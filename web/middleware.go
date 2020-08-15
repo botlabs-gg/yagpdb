@@ -8,17 +8,18 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/cplogs"
+	"github.com/jonas747/yagpdb/web/discorddata"
 	"github.com/miolini/datacounter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -123,20 +124,12 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		token, err := AuthTokenFromB64(cookie.Value)
+		session, err := discorddata.GetSession(cookie.Value, AuthTokenFromB64)
 		if err != nil {
-			if err != ErrNotLoggedIn {
-				// this could really only happen if the user messes with the session token, or some other BS happens (like bad ram i guess)
+			if errors.Cause(err) != ErrNotLoggedIn {
 				CtxLogger(r.Context()).WithError(err).Error("invalid session")
 			}
 
-			return
-		}
-
-		// construct the session from the user's (decoded) session cookie
-		session, err := discordgo.New(token.Type() + " " + token.AccessToken)
-		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Error("Failed initializing discord session")
 			return
 		}
 
@@ -175,6 +168,28 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+func CSRFProtectionMW(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		// validate the origin header (if present) for protection against CSRF attacks
+		// i don't think putting in more protection against CSRF attacks is needed, considering literally every browser these days support it
+		origin := r.Header.Get("Origin")
+		if origin != "" {
+			split := strings.SplitN(origin, ":", 3)
+			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
+
+			if len(split) < 2 || !strings.EqualFold("//"+hostSplit[0], split[1]) {
+				CtxLogger(r.Context()).Error("Mismatched origin: ", hostSplit[0]+" : "+split[1])
+				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
+				return
+			}
+		}
+
+		inner.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(mw)
+}
+
 // UserInfoMiddleware fills the context with user information and the guilds it's on guilds if possible
 func UserInfoMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
@@ -188,8 +203,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 		}
 
 		// retrieve user info
-		var user *discordgo.User
-		err := common.GetCacheDataJson(session.Token+":user", &user)
+		user, err := discorddata.GetUserInfo(session.Token, session)
 		if err != nil {
 			// nothing in cache...
 			user, err = session.UserMe()
@@ -227,30 +241,11 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-// setFullGuild is a fallback in case a userguild is not available, could be the case if a bot admin is accesing a server they're not part of
-func setFullGuild(ctx context.Context, guildID int64) (context.Context, error) {
-	fullGuild, err := common.GetGuild(guildID)
+func getGuild(ctx context.Context, guildID int64) (*discordgo.Guild, error) {
+	guild, err := discorddata.GetFullGuild(guildID)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Error("Failed retrieving guild")
-		return ctx, err
-	}
-
-	entry := CtxLogger(ctx).WithField("g", guildID)
-	ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
-	ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": fullGuild})
-	return context.WithValue(ctx, common.ContextKeyCurrentGuild, fullGuild), nil
-}
-
-func getGuild(guildID int64, ctx context.Context) (*discordgo.Guild, error) {
-	guild, err := botrest.GetGuild(guildID)
-	if err != nil {
-		CtxLogger(ctx).WithError(err).Warn("failed getting guild from bot, querying discord api")
-
-		guild, err = common.BotSession.Guild(guildID)
-		if err != nil {
-			CtxLogger(ctx).WithError(err).Warn("failed getting guild from discord fallback, nothing more we can do...")
-			return nil, err
-		}
+		CtxLogger(ctx).WithError(err).Warn("failed getting guild from discord fallback, nothing more we can do...")
+		return nil, err
 	}
 
 	return guild, nil
@@ -271,12 +266,10 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		guild, err := getGuild(guildID, ctx)
+		guild, err := getGuild(ctx, guildID)
 		if err != nil {
 			return
 		}
-
-		sort.Sort(dutil.Roles(guild.Roles))
 
 		entry := CtxLogger(ctx).WithField("g", guildID)
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
@@ -343,49 +336,16 @@ func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-// RequireGuildChannelsMiddleware ensures that the channels are available for the guild were on during this request, and yes this has to be done seperately cause discord
-func RequireGuildChannelsMiddleware(inner http.Handler) http.Handler {
-	mw := func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		guild := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
-
-		if len(guild.Channels) > 0 {
-			// channels already available
-			sort.Sort(dutil.Channels(guild.Channels))
-			inner.ServeHTTP(w, r)
-			return
-		}
-
-		channels, err := common.GetGuildChannels(guild.ID)
-		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("Failed retrieving channels")
-			http.Redirect(w, r, "/?err=retrievingchannels", http.StatusTemporaryRedirect)
-			return
-		}
-
-		// Sort them
-		sort.Sort(dutil.Channels(channels))
-		guild.Channels = channels
-
-		inner.ServeHTTP(w, r)
-	}
-	return http.HandlerFunc(mw)
-}
-
 // RequireBotMemberMW ensures that the bot member for the curreng guild is available, mostly used for checking the bot's roles
 func RequireBotMemberMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		parsedGuildID, _ := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
 
-		member, err := botrest.GetBotMember(parsedGuildID)
+		member, err := discorddata.GetMember(parsedGuildID, common.BotUser.ID)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Warn("Failed contacting bot about bot member information, falling back to discord api for retrieving bot member")
-			member, err = common.BotSession.GuildMember(parsedGuildID, common.BotUser.ID)
-			if err != nil {
-				CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
-				http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
-				return
-			}
+			CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
+			http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
+			return
 		}
 
 		ctx := SetContextTemplateData(r.Context(), map[string]interface{}{"BotMember": member})
@@ -618,7 +578,7 @@ type SimpleConfigSaver interface {
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
-func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) http.Handler {
+func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler, key string) http.Handler {
 	return FormParserMW(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		g, templateData := GetBaseCPContextData(ctx)
@@ -636,10 +596,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) ht
 		err := form.Save(g.ID)
 		if !CheckErr(templateData, err, "Failed saving config", CtxLogger(ctx).Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
-			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-			if ok {
-				common.AddCPLogEntry(user, g.ID, "Updated "+t.Name()+" Config.")
-			}
+			go cplogs.RetryAddEntry(NewLogEntryFromContext(ctx, key))
 		}
 	}), t)
 }
@@ -679,16 +636,11 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handle
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
-func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}, logMsg string) http.Handler {
+func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}) http.Handler {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
-
-		var g *discordgo.Guild
-		if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
-			g = v.(*discordgo.Guild)
-		}
 
 		if extraHandler != nil {
 			defer func() {
@@ -721,10 +673,6 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 
 		if err == nil && !hasErrorAlert {
 			data.AddAlerts(SucessAlert("Success!"))
-			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-			if ok && logMsg != "" && g != nil {
-				go common.AddCPLogEntry(user, g.ID, logMsg)
-			}
 		}
 	})
 
@@ -814,24 +762,11 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 		userI := r.Context().Value(common.ContextKeyUser)
 		if userI != nil {
 			user := userI.(*discordgo.User)
-			results, err := botrest.GetMembers(guild.ID, user.ID)
 
-			var m *discordgo.Member
-			if len(results) > 0 {
-				m = results[0]
-			}
-
+			m, err := discorddata.GetMember(guild.ID, user.ID)
 			if err != nil || m == nil {
-				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from bot, falling back to discord api")
-
-				// fallback to discord api
-				m, err = common.BotSession.GuildMember(guild.ID, user.ID)
-				if err != nil {
-					CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
-				}
-			}
-
-			if m != nil {
+				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
+			} else if m != nil {
 				// calculate permissions
 				perms := discordgo.MemberPermissions(guild, nil, m)
 

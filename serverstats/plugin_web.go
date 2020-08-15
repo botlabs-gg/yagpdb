@@ -12,6 +12,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
@@ -26,6 +27,8 @@ import (
 var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)
 var WebConfigCache = rcache.NewInt(cacheConfigFetcher, time.Minute)
 
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "serverstats_settings_updated", FormatString: "Updated serverstats settings"})
+
 type FormData struct {
 	Public         bool
 	IgnoreChannels []int64 `valid:"channel,false"`
@@ -37,20 +40,19 @@ func (p *Plugin) InitWeb() {
 	statsCPMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/stats"), statsCPMux)
 	web.CPMux.Handle(pat.New("/stats/*"), statsCPMux)
-	statsCPMux.Use(web.RequireGuildChannelsMiddleware)
 
 	cpGetHandler := web.ControllerHandler(publicHandler(HandleStatsHtml, false), "cp_serverstats")
 	statsCPMux.Handle(pat.Get(""), cpGetHandler)
 	statsCPMux.Handle(pat.Get("/"), cpGetHandler)
 
-	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
+	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}))
 	statsCPMux.Handle(pat.Get("/daily_json"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
 	statsCPMux.Handle(pat.Get("/charts"), web.APIHandler(publicHandlerJson(HandleStatsCharts, false)))
 
 	// Public
-	web.ServerPublicMux.Handle(pat.Get("/stats"), web.RequireGuildChannelsMiddleware(web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats")))
-	web.ServerPublicMux.Handle(pat.Get("/stats/daily_json"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsJson, true))))
-	web.ServerPublicMux.Handle(pat.Get("/stats/charts"), web.RequireGuildChannelsMiddleware(web.APIHandler(publicHandlerJson(HandleStatsCharts, true))))
+	web.ServerPublicMux.Handle(pat.Get("/stats"), web.ControllerHandler(publicHandler(HandleStatsHtml, true), "cp_serverstats"))
+	web.ServerPublicMux.Handle(pat.Get("/stats/daily_json"), web.APIHandler(publicHandlerJson(HandleStatsJson, true)))
+	web.ServerPublicMux.Handle(pat.Get("/stats/charts"), web.APIHandler(publicHandlerJson(HandleStatsCharts, true)))
 }
 
 type publicHandlerFunc func(w http.ResponseWriter, r *http.Request, publicAccess bool) (web.TemplateData, error)
@@ -124,6 +126,7 @@ OUTER:
 	err := model.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist("public", "ignore_channels"), boil.Infer())
 	if err == nil {
 		go pubsub.Publish("server_stats_invalidate_cache", ag.ID, nil)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 	}
 
 	WebConfigCache.Delete(int(ag.ID))

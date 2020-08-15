@@ -3,8 +3,13 @@ package twitter
 import (
 	"context"
 	"fmt"
-	"github.com/dghubble/go-twitter/twitter"
+	"html/template"
+	"net/http"
+	"strconv"
+
+	"github.com/jonas747/go-twitter/twitter"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/twitter/models"
 	"github.com/jonas747/yagpdb/web"
@@ -12,9 +17,6 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"strconv"
 )
 
 type CtxKey int
@@ -30,8 +32,16 @@ type Form struct {
 }
 
 type EditForm struct {
-	DiscordChannel int64 `valid:"channel,false"`
+	DiscordChannel  int64 `valid:"channel,false"`
+	IncludeReplies  bool
+	IncludeRetweets bool
 }
+
+var (
+	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "twitter_added_feed", FormatString: "Added twitter feed from %s"})
+	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "twitter_removed_feed", FormatString: "Removed twitter feed from %s"})
+	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "twitter_updated_feed", FormatString: "Updated twitter feed from %s"})
+)
 
 func (p *Plugin) InitWeb() {
 
@@ -46,21 +56,18 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/twitter/*"), mux)
 	web.CPMux.Handle(pat.New("/twitter"), mux)
 
-	// Alll handlers here require guild channels present
-	mux.Use(web.RequireGuildChannelsMiddleware)
-
 	mainGetHandler := web.ControllerHandler(p.HandleTwitter, "cp_twitter")
 
 	mux.Handle(pat.Get("/"), mainGetHandler)
 	mux.Handle(pat.Get(""), mainGetHandler)
 
-	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new twitter feed")
+	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{})
 
 	mux.Handle(pat.Post(""), addHandler)
 	mux.Handle(pat.Post("/"), addHandler)
-	mux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, EditForm{}, "Updated a twitter feed"))
-	mux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a twitter feed"))
-	mux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a twitter feed"))
+	mux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, EditForm{}))
+	mux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
+	mux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 }
 
 func (p *Plugin) HandleTwitter(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -134,6 +141,9 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	err = m.InsertG(ctx, boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.ScreenName}))
+	}
 	return templateData, err
 }
 
@@ -179,7 +189,13 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 
 	sub.ChannelID = data.DiscordChannel
 	sub.Enabled = true
-	_, err = sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled"))
+	sub.IncludeRT = data.IncludeRetweets
+	sub.IncludeReplies = data.IncludeReplies
+
+	_, err = sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled", "include_replies", "include_rt"))
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.TwitterUsername}))
+	}
 	return
 }
 
@@ -189,6 +205,9 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (templateD
 
 	sub := ctx.Value(ContextKeySub).(*models.TwitterFeed)
 	_, err = sub.DeleteG(ctx)
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.TwitterUsername}))
+	}
 	return templateData, err
 }
 

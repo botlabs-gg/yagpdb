@@ -17,6 +17,7 @@ import (
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -33,6 +34,20 @@ const (
 
 var _ web.Plugin = (*Plugin)(nil)
 
+var (
+	panelLogKeyNewList     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_list", FormatString: "Updated automod: Created a new ChannelOverride"})
+	panelLogKeyUpdatedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_list", FormatString: "Updated automod: Updated a ChannelOverride"})
+	panelLogKeyRemovedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_list", FormatString: "Updated automod: Removed a ChannelOverride"})
+
+	panelLogKeyNewRuleset     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_ruleset", FormatString: "Updated automod: Created a new ruleset"})
+	panelLogKeyUpdatedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_ruleset", FormatString: "Updated automod: Updated a ruleset"})
+	panelLogKeyRemovedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_ruleset", FormatString: "Updated automod: Removed a ruleset"})
+
+	panelLogKeyNewRule     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_rule", FormatString: "Updated automod: Created a new rule"})
+	panelLogKeyUpdatedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_rule", FormatString: "Updated automod: Updated a rule"})
+	panelLogKeyRemovedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_rule", FormatString: "Updated automod: Removed a rule"})
+)
+
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../automod/assets/automod.html", "templates/plugins/automod.html")
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
@@ -46,20 +61,18 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/automod"), muxer)
 	web.CPMux.Handle(pat.New("/automod/*"), muxer)
 
-	muxer.Use(web.RequireGuildChannelsMiddleware)
-
 	getIndexHandler := web.ControllerHandler(p.handleGetAutomodIndex, "automod_index")
 
 	muxer.Handle(pat.Get("/"), getIndexHandler)
 	muxer.Handle(pat.Get(""), getIndexHandler)
 	muxer.Handle(pat.Get("/logs"), web.ControllerHandler(p.handleGetLogs, "automod_index"))
 
-	muxer.Handle(pat.Post("/new_ruleset"), web.ControllerPostHandler(p.handlePostAutomodCreateRuleset, getIndexHandler, CreateRulesetData{}, "Created a new automod ruleset"))
+	muxer.Handle(pat.Post("/new_ruleset"), web.ControllerPostHandler(p.handlePostAutomodCreateRuleset, getIndexHandler, CreateRulesetData{}))
 
 	// List handlers
-	muxer.Handle(pat.Post("/new_list"), web.ControllerPostHandler(p.handlePostAutomodCreateList, getIndexHandler, CreateListData{}, "Created a new automod list"))
-	muxer.Handle(pat.Post("/list/:listID/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateList, getIndexHandler, UpdateListData{}, "Updated a automod list"))
-	muxer.Handle(pat.Post("/list/:listID/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteList, getIndexHandler, nil, "Deleted a automod list"))
+	muxer.Handle(pat.Post("/new_list"), web.ControllerPostHandler(p.handlePostAutomodCreateList, getIndexHandler, CreateListData{}))
+	muxer.Handle(pat.Post("/list/:listID/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateList, getIndexHandler, UpdateListData{}))
+	muxer.Handle(pat.Post("/list/:listID/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteList, getIndexHandler, nil))
 
 	// Ruleset specific handlers
 	rulesetMuxer := goji.SubMux()
@@ -72,12 +85,12 @@ func (p *Plugin) InitWeb() {
 	rulesetMuxer.Handle(pat.Get(""), getRulesetHandler)
 	rulesetMuxer.Handle(pat.Get("/"), getRulesetHandler)
 
-	rulesetMuxer.Handle(pat.Post("/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateRuleset, getRulesetHandler, UpdateRulesetData{}, "Updated a ruleset"))
-	rulesetMuxer.Handle(pat.Post("/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteRuleset, getIndexHandler, nil, "Deleted a ruleset"))
+	rulesetMuxer.Handle(pat.Post("/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateRuleset, getRulesetHandler, UpdateRulesetData{}))
+	rulesetMuxer.Handle(pat.Post("/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteRuleset, getIndexHandler, nil))
 
-	rulesetMuxer.Handle(pat.Post("/new_rule"), web.ControllerPostHandler(p.handlePostAutomodCreateRule, getRulesetHandler, CreateRuleData{}, "Created a new automod rule"))
-	rulesetMuxer.Handle(pat.Post("/rule/:ruleID/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteRule, getRulesetHandler, nil, "Deleted a automod rule"))
-	rulesetMuxer.Handle(pat.Post("/rule/:ruleID/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateRule, getRulesetHandler, UpdateRuleData{}, "Updated a automod rule"))
+	rulesetMuxer.Handle(pat.Post("/new_rule"), web.ControllerPostHandler(p.handlePostAutomodCreateRule, getRulesetHandler, CreateRuleData{}))
+	rulesetMuxer.Handle(pat.Post("/rule/:ruleID/delete"), web.ControllerPostHandler(p.handlePostAutomodDeleteRule, getRulesetHandler, nil))
+	rulesetMuxer.Handle(pat.Post("/rule/:ruleID/update"), web.ControllerPostHandler(p.handlePostAutomodUpdateRule, getRulesetHandler, UpdateRuleData{}))
 }
 
 func (p *Plugin) handleGetAutomodIndex(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -160,6 +173,9 @@ func (p *Plugin) handlePostAutomodCreateRuleset(w http.ResponseWriter, r *http.R
 	}
 
 	err = rs.InsertG(r.Context(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewRuleset))
+	}
 	return tmpl, err
 }
 
@@ -190,6 +206,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 	err = list.InsertG(r.Context(), boil.Infer())
 	if err == nil {
 		bot.EvictGSCache(g.ID, CacheKeyLists)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewList))
 	}
 	return tmpl, err
 }
@@ -212,6 +229,7 @@ func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Requ
 	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
 	if err == nil {
 		bot.EvictGSCache(g.ID, CacheKeyLists)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedList))
 	}
 	return tmpl, err
 }
@@ -228,6 +246,7 @@ func (p *Plugin) handlePostAutomodDeleteList(w http.ResponseWriter, r *http.Requ
 	_, err = list.DeleteG(r.Context())
 	if err == nil {
 		bot.EvictGSCache(g.ID, CacheKeyLists)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedList))
 	}
 	return tmpl, err
 }
@@ -299,6 +318,7 @@ func (p *Plugin) handlePostAutomodCreateRule(w http.ResponseWriter, r *http.Requ
 	err = rule.InsertG(r.Context(), boil.Infer())
 	if err == nil {
 		ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules, rule)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewRule))
 	}
 
 	return tmpl, err
@@ -372,6 +392,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 
 	bot.EvictGSCache(g.ID, CacheKeyRulesets)
 	featureflags.MarkGuildDirty(g.ID)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedRuleset))
 
 	// Reload the conditions now
 	ruleset.R.RulesetAutomodRulesetConditions = properConditions
@@ -384,15 +405,18 @@ func (p *Plugin) handlePostAutomodDeleteRuleset(w http.ResponseWriter, r *http.R
 	g, tmpl := web.GetBaseCPContextData(r.Context())
 
 	ruleset := r.Context().Value(CtxKeyCurrentRuleset).(*models.AutomodRuleset)
-	_, err := ruleset.DeleteG(r.Context())
+	rows, err := ruleset.DeleteG(r.Context())
 	if err != nil {
 		return tmpl, err
 	}
 
 	delete(tmpl, "CurrentRuleset")
 
-	bot.EvictGSCache(g.ID, CacheKeyRulesets)
-	featureflags.MarkGuildDirty(g.ID)
+	if rows > 0 {
+		bot.EvictGSCache(g.ID, CacheKeyRulesets)
+		featureflags.MarkGuildDirty(g.ID)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedRuleset))
+	}
 
 	return tmpl, err
 }
@@ -501,6 +525,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 
 	bot.EvictGSCache(g.ID, CacheKeyRulesets)
 	featureflags.MarkGuildDirty(g.ID)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedRule))
 
 	return tmpl, err
 }
@@ -701,6 +726,7 @@ func (p *Plugin) handlePostAutomodDeleteRule(w http.ResponseWriter, r *http.Requ
 				ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules[:k], ruleset.R.RulesetAutomodRules[k+1:]...)
 				bot.EvictGSCache(g.ID, CacheKeyRulesets)
 				featureflags.MarkGuildDirty(g.ID)
+				go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedRule))
 			}
 
 			return nil, err

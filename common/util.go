@@ -74,34 +74,6 @@ func SendTempMessage(session *discordgo.Session, duration time.Duration, cID int
 	DelayedMessageDelete(session, duration, cID, m.ID)
 }
 
-// GetGuildChannels returns the guilds channels either from cache or api
-func GetGuildChannels(guildID int64) (channels []*discordgo.Channel, err error) {
-	// Check cache first
-	err = GetCacheDataJson(KeyGuildChannels(guildID), &channels)
-	if err != nil {
-		channels, err = BotSession.GuildChannels(guildID)
-		if err == nil {
-			SetCacheDataJsonSimple(KeyGuildChannels(guildID), channels)
-		}
-	}
-
-	return
-}
-
-// GetGuild returns the guild from guildid either from cache or api
-func GetGuild(guildID int64) (guild *discordgo.Guild, err error) {
-	// Check cache first
-	err = GetCacheDataJson(KeyGuild(guildID), &guild)
-	if err != nil {
-		guild, err = BotSession.Guild(guildID)
-		if err == nil {
-			SetCacheDataJsonSimple(KeyGuild(guildID), guild)
-		}
-	}
-
-	return
-}
-
 func RandomAdjective() string {
 	return Adjectives[rand.Intn(len(Adjectives))]
 }
@@ -577,4 +549,18 @@ func IsOwner(userID int64) bool {
 
 var AllowedMentionsParseUsers = discordgo.AllowedMentions{
 	Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+}
+
+func LogLongCallTime(treshold time.Duration, isErr bool, logMsg string, f func()) {
+	started := time.Now()
+	f()
+	elapsed := time.Since(started)
+
+	if elapsed > treshold {
+		if isErr {
+			logrus.Error(logMsg + elapsed.String())
+		} else {
+			logrus.Warn(logMsg + elapsed.String())
+		}
+	}
 }

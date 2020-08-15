@@ -15,7 +15,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-const flushTresholdMinutes = time.Duration(60)
+const flushTresholdMinutes = 10
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*ScheduledEvents)(nil)
 

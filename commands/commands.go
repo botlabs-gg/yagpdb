@@ -87,9 +87,12 @@ func InitCommands() {
 	}
 }
 
-func GetCommandPrefix(guild int64) (string, error) {
+func GetCommandPrefixRedis(guild int64) (string, error) {
 	var prefix string
 	err := common.RedisPool.Do(radix.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))
+	if err == nil && prefix == "" {
+		prefix = defaultCommandPrefix()
+	}
 	return prefix, err
 }
 
@@ -102,7 +105,7 @@ const (
 
 func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 
-	prefix, err := GetCommandPrefix(guildID)
+	prefix, err := GetCommandPrefixRedis(guildID)
 	if err != nil {
 		return nil, err
 	}

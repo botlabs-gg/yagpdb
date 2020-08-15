@@ -7,9 +7,15 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
+)
+
+var (
+	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_settings_updated", FormatString: "Updated moderation config"})
+	panelLogKeyClearWarnings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_warnings_cleared", FormatString: "Cleared %d moderation user warnings"})
 )
 
 func (p *Plugin) InitWeb() {
@@ -25,14 +31,12 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/moderation"), subMux)
 	web.CPMux.Handle(pat.New("/moderation/*"), subMux)
 
-	subMux.Use(web.RequireGuildChannelsMiddleware)
-
 	subMux.Use(web.RequireBotMemberMW) // need the bot's role
 	subMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionEmbedLinks))
 
 	getHandler := web.ControllerHandler(HandleModeration, "cp_moderation")
-	postHandler := web.ControllerPostHandler(HandlePostModeration, getHandler, Config{}, "Updated moderation config")
-	clearServerWarnings := web.ControllerPostHandler(HandleClearServerWarnings, getHandler, nil, "Cleared all server warnings")
+	postHandler := web.ControllerPostHandler(HandlePostModeration, getHandler, Config{})
+	clearServerWarnings := web.ControllerPostHandler(HandleClearServerWarnings, getHandler, nil)
 
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)
@@ -41,7 +45,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/clear_server_warnings"), clearServerWarnings)
 }
 
-// The moderation page itself
+// HandleModeration servers the moderation page itself
 func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
@@ -58,7 +62,7 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	return templateData, nil
 }
 
-// Update the settings
+// HandlePostModeration update the settings
 func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
@@ -73,6 +77,10 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 
 	templateData["DefaultDMMessage"] = DefaultDMMessage
 
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
+	}
+
 	return templateData, err
 }
 
@@ -85,6 +93,10 @@ func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.Temp
 	rows := common.GORM.Where("guild_id = ?", activeGuild.ID).Delete(WarningModel{}).RowsAffected
 	templateData.AddAlerts(web.SucessAlert("Deleted ", rows, " warnings!"))
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+
+	if rows > 0 {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyClearWarnings, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: rows}))
+	}
 
 	return templateData, nil
 }

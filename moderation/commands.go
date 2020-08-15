@@ -147,7 +147,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-			
+
 			ddays := int(config.DefaultBanDeleteDays.Int64)
 			if parsed.Switches["ddays"].Value != nil {
 				ddays = parsed.Switches["ddays"].Int()
@@ -312,7 +312,13 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			reportBody := fmt.Sprintf("<@%d> Reported <@%d> in <#%d> For `%s`\nLast 100 messages from channel: <%s>", parsed.Msg.Author.ID, target, parsed.Msg.ChannelID, parsed.Args[1].Str(), logLink)
 
-			_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
+			_, err = common.BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+				Content: reportBody,
+				AllowedMentions: discordgo.AllowedMentions{
+					Users: []int64{parsed.Msg.Author.ID, target},
+				},
+			})
+
 			if err != nil {
 				return nil, err
 			}
@@ -774,10 +780,10 @@ var ModerationCommands = []*commands.YAGCommand{
 					return nil, err
 				}
 			}
-			
+
 			// cancel the event to add the role
 			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GS.ID, parsed.Msg.Author.ID, role.ID)
-			
+
 			action := MAGiveRole
 			action.Prefix = "Gave the role " + role.Name + " to "
 			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {

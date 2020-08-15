@@ -9,6 +9,8 @@ import (
 
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/serverstats/messagestatscollector"
+	"github.com/mediocregopher/radix/v3"
 )
 
 type ChannelStats struct {
@@ -26,12 +28,12 @@ type DailyStats struct {
 
 func RetrieveDailyStats(t time.Time, guildID int64) (*DailyStats, error) {
 
-	msgStats, err := readHourlyMessageStats(t, guildID)
+	msgStats, err := readDailyMsgStats(t, guildID)
 	if err != nil {
 		return nil, errors.WithStackIf(err)
 	}
 
-	miscStats, err := readHourlyMiscStats(t, guildID)
+	miscStats, err := readDailyMiscStats(t, guildID)
 	if err != nil {
 		return nil, errors.WithStackIf(err)
 	}
@@ -47,82 +49,50 @@ func RetrieveDailyStats(t time.Time, guildID int64) (*DailyStats, error) {
 	return miscStats, nil
 }
 
-func readHourlyMessageStats(t time.Time, guildID int64) (map[string]*ChannelStats, error) {
-	// read horly message stats
-	const qMsgStatsHourly = `SELECT t, channel_id, count 
-FROM server_stats_hourly_periods_messages
-WHERE t > ($2::timestamptz - INTERVAL '25 hours') AND guild_id = $1 AND date_trunc('hour', t) < date_trunc('hour', $2)`
+func readDailyMsgStats(t time.Time, guildID int64) (channelStats map[string]*ChannelStats, err error) {
+	day := t.YearDay()
+	year := t.Year()
 
-	rows, err := common.PQ.Query(qMsgStatsHourly, guildID, t)
+	raw := make(map[int64]int64)
+	err = common.RedisPool.Do(radix.Cmd(&raw, "ZRANGE", messagestatscollector.KeyMessageStats(guildID, year, day), "0", "-1", "WITHSCORES"))
 	if err != nil {
-		return nil, errors.WithStackIf(err)
+		return nil, err
 	}
-	defer rows.Close()
 
-	channelStats := make(map[string]*ChannelStats)
-
-	for rows.Next() {
-		var channelID int64
-		var count int64
-		var t time.Time
-		err = rows.Scan(&t, &channelID, &count)
-		if err != nil {
-			return nil, errors.WithStackIf(err)
-		}
-
-		cStr := strconv.FormatInt(channelID, 10)
-
-		if cs, ok := channelStats[cStr]; ok {
-			cs.Count += count
-		} else {
-			channelStats[cStr] = &ChannelStats{
-				Name:  cStr,
-				Count: count,
-			}
+	channelStats = make(map[string]*ChannelStats)
+	for k, v := range raw {
+		strID := strconv.FormatInt(k, 10)
+		channelStats[strID] = &ChannelStats{
+			Name:  strID,
+			Count: v,
 		}
 	}
 
-	return channelStats, nil
+	return channelStats, err
 }
 
-func readHourlyMiscStats(t time.Time, guildID int64) (*DailyStats, error) {
+func readDailyMiscStats(t time.Time, guildID int64) (*DailyStats, error) {
 	// read the rest
-	const qMiscStatsHourly = `SELECT t, num_members, max_online, joins, leaves, max_voice 
-FROM server_stats_hourly_periods_misc
-WHERE t > ($2::timestamptz - INTERVAL '25 hours') AND guild_id = $1 AND date_trunc('hour', t) < date_trunc('hour', $2)`
 
-	rows, err := common.PQ.Query(qMiscStatsHourly, guildID, t)
-	if err != nil {
-		return nil, errors.WithStackIf(err)
-	}
-	defer rows.Close()
+	year := t.Year()
+	day := t.YearDay()
 
-	sum := &DailyStats{}
+	var totalMembers int
+	var joins int
+	var leaves int
+	err := common.RedisPool.Do(radix.Pipeline(
+		radix.FlatCmd(&totalMembers, "ZSCORE", keyTotalMembers(year, day), guildID),
+		radix.FlatCmd(&joins, "ZSCORE", keyJoinedMembers(year, day), guildID),
+		radix.FlatCmd(&leaves, "ZSCORE", keyLeftMembers(year, day), guildID),
+	))
 
-	for rows.Next() {
-		var t time.Time
-		var numMembers int
-		var maxOnline int
-		var joins, leaves int
-		var maxVoice int
-
-		err = rows.Scan(&t, &numMembers, &maxOnline, &joins, &leaves, &maxVoice)
-		if err != nil {
-			return nil, errors.WithStackIf(err)
-		}
-
-		sum.JoinedDay += joins
-		sum.LeftDay += leaves
-		if maxOnline > sum.Online {
-			sum.Online = maxOnline
-		}
-
-		if numMembers > sum.TotalMembers {
-			sum.TotalMembers = numMembers
-		}
+	ds := &DailyStats{
+		TotalMembers: totalMembers,
+		JoinedDay:    joins,
+		LeftDay:      leaves,
 	}
 
-	return sum, nil
+	return ds, err
 }
 
 type ChartDataPeriod struct {

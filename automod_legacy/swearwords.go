@@ -60,6 +60,8 @@ var BuiltinSwearWords = map[string]bool{
 	"smegma":      true,
 	"spunk":       true,
 	"tit":         true,
+	"tranny":       true,
+	"trannies":     true,
 	"tosser":      true,
 	"turd":        true,
 	"twat":        true,

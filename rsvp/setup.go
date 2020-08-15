@@ -266,7 +266,7 @@ func (s *SetupSession) Finish() {
 		return
 	}
 
-	err = AddReactions(m.ChannelID, m.MessageID)
+	err = AddReactions(m.ChannelID, m.MessageID, m.MaxParticipants > 0)
 	if err != nil {
 		m.DeleteG(context.Background())
 		s.abortError("failed adding reactions", err)
@@ -362,10 +362,16 @@ const (
 	EmojiWaitlist   = "🕐"
 )
 
-var EventReactions = []string{EmojiJoining, EmojiNotJoining, EmojiWaitlist, EmojiMaybe}
+var EventReactionsWithLimit = []string{EmojiJoining, EmojiNotJoining, EmojiWaitlist, EmojiMaybe}
+var EventReactionsNoLimit = []string{EmojiJoining, EmojiNotJoining, EmojiMaybe}
 
-func AddReactions(channelID, messageID int64) error {
-	for _, r := range EventReactions {
+func AddReactions(channelID, messageID int64, isLimit bool) error {
+	list := EventReactionsNoLimit
+	if isLimit {
+		list = EventReactionsWithLimit
+	}
+
+	for _, r := range list {
 		err := common.BotSession.MessageReactionAdd(channelID, messageID, r)
 		if err != nil {
 			return err

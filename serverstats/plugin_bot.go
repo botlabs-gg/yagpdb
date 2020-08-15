@@ -3,6 +3,7 @@ package serverstats
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"emperror.dev/errors"
@@ -31,7 +32,7 @@ var (
 )
 
 func (p *Plugin) BotInit() {
-	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute)
+	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute*5)
 	memberSatatsUpdater = newServerMemberStatsUpdater()
 	go memberSatatsUpdater.run()
 
@@ -143,8 +144,12 @@ func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildState) (*Ser
 	return v.(*ServerStatsConfig), nil
 }
 
+func keyOnlineMembers(year, day int) string {
+	return "serverstats_online_members:" + strconv.Itoa(year) + ":" + strconv.Itoa(day)
+}
+
 func (p *Plugin) runOnlineUpdater() {
-	time.Sleep(time.Minute * 10) // relieve startup preasure
+	time.Sleep(time.Minute * 1) // relieve startup preasure
 
 	ticker := time.NewTicker(time.Second * 10)
 	state := bot.State
@@ -184,32 +189,19 @@ func (p *Plugin) runOnlineUpdater() {
 			checkedThisRound++
 		}
 
-		t := RoundHour(time.Now())
+		t := time.Now()
+		day := t.YearDay()
+		year := t.Year()
 
-		tx, err := common.PQ.Begin()
-		if err != nil {
-			logger.WithError(err).Error("[serverstats] failed starting online count transaction")
-			continue
-		}
+		updateActions := make([]radix.CmdAction, 0, len(totalCounts)*2)
 
 		for g, counts := range totalCounts {
-			_, err := tx.Exec(`INSERT INTO server_stats_hourly_periods_misc  (guild_id, t, num_members, joins, leaves, max_online, max_voice)
-VALUES ($1, $2, $3, 0, 0, $4, 0)
-ON CONFLICT (guild_id, t)
-DO UPDATE SET 
-max_online = GREATEST (server_stats_hourly_periods_misc.max_online, $4)
-`, g, t, counts[1], counts[0]) // update clause vars
-
-			if err != nil {
-				logger.WithError(err).WithField("guild", g).Error("failed checking guild online count")
-				tx.Rollback()
-				break
-			}
+			updateActions = append(updateActions, radix.FlatCmd(nil, "ZADD", keyTotalMembers(year, day), counts[1], g), radix.FlatCmd(nil, "ZADD", keyOnlineMembers(year, day), counts[0], g))
 		}
 
-		err = tx.Commit()
+		err := common.RedisPool.Do(radix.Pipeline(updateActions...))
 		if err != nil {
-			logger.WithError(err).Error("failed comitting online counts")
+			logger.WithError(err).Error("failed updating members period runner")
 		}
 
 		if time.Since(started) > time.Second {
