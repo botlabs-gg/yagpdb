@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"emperror.dev/errors"
@@ -701,9 +700,9 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 			}
 
 			if isStringMap {
-				switch mk.(type) {
+				switch t := mk.(type) {
 				case string:
-					m2[fmt.Sprint(mk)] = mv
+					m2[t] = mv
 				default:
 					isStringMap = false
 				}
