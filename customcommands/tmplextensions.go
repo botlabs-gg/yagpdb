@@ -682,7 +682,10 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 			return nil, err
 		}
 
-		m := make(map[interface{}]interface{}, n)
+		isStringKeysOnly := true
+		mi := make(map[interface{}]interface{}, n)
+		ms := make(map[string]interface{})
+
 		for i := 0; i < n; i++ {
 			mk, err := d.DecodeInterface()
 			if err != nil {
@@ -694,9 +697,28 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 				return nil, err
 			}
 
-			m[mk] = mv
+			// if the map only has string keys, use a map[string]interface{}
+			if isStringKeysOnly {
+				if s, ok := mk.(string); ok {
+					// so far only string keys
+					ms[s] = mv
+				} else {
+					// copy over the map to the interface{} keyed one
+					isStringKeysOnly = false
+					for jk, jv := range ms {
+						mi[jk] = jv
+					}
+					mi[mk] = mv
+				}
+			} else {
+				mi[mk] = mv
+			}
 		}
-		return m, nil
+		if isStringKeysOnly {
+			return ms, nil
+		}
+
+		return mi, nil
 	})
 
 	return dec
