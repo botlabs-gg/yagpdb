@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"emperror.dev/errors"
@@ -686,6 +687,8 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 		}
 
 		m := make(map[interface{}]interface{}, n)
+		m2 := make(map[string]interface{}, n)
+		isStringMap := true
 		for i := 0; i < n; i++ {
 			mk, err := d.DecodeInterface()
 			if err != nil {
@@ -697,8 +700,22 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 				return nil, err
 			}
 
+			if isStringMap {
+				switch mk.(type) {
+				case string:
+					m2[fmt.Sprint(mk)] = mv
+				default:
+					isStringMap = false
+				}
+			}
+
 			m[mk] = mv
 		}
+
+		if isStringMap {
+			return m2, nil
+		}
+
 		return m, nil
 	})
 
