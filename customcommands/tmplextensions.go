@@ -644,13 +644,10 @@ type LightDBEntry struct {
 
 func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 	var dst interface{}
-	err := msgpack.Unmarshal(m.ValueRaw, &dst)
+	dec := newDecoder(bytes.NewBuffer(m.ValueRaw))
+	err := dec.Decode(&dst)
 	if err != nil {
-		dec := newDecoder(bytes.NewBuffer(m.ValueRaw))
-		err = dec.Decode(&dst)
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	decodedValue := dst
