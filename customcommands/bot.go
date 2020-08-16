@@ -799,8 +799,11 @@ const (
 	CacheKeyDBLimits
 )
 
-func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) (cmds []*models.CustomCommand, err error) {
+func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
 	v, err := gs.UserCacheFetch(CacheKeyCommands, func() (interface{}, error) {
+		var cmds []*models.CustomCommand
+		var err error
+
 		common.LogLongCallTime(time.Second, true, fmt.Sprintf("Took longer than a second to fetch custom commands from db for %d: ", gs.ID), func() {
 			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
 		})
@@ -812,5 +815,5 @@ func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.
 		return nil, err
 	}
 
-	return v.(models.CustomCommandSlice), nil
+	return v.([]*models.CustomCommand), nil
 }
