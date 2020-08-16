@@ -397,9 +397,9 @@ func tmplDBIncr(ctx *templates.Context) interface{} {
 
 		keyStr := limitString(templates.ToString(key), 256)
 
-		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num) 
+		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num)
 VALUES ($1, $1, $2, $3, $4, $5, $6)
-ON CONFLICT (guild_id, user_id, key) 
+ON CONFLICT (guild_id, user_id, key)
 DO UPDATE SET value_num = templates_user_database.value_num + $6, updated_at = $1
 RETURNING value_num`
 
@@ -644,10 +644,13 @@ type LightDBEntry struct {
 
 func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 	var dst interface{}
-	dec := newDecoder(bytes.NewBuffer(m.ValueRaw))
-	err := dec.Decode(&dst)
+	err := msgpack.Unmarshal(m.ValueRaw, &dst)
 	if err != nil {
-		return nil, err
+		dec := newDecoder(bytes.NewBuffer(m.ValueRaw))
+		err = dec.Decode(&dst)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	decodedValue := dst
