@@ -780,6 +780,8 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyIsAdmin, read || write)
 
 		if read && !write {
+			ctx = context.WithValue(ctx, common.ContextKeyIsReadOnly, true)
+
 			var tmpl TemplateData
 			ctx, tmpl = GetCreateTemplateData(ctx)
 			tmpl.AddAlerts(WarningAlert("In read only mode, you can not change any settings."))

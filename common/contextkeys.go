@@ -20,4 +20,5 @@ const (
 	ContextKeyCoreConfig
 	ContextKeyMemberPermissions
 	ContextKeyIsAdmin
+	ContextKeyIsReadOnly
 )

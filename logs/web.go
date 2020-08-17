@@ -286,8 +286,12 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	config := r.Context().Value(ctxKeyConfig).(*models.GuildLoggingConfig)
 
 	// check if were allowed to view deleted messages
-	canViewDeleted, _ := web.IsAdminRequest(r.Context(), r)
-	if config.EveryoneCanViewDeleted.Bool {
+	isAdmin, _ := web.IsAdminRequest(r.Context(), r)
+
+	var canViewDeleted = false
+	if isAdmin && !web.GetIsReadOnly(r.Context()) {
+		canViewDeleted = true
+	} else if config.EveryoneCanViewDeleted.Bool {
 		canViewDeleted = true
 	} else if config.ManageMessagesCanViewDeleted.Bool && !canViewDeleted {
 		canViewDeleted = web.HasPermissionCTX(r.Context(), discordgo.PermissionManageMessages)
