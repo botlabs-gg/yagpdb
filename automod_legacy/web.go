@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
@@ -22,6 +23,8 @@ const (
 type GeneralForm struct {
 	Enabled bool
 }
+
+var panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automod_legacy_settings_updated", FormatString: "Updated legacy automod settings"})
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../automod_legacy/assets/automod_legacy.html", "templates/plugins/automod_legacy.html")
@@ -46,8 +49,8 @@ func (p *Plugin) InitWeb() {
 	autmodMux.Handle(pat.Get(""), getHandler)
 
 	// Post handlers
-	autmodMux.Handle(pat.Post("/"), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler)))
-	autmodMux.Handle(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler)))
+	autmodMux.Handle(pat.Post("/"), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
+	autmodMux.Handle(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
 }
 
 func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {

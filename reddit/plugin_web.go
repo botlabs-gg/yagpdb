@@ -11,6 +11,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -42,6 +43,12 @@ type UpdateForm struct {
 	NSFWMode   int   `schema:"nsfw_filter"`
 	MinUpvotes int   `schema:"min_upvotes"`
 }
+
+var (
+	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reddit_added_feed", FormatString: "Added reddit feed from %s"})
+	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reddit_updated_feed", FormatString: "Updated reddit feed from %s"})
+	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reddit_removed_feed", FormatString: "Removed reddit feed from %s"})
+)
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../reddit/assets/reddit.html", "templates/plugins/reddit.html")
@@ -147,15 +154,14 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData["RedditConfig"] = currentConfig
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Subreddit))
 
-	// Log
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Added reddit feed from /r/"+newElem.Subreddit)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: watchItem.Subreddit}))
+
 	return templateData
 }
 
 func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	_, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
@@ -186,14 +192,14 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
 
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, activeGuild.ID, "Modified a feed to /r/"+item.Subreddit)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
+
 	return templateData
 }
 
 func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	_, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
@@ -226,8 +232,8 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 
 	templateData["RedditConfig"] = currentConfig
 
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Removed feed from /r/"+item.Subreddit)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
+
 	return templateData
 }
 

@@ -420,7 +420,12 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	member := dstate.MSFromDGoMember(evt.GS, mc.Member)
-	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
+
+	var matchedCustomCommands []*TriggeredCC
+	var err error
+	common.LogLongCallTime(time.Second, true, fmt.Sprintf("Took longer than a second to fetch custom commands for %d: ", mc.GuildID), func() {
+		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
+	})
 	if err != nil {
 		logger.WithError(err).Error("Error mathching custom commands")
 		return
@@ -796,12 +801,19 @@ const (
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
 	v, err := gs.UserCacheFetch(CacheKeyCommands, func() (interface{}, error) {
-		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+		var cmds []*models.CustomCommand
+		var err error
+
+		common.LogLongCallTime(time.Second, true, fmt.Sprintf("Took longer than a second to fetch custom commands from db for %d: ", gs.ID), func() {
+			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+		})
+
+		return cmds, err
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return v.(models.CustomCommandSlice), nil
+	return v.([]*models.CustomCommand), nil
 }

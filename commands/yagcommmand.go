@@ -280,7 +280,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 
 	// Use the error as the response if no response was provided
 	if resp == nil && err != nil {
-		resp = fmt.Sprintf("%q command returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err)
+		resp = fmt.Sprintf("'%s' command returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err)
 	}
 
 	// send a alternative message in case of embeds in channels with no embeds perms

@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix/v3"
@@ -47,6 +48,18 @@ type CommandOverrideForm struct {
 	IgnoreRoles             []int64 `valid:"role,true"`
 }
 
+var (
+	panelLogKeyUpdatedPrefix = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_prefix", FormatString: "Updated command settings: Set prefix to %s"})
+
+	panelLogKeyNewChannelOverride     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_new_channel_override", FormatString: "Updated command settings: Created a new ChannelOverride"})
+	panelLogKeyUpdatedChannelOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_channel_override", FormatString: "Updated command settings: Updated a ChannelOverride"})
+	panelLogKeyRemovedChannelOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_removed_channel_override", FormatString: "Updated command settings: Removed a ChannelOverride"})
+
+	panelLogKeyNewCommandOverride     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_new_command", FormatString: "Updated command settings: Created a new command override"})
+	panelLogKeyUpdatedCommandOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_command", FormatString: "Updated command settings: Updated a command override"})
+	panelLogKeyRemovedCommandOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_removed_command", FormatString: "Updated command settings: Removed a command override"})
+)
+
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../commands/assets/commands.html", "templates/plugins/commands.html")
 	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
@@ -62,27 +75,27 @@ func (p *Plugin) InitWeb() {
 	getHandler := web.ControllerHandler(HandleCommands, "cp_commands")
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)
-	subMux.Handle(pat.Post("/general"), web.ControllerPostHandler(HandlePostCommands, getHandler, nil, "Updated command prefix"))
+	subMux.Handle(pat.Post("/general"), web.ControllerPostHandler(HandlePostCommands, getHandler, nil))
 
 	// Channel override handlers
 	subMux.Handle(pat.Post("/channel_overrides/new"),
-		web.ControllerPostHandler(HandleCreateChannelsOverride, getHandler, ChannelOverrideForm{}, "Created a new command channels override"))
+		web.ControllerPostHandler(HandleCreateChannelsOverride, getHandler, ChannelOverrideForm{}))
 
 	subMux.Handle(pat.Post("/channel_overrides/:channelOverride/update"),
-		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleUpdateChannelsOverride), getHandler, ChannelOverrideForm{}, "Updated a commands channel override"))
+		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleUpdateChannelsOverride), getHandler, ChannelOverrideForm{}))
 
 	subMux.Handle(pat.Post("/channel_overrides/:channelOverride/delete"),
-		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleDeleteChannelsOverride), getHandler, nil, "Deleted a commands channel override"))
+		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleDeleteChannelsOverride), getHandler, nil))
 
 	// Command override handlers
 	subMux.Handle(pat.Post("/channel_overrides/:channelOverride/command_overrides/new"),
-		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleCreateCommandOverride), getHandler, CommandOverrideForm{}, "Created a commands command override"))
+		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleCreateCommandOverride), getHandler, CommandOverrideForm{}))
 
 	subMux.Handle(pat.Post("/channel_overrides/:channelOverride/command_overrides/:commandsOverride/update"),
-		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleUpdateCommandOVerride), getHandler, CommandOverrideForm{}, "Updated a commands command override"))
+		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleUpdateCommandOVerride), getHandler, CommandOverrideForm{}))
 
 	subMux.Handle(pat.Post("/channel_overrides/:channelOverride/command_overrides/:commandsOverride/delete"),
-		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleDeleteCommandOverride), getHandler, nil, "Deleted a commands command override"))
+		web.ControllerPostHandler(ChannelOverrideMiddleware(HandleDeleteCommandOverride), getHandler, nil))
 
 }
 
@@ -176,8 +189,13 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 		return templateData, web.NewPublicError("Prefix is smaller than 1 or larger than 100 characters")
 	}
 
-	common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix))
+	err := common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix))
+	if err != nil {
+		return templateData, err
+	}
+
 	featureflags.MarkGuildDirty(activeGuild.ID)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedPrefix, &cplogs.Param{Type: cplogs.ParamTypeString, Value: newPrefix}))
 
 	return templateData, nil
 }
@@ -261,7 +279,10 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 	}
 
 	err = model.InsertG(r.Context(), boil.Infer())
-	featureflags.MarkGuildDirty(activeGuild.ID)
+	if err == nil {
+		featureflags.MarkGuildDirty(activeGuild.ID)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewChannelOverride))
+	}
 	return templateData, errors.WithMessage(err, "InsertG")
 }
 
@@ -292,13 +313,19 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 	currentOverride.IgnoreRoles = formData.IgnoreRoles
 
 	_, err = currentOverride.UpdateG(r.Context(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedChannelOverride))
+	}
 	return templateData, errors.WithMessage(err, "UpdateG")
 }
 
 func HandleDeleteChannelsOverride(w http.ResponseWriter, r *http.Request, currentOverride *models.CommandsChannelsOverride) (web.TemplateData, error) {
 	_, templateData := web.GetBaseCPContextData(r.Context())
 
-	_, err := currentOverride.DeleteG(r.Context())
+	rows, err := currentOverride.DeleteG(r.Context())
+	if rows > 0 {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedChannelOverride))
+	}
 	return templateData, errors.WithMessage(err, "DeleteG")
 }
 
@@ -345,6 +372,9 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	err = model.InsertG(r.Context(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewCommandOverride))
+	}
 
 	return templateData, errors.WithMessage(err, "InsertG")
 }
@@ -379,6 +409,9 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 	override.IgnoreRoles = formData.IgnoreRoles
 
 	_, err = override.UpdateG(r.Context(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommandOverride))
+	}
 
 	return templateData, errors.WithMessage(err, "UpdateG")
 }
@@ -394,7 +427,10 @@ func HandleDeleteCommandOverride(w http.ResponseWriter, r *http.Request, channel
 		return templateData, errors.WithMessage(err, "query override")
 	}
 
-	_, err = override.DeleteG(r.Context())
+	rows, err := override.DeleteG(r.Context())
+	if rows > 0 {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedCommandOverride))
+	}
 
 	return templateData, errors.WithMessage(err, "DeleteG")
 }

@@ -232,7 +232,7 @@ func (p *Plugin) AddCommands() {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			TicketLog(conf, parsed.GS.ID, parsed.Msg.Author, &discordgo.MessageEmbed{
 				Title:       fmt.Sprintf("Ticket #%d renamed", currentTicket.Ticket.LocalID),
-				Description: fmt.Sprintf("From %q to %q", oldName, newName),
+				Description: fmt.Sprintf("From '%s' to '%s'", oldName, newName),
 				Color:       0x5394fc,
 			})
 
@@ -284,7 +284,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			TicketLog(conf, parsed.GS.ID, parsed.Msg.Author, &discordgo.MessageEmbed{
-				Title:       fmt.Sprintf("Ticket #%d - %q closed", currentTicket.Ticket.LocalID, currentTicket.Ticket.Title),
+				Title:       fmt.Sprintf("Ticket #%d - '%s' closed", currentTicket.Ticket.LocalID, currentTicket.Ticket.Title),
 				Description: fmt.Sprintf("Reason: %s", parsed.Args[0].Str()),
 				Color:       0xf23c3c,
 			})

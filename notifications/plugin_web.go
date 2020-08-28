@@ -8,9 +8,12 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/configstore"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/web"
 	"goji.io/pat"
 )
+
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "notifications_settings", FormatString: "Updated server notification settings"})
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../notifications/assets/notifications_general.html", "templates/plugins/notifications_general.html")
@@ -21,7 +24,7 @@ func (p *Plugin) InitWeb() {
 	})
 
 	getHandler := web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")
-	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{}, "Updated general notifications config.")
+	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{})
 
 	web.CPMux.Handle(pat.Get("/notifications/general"), getHandler)
 	web.CPMux.Handle(pat.Get("/notifications/general/"), getHandler)
@@ -62,6 +65,8 @@ func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.Templa
 	if err != nil {
 		return templateData, nil
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
 	return templateData, nil
 }

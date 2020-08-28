@@ -14,22 +14,27 @@
     <div class="col-lg-12">
         <section class="card">
             <div class="card-body">
-                <p>Logs who changed settings, and in most (95%) cases what. (This isn't where kicks and bans are logged, set those up under moderation settings).</p>
+                <p>Control panel logs</p>
                 <div class="bs-callout bs-callout-info">
-                    <p>Note: If you see someone with the name jonas747 and the id <code>105487308693757952</code>, then don't be scared because that is me (the bot owner). The bot is very large and if something is causing me issues I might have to change update something to fix those issues, join the <a href="https://discord.gg/4udtcA5">support server</a> if you have more questions.</p>
+                    <p>Note: If you see someone with the name jonas747 and the id <code>105487308693757952</code>, then
+                        don't be scared because that is me (the bot owner). The bot is very large and if something is
+                        causing me issues I might have to change update something to fix those issues, join the <a
+                            href="https://discord.gg/4udtcA5">support server</a> if you have more questions.</p>
                 </div>
                 <table class="table table-responsive-lg table-bordered table-striped table-sm mb-0">
                     <thead>
                         <tr>
                             <th>Time</th>
+                            <th>User</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{range .entries}}
                         <tr>
-                            <td>{{.TimestampString}}</td>
-                            <td>{{.Action}}</td>
+                            <td>{{formatTime .CreatedAt.UTC}}</td>
+                            <td>{{.AuthorUsername}} (<code>{{.AuthorID}}</code>)</td>
+                            <td>{{.Action.String}}</td>
                         </tr>
                         {{end}}
                     </tbody>

@@ -167,7 +167,7 @@ func (p *Plugin) AddCommands() {
 
 			UpdateEventEmbed(m)
 
-			return fmt.Sprintf("Updated #%d to %q - with max %d participants, starting at: %s", m.LocalID, m.Title, m.MaxParticipants, m.StartsAt.Format("02 Jan 2006 15:04 MST")), nil
+			return fmt.Sprintf("Updated #%d to '%s' - with max %d participants, starting at: %s", m.LocalID, m.Title, m.MaxParticipants, m.StartsAt.Format("02 Jan 2006 15:04 MST")), nil
 		},
 	}
 
@@ -422,7 +422,12 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	undecidedField := ParticipantField(ParticipantStateMaybe, participants, fetchedMembers, "❔ Undecided")
 	// notJoiningField := ParticipantField(ParticipantStateNotJoining, participants, participantUsers, "Not joining")
 
-	embed.Fields = append(embed.Fields, participantsEmbed, waitingListField, undecidedField)
+	embed.Fields = append(embed.Fields, participantsEmbed)
+	// hide waiting list if theres no limit
+	if m.MaxParticipants > 0 {
+		embed.Fields = append(embed.Fields, waitingListField)
+	}
+	embed.Fields = append(embed.Fields, undecidedField)
 
 	_, err := common.BotSession.ChannelMessageEditEmbed(m.ChannelID, m.MessageID, embed)
 	return err
@@ -460,7 +465,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 		if v.JoinState == int16(state) {
 			if !reachedMax {
 				toAdd := user.Username + "#" + user.Discriminator + "\n"
-				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(field.Value) >= 25 {
+				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(field.Value) >= 100 {
 					reachedMax = true
 				} else {
 					field.Value += toAdd

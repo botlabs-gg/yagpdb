@@ -8,6 +8,9 @@
 {{template "cp_alerts" .}}
 
 <a href="/admin/config" class="btn btn-sm btn-primary">Internal bot config</a>
+<form method="POST" action="/admin/reconnect_all">
+    <button type="submit" class="btn btn-danger" value="Reconnect all shards">Reconnect all shards</button>
+</form>
 
 {{range .Hosts}}
 <h3>{{.Name}}</h3>

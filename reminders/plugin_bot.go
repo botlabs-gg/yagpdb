@@ -154,7 +154,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			delMsg := fmt.Sprintf("Deleted reminder **#%d**: %q", reminder.ID, reminder.Message)
+			delMsg := fmt.Sprintf("Deleted reminder **#%d**: '%s'", reminder.ID, reminder.Message)
 
 			// If there is another reminder with the same timestamp, do not remove the scheduled event
 			for _, v := range currentReminders {
@@ -178,14 +178,14 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		tStr := t.Format(time.RFC822)
 		if !displayUsernames {
 			channel := "<#" + discordgo.StrID(parsedCID) + ">"
-			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
+			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
 		} else {
 			member, _ := bot.GetMember(v.GuildID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
 				username = member.Username
 			}
-			out += fmt.Sprintf("**%d**: %s: %q - %s from now (%s)\n", v.ID, username, v.Message, timeFromNow, tStr)
+			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, username, v.Message, timeFromNow, tStr)
 		}
 	}
 	return out

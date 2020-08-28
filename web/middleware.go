@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/web/discorddata"
 	"github.com/miolini/datacounter"
 	"github.com/prometheus/client_golang/prometheus"
@@ -270,8 +270,6 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		if err != nil {
 			return
 		}
-
-		sort.Sort(dutil.Roles(guild.Roles))
 
 		entry := CtxLogger(ctx).WithField("g", guildID)
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
@@ -580,7 +578,7 @@ type SimpleConfigSaver interface {
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
-func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) http.Handler {
+func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler, key string) http.Handler {
 	return FormParserMW(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		g, templateData := GetBaseCPContextData(ctx)
@@ -598,10 +596,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler) ht
 		err := form.Save(g.ID)
 		if !CheckErr(templateData, err, "Failed saving config", CtxLogger(ctx).Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
-			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-			if ok {
-				common.AddCPLogEntry(user, g.ID, "Updated "+t.Name()+" Config.")
-			}
+			go cplogs.RetryAddEntry(NewLogEntryFromContext(ctx, key))
 		}
 	}), t)
 }
@@ -641,16 +636,11 @@ func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handle
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it
-func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}, logMsg string) http.Handler {
+func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.Handler, formData interface{}) http.Handler {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
-
-		var g *discordgo.Guild
-		if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
-			g = v.(*discordgo.Guild)
-		}
 
 		if extraHandler != nil {
 			defer func() {
@@ -683,10 +673,6 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 
 		if err == nil && !hasErrorAlert {
 			data.AddAlerts(SucessAlert("Success!"))
-			user, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-			if ok && logMsg != "" && g != nil {
-				go common.AddCPLogEntry(user, g.ID, logMsg)
-			}
 		}
 	})
 
@@ -794,6 +780,8 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyIsAdmin, read || write)
 
 		if read && !write {
+			ctx = context.WithValue(ctx, common.ContextKeyIsReadOnly, true)
+
 			var tmpl TemplateData
 			ctx, tmpl = GetCreateTemplateData(ctx)
 			tmpl.AddAlerts(WarningAlert("In read only mode, you can not change any settings."))
