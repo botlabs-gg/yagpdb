@@ -5,6 +5,7 @@ go 1.13
 require (
 	emperror.dev/errors v0.4.3
 	github.com/AYLIEN/aylien_textapi_go v0.6.0
+	github.com/AlekSi/pointer v1.1.0 // indirect
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
@@ -42,6 +43,7 @@ require (
 	github.com/jonas747/jdshardmanager v1.0.1
 	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 // indirect
 	github.com/jonas747/template v1.1.2
+	github.com/jonas747/when v0.0.2 // indirect
 	github.com/justinian/dice v0.0.0-20170728002755-6a18b51d929c // indirect
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/expect v1.0.1 // indirect
@@ -52,7 +54,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.1
 	github.com/miolini/datacounter v0.0.0-20190724021726-aa48df3a02c1
 	github.com/natefinch/lumberjack v2.0.0+incompatible
-	github.com/olebedev/when v0.0.0-20190311101825-c3b538a97254
+	github.com/olebedev/when v0.0.0-20190311101825-c3b538a97254 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1
