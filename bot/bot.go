@@ -10,7 +10,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator/v2/node"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"

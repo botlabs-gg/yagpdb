@@ -6,7 +6,7 @@ import (
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -37,7 +37,7 @@ var Command = &commands.YAGCommand{
 		&dcmd.ArgDef{Switch: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String, Default: ""},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		content :=  data.Switch("content").Str()
+		content := data.Switch("content").Str()
 		embed := &discordgo.MessageEmbed{
 			Title:       data.Switch("title").Str(),
 			Description: data.Switch("desc").Str(),
@@ -57,7 +57,7 @@ var Command = &commands.YAGCommand{
 			embed.Author = &discordgo.MessageEmbedAuthor{
 				Name:    author,
 				IconURL: data.Switch("authoricon").Str(),
-				URL:	 data.Switch("authorurl").Str(),
+				URL:     data.Switch("authorurl").Str(),
 			}
 		}
 
@@ -97,11 +97,11 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		messageSend := &discordgo.MessageSend {
-				Content: 	 content,
-				Embed:	 	 embed,
-				AllowedMentions: discordgo.AllowedMentions{},
-			}
+		messageSend := &discordgo.MessageSend{
+			Content:         content,
+			Embed:           embed,
+			AllowedMentions: discordgo.AllowedMentions{},
+		}
 		_, err := common.BotSession.ChannelMessageSendComplex(cID, messageSend)
 		if err != nil {
 			return err, err
