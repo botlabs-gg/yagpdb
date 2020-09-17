@@ -21,6 +21,7 @@ require (
 	github.com/evalphobia/logrus_sentry v0.8.2
 	github.com/fatih/structs v1.1.0
 	github.com/getsentry/raven-go v0.2.0 // indirect
+	github.com/getsentry/sentry-go v0.7.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/golang/protobuf v1.3.4 // indirect
@@ -51,7 +52,7 @@ require (
 	github.com/lib/pq v1.2.1-0.20191011153232-f91d3411e481
 	github.com/lunixbochs/vtclean v1.0.0
 	github.com/mediocregopher/radix/v3 v3.5.0
-	github.com/microcosm-cc/bluemonday v1.0.1
+	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/miolini/datacounter v0.0.0-20190724021726-aa48df3a02c1
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/patrickmn/go-cache v2.1.0+incompatible
