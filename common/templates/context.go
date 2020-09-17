@@ -287,13 +287,13 @@ func (c *Context) executeParsed() (string, error) {
 	var buf bytes.Buffer
 	w := LimitWriter(&buf, 25000)
 
-	started := time.Now()
+	// started := time.Now()
 	err := parsed.Execute(w, c.Data)
 
-	dur := time.Since(started)
-	if c.FixedOutput != "" {
-		return c.FixedOutput, nil
-	}
+	// dur := time.Since(started)
+	// if c.FixedOutput != "" {
+	// 	return c.FixedOutput, nil
+	// }
 
 	result := buf.String()
 	if err != nil {
@@ -301,7 +301,7 @@ func (c *Context) executeParsed() (string, error) {
 			err = errors.New("response grew too big (>25k)")
 		}
 
-		return result, errors.WithMessage(err, "Failed executing template (dur = "+dur.String()+")")
+		return result, errors.WithMessage(err, "Failed executing template")
 	}
 
 	return result, nil
