@@ -267,8 +267,8 @@
 <li>
     <a class="nav-link" {{if not $item.External}}data-partial-load="true"{{else}}target="_blank"{{end}} href="{{if not $item.External}}/manage/{{$ag.ID}}/{{$item.URL}}{{else}}{{$item.URL}}{{end}}">
         {{if $item.Icon}}<i class="{{$item.Icon}}" aria-hidden="true"></i>{{end}}
-        {{if $item.CustomIconImage}}<image src="{{$item.CustomIconImage}}" width="24" class="nav-sidebar-icon-custom" />{{end}}
-        {{if $item.New}}<span class="float-right badge badge-success mr-1">New!</span>{{end}}
+        {{if $item.CustomIconImage}}<image src="{{$item.CustomIconImage}}" width="24" class="nav-sidebar-icon-custom mr-1" />{{end}}
+        {{if $item.New}}<span class="float-right badge badge-success">New!</span>{{end}}
         <span>{{$item.Name}}</span>
     </a>
 </li>
