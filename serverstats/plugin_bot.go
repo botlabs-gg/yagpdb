@@ -36,10 +36,6 @@ func (p *Plugin) BotInit() {
 	memberSatatsUpdater = newServerMemberStatsUpdater()
 	go memberSatatsUpdater.run()
 
-	eventsystem.AddHandlerAsyncLastLegacy(p, handleUpdateMemberStats, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildMemberRemove, eventsystem.EventGuildCreate)
-
-	eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
-
 	pubsub.AddHandler("server_stats_invalidate_cache", func(evt *pubsub.Event) {
 		gs := bot.State.Guild(true, evt.TargetGuildInt)
 		if gs != nil {
@@ -47,7 +43,13 @@ func (p *Plugin) BotInit() {
 		}
 	}, nil)
 
-	go p.runOnlineUpdater()
+	if !confDeprecated.GetBool() {
+		eventsystem.AddHandlerAsyncLastLegacy(p, handleUpdateMemberStats, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildMemberRemove, eventsystem.EventGuildCreate)
+		eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
+		go p.runOnlineUpdater()
+	} else {
+		logger.Info("Not enabling server stats collecting due to deprecation flag being set")
+	}
 }
 
 func (p *Plugin) AddCommands() {
