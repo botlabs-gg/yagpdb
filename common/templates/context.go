@@ -13,7 +13,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -66,7 +66,7 @@ var (
 		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
 		"complexMessageEdit": CreateMessageEdit,
-		"kindOf":	      KindOf,
+		"kindOf":             KindOf,
 
 		"formatTime":  tmplFormatTime,
 		"json":        tmplJson,
@@ -287,13 +287,13 @@ func (c *Context) executeParsed() (string, error) {
 	var buf bytes.Buffer
 	w := LimitWriter(&buf, 25000)
 
-	started := time.Now()
+	// started := time.Now()
 	err := parsed.Execute(w, c.Data)
 
-	dur := time.Since(started)
-	if c.FixedOutput != "" {
-		return c.FixedOutput, nil
-	}
+	// dur := time.Since(started)
+	// if c.FixedOutput != "" {
+	// 	return c.FixedOutput, nil
+	// }
 
 	result := buf.String()
 	if err != nil {
@@ -301,7 +301,7 @@ func (c *Context) executeParsed() (string, error) {
 			err = errors.New("response grew too big (>25k)")
 		}
 
-		return result, errors.WithMessage(err, "Failed executing template (dur = "+dur.String()+")")
+		return result, errors.WithMessage(err, "Failed executing template")
 	}
 
 	return result, nil
@@ -487,7 +487,7 @@ func baseContextFuncs(c *Context) {
 
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
 	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
-	
+
 	c.ContextFuncs["addRoleName"] = c.tmplAddRoleName
 	c.ContextFuncs["removeRoleName"] = c.tmplRemoveRoleName
 
@@ -576,17 +576,17 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 type Dict map[interface{}]interface{}
 
 func (d Dict) Set(key interface{}, value interface{}) string {
-    d[key] = value
-    return ""
+	d[key] = value
+	return ""
 }
 
 func (d Dict) Get(key interface{}) interface{} {
-    return d[key]
+	return d[key]
 }
 
 func (d Dict) Del(key interface{}) string {
-    delete(d, key)
-    return ""
+	delete(d, key)
+	return ""
 }
 
 type SDict map[string]interface{}

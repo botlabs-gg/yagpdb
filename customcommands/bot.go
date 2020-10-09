@@ -20,7 +20,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -423,7 +423,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	var matchedCustomCommands []*TriggeredCC
 	var err error
-	common.LogLongCallTime(time.Second, true, fmt.Sprintf("Took longer than a second to fetch custom commands for %d: ", mc.GuildID), func() {
+	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
 	})
 	if err != nil {
@@ -804,7 +804,7 @@ func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.
 		var cmds []*models.CustomCommand
 		var err error
 
-		common.LogLongCallTime(time.Second, true, fmt.Sprintf("Took longer than a second to fetch custom commands from db for %d: ", gs.ID), func() {
+		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": gs.ID}, func() {
 			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
 		})
 
