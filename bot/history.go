@@ -2,9 +2,8 @@ package bot
 
 import (
 	"sort"
-	"time"
 
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/common"
 )
 
@@ -97,11 +96,6 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 		msgBuf = msgBuf[n+1:]
 	}
 
-	maxChannelMessages, maxMessageAge := State.MaxChannelMessages, State.MaxMessageAge
-	if State.CustomLimitProvider != nil {
-		maxChannelMessages, maxMessageAge = State.CustomLimitProvider.MessageLimits(cs)
-	}
-
 	// merge the current state with this new one and sort
 	cs.Owner.Lock()
 	defer cs.Owner.Unlock()
@@ -116,8 +110,6 @@ func GetMessages(channelID int64, limit int, deleted bool) ([]*dstate.MessageSta
 	}
 
 	sort.Sort(DiscordMessages(cs.Messages))
-
-	cs.UpdateMessages(false, maxChannelMessages, time.Now().Add(-maxMessageAge))
 
 	// Return at most limit results
 	if limit < len(msgBuf) {
