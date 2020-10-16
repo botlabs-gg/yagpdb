@@ -32,7 +32,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
-var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
+var thanksRegex = regexp.MustCompile(`(?i)(\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate()
@@ -313,7 +313,7 @@ var cmds = []*commands.YAGCommand{
 				rankStr = strconv.FormatInt(int64(rank), 10)
 			}
 
-			return fmt.Sprintf("**%s**: **%d** %s (#**%s**)", target.Username, score, conf.PointsName, rankStr), nil
+			return fmt.Sprintf("**%s** currently has: **%d** %s (#**%s**) - *%s*", target.Username, score, conf.PointsName, rankStr, "If you wanted to give this user rep, !grep instead."), nil
 		},
 	},
 	&commands.YAGCommand{
