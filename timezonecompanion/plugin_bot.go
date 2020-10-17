@@ -112,11 +112,10 @@ func (p *Plugin) AddCommands() {
 				}
 				// "matches" now contains all "zones"
 
-                zone, exists := zones[strings.ToLower(parsed.Args[0].Str())]
-                // debug (also try T)
-                fmt.Printf("zone variable is %#v\n", zone)
-				// A zone *exactly* matches user input
-				if exists {
+                zone = strings.ToLower(parsed.Args[0].Str())
+                // ^ This is the zone the user requested, in lowercase
+                _, exists := zones[zone]
+                if exists {
 					// Matching zone is already stored in "zone", so we just set a note for the user
 					note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
 				// No zones exactly match user input
