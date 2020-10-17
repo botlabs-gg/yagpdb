@@ -81,6 +81,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			zones := FindZone(parsed.Args[0].Str())
+			var zone string
 			// No zones matching user input
 			if len(zones) < 1 {
 				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
@@ -90,8 +91,10 @@ func (p *Plugin) AddCommands() {
 			if len(zones) > 1 {
 				if len(zones) > 10 {
 				    zonesArray := make([]string, len(zones))
-				    for i, v := range zones {
-				        zonesArray[i] = v
+				    idx := 0
+				    for v, _ := range zones {
+				        zonesArray[idx] = v
+				        idx++
 				    }
 					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
 						return paginatedTimezones(zonesArray)(nil, 1)
@@ -110,6 +113,8 @@ func (p *Plugin) AddCommands() {
 				// "matches" now contains all "zones"
 
                 zone, exists := zones[strings.ToLower(parsed.Args[0].Str())]
+                // debug (also try T)
+                fmt.Printf("zone variable is %#v\n", zone)
 				// A zone *exactly* matches user input
 				if exists {
 					// Matching zone is already stored in "zone", so we just set a note for the user
