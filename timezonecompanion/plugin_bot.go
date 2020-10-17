@@ -273,7 +273,8 @@ func GetUserTimezone(userID int64) *time.Location {
 	return loc
 }
 
-func FindZone(in string) []struct {
+type nothing struct{}
+func FindZone(in string) map[string]nothing {
 	lowerIn := strings.ToLower(in)
 	inSpaceReplaced := strings.ReplaceAll(lowerIn, " ", "_")
 
@@ -284,7 +285,6 @@ func FindZone(in string) []struct {
 		}
 	}
 
-    type nothing struct{}
     var noValue nothing
 	matchesZones := make(map[string]nothing)
 
