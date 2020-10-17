@@ -81,7 +81,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			zones := FindZone(parsed.Args[0].Str())
-			var zone
+			var zone string
 			// No zones matching user input
 			if len(zones) < 1 {
 				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
@@ -273,7 +273,7 @@ func GetUserTimezone(userID int64) *time.Location {
 	return loc
 }
 
-func FindZone(in string) map[string] {
+func FindZone(in string) map[string]struct {
 	lowerIn := strings.ToLower(in)
 	inSpaceReplaced := strings.ReplaceAll(lowerIn, " ", "_")
 
