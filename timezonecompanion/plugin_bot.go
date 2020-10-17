@@ -99,7 +99,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				matches := ""
-				for n, v := range zones {
+				for v, _ := range zones {
 					if s := StrZone(v); s != "" {
 						matches += s + "\n"
 					}
@@ -236,14 +236,14 @@ func StrZone(zone string) string {
 	return fmt.Sprintf("`%s`: %s", zone, name)
 }
 
-func paginatedTimezones(timezones []string) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+func paginatedTimezones(timezones map[string]nothing) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 	return func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 		numSkip := (page - 1) * 10
 
 		out := ""
 		numAdded := 0
-		for i := numSkip; i < len(timezones); i++ {
-			if s := StrZone(timezones[i]); s != "" {
+		for zone, _ := range timezones {
+			if s := StrZone(zone); s != "" {
 				out += s + "\n"
 				numAdded++
 				if numAdded >= 10 {
