@@ -81,294 +81,294 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 
-				zones := FindZone(parsed.Args[0].Str())
-				var zone string
-				// No zones matching user input
-				if len(zones) < 1 {
-					return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
-				}
-				// Multiple zones matching user input
-				note := ""
-				if len(zones) > 1 {
-					if len(zones) > 10 {
-						zonesArray := make([]string, len(zones))
-						idx := 0
-						for v, _ := range zones {
-							zonesArray[idx] = v
-							idx++
-						}
-						if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
-							return paginatedTimezones(zonesArray)(nil, 1)
-						}
-						_, err := paginatedmessages.CreatePaginatedMessage(
-							parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zonesArray))
-						return nil, err
-					}
-
-					matches := ""
+			zones := FindZone(parsed.Args[0].Str())
+			var zone string
+			// No zones matching user input
+			if len(zones) < 1 {
+				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
+			}
+			// Multiple zones matching user input
+			note := ""
+			if len(zones) > 1 {
+				if len(zones) > 10 {
+					zonesArray := make([]string, len(zones))
+					idx := 0
 					for v, _ := range zones {
-						if s := StrZone(v); s != "" {
-							matches += s + "\n"
+						zonesArray[idx] = v
+						idx++
+					}
+					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
+						return paginatedTimezones(zonesArray)(nil, 1)
+					}
+					_, err := paginatedmessages.CreatePaginatedMessage(
+						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zonesArray))
+					return nil, err
+				}
+
+				matches := ""
+				for v, _ := range zones {
+					if s := StrZone(v); s != "" {
+						matches += s + "\n"
+					}
+				}
+				// "matches" now contains all "zones"
+
+				zone = parsed.Args[0].Str()
+				// ^ This is the zone the user requested
+				_, exists := zones[zone]
+				if exists {
+					// Matching zone is already stored in "zone", so we just set a note for the user
+					note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
+					// No zones exactly match user input
+				} else {
+					out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
+					return out, nil
+				}
+			}
+
+			// Exactly matched zone is stored in "zone"
+			loc, err := time.LoadLocation(zone)
+			if err != nil {
+				return "Unknown timezone", nil
+			}
+
+			name, _ := time.Now().In(loc).Zone()
+
+			m := &models.UserTimezone{
+				UserID:       parsed.Msg.Author.ID,
+				TimezoneName: zone,
+			}
+
+			err = m.UpsertG(parsed.Context(), true, []string{"user_id"}, boil.Infer(), boil.Infer())
+			if err != nil {
+				return nil, err
+			}
+
+			return fmt.Sprintf("Set your timezone to `%s`: %s\n%s", zone, name, note), nil
+			// Note that an empty "note" variable will be invisible, since Discord trims trailing message whitespace
+		},
+	}, &commands.YAGCommand{
+	CmdCategory:         commands.CategoryTool,
+	Name:                "ToggleTimeConversion",
+	Aliases:             []string{"toggletconv", "ttc"},
+	Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
+	RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
+	Arguments: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
+	},
+	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		allStr := parsed.Args[0].Str()
+		all := false
+		if strings.EqualFold(allStr, "all") || strings.EqualFold(allStr, "*") {
+			all = true
+		}
+
+		insert := false
+		conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GS.ID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				conf = &models.TimezoneGuildConfig{
+					GuildID: parsed.GS.ID,
+				}
+				insert = true
+				} else {
+					return nil, err
+				}
+			}
+
+			resp := ""
+			if all {
+				if conf.NewChannelsDisabled {
+					conf.NewChannelsDisabled = false
+					conf.DisabledInChannels = []int64{}
+					resp = "Enabled time conversion in all channels."
+				} else {
+					conf.NewChannelsDisabled = true
+					conf.EnabledInChannels = []int64{}
+					resp = "Disabled time conversion in all channels, including newly created channels."
+				}
+			} else {
+				status := "off"
+
+				found := false
+				for i, v := range conf.DisabledInChannels {
+					if v == parsed.CS.ID {
+						found = true
+						conf.DisabledInChannels = append(conf.DisabledInChannels[:i], conf.DisabledInChannels[i+1:]...)
+						status = "on"
+
+						if conf.NewChannelsDisabled {
+							conf.EnabledInChannels = append(conf.EnabledInChannels, parsed.CS.ID)
+						}
+
+						break
+					}
+				}
+
+				if !found {
+					conf.DisabledInChannels = append(conf.DisabledInChannels, parsed.CS.ID)
+
+					for i, v := range conf.EnabledInChannels {
+						if v == parsed.CS.ID {
+							conf.EnabledInChannels = append(conf.EnabledInChannels[:i], conf.EnabledInChannels[i+1:]...)
 						}
 					}
-					// "matches" now contains all "zones"
+				}
 
-					zone = parsed.Args[0].Str()
-					// ^ This is the zone the user requested
-					_, exists := zones[zone]
-					if exists {
-						// Matching zone is already stored in "zone", so we just set a note for the user
-						note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
-						// No zones exactly match user input
-						} else {
-							out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
-							return out, nil
-						}
-					}
+				resp = fmt.Sprintf("Automatic time conversion in this channel toggled `%s`", status)
+			}
 
-					// Exactly matched zone is stored in "zone"
-					loc, err := time.LoadLocation(zone)
-					if err != nil {
-						return "Unknown timezone", nil
-					}
+			if insert {
+				err = conf.InsertG(parsed.Context(), boil.Infer())
+			} else {
+				_, err = conf.UpdateG(parsed.Context(), boil.Infer())
+			}
 
-					name, _ := time.Now().In(loc).Zone()
+			if err != nil {
+				return nil, err
+			}
 
-					m := &models.UserTimezone{
-						UserID:       parsed.Msg.Author.ID,
-						TimezoneName: zone,
-					}
+			return resp, nil
+		},
+	})
+}
 
-					err = m.UpsertG(parsed.Context(), true, []string{"user_id"}, boil.Infer(), boil.Infer())
-					if err != nil {
-						return nil, err
-					}
+func StrZone(zone string) string {
+	loc, err := time.LoadLocation(zone)
+	if err != nil {
+		return ""
+	}
 
-					return fmt.Sprintf("Set your timezone to `%s`: %s\n%s", zone, name, note), nil
-					// Note that an empty "note" variable will be invisible, since Discord trims trailing message whitespace
-				},
-				}, &commands.YAGCommand{
-					CmdCategory:         commands.CategoryTool,
-					Name:                "ToggleTimeConversion",
-					Aliases:             []string{"toggletconv", "ttc"},
-					Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
-					RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
-					Arguments: []*dcmd.ArgDef{
-						&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
-					},
-					RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-						allStr := parsed.Args[0].Str()
-						all := false
-						if strings.EqualFold(allStr, "all") || strings.EqualFold(allStr, "*") {
-							all = true
-						}
+	name, _ := time.Now().In(loc).Zone()
 
-						insert := false
-						conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GS.ID)
-						if err != nil {
-							if err == sql.ErrNoRows {
-								conf = &models.TimezoneGuildConfig{
-									GuildID: parsed.GS.ID,
-								}
-								insert = true
-								} else {
-									return nil, err
-								}
-							}
+	return fmt.Sprintf("`%s`: %s", zone, name)
+}
 
-							resp := ""
-							if all {
-								if conf.NewChannelsDisabled {
-									conf.NewChannelsDisabled = false
-									conf.DisabledInChannels = []int64{}
-									resp = "Enabled time conversion in all channels."
-									} else {
-										conf.NewChannelsDisabled = true
-										conf.EnabledInChannels = []int64{}
-										resp = "Disabled time conversion in all channels, including newly created channels."
-									}
-									} else {
-										status := "off"
+func paginatedTimezones(timezones []string) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+	return func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		numSkip := (page - 1) * 10
 
-										found := false
-										for i, v := range conf.DisabledInChannels {
-											if v == parsed.CS.ID {
-												found = true
-												conf.DisabledInChannels = append(conf.DisabledInChannels[:i], conf.DisabledInChannels[i+1:]...)
-												status = "on"
+		out := ""
+		numAdded := 0
+		for i := numSkip; i < len(timezones); i++ {
+			if s := StrZone(timezones[i]); s != "" {
+				out += s + "\n"
+				numAdded++
+				if numAdded >= 10 {
+					break
+				}
+			}
+		}
 
-												if conf.NewChannelsDisabled {
-													conf.EnabledInChannels = append(conf.EnabledInChannels, parsed.CS.ID)
-												}
+		return &discordgo.MessageEmbed{
+			Description: "Please redo the command with one of the following:\n" + out,
+		}, nil
+	}
+}
 
-												break
-											}
-										}
+func GetUserTimezone(userID int64) *time.Location {
+	m, err := models.FindUserTimezoneG(context.Background(), userID)
+	if err != nil {
+		return nil
+	}
 
-										if !found {
-											conf.DisabledInChannels = append(conf.DisabledInChannels, parsed.CS.ID)
+	loc, err := time.LoadLocation(m.TimezoneName)
+	if err != nil {
+		logger.WithError(err).Error("failed loading location")
+		return nil
+	}
 
-											for i, v := range conf.EnabledInChannels {
-												if v == parsed.CS.ID {
-													conf.EnabledInChannels = append(conf.EnabledInChannels[:i], conf.EnabledInChannels[i+1:]...)
-												}
-											}
-										}
+	return loc
+}
 
-										resp = fmt.Sprintf("Automatic time conversion in this channel toggled `%s`", status)
-									}
+type nothing struct{}
+func FindZone(in string) map[string]nothing {
+	lowerIn := strings.ToLower(in)
+	inSpaceReplaced := strings.ReplaceAll(lowerIn, " ", "_")
 
-									if insert {
-										err = conf.InsertG(parsed.Context(), boil.Infer())
-										} else {
-											_, err = conf.UpdateG(parsed.Context(), boil.Infer())
-										}
+	ccs := make([]string, 0)
+	for country, code := range CountryCodes {
+		if strings.Contains(strings.ToLower(country), lowerIn) {
+			ccs = appendIfNotExists(ccs, code)
+		}
+	}
 
-										if err != nil {
-											return nil, err
-										}
+	matchesZones := make(map[string]nothing)
 
-										return resp, nil
-									},
-								})
-							}
+	for code, zones := range CCToZones {
+		// if common.ContainsString()
 
-							func StrZone(zone string) string {
-								loc, err := time.LoadLocation(zone)
-								if err != nil {
-									return ""
-								}
+		// check if we specified the country
+		if common.ContainsStringSlice(ccs, code) || strings.EqualFold(code, lowerIn) {
+			for _, v := range zones {
+				matchesZones[strings.ToLower(StrZone(v))] = noValue
+			}
 
-								name, _ := time.Now().In(loc).Zone()
+			continue
+		}
 
-								return fmt.Sprintf("`%s`: %s", zone, name)
-							}
+		for _, v := range zones {
+			if strings.Contains(strings.ToLower(v), inSpaceReplaced) {
+				matchesZones[StrZone(v)] = noValue
+			}
+		}
+	}
 
-							func paginatedTimezones(timezones []string) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-								return func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-									numSkip := (page - 1) * 10
+	return matchesZones
+}
 
-									out := ""
-									numAdded := 0
-									for i := numSkip; i < len(timezones); i++ {
-										if s := StrZone(timezones[i]); s != "" {
-											out += s + "\n"
-											numAdded++
-											if numAdded >= 10 {
-												break
-											}
-										}
-									}
+func appendIfNotExists(in []string, elem string) []string {
+	if !common.ContainsStringSlice(in, elem) {
+		return append(in, elem)
+	}
 
-									return &discordgo.MessageEmbed{
-										Description: "Please redo the command with one of the following:\n" + out,
-										}, nil
-									}
-								}
+	return in
+}
 
-								func GetUserTimezone(userID int64) *time.Location {
-									m, err := models.FindUserTimezoneG(context.Background(), userID)
-									if err != nil {
-										return nil
-									}
+func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
+	m := evt.MessageCreate()
+	if m.GuildID == 0 {
+		return
+	}
 
-									loc, err := time.LoadLocation(m.TimezoneName)
-									if err != nil {
-										logger.WithError(err).Error("failed loading location")
-										return nil
-									}
+	//Additional check to ensure not reacting to own message
+	if m.Author.ID == common.BotUser.ID {
+		return
+	}
 
-									return loc
-								}
+	result, err := p.DateParser.Parse(m.Content, time.Now())
+	if err != nil || result == nil {
+		return
+	}
 
-								type nothing struct{}
-								func FindZone(in string) map[string]nothing {
-									lowerIn := strings.ToLower(in)
-									inSpaceReplaced := strings.ReplaceAll(lowerIn, " ", "_")
+	conf, err := models.FindTimezoneGuildConfigG(evt.Context(), m.GuildID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			logger.WithError(err).WithField("guild", m.GuildID).Error("failed fetching guild config")
+			return
+		}
+	} else if common.ContainsInt64Slice(conf.DisabledInChannels, m.ChannelID) || (conf.NewChannelsDisabled && !common.ContainsInt64Slice(conf.EnabledInChannels, m.ChannelID)) {
+		// disabled in this channel
+		return
+	}
 
-									ccs := make([]string, 0)
-									for country, code := range CountryCodes {
-										if strings.Contains(strings.ToLower(country), lowerIn) {
-											ccs = appendIfNotExists(ccs, code)
-										}
-									}
+	zone := GetUserTimezone(m.Author.ID)
+	if zone == nil {
+		return
+	}
 
-									matchesZones := make(map[string]nothing)
+	// re-parse it with proper context
+	result, err = p.DateParser.Parse(m.Content, time.Now().In(zone))
+	if err != nil || result == nil {
+		return
+	}
 
-									for code, zones := range CCToZones {
-										// if common.ContainsString()
+	common.BotSession.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+		Timestamp: result.Time.Format(time.RFC3339),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "Above time (" + result.Time.Format("15:04 MST") + ") in your local time",
+		},
+	})
 
-										// check if we specified the country
-										if common.ContainsStringSlice(ccs, code) || strings.EqualFold(code, lowerIn) {
-											for _, v := range zones {
-												matchesZones[strings.ToLower(StrZone(v))] = noValue
-											}
-
-											continue
-										}
-
-										for _, v := range zones {
-											if strings.Contains(strings.ToLower(v), inSpaceReplaced) {
-												matchesZones[StrZone(v)] = noValue
-											}
-										}
-									}
-
-									return matchesZones
-								}
-
-								func appendIfNotExists(in []string, elem string) []string {
-									if !common.ContainsStringSlice(in, elem) {
-										return append(in, elem)
-									}
-
-									return in
-								}
-
-								func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
-									m := evt.MessageCreate()
-									if m.GuildID == 0 {
-										return
-									}
-
-									//Additional check to ensure not reacting to own message
-									if m.Author.ID == common.BotUser.ID {
-										return
-									}
-
-									result, err := p.DateParser.Parse(m.Content, time.Now())
-									if err != nil || result == nil {
-										return
-									}
-
-									conf, err := models.FindTimezoneGuildConfigG(evt.Context(), m.GuildID)
-									if err != nil {
-										if err != sql.ErrNoRows {
-											logger.WithError(err).WithField("guild", m.GuildID).Error("failed fetching guild config")
-											return
-										}
-										} else if common.ContainsInt64Slice(conf.DisabledInChannels, m.ChannelID) || (conf.NewChannelsDisabled && !common.ContainsInt64Slice(conf.EnabledInChannels, m.ChannelID)) {
-											// disabled in this channel
-											return
-										}
-
-										zone := GetUserTimezone(m.Author.ID)
-										if zone == nil {
-											return
-										}
-
-										// re-parse it with proper context
-										result, err = p.DateParser.Parse(m.Content, time.Now().In(zone))
-										if err != nil || result == nil {
-											return
-										}
-
-										common.BotSession.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
-											Timestamp: result.Time.Format(time.RFC3339),
-											Footer: &discordgo.MessageEmbedFooter{
-												Text: "Above time (" + result.Time.Format("15:04 MST") + ") in your local time",
-											},
-										})
-
-										// common.BotSession.ChannelMessageSend(m.ChannelID, "Time: `"+result.Time.Format(time.RFC822)+"`")
-									}
+	// common.BotSession.ChannelMessageSend(m.ChannelID, "Time: `"+result.Time.Format(time.RFC822)+"`")
+}
