@@ -99,25 +99,25 @@ func (p *Plugin) AddCommands() {
 
 				matches := ""
 				for n, v := range zones {
-					if s := StrZone(v); n != 0 && s != "" {
+					if s := StrZone(v); s != "" {
 						matches += s + "\n"
 					}
 				}
-				// "matches" now contains all "zones" except "zones[0]"
+				// "matches" now contains all "zones"
 
-				// First (and thus no) zones exactly match user input
-				if StrZone(zones[0]) != parsed.Args[0].Str() {
-					matches = StrZone(zones[0]) + matches
+                zone, exists := zones[strings.ToLower(parsed.Args[0].Str())]
+				// A zone *exactly* matches user input
+				if exists {
+					// Matching zone is already stored in "zone", so we just set a note for the user
+					note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
+				// No zones exactly match user input
+				} else {
 					out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
 					return out, nil
-				// First of multiple matching zones *exactly* matches user input
-				} else if StrZone(zones[0]) == parsed.Args[0].Str() {
-					// First zone (which matches) will be selected a few lines from now, so we just set a note for the user
-					note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
 				}
 			}
 
-			zone := zones[0]
+            // Exactly matched zone is stored in "zone"
 			loc, err := time.LoadLocation(zone)
 			if err != nil {
 				return "Unknown timezone", nil
@@ -283,7 +283,9 @@ func FindZone(in string) []string {
 		}
 	}
 
-	matchesZones := make([]string, 0)
+    type nothing struct{}
+    var noValue nothing
+	matchesZones := make(map[string]nothing)
 
 	for code, zones := range CCToZones {
 		// if common.ContainsString()
@@ -291,7 +293,7 @@ func FindZone(in string) []string {
 		// check if we specified the country
 		if common.ContainsStringSlice(ccs, code) || strings.EqualFold(code, lowerIn) {
 			for _, v := range zones {
-				matchesZones = appendIfNotExists(matchesZones, v)
+				matchesZones[strings.ToLower(StrZone(v))] = noValue
 			}
 
 			continue
@@ -299,7 +301,7 @@ func FindZone(in string) []string {
 
 		for _, v := range zones {
 			if strings.Contains(strings.ToLower(v), inSpaceReplaced) {
-				matchesZones = appendIfNotExists(matchesZones, v)
+				matchesZones[strings.ToLower(StrZone(v))] = noValue
 			}
 		}
 	}

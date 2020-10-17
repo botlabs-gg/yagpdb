@@ -291,9 +291,9 @@ func (c *Context) executeParsed() (string, error) {
 	err := parsed.Execute(w, c.Data)
 
 	// dur := time.Since(started)
-	// if c.FixedOutput != "" {
-	// 	return c.FixedOutput, nil
-	// }
+	if c.FixedOutput != "" {
+		return c.FixedOutput, nil
+	}
 
 	result := buf.String()
 	if err != nil {
