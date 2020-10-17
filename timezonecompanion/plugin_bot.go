@@ -81,7 +81,6 @@ func (p *Plugin) AddCommands() {
 			}
 
 			zones := FindZone(parsed.Args[0].Str())
-			var zone string
 			// No zones matching user input
 			if len(zones) < 1 {
 				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
@@ -90,11 +89,15 @@ func (p *Plugin) AddCommands() {
 			note := ""
 			if len(zones) > 1 {
 				if len(zones) > 10 {
+				    zonesArray := make([]string, len(zones))
+				    for i, v := range zones {
+				        zonesArray[i] = v
+				    }
 					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
-						return paginatedTimezones(zones)(nil, 1)
+						return paginatedTimezones(zonesArray)(nil, 1)
 					}
 					_, err := paginatedmessages.CreatePaginatedMessage(
-						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
+						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zonesArray))
 					return nil, err
 				}
 
@@ -236,14 +239,14 @@ func StrZone(zone string) string {
 	return fmt.Sprintf("`%s`: %s", zone, name)
 }
 
-func paginatedTimezones(timezones map[string]nothing) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+func paginatedTimezones(timezones []string) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 	return func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 		numSkip := (page - 1) * 10
 
 		out := ""
 		numAdded := 0
-		for zone, _ := range timezones {
-			if s := StrZone(zone); s != "" {
+		for i := numSkip; i < len(timezones); i++ {
+			if s := StrZone(timezones[i]); s != "" {
 				out += s + "\n"
 				numAdded++
 				if numAdded >= 10 {
