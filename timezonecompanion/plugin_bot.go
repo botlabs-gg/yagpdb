@@ -76,10 +76,10 @@ func (p *Plugin) AddCommands() {
 						return nil, err
 					}
 					return "Deleted", nil
-					} else {
-						return "You don't have a registered time zone", nil
-					}
+				} else {
+					return "You don't have a registered time zone", nil
 				}
+			}
 
 			zones := FindZone(parsed.Args[0].Str())
 			var zone string
@@ -148,29 +148,29 @@ func (p *Plugin) AddCommands() {
 			// Note that an empty "note" variable will be invisible, since Discord trims trailing message whitespace
 		},
 	}, &commands.YAGCommand{
-	CmdCategory:         commands.CategoryTool,
-	Name:                "ToggleTimeConversion",
-	Aliases:             []string{"toggletconv", "ttc"},
-	Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
-	RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
-	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
-	},
-	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		allStr := parsed.Args[0].Str()
-		all := false
-		if strings.EqualFold(allStr, "all") || strings.EqualFold(allStr, "*") {
-			all = true
-		}
+		CmdCategory:         commands.CategoryTool,
+		Name:                "ToggleTimeConversion",
+		Aliases:             []string{"toggletconv", "ttc"},
+		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
+		Arguments: []*dcmd.ArgDef{
+			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			allStr := parsed.Args[0].Str()
+			all := false
+			if strings.EqualFold(allStr, "all") || strings.EqualFold(allStr, "*") {
+				all = true
+			}
 
-		insert := false
-		conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GS.ID)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				conf = &models.TimezoneGuildConfig{
-					GuildID: parsed.GS.ID,
-				}
-				insert = true
+			insert := false
+			conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GS.ID)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					conf = &models.TimezoneGuildConfig{
+						GuildID: parsed.GS.ID,
+					}
+					insert = true
 				} else {
 					return nil, err
 				}
