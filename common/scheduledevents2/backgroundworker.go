@@ -15,12 +15,13 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-const flushTresholdMinutes = 10
+const flushTresholdMinutes = 5
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*ScheduledEvents)(nil)
 
 func (p *ScheduledEvents) RunBackgroundWorker() {
 	cleanupTicker := time.NewTicker(time.Hour)
+	cleanupRecentTicker := time.NewTicker(time.Minute * 10)
 	checkNewEvents := time.NewTicker(time.Minute)
 
 	for {
@@ -30,6 +31,11 @@ func (p *ScheduledEvents) RunBackgroundWorker() {
 			return
 		case <-cleanupTicker.C:
 			runCleanup()
+		case <-cleanupRecentTicker.C:
+			err := cleanupRecent()
+			if err != nil {
+				logger.WithError(err).Error("failed cleaning up recent scheduled events")
+			}
 		case <-checkNewEvents.C:
 			err := runFlushNewEvents()
 			if err != nil {
@@ -94,4 +100,32 @@ func UpdateFlushedEvent(t time.Time, c radix.Client, evt *models.ScheduledEvent)
 
 func (p *ScheduledEvents) StopBackgroundWorker(wg *sync.WaitGroup) {
 	p.stopBGWorker <- wg
+}
+
+func cleanupRecent() error {
+	var recent []int64
+	err := common.RedisPool.Do(radix.Cmd(&recent, "SMEMBERS", "recently_done_scheduled_events"))
+	if err != nil {
+		return err
+	}
+
+	sqlArgs := make([]interface{}, len(recent))
+	for i, v := range recent {
+		sqlArgs[i] = v
+	}
+	result, err := models.ScheduledEvents(qm.WhereIn("id in ?", sqlArgs...)).DeleteAll(context.Background(), common.PQ)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("Deleted %d recently done events", result)
+
+	args := make([]string, len(recent)+1)
+	for i, v := range recent {
+		args[i+1] = strconv.FormatInt(v, 10)
+	}
+	// copy(args[1:], recent)
+	args[0] = "recently_done_scheduled_events"
+
+	return common.RedisPool.Do(radix.Cmd(nil, "SREM", args...))
 }
