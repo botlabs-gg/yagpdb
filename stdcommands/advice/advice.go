@@ -2,6 +2,7 @@ package advice
 
 import (
 	"encoding/json"
+	"math/rand"
 	"net/http"
 	"net/url"
 
@@ -55,7 +56,7 @@ var Command = &commands.YAGCommand{
 		} else {
 			cast := decoded.(*SearchAdviceResp)
 			if len(cast.Slips) > 0 {
-				advice = cast.Slips[0].Advice
+				advice = cast.Slips[rand.Intn(len(cast.Slips))].Advice
 			}
 		}
 
