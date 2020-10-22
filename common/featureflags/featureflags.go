@@ -70,6 +70,42 @@ func (c *flagCache) getGuildFlags(guildID int64) ([]string, error) {
 	return result, nil
 }
 
+func (c *flagCache) initCahceBatch(guilds []int64) error {
+	c.l.Lock()
+	defer c.l.Unlock()
+
+	actions := make([]radix.CmdAction, 0, len(guilds))
+	results := make([][]string, 0, len(guilds))
+	fetchingGuilds := make([]int64, 0, len(guilds))
+	i := 0
+	for _, g := range guilds {
+		if _, ok := c.cache[g]; ok {
+			continue // already in cache
+		}
+
+		results = append(results, make([]string, 0))
+		// results[g] = make([]string, 0)
+		actions = append(actions, radix.Cmd(&results[i], "SMEMBERS", keyGuildFlags(g)))
+		fetchingGuilds = append(fetchingGuilds, g)
+
+		i++
+	}
+
+	if len(actions) < 1 {
+		return nil
+	}
+
+	err := common.RedisPool.Do(radix.Pipeline(actions...))
+	if err != nil {
+		return err
+	}
+
+	for i, g := range fetchingGuilds {
+		c.cache[g] = results[i]
+	}
+	return nil
+}
+
 func (c *flagCache) invalidateGuild(guildID int64) {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -80,6 +116,36 @@ func (c *flagCache) invalidateGuild(guildID int64) {
 var (
 	caches = initCaches()
 )
+
+func BatchInitCache(guilds []int64) error {
+	logger.Infof("started preloading flag cache for %d guilds", len(guilds))
+	started := time.Now()
+
+	var wg sync.WaitGroup
+	for i := 0; i < len(caches); i++ {
+		toFetchHere := make([]int64, 0, len(guilds))
+
+		for _, g := range guilds {
+			cacheID := (g >> 22) % int64(len(caches))
+			if cacheID == int64(i) {
+				toFetchHere = append(toFetchHere, g)
+			}
+		}
+		wg.Add(1)
+		go func(cacheID int, guildsToFetch []int64) {
+			defer wg.Done()
+
+			err := caches[cacheID].initCahceBatch(toFetchHere)
+			if err != nil {
+				logger.WithError(err).Error("failed preloading flag cache")
+			}
+		}(i, toFetchHere)
+	}
+
+	wg.Wait()
+	logger.Info("Preloading flag cache done, dur: %s", time.Since(started))
+	return nil
+}
 
 // GetGuildFlags returns the feature flags a guild has
 func GetGuildFlags(guildID int64) ([]string, error) {
