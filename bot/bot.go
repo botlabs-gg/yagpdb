@@ -338,7 +338,7 @@ func setupState() {
 	// State.Debug = true
 	State.ThrowAwayDMMessages = true
 	State.TrackPrivateChannels = false
-	State.CacheExpirey = time.Hour
+	State.CacheExpirey = time.Hour * 2
 
 	if confStateRemoveOfflineMembers.GetBool() {
 		State.RemoveOfflineMembers = true
