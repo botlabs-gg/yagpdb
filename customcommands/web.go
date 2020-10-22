@@ -293,7 +293,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		if err != nil {
 			web.CtxLogger(ctx).WithError(err).Error("failed retrieving full model")
 		} else {
-			err = UpdateCommandNextRunTime(fullModel, true)
+			err = UpdateCommandNextRunTime(fullModel, true, true)
 		}
 	} else {
 		err = DelNextRunEvent(activeGuild.ID, dbModel.LocalID)
