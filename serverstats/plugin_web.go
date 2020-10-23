@@ -37,6 +37,12 @@ type FormData struct {
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../serverstats/assets/serverstats.html", "templates/plugins/serverstats.html")
 
+	web.AddSidebarItem(web.SidebarCategoryTopLevel, &web.SidebarItem{
+		Name: "Stats",
+		URL:  "stats",
+		Icon: "fas fa-chart-bar",
+	})
+
 	statsCPMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/stats"), statsCPMux)
 	web.CPMux.Handle(pat.New("/stats/*"), statsCPMux)
