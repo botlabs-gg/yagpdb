@@ -255,7 +255,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		return false, errors.WrapIf(err, "find_command")
 	}
 
-	if time.Now().Sub(cmd.NextRun.Time) > 2*time.Second {
+	if time.Now().Sub(cmd.NextRun.Time) > 5*time.Second {
 		return false, nil // old scheduled event that wasn't removed, /shrug
 	}
 
