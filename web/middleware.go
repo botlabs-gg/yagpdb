@@ -472,6 +472,7 @@ func APIHandler(inner CustomHandlerFunc) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		out := inner(w, r)
 
+		w.Header().Set("content-type", "application/json")
 		if cast, ok := out.(error); ok {
 			if cast == nil {
 				out = map[string]interface{}{"ok": true}
