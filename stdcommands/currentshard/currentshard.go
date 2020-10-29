@@ -40,18 +40,22 @@ var Command = &commands.YAGCommand{
 			node, err := common.ServicePoller.GetShardNode(shard)
 			if err != nil {
 				status = "Uknown node... May not be running"
-			}
-
-			nodeStatus, err := botrest.GetNodeStatus(node.NodeID)
-			if err != nil {
-				status = "failed querying status"
 			} else {
-				for _, v := range nodeStatus.Shards {
-					if v.ShardID == shard {
-						status = v.ConnStatus.String()
+				nodeStatus, err := botrest.GetNodeStatus(node.NodeID)
+				if err != nil {
+					status = "failed querying status"
+				} else {
+					for _, v := range nodeStatus.Shards {
+						if v.ShardID == shard {
+							status = v.ConnStatus.String()
+						}
 					}
 				}
 			}
+		}
+
+		if status == "" {
+			status = "unknown"
 		}
 
 		return fmt.Sprintf("`%d` on shard `%d` out of total `%d` shards, status: `%s`", gID, shard, totalShards, status), nil
