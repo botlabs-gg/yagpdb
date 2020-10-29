@@ -52,8 +52,6 @@ var Command = &commands.YAGCommand{
 					}
 				}
 			}
-
-			status = "unknown (on another node than this one)"
 		}
 
 		return fmt.Sprintf("`%d` on shard `%d` out of total `%d` shards, status: `%s`", gID, shard, totalShards, status), nil
