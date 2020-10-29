@@ -5,7 +5,9 @@ import (
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 )
 
 var Command = &commands.YAGCommand{
@@ -35,6 +37,22 @@ var Command = &commands.YAGCommand{
 
 			status = session.GatewayManager.Status().String()
 		} else {
+			node, err := common.ServicePoller.GetShardNode(shard)
+			if err != nil {
+				status = "Uknown node... May not be running"
+			}
+
+			nodeStatus, err := botrest.GetNodeStatus(node.NodeID)
+			if err != nil {
+				status = "failed querying status"
+			} else {
+				for _, v := range nodeStatus.Shards {
+					if v.ShardID == shard {
+						status = v.ConnStatus.String()
+					}
+				}
+			}
+
 			status = "unknown (on another node than this one)"
 		}
 
