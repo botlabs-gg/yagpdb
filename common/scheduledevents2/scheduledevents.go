@@ -292,8 +292,8 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 	}
 
 	// check if this event was changed after it was flushed
-	delta := item.TriggersAt.Sub(time.Now())
-	if delta > 1 {
+	untilExec := item.TriggersAt.Sub(time.Now())
+	if untilExec > 5*time.Second {
 		// it was changed, re-flush it, or remove it
 		err = UpdateFlushedEvent(time.Now(), common.RedisPool, item)
 		if err != nil {
