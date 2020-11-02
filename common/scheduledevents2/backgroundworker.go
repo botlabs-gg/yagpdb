@@ -109,6 +109,10 @@ func cleanupRecent() error {
 		return err
 	}
 
+	if len(recent) < 1 {
+		return nil
+	}
+
 	sqlArgs := make([]interface{}, len(recent))
 	for i, v := range recent {
 		sqlArgs[i] = v
