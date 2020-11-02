@@ -143,7 +143,7 @@ func BatchInitCache(guilds []int64) error {
 	}
 
 	wg.Wait()
-	logger.Info("Preloading flag cache done, dur: %s", time.Since(started))
+	logger.Infof("Preloading flag cache done, dur: %s", time.Since(started))
 	return nil
 }
 
