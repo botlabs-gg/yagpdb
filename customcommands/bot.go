@@ -255,8 +255,9 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		return false, errors.WrapIf(err, "find_command")
 	}
 
-	if time.Now().Sub(cmd.NextRun.Time) > 10*time.Second {
+	if time.Until(cmd.NextRun.Time) > time.Second*5 {
 		return false, nil // old scheduled event that wasn't removed, /shrug
+
 	}
 
 	gs := bot.State.Guild(true, evt.GuildID)
