@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
@@ -178,14 +179,14 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		tStr := t.Format(time.RFC822)
 		if !displayUsernames {
 			channel := "<#" + discordgo.StrID(parsedCID) + ">"
-			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
+			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, channel, limitString(v.Message), timeFromNow, tStr)
 		} else {
 			member, _ := bot.GetMember(v.GuildID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
 				username = member.Username
 			}
-			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, username, v.Message, timeFromNow, tStr)
+			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, username, limitString(v.Message), timeFromNow, tStr)
 		}
 	}
 	return out
@@ -226,4 +227,13 @@ func migrateLegacyScheduledEvents(t time.Time, data string) error {
 	parsed, _ := strconv.ParseInt(split[1], 10, 64)
 
 	return scheduledevents2.ScheduleEvent("reminders_check_user", 1, t, parsed)
+}
+
+func limitString(s string) string {
+	if utf8.RuneCountInString(s) < 50 {
+		return s
+	}
+
+	runes := []rune(s)
+	return string(runes[:47]) + "..."
 }
