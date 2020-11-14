@@ -155,7 +155,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			delMsg := fmt.Sprintf("Deleted reminder **#%d**: '%s'", reminder.ID, reminder.Message)
+			delMsg := fmt.Sprintf("Deleted reminder **#%d**: '%s'", reminder.ID, limitString(reminder.Message))
 
 			// If there is another reminder with the same timestamp, do not remove the scheduled event
 			for _, v := range currentReminders {
