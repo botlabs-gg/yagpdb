@@ -294,6 +294,8 @@ github.com/jonas747/template v1.1.2 h1:eCAU81MpcC0gij9NitXt+ECCf436OxklvJA+CHWjq
 github.com/jonas747/template v1.1.2/go.mod h1:gAPqCURcbB4rsYIzAsvcZyyflNZHNG6FQcUZBtLUzXg=
 github.com/jonas747/when v0.0.2 h1:71sgEPQ/3SlwcNHOblVj/RUCWqHkurK3umlRxNpbOFs=
 github.com/jonas747/when v0.0.2/go.mod h1:FcMTsyR9FGTdWt9RboWas5IJ+i5NlozhLtNkCRYC3+A=
+github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f h1:z2IO+m8BMTZJeubJxWrXEwhCCRewm6Tu/XDrrL44OLI=
+github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f/go.mod h1:FcMTsyR9FGTdWt9RboWas5IJ+i5NlozhLtNkCRYC3+A=
 github.com/json-iterator/go v1.1.6 h1:MrUvLMLTMxbqFJ9kzlvat/rYZqZnW3u4wkLzWTaFwKs=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/json-iterator/go v1.1.9 h1:9yzud/Ht36ygwatGx56VwCZtlI/2AD15T1X2sjSuGns=
