@@ -82,6 +82,7 @@ var (
 		"shuffle":     shuffle,
 		"seq":         sequence,
 		"currentTime": tmplCurrentTime,
+		"parseTime":   tmplParseTime,
 		"newDate":     tmplNewDate,
 
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
