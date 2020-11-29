@@ -123,6 +123,25 @@ type SpamRule struct {
 
 // Triggers when a certain number of messages is found by the same author within a timeframe
 func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
+	if !s.FindSpam(evt, cs) {
+		return
+	}
+
+	del = true
+
+	punishment, err = s.PushViolation(KeyViolations(cs.Guild.ID, evt.Author.ID, "spam"))
+	if err != nil {
+		return
+	}
+
+	msg = "Sending messages too fast."
+
+	return
+}
+
+func (s *SpamRule) FindSpam(evt *discordgo.Message, cs *dstate.ChannelState) bool {
+	cs.Owner.RLock()
+	defer cs.Owner.RUnlock()
 
 	within := time.Duration(s.Within) * time.Second
 	now := time.Now()
@@ -142,20 +161,7 @@ func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del b
 		}
 	}
 
-	if amount < s.NumMessages {
-		return
-	}
-
-	del = true
-
-	punishment, err = s.PushViolation(KeyViolations(cs.Guild.ID, evt.Author.ID, "spam"))
-	if err != nil {
-		return
-	}
-
-	msg = "Sending messages too fast."
-
-	return
+	return amount >= s.NumMessages && s.NumMessages != 1
 }
 
 type InviteRule struct {
