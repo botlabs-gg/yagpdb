@@ -880,10 +880,76 @@ func ToByte(from interface{}) []byte {
 func tmplJson(v interface{}) (string, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		return "", err
+		b, err = json.Marshal(convertMap(v))
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return string(b), nil
+}
+
+func convertMap(m interface{}) interface{} {
+	out := map[string]interface{}{}
+	val := reflect.ValueOf(m)
+	switch val.Kind() {
+	case reflect.Map:
+		for _, k := range val.MapKeys() {
+			v := val.MapIndex(k)
+			switch t := v.Interface().(type) {
+			case map[interface{}]interface{}, Dict, SDict:
+				out[fmt.Sprint(k)] = convertMap(t)
+			case Slice:
+				out[fmt.Sprint(k)] = handleSlices(t, nil)
+			case []interface{}:
+				out[fmt.Sprint(k)] = handleSlices(nil, t)
+			default:
+				out[fmt.Sprint(k)] = t
+			}
+		}
+		return out
+	default:
+		switch t := m.(type) {
+		case Slice:
+			return handleSlices(t, nil)
+		case []interface{}:
+			return handleSlices(nil, t)
+		default:
+			return m
+		}
+	}
+}
+
+func handleSlices(a Slice, b []interface{}) []interface{} {
+	var out []interface{}
+	if a == nil {
+		for _, v := range b {
+			out = append(out, innerHandler(v))
+		}
+	} else {
+		for _, v := range a {
+			out = append(out, innerHandler(v))
+		}
+	}
+
+	return out
+}
+
+func innerHandler(v interface{}) interface{} {
+	val := reflect.ValueOf(v)
+	switch val.Kind() {
+	case reflect.Map:
+		return convertMap(v)
+	case reflect.Slice:
+		switch t := v.(type) {
+		case Slice:
+			return handleSlices(t, nil)
+		case []interface{}:
+			return handleSlices(nil, t)
+		}
+	}
+
+	return v
 }
 
 func tmplFormatTime(t time.Time, args ...string) string {
