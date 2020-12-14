@@ -86,4 +86,10 @@ var throwThings = []string{
 	"a powershell script with no logging",
 	"Internet Exploder",
 	"DNS.  It's always DNS",
+	"a 2003 Dodge Dakota",
+	"a Hello Fresh discount code",
+	"a unicorn onesie [horn included]",
+	"an odd obsession with Henrik's calves",
+	"a fabulous beard",
+	"a neckbeard",
 }
