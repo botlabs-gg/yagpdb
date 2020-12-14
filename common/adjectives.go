@@ -997,6 +997,7 @@ var Adjectives = []string{
 	"serpentine",
 	"several",
 	"severe",
+	"sexy",
 	"shabby",
 	"shadowy",
 	"shady",
