@@ -32,7 +32,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
-var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
+var thanksRegex = regexp.MustCompile(`(?i)(?:\A|\b|\s+)(?:\+(?:\s+|rep)?|t(?:y(?:sm|vm)?|h(?:a?nks?|n?x)(?:\s+you)?(?:\s+(?:so|very)\s+much|\s+?a?\s*lot)?)|danke?s?)\s+<@!?\d{17,19}>(?:\s+|\b|\z)`)
 
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate()
