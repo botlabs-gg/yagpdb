@@ -1264,7 +1264,7 @@ func (sd *StdDepth) StdInit(input interface{}) interface{} {
 }
 
 func (sd *StdDepth) StdMap(input interface{}) interface{} {
-	if sd.depth >= 10 {
+	if sd.depth >= 1000 {
 		return input
 	}
 	sd.Add()
@@ -1291,7 +1291,7 @@ func (sd *StdDepth) StdMap(input interface{}) interface{} {
 }
 
 func (sd *StdDepth) StdStringMap(input interface{}) interface{} {
-	if sd.depth >= 10 {
+	if sd.depth >= 1000 {
 		return input
 	}
 	sd.Add()
@@ -1318,7 +1318,7 @@ func (sd *StdDepth) StdStringMap(input interface{}) interface{} {
 }
 
 func (sd *StdDepth) StdSlice(input []interface{}) interface{} {
-	if sd.depth >= 10 {
+	if sd.depth >= 1000 {
 		return input
 	}
 	sd.Add()
