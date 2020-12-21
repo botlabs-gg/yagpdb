@@ -583,8 +583,8 @@ func (d Dict) Set(key interface{}, value interface{}) string {
 }
 
 func (d Dict) Get(key interface{}) interface{} {
-	out := d[key]
-	if out == nil {
+	out, ok := d[key]
+	if !ok {
 		switch key.(type) {
 		case int:
 			out = d[ToInt64(key)]
