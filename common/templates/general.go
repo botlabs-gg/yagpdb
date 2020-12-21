@@ -924,32 +924,15 @@ func handleSlices(a Slice, b []interface{}) []interface{} {
 	var out []interface{}
 	if a == nil {
 		for _, v := range b {
-			out = append(out, innerHandler(v))
+			out = append(out, convertMap(v))
 		}
 	} else {
 		for _, v := range a {
-			out = append(out, innerHandler(v))
+			out = append(out, convertMap(v))
 		}
 	}
 
 	return out
-}
-
-func innerHandler(v interface{}) interface{} {
-	val := reflect.ValueOf(v)
-	switch val.Kind() {
-	case reflect.Map:
-		return convertMap(v)
-	case reflect.Slice:
-		switch t := v.(type) {
-		case Slice:
-			return handleSlices(t, nil)
-		case []interface{}:
-			return handleSlices(nil, t)
-		}
-	}
-
-	return v
 }
 
 func tmplFormatTime(t time.Time, args ...string) string {
