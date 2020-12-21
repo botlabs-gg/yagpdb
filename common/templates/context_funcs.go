@@ -1257,12 +1257,6 @@ func (sd *StdDepth) StdInit(input interface{}) interface{} {
 			return sd.StdSlice(t)
 		case *time.Time:
 			return *t
-		case float64:
-			i, err := strconv.ParseInt(fmt.Sprint(t), 10, 64)
-			if err != nil {
-				return t
-			}
-			return i
 		default:
 			return t
 		}
