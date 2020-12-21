@@ -1219,3 +1219,119 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 
 	return "", nil
 }
+
+type StdDepth struct {
+	depth int
+}
+
+func newStdDepth() *StdDepth {
+	return &StdDepth{
+		depth: 0,
+	}
+}
+
+func (sd *StdDepth) Add() {
+	sd.depth += 1
+}
+
+func (c *Context) tmplStandardize(input interface{}) interface{} {
+	depth := newStdDepth()
+	return depth.StdInit(input)
+}
+
+func (sd *StdDepth) StdInit(input interface{}) interface{} {
+	val := reflect.ValueOf(input)
+	switch val.Kind() {
+	case reflect.Map:
+		switch t := input.(type) {
+		case Dict, SDict:
+			return t
+		case map[string]interface{}:
+			return sd.StdStringMap(t)
+		default:
+			return sd.StdMap(t)
+		}
+	default:
+		switch t := input.(type) {
+		case []interface{}:
+			return sd.StdSlice(t)
+		case *time.Time:
+			return *t
+		case float64:
+			i, err := strconv.ParseInt(fmt.Sprint(t), 10, 64)
+			if err != nil {
+				return t
+			}
+			return i
+		default:
+			return t
+		}
+	}
+}
+
+func (sd *StdDepth) StdMap(input interface{}) interface{} {
+	if sd.depth >= 10 {
+		return input
+	}
+	sd.Add()
+	out := make(Dict)
+	val := reflect.ValueOf(input)
+	switch val.Kind() {
+	case reflect.Map:
+		for _, k := range val.MapKeys() {
+			v := val.MapIndex(k)
+			switch t := v.Interface().(type) {
+			case map[interface{}]interface{}:
+				out.Set(k.Interface(), sd.StdMap(t))
+			case map[string]interface{}:
+				out.Set(k.Interface(), sd.StdStringMap(t))
+			case []interface{}:
+				out.Set(k.Interface(), sd.StdSlice(t))
+			default:
+				out.Set(k.Interface(), sd.StdInit(t))
+			}
+		}
+		return out
+	}
+	return nil
+}
+
+func (sd *StdDepth) StdStringMap(input interface{}) interface{} {
+	if sd.depth >= 10 {
+		return input
+	}
+	sd.Add()
+	out := make(SDict)
+	val := reflect.ValueOf(input)
+	switch val.Kind() {
+	case reflect.Map:
+		for _, k := range val.MapKeys() {
+			v := val.MapIndex(k)
+			switch t := v.Interface().(type) {
+			case map[interface{}]interface{}:
+				out.Set(k.Interface().(string), sd.StdMap(t))
+			case map[string]interface{}:
+				out.Set(k.Interface().(string), sd.StdStringMap(t))
+			case []interface{}:
+				out.Set(k.Interface().(string), sd.StdSlice(t))
+			default:
+				out.Set(k.Interface().(string), sd.StdInit(t))
+			}
+		}
+		return out
+	}
+	return nil
+}
+
+func (sd *StdDepth) StdSlice(input []interface{}) interface{} {
+	if sd.depth >= 10 {
+		return input
+	}
+	sd.Add()
+	var out Slice
+	for _, v := range input {
+		out = append(out, sd.StdInit(v))
+	}
+
+	return out
+}
