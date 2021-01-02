@@ -829,27 +829,16 @@ func ToFloat64(from interface{}) float64 {
 
 func ToDuration(from interface{}) time.Duration {
 	switch t := from.(type) {
-	case int:
-		return time.Duration(int64(t))
-	case int32:
-		return time.Duration(int64(t))
-	case int64:
-		return time.Duration(int64(t))
-	case float32:
-		return time.Duration(int64(t))
-	case float64:
-		return time.Duration(int64(t))
-	case uint:
-		return time.Duration(int64(t))
-	case uint32:
-		return time.Duration(int64(t))
-	case uint64:
-		return time.Duration(int64(t))
+	case int, int32, int64, float32, float64, uint, uint32, uint64:
+		return time.Duration(ToInt64(t))
 	case string:
-		parsed, _ := common.ParseDuration(t)
+		parsed, err := common.ParseDuration(t)
+		if parsed < time.Second || err != nil {
+			return 0
+		}
 		return parsed
 	case time.Duration:
-		return time.Duration(t)
+		return t
 	default:
 		return 0
 	}

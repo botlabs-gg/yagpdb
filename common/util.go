@@ -131,8 +131,6 @@ func (d DurationFormatPrecision) FromSeconds(in int64) int64 {
 	}
 
 	panic("We shouldn't be here")
-
-	return 0
 }
 
 func pluralize(val int64) string {
