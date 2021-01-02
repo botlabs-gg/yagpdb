@@ -16,6 +16,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
+	prfx "github.com/jonas747/yagpdb/common/prefix"
 )
 
 var (
@@ -267,10 +268,10 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	prefix := defaultCommandPrefix()
+	prefix := prfx.DefaultCommandPrefix()
 	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
 		var err error
-		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		if err != nil {
 			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed fetching command prefix")
 		}
@@ -281,10 +282,10 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 }
 
 func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
-	prefix := defaultCommandPrefix()
+	prefix := prfx.DefaultCommandPrefix()
 	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
 		var err error
-		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		return prefix, err
 	}
 
@@ -293,7 +294,7 @@ func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
 
 func (p *Plugin) Prefix(data *dcmd.Data) string {
 
-	prefix, err := GetCommandPrefixRedis(data.GS.ID)
+	prefix, err := prfx.GetCommandPrefixRedis(data.GS.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -328,15 +329,6 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 	embed.Description = firstField.Value
 }
 
-func defaultCommandPrefix() string {
-	defaultPrefix := "-"
-	if common.Testing {
-		defaultPrefix = "("
-	}
-
-	return defaultPrefix
-}
-
 var cmdPrefix = &YAGCommand{
 	Name:        "Prefix",
 	Description: "Shows command prefix of the current server, or the specified server",
@@ -351,7 +343,7 @@ var cmdPrefix = &YAGCommand{
 			targetGuildID = data.GS.ID
 		}
 
-		prefix, err := GetCommandPrefixRedis(targetGuildID)
+		prefix, err := prfx.GetCommandPrefixRedis(targetGuildID)
 		if err != nil {
 			return nil, err
 		}

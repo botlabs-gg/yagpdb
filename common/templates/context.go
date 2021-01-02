@@ -17,6 +17,7 @@ import (
 	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/prefix"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/sirupsen/logrus"
 )
@@ -66,7 +67,7 @@ var (
 		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
 		"complexMessageEdit": CreateMessageEdit,
-		"kindOf":	      KindOf,
+		"kindOf":             KindOf,
 
 		"formatTime":  tmplFormatTime,
 		"json":        tmplJson,
@@ -195,6 +196,7 @@ func (c *Context) setupBaseData() {
 		c.Data["Guild"] = guild
 		c.Data["Server"] = guild
 		c.Data["server"] = guild
+		c.Data["ServerPrefix"] = prefix.GetPrefixIgnoreError(c.GS.ID)
 	}
 
 	if c.CurrentFrame.CS != nil {
@@ -487,7 +489,7 @@ func baseContextFuncs(c *Context) {
 
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
 	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
-	
+
 	c.ContextFuncs["addRoleName"] = c.tmplAddRoleName
 	c.ContextFuncs["removeRoleName"] = c.tmplRemoveRoleName
 
@@ -576,17 +578,17 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 type Dict map[interface{}]interface{}
 
 func (d Dict) Set(key interface{}, value interface{}) string {
-    d[key] = value
-    return ""
+	d[key] = value
+	return ""
 }
 
 func (d Dict) Get(key interface{}) interface{} {
-    return d[key]
+	return d[key]
 }
 
 func (d Dict) Del(key interface{}) string {
-    delete(d, key)
-    return ""
+	delete(d, key)
+	return ""
 }
 
 type SDict map[string]interface{}

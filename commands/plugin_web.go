@@ -15,6 +15,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
+	prfx "github.com/jonas747/yagpdb/common/prefix"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -171,7 +172,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	templateData["GlobalCommandSettings"] = global
 	templateData["ChannelOverrides"] = channelOverrides
 
-	prefix, _ := GetCommandPrefixRedis(activeGuild.ID)
+	prefix, _ := prfx.GetCommandPrefixRedis(activeGuild.ID)
 
 	templateData["CommandPrefix"] = prefix
 
@@ -444,7 +445,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["SettingsPath"] = "/commands/settings"
 	templateData["WidgetEnabled"] = true
 
-	prefix, err := GetCommandPrefixRedis(ag.ID)
+	prefix, err := prfx.GetCommandPrefixRedis(ag.ID)
 	if err != nil {
 		return templateData, err
 	}
