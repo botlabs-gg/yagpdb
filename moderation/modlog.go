@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
 	"github.com/jonas747/yagpdb/common"
 )
 
@@ -69,9 +68,6 @@ func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogActi
 		name = t.Name
 		id = t.ID
 	case *discordgo.Channel:
-		name = t.Name
-		id = t.ID
-	case *dstate.ChannelState:
 		name = t.Name
 		id = t.ID
 	}

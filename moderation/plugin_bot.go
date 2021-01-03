@@ -74,7 +74,6 @@ type ScheduledUnbanData struct {
 type ChannelRatelimitData struct {
 	ChannelID  int64 `json:"channel_id"`
 	OriginalRL int
-	CS         *dstate.ChannelState
 }
 
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
@@ -607,7 +606,7 @@ func handleResetChannelRatelimit(evt *seventsmodels.ScheduledEvent, data interfa
 		reason = fmt.Sprintf("The slowmode in the channel <#%d> has been adjusted to it's original state of %d messages per user per second, because the changed slowmode expired.", dataCast.ChannelID, dataCast.OriginalRL)
 	}
 
-	err = CreateModlogEmbed(config, author, action, dataCast.CS, reason, "")
+	err = CreateModlogEmbed(config, author, action, channel, reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", evt.GuildID).Error("Failed sending " + action.Prefix + " log message")
 	}

@@ -569,7 +569,6 @@ func SlowModeFunc(config *Config, guildID int64, channel *dstate.ChannelState, a
 		err = scheduledevents2.ScheduleEvent("moderation_set_channel_ratelimit", guildID, dur, &ChannelRatelimitData{
 			ChannelID:  channel.ID,
 			OriginalRL: channelData.RateLimitPerUser,
-			CS:         channel,
 		})
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed scheduling remove of slowmode")
@@ -578,7 +577,7 @@ func SlowModeFunc(config *Config, guildID int64, channel *dstate.ChannelState, a
 		action.Footer += "permanent"
 	}
 
-	err = CreateModlogEmbed(config, author, action, channel, reason, logLink)
+	err = CreateModlogEmbed(config, author, action, channelData, reason, logLink)
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	}
