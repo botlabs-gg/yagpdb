@@ -24,11 +24,11 @@ type Config struct {
 	KickMessage          string `valid:"template,5000"`
 
 	// Ban
-	BanEnabled        	bool
-	BanCmdRoles       	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	BanReasonOptional 	bool
-	BanMessage        	string `valid:"template,5000"`
-	DefaultBanDeleteDays    sql.NullInt64 `gorm:"default:1" valid:"0,7"`
+	BanEnabled           bool
+	BanCmdRoles          pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	BanReasonOptional    bool
+	BanMessage           string        `valid:"template,5000"`
+	DefaultBanDeleteDays sql.NullInt64 `gorm:"default:1" valid:"0,7"`
 
 	// Mute/unmute
 	MuteEnabled             bool
@@ -56,6 +56,7 @@ type Config struct {
 	ReportEnabled bool
 	ActionChannel string `valid:"channel,true"`
 	ReportChannel string `valid:"channel,true"`
+	ErrorChannel  string `valid:"channel,true"`
 	LogUnbans     bool
 	LogBans       bool
 
@@ -76,6 +77,11 @@ func (c *Config) IntActionChannel() (r int64) {
 
 func (c *Config) IntReportChannel() (r int64) {
 	r, _ = strconv.ParseInt(c.ReportChannel, 10, 64)
+	return
+}
+
+func (c *Config) IntErrorChannel() (r int64) {
+	r, _ = strconv.ParseInt(c.ErrorChannel, 10, 64)
 	return
 }
 

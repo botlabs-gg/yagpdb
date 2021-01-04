@@ -123,6 +123,14 @@ the punishment{{end}}
         </div>
         <hr />
 
+        <div class="form-group">
+            <label>Channel to send error messages of the moderation DMs</label>
+            <select class="form-control" name="ErrorChannel" data-requireperms-embed>
+                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ErrorChannel true "None"}}
+            </select>
+        </div>
+        <hr />
+
         {{checkbox "ReportEnabled" "report-enabled" "Enable report command?" .ModConfig.ReportEnabled}}
         <p><code>(mention or prefix) report @user some reason</code><br />
             Everyone can use this.<br />
@@ -346,7 +354,7 @@ the punishment{{end}}
 
         {{checkbox "BanReasonOptional" "BanReasonOptional" "Make the <code>reason</code> optional" .ModConfig.BanReasonOptional}}
         <hr />
-        
+
         <div class="form-group">
             <label>Default number of days of messages to delete while banning. Range 0 to 7.</label>
             <input type="number" name="DefaultBanDeleteDays.Int64" class="form-control"
