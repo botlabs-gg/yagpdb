@@ -15,7 +15,8 @@ var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
 	Name:         "Undelete",
 	Aliases:      []string{"ud"},
-	Description:  "Views the first 10 recent deleted messages. By default only the current users deleted messages will show.\n\nUse `-a` to view all users deleted messages or `-u` to view a specific users deleted messages.\nBoth `-a` and `-u` require \"Manage Messages\" permission.",
+	Description:		"Views the first 10 recent deleted messages. By default, only the current user's deleted messages will show.",
+	LongDescription:  "You can use the `-a` flag to view all users delete messages, or `-u` to view a specified user's deleted messages.\nBoth `-a` and `-u` require Manage Messages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specified along with `-u` only messages from the user provided using `-u` will be shown.",
 	RequiredArgs: 0,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Switch: "a", Name: "all"},
@@ -25,24 +26,14 @@ var Command = &commands.YAGCommand{
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
 		targetUser := data.Switch("u").Int64()
 		
-		if allUsers {
-			if ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages); !ok || err != nil {
-				if err != nil {
-					return nil, err
-				} else if !ok {
-					return "You need `Manage Messages` permissions to view all users deleted messages", nil
-				}
-			}
-		}
-		
-		if targetUser != 0 {
-			ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages) 
-			if err != nil || !ok && data.MS.ID != targetUser {
-				if err != nil {
-					return nil, err
-				} else if !ok && data.MS.ID != targetUser {
-					return "You need `Manage Messages` permissions to target a specific user other than yourself.", nil
-				}
+		if allUsers || targetUser != 0 {
+			ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages)
+			if err != nil {
+				return nil, err
+			} else if !ok && targetUser == 0 {
+				return "You need `Manage Messages` permissions to view all users deleted messages", nil
+			} else if !ok {
+				return "You need `Manage Messages` permissions to target a specific user other than yourself.", nil
 			}
 		}
 				
