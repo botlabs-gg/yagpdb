@@ -19,7 +19,7 @@ var Command = &commands.YAGCommand{
 	RequiredArgs: 0,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Switch: "a", Name: "all"},
-		&dcmd.ArgDef{Switch: "u", Name: "user", Type: dcmd.UserID, Default: 0},
+		{Switch: "u", Name: "user", Type: dcmd.UserID, Default: 0},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
@@ -36,7 +36,8 @@ var Command = &commands.YAGCommand{
 		}
 		
 		if targetUser != 0 {
-			if ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages); err != nil || !ok && data.MS.ID != targetUser {
+			ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages) 
+			if err != nil || !ok && data.MS.ID != targetUser {
 				if err != nil {
 					return nil, err
 				} else if !ok && data.MS.ID != targetUser {
