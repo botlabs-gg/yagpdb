@@ -15,14 +15,16 @@ var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
 	Name:         "Undelete",
 	Aliases:      []string{"ud"},
-	Description:  "Views your recent deleted messages, or all users deleted messages (with \"-a\" and manage messages perm) in this channel",
+	Description:  "Views the first 10 recent deleted messages. By default only the current users deleted messages will show.\n\nUse `-a` to view all users deleted messages or `-u` to view a specific users deleted messages.\nBoth `-a` and `-u` require \"Manage Messages\" permission.",
 	RequiredArgs: 0,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Switch: "a", Name: "all"},
+		&dcmd.ArgDef{Switch: "u", Name: "user", Type: dcmd.UserID, Default: 0},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
-
+		targetUser := data.Switch("u").Int64()
+		
 		if allUsers {
 			if ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages); !ok || err != nil {
 				if err != nil {
@@ -32,6 +34,17 @@ var Command = &commands.YAGCommand{
 				}
 			}
 		}
+		
+		if targetUser != 0 {
+			if ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages); err != nil || !ok && data.MS.ID != targetUser {
+				if err != nil {
+					return nil, err
+				} else if !ok && data.MS.ID != targetUser {
+					return "You need `Manage Messages` permissions to target a specific user other than yourself.", nil
+				}
+			}
+		}
+				
 
 		resp := "Up to 10 last deleted messages (last hour or 12 hours for premium): \n\n"
 		numFound := 0
@@ -45,11 +58,15 @@ var Command = &commands.YAGCommand{
 			if !msg.Deleted {
 				continue
 			}
-
-			if !allUsers && msg.Author.ID != data.Msg.Author.ID {
+			
+			if !allUsers && msg.Author.ID != data.Msg.Author.ID && targetUser == 0 {
 				continue
 			}
-
+			
+			if targetUser != 0 && msg.Author.ID != targetUser {
+				continue
+			}
+			
 			precision := common.DurationPrecisionHours
 			if time.Since(msg.ParsedCreated) < time.Hour {
 				precision = common.DurationPrecisionMinutes
