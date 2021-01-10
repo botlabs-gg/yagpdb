@@ -12,7 +12,7 @@ import (
 
 	"github.com/jonas747/dshardorchestrator/v2"
 	"github.com/jonas747/dshardorchestrator/v2/node"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/common"
 )
 

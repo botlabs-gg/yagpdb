@@ -43,9 +43,9 @@ func (p *Plugin) InitWeb() {
 	limiter := tollbooth.NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
 	limiter.SetIPLookups([]string{"CF-Connecting-IP", "X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
 
-	submux.Handle(pat.Post("/lookupcode"), tollbooth.LimitHandler(limiter, web.ControllerPostHandler(HandlePostLookupCode, mainHandler, nil, "")))
-	submux.Handle(pat.Post("/redeemcode"), tollbooth.LimitHandler(limiter, web.ControllerPostHandler(HandlePostRedeemCode, mainHandler, nil, "")))
-	submux.Handle(pat.Post("/updateslot/:slotID"), web.ControllerPostHandler(HandlePostUpdateSlot, mainHandler, UpdateData{}, ""))
+	submux.Handle(pat.Post("/lookupcode"), tollbooth.LimitHandler(limiter, web.ControllerPostHandler(HandlePostLookupCode, mainHandler, nil)))
+	submux.Handle(pat.Post("/redeemcode"), tollbooth.LimitHandler(limiter, web.ControllerPostHandler(HandlePostRedeemCode, mainHandler, nil)))
+	submux.Handle(pat.Post("/updateslot/:slotID"), web.ControllerPostHandler(HandlePostUpdateSlot, mainHandler, UpdateData{}))
 }
 
 // Add in a template var wether the guild is premium or not

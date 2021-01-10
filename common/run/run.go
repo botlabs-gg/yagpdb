@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/evalphobia/logrus_sentry"
+	"github.com/getsentry/sentry-go"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/commands"
@@ -21,6 +21,7 @@ import (
 	"github.com/jonas747/yagpdb/common/configstore"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/sentryhook"
 	"github.com/jonas747/yagpdb/feeds"
 	"github.com/jonas747/yagpdb/web"
 	log "github.com/sirupsen/logrus"
@@ -221,13 +222,22 @@ func shutdown() {
 }
 
 func addSentryHook() {
-	hook, err := logrus_sentry.NewSentryHook(confSentryDSN.GetString(), []log.Level{
-		log.PanicLevel,
-		log.FatalLevel,
-		log.ErrorLevel,
+	err := sentry.Init(sentry.ClientOptions{
+		// Either set your DSN here or set the SENTRY_DSN environment variable.
+		Dsn: confSentryDSN.GetString(),
+		// Enable printing of SDK debug messages.
+		// Useful when getting started or trying to figure something out.
+		Debug: false,
 	})
 
 	if err == nil {
+		sentry.ConfigureScope(func(s *sentry.Scope) {
+			if flagNodeID != "" {
+				s.SetTag("node_id", flagNodeID)
+			}
+		})
+
+		hook := &sentryhook.Hook{}
 		common.AddLogHook(hook)
 		log.Info("Added Sentry Hook")
 	} else {

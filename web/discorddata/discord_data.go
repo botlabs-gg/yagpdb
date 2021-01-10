@@ -36,9 +36,9 @@ func keySession(raw string) string {
 	return "discord_session:" + raw
 }
 
-func GetSession(raw string, tokenDecoder func(string) (*oauth2.Token, error)) (*discordgo.Session, error) {
-	result, err := applicationCache.Fetch(keySession(raw), time.Minute*10, func() (interface{}, error) {
-		decoded, err := tokenDecoder(raw)
+func GetSession(token string, sessionFetcher func(string) (*oauth2.Token, error)) (*discordgo.Session, error) {
+	result, err := applicationCache.Fetch(keySession(token), time.Minute*60, func() (interface{}, error) {
+		decoded, err := sessionFetcher(token)
 		if err != nil {
 			return nil, errors.WithStackIf(err)
 		}
@@ -55,6 +55,10 @@ func GetSession(raw string, tokenDecoder func(string) (*oauth2.Token, error)) (*
 	}
 
 	return result.Value().(*discordgo.Session), nil
+}
+
+func EvictSession(token string) {
+	applicationCache.Delete(keySession(token))
 }
 
 func keyUserInfo(token string) string {
@@ -108,6 +112,7 @@ func GetFullGuild(guildID int64) (*discordgo.Guild, error) {
 		}
 
 		sort.Sort(dutil.Channels(guild.Channels))
+		sort.Sort(dutil.Roles(guild.Roles))
 
 		return guild, nil
 	})
