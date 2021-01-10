@@ -1,9 +1,9 @@
 package web
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -11,12 +11,13 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/models"
+	"github.com/jonas747/yagpdb/web/discorddata"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
 
 var (
-	SessionCookieName = "yagpdb-session"
+	SessionCookieName = "yagpdb-session-3"
 	OauthConf         *oauth2.Config
 )
 
@@ -101,6 +102,11 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
+	rawToken := r.Context().Value(common.ContextKeyYagToken)
+	if rawToken != nil {
+		discorddata.EvictSession(rawToken.(string))
+	}
+
 	defer http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 
 	sessionCookie, err := r.Cookie(SessionCookieName)
@@ -139,17 +145,24 @@ var ErrNotLoggedIn = errors.New("Not logged in")
 
 // AuthTokenFromB64 Retrives an oauth2 token from the base64 string
 // Returns an error if expired
-func AuthTokenFromB64(b64 string) (t *oauth2.Token, err error) {
-	if b64 == "none" {
+func discordAuthTokenFromYag(yagToken string) (t *oauth2.Token, err error) {
+	if yagToken == "none" {
 		return nil, ErrNotLoggedIn
 	}
 
-	decodedB64, err := base64.URLEncoding.DecodeString(b64)
-	if err != nil {
-		return nil, common.ErrWithCaller(err)
-	}
+	// decodedB64, err := base64.URLEncoding.DecodeString(b64)
+	// if err != nil {
+	// 	return nil, common.ErrWithCaller(err)
+	// }
 
-	err = json.Unmarshal(decodedB64, &t)
+	var b64 string
+	err = common.RedisPool.Do(radix.Cmd(&b64, "HGET", "web_sessions", yagToken))
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(b64)
+
+	err = json.Unmarshal([]byte(b64), &t)
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	}
@@ -161,9 +174,14 @@ func AuthTokenFromB64(b64 string) (t *oauth2.Token, err error) {
 	return
 }
 
+var (
+	ErrDuplicateToken = errors.New("Somehow a duplicate token was found")
+)
+
 // CreateCookieSession creates a session cookie where the value is the access token itself,
 // this way we don't have to store it on our end anywhere.
 func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
+	yagToken := RandBase64(64)
 
 	token.RefreshToken = ""
 
@@ -171,8 +189,6 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	}
-
-	b64 := base64.URLEncoding.EncodeToString(dataRaw)
 
 	// Either the cookie expires in 30 days, or however long the validity of the token is if that is smaller than 7 days
 	cookieExpirey := time.Hour * 24 * 30
@@ -185,9 +201,16 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 		// The old cookie name can safely be used after the old format has been phased out (after a day in use)
 		// Name:   "yagpdb-session",
 		Name:   SessionCookieName,
-		Value:  b64,
+		Value:  yagToken,
 		MaxAge: int(cookieExpirey.Seconds()),
 		Path:   "/",
+	}
+
+	// store token in redis
+	didSet := false
+	common.RedisPool.Do(radix.Cmd(&didSet, "HSETNX", "web_sessions", yagToken, string(dataRaw)))
+	if !didSet {
+		return nil, ErrDuplicateToken
 	}
 
 	return cookie, nil

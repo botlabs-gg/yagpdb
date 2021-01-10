@@ -11,7 +11,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -23,6 +23,8 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
+
+var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
@@ -97,6 +99,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	model.R.RoleGroup = group
 
 	ClearRolemenuCacheGS(parsed.GS)
+	recentMenusTracker.AddMenu(model.MessageID)
 	resp, err := NextRoleMenuSetupStep(parsed.Context(), model, true)
 	updateSetupMessage(parsed.Context(), model, resp)
 	return nil, err
@@ -358,6 +361,14 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	if uID == common.BotUser.ID || evt.GS == nil {
 		return
 	}
+
+	_, checkDB := recentMenusTracker.CheckRecentTrackedMenu(mID)
+	if !checkDB {
+		logger.Debug("skipped db check for menus becuase of recent tracked menus")
+		return
+	}
+
+	logger.Debug("CheckDB was true")
 
 	menu, err := GetRolemenuCached(evt.Context(), evt.GS, mID)
 	if err != nil {
@@ -803,6 +814,8 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed creating setup message for menu")
 		return
 	}
+
+	recentMenusTracker.AddMenu(msg.ID)
 
 	if updateModel {
 		rm.SetupMSGID = msg.ID
