@@ -14,10 +14,11 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory: commands.CategoryFun,
-	Name:        "SimpleEmbed",
-	Aliases:     []string{"se"},
-	Description: "A more simpler version of CustomEmbed, controlled completely using switches.",
+	CmdCategory:         commands.CategoryFun,
+	Name:                "SimpleEmbed",
+	Aliases:             []string{"se"},
+	Description:         "A more simpler version of CustomEmbed, controlled completely using switches.",
+	RequireDiscordPerms: []int64{discordgo.PermissionManageMessages},
 	ArgSwitches: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
 		&dcmd.ArgDef{Switch: "content", Help: "Text content for the message", Type: dcmd.String, Default: ""},
