@@ -21,7 +21,6 @@ import (
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
-var noValue nothing
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMessageCreate, eventsystem.EventMessageCreate)
@@ -282,8 +281,7 @@ func GetUserTimezone(userID int64) *time.Location {
 	return loc
 }
 
-type nothing struct{}
-func FindZone(in string) map[string]nothing {
+func FindZone(in string) []string {
 	lowerIn := strings.ToLower(in)
 	inSpaceReplaced := strings.ReplaceAll(lowerIn, " ", "_")
 
@@ -294,7 +292,7 @@ func FindZone(in string) map[string]nothing {
 		}
 	}
 
-	matchesZones := make(map[string]nothing)
+	matchesZones := make([]string, 0)
 
 	for code, zones := range CCToZones {
 		// if common.ContainsString()
@@ -302,7 +300,7 @@ func FindZone(in string) map[string]nothing {
 		// check if we specified the country
 		if common.ContainsStringSlice(ccs, code) || strings.EqualFold(code, lowerIn) {
 			for _, v := range zones {
-				matchesZones[strings.ToLower(StrZone(v))] = noValue
+				matchesZones = appendIfNotExists(matchesZones, v)
 			}
 
 			continue
@@ -310,7 +308,7 @@ func FindZone(in string) map[string]nothing {
 
 		for _, v := range zones {
 			if strings.Contains(strings.ToLower(v), inSpaceReplaced) {
-				matchesZones[StrZone(v)] = noValue
+				matchesZones = appendIfNotExists(matchesZones, v)
 			}
 		}
 	}
