@@ -135,7 +135,7 @@ func getNodeStatusesClustered() (st *NodeStatusesResponse, err error) {
 	// send requests
 	resultCh := make(chan interface{}, len(nodeIDs))
 	for _, n := range nodeIDs {
-		go getNodeStatus(n, resultCh)
+		go getNodeStatusCh(n, resultCh)
 	}
 
 	timeout := time.After(time.Second * 3)
@@ -174,24 +174,31 @@ OUTER:
 	return
 }
 
-func getNodeStatus(nodeID string, retCh chan interface{}) {
+func getNodeStatusCh(nodeID string, retCh chan interface{}) {
+	status, err := GetNodeStatus(nodeID)
+	if err != nil {
+		retCh <- err
+	} else {
+		retCh <- status
+	}
+}
+
+func GetNodeStatus(nodeID string) (*NodeStatus, error) {
 	// retrieve the REST address for this node
 	addr, err := common.ServicePoller.GetNodeAddress(nodeID)
 	if err != nil {
 		clientLogger.WithError(err).Error("failed retrieving rest address for bot for node id: ", nodeID)
-		retCh <- err
-		return
+		return nil, err
 	}
 
 	var status *NodeStatus
 	err = internalapi.GetWithAddress(addr, "node_status", &status)
 	if err != nil {
 		clientLogger.WithError(err).Error("failed retrieving shard status for node ", nodeID)
-		retCh <- err
-		return
+		return nil, err
 	}
 
-	retCh <- status
+	return status, nil
 }
 
 func SendReconnectShard(shardID int, reidentify bool) (err error) {

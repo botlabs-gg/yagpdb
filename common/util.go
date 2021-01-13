@@ -13,7 +13,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
@@ -551,16 +551,17 @@ var AllowedMentionsParseUsers = discordgo.AllowedMentions{
 	Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
 }
 
-func LogLongCallTime(treshold time.Duration, isErr bool, logMsg string, f func()) {
+func LogLongCallTime(treshold time.Duration, isErr bool, logMsg string, extraData logrus.Fields, f func()) {
 	started := time.Now()
 	f()
 	elapsed := time.Since(started)
 
 	if elapsed > treshold {
+		l := logrus.WithFields(extraData).WithField("elapsed", elapsed.String())
 		if isErr {
-			logrus.Error(logMsg + elapsed.String())
+			l.Error(logMsg)
 		} else {
-			logrus.Warn(logMsg + elapsed.String())
+			l.Warn(logMsg)
 		}
 	}
 }

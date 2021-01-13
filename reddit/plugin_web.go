@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -155,6 +156,10 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Subreddit))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: watchItem.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+		Slow:      newElem.Slow,
+	})
 
 	return templateData
 }
@@ -193,6 +198,10 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+		Slow:      item.Slow,
+	})
 
 	return templateData
 }
@@ -233,6 +242,10 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData["RedditConfig"] = currentConfig
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+		Slow:      item.Slow,
+	})
 
 	return templateData
 }
