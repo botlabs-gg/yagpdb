@@ -348,7 +348,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "minage", Default: time.Duration(0), Name: "Min age", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
 			&dcmd.ArgDef{Switch: "nopin", Name: "Ignore pinned messages"},
-			&dcmd.ArgDef{Switch: "attachments", Name: "Only remove messages with attachments"},
+			&dcmd.ArgDef{Switch: "a", Name: "Only remove messages with attachments"},
 			&dcmd.ArgDef{Switch: "to", Name: "Stop at this msg ID", Type: dcmd.Int},
 		},
 		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
@@ -425,7 +425,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
                         // Check if we should only delete messages with attachments
 			attachments := false
-			if parsed.Switches["attachments"].Value != nil && parsed.Switches["attachments"].Value.(bool) {
+			if parsed.Switches["a"].Value != nil && parsed.Switches["a"].Value.(bool) {
 				attachments = true
 				filtered = true
 			}
