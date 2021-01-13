@@ -82,54 +82,55 @@ func (p *Plugin) AddCommands() {
 			}
 
 			zones := FindZone(parsed.Args[0].Str())
-			var zone string
 			// No zones matching user input
 			if len(zones) < 1 {
 				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
 			}
 			// Multiple zones matching user input
 			note := ""
+			zone := ""
 			if len(zones) > 1 {
 				if len(zones) > 10 {
-					zonesArray := make([]string, len(zones))
-					idx := 0
-					for v, _ := range zones {
-						zonesArray[idx] = v
-						idx++
-					}
 					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
-						return paginatedTimezones(zonesArray)(nil, 1)
+						return paginatedTimezones(zones)(nil, 1)
 					}
 					_, err := paginatedmessages.CreatePaginatedMessage(
-						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zonesArray))
+						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
 					return nil, err
 				}
 
 				matches := ""
-				for v, _ := range zones {
+				for n, v := range zones {
 					if s := StrZone(v); s != "" {
 						matches += s + "\n"
 					}
 				}
-				// "matches" now contains all "zones"
+				// "matches" now contains all zones, as newline-separated list
 
-				zone = parsed.Args[0].Str()
-				// ^ This is the zone the user requested
-				_, exists := zones[zone]
-				if exists {
-					// Matching zone is already stored in "zone", so we just set a note for the user
-					note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
-					// No zones exactly match user input
-				} else {
+				// Check whether the requested zone has an exact match in zones
+				found := false
+				for n, candidate := range zones {
+					if strings.ToLower(candidate) == strings.ToLower(parsed.Args[0].Str()) {
+						found = true
+						// Select matching zone
+						zone = zones[n]
+						// Set a note for the user
+						note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
+					}
+				}
+				if !found {
 					out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
 					return out, nil
 				}
+			} else {
+				zone = zones[0]
 			}
 
-			// Exactly matched zone is stored in "zone"
+			// Here, either `zones` is of length 1, or one zone of several is an exact match
+			// Either way, `zone` is already set to the proper value
 			loc, err := time.LoadLocation(zone)
 			if err != nil {
-				return "Unknown timezone", nil
+				return fmt.Sprintf("Unknown timezone `%s`", zone), nil
 			}
 
 			name, _ := time.Now().In(loc).Zone()
