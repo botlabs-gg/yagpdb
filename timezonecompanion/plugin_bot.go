@@ -99,7 +99,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				matches := ""
-				for n, v := range zones {
+				for _, v := range zones {
 					if s := StrZone(v); s != "" {
 						matches += s + "\n"
 					}
