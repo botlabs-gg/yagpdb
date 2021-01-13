@@ -446,17 +446,34 @@ func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute M
 }
 
 func decideUnmuteRoles(config *Config, currentRoles []int64, mute MuteModel) []string {
-	newMemberRoles := make([]string, 0, len(currentRoles)+len(config.MuteRemoveRoles))
+	newMemberRoles := make([]string, 0)
 
 	gs := bot.State.Guild(true, config.GuildID)
 	gs.RLock()
 	defer gs.RUnlock()
 
-	botState := gs.MemberCopy(true, common.BotUser.ID)
+	botState, err := bot.GetMember(gs.ID, common.BotUser.ID)
 	guildRoles := make([]int64, len(gs.Guild.Roles))
 	for k, e := range gs.Guild.Roles {
 		guildRoles[k] = e.ID
 	}
+
+	if err != nil || botState == nil { // We couldn't find the bot on state, so keep old behaviour
+		for _, r := range currentRoles {
+			if r != config.IntMuteRole() {
+				newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
+			}
+		}
+
+		for _, r := range mute.RemovedRoles {
+			if !common.ContainsInt64Slice(currentRoles, r) && common.ContainsInt64Slice(guildRoles, r) {
+				newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
+			}
+		}
+
+		return newMemberRoles
+	}
+
 	yagHighest := bot.MemberHighestRole(gs, botState)
 
 	for _, v := range currentRoles {
