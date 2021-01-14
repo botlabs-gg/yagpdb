@@ -933,16 +933,12 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, toI
 			continue
 		}
 
-		// If attachments only filter enabled, add only messages with attachments, else behave as usual
-		if attachmentFilterEnable {
-			if len(msgs[i].Attachments) > 0 {
-				toDelete = append(toDelete, msgs[i].ID)
-			} else {
-				continue
-			}
-		} else {
-                	toDelete = append(toDelete, msgs[i].ID)
+		// Check whether to ignore messages without attachments
+		if attachmentFilterEnable && len(msgs[i].Attachments) == 0 {
+			continue
 		}
+
+		toDelete = append(toDelete, msgs[i].ID)
 
 		//log.Println("Deleting", msgs[i].ContentWithMentionsReplaced())
 		if len(toDelete) >= deleteNum || len(toDelete) >= 100 {
