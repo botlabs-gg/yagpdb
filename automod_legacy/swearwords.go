@@ -6,7 +6,7 @@ var BuiltinSwearWords = map[string]bool{
 	"anal":        true,
 	"anus":        true,
 	"arse":        true,
-	"ass":         true,
+	         
 	"b1tch":       true,
 	"ballsack":    true,
 	"bastard":     true,
