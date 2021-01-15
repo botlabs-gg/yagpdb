@@ -100,11 +100,9 @@ var Command = &commands.YAGCommand{
 			if err != nil {
 				return "Something went wrong", nil
 			}
-		} else {
-			return hltbEmbed, nil
 		}
-
-		return nil, nil
+		
+		return hltbEmbed, nil
 	},
 }
 
