@@ -63,6 +63,12 @@ func runFlushNewEvents() error {
 
 	err = common.RedisPool.Do(radix.WithConn("a", func(c radix.Conn) error {
 		for _, v := range eventsTriggeringSoon {
+			isDone := false
+			c.Do(radix.FlatCmd(&isDone, "SISMEMBER", "recently_done_scheduled_events", v.ID))
+			if isDone {
+				continue
+			}
+
 			err := flushEventToRedis(c, v)
 			if err != nil {
 				return err
