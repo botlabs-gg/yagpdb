@@ -133,7 +133,7 @@ func (se *ScheduledEvents) StopBot(wg *sync.WaitGroup) {
 }
 
 func (se *ScheduledEvents) runCheckLoop() {
-	t := time.NewTicker(time.Second * 30)
+	t := time.NewTicker(time.Second)
 	for {
 		select {
 		case wg := <-se.stop:
