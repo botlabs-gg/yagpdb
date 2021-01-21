@@ -478,13 +478,13 @@ func decideUnmuteRoles(config *Config, currentRoles []int64, mute MuteModel) []s
 	yagHighest := bot.MemberHighestRole(gs, botState)
 
 	for _, v := range currentRoles {
-		if v != config.IntMuteRole() && dutil.IsRoleAbove(yagHighest, gs.Role(true, v)) {
+		if v != config.IntMuteRole() && dutil.IsRoleAbove(yagHighest, gs.Role(false, v)) {
 			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
 		}
 	}
 
 	for _, v := range mute.RemovedRoles {
-		if !common.ContainsInt64Slice(currentRoles, v) && common.ContainsInt64Slice(guildRoles, v) && dutil.IsRoleAbove(yagHighest, gs.Role(true, v)) {
+		if !common.ContainsInt64Slice(currentRoles, v) && common.ContainsInt64Slice(guildRoles, v) && dutil.IsRoleAbove(yagHighest, gs.Role(false, v)) {
 			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
 		}
 	}
