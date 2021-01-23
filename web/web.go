@@ -314,7 +314,7 @@ func setupRoutes() *goji.Mux {
 
 	CPMux.Handle(pat.Get("/core/"), coreSettingsHandler)
 	CPMux.Handle(pat.Get("/core"), coreSettingsHandler)
-	CPMux.Handle(pat.Post("/core"), ControllerPostHandler(HandlePostCoreSettings, coreSettingsHandler, CoreConfigPostForm{}, "Updated core settings"))
+	CPMux.Handle(pat.Post("/core"), ControllerPostHandler(HandlePostCoreSettings, coreSettingsHandler, CoreConfigPostForm{}))
 
 	RootMux.Handle(pat.Get("/guild_selection"), RequireSessionMiddleware(ControllerHandler(HandleGetManagedGuilds, "cp_guild_selection")))
 	CPMux.Handle(pat.Get("/guild_selection"), RequireSessionMiddleware(ControllerHandler(HandleGetManagedGuilds, "cp_guild_selection")))
@@ -425,10 +425,12 @@ const (
 )
 
 type SidebarItem struct {
-	Name string
-	URL  string
-	Icon string
-	New  bool
+	Name            string
+	URL             string
+	Icon            string
+	CustomIconImage string
+	New             bool
+	External        bool
 }
 
 var sideBarItems = make(map[string][]*SidebarItem)

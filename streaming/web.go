@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
@@ -21,6 +22,8 @@ type ConextKey int
 const (
 	ConextKeyConfig ConextKey = iota
 )
+
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "streaming_settings_updated", FormatString: "Updated streaming settings"})
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../streaming/assets/streaming.html", "templates/plugins/streaming.html")
@@ -92,8 +95,7 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 		web.CtxLogger(ctx).WithError(err).Error("Failed sending update streaming event")
 	}
 
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, guild.ID, "Updated streaming config.")
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
 	return tmpl.AddAlerts(web.SucessAlert("Saved settings"))
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -135,6 +135,10 @@ func RefreshMuteOverrides(guildID int64) {
 }
 
 func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err error) {
+	if !evt.HasFeatureFlag(featureFlagMuteRoleManaged) {
+		return false, nil
+	}
+
 	var channel *discordgo.Channel
 	if evt.Type == eventsystem.EventChannelCreate {
 		channel = evt.ChannelCreate().Channel
@@ -335,6 +339,10 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 // to avoid weird bugs from happening we lock it so it can only be updated one place per user
 func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 	return func(evt *eventsystem.EventData) (retry bool, err error) {
+		if !evt.HasFeatureFlag(featureFlagMuteEnabled) {
+			return false, nil
+		}
+
 		var userID int64
 		// TODO: add utility functions to the eventdata struct for fetching things like these?
 		if evt.Type == eventsystem.EventGuildMemberAdd {

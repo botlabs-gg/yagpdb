@@ -12,6 +12,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/serverstats/models"
@@ -26,6 +27,8 @@ import (
 var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)
 var WebConfigCache = rcache.NewInt(cacheConfigFetcher, time.Minute)
 
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "serverstats_settings_updated", FormatString: "Updated serverstats settings"})
+
 type FormData struct {
 	Public         bool
 	IgnoreChannels []int64 `valid:"channel,false"`
@@ -33,6 +36,12 @@ type FormData struct {
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../serverstats/assets/serverstats.html", "templates/plugins/serverstats.html")
+
+	web.AddSidebarItem(web.SidebarCategoryTopLevel, &web.SidebarItem{
+		Name: "Stats",
+		URL:  "stats",
+		Icon: "fas fa-chart-bar",
+	})
 
 	statsCPMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/stats"), statsCPMux)
@@ -42,7 +51,7 @@ func (p *Plugin) InitWeb() {
 	statsCPMux.Handle(pat.Get(""), cpGetHandler)
 	statsCPMux.Handle(pat.Get("/"), cpGetHandler)
 
-	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}, "Updated serverstats settings"))
+	statsCPMux.Handle(pat.Post("/settings"), web.ControllerPostHandler(HandleSaveStatsSettings, cpGetHandler, FormData{}))
 	statsCPMux.Handle(pat.Get("/daily_json"), web.APIHandler(publicHandlerJson(HandleStatsJson, false)))
 	statsCPMux.Handle(pat.Get("/charts"), web.APIHandler(publicHandlerJson(HandleStatsCharts, false)))
 
@@ -72,6 +81,10 @@ func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	}
 
 	templateData["Config"] = config
+
+	if confDeprecated.GetBool() {
+		templateData.AddAlerts(web.WarningAlert("Serverstats are deprecated in favor of the superior discord server insights. Recording of new stats may stop at any time and stats will no longer be available next month."))
+	}
 
 	return templateData, nil
 }
@@ -123,6 +136,7 @@ OUTER:
 	err := model.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist("public", "ignore_channels"), boil.Infer())
 	if err == nil {
 		go pubsub.Publish("server_stats_invalidate_cache", ag.ID, nil)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 	}
 
 	WebConfigCache.Delete(int(ag.ID))

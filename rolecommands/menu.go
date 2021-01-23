@@ -11,7 +11,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -23,6 +23,8 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
+
+var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
@@ -96,6 +98,8 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	model.R = model.R.NewStruct()
 	model.R.RoleGroup = group
 
+	ClearRolemenuCacheGS(parsed.GS)
+	recentMenusTracker.AddMenu(model.MessageID)
 	resp, err := NextRoleMenuSetupStep(parsed.Context(), model, true)
 	updateSetupMessage(parsed.Context(), model, resp)
 	return nil, err
@@ -141,6 +145,7 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	if resp != "" {
 		createSetupMessage(parsed.Context(), menu, resp, true)
 	}
+	ClearRolemenuCacheGS(parsed.GS)
 	return nil, err
 }
 
@@ -180,6 +185,7 @@ OUTER:
 
 		rm.State = RoleMenuStateDone
 		rm.UpdateG(ctx, boil.Infer())
+		ClearRolemenuCache(rm.GuildID)
 
 		flagHelp := StrFlags(rm)
 		return fmt.Sprintf("Done setting up! You can delete all the messages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
@@ -190,6 +196,7 @@ OUTER:
 
 	totalCommands := len(commands) - rm.SkipAmount
 	resp = fmt.Sprintf("[%d/%d]\n", numDone, totalCommands)
+	ClearRolemenuCache(rm.GuildID)
 
 	return resp + "React with the emoji for the role command: `" + nextCmd.Name + "`\nNote: The bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
 }
@@ -291,6 +298,8 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 		if rm.OwnMessage {
 			err = UpdateRoleMenuMessage(ctx, rm)
 			if err != nil {
+				ClearRolemenuCache(rm.GuildID)
+
 				code, _ := common.DiscordError(err)
 				switch code {
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
@@ -348,16 +357,26 @@ func findOptionFromEmoji(emoji *discordgo.Emoji, opts []*models.RoleMenuOption) 
 }
 
 func handleReactionAddRemove(evt *eventsystem.EventData) {
-	emoji, _, gID, uID, mID, raAdd := getReactionDetails(evt)
-	if uID == common.BotUser.ID {
+	emoji, _, _, uID, mID, raAdd := getReactionDetails(evt)
+	if uID == common.BotUser.ID || evt.GS == nil {
 		return
 	}
 
-	menu, err := FindRolemenuFull(evt.Context(), mID, gID)
+	_, checkDB := recentMenusTracker.CheckRecentTrackedMenu(mID)
+	if !checkDB {
+		logger.Debug("skipped db check for menus becuase of recent tracked menus")
+		return
+	}
+
+	logger.Debug("CheckDB was true")
+
+	menu, err := GetRolemenuCached(evt.Context(), evt.GS, mID)
 	if err != nil {
-		if err != sql.ErrNoRows {
-			logger.WithError(err).Error("RoleCommandsMenu: Failed finding menu")
-		}
+		logger.WithError(err).Error("RoleCommandsMenu: Failed finding menu")
+		return
+	}
+
+	if menu == nil {
 		return
 	}
 
@@ -643,6 +662,7 @@ func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	ClearRolemenuCacheGS(data.GS)
 
 	return "Deleted. The bot will no longer listen for reactions on this message, you can even make another menu on it.", nil
 }
@@ -666,6 +686,8 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 		return "", err
 	}
 
+	ClearRolemenuCacheGS(data.GS)
+
 	createSetupMessage(data.Context(), menu, "React on the emoji for the option you want to change", true)
 	return nil, nil
 }
@@ -688,6 +710,7 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	ClearRolemenuCacheGS(data.GS)
 
 	return "Menu marked as done", nil
 }
@@ -712,6 +735,7 @@ func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discord
 		if err != nil {
 			return "", err
 		}
+		ClearRolemenuCache(rm.GuildID)
 
 		return "Editing `" + option.R.RoleCommand.Name + "`, select the new emoji for it", nil
 	case RoleMenuStateEditingOptionReplacing:
@@ -738,6 +762,7 @@ func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discord
 
 		rm.State = RoleMenuStateDone
 		rm.UpdateG(ctx, boil.Whitelist("state"))
+		ClearRolemenuCache(rm.GuildID)
 
 		go common.BotSession.MessageReactionAdd(rm.ChannelID, rm.MessageID, emoji.APIName())
 
@@ -789,6 +814,8 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed creating setup message for menu")
 		return
 	}
+
+	recentMenusTracker.AddMenu(msg.ID)
 
 	if updateModel {
 		rm.SetupMSGID = msg.ID

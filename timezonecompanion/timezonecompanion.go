@@ -4,10 +4,10 @@ package timezonecompanion
 //go:generate go run generate/generatemappings.go
 
 import (
+	"github.com/jonas747/when"
+	"github.com/jonas747/when/rules"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/timezonecompanion/trules"
-	"github.com/olebedev/when"
-	"github.com/olebedev/when/rules"
 )
 
 type Plugin struct {

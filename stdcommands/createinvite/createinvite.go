@@ -28,11 +28,9 @@ var Command = &commands.YAGCommand{
 
 		channelID := int64(0)
 		for _, v := range channels {
-			if channelID == 0 || v.Type != discordgo.ChannelTypeGuildVoice {
+			if v.Type == discordgo.ChannelTypeGuildText {
 				channelID = v.ID
-				if v.Type != discordgo.ChannelTypeGuildVoice {
-					break
-				}
+				break
 			}
 		}
 
@@ -41,8 +39,10 @@ var Command = &commands.YAGCommand{
 		}
 
 		invite, err := common.BotSession.ChannelInviteCreate(channelID, discordgo.Invite{
-			MaxAge:  120,
-			MaxUses: 1,
+			MaxAge:    120,
+			MaxUses:   1,
+			Temporary: true,
+			Unique:    true,
 		})
 
 		if err != nil {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/reputation/models"
 	"github.com/jonas747/yagpdb/web"
@@ -48,6 +49,11 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 	}
 }
 
+var (
+	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reputation_settings_updated", FormatString: "Updated reputation settings"})
+	panelLogKeyResetReputation = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reputation_reset_reputation", FormatString: "Reset reputation"})
+)
+
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../reputation/assets/reputation_settings.html", "templates/plugins/reputation_settings.html")
 	web.LoadHTMLTemplate("../../reputation/assets/reputation_leaderboard.html", "templates/plugins/reputation_leaderboard.html")
@@ -66,9 +72,9 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Handle(pat.Get(""), mainGetHandler)
 	subMux.Handle(pat.Get("/"), mainGetHandler)
-	subMux.Handle(pat.Post(""), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputation config"))
-	subMux.Handle(pat.Post("/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}, "Updated reputation config"))
-	subMux.Handle(pat.Post("/reset_users"), web.ControllerPostHandler(HandleResetReputation, mainGetHandler, nil, "Reset reputation"))
+	subMux.Handle(pat.Post(""), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}))
+	subMux.Handle(pat.Post("/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}))
+	subMux.Handle(pat.Post("/reset_users"), web.ControllerPostHandler(HandleResetReputation, mainGetHandler, nil))
 	subMux.Handle(pat.Get("/logs"), web.APIHandler(HandleLogsJson))
 
 	web.ServerPublicMux.Handle(pat.Get("/reputation/leaderboard"), web.RenderHandler(HandleGetReputation, "cp_reputation_leaderboard"))
@@ -114,6 +120,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 
 	if err == nil {
 		featureflags.MarkGuildDirty(activeGuild.ID)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
 	}
 
 	return
@@ -124,6 +131,9 @@ func HandleResetReputation(w http.ResponseWriter, r *http.Request) (templateData
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reputation"
 
 	_, err = models.ReputationUsers(qm.Where("guild_id = ?", activeGuild.ID)).DeleteAll(r.Context(), common.PQ)
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyResetReputation))
+	}
 	return templateData, err
 }
 

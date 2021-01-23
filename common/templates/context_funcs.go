@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -229,8 +229,15 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 
 	// pass some data
 	if len(data) > 1 {
-		c.Data["TemplateArgs"], _ = Dictionary(data...)
+		dict, _ := Dictionary(data...)
+		c.Data["TemplateArgs"] = dict
+		if !c.checkSafeDictNoRecursion(dict, 0) {
+			return nil, errors.New("trying to pass the entire current context data in as templateargs, this is not needed, just use nil and access all other data normally")
+		}
 	} else if len(data) == 1 {
+		if cast, ok := data[0].(map[string]interface{}); ok && reflect.DeepEqual(cast, c.Data) {
+			return nil, errors.New("trying to pass the entire current context data in as templateargs, this is not needed, just use nil and access all other data normally")
+		}
 		c.Data["TemplateArgs"] = data[0]
 	}
 
@@ -250,6 +257,58 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		return m.ID, err
 	}
 	return "", err
+}
+
+func (c *Context) checkSafeStringDictNoRecursion(d SDict, n int) bool {
+	if n > 1000 {
+		return false
+	}
+
+	for _, v := range d {
+		if cast, ok := v.(Dict); ok {
+			if !c.checkSafeDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if reflect.DeepEqual(v, c.Data) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
+	if n > 1000 {
+		return false
+	}
+
+	for _, v := range d {
+		if cast, ok := v.(Dict); ok {
+			if !c.checkSafeDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if reflect.DeepEqual(v, c.Data) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {

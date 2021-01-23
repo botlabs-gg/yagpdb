@@ -16,6 +16,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
@@ -26,6 +27,12 @@ type CtxKey int
 
 const (
 	CurrentConfig CtxKey = iota
+)
+
+var (
+	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_added_feed", FormatString: "Added youtube feed from %s"})
+	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_removed_feed", FormatString: "Removed youtube feed from %s"})
+	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_updated_feed", FormatString: "Updated youtube feed from %s"})
 )
 
 type Form struct {
@@ -57,13 +64,13 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Get("/"), mainGetHandler)
 	ytMux.Handle(pat.Get(""), mainGetHandler)
 
-	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new youtube feed")
+	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{})
 
 	ytMux.Handle(pat.Post(""), addHandler)
 	ytMux.Handle(pat.Post("/"), addHandler)
-	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, Form{}, "Updated a youtube feed"))
-	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a youtube feed"))
-	ytMux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a youtube feed"))
+	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, Form{}))
+	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
+	ytMux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 
 	// The handler from pubsubhub
 	web.RootMux.Handle(pat.New("/yt_new_upload/"+confWebsubVerifytoken.GetString()), http.HandlerFunc(p.HandleFeedUpdate))
@@ -103,13 +110,15 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData.AddAlerts(web.ErrorAlert("Neither channelid or username specified.")), errors.New("ChannelID and username not specified")
 	}
 
-	_, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, data.YoutubeChannelID, data.YoutubeChannelUser, data.MentionEveryone)
+	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, data.YoutubeChannelID, data.YoutubeChannelUser, data.MentionEveryone)
 	if err != nil {
 		if err == ErrNoChannel {
 			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("Channel not found")
 		}
 		return templateData, err
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.YoutubeChannelName}))
 
 	return templateData, nil
 }
@@ -155,6 +164,9 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	sub.ChannelID = discordgo.StrID(data.DiscordChannel)
 
 	err = common.GORM.Save(sub).Error
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.YoutubeChannelName}))
+	}
 	return
 }
 
@@ -167,6 +179,8 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (templateD
 	if err != nil {
 		return
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.YoutubeChannelName}))
 
 	p.MaybeRemoveChannelWatch(sub.YoutubeChannelID)
 	return
@@ -218,6 +232,10 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed parsing feed body: ", string(result))
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if parsed.VideoId == "" || parsed.ChannelID == "" {
 		return
 	}
 
