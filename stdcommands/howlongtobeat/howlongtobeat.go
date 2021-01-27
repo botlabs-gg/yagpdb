@@ -106,7 +106,6 @@ var Command = &commands.YAGCommand{
 
 		return nil, nil
 	},
-	},
 }
 
 func embedCreator(hltbQuery []hltb, i int, paginated bool) *discordgo.MessageEmbed {
