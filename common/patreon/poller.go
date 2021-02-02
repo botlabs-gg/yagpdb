@@ -134,7 +134,7 @@ func (p *Poller) Poll() {
 	patrons := make([]*Patron, 0, 30)
 
 	for {
-		membersResponse, err := p.client.FetchMembers(campaignId, 0, cursor)
+		membersResponse, err := p.client.FetchMembers(campaignId, 200, cursor)
 		// pledgesResponse, err := p.client.FetchPledges(campaignId,
 		// patreon.WithPageSize(30),
 		// patreon.WithCursor(cursor))
@@ -192,7 +192,7 @@ func (p *Poller) Poll() {
 			}
 
 			patrons = append(patrons, patron)
-			// logger.Printf("%s is pledging %d cents, Discord: %d\r\n", patron.Name, patron.AmountCents, patron.DiscordID)
+			// logger.Printf("%s is pledging %d cents, Discord: %d\n", patron.Name, patron.AmountCents, patron.DiscordID)
 		}
 
 		// Get the link to the next page of pledges
@@ -203,8 +203,9 @@ func (p *Poller) Poll() {
 		}
 
 		cursor = nextCursor
-		// logger.Println("nextlink: ", page, ": ", cursor)
+		// logger.Println("nextlink: ", page, ": ", cursor, ", current len: ", len(patrons))
 		page++
+		time.Sleep(time.Second)
 	}
 
 	// Swap the stored ones, this dosent mutate the existing returned slices so we dont have to do any copying on each request woo
