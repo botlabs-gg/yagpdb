@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1277,4 +1278,123 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interface{}, error) {
+	if c.IncreaseCheckCallCounterPremium("sortfuncs", 1, 3) {
+		return "", ErrTooManyCalls
+	}
+
+	var dict SDict
+	var err error
+	switch len(sortargs) {
+	case 0:
+		input := make(map[string]interface{}, 3)
+		input["reverse"] = false
+		input["subslices"] = false
+		input["emptyslices"] = false
+
+		dict, err = StringKeyDictionary(input)
+		if err != nil {
+			return "", err
+		}
+	case 1:
+		dict, err = StringKeyDictionary(sortargs[0])
+		if err != nil {
+			return "", err
+		}
+	default:
+		dict, err = StringKeyDictionary(sortargs...)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	var numberSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice []interface{}
+
+	for _, v := range slice {
+		switch t := v.(type) {
+		case int, int64, float64:
+			numberSlice = append(numberSlice, t)
+		case string:
+			stringSlice = append(stringSlice, t)
+		case time.Time:
+			timeSlice = append(timeSlice, t)
+		case *time.Time:
+			timeSlice = append(timeSlice, *t)
+		default:
+			v := reflect.ValueOf(t)
+			switch v.Kind() {
+			case reflect.Slice:
+				csliceSlice = append(csliceSlice, t)
+			case reflect.Map:
+				mapSlice = append(mapSlice, t)
+			default:
+				defaultSlice = append(defaultSlice, t)
+			}
+		}
+	}
+
+	if dict.Get("reverse") == true {
+		sort.Slice(numberSlice, func(i, j int) bool { return ToFloat64(numberSlice[i]) > ToFloat64(numberSlice[j]) })
+		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) > ToString(stringSlice[j]) })
+		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[i].(time.Time).Before(timeSlice[j].(time.Time)) })
+		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) > getLen(csliceSlice[j]) })
+		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) > getLen(mapSlice[j]) })
+	} else {
+		sort.Slice(numberSlice, func(i, j int) bool { return ToFloat64(numberSlice[i]) < ToFloat64(numberSlice[j]) })
+		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) < ToString(stringSlice[j]) })
+		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[j].(time.Time).Before(timeSlice[i].(time.Time)) })
+		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) < getLen(csliceSlice[j]) })
+		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) < getLen(mapSlice[j]) })
+	}
+
+	if dict.Get("subslices") == true {
+		if dict.Get("emptyslices") == true {
+			outputSlice = append(outputSlice, numberSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice)
+		} else {
+			if len(numberSlice) > 0 {
+				outputSlice = append(outputSlice, numberSlice)
+			}
+
+			if len(stringSlice) > 0 {
+				outputSlice = append(outputSlice, stringSlice)
+			}
+
+			if len(timeSlice) > 0 {
+				outputSlice = append(outputSlice, timeSlice)
+			}
+
+			if len(csliceSlice) > 0 {
+				outputSlice = append(outputSlice, csliceSlice)
+			}
+
+			if len(mapSlice) > 0 {
+				outputSlice = append(outputSlice, mapSlice)
+			}
+
+			if len(defaultSlice) > 0 {
+				outputSlice = append(outputSlice, defaultSlice)
+			}
+		}
+	} else {
+		outputSlice = append(outputSlice, numberSlice...)
+		outputSlice = append(outputSlice, stringSlice...)
+		outputSlice = append(outputSlice, timeSlice...)
+		outputSlice = append(outputSlice, csliceSlice...)
+		outputSlice = append(outputSlice, mapSlice...)
+		outputSlice = append(outputSlice, defaultSlice...)
+	}
+
+	return outputSlice, nil
+}
+
+func getLen(from interface{}) int {
+	v := reflect.ValueOf(from)
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array, reflect.Map:
+		return v.Len()
+	default:
+		return 0
+	}
 }
