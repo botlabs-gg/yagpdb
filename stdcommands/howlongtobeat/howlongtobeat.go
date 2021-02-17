@@ -109,6 +109,7 @@ var Command = &commands.YAGCommand{
 }
 
 func embedCreator(hltbQuery []hltb, i int, paginated bool) *discordgo.MessageEmbed {
+	hltbURL := fmt.Sprintf("%s://%s", hltbScheme, hltbHost)
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name: hltbQuery[i].GameTitle,
@@ -120,7 +121,7 @@ func embedCreator(hltbQuery []hltb, i int, paginated bool) *discordgo.MessageEmb
 			&discordgo.MessageEmbedField{Name: hltbQuery[i].MainStory[0], Value: hltbQuery[i].MainStory[1]},
 		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: hltbQuery[i].ImageURL,
+			URL: hltbURL + hltbQuery[i].ImageURL,
 		},
 	}
 	if len(hltbQuery[i].MainExtra) > 0 {
