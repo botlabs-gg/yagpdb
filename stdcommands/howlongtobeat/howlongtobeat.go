@@ -117,12 +117,13 @@ func embedCreator(hltbQuery []hltb, i int, paginated bool) *discordgo.MessageEmb
 		},
 
 		Color: int(rand.Int63n(16777215)),
-		Fields: []*discordgo.MessageEmbedField{
-			&discordgo.MessageEmbedField{Name: hltbQuery[i].MainStory[0], Value: hltbQuery[i].MainStory[1]},
-		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: hltbURL + hltbQuery[i].ImageURL,
 		},
+	}
+	if len(hltbQuery[i].MainStory) > 0 {
+		embed.Fields = append(embed.Fields,
+			&discordgo.MessageEmbedField{Name: hltbQuery[i].MainStory[0], Value: hltbQuery[i].MainStory[1]})
 	}
 	if len(hltbQuery[i].MainExtra) > 0 {
 		embed.Fields = append(embed.Fields,
