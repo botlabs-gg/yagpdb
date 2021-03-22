@@ -21,8 +21,14 @@ require (
 	github.com/getsentry/sentry-go v0.7.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.0.4 // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/google/safebrowsing v0.0.0-20190624211811-bbf0d20d26b3
 	github.com/gorilla/schema v1.1.0
+	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmoiron/sqlx v1.2.0
@@ -30,7 +36,7 @@ require (
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
 	github.com/jonas747/dcmd v1.2.4
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.5.2
+	github.com/jonas747/discordgo v1.5.3-0.20210322082229-bd0ead5864e9
 	github.com/jonas747/dshardorchestrator/v2 v2.0.1
 	github.com/jonas747/dstate/v2 v2.0.2-0.20200910172413-04c84702ac80
 	github.com/jonas747/dutil v0.0.3
@@ -46,6 +52,7 @@ require (
 	github.com/karlseguin/rcache v1.0.1
 	github.com/lib/pq v1.2.1-0.20191011153232-f91d3411e481
 	github.com/lunixbochs/vtclean v1.0.0
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mediocregopher/radix/v3 v3.5.0
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/miolini/datacounter v0.0.0-20190724021726-aa48df3a02c1
@@ -70,10 +77,11 @@ require (
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
-	golang.org/x/net v0.0.0-20201209123823-ac852fbbde11
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
+	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	google.golang.org/api v0.40.0
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
