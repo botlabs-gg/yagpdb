@@ -17,7 +17,7 @@ import (
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func (p *Plugin) AddCommands() {
@@ -161,6 +161,7 @@ func (p *Plugin) BotInit() {
 	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
 	pubsub.AddHandler("role_commands_evict_menus", func(evt *pubsub.Event) {
 		ClearRolemenuCache(evt.TargetGuildInt)
+		recentMenusTracker.GuildReset(evt.TargetGuildInt)
 	}, nil)
 }
 

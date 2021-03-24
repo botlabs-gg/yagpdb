@@ -20,14 +20,18 @@ type RecentMenusTracker struct {
 	Started     time.Time
 	EvictionAge time.Duration
 
+	// If a guild created a menu from another source this gets set to that time
+	GuildStartTimes map[int64]time.Time
+
 	mu sync.RWMutex
 }
 
 func NewRecentMenusTracker(evictionTreshold time.Duration) *RecentMenusTracker {
 	tracker := &RecentMenusTracker{
-		RecentMenus: make([]*RecentTrackedMenu, 0),
-		Started:     time.Now(),
-		EvictionAge: evictionTreshold,
+		RecentMenus:     make([]*RecentTrackedMenu, 0),
+		Started:         time.Now(),
+		EvictionAge:     evictionTreshold,
+		GuildStartTimes: make(map[int64]time.Time),
 	}
 
 	go tracker.RunLoop()
@@ -55,7 +59,7 @@ func (r *RecentMenusTracker) AddMenu(msgID int64) {
 	})
 }
 
-func (r *RecentMenusTracker) CheckRecentTrackedMenu(msgID int64) (outOfTimeRange bool, checkDB bool) {
+func (r *RecentMenusTracker) CheckRecentTrackedMenu(guildID int64, msgID int64) (outOfTimeRange bool, checkDB bool) {
 	timestamp := bot.SnowflakeToTime(msgID)
 
 	if timestamp.Before(r.Started) || time.Since(timestamp) > r.EvictionAge {
@@ -64,6 +68,12 @@ func (r *RecentMenusTracker) CheckRecentTrackedMenu(msgID int64) (outOfTimeRange
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+
+	if t, ok := r.GuildStartTimes[guildID]; ok {
+		if timestamp.Before(t) {
+			return true, true
+		}
+	}
 
 	for _, v := range r.RecentMenus {
 		if v.MsgID == msgID {
@@ -74,6 +84,13 @@ func (r *RecentMenusTracker) CheckRecentTrackedMenu(msgID int64) (outOfTimeRange
 
 	// no need to check db, no menu found here
 	return false, false
+}
+
+func (r *RecentMenusTracker) GuildReset(guildID int64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.GuildStartTimes[guildID] = time.Now()
 }
 
 func (r *RecentMenusTracker) RunLoop() {

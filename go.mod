@@ -18,6 +18,7 @@ require (
 	github.com/dpatrie/urbandictionary v0.0.0-20151214192647-3b38cbf4cb81
 	github.com/ericlagergren/decimal v0.0.0-20190729173012-f05d33913e5a // indirect
 	github.com/fatih/structs v1.1.0
+	github.com/friendsofgo/errors v0.9.2
 	github.com/getsentry/sentry-go v0.7.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
@@ -74,7 +75,10 @@ require (
 	github.com/tkuchiki/go-timezone v0.1.5-0.20200504234801-f58f9e3b062f
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/volatiletech/null v8.0.0+incompatible
+	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
+	github.com/volatiletech/sqlboiler/v4 v4.5.0
+	github.com/volatiletech/strmangle v0.0.1
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670
