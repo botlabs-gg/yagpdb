@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS premium_slots (
 	duration_remaining BIGINT NOT NULL
 );
 `, `
+ALTER TABLE premium_slots ADD COLUMN IF NOT EXISTS tier INT NOT NULL DEFAULT 0;
+`, `
 CREATE TABLE IF NOT EXISTS premium_codes (
 	id BIGSERIAL PRIMARY KEY,
 

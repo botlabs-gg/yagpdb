@@ -9,14 +9,15 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const (
@@ -26,6 +27,11 @@ const (
 	RedisKeyPremiumGuilds          = "premium_activated_guilds"
 	RedisKeyPremiumGuildsTmp       = "premium_activated_guilds_tmp"
 	RedisKeyPremiumGuildLastActive = "premium_guild_last_active"
+)
+
+const (
+	PremiumTierPremium = 0
+	PremiumTierPlus    = 1
 )
 
 var (
@@ -291,7 +297,7 @@ func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID i
 	return nil
 }
 
-func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID int64, source, title, message string, sourceSlotID int64, duration time.Duration) (*models.PremiumSlot, error) {
+func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID int64, source, title, message string, sourceSlotID int64, duration time.Duration, tier int) (*models.PremiumSlot, error) {
 	slot := &models.PremiumSlot{
 		UserID:   userID,
 		Source:   source,
@@ -303,6 +309,7 @@ func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID in
 		FullDuration:      int64(duration),
 		Permanent:         duration <= 0,
 		DurationRemaining: int64(duration),
+		Tier:              tier,
 	}
 
 	err := slot.Insert(ctx, exec, boil.Infer())
@@ -384,6 +391,12 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 	if err != nil {
 		return errors.WithStackIf(err)
 	}
+
+	err = featureflags.UpdatePluginFeatureFlags(guildID, &Plugin{})
+	if err != nil {
+		return errors.WithMessage(err, "failed updating plugin feature flags")
+	}
+
 	return err
 }
 
@@ -459,4 +472,40 @@ func handleRemovedPremiumGuild(evt *schEventsModels.ScheduledEvent, data interfa
 	}
 
 	return false, nil
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+
+const (
+	featureFlagPremiumPlus = "premium_plus"
+	featureFlagPremiumFull = "premium_full"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+	slot, err := models.PremiumSlots(qm.Where("guild_id = ?", guildID)).OneG(context.Background())
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// no slot attached to this guild
+			return nil, nil
+		}
+
+		return nil, errors.WithMessage(err, "premium.UpdateFeatureFlags")
+	}
+
+	if slot.Tier == PremiumTierPremium {
+		return []string{featureFlagPremiumFull, featureFlagPremiumPlus}, nil
+	} else if slot.Tier == PremiumTierPlus {
+		return []string{featureFlagPremiumPlus}, nil
+	}
+
+	// if we get here something has gone wrong somewhere
+	logger.WithField("guild", guildID).WithField("slot_id", slot.ID).Errorf("Unknown premium tier: %d", slot.Tier)
+	return nil, nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		featureFlagPremiumFull, // set if this server has the highest premium tier
+		featureFlagPremiumPlus, // set if this server has the lower premium tier
+	}
 }
