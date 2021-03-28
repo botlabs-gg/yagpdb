@@ -2,6 +2,7 @@ package premium
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"html"
 	"html/template"
@@ -12,7 +13,10 @@ import (
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+
 	"goji.io"
 	"goji.io/pat"
 )
@@ -46,6 +50,8 @@ func (p *Plugin) InitWeb() {
 	submux.Handle(pat.Post("/lookupcode"), tollbooth.LimitHandler(limiter, web.ControllerPostHandler(HandlePostLookupCode, mainHandler, nil)))
 	submux.Handle(pat.Post("/redeemcode"), tollbooth.LimitHandler(limiter, web.ControllerPostHandler(HandlePostRedeemCode, mainHandler, nil)))
 	submux.Handle(pat.Post("/updateslot/:slotID"), web.ControllerPostHandler(HandlePostUpdateSlot, mainHandler, UpdateData{}))
+
+	web.CPMux.Handle(pat.Post("/premium/detach"), web.ControllerPostHandler(HandlePostDetachGuildSlot, mainHandler, nil))
 }
 
 // Add in a template var wether the guild is premium or not
@@ -181,7 +187,11 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 			discrim = user.Discriminator
 		}
 
-		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Premium active and provided by <code>%s#%s (%d)</p></code>\n\n%s", html.EscapeString(username), html.EscapeString(discrim), premiumBy, footer))
+		detForm := fmt.Sprintf(`<form data-async-form action="/manage/%d/premium/detach">
+			<button type="submit" class="btn btn-danger">Detach premium slot</button>
+		</form>`, ag.ID)
+
+		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Premium active and provided by <code>%s#%s (%d)</p></code>\n\n%s%s", html.EscapeString(username), html.EscapeString(discrim), premiumBy, footer, detForm))
 		templateData["WidgetEnabled"] = true
 
 		return templateData, err
@@ -195,4 +205,21 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 func (p *Plugin) ServerHomeWidgetOrder() int {
 	return 10
+}
+
+func HandlePostDetachGuildSlot(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+
+	slot, err := models.PremiumSlots(qm.Where("guild_id = ?", activeGuild.ID)).OneG(r.Context())
+	if err != nil {
+		if err == sql.ErrNoRows {
+			templateData.AddAlerts(web.ErrorAlert("No premium slot attached to this server"))
+			return templateData, nil
+		}
+
+		return templateData, err
+	}
+
+	err = DetachSlotFromGuild(r.Context(), slot.ID, slot.UserID)
+	return templateData, err
 }
