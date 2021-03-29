@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/didip/tollbooth"
@@ -170,31 +171,51 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	templateData["WidgetTitle"] = "Premium Status"
 
-	footer := "<p><a href=\"/premium\">Manage your premium slots</a></p>"
+	footer := "<p><a href=\"/premium\">Manage your user premium slots</a></p>"
 
 	if ContextPremium(r.Context()) {
-		username := ""
-		discrim := ""
+		body := strings.Builder{}
 
-		premiumBy, err := PremiumProvidedBy(ag.ID)
-		if err != nil {
-			return templateData, err
-		}
+		for _, v := range GuildPremiumSources {
+			tier, status, err := v.GuildPremiumDetails(ag.ID)
+			if err != nil {
+				return nil, err
+			}
 
-		user, err := common.BotSession.User(premiumBy)
-		if err == nil {
-			username = user.Username
-			discrim = user.Discriminator
-		}
+			if tier <= PremiumTierNone {
+				continue
+			}
 
-		detForm := fmt.Sprintf(`<form data-async-form action="/manage/%d/premium/detach">
+			if _, ok := v.(*SlotGuildPremiumSource); ok {
+				// special handling for this since i was a bit lazy
+				username := ""
+				discrim := ""
+
+				premiumBy, err := PremiumProvidedBy(ag.ID)
+				if err != nil {
+					return templateData, err
+				}
+
+				user, err := common.BotSession.User(premiumBy)
+				if err == nil {
+					username = user.Username
+					discrim = user.Discriminator
+				}
+
+				detForm := fmt.Sprintf(`<form data-async-form action="/manage/%d/premium/detach">
 			<button type="submit" class="btn btn-danger">Detach premium slot</button>
 		</form>`, ag.ID)
 
-		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Premium active and provided by <code>%s#%s (%d)</p></code>\n\n%s%s", html.EscapeString(username), html.EscapeString(discrim), premiumBy, footer, detForm))
-		templateData["WidgetEnabled"] = true
+				body.WriteString(fmt.Sprintf("<p>Premium tier %s active and provided by user <code>%s#%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), html.EscapeString(discrim), premiumBy, detForm))
+			} else {
+				body.WriteString(fmt.Sprintf("<p>Premium tier %s active and provided by %s: %s</p>", tier.String(), v.Name(), status))
+			}
+		}
 
-		return templateData, err
+		templateData["WidgetEnabled"] = true
+		templateData["WidgetBody"] = template.HTML(body.String() + footer)
+
+		return templateData, nil
 	} else {
 		templateData["WidgetDisabled"] = true
 		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Premium not active on this server :(</p>\n\n%s", footer))
