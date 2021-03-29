@@ -19,6 +19,15 @@ type PluginWithFeatureFlags interface {
 	AllFeatureFlags() []string
 }
 
+// this provides a way to batch update flags initially during init
+// for example with premium, we can get all the premium guilds in 1 db query
+// as opposed to querying each individual guild individually
+type PluginWithBatchFeatureFlags interface {
+	PluginWithFeatureFlags
+
+	UpdateFeatureFlagsBatch() (map[int64][]string, error)
+}
+
 func keyGuildFlags(guildID int64) string {
 	return fmt.Sprintf("f_flags:%d", guildID)
 }
@@ -70,7 +79,7 @@ func (c *flagCache) getGuildFlags(guildID int64) ([]string, error) {
 	return result, nil
 }
 
-func (c *flagCache) initCahceBatch(guilds []int64) error {
+func (c *flagCache) initCacheBatch(guilds []int64) error {
 	c.l.Lock()
 	defer c.l.Unlock()
 
@@ -135,7 +144,7 @@ func BatchInitCache(guilds []int64) error {
 		go func(cacheID int, guildsToFetch []int64) {
 			defer wg.Done()
 
-			err := caches[cacheID].initCahceBatch(toFetchHere)
+			err := caches[cacheID].initCacheBatch(toFetchHere)
 			if err != nil {
 				logger.WithError(err).Error("failed preloading flag cache")
 			}
@@ -283,4 +292,18 @@ func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 	}
 
 	return nil
+}
+
+// in some scenarios manual flag management is usefull and since updating flags
+// dosen't trample over unknown flags its completely reliable aswelll
+func AddManualGuildFlags(guildID int64, flags ...string) error {
+	err := common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{keyGuildFlags(guildID)}, flags...)...))
+	return err
+}
+
+// in some scenarios manual flag management is usefull and since updating flags
+// dosen't trample over unknown flags its completely reliable aswelll
+func RemoveManualGuildFlags(guildID int64, flags ...string) error {
+	err := common.RedisPool.Do(radix.Cmd(nil, "SREM", append([]string{keyGuildFlags(guildID)}, flags...)...))
+	return err
 }
