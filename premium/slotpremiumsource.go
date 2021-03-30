@@ -190,6 +190,11 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 		return errors.WithStackIf(err)
 	}
 
+	err = featureflags.UpdatePluginFeatureFlags(oldGuildID, &Plugin{})
+	if err != nil {
+		return errors.WithMessage(err, "failed updating plugin feature flags")
+	}
+
 	return nil
 }
 

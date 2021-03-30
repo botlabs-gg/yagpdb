@@ -52,7 +52,7 @@ func (p *Plugin) InitWeb() {
 	submux.Handle(pat.Post("/redeemcode"), tollbooth.LimitHandler(limiter, web.ControllerPostHandler(HandlePostRedeemCode, mainHandler, nil)))
 	submux.Handle(pat.Post("/updateslot/:slotID"), web.ControllerPostHandler(HandlePostUpdateSlot, mainHandler, UpdateData{}))
 
-	web.CPMux.Handle(pat.Post("/premium/detach"), web.ControllerPostHandler(HandlePostDetachGuildSlot, mainHandler, nil))
+	web.CPMux.Handle(pat.Post("/premium/detach"), web.ControllerPostHandler(HandlePostDetachGuildSlot, web.RenderHandler(nil, "cp_premium_detach"), nil))
 }
 
 // Add in a template var wether the guild is premium or not
@@ -206,9 +206,9 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 			<button type="submit" class="btn btn-danger">Detach premium slot</button>
 		</form>`, ag.ID)
 
-				body.WriteString(fmt.Sprintf("<p>Premium tier %s active and provided by user <code>%s#%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), html.EscapeString(discrim), premiumBy, detForm))
+				body.WriteString(fmt.Sprintf("<p>Premium tier <b>%s</b> active and provided by user <code>%s#%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), html.EscapeString(discrim), premiumBy, detForm))
 			} else {
-				body.WriteString(fmt.Sprintf("<p>Premium tier %s active and provided by %s: %s</p>", tier.String(), v.Name(), status))
+				body.WriteString(fmt.Sprintf("<p class=\"mt-3\">Premium tier <b>%s</b> active and provided by %s: %s</p>", tier.String(), v.Name(), status))
 			}
 		}
 
