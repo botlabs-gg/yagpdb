@@ -9,6 +9,8 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // PluginWithFeatureFlags is a interface for plugins that provide their own feature-flags
@@ -202,17 +204,15 @@ func GuildHasFlagOrLogError(guildID int64, flag string) bool {
 	return hasFlag
 }
 
+var metricsFeatureFlagsUpdated = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "yagpdb_featureflags_updated_guilds_total",
+	Help: "Guilds featureflags has been updated for",
+})
+
 const evictCachePubSubEvent = "feature_flags_updated"
 
 // UpdateGuildFlags updates the provided guilds feature flags
 func UpdateGuildFlags(guildID int64) error {
-	keyLock := fmt.Sprintf("feature_flags_updating:%d", guildID)
-	err := common.BlockingLockRedisKey(keyLock, time.Second*60, 60)
-	if err != nil {
-		return errors.WithStackIf(err)
-	}
-
-	defer common.UnlockRedisKey(keyLock)
 	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
 
 	var lastErr error
@@ -224,6 +224,8 @@ func UpdateGuildFlags(guildID int64) error {
 			}
 		}
 	}
+
+	metricsFeatureFlagsUpdated.Inc()
 
 	return lastErr
 }
@@ -298,6 +300,10 @@ func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 // dosen't trample over unknown flags its completely reliable aswelll
 func AddManualGuildFlags(guildID int64, flags ...string) error {
 	err := common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{keyGuildFlags(guildID)}, flags...)...))
+	if err == nil {
+		pubsub.PublishLogErr(evictCachePubSubEvent, guildID, nil)
+	}
+
 	return err
 }
 
@@ -305,5 +311,9 @@ func AddManualGuildFlags(guildID int64, flags ...string) error {
 // dosen't trample over unknown flags its completely reliable aswelll
 func RemoveManualGuildFlags(guildID int64, flags ...string) error {
 	err := common.RedisPool.Do(radix.Cmd(nil, "SREM", append([]string{keyGuildFlags(guildID)}, flags...)...))
+	if err == nil {
+		pubsub.PublishLogErr(evictCachePubSubEvent, guildID, nil)
+	}
+
 	return err
 }
