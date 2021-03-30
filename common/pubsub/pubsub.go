@@ -76,7 +76,15 @@ func Publish(evt string, target int64, data interface{}) error {
 	}
 
 	value := fmt.Sprintf("%d,%s,%s", target, evt, dataStr)
+	metricsPubsubSent.With(prometheus.Labels{"event": evt}).Inc()
 	return common.RedisPool.Do(radix.Cmd(nil, "PUBLISH", "events", value))
+}
+
+func PublishLogErr(evt string, target int64, data interface{}) {
+	err := Publish(evt, target, data)
+	if err != nil {
+		logger.WithError(err).WithField("target", target).WithField("evt", evt).Error("failed sending pubsub")
+	}
 }
 
 func PollEvents() {
@@ -99,6 +107,16 @@ var metricsPubsubEvents = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Number of pubsub events handled",
 }, []string{"event"})
 
+var metricsPubsubSent = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_pubsub_events_sent_total",
+	Help: "YAGPDB pubsub sent events",
+}, []string{"event"})
+
+var metricsPubsubSkipped = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_pubsub_events_skipped__total",
+	Help: "YAGPDB pubsub skipped events (unmatched target, unknown evt etc)",
+}, []string{"event"})
+
 func runPollEvents() error {
 	logger.Info("Listening for pubsub events")
 
@@ -118,7 +136,6 @@ func runPollEvents() error {
 		}
 
 		handlersMU.RLock()
-		logger.WithField("evt", string(msg.Message)).Debug("Handling PubSub event")
 		handleEvent(string(msg.Message))
 		handlersMU.RUnlock()
 	}
@@ -142,6 +159,7 @@ func handleEvent(evt string) {
 	parsedTarget, _ := strconv.ParseInt(target, 10, 64)
 	if FilterFunc != nil {
 		if !FilterFunc(parsedTarget) {
+			metricsPubsubSkipped.With(prometheus.Labels{"event": name}).Inc()
 			return
 		}
 	}
@@ -150,6 +168,7 @@ func handleEvent(evt string) {
 	if !ok && data != "" {
 		// No handler for this event
 		logger.WithField("evt", name).Debug("No handler for pubsub event")
+		metricsPubsubSkipped.With(prometheus.Labels{"event": name}).Inc()
 		return
 	}
 
