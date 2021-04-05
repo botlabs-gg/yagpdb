@@ -24,7 +24,10 @@ import (
 
 type CtxKey int
 
-var CtxKeyIsPremium CtxKey = 1
+var (
+	CtxKeyIsPremium   CtxKey = 1
+	CtxKeyPremiumTier CtxKey = 2
+)
 
 var _ web.Plugin = (*Plugin)(nil)
 
@@ -55,7 +58,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.Post("/premium/detach"), web.ControllerPostHandler(HandlePostDetachGuildSlot, web.RenderHandler(nil, "cp_premium_detach"), nil))
 }
 
-// Add in a template var wether the guild is premium or not
+// PremiumGuildMW adds premium data to context and tmpl vars
 func PremiumGuildMW(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		guild, tmpl := web.GetBaseCPContextData(r.Context())
@@ -65,9 +68,22 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 			web.CtxLogger(r.Context()).WithError(err).Error("Failed checking if guild is premium")
 		}
 
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, CtxKeyIsPremium, isPremium)
 		tmpl["IsGuildPremium"] = isPremium
 
-		inner.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), CtxKeyIsPremium, isPremium)))
+		if isPremium {
+
+			tier, err := GuildPremiumTier(guild.ID)
+			if err != nil {
+				web.CtxLogger(ctx).WithError(err).Error("Failed retrieving guild premium tier")
+			}
+
+			tmpl["GuildPremiumTier"] = tier
+			ctx = context.WithValue(ctx, CtxKeyPremiumTier, tier)
+		}
+
+		inner.ServeHTTP(w, r.WithContext(ctx))
 	}
 
 	return http.HandlerFunc(mw)
@@ -161,6 +177,14 @@ func ContextPremium(ctx context.Context) bool {
 	}
 
 	return false
+}
+
+func ContextPremiumTier(ctx context.Context) PremiumTier {
+	if v := ctx.Value(CtxKeyPremiumTier); v != nil {
+		return v.(PremiumTier)
+	}
+
+	return PremiumTierNone
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
