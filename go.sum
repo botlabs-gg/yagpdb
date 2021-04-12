@@ -375,6 +375,8 @@ github.com/jonas747/discordgo v1.5.2 h1:Pl6i98fHi3w0wFqiRmeCTzyltrZeRL6AqeS59+vD
 github.com/jonas747/discordgo v1.5.2/go.mod h1:AtjBAWqqaBsSj2dgxKaeQ3Gy8GFlDRg+PZiFcsqav00=
 github.com/jonas747/discordgo v1.5.3-0.20210322082229-bd0ead5864e9 h1:qVIRYNEQYj3zQitXhckGwgVJhV5Gnl7aae3v6DEZpWE=
 github.com/jonas747/discordgo v1.5.3-0.20210322082229-bd0ead5864e9/go.mod h1:AtjBAWqqaBsSj2dgxKaeQ3Gy8GFlDRg+PZiFcsqav00=
+github.com/jonas747/discordgo v1.5.3-0.20210412135806-7cb79dcecb49 h1:vG1XNFOc2BAVjorJNOrNK/xw5WlYVRzvQwZKCuu/m/k=
+github.com/jonas747/discordgo v1.5.3-0.20210412135806-7cb79dcecb49/go.mod h1:AtjBAWqqaBsSj2dgxKaeQ3Gy8GFlDRg+PZiFcsqav00=
 github.com/jonas747/dshardorchestrator v0.1.0 h1:3/v+lx0gLupm7/VZr7wbfvUGhpxvuNC5JHaS+OnWjCc=
 github.com/jonas747/dshardorchestrator v0.1.0/go.mod h1:ZlA6h9kj2H5q2aQkZgBiROp8zpIjIUMJQ3SOpVdWYfQ=
 github.com/jonas747/dshardorchestrator/v2 v2.0.1 h1:80ymqyYNTucNPe0oEvpiGWeZiJdiRsdmUDXiiefpo68=
@@ -388,6 +390,8 @@ github.com/jonas747/dstate/v2 v2.0.0 h1:iKRA/ENnyO+922kQCrTYpTivxn9tyFeNzh5slHvq
 github.com/jonas747/dstate/v2 v2.0.0/go.mod h1:xuGgbuvq9CgnxYrHfNzT9Zvc8bVRCZHMnBekL0c79fY=
 github.com/jonas747/dstate/v2 v2.0.2-0.20200910172413-04c84702ac80 h1:nGIxr0UC0QfUDFjfZi68Kdiob0MDA2Z56FC9b/5ja+k=
 github.com/jonas747/dstate/v2 v2.0.2-0.20200910172413-04c84702ac80/go.mod h1:xuGgbuvq9CgnxYrHfNzT9Zvc8bVRCZHMnBekL0c79fY=
+github.com/jonas747/dstate/v2 v2.0.2 h1:+UU+BmEsTL5HL8ESzfYH0m3LgsdJdmijs3ih6BhWSaE=
+github.com/jonas747/dstate/v2 v2.0.2/go.mod h1:xuGgbuvq9CgnxYrHfNzT9Zvc8bVRCZHMnBekL0c79fY=
 github.com/jonas747/dutil v0.0.2 h1:GV4b5tb0l/Qq11GS7g4m5hlxDkKGhZ8hXRefS4dKMMQ=
 github.com/jonas747/dutil v0.0.2/go.mod h1:FwfIRC0ShAEHhwUJ6JppfciiFrfOA/cAoyCECsfib8c=
 github.com/jonas747/dutil v0.0.3 h1:Qe4Qls2sBjAvBOqregFLyDuWG/gonK8BiqT9DHRhIg0=
