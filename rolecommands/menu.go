@@ -3,6 +3,7 @@ package rolecommands
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"sync"
@@ -212,14 +213,26 @@ func StrFlags(rm *models.RoleMenu) string {
 }
 
 func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
-	newMsg := "**Role Menu: " + rm.R.RoleGroup.Name + "**\nReact to give yourself a role.\n\n"
+	if rm.SavedContent.String != "" || rm.SavedEmbed.String != "" {
+		return updateCustomMessage(ctx, rm)
+	}
+
+	newMsg := ""
+	if rm.RoleGroupID.Valid {
+		newMsg = "**Role Menu: " + rm.R.RoleGroup.Name + "**\nReact to give yourself a role.\n\n"
+	} else {
+		newMsg = "**Role Menu\nReact to give yourself a role.\n\n"
+	}
 
 	opts := rm.R.RoleMenuOptions
-	sort.Slice(opts, OptionsLessFunc(opts))
+	sort.Slice(opts, OptionsLessFunc(!rm.RoleGroupID.Valid, opts))
+
+	gs := bot.State.Guild(true, rm.GuildID)
+	if gs == nil {
+		return errors.New("Guild not found")
+	}
 
 	for _, opt := range opts {
-		cmd := opt.R.RoleCommand
-
 		emoji := opt.UnicodeEmoji
 		if opt.EmojiID != 0 {
 			if opt.EmojiAnimated {
@@ -229,11 +242,56 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 			}
 		}
 
-		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, cmd.Name)
+		name := ""
+		if rm.RoleGroupID.Valid {
+			name = opt.R.RoleCommand.Name
+		} else {
+			r := gs.RoleCopy(true, opt.StandaloneRoleID.Int64)
+			if r != nil {
+				name = r.Name
+			} else {
+				name = "unknown role"
+			}
+		}
+		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, name)
 	}
 
 	_, err := common.BotSession.ChannelMessageEdit(rm.ChannelID, rm.MessageID, newMsg)
 	return err
+}
+
+func updateCustomMessage(ctx context.Context, rm *models.RoleMenu) error {
+	edit := discordgo.MessageEdit{
+		ID:              rm.MessageID,
+		AllowedMentions: &discordgo.AllowedMentions{},
+		Channel:         rm.ChannelID,
+	}
+
+	if rm.SavedContent.String != "" {
+		cop := rm.SavedContent.String
+		edit.Content = &cop
+	} else {
+		// set the content to empty, as otherwise whatever content were there before would persist
+		s := ""
+		edit.Content = &s
+	}
+
+	if rm.SavedEmbed.String != "" {
+		var decoded discordgo.MessageEmbed
+		err := json.Unmarshal([]byte(rm.SavedEmbed.String), &decoded)
+		if err != nil {
+			logger.WithError(err).WithField("message_id", rm.MessageID).Error("failed decoding rolemenu embed")
+		} else {
+			edit.Embed = &decoded
+		}
+	}
+
+	_, err := common.BotSession.ChannelMessageEditComplex(&edit)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
@@ -594,7 +652,14 @@ func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, us
 	}
 }
 
-func OptionsLessFunc(slice []*models.RoleMenuOption) func(int, int) bool {
+func OptionsLessFunc(standalone bool, slice []*models.RoleMenuOption) func(int, int) bool {
+	if standalone {
+		return func(i, j int) bool {
+			// keep them in the same order they were added, maybe add custom ordering later?
+			return slice[i].ID > slice[j].ID
+		}
+	}
+
 	return func(i, j int) bool {
 		// Compare timestamps if positions are equal, for deterministic output
 		if slice[i].R.RoleCommand.Position == slice[j].R.RoleCommand.Position {
@@ -642,7 +707,7 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	sort.Slice(menu.R.RoleMenuOptions, OptionsLessFunc(menu.R.RoleMenuOptions))
+	sort.Slice(menu.R.RoleMenuOptions, OptionsLessFunc(!menu.RoleGroupID.Valid, menu.R.RoleMenuOptions))
 
 	for _, option := range menu.R.RoleMenuOptions {
 		emoji := option.UnicodeEmoji
