@@ -232,6 +232,7 @@ func UpdateGuildFlags(guildID int64) error {
 
 // UpdatePluginFeatureFlags updates the feature flags of the provided plugin for the provided guild
 func UpdatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
+	defer EvictCacheForGuild(guildID)
 	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
 	return updatePluginFeatureFlags(guildID, p)
 }
