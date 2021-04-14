@@ -113,10 +113,6 @@ func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
 		return "Couldn't find menu", nil
 	}
 
-	if !menu.RoleGroupID.Valid {
-		return "Uh oh i haven't added editing of standalone menus yet. (will be added very soon)", nil
-	}
-
 	return UpdateMenu(parsed, menu)
 }
 
@@ -124,8 +120,6 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	if menu.State == RoleMenuStateSettingUp {
 		return "Already setting this menu up", nil
 	}
-
-	menu.State = RoleMenuStateSettingUp
 
 	if parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool) {
 		menu.DisableSendDM = !menu.DisableSendDM
@@ -135,14 +129,22 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 		menu.RemoveRoleOnReactionRemove = !menu.RemoveRoleOnReactionRemove
 	}
 
-	// don't reuse the old setup message
-	menu.SetupMSGID = 0
-	menu.OwnerID = parsed.Msg.Author.ID
+	if menu.RoleGroupID.Valid {
+		// re-enter setup mode for role group linked menus to add missing options
+		menu.SetupMSGID = 0
+		menu.OwnerID = parsed.Msg.Author.ID
+		menu.State = RoleMenuStateSettingUp
+	}
 
 	menu.UpdateG(parsed.Context(), boil.Infer())
 
 	if menu.OwnMessage {
 		UpdateRoleMenuMessage(parsed.Context(), menu)
+	}
+
+	if !menu.RoleGroupID.Valid {
+		// nothing more to do for standalone menus
+		return "Doneso!\n" + StrFlags(menu), nil
 	}
 
 	// Add all mising options
@@ -242,17 +244,7 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 			}
 		}
 
-		name := ""
-		if rm.RoleGroupID.Valid {
-			name = opt.R.RoleCommand.Name
-		} else {
-			r := gs.RoleCopy(true, opt.StandaloneRoleID.Int64)
-			if r != nil {
-				name = r.Name
-			} else {
-				name = "unknown role"
-			}
-		}
+		name := OptionName(gs, opt)
 		newMsg += fmt.Sprintf("%s : `%s`\n\n", emoji, name)
 	}
 
@@ -449,7 +441,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 			return
 		}
 
-		resp, err := MenuReactedNotDone(evt.Context(), menu, emoji, uID)
+		resp, err := MenuReactedNotDone(evt.Context(), evt.GS, menu, emoji, uID)
 		if err != nil {
 			logger.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup, or editing menu")
 		}
@@ -751,10 +743,6 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 		return "This menu isn't 'done' (still being edited, or made)", nil
 	}
 
-	if !menu.RoleGroupID.Valid {
-		return "Uh oh i haven't added editing of standalone menus yet. (will be added very soon)", nil
-	}
-
 	menu.State = RoleMenuStateEditingOptionSelecting
 	menu.OwnerID = data.Msg.Author.ID
 	menu.SetupMSGID = 0
@@ -796,7 +784,7 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	return "Menu marked as done", nil
 }
 
-func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
+func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildState, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
 	if userID != rm.OwnerID {
 		return "Someone is currently editing or setting up this menu, please wait", nil
 	}
@@ -818,7 +806,7 @@ func MenuReactedNotDone(ctx context.Context, rm *models.RoleMenu, emoji *discord
 		}
 		ClearRolemenuCache(rm.GuildID)
 
-		return "Editing `" + option.R.RoleCommand.Name + "`, select the new emoji for it", nil
+		return "Editing `" + OptionName(gs, option) + "`, select the new emoji for it", nil
 	case RoleMenuStateEditingOptionReplacing:
 		option, err := rm.EditingOption().OneG(ctx)
 		if err != nil {
@@ -905,4 +893,18 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 			logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed upating menu model")
 		}
 	}
+}
+
+func OptionName(gs *dstate.GuildState, opt *models.RoleMenuOption) string {
+	if opt.RoleCommandID.Valid {
+		return opt.R.RoleCommand.Name
+	} else {
+		r := gs.RoleCopy(true, opt.StandaloneRoleID.Int64)
+		if r != nil {
+			return r.Name
+		} else {
+			return "unknown role"
+		}
+	}
+
 }
