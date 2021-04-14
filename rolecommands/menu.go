@@ -221,7 +221,7 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 	if rm.RoleGroupID.Valid {
 		newMsg = "**Role Menu: " + rm.R.RoleGroup.Name + "**\nReact to give yourself a role.\n\n"
 	} else {
-		newMsg = "**Role Menu\nReact to give yourself a role.\n\n"
+		newMsg = "**Role Menu**\nReact to give yourself a role.\n\n"
 	}
 
 	opts := rm.R.RoleMenuOptions
