@@ -89,6 +89,8 @@ func PublishLogErr(evt string, target int64, data interface{}) {
 
 func PollEvents() {
 	AddHandler("global_ratelimit", handleGlobalRatelimtPusub, globalRatelimitTriggeredEventData{})
+	AddHandler("evict_core_config_cache", handleEvictCoreConfigCache, nil)
+
 	common.BotSession.AddHandler(func(s *discordgo.Session, r *discordgo.RateLimit) {
 		if r.Global {
 			PublishRatelimit(r)
