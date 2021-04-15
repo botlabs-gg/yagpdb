@@ -506,23 +506,12 @@ func tmplDBDelMultiple(ctx *templates.Context) interface{} {
 		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
 			return "", templates.ErrTooManyCalls
 		}
-
-		ctx.GS.UserCacheDel(CacheKeyDBLimits)
-
-		dict, err := templates.StringKeyDictionary(query)
-		if err != nil {
+		
+		q, err = queryFromArg(query)
+		if err!= nil {
 			return "", err
 		}
-		var q Query
-		encoded, err := json.Marshal(dict)
-		if err != nil {
-			return "", err
-		}
-		err = json.Unmarshal(encoded, &q)
-		if err != nil {
-			return "", err
-		}
-
+		
 		amount := int(templates.ToInt64(iAmount))
 		if amount > 100 {
 			amount = 100
@@ -544,8 +533,9 @@ func tmplDBDelMultiple(ctx *templates.Context) interface{} {
 		if err != nil {
 			return "", err
 		}
+		
 		cleared, err := rows.DeleteAllG(context.Background())
-
+		ctx.GS.UserCacheDel(CacheKeyDBLimits)
 		return cleared, err
 	}
 }
@@ -559,28 +549,17 @@ func tmplDBRank(ctx *templates.Context) interface{} {
 		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
 			return "", templates.ErrTooManyCalls
 		}
-
-		dict, err := templates.StringKeyDictionary(query)
-		if err != nil {
+		
+		q, err = queryFromArg(query)
+		if err!= nil {
 			return "", err
-		}
-
-		var q Query
-		encoded, err := json.Marshal(dict)
-		if err != nil {
-			return "", err
-		}
-
-		err = json.Unmarshal(encoded, &q)
-		if err != nil {
-			return "", err
-		}
-
+		}	
+		
 		order := `DESC`
 		if q.Reverse {
 			order = `ASC`
 		}
-		q.Pattern.String = limitString(q.Pattern.String, 256)
+		
 		if q.UserID.Valid && (q.UserID.Int64 != userID) { // some optimization
 			return 0, nil
 		}
@@ -636,24 +615,10 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 				pattern.String = patternStr
 				pattern.Valid = true
 			default:
-				dict, err := templates.StringKeyDictionary(arg)
-				if err != nil {
-					return "", err
-				}
-
-				var q Query
-				encoded, err := json.Marshal(dict)
-				if err != nil {
-					return "", err
-				}
-
-				err = json.Unmarshal(encoded, &q)
-				if err != nil {
-					return "", err
-				}
+				q, err = queryFromArg(query)
 				userID = q.UserID
 				pattern = q.Pattern
-				pattern.String = limitString(pattern.String, 256)
+				
 			}
 
 		}
@@ -665,6 +630,28 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 		return count, err
 	}
 }
+
+func queryFromArg(query interface{}) (Query, error) {
+
+	dict, err := templates.StringKeyDictionary(query)
+	if err != nil {
+		return nil, err
+	}
+	
+	var q Query
+	encoded, err := json.Marshal(dict)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(encoded, &q)
+	if err != nil {
+		return nil, err
+	}
+	q.Pattern.String = limitString(q.Pattern.String, 256)
+	return q, nil
+}
+
 
 func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 	orderBy := "value_num DESC, id DESC"
