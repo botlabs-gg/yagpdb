@@ -634,7 +634,7 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 	}
 }
 
-func queryFromArg(query interface{}) (Query, error) {
+func queryFromArg(query interface{}) (*Query, error) {
 
 	dict, err := templates.StringKeyDictionary(query)
 	if err != nil {
@@ -652,7 +652,7 @@ func queryFromArg(query interface{}) (Query, error) {
 		return nil, err
 	}
 	q.Pattern.String = limitString(q.Pattern.String, 256)
-	return q, nil
+	return &q, nil
 }
 
 
