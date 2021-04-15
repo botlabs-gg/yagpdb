@@ -400,7 +400,20 @@ func tmplDBIncr(ctx *templates.Context) interface{} {
 		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num) 
 VALUES ($1, $1, $2, $3, $4, $5, $6)
 ON CONFLICT (guild_id, user_id, key) 
-DO UPDATE SET value_num = templates_user_database.value_num + $6, updated_at = $1
+DO UPDATE SET
+	value_num =
+		CASE
+			WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > $1) THEN templates_user_database.value_num + $6
+			-- Entry that has expired
+			ELSE $6
+		END,
+	updated_at = $1,
+	expires_at =
+		CASE
+			WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > $1) THEN templates_user_database.expires_at
+			-- Set expiration time to never if the database entry should have expired already
+			ELSE NULL
+		END
 RETURNING value_num`
 
 		result := common.PQ.QueryRow(q, time.Now(), ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
