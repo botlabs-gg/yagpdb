@@ -239,10 +239,10 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 			// The bot was the one that performed the unban 
 			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
 			if i == 2 {
-				//Bot perfrmed non-scheduled unban, don't make duplicate entries in the modlog
+				//Bot performed non-scheduled unban, don't make duplicate entries in the modlog
 				return
 			}
-			// Bot perfermed scheduled unban, modlog entry must be handled
+			// Bot performed scheduled unban, modlog entry must be handled
 			botPerformed = true
 		}
 
