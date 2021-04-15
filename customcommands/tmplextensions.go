@@ -507,7 +507,7 @@ func tmplDBDelMultiple(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 		
-		q, err = queryFromArg(query)
+		q, err := queryFromArg(query)
 		if err!= nil {
 			return "", err
 		}
@@ -550,7 +550,7 @@ func tmplDBRank(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 		
-		q, err = queryFromArg(query)
+		q, err := queryFromArg(query)
 		if err!= nil {
 			return "", err
 		}	
@@ -615,7 +615,10 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 				pattern.String = patternStr
 				pattern.Valid = true
 			default:
-				q, err = queryFromArg(query)
+				q, err := queryFromArg(query)
+				if err!= nil {
+					return "", err
+				}
 				userID = q.UserID
 				pattern = q.Pattern
 				
