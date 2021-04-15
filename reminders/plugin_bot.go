@@ -112,7 +112,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
-		Description:  "Deletes a reminder.",
+		Description:  "Deletes a reminder. You can delete reminders from other users provided you are running this command in the same guild the reminder was created in and have the Manage Channel permission in the channel the reminder was created in.",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
@@ -128,12 +128,11 @@ var cmds = []*commands.YAGCommand{
 				return "Error retrieving reminder", err
 			}
 
-			if reminder.GuildID != parsed.GS.ID {
-				return "That reminder is not from this server", nil
-			}
-
 			// Check perms
 			if reminder.UserID != discordgo.StrID(parsed.Msg.Author.ID) {
+				if reminder.GuildID != parsed.GS.ID {
+					return "You can only delete reminders that are not your own in the guild the reminder was originally created", nil
+				}
 				ok, err := bot.AdminOrPermMS(reminder.ChannelIDInt(), parsed.MS, discordgo.PermissionManageChannels)
 				if err != nil {
 					return nil, err
