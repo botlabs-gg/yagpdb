@@ -940,21 +940,47 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 	return callVariadic(f, false, values...)
 }
 
-func (c *Context) tmplDelAllMessageReactions(channel, msgID interface{}) (string, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
+func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.Value, error) {
+	
+	f := func(args []reflect.Value) (reflect.Value, error) {
+		if len(args) < 2 {
+			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, emojis[optional])")
+		}
+
+		var cArg interface{}
+		if args[0].IsValid() {
+			cArg = args[0].Interface()
+		}
+
+		cID := c.ChannelArg(cArg)
+		if cID == 0 {
+			return reflect.ValueOf("non-existing channel"), nil
+		}
+
+		mID := ToInt64(args[1].Interface())
+		
+
+		if len(args) > 2 {
+			for _, emoji := range args[2:] {
+				if c.IncreaseCheckCallCounter("del_reaction_message", 10) {
+					return reflect.Value{}, ErrTooManyCalls
+				}
+			
+				if err := common.BotSession.MessageReactionRemoveEmoji(cID, mID, emoji.String()); err != nil {
+					return reflect.Value{}, err
+				}
+			}
+			return reflect.ValueOf(""), nil
+		}
+
+		if c.IncreaseCheckGenericAPICall() {
+			return reflect.Value{}, ErrTooManyAPICalls
+		}
+		common.BotSession.MessageReactionsRemoveAll(cID, mID)
+		return reflect.ValueOf(""), nil
 	}
 
-	cID := c.ChannelArg(channel)
-	if cID == 0 {
-		return "", nil
-	}
-
-	mID := ToInt64(msgID)
-
-	common.BotSession.MessageReactionsRemoveAll(cID, mID)
-
-	return "", nil
+	return callVariadic(f, false, values...)		
 }
 
 func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message, error) {
