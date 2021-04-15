@@ -44,7 +44,7 @@ var throwThings = []string{
 	"flat earthers",
 	"round earthers",
 	"prequel memes",
-	"logan paul and his dead body",
+	"logan paul and jake paul",
 	"selfbots",
 	"very big fish",
 	"ur mum",
