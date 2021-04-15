@@ -615,7 +615,7 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 				pattern.String = patternStr
 				pattern.Valid = true
 			default:
-				q, err := queryFromArg(query)
+				q, err := queryFromArg(arg)
 				if err!= nil {
 					return "", err
 				}
