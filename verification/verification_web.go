@@ -13,6 +13,7 @@ import (
 
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/yagpdb/verification/models"
 	"github.com/jonas747/yagpdb/web"
@@ -34,6 +35,8 @@ type FormData struct {
 	LogChannel          int64  `valid:"channel,true"`
 }
 
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "verification_updated_settings", FormatString: "Updated verification settings"})
+
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../verification/assets/verification_control_panel.html", "templates/plugins/verification_control_panel.html")
 	web.LoadHTMLTemplate("../../verification/assets/verification_verify_page.html", "templates/plugins/verification_verify_page.html")
@@ -45,15 +48,15 @@ func (p *Plugin) InitWeb() {
 	})
 
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_verification_settings")
-	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated verification settings")
+	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{})
 
-	web.CPMux.Handle(pat.Get("/verification"), web.RequireBotMemberMW(web.RequireGuildChannelsMiddleware(getHandler)))
-	web.CPMux.Handle(pat.Get("/verification/"), web.RequireBotMemberMW(web.RequireGuildChannelsMiddleware(getHandler)))
+	web.CPMux.Handle(pat.Get("/verification"), web.RequireBotMemberMW(getHandler))
+	web.CPMux.Handle(pat.Get("/verification/"), web.RequireBotMemberMW(getHandler))
 
-	web.CPMux.Handle(pat.Post("/verification"), web.RequireGuildChannelsMiddleware(postHandler))
+	web.CPMux.Handle(pat.Post("/verification"), postHandler)
 
 	getVerifyPageHandler := web.ControllerHandler(p.handleGetVerifyPage, "verification_verify_page")
-	postVerifyPageHandler := web.ControllerPostHandler(p.handlePostVerifyPage, getVerifyPageHandler, nil, "")
+	postVerifyPageHandler := web.ControllerPostHandler(p.handlePostVerifyPage, getVerifyPageHandler, nil)
 	web.ServerPublicMux.Handle(pat.Get("/verify/:user_id/:token"), getVerifyPageHandler)
 	web.ServerPublicMux.Handle(pat.Post("/verify/:user_id/:token"), postVerifyPageHandler)
 }
@@ -101,6 +104,9 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 	columns := boil.Whitelist("enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel", "dm_message")
 	columnsCreate := boil.Whitelist("guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel", "dm_message")
 	err := model.UpsertG(ctx, true, []string{"guild_id"}, columns, columnsCreate)
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
+	}
 	return templateData, err
 }
 
@@ -297,7 +303,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	format := `<ul>
-	<li>Enabled: %s</li>
+	<li>Status: %s</li>
 	<li>Role: <code>%s</code> %s</li>
 </ul>`
 

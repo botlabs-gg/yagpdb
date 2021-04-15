@@ -13,7 +13,7 @@ import (
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -484,8 +484,6 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 		return nil
 	}
 
-	logger.Debug("User changed username, old:", lastUsername, " | new:", user.Username)
-
 	listing := &models.UsernameListing{
 		UserID:   null.Int64From(user.ID),
 		Username: null.StringFrom(user.Username),
@@ -517,8 +515,6 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 	if err != sql.ErrNoRows && err != nil {
 		return err
 	}
-
-	logger.Debug("User changed nickname, old:", lastNickname, " | new:", nickname)
 
 	listing := &models.NicknameListing{
 		UserID:   null.Int64From(userID),

@@ -14,8 +14,9 @@ import (
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/analytics"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
@@ -54,6 +55,11 @@ func (p *Plugin) AddCommands() {
 
 			if parsed.GS.Channel(true, conf.TicketsChannelCategory) == nil {
 				return "No category for ticket channels set", nil
+			}
+
+			if !bot.BotProbablyHasPermissionGS(parsed.GS, parsed.CS.ID, InTicketPerms) {
+				return fmt.Sprintf("The bot is missing one of the following permissions: %s", common.HumanizePermissions(InTicketPerms)), nil
+				// return "", nil
 			}
 
 			inCurrentTickets, err := models.Tickets(
@@ -232,7 +238,7 @@ func (p *Plugin) AddCommands() {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			TicketLog(conf, parsed.GS.ID, parsed.Msg.Author, &discordgo.MessageEmbed{
 				Title:       fmt.Sprintf("Ticket #%d renamed", currentTicket.Ticket.LocalID),
-				Description: fmt.Sprintf("From %q to %q", oldName, newName),
+				Description: fmt.Sprintf("From '%s' to '%s'", oldName, newName),
 				Color:       0x5394fc,
 			})
 
@@ -284,7 +290,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			TicketLog(conf, parsed.GS.ID, parsed.Msg.Author, &discordgo.MessageEmbed{
-				Title:       fmt.Sprintf("Ticket #%d - %q closed", currentTicket.Ticket.LocalID, currentTicket.Ticket.Title),
+				Title:       fmt.Sprintf("Ticket #%d - '%s' closed", currentTicket.Ticket.LocalID, currentTicket.Ticket.Title),
 				Description: fmt.Sprintf("Reason: %s", parsed.Args[0].Str()),
 				Color:       0xf23c3c,
 			})
@@ -720,7 +726,9 @@ OUTER2:
 	}
 
 	// inherit settings from category
-	overwrites = applyChannelParentSettings(gs, conf.TicketsChannelCategory, overwrites)
+	// TODO: disabled because of a issue with discord recently pushed change that disallows bots from creating channels with permissions they don't have
+	// TODO: automatically filter those out
+	// overwrites = applyChannelParentSettings(gs, conf.TicketsChannelCategory, overwrites)
 
 	// generate the ID for this ticket
 	id, err := common.GenLocalIncrID(gs.ID, "ticket")

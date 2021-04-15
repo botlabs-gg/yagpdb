@@ -1,15 +1,7 @@
 package soundboard
 
 import (
-	"emperror.dev/errors"
 	"fmt"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/soundboard/models"
-	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-	"goji.io"
-	"goji.io/pat"
 	"html/template"
 	"io"
 	"mime/multipart"
@@ -17,6 +9,16 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"emperror.dev/errors"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
+	"github.com/jonas747/yagpdb/soundboard/models"
+	"github.com/jonas747/yagpdb/web"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"goji.io"
+	"goji.io/pat"
 )
 
 type PostForm struct {
@@ -37,6 +39,12 @@ func (pf *PostForm) ToDBModel() *models.SoundboardSound {
 	}
 }
 
+var (
+	panelLogKeyAddedSound   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "soundboard_added_sound", FormatString: "Added soundboard sound %s"})
+	panelLogKeyUpdatedSound = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "soundboard_updated_sound", FormatString: "Updated soundboard sound %s"})
+	panelLogKeyRemovedSound = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "soundboard_removed_sound", FormatString: "Removed soundboard sound %s"})
+)
+
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../soundboard/assets/soundboard.html", "templates/plugins/soundboard.html")
 	web.AddSidebarItem(web.SidebarCategoryFun, &web.SidebarItem{
@@ -56,9 +64,9 @@ func (p *Plugin) InitWeb() {
 
 	cpMux.Handle(pat.Get("/"), getHandler)
 	//cpMux.Handle(pat.Get(""), getHandler)
-	cpMux.Handle(pat.Post("/new"), web.ControllerPostHandler(HandleNew, getHandler, PostForm{}, "Added a new sound to the soundboard"))
-	cpMux.Handle(pat.Post("/update"), web.ControllerPostHandler(HandleUpdate, getHandler, PostForm{}, "Updated a soundboard sound"))
-	cpMux.Handle(pat.Post("/delete"), web.ControllerPostHandler(HandleDelete, getHandler, PostForm{}, "Removed a sound from the soundboard"))
+	cpMux.Handle(pat.Post("/new"), web.ControllerPostHandler(HandleNew, getHandler, PostForm{}))
+	cpMux.Handle(pat.Post("/update"), web.ControllerPostHandler(HandleUpdate, getHandler, PostForm{}))
+	cpMux.Handle(pat.Post("/delete"), web.ControllerPostHandler(HandleDelete, getHandler, PostForm{}))
 }
 
 func HandleGetCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -175,7 +183,9 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		return tmpl, err
 	}
 
-	return tmpl, err
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedSound, &cplogs.Param{Type: cplogs.ParamTypeString, Value: data.Name}))
+
+	return tmpl, nil
 }
 
 func DownloadNewSoundFile(r io.Reader, w io.Writer, limit int) (tooBig bool, err error) {
@@ -236,6 +246,9 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	dbModel.BlacklistedRoles = data.BlacklistedRoles
 
 	_, err = dbModel.UpdateG(ctx, boil.Whitelist("name", "required_roles", "blacklisted_roles", "updated_at"))
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSound, &cplogs.Param{Type: cplogs.ParamTypeString, Value: data.Name}))
+	}
 	return tmpl, err
 }
 
@@ -274,6 +287,9 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 
 	_, err = storedSound.DeleteG(ctx)
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedSound, &cplogs.Param{Type: cplogs.ParamTypeString, Value: storedSound.Name}))
+	}
 	return tmpl, err
 }
 

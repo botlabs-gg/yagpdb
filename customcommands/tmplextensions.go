@@ -9,7 +9,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -131,7 +131,11 @@ func (pa *ParsedArgs) Get(index int) interface{} {
 
 	switch pa.parsed[index].Def.Type.(type) {
 	case *dcmd.IntArg:
-		return pa.parsed[index].Int()
+		i := pa.parsed[index]
+		if i.Value == nil {
+			return nil
+		}
+		return i.Int()
 	case *dcmd.ChannelArg:
 		i := pa.parsed[index].Value
 		if i == nil {
@@ -640,7 +644,8 @@ type LightDBEntry struct {
 
 func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 	var dst interface{}
-	err := msgpack.Unmarshal(m.ValueRaw, &dst)
+	dec := newDecoder(bytes.NewBuffer(m.ValueRaw))
+	err := dec.Decode(&dst)
 	if err != nil {
 		return nil, err
 	}
@@ -666,6 +671,57 @@ func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 	entry.User.ID = entry.UserID
 
 	return entry, nil
+}
+
+func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
+	dec := msgpack.NewDecoder(buf)
+
+	dec.SetDecodeMapFunc(func(d *msgpack.Decoder) (interface{}, error) {
+		n, err := d.DecodeMapLen()
+		if err != nil {
+			return nil, err
+		}
+
+		isStringKeysOnly := true
+		mi := make(map[interface{}]interface{}, n)
+		ms := make(map[string]interface{})
+
+		for i := 0; i < n; i++ {
+			mk, err := d.DecodeInterface()
+			if err != nil {
+				return nil, err
+			}
+
+			mv, err := d.DecodeInterface()
+			if err != nil {
+				return nil, err
+			}
+
+			// if the map only has string keys, use a map[string]interface{}
+			if isStringKeysOnly {
+				if s, ok := mk.(string); ok {
+					// so far only string keys
+					ms[s] = mv
+				} else {
+					// copy over the map to the interface{} keyed one
+					isStringKeysOnly = false
+					for jk, jv := range ms {
+						mi[jk] = jv
+					}
+					mi[mk] = mv
+				}
+			} else {
+				mi[mk] = mv
+			}
+		}
+		if isStringKeysOnly {
+			return ms, nil
+		}
+
+		return mi, nil
+	})
+
+	return dec
 }
 
 func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildState, rs []*models.TemplatesUserDatabase) []*LightDBEntry {

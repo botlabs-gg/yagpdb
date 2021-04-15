@@ -1,10 +1,18 @@
 package rolecommands
 
 import (
-	"emperror.dev/errors"
 	"fmt"
+	"html/template"
+	"net/http"
+	"sort"
+	"strconv"
+	"strings"
+
+	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
@@ -13,11 +21,17 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"sort"
-	"strconv"
-	"strings"
+)
+
+var (
+	panelLogKeyNewCommand        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_new_command", FormatString: "Created a new role command: %s"})
+	panelLogKeyUpdatedCommand    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_updated_command", FormatString: "Updated role command: %s"})
+	panelLogKeyRemovedCommand    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_removed_command", FormatString: "Removed role command: %d"})
+	panelLogKeyRemoveAllCommands = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_removed_all_command", FormatString: "Removed all role command in group: %s"})
+
+	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_new_group", FormatString: "Created a new role group: %s"})
+	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_updated_group", FormatString: "Updated role group: %s"})
+	panelLogKeyRemovedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_removed_group", FormatString: "Removed role group: %d"})
 )
 
 type FormCommand struct {
@@ -93,15 +107,15 @@ func (p *Plugin) InitWeb() {
 		return HandleGetIndex(w, r)
 	}, "cp_rolecommands")
 
-	subMux.Handle(pat.Post("/new_cmd"), web.ControllerPostHandler(HandleNewCommand, getIndexpPostHandler, FormCommand{}, "Added a new role command"))
-	subMux.Handle(pat.Post("/update_cmd"), web.ControllerPostHandler(HandleUpdateCommand, getIndexpPostHandler, FormCommand{}, "Updated a role command"))
-	subMux.Handle(pat.Post("/remove_cmd"), web.ControllerPostHandler(HandleRemoveCommand, getIndexpPostHandler, nil, "Removed a role command"))
-	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HandleMoveCommand, getIndexpPostHandler, nil, "Moved a role command"))
-	subMux.Handle(pat.Post("/delete_rolecmds"), web.ControllerPostHandler(HandleDeleteRoleCommands, getIndexpPostHandler, nil, "Deleted all role commands in group"))
+	subMux.Handle(pat.Post("/new_cmd"), web.ControllerPostHandler(HandleNewCommand, getIndexpPostHandler, FormCommand{}))
+	subMux.Handle(pat.Post("/update_cmd"), web.ControllerPostHandler(HandleUpdateCommand, getIndexpPostHandler, FormCommand{}))
+	subMux.Handle(pat.Post("/remove_cmd"), web.ControllerPostHandler(HandleRemoveCommand, getIndexpPostHandler, nil))
+	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HandleMoveCommand, getIndexpPostHandler, nil))
+	subMux.Handle(pat.Post("/delete_rolecmds"), web.ControllerPostHandler(HandleDeleteRoleCommands, getIndexpPostHandler, nil))
 
-	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, getIndexpPostHandler, FormGroup{}, "Added a new role command group"))
-	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, getIndexpPostHandler, FormGroup{}, "Updated a role command group"))
-	subMux.Handle(pat.Post("/remove_group"), web.ControllerPostHandler(HandleRemoveGroup, getIndexpPostHandler, nil, "Removed a role command group"))
+	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, getIndexpPostHandler, FormGroup{}))
+	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, getIndexpPostHandler, FormGroup{}))
+	subMux.Handle(pat.Post("/remove_group"), web.ControllerPostHandler(HandleRemoveGroup, getIndexpPostHandler, nil))
 }
 
 func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
@@ -194,6 +208,10 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	err := model.InsertG(r.Context(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewCommand, &cplogs.Param{Type: cplogs.ParamTypeString, Value: form.Name}))
+		sendEvictMenuCachePubSub(g.ID)
+	}
 
 	return tmpl, err
 }
@@ -249,6 +267,10 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 	_, err = cmd.UpdateG(r.Context(),
 		boil.Whitelist(models.RoleCommandColumns.Name, models.RoleCommandColumns.Role, models.RoleCommandColumns.IgnoreRoles,
 			models.RoleCommandColumns.RequireRoles, models.RoleCommandColumns.RoleGroupID))
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommand, &cplogs.Param{Type: cplogs.ParamTypeString, Value: cmd.Name}))
+		sendEvictMenuCachePubSub(g.ID)
+	}
 	return
 }
 
@@ -321,6 +343,7 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 			err = lErr
 		}
 	}
+	sendEvictMenuCachePubSub(g.ID)
 
 	return tmpl, err
 }
@@ -336,9 +359,18 @@ func HandleDeleteRoleCommands(w http.ResponseWriter, r *http.Request) (web.Templ
 	} else {
 		qmRoleGroupID = qm.Where("role_group_id=?", idParsed)
 	}
-	_, err := models.RoleCommands(qm.Where("guild_id=?", g.ID), qmRoleGroupID).DeleteAll(r.Context(), common.PQ)
+	result, err := models.RoleCommands(qm.Where("guild_id=?", g.ID), qmRoleGroupID).DeleteAll(r.Context(), common.PQ)
 	if err != nil {
 		return nil, err
+	}
+
+	if result > 0 {
+		id := r.FormValue("group")
+		if id == "" {
+			id = "Ungrouped"
+		}
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemoveAllCommands, &cplogs.Param{Type: cplogs.ParamTypeString, Value: id}))
+		sendEvictMenuCachePubSub(g.ID)
 	}
 
 	return tmpl, nil
@@ -352,6 +384,9 @@ func HandleRemoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	if err != nil {
 		return nil, err
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: idParsed}))
+	sendEvictMenuCachePubSub(g.ID)
 
 	return tmpl, nil
 }
@@ -391,6 +426,9 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 		return tmpl, err
 	}
 
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: model.Name}))
+	sendEvictMenuCachePubSub(g.ID)
+
 	tmpl["GroupID"] = model.ID
 
 	return tmpl, nil
@@ -423,6 +461,9 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 		return
 	}
 
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: group.Name}))
+	sendEvictMenuCachePubSub(g.ID)
+
 	if group.TemporaryRoleDuration < 1 {
 		_, err = schEvtsModels.ScheduledEvents(qm.Where("event_name='remove_member_role' AND guild_id = ? AND (data->>'group_id')::bigint = ?", g.ID, group.ID)).DeleteAll(r.Context(), common.PQ)
 	}
@@ -435,6 +476,10 @@ func HandleRemoveGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
 	_, err := models.RoleGroups(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll(r.Context(), common.PQ)
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedGroup, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: idParsed}))
+		sendEvictMenuCachePubSub(g.ID)
+	}
 	return nil, err
 }
 
@@ -460,9 +505,16 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(`<ul>
-		<li>Active RoleCommands: <code>%d</code></li>
-		<li>Active RoleGroups: <code>%d</code></li>
+		<li>Active role commands: <code>%d</code></li>
+		<li>Active role groups: <code>%d</code></li>
 		</ul>`, numCommands, numGroups))
 
 	return templateData, err
+}
+
+func sendEvictMenuCachePubSub(guildID int64) {
+	err := pubsub.Publish("role_commands_evict_menus", guildID, nil)
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed evicting rolemenu cache")
+	}
 }

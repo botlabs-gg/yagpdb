@@ -1,7 +1,6 @@
 package mqueue
 
 import (
-	"container/list"
 	"encoding/json"
 	"net"
 	"net/http"
@@ -156,8 +155,13 @@ var _ bot.LateBotInitHandler = (*Plugin)(nil)
 // LateBotInit implements bot.LateBotInitHandler
 func (p *Plugin) LateBotInit() {
 	go startPolling()
-	go processWorker()
-	go workerScaler()
+
+	// start the rest
+	for i := 0; i < confMaxWorkers.GetInt(); i++ {
+		go processWorker()
+	}
+
+	logger.Infof("Started %d mqueue workers", confMaxWorkers.GetInt())
 }
 
 // StopBot implements bot.BotStopperHandler
@@ -170,64 +174,6 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 	}
 	startedLock.Unlock()
 	stopChan <- wg
-}
-
-func workerScaler() {
-	lastWorkerSpawnedAt := time.Now()
-	t := time.NewTicker(time.Second * 10)
-
-	deltaHistory := list.New()
-	sizeHistory := list.New()
-
-	lastSize := 0
-	for {
-		<-t.C
-
-		workmu.Lock()
-		current := len(workSlice)
-		workmu.Unlock()
-
-		delta := current - lastSize
-		lastSize = current
-		deltaHistory.PushBack(delta)
-		sizeHistory.PushBack(current)
-
-		if deltaHistory.Len() > 6*5 { // keep 5 minute average
-			deltaHistory.Remove(deltaHistory.Front())
-			sizeHistory.Remove(sizeHistory.Front())
-		}
-
-		// see if we should launch a worker
-		if current < 100 || time.Since(lastWorkerSpawnedAt) < time.Minute*10 || deltaHistory.Len() < 6 {
-			// don't bother launching workers when below 100, and atleast have a minute of averages
-			continue
-		}
-
-		// calculate average to see if it increased or decreased
-		deltaAverage := calcListAverage(deltaHistory)
-		sizeAverage := calcListAverage(sizeHistory)
-
-		if deltaAverage > 1 && sizeAverage > 1000 {
-			logger.Info("Launched new mqueue worker, total workers: ", atomic.LoadInt32(numWorkers)+1)
-			go processWorker()
-			lastWorkerSpawnedAt = time.Now()
-		}
-
-		nw := atomic.LoadInt32(numWorkers)
-		if int(nw) >= confMaxWorkers.GetInt() {
-			return
-		}
-	}
-}
-
-func calcListAverage(in *list.List) int {
-	total := 0
-	for elem := in.Front(); elem != nil; elem = elem.Next() {
-		total += elem.Value.(int)
-	}
-
-	average := total / in.Len()
-	return average
 }
 
 var (

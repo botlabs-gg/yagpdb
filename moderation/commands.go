@@ -11,7 +11,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
@@ -147,7 +147,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-			
+
 			ddays := int(config.DefaultBanDeleteDays.Int64)
 			if parsed.Switches["ddays"].Value != nil {
 				ddays = parsed.Switches["ddays"].Int()
@@ -312,7 +312,13 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			reportBody := fmt.Sprintf("<@%d> Reported <@%d> in <#%d> For `%s`\nLast 100 messages from channel: <%s>", parsed.Msg.Author.ID, target, parsed.Msg.ChannelID, parsed.Args[1].Str(), logLink)
 
-			_, err = common.BotSession.ChannelMessageSend(channelID, reportBody)
+			_, err = common.BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+				Content: reportBody,
+				AllowedMentions: discordgo.AllowedMentions{
+					Users: []int64{parsed.Msg.Author.ID, target},
+				},
+			})
+
 			if err != nil {
 				return nil, err
 			}
@@ -328,7 +334,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled:   true,
 		CmdCategory:     commands.CategoryModeration,
 		Name:            "Clean",
-		Description:     "Delete the last number of messages from chat, optionally filtering by user, max age and regex or ignoring pinned messages.",
+		Description:     "Delete the last number of messages from chat, optionally filtering by user, max age and regex or ignoring pinned messages.\n⚠️ **Warning:** Using `clean <userId> <amount>` does not work. This is because the user ID is interpreted as the amount. As it is over the limit of 100, it is treated as invalid. You can use `clean <amount> <userId>` instead or mention the user.",
 		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nNote: Will only look in the last 1k messages",
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
@@ -342,6 +348,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Switch: "minage", Default: time.Duration(0), Name: "Min age", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
 			&dcmd.ArgDef{Switch: "nopin", Name: "Ignore pinned messages"},
+			&dcmd.ArgDef{Switch: "to", Name: "Stop at this msg ID", Type: dcmd.Int},
 		},
 		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -401,6 +408,13 @@ var ModerationCommands = []*commands.YAGCommand{
 				filtered = true
 			}
 
+			// Check if set to break at a certain ID
+			toID := int64(0)
+			if parsed.Switches["to"].Value != nil {
+				filtered = true
+				toID = parsed.Switches["to"].Int64()
+			}
+
 			// Check if we should ignore pinned messages
 			pe := false
 			if parsed.Switches["nopin"].Value != nil && parsed.Switches["nopin"].Value.(bool) {
@@ -420,7 +434,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, ma, minAge, pe, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, toID, ma, minAge, pe, num, limitFetch)
 
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
@@ -766,10 +780,10 @@ var ModerationCommands = []*commands.YAGCommand{
 					return nil, err
 				}
 			}
-			
+
 			// cancel the event to add the role
 			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GS.ID, parsed.Msg.Author.ID, role.ID)
-			
+
 			action := MAGiveRole
 			action.Prefix = "Gave the role " + role.Name + " to "
 			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
@@ -841,7 +855,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -904,6 +918,11 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, max
 			if _, found := pinnedMessages[msgs[i].ID]; found {
 				continue
 			}
+		}
+
+		// Continue only if current msg ID is < toID
+		if toID > msgs[i].ID {
+			continue
 		}
 
 		toDelete = append(toDelete, msgs[i].ID)

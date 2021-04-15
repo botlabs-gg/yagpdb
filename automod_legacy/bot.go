@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -97,14 +97,6 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	member := dstate.MSFromDGoMember(cs.Guild, m.Member)
 
-	locked := true
-	cs.Owner.RLock()
-	defer func() {
-		if locked {
-			cs.Owner.RUnlock()
-		}
-	}()
-
 	del := false // Set if a rule triggered a message delete
 	punishMsg := ""
 	highestPunish := PunishNone
@@ -155,9 +147,6 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		// Strip last newline
 		punishMsg = punishMsg[:len(punishMsg)-1]
 	}
-
-	cs.Owner.RUnlock()
-	locked = false
 
 	go func() {
 		switch highestPunish {

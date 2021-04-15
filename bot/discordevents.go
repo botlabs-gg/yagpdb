@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/joinedguildsupdater"
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -89,6 +90,13 @@ OUTER:
 		logger.Info("Left server while bot was down: ", v)
 		go guildRemoved(v)
 	}
+
+	guilds := make([]int64, len(evt.Guilds))
+	for i, v := range evt.Guilds {
+		guilds[i] = v.ID
+	}
+
+	featureflags.BatchInitCache(guilds)
 }
 
 var guildJoinHandler = joinedguildsupdater.NewUpdater()

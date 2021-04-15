@@ -2,7 +2,7 @@ package templates
 
 import (
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 )
 
 // CtxChannel is almost a 1:1 copy of dstate.ChannelState, its needed because we cant axpose all those state methods
