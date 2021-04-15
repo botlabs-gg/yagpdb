@@ -277,6 +277,57 @@ func BanUser(config *Config, guildID int64, channel *dstate.ChannelState, messag
 	return BanUserWithDuration(config, guildID, channel, message, author, reason, user, 0, 1)
 }
 
+func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason string, user *discordgo.User) (bool, error) {
+	config, err := getConfigIfNotSet(guildID, config)
+	if err != nil {
+		return false, common.ErrWithCaller(err)
+	}
+	action := MAUnbanned
+
+	//Delete all future Unban Events
+	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
+	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
+	
+	//We need details for user only if unban is to be logged in modlog. Thus we can save a potential api call by directly attempting an unban in other cases.
+	if config.LogUnbans && config.IntActionChannel() != 0 {
+		// check if they're already banned
+		guildBan, err := common.BotSession.GuildBan(guildID, user.ID)
+		if err != nil {
+			notbanned, err := isNotFound(err)
+			return notbanned, err
+		}
+		user = guildBan.User
+	}
+		
+	// Set a key in redis that marks that this user has appeared in the modlog already
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))	
+	
+	err = common.BotSession.GuildBanDelete(guildID, user.ID)
+	if err != nil {
+		notbanned, err := isNotFound(err)
+		return notbanned, err
+	}
+	
+	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
+	
+	//modLog Entry handling
+	if config.LogUnbans {
+		err = CreateModlogEmbed(config, author, action, user, reason, "")
+	}
+	return false, err
+}
+
+func isNotFound (err error) (bool, error) {
+	if err != nil {
+		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
+			if cast.Response.StatusCode == 404 {
+				return true, nil // Not found
+			}
+		}
+		return false, err
+	}
+	return false, nil
+}
 const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
