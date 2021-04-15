@@ -301,7 +301,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	
 	err = common.BotSession.GuildBanDelete(guildID, user.ID)
 	if err != nil {
-		notbanned, err := checkErr(err)
+		notbanned, err := isNotFound(err)
 		return notbanned, err
 	}
 	
