@@ -114,7 +114,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		}
 
 		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)
-		body = strings.Replace(body, string(0), "", -1)
+		body = strings.Replace(body, string(rune(0)), "", -1)
 
 		messageModel := &models.Messages2{
 			ID:      v.ID,

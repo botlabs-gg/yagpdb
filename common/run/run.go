@@ -126,6 +126,13 @@ func Run() {
 		return
 	}
 
+	if flagRunWeb {
+		// web should handle all events
+		pubsub.FilterFunc = func(guildID int64) bool {
+			return true
+		}
+	}
+
 	if flagRunBot || flagRunEverything {
 		bot.Enabled = true
 	}
