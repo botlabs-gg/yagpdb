@@ -398,12 +398,29 @@ func tmplDBIncr(ctx *templates.Context) interface{} {
 		keyStr := limitString(templates.ToString(key), 256)
 
 		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num) 
-VALUES ($1, $1, $2, $3, $4, $5, $6)
+VALUES (now(), now(), $1, $2, $3, $4, $5)
 ON CONFLICT (guild_id, user_id, key) 
-DO UPDATE SET value_num = templates_user_database.value_num + $6, updated_at = $1
+DO UPDATE SET
+	value_num =
+		-- Don't increment expired entry
+		CASE WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > now()) THEN templates_user_database.value_num + $5
+		ELSE $5
+		END,
+	updated_at = now(),
+	created_at =
+		-- Reset created_at if the entry expired
+		CASE WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > now()) THEN templates_user_database.created_at
+		ELSE now()
+		END,
+	expires_at =
+		-- Same for expires_at
+		CASE WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > now()) THEN templates_user_database.expires_at
+		ELSE NULL
+		END
+	
 RETURNING value_num`
 
-		result := common.PQ.QueryRow(q, time.Now(), ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
+		result := common.PQ.QueryRow(q, ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
 
 		var newVal float64
 		err = result.Scan(&newVal)
