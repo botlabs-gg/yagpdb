@@ -9,6 +9,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
@@ -21,6 +22,8 @@ type ConextKey int
 const (
 	ConextKeyConfig ConextKey = iota
 )
+
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "streaming_settings_updated", FormatString: "Updated streaming settings"})
 
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../streaming/assets/streaming.html", "templates/plugins/streaming.html")
@@ -35,7 +38,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/streaming"), streamingMux)
 
 	// Alll handlers here require guild channels present
-	streamingMux.Use(web.RequireGuildChannelsMiddleware)
 	streamingMux.Use(web.RequireBotMemberMW)
 	streamingMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 	streamingMux.Use(baseData)
@@ -93,14 +95,12 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 		web.CtxLogger(ctx).WithError(err).Error("Failed sending update streaming event")
 	}
 
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, guild.ID, "Updated streaming config.")
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
 	return tmpl.AddAlerts(web.SucessAlert("Saved settings"))
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
-var _ web.PluginWithServerHomeWidgetMiddlewares = (*Plugin)(nil)
 
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ag, templateData := web.GetBaseCPContextData(r.Context())
@@ -149,8 +149,4 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, status, roleStr, indicatorRole, channelStr, indicatorMessage))
 
 	return templateData, nil
-}
-
-func (p *Plugin) ServerHomeWidgetApplyMiddlewares(inner http.Handler) http.Handler {
-	return web.RequireGuildChannelsMiddleware(inner)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/null"
@@ -44,6 +45,12 @@ type ConfigFormData struct {
 	MessageLogsAllowedRoles      []int64
 }
 
+var (
+	panelLogKeyUpdatedSettings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_settings_updated", FormatString: "Updated logging settings"})
+	panelLogKeyDeletedMessageLog = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message_log", FormatString: "Deleted a message log: %d"})
+	panelLogKeyDeletedMessage    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message", FormatString: "Deleted a message from a message log: %d"})
+)
+
 func (lp *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../logs/assets/logs_control_panel.html", "templates/plugins/logs_control_panel.html")
 	web.LoadHTMLTemplate("../../logs/assets/logs_view.html", "templates/plugins/logs_view.html")
@@ -64,14 +71,12 @@ func (lp *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/logging"), logCPMux)
 	web.CPMux.Handle(pat.New("/logging/*"), logCPMux)
 
-	logCPMux.Use(web.RequireGuildChannelsMiddleware)
-
 	cpGetHandler := web.ControllerHandler(HandleLogsCP, "cp_logging")
 	logCPMux.Handle(pat.Get("/"), cpGetHandler)
 	logCPMux.Handle(pat.Get(""), cpGetHandler)
 
-	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, ConfigFormData{}, "Updated logging config")
-	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{}, "Deleted a channel log")
+	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, ConfigFormData{})
+	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{})
 	msgDeleteHandler := web.APIHandler(HandleDeleteMessageJson)
 
 	logCPMux.Handle(pat.Post("/"), saveHandler)
@@ -158,8 +163,9 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
 	if err == nil {
-		logger.Println("evicting")
 		bot.EvictGSCache(g.ID, CacheKeyConfig)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
+
 	}
 	return tmpl, err
 }
@@ -181,6 +187,8 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	if err != nil {
 		return tmpl, err
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDeletedMessageLog, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: data.ID}))
 
 	// for legacy setups
 	// _, err = models.Messages(models.MessageWhere.MessageLogID.EQ(null.IntFrom(int(data.ID)))).DeleteAll(ctx, common.PQ)
@@ -278,8 +286,12 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	config := r.Context().Value(ctxKeyConfig).(*models.GuildLoggingConfig)
 
 	// check if were allowed to view deleted messages
-	canViewDeleted, _ := web.IsAdminRequest(r.Context(), r)
-	if config.EveryoneCanViewDeleted.Bool {
+	isAdmin, _ := web.IsAdminRequest(r.Context(), r)
+
+	var canViewDeleted = false
+	if isAdmin && !web.GetIsReadOnly(r.Context()) {
+		canViewDeleted = true
+	} else if config.EveryoneCanViewDeleted.Bool {
 		canViewDeleted = true
 	} else if config.ManageMessagesCanViewDeleted.Bool && !canViewDeleted {
 		canViewDeleted = web.HasPermissionCTX(r.Context(), discordgo.PermissionManageMessages)
@@ -361,8 +373,8 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 		return err
 	}
 
-	user := r.Context().Value(common.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, g.ID, "Deleted a message from log #"+logsId)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDeletedMessage, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: parsedMsgID}))
+
 	return err
 }
 

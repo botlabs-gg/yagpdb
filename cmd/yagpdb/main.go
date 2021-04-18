@@ -5,6 +5,7 @@ import (
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/prom"
 	"github.com/jonas747/yagpdb/common/run"
+	"github.com/jonas747/yagpdb/web/discorddata"
 
 	// Core yagpdb packages
 
@@ -51,6 +52,7 @@ func main() {
 
 	//BotSession.LogLevel = discordgo.LogInformational
 	paginatedmessages.RegisterPlugin()
+	discorddata.RegisterPlugin()
 
 	// Setup plugins
 	analytics.RegisterPlugin()

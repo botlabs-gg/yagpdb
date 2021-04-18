@@ -334,11 +334,6 @@ func (ma *MemberArg) HelpName() string {
 type RoleArg struct{}
 
 func (ra *RoleArg) Matches(def *dcmd.ArgDef, part string) bool {
-	/*if len(part) < 1 {
-		return false
-	}
-	return true*/
-
 	// Check for mention
 	if strings.HasPrefix(part, "<@&") && strings.HasSuffix(part, ">") {
 		return true
@@ -360,9 +355,6 @@ func (ra *RoleArg) Matches(def *dcmd.ArgDef, part string) bool {
 func (ra *RoleArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
 	id := ra.ExtractID(part, data)
 
-	/*if len(id) < 1 {
-		return nil, dcmd.NewSimpleUserError("Invalid role mention or id")
-	}*/
 	var idName string
 	switch t := id.(type) {
 	case int, int32, int64:
@@ -372,21 +364,20 @@ func (ra *RoleArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interf
 	default:
 		idName = ""
 	}
+
 	roles := data.GS.Guild.Roles
-	var role *discordgo.Role
+	var role discordgo.Role
 	for _, v := range roles {
 		if v.ID == id {
-			role = v
-			return role, nil
+			role = *v
+			return &role, nil
 		} else if v.Name == idName {
-			role = v
-			return role, nil
+			role = *v
+			return &role, nil
 		}
-
 	}
 
 	return nil, dcmd.NewSimpleUserError("Invalid role mention or id")
-
 }
 
 func (ra *RoleArg) ExtractID(part string, data *dcmd.Data) interface{} {

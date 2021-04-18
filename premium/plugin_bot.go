@@ -3,7 +3,7 @@ package premium
 import (
 	"time"
 
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 )
@@ -27,14 +27,14 @@ const (
 	PremiumStateMaxMessageAge = time.Hour * 12
 )
 
-func (p *Plugin) MessageLimits(cs *dstate.ChannelState) (maxMessages int, maxMessageAge time.Duration) {
-	if cs.Guild == nil {
+func (p *Plugin) MessageLimits(gs *dstate.GuildState) (maxMessages int, maxMessageAge time.Duration) {
+	if gs == nil {
 		return NormalStateMaxMessages, NormalStateMaxMessageAge
 	}
 
-	premium, err := IsGuildPremiumCached(cs.Guild.ID)
+	premium, err := IsGuildPremiumCached(gs.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed checking if guild is premium")
+		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking if guild is premium")
 	}
 
 	if premium {

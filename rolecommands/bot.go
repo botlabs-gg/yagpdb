@@ -6,16 +6,18 @@ import (
 
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/analytics"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func (p *Plugin) AddCommands() {
@@ -152,11 +154,22 @@ type ScheduledMemberRoleRemoveData struct {
 	RoleID  int64 `json:"role_id"`
 }
 
+type ScheduledEventUpdateMenuMessageData struct {
+	GuildID   int64 `json:"guild_id"`
+	MessageID int64 `json:"message_id"`
+}
+
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleReactionAddRemove, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageRemove, eventsystem.EventMessageDelete, eventsystem.EventMessageDeleteBulk)
 
 	scheduledevents2.RegisterHandler("remove_member_role", ScheduledMemberRoleRemoveData{}, handleRemoveMemberRole)
+	scheduledevents2.RegisterHandler("rolemenu_update_message", ScheduledEventUpdateMenuMessageData{}, handleUpdateRolemenuMessage)
+
+	pubsub.AddHandler("role_commands_evict_menus", func(evt *pubsub.Event) {
+		ClearRolemenuCache(evt.TargetGuildInt)
+		recentMenusTracker.GuildReset(evt.TargetGuildInt)
+	}, nil)
 }
 
 func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
@@ -272,6 +285,22 @@ func StringCommands(cmds []*models.RoleCommand) string {
 	return output + "```\n"
 }
 
+func handleUpdateRolemenuMessage(evt *schEvtsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	dataCast := data.(*ScheduledEventUpdateMenuMessageData)
+
+	fullMenu, err := FindRolemenuFull(context.Background(), dataCast.MessageID, dataCast.GuildID)
+	if err != nil {
+		return false, err
+	}
+
+	err = UpdateRoleMenuMessage(context.Background(), fullMenu)
+	if err != nil {
+		return false, err
+	}
+
+	return false, nil
+}
+
 func handleRemoveMemberRole(evt *schEvtsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	dataCast := data.(*ScheduledMemberRoleRemoveData)
 	err = common.BotSession.GuildMemberRoleRemove(dataCast.GuildID, dataCast.UserID, dataCast.RoleID)
@@ -307,4 +336,41 @@ OUTER:
 	}
 
 	return scheduledevents2.CheckDiscordErrRetry(err), err
+}
+
+type MenuCacheKey int64
+
+func GetRolemenuCached(ctx context.Context, gs *dstate.GuildState, messageID int64) (*models.RoleMenu, error) {
+	result, err := gs.UserCacheFetch(MenuCacheKey(messageID), func() (interface{}, error) {
+		menu, err := FindRolemenuFull(ctx, messageID, gs.ID)
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return nil, err
+			}
+			return nil, nil
+		}
+
+		return menu, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return nil, nil
+	}
+
+	return result.(*models.RoleMenu), nil
+}
+
+func ClearRolemenuCache(gID int64) {
+	gs := bot.State.Guild(true, gID)
+	if gs != nil {
+		ClearRolemenuCacheGS(gs)
+	}
+}
+
+func ClearRolemenuCacheGS(gs *dstate.GuildState) {
+	gs.UserCacheDellAllKeysType(MenuCacheKey(0))
 }

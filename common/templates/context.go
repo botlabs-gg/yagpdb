@@ -13,7 +13,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -66,6 +66,7 @@ var (
 		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
 		"complexMessageEdit": CreateMessageEdit,
+		"kindOf":             KindOf,
 
 		"formatTime":  tmplFormatTime,
 		"json":        tmplJson,
@@ -275,7 +276,13 @@ func (c *Context) Execute(source string) (string, error) {
 	return c.executeParsed()
 }
 
-func (c *Context) executeParsed() (string, error) {
+func (c *Context) executeParsed() (r string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New("paniced!")
+		}
+	}()
+
 	parsed := c.CurrentFrame.parsedTemplate
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
@@ -286,10 +293,10 @@ func (c *Context) executeParsed() (string, error) {
 	var buf bytes.Buffer
 	w := LimitWriter(&buf, 25000)
 
-	started := time.Now()
-	err := parsed.Execute(w, c.Data)
+	// started := time.Now()
+	err = parsed.Execute(w, c.Data)
 
-	dur := time.Since(started)
+	// dur := time.Since(started)
 	if c.FixedOutput != "" {
 		return c.FixedOutput, nil
 	}
@@ -300,7 +307,7 @@ func (c *Context) executeParsed() (string, error) {
 			err = errors.New("response grew too big (>25k)")
 		}
 
-		return result, errors.WithMessage(err, "Failed executing template (dur = "+dur.String()+")")
+		return result, errors.WithMessage(err, "Failed executing template")
 	}
 
 	return result, nil
@@ -486,7 +493,7 @@ func baseContextFuncs(c *Context) {
 
 	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
 	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
-	
+
 	c.ContextFuncs["addRoleName"] = c.tmplAddRoleName
 	c.ContextFuncs["removeRoleName"] = c.tmplRemoveRoleName
 
@@ -519,6 +526,7 @@ func baseContextFuncs(c *Context) {
 	c.ContextFuncs["reFindAll"] = c.reFindAll
 	c.ContextFuncs["reFindAllSubmatches"] = c.reFindAllSubmatches
 	c.ContextFuncs["reReplace"] = c.reReplace
+	c.ContextFuncs["reSplit"] = c.reSplit
 
 	c.ContextFuncs["editChannelTopic"] = c.tmplEditChannelTopic
 	c.ContextFuncs["editChannelName"] = c.tmplEditChannelName
@@ -575,17 +583,17 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 type Dict map[interface{}]interface{}
 
 func (d Dict) Set(key interface{}, value interface{}) string {
-    d[key] = value
-    return ""
+	d[key] = value
+	return ""
 }
 
 func (d Dict) Get(key interface{}) interface{} {
-    return d[key]
+	return d[key]
 }
 
 func (d Dict) Del(key interface{}) string {
-    delete(d, key)
-    return ""
+	delete(d, key)
+	return ""
 }
 
 type SDict map[string]interface{}
