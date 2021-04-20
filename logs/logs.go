@@ -270,3 +270,8 @@ func GetNicknames(ctx context.Context, userID, guildID int64, limit, offset int)
 		qm.Limit(limit),
 		qm.Offset(offset)).AllG(ctx)
 }
+
+const (
+	AccessModeMembers  = 0
+	AccessModeEveryone = 1
+)
