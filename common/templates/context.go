@@ -125,9 +125,10 @@ type Context struct {
 	Msg     *discordgo.Message
 	BotUser *discordgo.User
 
-	ContextFuncs map[string]interface{}
-	Data         map[string]interface{}
-	Counters     map[string]int
+	DisabledContextFuncs []string
+	ContextFuncs         map[string]interface{}
+	Data                 map[string]interface{}
+	Counters             map[string]int
 
 	FixedOutput  string
 	secondsSlept int
@@ -137,6 +138,8 @@ type Context struct {
 	RegexCache map[string]*regexp.Regexp
 
 	CurrentFrame *contextFrame
+
+	contextFuncsAdded bool
 }
 
 type contextFrame struct {
@@ -177,8 +180,6 @@ func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.Membe
 		ctx.IsPremium, _ = GuildPremiumFunc(gs.ID)
 	}
 
-	ctx.setupContextFuncs()
-
 	return ctx
 }
 
@@ -186,6 +187,8 @@ func (c *Context) setupContextFuncs() {
 	for _, f := range contextSetupFuncs {
 		f(c)
 	}
+
+	c.contextFuncsAdded = true
 }
 
 func (c *Context) setupBaseData() {
@@ -218,6 +221,10 @@ func (c *Context) setupBaseData() {
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
+	if !c.contextFuncsAdded {
+		c.setupContextFuncs()
+	}
+
 	tmpl := template.New(c.Name)
 	tmpl.Funcs(StandardFuncMap)
 	tmpl.Funcs(c.ContextFuncs)
@@ -469,70 +476,76 @@ func (c *Context) LogEntry() *logrus.Entry {
 	return f
 }
 
+func (c *Context) addContextFunc(name string, f interface{}) {
+	if !common.ContainsStringSlice(c.DisabledContextFuncs, name) {
+		c.ContextFuncs[name] = f
+	}
+}
+
 func baseContextFuncs(c *Context) {
 	// message functions
-	c.ContextFuncs["sendDM"] = c.tmplSendDM
-	c.ContextFuncs["sendMessage"] = c.tmplSendMessage(true, false)
-	c.ContextFuncs["sendTemplate"] = c.tmplSendTemplate
-	c.ContextFuncs["sendTemplateDM"] = c.tmplSendTemplateDM
-	c.ContextFuncs["sendMessageRetID"] = c.tmplSendMessage(true, true)
-	c.ContextFuncs["sendMessageNoEscape"] = c.tmplSendMessage(false, false)
-	c.ContextFuncs["sendMessageNoEscapeRetID"] = c.tmplSendMessage(false, true)
-	c.ContextFuncs["editMessage"] = c.tmplEditMessage(true)
-	c.ContextFuncs["editMessageNoEscape"] = c.tmplEditMessage(false)
+	c.addContextFunc("sendDM", c.tmplSendDM)
+	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
+	c.addContextFunc("sendTemplate", c.tmplSendTemplate)
+	c.addContextFunc("sendTemplateDM", c.tmplSendTemplateDM)
+	c.addContextFunc("sendMessageRetID", c.tmplSendMessage(true, true))
+	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
+	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
+	c.addContextFunc("editMessage", c.tmplEditMessage(true))
+	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
 
 	// Mentions
-	c.ContextFuncs["mentionEveryone"] = c.tmplMentionEveryone
-	c.ContextFuncs["mentionHere"] = c.tmplMentionHere
-	c.ContextFuncs["mentionRoleName"] = c.tmplMentionRoleName
-	c.ContextFuncs["mentionRoleID"] = c.tmplMentionRoleID
+	c.addContextFunc("mentionEveryone", c.tmplMentionEveryone)
+	c.addContextFunc("mentionHere", c.tmplMentionHere)
+	c.addContextFunc("mentionRoleName", c.tmplMentionRoleName)
+	c.addContextFunc("mentionRoleID", c.tmplMentionRoleID)
 
 	// Role functions
-	c.ContextFuncs["hasRoleName"] = c.tmplHasRoleName
-	c.ContextFuncs["hasRoleID"] = c.tmplHasRoleID
+	c.addContextFunc("hasRoleName", c.tmplHasRoleName)
+	c.addContextFunc("hasRoleID", c.tmplHasRoleID)
 
-	c.ContextFuncs["addRoleID"] = c.tmplAddRoleID
-	c.ContextFuncs["removeRoleID"] = c.tmplRemoveRoleID
+	c.addContextFunc("addRoleID", c.tmplAddRoleID)
+	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
 
-	c.ContextFuncs["addRoleName"] = c.tmplAddRoleName
-	c.ContextFuncs["removeRoleName"] = c.tmplRemoveRoleName
+	c.addContextFunc("addRoleName", c.tmplAddRoleName)
+	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
 
-	c.ContextFuncs["giveRoleID"] = c.tmplGiveRoleID
-	c.ContextFuncs["giveRoleName"] = c.tmplGiveRoleName
+	c.addContextFunc("giveRoleID", c.tmplGiveRoleID)
+	c.addContextFunc("giveRoleName", c.tmplGiveRoleName)
 
-	c.ContextFuncs["takeRoleID"] = c.tmplTakeRoleID
-	c.ContextFuncs["takeRoleName"] = c.tmplTakeRoleName
+	c.addContextFunc("takeRoleID", c.tmplTakeRoleID)
+	c.addContextFunc("takeRoleName", c.tmplTakeRoleName)
 
-	c.ContextFuncs["targetHasRoleID"] = c.tmplTargetHasRoleID
-	c.ContextFuncs["targetHasRoleName"] = c.tmplTargetHasRoleName
+	c.addContextFunc("targetHasRoleID", c.tmplTargetHasRoleID)
+	c.addContextFunc("targetHasRoleName", c.tmplTargetHasRoleName)
 
-	c.ContextFuncs["deleteResponse"] = c.tmplDelResponse
-	c.ContextFuncs["deleteTrigger"] = c.tmplDelTrigger
-	c.ContextFuncs["deleteMessage"] = c.tmplDelMessage
-	c.ContextFuncs["deleteMessageReaction"] = c.tmplDelMessageReaction
-	c.ContextFuncs["deleteAllMessageReactions"] = c.tmplDelAllMessageReactions
-	c.ContextFuncs["getMessage"] = c.tmplGetMessage
-	c.ContextFuncs["getMember"] = c.tmplGetMember
-	c.ContextFuncs["getChannel"] = c.tmplGetChannel
-	c.ContextFuncs["addReactions"] = c.tmplAddReactions
-	c.ContextFuncs["addResponseReactions"] = c.tmplAddResponseReactions
-	c.ContextFuncs["addMessageReactions"] = c.tmplAddMessageReactions
+	c.addContextFunc("deleteResponse", c.tmplDelResponse)
+	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
+	c.addContextFunc("deleteMessage", c.tmplDelMessage)
+	c.addContextFunc("deleteMessageReaction", c.tmplDelMessageReaction)
+	c.addContextFunc("deleteAllMessageReactions", c.tmplDelAllMessageReactions)
+	c.addContextFunc("getMessage", c.tmplGetMessage)
+	c.addContextFunc("getMember", c.tmplGetMember)
+	c.addContextFunc("getChannel", c.tmplGetChannel)
+	c.addContextFunc("addReactions", c.tmplAddReactions)
+	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
+	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
 
-	c.ContextFuncs["currentUserCreated"] = c.tmplCurrentUserCreated
-	c.ContextFuncs["currentUserAgeHuman"] = c.tmplCurrentUserAgeHuman
-	c.ContextFuncs["currentUserAgeMinutes"] = c.tmplCurrentUserAgeMinutes
-	c.ContextFuncs["sleep"] = c.tmplSleep
-	c.ContextFuncs["reFind"] = c.reFind
-	c.ContextFuncs["reFindAll"] = c.reFindAll
-	c.ContextFuncs["reFindAllSubmatches"] = c.reFindAllSubmatches
-	c.ContextFuncs["reReplace"] = c.reReplace
-	c.ContextFuncs["reSplit"] = c.reSplit
+	c.addContextFunc("currentUserCreated", c.tmplCurrentUserCreated)
+	c.addContextFunc("currentUserAgeHuman", c.tmplCurrentUserAgeHuman)
+	c.addContextFunc("currentUserAgeMinutes", c.tmplCurrentUserAgeMinutes)
+	c.addContextFunc("sleep", c.tmplSleep)
+	c.addContextFunc("reFind", c.reFind)
+	c.addContextFunc("reFindAll", c.reFindAll)
+	c.addContextFunc("reFindAllSubmatches", c.reFindAllSubmatches)
+	c.addContextFunc("reReplace", c.reReplace)
+	c.addContextFunc("reSplit", c.reSplit)
 
-	c.ContextFuncs["editChannelTopic"] = c.tmplEditChannelTopic
-	c.ContextFuncs["editChannelName"] = c.tmplEditChannelName
-	c.ContextFuncs["onlineCount"] = c.tmplOnlineCount
-	c.ContextFuncs["onlineCountBots"] = c.tmplOnlineCountBots
-	c.ContextFuncs["editNickname"] = c.tmplEditNickname
+	c.addContextFunc("editChannelTopic", c.tmplEditChannelTopic)
+	c.addContextFunc("editChannelName", c.tmplEditChannelName)
+	c.addContextFunc("onlineCount", c.tmplOnlineCount)
+	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
+	c.addContextFunc("editNickname", c.tmplEditNickname)
 }
 
 type limitedWriter struct {
