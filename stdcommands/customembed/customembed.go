@@ -23,6 +23,10 @@ var Command = &commands.YAGCommand{
 		err := json.Unmarshal([]byte(data.Args[0].Str()), &parsed)
 		if err != nil {
 			return "Failed parsing json: " + err.Error(), err
+		}	
+		// fallback for missing description
+		if parsed["description"] == nil {
+			json.Unmarshal([]byte("\"description\":\"\u200b\""), &parsed)
 		}
 		return parsed, nil
 	},
