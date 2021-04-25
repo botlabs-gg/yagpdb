@@ -38,6 +38,9 @@ var Command = &commands.YAGCommand{
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		content :=  data.Switch("content").Str()
+		if data.Switch("title") == "" && data.Switch("url") != "" {
+			return "Title is required for URL field", nil
+		}
 		embed := &discordgo.MessageEmbed{
 			Title:       data.Switch("title").Str(),
 			Description: data.Switch("desc").Str(),
