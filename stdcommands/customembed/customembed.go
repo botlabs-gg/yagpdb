@@ -24,9 +24,17 @@ var Command = &commands.YAGCommand{
 		if err != nil {
 			return "Failed parsing json: " + err.Error(), err
 		}	
-		// fallback for missing description
-		if parsed["description"] == nil {
-			json.Unmarshal([]byte("\"description\":\"\u200b\""), &parsed)
+		// fallback for missing embed fields
+		if parsed.Description == "" {
+			parsed.Description = "\u200b"
+		}
+		if parsed.Author.Name == "" && parsed.Author.IconURL != "" {
+			parsed.Author.Name = "\u200b"
+		} else if parsed.Author.Name == "" && parsed.Author.URL != "" {
+			return "Author Name is required for Author URL", nil
+		}
+		if parsed.Footer.Name == "" && parsed.Footer.IconURL != "" {
+			parsed.Footer.Name = "\u200b"
 		}
 		return parsed, nil
 	},
