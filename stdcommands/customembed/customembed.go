@@ -28,6 +28,9 @@ var Command = &commands.YAGCommand{
 		if parsed.Description == "" {
 			parsed.Description = "\u200b"
 		}
+		if parsed.Title == "" && parsed.URL != "" {
+			return "Title is required for URL", nil
+		}
 		if parsed.Author.Name == "" && parsed.Author.IconURL != "" {
 			parsed.Author.Name = "\u200b"
 		} else if parsed.Author.Name == "" && parsed.Author.URL != "" {
