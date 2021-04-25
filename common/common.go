@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
+	boilv4 "github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -248,6 +249,7 @@ func connectDB(host, user, pass, dbName string, maxConns int) error {
 	PQ = db.DB()
 	SQLX = sqlx.NewDb(PQ, "postgres")
 	boil.SetDB(PQ)
+	boilv4.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(maxConns)
 		PQ.SetMaxIdleConns(maxConns)

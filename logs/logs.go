@@ -14,9 +14,9 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"golang.org/x/net/context"
 )
 
@@ -114,7 +114,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		}
 
 		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)
-		body = strings.Replace(body, string(0), "", -1)
+		body = strings.Replace(body, string(rune(0)), "", -1)
 
 		messageModel := &models.Messages2{
 			ID:      v.ID,
@@ -270,3 +270,8 @@ func GetNicknames(ctx context.Context, userID, guildID int64, limit, offset int)
 		qm.Limit(limit),
 		qm.Offset(offset)).AllG(ctx)
 }
+
+const (
+	AccessModeMembers  = 0
+	AccessModeEveryone = 1
+)

@@ -15,23 +15,28 @@ var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
 	Name:         "Undelete",
 	Aliases:      []string{"ud"},
-	Description:  "Views your recent deleted messages, or all users deleted messages (with \"-a\" and manage messages perm) in this channel",
+	Description:		"Views the first 10 recent deleted messages. By default, only the current user's deleted messages will show.",
+	LongDescription:  "You can use the `-a` flag to view all users delete messages, or `-u` to view a specified user's deleted messages.\nBoth `-a` and `-u` require Manage Messages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specified along with `-u` only messages from the user provided using `-u` will be shown.",
 	RequiredArgs: 0,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Switch: "a", Name: "all"},
+		{Switch: "u", Name: "user", Type: dcmd.UserID, Default: 0},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
-
-		if allUsers {
-			if ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages); !ok || err != nil {
-				if err != nil {
-					return nil, err
-				} else if !ok {
-					return "You need `Manage Messages` permissions to view all users deleted messages", nil
-				}
+		targetUser := data.Switch("u").Int64()
+		
+		if allUsers || targetUser != 0 {
+			ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageMessages)
+			if err != nil {
+				return nil, err
+			} else if !ok && targetUser == 0 {
+				return "You need `Manage Messages` permissions to view all users deleted messages", nil
+			} else if !ok {
+				return "You need `Manage Messages` permissions to target a specific user other than yourself.", nil
 			}
 		}
+				
 
 		resp := "Up to 10 last deleted messages (last hour or 12 hours for premium): \n\n"
 		numFound := 0
@@ -45,11 +50,15 @@ var Command = &commands.YAGCommand{
 			if !msg.Deleted {
 				continue
 			}
-
-			if !allUsers && msg.Author.ID != data.Msg.Author.ID {
+			
+			if !allUsers && msg.Author.ID != data.Msg.Author.ID && targetUser == 0 {
 				continue
 			}
-
+			
+			if targetUser != 0 && msg.Author.ID != targetUser {
+				continue
+			}
+			
 			precision := common.DurationPrecisionHours
 			if time.Since(msg.ParsedCreated) < time.Hour {
 				precision = common.DurationPrecisionMinutes

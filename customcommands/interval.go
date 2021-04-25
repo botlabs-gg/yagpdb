@@ -104,11 +104,13 @@ func DelNextRunEvent(guildID int64, cmdID int64) error {
 }
 
 // TODO: Run this all in a transaction?
-func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool) error {
-	// remove the old events
-	err := DelNextRunEvent(cc.GuildID, cc.LocalID)
-	if err != nil {
-		return errors.WrapIf(err, "del_old_events")
+func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool, clearOld bool) error {
+	if clearOld {
+		// remove the old events
+		err := DelNextRunEvent(cc.GuildID, cc.LocalID)
+		if err != nil {
+			return errors.WrapIf(err, "del_old_events")
+		}
 	}
 
 	if cc.TriggerType != int(CommandTriggerInterval) || cc.TimeTriggerInterval < 1 {
@@ -127,7 +129,7 @@ func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool) erro
 	if updateLastRun {
 		toUpdate = append(toUpdate, "last_run")
 	}
-	_, err = cc.UpdateG(context.Background(), boil.Whitelist(toUpdate...))
+	_, err := cc.UpdateG(context.Background(), boil.Whitelist(toUpdate...))
 	if err != nil {
 		return errors.WrapIf(err, "update_cc")
 	}
