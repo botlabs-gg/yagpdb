@@ -278,7 +278,9 @@ func (p *Plugin) UpdateFeatureFlagsBatch() (map[int64][]string, error) {
 			}
 
 			if current, ok := highestTiers[guildID]; ok {
-				if tier > current {
+				if tier == PremiumTierPremium {
+					highestTiers[guildID] = tier
+				} else if current == PremiumTierNone {
 					highestTiers[guildID] = tier
 				}
 			} else {
