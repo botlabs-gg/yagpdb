@@ -7,11 +7,12 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	Cooldown:    5,
-	CmdCategory: commands.CategoryFun,
-	Name:        "Topic",
-	Description: "Generates a conversation topic to help chat get moving.",
-
+	Cooldown:            5,
+	CmdCategory:         commands.CategoryFun,
+	Name:                "Topic",
+	Description:         "Generates a conversation topic to help chat get moving.",
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		doc, err := goquery.NewDocument("http://www.conversationstarters.com/generator.php")
 		if err != nil {

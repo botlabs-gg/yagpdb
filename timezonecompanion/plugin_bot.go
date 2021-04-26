@@ -43,7 +43,7 @@ func (p *Plugin) AddCommands() {
 
 			localTZ := time.Now().Location()
 			userZone, userOffset := time.Now().In(localTZ).Zone()
-			getUserTZ := GetUserTimezone(parsed.Msg.Author.ID)
+			getUserTZ := GetUserTimezone(parsed.Author.ID)
 			tzState := "server's"
 
 			if getUserTZ != nil {
@@ -67,7 +67,7 @@ func (p *Plugin) AddCommands() {
 				if getUserTZ != nil {
 
 					m := &models.UserTimezone{
-						UserID:       parsed.Msg.Author.ID,
+						UserID:       parsed.Author.ID,
 						TimezoneName: localTZ.String(),
 					}
 					_, err := m.DeleteG(parsed.Context())
@@ -94,7 +94,7 @@ func (p *Plugin) AddCommands() {
 						return paginatedTimezones(zones)(nil, 1)
 					}
 					_, err := paginatedmessages.CreatePaginatedMessage(
-						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
+						parsed.GuildData.GS.ID, parsed.ChannelID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
 					return nil, err
 				}
 
@@ -135,7 +135,7 @@ func (p *Plugin) AddCommands() {
 			name, _ := time.Now().In(loc).Zone()
 
 			m := &models.UserTimezone{
-				UserID:       parsed.Msg.Author.ID,
+				UserID:       parsed.Author.ID,
 				TimezoneName: zone,
 			}
 
@@ -164,11 +164,11 @@ func (p *Plugin) AddCommands() {
 			}
 
 			insert := false
-			conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GS.ID)
+			conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				if err == sql.ErrNoRows {
 					conf = &models.TimezoneGuildConfig{
-						GuildID: parsed.GS.ID,
+						GuildID: parsed.GuildData.GS.ID,
 					}
 					insert = true
 				} else {
@@ -192,13 +192,13 @@ func (p *Plugin) AddCommands() {
 
 				found := false
 				for i, v := range conf.DisabledInChannels {
-					if v == parsed.CS.ID {
+					if v == parsed.ChannelID {
 						found = true
 						conf.DisabledInChannels = append(conf.DisabledInChannels[:i], conf.DisabledInChannels[i+1:]...)
 						status = "on"
 
 						if conf.NewChannelsDisabled {
-							conf.EnabledInChannels = append(conf.EnabledInChannels, parsed.CS.ID)
+							conf.EnabledInChannels = append(conf.EnabledInChannels, parsed.ChannelID)
 						}
 
 						break
@@ -206,10 +206,10 @@ func (p *Plugin) AddCommands() {
 				}
 
 				if !found {
-					conf.DisabledInChannels = append(conf.DisabledInChannels, parsed.CS.ID)
+					conf.DisabledInChannels = append(conf.DisabledInChannels, parsed.ChannelID)
 
 					for i, v := range conf.EnabledInChannels {
-						if v == parsed.CS.ID {
+						if v == parsed.ChannelID {
 							conf.EnabledInChannels = append(conf.EnabledInChannels[:i], conf.EnabledInChannels[i+1:]...)
 						}
 					}

@@ -15,10 +15,12 @@ var Command = &commands.YAGCommand{
 	Description:     "Roll dices, specify nothing for 6 sides, specify a number for max sides, or rpg dice syntax.",
 	LongDescription: "Example: `-roll 2d6`",
 	Arguments: []*dcmd.ArgDef{
-		{Name: "RPG Dice", Type: dcmd.String},
+		{Name: "RPG-Dice", Type: dcmd.String},
 		{Name: "Sides", Default: 0, Type: dcmd.Int},
 	},
-	ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
+	ArgumentCombos:      [][]int{[]int{1}, []int{0}, []int{}},
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		if data.Args[0].Value != nil {
 			// Special dice syntax if string

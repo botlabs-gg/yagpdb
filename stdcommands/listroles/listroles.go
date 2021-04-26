@@ -21,18 +21,18 @@ var Command = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		var out, outFinal string
 		var noMana bool
-		
+
 		if data.Switches["nomanaged"].Value != nil && data.Switches["nomanaged"].Value.(bool) {
 			noMana = true
 		}
-		
-		data.GS.Lock()
-		defer data.GS.Unlock()
 
-		sort.Sort(dutil.Roles(data.GS.Guild.Roles))
-		
+		data.GuildData.GS.Lock()
+		defer data.GuildData.GS.Unlock()
+
+		sort.Sort(dutil.Roles(data.GuildData.GS.Guild.Roles))
+
 		counter := 0
-		for _, r := range data.GS.Guild.Roles {
+		for _, r := range data.GuildData.GS.Guild.Roles {
 			if noMana && r.Managed {
 				continue
 			} else {

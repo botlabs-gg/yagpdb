@@ -35,10 +35,11 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonas747/cardsagainstdiscord v1.1.1-0.20200617121715-2c969a853358
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
-	github.com/jonas747/dcmd v1.2.4
+	github.com/jonas747/dcmd v1.2.5-0.20210427180604-610996d789dc
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.5.3-0.20210412135806-7cb79dcecb49
+	github.com/jonas747/discordgo v1.5.3
 	github.com/jonas747/dshardorchestrator/v2 v2.0.1
+	github.com/jonas747/dstate v1.0.5 // indirect
 	github.com/jonas747/dstate/v2 v2.0.2
 	github.com/jonas747/dutil v0.0.3
 	github.com/jonas747/go-reddit v0.1.2
@@ -81,13 +82,15 @@ require (
 	github.com/volatiletech/strmangle v0.0.1
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670
+	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
-	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	google.golang.org/api v0.40.0
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
+
+// replace github.com/jonas747/discordgo => ../discordgo
+// replace github.com/jonas747/dcmd => ../dcmd

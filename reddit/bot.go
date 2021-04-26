@@ -62,8 +62,8 @@ func (p *Plugin) AddCommands() {
 				ratelimiter: NewRatelimiter(),
 			}
 
-			err1 := handlerSlow.handlePost(resp[0], data.GS.ID)
-			err2 := handlerFast.handlePost(resp[0], data.GS.ID)
+			err1 := handlerSlow.handlePost(resp[0], data.GuildData.GS.ID)
+			err2 := handlerFast.handlePost(resp[0], data.GuildData.GS.ID)
 
 			return fmt.Sprintf("SlowErr: `%v`, fastErr: `%v`", err1, err2), nil
 		}),

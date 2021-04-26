@@ -50,12 +50,12 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Send full help in DM
-	ir, err := createInteractiveHelp(data.Msg.Author.ID, resp)
+	ir, err := createInteractiveHelp(data.Author.ID, resp)
 	if ir != nil || err != nil {
 		return ir, err
 	}
 
-	if data.Source == dcmd.DMSource {
+	if data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
 	}
 

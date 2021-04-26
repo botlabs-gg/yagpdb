@@ -177,7 +177,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		return CmdFuncListCommands(parsed)
 	}
 
-	given, err := FindToggleRole(parsed.Context(), parsed.MS, parsed.Args[0].Str())
+	given, err := FindToggleRole(parsed.Context(), parsed.GuildData.MS, parsed.Args[0].Str())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
@@ -188,10 +188,10 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 			return resp, err
 		}
 
-		return HumanizeAssignError(parsed.GS, err)
+		return HumanizeAssignError(parsed.GuildData.GS, err)
 	}
 
-	go analytics.RecordActiveUnit(parsed.GS.ID, &Plugin{}, "cmd_used")
+	go analytics.RecordActiveUnit(parsed.GuildData.GS.ID, &Plugin{}, "cmd_used")
 
 	if given {
 		return "Gave you the role!", nil
@@ -226,7 +226,7 @@ func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
 }
 
 func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
-	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.Context(), parsed.GS.ID)
+	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.Context(), parsed.GuildData.GS.ID)
 	if err != nil {
 		return "Failed retrieving role commands", err
 	}

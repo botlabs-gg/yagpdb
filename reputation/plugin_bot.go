@@ -129,23 +129,23 @@ var cmds = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
+			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occured while finding the server config", err
 			}
 
-			if !IsAdmin(parsed.GS, parsed.MS, conf) {
+			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
 				return "You're not a reputation admin. (no manage server perms and no rep admin role)", nil
 			}
 
 			targetID := parsed.Args[0].Int64()
 			targetUsername := strconv.FormatInt(targetID, 10)
-			targetMember, _ := bot.GetMember(parsed.GS.ID, targetID)
+			targetMember, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
 			if targetMember != nil {
 				targetUsername = targetMember.Username
 			}
 
-			err = SetRep(parsed.Context(), parsed.GS.ID, parsed.MS.ID, targetID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.ID, targetID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
@@ -162,18 +162,18 @@ var cmds = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
+			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occured while finding the server config", err
 			}
 
-			if !IsAdmin(parsed.GS, parsed.MS, conf) {
+			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
 
 			target := parsed.Args[0].Int64()
 
-			err = DelRep(parsed.Context(), parsed.GS.ID, target)
+			err = DelRep(parsed.Context(), parsed.GuildData.GS.ID, target)
 			if err != nil {
 				return nil, err
 			}
@@ -192,12 +192,12 @@ var cmds = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "Page", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
+			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occured while finding the server config", err
 			}
 
-			if !IsAdmin(parsed.GS, parsed.MS, conf) {
+			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
 
@@ -206,7 +206,7 @@ var cmds = []*commands.YAGCommand{
 			const entriesPerPage = 20
 			offset := (parsed.Args[1].Int() - 1) * entriesPerPage
 
-			logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", parsed.GS.ID, targetID, targetID), qm.OrderBy("id desc"), qm.Limit(entriesPerPage), qm.Offset(offset)).AllG(parsed.Context())
+			logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", parsed.GuildData.GS.ID, targetID, targetID), qm.OrderBy("id desc"), qm.Limit(entriesPerPage), qm.Offset(offset)).AllG(parsed.Context())
 			if err != nil {
 				return nil, err
 			}
@@ -240,7 +240,7 @@ var cmds = []*commands.YAGCommand{
 				}
 			}
 
-			members, _ := bot.GetMembers(parsed.GS.ID, membersToGrab...)
+			members, _ := bot.GetMembers(parsed.GuildData.GS.ID, membersToGrab...)
 
 			// finally display the results
 			var out strings.Builder
@@ -288,17 +288,17 @@ var cmds = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.User},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			target := parsed.Msg.Author
+			target := parsed.Author
 			if parsed.Args[0].Value != nil {
 				target = parsed.Args[0].Value.(*discordgo.User)
 			}
 
-			conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
+			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occured finding the server config", err
 			}
 
-			score, rank, err := GetUserStats(parsed.GS.ID, target.ID)
+			score, rank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)
 
 			if err != nil {
 				if err == ErrUserNotFound {
@@ -325,12 +325,12 @@ var cmds = []*commands.YAGCommand{
 		},
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			offset := (page - 1) * 15
-			entries, err := TopUsers(parsed.GS.ID, offset, 15)
+			entries, err := TopUsers(parsed.GuildData.GS.ID, offset, 15)
 			if err != nil {
 				return nil, err
 			}
 
-			detailed, err := DetailedLeaderboardEntries(parsed.GS.ID, entries)
+			detailed, err := DetailedLeaderboardEntries(parsed.GuildData.GS.ID, entries)
 			if err != nil {
 				return nil, err
 			}
@@ -343,7 +343,7 @@ var cmds = []*commands.YAGCommand{
 				Title: "Reputation leaderboard",
 			}
 
-			leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(parsed.GS.ID) + "/reputation/leaderboard"
+			leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(parsed.GuildData.GS.ID) + "/reputation/leaderboard"
 			out := "```\n# -- Points -- User\n"
 			for _, v := range detailed {
 				user := v.Username
@@ -365,26 +365,26 @@ var cmds = []*commands.YAGCommand{
 func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 	target := parsed.Args[0].Value.(*discordgo.User)
 
-	conf, err := GetConfig(parsed.Context(), parsed.GS.ID)
+	conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	pointsName := conf.PointsName
 
-	if target.ID == parsed.Msg.Author.ID {
+	if target.ID == parsed.Author.ID {
 		return fmt.Sprintf("You can't modify your own %s... **Silly**", pointsName), nil
 	}
 
-	sender := parsed.MS
-	receiver, err := bot.GetMember(parsed.GS.ID, target.ID)
+	sender := parsed.GuildData.MS
+	receiver, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	amount := parsed.Args[1].Int()
 
-	err = ModifyRep(parsed.Context(), conf, parsed.GS.ID, sender, receiver, int64(amount))
+	err = ModifyRep(parsed.Context(), conf, parsed.GuildData.GS.ID, sender, receiver, int64(amount))
 	if err != nil {
 		if cast, ok := err.(UserError); ok {
 			return cast, nil
@@ -393,7 +393,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	newScore, newRank, err := GetUserStats(parsed.GS.ID, target.ID)
+	newScore, newRank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)
 	if err != nil {
 		newScore = -1
 		newRank = -1

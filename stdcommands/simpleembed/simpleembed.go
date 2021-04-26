@@ -83,12 +83,12 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		cID := data.Msg.ChannelID
+		cID := data.ChannelID
 		c := data.Switch("channel")
 		if c.Value != nil {
 			cID = c.Value.(*dstate.ChannelState).ID
 
-			hasPerms, err := bot.AdminOrPermMS(cID, data.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+			hasPerms, err := bot.AdminOrPermMS(cID, data.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
 				return "Failed checking permissions, please try again or join the support server.", err
 			}
@@ -108,7 +108,7 @@ var Command = &commands.YAGCommand{
 			return err, err
 		}
 
-		if cID != data.Msg.ChannelID {
+		if cID != data.ChannelID {
 			return "Done", nil
 		}
 

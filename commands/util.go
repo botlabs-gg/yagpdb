@@ -11,6 +11,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 )
@@ -18,6 +19,8 @@ import (
 type DurationArg struct {
 	Min, Max time.Duration
 }
+
+var _ dcmd.ArgType = (*DurationArg)(nil)
 
 func (d *DurationArg) Matches(def *dcmd.ArgDef, part string) bool {
 	if len(part) < 1 {
@@ -34,8 +37,29 @@ func (d *DurationArg) Matches(def *dcmd.ArgDef, part string) bool {
 	return err == nil
 }
 
-func (d *DurationArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
+func (d *DurationArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
 	dur, err := ParseDuration(part)
+	if err != nil {
+		return nil, err
+	}
+
+	if d.Min != 0 && d.Min > dur {
+		return nil, &DurationOutOfRangeError{ArgName: def.Name, Got: dur, Max: d.Max, Min: d.Min}
+	}
+
+	if d.Max != 0 && d.Max < dur {
+		return nil, &DurationOutOfRangeError{ArgName: def.Name, Got: dur, Max: d.Max, Min: d.Min}
+	}
+
+	return dur, nil
+}
+
+func (d *DurationArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val interface{}, err error) {
+	s, err := options.ExpectString(def.Name)
+	if err != nil {
+		return nil, err
+	}
+	dur, err := ParseDuration(s)
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +77,10 @@ func (d *DurationArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (int
 
 func (d *DurationArg) HelpName() string {
 	return "Duration"
+}
+
+func (d *DurationArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
 }
 
 // Parses a time string like 1day3h
@@ -203,16 +231,16 @@ func FilterBadInvites(msg string, guildID int64, replacement string) string {
 func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage string) func(data *dcmd.Data) (interface{}, error) {
 	return func(data *dcmd.Data) (interface{}, error) {
 		// Only show stuff if atleast 1 of the commands in the container is enabled
-		if data.GS != nil {
-			data.GS.RLock()
-			cParentID := data.CS.ParentID
-			data.GS.RUnlock()
+		if data.GuildData != nil {
+			data.GuildData.GS.RLock()
+			cParentID := data.GuildData.CS.ParentID
+			data.GuildData.GS.RUnlock()
 
-			ms := data.MS
+			ms := data.GuildData.MS
 
-			channelOverrides, err := GetOverridesForChannel(data.CS.ID, cParentID, data.GS.ID)
+			channelOverrides, err := GetOverridesForChannel(data.ChannelID, cParentID, data.GuildData.GS.ID)
 			if err != nil {
-				logger.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed retrieving command overrides")
+				logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("failed retrieving command overrides")
 				return nil, nil
 			}
 
@@ -223,9 +251,9 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 			// make sure that at least 1 command in the container is enabled
 			for _, v := range container.Commands {
 				cast := v.Command.(*YAGCommand)
-				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GS.ID, channelOverrides)
+				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GuildData.GS.ID, channelOverrides)
 				if err != nil {
-					logger.WithError(err).WithField("guild", data.Msg.GuildID).Error("failed checking if command was enabled")
+					logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("failed checking if command was enabled")
 					continue
 				}
 
@@ -267,6 +295,8 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 // MemberArg matches a id or mention and returns a MemberState object for the user
 type MemberArg struct{}
 
+var _ dcmd.ArgType = (*MemberArg)(nil)
+
 func (ma *MemberArg) Matches(def *dcmd.ArgDef, part string) bool {
 	// Check for mention
 	if strings.HasPrefix(part, "<@") && strings.HasSuffix(part, ">") {
@@ -282,14 +312,14 @@ func (ma *MemberArg) Matches(def *dcmd.ArgDef, part string) bool {
 	return false
 }
 
-func (ma *MemberArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
+func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
 	id := ma.ExtractID(part, data)
 
 	if id < 1 {
 		return nil, dcmd.NewSimpleUserError("Invalid mention or id")
 	}
 
-	member, err := bot.GetMemberJoinedAt(data.GS.ID, id)
+	member, err := bot.GetMemberJoinedAt(data.GuildData.GS.ID, id)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember, discordgo.ErrCodeUnknownUser) {
 			return nil, dcmd.NewSimpleUserError("User not a member of the server")
@@ -299,6 +329,15 @@ func (ma *MemberArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (inte
 	}
 
 	return member, nil
+}
+
+func (ma *MemberArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val interface{}, err error) {
+	member, err := options.ExpectMember(def.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return dstate.MSFromDGoMember(data.GuildData.GS, member), nil
 }
 
 func (ma *MemberArg) ExtractID(part string, data *dcmd.Data) int64 {
@@ -328,4 +367,8 @@ func (ma *MemberArg) ExtractID(part string, data *dcmd.Data) int64 {
 
 func (ma *MemberArg) HelpName() string {
 	return "Member"
+}
+
+func (ma *MemberArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeUser)}
 }

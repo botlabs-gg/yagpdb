@@ -180,18 +180,18 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 
 	fakeMsg.Content = cmdLine
 
-	data, err := CommandSystem.FillData(common.BotSession, &fakeMsg)
+	data, err := CommandSystem.FillDataLegacyMessage(common.BotSession, &fakeMsg)
 	if err != nil {
 		return "", errors.WithMessage(err, "tmplExecCmd")
 	}
 
-	data.MsgStrippedPrefix = fakeMsg.Content
+	data.TraditionalTriggerData.MessageStrippedPrefix = fakeMsg.Content
 	foundCmd, foundContainer, rest := CommandSystem.Root.AbsFindCommandWithRest(cmdLine)
 	if foundCmd == nil {
 		return "Unknown command", nil
 	}
 
-	data.MsgStrippedPrefix = rest
+	data.TraditionalTriggerData.MessageStrippedPrefix = rest
 
 	data.Cmd = foundCmd
 	data.ContainerChain = []*dcmd.Container{CommandSystem.Root}

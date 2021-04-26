@@ -28,9 +28,9 @@ func (p *Plugin) AddCommands() {
 			pStr := data.Args[0].Str()
 			packs := strings.Fields(pStr)
 
-			_, err := p.Manager.CreateGame(data.GS.ID, data.CS.ID, data.Msg.Author.ID, data.Msg.Author.Username, voteMode, packs...)
+			_, err := p.Manager.CreateGame(data.GuildData.GS.ID, data.GuildData.CS.ID, data.Author.ID, data.Author.Username, voteMode, packs...)
 			if err == nil {
-				logrus.Info("[cah] Created a new game in ", data.CS.ID, ":", data.GS.ID)
+				logrus.Info("[cah] Created a new game in ", data.GuildData.CS.ID, ":", data.GuildData.GS.ID)
 				return "", nil
 			}
 
@@ -47,11 +47,11 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a Cards Against Humanity game that is ongoing in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			isAdmin, err := bot.AdminOrPermMS(data.CS.ID, data.MS, 0)
+			isAdmin, err := bot.AdminOrPermMS(data.ChannelID, data.GuildData.MS, 0)
 			if err == nil && isAdmin {
-				err = p.Manager.RemoveGame(data.CS.ID)
+				err = p.Manager.RemoveGame(data.ChannelID)
 			} else {
-				err = p.Manager.TryAdminRemoveGame(data.Msg.Author.ID)
+				err = p.Manager.TryAdminRemoveGame(data.Author.ID)
 			}
 
 			if err != nil {
@@ -76,7 +76,7 @@ func (p *Plugin) AddCommands() {
 		Description: "Kicks a player from the ongoing Cards Against Humanity game in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			userID := data.Args[0].Int64()
-			err := p.Manager.AdminKickUser(data.Msg.Author.ID, userID)
+			err := p.Manager.AdminKickUser(data.Author.ID, userID)
 			if err != nil {
 				if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
 					return cahErr, nil

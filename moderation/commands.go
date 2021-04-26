@@ -21,18 +21,18 @@ import (
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
-	config, err = GetConfig(cmdData.GS.ID)
+	config, err = GetConfig(cmdData.GuildData.GS.ID)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetConfig")
 	}
 
 	if targetID != 0 {
-		targetMember, _ := bot.GetMember(cmdData.GS.ID, targetID)
+		targetMember, _ := bot.GetMember(cmdData.GuildData.GS.ID, targetID)
 		if targetMember != nil {
-			gs := cmdData.GS
+			gs := cmdData.GuildData.GS
 
 			gs.RLock()
-			above := bot.IsMemberAbove(gs, cmdData.MS, targetMember)
+			above := bot.IsMemberAbove(gs, cmdData.GuildData.MS, targetMember)
 			gs.RUnlock()
 
 			if !above {
@@ -66,7 +66,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		oreason = "(No reason specified)"
 	}
 
-	member := cmdData.MS
+	member := cmdData.GuildData.MS
 
 	// check permissions or role setup for this command
 	permsMet := false
@@ -82,7 +82,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 
 	if !permsMet && neededPerm != 0 {
 		// Fallback to legacy permissions
-		hasPerms, err := bot.AdminOrPermMS(cmdData.CS.ID, member, neededPerm)
+		hasPerms, err := bot.AdminOrPermMS(cmdData.ChannelID, member, neededPerm)
 		if err != nil || !hasPerms {
 			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm])
 		}
@@ -90,7 +90,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		permsMet = true
 	}
 
-	go analytics.RecordActiveUnit(cmdData.GS.ID, &Plugin{}, "executed_cmd_"+cmdName)
+	go analytics.RecordActiveUnit(cmdData.GuildData.GS.ID, &Plugin{}, "executed_cmd_"+cmdName)
 
 	return oreason, nil
 }
@@ -152,7 +152,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.Switches["ddays"].Value != nil {
 				ddays = parsed.Switches["ddays"].Int()
 			}
-			err = BanUserWithDuration(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), ddays)
+			var msg *discordgo.Message
+			if parsed.TraditionalTriggerData != nil {
+				msg = parsed.TraditionalTriggerData.Message
+			}
+			err = BanUserWithDuration(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), ddays)
 			if err != nil {
 				return nil, err
 			}
@@ -171,7 +175,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
-		
+
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0) //No need to check member role hierarchy as banned members should not be in server
 			if err != nil {
@@ -185,17 +189,17 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 			targetID := parsed.Args[0].Int64()
 			target := &discordgo.User{
-					Username:      "unknown",
-					Discriminator: "????",
-					ID:            targetID,
-				  }
-			targetMem, _ := bot.GetMember(parsed.GS.ID, targetID)
+				Username:      "unknown",
+				Discriminator: "????",
+				ID:            targetID,
+			}
+			targetMem, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
 			if targetMem != nil {
 				return "User is not banned!", nil
 			}
 
-			isNotBanned, err := UnbanUser(config, parsed.GS.ID, parsed.Msg.Author, reason, target)
-			
+			isNotBanned, err := UnbanUser(config, parsed.GuildData.GS.ID, parsed.Author, reason, target)
+
 			if err != nil {
 				return nil, err
 			}
@@ -228,7 +232,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			err = KickUser(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, target)
+			var msg *discordgo.Message
+			if parsed.TraditionalTriggerData != nil {
+				msg = parsed.TraditionalTriggerData.Message
+			}
+			err = KickUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target)
 			if err != nil {
 				return nil, err
 			}
@@ -273,12 +281,16 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			logger.Info(d.Seconds())
 
-			member, err := bot.GetMember(parsed.GS.ID, target.ID)
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, true, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, member, int(d.Minutes()))
+			var msg *discordgo.Message
+			if parsed.TraditionalTriggerData != nil {
+				msg = parsed.TraditionalTriggerData.Message
+			}
+			err = MuteUnmuteUser(config, true, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, int(d.Minutes()))
 			if err != nil {
 				return nil, err
 			}
@@ -312,12 +324,16 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			member, err := bot.GetMember(parsed.GS.ID, target.ID)
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
 			}
 
-			err = MuteUnmuteUser(config, false, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, reason, member, 0)
+			var msg *discordgo.Message
+			if parsed.TraditionalTriggerData != nil {
+				msg = parsed.TraditionalTriggerData.Message
+			}
+			err = MuteUnmuteUser(config, false, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -349,19 +365,19 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Int64()
 
-			logLink := CreateLogs(parsed.GS.ID, parsed.CS.ID, parsed.Msg.Author)
+			logLink := CreateLogs(parsed.GuildData.GS.ID, parsed.GuildData.CS.ID, parsed.Author)
 
 			channelID := config.IntReportChannel()
 			if channelID == 0 {
 				return "No report channel set up", nil
 			}
 
-			reportBody := fmt.Sprintf("<@%d> Reported <@%d> in <#%d> For `%s`\nLast 100 messages from channel: <%s>", parsed.Msg.Author.ID, target, parsed.Msg.ChannelID, parsed.Args[1].Str(), logLink)
+			reportBody := fmt.Sprintf("<@%d> Reported <@%d> in <#%d> For `%s`\nLast 100 messages from channel: <%s>", parsed.Author.ID, target, parsed.ChannelID, parsed.Args[1].Str(), logLink)
 
 			_, err = common.BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 				Content: reportBody,
 				AllowedMentions: discordgo.AllowedMentions{
-					Users: []int64{parsed.Msg.Author.ID, target},
+					Users: []int64{parsed.Author.ID, target},
 				},
 			})
 
@@ -370,7 +386,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			// don't bother sending confirmation if it's in the same channel
-			if channelID != parsed.Msg.ChannelID {
+			if channelID != parsed.ChannelID {
 				return "User reported to the proper authorities", nil
 			}
 			return nil, nil
@@ -412,7 +428,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			userFilter := parsed.Args[1].Int64()
 
 			num := parsed.Args[0].Int()
-			if (userFilter == 0 || userFilter == parsed.Msg.Author.ID) && parsed.Source != 0 {
+			if (userFilter == 0 || userFilter == parsed.Author.ID) && parsed.Source != 0 {
 				num++ // Automatically include our own message if not triggeded by exec/execAdmin
 			}
 
@@ -469,7 +485,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				filtered = true
 			}
 
-                        // Check if we should only delete messages with attachments
+			// Check if we should only delete messages with attachments
 			attachments := false
 			if parsed.Switches["a"].Value != nil && parsed.Switches["a"].Value.(bool) {
 				attachments = true
@@ -488,7 +504,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, toID, ma, minAge, pe, attachments, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.ChannelID, userFilter, re, toID, ma, minAge, pe, attachments, num, limitFetch)
 
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
@@ -532,7 +548,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			embed := msg.Embeds[0]
-			updateEmbedReason(parsed.Msg.Author, parsed.Args[1].Str(), embed)
+			updateEmbedReason(parsed.Author, parsed.Args[1].Str(), embed)
 			_, err = common.BotSession.ChannelMessageEditEmbed(config.IntActionChannel(), msg.ID, embed)
 			if err != nil {
 				return nil, err
@@ -561,7 +577,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			err = WarnUser(config, parsed.GS.ID, parsed.CS, parsed.Msg, parsed.Msg.Author, target, parsed.Args[1].Str())
+			var msg *discordgo.Message
+			if parsed.TraditionalTriggerData != nil {
+				msg = parsed.TraditionalTriggerData.Message
+			}
+			err = WarnUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, target, parsed.Args[1].Str())
 			if err != nil {
 				return nil, err
 			}
@@ -597,7 +617,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			if parsed.Switches["id"].Value != nil {
 				var warn []*WarningModel
-				err = common.GORM.Where("guild_id = ? AND id = ?", parsed.GS.ID, parsed.Switches["id"].Int()).First(&warn).Error
+				err = common.GORM.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Switches["id"].Int()).First(&warn).Error
 				if err != nil && err != gorm.ErrRecordNotFound {
 					return nil, err
 				}
@@ -618,7 +638,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
 				return PaginateWarnings(parsed)(nil, page)
 			}
-			_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, page, 0, PaginateWarnings(parsed))
+			_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.GuildData.CS.ID, page, 0, PaginateWarnings(parsed))
 			return nil, err
 		},
 	},
@@ -643,8 +663,8 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.GS.ID, parsed.Args[0].Int()).Update(
-				"message", fmt.Sprintf("%s (updated by %s#%s (%d))", parsed.Args[1].Str(), parsed.Msg.Author.Username, parsed.Msg.Author.Discriminator, parsed.Msg.Author.ID)).RowsAffected
+			rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Update(
+				"message", fmt.Sprintf("%s (updated by %s#%s (%d))", parsed.Args[1].Str(), parsed.Author.Username, parsed.Author.Discriminator, parsed.Author.ID)).RowsAffected
 
 			if rows < 1 {
 				return "Failed updating, most likely couldn't find the warning", nil
@@ -674,7 +694,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GS.ID, parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
+			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
 			if rows < 1 {
 				return "Failed deleting, most likely couldn't find the warning", nil
 			}
@@ -706,7 +726,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			userID := parsed.Args[0].Int64()
 
-			rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.GS.ID, userID).Delete(WarningModel{}).RowsAffected
+			rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.GuildData.GS.ID, userID).Delete(WarningModel{}).RowsAffected
 			return fmt.Sprintf("Deleted %d warnings.", rows), nil
 		},
 	},
@@ -739,7 +759,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			offset := (page - 1) * 15
-			entries, err := TopWarns(parsed.GS.ID, offset, 15)
+			entries, err := TopWarns(parsed.GuildData.GS.ID, offset, 15)
 			if err != nil {
 				return nil, err
 			}
@@ -798,22 +818,22 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			member, err := bot.GetMember(parsed.GS.ID, target.ID)
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
 			}
 
-			role := FindRole(parsed.GS, parsed.Args[1].Str())
+			role := FindRole(parsed.GuildData.GS, parsed.Args[1].Str())
 			if role == nil {
 				return "Couldn't find the specified role", nil
 			}
 
-			parsed.GS.RLock()
-			if !bot.IsMemberAboveRole(parsed.GS, parsed.MS, role) {
-				parsed.GS.RUnlock()
+			parsed.GuildData.GS.RLock()
+			if !bot.IsMemberAboveRole(parsed.GuildData.GS, parsed.GuildData.MS, role) {
+				parsed.GuildData.GS.RUnlock()
 				return "Can't give roles above you", nil
 			}
-			parsed.GS.RUnlock()
+			parsed.GuildData.GS.RUnlock()
 
 			dur := parsed.Switches["d"].Value.(time.Duration)
 
@@ -829,14 +849,14 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			// schedule the expiry
 			if dur > 0 {
-				err := scheduledevents2.ScheduleRemoveRole(parsed.Context(), parsed.GS.ID, target.ID, role.ID, time.Now().Add(dur))
+				err := scheduledevents2.ScheduleRemoveRole(parsed.Context(), parsed.GuildData.GS.ID, target.ID, role.ID, time.Now().Add(dur))
 				if err != nil {
 					return nil, err
 				}
 			}
 
 			// cancel the event to add the role
-			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GS.ID, parsed.Msg.Author.ID, role.ID)
+			scheduledevents2.CancelAddRole(parsed.Context(), parsed.GuildData.GS.ID, parsed.Author.ID, role.ID)
 
 			action := MAGiveRole
 			action.Prefix = "Gave the role " + role.Name + " to "
@@ -844,7 +864,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				if dur > 0 {
 					action.Footer = "Duration: " + common.HumanizeDuration(common.DurationPrecisionMinutes, dur)
 				}
-				CreateModlogEmbed(config, parsed.Msg.Author, action, target, "", "")
+				CreateModlogEmbed(config, parsed.Author, action, target, "", "")
 			}
 
 			return GenericCmdResp(action, target, dur, true, dur <= 0), nil
@@ -873,22 +893,22 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			member, err := bot.GetMember(parsed.GS.ID, target.ID)
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
 			}
 
-			role := FindRole(parsed.GS, parsed.Args[1].Str())
+			role := FindRole(parsed.GuildData.GS, parsed.Args[1].Str())
 			if role == nil {
 				return "Couldn't find the specified role", nil
 			}
 
-			parsed.GS.RLock()
-			if !bot.IsMemberAboveRole(parsed.GS, parsed.MS, role) {
-				parsed.GS.RUnlock()
+			parsed.GuildData.GS.RLock()
+			if !bot.IsMemberAboveRole(parsed.GuildData.GS, parsed.GuildData.MS, role) {
+				parsed.GuildData.GS.RUnlock()
 				return "Can't remove roles above you", nil
 			}
-			parsed.GS.RUnlock()
+			parsed.GuildData.GS.RUnlock()
 
 			err = common.RemoveRoleDS(member, role.ID)
 			if err != nil {
@@ -896,12 +916,12 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			// cancel the event to remove the role
-			scheduledevents2.CancelRemoveRole(parsed.Context(), parsed.GS.ID, parsed.Msg.Author.ID, role.ID)
+			scheduledevents2.CancelRemoveRole(parsed.Context(), parsed.GuildData.GS.ID, parsed.Author.ID, role.ID)
 
 			action := MARemoveRole
 			action.Prefix = "Removed the role " + role.Name + " from "
 			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
-				CreateModlogEmbed(config, parsed.Msg.Author, action, target, "", "")
+				CreateModlogEmbed(config, parsed.Author, action, target, "", "")
 			}
 
 			return GenericCmdResp(action, target, 0, true, true), nil
@@ -1045,11 +1065,11 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 
 		var result []*WarningModel
 		var count int
-		err = common.GORM.Table("moderation_warnings").Where("user_id = ? AND guild_id = ?", userID, parsed.GS.ID).Count(&count).Error
+		err = common.GORM.Table("moderation_warnings").Where("user_id = ? AND guild_id = ?", userID, parsed.GuildData.GS.ID).Count(&count).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return nil, err
 		}
-		err = common.GORM.Where("user_id = ? AND guild_id = ?", userID, parsed.GS.ID).Order("id desc").Offset(skip).Limit(limit).Find(&result).Error
+		err = common.GORM.Where("user_id = ? AND guild_id = ?", userID, parsed.GuildData.GS.ID).Order("id desc").Offset(skip).Limit(limit).Find(&result).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return nil, err
 		}

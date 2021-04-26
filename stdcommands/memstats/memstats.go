@@ -34,7 +34,7 @@ var Command = &commands.YAGCommand{
 			},
 		}
 
-		_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, send)
+		_, err := common.BotSession.ChannelMessageSendComplex(data.ChannelID, send)
 
 		return nil, err
 	}),

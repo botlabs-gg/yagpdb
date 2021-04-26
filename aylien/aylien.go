@@ -80,7 +80,7 @@ func (p *Plugin) AddCommands() {
 			} else {
 
 				// Get the message to analyze
-				msgs, err := bot.GetMessages(cmd.CS.ID, 100, false)
+				msgs, err := bot.GetMessages(cmd.ChannelID, 100, false)
 				if err != nil {
 					return "", err
 				}
@@ -94,7 +94,7 @@ func (p *Plugin) AddCommands() {
 				for i := len(msgs) - 1; i >= 0; i-- {
 					msg := msgs[i]
 					// logger.Println(msg.ID, msg.ContentWithMentionsReplaced())
-					if msg.Author.ID == cmd.Msg.Author.ID {
+					if msg.Author.ID == cmd.Author.ID {
 						if len(strings.Fields(msg.ContentWithMentionsReplaced())) > 3 {
 							toAnalyze = append(toAnalyze, msg)
 							if len(toAnalyze) >= 5 {

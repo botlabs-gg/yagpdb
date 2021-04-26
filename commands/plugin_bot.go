@@ -27,9 +27,12 @@ var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMsgCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleInteractionCreate, eventsystem.EventInteractionCreate)
 
 	CommandSystem.State = bot.State
 	dcmd.CustomUsernameSearchFunc = p.customUsernameSearchFunc
+
+	p.startSlashCommandsUpdater()
 }
 
 func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
@@ -142,19 +145,25 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		if !ok {
 			resp, err := inner(data)
 			// Filter the response
-			if data.GS != nil {
+			if data.GuildData != nil {
 				if resp == nil && err != nil {
-					err = errors.New(FilterResp(err.Error(), data.GS.ID).(string))
+					err = errors.New(FilterResp(err.Error(), data.GuildData.GS.ID).(string))
 				} else if resp != nil {
-					resp = FilterResp(resp, data.GS.ID)
+					resp = FilterResp(resp, data.GuildData.GS.ID)
 				}
 			}
 
 			return resp, err
 		}
+		guildID := int64(0)
+		var cs *dstate.ChannelState
+		if data.GuildData != nil {
+			guildID = data.GuildData.GS.ID
+			cs = data.GuildData.CS
+		}
 
 		// Lock the command for execution
-		if !BlockingAddRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc, time.Second*60) {
+		if !BlockingAddRunningCommand(guildID, data.ChannelID, data.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
 				return yc.Name + ": Bot is restarting, please try again in a couple seconds...", nil
 			}
@@ -162,10 +171,10 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			return yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish", nil
 		}
 
-		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
+		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)
 
 		// Check if the user can execute the command
-		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, data.CS)
+		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, cs)
 		if err != nil {
 			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
 		}
@@ -173,9 +182,19 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		if resp != "" {
 			if resp == ReasonCooldown {
 				fmt.Println("Were on cooldown")
-				if (data.GS != nil && bot.BotProbablyHasPermissionGS(data.GS, data.CS.ID, discordgo.PermissionAddReactions)) || data.GS == nil {
-					common.BotSession.MessageReactionAdd(data.Msg.ChannelID, data.Msg.ID, "⏳")
+
+				switch data.TriggerType {
+				case dcmd.TriggerTypeSlashCommands:
+					common.BotSession.CreateFollowupMessage(data.SlashCommandTriggerData.Interaction.ApplicationID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.WebhookParams{
+						Flags:   64,
+						Content: "Command is on cooldown.",
+					})
+				default:
+					if (data.GuildData != nil && bot.BotProbablyHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions)) || data.GuildData.GS == nil {
+						common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
+					}
 				}
+
 			}
 
 			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
@@ -294,8 +313,11 @@ func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
 }
 
 func (p *Plugin) Prefix(data *dcmd.Data) string {
+	if data.Source == dcmd.TriggerSourceDM {
+		return "-"
+	}
 
-	prefix, err := GetCommandPrefixRedis(data.GS.ID)
+	prefix, err := GetCommandPrefixRedis(data.GuildData.GS.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -350,7 +372,7 @@ var cmdPrefix = &YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		targetGuildID := data.Args[0].Int64()
 		if targetGuildID == 0 {
-			targetGuildID = data.GS.ID
+			targetGuildID = data.GuildData.GS.ID
 		}
 
 		prefix, err := GetCommandPrefixRedis(targetGuildID)

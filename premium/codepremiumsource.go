@@ -190,7 +190,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 
 		dm += "```"
 
-		bot.SendDM(data.Msg.Author.ID, dm)
+		bot.SendDM(data.Author.ID, dm)
 		return "Check yer dms", nil
 	}),
 }

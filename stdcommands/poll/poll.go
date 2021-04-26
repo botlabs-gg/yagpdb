@@ -54,9 +54,9 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		description += pollReactions[i] + " " + option.Str()
 	}
 
-	authorName := data.MS.Nick
+	authorName := data.GuildData.MS.Nick
 	if authorName == "" {
-		authorName = data.MS.Username
+		authorName = data.GuildData.MS.Username
 	}
 
 	response := discordgo.MessageEmbed{
@@ -65,12 +65,15 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		Color:       0x65f442,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    authorName,
-			IconURL: discordgo.EndpointUserAvatar(data.MS.ID, data.Msg.Author.Avatar),
+			IconURL: discordgo.EndpointUserAvatar(data.GuildData.MS.ID, data.Author.Avatar),
 		},
 	}
 
-	common.BotSession.ChannelMessageDelete(data.Msg.ChannelID, data.Msg.ID)
-	pollMsg, err := common.BotSession.ChannelMessageSendEmbed(data.Msg.ChannelID, &response)
+	if data.TraditionalTriggerData != nil {
+		common.BotSession.ChannelMessageDelete(data.ChannelID, data.TraditionalTriggerData.Message.ID)
+	}
+
+	pollMsg, err := common.BotSession.ChannelMessageSendEmbed(data.ChannelID, &response)
 	if err != nil {
 		return nil, errors.WrapIf(err, "failed to add poll description")
 	}

@@ -24,13 +24,13 @@ var Command = &commands.YAGCommand{
 		}
 
 		content := fmt.Sprintf("**Would you rather** (*<http://either.io>*)\n🇦 %s\n **OR**\n🇧 %s", q1, q2)
-		msg, err := common.BotSession.ChannelMessageSend(data.Msg.ChannelID, content)
+		msg, err := common.BotSession.ChannelMessageSend(data.ChannelID, content)
 		if err != nil {
 			return nil, err
 		}
 
-		common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "🇦")
-		err = common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "🇧")
+		common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇦")
+		err = common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇧")
 		if err != nil {
 			return nil, err
 		}

@@ -45,7 +45,7 @@ var cmds = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "Message", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			currentReminders, _ := GetUserReminders(parsed.Msg.Author.ID)
+			currentReminders, _ := GetUserReminders(parsed.Author.ID)
 			if len(currentReminders) >= 25 {
 				return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
 			}
@@ -60,7 +60,7 @@ var cmds = []*commands.YAGCommand{
 				return "Can be max 365 days from now...", nil
 			}
 
-			_, err := NewReminder(parsed.Msg.Author.ID, parsed.GS.ID, parsed.CS.ID, parsed.Args[1].Str(), when)
+			_, err := NewReminder(parsed.Author.ID, parsed.GuildData.GS.ID, parsed.ChannelID, parsed.Args[1].Str(), when)
 			if err != nil {
 				return nil, err
 			}
@@ -73,7 +73,7 @@ var cmds = []*commands.YAGCommand{
 		Name:        "Reminders",
 		Description: "Lists your active reminders",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			currentReminders, err := GetUserReminders(parsed.Msg.Author.ID)
+			currentReminders, err := GetUserReminders(parsed.Author.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -89,7 +89,7 @@ var cmds = []*commands.YAGCommand{
 		Name:        "CReminders",
 		Description: "Lists reminders in channel, only users with 'manage server' permissions can use this.",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			ok, err := bot.AdminOrPermMS(parsed.CS.ID, parsed.MS, discordgo.PermissionManageChannels)
+			ok, err := bot.AdminOrPermMS(parsed.ChannelID, parsed.GuildData.MS, discordgo.PermissionManageChannels)
 			if err != nil {
 				return nil, err
 			}
@@ -97,7 +97,7 @@ var cmds = []*commands.YAGCommand{
 				return "You do not have access to this command (requires manage channel permission)", nil
 			}
 
-			currentReminders, err := GetChannelReminders(parsed.CS.ID)
+			currentReminders, err := GetChannelReminders(parsed.ChannelID)
 			if err != nil {
 				return nil, err
 			}
@@ -129,11 +129,11 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			// Check perms
-			if reminder.UserID != discordgo.StrID(parsed.Msg.Author.ID) {
-				if reminder.GuildID != parsed.GS.ID {
+			if reminder.UserID != discordgo.StrID(parsed.Author.ID) {
+				if reminder.GuildID != parsed.GuildData.GS.ID {
 					return "You can only delete reminders that are not your own in the guild the reminder was originally created", nil
 				}
-				ok, err := bot.AdminOrPermMS(reminder.ChannelIDInt(), parsed.MS, discordgo.PermissionManageChannels)
+				ok, err := bot.AdminOrPermMS(reminder.ChannelIDInt(), parsed.GuildData.MS, discordgo.PermissionManageChannels)
 				if err != nil {
 					return nil, err
 				}

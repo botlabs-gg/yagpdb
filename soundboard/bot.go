@@ -22,13 +22,13 @@ func (p *Plugin) AddCommands() {
 				&dcmd.ArgDef{Name: "Name", Type: dcmd.String},
 			},
 			RunFunc: func(data *dcmd.Data) (interface{}, error) {
-				sounds, err := GetSoundboardSounds(data.GS.ID, data.Context())
+				sounds, err := GetSoundboardSounds(data.GuildData.GS.ID, data.Context())
 				if err != nil {
 					return nil, errors.WithMessage(err, "GetSoundboardSounds")
 				}
 
 				// Get member from api or state
-				member := data.MS
+				member := data.GuildData.MS
 
 				if data.Args[0].Str() == "" {
 					return ListSounds(sounds, member), nil
@@ -62,11 +62,11 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 
-				data.GS.RLock()
-				defer data.GS.RUnlock()
+				data.GuildData.GS.RLock()
+				defer data.GuildData.GS.RUnlock()
 
 				var voiceChannel int64
-				vs := data.GS.VoiceState(false, data.Msg.Author.ID)
+				vs := data.GuildData.GS.VoiceState(false, data.Author.ID)
 				if vs != nil {
 					voiceChannel = vs.ChannelID
 				}
@@ -75,9 +75,9 @@ func (p *Plugin) AddCommands() {
 					return "You're not in a voice channel", nil
 				}
 
-				go analytics.RecordActiveUnit(data.GS.ID, p, "playing sound")
+				go analytics.RecordActiveUnit(data.GuildData.GS.ID, p, "playing sound")
 
-				if RequestPlaySound(data.GS.ID, voiceChannel, data.Msg.ChannelID, sound.ID) {
+				if RequestPlaySound(data.GuildData.GS.ID, voiceChannel, data.ChannelID, sound.ID) {
 					return "Queued up", nil
 				}
 
@@ -91,7 +91,7 @@ func (p *Plugin) AddCommands() {
 			Aliases:     []string{"sbclose", "sbReset"},
 			Description: "Reset Soundboard Player",
 			RunFunc: func(data *dcmd.Data) (interface{}, error) {
-				response := resetPlayerServer(data.GS.ID)
+				response := resetPlayerServer(data.GuildData.GS.ID)
 				if response != "" {
 					return response, nil
 				}

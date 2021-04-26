@@ -28,7 +28,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	if allSwitch != nil && allSwitch.Bool() {
 		all = true
 
-		if admin, err := bot.IsBotAdmin(data.Msg.Author.ID); !admin || err != nil {
+		if admin, err := bot.IsBotAdmin(data.Author.ID); !admin || err != nil {
 			if err != nil {
 				return nil, err
 			}
@@ -46,7 +46,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 			checkGuild(fastResult, g)
 		}
 	} else {
-		checkGuild(fastResult, data.GS)
+		checkGuild(fastResult, data.GuildData.GS)
 	}
 
 	// then we convert and sort it

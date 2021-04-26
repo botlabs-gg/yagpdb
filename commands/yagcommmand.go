@@ -82,6 +82,8 @@ type RunningCommand struct {
 	Command *YAGCommand
 }
 
+type RolesRunFunc func(gs *dstate.GuildState) ([]int64, error)
+
 // Slight extension to the simplecommand, it will check if the command is enabled in the HandleCommand func
 // And invoke a custom handlerfunc with provided redis client
 type YAGCommand struct {
@@ -119,6 +121,25 @@ type YAGCommand struct {
 	RunFunc dcmd.RunFunc
 
 	Plugin common.Plugin
+
+	// Slash commands integration (this is unused on sub commands)
+	//
+	// Note about channel overrides:
+	// Since the slash commands permissions is limited to roles/users only and can't be per channel, it takes the common set of roles required to run the command between all overrides
+	// e.g if the command does not require a role in one channel, but it requires one in another channel, then the required permission for the slash command will be none set,
+	// note that these settings are still checked when the command is run, but they just show the command in the client even if you can't use it in this case, so its just a visual limitation of slash commands.
+	//
+	// If it's disabled in all chanels, then for default_enabled = true commands, it adds the everyone role to the blacklist, otherwise it adds no role to the whitelist (does this even work? can i use the everyone role in this context?)
+	SlashCommandEnabled bool
+
+	// Wether the command is enabled in all guilds by default or not
+	DefaultEnabled bool
+
+	// If default enabled = false
+	// then this returns the roles that CAN use the command
+	// if default enabled = true
+	// then this returns the roles that CAN'T use the command
+	RolesRunFunc RolesRunFunc
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation
@@ -141,27 +162,42 @@ func (yc *YAGCommand) Switches() []*dcmd.ArgDef {
 var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "bot_commands_total",
 	Help: "Commands the bot executed",
-}, []string{"name"})
+}, []string{"name", "trigger_type"})
 
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
-	if !yc.RunInDM && data.Source == dcmd.DMSource {
+	if !yc.RunInDM && data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
 	}
 
 	// Send typing to indicate the bot's working
-	if confSetTyping.GetBool() {
-		common.BotSession.ChannelTyping(data.Msg.ChannelID)
+	if confSetTyping.GetBool() && data.TriggerType != dcmd.TriggerTypeSlashCommands {
+		common.BotSession.ChannelTyping(data.ChannelID)
 	}
 
 	logger := yc.Logger(data)
 
 	// Track how long execution of a command took
 	started := time.Now()
+	rawCommand := ""
+	triggerType := ""
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		rawCommand = yc.Name + " (slashcommand)"
+		triggerType = "slashcommand"
+	default:
+		rawCommand = data.TraditionalTriggerData.Message.Content
+		triggerType = "message"
+	}
 	defer func() {
-		yc.logExecutionTime(time.Since(started), data.Msg.Content, data.Msg.Author.Username)
+		yc.logExecutionTime(time.Since(started), rawCommand, data.Author.Username)
 	}()
 
-	cState := data.CS
+	var cState *dstate.ChannelState
+	guildID := int64(0)
+	if data.GuildData != nil {
+		cState = data.GuildData.CS
+		guildID = data.GuildData.GS.ID
+	}
 
 	cmdFullName := yc.Name
 	if len(data.ContainerChain) > 1 {
@@ -171,11 +207,11 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Set up log entry for later use
 	logEntry := &common.LoggedExecutedCommand{
-		UserID:    discordgo.StrID(data.Msg.Author.ID),
-		ChannelID: discordgo.StrID(data.Msg.ChannelID),
+		UserID:    discordgo.StrID(data.Author.ID),
+		ChannelID: discordgo.StrID(data.ChannelID),
 
 		Command:    cmdFullName,
-		RawCommand: data.Msg.Content,
+		RawCommand: rawCommand,
 		TimeStamp:  time.Now(),
 	}
 
@@ -183,9 +219,9 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
 	}
 
-	metricsExcecutedCommands.With(prometheus.Labels{"name": "(other)"}).Inc()
+	metricsExcecutedCommands.With(prometheus.Labels{"name": "(other)", "trigger_type": triggerType}).Inc()
 
-	logger.Info("Handling command: " + data.Msg.Content)
+	logger.Info("Handling command: " + rawCommand)
 
 	runCtx, cancelExec := context.WithTimeout(data.Context(), CommandExecTimeout)
 	defer cancelExec()
@@ -194,7 +230,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	r, cmdErr := yc.RunFunc(data.WithContext(runCtx))
 	if cmdErr != nil {
 		if errors.Cause(cmdErr) == context.Canceled || errors.Cause(cmdErr) == context.DeadlineExceeded {
-			r = "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + data.Msg.Content + "`, Cancelled the command."
+			r = "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + rawCommand + "`, Cancelled the command."
 		}
 	}
 
@@ -206,13 +242,13 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// set cooldowns
 	if cmdErr == nil {
-		err := yc.SetCooldowns(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
+		err := yc.SetCooldowns(data.ContainerChain, data.Author.ID, guildID)
 		if err != nil {
 			logger.WithError(err).Error("Failed setting cooldown")
 		}
 
 		if yc.Plugin != nil {
-			go analytics.RecordActiveUnit(data.Msg.GuildID, yc.Plugin, "cmd_executed_"+strings.ToLower(cmdFullName))
+			go analytics.RecordActiveUnit(guildID, yc.Plugin, "cmd_executed_"+strings.ToLower(cmdFullName))
 		}
 	}
 
@@ -259,20 +295,20 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		yc.Logger(cmdData).WithError(err).Error("Command returned error")
 	}
 
-	if cmdData.GS != nil {
+	if cmdData.GuildData != nil {
 		if resp == nil && err != nil {
-			err = errors.New(FilterResp(err.Error(), cmdData.GS.ID).(string))
+			err = errors.New(FilterResp(err.Error(), cmdData.GuildData.GS.ID).(string))
 		} else if resp != nil {
-			resp = FilterResp(resp, cmdData.GS.ID)
+			resp = FilterResp(resp, cmdData.GuildData.GS.ID)
 		}
 	}
 
-	if settings.DelResponse && settings.DelResponseDelay < 1 {
+	if (settings.DelResponse || settings.DelResponseDelay < 1) && cmdData.TraditionalTriggerData != nil {
 		// Set up the trigger deletion if set
 		if settings.DelTrigger {
 			go func() {
 				time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
-				common.BotSession.ChannelMessageDelete(cmdData.CS.ID, cmdData.Msg.ID)
+				common.BotSession.ChannelMessageDelete(cmdData.ChannelID, cmdData.TraditionalTriggerData.Message.ID)
 			}()
 		}
 		return // Don't bother sending the reponse if it has no delete delay
@@ -284,10 +320,10 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	}
 
 	// send a alternative message in case of embeds in channels with no embeds perms
-	if cmdData.GS != nil {
+	if cmdData.GuildData != nil {
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
-			if !bot.BotProbablyHasPermissionGS(cmdData.GS, cmdData.CS.ID, discordgo.PermissionEmbedLinks) {
+			if !bot.BotProbablyHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks) {
 				resp = "This command returned an embed but the bot does not have embed links permissions in this channel, cannot send the response."
 			}
 		}
@@ -312,23 +348,23 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 			}
 
 			// If trigger deletion had the same delay, delete the trigger in the same batch
-			if settings.DelTrigger && settings.DelTriggerDelay == settings.DelResponseDelay {
-				ids = append(ids, cmdData.Msg.ID)
+			if settings.DelTrigger && settings.DelTriggerDelay == settings.DelResponseDelay && cmdData.TraditionalTriggerData != nil {
+				ids = append(ids, cmdData.TraditionalTriggerData.Message.ID)
 			}
 
 			if len(ids) == 1 {
-				common.BotSession.ChannelMessageDelete(cmdData.CS.ID, ids[0])
+				common.BotSession.ChannelMessageDelete(cmdData.ChannelID, ids[0])
 			} else if len(ids) > 1 {
-				common.BotSession.ChannelMessagesBulkDelete(cmdData.CS.ID, ids)
+				common.BotSession.ChannelMessagesBulkDelete(cmdData.ChannelID, ids)
 			}
 		}()
 	}
 
 	// If were deleting the trigger in a seperate call from the response deletion
-	if settings.DelTrigger && (!settings.DelResponse || settings.DelTriggerDelay != settings.DelResponseDelay) {
+	if settings.DelTrigger && (!settings.DelResponse || settings.DelTriggerDelay != settings.DelResponseDelay) && cmdData.TraditionalTriggerData != nil {
 		go func() {
 			time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
-			common.BotSession.ChannelMessageDelete(cmdData.CS.ID, cmdData.Msg.ID)
+			common.BotSession.ChannelMessageDelete(cmdData.ChannelID, cmdData.TraditionalTriggerData.Message.ID)
 		}()
 	}
 
@@ -349,7 +385,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 	// Check guild specific settings if not triggered from a DM
 	var guild *dstate.GuildState
 
-	if data.Source != dcmd.DMSource {
+	if data.Source != dcmd.TriggerSourceDM {
 
 		canExecute = false
 		guild = cState.Guild
@@ -378,7 +414,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 			return
 		}
 
-		member := data.MS
+		member := data.GuildData.MS
 		// Check the required and ignored roles
 		if len(settings.RequiredRoles) > 0 {
 			found := false
@@ -431,7 +467,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 	}
 
 	// Check the command cooldown
-	cdLeft, err := yc.LongestCooldownLeft(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
+	cdLeft, err := yc.LongestCooldownLeft(data.ContainerChain, data.Author.ID, data.GuildData.GS.ID)
 	if err != nil {
 		// Just pretend the cooldown is off...
 		yc.Logger(data).Error("Failed checking command cooldown")
@@ -724,17 +760,17 @@ func (cs *YAGCommand) SetCooldownGuild(cc []*dcmd.Container, guildID int64) erro
 func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 	l := logger.WithField("cmd", yc.FindNameFromContainerChain(data.ContainerChain))
 	if data != nil {
-		if data.Msg != nil {
-			l = l.WithField("user_n", data.Msg.Author.Username)
-			l = l.WithField("user_id", data.Msg.Author.ID)
+		if data.Author != nil {
+			l = l.WithField("user_n", data.Author.Username)
+			l = l.WithField("user_id", data.Author.ID)
 		}
 
-		if data.CS != nil {
-			l = l.WithField("channel", data.CS.ID)
+		if data.GuildData != nil && data.GuildData.CS != nil {
+			l = l.WithField("channel", data.GuildData.CS.ID)
 		}
 
-		if data.GS != nil {
-			l = l.WithField("guild", data.GS.ID)
+		if data.GuildData != nil && data.GuildData.GS != nil {
+			l = l.WithField("guild", data.GuildData.GS.ID)
 		}
 	}
 
