@@ -18,11 +18,10 @@ var Command = &commands.YAGCommand{
 		{Name: "Sides", Default: 0, Type: dcmd.Int},
 		{Name: "RPG-Dice", Type: dcmd.String},
 	},
-	ArgumentCombos:      [][]int{{1}, {0}, {}},
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		if data.Args[0].Value != nil {
+		if data.Args[1].Value != nil {
 			// Special dice syntax if string
 			r, _, err := dice.Roll(data.Args[0].Str())
 			if err != nil {
