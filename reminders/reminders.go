@@ -68,7 +68,7 @@ func (r *Reminder) Trigger() error {
 		Guild:   r.GuildID,
 		Channel: r.ChannelIDInt(),
 
-		MessageStr: "**Reminder** <@" + r.UserID + ">: " + r.Message,
+		MessageStr: "**Reminder** <@" + r.UserID + ">: " + common.ReplaceServerInvites(r.Message, r.GuildID, "(removed-invite)"),
 		AllowedMentions: discordgo.AllowedMentions{
 			Users: []int64{r.UserIDInt()},
 		},
