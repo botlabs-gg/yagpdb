@@ -177,7 +177,7 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 
 	err = tx.Commit()
 	if err != nil {
-		errors.WithMessage(err, "Commit")
+		return errors.WithMessage(err, "Commit")
 	}
 
 	err = common.RedisPool.Do(radix.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, oldGuildID))
