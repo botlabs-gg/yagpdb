@@ -15,8 +15,8 @@ var Command = &commands.YAGCommand{
 	Description:     "Roll dices, specify nothing for 6 sides, specify a number for max sides, or rpg dice syntax.",
 	LongDescription: "Example: `-roll 2d6`",
 	Arguments: []*dcmd.ArgDef{
-		{Name: "RPG-Dice", Type: dcmd.String},
 		{Name: "Sides", Default: 0, Type: dcmd.Int},
+		{Name: "RPG-Dice", Type: dcmd.String},
 	},
 	ArgumentCombos:      [][]int{{1}, {0}, {}},
 	DefaultEnabled:      true,
