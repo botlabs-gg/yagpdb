@@ -35,7 +35,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonas747/cardsagainstdiscord v1.1.1-0.20200617121715-2c969a853358
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
-	github.com/jonas747/dcmd v1.2.5-0.20210427180604-610996d789dc
+	github.com/jonas747/dcmd v1.2.5-0.20210428193541-8c5a2f45248e
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
 	github.com/jonas747/discordgo v1.5.3
 	github.com/jonas747/dshardorchestrator/v2 v2.0.1
