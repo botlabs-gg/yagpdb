@@ -713,7 +713,7 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 		}
 	}
 
-	return nil, nil
+	return "Done resetting rolemenu!", nil
 }
 
 func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
