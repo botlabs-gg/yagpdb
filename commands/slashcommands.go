@@ -46,6 +46,11 @@ func (p *Plugin) updateGlobalCommands() {
 		}
 	}
 
+	for _, v := range slashCommandsContainers {
+		logger.Infof("%s is a slash command container: default enabled: %v", v.container.Names[0], v.defaultPermissions)
+		result = append(result, p.containerToSlashCommand(v))
+	}
+
 	encoded, _ := json.MarshalIndent(result, "", " ")
 	fmt.Println(string(encoded))
 
@@ -53,6 +58,40 @@ func (p *Plugin) updateGlobalCommands() {
 	if err != nil {
 		logger.WithError(err).Error("failed updating global slash commands")
 	}
+}
+
+func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *discordgo.CreateApplicationCommandRequest {
+	req := &discordgo.CreateApplicationCommandRequest{
+		Name:              container.container.Names[0],
+		Description:       common.CutStringShort(container.container.Description, 100),
+		DefaultPermission: &container.defaultPermissions,
+		// Options:           cast.slashCommandOptions(),
+	}
+
+	for _, v := range container.container.Commands {
+		cast, ok := v.Command.(*YAGCommand)
+		if !ok {
+			panic("Not a yag command? what is this a triple nested command or something?")
+		}
+
+		opt := &discordgo.ApplicationCommandOption{
+			Name:        cast.Name,
+			Description: common.CutStringShort(cast.Description, 100),
+			Kind:        discordgo.CommandOptionTypeSubCommand,
+			Options:     cast.slashCommandOptions(),
+		}
+
+		req.Options = append(req.Options, opt)
+	}
+
+	return req
+
+	// return &discordgo.CreateApplicationCommandRequest{
+	// 	Name:              cmd.Trigger.Names[0],
+	// 	Description:       common.CutStringShort(cast.Description, 100),
+	// 	DefaultPermission: &cast.DefaultEnabled,
+	// 	Options:           cast.slashCommandOptions(),
+	// }
 }
 
 func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordgo.CreateApplicationCommandRequest {

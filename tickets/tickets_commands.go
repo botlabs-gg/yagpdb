@@ -389,6 +389,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	container := commands.CommandSystem.Root.Sub("tickets", "ticket")
+	container.Description = "Command to manage the ticket system"
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 	container.AddMidlewares(
 		func(inner dcmd.RunFunc) dcmd.RunFunc {
@@ -437,6 +438,26 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdRenameTicket, cmdRenameTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdCloseTicket, cmdCloseTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
+
+	commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
+}
+
+func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildState) ([]int64, error) {
+	conf, err := models.FindTicketConfigG(context.Background(), gs.ID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return nil, err
+		}
+
+		conf = &models.TicketConfig{}
+	}
+
+	if !conf.Enabled {
+		return nil, nil
+	}
+
+	// use the everyone role to signify that everyone can use the commands
+	return []int64{gs.ID}, nil
 }
 
 func RequireActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
