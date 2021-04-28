@@ -303,7 +303,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		}
 	}
 
-	if (settings.DelResponse || settings.DelResponseDelay < 1) && cmdData.TraditionalTriggerData != nil {
+	if (settings.DelResponse && settings.DelResponseDelay < 1) && cmdData.TraditionalTriggerData != nil {
 		// Set up the trigger deletion if set
 		if settings.DelTrigger {
 			go func() {
