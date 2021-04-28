@@ -91,42 +91,42 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 }
 
 var cmds = []*commands.YAGCommand{
-	&commands.YAGCommand{
+	{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "TakeRep",
 		Aliases:      []string{"-", "tr", "trep", "-rep"},
 		Description:  "Takes away rep from someone",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.User},
-			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int, Default: 1},
+			{Name: "User", Type: dcmd.User},
+			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			parsed.Args[1].Value = -parsed.Args[1].Int()
 			return CmdGiveRep(parsed)
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "GiveRep",
 		Aliases:      []string{"+", "gr", "grep", "+rep"},
 		Description:  "Gives rep to someone",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.User},
-			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int, Default: 1},
+			{Name: "User", Type: dcmd.User},
+			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: CmdGiveRep,
 	},
-	&commands.YAGCommand{
+	{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "SetRep",
 		Aliases:      []string{"SetRepID"}, // alias for legacy reasons, used to be a standalone command
 		Description:  "Sets someones rep, this is an admin command and bypasses cooldowns and other restrictions.",
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Num", Type: dcmd.Int},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Num", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
@@ -153,13 +153,13 @@ var cmds = []*commands.YAGCommand{
 			return fmt.Sprintf("Set **%s** %s to `%d`", targetUsername, conf.PointsName, parsed.Args[1].Int()), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "DelRep",
 		Description:  "Deletes someone from the reputation list completely, this cannot be undone.",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.UserID},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
@@ -181,15 +181,15 @@ var cmds = []*commands.YAGCommand{
 			return fmt.Sprintf("Deleted all of %d's %s.", target, conf.PointsName), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "RepLog",
 		Aliases:      []string{"replogs"},
 		Description:  "Shows the rep log for the specified user.",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Page", Type: dcmd.Int, Default: 1},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Page", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
@@ -280,12 +280,12 @@ var cmds = []*commands.YAGCommand{
 			return out.String(), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Rep",
 		Description: "Shows yours or the specified users current rep and rank",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.User},
+			{Name: "User", Type: dcmd.User},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			target := parsed.Author
@@ -316,7 +316,7 @@ var cmds = []*commands.YAGCommand{
 			return fmt.Sprintf("**%s**: **%d** %s (#**%s**)", target.Username, score, conf.PointsName, rankStr), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CmdCategory: commands.CategoryFun,
 		Name:        "TopRep",
 		Description: "Shows rep leaderboard on the server",

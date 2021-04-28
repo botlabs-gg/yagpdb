@@ -25,9 +25,10 @@ var Command = &commands.YAGCommand{
 	RunInDM:      true,
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Expression", Type: dcmd.String},
+		{Name: "Expression", Type: dcmd.String},
 	},
-
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		computeLock.Lock()
 		defer computeLock.Unlock()

@@ -39,6 +39,8 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "l", Help: "Latest comic"},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 
 		//first query to get latest number

@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	Description:  "Returns wether the specified guild is unavilable or not",
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "guildid", Type: dcmd.Int, Default: int64(0)},
+		{Name: "guildid", Type: dcmd.Int, Default: int64(0)},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		gID := data.Args[0].Int64()

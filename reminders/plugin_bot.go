@@ -34,16 +34,18 @@ func (p *Plugin) BotInit() {
 
 // Reminder management commands
 var cmds = []*commands.YAGCommand{
-	&commands.YAGCommand{
+	{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "Remindme",
 		Description:  "Schedules a reminder, example: 'remindme 1h30min are you alive still?'",
 		Aliases:      []string{"remind", "reminder"},
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Time", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Name: "Message", Type: dcmd.String},
+			{Name: "Time", Type: &commands.DurationArg{}},
+			{Name: "Message", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentReminders, _ := GetUserReminders(parsed.Author.ID)
 			if len(currentReminders) >= 25 {
@@ -68,10 +70,12 @@ var cmds = []*commands.YAGCommand{
 			return "Set a reminder in " + durString + " from now (" + tStr + ")\nView reminders with the reminders command", nil
 		},
 	},
-	&commands.YAGCommand{
-		CmdCategory: commands.CategoryTool,
-		Name:        "Reminders",
-		Description: "Lists your active reminders",
+	{
+		CmdCategory:         commands.CategoryTool,
+		Name:                "Reminders",
+		Description:         "Lists your active reminders",
+		SlashCommandEnabled: true,
+		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentReminders, err := GetUserReminders(parsed.Author.ID)
 			if err != nil {
@@ -84,10 +88,12 @@ var cmds = []*commands.YAGCommand{
 			return out, nil
 		},
 	},
-	&commands.YAGCommand{
-		CmdCategory: commands.CategoryTool,
-		Name:        "CReminders",
-		Description: "Lists reminders in channel, only users with 'manage server' permissions can use this.",
+	{
+		CmdCategory:         commands.CategoryTool,
+		Name:                "CReminders",
+		Description:         "Lists reminders in channel, only users with 'manage server' permissions can use this.",
+		SlashCommandEnabled: true,
+		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			ok, err := bot.AdminOrPermMS(parsed.ChannelID, parsed.GuildData.MS, discordgo.PermissionManageChannels)
 			if err != nil {
@@ -108,7 +114,7 @@ var cmds = []*commands.YAGCommand{
 			return out, nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
@@ -117,6 +123,8 @@ var cmds = []*commands.YAGCommand{
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
 			var reminder Reminder

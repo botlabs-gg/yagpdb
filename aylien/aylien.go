@@ -67,6 +67,8 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "text", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      true,
 		RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 			var responses []*textapi.SentimentResponse
 			if cmd.Args[0].Value != nil {
@@ -134,7 +136,9 @@ func (p *Plugin) AddCommands() {
 			Arguments: []*dcmd.ArgDef{
 				{Name: "What-to-ask", Type: dcmd.String},
 			},
-			RequiredArgs: 1,
+			RequiredArgs:        1,
+			SlashCommandEnabled: true,
+			DefaultEnabled:      true,
 			RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 				resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: cmd.Args[0].Str()})
 				if err != nil {

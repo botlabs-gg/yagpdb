@@ -90,7 +90,11 @@ func (yc *YAGCommand) slashCommandOptions() []*discordgo.ApplicationCommandOptio
 		result = append(result, opts...)
 	}
 	for _, v := range yc.ArgSwitches {
-		result = append(result, v.Type.SlashCommandOptions(v)...)
+		if v.Type == nil {
+			result = append(result, v.StandardSlashCommandOption(discordgo.CommandOptionTypeBoolean))
+		} else {
+			result = append(result, v.Type.SlashCommandOptions(v)...)
+		}
 	}
 
 	return result

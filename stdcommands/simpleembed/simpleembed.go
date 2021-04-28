@@ -37,6 +37,7 @@ var Command = &commands.YAGCommand{
 		{Name: "footer", Help: "Text content for the footer", Type: dcmd.String, Default: ""},
 		{Name: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String, Default: ""},
 	},
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		content := data.Switch("content").Str()
 		embed := &discordgo.MessageEmbed{
