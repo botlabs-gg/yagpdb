@@ -27,10 +27,10 @@ var Command = &commands.YAGCommand{
 		}	
 		// fallback for missing embed fields
 		if parsed.Description == "" {
-			parsed.Description = "\u200b"
+			return "Description is a required field for embeds", nil
 		}
 		if parsed.Title == "" && parsed.URL != "" {
-			return "Title is required for URL", nil
+			return "Title is a required field for URL", nil
 		}
 		if parsed.Author.Name == "" && parsed.Author.IconURL != "" {
 			parsed.Author.Name = "\u200b"
