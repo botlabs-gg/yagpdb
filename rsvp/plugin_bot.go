@@ -106,13 +106,13 @@ func (p *Plugin) AddCommands() {
 		Plugin:              p,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+			{Name: "ID", Type: dcmd.Int},
 		},
 		RequiredArgs: 1,
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "title", Help: "Change the title of the event", Type: dcmd.String},
-			&dcmd.ArgDef{Switch: "time", Help: "Change the start time of the event", Type: dcmd.String},
-			&dcmd.ArgDef{Switch: "max", Help: "Change max participants", Type: dcmd.Int},
+			{Name: "title", Help: "Change the title of the event", Type: dcmd.String},
+			{Name: "time", Help: "Change the start time of the event", Type: dcmd.String},
+			{Name: "max", Help: "Change max participants", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			m, err := models.RSVPSessions(
@@ -215,7 +215,7 @@ func (p *Plugin) AddCommands() {
 		RequiredArgs:        1,
 		Plugin:              p,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+			{Name: "ID", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 

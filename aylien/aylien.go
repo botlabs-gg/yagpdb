@@ -65,7 +65,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"sent"},
 		Description: "Does sentiment analysis on a message or your last 5 messages longer than 3 words",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "text", Type: dcmd.String},
+			{Name: "text", Type: dcmd.String},
 		},
 		RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 			var responses []*textapi.SentimentResponse
@@ -132,7 +132,7 @@ func (p *Plugin) AddCommands() {
 			Name:        "8Ball",
 			Description: "Wisdom",
 			Arguments: []*dcmd.ArgDef{
-				&dcmd.ArgDef{Name: "What to ask", Type: dcmd.String},
+				{Name: "What-to-ask", Type: dcmd.String},
 			},
 			RequiredArgs: 1,
 			RunFunc: func(cmd *dcmd.Data) (interface{}, error) {

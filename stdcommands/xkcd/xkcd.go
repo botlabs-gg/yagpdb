@@ -34,10 +34,10 @@ var Command = &commands.YAGCommand{
 	Name:        "Xkcd",
 	Description: "An xkcd comic, by default returns random comic strip",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Comic number", Type: dcmd.Int},
+		{Name: "Comic-number", Type: dcmd.Int},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "l", Name: "Latest comic"},
+		{Name: "l", Help: "Latest comic"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 

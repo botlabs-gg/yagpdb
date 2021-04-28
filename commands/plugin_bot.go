@@ -40,7 +40,7 @@ func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (
 	members, err := bot.BatchMemberJobManager.SearchByUsername(gs.ID, query)
 	if err != nil {
 		if err == bot.ErrTimeoutWaitingForMember {
-			return nil, &dcmd.UserNotFound{query}
+			return nil, &dcmd.UserNotFound{Part: query}
 		}
 
 		return nil, err
@@ -78,7 +78,7 @@ func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (
 	}
 
 	if len(fullMatches) == 0 && len(partialMatches) == 0 {
-		return nil, &dcmd.UserNotFound{query}
+		return nil, &dcmd.UserNotFound{Part: query}
 	}
 
 	// Show some help output
@@ -101,7 +101,7 @@ func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (
 			out += "`" + v.User.Username + "`"
 		}
 	} else {
-		return nil, &dcmd.UserNotFound{query}
+		return nil, &dcmd.UserNotFound{Part: query}
 	}
 
 	if len(fullMatches) > 1 {
@@ -366,7 +366,7 @@ var cmdPrefix = &YAGCommand{
 	Description: "Shows command prefix of the current server, or the specified server",
 	CmdCategory: CategoryTool,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Server ID", Type: dcmd.Int, Default: 0},
+		{Name: "Server-ID", Type: dcmd.Int, Default: 0},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {

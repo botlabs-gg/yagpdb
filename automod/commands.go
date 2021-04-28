@@ -26,7 +26,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:  commands.CategoryModeration,
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ruleset name", Type: dcmd.String},
+			{Name: "Ruleset-Name", Type: dcmd.String},
 		},
 		Description:         "Toggles a ruleset on/off",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
@@ -94,10 +94,10 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryModeration,
 		Description: "Shows the log of the last triggered automod rules, optionally filtering by user",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
+			{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "user", Type: dcmd.UserID},
+			{Name: "user", Type: dcmd.UserID},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(data *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
@@ -150,11 +150,11 @@ func (p *Plugin) AddCommands() {
 		Aliases:       []string{"ViolationsCount", "VCount"},
 		RequiredArgs:  0,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.UserID},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Type: dcmd.Int, Default: 0},
+			{Name: "ma", Help: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "skip", Help: "Amount Skipped", Type: dcmd.Int, Default: 0},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -221,11 +221,11 @@ func (p *Plugin) AddCommands() {
 		Aliases:       []string{"Violations", "ViolationLogs", "VLogs", "VLog"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Page Number", Type: dcmd.Int, Default: 0},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Page-Number", Type: dcmd.Int, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "old", Name: "Oldest First"},
+			{Name: "old", Help: "Oldest First"},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
 		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
@@ -276,7 +276,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:       []string{"DelViolation", "DelV", "DV"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+			{Name: "ID", Type: dcmd.Int},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -301,17 +301,17 @@ func (p *Plugin) AddCommands() {
 		Description:   "Clears Violations of specified user (or global if User ID = 0 or unspecified) optionally filtered by Name, Min/Max age and other conditions. By default, more recent violations are preferentially cleared. Maximum of 2000 can be cleared at a time.",
 		Aliases:       []string{"ClearV", "ClrViolations", "ClrV"},
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Default: 0, Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Violation Name", Type: dcmd.String},
+			{Name: "User", Default: 0, Type: dcmd.UserID},
+			{Name: "Violation-Name", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "minage", Name: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "num", Name: "Max Violations Cleared", Default: 2000, Type: &dcmd.IntArg{Min: 0, Max: 2000}},
-			&dcmd.ArgDef{Switch: "old", Name: "Preferentially Clear Older Violations"},
-			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Default: 0, Type: dcmd.Int},
+			{Name: "ma", Help: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "minage", Help: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "num", Help: "Max Violations Cleared", Default: 2000, Type: &dcmd.IntArg{Min: 0, Max: 2000}},
+			{Name: "old", Help: "Preferentially Clear Older Violations"},
+			{Name: "skip", Help: "Amount Skipped", Default: 0, Type: dcmd.Int},
 		},
-		ArgumentCombos:      [][]int{[]int{0, 1}, []int{0}, []int{1}, []int{}},
+		ArgumentCombos:      [][]int{{0, 1}, {0}, {1}, {}},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		GuildScopeCooldown:  5,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {

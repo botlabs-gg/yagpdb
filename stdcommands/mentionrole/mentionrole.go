@@ -69,7 +69,7 @@ var Command = &commands.YAGCommand{
 		{Name: "Message", Type: dcmd.String, Default: ""},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
+		{Name: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
 	},
 	RunFunc:            cmdFuncMentionRole,
 	GuildScopeCooldown: 10,

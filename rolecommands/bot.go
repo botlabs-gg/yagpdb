@@ -36,7 +36,7 @@ func (p *Plugin) AddCommands() {
 			Name:        "Role",
 			Description: "Toggle a role on yourself or list all available roles, they have to be set up in the control panel first, under 'rolecommands' ",
 			Arguments: []*dcmd.ArgDef{
-				&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
+				{Name: "Role", Type: dcmd.String},
 			},
 			RunFunc: CmdFuncRole,
 		})
@@ -50,13 +50,13 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Group", Type: dcmd.String},
+			{Name: "Group", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "m", Name: "Message ID", Type: &dcmd.IntArg{}},
-			&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
-			&dcmd.ArgDef{Switch: "rr", Name: "Remove role on reaction removed"},
-			&dcmd.ArgDef{Switch: "skip", Name: "Number of roles to skip", Default: 0, Type: dcmd.Int},
+			{Name: "m", Help: "Message ID", Type: &dcmd.IntArg{}},
+			{Name: "nodm", Help: "Disable DM"},
+			{Name: "rr", Help: "Remove role on reaction removed"},
+			{Name: "skip", Help: "Number of roles to skip", Default: 0, Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuCreate,
 	}
@@ -69,7 +69,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuRemove,
 	}
@@ -83,11 +83,11 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.Int},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "nodm", Name: "Disable DM"},
-			&dcmd.ArgDef{Switch: "rr", Name: "Remove role on reaction removed"},
+			{Name: "nodm", Help: "Disable DM"},
+			{Name: "rr", Help: "Remove role on reaction removed"},
 		},
 		RunFunc: cmdFuncRoleMenuUpdate,
 	}
@@ -101,7 +101,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuResetReactions,
 	}
@@ -115,7 +115,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuEditOption,
 	}
@@ -129,7 +129,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuComplete,
 	}

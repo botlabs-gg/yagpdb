@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 		{Name: "status", Type: dcmd.String, Default: ""},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		{Switch: "url", Name: "streaming url", Type: dcmd.String, Default: ""},
+		{Name: "url", Type: dcmd.String, Default: ""},
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		streamingURL := data.Switch("url").Str()

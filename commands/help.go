@@ -17,7 +17,7 @@ var cmdHelp = &YAGCommand{
 	CmdCategory: CategoryGeneral,
 	RunInDM:     true,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "command", Type: dcmd.String},
+		{Name: "command", Type: dcmd.String},
 	},
 
 	RunFunc:  cmdFuncHelp,

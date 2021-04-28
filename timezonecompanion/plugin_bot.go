@@ -33,11 +33,11 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"setz", "tzset"},
 		Description: "Sets your timezone, used for various purposes such as auto conversion. Give it your country.",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Timezone", Type: dcmd.String},
+			{Name: "Timezone", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "u", Name: "Display current"},
-			&dcmd.ArgDef{Switch: "d", Name: "Delete TZ record"},
+			{Name: "u", Help: "Display current"},
+			{Name: "d", Help: "Delete TZ record"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 

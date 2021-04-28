@@ -18,10 +18,10 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"c"},
 		Description: "Creates a Cards Against Humanity game in this channel, add packs after commands, or * for all packs. (-v for vote mode without a card czar).",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them."},
+			{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them."},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Switch: "v", Name: "Vote mode - players vote instead of having a card czar."},
+			{Name: "v", Help: "Vote mode - players vote instead of having a card czar."},
 		},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			voteMode := data.Switch("v").Bool()
@@ -71,7 +71,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:  commands.CategoryFun,
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "user", Type: dcmd.UserID},
+			{Name: "user", Type: dcmd.UserID},
 		},
 		Description: "Kicks a player from the ongoing Cards Against Humanity game in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {

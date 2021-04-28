@@ -121,7 +121,7 @@ func GenericCmdResp(action ModlogAction, target *discordgo.User, duration time.D
 }
 
 var ModerationCommands = []*commands.YAGCommand{
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Ban",
@@ -129,12 +129,12 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Bans a member, specify a duration with -d and specify number of days of messages to delete with -ddays (0 to 7)",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Reason", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "d", Default: time.Duration(0), Name: "Duration", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "ddays", Name: "Days", Type: dcmd.Int},
+			{Name: "d", Help: "Duration", Type: &commands.DurationArg{}, Default: time.Duration(0)},
+			{Name: "ddays", Help: "Delete Days", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
@@ -164,7 +164,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			return GenericCmdResp(MABanned, target, parsed.Switch("d").Value.(time.Duration), true, false), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Unban",
@@ -172,8 +172,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Unbans a user. Reason requirement is same as ban command setting.",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Reason", Type: dcmd.String},
 		},
 
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -210,15 +210,15 @@ var ModerationCommands = []*commands.YAGCommand{
 			return GenericCmdResp(MAUnbanned, target, 0, true, true), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Kick",
 		Description:   "Kicks a member",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
@@ -244,17 +244,17 @@ var ModerationCommands = []*commands.YAGCommand{
 			return GenericCmdResp(MAKick, target, 0, true, true), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Mute",
 		Description:   "Mutes a member",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Duration", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Duration", Type: &commands.DurationArg{}},
+			{Name: "Reason", Type: dcmd.String},
 		},
-		ArgumentCombos: [][]int{[]int{0, 1, 2}, []int{0, 2, 1}, []int{0, 1}, []int{0, 2}, []int{0}},
+		ArgumentCombos: [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
@@ -298,15 +298,15 @@ var ModerationCommands = []*commands.YAGCommand{
 			return GenericCmdResp(MAMute, target, d, true, false), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Unmute",
 		Description:   "Unmutes a member",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
@@ -341,7 +341,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			return GenericCmdResp(MAUnmute, target, 0, false, true), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		Cooldown:      5,
 		CmdCategory:   commands.CategoryModeration,
@@ -349,8 +349,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Reports a member to the server's staff",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
@@ -392,7 +392,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			return nil, nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled:   true,
 		CmdCategory:     commands.CategoryModeration,
 		Name:            "Clean",
@@ -401,19 +401,19 @@ var ModerationCommands = []*commands.YAGCommand{
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Num", Type: &dcmd.IntArg{Min: 1, Max: 100}},
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID, Default: 0},
+			{Name: "Num", Type: &dcmd.IntArg{Min: 1, Max: 100}},
+			{Name: "User", Type: dcmd.UserID, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "r", Name: "Regex", Type: dcmd.String},
-			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max age", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "minage", Default: time.Duration(0), Name: "Min age", Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
-			&dcmd.ArgDef{Switch: "nopin", Name: "Ignore pinned messages"},
-			&dcmd.ArgDef{Switch: "a", Name: "Only remove messages with attachments"},
-			&dcmd.ArgDef{Switch: "to", Name: "Stop at this msg ID", Type: dcmd.Int},
+			{Name: "r", Help: "Regex", Type: dcmd.String},
+			{Name: "ma", Help: "Max age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "minage", Help: "Min age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "i", Help: "Regex case insensitive"},
+			{Name: "nopin", Help: "Ignore pinned messages"},
+			{Name: "a", Help: "Only remove messages with attachments"},
+			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.Int},
 		},
-		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
+		ArgumentCombos: [][]int{{0}, {0, 1}, {1, 0}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -509,15 +509,15 @@ var ModerationCommands = []*commands.YAGCommand{
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Reason",
 		Description:   "Add/Edit a modlog reason",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Message ID", Type: dcmd.Int},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+			{Name: "Message-ID", Type: dcmd.Int},
+			{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
@@ -557,15 +557,15 @@ var ModerationCommands = []*commands.YAGCommand{
 			return "👌", nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warn",
 		Description:   "Warns a user, warnings are saved using the bot. Use -warnings to view them.",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Reason", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
@@ -589,7 +589,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			return GenericCmdResp(MAWarned, target, 0, false, true), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warnings",
@@ -597,11 +597,11 @@ var ModerationCommands = []*commands.YAGCommand{
 		Aliases:       []string{"Warns"},
 		RequiredArgs:  0,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID, Default: 0},
-			&dcmd.ArgDef{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
+			{Name: "User", Type: dcmd.UserID, Default: 0},
+			{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "id", Name: "Warning ID", Type: dcmd.Int},
+			{Name: "id", Help: "Warning ID", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var err error
@@ -642,15 +642,15 @@ var ModerationCommands = []*commands.YAGCommand{
 			return nil, err
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "EditWarning",
 		Description:   "Edit a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Id", Type: dcmd.Int},
-			&dcmd.ArgDef{Name: "NewMessage", Type: dcmd.String},
+			{Name: "Id", Type: dcmd.Int},
+			{Name: "NewMessage", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
@@ -673,7 +673,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			return "👌", nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "DelWarning",
@@ -681,7 +681,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Deletes a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Id", Type: dcmd.Int},
+			{Name: "Id", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
@@ -702,7 +702,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			return "👌", nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ClearWarnings",
@@ -710,7 +710,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Clears the warnings of a user",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.UserID},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
@@ -730,7 +730,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			return fmt.Sprintf("Deleted %d warnings.", rows), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CmdCategory: commands.CategoryModeration,
 		Name:        "TopWarnings",
 		Aliases:     []string{"topwarns"},
@@ -739,7 +739,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Page", Type: dcmd.Int, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "id", Name: "List userIDs"},
+			{Name: "id", Help: "List userIDs"},
 		},
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
@@ -792,7 +792,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 		}),
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "GiveRole",
@@ -801,11 +801,11 @@ var ModerationCommands = []*commands.YAGCommand{
 
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Role", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "d", Default: time.Duration(0), Name: "Duration", Type: &commands.DurationArg{}},
+			{Name: "d", Default: time.Duration(0), Help: "Duration", Type: &commands.DurationArg{}},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
@@ -870,7 +870,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			return GenericCmdResp(action, target, dur, true, dur <= 0), nil
 		},
 	},
-	&commands.YAGCommand{
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "RemoveRole",
@@ -879,8 +879,8 @@ var ModerationCommands = []*commands.YAGCommand{
 
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Role", Type: dcmd.String},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Role", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())

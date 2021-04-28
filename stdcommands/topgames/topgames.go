@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 	Description:  "Shows the top games on this server",
 	HideFromHelp: true,
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "all"},
+		{Name: "all"},
 	},
 	RunFunc: cmdFuncTopCommands,
 }
