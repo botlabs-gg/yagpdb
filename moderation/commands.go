@@ -171,7 +171,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
 			&dcmd.ArgDef{Name: "Reason", Type: dcmd.String},
 		},
-		
+
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0) //No need to check member role hierarchy as banned members should not be in server
 			if err != nil {
@@ -185,17 +185,17 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 			targetID := parsed.Args[0].Int64()
 			target := &discordgo.User{
-					Username:      "unknown",
-					Discriminator: "????",
-					ID:            targetID,
-				  }
+				Username:      "unknown",
+				Discriminator: "????",
+				ID:            targetID,
+			}
 			targetMem, _ := bot.GetMember(parsed.GS.ID, targetID)
 			if targetMem != nil {
 				return "User is not banned!", nil
 			}
 
 			isNotBanned, err := UnbanUser(config, parsed.GS.ID, parsed.Msg.Author, reason, target)
-			
+
 			if err != nil {
 				return nil, err
 			}
@@ -349,6 +349,10 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Int64()
 
+			if target == parsed.Msg.Author.ID {
+				return "You can't report yourself, silly.", nil
+			}
+
 			logLink := CreateLogs(parsed.GS.ID, parsed.CS.ID, parsed.Msg.Author)
 
 			channelID := config.IntReportChannel()
@@ -469,7 +473,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				filtered = true
 			}
 
-                        // Check if we should only delete messages with attachments
+			// Check if we should only delete messages with attachments
 			attachments := false
 			if parsed.Switches["a"].Value != nil && parsed.Switches["a"].Value.(bool) {
 				attachments = true
