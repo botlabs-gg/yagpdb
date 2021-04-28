@@ -963,7 +963,7 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 }
 
 func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.Value, error) {
-
+	
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
 			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, emojis[optional])")
@@ -980,13 +980,14 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 		}
 
 		mID := ToInt64(args[1].Interface())
+		
 
 		if len(args) > 2 {
 			for _, emoji := range args[2:] {
 				if c.IncreaseCheckCallCounter("del_reaction_message", 10) {
 					return reflect.Value{}, ErrTooManyCalls
 				}
-
+			
 				if err := common.BotSession.MessageReactionRemoveEmoji(cID, mID, emoji.String()); err != nil {
 					return reflect.Value{}, err
 				}
@@ -1001,7 +1002,7 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 		return reflect.ValueOf(""), nil
 	}
 
-	return callVariadic(f, false, values...)
+	return callVariadic(f, false, values...)		
 }
 
 func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message, error) {

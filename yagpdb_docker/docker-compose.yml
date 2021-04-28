@@ -11,18 +11,13 @@ networks:
 
 services:
   app:
-    build:
-      # We change context so that we can copy the local repo in during
-      # development
-      context: ../
-      dockerfile: yagpdb_docker/Dockerfile
+    image: caskd/yagpdb
     restart: unless-stopped
     command:
-      - '/app/yagpdb'
-      - '-all'
-      - '-pa'
-      - '-exthttps=false'
-      - '-https=false'
+      - "-all"
+      - "-pa"
+      - "-exthttps=false"
+      - "-https=true"
     depends_on:
       - redis
       - db
@@ -54,3 +49,4 @@ services:
       - default
     env_file:
       - db.env
+

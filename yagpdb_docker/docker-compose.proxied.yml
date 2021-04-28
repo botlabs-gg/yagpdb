@@ -8,32 +8,28 @@ volumes:
 
 networks:
   default:
+  proxy-tier:
+    external:
+      name: proxy-tier
 
 services:
   app:
-    build:
-      # We change context so that we can copy the local repo in during
-      # development
-      context: ../
-      dockerfile: yagpdb_docker/Dockerfile
+    image: caskd/yagpdb
     restart: unless-stopped
     command:
-      - "/app/yagpdb"
       - "-all"
       - "-pa"
-      - "-exthttps=false"
-      - "-https=true"
+      - "-exthttps=true"
+      - "-https=false"
     depends_on:
       - redis
       - db
     networks:
       - default
+      - proxy-tier
     volumes:
       - cert_cache:/app/cert
       - soundboard:/app/soundboard
-    ports:
-      - '80:80'
-      - '443:443'
     env_file:
       - app.env
 
@@ -54,3 +50,4 @@ services:
       - default
     env_file:
       - db.env
+
