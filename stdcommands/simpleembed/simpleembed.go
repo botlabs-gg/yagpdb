@@ -24,7 +24,7 @@ var Command = &commands.YAGCommand{
 		&dcmd.ArgDef{Switch: "content", Help: "Text content for the message", Type: dcmd.String, Default: ""},
 
 		&dcmd.ArgDef{Switch: "title", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "desc", Type: dcmd.String, Help: "Text in the 'description' field", Default: "\u200b"},
+		&dcmd.ArgDef{Switch: "desc", Type: dcmd.String, Help: "Text in the 'description' field", Default: ""},
 		&dcmd.ArgDef{Switch: "color", Help: "Either hex code or name", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "url", Help: "Url of this embed", Type: dcmd.String, Default: ""},
 		&dcmd.ArgDef{Switch: "thumbnail", Help: "Url to a thumbnail", Type: dcmd.String, Default: ""},
@@ -39,7 +39,10 @@ var Command = &commands.YAGCommand{
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		if data.Switch("title").Str() == "" && data.Switch("url").Str() != "" {
-			return "Title is required for URL field", nil
+			return "Title is a required field for URL field", nil
+		}
+		if data.Switch("desc").Str() == "" {
+			return "Description is a required field for embeds", nil
 		}
 		content := data.Switch("content").Str()
 		embed := &discordgo.MessageEmbed{
