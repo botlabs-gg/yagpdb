@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -31,20 +31,39 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	c.GS.RUnlock()
 
 	info := fmt.Sprintf("Custom Command DM From the server **%s**", gName)
-
-	// Send embed
-	if embed, ok := s[0].(*discordgo.MessageEmbed); ok {
-		embed.Footer = &discordgo.MessageEmbedFooter{
-			Text: info,
+	msgSend := &discordgo.MessageSend{
+			AllowedMentions: discordgo.AllowedMentions{
+					Parse : []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+			},
 		}
-
-		bot.SendDMEmbed(memberID, embed)
+	
+	switch t:= s[0].(type) {		
+		case *discordgo.MessageEmbed:
+			t.Footer = &discordgo.MessageEmbedFooter{
+					Text: info,
+				    }
+			msgSend.Embed = t
+		case *discordgo.MessageSend:
+			msgSend = t
+			if msgSend.Embed != nil {
+				msgSend.Embed.Footer = &discordgo.MessageEmbedFooter{
+					Text: info,
+				    }
+				break
+			}
+			if (strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) {
+				return ""
+			}
+			msgSend.Content = info + "\n" + msgSend.Content
+		default:
+			msgSend.Content = fmt.Sprintf("%s\n%s", info, fmt.Sprint(s...))
+	}
+	
+	channel, err := common.BotSession.UserChannelCreate(memberID)
+	if err != nil {
 		return ""
 	}
-
-	msg := fmt.Sprint(s...)
-	msg = fmt.Sprintf("%s\n%s", info, msg)
-	bot.SendDM(memberID, msg)
+	_, _ = common.BotSession.ChannelMessageSendComplex(channel.ID, msgSend)
 	return ""
 }
 
@@ -229,8 +248,15 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 
 	// pass some data
 	if len(data) > 1 {
-		c.Data["TemplateArgs"], _ = Dictionary(data...)
+		dict, _ := Dictionary(data...)
+		c.Data["TemplateArgs"] = dict
+		if !c.checkSafeDictNoRecursion(dict, 0) {
+			return nil, errors.New("trying to pass the entire current context data in as templateargs, this is not needed, just use nil and access all other data normally")
+		}
 	} else if len(data) == 1 {
+		if cast, ok := data[0].(map[string]interface{}); ok && reflect.DeepEqual(cast, c.Data) {
+			return nil, errors.New("trying to pass the entire current context data in as templateargs, this is not needed, just use nil and access all other data normally")
+		}
 		c.Data["TemplateArgs"] = data[0]
 	}
 
@@ -250,6 +276,58 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		return m.ID, err
 	}
 	return "", err
+}
+
+func (c *Context) checkSafeStringDictNoRecursion(d SDict, n int) bool {
+	if n > 1000 {
+		return false
+	}
+
+	for _, v := range d {
+		if cast, ok := v.(Dict); ok {
+			if !c.checkSafeDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if reflect.DeepEqual(v, c.Data) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
+	if n > 1000 {
+		return false
+	}
+
+	for _, v := range d {
+		if cast, ok := v.(Dict); ok {
+			if !c.checkSafeDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if reflect.DeepEqual(v, c.Data) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
@@ -894,21 +972,47 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 	return callVariadic(f, false, values...)
 }
 
-func (c *Context) tmplDelAllMessageReactions(channel, msgID interface{}) (string, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
+func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.Value, error) {
+	
+	f := func(args []reflect.Value) (reflect.Value, error) {
+		if len(args) < 2 {
+			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, emojis[optional])")
+		}
+
+		var cArg interface{}
+		if args[0].IsValid() {
+			cArg = args[0].Interface()
+		}
+
+		cID := c.ChannelArg(cArg)
+		if cID == 0 {
+			return reflect.ValueOf("non-existing channel"), nil
+		}
+
+		mID := ToInt64(args[1].Interface())
+		
+
+		if len(args) > 2 {
+			for _, emoji := range args[2:] {
+				if c.IncreaseCheckCallCounter("del_reaction_message", 10) {
+					return reflect.Value{}, ErrTooManyCalls
+				}
+			
+				if err := common.BotSession.MessageReactionRemoveEmoji(cID, mID, emoji.String()); err != nil {
+					return reflect.Value{}, err
+				}
+			}
+			return reflect.ValueOf(""), nil
+		}
+
+		if c.IncreaseCheckGenericAPICall() {
+			return reflect.Value{}, ErrTooManyAPICalls
+		}
+		common.BotSession.MessageReactionsRemoveAll(cID, mID)
+		return reflect.ValueOf(""), nil
 	}
 
-	cID := c.ChannelArg(channel)
-	if cID == 0 {
-		return "", nil
-	}
-
-	mID := ToInt64(msgID)
-
-	common.BotSession.MessageReactionsRemoveAll(cID, mID)
-
-	return "", nil
+	return callVariadic(f, false, values...)		
 }
 
 func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message, error) {
@@ -1162,6 +1266,15 @@ func (c *Context) reReplace(r string, s string, repl string) (string, error) {
 	}
 
 	return compiled.ReplaceAllString(s, repl), nil
+}
+
+func (c *Context) reSplit(r, s string, i int) ([]string, error) {
+	compiled, err := c.compileRegex(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return compiled.Split(s, i), nil
 }
 
 func (c *Context) tmplEditChannelName(channel interface{}, newName string) (string, error) {

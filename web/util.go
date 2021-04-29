@@ -370,3 +370,12 @@ func GetRequestIP(r *http.Request) string {
 
 	return r.Header.Get(headerField)
 }
+
+func GetIsReadOnly(ctx context.Context) bool {
+	readOnly := ctx.Value(common.ContextKeyIsReadOnly)
+	if readOnly == nil {
+		return false
+	}
+
+	return readOnly.(bool)
+}

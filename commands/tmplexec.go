@@ -200,6 +200,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	}
 
 	data = data.WithContext(context.WithValue(data.Context(), paginatedmessages.CtxKeyNoPagination, true))
+	data = data.WithContext(context.WithValue(data.Context(), CtxKeyExecutedByCC, true))
 
 	cast := foundCmd.Command.(*YAGCommand)
 

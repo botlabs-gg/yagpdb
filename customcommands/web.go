@@ -221,7 +221,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		TimeTriggerExcludingDays:  []int64{},
 		TimeTriggerExcludingHours: []int64{},
 
-		Responses: []string{"Edit this to change the output of the command!"},
+		Responses: []string{"Edit this to change the output of the custom command {{.CCID}}!"},
 	}
 
 	if groupID != 0 {
@@ -293,7 +293,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		if err != nil {
 			web.CtxLogger(ctx).WithError(err).Error("failed retrieving full model")
 		} else {
-			err = UpdateCommandNextRunTime(fullModel, true)
+			err = UpdateCommandNextRunTime(fullModel, true, true)
 		}
 	} else {
 		err = DelNextRunEvent(activeGuild.ID, dbModel.LocalID)
