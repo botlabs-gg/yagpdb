@@ -12,7 +12,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/customcommands/models"
@@ -157,6 +157,11 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 
 	if combinedSize > 10000 {
 		tmpl.AddAlerts(web.ErrorAlert("Max combined command size can be 10k"))
+		return false
+	}
+
+	if cc.TriggerTypeForm == "interval_minutes" && cc.TimeTriggerInterval < 5 {
+		tmpl.AddAlerts(web.ErrorAlert("Minimum interval is now 5 minutes (was recently from 1)"))
 		return false
 	}
 

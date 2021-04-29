@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 )
 
 func TestMemberHighestRole(t *testing.T) {

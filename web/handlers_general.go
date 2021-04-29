@@ -18,8 +18,10 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/models"
 	"github.com/jonas747/yagpdb/common/patreon"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
@@ -100,7 +102,7 @@ func HandleServerHome(w http.ResponseWriter, r *http.Request) (TemplateData, err
 func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
 	activeGuild, templateData := GetBaseCPContextData(r.Context())
 
-	logs, err := common.GetCPLogEntries(activeGuild.ID)
+	logs, err := cplogs.GetEntries(activeGuild.ID, 100, 0)
 	if err != nil {
 		templateData.AddAlerts(ErrorAlert("Failed retrieving logs", err))
 	} else {
@@ -446,10 +448,10 @@ func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http
 	config := r.Context().Value(common.ContextKeyCoreConfig).(*models.CoreConfig)
 
 	const format = `<ul>
-	<li>Read Only roles: <code>%d</code></li>
-	<li>Write Roles: <code>%d</code></li>
-	<li>All members read only: %s</li>
-	<li>Allow absolutely everyone read only access: %s</li>
+	<li>Read-only roles: <code>%d</code></li>
+	<li>Write roles: <code>%d</code></li>
+	<li>All members read-only: %s</li>
+	<li>Allow absolutely everyone read-only access: %s</li>
 </ul>`
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles), EnabledDisabledSpanStatus(config.AllowAllMembersReadOnly), EnabledDisabledSpanStatus(config.AllowNonMembersReadOnly)))
 
@@ -486,7 +488,11 @@ func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateDat
 		return templateData, err
 	}
 
+	pubsub.Publish("evict_core_config_cache", g.ID, nil)
+
 	templateData["CoreConfig"] = m
+
+	go cplogs.RetryAddEntry(NewLogEntryFromContext(r.Context(), panelLogKeyCore))
 
 	return templateData, nil
 }

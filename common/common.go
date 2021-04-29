@@ -17,12 +17,14 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/jmoiron/sqlx"
 	"github.com/jonas747/discordgo"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
+	boilv4 "github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -30,6 +32,7 @@ var (
 
 	GORM *gorm.DB
 	PQ   *sql.DB
+	SQLX *sqlx.DB
 
 	RedisPool *radix.Pool
 
@@ -108,7 +111,8 @@ func Init() error {
 	}
 
 	logger.Info("Initializing core schema")
-	InitSchemas("core_configs", CoreServerConfDBSchema)
+	InitSchemas("core_configs", CoreServerConfDBSchema, localIDsSchema)
+	initQueuedSchemas()
 
 	return err
 }
@@ -243,7 +247,9 @@ func connectDB(host, user, pass, dbName string, maxConns int) error {
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable%s", host, user, dbName, passwordPart))
 	GORM = db
 	PQ = db.DB()
+	SQLX = sqlx.NewDb(PQ, "postgres")
 	boil.SetDB(PQ)
+	boilv4.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(maxConns)
 		PQ.SetMaxIdleConns(maxConns)

@@ -12,11 +12,10 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix/v3"
 )
 
 var (
@@ -27,7 +26,6 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildCreate, eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMsgCreate, eventsystem.EventMessageCreate)
 
 	CommandSystem.State = bot.State
@@ -174,8 +172,10 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 		if resp != "" {
 			if resp == ReasonCooldown {
-				cdLeft, _ := yc.LongestCooldownLeft(data.ContainerChain, data.Msg.Author.ID, data.Msg.GuildID)
-				return fmt.Sprintf("This command is on cooldown for another %d seconds", cdLeft), nil
+				fmt.Println("Were on cooldown")
+				if (data.GS != nil && bot.BotProbablyHasPermissionGS(data.GS, data.CS.ID, discordgo.PermissionAddReactions)) || data.GS == nil {
+					common.BotSession.MessageReactionAdd(data.Msg.ChannelID, data.Msg.ID, "⏳")
+				}
 			}
 
 			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
@@ -269,11 +269,33 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
+	prefix := defaultCommandPrefix()
+	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
+		var err error
+		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed fetching command prefix")
+		}
+	}
+
+	CommandSystem.CheckMessageWtihPrefetchedPrefix(common.BotSession, evt.MessageCreate(), prefix)
+	// CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
+}
+
+func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
+	prefix := defaultCommandPrefix()
+	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
+		var err error
+		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		return prefix, err
+	}
+
+	return prefix, nil
 }
 
 func (p *Plugin) Prefix(data *dcmd.Data) string {
-	prefix, err := GetCommandPrefix(data.GS.ID)
+
+	prefix, err := GetCommandPrefixRedis(data.GS.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -308,24 +330,6 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 	embed.Description = firstField.Value
 }
 
-func HandleGuildCreate(evt *eventsystem.EventData) {
-	g := evt.GuildCreate()
-
-	var prefixExists bool
-	err := common.RedisPool.Do(radix.Cmd(&prefixExists, "EXISTS", "command_prefix:"+discordgo.StrID(g.ID)))
-	if err != nil {
-		logger.WithError(err).Error("Failed checking if prefix exists")
-		return
-	}
-
-	if !prefixExists {
-		defaultPrefix := defaultCommandPrefix()
-
-		common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(g.ID), defaultPrefix))
-		logger.WithField("guild", g.ID).WithField("g_name", g.Name).Info("Set command prefix to default (" + defaultPrefix + ")")
-	}
-}
-
 func defaultCommandPrefix() string {
 	defaultPrefix := "-"
 	if common.Testing {
@@ -349,7 +353,7 @@ var cmdPrefix = &YAGCommand{
 			targetGuildID = data.GS.ID
 		}
 
-		prefix, err := GetCommandPrefix(targetGuildID)
+		prefix, err := GetCommandPrefixRedis(targetGuildID)
 		if err != nil {
 			return nil, err
 		}

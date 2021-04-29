@@ -2,9 +2,9 @@
 {{template "cp_head" .}}
 
 <style>
-.feed-item-disabled {
-    background-color: #f003;
-}
+    .feed-item-disabled {
+        background-color: #f003;
+    }
 </style>
 
 <header class="page-header">
@@ -23,7 +23,8 @@
             <div class="card-body">
                 <form class="" method="post" action="/manage/{{.ActiveGuild.ID}}/twitter">
                     <p><b>Note:</b> Added feeds may take up to 10 minutes before they start being used</p>
-                    <p>Twitter feeds are premium only atm, this is because of twitter API limitations for non-enterprise users</p>
+                    <p>Twitter feeds are premium only atm, this is because of twitter API limitations for non-enterprise
+                        users</p>
                     <div class="form-group">
                         <label for="yt-channel-user">Twitter Username</label>
                         <div class="input-group input-group-sm">
@@ -51,10 +52,12 @@
                 <h2 class="card-title">Current twitter feeds</h2>
             </header>
             <div class="card-body">
-                <p>Feeds in red are disabled for some reason (such as expired premium) and will be enabled again once you save them</p>
+                <p>Feeds in red are disabled for some reason (such as expired premium) and will be enabled again once
+                    you save them</p>
                 {{$Dot := .}}
                 {{range .FeedItems}}
-                <form id="feed-item-{{.ID}}" data-async-form method="post" action="/manage/{{$Dot.ActiveGuild.ID}}/reddit/{{.ID}}/update">
+                <form id="feed-item-{{.ID}}" data-async-form method="post"
+                    action="/manage/{{$Dot.ActiveGuild.ID}}/reddit/{{.ID}}/update">
                     <div class="row border-bottom border-secondary pb-3 {{if not .Enabled}}feed-item-disabled{{end}}">
                         <input type="text" class="hidden" name="id" value="{{.ID}}">
                         <div class="form-group col">
@@ -68,9 +71,21 @@
                             </select>
                         </div>
                         <div class="form-group col">
+                            {{$id_include_replies := (joinStr "" "feed-" .ID "-replies")}}
+                            <label for="{{$id_include_replies}}">Include Replies</label>
+                            {{checkbox "IncludeReplies" $id_include_replies `` .IncludeReplies}}
+                        </div>
+                        <div class="form-group col">
+                            {{$id_include_rts := (joinStr "" "feed-" .ID "-rts")}}
+                            <label for="{{$id_include_rts}}">Include Retweets</label>
+                            {{checkbox "IncludeRetweets" $id_include_rts `` .IncludeRT}}
+                        </div>
+                        <div class="form-group col">
                             <div class="btn-group mt-4">
-                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3" formaction="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/update">Save</button>
-                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/delete">Delete</button>
+                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3"
+                                    formaction="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/update">Save</button>
+                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger"
+                                    formaction="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/delete">Delete</button>
                             </div>
                         </div>
                     </div>

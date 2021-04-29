@@ -24,16 +24,14 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const (
-	MaxPostsHourFast = 200
-	MaxPostsHourSlow = 200
-)
-
 var (
 	confClientID     = config.RegisterOption("yagpdb.reddit.clientid", "Client ID for the reddit api application", "")
 	confClientSecret = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
 	confRedirectURI  = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
 	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
+
+	confMaxPostsHourFast = config.RegisterOption("yagpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
+	confMaxPostsHourSlow = config.RegisterOption("yagpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)
 
 	feedLock sync.Mutex
 	fastFeed *PostFetcher
@@ -97,6 +95,11 @@ func (p *Plugin) runBot() {
 	feedLock.Unlock()
 }
 
+type KeySlowFeeds string
+type KeyFastFeeds string
+
+var configCache sync.Map
+
 type PostHandlerImpl struct {
 	Slow        bool
 	ratelimiter *Ratelimiter
@@ -128,25 +131,55 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 	}
 }
 
-func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error {
-
-	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
-	// logger.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
-
-	qms := []qm.QueryMod{
-		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
-		models.RedditFeedWhere.Slow.EQ(p.Slow),
-		models.RedditFeedWhere.Disabled.EQ(false),
+func (p *PostHandlerImpl) getConfigs(subreddit string) ([]*models.RedditFeed, error) {
+	var key interface{}
+	key = KeySlowFeeds(subreddit)
+	if !p.Slow {
+		key = KeyFastFeeds(subreddit)
 	}
 
-	if filterGuild > 0 {
-		qms = append(qms, models.RedditFeedWhere.GuildID.EQ(filterGuild))
+	v, ok := configCache.Load(key)
+	if ok {
+		return v.(models.RedditFeedSlice), nil
+	}
+
+	qms := []qm.QueryMod{
+		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(subreddit)),
+		models.RedditFeedWhere.Slow.EQ(p.Slow),
+		models.RedditFeedWhere.Disabled.EQ(false),
 	}
 
 	config, err := models.RedditFeeds(qms...).AllG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("failed retrieving reddit feeds for subreddit")
+		return nil, err
+	}
+
+	configCache.Store(key, config)
+
+	return config, nil
+}
+
+func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error {
+
+	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
+	// logger.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
+
+	config, err := p.getConfigs(strings.ToLower(post.Subreddit))
+	if err != nil {
+		logger.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
+	}
+
+	if filterGuild > 0 {
+		filtered := make([]*models.RedditFeed, 0)
+		for _, v := range config {
+			if v.GuildID == filterGuild {
+				filtered = append(filtered, v)
+			}
+		}
+
+		config = filtered
 	}
 
 	// Get the configs that listens to this subreddit, if any
@@ -205,9 +238,9 @@ OUTER:
 			}
 		}
 
-		limit := MaxPostsHourFast
+		limit := confMaxPostsHourFast.GetInt()
 		if p.Slow {
-			limit = MaxPostsHourSlow
+			limit = confMaxPostsHourSlow.GetInt()
 		}
 
 		// apply ratelimiting
