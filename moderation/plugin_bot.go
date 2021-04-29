@@ -59,6 +59,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)
 
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
+	pubsub.AddHandler("mod_refresh_mute_override_create_role", HandleRefreshMuteOverridesCreateRole, nil)
 }
 
 type ScheduledUnmuteData struct {
@@ -72,12 +73,16 @@ type ScheduledUnbanData struct {
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
 	if evt == bot.EvtGuildState {
 		gs := data.(*dstate.GuildState)
-		go RefreshMuteOverrides(gs.ID)
+		go RefreshMuteOverrides(gs.ID, false)
 	}
 }
 
 func HandleRefreshMuteOverrides(evt *pubsub.Event) {
-	RefreshMuteOverrides(evt.TargetGuildInt)
+	RefreshMuteOverrides(evt.TargetGuildInt, false)
+}
+
+func HandleRefreshMuteOverridesCreateRole(evt *pubsub.Event) {
+	RefreshMuteOverrides(evt.TargetGuildInt, true)
 }
 
 var started = time.Now()
@@ -95,12 +100,12 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 		time.Sleep(sleep)
 	}
 
-	RefreshMuteOverrides(gc.ID)
+	RefreshMuteOverrides(gc.ID, false)
 }
 
 // Refreshes the mute override on the channel, currently it only adds it.
-func RefreshMuteOverrides(guildID int64) {
-	if !featureflags.GuildHasFlagOrLogError(guildID, featureFlagMuteRoleManaged) {
+func RefreshMuteOverrides(guildID int64, createRole bool) {
+	if !createRole && !featureflags.GuildHasFlagOrLogError(guildID, featureFlagMuteRoleManaged) {
 		return // nothing to do
 	}
 
@@ -109,7 +114,20 @@ func RefreshMuteOverrides(guildID int64) {
 		return
 	}
 
-	if config.MuteRole == "" || !config.MuteManageRole {
+	if !config.MuteManageRole {
+		return
+	}
+
+	if config.MuteRole == "" || config.MuteRole == "0" {
+		if createRole {
+			_, err := createMuteRole(config, guildID)
+			if err != nil {
+				logger.WithError(err).Error("failed creating mute role")
+			}
+		}
+
+		// this will trigger a new pubsub event to refresh mute override if it was successfull in creating the role
+		// so theres no need to continue here
 		return
 	}
 
@@ -132,6 +150,34 @@ func RefreshMuteOverrides(guildID int64) {
 	for _, v := range channelsCopy {
 		RefreshMuteOverrideForChannel(config, v)
 	}
+}
+
+func createMuteRole(config *Config, guildID int64) (int64, error) {
+	guild := bot.State.Guild(true, guildID)
+	if guild == nil {
+		return 0, errors.New("failed finding guild")
+	}
+
+	r, err := common.BotSession.GuildRoleCreateComplex(guildID, discordgo.RoleCreate{
+		Name:        "Muted - (by yagpdb)",
+		Permissions: "0",
+		Mentionable: false,
+		Color:       0,
+		Hoist:       false,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	config.MuteRole = strconv.FormatInt(r.ID, 10)
+	err = config.Save(guildID)
+	if err != nil {
+		// failed saving config, attempt to delete the role
+		common.BotSession.GuildRoleDelete(guildID, r.ID)
+		return 0, err
+	}
+
+	return r.ID, nil
 }
 
 func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err error) {
@@ -244,8 +290,13 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		var i int
 		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
 		if i > 0 {
-			// The bot was the one that performed the unban
+			// The bot was the one that performed the unban 
 			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
+			if i == 2 {
+				//Bot performed non-scheduled unban, don't make duplicate entries in the modlog
+				return
+			}
+			// Bot performed scheduled unban, modlog entry must be handled
 			botPerformed = true
 		}
 

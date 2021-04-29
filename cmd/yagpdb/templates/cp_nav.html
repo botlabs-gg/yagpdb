@@ -255,7 +255,7 @@
 {{end}}
 {{end}}
 
-{{define "sidebar_item"}}
+{{define "sidebar_item"}} 
 {{$ag := .ActiveGuild}}
 {{$item := .Item}}
 <li>
@@ -310,7 +310,7 @@
         {{range $index, $element := .ManagedGuilds -}}{{if not $element.Connected -}}
         <li>
             <a
-                href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=bot&permissions=2146827775&guild_id={{$element.ID}}&response_type=code&redirect_uri={{joinStr "" $baseURL "/manage"}}"><i
+                href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=applications.commands%20bot&permissions=2146827775&guild_id={{$element.ID}}&response_type=code&redirect_uri={{joinStr "" $baseURL "/manage"}}"><i
                     class="fas fa-plus"></i>{{$element.Name}}</a>
         </li>
         {{end}}{{end}}
