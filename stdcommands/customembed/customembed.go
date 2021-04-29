@@ -26,8 +26,17 @@ var Command = &commands.YAGCommand{
 			return "Failed parsing json: " + err.Error(), err
 		}	
 		// fallback for missing embed fields
-		if parsed.Description == "" {
-			return "Description is a required field for embeds", nil
+		if parsed.Color != "" || 
+			parsed.URL != "" || 
+			parsed.Author.URL != "" {
+			if parsed.Title == "" && 
+				parsed.Description == "" && 
+				parsed.Thumbnail.URL == "" && 
+				parsed.Image.URL == "" && 
+				parsed.Author.Name == "" && 
+				parsed.Footer.Name == "" {
+				return "Fields title, description, thumbnail, image, author, or footer is required", nil
+			}
 		}
 		if parsed.Title == "" && parsed.URL != "" {
 			return "Title is a required field for URL", nil
