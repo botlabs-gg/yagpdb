@@ -34,7 +34,7 @@ var Command = &commands.YAGCommand{
 				parsed.Thumbnail.URL == "" && 
 				parsed.Image.URL == "" && 
 				parsed.Author.Name == "" && 
-				parsed.Footer.Name == "" {
+				parsed.Footer.Text == "" {
 				return "Fields title, description, thumbnail, image, author, or footer is required", nil
 			}
 		}
@@ -46,8 +46,8 @@ var Command = &commands.YAGCommand{
 		} else if parsed.Author.Name == "" && parsed.Author.URL != "" {
 			return "Author Name is required for Author URL", nil
 		}
-		if parsed.Footer.Name == "" && parsed.Footer.IconURL != "" {
-			parsed.Footer.Name = "\u200b"
+		if parsed.Footer.Text == "" && parsed.Footer.IconURL != "" {
+			parsed.Footer.Text = "\u200b"
 		}
 		return parsed, nil
 	},
