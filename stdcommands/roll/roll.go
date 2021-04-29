@@ -18,6 +18,7 @@ var Command = &commands.YAGCommand{
 		{Name: "Sides", Default: 0, Type: dcmd.Int},
 		{Name: "RPG-Dice", Type: dcmd.String},
 	},
+	ArgumentCombos:      [][]int{{0}, {1}, {}},
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
