@@ -30,3 +30,7 @@ func handleGlobalRatelimtPusub(evt *Event) {
 	data := evt.Data.(*globalRatelimitTriggeredEventData)
 	common.BotSession.Ratelimiter.SetGlobalTriggered(data.Reset)
 }
+
+func handleEvictCoreConfigCache(evt *Event) {
+	common.CoreServerConfigCache.Delete(int(evt.TargetGuildInt))
+}

@@ -7,7 +7,7 @@ import (
 
 	"emperror.dev/errors"
 
-	"github.com/olebedev/when/rules"
+	"github.com/jonas747/when/rules"
 )
 
 /*

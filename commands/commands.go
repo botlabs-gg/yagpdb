@@ -24,6 +24,7 @@ type CtxKey int
 const (
 	CtxKeyCmdSettings CtxKey = iota
 	CtxKeyChannelOverride
+	CtxKeyExecutedByCC
 )
 
 type MessageFilterFunc func(evt *eventsystem.EventData, msg *discordgo.Message) bool

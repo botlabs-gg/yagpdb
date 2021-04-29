@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd"
@@ -111,7 +112,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
-		Description:  "Deletes a reminder.",
+		Description:  "Deletes a reminder. You can delete reminders from other users provided you are running this command in the same guild the reminder was created in and have the Manage Channel permission in the channel the reminder was created in.",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
@@ -127,12 +128,11 @@ var cmds = []*commands.YAGCommand{
 				return "Error retrieving reminder", err
 			}
 
-			if reminder.GuildID != parsed.GS.ID {
-				return "That reminder is not from this server", nil
-			}
-
 			// Check perms
 			if reminder.UserID != discordgo.StrID(parsed.Msg.Author.ID) {
+				if reminder.GuildID != parsed.GS.ID {
+					return "You can only delete reminders that are not your own in the guild the reminder was originally created", nil
+				}
 				ok, err := bot.AdminOrPermMS(reminder.ChannelIDInt(), parsed.MS, discordgo.PermissionManageChannels)
 				if err != nil {
 					return nil, err
@@ -154,7 +154,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			delMsg := fmt.Sprintf("Deleted reminder **#%d**: '%s'", reminder.ID, reminder.Message)
+			delMsg := fmt.Sprintf("Deleted reminder **#%d**: '%s'", reminder.ID, limitString(reminder.Message))
 
 			// If there is another reminder with the same timestamp, do not remove the scheduled event
 			for _, v := range currentReminders {
@@ -178,14 +178,14 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		tStr := t.Format(time.RFC822)
 		if !displayUsernames {
 			channel := "<#" + discordgo.StrID(parsedCID) + ">"
-			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, channel, v.Message, timeFromNow, tStr)
+			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, channel, limitString(v.Message), timeFromNow, tStr)
 		} else {
 			member, _ := bot.GetMember(v.GuildID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
 				username = member.Username
 			}
-			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, username, v.Message, timeFromNow, tStr)
+			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, username, limitString(v.Message), timeFromNow, tStr)
 		}
 	}
 	return out
@@ -226,4 +226,13 @@ func migrateLegacyScheduledEvents(t time.Time, data string) error {
 	parsed, _ := strconv.ParseInt(split[1], 10, 64)
 
 	return scheduledevents2.ScheduleEvent("reminders_check_user", 1, t, parsed)
+}
+
+func limitString(s string) string {
+	if utf8.RuneCountInString(s) < 50 {
+		return s
+	}
+
+	runes := []rune(s)
+	return string(runes[:47]) + "..."
 }
