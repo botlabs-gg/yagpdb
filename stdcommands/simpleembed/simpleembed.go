@@ -38,11 +38,19 @@ var Command = &commands.YAGCommand{
 		&dcmd.ArgDef{Switch: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String, Default: ""},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		if data.Switch("title").Str() == "" && data.Switch("url").Str() != "" {
-			return "Title is a required field for URL field", nil
-		}
-		if data.Switch("desc").Str() == "" {
-			return "Description is a required field for embeds", nil
+		if data.Switch("channel").Str() != "" || 
+			data.Switch("content").Str() != "" || 
+			data.Switch("color").Str() != "" || 
+			data.Switch("url").Str() != "" || 
+			data.Switch("authorurl").Str() != "" {
+    			if data.Switch("title").Str() == "" && 
+				data.Switch("desc").Str() == "" && 
+				data.Switch("thumbnail").Str() == "" && 
+				data.Switch("image").Str() == "" && 
+				data.Switch("author").Str() == "" && 
+				data.Switch("footer").Str() == "" {
+        			return "Fields title, desc, thumbnail, image, author, or footer is required", nil
+    			}
 		}
 		content := data.Switch("content").Str()
 		embed := &discordgo.MessageEmbed{
