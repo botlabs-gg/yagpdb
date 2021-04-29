@@ -26,7 +26,7 @@ var Command = &commands.YAGCommand{
 			return "Failed parsing json: " + err.Error(), err
 		}	
 		// fallback for missing embed fields
-		if parsed.Color != "" || 
+		if parsed.Color != nil || 
 			parsed.URL != "" || 
 			parsed.Author.URL != "" {
 			if parsed.Title == "" && 
