@@ -256,7 +256,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 		// closes, probably due to small variances in networking and scheduling latencies
 		// Adding a extra 100ms fixes this completely, but to be on the safe side we add a extra 50ms
 		var resp string
-		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "10000", "NX"))
+		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "5100", "NX"))
 		if err != nil {
 			logger.WithError(err).Error("failed ratelimiting gateway")
 			time.Sleep(time.Second)

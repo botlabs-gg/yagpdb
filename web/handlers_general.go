@@ -21,6 +21,7 @@ import (
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/models"
 	"github.com/jonas747/yagpdb/common/patreon"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
@@ -486,6 +487,8 @@ func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateDat
 	if err != nil {
 		return templateData, err
 	}
+
+	pubsub.Publish("evict_core_config_cache", g.ID, nil)
 
 	templateData["CoreConfig"] = m
 
