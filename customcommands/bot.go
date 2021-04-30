@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -99,6 +100,10 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
+	ArgSwitches: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Switch: "f", Name: "File", Help: "Send responses in file"},
+		&dcmd.ArgDef{Switch: "h", Name: "Highlight", Help: "Use syntax highlighting (Go)"},
+	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
@@ -135,12 +140,34 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		if cc.TextTrigger != "" {
-			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
+		highlight := "txt"
+		if data.Switches["h"].Value != nil {
+			highlight = "go"
+		}
+
+		if data.Switches["f"].Value != nil {
+			ccResponseFile := CCResponseToFile(cc)
+			channel := data.Msg.ChannelID
+			guildName := data.GS.Guild.Name
+			if cc.TextTrigger != "" {
+				return common.BotSession.ChannelFileSendWithMessage(channel, fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64]), fmt.Sprintf("%s_CC_%d.%s", guildName, cc.LocalID, highlight), ccResponseFile)
+			} else {
+				return common.BotSession.ChannelFileSendWithMessage(channel, fmt.Sprintf("#%d - %s - Group: `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]), fmt.Sprintf("%s_CC_%d.%s", guildName, cc.LocalID, highlight), ccResponseFile)
+			}
 		} else {
-			return fmt.Sprintf("#%d - %s - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
+			if cc.TextTrigger != "" {
+				return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```%s\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], highlight, strings.Join(cc.Responses, "```\n```")), nil
+			} else {
+				return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], highlight, strings.Join(cc.Responses, "```\n```")), nil
+			}
 		}
 	},
+}
+
+func CCResponseToFile(cc *models.CustomCommand) *bytes.Buffer {
+	var buf bytes.Buffer
+	buf.WriteString(strings.Join(cc.Responses, "Additional response: "))
+	return &buf
 }
 
 func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*models.CustomCommand, provided bool) {
