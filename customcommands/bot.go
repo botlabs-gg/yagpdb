@@ -146,13 +146,32 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		if data.Switches["f"].Value != nil {
-			ccResponseFile := CCResponseToFile(cc)
-			channel := data.Msg.ChannelID
-			guildName := data.GS.Guild.Name
+
+			ccFile := discordgo.File{
+				Name:   fmt.Sprintf("%s_CC_%d.%s", data.GS.Guild.Name, cc.LocalID, highlight),
+				Reader: CCResponseToFile(cc),
+			}
+
 			if cc.TextTrigger != "" {
-				return common.BotSession.ChannelFileSendWithMessage(channel, fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64]), fmt.Sprintf("%s_CC_%d.%s", guildName, cc.LocalID, highlight), ccResponseFile)
+				message := discordgo.MessageSend{
+					Content: fmt.Sprintf("#%d - %s: `%s` Case sensitive trigger: `%t` - Group: `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64]),
+					Files: []*discordgo.File{
+						&ccFile,
+					},
+				}
+
+				return common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, &message)
+
 			} else {
-				return common.BotSession.ChannelFileSendWithMessage(channel, fmt.Sprintf("#%d - %s - Group: `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]), fmt.Sprintf("%s_CC_%d.%s", guildName, cc.LocalID, highlight), ccResponseFile)
+				message := discordgo.MessageSend{
+					Content: fmt.Sprintf("#%d - %s - Group: `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]),
+					Files: []*discordgo.File{
+						&ccFile,
+					},
+				}
+
+				return common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, &message)
+
 			}
 		} else {
 			if cc.TextTrigger != "" {
