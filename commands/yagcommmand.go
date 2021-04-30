@@ -140,6 +140,8 @@ type YAGCommand struct {
 	// if default enabled = true
 	// then this returns the roles that CAN'T use the command
 	RolesRunFunc RolesRunFunc
+
+	slashCommandID int64
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation
@@ -880,4 +882,28 @@ func (yc *YAGCommand) FindNameFromContainerChain(cc []*dcmd.Container) string {
 	}
 
 	return name + yc.Name
+}
+
+// GetAllOverrides returns all channel overrides and ensures the global override with atleast a default is present
+func GetAllOverrides(ctx context.Context, guildID int64) ([]*models.CommandsChannelsOverride, error) {
+	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", guildID), qm.Load("CommandsCommandOverrides")).AllG(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range channelOverrides {
+		if v.Global {
+			return channelOverrides, nil
+		}
+	}
+
+	global := &models.CommandsChannelsOverride{
+		Global:          true,
+		CommandsEnabled: true,
+	}
+	global.R = global.R.NewStruct()
+
+	channelOverrides = append(channelOverrides, global)
+
+	return channelOverrides, nil
 }
