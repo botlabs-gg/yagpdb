@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
