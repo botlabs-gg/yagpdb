@@ -1,10 +1,11 @@
 package bot
 
 import (
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
 	"runtime/debug"
 	"time"
+
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/config"
 
 	"github.com/shirou/gopsutil/mem"
 )

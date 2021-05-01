@@ -3,6 +3,7 @@ package youtube
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"sync"
@@ -46,16 +47,17 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func RegisterPlugin() {
 	p := &Plugin{}
+
+	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
+
+	mqueue.RegisterSource("youtube", p)
+
 	err := p.SetupClient()
 	if err != nil {
 		logger.WithError(err).Error("Failed setting up youtube plugin, youtube plugin will not be enabled.")
 		return
 	}
-
-	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
-
 	common.RegisterPlugin(p)
-	mqueue.RegisterSource("youtube", p)
 }
 
 type ChannelSubscription struct {
@@ -114,7 +116,8 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("Go bad status code: %d (%s)", resp.StatusCode, resp.Status)
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("Go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
 	}
 
 	logger.Info("Websub: Subscribed to channel ", ytChannelID)

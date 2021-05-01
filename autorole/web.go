@@ -9,6 +9,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix/v3"
@@ -21,6 +22,11 @@ type Form struct {
 }
 
 var _ web.SimpleConfigSaver = (*Form)(nil)
+
+var (
+	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "autorole_settings_updated", FormatString: "Updated autorole settings"})
+	panelLogKeyStartedFullScan = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "autorole_full_scan", FormatString: "Started full retroactive autorole scan"})
+)
 
 func (f Form) Save(guildID int64) error {
 	pubsub.Publish("autorole_stop_processing", guildID, nil)
@@ -59,10 +65,10 @@ func (p *Plugin) InitWeb() {
 	muxer.Handle(pat.Get(""), getHandler)
 	muxer.Handle(pat.Get("/"), getHandler)
 
-	muxer.Handle(pat.Post("/fullscan"), web.ControllerPostHandler(handlePostFullScan, getHandler, nil, "Triggered a full autorole scan"))
+	muxer.Handle(pat.Post("/fullscan"), web.ControllerPostHandler(handlePostFullScan, getHandler, nil))
 
-	muxer.Handle(pat.Post(""), web.SimpleConfigSaverHandler(Form{}, getHandler))
-	muxer.Handle(pat.Post("/"), web.SimpleConfigSaverHandler(Form{}, getHandler))
+	muxer.Handle(pat.Post(""), web.SimpleConfigSaverHandler(Form{}, getHandler, panelLogKeyUpdatedSettings))
+	muxer.Handle(pat.Post("/"), web.SimpleConfigSaverHandler(Form{}, getHandler, panelLogKeyUpdatedSettings))
 }
 
 func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface{} {
@@ -97,6 +103,8 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 
 		return tmpl, errors.WithMessage(err, "botrest")
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyStartedFullScan))
 
 	return tmpl, nil
 }

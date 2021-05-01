@@ -323,16 +323,18 @@ the punishment{{end}}
     <li>You can ban using user ids (even if they left the server)</li>
     <li>You can put a duration on the bans</li>
 </ul>
-<p>Note that the bans themselves are on discord, to unban someone you need to go into your banlist on discord
-    and unban them.</p>
+<p>Note that the bans themselves are on discord. To unban someone you can run the unban command 
+    <code>unban @user somereason</code> or <code> unban 1034924032 somereason</code> or go into 
+    your banlist on discord and unban them.</p>
 <div class="row">
     <div class="col-sm">
-        {{checkbox "BanEnabled" "BanEnabled" "Enable the Ban command" .ModConfig.BanEnabled}}
+        {{checkbox "BanEnabled" "BanEnabled" "Enable the Ban/Unban commands" .ModConfig.BanEnabled}}
         <p>
-            <code>ban @user some reason</code><br />
+            <code>ban/unban @user some reason</code><br />
             Only users with ban permission can use this. (or with roles specified below)<br />
             The ban command will ban a user as well as sending a message that the user was banned in the
-            action channel.
+            action channel. The unban command unbans a banned user and optionally sends a message to the
+	    action channel.
         </p>
         <hr />
 

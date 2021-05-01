@@ -131,7 +131,8 @@
                 <ul>
                     <li>{{if not .Permanent}}Expires in:
                         <code>{{humanizeDurationHours (call $dot.PremiumSlotDurationRemaining .)}}</code>{{else}}Expires
-                        never{{end}}.</li>
+                        never{{end}}.
+                    </li>
                     {{if .Message}}<li>{{.Message}}</li>{{end}}
                 </ul>
 
@@ -144,7 +145,7 @@
 
 
                             {{$selected := .GuildID.Int64}}
-                            {{range  $dot.UserGuilds}}{{if .Connected}}
+                            {{range $dot.UserGuilds}}{{if .Connected}}
                             <option value="{{.ID}}" {{if eq .ID $selected}}{{$found = true}} selected {{end}}>{{.Name}}
                             </option>
                             {{end}}{{end}}
@@ -164,6 +165,35 @@
     {{end}}
     <!-- /.col-lg-12 -->
 </div>
+{{template "cp_footer" .}}
+
+{{end}}
+
+
+{{define "cp_premium_detach"}}
+{{template "cp_head" .}}
+
+<div class="page-header">
+    <h2>Detach premium slot</h2>
+</div>
+
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card card-featured card-featured-success">
+            <div class="card-body">
+                <div class="row">
+                    <h2><a href="/manage/{{.ActiveGuild.ID}}/home">Back to home</a></h2>
+                </div>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
 {{template "cp_footer" .}}
 
 {{end}}

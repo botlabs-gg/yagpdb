@@ -8,7 +8,7 @@ import (
 
 	textapi "github.com/AYLIEN/aylien_textapi_go"
 	"github.com/jonas747/dcmd"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"

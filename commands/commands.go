@@ -24,6 +24,7 @@ type CtxKey int
 const (
 	CtxKeyCmdSettings CtxKey = iota
 	CtxKeyChannelOverride
+	CtxKeyExecutedByCC
 )
 
 type MessageFilterFunc func(evt *eventsystem.EventData, msg *discordgo.Message) bool
@@ -90,6 +91,9 @@ func InitCommands() {
 func GetCommandPrefixRedis(guild int64) (string, error) {
 	var prefix string
 	err := common.RedisPool.Do(radix.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))
+	if err == nil && prefix == "" {
+		prefix = defaultCommandPrefix()
+	}
 	return prefix, err
 }
 

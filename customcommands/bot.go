@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -20,7 +21,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -32,6 +33,7 @@ import (
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
+	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -56,7 +58,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdListCommands)
+	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands)
 }
 
 func (p *Plugin) BotInit() {
@@ -98,6 +100,10 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
+	ArgSwitches: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Switch: "f", Name: "File", Help: "Send responses in file"},
+		&dcmd.ArgDef{Switch: "h", Name: "Highlight", Help: "Use syntax highlighting (Go)"},
+	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
@@ -134,11 +140,60 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		if cc.TextTrigger != "" {
-			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
-		} else {
-			return fmt.Sprintf("#%d - %s - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
+		highlight := "txt"
+		if data.Switches["h"].Value != nil {
+			highlight = "go"
 		}
+
+		var ccFile *discordgo.File
+		var msg *discordgo.MessageSend
+
+		if data.Switches["f"].Value != nil {
+
+			data.GS.Lock()
+			gName := data.GS.Guild.Name
+			data.GS.Unlock()
+
+			var buf bytes.Buffer
+			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
+
+			ccFile = &discordgo.File{
+				Name:   fmt.Sprintf("%s_CC_%d.%s", gName, cc.LocalID, highlight),
+				Reader: &buf,
+			}
+		}
+
+		if cc.TextTrigger != "" {
+			if ccFile != nil {
+				msg = &discordgo.MessageSend{
+					Content: fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` Group: `%s`",
+						cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64]),
+					Files: []*discordgo.File{
+						ccFile,
+					},
+				}
+				_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+				return "", err
+			}
+
+			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```%s\n%s\n```",
+				cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive,
+				groupMap[cc.GroupID.Int64], highlight, strings.Join(cc.Responses, "```\n```")), nil
+		}
+		if ccFile != nil {
+			msg = &discordgo.MessageSend{
+				Content: fmt.Sprintf("#%d - %s - Group `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]),
+				Files: []*discordgo.File{
+					ccFile,
+				},
+			}
+			_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+			return "", err
+
+		}
+		return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
+			cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64],
+			highlight, strings.Join(cc.Responses, "```\n```")), nil
 	},
 }
 
@@ -254,6 +309,11 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		return false, errors.WrapIf(err, "find_command")
 	}
 
+	if time.Until(cmd.NextRun.Time) > time.Second*5 {
+		return false, nil // old scheduled event that wasn't removed, /shrug
+
+	}
+
 	gs := bot.State.Guild(true, evt.GuildID)
 	if gs == nil {
 		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
@@ -282,7 +342,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 
 	// schedule next runs
 	cmd.LastRun = cmd.NextRun
-	err = UpdateCommandNextRunTime(cmd, true)
+	err = UpdateCommandNextRunTime(cmd, true, false)
 	if err != nil {
 		logger.WithError(err).Error("failed updating custom command next run time")
 	}
@@ -420,7 +480,12 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	member := dstate.MSFromDGoMember(evt.GS, mc.Member)
-	matchedCustomCommands, err := findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
+
+	var matchedCustomCommands []*TriggeredCC
+	var err error
+	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
+		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
+	})
 	if err != nil {
 		logger.WithError(err).Error("Error mathching custom commands")
 		return
@@ -796,12 +861,42 @@ const (
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
 	v, err := gs.UserCacheFetch(CacheKeyCommands, func() (interface{}, error) {
-		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+		var cmds []*models.CustomCommand
+		var err error
+
+		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": gs.ID}, func() {
+			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+		})
+
+		return cmds, err
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return v.(models.CustomCommandSlice), nil
+	return v.([]*models.CustomCommand), nil
+}
+
+var cmdFixCommands = &commands.YAGCommand{
+	CmdCategory:          commands.CategoryTool,
+	Name:                 "fixscheduledccs",
+	Description:          "???",
+	HideFromCommandsPage: true,
+	HideFromHelp:         true,
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
+		ccs, err := models.CustomCommands(qm.Where("trigger_type = 5"), qm.Where("now() - INTERVAL '1 hour' > next_run")).AllG(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
+		for _, v := range ccs {
+			err = UpdateCommandNextRunTime(v, false, false)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return fmt.Sprintf("Doneso! fixed %d commands!", len(ccs)), nil
+	}),
 }
