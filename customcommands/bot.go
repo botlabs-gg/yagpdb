@@ -150,9 +150,9 @@ var cmdListCommands = &commands.YAGCommand{
 
 		if data.Switches["f"].Value != nil {
 
-			data.GS.RLocker().Lock()
+			data.GS.Lock()
 			gName := data.GS.Guild.Name
-			data.GS.RLocker().Unlock()
+			data.GS.Unlock()
 
 			var buf bytes.Buffer
 			buf.WriteString(strings.Join(cc.Responses, "Additional response:\n"))
