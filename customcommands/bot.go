@@ -155,7 +155,7 @@ var cmdListCommands = &commands.YAGCommand{
 			data.GS.Unlock()
 
 			var buf bytes.Buffer
-			buf.WriteString(strings.Join(cc.Responses, "Additional response:\n"))
+			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
 
 			ccFile = &discordgo.File{
 				Name:   fmt.Sprintf("%s_CC_%d.%s", gName, cc.LocalID, highlight),
@@ -172,33 +172,28 @@ var cmdListCommands = &commands.YAGCommand{
 						ccFile,
 					},
 				}
-
 				_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
 				return "", err
-
-			} else {
-				return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```%s\n%s\n```",
-					cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive,
-					groupMap[cc.GroupID.Int64], highlight, strings.Join(cc.Responses, "```\n```")), nil
 			}
-		} else {
-			if ccFile != nil {
-				msg = &discordgo.MessageSend{
-					Content: fmt.Sprintf("#%d - %s - Group `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]),
-					Files: []*discordgo.File{
-						ccFile,
-					},
-				}
 
-				_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
-				return "", err
-
-			} else {
-				return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
-					cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64],
-					highlight, strings.Join(cc.Responses, "```\n```")), nil
-			}
+			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```%s\n%s\n```",
+				cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive,
+				groupMap[cc.GroupID.Int64], highlight, strings.Join(cc.Responses, "```\n```")), nil
 		}
+		if ccFile != nil {
+			msg = &discordgo.MessageSend{
+				Content: fmt.Sprintf("#%d - %s - Group `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]),
+				Files: []*discordgo.File{
+					ccFile,
+				},
+			}
+			_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+			return "", err
+
+		}
+		return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
+			cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64],
+			highlight, strings.Join(cc.Responses, "```\n```")), nil
 	},
 }
 
