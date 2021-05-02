@@ -403,6 +403,16 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		ArgumentCombos: [][]int{[]int{0}, []int{0, 1}, []int{1, 0}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			botMember, err := bot.GetMember(parsed.Msg.GuildID, common.BotUser.ID)
+			if err != nil {
+				return "Failed fetching bot member to check permissions", nil
+			}
+
+			canClear, err := bot.AdminOrPermMS(parsed.CS.ID, botMember, discordgo.PermissionManageMessages)
+			if err != nil || !canClear {
+				return "I need the `Manage Messages` permission to be able to clear messages", nil
+			}
+
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
 				return nil, err
