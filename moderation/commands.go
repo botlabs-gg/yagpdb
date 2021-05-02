@@ -385,7 +385,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:     commands.CategoryModeration,
 		Name:            "Clean",
 		Description:     "Delete the last number of messages from chat, optionally filtering by user, max age and regex or ignoring pinned messages.\n⚠️ **Warning:** Using `clean <userId> <amount>` does not work. This is because the user ID is interpreted as the amount. As it is over the limit of 100, it is treated as invalid. You can use `clean <amount> <userId>` instead or mention the user.",
-		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nNote: Will only look in the last 1k messages",
+		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nYou can invert the regex match (i.e. only clear messages that do not match the given regex) by supplying the `-im` flag\nNote: Will only look in the last 1k messages",
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
 		Arguments: []*dcmd.ArgDef{
@@ -394,6 +394,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Switch: "r", Name: "Regex", Type: dcmd.String},
+			&dcmd.ArgDef{Switch: "im", Name: "Invert regex match"},
 			&dcmd.ArgDef{Switch: "ma", Default: time.Duration(0), Name: "Max age", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "minage", Default: time.Duration(0), Name: "Min age", Type: &commands.DurationArg{}},
 			&dcmd.ArgDef{Switch: "i", Name: "Regex case insensitive"},
@@ -446,6 +447,7 @@ var ModerationCommands = []*commands.YAGCommand{
 					}
 				}
 			}
+			invertRegexMatch := parsed.Switch("im").Value != nil && parsed.Switch("im").Value.(bool)
 
 			// Check if we have a max age
 			ma := parsed.Switches["ma"].Value.(time.Duration)
@@ -492,7 +494,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, toID, ma, minAge, pe, attachments, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.Msg.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
 
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
@@ -913,7 +915,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -956,7 +958,11 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, toI
 
 		// Check regex
 		if compiledRegex != nil {
-			if !compiledRegex.MatchString(msgs[i].Content) {
+			ok := compiledRegex.MatchString(msgs[i].Content)
+			if invertRegexMatch {
+				ok = !ok
+			}
+			if !ok {
 				continue
 			}
 		}
