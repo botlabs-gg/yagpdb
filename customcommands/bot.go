@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -99,6 +100,10 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
+	ArgSwitches: []*dcmd.ArgDef{
+		&dcmd.ArgDef{Switch: "f", Name: "File", Help: "Send responses in file"},
+		&dcmd.ArgDef{Switch: "h", Name: "Highlight", Help: "Use syntax highlighting (Go)"},
+	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
@@ -135,11 +140,60 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		if cc.TextTrigger != "" {
-			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
-		} else {
-			return fmt.Sprintf("#%d - %s - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
+		highlight := "txt"
+		if data.Switches["h"].Value != nil {
+			highlight = "go"
 		}
+
+		var ccFile *discordgo.File
+		var msg *discordgo.MessageSend
+
+		if data.Switches["f"].Value != nil {
+
+			data.GS.Lock()
+			gName := data.GS.Guild.Name
+			data.GS.Unlock()
+
+			var buf bytes.Buffer
+			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
+
+			ccFile = &discordgo.File{
+				Name:   fmt.Sprintf("%s_CC_%d.%s", gName, cc.LocalID, highlight),
+				Reader: &buf,
+			}
+		}
+
+		if cc.TextTrigger != "" {
+			if ccFile != nil {
+				msg = &discordgo.MessageSend{
+					Content: fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` Group: `%s`",
+						cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64]),
+					Files: []*discordgo.File{
+						ccFile,
+					},
+				}
+				_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+				return "", err
+			}
+
+			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```%s\n%s\n```",
+				cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive,
+				groupMap[cc.GroupID.Int64], highlight, strings.Join(cc.Responses, "```\n```")), nil
+		}
+		if ccFile != nil {
+			msg = &discordgo.MessageSend{
+				Content: fmt.Sprintf("#%d - %s - Group `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]),
+				Files: []*discordgo.File{
+					ccFile,
+				},
+			}
+			_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+			return "", err
+
+		}
+		return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
+			cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64],
+			highlight, strings.Join(cc.Responses, "```\n```")), nil
 	},
 }
 
