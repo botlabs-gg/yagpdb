@@ -27,10 +27,12 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 
 	c.GS.RLock()
 	gName := c.GS.Guild.Name
+	gIcon := discordgo.EndpointGuildIcon(c.GS.Guild.ID, c.GS.Guild.Icon)
 	memberID := c.MS.ID
 	c.GS.RUnlock()
 
-	info := fmt.Sprintf("Custom Command DM From the server **%s**", gName)
+	info := fmt.Sprintf("Custom Command DM from the server **%s**", gName)
+	embedInfo := fmt.Sprintf("Custom Command DM from the server %s", gName)
 	msgSend := &discordgo.MessageSend{
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
@@ -40,14 +42,16 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	switch t := s[0].(type) {
 	case *discordgo.MessageEmbed:
 		t.Footer = &discordgo.MessageEmbedFooter{
-			Text: info,
+			Text:    embedInfo,
+			IconURL: gIcon,
 		}
 		msgSend.Embed = t
 	case *discordgo.MessageSend:
 		msgSend = t
 		if msgSend.Embed != nil {
 			msgSend.Embed.Footer = &discordgo.MessageEmbedFooter{
-				Text: info,
+				Text:    embedInfo,
+				IconURL: gIcon,
 			}
 			break
 		}
