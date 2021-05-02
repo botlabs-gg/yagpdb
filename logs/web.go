@@ -206,7 +206,6 @@ func HandleLogsCPDeleteAll(w http.ResponseWriter, r *http.Request) (web.Template
 
 	count, err := models.MessageLogs2s(models.MessageLogs2Where.GuildID.EQ(g.ID)).DeleteAll(r.Context(), common.PQ)
 	if err != nil {
-		tmpl.AddAlerts(web.ErrorAlert("Failed deleting all server logs"))
 		return tmpl, err
 	}
 
