@@ -304,7 +304,7 @@ func ContainerSlashCommandPermissions(container *slashCommandsContainer, overrid
 		denyAll = childDenyAll
 	}
 
-	childAllows = commonSet(childAllows, allowRoles)
+	allowRoles = commonSet(childAllows, allowRoles)
 	denyRoles = mergeInt64Slice(denyRoles, childDenies)
 
 	fmt.Printf("CONTAINER PERMS: %s(%d): allowAll: %v, denyAll: %v, allow: %v, deny: %v \n", container.container.Names[0], container.slashCommandID, allowAll, denyAll, allowRoles, denyRoles)
