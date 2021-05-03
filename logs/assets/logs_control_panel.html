@@ -7,6 +7,36 @@
 
 {{template "cp_alerts" .}}
 
+<div id="delete-all-message-logs-modal" class="modal-block modal-full-color modal-block-danger mfp-hide">
+    <section class="card">
+        <header class="card-header">
+            <h2 class="card-title">Danger!</h2>
+        </header>
+        <div class="card-body">
+            <div class="modal-wrapper">
+                <div class="modal-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="modal-text">
+                    <h4>Delete ALL message logs?</h4>
+                    <p>This cannot be undone.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="card-footer">
+            <div class="row">
+                <div class="col-md-12 text-right">
+                    <form action="/manage/{{.ActiveGuild.ID}}/logging/delete_all" data-async-form
+                        method="post">
+                        <button class="btn btn-default modal-dismiss">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete them all!</button>
+                    </form>
+                </div>
+            </div>
+        </footer>
+    </section>
+</div>
+
 <div class="row">
     <div class="col-lg-12">
         <section class="card">
@@ -67,6 +97,13 @@
                                     {{roleOptionsMulti .ActiveGuild.Roles nil .Config.MessageLogsAllowedRoles}}
                                 </select>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#delete-all-message-logs-modal">
+                                Delete all logs
+                            </a>
                         </div>
                     </div>
                     <div class="row">
