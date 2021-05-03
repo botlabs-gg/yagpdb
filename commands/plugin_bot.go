@@ -176,10 +176,10 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Lock the command for execution
 		if !BlockingAddRunningCommand(guildID, data.ChannelID, data.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
-				return yc.Name + ": Bot is restarting, please try again in a couple seconds...", nil
+				return &EphermalOrGuild{Content: yc.Name + ": Bot is restarting, please try again in a couple seconds..."}, nil
 			}
 
-			return yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish", nil
+			return &EphermalOrGuild{Content: yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish"}, nil
 		}
 
 		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)
@@ -192,8 +192,6 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 		if resp != "" {
 			if resp == ReasonCooldown {
-				fmt.Println("Were on cooldown")
-
 				switch data.TriggerType {
 				case dcmd.TriggerTypeSlashCommands:
 					common.BotSession.CreateFollowupMessage(data.SlashCommandTriggerData.Interaction.ApplicationID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.WebhookParams{
@@ -205,17 +203,18 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 						common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
 					}
 				}
-
 			}
 
-			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
-			// m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
-			// go yc.deleteResponse([]*discordgo.Message{m})
-			return nil, nil
+			return &EphermalOrNone{
+				Content: "You're unable to run this command: " + resp,
+			}, nil
+
 		}
 
 		if !canExecute {
-			return nil, nil
+			return &EphermalOrNone{
+				Content: "You're unable to run this command.",
+			}, nil
 		}
 
 		if err != nil {
@@ -240,7 +239,9 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 				}
 
 				resp = resp + "\nInvalid arguments provided: " + err.Error()
-				yc.PostCommandExecuted(settings, data, resp, nil)
+				yc.PostCommandExecuted(settings, data, &EphermalOrGuild{
+					Content: resp,
+				}, nil)
 				return nil, nil
 			}
 

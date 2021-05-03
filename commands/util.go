@@ -372,3 +372,61 @@ func (ma *MemberArg) HelpName() string {
 func (ma *MemberArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {
 	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeUser)}
 }
+
+type EphermalOrGuild struct {
+	Content string
+	Embed   *discordgo.MessageEmbed
+}
+
+var _ dcmd.Response = (*EphermalOrGuild)(nil)
+
+func (e *EphermalOrGuild) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
+
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		tmp := &EphermalOrNone{
+			Content: e.Content,
+			Embed:   e.Embed,
+		}
+		return tmp.Send(data)
+	default:
+		send := discordgo.MessageSend{
+			Content:         e.Content,
+			Embed:           e.Embed,
+			AllowedMentions: discordgo.AllowedMentions{},
+		}
+
+		return data.SendFollowupMessage(send, discordgo.AllowedMentions{})
+	}
+}
+
+type EphermalOrNone struct {
+	Content string
+	Embed   *discordgo.MessageEmbed
+}
+
+var _ dcmd.Response = (*EphermalOrNone)(nil)
+
+func (e *EphermalOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		params := &discordgo.WebhookParams{
+			Content:         e.Content,
+			AllowedMentions: &discordgo.AllowedMentions{},
+			Flags:           64,
+		}
+
+		if e.Embed != nil {
+			params.Embeds = []*discordgo.MessageEmbed{e.Embed}
+		}
+
+		m, err := data.Session.CreateFollowupMessage(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
+		if err != nil {
+			return nil, err
+		}
+
+		return []*discordgo.Message{m}, nil
+	default:
+		return nil, nil
+	}
+}

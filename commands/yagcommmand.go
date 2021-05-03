@@ -230,20 +230,23 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Run the command
 	r, cmdErr := yc.RunFunc(data.WithContext(runCtx))
-	if cmdErr != nil {
-		if errors.Cause(cmdErr) == context.Canceled || errors.Cause(cmdErr) == context.DeadlineExceeded {
-			r = "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + rawCommand + "`, Cancelled the command."
-		}
-	}
-
-	if (r == nil || r == "") && cmdErr != nil {
-		r = yc.humanizeError(cmdErr)
-	}
-
 	logEntry.ResponseTime = int64(time.Since(started))
 
-	// set cooldowns
-	if cmdErr == nil {
+	if cmdErr != nil {
+		if errors.Cause(cmdErr) == context.Canceled || errors.Cause(cmdErr) == context.DeadlineExceeded {
+			r = EphermalOrGuild{Content: "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + rawCommand + "`, Cancelled the command."}
+		}
+
+		if r == nil || r == "" {
+			r = EphermalOrGuild{Content: yc.humanizeError(cmdErr)}
+		}
+
+		// set cmdErr to nil if this was a user error top stop it from being recorded and logged as an actual error
+		if _, isUserErr := errors.Cause(cmdErr).(dcmd.UserError); isUserErr {
+			cmdErr = nil
+		}
+	} else {
+		// set cooldowns
 		err := yc.SetCooldowns(data.ContainerChain, data.Author.ID, guildID)
 		if err != nil {
 			logger.WithError(err).Error("Failed setting cooldown")
@@ -251,13 +254,6 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 		if yc.Plugin != nil {
 			go analytics.RecordActiveUnit(guildID, yc.Plugin, "cmd_executed_"+strings.ToLower(cmdFullName))
-		}
-	}
-
-	// set cmdErr to nil if this was a user error top stop it from being recorded and logged as an actual error
-	if cmdErr != nil {
-		if _, isUserErr := errors.Cause(cmdErr).(dcmd.UserError); isUserErr {
-			cmdErr = nil
 		}
 	}
 
@@ -322,7 +318,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	}
 
 	// send a alternative message in case of embeds in channels with no embeds perms
-	if cmdData.GuildData != nil {
+	if cmdData.GuildData != nil && cmdData.TriggerType != dcmd.TriggerTypeSlashCommands {
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
 			if !bot.BotProbablyHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks) {
