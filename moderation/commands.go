@@ -136,6 +136,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "d", Help: "Duration", Type: &commands.DurationArg{}, Default: time.Duration(0)},
 			{Name: "ddays", Help: "Delete Days", Type: dcmd.Int},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
@@ -175,7 +177,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
-
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0) //No need to check member role hierarchy as banned members should not be in server
 			if err != nil {
@@ -220,6 +223,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
@@ -254,7 +259,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Duration", Type: &commands.DurationArg{}},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		ArgumentCombos: [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
+		ArgumentCombos:      [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
@@ -308,6 +315,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
@@ -352,6 +361,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -413,7 +424,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "a", Help: "Only remove messages with attachments"},
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.Int},
 		},
-		ArgumentCombos: [][]int{{0}, {0, 1}, {1, 0}},
+		ArgumentCombos:      [][]int{{0}, {0, 1}, {1, 0}},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -519,6 +532,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Message-ID", Type: dcmd.Int},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -567,6 +582,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
@@ -603,6 +620,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "id", Help: "Warning ID", Type: dcmd.Int},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var err error
 			config, _, err := MBaseCmd(parsed, 0)
@@ -652,6 +671,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Id", Type: dcmd.Int},
 			{Name: "NewMessage", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -683,6 +704,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Id", Type: dcmd.Int},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -712,6 +735,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
 			config, _, err := MBaseCmd(parsed, 0)
@@ -741,6 +766,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "id", Help: "List userIDs"},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
 			showUserIDs := false
@@ -807,6 +834,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "d", Default: time.Duration(0), Help: "Duration", Type: &commands.DurationArg{}},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
@@ -882,6 +911,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Role", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {

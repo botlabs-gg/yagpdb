@@ -269,7 +269,13 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdList, cmdList.GetTrigger())
 	container.AddCommand(cmdDel, cmdDel.GetTrigger())
 	container.AddCommand(cmdStopSetup, cmdStopSetup.GetTrigger())
+	container.Description = "Manage events"
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildState) ([]int64, error) {
+		return nil, nil
+	})
 }
+
+type RolesRunFunc func(gs *dstate.GuildState) ([]int64, error)
 
 func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate()

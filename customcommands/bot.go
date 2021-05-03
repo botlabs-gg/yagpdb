@@ -99,6 +99,8 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {

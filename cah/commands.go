@@ -5,6 +5,7 @@ import (
 
 	"github.com/jonas747/cardsagainstdiscord"
 	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/sirupsen/logrus"
@@ -106,9 +107,13 @@ func (p *Plugin) AddCommands() {
 
 	container := commands.CommandSystem.Root.Sub("cah")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
+	container.Description = "Playt cards against humanity!"
 
 	container.AddCommand(cmdCreate, cmdCreate.GetTrigger())
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())
 	container.AddCommand(cmdKick, cmdKick.GetTrigger())
 	container.AddCommand(cmdPacks, cmdPacks.GetTrigger())
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildState) ([]int64, error) {
+		return nil, nil
+	})
 }

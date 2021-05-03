@@ -101,17 +101,21 @@ var cmds = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			parsed.Args[1].Value = -parsed.Args[1].Int()
 			return CmdGiveRep(parsed)
 		},
 	},
 	{
-		CmdCategory:  commands.CategoryFun,
-		Name:         "GiveRep",
-		Aliases:      []string{"+", "gr", "grep", "+rep"},
-		Description:  "Gives rep to someone",
-		RequiredArgs: 1,
+		CmdCategory:         commands.CategoryFun,
+		Name:                "GiveRep",
+		Aliases:             []string{"+", "gr", "grep", "+rep"},
+		Description:         "Gives rep to someone",
+		RequiredArgs:        1,
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
@@ -119,11 +123,13 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: CmdGiveRep,
 	},
 	{
-		CmdCategory:  commands.CategoryFun,
-		Name:         "SetRep",
-		Aliases:      []string{"SetRepID"}, // alias for legacy reasons, used to be a standalone command
-		Description:  "Sets someones rep, this is an admin command and bypasses cooldowns and other restrictions.",
-		RequiredArgs: 2,
+		CmdCategory:         commands.CategoryFun,
+		Name:                "SetRep",
+		Aliases:             []string{"SetRepID"}, // alias for legacy reasons, used to be a standalone command
+		Description:         "Sets someones rep, this is an admin command and bypasses cooldowns and other restrictions.",
+		RequiredArgs:        2,
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Num", Type: dcmd.Int},
@@ -154,10 +160,12 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	{
-		CmdCategory:  commands.CategoryFun,
-		Name:         "DelRep",
-		Description:  "Deletes someone from the reputation list completely, this cannot be undone.",
-		RequiredArgs: 1,
+		CmdCategory:         commands.CategoryFun,
+		Name:                "DelRep",
+		Description:         "Deletes someone from the reputation list completely, this cannot be undone.",
+		RequiredArgs:        1,
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 		},
@@ -182,11 +190,13 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	{
-		CmdCategory:  commands.CategoryFun,
-		Name:         "RepLog",
-		Aliases:      []string{"replogs"},
-		Description:  "Shows the rep log for the specified user.",
-		RequiredArgs: 1,
+		CmdCategory:         commands.CategoryFun,
+		Name:                "RepLog",
+		Aliases:             []string{"replogs"},
+		Description:         "Shows the rep log for the specified user.",
+		RequiredArgs:        1,
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Page", Type: dcmd.Int, Default: 1},
@@ -287,6 +297,8 @@ var cmds = []*commands.YAGCommand{
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			target := parsed.Author
 			if parsed.Args[0].Value != nil {
@@ -323,6 +335,8 @@ var cmds = []*commands.YAGCommand{
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: dcmd.Int, Default: 0},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			offset := (page - 1) * 15
 			entries, err := TopUsers(parsed.GuildData.GS.ID, offset, 15)

@@ -158,8 +158,21 @@ func (yc *YAGCommand) slashCommandOptions() []*discordgo.ApplicationCommandOptio
 			}
 		}
 
-		result = append(result, opts...)
+		// required args needs to be first
+		for _, v := range opts {
+			if v.Required {
+				result = append(result, v)
+			}
+		}
+
+		// add the optional args last
+		for _, v := range opts {
+			if !v.Required {
+				result = append(result, v)
+			}
+		}
 	}
+
 	for _, v := range yc.ArgSwitches {
 		if v.Type == nil {
 			result = append(result, v.StandardSlashCommandOption(discordgo.CommandOptionTypeBoolean))

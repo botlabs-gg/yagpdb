@@ -51,6 +51,8 @@ var cmdLogs = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
 	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 		num := cmd.Args[0].Int()
 
@@ -76,6 +78,8 @@ var cmdWhois = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: &commands.MemberArg{}},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 		if err != nil {

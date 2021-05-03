@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/common/featureflags"
-
 	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/automod/models"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -367,6 +367,7 @@ func (p *Plugin) AddCommands() {
 
 	container := commands.CommandSystem.Root.Sub("automod", "amod")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
+	container.Description = "Commands for managing automod"
 
 	container.AddCommand(cmdViewRulesets, cmdViewRulesets.GetTrigger())
 	container.AddCommand(cmdToggleRuleset, cmdToggleRuleset.GetTrigger())
@@ -375,4 +376,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdListVLC, cmdListVLC.GetTrigger())
 	container.AddCommand(cmdDelV, cmdDelV.GetTrigger())
 	container.AddCommand(cmdClearV, cmdClearV.GetTrigger())
+	commands.RegisterSlashCommandsContainer(container, false, func(gs *dstate.GuildState) ([]int64, error) {
+		return nil, nil
+	})
 }
