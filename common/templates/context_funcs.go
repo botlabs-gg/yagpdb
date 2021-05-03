@@ -1191,7 +1191,7 @@ func (c *Context) compileRegex(r string) (*regexp.Regexp, error) {
 	return compiled, nil
 }
 
-func (c *Context) reFind(r string, s string) (string, error) {
+func (c *Context) reFind(r, s string) (string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return "", err
@@ -1200,25 +1200,43 @@ func (c *Context) reFind(r string, s string) (string, error) {
 	return compiled.FindString(s), nil
 }
 
-func (c *Context) reFindAll(r string, s string) ([]string, error) {
+func (c *Context) reFindAll(r, s string, i ...int) ([]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.FindAllString(s, 1000), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 1000 || n < 0 {
+		n = 1000
+	}
+
+	return compiled.FindAllString(s, n), nil
 }
 
-func (c *Context) reFindAllSubmatches(r string, s string) ([][]string, error) {
+func (c *Context) reFindAllSubmatches(r, s string, i ...int) ([][]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.FindAllStringSubmatch(s, 100), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 100 || n < 0 {
+		n = 100
+	}
+
+	return compiled.FindAllStringSubmatch(s, n), nil
 }
 
-func (c *Context) reReplace(r string, s string, repl string) (string, error) {
+func (c *Context) reReplace(r, s, repl string) (string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return "", err
@@ -1227,13 +1245,22 @@ func (c *Context) reReplace(r string, s string, repl string) (string, error) {
 	return compiled.ReplaceAllString(s, repl), nil
 }
 
-func (c *Context) reSplit(r, s string, i int) ([]string, error) {
+func (c *Context) reSplit(r, s string, i ...int) ([]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.Split(s, i), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 500 || n < 0 {
+		n = 500
+	}
+
+	return compiled.Split(s, n), nil
 }
 
 func (c *Context) tmplEditChannelName(channel interface{}, newName string) (string, error) {
