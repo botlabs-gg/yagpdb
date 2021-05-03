@@ -100,11 +100,11 @@ OUTER:
 }
 
 func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *discordgo.CreateApplicationCommandRequest {
+	t := true
 	req := &discordgo.CreateApplicationCommandRequest{
 		Name:              container.container.Names[0],
 		Description:       common.CutStringShort(container.container.Description, 100),
-		DefaultPermission: &container.defaultPermissions,
-		// Options:           cast.slashCommandOptions(),
+		DefaultPermission: &t,
 	}
 
 	for _, v := range container.container.Commands {
@@ -138,11 +138,11 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		// not enabled for slash commands
 		return nil
 	}
-
+	t := true
 	return &discordgo.CreateApplicationCommandRequest{
 		Name:              cmd.Trigger.Names[0],
 		Description:       common.CutStringShort(cast.Description, 100),
-		DefaultPermission: &cast.DefaultEnabled,
+		DefaultPermission: &t,
 		Options:           cast.slashCommandOptions(),
 	}
 }
@@ -172,6 +172,7 @@ func (yc *YAGCommand) slashCommandOptions() []*discordgo.ApplicationCommandOptio
 }
 
 func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
+	// TODO: add queue?
 	waitForSlashCommandIDs()
 
 	gs := bot.State.Guild(true, evt.GuildCreate().ID)
@@ -351,69 +352,66 @@ func sumContainerSlashCommandsChildren(container *slashCommandsContainer, overri
 func toApplicationCommandPermissions(gs *dstate.GuildState, defaultEnabeld bool, allowRoles, denyRoles []int64, allowAll, denyAll bool) []*discordgo.ApplicationCommandPermissions {
 	result := make([]*discordgo.ApplicationCommandPermissions, 0, 10)
 
-	allGuildroles := guildRoles(gs)
+	// allGuildroles := guildRoles(gs)
 
 	// Add allow roles
-	if allowAll {
-		if !defaultEnabeld {
-			for _, v := range allGuildroles {
-				if v == gs.ID {
-					continue
-				}
-				result = append(result, &discordgo.ApplicationCommandPermissions{
-					ID:         v,
-					Kind:       discordgo.CommandPermissionTypeRole,
-					Permission: true,
-				})
-			}
+	// if allowAll {
+	// 	if !defaultEnabeld {
+	// 		result = append(result, &discordgo.ApplicationCommandPermissions{
+	// 			ID:         gs.ID,
+	// 			Kind:       discordgo.CommandPermissionTypeRole,
+	// 			Permission: true,
+	// 		})
+	// 	}
+	// } else {
+	// 	for _, v := range allowRoles {
+	// 		result = append(result, &discordgo.ApplicationCommandPermissions{
+	// 			ID:         v,
+	// 			Kind:       discordgo.CommandPermissionTypeRole,
+	// 			Permission: true,
+	// 		})
+	// 	}
+	// }
 
-			// Apperently we can't use the everyone role, shrug
-			// result = append(result, &discordgo.ApplicationCommandPermissions{
-			// 	ID:         gs.ID,
-			// 	Kind:       discordgo.CommandPermissionTypeRole,
-			// 	Permission: true,
-			// })
-		}
-	} else {
-		for _, v := range allowRoles {
+	// for now were keeping the permissions simple because of limitations with interactions currently
+	if allowAll || len(allowRoles) > 0 {
+		if !defaultEnabeld {
 			result = append(result, &discordgo.ApplicationCommandPermissions{
-				ID:         v,
+				ID:         gs.ID,
 				Kind:       discordgo.CommandPermissionTypeRole,
 				Permission: true,
 			})
 		}
-	}
-
-	// Add deny roles
-	if denyAll {
+	} else if denyAll {
 		if defaultEnabeld {
-			for _, v := range allGuildroles {
-				if v == gs.ID {
-					continue
-				}
+			// for _, v := range allGuildroles {
+			// 	if v == gs.ID {
+			// 		continue
+			// 	}
 
-				result = append(result, &discordgo.ApplicationCommandPermissions{
-					ID:         v,
-					Kind:       discordgo.CommandPermissionTypeRole,
-					Permission: false,
-				})
-			}
+			// 	result = append(result, &discordgo.ApplicationCommandPermissions{
+			// 		ID:         v,
+			// 		Kind:       discordgo.CommandPermissionTypeRole,
+			// 		Permission: false,
+			// 	})
+			// }
 
-			// Apperently we can't use the everyone role, shrug
-			// result = append(result, &discordgo.ApplicationCommandPermissions{
-			// 	ID:         gs.ID,
-			// 	Kind:       discordgo.CommandPermissionTypeRole,
-			// 	Permission: false,
-			// })
-		}
-	} else {
-		for _, v := range denyRoles {
 			result = append(result, &discordgo.ApplicationCommandPermissions{
-				ID:         v,
+				ID:         gs.ID,
 				Kind:       discordgo.CommandPermissionTypeRole,
 				Permission: false,
 			})
 		}
+	} else {
+		// we cannot do this atm because of the max 10 limit of permission overwrites on commands, so keep it simple
+
+		// for _, v := range denyRoles {
+		// 	result = append(result, &discordgo.ApplicationCommandPermissions{
+		// 		ID:         v,
+		// 		Kind:       discordgo.CommandPermissionTypeRole,
+		// 		Permission: false,
+		// 	})
+		// }
 	}
 
 	return result

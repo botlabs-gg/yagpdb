@@ -16,7 +16,6 @@ import (
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
 )
 
 var (
@@ -29,15 +28,22 @@ var _ bot.BotStopperHandler = (*Plugin)(nil)
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMsgCreate, eventsystem.EventMessageCreate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleInteractionCreate, eventsystem.EventInteractionCreate)
-	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildCreate, eventsystem.EventGuildCreate)
-	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleDiscordEventUpdateSlashCommandPermissions, eventsystem.EventGuildRoleCreate, eventsystem.EventGuildRoleUpdate, eventsystem.EventChannelCreate)
+
+	// Slash command permissions are currently pretty fucked so can't use them
+	//
+	// eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildCreate, eventsystem.EventGuildCreate)
+	// eventsystem.AddHandlerAsyncLastLegacy(p, p.handleDiscordEventUpdateSlashCommandPermissions, eventsystem.EventGuildRoleCreate, eventsystem.EventGuildRoleUpdate, eventsystem.EventChannelCreate)
+	// pubsub.AddHandler("update_slash_command_permissions", p.handleUpdateSlashCommandsPermissions, nil)
 
 	CommandSystem.State = bot.State
 	dcmd.CustomUsernameSearchFunc = p.customUsernameSearchFunc
 
+	// err := clearGlobalCommands()
+	// if err != nil {
+	// 	logger.WithError(err).Errorf("failed clearing all commands")
+	// }
 	p.startSlashCommandsUpdater()
 
-	pubsub.AddHandler("update_slash_command_permissions", p.handleUpdateSlashCommandsPermissions, nil)
 }
 
 func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
@@ -387,4 +393,23 @@ var cmdPrefix = &YAGCommand{
 
 		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
 	},
+}
+
+func clearGlobalCommands() error {
+	commands, err := common.BotSession.GetGlobalApplicationCommands(common.BotApplication.ID)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("COMMANDS LENGHT: ", len(commands))
+
+	for _, v := range commands {
+		err = common.BotSession.DeleteGlobalApplicationCommand(common.BotApplication.ID, v.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	logger.Info("DONE")
+	return nil
 }
