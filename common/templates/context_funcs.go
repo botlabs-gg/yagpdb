@@ -996,6 +996,10 @@ func (c *Context) tmplTargetHasPermissions(target interface{}, needed int) (bool
 }
 
 func (c *Context) tmplGetTargetPermissionsIn(target interface{}, channel interface{}) (int, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return 0, ErrTooManyAPICalls
+	}
+
 	targetID := targetUserID(target)
 	if targetID == 0 {
 		return 0, nil
