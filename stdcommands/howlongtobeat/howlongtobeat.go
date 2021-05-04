@@ -77,7 +77,7 @@ var Command = &commands.YAGCommand{
 
 		if compactView {
 			compactData := fmt.Sprintf("%s: %s | %s | %s | <%s>",
-				hltbQuery[0].GameTitle,
+				normaliseTitle(hltbQuery[0].GameTitle),
 				strings.Trim(fmt.Sprint(hltbQuery[0].MainStory), "[]"),
 				strings.Trim(fmt.Sprint(hltbQuery[0].MainExtra), "[]"),
 				strings.Trim(fmt.Sprint(hltbQuery[0].Completionist), "[]"),
@@ -112,7 +112,7 @@ func embedCreator(hltbQuery []hltb, i int, paginated bool) *discordgo.MessageEmb
 	hltbURL := fmt.Sprintf("%s://%s", hltbScheme, hltbHost)
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name: hltbQuery[i].GameTitle,
+			Name: normaliseTitle(hltbQuery[i].GameTitle),
 			URL:  hltbQuery[i].GameURL,
 		},
 
@@ -138,3 +138,8 @@ func embedCreator(hltbQuery []hltb, i int, paginated bool) *discordgo.MessageEmb
 	}
 	return embed
 }
+
+func normaliseTitle(t string) string {
+	return strings.Join(strings.Fields(t), " ")
+}
+
