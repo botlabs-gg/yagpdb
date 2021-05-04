@@ -3,7 +3,7 @@ package dogfact
 import (
 	"math/rand"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/yagpdb/commands"
 )
 

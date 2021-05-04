@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	textapi "github.com/AYLIEN/aylien_textapi_go"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
