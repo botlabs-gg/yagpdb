@@ -234,11 +234,11 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	if cmdErr != nil {
 		if errors.Cause(cmdErr) == context.Canceled || errors.Cause(cmdErr) == context.DeadlineExceeded {
-			r = EphermalOrGuild{Content: "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + rawCommand + "`, Cancelled the command."}
+			r = &EphemeralOrGuild{Content: "Took longer than " + CommandExecTimeout.String() + " to handle command: `" + rawCommand + "`, Cancelled the command."}
 		}
 
 		if r == nil || r == "" {
-			r = EphermalOrGuild{Content: yc.humanizeError(cmdErr)}
+			r = &EphemeralOrGuild{Content: yc.humanizeError(cmdErr)}
 		}
 
 		// set cmdErr to nil if this was a user error top stop it from being recorded and logged as an actual error

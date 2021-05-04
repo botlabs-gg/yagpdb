@@ -373,18 +373,18 @@ func (ma *MemberArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.Applicat
 	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeUser)}
 }
 
-type EphermalOrGuild struct {
+type EphemeralOrGuild struct {
 	Content string
 	Embed   *discordgo.MessageEmbed
 }
 
-var _ dcmd.Response = (*EphermalOrGuild)(nil)
+var _ dcmd.Response = (*EphemeralOrGuild)(nil)
 
-func (e *EphermalOrGuild) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
+func (e *EphemeralOrGuild) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 
 	switch data.TriggerType {
 	case dcmd.TriggerTypeSlashCommands:
-		tmp := &EphermalOrNone{
+		tmp := &EphemeralOrNone{
 			Content: e.Content,
 			Embed:   e.Embed,
 		}
@@ -400,14 +400,14 @@ func (e *EphermalOrGuild) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 	}
 }
 
-type EphermalOrNone struct {
+type EphemeralOrNone struct {
 	Content string
 	Embed   *discordgo.MessageEmbed
 }
 
-var _ dcmd.Response = (*EphermalOrNone)(nil)
+var _ dcmd.Response = (*EphemeralOrNone)(nil)
 
-func (e *EphermalOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
+func (e *EphemeralOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 
 	switch data.TriggerType {
 	case dcmd.TriggerTypeSlashCommands:
@@ -435,10 +435,18 @@ func (e *EphermalOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 
 		m, err := data.Session.CreateFollowupMessage(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
 		// m, err := data.Session.EditOriginalInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
+		// err = data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.InteractionResponse{
+		// 	Kind: discordgo.InteractionResponseTypeChannelMessageWithSource,
+		// 	Data: &discordgo.InteractionApplicationCommandCallbackData{
+		// 		Content: &e.Content,
+		// 		Flags:   64,
+		// 	},
+		// })
 		if err != nil {
 			return nil, err
 		}
 
+		// return []*discordgo.Message{}, nil
 		return []*discordgo.Message{m}, nil
 	default:
 		return nil, nil

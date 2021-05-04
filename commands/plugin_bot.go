@@ -176,10 +176,10 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Lock the command for execution
 		if !BlockingAddRunningCommand(guildID, data.ChannelID, data.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
-				return &EphermalOrGuild{Content: yc.Name + ": Bot is restarting, please try again in a couple seconds..."}, nil
+				return &EphemeralOrGuild{Content: yc.Name + ": Bot is restarting, please try again in a couple seconds..."}, nil
 			}
 
-			return &EphermalOrGuild{Content: yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish"}, nil
+			return &EphemeralOrGuild{Content: yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish"}, nil
 		}
 
 		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)
@@ -205,14 +205,14 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 				}
 			}
 
-			return &EphermalOrNone{
+			return &EphemeralOrNone{
 				Content: "You're unable to run this command: " + resp,
 			}, nil
 
 		}
 
 		if !canExecute {
-			return &EphermalOrNone{
+			return &EphemeralOrNone{
 				Content: "You're unable to run this command.",
 			}, nil
 		}
@@ -239,7 +239,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 				}
 
 				resp = resp + "\nInvalid arguments provided: " + err.Error()
-				yc.PostCommandExecuted(settings, data, &EphermalOrGuild{
+				yc.PostCommandExecuted(settings, data, &EphemeralOrGuild{
 					Content: resp,
 				}, nil)
 				return nil, nil
