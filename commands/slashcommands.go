@@ -65,11 +65,26 @@ func (p *Plugin) updateGlobalCommands() {
 	}
 
 	encoded, _ := json.MarshalIndent(result, "", " ")
-	fmt.Println(string(encoded))
+
+	current := ""
+	err := common.RedisPool.Do(radix.Cmd(&current, "GET", "slash_commands_current"))
+	if err != nil {
+		logger.WithError(err).Error("failed retrieving current saved slash commands")
+		return
+	}
+
+	if bytes.Equal([]byte(current), encoded) {
+		logger.Info("Slash commands identical, skipping update")
+		return
+	}
+
+	logger.Info("Slash commands changed, updating....")
 
 	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
+	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
 	if err != nil {
 		logger.WithError(err).Error("failed updating global slash commands")
+		return
 	}
 
 	// assign the id's
@@ -95,8 +110,10 @@ OUTER:
 
 	atomic.StoreInt32(slashCommandsIdsSet, 1)
 
-	encoded, _ = json.MarshalIndent(ret, "<", " ")
-	fmt.Println(string(encoded))
+	err = common.RedisPool.Do(radix.Cmd(nil, "SET", "slash_commands_current", string(encoded)))
+	if err != nil {
+		logger.WithError(err).Error("failed setting current slash commands in redis")
+	}
 }
 
 func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *discordgo.CreateApplicationCommandRequest {
@@ -158,30 +175,34 @@ func (yc *YAGCommand) slashCommandOptions() []*discordgo.ApplicationCommandOptio
 			}
 		}
 
-		// required args needs to be first
-		for _, v := range opts {
-			if v.Required {
-				result = append(result, v)
-			}
-		}
+		result = append(result, opts...)
+	}
 
-		// add the optional args last
-		for _, v := range opts {
-			if !v.Required {
-				result = append(result, v)
-			}
+	sortedResult := make([]*discordgo.ApplicationCommandOption, 0, len(result))
+
+	// required args needs to be first
+	for _, v := range result {
+		if v.Required {
+			sortedResult = append(sortedResult, v)
+		}
+	}
+
+	// add the optional args last
+	for _, v := range result {
+		if !v.Required {
+			sortedResult = append(sortedResult, v)
 		}
 	}
 
 	for _, v := range yc.ArgSwitches {
 		if v.Type == nil {
-			result = append(result, v.StandardSlashCommandOption(discordgo.CommandOptionTypeBoolean))
+			sortedResult = append(sortedResult, v.StandardSlashCommandOption(discordgo.CommandOptionTypeBoolean))
 		} else {
-			result = append(result, v.Type.SlashCommandOptions(v)...)
+			sortedResult = append(sortedResult, v.Type.SlashCommandOptions(v)...)
 		}
 	}
 
-	return result
+	return sortedResult
 }
 
 func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
@@ -285,7 +306,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildState) (updated bool, er
 
 func handleInteractionCreate(evt *eventsystem.EventData) {
 	interaction := evt.InteractionCreate()
-	if interaction.Data == nil {
+	if interaction.DataCommand == nil {
 		logger.Warn("Interaction had no data")
 		return
 	}
@@ -294,7 +315,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 	logger.Infof("Got interaction %#v", interaction.Interaction)
 	fmt.Println(string(serialized))
 
-	err := CommandSystem.CheckInteraction(common.BotSession, interaction.Interaction)
+	err := CommandSystem.CheckInteraction(common.BotSession, &interaction.Interaction)
 	if err != nil {
 		logger.WithError(err).Error("failed handling command interaction")
 	}
