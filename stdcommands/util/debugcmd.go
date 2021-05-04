@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -23,7 +23,7 @@ func RequireBotAdmin(inner dcmd.RunFunc) dcmd.RunFunc {
 			return "", nil
 		}
 
-		if admin, err := bot.IsBotAdmin(data.Msg.Author.ID); admin && err == nil {
+		if admin, err := bot.IsBotAdmin(data.Author.ID); admin && err == nil {
 			return inner(data)
 		}
 
@@ -37,7 +37,7 @@ func RequireOwner(inner dcmd.RunFunc) dcmd.RunFunc {
 			return "", nil
 		}
 
-		if common.IsOwner(data.Msg.Author.ID) {
+		if common.IsOwner(data.Author.ID) {
 			return inner(data)
 		}
 

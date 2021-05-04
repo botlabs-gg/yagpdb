@@ -11,7 +11,7 @@ import (
 	"unicode"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
@@ -149,7 +149,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 	templateData["SortedCommands"] = commands
 
-	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", activeGuild.ID), qm.Load("CommandsCommandOverrides")).AllG(r.Context())
+	channelOverrides, err := GetAllOverrides(r.Context(), activeGuild.ID)
 	if err != nil {
 		return templateData, err
 	}
@@ -164,10 +164,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	if global == nil {
-		global = &models.CommandsChannelsOverride{
-			Global:          true,
-			CommandsEnabled: true,
-		}
+		panic("This shouldn't be possible, no global!?!?!")
 	}
 
 	templateData["GlobalCommandSettings"] = global

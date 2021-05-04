@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/lib/pq"
@@ -564,4 +565,26 @@ func LogLongCallTime(treshold time.Duration, isErr bool, logMsg string, extraDat
 			l.Warn(logMsg)
 		}
 	}
+}
+
+func SplitSendMessage(channelID int64, contents string, allowedMentions discordgo.AllowedMentions) ([]*discordgo.Message, error) {
+	result := make([]*discordgo.Message, 0, 1)
+
+	split := dcmd.SplitString(contents, 2000)
+	for _, v := range split {
+		var err error
+		var m *discordgo.Message
+		m, err = BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+			Content:         v,
+			AllowedMentions: allowedMentions,
+		})
+
+		if err != nil {
+			return result, err
+		}
+
+		result = append(result, m)
+	}
+
+	return result, nil
 }

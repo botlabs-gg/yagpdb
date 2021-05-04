@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 	Description:  "Shows the top games on this server",
 	HideFromHelp: true,
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "all"},
+		{Name: "all"},
 	},
 	RunFunc: cmdFuncTopCommands,
 }
@@ -28,7 +28,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	if allSwitch != nil && allSwitch.Bool() {
 		all = true
 
-		if admin, err := bot.IsBotAdmin(data.Msg.Author.ID); !admin || err != nil {
+		if admin, err := bot.IsBotAdmin(data.Author.ID); !admin || err != nil {
 			if err != nil {
 				return nil, err
 			}
@@ -46,7 +46,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 			checkGuild(fastResult, g)
 		}
 	} else {
-		checkGuild(fastResult, data.GS)
+		checkGuild(fastResult, data.GuildData.GS)
 	}
 
 	// then we convert and sort it

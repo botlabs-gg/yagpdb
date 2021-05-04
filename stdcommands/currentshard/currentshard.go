@@ -3,7 +3,7 @@ package currentshard
 import (
 	"fmt"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/commands"
@@ -19,7 +19,7 @@ var Command = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "serverid", Type: dcmd.Int, Default: int64(0)},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		gID := data.GS.ID
+		gID := data.GuildData.GS.ID
 
 		if data.Args[0].Int64() != 0 {
 			gID = data.Args[0].Int64()

@@ -20,7 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -101,17 +101,19 @@ var cmdListCommands = &commands.YAGCommand{
 		&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
 		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "f", Name: "File", Help: "Send responses in file"},
-		&dcmd.ArgDef{Switch: "h", Name: "Highlight", Help: "Use syntax highlighting (Go)"},
+		&dcmd.ArgDef{Name: "f", Help: "Send responses in file"},
+		&dcmd.ArgDef{Name: "h", Help: "Use syntax highlighting (Go)"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
+		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
 
-		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GS.ID)).AllG(data.Context())
+		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GuildData.GS.ID)).AllG(data.Context())
 		if err != nil {
 			return "Failed retrieving custom command groups", err
 		}
@@ -151,9 +153,9 @@ var cmdListCommands = &commands.YAGCommand{
 
 		if data.Switches["f"].Value != nil {
 
-			data.GS.Lock()
-			gName := data.GS.Guild.Name
-			data.GS.Unlock()
+			data.GuildData.GS.Lock()
+			gName := data.GuildData.GS.Guild.Name
+			data.GuildData.GS.Unlock()
 
 			var buf bytes.Buffer
 			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
@@ -173,7 +175,7 @@ var cmdListCommands = &commands.YAGCommand{
 						ccFile,
 					},
 				}
-				_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+				_, err := common.BotSession.ChannelMessageSendComplex(data.ChannelID, msg)
 				return "", err
 			}
 
@@ -188,7 +190,7 @@ var cmdListCommands = &commands.YAGCommand{
 					ccFile,
 				},
 			}
-			_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+			_, err := common.BotSession.ChannelMessageSendComplex(data.ChannelID, msg)
 			return "", err
 
 		}
