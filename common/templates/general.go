@@ -634,6 +634,37 @@ func tmplLog(arguments ...interface{}) (float64, error) {
 	return logarithm, nil
 }
 
+func tmplBitwiseAnd(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) & tmplToInt(arg2)
+}
+
+func tmplBitwiseOr(args ...interface{}) (res int) {
+	for _, arg := range args {
+		res |= tmplToInt(arg)
+	}
+	return
+}
+
+func tmplBitwiseXOR(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) ^ tmplToInt(arg2)
+}
+
+func tmplBitwiseNot(arg interface{}) int {
+	return ^tmplToInt(arg)
+}
+
+func tmplBitwiseAndNot(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) &^ tmplToInt(arg2)
+}
+
+func tmplBitwiseLeftShift(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) << tmplToInt(arg2)
+}
+
+func tmplBitwiseRightShift(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) >> tmplToInt(arg2)
+}
+
 //tmplHumanizeThousands comma separates thousands
 func tmplHumanizeThousands(input interface{}) string {
 	var f1, f2 string
