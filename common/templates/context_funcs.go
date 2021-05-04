@@ -27,38 +27,42 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 
 	c.GS.RLock()
 	gName := c.GS.Guild.Name
+	gIcon := discordgo.EndpointGuildIcon(c.GS.Guild.ID, c.GS.Guild.Icon)
 	memberID := c.MS.ID
 	c.GS.RUnlock()
 
-	info := fmt.Sprintf("Custom Command DM From the server **%s**", gName)
+	info := fmt.Sprintf("Custom Command DM from the server **%s**", gName)
+	embedInfo := fmt.Sprintf("Custom Command DM from the server %s", gName)
 	msgSend := &discordgo.MessageSend{
-			AllowedMentions: discordgo.AllowedMentions{
-					Parse : []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
-			},
-		}
-	
-	switch t:= s[0].(type) {		
-		case *discordgo.MessageEmbed:
-			t.Footer = &discordgo.MessageEmbedFooter{
-					Text: info,
-				    }
-			msgSend.Embed = t
-		case *discordgo.MessageSend:
-			msgSend = t
-			if msgSend.Embed != nil {
-				msgSend.Embed.Footer = &discordgo.MessageEmbedFooter{
-					Text: info,
-				    }
-				break
-			}
-			if (strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) {
-				return ""
-			}
-			msgSend.Content = info + "\n" + msgSend.Content
-		default:
-			msgSend.Content = fmt.Sprintf("%s\n%s", info, fmt.Sprint(s...))
+		AllowedMentions: discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+		},
 	}
-	
+
+	switch t := s[0].(type) {
+	case *discordgo.MessageEmbed:
+		t.Footer = &discordgo.MessageEmbedFooter{
+			Text:    embedInfo,
+			IconURL: gIcon,
+		}
+		msgSend.Embed = t
+	case *discordgo.MessageSend:
+		msgSend = t
+		if msgSend.Embed != nil {
+			msgSend.Embed.Footer = &discordgo.MessageEmbedFooter{
+				Text:    embedInfo,
+				IconURL: gIcon,
+			}
+			break
+		}
+		if (strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) {
+			return ""
+		}
+		msgSend.Content = info + "\n" + msgSend.Content
+	default:
+		msgSend.Content = fmt.Sprintf("%s\n%s", info, fmt.Sprint(s...))
+	}
+
 	channel, err := common.BotSession.UserChannelCreate(memberID)
 	if err != nil {
 		return ""
@@ -960,7 +964,7 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 }
 
 func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.Value, error) {
-	
+
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
 			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, emojis[optional])")
@@ -977,14 +981,13 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 		}
 
 		mID := ToInt64(args[1].Interface())
-		
 
 		if len(args) > 2 {
 			for _, emoji := range args[2:] {
 				if c.IncreaseCheckCallCounter("del_reaction_message", 10) {
 					return reflect.Value{}, ErrTooManyCalls
 				}
-			
+
 				if err := common.BotSession.MessageReactionRemoveEmoji(cID, mID, emoji.String()); err != nil {
 					return reflect.Value{}, err
 				}
@@ -999,7 +1002,7 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 		return reflect.ValueOf(""), nil
 	}
 
-	return callVariadic(f, false, values...)		
+	return callVariadic(f, false, values...)
 }
 
 func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message, error) {
@@ -1188,7 +1191,7 @@ func (c *Context) compileRegex(r string) (*regexp.Regexp, error) {
 	return compiled, nil
 }
 
-func (c *Context) reFind(r string, s string) (string, error) {
+func (c *Context) reFind(r, s string) (string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return "", err
@@ -1197,25 +1200,43 @@ func (c *Context) reFind(r string, s string) (string, error) {
 	return compiled.FindString(s), nil
 }
 
-func (c *Context) reFindAll(r string, s string) ([]string, error) {
+func (c *Context) reFindAll(r, s string, i ...int) ([]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.FindAllString(s, 1000), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 1000 || n < 0 {
+		n = 1000
+	}
+
+	return compiled.FindAllString(s, n), nil
 }
 
-func (c *Context) reFindAllSubmatches(r string, s string) ([][]string, error) {
+func (c *Context) reFindAllSubmatches(r, s string, i ...int) ([][]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.FindAllStringSubmatch(s, 100), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 100 || n < 0 {
+		n = 100
+	}
+
+	return compiled.FindAllStringSubmatch(s, n), nil
 }
 
-func (c *Context) reReplace(r string, s string, repl string) (string, error) {
+func (c *Context) reReplace(r, s, repl string) (string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return "", err
@@ -1224,13 +1245,22 @@ func (c *Context) reReplace(r string, s string, repl string) (string, error) {
 	return compiled.ReplaceAllString(s, repl), nil
 }
 
-func (c *Context) reSplit(r, s string, i int) ([]string, error) {
+func (c *Context) reSplit(r, s string, i ...int) ([]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.Split(s, i), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 500 || n < 0 {
+		n = 500
+	}
+
+	return compiled.Split(s, n), nil
 }
 
 func (c *Context) tmplEditChannelName(channel interface{}, newName string) (string, error) {

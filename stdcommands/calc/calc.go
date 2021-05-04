@@ -15,7 +15,7 @@ var (
 	computeLock sync.Mutex
 )
 
-var replacer = strings.NewReplacer("x", "*", "×", "*", "÷", "/")
+var replacer = strings.NewReplacer("x", "*", "×", "*", "÷", "/", "++", "+", "--", "- -")
 
 var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,

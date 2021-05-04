@@ -78,6 +78,8 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 		def.Type = dcmd.Channel
 	case "member":
 		def.Type = &commands.MemberArg{}
+	case "role":
+		def.Type = &commands.RoleArg{}
 	default:
 		return nil, errors.New("Unknown type")
 	}
@@ -152,6 +154,13 @@ func (pa *ParsedArgs) Get(index int) interface{} {
 
 		m := i.(*dstate.MemberState)
 		return m.DGoCopy()
+	case *commands.RoleArg:
+		i := pa.parsed[index].Value
+		if i == nil {
+			return nil
+		}
+
+		return i.(*discordgo.Role)
 	}
 
 	return pa.parsed[index].Value
@@ -397,9 +406,9 @@ func tmplDBIncr(ctx *templates.Context) interface{} {
 
 		keyStr := limitString(templates.ToString(key), 256)
 
-		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num) 
+		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num)
 VALUES (now(), now(), $1, $2, $3, $4, $5)
-ON CONFLICT (guild_id, user_id, key) 
+ON CONFLICT (guild_id, user_id, key)
 DO UPDATE SET
 	value_num =
 		-- Don't increment expired entry
@@ -417,7 +426,7 @@ DO UPDATE SET
 		CASE WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > now()) THEN templates_user_database.expires_at
 		ELSE NULL
 		END
-	
+
 RETURNING value_num`
 
 		result := common.PQ.QueryRow(q, ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
