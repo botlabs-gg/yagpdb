@@ -408,6 +408,7 @@ type EphermalOrNone struct {
 var _ dcmd.Response = (*EphermalOrNone)(nil)
 
 func (e *EphermalOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
+
 	switch data.TriggerType {
 	case dcmd.TriggerTypeSlashCommands:
 		params := &discordgo.WebhookParams{
@@ -420,7 +421,20 @@ func (e *EphermalOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 			params.Embeds = []*discordgo.MessageEmbed{e.Embed}
 		}
 
+		// _, err := data.Session.EditOriginalInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.EditWebhookMessageRequest{
+		// 	Content: "Failed running the command.",
+		// })
+
+		// Yeah so because the original reaction response is not marked as ephemeral, and there's no way to change that, just delete it i guess...
+		// becuase otherwise the followup message rturns into the original response
+		err := data.Session.DeleteInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+
 		m, err := data.Session.CreateFollowupMessage(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
+		// m, err := data.Session.EditOriginalInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
 		if err != nil {
 			return nil, err
 		}
