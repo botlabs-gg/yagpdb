@@ -426,7 +426,7 @@ func (e *EphermalOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 		// })
 
 		// Yeah so because the original reaction response is not marked as ephemeral, and there's no way to change that, just delete it i guess...
-		// becuase otherwise the followup message rturns into the original response
+		// because otherwise the followup message turns into the original response
 		err := data.Session.DeleteInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token)
 		if err != nil {
 			fmt.Println(err)
