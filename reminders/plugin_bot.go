@@ -124,16 +124,16 @@ var cmds = []*commands.YAGCommand{
 			{Name: "ID", Type: dcmd.Int},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Switch: "a", Help: "All"},
+			{Name: "a", Help: "All"},
 		},
-    SlashCommandEnabled: true,
+		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var reminder Reminder
 
 			clearAll := parsed.Switch("a").Value != nil && parsed.Switch("a").Value.(bool)
 			if clearAll {
-				db := common.GORM.Where("user_id = ?", parsed.Msg.Author.ID).Delete(&reminder)
+				db := common.GORM.Where("user_id = ?", parsed.Author.ID).Delete(&reminder)
 				err := db.Error
 				if err != nil {
 					return "Error clearing reminders", err

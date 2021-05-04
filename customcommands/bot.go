@@ -153,9 +153,9 @@ var cmdListCommands = &commands.YAGCommand{
 
 		if data.Switches["f"].Value != nil {
 
-			data.GS.Lock()
-			gName := data.GS.Guild.Name
-			data.GS.Unlock()
+			data.GuildData.GS.Lock()
+			gName := data.GuildData.GS.Guild.Name
+			data.GuildData.GS.Unlock()
 
 			var buf bytes.Buffer
 			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
@@ -175,7 +175,7 @@ var cmdListCommands = &commands.YAGCommand{
 						ccFile,
 					},
 				}
-				_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+				_, err := common.BotSession.ChannelMessageSendComplex(data.ChannelID, msg)
 				return "", err
 			}
 
@@ -190,7 +190,7 @@ var cmdListCommands = &commands.YAGCommand{
 					ccFile,
 				},
 			}
-			_, err := common.BotSession.ChannelMessageSendComplex(data.Msg.ChannelID, msg)
+			_, err := common.BotSession.ChannelMessageSendComplex(data.ChannelID, msg)
 			return "", err
 
 		}

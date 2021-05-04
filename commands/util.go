@@ -456,6 +456,8 @@ func (e *EphemeralOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 // RoleArg matches an id or name and returns a discordgo.Role
 type RoleArg struct{}
 
+var _ dcmd.ArgType = (*RoleArg)(nil)
+
 func (ra *RoleArg) Matches(def *dcmd.ArgDef, part string) bool {
 	// Check for mention
 	if strings.HasPrefix(part, "<@&") && strings.HasSuffix(part, ">") {
@@ -475,7 +477,7 @@ func (ra *RoleArg) Matches(def *dcmd.ArgDef, part string) bool {
 	return false
 }
 
-func (ra *RoleArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
+func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
 	id := ra.ExtractID(part, data)
 
 	var idName string
@@ -488,7 +490,7 @@ func (ra *RoleArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interf
 		idName = ""
 	}
 
-	roles := data.GS.Guild.Roles
+	roles := data.GuildData.GS.Guild.Roles
 	var role discordgo.Role
 	for _, v := range roles {
 		if v.ID == id {
@@ -501,6 +503,15 @@ func (ra *RoleArg) Parse(def *dcmd.ArgDef, part string, data *dcmd.Data) (interf
 	}
 
 	return nil, dcmd.NewSimpleUserError("Invalid role mention or id")
+}
+
+func (ra *RoleArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val interface{}, err error) {
+	r, err := options.ExpectRole(def.Name)
+	return r, err
+}
+
+func (ra *RoleArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeRole)}
 }
 
 func (ra *RoleArg) ExtractID(part string, data *dcmd.Data) interface{} {

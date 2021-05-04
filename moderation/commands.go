@@ -376,7 +376,6 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Int64()
 
-
 			if target == parsed.Author.ID {
 				return "You can't report yourself, silly.", nil
 			}
@@ -422,9 +421,9 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "r", Help: "Regex", Type: dcmd.String},
-      {Name: "im", Help: "Invert regex match"},
+			{Name: "im", Help: "Invert regex match"},
 			{Name: "ma", Help: "Max age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-      {Name: "minage", Help: "Min age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "minage", Help: "Min age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "i", Help: "Regex case insensitive"},
 			{Name: "nopin", Help: "Ignore pinned messages"},
 			{Name: "a", Help: "Only remove messages with attachments"},
@@ -434,12 +433,12 @@ var ModerationCommands = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			botMember, err := bot.GetMember(parsed.Msg.GuildID, common.BotUser.ID)
+			botMember, err := bot.GetMember(parsed.GuildData.GS.ID, common.BotUser.ID)
 			if err != nil {
 				return "Failed fetching bot member to check permissions", nil
 			}
 
-			canClear, err := bot.AdminOrPermMS(parsed.CS.ID, botMember, discordgo.PermissionManageMessages)
+			canClear, err := bot.AdminOrPermMS(parsed.ChannelID, botMember, discordgo.PermissionManageMessages)
 			if err != nil || !canClear {
 				return "I need the `Manage Messages` permission to be able to clear messages", nil
 			}
