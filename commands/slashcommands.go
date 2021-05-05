@@ -81,8 +81,8 @@ func (p *Plugin) updateGlobalCommands() {
 
 	logger.Info("Slash commands changed, updating....")
 
-	// ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
-	ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
+	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
+	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
 	if err != nil {
 		logger.WithError(err).Error("failed updating global slash commands")
 		return
