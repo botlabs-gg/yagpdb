@@ -418,7 +418,6 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 	_, checkDB := recentMenusTracker.CheckRecentTrackedMenu(evt.GS.ID, mID)
 	if !checkDB {
-		logger.Debug("skipped db check for menus becuase of recent tracked menus")
 		return
 	}
 
