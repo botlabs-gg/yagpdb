@@ -338,8 +338,6 @@ github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8/go.mod h1:rxjYX9OJU81
 github.com/jonas747/dcmd v1.1.0/go.mod h1:pfeU2I/OynOj5NXiyavaMb4MqKq7rbjHj1hPe44YJ1A=
 github.com/jonas747/dcmd v1.2.4 h1:+3Uxk7yGxuVrVqK4CAXK9ASK7yHzUE7accU5lESHb+A=
 github.com/jonas747/dcmd v1.2.4/go.mod h1:dOpx8IdbmRPYsv9f4wFQXRxGYrA2lTBmSA4xM9fARiI=
-github.com/jonas747/dcmd/v2 v2.0.0 h1:iDBdYI5wMKVXEENad1UWVTI1C7fG//MjM04v3qdAHG0=
-github.com/jonas747/dcmd/v2 v2.0.0/go.mod h1:2Vg/8yjepMG12MpJvg1WMCXs6ia0v+sryXjZVkYPIfo=
 github.com/jonas747/dcmd/v2 v2.0.1 h1:adkmYLnq+1FLuKgja2nfYb8iAjLK6UfumxA0iRnuVJ4=
 github.com/jonas747/dcmd/v2 v2.0.1/go.mod h1:2Vg/8yjepMG12MpJvg1WMCXs6ia0v+sryXjZVkYPIfo=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
