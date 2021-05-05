@@ -361,6 +361,12 @@
                                     formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/delete">Delete</button>
                             </div>
                         </div>
+                        <div class="row mt-4" id="interval-cc-run-now">
+                            <div class="col">
+                                <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this custom command immediately"
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/run_now">Run now</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -431,6 +437,7 @@
         if (dropdown.val() === "interval_hours" || dropdown.val() === "interval_minutes") {
             // Interval triggers
 
+            $("#interval-cc-run-now").removeClass("hidden")
             $("#cc-time-trigger-details").removeClass("hidden");
 
             $("#cc-text-trigger-details").addClass("hidden");
@@ -448,6 +455,8 @@
             $("#cc-time-trigger-details").addClass("hidden");
             $("#cc-text-trigger-details").addClass("hidden");
 
+            $("#interval-cc-run-now").addClass("hidden")
+
             $("#trigger-warning").attr("hidden", true);
 
         } else if (isTextTrigger(dropdown.val())) {
@@ -458,6 +467,8 @@
 
             $("#cc-reaction-trigger-details").addClass("hidden")
             $("#cc-time-trigger-details").addClass("hidden");
+
+            $("#interval-cc-run-now").addClass("hidden")
 
             $("#trigger-warning").attr("hidden", true);
             // $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
@@ -470,6 +481,7 @@
             $("#cc-reaction-trigger-details").addClass("hidden")
             $("#cc-time-trigger-details").addClass("hidden");
 
+            $("#interval-cc-run-now").addClass("hidden")
 
             $("#trigger-warning").removeAttr("hidden");
             $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")

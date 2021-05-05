@@ -9,13 +9,18 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/mediocregopher/radix/v3"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
+	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/jonas747/yagpdb/common/templates"
 	yagtemplate "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
@@ -90,6 +95,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/commands/new"), newCommandHandler)
 	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(handleUpdateCommand, getCmdHandler, CustomCommand{}))
 	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(handleDeleteCommand, getHandler, nil))
+	subMux.Handle(pat.Post("/commands/:cmd/run_now"), web.ControllerPostHandler(handleRunCommandNow, getCmdHandler, nil))
 
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(handleUpdateGroup, getGroupHandler, GroupForm{}))
@@ -339,6 +345,78 @@ func handleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	featureflags.MarkGuildDirty(activeGuild.ID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
+}
+
+const RunCmdCooldownSeconds = 5
+
+func keyRunCmdCooldown(guildID, userID int64) string {
+	return "custom_command_run_now_cooldown:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
+}
+
+func checkSetCooldown(guildID, userID int64) (bool, error) {
+	var resp string
+	err := common.RedisPool.Do(radix.FlatCmd(&resp, "SET", keyRunCmdCooldown(guildID, userID), true, "EX", RunCmdCooldownSeconds, "NX"))
+	if err != nil {
+		return false, err
+	}
+
+	return resp == "OK", nil
+}
+
+func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	member := web.ContextMember(ctx)
+	if member == nil {
+		templateData.AddAlerts()
+		return templateData, nil
+	}
+
+	cmdID, err := strconv.ParseInt(pat.Param(r, "cmd"), 10, 64)
+	if err != nil {
+		return templateData, err
+	}
+
+	// only interval commands can be ran from the dashboard currently
+	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ? AND trigger_type = 5", activeGuild.ID, cmdID)).OneG(context.Background())
+	if err != nil {
+		return templateData, err
+	}
+
+	ok, err := checkSetCooldown(activeGuild.ID, member.User.ID)
+	if err != nil {
+		return templateData, err
+	}
+
+	if !ok {
+		templateData.AddAlerts(web.ErrorAlert("You're on cooldown, wait before trying again"))
+		return templateData, nil
+	}
+
+	gs := bot.State.Guild(true, activeGuild.ID)
+	if gs == nil {
+		templateData.AddAlerts(web.ErrorAlert("Failed fetching active guild from state, try again"))
+		return templateData, nil
+	}
+
+	cs := gs.Channel(true, cmd.ContextChannel)
+	if cs == nil {
+		templateData.AddAlerts(web.ErrorAlert("Failed finding channel to run CC in, try again"))
+		return templateData, nil
+	}
+
+	metricsExecutedCommands.With(prometheus.Labels{"trigger": "timed"}).Inc()
+
+	tmplCtx := templates.NewContext(gs, cs, nil)
+	ExecuteCustomCommand(cmd, tmplCtx)
+
+	cmd.LastRun = cmd.NextRun
+	err = UpdateCommandNextRunTime(cmd, true, false)
+	if err != nil {
+		web.CtxLogger(ctx).WithError(err).Error("failed updating custom command next run time")
+	}
+
+	return templateData, nil
 }
 
 // allow for max 5 triggers with intervals of less than 10 minutes
