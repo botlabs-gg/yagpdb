@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/mediocregopher/radix/v3"
@@ -410,7 +411,7 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	tmplCtx := templates.NewContext(gs, cs, nil)
 	ExecuteCustomCommand(cmd, tmplCtx)
 
-	cmd.LastRun = cmd.NextRun
+	cmd.LastRun = null.TimeFrom(time.Now())
 	err = UpdateCommandNextRunTime(cmd, true, false)
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("failed updating custom command next run time")
