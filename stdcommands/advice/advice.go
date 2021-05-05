@@ -2,7 +2,6 @@ package advice
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -28,8 +27,6 @@ var Command = &commands.YAGCommand{
 			random = false
 			addr = "http://api.adviceslip.com/advice/search/" + url.QueryEscape(data.Args[0].Str())
 		}
-
-		fmt.Println(addr)
 
 		resp, err := http.Get(addr)
 		if err != nil {

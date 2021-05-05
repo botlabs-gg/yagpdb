@@ -77,7 +77,7 @@ func (p *Plugin) updateGlobalCommands() {
 		logger.Info("Slash commands identical, skipping update")
 		return
 	}
-	fmt.Println(string(encoded))
+	// fmt.Println(string(encoded))
 
 	logger.Info("Slash commands changed, updating....")
 
@@ -354,9 +354,9 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	serialized, _ := json.MarshalIndent(interaction.Interaction, "", "  ")
-	logger.Infof("Got interaction %#v", interaction.Interaction)
-	fmt.Println(string(serialized))
+	// serialized, _ := json.MarshalIndent(interaction.Interaction, "", "  ")
+	// logger.Infof("Got interaction %#v", interaction.Interaction)
+	// fmt.Println(string(serialized))
 
 	err := CommandSystem.CheckInteraction(common.BotSession, &interaction.Interaction)
 	if err != nil {

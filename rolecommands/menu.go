@@ -422,8 +422,6 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	logger.Debug("CheckDB was trddddue")
-
 	menu, err := GetRolemenuCached(evt.Context(), evt.GS, mID)
 	if err != nil {
 		logger.WithError(err).Error("RoleCommandsMenu: Failed finding menu")

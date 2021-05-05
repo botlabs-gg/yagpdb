@@ -429,7 +429,6 @@ func (e *EphemeralOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 		// because otherwise the followup message turns into the original response
 		err := data.Session.DeleteInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token)
 		if err != nil {
-			fmt.Println(err)
 			return nil, err
 		}
 
