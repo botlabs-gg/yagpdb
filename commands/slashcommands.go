@@ -77,11 +77,12 @@ func (p *Plugin) updateGlobalCommands() {
 		logger.Info("Slash commands identical, skipping update")
 		return
 	}
+	fmt.Println(string(encoded))
 
 	logger.Info("Slash commands changed, updating....")
 
-	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
-	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
+	// ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
+	ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
 	if err != nil {
 		logger.WithError(err).Error("failed updating global slash commands")
 		return
@@ -130,11 +131,17 @@ func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *dis
 			panic("Not a yag command? what is this a triple nested command or something?")
 		}
 
+		isSub, innerOpts := cast.slashCommandOptions()
+		kind := discordgo.CommandOptionTypeSubCommand
+		if isSub {
+			kind = discordgo.CommandOptionTypeSubCommandGroup
+		}
+
 		opt := &discordgo.ApplicationCommandOption{
 			Name:        cast.Name,
 			Description: common.CutStringShort(cast.Description, 100),
-			Kind:        discordgo.CommandOptionTypeSubCommand,
-			Options:     cast.slashCommandOptions(),
+			Kind:        kind,
+			Options:     innerOpts,
 		}
 
 		req.Options = append(req.Options, opt)
@@ -156,26 +163,54 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		return nil
 	}
 	t := true
+
+	_, opts := cast.slashCommandOptions()
 	return &discordgo.CreateApplicationCommandRequest{
 		Name:              cmd.Trigger.Names[0],
 		Description:       common.CutStringShort(cast.Description, 100),
 		DefaultPermission: &t,
-		Options:           cast.slashCommandOptions(),
+		Options:           opts,
 	}
 }
 
-func (yc *YAGCommand) slashCommandOptions() []*discordgo.ApplicationCommandOption {
-	var result []*discordgo.ApplicationCommandOption
+func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result []*discordgo.ApplicationCommandOption) {
+
+	var subCommands []*discordgo.ApplicationCommandOption
 
 	for i, v := range yc.Arguments {
-		opts := v.Type.SlashCommandOptions(v)
-		if len(opts) == 1 {
-			if i < yc.RequiredArgs {
-				opts[0].Required = true
-			}
-		}
 
-		result = append(result, opts...)
+		opts := v.Type.SlashCommandOptions(v)
+
+		if len(opts) > 1 && i == 0 {
+			// turn this command into a container
+			turnedIntoSubCommands = true
+			kind := discordgo.CommandOptionTypeSubCommand
+
+			for _, opt := range opts {
+				if i < yc.RequiredArgs {
+					opt.Required = true
+				}
+
+				subCommands = append(subCommands, &discordgo.ApplicationCommandOption{
+					Kind:        kind,
+					Name:        "by-" + opt.Name,
+					Description: common.CutStringShort(yc.Description, 100),
+					Options: []*discordgo.ApplicationCommandOption{
+						opt,
+					},
+				})
+			}
+
+			turnedIntoSubCommands = true
+		} else {
+			if len(opts) == 1 {
+				if i < yc.RequiredArgs {
+					opts[0].Required = true
+				}
+			}
+
+			result = append(result, opts...)
+		}
 	}
 
 	sortedResult := make([]*discordgo.ApplicationCommandOption, 0, len(result))
@@ -202,7 +237,15 @@ func (yc *YAGCommand) slashCommandOptions() []*discordgo.ApplicationCommandOptio
 		}
 	}
 
-	return sortedResult
+	if turnedIntoSubCommands {
+		for _, v := range subCommands {
+			v.Options = append(v.Options, sortedResult...)
+		}
+
+		return true, subCommands
+	} else {
+		return false, sortedResult
+	}
 }
 
 func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
