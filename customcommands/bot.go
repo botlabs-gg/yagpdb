@@ -98,14 +98,14 @@ var cmdListCommands = &commands.YAGCommand{
 	Description:    "Shows a custom command specified by id or trigger, or lists them all",
 	ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
-		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
+		{Name: "ID", Type: dcmd.Int},
+		{Name: "Trigger", Type: dcmd.String},
 	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      false,
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "f", Help: "Send responses in file"},
-		&dcmd.ArgDef{Name: "h", Help: "Use syntax highlighting (Go)"},
+		{Name: "file", Help: "Send responses in file"},
+		{Name: "color", Help: "Use syntax highlighting (Go)"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
@@ -144,14 +144,14 @@ var cmdListCommands = &commands.YAGCommand{
 		cc := foundCCS[0]
 
 		highlight := "txt"
-		if data.Switches["h"].Value != nil {
+		if data.Switches["color"].Value != nil {
 			highlight = "go"
 		}
 
 		var ccFile *discordgo.File
 		var msg *discordgo.MessageSend
 
-		if data.Switches["f"].Value != nil {
+		if data.Switches["file"].Value != nil {
 
 			data.GuildData.GS.Lock()
 			gName := data.GuildData.GS.Guild.Name
@@ -175,8 +175,7 @@ var cmdListCommands = &commands.YAGCommand{
 						ccFile,
 					},
 				}
-				_, err := common.BotSession.ChannelMessageSendComplex(data.ChannelID, msg)
-				return "", err
+				return msg, nil
 			}
 
 			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```%s\n%s\n```",
@@ -190,8 +189,8 @@ var cmdListCommands = &commands.YAGCommand{
 					ccFile,
 				},
 			}
-			_, err := common.BotSession.ChannelMessageSendComplex(data.ChannelID, msg)
-			return "", err
+
+			return msg, nil
 
 		}
 		return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
