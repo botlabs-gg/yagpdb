@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
@@ -41,11 +41,11 @@ var Command = &commands.YAGCommand{
 	RequiredArgs: 1,
 	Description:  "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their default. Without -p returns the first result.\nSwitch -p gives paginated output using Levenshtein distance sorting max 20 results.",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Game title", Type: dcmd.String},
+		{Name: "Game-Title", Type: dcmd.String},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "c", Name: "Compact output"},
-		&dcmd.ArgDef{Switch: "p", Name: "Paginated output"},
+		{Name: "c", Help: "Compact output"},
+		{Name: "p", Help: "Paginated output"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		var compactView, paginatedView bool
@@ -89,7 +89,7 @@ var Command = &commands.YAGCommand{
 
 		if paginatedView {
 			_, err := paginatedmessages.CreatePaginatedMessage(
-				data.GS.ID, data.CS.ID, 1, len(hltbQuery), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+				data.GuildData.GS.ID, data.ChannelID, 1, len(hltbQuery), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					i := page - 1
 					sort.SliceStable(hltbQuery, func(i, j int) bool {
 						return hltbQuery[i].LevDistance < hltbQuery[j].LevDistance
