@@ -233,23 +233,17 @@ OUTER:
 		}
 
 		for guild, cache := range InvitesCache.CacheMap {
-			if guild == guildID {
-				for _, cachedInvite := range cache {
-					if cachedInvite.Invite == id {
+			for _, cachedInvite := range cache {
+				if cachedInvite.Invite == id {
+					InvitesCache.RUnlock()
+					if guild == guildID {
 						// Ignore invites to this server
-						InvitesCache.RUnlock()
 						continue OUTER
 					}
-				}
-			} else {
-				for _, cachedInvite := range cache {
-					if cachedInvite.Invite == id {
-						// If the invite is present on our cache, we return true even if it is not valid anymore
-						// This is to prevent making API Calls about invites which have a restrict rate limit
-						// Because otherwise we would most likely hit those limits
-						InvitesCache.RUnlock()
-						return true
-					}
+					// If the invite is present on our cache, we return true even if it is not valid anymore
+					// This is to prevent making API Calls about invites which have a restrict rate limit
+					// Because otherwise we would most likely hit those limits
+					return true
 				}
 			}
 		}
