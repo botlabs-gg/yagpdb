@@ -427,7 +427,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "i", Help: "Regex case insensitive"},
 			{Name: "nopin", Help: "Ignore pinned messages"},
 			{Name: "a", Help: "Only remove messages with attachments"},
-			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.Int},
+			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
 		},
 		ArgumentCombos:      [][]int{{0}, {0, 1}, {1, 0}},
 		SlashCommandEnabled: true,
@@ -544,7 +544,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Add/Edit a modlog reason",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Message-ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.BigInt},
 			{Name: "Reason", Type: dcmd.String},
 		},
 		SlashCommandEnabled: true,

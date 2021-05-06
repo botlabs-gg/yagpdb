@@ -378,7 +378,7 @@ var cmdPrefix = &YAGCommand{
 	Description: "Shows command prefix of the current server, or the specified server",
 	CmdCategory: CategoryTool,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "Server-ID", Type: dcmd.Int, Default: 0},
+		{Name: "Server-ID", Type: dcmd.BigInt, Default: 0},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
