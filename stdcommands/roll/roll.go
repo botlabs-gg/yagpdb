@@ -37,7 +37,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		// normal, n sides dice rolling
-		sides := data.Args[1].Int()
+		sides := data.Args[0].Int()
 		if sides < 1 {
 			sides = 6
 		}
