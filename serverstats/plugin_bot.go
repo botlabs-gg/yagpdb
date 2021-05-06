@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -36,10 +36,6 @@ func (p *Plugin) BotInit() {
 	memberSatatsUpdater = newServerMemberStatsUpdater()
 	go memberSatatsUpdater.run()
 
-	eventsystem.AddHandlerAsyncLastLegacy(p, handleUpdateMemberStats, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildMemberRemove, eventsystem.EventGuildCreate)
-
-	eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
-
 	pubsub.AddHandler("server_stats_invalidate_cache", func(evt *pubsub.Event) {
 		gs := bot.State.Guild(true, evt.TargetGuildInt)
 		if gs != nil {
@@ -47,7 +43,13 @@ func (p *Plugin) BotInit() {
 		}
 	}, nil)
 
-	go p.runOnlineUpdater()
+	if !confDeprecated.GetBool() {
+		eventsystem.AddHandlerAsyncLastLegacy(p, handleUpdateMemberStats, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildMemberRemove, eventsystem.EventGuildCreate)
+		eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
+		go p.runOnlineUpdater()
+	} else {
+		logger.Info("Not enabling server stats collecting due to deprecation flag being set")
+	}
 }
 
 func (p *Plugin) AddCommands() {
@@ -58,7 +60,7 @@ func (p *Plugin) AddCommands() {
 		Name:          "Stats",
 		Description:   "Shows server stats (if public stats are enabled)",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			config, err := GetConfig(data.Context(), data.GS.ID)
+			config, err := GetConfig(data.Context(), data.GuildData.GS.ID)
 			if err != nil {
 				return nil, errors.WithMessage(err, "getconfig")
 			}
@@ -67,7 +69,7 @@ func (p *Plugin) AddCommands() {
 				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.ConfHost.GetString()), nil
 			}
 
-			stats, err := RetrieveDailyStats(time.Now(), data.GS.ID)
+			stats, err := RetrieveDailyStats(time.Now(), data.GuildData.GS.ID)
 			if err != nil {
 				return nil, errors.WithMessage(err, "retrievefullstats")
 			}
@@ -79,7 +81,7 @@ func (p *Plugin) AddCommands() {
 
 			embed := &discordgo.MessageEmbed{
 				Title:       "Server stats",
-				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GS.ID),
+				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GuildData.GS.ID),
 				Fields: []*discordgo.MessageEmbedField{
 					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},

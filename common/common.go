@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
+	boilv4 "github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -35,8 +36,9 @@ var (
 
 	RedisPool *radix.Pool
 
-	BotSession *discordgo.Session
-	BotUser    *discordgo.User
+	BotSession     *discordgo.Session
+	BotUser        *discordgo.User
+	BotApplication *discordgo.Application
 
 	RedisPoolSize = 0
 
@@ -98,11 +100,23 @@ func Init() error {
 	logger.Info("Retrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("%#+v", err))
 	}
+
+	if !BotUser.Bot {
+		panic("This user is not a bot! Yags can only be used with bot accounts!")
+	}
+
 	BotSession.State.User = &discordgo.SelfUser{
 		User: BotUser,
 	}
+
+	app, err := BotSession.ApplicationMe()
+	if err != nil {
+		panic(fmt.Sprintf("%#+v", err))
+	}
+
+	BotApplication = app
 
 	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
@@ -248,6 +262,7 @@ func connectDB(host, user, pass, dbName string, maxConns int) error {
 	PQ = db.DB()
 	SQLX = sqlx.NewDb(PQ, "postgres")
 	boil.SetDB(PQ)
+	boilv4.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(maxConns)
 		PQ.SetMaxIdleConns(maxConns)

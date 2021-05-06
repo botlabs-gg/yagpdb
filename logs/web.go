@@ -16,8 +16,8 @@ import (
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -41,6 +41,7 @@ type ConfigFormData struct {
 	NicknameLoggingEnabled       bool
 	ManageMessagesCanViewDeleted bool
 	EveryoneCanViewDeleted       bool
+	AccessMode                   int
 	BlacklistedChannels          []string
 	MessageLogsAllowedRoles      []int64
 }
@@ -49,6 +50,7 @@ var (
 	panelLogKeyUpdatedSettings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_settings_updated", FormatString: "Updated logging settings"})
 	panelLogKeyDeletedMessageLog = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message_log", FormatString: "Deleted a message log: %d"})
 	panelLogKeyDeletedMessage    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message", FormatString: "Deleted a message from a message log: %d"})
+	panelLogKeyDeletedAll        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_all", FormatString: "Deleted %d message logs"})
 )
 
 func (lp *Plugin) InitWeb() {
@@ -78,12 +80,14 @@ func (lp *Plugin) InitWeb() {
 	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, ConfigFormData{})
 	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{})
 	msgDeleteHandler := web.APIHandler(HandleDeleteMessageJson)
+	clearMessageLogs := web.ControllerPostHandler(HandleLogsCPDeleteAll, cpGetHandler, nil)
 
 	logCPMux.Handle(pat.Post("/"), saveHandler)
 	logCPMux.Handle(pat.Post(""), saveHandler)
 
 	logCPMux.Handle(pat.Post("/fulldelete2"), fullDeleteHandler)
 	logCPMux.Handle(pat.Post("/msgdelete2"), msgDeleteHandler)
+	logCPMux.Handle(pat.Post("/delete_all"), clearMessageLogs)
 }
 
 func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -159,6 +163,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 		EveryoneCanViewDeleted:       null.BoolFrom(form.EveryoneCanViewDeleted),
 		ManageMessagesCanViewDeleted: null.BoolFrom(form.ManageMessagesCanViewDeleted),
 		MessageLogsAllowedRoles:      form.MessageLogsAllowedRoles,
+		AccessMode:                   int16(form.AccessMode),
 	}
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
@@ -195,25 +200,44 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	return tmpl, err
 }
 
+func HandleLogsCPDeleteAll(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
+	g, tmpl := web.GetBaseCPContextData(ctx)
+
+	count, err := models.MessageLogs2s(models.MessageLogs2Where.GuildID.EQ(g.ID)).DeleteAll(r.Context(), common.PQ)
+	if err != nil {
+		return tmpl, err
+	}
+
+	tmpl.AddAlerts(web.SucessAlert("Deleted ", count, " logs!"))
+	if count > 0 {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDeletedAll, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: count}))
+	}
+
+	return tmpl, nil
+}
+
 func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.GuildLoggingConfig) bool {
 	_, tmpl := web.GetBaseCPContextData(r.Context())
 
 	isAdmin, _ := web.IsAdminRequest(r.Context(), r)
 
 	// check if were allowed access to logs on this server
-	if isAdmin || len(config.MessageLogsAllowedRoles) < 1 {
+	if isAdmin || config.AccessMode == AccessModeEveryone {
 		return true
 	}
 
 	member := web.ContextMember(r.Context())
 	if member == nil {
-		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, either you're not logged in or not on this server."))
+		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to members only."))
 		return false
 	}
 
-	if !common.ContainsInt64SliceOneOf(member.Roles, config.MessageLogsAllowedRoles) {
-		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, you don't have any of them."))
-		return false
+	if len(config.MessageLogsAllowedRoles) > 0 {
+		if !common.ContainsInt64SliceOneOf(member.Roles, config.MessageLogsAllowedRoles) {
+			tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, you don't have any of them."))
+			return false
+		}
 	}
 
 	return true
@@ -302,7 +326,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	// Convert into views with formatted dates and colors
 	const TimeFormat = "2006 Jan 02 15:04"
 	messageViews := make([]*MessageView, len(messages))
-	for i, _ := range messageViews {
+	for i := range messageViews {
 		m := messages[i]
 		v := &MessageView{
 			Model:     m,

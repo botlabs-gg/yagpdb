@@ -11,23 +11,23 @@ import (
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/common/config"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdMigrate, cmdClearNames)
+	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdClearNames)
 }
 
 func (p *Plugin) BotInit() {
@@ -51,10 +51,12 @@ var cmdLogs = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
 	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 		num := cmd.Args[0].Int()
 
-		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GS.ID, cmd.CS.ID, cmd.Msg.Author.Username, cmd.Msg.Author.ID, num)
+		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GuildData.GS.ID, cmd.ChannelID, cmd.Author.Username, cmd.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
 				return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
@@ -63,7 +65,7 @@ var cmdLogs = &commands.YAGCommand{
 			return "", err
 		}
 
-		return CreateLink(cmd.GS.ID, l.ID), err
+		return CreateLink(cmd.GuildData.GS.ID, l.ID), err
 	},
 }
 
@@ -76,8 +78,10 @@ var cmdWhois = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: &commands.MemberArg{}},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
+		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -86,8 +90,8 @@ var cmdWhois = &commands.YAGCommand{
 		if parsed.Args[0].Value != nil {
 			member = parsed.Args[0].Value.(*dstate.MemberState)
 		} else {
-			member = parsed.MS
-			if sm := parsed.GS.MemberCopy(true, member.ID); sm != nil {
+			member = parsed.GuildData.MS
+			if sm := parsed.GuildData.GS.MemberCopy(true, member.ID); sm != nil {
 				// Prefer state member over the one provided in the message, since it may have presence data
 				member = sm
 			}
@@ -199,7 +203,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		if config.NicknameLoggingEnabled.Bool {
 
-			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GS.ID, 5, 0)
+			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GuildData.GS.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -240,8 +244,8 @@ var cmdUsernames = &commands.YAGCommand{
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		gID := int64(0)
-		if parsed.GS != nil {
-			config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
+		if parsed.GuildData != nil {
+			config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -250,11 +254,11 @@ var cmdUsernames = &commands.YAGCommand{
 				return "Username logging is disabled on this server", nil
 			}
 
-			gID = parsed.GS.ID
+			gID = parsed.GuildData.GS.ID
 		}
 
-		_, err := paginatedmessages.CreatePaginatedMessage(gID, parsed.Msg.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-			target := parsed.Msg.Author
+		_, err := paginatedmessages.CreatePaginatedMessage(gID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			target := parsed.Author
 			if parsed.Args[0].Value != nil {
 				target = parsed.Args[0].Value.(*discordgo.User)
 			}
@@ -302,12 +306,12 @@ var cmdNicknames = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
+		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		target := parsed.Msg.Author
+		target := parsed.Author
 		if parsed.Args[0].Value != nil {
 			target = parsed.Args[0].Value.(*discordgo.User)
 		}
@@ -316,11 +320,11 @@ var cmdNicknames = &commands.YAGCommand{
 			return "Nickname logging is disabled on this server", nil
 		}
 
-		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
 			offset := (page - 1) * 15
 
-			nicknames, err := GetNicknames(context.Background(), target.ID, parsed.GS.ID, 15, offset)
+			nicknames, err := GetNicknames(context.Background(), target.ID, parsed.GuildData.GS.ID, 15, offset)
 			if err != nil {
 				return nil, err
 			}
@@ -366,7 +370,7 @@ var cmdClearNames = &commands.YAGCommand{
 		}
 
 		for _, v := range queries {
-			_, err := common.PQ.Exec(v, parsed.Msg.Author.ID)
+			_, err := common.PQ.Exec(v, parsed.Author.ID)
 			if err != nil {
 				return "An error occured, join the support server for help", err
 			}
@@ -484,8 +488,6 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 		return nil
 	}
 
-	logger.Debug("User changed username, old:", lastUsername, " | new:", user.Username)
-
 	listing := &models.UsernameListing{
 		UserID:   null.Int64From(user.ID),
 		Username: null.StringFrom(user.Username),
@@ -517,8 +519,6 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 	if err != sql.ErrNoRows && err != nil {
 		return err
 	}
-
-	logger.Debug("User changed nickname, old:", lastNickname, " | new:", nickname)
 
 	listing := &models.NicknameListing{
 		UserID:   null.Int64From(userID),
