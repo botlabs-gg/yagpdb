@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/common/featureflags"
-
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/automod/models"
+	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -26,13 +26,13 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:  commands.CategoryModeration,
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ruleset name", Type: dcmd.String},
+			{Name: "Ruleset-Name", Type: dcmd.String},
 		},
 		Description:         "Toggles a ruleset on/off",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			rulesetName := data.Args[0].Str()
-			ruleset, err := models.AutomodRulesets(qm.Where("guild_id = ? AND name ILIKE ?", data.GS.ID, rulesetName)).OneG(data.Context())
+			ruleset, err := models.AutomodRulesets(qm.Where("guild_id = ? AND name ILIKE ?", data.GuildData.GS.ID, rulesetName)).OneG(data.Context())
 			if err != nil {
 				return "Unable to fine the ruleset, did you type the name correctly?", err
 			}
@@ -43,9 +43,9 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			data.GS.UserCacheDel(CacheKeyRulesets)
-			data.GS.UserCacheDel(CacheKeyLists)
-			featureflags.MarkGuildDirty(data.GS.ID)
+			data.GuildData.GS.UserCacheDel(CacheKeyRulesets)
+			data.GuildData.GS.UserCacheDel(CacheKeyLists)
+			featureflags.MarkGuildDirty(data.GuildData.GS.ID)
 
 			enabledStr := "enabled"
 			if !ruleset.Enabled {
@@ -63,7 +63,7 @@ func (p *Plugin) AddCommands() {
 		Description:         "Lists all rulesets and their status",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
+			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
 			if err != nil {
 				return nil, err
 			}
@@ -94,17 +94,17 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryModeration,
 		Description: "Shows the log of the last triggered automod rules, optionally filtering by user",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
+			{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "user", Type: dcmd.UserID},
+			{Name: "user", Type: dcmd.UserID},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(data *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			skip := (page - 1) * 15
 			userID := data.Switch("user").Int64()
 
-			qms := []qm.QueryMod{qm.Where("guild_id=?", data.GS.ID), qm.OrderBy("id desc"), qm.Limit(15)}
+			qms := []qm.QueryMod{qm.Where("guild_id=?", data.GuildData.GS.ID), qm.OrderBy("id desc"), qm.Limit(15)}
 			if skip != 0 {
 				qms = append(qms, qm.Offset(skip))
 			}
@@ -150,11 +150,11 @@ func (p *Plugin) AddCommands() {
 		Aliases:       []string{"ViolationsCount", "VCount"},
 		RequiredArgs:  0,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.UserID},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Type: dcmd.Int, Default: 0},
+			{Name: "ma", Help: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "skip", Help: "Amount Skipped", Type: dcmd.Int, Default: 0},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -170,7 +170,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			// retrieve Violations
-			qms := []qm.QueryMod{qm.Where("guild_id = ?", parsed.GS.ID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)}
+			qms := []qm.QueryMod{qm.Where("guild_id = ?", parsed.GuildData.GS.ID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)}
 
 			if userID != 0 {
 				qms = append(qms, qm.Where("user_id = ?", userID))
@@ -221,11 +221,11 @@ func (p *Plugin) AddCommands() {
 		Aliases:       []string{"Violations", "ViolationLogs", "VLogs", "VLog"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Page Number", Type: dcmd.Int, Default: 0},
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Page-Number", Type: dcmd.Int, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "old", Name: "Oldest First"},
+			{Name: "old", Help: "Oldest First"},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
 		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
@@ -240,7 +240,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			// retrieve Violations
-			listViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ?", parsed.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)).AllG(context.Background())
+			listViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ?", parsed.GuildData.GS.ID, userID), qm.OrderBy(order), qm.Limit(limit), qm.Offset(skip)).AllG(context.Background())
 			if err != nil {
 				return nil, err
 			}
@@ -276,12 +276,12 @@ func (p *Plugin) AddCommands() {
 		Aliases:       []string{"DelViolation", "DelV", "DV"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+			{Name: "ID", Type: dcmd.Int},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			ID := parsed.Args[0].Int()
-			rows, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", parsed.GS.ID, ID)).DeleteAll(context.Background(), common.PQ)
+			rows, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, ID)).DeleteAll(context.Background(), common.PQ)
 
 			if err != nil {
 				return nil, err
@@ -301,19 +301,19 @@ func (p *Plugin) AddCommands() {
 		Description:   "Clears Violations of specified user (or global if User ID = 0 or unspecified) optionally filtered by Name, Min/Max age and other conditions. By default, more recent violations are preferentially cleared. Maximum of 2000 can be cleared at a time.",
 		Aliases:       []string{"ClearV", "ClrViolations", "ClrV"},
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "User", Default: 0, Type: dcmd.UserID},
-			&dcmd.ArgDef{Name: "Violation Name", Type:dcmd.String},
+			{Name: "User", Default: 0, Type: dcmd.UserID},
+			{Name: "Violation-Name", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "ma", Name: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "minage", Name: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			&dcmd.ArgDef{Switch: "num", Name: "Max Violations Cleared", Default: 2000, Type: &dcmd.IntArg{Min:0, Max: 2000}},
-			&dcmd.ArgDef{Switch: "old", Name: "Preferentially Clear Older Violations"},
-			&dcmd.ArgDef{Switch: "skip", Name: "Amount Skipped", Default: 0, Type: dcmd.Int},
+			{Name: "ma", Help: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "minage", Help: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "num", Help: "Max Violations Cleared", Default: 2000, Type: &dcmd.IntArg{Min: 0, Max: 2000}},
+			{Name: "old", Help: "Preferentially Clear Older Violations"},
+			{Name: "skip", Help: "Amount Skipped", Default: 0, Type: dcmd.Int},
 		},
-		ArgumentCombos: [][]int{[]int{0, 1}, []int{0}, []int{1}, []int{}},
+		ArgumentCombos:      [][]int{{0, 1}, {0}, {1}, {}},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
-		GuildScopeCooldown: 5,
+		GuildScopeCooldown:  5,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			UserID := parsed.Args[0].Int64()
 			VName := parsed.Args[1].Str()
@@ -332,12 +332,12 @@ func (p *Plugin) AddCommands() {
 			}
 
 			//Construct Query and Fetch Rows
-			qms := []qm.QueryMod{qm.Where("guild_id = ?", parsed.GS.ID), qm.OrderBy(order), qm.Offset(skip), qm.Limit(limit)}
-			
+			qms := []qm.QueryMod{qm.Where("guild_id = ?", parsed.GuildData.GS.ID), qm.OrderBy(order), qm.Offset(skip), qm.Limit(limit)}
+
 			if UserID != 0 {
 				qms = append(qms, qm.Where("user_id = ?", UserID))
 			}
-			
+
 			if VName != "" {
 				qms = append(qms, qm.Where("name = ?", VName))
 			}
@@ -349,7 +349,6 @@ func (p *Plugin) AddCommands() {
 			if minAge != 0 {
 				qms = append(qms, qm.Where("created_at < ?", time.Now().Add(-minAge)))
 			}
-
 
 			rows, err := models.AutomodViolations(qms...).AllG(context.Background())
 			if err != nil {
@@ -368,6 +367,7 @@ func (p *Plugin) AddCommands() {
 
 	container := commands.CommandSystem.Root.Sub("automod", "amod")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
+	container.Description = "Commands for managing automod"
 
 	container.AddCommand(cmdViewRulesets, cmdViewRulesets.GetTrigger())
 	container.AddCommand(cmdToggleRuleset, cmdToggleRuleset.GetTrigger())
@@ -376,4 +376,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdListVLC, cmdListVLC.GetTrigger())
 	container.AddCommand(cmdDelV, cmdDelV.GetTrigger())
 	container.AddCommand(cmdClearV, cmdClearV.GetTrigger())
+	commands.RegisterSlashCommandsContainer(container, false, func(gs *dstate.GuildState) ([]int64, error) {
+		return nil, nil
+	})
 }

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/lunixbochs/vtclean"
 )
@@ -25,6 +25,8 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "Where", Type: dcmd.String},
 	},
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		where := data.Args[0].Str()
 

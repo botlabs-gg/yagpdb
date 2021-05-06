@@ -1,7 +1,7 @@
 package paginatedmessages
 
 import (
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 )
 
@@ -26,7 +26,7 @@ func PaginatedCommand(pageArgIndex int, cb PaginatedCommandFunc) dcmd.RunFunc {
 			return cb(data, nil, page)
 		}
 
-		_, err := CreatePaginatedMessage(data.GS.ID, data.CS.ID, page, 0, func(p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err := CreatePaginatedMessage(data.GuildData.GS.ID, data.GuildData.CS.ID, page, 0, func(p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			return cb(data, p, page)
 		})
 

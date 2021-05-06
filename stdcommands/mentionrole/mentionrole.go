@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -69,28 +69,28 @@ var Command = &commands.YAGCommand{
 		{Name: "Message", Type: dcmd.String, Default: ""},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
+		{Name: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
 	},
 	RunFunc:            cmdFuncMentionRole,
 	GuildScopeCooldown: 10,
 }
 
 func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
-	if ok, err := bot.AdminOrPermMS(data.CS.ID, data.MS, discordgo.PermissionManageRoles); err != nil {
+	if ok, err := bot.AdminOrPermMS(data.ChannelID, data.GuildData.MS, discordgo.PermissionManageRoles); err != nil {
 		return "Failed checking perms", err
 	} else if !ok {
 		return "You need manage roles perms to use this command", nil
 	}
 
 	roleS := data.Args[0].Str()
-	role := findRoleByName(data.GS, roleS)
+	role := findRoleByName(data.GuildData.GS, roleS)
 
 	//if we did not find a match yet try to match ID
 	if role == nil {
 		parsedNumber, parseErr := strconv.ParseInt(roleS, 10, 64)
 		if parseErr == nil {
 			// was a number, try looking by id
-			role = data.GS.RoleCopy(true, parsedNumber)
+			role = data.GuildData.GS.RoleCopy(true, parsedNumber)
 		}
 	}
 
@@ -98,12 +98,12 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		return "No role with the name or ID`" + roleS + "` found", nil
 	}
 
-	cID := data.CS.ID
+	cID := data.GuildData.CS.ID
 	c := data.Switch("channel")
 	if c.Value != nil {
 		cID = c.Value.(*dstate.ChannelState).ID
 
-		perms, err := data.GS.MemberPermissions(true, cID, data.Msg.Author.ID)
+		perms, err := data.GuildData.GS.MemberPermissions(true, cID, data.Author.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +113,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		}
 	}
 
-	_, err := common.BotSession.GuildRoleEdit(data.GS.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
+	_, err := common.BotSession.GuildRoleEdit(data.GuildData.GS.ID, role.ID, role.Name, role.Color, role.Hoist, role.Permissions, true)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +129,8 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	err = scheduledevents2.ScheduleEvent("reset_mentionable_role", data.GS.ID, time.Now().Add(time.Second*10), &EvtData{
-		GuildID: data.GS.ID,
+	err = scheduledevents2.ScheduleEvent("reset_mentionable_role", data.GuildData.GS.ID, time.Now().Add(time.Second*10), &EvtData{
+		GuildID: data.GuildData.GS.ID,
 		RoleID:  role.ID,
 	})
 	return nil, err

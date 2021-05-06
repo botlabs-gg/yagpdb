@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -53,7 +53,7 @@ func (p *Plugin) AddCommands() {
 		Plugin:      p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
-			count, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID)).CountG(parsed.Context())
+			count, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID)).CountG(parsed.Context())
 			if err != nil {
 				return nil, err
 			}
@@ -64,20 +64,25 @@ func (p *Plugin) AddCommands() {
 
 			p.setupSessionsMU.Lock()
 			for _, v := range p.setupSessions {
-				if v.SetupChannel == parsed.CS.ID {
+				if v.SetupChannel == parsed.ChannelID {
 					p.setupSessionsMU.Unlock()
 					return "Already a setup process going on in this channel, if you want to exit it type `exit`, admins can force cancel setups with `events stopsetup`", nil
 				}
 			}
-
+			var msgID int64
+			setupMessages := []int64{}
+			if parsed.TraditionalTriggerData != nil {
+				msgID = parsed.TraditionalTriggerData.Message.ID
+				setupMessages = []int64{msgID}
+			}
 			setupSession := &SetupSession{
-				CreatedOnMessageID: parsed.Msg.ID,
-				GuildID:            parsed.GS.ID,
-				SetupChannel:       parsed.CS.ID,
-				AuthorID:           parsed.Msg.Author.ID,
+				CreatedOnMessageID: msgID,
+				GuildID:            parsed.GuildData.GS.ID,
+				SetupChannel:       parsed.ChannelID,
+				AuthorID:           parsed.Author.ID,
 				LastAction:         time.Now(),
 				plugin:             p,
-				setupMessages:      []int64{parsed.Msg.ID},
+				setupMessages:      setupMessages,
 
 				stopCH: make(chan bool),
 			}
@@ -101,17 +106,17 @@ func (p *Plugin) AddCommands() {
 		Plugin:              p,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+			{Name: "ID", Type: dcmd.Int},
 		},
 		RequiredArgs: 1,
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "title", Help: "Change the title of the event", Type: dcmd.String},
-			&dcmd.ArgDef{Switch: "time", Help: "Change the start time of the event", Type: dcmd.String},
-			&dcmd.ArgDef{Switch: "max", Help: "Change max participants", Type: dcmd.Int},
+			{Name: "title", Help: "Change the title of the event", Type: dcmd.String},
+			{Name: "time", Help: "Change the start time of the event", Type: dcmd.String},
+			{Name: "max", Help: "Change max participants", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			m, err := models.RSVPSessions(
-				models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID),
+				models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID),
 				models.RSVPSessionWhere.LocalID.EQ(parsed.Args[0].Int64()),
 				qm.Load("RSVPSessionsMessageRSVPParticipants", qm.OrderBy("marked_as_participating_at asc")),
 			).OneG(parsed.Context())
@@ -134,7 +139,7 @@ func (p *Plugin) AddCommands() {
 
 			timeChanged := false
 			if parsed.Switch("time").Value != nil {
-				registeredTimezone := timezonecompanion.GetUserTimezone(parsed.Msg.Author.ID)
+				registeredTimezone := timezonecompanion.GetUserTimezone(parsed.Author.ID)
 				if registeredTimezone == nil || UTCRegex.MatchString(parsed.Switch("time").Str()) {
 					registeredTimezone = time.UTC
 				}
@@ -154,7 +159,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if timeChanged {
-				_, err := eventModels.ScheduledEvents(qm.Where("event_name='rsvp_update_session' AND  guild_id = ? AND data::text::bigint = ? AND processed = false", parsed.GS.ID, m.MessageID)).DeleteAll(parsed.Context(), common.PQ)
+				_, err := eventModels.ScheduledEvents(qm.Where("event_name='rsvp_update_session' AND  guild_id = ? AND data::text::bigint = ? AND processed = false", parsed.GuildData.GS.ID, m.MessageID)).DeleteAll(parsed.Context(), common.PQ)
 				if err != nil {
 					return nil, err
 				}
@@ -179,7 +184,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			events, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID), qm.OrderBy("starts_at asc")).AllG(parsed.Context())
+			events, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID), qm.OrderBy("starts_at asc")).AllG(parsed.Context())
 			if err != nil {
 				return nil, err
 			}
@@ -194,7 +199,7 @@ func (p *Plugin) AddCommands() {
 				humanized := common.HumanizeDuration(common.DurationPrecisionMinutes, timeUntil)
 
 				output.WriteString(fmt.Sprintf("#%2d: **%s** in `%s` https://ptb.discordapp.com/channels/%d/%d/%d\n",
-					v.LocalID, v.Title, humanized, parsed.GS.ID, v.ChannelID, v.MessageID))
+					v.LocalID, v.Title, humanized, parsed.GuildData.GS.ID, v.ChannelID, v.MessageID))
 			}
 
 			return output.String(), nil
@@ -210,12 +215,12 @@ func (p *Plugin) AddCommands() {
 		RequiredArgs:        1,
 		Plugin:              p,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
+			{Name: "ID", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
 			m, err := models.RSVPSessions(
-				models.RSVPSessionWhere.GuildID.EQ(parsed.GS.ID),
+				models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID),
 				models.RSVPSessionWhere.LocalID.EQ(parsed.Args[0].Int64()),
 			).OneG(parsed.Context())
 
@@ -247,7 +252,7 @@ func (p *Plugin) AddCommands() {
 
 			p.setupSessionsMU.Lock()
 			for _, v := range p.setupSessions {
-				if v.SetupChannel == parsed.CS.ID {
+				if v.SetupChannel == parsed.ChannelID {
 					p.setupSessionsMU.Unlock()
 					go v.remove()
 					return "Canceled the current setup in this channel", nil
@@ -264,7 +269,13 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdList, cmdList.GetTrigger())
 	container.AddCommand(cmdDel, cmdDel.GetTrigger())
 	container.AddCommand(cmdStopSetup, cmdStopSetup.GetTrigger())
+	container.Description = "Manage events"
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildState) ([]int64, error) {
+		return nil, nil
+	})
 }
+
+type RolesRunFunc func(gs *dstate.GuildState) ([]int64, error)
 
 func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate()

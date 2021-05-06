@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/common"
@@ -17,7 +17,7 @@ var cmdHelp = &YAGCommand{
 	CmdCategory: CategoryGeneral,
 	RunInDM:     true,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "command", Type: dcmd.String},
+		{Name: "command", Type: dcmd.String},
 	},
 
 	RunFunc:  cmdFuncHelp,
@@ -50,12 +50,12 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Send full help in DM
-	ir, err := createInteractiveHelp(data.Msg.Author.ID, resp)
+	ir, err := createInteractiveHelp(data.Author.ID, resp)
 	if ir != nil || err != nil {
 		return ir, err
 	}
 
-	if data.Source == dcmd.DMSource {
+	if data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
 	}
 

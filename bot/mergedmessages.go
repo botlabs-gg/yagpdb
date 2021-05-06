@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/dcmd"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 )
@@ -55,7 +54,7 @@ func sendMergedBatch(channelID int64, messages []*QueuedMergedMessage) {
 
 	// Strip newline
 	out = out[:len(out)-1]
-	_, err := dcmd.SplitSendMessage(common.BotSession, channelID, out, mergedAllowedMentions)
+	_, err := common.SplitSendMessage(channelID, out, mergedAllowedMentions)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions) {
 		logger.WithError(err).WithField("message", out).Error("Error sending messages")
 	}
