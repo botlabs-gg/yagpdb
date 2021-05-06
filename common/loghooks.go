@@ -198,7 +198,7 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 		metricsHTTPLatency.Observe(since)
 
 		if code == 429 {
-			metrics429Path.With(prometheus.Labels{"path": path})
+			metrics429Path.With(prometheus.Labels{"path": path}).Inc()
 		}
 		// metricsNumRequests.With(prometheus.Labels{"path": path})
 		metricsNumRequestsResponseCode.With(prometheus.Labels{"response_code": strconv.Itoa(code)}).Inc()
