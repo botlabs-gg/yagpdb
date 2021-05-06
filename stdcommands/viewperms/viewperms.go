@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -23,10 +23,10 @@ var Command = &commands.YAGCommand{
 		var target *dstate.MemberState
 
 		if targetID := data.Args[0].Int64(); targetID == 0 {
-			target = data.MS
+			target = data.GuildData.MS
 		} else {
 			var err error
-			target, err = bot.GetMember(data.GS.ID, targetID)
+			target, err = bot.GetMember(data.GuildData.GS.ID, targetID)
 			if err != nil {
 				if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
 					return "Unknown member", nil
@@ -36,7 +36,7 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		perms, err := data.GS.MemberPermissionsMS(true, data.CS.ID, target)
+		perms, err := data.GuildData.GS.MemberPermissionsMS(true, data.GuildData.CS.ID, target)
 		if err != nil {
 			return "Unable to calculate perms", err
 		}

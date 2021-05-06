@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -60,7 +60,7 @@ func (p *Plugin) AddCommands() {
 		Name:          "Stats",
 		Description:   "Shows server stats (if public stats are enabled)",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			config, err := GetConfig(data.Context(), data.GS.ID)
+			config, err := GetConfig(data.Context(), data.GuildData.GS.ID)
 			if err != nil {
 				return nil, errors.WithMessage(err, "getconfig")
 			}
@@ -69,7 +69,7 @@ func (p *Plugin) AddCommands() {
 				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.ConfHost.GetString()), nil
 			}
 
-			stats, err := RetrieveDailyStats(time.Now(), data.GS.ID)
+			stats, err := RetrieveDailyStats(time.Now(), data.GuildData.GS.ID)
 			if err != nil {
 				return nil, errors.WithMessage(err, "retrievefullstats")
 			}
@@ -81,7 +81,7 @@ func (p *Plugin) AddCommands() {
 
 			embed := &discordgo.MessageEmbed{
 				Title:       "Server stats",
-				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GS.ID),
+				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GuildData.GS.ID),
 				Fields: []*discordgo.MessageEmbedField{
 					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
 					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},

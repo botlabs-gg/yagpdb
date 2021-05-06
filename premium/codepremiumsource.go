@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -190,7 +190,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 
 		dm += "```"
 
-		bot.SendDM(data.Msg.Author.ID, dm)
+		bot.SendDM(data.Author.ID, dm)
 		return "Check yer dms", nil
 	}),
 }

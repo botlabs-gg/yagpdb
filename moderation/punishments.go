@@ -10,6 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -490,8 +491,42 @@ func AddMemberMuteRole(config *Config, id int64, currentRoles []int64) (removedR
 }
 
 func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute MuteModel) (err error) {
+	newMemberRoles := decideUnmuteRoles(config, currentRoles, mute)
+	err = common.BotSession.GuildMemberEdit(config.GuildID, id, newMemberRoles)
+	return
+}
 
-	newMemberRoles := make([]string, 0, len(currentRoles)+len(config.MuteRemoveRoles))
+func decideUnmuteRoles(config *Config, currentRoles []int64, mute MuteModel) []string {
+	newMemberRoles := make([]string, 0)
+
+	gs := bot.State.Guild(true, config.GuildID)
+	botState, err := bot.GetMember(gs.ID, common.BotUser.ID)
+
+	gs.RLock()
+	defer gs.RUnlock()
+
+	guildRoles := make([]int64, len(gs.Guild.Roles))
+	for k, e := range gs.Guild.Roles {
+		guildRoles[k] = e.ID
+	}
+
+	if err != nil || botState == nil { // We couldn't find the bot on state, so keep old behaviour
+		for _, r := range currentRoles {
+			if r != config.IntMuteRole() {
+				newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
+			}
+		}
+
+		for _, r := range mute.RemovedRoles {
+			if !common.ContainsInt64Slice(currentRoles, r) && common.ContainsInt64Slice(guildRoles, r) {
+				newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
+			}
+		}
+
+		return newMemberRoles
+	}
+
+	yagHighest := bot.MemberHighestRole(gs, botState)
 
 	for _, v := range currentRoles {
 		if v != config.IntMuteRole() {
@@ -500,14 +535,12 @@ func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute M
 	}
 
 	for _, v := range mute.RemovedRoles {
-		if !common.ContainsInt64Slice(currentRoles, v) {
+		if !common.ContainsInt64Slice(currentRoles, v) && common.ContainsInt64Slice(guildRoles, v) && dutil.IsRoleAbove(yagHighest, gs.Role(false, v)) {
 			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
 		}
 	}
 
-	err = common.BotSession.GuildMemberEdit(config.GuildID, id, newMemberRoles)
-
-	return
+	return newMemberRoles
 }
 
 func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *discordgo.Message, author *discordgo.User, target *discordgo.User, message string) error {

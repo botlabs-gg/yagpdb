@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/yagpdb/commands"
 )
@@ -15,12 +15,14 @@ var Command = &commands.YAGCommand{
 	Description:     "Roll dices, specify nothing for 6 sides, specify a number for max sides, or rpg dice syntax.",
 	LongDescription: "Example: `-roll 2d6`",
 	Arguments: []*dcmd.ArgDef{
-		{Name: "RPG Dice", Type: dcmd.String},
 		{Name: "Sides", Default: 0, Type: dcmd.Int},
+		{Name: "RPG-Dice", Type: dcmd.String},
 	},
-	ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
+	ArgumentCombos:      [][]int{{0}, {1}, {}},
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		if data.Args[0].Value != nil {
+		if data.Args[1].Value != nil {
 			// Special dice syntax if string
 			r, _, err := dice.Roll(data.Args[0].Str())
 			if err != nil {

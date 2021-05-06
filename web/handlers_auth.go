@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -160,7 +159,6 @@ func discordAuthTokenFromYag(yagToken string) (t *oauth2.Token, err error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(b64)
 
 	err = json.Unmarshal([]byte(b64), &t)
 	if err != nil {

@@ -7,9 +7,11 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
@@ -148,7 +150,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 	templateData["SortedCommands"] = commands
 
-	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", activeGuild.ID), qm.Load("CommandsCommandOverrides")).AllG(r.Context())
+	channelOverrides, err := GetAllOverrides(r.Context(), activeGuild.ID)
 	if err != nil {
 		return templateData, err
 	}
@@ -163,10 +165,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	if global == nil {
-		global = &models.CommandsChannelsOverride{
-			Global:          true,
-			CommandsEnabled: true,
-		}
+		panic("This shouldn't be possible, no global!?!?!")
 	}
 
 	templateData["GlobalCommandSettings"] = global
@@ -185,7 +184,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 func HandlePostCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
-	newPrefix := r.FormValue("Prefix")
+	newPrefix := strings.TrimLeftFunc(r.FormValue("Prefix"), unicode.IsSpace)
 	if len(newPrefix) < 1 || len(newPrefix) > 100 {
 		return templateData, web.NewPublicError("Prefix is smaller than 1 or larger than 100 characters")
 	}

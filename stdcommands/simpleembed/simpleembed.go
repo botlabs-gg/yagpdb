@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -20,23 +20,24 @@ var Command = &commands.YAGCommand{
 	Description:         "A more simpler version of CustomEmbed, controlled completely using switches.",
 	RequireDiscordPerms: []int64{discordgo.PermissionManageMessages},
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
-		&dcmd.ArgDef{Switch: "content", Help: "Text content for the message", Type: dcmd.String, Default: ""},
+		{Name: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
+		{Name: "content", Help: "Text content for the message", Type: dcmd.String, Default: ""},
 
-		&dcmd.ArgDef{Switch: "title", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "desc", Type: dcmd.String, Help: "Text in the 'description' field", Default: ""},
-		&dcmd.ArgDef{Switch: "color", Help: "Either hex code or name", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "url", Help: "Url of this embed", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "thumbnail", Help: "Url to a thumbnail", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "image", Help: "Url to an image", Type: dcmd.String, Default: ""},
+		{Name: "title", Type: dcmd.String, Default: ""},
+		{Name: "desc", Type: dcmd.String, Help: "Text in the 'description' field", Default: ""},
+		{Name: "color", Help: "Either hex code or name", Type: dcmd.String, Default: ""},
+		{Name: "url", Help: "Url of this embed", Type: dcmd.String, Default: ""},
+		{Name: "thumbnail", Help: "Url to a thumbnail", Type: dcmd.String, Default: ""},
+		{Name: "image", Help: "Url to an image", Type: dcmd.String, Default: ""},
 
-		&dcmd.ArgDef{Switch: "author", Help: "The text in the 'author' field", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "authoricon", Help: "Url to a icon for the 'author' field", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "authorurl", Help: "Url of the 'author' field", Type: dcmd.String, Default: ""},
+		{Name: "author", Help: "The text in the 'author' field", Type: dcmd.String, Default: ""},
+		{Name: "authoricon", Help: "Url to a icon for the 'author' field", Type: dcmd.String, Default: ""},
+		{Name: "authorurl", Help: "Url of the 'author' field", Type: dcmd.String, Default: ""},
 
-		&dcmd.ArgDef{Switch: "footer", Help: "Text content for the footer", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String, Default: ""},
+		{Name: "footer", Help: "Text content for the footer", Type: dcmd.String, Default: ""},
+		{Name: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String, Default: ""},
 	},
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		content := data.Switch("content").Str()
 		embed := &discordgo.MessageEmbed{
@@ -83,12 +84,12 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		cID := data.Msg.ChannelID
+		cID := data.ChannelID
 		c := data.Switch("channel")
 		if c.Value != nil {
 			cID = c.Value.(*dstate.ChannelState).ID
 
-			hasPerms, err := bot.AdminOrPermMS(cID, data.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+			hasPerms, err := bot.AdminOrPermMS(cID, data.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
 				return "Failed checking permissions, please try again or join the support server.", err
 			}
@@ -108,7 +109,7 @@ var Command = &commands.YAGCommand{
 			return err, err
 		}
 
-		if cID != data.Msg.ChannelID {
+		if cID != data.ChannelID {
 			return "Done", nil
 		}
 
