@@ -344,6 +344,8 @@ github.com/jonas747/dcmd/v2 v2.0.2 h1:CI5YuklAAZPY4ZHTEOdrAY/5LFtffknp/zZiuj4k2/
 github.com/jonas747/dcmd/v2 v2.0.2/go.mod h1:2Vg/8yjepMG12MpJvg1WMCXs6ia0v+sryXjZVkYPIfo=
 github.com/jonas747/dcmd/v2 v2.0.3 h1:x/BYziw7Q/+Nn7vPI1Thai/14IxiVj1bWeEtPRfBwvY=
 github.com/jonas747/dcmd/v2 v2.0.3/go.mod h1:+0HJW5l5pvz90uklMbQqnzNMzQx8+ihvJKvh9qDrawo=
+github.com/jonas747/dcmd/v2 v2.0.4 h1:q7yLLO8P9N3It+sZqKwQXj0p+nfZRL1Ueqh/neJRJz0=
+github.com/jonas747/dcmd/v2 v2.0.4/go.mod h1:+0HJW5l5pvz90uklMbQqnzNMzQx8+ihvJKvh9qDrawo=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69/go.mod h1:m242ZgUE5Rw5Pmc35yiSSyGAxXCiO/QWJZ244MDpanI=
 github.com/jonas747/discordgo v1.1.1/go.mod h1:Mq9l7/Kn7L8Np5p//vuxKfnZohrX70XYx9cGoa+19J8=
