@@ -3,7 +3,7 @@ package stateinfo
 import (
 	"fmt"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -56,6 +56,7 @@ func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 			&discordgo.MessageEmbedField{Name: "Cache Hits/Misses", Value: fmt.Sprintf("%d - %d", stats.CacheHits, stats.CacheMisses), Inline: true},
 			&discordgo.MessageEmbedField{Name: "Members evicted total", Value: fmt.Sprintf("%d", stats.MembersRemovedTotal), Inline: true},
 			&discordgo.MessageEmbedField{Name: "Cache evicted total", Value: fmt.Sprintf("%d", stats.UserCachceEvictedTotal), Inline: true},
+			&discordgo.MessageEmbedField{Name: "Messages removed total", Value: fmt.Sprintf("%d", stats.MessagesRemovedTotal), Inline: true},
 		},
 	}
 

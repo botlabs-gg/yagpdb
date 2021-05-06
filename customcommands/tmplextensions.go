@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -78,6 +78,8 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 		def.Type = dcmd.Channel
 	case "member":
 		def.Type = &commands.MemberArg{}
+	case "role":
+		def.Type = &commands.RoleArg{}
 	default:
 		return nil, errors.New("Unknown type")
 	}
@@ -99,7 +101,7 @@ func tmplExpectArgs(ctx *templates.Context) interface{} {
 		split := dcmd.SplitArgs(stripped)
 
 		// create the dcmd data context used in the arg parsing
-		dcmdData, err := commands.CommandSystem.FillData(common.BotSession, msg)
+		dcmdData, err := commands.CommandSystem.FillDataLegacyMessage(common.BotSession, msg)
 		if err != nil {
 			return result, errors.WithMessage(err, "tmplExpectArgs")
 		}
@@ -152,6 +154,13 @@ func (pa *ParsedArgs) Get(index int) interface{} {
 
 		m := i.(*dstate.MemberState)
 		return m.DGoCopy()
+	case *commands.RoleArg:
+		i := pa.parsed[index].Value
+		if i == nil {
+			return nil
+		}
+
+		return i.(*discordgo.Role)
 	}
 
 	return pa.parsed[index].Value
@@ -397,13 +406,30 @@ func tmplDBIncr(ctx *templates.Context) interface{} {
 
 		keyStr := limitString(templates.ToString(key), 256)
 
-		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num) 
-VALUES ($1, $1, $2, $3, $4, $5, $6)
-ON CONFLICT (guild_id, user_id, key) 
-DO UPDATE SET value_num = templates_user_database.value_num + $6, updated_at = $1
+		const q = `INSERT INTO templates_user_database (created_at, updated_at, guild_id, user_id, key, value_raw, value_num)
+VALUES (now(), now(), $1, $2, $3, $4, $5)
+ON CONFLICT (guild_id, user_id, key)
+DO UPDATE SET
+	value_num =
+		-- Don't increment expired entry
+		CASE WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > now()) THEN templates_user_database.value_num + $5
+		ELSE $5
+		END,
+	updated_at = now(),
+	created_at =
+		-- Reset created_at if the entry expired
+		CASE WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > now()) THEN templates_user_database.created_at
+		ELSE now()
+		END,
+	expires_at =
+		-- Same for expires_at
+		CASE WHEN (templates_user_database.expires_at IS NULL OR templates_user_database.expires_at > now()) THEN templates_user_database.expires_at
+		ELSE NULL
+		END
+
 RETURNING value_num`
 
-		result := common.PQ.QueryRow(q, time.Now(), ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
+		result := common.PQ.QueryRow(q, ctx.GS.ID, userID, keyStr, valueSerialized, vNum)
 
 		var newVal float64
 		err = result.Scan(&newVal)
@@ -682,7 +708,10 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 			return nil, err
 		}
 
-		m := make(map[interface{}]interface{}, n)
+		isStringKeysOnly := true
+		mi := make(map[interface{}]interface{}, n)
+		ms := make(map[string]interface{})
+
 		for i := 0; i < n; i++ {
 			mk, err := d.DecodeInterface()
 			if err != nil {
@@ -694,9 +723,28 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 				return nil, err
 			}
 
-			m[mk] = mv
+			// if the map only has string keys, use a map[string]interface{}
+			if isStringKeysOnly {
+				if s, ok := mk.(string); ok {
+					// so far only string keys
+					ms[s] = mv
+				} else {
+					// copy over the map to the interface{} keyed one
+					isStringKeysOnly = false
+					for jk, jv := range ms {
+						mi[jk] = jv
+					}
+					mi[mk] = mv
+				}
+			} else {
+				mi[mk] = mv
+			}
 		}
-		return m, nil
+		if isStringKeysOnly {
+			return ms, nil
+		}
+
+		return mi, nil
 	})
 
 	return dec

@@ -5,6 +5,7 @@ type ContextKey int
 const (
 	ContextKeyRedis ContextKey = iota
 	ContextKeyDiscordSession
+	ContextKeyYagToken
 	ContextKeyTemplateData
 	ContextKeyUser
 	ContextKeyCurrentGuild
@@ -20,4 +21,5 @@ const (
 	ContextKeyCoreConfig
 	ContextKeyMemberPermissions
 	ContextKeyIsAdmin
+	ContextKeyIsReadOnly
 )

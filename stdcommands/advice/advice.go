@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/yagpdb/commands"
 )
 
@@ -17,7 +17,8 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		&dcmd.ArgDef{Name: "What", Type: dcmd.String},
 	},
-
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		//return "The API this command used has been shut down :(", nil
 		random := true

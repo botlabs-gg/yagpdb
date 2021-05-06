@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -12,15 +13,16 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -32,6 +34,7 @@ import (
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
+	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -56,7 +59,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdListCommands)
+	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands)
 }
 
 func (p *Plugin) BotInit() {
@@ -95,16 +98,22 @@ var cmdListCommands = &commands.YAGCommand{
 	Description:    "Shows a custom command specified by id or trigger, or lists them all",
 	ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "ID", Type: dcmd.Int},
-		&dcmd.ArgDef{Name: "Trigger", Type: dcmd.String},
+		{Name: "ID", Type: dcmd.Int},
+		{Name: "Trigger", Type: dcmd.String},
+	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "file", Help: "Send responses in file"},
+		{Name: "color", Help: "Use syntax highlighting (Go)"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
+		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
 			return "Failed retrieving custom commands", err
 		}
 
-		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GS.ID)).AllG(data.Context())
+		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GuildData.GS.ID)).AllG(data.Context())
 		if err != nil {
 			return "Failed retrieving custom command groups", err
 		}
@@ -134,11 +143,59 @@ var cmdListCommands = &commands.YAGCommand{
 
 		cc := foundCCS[0]
 
-		if cc.TextTrigger != "" {
-			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
-		} else {
-			return fmt.Sprintf("#%d - %s - Group: `%s`\n```\n%s\n```", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], strings.Join(cc.Responses, "```\n```")), nil
+		highlight := "txt"
+		if data.Switches["color"].Value != nil {
+			highlight = "go"
 		}
+
+		var ccFile *discordgo.File
+		var msg *discordgo.MessageSend
+
+		if data.Switches["file"].Value != nil {
+
+			data.GuildData.GS.Lock()
+			gName := data.GuildData.GS.Guild.Name
+			data.GuildData.GS.Unlock()
+
+			var buf bytes.Buffer
+			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
+
+			ccFile = &discordgo.File{
+				Name:   fmt.Sprintf("%s_CC_%d.%s", gName, cc.LocalID, highlight),
+				Reader: &buf,
+			}
+		}
+
+		if cc.TextTrigger != "" {
+			if ccFile != nil {
+				msg = &discordgo.MessageSend{
+					Content: fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` Group: `%s`",
+						cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64]),
+					Files: []*discordgo.File{
+						ccFile,
+					},
+				}
+				return msg, nil
+			}
+
+			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```%s\n%s\n```",
+				cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive,
+				groupMap[cc.GroupID.Int64], highlight, strings.Join(cc.Responses, "```\n```")), nil
+		}
+		if ccFile != nil {
+			msg = &discordgo.MessageSend{
+				Content: fmt.Sprintf("#%d - %s - Group `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]),
+				Files: []*discordgo.File{
+					ccFile,
+				},
+			}
+
+			return msg, nil
+
+		}
+		return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
+			cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64],
+			highlight, strings.Join(cc.Responses, "```\n```")), nil
 	},
 }
 
@@ -254,6 +311,11 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		return false, errors.WrapIf(err, "find_command")
 	}
 
+	if time.Until(cmd.NextRun.Time) > time.Second*5 {
+		return false, nil // old scheduled event that wasn't removed, /shrug
+
+	}
+
 	gs := bot.State.Guild(true, evt.GuildID)
 	if gs == nil {
 		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
@@ -282,7 +344,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 
 	// schedule next runs
 	cmd.LastRun = cmd.NextRun
-	err = UpdateCommandNextRunTime(cmd, true)
+	err = UpdateCommandNextRunTime(cmd, true, false)
 	if err != nil {
 		logger.WithError(err).Error("failed updating custom command next run time")
 	}
@@ -423,7 +485,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	var matchedCustomCommands []*TriggeredCC
 	var err error
-	common.LogLongCallTime(time.Second, true, fmt.Sprintf("Took longer than a second to fetch custom commands for %d: ", mc.GuildID), func() {
+	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
 	})
 	if err != nil {
@@ -655,7 +717,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
 		if cmd.ShowErrors {
 			out += "\nAn error caused the execution of the custom command template to stop:\n"
-			out += "`" + err.Error() + "`"
+			out += formatCustomCommandRunErr(chanMsg, err)
 		}
 	}
 
@@ -664,6 +726,139 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		return errors.WithStackIf(err)
 	}
 	return nil
+}
+
+func formatCustomCommandRunErr(src string, err error) string {
+	// check if we can retrieve the original ExecError
+	cause := errors.Cause(err)
+	if eerr, ok := cause.(template.ExecError); ok {
+		data := parseExecError(eerr)
+		// couldn't parse error, fall back to the original error message
+		if data == nil {
+			return "`" + err.Error() + "`"
+		}
+
+		out := fmt.Sprintf("`Failed executing CC #%d, line %d, row %d: %s`", data.CCID, data.Line, data.Row, data.Msg)
+		lines := strings.Split(src, "\n")
+		if len(lines) < int(data.Line) {
+			return out
+		}
+
+		out += "\n```"
+		out += getSurroundingLines(lines, int(data.Line-1)) // data.Line is 1-based, convert to 0-based.
+		out += "\n```"
+		return out
+	}
+
+	// otherwise, fall back to the normal error message
+	return "`" + err.Error() + "`"
+}
+
+// getSurroundingLines returns a string representing the lines close to a given
+// line number with common leading whitespace removed. Each line is formatted like
+// `<line number>    <line content>`.
+func getSurroundingLines(lines []string, lineIndex int) string {
+	var lineNums []int
+	var res []string
+
+	commonLeadingSpaces := -1
+	addLine := func(n int) {
+		line := lines[n]
+
+		leadingSpaceCount := 0
+		var cleaned strings.Builder
+		var i int
+	Loop:
+		for i = 0; i < len(line); i++ {
+			switch line[i] {
+			case '\t':
+				cleaned.WriteString("    ") // tabs -> 4 spaces
+				leadingSpaceCount += 4
+			case ' ':
+				cleaned.WriteByte(' ')
+				leadingSpaceCount++
+			default:
+				break Loop
+			}
+		}
+
+		if i != len(line) {
+			cleaned.WriteString(line[i:])
+		}
+
+		if commonLeadingSpaces == -1 || leadingSpaceCount < commonLeadingSpaces {
+			commonLeadingSpaces = leadingSpaceCount
+		}
+
+		res = append(res, cleaned.String())
+		lineNums = append(lineNums, n+1) // line numbers shown to the user are 1-based
+	}
+
+	// add previous line if possible
+	if lineIndex > 0 && len(lines) > 1 {
+		addLine(lineIndex - 1)
+	}
+
+	addLine(lineIndex)
+
+	// add next line if possible
+	if lineIndex != len(lines)-1 {
+		addLine(lineIndex + 1)
+	}
+
+	var out strings.Builder
+	for i, line := range res {
+		if i > 0 {
+			out.WriteByte('\n')
+		}
+
+		// remove common leading whitespace
+		line = line[commonLeadingSpaces:]
+		if len(line) > 35 {
+			line = limitString(line, 30) + "..."
+		}
+		// replace all ` with ` + a ZWS to make sure that all the code will stay formatted nicely in the codeblock
+		line = strings.ReplaceAll(line, "`", "`\u200b")
+
+		out.WriteString(strconv.FormatInt(int64(lineNums[i]), 10))
+		out.WriteString("    ")
+		out.WriteString(line)
+	}
+
+	return out.String()
+}
+
+type execErrorData struct {
+	CCID, Line, Row int64
+	Msg             string
+}
+
+var execErrorInfoRe = regexp.MustCompile(`\Atemplate: CC #(\d+):(\d+):(\d+): ([\S\s]+)`)
+
+// parseExecError uses regex to extract the individual parts out of an ExecError.
+// It returns nil if an error occurred during parsing.
+func parseExecError(err template.ExecError) *execErrorData {
+	parts := execErrorInfoRe.FindStringSubmatch(err.Error())
+	if parts == nil {
+		return nil
+	}
+
+	ccid, perr := strconv.ParseInt(parts[1], 10, 64)
+	if perr != nil {
+		return nil
+	}
+
+	line, perr := strconv.ParseInt(parts[2], 10, 64)
+	if perr != nil {
+		return nil
+	}
+
+	row, perr := strconv.ParseInt(parts[3], 10, 64)
+	if perr != nil {
+		return nil
+	}
+
+	return &execErrorData{ccid, line, row, parts[4]}
 }
 
 func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Context, logStack bool) {
@@ -801,12 +996,42 @@ const (
 
 func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
 	v, err := gs.UserCacheFetch(CacheKeyCommands, func() (interface{}, error) {
-		return models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+		var cmds []*models.CustomCommand
+		var err error
+
+		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": gs.ID}, func() {
+			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", gs.Guild.ID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+		})
+
+		return cmds, err
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return v.(models.CustomCommandSlice), nil
+	return v.([]*models.CustomCommand), nil
+}
+
+var cmdFixCommands = &commands.YAGCommand{
+	CmdCategory:          commands.CategoryTool,
+	Name:                 "fixscheduledccs",
+	Description:          "???",
+	HideFromCommandsPage: true,
+	HideFromHelp:         true,
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
+		ccs, err := models.CustomCommands(qm.Where("trigger_type = 5"), qm.Where("now() - INTERVAL '1 hour' > next_run")).AllG(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
+		for _, v := range ccs {
+			err = UpdateCommandNextRunTime(v, false, false)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return fmt.Sprintf("Doneso! fixed %d commands!", len(ccs)), nil
+	}),
 }
