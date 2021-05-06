@@ -10,7 +10,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator/v2/node"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
@@ -256,7 +256,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 		// closes, probably due to small variances in networking and scheduling latencies
 		// Adding a extra 100ms fixes this completely, but to be on the safe side we add a extra 50ms
 		var resp string
-		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "10000", "NX"))
+		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "5100", "NX"))
 		if err != nil {
 			logger.WithError(err).Error("failed ratelimiting gateway")
 			time.Sleep(time.Second)
@@ -338,7 +338,7 @@ func setupState() {
 	// State.Debug = true
 	State.ThrowAwayDMMessages = true
 	State.TrackPrivateChannels = false
-	State.CacheExpirey = time.Minute * 30
+	State.CacheExpirey = time.Hour * 2
 
 	if confStateRemoveOfflineMembers.GetBool() {
 		State.RemoveOfflineMembers = true

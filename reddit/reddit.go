@@ -11,6 +11,7 @@ import (
 	"github.com/jonas747/go-reddit"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/reddit/models"
 )
@@ -79,6 +80,20 @@ func RegisterPlugin() {
 
 	common.RegisterPlugin(plugin)
 	mqueue.RegisterSource("reddit", plugin)
+
+	pubsub.AddHandler("reddit_clear_subreddit_cache", func(evt *pubsub.Event) {
+		dataCast := evt.Data.(*PubSubSubredditEventData)
+		if dataCast.Slow {
+			configCache.Delete(KeySlowFeeds(strings.ToLower(dataCast.Subreddit)))
+		} else {
+			configCache.Delete(KeyFastFeeds(strings.ToLower(dataCast.Subreddit)))
+		}
+	}, PubSubSubredditEventData{})
+}
+
+type PubSubSubredditEventData struct {
+	Subreddit string `json:"subreddit"`
+	Slow      bool   `json:"slow"`
 }
 
 const (

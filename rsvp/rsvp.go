@@ -3,13 +3,14 @@ package rsvp
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	"sync"
+
+	"github.com/jonas747/when"
+	"github.com/jonas747/when/rules"
+	wcommon "github.com/jonas747/when/rules/common"
+	"github.com/jonas747/when/rules/en"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/timezonecompanion/trules"
-	"github.com/olebedev/when"
-	"github.com/olebedev/when/rules"
-	wcommon "github.com/olebedev/when/rules/common"
-	"github.com/olebedev/when/rules/en"
-	"sync"
 )
 
 var (
@@ -30,7 +31,6 @@ func init() {
 		trules.Hour(rules.Override),
 		trules.HourMinute(rules.Override),
 		en.Deadline(rules.Override),
-		en.PastTime(rules.Override),
 		en.ExactMonthDate(rules.Override),
 	)
 	dateParser.Add(wcommon.All...)
