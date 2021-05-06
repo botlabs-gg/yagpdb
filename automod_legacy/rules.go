@@ -310,7 +310,7 @@ func inviteCacheGC() {
 
 		for guild, cache := range InvitesCache.CacheMap {
 			for i, cached := range cache {
-				if time.Since(cached.CreatedAt) > (60 * time.Minute) {
+				if time.Since(cached.CreatedAt) > (InvitesCacheDuration * time.Minute) {
 					InvitesCache.CacheMap[guild] = removeFromSlice(cache, i)
 					counter++
 				}
