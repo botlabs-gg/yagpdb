@@ -1211,7 +1211,7 @@ func (c *Context) reFindAll(r, s string, i ...int) ([]string, error) {
 		n = i[0]
 	}
 
-	if n > 1000 || n < 0 {
+	if n > 1000 || n <= 0 {
 		n = 1000
 	}
 
@@ -1229,7 +1229,7 @@ func (c *Context) reFindAllSubmatches(r, s string, i ...int) ([][]string, error)
 		n = i[0]
 	}
 
-	if n > 100 || n < 0 {
+	if n > 100 || n <= 0 {
 		n = 100
 	}
 
@@ -1256,7 +1256,7 @@ func (c *Context) reSplit(r, s string, i ...int) ([]string, error) {
 		n = i[0]
 	}
 
-	if n > 500 || n < 0 {
+	if n > 500 || n <= 0 {
 		n = 500
 	}
 
