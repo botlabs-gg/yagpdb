@@ -898,13 +898,13 @@ func convertMap(m interface{}) interface{} {
 			v := val.MapIndex(k)
 			switch t := v.Interface().(type) {
 			case map[interface{}]interface{}, Dict, SDict:
-				out[fmt.Sprint(k)] = convertMap(t)
+				out[ToString(k)] = convertMap(t)
 			case Slice:
-				out[fmt.Sprint(k)] = handleSlices(t, nil)
+				out[ToString(k)] = handleSlices(t, nil)
 			case []interface{}:
-				out[fmt.Sprint(k)] = handleSlices(nil, t)
+				out[ToString(k)] = handleSlices(nil, t)
 			default:
-				out[fmt.Sprint(k)] = t
+				out[ToString(k)] = t
 			}
 		}
 		return out
