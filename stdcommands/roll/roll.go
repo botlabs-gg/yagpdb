@@ -3,6 +3,7 @@ package roll
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 
 	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/dice"
@@ -24,7 +25,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		if data.Args[1].Value != nil {
 			// Special dice syntax if string
-			r, _, err := dice.Roll(data.Args[0].Str())
+			r, _, err := dice.Roll(data.Args[1].Str())
 			if err != nil {
 				return err.Error(), nil
 			}
@@ -32,8 +33,11 @@ var Command = &commands.YAGCommand{
 			output := r.String()
 			if len(output) > 100 {
 				output = output[:100] + "..."
+			} else {
+				output = strings.TrimSuffix(output, "([])")
 			}
-			return output, nil
+
+			return ":game_die: " + output, nil
 		}
 
 		// normal, n sides dice rolling
