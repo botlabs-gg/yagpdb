@@ -469,8 +469,13 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.Cha
 		}
 	}
 
+	guildID := int64(0)
+	if data.GuildData != nil {
+		guildID = data.GuildData.GS.ID
+	}
+
 	// Check the command cooldown
-	cdLeft, err := yc.LongestCooldownLeft(data.ContainerChain, data.Author.ID, data.GuildData.GS.ID)
+	cdLeft, err := yc.LongestCooldownLeft(data.ContainerChain, data.Author.ID, guildID)
 	if err != nil {
 		// Just pretend the cooldown is off...
 		yc.Logger(data).Error("Failed checking command cooldown")
