@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +20,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/fuzzy"
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/volatiletech/null/v8"
@@ -28,10 +31,41 @@ import (
 var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
-	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
+	name := parsed.Args[0].Str()
+	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
-			return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
+			groups, err := models.RoleGroups(qm.Where("guild_id = ?", parsed.GuildData.GS.ID), qm.Select("name")).AllG(parsed.Context())
+			if err != nil {
+				return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", err
+			}
+
+			names := make([]string, len(groups))
+			for i, group := range groups {
+				names[i] = group.Name
+			}
+
+			selections := fuzzy.SelectN(name, names, fuzzy.AdaptiveThreshold, false, 3)
+			if len(selections) == 0 {
+				return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
+			}
+
+			var builder strings.Builder
+			builder.WriteString("Did not find a role group with the name `")
+			builder.WriteString(name)
+			builder.WriteString("`, but I did find ")
+			builder.WriteString(strconv.FormatInt(int64(len(selections)), 10))
+			builder.WriteString(" role groups with similar names: `")
+
+			for i, selection := range selections {
+				if i > 0 {
+					builder.WriteString(", `")
+				}
+				builder.WriteString(selection.Value)
+				builder.WriteByte('`')
+			}
+
+			return builder.String(), nil
 		}
 
 		return nil, err
