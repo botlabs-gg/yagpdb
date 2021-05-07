@@ -35,6 +35,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/simpleembed"
 	"github.com/jonas747/yagpdb/stdcommands/sleep"
 	"github.com/jonas747/yagpdb/stdcommands/statedbg"
+	"github.com/jonas747/yagpdb/stdcommands/songwhip"
 	"github.com/jonas747/yagpdb/stdcommands/stateinfo"
 	"github.com/jonas747/yagpdb/stdcommands/throw"
 	"github.com/jonas747/yagpdb/stdcommands/toggledbg"
@@ -96,6 +97,7 @@ func (p *Plugin) AddCommands() {
 		topgames.Command,
 		xkcd.Command,
 		howlongtobeat.Command,
+		songwhip.Command,
 
 		// Maintenance
 		stateinfo.Command,
