@@ -105,16 +105,14 @@
 <!-- /.row -->
 
 <script>
-    $(document).ready(function() {
-        $("#commands-enabled-global").click(function() {
-            if (!this.checked) {
-                $("#confirm-disable-all-commands-modal").modal("show");
-            }
-        });
+    $("#commands-enabled-global").click(function() {
+        if (!this.checked) {
+            $("#confirm-disable-all-commands-modal").modal("show");
+        }
+    });
 
-        $("#cancel-disable-all-commands").click(function() {
-            $("#commands-enabled-global").prop("checked", true).change();
-        });
+    $("#cancel-disable-all-commands").click(function() {
+        $("#commands-enabled-global").prop("checked", true).change();
     });
 </script>
 
