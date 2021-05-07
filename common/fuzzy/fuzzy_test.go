@@ -73,6 +73,8 @@ func TestSelectN(t *testing.T) {
 		{"roels", []string{"reoles", "othermenu", "role", "roles"}, 0.7, true, 2, []string{"roles", "reoles"}},
 		{"roels", []string{"reoles", "othermenu", "role", "roles"}, 0.7, true, -1, []string{"roles", "reoles", "role"}},
 		{"roels", []string{"reoles", "othermenu", "role", "roles"}, AdaptiveThreshold, true, -1, []string{"roles", "reoles", "role"}},
+		{"zac EFroN", []string{"zAc ePhrOn", "Kai Ephron"}, 0.9, false, 0, nil},
+		{"as", []string{"asd", "bas", "hello", "world"}, AdaptiveThreshold, false, -1, nil},
 
 		{"zac EFroN", []string{"zAc ePhrOn", "Kai Ephron"}, 0.9, false, 1, []string{"zAc ePhrOn"}},
 		{"zac efron", []string{"zAc ePhrOn", "Kai Ephron"}, AdaptiveThreshold, false, 1, []string{"zAc ePhrOn"}},
