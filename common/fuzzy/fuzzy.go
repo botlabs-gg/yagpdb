@@ -139,7 +139,7 @@ func SelectN(query string, options []string, threshold float64, caseSensitive bo
 	return selections[:n]
 }
 
-// SelectN returns all the options for which the Jaro-Winkler distance between
+// SelectAll returns all the options for which the Jaro-Winkler distance between
 // the query and the option is greater than or equal to threshold.
 // If threshold == AdaptiveThreshold, an optimal threshold will be computed
 // automatically.
