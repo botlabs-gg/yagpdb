@@ -196,7 +196,7 @@ func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result 
 
 				subCommands = append(subCommands, &discordgo.ApplicationCommandOption{
 					Kind:        kind,
-					Name:        "by-" + opt.Name,
+					Name:        "by-" + strings.ToLower(opt.Name),
 					Description: common.CutStringShort(yc.Description, 100),
 					Options: []*discordgo.ApplicationCommandOption{
 						opt,
