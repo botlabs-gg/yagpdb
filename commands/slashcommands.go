@@ -120,7 +120,7 @@ OUTER:
 func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *discordgo.CreateApplicationCommandRequest {
 	t := true
 	req := &discordgo.CreateApplicationCommandRequest{
-		Name:              container.container.Names[0],
+		Name:              strings.ToLower(container.container.Names[0]),
 		Description:       common.CutStringShort(container.container.Description, 100),
 		DefaultPermission: &t,
 	}
@@ -138,7 +138,7 @@ func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *dis
 		}
 
 		opt := &discordgo.ApplicationCommandOption{
-			Name:        cast.Name,
+			Name:        strings.ToLower(cast.Name),
 			Description: common.CutStringShort(cast.Description, 100),
 			Kind:        kind,
 			Options:     innerOpts,
@@ -166,7 +166,7 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 
 	_, opts := cast.slashCommandOptions()
 	return &discordgo.CreateApplicationCommandRequest{
-		Name:              cmd.Trigger.Names[0],
+		Name:              strings.ToLower(cmd.Trigger.Names[0]),
 		Description:       common.CutStringShort(cast.Description, 100),
 		DefaultPermission: &t,
 		Options:           opts,
@@ -180,6 +180,9 @@ func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result 
 	for i, v := range yc.Arguments {
 
 		opts := v.Type.SlashCommandOptions(v)
+		for _, v := range opts {
+			v.Name = strings.ToLower(v.Name)
+		}
 
 		if len(opts) > 1 && i == 0 {
 			// turn this command into a container
@@ -231,9 +234,15 @@ func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result 
 
 	for _, v := range yc.ArgSwitches {
 		if v.Type == nil {
-			sortedResult = append(sortedResult, v.StandardSlashCommandOption(discordgo.CommandOptionTypeBoolean))
+			adding := v.StandardSlashCommandOption(discordgo.CommandOptionTypeBoolean)
+			adding.Name = strings.ToLower(adding.Name)
+			sortedResult = append(sortedResult, adding)
 		} else {
-			sortedResult = append(sortedResult, v.Type.SlashCommandOptions(v)...)
+			adding := v.Type.SlashCommandOptions(v)
+			for _, v := range adding {
+				v.Name = strings.ToLower(v.Name)
+			}
+			sortedResult = append(sortedResult, adding...)
 		}
 	}
 
