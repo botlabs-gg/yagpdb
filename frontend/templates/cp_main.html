@@ -198,12 +198,12 @@ $(function(){
             }
         }
 
+        // we need BigInt support to run the alert update loop (to compute the shard #)
+        // luckily all modern browsers have supported it for a reasonable
+        // while (https://caniuse.com/bigint) so this should not be a huge
+        // issue.
         if (typeof BigInt !== "undefined") {
             console.log("Running bot status update alert loop");
-            // we need BigInt support to run the alert update loop (to compute the shard #)
-            // luckily all modern browsers have supported it for a reasonable
-            // while (https://caniuse.com/bigint) so this should not be a huge
-            // issue.
             updateBotStatusAlert();
             setInterval(updateBotStatusAlert, 30_000 /* 30 seconds */);
         }
