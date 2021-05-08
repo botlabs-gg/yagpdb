@@ -131,7 +131,12 @@ var cmdWhois = &commands.YAGCommand{
 			if member.PresenceGame.Type == 4 {
 				memberStatus = fmt.Sprintf("%s: %s", member.PresenceGame.Name, member.PresenceGame.State)
 			} else {
-				memberStatus = fmt.Sprintf("%s: %s", state[member.PresenceGame.Type], member.PresenceGame.Name)
+				presenceName := "Unknown"
+				if member.PresenceGame.Type > 0 && len(state) > int(member.PresenceGame.Type) {
+					presenceName = state[member.PresenceGame.Type]
+				}
+
+				memberStatus = fmt.Sprintf("%s: %s", presenceName, member.PresenceGame.Name)
 			}
 		}
 
