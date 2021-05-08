@@ -124,14 +124,19 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		var memberStatus string
-		state := [4]string{"Playing", "Streaming", "Listening", "Watching"}
 		if !member.PresenceSet || member.PresenceGame == nil {
 			memberStatus = fmt.Sprintf("Has no active status, is invisible/offline or is not in the bot's cache.")
 		} else {
 			if member.PresenceGame.Type == 4 {
 				memberStatus = fmt.Sprintf("%s: %s", member.PresenceGame.Name, member.PresenceGame.State)
 			} else {
-				memberStatus = fmt.Sprintf("%s: %s", state[member.PresenceGame.Type], member.PresenceGame.Name)
+				state := [4]string{"Playing", "Streaming", "Listening", "Watching"}
+				presenceName := "Unknown"
+				if member.PresenceGame.Type > 0 && len(state) > int(member.PresenceGame.Type) {
+					presenceName = state[member.PresenceGame.Type]
+				}
+
+				memberStatus = fmt.Sprintf("%s: %s", presenceName, member.PresenceGame.Name)
 			}
 		}
 
