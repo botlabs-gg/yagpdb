@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -51,6 +52,13 @@ type SetupSession struct {
 	LastAction time.Time
 	stopCH     chan bool
 	stopped    bool
+
+	// the following fields are only set if 1) sendInitialMessage was called
+	// with interaction data and 2) the interaction response was sent
+	// successfully
+
+	followupMessageID int64
+	interactionToken  string
 }
 
 func (s *SetupSession) handleMessage(m *discordgo.Message) {
@@ -289,6 +297,10 @@ func (s *SetupSession) Finish() {
 	}
 
 	common.BotSession.ChannelMessagesBulkDelete(s.SetupChannel, toDelete)
+	if s.followupMessageID != 0 {
+		common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, s.interactionToken)
+		common.BotSession.DeleteFollowupMessage(common.BotApplication.ID, s.interactionToken, s.followupMessageID)
+	}
 }
 
 func (s *SetupSession) abortError(msg string, err error) {
@@ -352,6 +364,29 @@ func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
 		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
 	} else {
 		s.setupMessages = append(s.setupMessages, m.ID)
+	}
+}
+
+func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...interface{}) {
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		content := "[RSVP Event Setup]: " + fmt.Sprintf(msgf, args...)
+
+		params := &discordgo.WebhookParams{
+			Content:         content,
+			AllowedMentions: &discordgo.AllowedMentions{},
+		}
+
+		m, err := data.Session.CreateFollowupMessage(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
+		if err != nil {
+			logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
+			return
+		}
+
+		s.followupMessageID = m.ID
+		s.interactionToken = data.SlashCommandTriggerData.Interaction.Token
+	default:
+		s.sendMessage(fmt.Sprintf(msgf, args...))
 	}
 }
 
