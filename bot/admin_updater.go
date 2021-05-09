@@ -111,4 +111,7 @@ func requestCheckBotAdmins(skipRename bool, mainServer, adminRole, readOnlyRole 
 
 func HandleGuildMembersChunk(data *eventsystem.EventData) {
 	go BatchMemberJobManager.handleGuildMemberChunk(data)
+	if memberFetcher != nil {
+		go memberFetcher.HandleGuildmembersChunk(data)
+	}
 }
