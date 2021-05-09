@@ -144,7 +144,8 @@
             </form>
             <h2 class="card-title">
                 <a style="padding:15px 20px 10px 20px!important" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}" class="cc-collapsibleDown">
-                    #{{.LocalID}} - {{index $dot.CCTriggerTypes .TriggerType}}{{if and (ne .TriggerType 10) (ne .TriggerType 5) (ne .TriggerType 6)}}: <span class="cc-text-trigger-span">{{.TextTrigger}}</span>{{else if and (ne .TriggerType 10) (ne .TriggerType 6)}}: <span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s)</span>{{else}}minute(s)</span>{{end}} next run: <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
+                    #{{.LocalID}} -
+                    {{index $dot.CCTriggerTypes .TriggerType}}{{if .Name.Valid}} (name: {{.Name.String}}){{else if and (ne .TriggerType 10) (ne .TriggerType 5) (ne .TriggerType 6)}}: <span class="cc-text-trigger-span">{{.TextTrigger}}</span>{{else if and (ne .TriggerType 10) (ne .TriggerType 6)}}: <span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s)</span>{{else}}minute(s)</span>{{end}} next run: <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
                 </a>
             </h2>
         </div>
