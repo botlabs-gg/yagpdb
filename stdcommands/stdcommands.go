@@ -25,7 +25,6 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/invite"
 	"github.com/jonas747/yagpdb/stdcommands/leaveserver"
 	"github.com/jonas747/yagpdb/stdcommands/listroles"
-	"github.com/jonas747/yagpdb/stdcommands/memberfetcher"
 	"github.com/jonas747/yagpdb/stdcommands/memstats"
 	"github.com/jonas747/yagpdb/stdcommands/mentionrole"
 	"github.com/jonas747/yagpdb/stdcommands/ping"
@@ -106,7 +105,6 @@ func (p *Plugin) AddCommands() {
 		topcommands.Command,
 		topevents.Command,
 		currentshard.Command,
-		memberfetcher.Command,
 		guildunavailable.Command,
 		yagstatus.Command,
 		setstatus.Command,
