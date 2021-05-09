@@ -216,9 +216,9 @@ var cmdListCommands = &commands.YAGCommand{
 		if ccFile != nil {
 			var header string
 			if cc.Name.Valid {
-				header = fmt.Sprintf("#%d - %s (name: `%s`) - Group `%s`- Enabled `%v`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], !cc.Disabled)
+				header = fmt.Sprintf("#%d - %s (name: `%s`) - Group `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64])
 			} else {
-				header = fmt.Sprintf("#%d - %s - Group `%s` - IsEnabled `%v`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], !cc.Disabled)
+				header = fmt.Sprintf("#%d - %s - Group `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64])
 			}
 
 			msg = &discordgo.MessageSend{
