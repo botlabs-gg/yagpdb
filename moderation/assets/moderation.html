@@ -123,12 +123,14 @@ the punishment{{end}}
         </div>
         <hr />
 
-        {{checkbox "ReportEnabled" "report-enabled" "Enable report command?" .ModConfig.ReportEnabled}}
+        {{checkbox "ReportEnabled" "report-enabled" "Enable report and reporter commands?" .ModConfig.ReportEnabled}}
         <p><code>(mention or prefix) report @user some reason</code><br />
             Everyone can use this.<br />
             Report will upload a log of the last 100 messages in the channel and send a message about it in the
             report channel.
         </p>
+        {{checkbox "AnonymousReports" "anonymous-reports" "Make reports anonymous by default" .ModConfig.AnonymousReports}}
+        <p>Users with the Manage Messages permission will be able to view whoever created a report using the <code>(mention or prefix)reporter report-id</code> command.</p>
         <hr />
 
         {{checkbox "LogUnbans" "log-unbans" "Log unban events in the modlog channel" .ModConfig.LogUnbans}}
