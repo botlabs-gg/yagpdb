@@ -24,11 +24,11 @@ type Config struct {
 	KickMessage          string `valid:"template,5000"`
 
 	// Ban
-	BanEnabled        	bool
-	BanCmdRoles       	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	BanReasonOptional 	bool
-	BanMessage        	string `valid:"template,5000"`
-	DefaultBanDeleteDays    sql.NullInt64 `gorm:"default:1" valid:"0,7"`
+	BanEnabled           bool
+	BanCmdRoles          pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	BanReasonOptional    bool
+	BanMessage           string        `valid:"template,5000"`
+	DefaultBanDeleteDays sql.NullInt64 `gorm:"default:1" valid:"0,7"`
 
 	// Mute/unmute
 	MuteEnabled             bool
@@ -52,12 +52,13 @@ type Config struct {
 	WarnMessage            string `valid:"template,5000"`
 
 	// Misc
-	CleanEnabled  bool
-	ReportEnabled bool
-	ActionChannel string `valid:"channel,true"`
-	ReportChannel string `valid:"channel,true"`
-	LogUnbans     bool
-	LogBans       bool
+	CleanEnabled     bool
+	ReportEnabled    bool
+	AnonymousReports bool   `gorm:"default:false"`
+	ActionChannel    string `valid:"channel,true"`
+	ReportChannel    string `valid:"channel,true"`
+	LogUnbans        bool
+	LogBans          bool
 
 	GiveRoleCmdEnabled bool
 	GiveRoleCmdModlog  bool
@@ -100,6 +101,16 @@ func (c *Config) Save(guildID int64) error {
 
 	pubsub.Publish("mod_refresh_mute_override", guildID, nil)
 	return err
+}
+
+type ReportModel struct {
+	common.SmallModel
+	ReporterID                 int64
+	ReporterUsernameAndDiscrim string
+}
+
+func (r *ReportModel) TableName() string {
+	return "moderation_reports"
 }
 
 type WarningModel struct {
