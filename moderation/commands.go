@@ -366,6 +366,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		ArgSwitches: []*dcmd.ArgDef{
+			{Name: "Anonymous", Help: "Make the report anonymously"},
+		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -390,6 +393,19 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "You can't report yourself, silly.", nil
 			}
 
+			s := parsed.Switch("Anonymous")
+			isAnon := config.AnonymousReports || (s.Value != nil && s.Value.(bool))
+
+			// delete anonymous reports
+			if isAnon {
+				switch parsed.TriggerType {
+				case dcmd.TriggerTypeSlashCommands:
+					common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, parsed.SlashCommandTriggerData.Interaction.Token)
+				default:
+					common.BotSession.ChannelMessageDelete(parsed.ChannelID, parsed.TraditionalTriggerData.Message.ID)
+				}
+			}
+
 			logLink := CreateLogs(parsed.GuildData.GS.ID, parsed.GuildData.CS.ID, parsed.Author)
 
 			channelID := config.IntReportChannel()
@@ -397,16 +413,37 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No report channel set up", nil
 			}
 
-			embed := &discordgo.MessageEmbed{
-				Author: &discordgo.MessageEmbedAuthor{
+			report := ReportModel{
+				ReporterID:                 parsed.Author.ID,
+				ReporterUsernameAndDiscrim: parsed.Author.Username + "#" + parsed.Author.Discriminator,
+			}
+			err = common.GORM.Create(&report).Error
+			if err != nil {
+				return &commands.EphemeralOrGuild{Content: "Something went wrong while creating your report!"}, err
+			}
+
+			author := &discordgo.MessageEmbedAuthor{
+				Name:    "[anonymous reporter]",
+				IconURL: "https://i.imgur.com/mn3WcKl.png",
+			}
+			footerf := "Report ID: %d | Use '-reporter %[1]d' to view the reporter"
+
+			if !isAnon {
+				author = &discordgo.MessageEmbedAuthor{
 					Name:    fmt.Sprintf("%s#%s (ID %d)", parsed.Author.Username, parsed.Author.Discriminator, parsed.Author.ID),
 					IconURL: discordgo.EndpointUserAvatar(parsed.Author.ID, parsed.Author.Avatar),
-				},
+				}
+				footerf = "Report ID: %d"
+			}
+
+			embed := &discordgo.MessageEmbed{
+				Author:      author,
 				Description: fmt.Sprintf("🔍**Reported** %s#%s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))", target.Username, target.Discriminator, target.ID, parsed.Args[1].Value, logLink),
 				Color:       0xee82ee,
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
 				},
+				Footer: &discordgo.MessageEmbedFooter{Text: fmt.Sprintf(footerf, report.ID)},
 			}
 
 			_, err = common.BotSession.ChannelMessageSendEmbed(channelID, embed)
@@ -420,6 +457,40 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			return nil, nil
+		},
+	},
+	{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "Reporter",
+		Description:   "View the user that made a report, requires Manage Messages permissions.",
+		RequiredArgs:  1,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "ID", Type: &dcmd.IntArg{}},
+		},
+		SlashCommandEnabled: true,
+		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			config, _, err := MBaseCmd(parsed, 0)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = MBaseCmdSecond(parsed, "", true, 0, nil, config.ReportEnabled)
+			if err != nil {
+				return nil, err
+			}
+
+			var report ReportModel
+			err = common.GORM.Where(parsed.Args[0].Int()).First(&report).Error
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return "No report by that ID found", nil
+				}
+				return "Error retrieving report", nil
+			}
+
+			return fmt.Sprintf("Reporter: **%s** (%d)", report.ReporterUsernameAndDiscrim, report.ReporterID), nil
 		},
 	},
 	{
