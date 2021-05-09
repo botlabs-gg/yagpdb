@@ -374,7 +374,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			temp, _ := bot.GetMember(parsed.GuildData.GS.ID, parsed.Args[0].Int64())
+			temp, err := bot.GetMember(parsed.GuildData.GS.ID, parsed.Args[0].Int64())
+			if err != nil || temp == nil {
+				return err, err
+			}
+
 			target := temp.DGoUser()
 
 			if target.ID == parsed.Author.ID {
