@@ -40,6 +40,8 @@ var Command = &commands.YAGCommand{
 	Aliases:      []string{"hltb"},
 	RequiredArgs: 1,
 	Description:  "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their default. Without -p returns the first result.\nSwitch -p gives paginated output using Levenshtein distance sorting max 20 results.",
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Game-Title", Type: dcmd.String},
 	},
