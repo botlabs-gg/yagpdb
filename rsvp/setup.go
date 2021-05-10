@@ -368,25 +368,19 @@ func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
 }
 
 func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...interface{}) {
+	send := &discordgo.MessageSend{Content: "[RSVP Event Setup]: " + fmt.Sprintf(msgf, args...)}
+	msgs, err := data.SendFollowupMessage(send, discordgo.AllowedMentions{})
+	if err != nil {
+		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
+		return
+	}
+
 	switch data.TriggerType {
 	case dcmd.TriggerTypeSlashCommands:
-		content := "[RSVP Event Setup]: " + fmt.Sprintf(msgf, args...)
-
-		params := &discordgo.WebhookParams{
-			Content:         content,
-			AllowedMentions: &discordgo.AllowedMentions{},
-		}
-
-		m, err := data.Session.CreateFollowupMessage(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
-		if err != nil {
-			logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
-			return
-		}
-
-		s.followupMessageID = m.ID
+		s.followupMessageID = msgs[0].ID
 		s.interactionToken = data.SlashCommandTriggerData.Interaction.Token
 	default:
-		s.sendMessage(fmt.Sprintf(msgf, args...))
+		s.setupMessages = append(s.setupMessages, msgs[0].ID)
 	}
 }
 
