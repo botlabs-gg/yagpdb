@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "server", Type: dcmd.Int},
+		{Name: "server", Type: dcmd.BigInt},
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		channels, err := common.BotSession.GuildChannels(data.Args[0].Int64())

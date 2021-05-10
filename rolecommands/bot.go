@@ -53,7 +53,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "Group", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "m", Help: "Message ID", Type: &dcmd.IntArg{}},
+			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},
 			{Name: "nodm", Help: "Disable DM"},
 			{Name: "rr", Help: "Remove role on reaction removed"},
 			{Name: "skip", Help: "Number of roles to skip", Default: 0, Type: dcmd.Int},
@@ -69,7 +69,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Message-ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.BigInt},
 		},
 		RunFunc: cmdFuncRoleMenuRemove,
 	}
@@ -83,7 +83,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Message-ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.BigInt},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "nodm", Help: "Disable DM"},
@@ -101,7 +101,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Message-ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.BigInt},
 		},
 		RunFunc: cmdFuncRoleMenuResetReactions,
 	}
@@ -115,7 +115,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Message-ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.BigInt},
 		},
 		RunFunc: cmdFuncRoleMenuEditOption,
 	}
@@ -129,7 +129,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Message-ID", Type: dcmd.Int},
+			{Name: "Message-ID", Type: dcmd.BigInt},
 		},
 		RunFunc: cmdFuncRoleMenuComplete,
 	}
