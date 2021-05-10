@@ -451,12 +451,10 @@ func (s *shardMemberFetcher) fetchSingleInner(req *MemberFetchRequest) (*dstate.
 
 	// it was already existant in the state
 	result := gs.MemberCopy(true, req.Member)
-	if result != nil {
+	if result != nil && result.MemberSet && (!req.NeedJoinedAt || !result.JoinedAt.IsZero()) {
 		metricsProcessed.With(prometheus.Labels{"type": "state"}).Inc()
 		return result, nil
 	}
-
-	metricsProcessed.With(prometheus.Labels{"type": "http"}).Inc()
 
 	// fetch from api
 	var m *discordgo.Member
@@ -465,6 +463,8 @@ func (s *shardMemberFetcher) fetchSingleInner(req *MemberFetchRequest) (*dstate.
 		metricsFailed.With(prometheus.Labels{"type": "http"}).Inc()
 		return nil, err
 	}
+
+	metricsProcessed.With(prometheus.Labels{"type": "http"}).Inc()
 
 	result = dstate.MSFromDGoMember(gs, m)
 	gs.MemberAddUpdate(true, m)
