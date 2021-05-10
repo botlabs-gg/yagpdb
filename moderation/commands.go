@@ -136,6 +136,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "d", Help: "Duration", Type: &commands.DurationArg{}, Default: time.Duration(0)},
 			{Name: "ddays", Help: "Delete Days", Type: dcmd.Int},
 		},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionBanMembers}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -177,6 +178,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionBanMembers}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -223,6 +225,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionKickMembers}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -259,6 +262,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Duration", Type: &commands.DurationArg{}},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
 		ArgumentCombos:      [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
@@ -315,6 +319,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -374,9 +379,14 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			target := parsed.Args[0].Int64()
+			temp, err := bot.GetMember(parsed.GuildData.GS.ID, parsed.Args[0].Int64())
+			if err != nil || temp == nil {
+				return err, err
+			}
 
-			if target == parsed.Author.ID {
+			target := temp.DGoUser()
+
+			if target.ID == parsed.Author.ID {
 				return "You can't report yourself, silly.", nil
 			}
 
@@ -387,23 +397,28 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No report channel set up", nil
 			}
 
-			reportBody := fmt.Sprintf("<@%d> Reported <@%d> in <#%d> For `%s`\nLast 100 messages from channel: <%s>", parsed.Author.ID, target, parsed.ChannelID, parsed.Args[1].Str(), logLink)
-
-			_, err = common.BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
-				Content: reportBody,
-				AllowedMentions: discordgo.AllowedMentions{
-					Users: []int64{parsed.Author.ID, target},
+			embed := &discordgo.MessageEmbed{
+				Author: &discordgo.MessageEmbedAuthor{
+					Name:    fmt.Sprintf("%s#%s (ID %d)", parsed.Author.Username, parsed.Author.Discriminator, parsed.Author.ID),
+					IconURL: discordgo.EndpointUserAvatar(parsed.Author.ID, parsed.Author.Avatar),
 				},
-			})
+				Description: fmt.Sprintf("🔍**Reported** %s#%s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))", target.Username, target.Discriminator, target.ID, parsed.Args[1].Value, logLink),
+				Color:       0xee82ee,
+				Thumbnail: &discordgo.MessageEmbedThumbnail{
+					URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
+				},
+			}
 
+			_, err = common.BotSession.ChannelMessageSendEmbed(channelID, embed)
 			if err != nil {
-				return nil, err
+				return "Something went wrong while sending your report!", err
 			}
 
-			// don't bother sending confirmation if it's in the same channel
+			// Don't bother sending confirmation if it is done in the report channel
 			if channelID != parsed.ChannelID {
-				return "User reported to the proper authorities", nil
+				return "User reported to the proper authorities!", nil
 			}
+
 			return nil, nil
 		},
 	},
@@ -429,6 +444,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "a", Help: "Only remove messages with attachments"},
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
 		},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageMessages}},
 		ArgumentCombos:      [][]int{{0}, {0, 1}, {1, 0}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
@@ -849,6 +865,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "d", Default: time.Duration(0), Help: "Duration", Type: &commands.DurationArg{}},
 		},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -926,6 +943,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Role", Type: dcmd.String},
 		},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {

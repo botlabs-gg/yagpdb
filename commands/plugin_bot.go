@@ -190,25 +190,25 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
 		}
 
-		if resp != "" {
-			if resp == ReasonCooldown {
-				switch data.TriggerType {
-				case dcmd.TriggerTypeSlashCommands:
-					common.BotSession.CreateFollowupMessage(data.SlashCommandTriggerData.Interaction.ApplicationID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.WebhookParams{
-						Flags:   64,
-						Content: "Command is on cooldown.",
-					})
-				default:
-					if (data.GuildData != nil && bot.BotProbablyHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions)) || data.GuildData.GS == nil {
-						common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
-					}
+		if resp != nil {
+
+			if resp.Type == ReasonCooldown && data.TriggerType != dcmd.TriggerTypeSlashCommands {
+				if (data.GuildData != nil && bot.BotProbablyHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions)) || data.GuildData.GS == nil {
+					common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
+					return nil, nil
 				}
 			}
 
-			return &EphemeralOrNone{
-				Content: "You're unable to run this command: " + resp,
-			}, nil
-
+			switch resp.Type {
+			case ReasonBotMissingPerms:
+				return &EphemeralOrGuild{
+					Content: "You're unable to run this command:\n> " + resp.Message,
+				}, nil
+			default:
+				return &EphemeralOrNone{
+					Content: "You're unable to run this command:\n> " + resp.Message,
+				}, nil
+			}
 		}
 
 		if !canExecute {

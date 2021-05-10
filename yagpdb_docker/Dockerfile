@@ -1,7 +1,13 @@
 FROM golang:stretch as builder
 
-# Uncomment during development
-COPY . /appbuild/yagpdb
+WORKDIR /appbuild/yagpdb/
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
 
 WORKDIR /appbuild/yagpdb/cmd/yagpdb
 
@@ -15,7 +21,9 @@ VOLUME /app/soundboard \
 EXPOSE 80 443
 
 # We need the X.509 certificates for client TLS to work.
-RUN apk --no-cache add ca-certificates
+# Also install tzdata, needed for Go timezone support, as the alpine image does
+# not come with it by default. 
+RUN apk --no-cache add ca-certificates tzdata
 
 # Add ffmpeg for soundboard support
 RUN apk --no-cache add ffmpeg
