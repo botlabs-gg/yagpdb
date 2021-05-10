@@ -89,6 +89,8 @@ type DelayedRunCCData struct {
 	Member  *dstate.MemberState
 
 	UserKey interface{} `json:"user_key"`
+
+	IsExecedByLeaveMessage bool `json:"is_execed_by_leave_message"`
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -96,7 +98,7 @@ var cmdListCommands = &commands.YAGCommand{
 	Name:           "CustomCommands",
 	Aliases:        []string{"cc"},
 	Description:    "Shows a custom command specified by id or trigger, or lists them all",
-	ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
+	ArgumentCombos: [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
 		{Name: "Trigger", Type: dcmd.String},
@@ -287,6 +289,8 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		tmplCtx.Msg = dataCast.Message
 		tmplCtx.Data["Message"] = dataCast.Message
 	}
+
+	tmplCtx.IsExecedByLeaveMessage = dataCast.IsExecedByLeaveMessage
 
 	// decode userdata
 	if len(dataCast.UserData) > 0 {

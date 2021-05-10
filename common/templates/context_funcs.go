@@ -21,7 +21,7 @@ var ErrTooManyCalls = errors.New("Too many calls to this function")
 var ErrTooManyAPICalls = errors.New("Too many potential discord api calls function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
-	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.MS == nil {
+	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.IsExecedByLeaveMessage {
 		return ""
 	}
 
@@ -180,6 +180,10 @@ func (c *Context) ChannelArgNoDM(v interface{}) int64 {
 }
 
 func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
+	if c.IsExecedByLeaveMessage {
+		return "", errors.New("cannot use sendDM on leave message")
+	}
+
 	return c.sendNestedTemplate(nil, true, name, data...)
 }
 
@@ -350,6 +354,14 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			return ""
 		}
 
+		isDM := cid != c.ChannelArgNoDM(channel)
+		c.GS.RLock()
+		gName := c.GS.Guild.Name
+		info := fmt.Sprintf("Custom Command DM from the server **%s**", gName)
+		embedInfo := fmt.Sprintf("Custom Command DM from the server %s", gName)
+		icon := discordgo.EndpointGuildIcon(c.GS.Guild.ID, c.GS.Guild.Icon)
+		c.GS.RUnlock()
+
 		var m *discordgo.Message
 		msgSend := &discordgo.MessageSend{
 			AllowedMentions: discordgo.AllowedMentions{
@@ -359,16 +371,34 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		var err error
 
 		switch typedMsg := msg.(type) {
-
 		case *discordgo.MessageEmbed:
+			if isDM {
+				typedMsg.Footer = &discordgo.MessageEmbedFooter{
+					Text:    embedInfo,
+					IconURL: icon,
+				}
+			}
 			msgSend.Embed = typedMsg
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
-			msgSend.AllowedMentions = discordgo.AllowedMentions{
-				Parse: parseMentions,
+			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
+
+			if isDM {
+				if typedMsg.Embed != nil {
+					typedMsg.Embed.Footer = &discordgo.MessageEmbedFooter{
+						Text:    embedInfo,
+						IconURL: icon,
+					}
+				} else {
+					typedMsg.Content = info + "\n" + typedMsg.Content
+				}
 			}
 		default:
-			msgSend.Content = fmt.Sprint(msg)
+			if isDM {
+				msgSend.Content = info + "\n" + ToString(msg)
+			} else {
+				msgSend.Content = ToString(msg)
+			}
 		}
 
 		m, err = common.BotSession.ChannelMessageSendComplex(cid, msgSend)

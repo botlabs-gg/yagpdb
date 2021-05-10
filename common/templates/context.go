@@ -139,6 +139,8 @@ type Context struct {
 
 	CurrentFrame *contextFrame
 
+	IsExecedByLeaveMessage bool
+
 	contextFuncsAdded bool
 }
 
@@ -289,6 +291,10 @@ func (c *Context) executeParsed() (r string, err error) {
 			err = errors.New("paniced!")
 		}
 	}()
+
+	if c.CurrentFrame.SendResponseInDM && c.IsExecedByLeaveMessage {
+		return "", errors.New("cannot send DM on leave message")
+	}
 
 	parsed := c.CurrentFrame.parsedTemplate
 	if c.IsPremium {
