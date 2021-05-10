@@ -21,12 +21,12 @@ VOLUME /app/soundboard \
 EXPOSE 80 443
 
 # We need the X.509 certificates for client TLS to work.
-# Also install tzdata, needed for Go timezone support, as the alpine image does
-# not come with it by default. 
-RUN apk --no-cache add ca-certificates tzdata
-
-# Add ffmpeg for soundboard support
-RUN apk --no-cache add ffmpeg
+# Also install tzdata, needed for Go timezone support, 
+# and ffmpeg for soundboard support,
+# as the alpine image does not come with them by default. 
+RUN apk --no-cache add ca-certificates \
+  ffmpeg \
+  tzdata
 
 # Handle templates for plugins automatically
 COPY --from=builder /appbuild/yagpdb/*/assets/*.html templates/plugins/
