@@ -308,8 +308,6 @@
 
 {{if gt (len .Commands) 0}}
     {{if gt (len .Commands) 1}}
-        <script src="/static/vendor/sortable/Sortable.js"></script>
-
         <script>
             $(function(){
                 createDragnDrop("{{.ActiveGuild.ID}}");
