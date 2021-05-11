@@ -186,7 +186,7 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del
 }
 
 type CachedInvite struct {
-	CreatedAt int64
+	CreatedAt time.Time
 	Invite    string // we only store the invite code, no need to waste memory on the entire invite data
 }
 
@@ -274,7 +274,7 @@ OUTER:
 			InvitesCache.Lock()
 			// This invite was not found on our cache, so let's add it
 			InvitesCache.CacheMap[invite.Guild.ID] = append(InvitesCache.CacheMap[invite.Guild.ID], CachedInvite{
-				CreatedAt: time.Now().Unix(),
+				CreatedAt: time.Now(),
 				Invite:    invite.Code,
 			})
 			InvitesCache.Unlock()
@@ -310,7 +310,7 @@ func inviteCacheGC() {
 
 		for guild, cache := range InvitesCache.CacheMap {
 			for i, cached := range cache {
-				if time.Since(time.Unix(cached.CreatedAt, 0)) > (InvitesCacheDuration * time.Minute) {
+				if time.Since(cached.CreatedAt) > (InvitesCacheDuration * time.Minute) {
 					InvitesCache.CacheMap[guild] = removeFromSlice(cache, i)
 					counter++
 				}
