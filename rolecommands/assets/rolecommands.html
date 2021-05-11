@@ -308,8 +308,7 @@
 
 {{if gt (len .Commands) 0}}
     {{if gt (len .Commands) 1}}
-        <!-- Latest Sortable -->
-        <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
+        <script src="/static/vendor/sortable/Sortable.js"></script>
 
         <script>
             $(function(){
@@ -337,6 +336,7 @@
                 {{range .Commands}}
                 <form class="" data-async-form action="/manage/{{$ag.ID}}/rolecommands/update_cmd" method="post">
                     <div class="form-row border-bottom border-secondary pt-2">
+                        <i class="fas fa-arrows-alt role-handle"></i>
                         <input type="number" name="ID" class="hidden" value="{{.ID}}">
                         <div class="form-group col">
                             <label for="{{.ID}}-role-command-name">Name</label>

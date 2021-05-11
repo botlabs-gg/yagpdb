@@ -137,10 +137,6 @@ func HandleDragCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 
 	g, tmpl := web.GetBaseCPContextData(r.Context())
 
-	if incomeChange.OldIndex == incomeChange.NewIndex {
-		return tmpl, nil
-	}
-
 	commands, err := models.RoleCommands(qm.Where("guild_id=?", g.ID)).AllG(r.Context())
 	if err != nil {
 		return tmpl, err

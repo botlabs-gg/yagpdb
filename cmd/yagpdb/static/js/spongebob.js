@@ -817,8 +817,15 @@ function createDragnDrop(guildID) {
 		easing: "cubic-bezier(1, 0, 0, 1)",
 		ghostClass: "sortable-ghost",
 		chosenClass: "sortable-chosen",
+		touchStartThreshold: 4,
+		fallbackTolerance: 3,
+		handle: '.role-handle',
 
 		onEnd: function (evt) {
+			if (evt.oldIndex == evt.newIndex) {
+				return;
+			}
+
 			createRequest("POST", "/manage/" + guildID + "/rolecommands/drag_cmd", {"old_index": evt.oldIndex, "new_index": evt.newIndex, "id": evt.item[0].value}, null);
 			showReorderedRolesPopup();
 		},
