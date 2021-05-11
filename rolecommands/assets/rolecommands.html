@@ -143,6 +143,8 @@
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-success">Create new group</button>
+                                <hr />
+                                <p><b>You can reorder the roles by dragging and dropping</b></p>
                             </form>
                         </div>
                         <!-- /.col-lg-6 -->
@@ -204,7 +206,7 @@
 <script>
     $(function () {
         ModeChanged($("#{{.CurrentGroup.ID}}-group-mode")[0], "{{.CurrentGroup.ID}}-");
-    }); 
+    });
 </script>
 {{end}}
 
@@ -305,10 +307,31 @@
 {{end}}
 
 {{if gt (len .Commands) 0}}
+    {{if gt (len .Commands) 1}}
+        <!-- Latest Sortable -->
+        <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
+
+        <script>
+            $(function(){
+                createDragnDrop("{{.ActiveGuild.ID}}");
+            });
+        </script>
+
+        <style>
+            .sortable-ghost {
+                opacity: 0.4;
+            }
+
+            .sortable-chosen {
+                color: #282d36;
+                background-color: #40464d;
+            }
+        </style>
+    {{end}}
 <div class="row">
     <div class="col" style="overflow-x: auto">
         <div class="card card-featured card-featured-primary multiselect-popout-hack" style="min-width: 800px">
-            <div class="card-body pt-2" style="padding-top: 0px;">
+            <div class="card-body pt-2" style="padding-top: 0px;" id="rolesList">
                 {{$groups := .Groups}}
                 {{$group := .Group}}
                 {{range .Commands}}

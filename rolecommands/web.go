@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -112,11 +113,109 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/update_cmd"), web.ControllerPostHandler(HandleUpdateCommand, getIndexpPostHandler, FormCommand{}))
 	subMux.Handle(pat.Post("/remove_cmd"), web.ControllerPostHandler(HandleRemoveCommand, getIndexpPostHandler, nil))
 	subMux.Handle(pat.Post("/move_cmd"), web.ControllerPostHandler(HandleMoveCommand, getIndexpPostHandler, nil))
+	subMux.Handle(pat.Post("/drag_cmd"), web.ControllerPostHandler(HandleDragCommand, getIndexpPostHandler, nil))
 	subMux.Handle(pat.Post("/delete_rolecmds"), web.ControllerPostHandler(HandleDeleteRoleCommands, getIndexpPostHandler, nil))
 
 	subMux.Handle(pat.Post("/new_group"), web.ControllerPostHandler(HandleNewGroup, getIndexpPostHandler, FormGroup{}))
 	subMux.Handle(pat.Post("/update_group"), web.ControllerPostHandler(HandleUpdateGroup, getIndexpPostHandler, FormGroup{}))
 	subMux.Handle(pat.Post("/remove_group"), web.ControllerPostHandler(HandleRemoveGroup, getIndexpPostHandler, nil))
+}
+
+type DragCmdData struct {
+	OldIndex int   `json:"old_index"`
+	NewIndex int   `json:"new_index"`
+	ID       int64 `json:"id,string"`
+}
+
+func HandleDragCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	defer r.Body.Close()
+	incomeChange := DragCmdData{}
+	err := json.NewDecoder(r.Body).Decode(&incomeChange)
+	if err != nil {
+		return nil, err
+	}
+
+	g, tmpl := web.GetBaseCPContextData(r.Context())
+
+	if incomeChange.OldIndex == incomeChange.NewIndex {
+		return tmpl, nil
+	}
+
+	commands, err := models.RoleCommands(qm.Where("guild_id=?", g.ID)).AllG(r.Context())
+	if err != nil {
+		return tmpl, err
+	}
+
+	var targetCmd *models.RoleCommand
+	for _, v := range commands {
+		if v.ID == incomeChange.ID {
+			targetCmd = v
+			break
+		}
+	}
+
+	if targetCmd == nil {
+		return tmpl, errors.New("RoleCommand not found")
+	}
+
+	commandsInGroup := make([]*models.RoleCommand, 0, len(commands))
+
+	// Sort all relevant commands
+	for _, v := range commands {
+		if (!targetCmd.RoleGroupID.Valid && !v.RoleGroupID.Valid) || (targetCmd.RoleGroupID.Valid && v.RoleGroupID.Valid && targetCmd.RoleGroupID.Int64 == v.RoleGroupID.Int64) {
+			commandsInGroup = append(commandsInGroup, v)
+		}
+	}
+
+	sort.Slice(commandsInGroup, RoleCommandsLessFunc(commandsInGroup))
+
+	isUp := incomeChange.OldIndex > incomeChange.NewIndex
+
+	// Move the position
+OUTER:
+	for i := 0; i < len(commandsInGroup); i++ {
+		v := commandsInGroup[i]
+		v.Position = int64(i)
+
+		if v.ID == targetCmd.ID {
+			v.Position = int64(incomeChange.NewIndex)
+			continue OUTER
+		}
+
+		if isUp {
+			switch {
+			case i < incomeChange.NewIndex:
+				// nothing to do
+				continue OUTER
+			case i >= incomeChange.NewIndex && i < incomeChange.OldIndex:
+				v.Position++
+			case i > incomeChange.OldIndex:
+				// nothing to do
+				continue OUTER
+			}
+		} else {
+			switch {
+			case i > incomeChange.NewIndex:
+				// nothing to do
+				continue OUTER
+			case i <= incomeChange.NewIndex && i > incomeChange.OldIndex:
+				v.Position--
+			case i < incomeChange.OldIndex:
+				// nothing to do
+				continue OUTER
+			}
+		}
+	}
+
+	for _, v := range commandsInGroup {
+		_, lErr := v.UpdateG(r.Context(), boil.Whitelist(models.RoleCommandColumns.Position))
+		if lErr != nil {
+			err = lErr
+		}
+	}
+	sendEvictMenuCachePubSub(g.ID)
+
+	return tmpl, err
 }
 
 func HandleGetIndex(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {

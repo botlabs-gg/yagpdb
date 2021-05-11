@@ -689,15 +689,16 @@ function updateUnsavedChangesPopup() {
 			$("#unsaved-changes-message").text("You have unsaved changes, would you like to save them?");
 			if (!isSavingUnsavedForms)
 				$("#unsaved-changes-save-button").attr("hidden", false);
-
+				hideReorderedRolesPopup();
 		} else {
 			$("#unsaved-changes-message").text("You have unsaved changes on multiple forms, save them all?");
 			if (!isSavingUnsavedForms)
 				$("#unsaved-changes-save-button").attr("hidden", false);
-
+				hideReorderedRolesPopup();
 		}
 
 		$("#unsaved-changes-popup").attr("hidden", false)
+		hideReorderedRolesPopup();
 	}
 }
 
@@ -733,7 +734,7 @@ function saveUnsavedChanges() {
 
 		// let alertsOnly = jf.attr("data-async-form-alertsonly") !== undefined;
 		// if (!alertsOnly) {
-		// 	alertsOnly = 
+		// 	alertsOnly =
 		// }
 
 		// Keep the current tab selected
@@ -808,4 +809,31 @@ function loadWidget(destinationParentID, path) {
 	createRequest("GET", path + "?partial=1", null, function () {
 		$("#" + destinationParentID).html(this.responseText);
 	})
+}
+
+function createDragnDrop(guildID) {
+	Sortable.create(rolesList, {
+		animation: 150,
+		easing: "cubic-bezier(1, 0, 0, 1)",
+		ghostClass: "sortable-ghost",
+		chosenClass: "sortable-chosen",
+
+		onEnd: function (evt) {
+			createRequest("POST", "/manage/" + guildID + "/rolecommands/drag_cmd", {"old_index": evt.oldIndex, "new_index": evt.newIndex, "id": evt.item[0].value}, null);
+			showReorderedRolesPopup();
+		},
+	});
+}
+
+function showReorderedRolesPopup() {
+	$("#reordered-message").text("All set! Reordering roles saves automatically :)");
+	$("#reordered-roles-popup").attr("hidden", false);
+
+	setTimeout(function() {
+		hideReorderedRolesPopup();
+	}, 4000);
+}
+
+function hideReorderedRolesPopup() {
+	$("#reordered-roles-popup").attr("hidden", true);
 }
