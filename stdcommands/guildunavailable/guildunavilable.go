@@ -23,6 +23,6 @@ var Command = &commands.YAGCommand{
 			return "Uh oh", err
 		}
 
-		return fmt.Sprintf("Guild (%d) unavilable: %v", guild.ID, guild.Unavailable), nil
+		return fmt.Sprintf("Guild (%d) unavailable: %v", guild.ID, guild.Unavailable), nil
 	},
 }
