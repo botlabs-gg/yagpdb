@@ -355,6 +355,20 @@ OUTER_SEND:
 		// not found, sendn il
 		go s.sendGWResult(gs, req, nil)
 	}
+
+	// add to state
+	gs.Lock()
+	defer gs.Unlock()
+
+	for _, v := range chunk.Members {
+		if ms, ok := gs.Members[v.User.ID]; ok {
+			if ms.MemberSet {
+				continue
+			}
+		}
+
+		gs.MemberAddUpdate(false, v)
+	}
 }
 
 func (s *shardMemberFetcher) sendResult(req *MemberFetchRequest, result *MemberFetchResult) {
@@ -372,6 +386,8 @@ func (s *shardMemberFetcher) sendGWResult(gs *dstate.GuildState, req *MemberFetc
 			MemberID: req.Member,
 		}
 	} else {
+		metricsProcessed.With(prometheus.Labels{"type": "gateway"}).Add(1)
+
 		ms := dstate.MSFromDGoMember(gs, member)
 		req.resp <- &MemberFetchResult{
 			Err:      nil,
@@ -548,7 +564,6 @@ OUTER:
 	s.fetchingGWState.Nonce = nonce
 	s.fetchingGWState.Started = time.Now()
 	s.fetchingGWState.Members = ids
-	metricsProcessed.With(prometheus.Labels{"type": "gateway"}).Add(float64(len(ids)))
 
 	s.gwRequestFunc(biggestQueueGuild, ids, nonce)
 }
