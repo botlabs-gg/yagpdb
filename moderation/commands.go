@@ -499,8 +499,20 @@ var ModerationCommands = []*commands.YAGCommand{
 			userFilter := parsed.Args[1].Int64()
 
 			num := parsed.Args[0].Int()
-			if (userFilter == 0 || userFilter == parsed.Author.ID) && parsed.Source != 0 {
-				num++ // Automatically include our own message if not triggeded by exec/execAdmin
+
+			var triggerID int64
+			ignoreTrigger := parsed.Source != dcmd.TriggerSourceDM && parsed.Context().Value(commands.CtxKeyExecutedByCC) == nil
+			if ignoreTrigger {
+				if parsed.TriggerType == dcmd.TriggerTypeSlashCommands {
+					m, err := common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, parsed.SlashCommandTriggerData.Interaction.Token)
+					if err != nil {
+						return nil, err
+					}
+
+					triggerID = m.ID
+				} else {
+					triggerID = parsed.TraditionalTriggerData.Message.ID
+				}
 			}
 
 			if num > 100 {
@@ -569,6 +581,9 @@ var ModerationCommands = []*commands.YAGCommand{
 				limitFetch = num * 50 // Maybe just change to full fetch?
 			}
 
+			if ignoreTrigger {
+				limitFetch++
+			}
 			if limitFetch > 1000 {
 				limitFetch = 1000
 			}
@@ -576,7 +591,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, triggerID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
 			deleteMessageWord := "messages"
 			if numDeleted == 1 {
 				deleteMessageWord = "message"
@@ -1021,7 +1036,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(guildID, channelID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(guildID, channelID int64, triggerID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -1053,6 +1068,10 @@ func AdvancedDeleteMessages(guildID, channelID int64, filterUser int64, regex st
 	toDelete := make([]int64, 0)
 	now := time.Now()
 	for i := 0; i < len(msgs); i++ {
+		if msgs[i].ID == triggerID {
+			continue
+		}
+
 		if filterUser != 0 && msgs[i].Author.ID != filterUser {
 			continue
 		}
