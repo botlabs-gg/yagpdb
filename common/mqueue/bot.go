@@ -226,10 +226,10 @@ OUTER:
 		// check the ratelimit for this channel, we skip elements being ratelimited
 		var ratelimitWait time.Duration
 		if v.elem.UseWebhook {
-			b := webhookSession.Ratelimiter.GetBucket(discordgo.EndpointWebhook(v.elem.Channel))
-			b.Lock()
-			ratelimitWait = webhookSession.Ratelimiter.GetWaitTime(b, 1)
-			b.Unlock()
+			// b := webhookSession.Ratelimiter.GetBucket(discordgo.EndpointWebhook(v.elem.Channel))
+			// b.Lock()
+			// ratelimitWait = webhookSession.Ratelimiter.GetWaitTime(b, 1)
+			// b.Unlock()
 		} else {
 			b := common.BotSession.Ratelimiter.GetBucket(discordgo.EndpointChannelMessages(v.elem.Channel))
 			b.Lock()
