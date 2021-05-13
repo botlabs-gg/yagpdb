@@ -4,16 +4,24 @@ import (
 	"encoding/json"
 	"time"
 
+	"emperror.dev/errors"
+	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const MaxConcurrentSends = 2
 
+type workResult struct {
+	item  *workItem
+	retry bool
+}
+
 type MqueueServer struct {
 	refreshWork    chan bool
-	doneWork       chan *workItem
+	doneWork       chan *workResult
 	pubsubWork     chan *workItem
 	clearTotalWork chan bool
 
@@ -31,7 +39,8 @@ type MqueueServer struct {
 	localWork []*workItem
 
 	// work currently being processed
-	activeWork []*workItem
+	activeWork      []*workItem
+	ratelimitedWork int
 }
 
 func (m *MqueueServer) Run() {
@@ -158,11 +167,100 @@ func (m *MqueueServer) addWork(wi *workItem) {
 	m.checkRunNextWork()
 }
 
-func (m *MqueueServer) checkRunNextWork()       {}
-func (m *MqueueServer) finishWork(wi *workItem) {}
+func (m *MqueueServer) checkRunNextWork() {
+	next := m.findWork()
+	if next == nil {
+		return
+	}
+
+	m.activeWork = append(m.activeWork, next)
+	go m.runWork(next)
+}
+
+func (m *MqueueServer) runWork(wi *workItem) {
+	metricsProcessed.With(prometheus.Labels{"source": wi.elem.Source}).Inc()
+
+	retry := false
+	defer func() {
+		m.doneWork <- &workResult{
+			item:  wi,
+			retry: retry,
+		}
+	}()
+
+	queueLogger := logger.WithField("mq_id", wi.elem.ID)
+
+	defer func() {
+		common.RedisPool.Do(radix.Cmd(nil, "ZREM", "mqueue", string(wi.raw)))
+	}()
+
+	var err error
+	if wi.elem.UseWebhook {
+		err = trySendWebhook(queueLogger, wi.elem)
+	} else {
+		err = trySendNormal(queueLogger, wi.elem)
+	}
+
+	if err == nil {
+		return
+	}
+
+	if e, ok := errors.Cause(err).(*discordgo.RESTError); ok {
+		if (e.Response != nil && e.Response.StatusCode >= 400 && e.Response.StatusCode < 500) || (e.Message != nil && e.Message.Code != 0) {
+			if source, ok := sources[wi.elem.Source]; ok {
+				maybeDisableFeed(source, wi.elem, e)
+			}
+
+			return
+		}
+	} else {
+		if onGuild, err := common.BotIsOnGuild(wi.elem.Guild); !onGuild && err == nil {
+			if source, ok := sources[wi.elem.Source]; ok {
+				logger.WithError(err).Warnf("disabling feed item %s from %s to nonexistant guild", wi.elem.SourceID, wi.elem.Source)
+				source.DisableFeed(wi.elem, err)
+			}
+
+			return
+		} else if err != nil {
+			logger.WithError(err).Error("failed checking if bot is on guild")
+		}
+	}
+
+	if c, _ := common.DiscordError(err); c != 0 {
+		return
+	}
+
+	retry = true
+	queueLogger.Warn("Non-discord related error when sending message, retrying. ", err)
+	time.Sleep(time.Second)
+
+}
+
+func (m *MqueueServer) finishWork(wr *workResult) {
+	if !wr.retry {
+		common.RedisPool.Do(radix.Cmd(nil, "ZREM", "mqueue", string(wr.item.raw)))
+		m.activeWork = removeFromWorkSlice(m.activeWork, wr.item)
+		m.localWork = removeFromWorkSlice(m.localWork, wr.item)
+		if m.totalWorkPresent {
+			m.totalWork = removeFromWorkSlice(m.totalWork, wr.item)
+		}
+	}
+
+	m.checkRunNextWork()
+}
+
+func removeFromWorkSlice(s []*workItem, wi *workItem) []*workItem {
+	for i, v := range s {
+		if v.elem.ID == wi.elem.ID {
+			s = append(s[:i], s[i+1:]...)
+		}
+	}
+
+	return s
+}
 
 func (m *MqueueServer) findWork() *workItem {
-	if len(m.activeWork) >= MaxConcurrentSends {
+	if len(m.activeWork)-m.ratelimitedWork >= MaxConcurrentSends {
 		return nil
 	}
 
@@ -190,9 +288,9 @@ OUTER:
 		// 	b.Unlock()
 		// }
 
-		if ratelimitWait > time.Millisecond*250 {
-			continue
-		}
+		// if ratelimitWait > time.Millisecond*250 {
+		// 	continue
+		// }
 
 		return v
 	}
