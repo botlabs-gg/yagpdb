@@ -11,7 +11,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "IsGuildUnavailable",
-	Description:  "Returns wether the specified guild is unavilable or not",
+	Description:  "Returns wether the specified guild is unavailable or not",
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "guildid", Type: dcmd.BigInt, Default: int64(0)},
