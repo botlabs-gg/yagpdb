@@ -402,7 +402,7 @@ var ModerationCommands = []*commands.YAGCommand{
 					Name:    fmt.Sprintf("%s#%s (ID %d)", parsed.Author.Username, parsed.Author.Discriminator, parsed.Author.ID),
 					IconURL: discordgo.EndpointUserAvatar(parsed.Author.ID, parsed.Author.Avatar),
 				},
-				Description: fmt.Sprintf("🔍**Reported** %s#%s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))", target.Username, target.Discriminator, target.ID, parsed.Args[1].Value, logLink),
+				Description: fmt.Sprintf("🔍**Reported** %s#%s <@%d>\n*(ID %d)*\n📄**Reason:** %s ([Logs](%s))\nIn: <#%d>", target.Username, target.Discriminator, target.ID, target.ID, parsed.Args[1].Value, logLink, parsed.GuildData.CS.ID),
 				Color:       0xee82ee,
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
