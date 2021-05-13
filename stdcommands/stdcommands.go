@@ -20,6 +20,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/dogfact"
 	"github.com/jonas747/yagpdb/stdcommands/findserver"
 	"github.com/jonas747/yagpdb/stdcommands/globalrl"
+	"github.com/jonas747/yagpdb/stdcommands/howlongtobeat"
 	"github.com/jonas747/yagpdb/stdcommands/guildunavailable"
 	"github.com/jonas747/yagpdb/stdcommands/info"
 	"github.com/jonas747/yagpdb/stdcommands/invite"
@@ -94,6 +95,7 @@ func (p *Plugin) AddCommands() {
 		viewperms.Command,
 		topgames.Command,
 		xkcd.Command,
+		howlongtobeat.Command,
 
 		// Maintenance
 		stateinfo.Command,

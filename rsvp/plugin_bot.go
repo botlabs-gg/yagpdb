@@ -92,7 +92,7 @@ func (p *Plugin) AddCommands() {
 			p.setupSessionsMU.Unlock()
 
 			setupSession.mu.Lock()
-			setupSession.sendMessage("Started interactive setup:\nWhat channel should i put the event embed in? (type `this` or `here` for the current one)")
+			setupSession.sendInitialMessage(parsed, "Started interactive setup:\nWhat channel should i put the event embed in? (type `this` or `here` for the current one)")
 			setupSession.mu.Unlock()
 
 			return "", nil
