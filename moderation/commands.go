@@ -381,7 +381,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			temp, err := bot.GetMember(parsed.GuildData.GS.ID, parsed.Args[0].Int64())
 			if err != nil || temp == nil {
-				return err, err
+				return nil, err
 			}
 
 			target := temp.DGoUser()
@@ -397,19 +397,29 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No report channel set up", nil
 			}
 
+			topContent := fmt.Sprintf("%s reported %s", parsed.Author.Mention(), target.Mention())
+
 			embed := &discordgo.MessageEmbed{
 				Author: &discordgo.MessageEmbedAuthor{
 					Name:    fmt.Sprintf("%s#%s (ID %d)", parsed.Author.Username, parsed.Author.Discriminator, parsed.Author.ID),
 					IconURL: discordgo.EndpointUserAvatar(parsed.Author.ID, parsed.Author.Avatar),
 				},
-				Description: fmt.Sprintf("🔍**Reported** %s#%s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))", target.Username, target.Discriminator, target.ID, parsed.Args[1].Value, logLink),
+				Description: fmt.Sprintf("🔍**Reported** %s#%s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))\n**Channel:** <#%d>", target.Username, target.Discriminator, target.ID, parsed.Args[1].Value, logLink, parsed.ChannelID),
 				Color:       0xee82ee,
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
 				},
 			}
 
-			_, err = common.BotSession.ChannelMessageSendEmbed(channelID, embed)
+			send := &discordgo.MessageSend{
+				Content: topContent,
+				Embed:   embed,
+				AllowedMentions: discordgo.AllowedMentions{
+					Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+				},
+			}
+
+			_, err = common.BotSession.ChannelMessageSendComplex(channelID, send)
 			if err != nil {
 				return "Something went wrong while sending your report!", err
 			}
