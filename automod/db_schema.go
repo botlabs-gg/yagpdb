@@ -109,4 +109,11 @@ CREATE INDEX IF NOT EXISTS automod_triggered_rules_guild_idx ON automod_triggere
 CREATE INDEX IF NOT EXISTS automod_triggered_rules_rule_id_idx on automod_triggered_rules(rule_id);
 `, `
 CREATE INDEX IF NOT EXISTS automod_triggered_rules_trigger_idx ON automod_triggered_rules(trigger_id);
+`, `
+ALTER TABLE automod_triggered_rules ALTER COLUMN trigger_typeid DROP NOT NULL;
+-- can be null if more than 1 trigger matched for a rule, this can happen if the match type is AND instead of OR
+`, `
+ALTER TABLE automod_rules ADD COLUMN IF NOT EXISTS trigger_mode_or BOOLEAN NOT NULL DEFAULT true;
+`, `
+ALTER TABLE automod_rules ADD COLUMN IF NOT EXISTS condition_mode_or BOOLEAN NOT NULL DEFAULT false;
 `}
