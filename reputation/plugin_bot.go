@@ -1,6 +1,7 @@
 package reputation
 
 import (
+	"database/sql"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -335,45 +336,84 @@ var cmds = []*commands.YAGCommand{
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: dcmd.Int, Default: 0},
 		},
+		ArgSwitches: []*dcmd.ArgDef{
+			{Name: "user", Help: "User to search for in the leaderboard", Type: dcmd.UserID},
+		},
 		SlashCommandEnabled: true,
-		DefaultEnabled:      false,
-		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-			offset := (page - 1) * 15
-			entries, err := TopUsers(parsed.GuildData.GS.ID, offset, 15)
-			if err != nil {
-				return nil, err
-			}
+		DefaultEnabled:      true,
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			page := parsed.Args[0].Int()
+			if id := parsed.Switch("user").Int64(); id != 0 {
+				const query = `
+					SELECT RANK() OVER (ORDER BY points DESC)
+					FROM reputation_users
+					WHERE guild_id = $1 AND user_id = $2
+				`
 
-			detailed, err := DetailedLeaderboardEntries(parsed.GuildData.GS.ID, entries)
-			if err != nil {
-				return nil, err
-			}
-
-			if len(entries) < 1 && p != nil && p.LastResponse != nil { //Dont send No Results error on first execution
-				return nil, paginatedmessages.ErrNoResults
-			}
-
-			embed := &discordgo.MessageEmbed{
-				Title: "Reputation leaderboard",
-			}
-
-			leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(parsed.GuildData.GS.ID) + "/reputation/leaderboard"
-			out := "```\n# -- Points -- User\n"
-			for _, v := range detailed {
-				user := v.Username
-				if user == "" {
-					user = "unknown ID:" + strconv.FormatInt(v.UserID, 10)
+				var pos int
+				err := common.PQ.QueryRow(query, parsed.GuildData.GS.ID, id).Scan(&pos)
+				if err != nil {
+					if err == sql.ErrNoRows {
+						return "Could not find that user on the leaderboard", nil
+					}
+					return "Failed finding that user on the leaderboard, try again", err
 				}
-				out += fmt.Sprintf("#%02d: %6d - %s\n", v.Rank, v.Points, user)
+
+				page = pos/15 + 1
 			}
-			out += "```\n" + "Full leaderboard: <" + leaderboardURL + ">"
 
-			embed.Description = out
+			if page < 1 {
+				page = 1
+			}
 
-			return embed, nil
+			if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
+				return topRepPager(parsed.GuildData.GS.ID, nil, page)
+			}
 
-		}),
+			_, err := paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, page, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+				return topRepPager(parsed.GuildData.GS.ID, p, page)
+			})
+
+			return nil, err
+		},
 	},
+}
+
+func topRepPager(guildID int64, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+	offset := (page - 1) * 15
+	entries, err := TopUsers(guildID, offset, 15)
+	if err != nil {
+		return nil, err
+	}
+
+	detailed, err := DetailedLeaderboardEntries(guildID, entries)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(entries) < 1 && p != nil && p.LastResponse != nil { //Dont send No Results error on first execution
+		return nil, paginatedmessages.ErrNoResults
+	}
+
+	embed := &discordgo.MessageEmbed{
+		Title: "Reputation leaderboard",
+	}
+
+	leaderboardURL := web.BaseURL() + "/public/" + discordgo.StrID(guildID) + "/reputation/leaderboard"
+	out := "```\n# -- Points -- User\n"
+	for _, v := range detailed {
+		user := v.Username
+		if user == "" {
+			user = "unknown ID:" + strconv.FormatInt(v.UserID, 10)
+		}
+		out += fmt.Sprintf("#%02d: %6d - %s\n", v.Rank, v.Points, user)
+	}
+	out += "```\n" + "Full leaderboard: <" + leaderboardURL + ">"
+
+	embed.Description = out
+
+	return embed, nil
+
 }
 
 func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
