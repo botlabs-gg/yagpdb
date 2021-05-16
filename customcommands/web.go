@@ -7,21 +7,17 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/mediocregopher/radix/v3"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/templates"
 	yagtemplate "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
@@ -394,28 +390,7 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		return templateData, nil
 	}
 
-	gs := bot.State.Guild(true, activeGuild.ID)
-	if gs == nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed fetching active guild from state, try again"))
-		return templateData, nil
-	}
-
-	cs := gs.Channel(true, cmd.ContextChannel)
-	if cs == nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed finding channel to run CC in, try again"))
-		return templateData, nil
-	}
-
-	metricsExecutedCommands.With(prometheus.Labels{"trigger": "timed"}).Inc()
-
-	tmplCtx := templates.NewContext(gs, cs, nil)
-	ExecuteCustomCommand(cmd, tmplCtx)
-
-	cmd.LastRun = null.TimeFrom(time.Now())
-	err = UpdateCommandNextRunTime(cmd, true, false)
-	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("failed updating custom command next run time")
-	}
+	go pubsub.Publish("custom_commands_run_now", activeGuild.ID, cmd)
 
 	return templateData, nil
 }

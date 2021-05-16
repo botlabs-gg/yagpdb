@@ -37,6 +37,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -75,9 +76,41 @@ func (p *Plugin) BotInit() {
 
 		gs.UserCacheDel(CacheKeyCommands)
 	}, nil)
+	pubsub.AddHandler("custom_commands_run_now", handleCustomCommandsRunNow, models.CustomCommand{})
 
 	scheduledevents2.RegisterHandler("cc_next_run", NextRunScheduledEvent{}, handleNextRunScheduledEVent)
 	scheduledevents2.RegisterHandler("cc_delayed_run", DelayedRunCCData{}, handleDelayedRunCC)
+}
+
+func handleCustomCommandsRunNow(event *pubsub.Event) {
+	dataCast := event.Data.(*models.CustomCommand)
+	f := logger.WithFields(logrus.Fields{
+		"guild_id": dataCast.GuildID,
+		"cmd_id":   dataCast.LocalID,
+	})
+
+	gs := bot.State.Guild(true, dataCast.GuildID)
+	if gs == nil {
+		f.Error("failed fetching active guild from state")
+		return
+	}
+
+	cs := gs.Channel(true, dataCast.ContextChannel)
+	if cs == nil {
+		f.Error("failed finding channel to run cc in")
+		return
+	}
+
+	metricsExecutedCommands.With(prometheus.Labels{"trigger": "timed"}).Inc()
+
+	tmplCtx := templates.NewContext(gs, cs, nil)
+	ExecuteCustomCommand(dataCast, tmplCtx)
+
+	dataCast.LastRun = null.TimeFrom(time.Now())
+	err := UpdateCommandNextRunTime(dataCast, true, true)
+	if err != nil {
+		f.WithError(err).Error("failed updating custom command next run time")
+	}
 }
 
 type DelayedRunCCData struct {
