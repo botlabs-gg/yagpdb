@@ -10,7 +10,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -174,6 +174,20 @@ func BotProbablyHasPermissionGS(gs *dstate.GuildState, channelID int64, permissi
 	}
 
 	return false
+}
+
+func BotPermissions(gs *dstate.GuildState, channelID int64) (int64, error) {
+	ms, err := GetMember(gs.ID, common.BotUser.ID)
+	if err != nil {
+		return 0, err
+	}
+
+	perms, err := gs.MemberPermissionsMS(true, channelID, ms)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(perms), nil
 }
 
 func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {

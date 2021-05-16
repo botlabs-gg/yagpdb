@@ -16,9 +16,10 @@ import (
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/rolecommands/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	v3_qm "github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -465,7 +466,7 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 	sendEvictMenuCachePubSub(g.ID)
 
 	if group.TemporaryRoleDuration < 1 {
-		_, err = schEvtsModels.ScheduledEvents(qm.Where("event_name='remove_member_role' AND guild_id = ? AND (data->>'group_id')::bigint = ?", g.ID, group.ID)).DeleteAll(r.Context(), common.PQ)
+		_, err = schEvtsModels.ScheduledEvents(v3_qm.Where("event_name='remove_member_role' AND guild_id = ? AND (data->>'group_id')::bigint = ?", g.ID, group.ID)).DeleteAll(r.Context(), common.PQ)
 	}
 
 	return

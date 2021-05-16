@@ -3,6 +3,7 @@ package bot
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
@@ -10,9 +11,10 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator/v2/node"
-	"github.com/jonas747/dstate"
+	"github.com/jonas747/dstate/v2"
 	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/bot/shardmemberfetcher"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -79,7 +81,6 @@ func Run(nodeID string) {
 		setupStandalone()
 	}
 
-	go MemberFetcher.Run()
 	go mergedMessageSender()
 
 	Running = true
@@ -169,6 +170,23 @@ func botReady() {
 
 	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
 
+	memberFetcher = shardmemberfetcher.NewManager(int64(totalShardCount), State, func(guildID int64, userIDs []int64, nonce string) error {
+		shardID := guildShardID(guildID)
+		session := ShardManager.Session(shardID)
+		if session != nil {
+			session.GatewayManager.RequestGuildMembersComplex(&discordgo.RequestGuildMembersData{
+				GuildID:   guildID,
+				Presences: false,
+				UserIDs:   userIDs,
+				Nonce:     nonce,
+			})
+		} else {
+			return errors.New("session not found")
+		}
+
+		return nil
+	})
+
 	serviceDetails := "Not using orchestrator"
 	if UsingOrchestrator {
 		serviceDetails = "Using orchestrator, NodeID: " + common.NodeID
@@ -256,7 +274,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 		// closes, probably due to small variances in networking and scheduling latencies
 		// Adding a extra 100ms fixes this completely, but to be on the safe side we add a extra 50ms
 		var resp string
-		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "10000", "NX"))
+		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "5100", "NX"))
 		if err != nil {
 			logger.WithError(err).Error("failed ratelimiting gateway")
 			time.Sleep(time.Second)
@@ -338,7 +356,7 @@ func setupState() {
 	// State.Debug = true
 	State.ThrowAwayDMMessages = true
 	State.TrackPrivateChannels = false
-	State.CacheExpirey = time.Minute * 30
+	State.CacheExpirey = time.Hour * 2
 
 	if confStateRemoveOfflineMembers.GetBool() {
 		State.RemoveOfflineMembers = true

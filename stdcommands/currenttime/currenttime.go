@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/tkuchiki/go-timezone"
 )
@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	Name:           "CurrentTime",
 	Aliases:        []string{"ctime", "gettime"},
 	Description:    "Shows current time in different timezones. [Available timezones](https://pastebin.com/ZqSPUhc7)",
-	ArgumentCombos: [][]int{[]int{1}, []int{0}, []int{}},
+	ArgumentCombos: [][]int{{1}, {0}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Zone", Type: dcmd.String},
 		{Name: "Offset", Type: dcmd.Int},

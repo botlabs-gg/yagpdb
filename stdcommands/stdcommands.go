@@ -20,11 +20,13 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/dogfact"
 	"github.com/jonas747/yagpdb/stdcommands/findserver"
 	"github.com/jonas747/yagpdb/stdcommands/globalrl"
+	"github.com/jonas747/yagpdb/stdcommands/howlongtobeat"
+	"github.com/jonas747/yagpdb/stdcommands/guildunavailable"
 	"github.com/jonas747/yagpdb/stdcommands/info"
 	"github.com/jonas747/yagpdb/stdcommands/invite"
 	"github.com/jonas747/yagpdb/stdcommands/leaveserver"
 	"github.com/jonas747/yagpdb/stdcommands/listroles"
-	"github.com/jonas747/yagpdb/stdcommands/memberfetcher"
+	"github.com/jonas747/yagpdb/stdcommands/memstats"
 	"github.com/jonas747/yagpdb/stdcommands/mentionrole"
 	"github.com/jonas747/yagpdb/stdcommands/ping"
 	"github.com/jonas747/yagpdb/stdcommands/poll"
@@ -86,12 +88,14 @@ func (p *Plugin) AddCommands() {
 		currenttime.Command,
 		mentionrole.Command,
 		listroles.Command,
+		memstats.Command,
 		wouldyourather.Command,
 		poll.Command,
 		undelete.Command,
 		viewperms.Command,
 		topgames.Command,
 		xkcd.Command,
+		howlongtobeat.Command,
 
 		// Maintenance
 		stateinfo.Command,
@@ -103,7 +107,7 @@ func (p *Plugin) AddCommands() {
 		topcommands.Command,
 		topevents.Command,
 		currentshard.Command,
-		memberfetcher.Command,
+		guildunavailable.Command,
 		yagstatus.Command,
 		setstatus.Command,
 		createinvite.Command,

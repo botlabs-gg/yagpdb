@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
 )
@@ -16,7 +16,8 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Target", Type: dcmd.User},
 	},
-
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 
 		target := "a random person nearby"

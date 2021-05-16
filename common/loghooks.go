@@ -97,7 +97,17 @@ func discordLogger(msgL, caller int, format string, a ...interface{}) {
 	}
 }
 
+var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_request_guildmembers_sent_total",
+	Help: "Total number of request guild members commands sent",
+}, []string{"shard"})
+
 func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, args ...interface{}) {
+	if msgf == "Sending request guild members" {
+		metricsHandledEventsHandledShards.With(prometheus.Labels{"shard": strconv.Itoa(shardID)}).Add(1)
+		return
+	}
+
 	pc := make([]uintptr, 3)
 	runtime.Callers(3, pc)
 	fu := runtime.FuncForPC(pc[0] - 1)
@@ -147,6 +157,11 @@ var (
 		Help: "Number of http requests to the discord API",
 	}, []string{"path"})
 
+	metrics429Path = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "yagpdb_discord_http_429_path_total",
+		Help: "Number of http requests to the discord API",
+	}, []string{"path"})
+
 	metricsNumRequestsResponseCode = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "yagpdb_discord_http_requests_response_code_total",
 		Help: "Number of http requests to the discord API",
@@ -191,6 +206,10 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 		path = numberRemover.Replace(path)
 
 		metricsHTTPLatency.Observe(since)
+
+		if code == 429 {
+			metrics429Path.With(prometheus.Labels{"path": path}).Inc()
+		}
 		// metricsNumRequests.With(prometheus.Labels{"path": path})
 		metricsNumRequestsResponseCode.With(prometheus.Labels{"response_code": strconv.Itoa(code)}).Inc()
 
