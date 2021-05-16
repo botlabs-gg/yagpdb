@@ -86,7 +86,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		if p == PunishmentKick {
 			msg = config.KickMessage
 		}
-		sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason)
+		sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason, -1)
 	}
 
 	logLink := ""
@@ -147,7 +147,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	return err
 }
 
-func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildState, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string) {
+func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildState, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int) {
 	if dmMsg == "" {
 		dmMsg = DefaultDMMessage
 	}
@@ -165,6 +165,10 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 	ctx.Data["Author"] = author
 	ctx.Data["ModAction"] = action
 	ctx.Data["Message"] = message
+
+	if warningID != -1 {
+		ctx.Data["WarningID"] = warningID
+	}
 
 	if duration < 1 {
 		ctx.Data["HumanDuration"] = "permanently"
@@ -288,7 +292,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	//Delete all future Unban Events
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
 	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
-	
+
 	//We need details for user only if unban is to be logged in modlog. Thus we can save a potential api call by directly attempting an unban in other cases.
 	if config.LogUnbans && config.IntActionChannel() != 0 {
 		// check if they're already banned
@@ -299,18 +303,18 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 		}
 		user = guildBan.User
 	}
-		
+
 	// Set a key in redis that marks that this user has appeared in the modlog already
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))	
-	
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))
+
 	err = common.BotSession.GuildBanDelete(guildID, user.ID)
 	if err != nil {
 		notbanned, err := isNotFound(err)
 		return notbanned, err
 	}
-	
+
 	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
-	
+
 	//modLog Entry handling
 	if config.LogUnbans {
 		err = CreateModlogEmbed(config, author, action, user, reason, "")
@@ -318,7 +322,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	return false, err
 }
 
-func isNotFound (err error) (bool, error) {
+func isNotFound(err error) (bool, error) {
 	if err != nil {
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
 			if cast.Response.StatusCode == 404 {
@@ -329,6 +333,7 @@ func isNotFound (err error) (bool, error) {
 	}
 	return false, nil
 }
+
 const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
@@ -455,7 +460,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 	gs := bot.State.Guild(true, guildID)
 	if gs != nil {
-		sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason)
+		sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1)
 	}
 
 	// Create the modlog entry
@@ -576,7 +581,7 @@ func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *
 	gs := bot.State.Guild(true, guildID)
 	ms, _ := bot.GetMember(guildID, target.ID)
 	if gs != nil && ms != nil {
-		sendPunishDM(config, config.WarnMessage, MAWarned, gs, channel, msg, author, ms, -1, message)
+		sendPunishDM(config, config.WarnMessage, MAWarned, gs, channel, msg, author, ms, -1, message, int(warning.ID))
 	}
 
 	// go bot.SendDM(target.ID, fmt.Sprintf("**%s**: You have been warned for: %s", bot.GuildName(guildID), message))
