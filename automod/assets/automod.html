@@ -220,6 +220,21 @@ table{
                 <div class="card-body">
                     <div class="automod-rule-part-table" data-automod-part-type=0>
                         <b>Triggers</b>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="TriggerModeOr" value="on"
+                                    {{if .TriggerModeOr}}checked{{end}}>
+                                Trigger if any of the following match (<code>OR</code>)
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="TriggerModeOr" value=""
+                                    {{if not .TriggerModeOr}}checked{{end}}>
+                                Trigger if all of the following match (<code>AND</code>)
+                            </label>
+                        </div>
+                    
                         <table class="table table-sm mb-0">
                             <thead>
                                 <tr>
@@ -240,6 +255,21 @@ table{
                     </div>
                     <div class="automod-rule-part-table" data-automod-part-type=1>
                         <b>Conditions</b>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="ConditionModeOr" value="on"
+                                    {{if .ConditionModeOr}}checked{{end}}>
+                                Trigger if any of the following conditions is true (<code>OR</code>)
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="ConditionModeOr" value=""
+                                    {{if not .ConditionModeOr}}checked{{end}}>
+                                Trigger if all of the following conditions are true (<code>AND</code>)
+                            </label>
+                        </div>
+                    
                         <table class="table table-sm mb-0">
                             <thead>
                                 <tr>

@@ -426,10 +426,12 @@ func (p *Plugin) handlePostAutomodDeleteRuleset(w http.ResponseWriter, r *http.R
 }
 
 type UpdateRuleData struct {
-	Name       string `valid:",1,50"`
-	Triggers   []RuleRowData
-	Conditions []RuleRowData
-	Effects    []RuleRowData
+	Name            string `valid:",1,50"`
+	TriggerModeOr   bool
+	ConditionModeOr bool
+	Triggers        []RuleRowData
+	Conditions      []RuleRowData
+	Effects         []RuleRowData
 }
 
 type RuleRowData struct {
@@ -510,7 +512,9 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	}
 
 	currentRule.Name = data.Name
-	_, err = currentRule.Update(r.Context(), tx, boil.Whitelist("name"))
+	currentRule.TriggerModeOr = data.TriggerModeOr
+	currentRule.ConditionModeOr = data.ConditionModeOr
+	_, err = currentRule.Update(r.Context(), tx, boil.Whitelist("trigger_mode_or", "condition_mode_or", "name"))
 	if err != nil {
 		tx.Rollback()
 		return tmpl, err
