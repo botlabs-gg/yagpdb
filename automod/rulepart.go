@@ -161,8 +161,9 @@ type TriggeredRuleData struct {
 	CurrentRule *ParsedRule
 
 	// not present when checking conditions
-	TriggeredRules    []*ParsedRule
-	ActivatedTriggers []*ParsedPart
+	TriggeredRules       []*ParsedRule
+	MultipleTriggerRules map[int64]struct{} // set of rules that were triggered by multiple triggers
+	ActivatedTriggers    []*ParsedPart
 
 	// Optional data that may not be present
 	CS                     *dstate.ChannelState

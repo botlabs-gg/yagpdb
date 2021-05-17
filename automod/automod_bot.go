@@ -77,6 +77,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 	ctxData.ActivatedTriggers = nil
 	ctxData.CurrentRule = nil
 	ctxData.TriggeredRules = nil
+	ctxData.MultipleTriggerRules = make(map[int64]struct{})
 
 	if ctxData.RecursionCounter > 2 {
 		logger.WithField("guild", ctxData.GS.ID).Warn("automod stopped infinite recursion")
@@ -121,7 +122,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 				continue
 			}
 
-			// check if one of the triggers should be activated
+			matched := false
 			for _, trig := range rule.Triggers {
 				violationTrigger, ok := trig.Part.(ViolationListener)
 				if !ok {
@@ -133,16 +134,25 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 					continue
 				}
 
-				matched, err := violationTrigger.CheckUser(ctxData, userViolations, trig.ParsedSettings, false)
+				matched, err = violationTrigger.CheckUser(ctxData, userViolations, trig.ParsedSettings, false)
 				if err != nil {
 					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking violations trigger")
 					continue
 				}
 
-				if matched {
+				if matched && rule.Model.TriggerModeOr {
+					// one trigger matching is enough for OR mode
 					activatedTriggers = append(activatedTriggers, trig)
 					break
+				} else if !matched && !rule.Model.TriggerModeOr {
+					// one trigger not matching is enough to fail the check in AND mode
+					break
 				}
+			}
+
+			if matched && !rule.Model.TriggerModeOr {
+				// if the rule matched in AND mode, add all its triggers since all must have matched
+				activatedTriggers = append(activatedTriggers, rule.Triggers...)
 			}
 		}
 
@@ -161,7 +171,10 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 		// do a second pass with the triggers sorted, incase only the highest should be triggered
 		finalActivatedTriggers := make([]*ParsedPart, 0, len(activatedTriggers))
-		finalTriggeredRules := make([]*ParsedRule, 0, len(activatedTriggers))
+		finalTriggeredRules := make(map[int64]*ParsedRule) // map to avoid duplicates
+
+		cClone := ctxData.Clone()
+		cClone.Ruleset = rs
 
 		triggeredOne := false
 		for _, t := range activatedTriggers {
@@ -176,14 +189,24 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 			if matched {
 				finalActivatedTriggers = append(finalActivatedTriggers, t)
-				finalTriggeredRules = append(finalTriggeredRules, t.ParentRule)
+				if _, ok := finalTriggeredRules[t.ParentRule.Model.ID]; ok {
+					// this rule has more than 1 trigger that matched
+					cClone.MultipleTriggerRules[t.ParentRule.Model.ID] = struct{}{}
+				} else {
+					finalTriggeredRules[t.ParentRule.Model.ID] = t.ParentRule
+				}
+
 				triggeredOne = true
 			}
 		}
 
-		cClone := ctxData.Clone()
-		cClone.Ruleset = rs
-		cClone.TriggeredRules = finalTriggeredRules
+		// convert map to slice of values
+		rs := make([]*ParsedRule, 0, len(finalTriggeredRules))
+		for _, r := range finalTriggeredRules {
+			rs = append(rs, r)
+		}
+		cClone.TriggeredRules = rs
+
 		cClone.ActivatedTriggers = finalActivatedTriggers
 		cClone.CurrentRule = nil
 
@@ -289,10 +312,11 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 			Plugin:  p,
 			Ruleset: rs,
 
-			Message: msg,
+			Message:              msg,
+			MultipleTriggerRules: make(map[int64]struct{}),
 		}
 
-		// check if we match all conditions, starting with the ruleset conditions
+		// Check conditions
 		if !p.CheckConditions(ctxData, rs.ParsedConditions) {
 			continue
 		}
@@ -311,20 +335,38 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 			}
 			ctxData.CurrentRule = nil
 
+			var err error
+			activated := false
 			for _, trig := range rule.Triggers {
 
-				activated, err := checkF(trig)
+				activated, err = checkF(trig)
 				if err != nil {
 					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking trigger")
 					continue
 				}
 
-				if activated {
+				if activated && rule.Model.TriggerModeOr {
+					// just 1 trigger matching is enough for OR mode
 					triggeredRules = append(triggeredRules, rule)
 					activatedTriggers = append(activatedTriggers, trig)
 					break
+				} else if !activated && !rule.Model.TriggerModeOr {
+					// just 1 trigger not matching is enough to fail the whole match for AND mode
+					break
 				}
 
+			}
+
+			if activated && !rule.Model.TriggerModeOr {
+				triggeredRules = append(triggeredRules, rule)
+				// if the rule's triggers matched in AND mode, add all of its
+				// triggers since all must have matched
+				activatedTriggers = append(activatedTriggers, rule.Triggers...)
+
+				if len(activatedTriggers) > 1 {
+					// More than 1 trigger matched for this rule
+					ctxData.MultipleTriggerRules[rule.Model.ID] = struct{}{}
+				}
 			}
 
 		}
@@ -385,20 +427,29 @@ func (p *Plugin) RulesetRulesTriggered(ctxData *TriggeredRuleData, checkedCondit
 }
 
 func (p *Plugin) CheckConditions(ctxData *TriggeredRuleData, conditions []*ParsedPart) bool {
-	// check if we match all conditions, starting with the ruleset conditions
+	// whether the match mode is OR rather than AND (only 1 match is needed instead of all)
+	// if we're checking rulesets, it's always AND
+	isOr := ctxData.CurrentRule != nil && ctxData.CurrentRule.Model.ConditionModeOr
+
+	met := true
+	var err error
 	for _, cond := range conditions {
-		met, err := cond.Part.(Condition).IsMet(ctxData, cond.ParsedSettings)
+		met, err = cond.Part.(Condition).IsMet(ctxData, cond.ParsedSettings)
 		if err != nil {
 			logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed checking if automod condition was met")
-			return false // assume the condition failed
+			met = false // assume the condition failed
 		}
 
-		if !met {
-			return false // condition was not met
+		if met && isOr {
+			// one condition met is enough for OR mode
+			return true
+		} else if !met && !isOr {
+			// one condition not met on AND mode is enough to fail the check
+			return false
 		}
 	}
 
-	return true
+	return met
 }
 
 func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, triggeredRules []*ParsedRule, ctxData *TriggeredRuleData) {
@@ -429,13 +480,18 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			cid = ctxData.CS.ID
 		}
 
-		tID := int64(0)
-		tTypeID := 0
-		for _, v := range ctxData.ActivatedTriggers {
-			if v.RuleModel.RuleID == rule.Model.ID {
-				tID = v.RuleModel.ID
-				tTypeID = v.RuleModel.TypeID
-				break
+		tID := null.NewInt64(0, false)
+		tTypeID := null.NewInt(0, false)
+
+		// only attempt to find the trigger if one and only one trigger matched
+		// for this rule
+		if _, ok := ctxData.MultipleTriggerRules[rule.Model.ID]; !ok {
+			for _, v := range ctxData.ActivatedTriggers {
+				if v.RuleModel.RuleID == rule.Model.ID {
+					tID.SetValid(v.RuleModel.ID)
+					tTypeID.SetValid(v.RuleModel.TypeID)
+					break
+				}
 			}
 		}
 
@@ -453,7 +509,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			ChannelID:     cid,
 			ChannelName:   cname,
 			GuildID:       ctxData.GS.ID,
-			TriggerID:     null.Int64{Int64: tID, Valid: tID != 0},
+			TriggerID:     tID,
 			TriggerTypeid: tTypeID,
 			RuleID:        null.Int64{Int64: rule.Model.ID, Valid: true},
 			RuleName:      rule.Model.Name,
