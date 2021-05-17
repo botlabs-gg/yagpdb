@@ -128,7 +128,13 @@ func (p *Plugin) AddCommands() {
 			if len(entries) > 0 {
 				for _, v := range entries {
 					t := v.CreatedAt.UTC().Format("02 Jan 2006 15:04")
-					out.WriteString(fmt.Sprintf("[%-17s] - %s\nRS:%s - R:%s - TR:%s\n\n", t, v.UserName, v.RulesetName, v.RuleName, RulePartMap[v.TriggerTypeid].Name()))
+
+					trigger := "more than 1 trigger matched"
+					if v.TriggerTypeid.Valid {
+						trigger = RulePartMap[v.TriggerTypeid.Int].Name()
+					}
+
+					out.WriteString(fmt.Sprintf("[%-17s] - %s\nRS:%s - R:%s - TR:%s\n\n", t, v.UserName, v.RulesetName, v.RuleName, trigger))
 				}
 			} else {
 				out.WriteString("No Entries")
