@@ -198,11 +198,24 @@ func (t *TriggeredRuleData) ConstructReason(includePrevious bool) string {
 	} else {
 		builder.WriteString(t.CurrentRule.Model.Name)
 
+		triggerName := ""
 		for _, p := range t.ActivatedTriggers {
 			if p.RuleModel.RuleID == t.CurrentRule.Model.ID {
-				builder.WriteString(" (`" + p.Part.Name() + "`)")
-				break
+				if triggerName != "" {
+					// already have a trigger name, this means that more than
+					// one trigger matched
+					triggerName = "" // reset
+					break
+				}
+
+				triggerName = p.Part.Name()
 			}
+		}
+
+		if triggerName != "" {
+			builder.WriteString(" (`" + triggerName + "`)")
+		} else {
+			builder.WriteString(" (more than 1 trigger matched)")
 		}
 	}
 
