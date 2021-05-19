@@ -1344,6 +1344,27 @@ func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interf
 
 	var dict SDict
 	var err error
+
+	// We have optional args to set the output of the func
+	//
+	// Reverse
+	// Reverses the order
+	// From [0 1 2] to [2 1 0]
+	//
+	// Subslices
+	// By default the function returns a single slice with all the values sorted
+	// setting subslices to true will make the function return a set of sublices
+	// based on the input type/kind
+	// From [1 2 3 a b c] to [[1 2 3] [a b c]]
+	//
+	// Emptyslices
+	// By default the function only returns the slices that had an input to them
+	// if you sort only strings, the output would be slice of strings.
+	// But with this flag the function returns all possible slices, this is helpful for indexing
+	// From [[1 2 3] [] [a b c] [map[a:1 b:2]]] to [[1 2 3] [] [a b c] [] [] [map[a:1 b:2]] []]
+	//
+	// We can have up to 7 subslices total:
+	// intSlice, floatSlice, stringSlice, timeSlice, sliceSlice, mapSlice and defaultSlice
 	switch len(sortargs) {
 	case 0:
 		input := make(map[string]interface{}, 3)
@@ -1367,18 +1388,22 @@ func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interf
 		}
 	}
 
-	var numberSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice []interface{}
+	var intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice []interface{}
 
 	for _, v := range slice {
 		switch t := v.(type) {
-		case int, int64, float64:
-			numberSlice = append(numberSlice, t)
+		case int, int64:
+			intSlice = append(intSlice, t)
+		case float64:
+			floatSlice = append(floatSlice, t)
 		case string:
 			stringSlice = append(stringSlice, t)
 		case time.Time:
 			timeSlice = append(timeSlice, t)
 		case *time.Time:
-			timeSlice = append(timeSlice, *t)
+			if t != nil {
+				timeSlice = append(timeSlice, *t)
+			}
 		default:
 			v := reflect.ValueOf(t)
 			switch v.Kind() {
@@ -1392,26 +1417,32 @@ func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interf
 		}
 	}
 
-	if dict.Get("reverse") == true {
-		sort.Slice(numberSlice, func(i, j int) bool { return ToFloat64(numberSlice[i]) > ToFloat64(numberSlice[j]) })
+	if dict.Get(strings.ToLower("reverse")) == true { // User wants the output in reversed order
+		sort.Slice(intSlice, func(i, j int) bool { return ToInt64(intSlice[i]) > ToInt64(intSlice[j]) })
+		sort.Slice(floatSlice, func(i, j int) bool { return ToFloat64(floatSlice[i]) > ToFloat64(floatSlice[j]) })
 		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) > ToString(stringSlice[j]) })
 		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[i].(time.Time).Before(timeSlice[j].(time.Time)) })
 		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) > getLen(csliceSlice[j]) })
 		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) > getLen(mapSlice[j]) })
-	} else {
-		sort.Slice(numberSlice, func(i, j int) bool { return ToFloat64(numberSlice[i]) < ToFloat64(numberSlice[j]) })
+	} else { // User wants the output in standard order
+		sort.Slice(intSlice, func(i, j int) bool { return ToInt64(intSlice[i]) < ToInt64(intSlice[j]) })
+		sort.Slice(floatSlice, func(i, j int) bool { return ToFloat64(floatSlice[i]) < ToFloat64(floatSlice[j]) })
 		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) < ToString(stringSlice[j]) })
 		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[j].(time.Time).Before(timeSlice[i].(time.Time)) })
 		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) < getLen(csliceSlice[j]) })
 		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) < getLen(mapSlice[j]) })
 	}
 
-	if dict.Get("subslices") == true {
-		if dict.Get("emptyslices") == true {
-			outputSlice = append(outputSlice, numberSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice)
-		} else {
-			if len(numberSlice) > 0 {
-				outputSlice = append(outputSlice, numberSlice)
+	if dict.Get(strings.ToLower("subslices")) == true { // User wants the output to be separated by type/kind
+		if dict.Get(strings.ToLower("emptyslices")) == true { // User wants the output to be filled with empty slices
+			outputSlice = append(outputSlice, intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice)
+		} else { // User only wants the subset of slices that contain data
+			if len(intSlice) > 0 {
+				outputSlice = append(outputSlice, intSlice)
+			}
+
+			if len(floatSlice) > 0 {
+				outputSlice = append(outputSlice, floatSlice)
 			}
 
 			if len(stringSlice) > 0 {
@@ -1434,8 +1465,9 @@ func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interf
 				outputSlice = append(outputSlice, defaultSlice)
 			}
 		}
-	} else {
-		outputSlice = append(outputSlice, numberSlice...)
+	} else { // User wants a single slice output, without any subset
+		outputSlice = append(outputSlice, intSlice...)
+		outputSlice = append(outputSlice, floatSlice...)
 		outputSlice = append(outputSlice, stringSlice...)
 		outputSlice = append(outputSlice, timeSlice...)
 		outputSlice = append(outputSlice, csliceSlice...)
