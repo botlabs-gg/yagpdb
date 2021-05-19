@@ -1368,8 +1368,8 @@ func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interf
 	switch len(sortargs) {
 	case 0:
 		dict = SDict{
-			"reverse": false,
-			"subslices": false,
+			"reverse":     false,
+			"subslices":   false,
 			"emptyslices": false,
 		}
 	case 1:
