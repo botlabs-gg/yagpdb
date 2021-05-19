@@ -172,6 +172,11 @@ var (
 		Help:       "Latency do the discord API",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 	})
+
+	metricsConcurrentRequests = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "yagpdb_http_concurrent_requests",
+		Help: "Number of concurrent requests returned from the ratelimiter",
+	})
 )
 
 func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, error) {
@@ -251,4 +256,12 @@ func GetPluginLogger(plugin Plugin) *logrus.Entry {
 
 func GetFixedPrefixLogger(prefix string) *logrus.Entry {
 	return logrus.WithField("p", prefix)
+}
+
+func updateConcurrentRequests() {
+	for {
+		time.Sleep(time.Second)
+		num := BotSession.Ratelimiter.CurrentConcurrentLocks()
+		metricsConcurrentRequests.Set(float64(num))
+	}
 }
