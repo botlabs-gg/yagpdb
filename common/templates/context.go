@@ -546,7 +546,6 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("onlineCount", c.tmplOnlineCount)
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
 	c.addContextFunc("editNickname", c.tmplEditNickname)
-	c.addContextFunc("standardize", c.tmplStandardize)
 }
 
 type limitedWriter struct {
