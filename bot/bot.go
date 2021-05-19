@@ -15,6 +15,8 @@ import (
 	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/bot/shardmemberfetcher"
+	"github.com/jonas747/yagpdb/bot/state"
+	"github.com/jonas747/yagpdb/bot/state/embeddedtracker"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -25,10 +27,12 @@ import (
 
 var (
 	// When the bot was started
-	Started      = time.Now()
-	Enabled      bool // wether the bot is set to run at some point in this process
-	Running      bool // wether the bot is currently running
-	State        *dstate.State
+	Started              = time.Now()
+	Enabled              bool // wether the bot is set to run at some point in this process
+	Running              bool // wether the bot is currently running
+	State                state.StateTracker
+	embeddedStateTracker *embeddedtracker.SimpleStateTracker
+
 	ShardManager *dshardmanager.Manager
 
 	NodeConn          *node.Conn
@@ -104,7 +108,6 @@ func setup() {
 
 	discordgo.IdentifyRatelimiter = &identifyRatelimiter{}
 
-	setupState()
 	addBotHandlers()
 	setupShardManager()
 }
@@ -121,6 +124,7 @@ func setupStandalone() {
 		usingFixedSharding = true
 		ShardManager.SetNumShards(totalShardCount)
 	}
+	setupState()
 
 	EventLogger.init(totalShardCount)
 	eventsystem.InitWorkers(totalShardCount)
@@ -348,7 +352,58 @@ var (
 
 var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Gateway connection logging channel", true)
 
+// func setupState() {
+// 	// Things may rely on state being available at this point for initialization
+// 	State = dstate.NewState()
+// 	State.MaxChannelMessages = 1000
+// 	State.MaxMessageAge = time.Hour
+// 	// State.Debug = true
+// 	State.ThrowAwayDMMessages = true
+// 	State.TrackPrivateChannels = false
+// 	State.CacheExpirey = time.Hour * 2
+
+// 	if confStateRemoveOfflineMembers.GetBool() {
+// 		State.RemoveOfflineMembers = true
+// 	}
+
+// 	go State.RunGCWorker()
+
+// 	eventsystem.DiscordState = State
+
+// 	// track cache hits/misses
+// 	go func() {
+// 		lastHits := int64(0)
+// 		lastMisses := int64(0)
+// 		lastEvictionsCache := int64(0)
+// 		lastEvictionsMembers := int64(0)
+
+// 		ticker := time.NewTicker(time.Minute)
+// 		for {
+// 			<-ticker.C
+
+// 			stats := State.StateStats()
+// 			deltaHits := stats.CacheHits - lastHits
+// 			deltaMisses := stats.CacheMisses - lastMisses
+// 			lastHits = stats.CacheHits
+// 			lastMisses = stats.CacheMisses
+
+// 			metricsCacheHits.Add(float64(deltaHits))
+// 			metricsCacheMisses.Add(float64(deltaMisses))
+
+// 			metricsCacheEvictions.Add(float64(stats.UserCachceEvictedTotal - lastEvictionsCache))
+// 			metricsCacheMemberEvictions.Add(float64(stats.MembersRemovedTotal - lastEvictionsMembers))
+
+// 			lastEvictionsCache = stats.UserCachceEvictedTotal
+// 			lastEvictionsMembers = stats.MembersRemovedTotal
+
+// 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
+// 		}
+// 	}()
+// }
+
 func setupState() {
+	tracker := embeddedtracker.NewSimpleStateTracker(embeddedtracker.TrackerConfig{}, int64(totalShardCount))
+
 	// Things may rely on state being available at this point for initialization
 	State = dstate.NewState()
 	State.MaxChannelMessages = 1000

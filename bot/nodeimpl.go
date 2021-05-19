@@ -35,6 +35,8 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 
 	if totalShardCount == 0 {
 		totalShardCount = info.TotalShards
+		setupState()
+
 		ShardManager.SetNumShards(totalShardCount)
 		eventsystem.InitWorkers(totalShardCount)
 		ReadyTracker.initTotalShardCount(totalShardCount)

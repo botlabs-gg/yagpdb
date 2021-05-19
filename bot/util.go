@@ -99,16 +99,6 @@ func AdminOrPermMS(channelID int64, ms *dstate.MemberState, needed int) (bool, e
 	return false, nil
 }
 
-// GuildName is a convenience function for getting the name of a guild
-func GuildName(gID int64) (name string) {
-	g := State.Guild(true, gID)
-	g.RLock()
-	name = g.Guild.Name
-	g.RUnlock()
-
-	return
-}
-
 func SnowflakeToTime(i int64) time.Time {
 	flake := snowflake.ID(i)
 	t := time.Unix(flake.Time()/1000, 0)
