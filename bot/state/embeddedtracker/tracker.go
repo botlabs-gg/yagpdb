@@ -90,6 +90,16 @@ func (s *SparseGuildState) copyVoiceStates() *SparseGuildState {
 	return &guildSetCopy
 }
 
+func (s *SparseGuildState) channel(id int64) *state.CachedChannel {
+	for _, v := range s.Channels {
+		if v.ID == id {
+			return v
+		}
+	}
+
+	return nil
+}
+
 type SimpleStateTrackerShard struct {
 	mu sync.RWMutex
 
@@ -390,20 +400,23 @@ func (shard *SimpleStateTrackerShard) innerHandleMemberUpdate(m *discordgo.Membe
 	members, ok := shard.members[m.GuildID]
 	if !ok {
 		// intialize slice
-		shard.members[m.GuildID] = []*state.CachedMember{state.NewCachedMember(m)}
+		shard.members[m.GuildID] = []*state.CachedMember{CachedMemberFromDgoMember(m)}
 		return
 	}
 
 	for i, v := range members {
-		if v.ID == m.User.ID {
+		if v.User.ID == m.User.ID {
 			// replace in slice
-			members[i] = state.NewCachedMember(m)
+			new := CachedMemberFromDgoMember(m)
+			new.Presence = v.Presence
+
+			members[i] = new
 			return
 		}
 	}
 
 	// member was not already in state, we need to add it to the members slice
-	members = append(members, state.NewCachedMember(m))
+	members = append(members, CachedMemberFromDgoMember(m))
 	shard.members[m.GuildID] = members
 }
 
@@ -424,7 +437,7 @@ func (shard *SimpleStateTrackerShard) handleMemberDelete(mr *discordgo.GuildMemb
 	// remove member from state
 	if members, ok := shard.members[mr.GuildID]; ok {
 		for i, v := range members {
-			if v.ID == mr.User.ID {
+			if v.User.ID == mr.User.ID {
 				shard.members[mr.GuildID] = append(members[:i], members[i+1:]...)
 				return
 			}
@@ -581,6 +594,32 @@ func (shard *SimpleStateTrackerShard) handleMessageDeleteBulk(m *discordgo.Messa
 func (shard *SimpleStateTrackerShard) handlePresenceUpdate(p *discordgo.PresenceUpdate) {
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
+
+	if p.User == nil {
+		return
+	}
+
+	members, ok := shard.members[p.GuildID]
+	if !ok {
+		// intialize slice
+		shard.members[p.GuildID] = []*state.CachedMember{CachedMemberFromDgoPresence(p)}
+		return
+	}
+
+	for i, v := range members {
+		if v.User.ID == p.User.ID {
+			// replace in slice
+			new := CachedMemberFromDgoPresence(p)
+			new.Member = v.Member
+
+			members[i] = new
+			return
+		}
+	}
+
+	// member was not already in state, we need to add it to the members slice
+	members = append(members, CachedMemberFromDgoPresence(p))
+	shard.members[p.GuildID] = members
 }
 
 func (shard *SimpleStateTrackerShard) handleVoiceStateUpdate(p *discordgo.VoiceStateUpdate) {
@@ -642,4 +681,40 @@ func (shard *SimpleStateTrackerShard) reset() {
 	shard.guilds = make(map[int64]*SparseGuildState)
 	shard.members = make(map[int64][]*state.CachedMember)
 	shard.messages = make(map[int64]*list.List)
+}
+
+func CachedMemberFromDgoMember(member *discordgo.Member) *state.CachedMember {
+	var user discordgo.User
+	if member.User != nil {
+		user = *member.User
+	}
+
+	return &state.CachedMember{
+		User:    user,
+		GuildID: member.GuildID,
+		Roles:   member.Roles,
+		Nick:    member.Nick,
+
+		Member: &state.MemberFields{
+			JoinedAt: member.JoinedAt,
+		},
+		Presence: nil,
+	}
+}
+
+func CachedMemberFromDgoPresence(p *discordgo.PresenceUpdate) *state.CachedMember {
+	var user discordgo.User
+	if p.User != nil {
+		user = *p.User
+	}
+
+	return &state.CachedMember{
+		User:    user,
+		GuildID: p.GuildID,
+		Roles:   p.Roles,
+		Nick:    p.Nick,
+
+		Member:   nil,
+		Presence: &state.PresenceFields{},
+	}
 }
