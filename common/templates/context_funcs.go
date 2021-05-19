@@ -1367,14 +1367,10 @@ func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interf
 	// intSlice, floatSlice, stringSlice, timeSlice, sliceSlice, mapSlice and defaultSlice
 	switch len(sortargs) {
 	case 0:
-		input := make(map[string]interface{}, 3)
-		input["reverse"] = false
-		input["subslices"] = false
-		input["emptyslices"] = false
-
-		dict, err = StringKeyDictionary(input)
-		if err != nil {
-			return "", err
+		dict = SDict{
+			"reverse": false,
+			"subslices": false,
+			"emptyslices": false,
 		}
 	case 1:
 		dict, err = StringKeyDictionary(sortargs[0])
