@@ -319,7 +319,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
-				return "An unknown error occured, please retry adding that emoji", nil
+				return "An unknown error occurred, please retry adding that emoji", nil
 			}
 		}
 
@@ -359,7 +359,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 					return "I do not have permissions to update the menu message, please give me the proper permissions for me to update the menu message.", nil
 				default:
-					return "An error occured updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
+					return "An error occurred updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
 				}
 			}
 		}
@@ -490,7 +490,7 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 			return "", nil
 		}
 
-		return "An error occured giving you the role", err
+		return "An error occurred giving you the role", err
 	}
 
 	if member.Bot {

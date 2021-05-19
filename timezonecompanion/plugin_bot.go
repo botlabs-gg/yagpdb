@@ -118,7 +118,7 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 				if !found {
-					out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
+					out := "More than 1 result, reuse the command with one of the following:\n" + matches + "\n" + userTZ
 					return out, nil
 				}
 			} else {
@@ -151,7 +151,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         commands.CategoryTool,
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv", "ttc"},
-		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
+		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, toggle all channels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
