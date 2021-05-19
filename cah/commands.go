@@ -19,7 +19,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"c"},
 		Description: "Creates a Cards Against Humanity game in this channel, add packs after commands, or * for all packs. (-v for vote mode without a card czar).",
 		Arguments: []*dcmd.ArgDef{
-			{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them."},
+			{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs separated by space, or * for all of them."},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "v", Help: "Vote mode - players vote instead of having a card czar."},

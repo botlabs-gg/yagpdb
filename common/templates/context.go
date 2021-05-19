@@ -283,13 +283,7 @@ func (c *Context) Execute(source string) (string, error) {
 	return c.executeParsed()
 }
 
-func (c *Context) executeParsed() (r string, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = errors.New("paniced!")
-		}
-	}()
-
+func (c *Context) executeParsed() (string, error) {
 	parsed := c.CurrentFrame.parsedTemplate
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
@@ -301,7 +295,7 @@ func (c *Context) executeParsed() (r string, err error) {
 	w := LimitWriter(&buf, 25000)
 
 	// started := time.Now()
-	err = parsed.Execute(w, c.Data)
+	err := parsed.Execute(w, c.Data)
 
 	// dur := time.Since(started)
 	if c.FixedOutput != "" {

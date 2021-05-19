@@ -173,7 +173,7 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 		errMsg = err.Error()
 	}
 
-	t.AddAlerts(ErrorAlert("An Error occured: ", errMsg))
+	t.AddAlerts(ErrorAlert("An error occurred: ", errMsg))
 
 	if logger != nil {
 		logger("An error occured:", err)
