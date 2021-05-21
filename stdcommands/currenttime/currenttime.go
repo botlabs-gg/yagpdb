@@ -6,6 +6,7 @@ import (
 
 	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/timezonecompanion"
 	"github.com/tkuchiki/go-timezone"
 )
 
@@ -47,6 +48,10 @@ func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
 		return now.In(location).Format(format), nil
 	}
 
-	// No offset of zone specified, just return the bots location
+	loc := timezonecompanion.GetUserTimezone(data.Author.ID)
+	if loc != nil {
+		return now.In(loc).Format(format), nil
+	}
+
 	return now.Format(format), nil
 }
