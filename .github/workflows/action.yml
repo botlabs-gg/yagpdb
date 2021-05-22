@@ -1,0 +1,28 @@
+name: Comment PR
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    name: Comment on Pull Request
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - if: ${{ !hashFiles('**/swearwords.go') }}
+        name: Comment
+        uses: thollander/actions-comment-pull-request@master
+        with:
+          message: "Hey @${{ github.actor }}! Thank you for your pull request.\nHowever, please do not open pull requests against the `master` branch, as stated in [CONTRIBUTING.md](../../CONTRIBUTING.md):\n> push the changes you make to the dev branch (Jonas747/yagpdb/dev).\n\nIf you still wish to keep this pull request open, please change the base branch.\nFor that, simply click the edit button next to the title of this pull request and select the new base;\nTo prevent conflicts, I suggest you first `git merge upstream/dev` on your local branch and push these new changes. Alternatively, `git rebase upstream/dev` on your local branch and then force-push."
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - if: ${{ hashFiles('**/swearwords.go') }}
+        name: Comment
+        uses: thollander/actions-comment-pull-request@master
+        with:
+          message: "Hey @${{github.actor }}! Thank you for your interest in contributing to YAGPDB.\nUnfortunately, basic automoderator will not receive **any** updates. To be able to use a custom list of swearwords, please use [automoderator v2](https://docs.yagpdb.xyz/tools-and-utilities/automoderator-v2).\n\nAdditionally, please do not open pull requests against the `master` branch, as stated in [CONTRIBUTING.md](../../CONTRIBUTING.md):\n> push the changes you make to the dev branch (Jonas747/yagpdb/dev).\n\nIf you still wish to keep this pull request open, please change the base branch.\nFor that, simply click the edit button next to the title of this pull request and select the new base;\nTo prevent conflicts, I suggest you first `git merge upstream/dev` on your local branch and push these new changes. Alternatively, `git rebase upstream/dev` on your local branch and then force-push."
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
