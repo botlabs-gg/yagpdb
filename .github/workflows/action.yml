@@ -31,7 +31,7 @@ jobs:
             To prevent conflicts, I suggest you first `git merge upstream/dev` on your local branch and push these new changes. Alternatively, `git rebase upstream/dev` on your local branch and then force-push.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - if: ${{ contains(steps.changed-files.outputs.modified_files, 'noCopy.txt') }}
+      - if: ${{ contains(steps.changed-files.outputs.modified_files, 'swearwords.go') }}
         name: automod comment
         uses: thollander/actions-comment-pull-request@master
         with:
