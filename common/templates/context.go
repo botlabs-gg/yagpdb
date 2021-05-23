@@ -506,6 +506,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("addRoleID", c.tmplAddRoleID)
 	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
 
+	c.addContextFunc("setRoles", c.tmplSetRoles)
 	c.addContextFunc("addRoleName", c.tmplAddRoleName)
 	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
 
