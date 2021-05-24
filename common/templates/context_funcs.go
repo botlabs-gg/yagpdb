@@ -757,6 +757,51 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs
 	return ""
 }
 
+func (c *Context) tmplSetRoles(target interface{}, roleSlice interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return "", nil
+	}
+
+	if c.IncreaseCheckCallCounter("set_roles"+discordgo.StrID(targetID), 1) {
+		return "", errors.New("Too many calls to setRoles for specific user ID (max 1 / user)")
+	}
+
+	rSlice := reflect.ValueOf(roleSlice)
+	switch rSlice.Kind() {
+	case reflect.Slice, reflect.Array:
+		// ok
+	default:
+		return "", errors.New("Value passed was not an array or slice")
+	}
+
+	if rSlice.Len() > 250 {
+		return "", errors.New("Length of slice passed was > 250 (Discord role limit)")
+	}
+
+	roles := make([]string, 0, rSlice.Len())
+	for i := 0; i < rSlice.Len(); i++ {
+		switch v := rSlice.Index(i).Interface().(type) {
+		case string:
+			roles = append(roles, v)
+		case int, int64:
+			roles = append(roles, discordgo.StrID(reflect.ValueOf(v).Int()))
+		default:
+			return "", errors.New("Could not convert slice to string slice")
+		}
+	}
+
+	err := common.BotSession.GuildMemberEdit(c.GS.ID, targetID, roles)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
 func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
