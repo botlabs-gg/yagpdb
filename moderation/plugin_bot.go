@@ -10,7 +10,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -290,7 +290,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		var i int
 		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
 		if i > 0 {
-			// The bot was the one that performed the unban 
+			// The bot was the one that performed the unban
 			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
 			if i == 2 {
 				//Bot performed non-scheduled unban, don't make duplicate entries in the modlog

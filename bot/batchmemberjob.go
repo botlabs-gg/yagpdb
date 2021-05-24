@@ -72,7 +72,7 @@ func (m *batchMemberJobManager) NewBatchMemberJob(guildID int64, f func(guildID 
 		return ErrGuildNotOnProcess
 	}
 
-	gs := State.Guild(true, guildID)
+	gs := State.GetGuild(guildID)
 	if gs == nil {
 		return ErrGuildNotFound
 	}
@@ -109,7 +109,7 @@ func (m *batchMemberJobManager) SearchByUsername(guildID int64, query string) ([
 		return nil, ErrGuildNotOnProcess
 	}
 
-	gs := State.Guild(true, guildID)
+	gs := State.GetGuild(guildID)
 	if gs == nil {
 		return nil, ErrGuildNotFound
 	}

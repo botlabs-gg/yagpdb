@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot/shardmemberfetcher"
 	"github.com/jonas747/yagpdb/common"
 )
@@ -16,15 +16,9 @@ func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 		return memberFetcher.GetMember(guildID, userID)
 	}
 
-	// fallback to this
-	gs := State.Guild(true, guildID)
-	if gs == nil {
-		return nil, ErrGuildNotFound
-	}
-
-	cop := gs.MemberCopy(true, userID)
-	if cop != nil && cop.MemberSet {
-		return cop, nil
+	ms := State.GetMember(guildID, userID)
+	if ms != nil && ms.Member != nil {
+		return ms, nil
 	}
 
 	member, err := common.BotSession.GuildMember(guildID, userID)
@@ -32,8 +26,7 @@ func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 		return nil, err
 	}
 
-	ms := dstate.MSFromDGoMember(gs, member)
-	return ms, nil
+	return dstate.MemberStateFromMember(member), nil
 }
 
 // GetMembers is the same as GetMember but with multiple members
@@ -62,14 +55,9 @@ func GetMemberJoinedAt(guildID, userID int64) (*dstate.MemberState, error) {
 		return memberFetcher.GetMember(guildID, userID)
 	}
 
-	gs := State.Guild(true, guildID)
-	if gs == nil {
-		return nil, ErrGuildNotFound
-	}
-
-	cop := gs.MemberCopy(true, userID)
-	if cop != nil && cop.MemberSet && !cop.JoinedAt.IsZero() {
-		return cop, nil
+	ms := State.GetMember(guildID, userID)
+	if ms != nil && ms.Member != nil {
+		return ms, nil
 	}
 
 	member, err := common.BotSession.GuildMember(guildID, userID)
@@ -77,6 +65,5 @@ func GetMemberJoinedAt(guildID, userID int64) (*dstate.MemberState, error) {
 		return nil, err
 	}
 
-	ms := dstate.MSFromDGoMember(gs, member)
-	return ms, nil
+	return dstate.MemberStateFromMember(member), nil
 }

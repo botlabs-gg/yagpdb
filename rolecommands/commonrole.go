@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"

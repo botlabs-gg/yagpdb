@@ -11,7 +11,7 @@ import (
 	"unicode"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"

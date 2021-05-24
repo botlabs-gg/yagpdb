@@ -408,7 +408,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		}
 	}
 
-	gs := bot.State.Guild(true, elem.Guild)
+	gs := bot.State.GetGuild(elem.Guild)
 	if gs == nil {
 		// another check just in case
 		if onGuild, err := common.BotIsOnGuild(elem.Guild); err == nil && !onGuild {

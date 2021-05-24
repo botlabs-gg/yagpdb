@@ -5,18 +5,17 @@ import (
 	"testing"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 )
 
 func TestMemberHighestRole(t *testing.T) {
-	gs := &dstate.GuildState{
-		Guild: &discordgo.Guild{
-			Roles: []*discordgo.Role{
-				&discordgo.Role{ID: 10, Position: 10},
-				&discordgo.Role{ID: 5, Position: 5},
-				&discordgo.Role{ID: 100, Position: 1},
-				&discordgo.Role{ID: 102, Position: 1},
-			},
+	gs := &dstate.GuildSet{
+		GuildState: dstate.GuildState{},
+		Roles: []*discordgo.Role{
+			{ID: 10, Position: 10},
+			{ID: 5, Position: 5},
+			{ID: 100, Position: 1},
+			{ID: 102, Position: 1},
 		},
 	}
 
@@ -44,15 +43,15 @@ func TestMemberHighestRole(t *testing.T) {
 }
 
 func TestIsMemberAbove(t *testing.T) {
-	gs := &dstate.GuildState{
-		Guild: &discordgo.Guild{
+	gs := &dstate.GuildSet{
+		GuildState: dstate.GuildState{
 			OwnerID: 99,
-			Roles: []*discordgo.Role{
-				&discordgo.Role{ID: 10, Position: 10},
-				&discordgo.Role{ID: 5, Position: 5},
-				&discordgo.Role{ID: 100, Position: 1},
-				&discordgo.Role{ID: 102, Position: 1},
-			},
+		},
+		Roles: []*discordgo.Role{
+			{ID: 10, Position: 10},
+			{ID: 5, Position: 5},
+			{ID: 100, Position: 1},
+			{ID: 102, Position: 1},
 		},
 	}
 

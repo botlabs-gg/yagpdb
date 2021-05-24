@@ -9,7 +9,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -73,33 +73,37 @@ func (p *Plugin) InitInternalAPIRoutes(muxer *goji.Mux) {
 func HandleGuild(w http.ResponseWriter, r *http.Request) {
 	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 
-	guild := bot.State.Guild(true, gId)
+	guild := bot.State.GetGuild(gId)
 	if guild == nil {
 		internalapi.ServerError(w, r, errors.New("Guild not found"))
 		return
 	}
 
-	gCopy := guild.DeepCopy(true, true, false, true)
-
-	internalapi.ServeJson(w, r, gCopy)
+	internalapi.ServeJson(w, r, guild)
 }
 
 func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 
-	guild := bot.State.Guild(true, gId)
-	if guild == nil {
-		internalapi.ServerError(w, r, errors.New("Guild not found"))
-		return
-	}
+	// guild := bot.State.GetGuild(gId)
+	// if guild == nil {
+	// 	internalapi.ServerError(w, r, errors.New("Guild not found"))
+	// 	return
+	// }
 
-	member := guild.MemberDGoCopy(true, common.BotUser.ID)
+	member := bot.State.GetMember(gId, common.BotUser.ID)
 	if member == nil {
 		internalapi.ServerError(w, r, errors.New("Bot Member not found"))
 		return
 	}
 
-	internalapi.ServeJson(w, r, member)
+	// member := guild.MemberDGoCopy(true, common.BotUser.ID)
+	// if member == nil {
+	// 	internalapi.ServerError(w, r, errors.New("Bot Member not found"))
+	// 	return
+	// }
+
+	internalapi.ServeJson(w, r, member.DgoMember())
 }
 
 func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
@@ -116,12 +120,6 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	guild := bot.State.Guild(true, gId)
-	if guild == nil {
-		internalapi.ServerError(w, r, errors.New("Guild not found"))
-		return
-	}
-
 	uIDsParsed := make([]int64, 0, len(uIDs))
 	for _, v := range uIDs {
 		parsed, _ := strconv.ParseInt(v, 10, 64)
@@ -131,7 +129,7 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 	memberStates, _ := bot.GetMembers(gId, uIDsParsed...)
 	members := make([]*discordgo.Member, len(memberStates))
 	for i, v := range memberStates {
-		members[i] = v.DGoCopy()
+		members[i] = v.DgoMember()
 	}
 
 	internalapi.ServeJson(w, r, members)
@@ -151,7 +149,7 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	guild := bot.State.Guild(true, gId)
+	guild := bot.State.GetGuild(gId)
 	if guild == nil {
 		internalapi.ServerError(w, r, errors.New("Guild not found"))
 		return
@@ -165,16 +163,13 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 
 	memberStates, _ := bot.GetMembers(gId, uIDsParsed...)
 
-	guild.Lock()
-	defer guild.Unlock()
-
 	// Make sure the roles are in the proper order
-	sort.Sort(dutil.Roles(guild.Guild.Roles))
+	sort.Sort(dutil.Roles(guild.Roles))
 
 	colors := make(map[string]int)
 	for _, ms := range memberStates {
 		// Find the highest role this user has with a color
-		for _, role := range guild.Guild.Roles {
+		for _, role := range guild.Roles {
 			if role.Color == 0 {
 				continue
 			}
@@ -184,7 +179,7 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Bingo
-			colors[ms.StrID()] = role.Color
+			colors[strconv.FormatInt(ms.User.ID, 10)] = role.Color
 			break
 		}
 	}
@@ -195,20 +190,12 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 func HandleGetOnlineCount(w http.ResponseWriter, r *http.Request) {
 	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 
-	guild := bot.State.Guild(true, gId)
-	if guild == nil {
-		internalapi.ServerError(w, r, errors.New("Guild not found"))
-		return
-	}
-
 	count := 0
-	guild.RLock()
-	for _, ms := range guild.Members {
-		if ms.PresenceSet && ms.PresenceStatus != dstate.StatusNotSet && ms.PresenceStatus != dstate.StatusOffline {
-			count++
-		}
-	}
-	guild.RUnlock()
+
+	bot.State.IterateMembers(gId, func(chunk []*dstate.MemberState) bool {
+		count += len(chunk)
+		return true
+	})
 
 	internalapi.ServeJson(w, r, count)
 }
@@ -217,15 +204,19 @@ func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 	cId, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 
-	guild := bot.State.Guild(true, gId)
+	guild := bot.State.GetGuild(gId)
 	if guild == nil {
 		internalapi.ServerError(w, r, errors.New("Guild not found"))
 		return
 	}
 
-	perms, err := guild.MemberPermissions(true, cId, common.BotUser.ID)
-
+	member, err := bot.GetMember(gId, common.BotUser.ID)
 	if err != nil {
+		internalapi.ServerError(w, r, errors.New("Could not find bot member"))
+	}
+
+	perms, ok := guild.GetMemberPermissions(cId, member.User.ID, member.Roles)
+	if !ok {
 		internalapi.ServerError(w, r, errors.WithMessage(err, "Error calculating perms"))
 		return
 	}
@@ -279,6 +270,14 @@ func HandleNodeStatus(w http.ResponseWriter, r *http.Request) {
 
 		beat, ack := shard.GatewayManager.HeartBeatStats()
 
+		guilds := bot.State.GetShardGuilds(int64(shardID))
+		numUnavailable := 0
+		for _, g := range guilds {
+			if !g.Available {
+				numUnavailable++
+			}
+		}
+
 		result = append(result, &ShardStatus{
 			ShardID:           shardID,
 			ConnStatus:        shard.GatewayManager.Status(),
@@ -286,23 +285,9 @@ func HandleNodeStatus(w http.ResponseWriter, r *http.Request) {
 			EventsPerSecond:   float64(sumPeriodEvents) / bot.EventLoggerPeriodDuration.Seconds(),
 			LastHeartbeatSend: beat,
 			LastHeartbeatAck:  ack,
+			NumGuilds:         len(guilds),
+			UnavailableGuilds: numUnavailable,
 		})
-	}
-
-	// Guild guild stats
-	gSlice := bot.State.GuildsSlice(true)
-	for _, g := range gSlice {
-		shardID := bot.GuildShardID(int64(numShards), g.ID)
-		available := g.IsAvailable(true)
-		for _, v := range result {
-			if v.ShardID == shardID {
-				v.NumGuilds++
-				if !available {
-					v.UnavailableGuilds++
-				}
-				break
-			}
-		}
 	}
 
 	hostname, _ := os.Hostname()

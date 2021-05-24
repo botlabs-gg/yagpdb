@@ -9,7 +9,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -288,7 +288,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	//Delete all future Unban Events
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
 	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
-	
+
 	//We need details for user only if unban is to be logged in modlog. Thus we can save a potential api call by directly attempting an unban in other cases.
 	if config.LogUnbans && config.IntActionChannel() != 0 {
 		// check if they're already banned
@@ -299,18 +299,18 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 		}
 		user = guildBan.User
 	}
-		
+
 	// Set a key in redis that marks that this user has appeared in the modlog already
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))	
-	
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))
+
 	err = common.BotSession.GuildBanDelete(guildID, user.ID)
 	if err != nil {
 		notbanned, err := isNotFound(err)
 		return notbanned, err
 	}
-	
+
 	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
-	
+
 	//modLog Entry handling
 	if config.LogUnbans {
 		err = CreateModlogEmbed(config, author, action, user, reason, "")
@@ -318,7 +318,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	return false, err
 }
 
-func isNotFound (err error) (bool, error) {
+func isNotFound(err error) (bool, error) {
 	if err != nil {
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
 			if cast.Response.StatusCode == 404 {
@@ -329,6 +329,7 @@ func isNotFound (err error) (bool, error) {
 	}
 	return false, nil
 }
+
 const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
