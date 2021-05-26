@@ -1473,10 +1473,26 @@ func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interfac
 		switch t := inputSlice.Index(i).Interface().(type) {
 		case int, int64:
 			intSlice = append(intSlice, t)
+		case *int:
+			if t != nil {
+				intSlice = append(intSlice, *t)
+			}
+		case *int64:
+			if t != nil {
+				intSlice = append(intSlice, *t)
+			}
 		case float64:
 			floatSlice = append(floatSlice, t)
+		case *float64:
+			if t != nil {
+				floatSlice = append(floatSlice, *t)
+			}
 		case string:
 			stringSlice = append(stringSlice, t)
+		case *string:
+			if t != nil {
+				stringSlice = append(stringSlice, *t)
+			}
 		case time.Time:
 			timeSlice = append(timeSlice, t)
 		case *time.Time:
