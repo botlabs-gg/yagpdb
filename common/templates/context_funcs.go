@@ -1409,9 +1409,17 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 	return "", nil
 }
 
-func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interface{}, error) {
+func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interface{}, error) {
 	if c.IncreaseCheckCallCounterPremium("sortfuncs", 1, 3) {
 		return "", ErrTooManyCalls
+	}
+
+	inputSlice := reflect.ValueOf(input)
+	switch inputSlice.Kind() {
+	case reflect.Slice, reflect.Array:
+		// valid
+	default:
+		return "", fmt.Errorf("Can not use type %s as input to the sort func", inputSlice.Type().String())
 	}
 
 	var dict SDict
@@ -1424,19 +1432,22 @@ func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interf
 	// From [0 1 2] to [2 1 0]
 	//
 	// Subslices
-	// By default the function returns a single slice with all the values sorted
-	// setting subslices to true will make the function return a set of sublices
+	// By default the function returns a single slice with all the values sorted.
+	// Setting subslices to true will make the function return a set of sublices
 	// based on the input type/kind
 	// From [1 2 3 a b c] to [[1 2 3] [a b c]]
 	//
 	// Emptyslices
-	// By default the function only returns the slices that had an input to them
-	// if you sort only strings, the output would be slice of strings.
+	// By default the function only returns the slices that had an input to them.
+	// If you sort only strings, the output would be a slice of strings.
 	// But with this flag the function returns all possible slices, this is helpful for indexing
-	// From [[1 2 3] [] [a b c] [map[a:1 b:2]]] to [[1 2 3] [] [a b c] [] [] [map[a:1 b:2]] []]
+	// From [[1 2 3] [a b c] [map[a:1 b:2]]] to [[1 2 3] [] [a b c] [] [] [map[a:1 b:2]] []]
 	//
 	// We can have up to 7 subslices total:
 	// intSlice, floatSlice, stringSlice, timeSlice, sliceSlice, mapSlice and defaultSlice
+	//
+	// Note that the output will always be an `Slice` even if all the items
+	// of the slice are of a single type/kind
 	switch len(sortargs) {
 	case 0:
 		dict = SDict{
@@ -1456,10 +1467,10 @@ func (c *Context) tmplSort(slice []interface{}, sortargs ...interface{}) (interf
 		}
 	}
 
-	var intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice []interface{}
+	var intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice Slice
 
-	for _, v := range slice {
-		switch t := v.(type) {
+	for i := 0; i < inputSlice.Len(); i++ {
+		switch t := inputSlice.Index(i).Interface().(type) {
 		case int, int64:
 			intSlice = append(intSlice, t)
 		case float64:
