@@ -9,7 +9,6 @@ import (
 	"emperror.dev/errors"
 	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -42,7 +41,6 @@ func (p *Plugin) BotInit() {
 
 	scheduledevents2.RegisterHandler("autorole_assign_role", assignRoleEventdata{}, handleAssignRole)
 
-	pubsub.AddHandler("autorole_stop_processing", HandleUpdateAutoroles, nil)
 	// go runDurationChecker()
 }
 
@@ -51,7 +49,7 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 }
 
 var roleCommands = []*commands.YAGCommand{
-	&commands.YAGCommand{
+	{
 		CmdCategory: commands.CategoryDebug,
 		Name:        "Roledbg",
 		Description: "Debug debug debug autorole assignment",
@@ -61,14 +59,6 @@ var roleCommands = []*commands.YAGCommand{
 			return fmt.Sprintf("Processing %d users.", processing), err
 		},
 	},
-}
-
-// Stop updating
-func HandleUpdateAutoroles(event *pubsub.Event) {
-	gs := bot.State.Guild(true, event.TargetGuildInt)
-	if gs != nil {
-		gs.UserCacheDel(CacheKeyConfig)
-	}
 }
 
 // HandlePresenceUpdate makes sure the member with joined_at is available for the relevant guilds
@@ -114,12 +104,12 @@ func saveGeneral(guildID int64, config *GeneralConfig) {
 func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	addEvt := evt.GuildMemberAdd()
 
-	config, err := GuildCacheGetGeneralConfig(evt.GS)
+	config, err := GuildCacheGetGeneralConfig(addEvt.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
 
-	if config.Role == 0 || evt.GS.Role(true, config.Role) == nil {
+	if config.Role == 0 || evt.GS.GetRole(config.Role) == nil {
 		return
 	}
 
@@ -293,12 +283,8 @@ type CacheKey int
 
 const CacheKeyConfig CacheKey = 1
 
-func GuildCacheGetGeneralConfig(gs *dstate.GuildState) (*GeneralConfig, error) {
-	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
-		config, err := GetGeneralConfig(gs.ID)
-		return config, err
-	})
-
+func GuildCacheGetGeneralConfig(guildID int64) (*GeneralConfig, error) {
+	v, err := configCache.Get(guildID)
 	if err != nil {
 		return nil, err
 	}
@@ -328,7 +314,8 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 		return bot.CheckDiscordErrRetry(err), err
 	}
 
-	memberDuration := time.Now().Sub(member.JoinedAt)
+	parsedT, _ := member.Member.JoinedAt.Parse()
+	memberDuration := time.Now().Sub(parsedT)
 	if memberDuration < time.Duration(config.RequiredDuration)*time.Minute {
 		// settings may have been changed, re-schedule
 
@@ -337,7 +324,7 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 		return bot.CheckDiscordErrRetry(err), err
 	}
 
-	if !config.CanAssignTo(member.Roles, member.JoinedAt) {
+	if !config.CanAssignTo(member.Roles, parsedT) {
 		// some other reason they can't get the role, such as whitelist or ignore roles
 		return false, nil
 	}
@@ -350,12 +337,12 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 
 func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	update := evt.GuildMemberUpdate()
-	config, err := GuildCacheGetGeneralConfig(evt.GS)
+	config, err := GuildCacheGetGeneralConfig(update.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
 
-	if config.Role == 0 || config.OnlyOnJoin || evt.GS.Role(true, config.Role) == nil {
+	if config.Role == 0 || config.OnlyOnJoin || evt.GS.GetRole(config.Role) == nil {
 		return false, nil
 	}
 
@@ -374,7 +361,8 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 			return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 		}
 
-		if time.Since(ms.JoinedAt) < time.Duration(config.RequiredDuration)*time.Minute {
+		parsedT, _ := ms.Member.JoinedAt.Parse()
+		if time.Since(parsedT) < time.Duration(config.RequiredDuration)*time.Minute {
 			// haven't been a member long enough
 			return false, nil
 		}

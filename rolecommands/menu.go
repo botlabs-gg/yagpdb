@@ -483,7 +483,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 }
 
-func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.GuildState, option *models.RoleMenuOption, userID int64, emoji *discordgo.Emoji, raAdd bool) (resp string, err error) {
+func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.GuildSet, option *models.RoleMenuOption, userID int64, emoji *discordgo.Emoji, raAdd bool) (resp string, err error) {
 	member, err := bot.GetMember(gs.ID, userID)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
@@ -781,7 +781,7 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	return "Menu marked as done", nil
 }
 
-func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildState, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
+func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
 	if userID != rm.OwnerID {
 		return "Someone is currently editing or setting up this menu, please wait", nil
 	}
@@ -892,7 +892,7 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 	}
 }
 
-func OptionName(gs *dstate.GuildState, opt *models.RoleMenuOption) string {
+func OptionName(gs *dstate.GuildSet, opt *models.RoleMenuOption) string {
 	if opt.RoleCommandID.Valid {
 		return opt.R.RoleCommand.Name
 	} else {

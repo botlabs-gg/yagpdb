@@ -153,7 +153,7 @@ type MergeableRulePart interface {
 type TriggeredRuleData struct {
 	// Should always be available
 	Plugin  *Plugin
-	GS      *dstate.GuildState
+	GS      *dstate.GuildSet
 	MS      *dstate.MemberState
 	Ruleset *ParsedRuleset
 

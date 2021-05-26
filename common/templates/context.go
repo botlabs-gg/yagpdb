@@ -120,7 +120,7 @@ var GuildPremiumFunc func(guildID int64) (bool, error)
 type Context struct {
 	Name string
 
-	GS      *dstate.GuildState
+	GS      *dstate.GuildSet
 	MS      *dstate.MemberState
 	Msg     *discordgo.Message
 	BotUser *discordgo.User
@@ -160,7 +160,7 @@ type contextFrame struct {
 	SendResponseInDM bool
 }
 
-func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
+func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
 	ctx := &Context{
 		GS: gs,
 		MS: ms,

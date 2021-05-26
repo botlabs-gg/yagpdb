@@ -163,7 +163,7 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return nil
 	}
 
-	ok, err := CheckSetCooldown(conf, sender.ID)
+	ok, err := CheckSetCooldown(conf, sender.User.ID)
 	if err != nil || !ok {
 		if err == nil {
 			err = ErrCooldown
@@ -171,24 +171,22 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return
 	}
 
-	err = insertUpdateUserRep(ctx, guildID, receiver.ID, amount)
+	err = insertUpdateUserRep(ctx, guildID, receiver.User.ID, amount)
 	if err != nil {
 		// Clear the cooldown since it failed updating the rep
-		ClearCooldown(guildID, sender.ID)
+		ClearCooldown(guildID, sender.User.ID)
 		return
 	}
 
-	receiver.Guild.RLock()
-	defer receiver.Guild.RUnlock()
-	receiverUsername := receiver.Username + "#" + receiver.StrDiscriminator()
-	senderUsername := sender.Username + "#" + sender.StrDiscriminator()
+	receiverUsername := receiver.User.Username + "#" + receiver.User.Discriminator
+	senderUsername := sender.User.Username + "#" + sender.User.Discriminator
 
 	// Add the log element
 	entry := &models.ReputationLog{
 		GuildID:          guildID,
-		SenderID:         sender.ID,
+		SenderID:         sender.User.ID,
 		SenderUsername:   senderUsername,
-		ReceiverID:       receiver.ID,
+		ReceiverID:       receiver.User.ID,
 		ReceiverUsername: receiverUsername,
 		SetFixedAmount:   false,
 		Amount:           amount,
@@ -241,9 +239,9 @@ func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.Member
 	return nil
 }
 
-func IsAdmin(gs *dstate.GuildState, member *dstate.MemberState, config *models.ReputationConfig) bool {
+func IsAdmin(gs *dstate.GuildSet, member *dstate.MemberState, config *models.ReputationConfig) bool {
 
-	memberPerms, _ := gs.MemberPermissions(false, gs.ID, member.ID)
+	memberPerms, _ := gs.GetMemberPermissions(0, member.User.ID, member.Roles)
 
 	if memberPerms&discordgo.PermissionManageServer != 0 {
 		return true
@@ -343,7 +341,7 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 		tmp, err = bot.GetMembers(guildID, userIDs...)
 		if tmp != nil {
 			for _, v := range tmp {
-				members = append(members, v.DGoCopy())
+				members = append(members, v.DgoMember())
 			}
 		}
 	} else {

@@ -134,7 +134,7 @@ const (
 	CacheKeyConfig CacheKey = iota
 )
 
-func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildState) (*ServerStatsConfig, error) {
+func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildSet) (*ServerStatsConfig, error) {
 	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
 		return GetConfig(ctx, gs.ID)
 	})
@@ -156,7 +156,7 @@ func (p *Plugin) runOnlineUpdater() {
 	ticker := time.NewTicker(time.Second * 10)
 	state := bot.State
 
-	var guildsToCheck []*dstate.GuildState
+	var guildsToCheck []*dstate.GuildSet
 	var i int
 	var numToCheckPerRun int
 
@@ -212,7 +212,7 @@ func (p *Plugin) runOnlineUpdater() {
 	}
 }
 
-func (p *Plugin) checkGuildOnlineCount(guild *dstate.GuildState) (online int, total int) {
+func (p *Plugin) checkGuildOnlineCount(guild *dstate.GuildSet) (online int, total int) {
 
 	guild.RLock()
 	total = guild.Guild.MemberCount

@@ -27,7 +27,7 @@ const (
 	PremiumStateMaxMessageAge = time.Hour * 12
 )
 
-func (p *Plugin) MessageLimits(gs *dstate.GuildState) (maxMessages int, maxMessageAge time.Duration) {
+func (p *Plugin) MessageLimits(gs *dstate.GuildSet) (maxMessages int, maxMessageAge time.Duration) {
 	if gs == nil {
 		return NormalStateMaxMessages, NormalStateMaxMessageAge
 	}

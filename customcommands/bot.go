@@ -994,7 +994,7 @@ const (
 	CacheKeyDBLimits
 )
 
-func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildState, ctx context.Context) ([]*models.CustomCommand, error) {
+func BotCachedGetCommandsWithMessageTriggers(gs *dstate.GuildSet, ctx context.Context) ([]*models.CustomCommand, error) {
 	v, err := gs.UserCacheFetch(CacheKeyCommands, func() (interface{}, error) {
 		var cmds []*models.CustomCommand
 		var err error

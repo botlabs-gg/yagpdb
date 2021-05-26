@@ -64,7 +64,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	target, err := bot.GetMember(msg.GuildID, who.ID)
-	sender := dstate.MSFromDGoMember(evt.GS, msg.Member)
+	sender := dstate.MemberStateFromMember(msg.Member)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving target member")
 		return
@@ -148,10 +148,10 @@ var cmds = []*commands.YAGCommand{
 			targetUsername := strconv.FormatInt(targetID, 10)
 			targetMember, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
 			if targetMember != nil {
-				targetUsername = targetMember.Username
+				targetUsername = targetMember.User.Username
 			}
 
-			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.ID, targetID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.User.ID, targetID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
@@ -260,11 +260,11 @@ var cmds = []*commands.YAGCommand{
 				sender := entry.SenderUsername
 
 				for _, v := range members {
-					if v.ID == entry.ReceiverID {
-						receiver = v.Username + "#" + v.StrDiscriminator()
+					if v.User.ID == entry.ReceiverID {
+						receiver = v.User.Username + "#" + v.User.Discriminator
 					}
-					if v.ID == entry.SenderID {
-						sender = v.Username + "#" + v.StrDiscriminator()
+					if v.User.ID == entry.SenderID {
+						sender = v.User.Username + "#" + v.User.Discriminator
 					}
 				}
 

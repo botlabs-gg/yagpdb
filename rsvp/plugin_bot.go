@@ -270,12 +270,12 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdDel, cmdDel.GetTrigger())
 	container.AddCommand(cmdStopSetup, cmdStopSetup.GetTrigger())
 	container.Description = "Manage events"
-	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildState) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }
 
-type RolesRunFunc func(gs *dstate.GuildState) ([]int64, error)
+type RolesRunFunc func(gs *dstate.GuildSet) ([]int64, error)
 
 func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate()
@@ -447,9 +447,8 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 func findUser(members []*dstate.MemberState, target int64) *discordgo.User {
 
 	for _, v := range members {
-		if v.ID == target {
-			dgoUser := v.DGoUser()
-			return dgoUser
+		if v.User.ID == target {
+			return &v.User
 		}
 	}
 
@@ -572,11 +571,9 @@ func (p *Plugin) startEvent(m *models.RSVPSession) error {
 func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 
 	serverName := strconv.FormatInt(m.GuildID, 10)
-	gs := bot.State.Guild(true, m.GuildID)
+	gs := bot.State.GetGuild(m.GuildID)
 	if gs != nil {
-		gs.RLock()
-		serverName = gs.Guild.Name
-		gs.RUnlock()
+		serverName = gs.Name
 	}
 
 	for _, v := range m.R.RSVPSessionsMessageRSVPParticipants {

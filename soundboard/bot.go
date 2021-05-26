@@ -64,11 +64,8 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 
-				data.GuildData.GS.RLock()
-				defer data.GuildData.GS.RUnlock()
-
 				var voiceChannel int64
-				vs := data.GuildData.GS.VoiceState(false, data.Author.ID)
+				vs := data.GuildData.GS.GetVoiceState(data.Author.ID)
 				if vs != nil {
 					voiceChannel = vs.ChannelID
 				}

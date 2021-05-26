@@ -146,7 +146,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
-	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildState) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }
@@ -204,7 +204,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 	return "Took away your role!", nil
 }
 
-func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
+func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 	if IsRoleCommandError(err) {
 		if roleError, ok := err.(*RoleError); ok {
 			guild.RLock()
@@ -344,7 +344,7 @@ OUTER:
 
 type MenuCacheKey int64
 
-func GetRolemenuCached(ctx context.Context, gs *dstate.GuildState, messageID int64) (*models.RoleMenu, error) {
+func GetRolemenuCached(ctx context.Context, gs *dstate.GuildSet, messageID int64) (*models.RoleMenu, error) {
 	result, err := gs.UserCacheFetch(MenuCacheKey(messageID), func() (interface{}, error) {
 		menu, err := FindRolemenuFull(ctx, messageID, gs.ID)
 		if err != nil {
@@ -375,6 +375,6 @@ func ClearRolemenuCache(gID int64) {
 	}
 }
 
-func ClearRolemenuCacheGS(gs *dstate.GuildState) {
+func ClearRolemenuCacheGS(gs *dstate.GuildSet) {
 	gs.UserCacheDellAllKeysType(MenuCacheKey(0))
 }

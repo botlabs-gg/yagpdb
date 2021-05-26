@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	dshardorchestrator.RegisterUserEvent("GuildState", EvtGuildState, dstate.GuildState{})
+	dshardorchestrator.RegisterUserEvent("GuildState", EvtGuildState, dstate.GuildSet{})
 }
 
 // Implementation of DShardOrchestrator/Node/Interface
@@ -135,7 +135,7 @@ func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interf
 	panic("TODO: Not implemented")
 
 	if evt == EvtGuildState {
-		// dataCast := data.(*dstate.GuildState)
+		// dataCast := data.(*dstate.GuildSet)
 		// n.LoadGuildState(dataCast)
 	}
 
@@ -158,7 +158,7 @@ func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interf
 // 	}
 
 // 	// Send the guilds on this shard
-// 	guildsToSend := make([]*dstate.GuildState, 0)
+// 	guildsToSend := make([]*dstate.GuildSet, 0)
 // 	State.RLock()
 // 	for _, v := range State.Guilds {
 // 		shardID := guildShardID(v.ID)
@@ -168,7 +168,7 @@ func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interf
 // 	}
 // 	State.RUnlock()
 
-// 	workChan := make(chan *dstate.GuildState)
+// 	workChan := make(chan *dstate.GuildSet)
 // 	var wg sync.WaitGroup
 
 // 	// To speed this up we use multiple workers, this has to be done in a relatively short timespan otherwise we won't be able to resume
@@ -220,7 +220,7 @@ func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interf
 // 	return totalSentEvents
 // }
 
-// func (n *NodeImpl) LoadGuildState(gs *dstate.GuildState) {
+// func (n *NodeImpl) LoadGuildState(gs *dstate.GuildSet) {
 
 // 	for _, c := range gs.Channels {
 // 		c.Owner = gs

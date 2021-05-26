@@ -82,7 +82,7 @@ func (p *Plugin) AddCommands() {
 			} else {
 
 				// Get the message to analyze
-				msgs, err := bot.GetMessages(cmd.ChannelID, 100, false)
+				msgs, err := bot.GetMessages(cmd.GuildData.GS.ID, cmd.ChannelID, 100, false)
 				if err != nil {
 					return "", err
 				}

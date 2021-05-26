@@ -599,7 +599,7 @@ func serializeValue(v interface{}) ([]byte, error) {
 }
 
 // returns true if were above db limit for the specified guild
-func CheckGuildDBLimit(gs *dstate.GuildState) (bool, error) {
+func CheckGuildDBLimit(gs *dstate.GuildSet) (bool, error) {
 	limitMuliplier := 1
 	if isPremium, _ := premium.IsGuildPremium(gs.ID); isPremium {
 		limitMuliplier = 10
@@ -622,7 +622,7 @@ func getGuildCCDBNumValues(guildID int64) (int64, error) {
 	return count, err
 }
 
-func cacheCheckDBLimit(gs *dstate.GuildState) (int64, error) {
+func cacheCheckDBLimit(gs *dstate.GuildSet) (int64, error) {
 	v, err := gs.UserCacheFetch(CacheKeyDBLimits, func() (interface{}, error) {
 		n, err := getGuildCCDBNumValues(gs.ID)
 		return n, err
@@ -750,7 +750,7 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 	return dec
 }
 
-func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildState, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
+func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
 	// convert them into lightdb entries and decode their values
 	entries := make([]*LightDBEntry, 0, len(rs))
 	for _, v := range rs {

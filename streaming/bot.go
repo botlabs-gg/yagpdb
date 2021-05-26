@@ -45,7 +45,7 @@ func HandleUpdateStreaming(event *pubsub.Event) {
 	CheckGuildFull(gs, true)
 }
 
-func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
+func CheckGuildFull(gs *dstate.GuildSet, fetchMembers bool) {
 
 	config, err := GetConfig(gs.ID)
 	if err != nil {
@@ -238,7 +238,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	return false, nil
 }
 
-func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Presence, gs *dstate.GuildState) error {
+func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Presence, gs *dstate.GuildSet) error {
 	if !config.Enabled {
 		// RemoveStreaming(client, config, gs.ID, p.User.ID, member)
 		return nil
@@ -300,7 +300,7 @@ func retrieveMainActivity(p *discordgo.Presence) *discordgo.Game {
 	return nil
 }
 
-func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, gs *dstate.GuildState) error {
+func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, gs *dstate.GuildSet) error {
 	if !config.Enabled {
 		// RemoveStreaming(client, config, gs.ID, p.User.ID, member)
 		return nil
@@ -395,7 +395,7 @@ func RemoveStreaming(client radix.Client, config *Config, guildID int64, memberI
 	// }
 }
 
-func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dstate.MemberState, url string, gameName string, streamTitle string, streamPlatform string) {
+func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstate.MemberState, url string, gameName string, streamTitle string, streamPlatform string) {
 	// Only send one announcment every 1 hour
 	var resp string
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.ID)
@@ -517,7 +517,7 @@ const (
 	CacheKeyConfig CacheKey = iota
 )
 
-func BotCachedGetConfig(gs *dstate.GuildState) (*Config, error) {
+func BotCachedGetConfig(gs *dstate.GuildSet) (*Config, error) {
 	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
 		return GetConfig(gs.ID)
 	})

@@ -260,7 +260,7 @@ func AddRoleDS(ms *dstate.MemberState, role int64) error {
 		}
 	}
 
-	return BotSession.GuildMemberRoleAdd(ms.Guild.ID, ms.ID, role)
+	return BotSession.GuildMemberRoleAdd(ms.GuildID, ms.User.ID, role)
 }
 
 func RemoveRole(member *discordgo.Member, role int64, guildID int64) error {
@@ -277,7 +277,7 @@ func RemoveRole(member *discordgo.Member, role int64, guildID int64) error {
 func RemoveRoleDS(ms *dstate.MemberState, role int64) error {
 	for _, r := range ms.Roles {
 		if r == role {
-			return BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, r)
+			return BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, r)
 		}
 	}
 

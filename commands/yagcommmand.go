@@ -557,11 +557,11 @@ func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildSet, ms *dstate.M
 		return nil
 	}
 
-	perms, ok := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
-	if !ok {
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
+	if err != nil {
 		return &CanExecuteError{
 			Type:    ReasonError,
-			Message: "Failed fetching member perms, unknown channel?",
+			Message: "Failed fetching member perms?",
 		}
 	}
 

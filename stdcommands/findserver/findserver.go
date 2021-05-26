@@ -66,7 +66,7 @@ var Command = &commands.YAGCommand{
 	}),
 }
 
-func CheckGuild(gs *dstate.GuildState, nameToMatch string, userToMatch int64) *Candidate {
+func CheckGuild(gs *dstate.GuildSet, nameToMatch string, userToMatch int64) *Candidate {
 	if nameToMatch != "" {
 		gl := strings.ToLower(gs.Guild.Name)
 		if gl != nameToMatch && !strings.Contains(gl, nameToMatch) {

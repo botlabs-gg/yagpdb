@@ -213,10 +213,11 @@ func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 	member, err := bot.GetMember(gId, common.BotUser.ID)
 	if err != nil {
 		internalapi.ServerError(w, r, errors.New("Could not find bot member"))
+		return
 	}
 
-	perms, ok := guild.GetMemberPermissions(cId, member.User.ID, member.Roles)
-	if !ok {
+	perms, err := guild.GetMemberPermissions(cId, member.User.ID, member.Roles)
+	if err != nil {
 		internalapi.ServerError(w, r, errors.WithMessage(err, "Error calculating perms"))
 		return
 	}

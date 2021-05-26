@@ -136,7 +136,7 @@ func cmdFuncMentionRole(data *dcmd.Data) (interface{}, error) {
 	return nil, err
 }
 
-func findRoleByName(gs *dstate.GuildState, name string) *discordgo.Role {
+func findRoleByName(gs *dstate.GuildSet, name string) *discordgo.Role {
 	var role *discordgo.Role
 
 	gs.RLock()

@@ -75,7 +75,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	return out, nil
 }
 
-func checkGuild(dst map[string]int, gs *dstate.GuildState) {
+func checkGuild(dst map[string]int, gs *dstate.GuildSet) {
 	gs.RLock()
 	defer gs.RUnlock()
 

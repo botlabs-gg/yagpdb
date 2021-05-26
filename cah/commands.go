@@ -48,7 +48,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a Cards Against Humanity game that is ongoing in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			isAdmin, err := bot.AdminOrPermMS(data.ChannelID, data.GuildData.MS, 0)
+			isAdmin, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.ChannelID, data.GuildData.MS, 0)
 			if err == nil && isAdmin {
 				err = p.Manager.RemoveGame(data.ChannelID)
 			} else {
@@ -113,7 +113,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())
 	container.AddCommand(cmdKick, cmdKick.GetTrigger())
 	container.AddCommand(cmdPacks, cmdPacks.GetTrigger())
-	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildState) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }

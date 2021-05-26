@@ -18,7 +18,7 @@ func GetMessages(guildID int64, channelID int64, limit int, deleted bool) ([]*ds
 	// }
 	// cs.Owner.RLock()
 
-	msgBuf := State.GetMessages(guildID, channelID)
+	msgBuf := State.GetMessages(guildID, channelID, 0, -1, nil)
 
 	if len(msgBuf) > limit {
 		msgBuf = msgBuf[:limit]

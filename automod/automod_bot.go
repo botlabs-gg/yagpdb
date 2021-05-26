@@ -476,7 +476,7 @@ const (
 	CacheKeyLists    bot.GSCacheKey = "automod_2_lists"
 )
 
-func (p *Plugin) FetchGuildRulesets(gs *dstate.GuildState) ([]*ParsedRuleset, error) {
+func (p *Plugin) FetchGuildRulesets(gs *dstate.GuildSet) ([]*ParsedRuleset, error) {
 	v, err := gs.UserCacheFetch(CacheKeyRulesets, func() (interface{}, error) {
 		rulesets, err := models.AutomodRulesets(qm.Where("guild_id=?", gs.ID),
 			qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).AllG(context.Background())
@@ -505,7 +505,7 @@ func (p *Plugin) FetchGuildRulesets(gs *dstate.GuildState) ([]*ParsedRuleset, er
 	return cast, nil
 }
 
-func FetchGuildLists(gs *dstate.GuildState) ([]*models.AutomodList, error) {
+func FetchGuildLists(gs *dstate.GuildSet) ([]*models.AutomodList, error) {
 	v, err := gs.UserCacheFetch(CacheKeyLists, func() (interface{}, error) {
 		lists, err := models.AutomodLists(qm.Where("guild_id = ?", gs.ID)).AllG(context.Background())
 		if err != nil {
@@ -525,7 +525,7 @@ func FetchGuildLists(gs *dstate.GuildState) ([]*models.AutomodList, error) {
 
 var ErrListNotFound = errors.New("list not found")
 
-func FindFetchGuildList(gs *dstate.GuildState, listID int64) (*models.AutomodList, error) {
+func FindFetchGuildList(gs *dstate.GuildSet, listID int64) (*models.AutomodList, error) {
 	lists, err := FetchGuildLists(gs)
 	if err != nil {
 		return nil, err

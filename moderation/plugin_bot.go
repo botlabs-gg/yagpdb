@@ -72,7 +72,7 @@ type ScheduledUnbanData struct {
 
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
 	if evt == bot.EvtGuildState {
-		gs := data.(*dstate.GuildState)
+		gs := data.(*dstate.GuildSet)
 		go RefreshMuteOverrides(gs.ID, false)
 	}
 }
@@ -131,29 +131,22 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 		return
 	}
 
-	guild := bot.State.Guild(true, guildID)
+	guild := bot.State.GetGuild(guildID)
 	if guild == nil {
 		return // Still starting up and haven't received the guild yet
 	}
 
-	if guild.RoleCopy(true, config.IntMuteRole()) == nil {
+	if guild.GetRole(config.IntMuteRole()) == nil {
 		return
 	}
 
-	guild.RLock()
-	channelsCopy := make([]*discordgo.Channel, 0, len(guild.Channels))
 	for _, v := range guild.Channels {
-		channelsCopy = append(channelsCopy, v.DGoCopy())
-	}
-	guild.RUnlock()
-
-	for _, v := range channelsCopy {
 		RefreshMuteOverrideForChannel(config, v)
 	}
 }
 
 func createMuteRole(config *Config, guildID int64) (int64, error) {
-	guild := bot.State.Guild(true, guildID)
+	guild := bot.State.GetGuild(guildID)
 	if guild == nil {
 		return 0, errors.New("failed finding guild")
 	}
@@ -205,12 +198,12 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err erro
 		return false, nil
 	}
 
-	RefreshMuteOverrideForChannel(config, channel)
+	RefreshMuteOverrideForChannel(config, dstate.ChannelStateFromDgo(channel))
 
 	return false, nil
 }
 
-func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
+func RefreshMuteOverrideForChannel(config *Config, channel *dstate.ChannelState) {
 	// Ignore the channel
 	if common.ContainsInt64Slice(config.MuteIgnoreChannels, channel.ID) {
 		return
@@ -225,7 +218,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 	// Check for existing override
 	for _, v := range channel.PermissionOverwrites {
 		if v.Type == "role" && v.ID == config.IntMuteRole() {
-			override = v
+			override = &v
 			break
 		}
 	}
@@ -461,7 +454,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 
 	guild := evt.GS
 
-	role := guild.RoleCopy(true, config.IntMuteRole())
+	role := guild.GetRole(config.IntMuteRole())
 	if role == nil {
 		return false, nil // Probably deleted the mute role, do nothing then
 	}
@@ -580,7 +573,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 	guildID := evt.GuildID
 	userID := unbanData.UserID
 
-	g := bot.State.Guild(true, guildID)
+	g := bot.State.GetGuild(guildID)
 	if g == nil {
 		logger.WithField("guild", guildID).Error("Unban scheduled for guild not in state")
 		return false, nil

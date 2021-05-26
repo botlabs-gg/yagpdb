@@ -115,7 +115,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 		return
 	}
 
-	gs := bot.State.Guild(true, guildID)
+	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
 		logger.Error("guild not available")
 		return
@@ -132,7 +132,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 		return
 	}
 
-	channel, err := common.BotSession.UserChannelCreate(ms.ID)
+	channel, err := common.BotSession.UserChannelCreate(ms.User.ID)
 	if err != nil {
 		logger.WithError(err).Error("failed creating user channel")
 		return
@@ -144,7 +144,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.ID).Error("failed sending verification dm message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed sending verification dm message")
 	}
 
 	evt := &VerificationEventData{
@@ -153,9 +153,9 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	}
 
 	// schedule the kick and warnings
-	err = p.clearScheduledEvents(context.Background(), gs.ID, ms.ID) //clear old scheduled events
+	err = p.clearScheduledEvents(context.Background(), gs.ID, ms.User.ID) //clear old scheduled events
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.ID).Error("failed clearing past scheduled warn/kick events.")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed clearing past scheduled warn/kick events.")
 	}
 	if conf.WarnUnverifiedAfter > 0 && conf.WarnMessage != "" {
 		scheduledevents2.ScheduleEvent("verification_user_warn", guildID, time.Now().Add(time.Minute*time.Duration(conf.WarnUnverifiedAfter)), evt)
@@ -201,12 +201,12 @@ func ScheduledEventMW(innerHandler func(ms *dstate.MemberState, guildID int64, c
 }
 
 func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
-	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, conf.VerifiedRole)
+	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.User.ID, conf.VerifiedRole)
 	if err != nil {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	model, err := models.FindVerifiedUserG(context.Background(), guildID, ms.ID)
+	model, err := models.FindVerifiedUserG(context.Background(), guildID, ms.User.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, err
@@ -214,24 +214,24 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	err = p.clearScheduledEvents(context.Background(), guildID, ms.ID)
+	err = p.clearScheduledEvents(context.Background(), guildID, ms.User.ID)
 	if err != nil {
 		return true, err
 	}
 
 	if !confVerificationTrackIPs.GetBool() || model.IP == "" {
-		p.logAction(guildID, conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
+		p.logAction(guildID, conf.LogChannel, &ms.User, "User successfully verified", 0x49ed47)
 		return false, nil
 	}
 
 	// Check for IP conflicts
-	conflicts, err := p.findIPConflicts(guildID, ms.ID, model.IP)
+	conflicts, err := p.findIPConflicts(guildID, ms.User.ID, model.IP)
 	if err != nil {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
 	if len(conflicts) < 1 {
-		p.logAction(guildID, conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
+		p.logAction(guildID, conf.LogChannel, &ms.User, "User successfully verified", 0x49ed47)
 		return false, nil
 	}
 
@@ -251,12 +251,12 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 			banReason = string(r) + "..."
 		}
 
-		err := moderation.BanUser(nil, guildID, nil, nil, common.BotUser, banReason, ms.DGoUser())
+		err := moderation.BanUser(nil, guildID, nil, nil, common.BotUser, banReason, &ms.User)
 		if err != nil {
 			return scheduledevents2.CheckDiscordErrRetry(err), err
 		}
 
-		p.logAction(guildID, conf.LogChannel, ms.DGoUser(), fmt.Sprintf("User banned for sharing IP with banned user %s#%s (%d)\nReason: %s",
+		p.logAction(guildID, conf.LogChannel, &ms.User, fmt.Sprintf("User banned for sharing IP with banned user %s#%s (%d)\nReason: %s",
 			ban.User.Username, ban.User.Discriminator, ban.User.ID, ban.Reason), 0xef4640)
 
 		return false, nil
@@ -274,7 +274,7 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 		}
 	}
 
-	p.logAction(guildID, conf.LogChannel, ms.DGoUser(), builder.String(), 0xff8228)
+	p.logAction(guildID, conf.LogChannel, &ms.User, builder.String(), 0xff8228)
 	return false, nil
 }
 
@@ -337,7 +337,7 @@ func (p *Plugin) CheckBanned(guildID int64, users []*discordgo.User) (*discordgo
 }
 
 func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
-	gs := bot.State.Guild(true, guildID)
+	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
 		return false, nil
 	}
@@ -361,25 +361,25 @@ func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int6
 	return scheduledevents2.CheckDiscordErrRetry(err), err
 }
 
-func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildState, token string, conf *models.VerificationConfig) error {
+func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token string, conf *models.VerificationConfig) error {
 
 	msg := conf.WarnMessage
 	if strings.TrimSpace(msg) == "" {
 		return nil // no message to send
 	}
 
-	channel, err := common.BotSession.UserChannelCreate(ms.ID)
+	channel, err := common.BotSession.UserChannelCreate(ms.User.ID)
 	if err != nil {
 		return err
 	}
 
 	tmplCTX := templates.NewContext(gs, dstate.NewChannelState(gs, gs, channel), ms)
 	tmplCTX.Name = "warn message"
-	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.ID, token)
+	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.User.ID, token)
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.ID).Error("failed sending warning message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed sending warning message")
 	}
 
 	return nil
@@ -402,9 +402,9 @@ func (p *Plugin) handleKickUser(ms *dstate.MemberState, guildID int64, conf *mod
 		return false, nil
 	}
 
-	err = common.BotSession.GuildMemberDelete(guildID, ms.ID)
+	err = common.BotSession.GuildMemberDelete(guildID, ms.User.ID)
 	if err == nil {
-		p.logAction(guildID, conf.LogChannel, ms.DGoUser(), "Kicked for not verifying within deadline", 0xef4640)
+		p.logAction(guildID, conf.LogChannel, &ms.User, "Kicked for not verifying within deadline", 0xef4640)
 	}
 
 	return scheduledevents2.CheckDiscordErrRetry(err), err

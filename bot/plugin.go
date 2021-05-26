@@ -51,7 +51,7 @@ type BotStopperHandler interface {
 }
 
 type ShardMigrationHandler interface {
-	GuildMigrated(guild *dstate.GuildState, toThisSlave bool)
+	GuildMigrated(guild *dstate.GuildSet, toThisSlave bool)
 }
 
 var metricsLeftGuilds = promauto.NewCounter(prometheus.CounterOpts{

@@ -87,15 +87,10 @@ func AdminOrPermMS(guildID int64, channelID int64, ms *dstate.MemberState, neede
 		return false, ErrGuildNotFound
 	}
 
-	perms, ok := guild.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
-	if !ok {
-		return false, ErrChannelNotFound
+	perms, err := guild.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
+	if err != nil {
+		return false, err
 	}
-
-	// perms, err := ms.Guild.MemberPermissionsMS(true, channelID, ms)
-	// if err != nil {
-	// 	return false, err
-	// }
 
 	if needed != 0 && perms&int64(needed) == int64(needed) {
 		return true, nil
@@ -158,9 +153,9 @@ func BotProbablyHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission
 		return false
 	}
 
-	perms, ok := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
-	if !ok {
-		logger.WithField("guild", gs.ID).Error("Failed checking perms")
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
+	if err != nil {
+		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
 		return true
 	}
 
@@ -181,9 +176,9 @@ func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
 		return 0, err
 	}
 
-	perms, ok := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
-	if !ok {
-		return 0, ErrChannelNotFound
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
+	if err != nil {
+		return 0, err
 	}
 
 	return int64(perms), nil

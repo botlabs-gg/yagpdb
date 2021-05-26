@@ -94,9 +94,10 @@ func keyFullGuild(guildID int64) string {
 // It will will also make sure channels are included in the event we fall back to the discord API
 func GetFullGuild(guildID int64) (*discordgo.Guild, error) {
 	result, err := applicationCache.Fetch(keyFullGuild(guildID), time.Minute*10, func() (interface{}, error) {
-		guild, err := botrest.GetGuild(guildID)
+		gs, err := botrest.GetGuild(guildID)
 		if err != nil {
 			// fall back to discord API
+
 			guild, err = common.BotSession.Guild(guildID)
 			if err != nil {
 				return nil, err
@@ -111,8 +112,8 @@ func GetFullGuild(guildID int64) (*discordgo.Guild, error) {
 			guild.Channels = channels
 		}
 
-		sort.Sort(dutil.Channels(guild.Channels))
-		sort.Sort(dutil.Roles(guild.Roles))
+		sort.Sort(dutil.Channels(gs.Channels))
+		sort.Sort(dutil.Roles(gs.Roles))
 
 		return guild, nil
 	})

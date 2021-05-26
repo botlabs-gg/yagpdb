@@ -96,7 +96,7 @@ func (s *SetupSession) handleMessage(m *discordgo.Message) {
 func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 	targetChannel := int64(0)
 
-	gs := bot.State.Guild(true, m.GuildID)
+	gs := bot.State.GetGuild(m.GuildID)
 	if gs == nil {
 		logger.WithField("guild", m.GuildID).Error("Guild not found")
 		return
@@ -109,27 +109,25 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 		// channel mention
 		idStr := m.Content[2 : len(m.Content)-1]
 		if parsed, err := strconv.ParseInt(idStr, 10, 64); err == nil {
-			if gs.Channel(true, parsed) != nil {
+			if gs.GetChannel(parsed) != nil {
 				targetChannel = parsed
 			}
 		}
 	} else {
 		// search by name
 		nameSearch := strings.ReplaceAll(m.Content, " ", "-")
-		gs.RLock()
 		for _, v := range gs.Channels {
 			if strings.EqualFold(v.Name, nameSearch) {
 				targetChannel = v.ID
 				break
 			}
 		}
-		gs.RUnlock()
 	}
 
 	if targetChannel == 0 {
 		// search by ID
 		if parsed, err := strconv.ParseInt(m.Content, 10, 64); err == nil {
-			if gs.Channel(true, parsed) != nil {
+			if gs.GetChannel(parsed) != nil {
 				targetChannel = parsed
 			}
 		}
@@ -140,7 +138,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 		return
 	}
 
-	hasPerms, err := bot.AdminOrPermMS(targetChannel, dstate.MSFromDGoMember(gs, m.Member), discordgo.PermissionSendMessages)
+	hasPerms, err := bot.AdminOrPermMS(m.GuildID, targetChannel, dstate.MemberStateFromMember(m.Member), discordgo.PermissionSendMessages)
 	if err != nil {
 		s.sendMessage("Failed retrieving your pems, check with bot owner")
 		logger.WithError(err).WithField("guild", gs.ID).Error("failed calculating permissions")
