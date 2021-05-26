@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/analytics"
@@ -57,7 +57,7 @@ var roleCommands = []*commands.YAGCommand{
 		Description: "Debug debug debug autorole assignment",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var processing int
-			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GS.ID)))
+			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GuildData.GS.ID)))
 			return fmt.Sprintf("Processing %d users.", processing), err
 		},
 	},

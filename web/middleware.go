@@ -693,7 +693,7 @@ func checkControllerError(ctx context.Context, data TemplateData, err error) {
 	if cast, ok := err.(*PublicError); ok {
 		data.AddAlerts(ErrorAlert(cast.Error()))
 	} else {
-		data.AddAlerts(ErrorAlert("An error occured... Contact support if you're having issues."))
+		data.AddAlerts(ErrorAlert("An error occurred... Contact support if you're having issues."))
 	}
 
 	CtxLogger(ctx).WithError(err).Error("Web handler reported an error")

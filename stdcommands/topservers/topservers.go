@@ -3,7 +3,7 @@ package topservers
 import (
 	"fmt"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -16,10 +16,10 @@ var Command = &commands.YAGCommand{
 	Name:        "TopServers",
 	Description: "Responds with the top 20 servers I'm on",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int, Default: 0},
+		{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int, Default: 0},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		{Switch: "id", Name: "serverID", Type: dcmd.Int},
+		{Name: "id", Type: dcmd.BigInt},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		skip := data.Args[0].Int()

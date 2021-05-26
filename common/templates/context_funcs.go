@@ -758,6 +758,51 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs
 	return ""
 }
 
+func (c *Context) tmplSetRoles(target interface{}, roleSlice interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return "", nil
+	}
+
+	if c.IncreaseCheckCallCounter("set_roles"+discordgo.StrID(targetID), 1) {
+		return "", errors.New("Too many calls to setRoles for specific user ID (max 1 / user)")
+	}
+
+	rSlice := reflect.ValueOf(roleSlice)
+	switch rSlice.Kind() {
+	case reflect.Slice, reflect.Array:
+		// ok
+	default:
+		return "", errors.New("Value passed was not an array or slice")
+	}
+
+	if rSlice.Len() > 250 {
+		return "", errors.New("Length of slice passed was > 250 (Discord role limit)")
+	}
+
+	roles := make([]string, 0, rSlice.Len())
+	for i := 0; i < rSlice.Len(); i++ {
+		switch v := rSlice.Index(i).Interface().(type) {
+		case string:
+			roles = append(roles, v)
+		case int, int64:
+			roles = append(roles, discordgo.StrID(reflect.ValueOf(v).Int()))
+		default:
+			return "", errors.New("Could not convert slice to string slice")
+		}
+	}
+
+	err := common.BotSession.GuildMemberEdit(c.GS.ID, targetID, roles)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
 func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
@@ -1192,7 +1237,7 @@ func (c *Context) compileRegex(r string) (*regexp.Regexp, error) {
 	return compiled, nil
 }
 
-func (c *Context) reFind(r string, s string) (string, error) {
+func (c *Context) reFind(r, s string) (string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return "", err
@@ -1201,25 +1246,43 @@ func (c *Context) reFind(r string, s string) (string, error) {
 	return compiled.FindString(s), nil
 }
 
-func (c *Context) reFindAll(r string, s string) ([]string, error) {
+func (c *Context) reFindAll(r, s string, i ...int) ([]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.FindAllString(s, 1000), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 1000 || n <= 0 {
+		n = 1000
+	}
+
+	return compiled.FindAllString(s, n), nil
 }
 
-func (c *Context) reFindAllSubmatches(r string, s string) ([][]string, error) {
+func (c *Context) reFindAllSubmatches(r, s string, i ...int) ([][]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.FindAllStringSubmatch(s, 100), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 100 || n <= 0 {
+		n = 100
+	}
+
+	return compiled.FindAllStringSubmatch(s, n), nil
 }
 
-func (c *Context) reReplace(r string, s string, repl string) (string, error) {
+func (c *Context) reReplace(r, s, repl string) (string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return "", err
@@ -1228,13 +1291,22 @@ func (c *Context) reReplace(r string, s string, repl string) (string, error) {
 	return compiled.ReplaceAllString(s, repl), nil
 }
 
-func (c *Context) reSplit(r, s string, i int) ([]string, error) {
+func (c *Context) reSplit(r, s string, i ...int) ([]string, error) {
 	compiled, err := c.compileRegex(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return compiled.Split(s, i), nil
+	var n int
+	if len(i) > 0 {
+		n = i[0]
+	}
+
+	if n > 500 || n <= 0 {
+		n = 500
+	}
+
+	return compiled.Split(s, n), nil
 }
 
 func (c *Context) tmplEditChannelName(channel interface{}, newName string) (string, error) {

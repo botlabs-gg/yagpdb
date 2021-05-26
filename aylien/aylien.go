@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	textapi "github.com/AYLIEN/aylien_textapi_go"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -65,8 +65,10 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"sent"},
 		Description: "Does sentiment analysis on a message or your last 5 messages longer than 3 words",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "text", Type: dcmd.String},
+			{Name: "text", Type: dcmd.String},
 		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      true,
 		RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 			var responses []*textapi.SentimentResponse
 			if cmd.Args[0].Value != nil {
@@ -80,7 +82,7 @@ func (p *Plugin) AddCommands() {
 			} else {
 
 				// Get the message to analyze
-				msgs, err := bot.GetMessages(cmd.CS.ID, 100, false)
+				msgs, err := bot.GetMessages(cmd.ChannelID, 100, false)
 				if err != nil {
 					return "", err
 				}
@@ -94,7 +96,7 @@ func (p *Plugin) AddCommands() {
 				for i := len(msgs) - 1; i >= 0; i-- {
 					msg := msgs[i]
 					// logger.Println(msg.ID, msg.ContentWithMentionsReplaced())
-					if msg.Author.ID == cmd.Msg.Author.ID {
+					if msg.Author.ID == cmd.Author.ID {
 						if len(strings.Fields(msg.ContentWithMentionsReplaced())) > 3 {
 							toAnalyze = append(toAnalyze, msg)
 							if len(toAnalyze) >= 5 {
@@ -132,9 +134,11 @@ func (p *Plugin) AddCommands() {
 			Name:        "8Ball",
 			Description: "Wisdom",
 			Arguments: []*dcmd.ArgDef{
-				&dcmd.ArgDef{Name: "What to ask", Type: dcmd.String},
+				{Name: "What-to-ask", Type: dcmd.String},
 			},
-			RequiredArgs: 1,
+			RequiredArgs:        1,
+			SlashCommandEnabled: true,
+			DefaultEnabled:      true,
 			RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 				resp, err := p.aylien.Sentiment(&textapi.SentimentParams{Text: cmd.Args[0].Str()})
 				if err != nil {

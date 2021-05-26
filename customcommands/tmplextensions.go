@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -101,7 +101,7 @@ func tmplExpectArgs(ctx *templates.Context) interface{} {
 		split := dcmd.SplitArgs(stripped)
 
 		// create the dcmd data context used in the arg parsing
-		dcmdData, err := commands.CommandSystem.FillData(common.BotSession, msg)
+		dcmdData, err := commands.CommandSystem.FillDataLegacyMessage(common.BotSession, msg)
 		if err != nil {
 			return result, errors.WithMessage(err, "tmplExpectArgs")
 		}

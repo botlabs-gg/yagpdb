@@ -166,9 +166,8 @@ func HandleGuildDelete(evt *eventsystem.EventData) (retry bool, err error) {
 }
 
 func HandleGuildMemberAdd(evt *eventsystem.EventData) (retry bool, err error) {
-	ma := evt.GuildMemberAdd()
-
-	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
+	// ma := evt.GuildMemberAdd()
+	// failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
 
 	guildJoinHandler.Incoming <- evt
 	return false, nil

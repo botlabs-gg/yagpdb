@@ -3,6 +3,7 @@ package bot
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/jonas747/dstate/v2"
 	dshardmanager "github.com/jonas747/jdshardmanager"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/jonas747/yagpdb/bot/shardmemberfetcher"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -79,7 +81,6 @@ func Run(nodeID string) {
 		setupStandalone()
 	}
 
-	go MemberFetcher.Run()
 	go mergedMessageSender()
 
 	Running = true
@@ -168,6 +169,23 @@ func botReady() {
 	}, nil)
 
 	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
+
+	memberFetcher = shardmemberfetcher.NewManager(int64(totalShardCount), State, func(guildID int64, userIDs []int64, nonce string) error {
+		shardID := guildShardID(guildID)
+		session := ShardManager.Session(shardID)
+		if session != nil {
+			session.GatewayManager.RequestGuildMembersComplex(&discordgo.RequestGuildMembersData{
+				GuildID:   guildID,
+				Presences: false,
+				UserIDs:   userIDs,
+				Nonce:     nonce,
+			})
+		} else {
+			return errors.New("session not found")
+		}
+
+		return nil
+	})
 
 	serviceDetails := "Not using orchestrator"
 	if UsingOrchestrator {

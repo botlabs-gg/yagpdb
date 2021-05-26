@@ -231,8 +231,10 @@ function updateSelectedMenuItem(pathname) {
 	}
 }
 
-function addAlert(kind, msg) {
-	$("<div/>").addClass("row").append(
+function addAlert(kind, msg, id) {
+	const alert = $(`<div/>`);
+	if (id !== undefined) alert.prop("id", id)
+	alert.addClass("row").append(
 		$("<div/>").addClass("col-lg-12").append(
 			$("<div/>").addClass("alert alert-" + kind).text(msg)
 		)

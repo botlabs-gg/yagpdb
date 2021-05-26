@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot/models"
@@ -32,8 +32,8 @@ var Command = &commands.YAGCommand{
 	Description:          "Looks for a server by server name or the servers a user owns",
 	HideFromHelp:         true,
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "name", Name: "name", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "user", Name: "user", Type: dcmd.UserID, Default: 0},
+		{Name: "name", Type: dcmd.String, Default: ""},
+		{Name: "user", Type: dcmd.UserID, Default: 0},
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		nameToMatch := strings.ToLower(data.Switch("name").Str())

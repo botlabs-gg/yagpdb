@@ -276,9 +276,8 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 				return errors.WithStackIf(err)
 			}
 
-			SendStreamingAnnouncement(config, gs, ms)
+			SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
 		}
-
 	} else {
 		// Not streaming
 		RemoveStreaming(client, config, gs.ID, p.User.ID, p.Roles)
@@ -331,7 +330,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != 0 && config.AnnounceMessage != "" {
-			SendStreamingAnnouncement(config, gs, ms)
+			SendStreamingAnnouncement(config, gs, ms, ms.PresenceGame.URL, ms.PresenceGame.State, ms.PresenceGame.Details, ms.PresenceGame.Name)
 		}
 
 	} else {
@@ -396,7 +395,7 @@ func RemoveStreaming(client radix.Client, config *Config, guildID int64, memberI
 	// }
 }
 
-func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dstate.MemberState) {
+func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dstate.MemberState, url string, gameName string, streamTitle string, streamPlatform string) {
 	// Only send one announcment every 1 hour
 	var resp string
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.ID)
@@ -431,11 +430,17 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	go analytics.RecordActiveUnit(guild.ID, &Plugin{}, "sent_streaming_announcement")
 
 	ctx := templates.NewContext(guild, nil, ms)
-	ctx.Data["URL"] = ms.PresenceGame.URL
-	ctx.Data["url"] = ms.PresenceGame.URL
-	ctx.Data["Game"] = ms.PresenceGame.State
-	ctx.Data["StreamTitle"] = ms.PresenceGame.Details
-	ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
+	// ctx.Data["URL"] = ms.PresenceGame.URL
+	// ctx.Data["url"] = ms.PresenceGame.URL
+	// ctx.Data["Game"] = ms.PresenceGame.State
+	// ctx.Data["StreamTitle"] = ms.PresenceGame.Details
+	// ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
+
+	ctx.Data["URL"] = url
+	ctx.Data["url"] = url
+	ctx.Data["Game"] = gameName
+	ctx.Data["StreamTitle"] = streamTitle
+	ctx.Data["StreamPlatform"] = streamPlatform
 
 	out, err := ctx.Execute(config.AnnounceMessage)
 	if err != nil {

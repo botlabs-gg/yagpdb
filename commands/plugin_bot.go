@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v2"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
@@ -27,9 +27,23 @@ var _ bot.BotStopperHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMsgCreate, eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleInteractionCreate, eventsystem.EventInteractionCreate)
+
+	// Slash command permissions are currently pretty fucked so can't use them
+	//
+	// eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildCreate, eventsystem.EventGuildCreate)
+	// eventsystem.AddHandlerAsyncLastLegacy(p, p.handleDiscordEventUpdateSlashCommandPermissions, eventsystem.EventGuildRoleCreate, eventsystem.EventGuildRoleUpdate, eventsystem.EventChannelCreate)
+	// pubsub.AddHandler("update_slash_command_permissions", p.handleUpdateSlashCommandsPermissions, nil)
 
 	CommandSystem.State = bot.State
 	dcmd.CustomUsernameSearchFunc = p.customUsernameSearchFunc
+
+	// err := clearGlobalCommands()
+	// if err != nil {
+	// 	logger.WithError(err).Errorf("failed clearing all commands")
+	// }
+	p.startSlashCommandsUpdater()
+
 }
 
 func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
@@ -37,7 +51,7 @@ func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (
 	members, err := bot.BatchMemberJobManager.SearchByUsername(gs.ID, query)
 	if err != nil {
 		if err == bot.ErrTimeoutWaitingForMember {
-			return nil, &dcmd.UserNotFound{query}
+			return nil, &dcmd.UserNotFound{Part: query}
 		}
 
 		return nil, err
@@ -75,7 +89,7 @@ func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (
 	}
 
 	if len(fullMatches) == 0 && len(partialMatches) == 0 {
-		return nil, &dcmd.UserNotFound{query}
+		return nil, &dcmd.UserNotFound{Part: query}
 	}
 
 	// Show some help output
@@ -98,7 +112,7 @@ func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (
 			out += "`" + v.User.Username + "`"
 		}
 	} else {
-		return nil, &dcmd.UserNotFound{query}
+		return nil, &dcmd.UserNotFound{Part: query}
 	}
 
 	if len(fullMatches) > 1 {
@@ -142,50 +156,65 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		if !ok {
 			resp, err := inner(data)
 			// Filter the response
-			if data.GS != nil {
+			if data.GuildData != nil {
 				if resp == nil && err != nil {
-					err = errors.New(FilterResp(err.Error(), data.GS.ID).(string))
+					err = errors.New(FilterResp(err.Error(), data.GuildData.GS.ID).(string))
 				} else if resp != nil {
-					resp = FilterResp(resp, data.GS.ID)
+					resp = FilterResp(resp, data.GuildData.GS.ID)
 				}
 			}
 
 			return resp, err
 		}
-
-		// Lock the command for execution
-		if !BlockingAddRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc, time.Second*60) {
-			if atomic.LoadInt32(shuttingDown) == 1 {
-				return yc.Name + ": Bot is restarting, please try again in a couple seconds...", nil
-			}
-
-			return yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish", nil
+		guildID := int64(0)
+		var cs *dstate.ChannelState
+		if data.GuildData != nil {
+			guildID = data.GuildData.GS.ID
+			cs = data.GuildData.CS
 		}
 
-		defer removeRunningCommand(data.Msg.GuildID, data.Msg.ChannelID, data.Msg.Author.ID, yc)
+		// Lock the command for execution
+		if !BlockingAddRunningCommand(guildID, data.ChannelID, data.Author.ID, yc, time.Second*60) {
+			if atomic.LoadInt32(shuttingDown) == 1 {
+				return &EphemeralOrGuild{Content: yc.Name + ": Bot is restarting, please try again in a couple seconds..."}, nil
+			}
+
+			return &EphemeralOrGuild{Content: yc.Name + ": Gave up trying to run command after 60 seconds waiting for your previous instance of this command to finish"}, nil
+		}
+
+		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)
 
 		// Check if the user can execute the command
-		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, data.CS)
+		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, cs)
 		if err != nil {
 			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
 		}
 
-		if resp != "" {
-			if resp == ReasonCooldown {
-				fmt.Println("Were on cooldown")
-				if (data.GS != nil && bot.BotProbablyHasPermissionGS(data.GS, data.CS.ID, discordgo.PermissionAddReactions)) || data.GS == nil {
-					common.BotSession.MessageReactionAdd(data.Msg.ChannelID, data.Msg.ID, "⏳")
+		if resp != nil {
+
+			if resp.Type == ReasonCooldown && data.TriggerType != dcmd.TriggerTypeSlashCommands {
+				if (data.GuildData != nil && bot.BotProbablyHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions)) || data.GuildData.GS == nil {
+					common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
+					return nil, nil
 				}
 			}
 
-			// yc.PostCommandExecuted(settings, data, "", errors.WithMessage(err, "checkCanExecuteCommand"))
-			// m, err := common.BotSession.ChannelMessageSend(cState.ID(), resp)
-			// go yc.deleteResponse([]*discordgo.Message{m})
-			return nil, nil
+			switch resp.Type {
+			case ReasonBotMissingPerms:
+				return &EphemeralOrGuild{
+					Content: "You're unable to run this command:\n> " + resp.Message,
+				}, nil
+			default:
+				return &EphemeralOrNone{
+					Content: "You're unable to run this command:\n> " + resp.Message,
+				}, nil
+			}
 		}
 
 		if !canExecute {
-			return nil, nil
+			return &EphemeralOrNone{
+				Content: "You're unable to run this command.",
+			}, nil
 		}
 
 		if err != nil {
@@ -210,7 +239,9 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 				}
 
 				resp = resp + "\nInvalid arguments provided: " + err.Error()
-				yc.PostCommandExecuted(settings, data, resp, nil)
+				yc.PostCommandExecuted(settings, data, &EphemeralOrGuild{
+					Content: resp,
+				}, nil)
 				return nil, nil
 			}
 
@@ -294,8 +325,11 @@ func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
 }
 
 func (p *Plugin) Prefix(data *dcmd.Data) string {
+	if data.Source == dcmd.TriggerSourceDM {
+		return "-"
+	}
 
-	prefix, err := GetCommandPrefixRedis(data.GS.ID)
+	prefix, err := GetCommandPrefixRedis(data.GuildData.GS.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -344,13 +378,13 @@ var cmdPrefix = &YAGCommand{
 	Description: "Shows command prefix of the current server, or the specified server",
 	CmdCategory: CategoryTool,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Server ID", Type: dcmd.Int, Default: 0},
+		{Name: "Server-ID", Type: dcmd.BigInt, Default: 0},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		targetGuildID := data.Args[0].Int64()
 		if targetGuildID == 0 {
-			targetGuildID = data.GS.ID
+			targetGuildID = data.GuildData.GS.ID
 		}
 
 		prefix, err := GetCommandPrefixRedis(targetGuildID)
@@ -360,4 +394,23 @@ var cmdPrefix = &YAGCommand{
 
 		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
 	},
+}
+
+func clearGlobalCommands() error {
+	commands, err := common.BotSession.GetGlobalApplicationCommands(common.BotApplication.ID)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("COMMANDS LENGHT: ", len(commands))
+
+	for _, v := range commands {
+		err = common.BotSession.DeleteGlobalApplicationCommand(common.BotApplication.ID, v.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	logger.Info("DONE")
+	return nil
 }
