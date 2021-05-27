@@ -7,6 +7,7 @@ import (
 )
 
 var confDisableNonPremiumRetroActiveAssignment = config.RegisterOption("yagpdb.autorole.non_premium_retroactive_assignment", "Wether to enable retroactive assignemnt on non premium guilds", true)
+
 var configCache = common.CacheSet.RegisterSlot("autorole_config", func(key interface{}) (interface{}, error) {
 	config, err := GetGeneralConfig(key.(int64))
 	return config, err

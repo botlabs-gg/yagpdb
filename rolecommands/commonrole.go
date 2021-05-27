@@ -137,7 +137,7 @@ func (c *CommonRoleSettings) CanRole(ctx context.Context, ms *dstate.MemberState
 	// First check cooldown
 	if c.ParentGroupMode == GroupModeSingle {
 		err = cooldownsDB.Update(func(tx *buntdb.Tx) error {
-			_, replaced, _ := tx.Set(discordgo.StrID(ms.ID), "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
+			_, replaced, _ := tx.Set(discordgo.StrID(ms.User.ID), "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
 			if replaced {
 				onCD = true
 			}
@@ -270,11 +270,11 @@ func (c *CommonRoleSettings) CheckToggleRole(ctx context.Context, ms *dstate.Mem
 // ToggleRole toggles the role of a guildmember, adding it if the member does not have the role and removing it if they do
 func (c *CommonRoleSettings) ToggleRole(ms *dstate.MemberState) (gaveRole bool, err error) {
 	if common.ContainsInt64Slice(ms.Roles, c.RoleId) {
-		err = common.BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, c.RoleId)
+		err = common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, c.RoleId)
 		return false, err
 	}
 
-	err = common.BotSession.GuildMemberRoleAdd(ms.Guild.ID, ms.ID, c.RoleId)
+	err = common.BotSession.GuildMemberRoleAdd(ms.GuildID, ms.User.ID, c.RoleId)
 	return true, err
 }
 
@@ -291,7 +291,7 @@ func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.Mem
 
 	// If user already has role it's attempting to give itself
 	if common.ContainsInt64Slice(ms.Roles, c.RoleId) {
-		err = common.BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, c.RoleId)
+		err = common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, c.RoleId)
 		return false, err
 	}
 
@@ -300,7 +300,7 @@ func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.Mem
 	for _, v := range commands {
 		if common.ContainsInt64Slice(ms.Roles, v.RoleId) {
 			if c.ModeSettings().SingleAutoToggleOff {
-				common.BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, v.RoleId)
+				common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, v.RoleId)
 			} else {
 				return false, NewCommonRoleError("Max 1 role in **%s** is allowed", c)
 			}
@@ -308,7 +308,7 @@ func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.Mem
 	}
 
 	// Finally give the role
-	err = common.BotSession.GuildMemberRoleAdd(ms.Guild.ID, ms.ID, c.RoleId)
+	err = common.BotSession.GuildMemberRoleAdd(ms.GuildID, ms.User.ID, c.RoleId)
 	if err == nil {
 		err = c.MaybeScheduleRoleRemoval(ctx, ms)
 	}
@@ -340,16 +340,16 @@ func (c *CommonRoleSettings) MaybeScheduleRoleRemoval(ctx context.Context, ms *d
 	}
 
 	// remove existing role removal events for this role
-	_, err := schEvtsModels.ScheduledEvents(v3_qm.Where("event_name='remove_member_role' AND  guild_id = ? AND (data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ?", ms.Guild.ID, ms.ID, c.RoleId)).DeleteAll(ctx, common.PQ)
+	_, err := schEvtsModels.ScheduledEvents(v3_qm.Where("event_name='remove_member_role' AND  guild_id = ? AND (data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ?", ms.GuildID, ms.User.ID, c.RoleId)).DeleteAll(ctx, common.PQ)
 	if err != nil {
 		return err
 	}
 
 	// add the scheduled event for it
-	err = scheduledevents2.ScheduleEvent("remove_member_role", ms.Guild.ID, time.Now().Add(time.Duration(temporaryDuration)*time.Minute), &ScheduledMemberRoleRemoveData{
-		GuildID: ms.Guild.ID,
+	err = scheduledevents2.ScheduleEvent("remove_member_role", ms.GuildID, time.Now().Add(time.Duration(temporaryDuration)*time.Minute), &ScheduledMemberRoleRemoveData{
+		GuildID: ms.GuildID,
 		GroupID: c.ParentGroup.ID,
-		UserID:  ms.ID,
+		UserID:  ms.User.ID,
 		RoleID:  c.RoleId,
 	})
 

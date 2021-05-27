@@ -194,10 +194,10 @@ func (c *Context) setupContextFuncs() {
 func (c *Context) setupBaseData() {
 
 	if c.GS != nil {
-		guild := c.GS.DeepCopy(false, true, true, false)
-		c.Data["Guild"] = guild
-		c.Data["Server"] = guild
-		c.Data["server"] = guild
+		// guild := c.GS.DeepCopy(false, true, true, false)
+		c.Data["Guild"] = c.GS
+		c.Data["Server"] = c.GS
+		c.Data["server"] = c.GS
 	}
 
 	if c.CurrentFrame.CS != nil {
@@ -207,8 +207,8 @@ func (c *Context) setupBaseData() {
 	}
 
 	if c.MS != nil {
-		c.Data["Member"] = c.MS.DGoCopy()
-		c.Data["User"] = c.MS.DGoUser()
+		c.Data["Member"] = c.MS.DgoMember()
+		c.Data["User"] = c.MS.User
 		c.Data["user"] = c.Data["User"]
 	}
 
@@ -261,17 +261,9 @@ func (c *Context) Execute(source string) (string, error) {
 				return "", errors.WithMessage(err, "ctx.Execute")
 			}
 
-			c.Msg.Member = member.DGoCopy()
+			c.Msg.Member = member.DgoMember()
 		}
 
-	}
-
-	if c.GS != nil {
-		c.GS.RLock()
-	}
-	c.setupBaseData()
-	if c.GS != nil {
-		c.GS.RUnlock()
 	}
 
 	parsed, err := c.Parse(source)
@@ -384,7 +376,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		if c.CurrentFrame.CS != nil && c.CurrentFrame.CS.Type == discordgo.ChannelTypeDM {
 			channelID = c.CurrentFrame.CS.ID
 		} else {
-			privChannel, err := common.BotSession.UserChannelCreate(c.MS.ID)
+			privChannel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -466,7 +458,7 @@ func (c *Context) LogEntry() *logrus.Entry {
 	})
 
 	if c.MS != nil {
-		f = f.WithField("user", c.MS.ID)
+		f = f.WithField("user", c.MS.User.ID)
 	}
 
 	if c.CurrentFrame.CS != nil {

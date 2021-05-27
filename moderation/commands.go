@@ -557,7 +557,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
 	},
@@ -995,7 +995,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(guildID, channelID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -1019,20 +1019,20 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, inv
 		}
 	}
 
-	msgs, err := bot.GetMessages(channelID, fetchNum, false)
+	msgs, err := bot.GetMessages(guildID, channelID, fetchNum, false)
 	if err != nil {
 		return 0, err
 	}
 
 	toDelete := make([]int64, 0)
 	now := time.Now()
-	for i := len(msgs) - 1; i >= 0; i-- {
+	for i := 0; i < len(msgs); i++ {
 		if filterUser != 0 && msgs[i].Author.ID != filterUser {
 			continue
 		}
 
 		// Can only bulk delete messages up to 2 weeks (but add 1 minute buffer account for time sync issues and other smallies)
-		if now.Sub(msgs[i].ParsedCreated) > (time.Hour*24*14)-time.Minute {
+		if now.Sub(msgs[i].ParsedCreatedAt) > (time.Hour*24*14)-time.Minute {
 			continue
 		}
 
@@ -1048,12 +1048,12 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, inv
 		}
 
 		// Check max age
-		if maxAge != 0 && now.Sub(msgs[i].ParsedCreated) > maxAge {
+		if maxAge != 0 && now.Sub(msgs[i].ParsedCreatedAt) > maxAge {
 			continue
 		}
 
 		// Check min age
-		if minAge != 0 && now.Sub(msgs[i].ParsedCreated) < minAge {
+		if minAge != 0 && now.Sub(msgs[i].ParsedCreatedAt) < minAge {
 			continue
 		}
 

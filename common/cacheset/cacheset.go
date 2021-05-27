@@ -188,6 +188,21 @@ func (s *Slot) Delete(key interface{}) {
 	delete(s.values, key)
 }
 
+func (s *Slot) DeleteFunc(f func(key interface{}, value interface{}) bool) int {
+	s.valuesmu.Lock()
+	defer s.valuesmu.Unlock()
+
+	n := 0
+	for k, v := range s.values {
+		if f(k, v) {
+			delete(s.values, k)
+			n++
+		}
+	}
+
+	return n
+}
+
 func (s *Slot) fetch(fetcher FetcherFunc, key interface{}) (interface{}, error) {
 	return fetcher(key)
 }

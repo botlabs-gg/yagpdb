@@ -6,55 +6,19 @@ import (
 )
 
 // GetMessages Gets messages from state if possible, if not then it retrieves from the discord api
-// Puts the messages in the state aswell
 func GetMessages(guildID int64, channelID int64, limit int, deleted bool) ([]*dstate.MessageState, error) {
 	if limit < 1 {
 		return []*dstate.MessageState{}, nil
 	}
 
-	// cs := State.Channel(true, channelID)
-	// if cs == nil {
-	// 	return []*dstate.MessageState{}, nil
-	// }
-	// cs.Owner.RLock()
+	msgBuf := State.GetMessages(guildID, channelID, &dstate.MessagesQuery{
+		Limit:          limit,
+		IncludeDeleted: deleted,
+	})
 
-	msgBuf := State.GetMessages(guildID, channelID, 0, -1, nil)
-
-	if len(msgBuf) > limit {
+	if len(msgBuf) >= limit {
+		// State had all messages
 		msgBuf = msgBuf[:limit]
-	}
-
-	// nRemaining := limit - len(msgBuf)
-
-	// The order we get from state is newest messages last, we need to flip it so that oldest mesages is last
-	// reverse it so that we get newest messages first and oldest last
-	for i, j := 0, len(msgBuf)-1; i < j; i, j = i+1, j-1 {
-		msgBuf[i], msgBuf[j] = msgBuf[j], msgBuf[i]
-	}
-
-	// for i := len(cs.Messages) - 1; i >= 0; i-- {
-	// 	if cs.Messages[i] == nil {
-	// 		continue
-	// 	}
-
-	// 	if !deleted {
-	// 		if cs.Messages[i].Deleted {
-	// 			continue
-	// 		}
-	// 	}
-	// 	m := cs.Messages[i].Copy()
-	// 	msgBuf[n] = m
-
-	// 	n--
-	// 	if n < 0 {
-	// 		break
-	// 	}
-	// }
-
-	// cs.Owner.RUnlock()
-
-	// Check if the state was full
-	if len(msgBuf) == limit {
 		return msgBuf, nil
 	}
 
@@ -64,12 +28,6 @@ func GetMessages(guildID int64, channelID int64, limit int, deleted bool) ([]*ds
 	if len(msgBuf) > 0 {
 		before = msgBuf[len(msgBuf)-1].ID
 	}
-
-	// if n+1 < len(msgBuf) {
-	// 	if msgBuf[n+1] != nil {
-	// 		before = msgBuf[n+1].ID
-	// 	}
-	// }
 
 	// Start fetching from the api
 	for len(msgBuf) < limit {
@@ -105,32 +63,6 @@ func GetMessages(guildID int64, channelID int64, limit int, deleted bool) ([]*ds
 		}
 	}
 
-	// remove nil entries if it wasn't big enough
-	// if nRemaining+1 > 0 {
-	// 	msgBuf = msgBuf[n+1:]
-	// }
-
-	// merge the current state with this new one and sort
-	// cs.Owner.Lock()
-	// defer cs.Owner.Unlock()
-
-	// for _, m := range msgBuf {
-	// 	if cs.Message(false, m.ID) != nil {
-	// 		continue
-	// 	}
-
-	// 	cs.Messages = append(cs.Messages, m.Copy())
-	// 	// cs.MessageAddUpdate(false, m.Message, -1, 0, false, false)
-	// }
-
-	// sort.Sort(DiscordMessages(cs.Messages))
-
-	// Return at most limit results
-	// if limit < len(msgBuf) {
-	// 	return msgBuf[len(msgBuf)-limit:], nil
-	// } else {
-	// 	return msgBuf, nil
-	// }
 	return msgBuf, nil
 }
 

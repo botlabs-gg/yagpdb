@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -137,8 +138,8 @@ func SucessAlert(args ...interface{}) *Alert {
 	}
 }
 
-func ContextGuild(ctx context.Context) *discordgo.Guild {
-	return ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+func ContextGuild(ctx context.Context) *dstate.GuildSet {
+	return ctx.Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 }
 
 func ContextIsAdmin(ctx context.Context) bool {
@@ -151,10 +152,10 @@ func ContextIsAdmin(ctx context.Context) bool {
 }
 
 // Returns base context data for control panel plugins
-func GetBaseCPContextData(ctx context.Context) (*discordgo.Guild, TemplateData) {
-	var guild *discordgo.Guild
+func GetBaseCPContextData(ctx context.Context) (*dstate.GuildSet, TemplateData) {
+	var guild *dstate.GuildSet
 	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
-		guild = v.(*discordgo.Guild)
+		guild = v.(*dstate.GuildSet)
 	}
 
 	templateData := ctx.Value(common.ContextKeyTemplateData).(TemplateData)
@@ -189,7 +190,7 @@ func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool
 
 	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
 		// accessing a server page
-		g := v.(*discordgo.Guild)
+		g := v.(*dstate.GuildSet)
 
 		gWithConnected := &common.GuildWithConnected{
 			UserGuild: &discordgo.UserGuild{
@@ -247,7 +248,7 @@ func NewLogEntryFromContext(ctx context.Context, action string, params ...*cplog
 		return nil
 	}
 
-	g := ctx.Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	g := ctx.Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 
 	return cplogs.NewEntry(g.ID, user.ID, user.Username, action, params...)
 }

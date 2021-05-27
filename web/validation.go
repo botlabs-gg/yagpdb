@@ -36,6 +36,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/lib/pq"
@@ -88,7 +89,7 @@ var (
 )
 
 // Probably needs some cleaning up
-func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) bool {
+func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) bool {
 
 	ok := true
 
@@ -127,7 +128,7 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			keep, err = ValidateIntField(cv.Int64, validationTag, guild, false)
 			if err == nil && !keep {
 				vField.Set(reflect.ValueOf(newNullInt))
-			} 
+			}
 		case float64:
 			min, max := readMinMax(validationTag)
 			err = ValidateFloatField(cv, min, max)
@@ -226,7 +227,7 @@ func readMinMax(valid *ValidationTag) (float64, float64) {
 	return min, max
 }
 
-func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *discordgo.Guild) (filtered []int64, err error) {
+func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *dstate.GuildSet) (filtered []int64, err error) {
 	filtered = make([]int64, 0, len(is))
 	for _, integer := range is {
 		keep, err := ValidateIntField(integer, tags, guild, true)
@@ -242,7 +243,7 @@ func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *discordgo.Gui
 	return filtered, nil
 }
 
-func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild, forceAllowEmpty bool) (keep bool, err error) {
+func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forceAllowEmpty bool) (keep bool, err error) {
 	kind, _ := tags.Str(0)
 
 	if kind != "role" && kind != "channel" {
@@ -310,7 +311,7 @@ func ValidateRegexField(s string, max int) error {
 	return err
 }
 
-func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) (str string, err error) {
+func ValidateStringField(s string, tags *ValidationTag, guild *dstate.GuildSet) (str string, err error) {
 	maxLen := 2000
 
 	str = s
@@ -406,7 +407,7 @@ func ValidateTemplateField(s string, max int) error {
 	return err
 }
 
-func ValidateChannelField(s int64, channels []*discordgo.Channel, allowEmpty bool) error {
+func ValidateChannelField(s int64, channels []*dstate.ChannelState, allowEmpty bool) error {
 	if s == 0 {
 		if allowEmpty {
 			return nil

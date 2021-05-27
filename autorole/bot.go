@@ -279,10 +279,6 @@ func WorkingOnFullScan(guildID int64) bool {
 	return b
 }
 
-type CacheKey int
-
-const CacheKeyConfig CacheKey = 1
-
 func GuildCacheGetGeneralConfig(guildID int64) (*GeneralConfig, error) {
 	v, err := configCache.Get(guildID)
 	if err != nil {

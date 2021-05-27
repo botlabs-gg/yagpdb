@@ -171,8 +171,6 @@ func botReady() {
 		updateAllShardStatuses()
 	}, nil)
 
-	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
-
 	memberFetcher = shardmemberfetcher.NewManager(int64(totalShardCount), State, func(guildID int64, userIDs []int64, nonce string) error {
 		shardID := guildShardID(guildID)
 		session := ShardManager.Session(shardID)

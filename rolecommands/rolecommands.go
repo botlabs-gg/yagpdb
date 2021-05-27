@@ -64,7 +64,7 @@ func RegisterPlugin() {
 }
 
 func FindToggleRole(ctx context.Context, ms *dstate.MemberState, name string) (gaveRole bool, err error) {
-	cmd, err := models.RoleCommands(qm.Where("guild_id=?", ms.Guild.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
+	cmd, err := models.RoleCommands(qm.Where("guild_id=?", ms.GuildID), qm.Where("name ILIKE ?", name), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
 	if err != nil {
 		return false, err
 	}

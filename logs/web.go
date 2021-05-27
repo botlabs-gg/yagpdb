@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/null/v8"
@@ -168,7 +168,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
 	if err == nil {
-		bot.EvictGSCache(g.ID, CacheKeyConfig)
+		pubsub.EvictCacheSet(-1, configCache, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
 
 	}
@@ -181,7 +181,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*DeleteData)
 	if data.ID == 0 {
-		return tmpl, errors.New("ID is blank!")
+		return tmpl, errors.New("id is blank")
 	}
 
 	_, err := models.MessageLogs2s(

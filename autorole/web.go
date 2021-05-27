@@ -125,7 +125,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	enabledDisabled := ""
 	autoroleRole := "none"
 
-	if role := ag.Role(general.Role); role != nil {
+	if role := ag.GetRole(general.Role); role != nil {
 		templateData["WidgetEnabled"] = true
 		enabledDisabled = web.EnabledDisabledSpanStatus(true)
 		autoroleRole = html.EscapeString(role.Name)
