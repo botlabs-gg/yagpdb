@@ -213,6 +213,9 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 	msg := &discordgo.MessageSend{}
 
+	// Default filename
+	filename := "Attachment"
+
 	for key, val := range messageSdict {
 
 		switch key {
@@ -236,14 +239,20 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			buf.WriteString(stringFile)
 
 			msg.File = &discordgo.File{
-				Name:        "Attachment.txt",
 				ContentType: "text/plain",
 				Reader:      &buf,
 			}
+		case "filename":
+			// Cut the filename to a reasonable length if it's too long
+			filename = common.CutStringShort(fmt.Sprint(val), 64)
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
 
+	}
+	if msg.File != nil {
+		// We hardcode the extension to .txt to prevent possible abuse via .bat or other possible harmful/easily corruptable file formats
+		msg.File.Name = filename + ".txt"
 	}
 
 	return msg, nil
