@@ -9,6 +9,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 )
 
 var Command = &commands.YAGCommand{
@@ -68,7 +69,7 @@ var Command = &commands.YAGCommand{
 func embedCreator(udResult []urbandictionary.Result, i int) *discordgo.MessageEmbed {
 	definition := udResult[i].Definition
 	if len(definition) > 2000 {
-		definition = definition[0:2000] + "...\n\n(definition too long)"
+		definition = common.CutStringShort(definition, 2000) + "\n\n(definition too long)"
 	}
 	example := "None given"
 	if len(udResult[i].Example) > 0 {
