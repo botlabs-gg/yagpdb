@@ -21,13 +21,15 @@ var Command = &commands.YAGCommand{
 
 		vcs := make([]*discordgo.VoiceState, 0)
 
-		guilds := bot.State.GuildsSlice(true)
-
-		for _, g := range guilds {
-			vc := g.VoiceState(true, common.BotUser.ID)
-			if vc != nil {
-				vcs = append(vcs, vc)
-				go bot.ShardManager.SessionForGuild(g.ID).GatewayManager.ChannelVoiceLeave(g.ID)
+		processShards := bot.ReadyTracker.GetProcessShards()
+		for _, shard := range processShards {
+			guilds := bot.State.GetShardGuilds(int64(shard))
+			for _, g := range guilds {
+				vc := g.GetVoiceState(common.BotUser.ID)
+				if vc != nil {
+					vcs = append(vcs, vc)
+					go bot.ShardManager.SessionForGuild(g.ID).GatewayManager.ChannelVoiceLeave(g.ID)
+				}
 			}
 		}
 

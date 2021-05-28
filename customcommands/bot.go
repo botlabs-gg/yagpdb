@@ -970,15 +970,6 @@ func CheckMatchReaction(cmd *models.CustomCommand, reaction *discordgo.MessageRe
 	return false
 }
 
-type CacheKey int
-
-const (
-// CacheKeyCommands CacheKey = iota
-// CacheKeyReactionCommands
-
-// CacheKeyDBLimits
-)
-
 var cachedCommandsMessage = common.CacheSet.RegisterSlot("custom_commands_message_trigger", nil, int64(0))
 
 func BotCachedGetCommandsWithMessageTriggers(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {

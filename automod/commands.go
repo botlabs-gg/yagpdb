@@ -43,8 +43,8 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			data.GuildData.GS.UserCacheDel(CacheKeyRulesets)
-			data.GuildData.GS.UserCacheDel(CacheKeyLists)
+			cachedRulesets.Delete(data.GuildData.GS.ID)
+			cachedLists.Delete(data.GuildData.GS.ID)
 			featureflags.MarkGuildDirty(data.GuildData.GS.ID)
 
 			enabledStr := "enabled"
