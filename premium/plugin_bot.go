@@ -13,14 +13,9 @@ var _ commands.CommandProvider = (*Plugin)(nil)
 func init() {
 	oldF := bot.StateLimitsF
 	bot.StateLimitsF = func(guildID int64) (int, time.Duration) {
-		gs := bot.State.GetGuild(guildID)
-		if gs == nil {
-			return oldF(guildID)
-		}
-
-		premium, err := IsGuildPremiumCached(gs.ID)
+		premium, err := IsGuildPremiumCached(guildID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking if guild is premium")
+			logger.WithError(err).WithField("guild", guildID).Error("Failed checking if guild is premium")
 			return oldF(guildID)
 		}
 
