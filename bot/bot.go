@@ -406,7 +406,7 @@ func setupState() {
 		ChannelMessageLimitsF: StateLimitsF,
 	}, int64(totalShardCount))
 
-	eventsystem.DiscordState = State
+	eventsystem.DiscordState = tracker
 
 	stateTracker = tracker
 	State = tracker
