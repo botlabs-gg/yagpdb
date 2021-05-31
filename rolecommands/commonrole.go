@@ -150,13 +150,13 @@ func (c *CommonRoleSettings) CanRole(ctx context.Context, ms *dstate.MemberState
 	}
 
 	if len(c.WhitelistRoles) > 0 {
-		if !CheckRequiredRoles(c.WhitelistRoles, ms.Roles) {
+		if !CheckRequiredRoles(c.WhitelistRoles, ms.Member.Roles) {
 			return false, NewSimpleError("This self assignable role has been configured to require another role by the server admins.")
 		}
 	}
 
 	if len(c.BlacklistRoles) > 0 {
-		if err := CheckIgnoredRoles(c.BlacklistRoles, ms.Roles); err != nil {
+		if err := CheckIgnoredRoles(c.BlacklistRoles, ms.Member.Roles); err != nil {
 			return false, err
 		}
 	}
@@ -175,14 +175,14 @@ func (c *CommonRoleSettings) CanRole(ctx context.Context, ms *dstate.MemberState
 
 func (c *CommonRoleSettings) ParentCanRole(ctx context.Context, ms *dstate.MemberState) (can bool, err error) {
 	if len(c.ParentWhitelistRoles) > 0 {
-		if !CheckRequiredRoles(c.ParentWhitelistRoles, ms.Roles) {
+		if !CheckRequiredRoles(c.ParentWhitelistRoles, ms.Member.Roles) {
 			err = NewSimpleError("You don't have a required role for this self-assignable role group.")
 			return false, err
 		}
 	}
 
 	if len(c.ParentBlacklistRoles) > 0 {
-		if err = CheckIgnoredRoles(c.ParentBlacklistRoles, ms.Roles); err != nil {
+		if err = CheckIgnoredRoles(c.ParentBlacklistRoles, ms.Member.Roles); err != nil {
 			return false, err
 		}
 	}
@@ -198,7 +198,7 @@ func (c *CommonRoleSettings) ParentCanRole(ctx context.Context, ms *dstate.Membe
 
 	if c.ParentGroupMode == GroupModeSingle {
 		// If user already has role it's attempting to give itself, assume were trying to remove it
-		if common.ContainsInt64Slice(ms.Roles, c.RoleId) {
+		if common.ContainsInt64Slice(ms.Member.Roles, c.RoleId) {
 			if modeSettings.SingleRequireOne {
 				return false, NewSimpleError("Need at least one role in this group/rolemenu")
 			}
@@ -208,7 +208,7 @@ func (c *CommonRoleSettings) ParentCanRole(ctx context.Context, ms *dstate.Membe
 
 		// Check if the user has any other role commands in this group
 		for _, v := range commands {
-			if common.ContainsInt64Slice(ms.Roles, v.RoleId) {
+			if common.ContainsInt64Slice(ms.Member.Roles, v.RoleId) {
 				if !modeSettings.SingleAutoToggleOff {
 					return false, NewSimpleError("Max 1 role in this group/rolemenu is allowed")
 				}
@@ -226,7 +226,7 @@ func (c *CommonRoleSettings) ParentCanRole(ctx context.Context, ms *dstate.Membe
 	hasRoles := 0
 	hasTargetRole := false
 	for _, role := range commands {
-		if common.ContainsInt64Slice(ms.Roles, role.RoleId) {
+		if common.ContainsInt64Slice(ms.Member.Roles, role.RoleId) {
 			hasRoles++
 			if role.RoleId == c.RoleId {
 				hasTargetRole = true
@@ -269,7 +269,7 @@ func (c *CommonRoleSettings) CheckToggleRole(ctx context.Context, ms *dstate.Mem
 
 // ToggleRole toggles the role of a guildmember, adding it if the member does not have the role and removing it if they do
 func (c *CommonRoleSettings) ToggleRole(ms *dstate.MemberState) (gaveRole bool, err error) {
-	if common.ContainsInt64Slice(ms.Roles, c.RoleId) {
+	if common.ContainsInt64Slice(ms.Member.Roles, c.RoleId) {
 		err = common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, c.RoleId)
 		return false, err
 	}
@@ -290,7 +290,7 @@ func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.Mem
 	}
 
 	// If user already has role it's attempting to give itself
-	if common.ContainsInt64Slice(ms.Roles, c.RoleId) {
+	if common.ContainsInt64Slice(ms.Member.Roles, c.RoleId) {
 		err = common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, c.RoleId)
 		return false, err
 	}
@@ -298,7 +298,7 @@ func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.Mem
 	// Check if the user has any other role commands in this group
 	commands := c.AllGroupRoles(ctx)
 	for _, v := range commands {
-		if common.ContainsInt64Slice(ms.Roles, v.RoleId) {
+		if common.ContainsInt64Slice(ms.Member.Roles, v.RoleId) {
 			if c.ModeSettings().SingleAutoToggleOff {
 				common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, v.RoleId)
 			} else {
@@ -316,7 +316,7 @@ func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.Mem
 }
 
 func (c *CommonRoleSettings) AssignRole(ctx context.Context, ms *dstate.MemberState) (gaveRole bool, err error) {
-	if common.ContainsInt64Slice(ms.Roles, c.RoleId) {
+	if common.ContainsInt64Slice(ms.Member.Roles, c.RoleId) {
 		return false, nil
 	}
 
@@ -324,7 +324,7 @@ func (c *CommonRoleSettings) AssignRole(ctx context.Context, ms *dstate.MemberSt
 }
 
 func (c *CommonRoleSettings) RemoveRole(ctx context.Context, ms *dstate.MemberState) (removedRole bool, err error) {
-	if !common.ContainsInt64Slice(ms.Roles, c.RoleId) {
+	if !common.ContainsInt64Slice(ms.Member.Roles, c.RoleId) {
 		return false, nil
 	}
 

@@ -63,7 +63,7 @@ func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
 func (mrc *MemberRolesCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	settingsCast := settings.(*MemberRolesConditionData)
 	for _, r := range settingsCast.Roles {
-		if common.ContainsInt64Slice(data.MS.Roles, r) {
+		if common.ContainsInt64Slice(data.MS.Member.Roles, r) {
 			if mrc.Blacklist {
 				// Had a blacklist role, this condition is not met
 				return false, nil

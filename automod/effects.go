@@ -506,7 +506,7 @@ func (sn *SetNicknameEffect) Description() (description string) {
 func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*SetNicknameEffectData)
 
-	if ctxData.MS.Nick == settingsCast.NewName {
+	if ctxData.MS.Member.Nick == settingsCast.NewName {
 		// Avoid infinite recursion
 		return nil
 	}
@@ -674,7 +674,7 @@ func (rf *RemoveRoleEffect) Description() (description string) {
 func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*RemoveRoleEffectData)
 
-	if !common.ContainsInt64Slice(ctxData.MS.Roles, settingsCast.Role) {
+	if !common.ContainsInt64Slice(ctxData.MS.Member.Roles, settingsCast.Role) {
 		return nil
 	}
 

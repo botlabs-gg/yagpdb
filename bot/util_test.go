@@ -31,7 +31,9 @@ func TestMemberHighestRole(t *testing.T) {
 	for i, v := range cases {
 		t.Run(fmt.Sprintf("case #%d", i), func(t *testing.T) {
 			ms := &dstate.MemberState{
-				Roles: v.Roles,
+				Member: &dstate.MemberFields{
+					Roles: v.Roles,
+				},
 			}
 
 			result := MemberHighestRole(gs, ms)
@@ -71,11 +73,15 @@ func TestIsMemberAbove(t *testing.T) {
 	for i, v := range cases {
 		t.Run(fmt.Sprintf("case #%d", i), func(t *testing.T) {
 			ms1 := &dstate.MemberState{
-				Roles: v.M1,
+				Member: &dstate.MemberFields{
+					Roles: v.M1,
+				},
 			}
 
 			ms2 := &dstate.MemberState{
-				Roles: v.M2,
+				Member: &dstate.MemberFields{
+					Roles: v.M2,
+				},
 			}
 
 			result := IsMemberAbove(gs, ms1, ms2)

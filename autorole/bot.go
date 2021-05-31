@@ -320,7 +320,7 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 		return bot.CheckDiscordErrRetry(err), err
 	}
 
-	if !config.CanAssignTo(member.Roles, parsedT) {
+	if !config.CanAssignTo(member.Member.Roles, parsedT) {
 		// some other reason they can't get the role, such as whitelist or ignore roles
 		return false, nil
 	}

@@ -36,7 +36,7 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		perms, err := data.GuildData.GS.GetMemberPermissions(data.GuildData.CS.ID, target.User.ID, target.Roles)
+		perms, err := data.GuildData.GS.GetMemberPermissions(data.GuildData.CS.ID, target.User.ID, target.Member.Roles)
 		if err != nil {
 			return "Unable to calculate perms", err
 		}

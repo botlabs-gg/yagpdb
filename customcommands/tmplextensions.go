@@ -620,7 +620,7 @@ func getGuildCCDBNumValues(guildID int64) (int64, error) {
 	return count, err
 }
 
-var cachedDBLimits = common.CacheSet.RegisterSlot("custom_commands_message_trigger", nil, int64(0))
+var cachedDBLimits = common.CacheSet.RegisterSlot("custom_commands_db_limits", nil, int64(0))
 
 func cacheCheckDBLimit(gs *dstate.GuildSet) (int64, error) {
 	v, err := cachedDBLimits.GetCustomFetch(gs.ID, func(key interface{}) (interface{}, error) {

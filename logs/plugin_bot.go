@@ -98,8 +98,8 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		nick := ""
-		if member.Nick != "" {
-			nick = " (" + member.Nick + ")"
+		if member.Member.Nick != "" {
+			nick = " (" + member.Member.Nick + ")"
 		}
 
 		joinedAtStr := ""
@@ -429,7 +429,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if pu.Nick != ms.Nick {
+	if pu.Nick != ms.Member.Nick {
 		queueEvt(pu)
 		return
 	}

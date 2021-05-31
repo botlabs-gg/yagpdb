@@ -54,7 +54,7 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		description += pollReactions[i] + " " + option.Str()
 	}
 
-	authorName := data.GuildData.MS.Nick
+	authorName := data.GuildData.MS.Member.Nick
 	if authorName == "" {
 		authorName = data.GuildData.MS.User.Username
 	}

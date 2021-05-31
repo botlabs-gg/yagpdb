@@ -46,7 +46,7 @@ func (p *Plugin) AddCommands() {
 
 				if sound == nil {
 					return "Sound not found, " + ListSounds(sounds, member), nil
-				} else if !CanPlaySound(sound, member.Roles) {
+				} else if !CanPlaySound(sound, member.Member.Roles) {
 					return "You can't play that sound, either you have a blacklisted role or missing a required role for this sound", nil
 				}
 
@@ -106,7 +106,7 @@ func ListSounds(sounds []*models.SoundboardSound, ms *dstate.MemberState) string
 	restricted := ""
 
 	for _, sound := range sounds {
-		if CanPlaySound(sound, ms.Roles) {
+		if CanPlaySound(sound, ms.Member.Roles) {
 			canPlay += "`" + sound.Name + "`, "
 		} else {
 			restricted += "`" + sound.Name + "`, "

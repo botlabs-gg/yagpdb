@@ -380,7 +380,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 	if mute {
 		// Apply the roles to the user
-		removedRoles, err := AddMemberMuteRole(config, member.User.ID, member.Roles)
+		removedRoles, err := AddMemberMuteRole(config, member.User.ID, member.Member.Roles)
 		if err != nil {
 			return errors.WithMessage(err, "AddMemberMuteRole")
 		}
@@ -418,7 +418,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		}
 	} else {
 		// Remove the mute role, and give back the role the bot took
-		err = RemoveMemberMuteRole(config, member.User.ID, member.Roles, currentMute)
+		err = RemoveMemberMuteRole(config, member.User.ID, member.Member.Roles, currentMute)
 		if err != nil {
 			return errors.WithMessage(err, "failed removing mute role")
 		}

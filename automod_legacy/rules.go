@@ -106,7 +106,7 @@ func (r BaseRule) ShouldIgnore(evt *discordgo.Message, ms *dstate.MemberState) b
 		}
 	}
 
-	for _, role := range ms.Roles {
+	for _, role := range ms.Member.Roles {
 		if r.IgnoreRoleInt() == role {
 			return true
 		}

@@ -303,13 +303,13 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 	if ms.Presence != nil && ms.Presence.Status != dstate.StatusOffline && ms.Presence.Game != nil && ms.Presence.Game.URL != "" && ms.Presence.Game.Type == 1 {
 		// Streaming
 
-		if !config.MeetsRequirements(ms.Roles, ms.Presence.Game.State, ms.Presence.Game.Details) {
-			RemoveStreaming(client, config, gs.ID, ms.User.ID, ms.Roles)
+		if !config.MeetsRequirements(ms.Member.Roles, ms.Presence.Game.State, ms.Presence.Game.Details) {
+			RemoveStreaming(client, config, gs.ID, ms.User.ID, ms.Member.Roles)
 			return nil
 		}
 
 		if config.GiveRole != 0 {
-			go GiveStreamingRole(gs.ID, ms.User.ID, config.GiveRole, ms.Roles)
+			go GiveStreamingRole(gs.ID, ms.User.ID, config.GiveRole, ms.Member.Roles)
 		}
 
 		// if true, then we were marked now, and not before
@@ -327,7 +327,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 	} else {
 		// Not streaming
-		RemoveStreaming(client, config, gs.ID, ms.User.ID, ms.Roles)
+		RemoveStreaming(client, config, gs.ID, ms.User.ID, ms.Member.Roles)
 	}
 
 	return nil

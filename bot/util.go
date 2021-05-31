@@ -87,7 +87,7 @@ func AdminOrPermMS(guildID int64, channelID int64, ms *dstate.MemberState, neede
 		return false, ErrGuildNotFound
 	}
 
-	perms, err := guild.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
+	perms, err := guild.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
 		return false, err
 	}
@@ -153,7 +153,7 @@ func BotProbablyHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission
 		return false
 	}
 
-	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
 		return true
@@ -176,7 +176,7 @@ func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
 		return 0, err
 	}
 
-	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
 		return 0, err
 	}
@@ -314,7 +314,7 @@ func IsMemberAboveRole(gs *dstate.GuildSet, ms1 *dstate.MemberState, role *disco
 // MemberHighestRole returns the highest role for ms, assumes gs is rlocked, otherwise race conditions will occur
 func MemberHighestRole(gs *dstate.GuildSet, ms *dstate.MemberState) *discordgo.Role {
 	var highest *discordgo.Role
-	for _, rID := range ms.Roles {
+	for _, rID := range ms.Member.Roles {
 		for _, r := range gs.Roles {
 			if r.ID != rID {
 				continue

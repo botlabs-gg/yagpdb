@@ -174,7 +174,7 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			if !common.ContainsInt64Slice(ms.Roles, role.ID) {
+			if !common.ContainsInt64Slice(ms.Member.Roles, role.ID) {
 				continue
 			}
 
@@ -216,7 +216,7 @@ func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	perms, err := guild.GetMemberPermissions(cId, member.User.ID, member.Roles)
+	perms, err := guild.GetMemberPermissions(cId, member.User.ID, member.Member.Roles)
 	if err != nil {
 		internalapi.ServerError(w, r, errors.WithMessage(err, "Error calculating perms"))
 		return

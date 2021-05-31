@@ -196,7 +196,7 @@ func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 	evtData := evt.GuildMemberUpdate()
 
 	ms := dstate.MemberStateFromMember(evtData.Member)
-	if ms.Nick == "" {
+	if ms.Member.Nick == "" {
 		return
 	}
 

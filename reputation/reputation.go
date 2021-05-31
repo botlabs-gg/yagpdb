@@ -216,23 +216,23 @@ DO UPDATE SET points = reputation_users.points + $4;
 // Returns a user error if the sender can not modify the rep of receiver
 // Admins are always able to modify the rep of everyone
 func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.MemberState) error {
-	if common.ContainsInt64SliceOneOf(sender.Roles, conf.AdminRoles) {
+	if common.ContainsInt64SliceOneOf(sender.Member.Roles, conf.AdminRoles) {
 		return nil
 	}
 
-	if len(conf.RequiredGiveRoles) > 0 && !common.ContainsInt64SliceOneOf(sender.Roles, conf.RequiredGiveRoles) {
+	if len(conf.RequiredGiveRoles) > 0 && !common.ContainsInt64SliceOneOf(sender.Member.Roles, conf.RequiredGiveRoles) {
 		return ErrMissingRequiredGiveRole
 	}
 
-	if len(conf.RequiredReceiveRoles) > 0 && !common.ContainsInt64SliceOneOf(receiver.Roles, conf.RequiredReceiveRoles) {
+	if len(conf.RequiredReceiveRoles) > 0 && !common.ContainsInt64SliceOneOf(receiver.Member.Roles, conf.RequiredReceiveRoles) {
 		return ErrMissingRequiredReceiveRole
 	}
 
-	if common.ContainsInt64SliceOneOf(sender.Roles, conf.BlacklistedGiveRoles) {
+	if common.ContainsInt64SliceOneOf(sender.Member.Roles, conf.BlacklistedGiveRoles) {
 		return ErrBlacklistedGive
 	}
 
-	if common.ContainsInt64SliceOneOf(receiver.Roles, conf.BlacklistedReceiveRoles) {
+	if common.ContainsInt64SliceOneOf(receiver.Member.Roles, conf.BlacklistedReceiveRoles) {
 		return ErrBlacklistedReceive
 	}
 
@@ -241,13 +241,13 @@ func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.Member
 
 func IsAdmin(gs *dstate.GuildSet, member *dstate.MemberState, config *models.ReputationConfig) bool {
 
-	memberPerms, _ := gs.GetMemberPermissions(0, member.User.ID, member.Roles)
+	memberPerms, _ := gs.GetMemberPermissions(0, member.User.ID, member.Member.Roles)
 
 	if memberPerms&discordgo.PermissionManageServer != 0 {
 		return true
 	}
 
-	if common.ContainsInt64SliceOneOf(member.Roles, config.AdminRoles) {
+	if common.ContainsInt64SliceOneOf(member.Member.Roles, config.AdminRoles) {
 		return true
 	}
 

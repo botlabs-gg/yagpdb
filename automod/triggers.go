@@ -991,7 +991,7 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.Nick) {
+	if re.MatchString(t.MS.Member.Nick) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1058,7 +1058,7 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 		return false, nil
 	}
 
-	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Nick))
+	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
 
 	for _, mf := range fields {
 		contained := false

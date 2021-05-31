@@ -475,7 +475,7 @@ func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 		return false
 	}
 
-	contains := common.ContainsInt64Slice(c.MS.Roles, role)
+	contains := common.ContainsInt64Slice(c.MS.Member.Roles, role)
 	return contains
 }
 
@@ -486,7 +486,7 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(c.MS.Roles, r.ID) {
+			if common.ContainsInt64Slice(c.MS.Member.Roles, r.ID) {
 				return true, nil
 			}
 
@@ -539,7 +539,7 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 		return false
 	}
 
-	contains := common.ContainsInt64Slice(ts.Roles, role)
+	contains := common.ContainsInt64Slice(ts.Member.Roles, role)
 
 	return contains
 
@@ -562,7 +562,7 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(ts.Roles, r.ID) {
+			if common.ContainsInt64Slice(ts.Member.Roles, r.ID) {
 				return true
 			}
 
@@ -621,7 +621,7 @@ func (c *Context) giveRole(targetID int64, roleID int64) string {
 		return ""
 	}
 
-	if !common.ContainsInt64Slice(ms.Roles, roleID) {
+	if !common.ContainsInt64Slice(ms.Member.Roles, roleID) {
 		common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, roleID)
 	}
 
@@ -684,7 +684,7 @@ func (c *Context) takeRole(targetID int64, roleID int64, delay time.Duration) st
 		return ""
 	}
 
-	if common.ContainsInt64Slice(ms.Roles, roleID) {
+	if common.ContainsInt64Slice(ms.Member.Roles, roleID) {
 		return ""
 	}
 
@@ -1280,7 +1280,7 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 		return "", nil
 	}
 
-	if strings.Compare(c.MS.Nick, Nickname) == 0 {
+	if strings.Compare(c.MS.Member.Nick, Nickname) == 0 {
 
 		return "", nil
 

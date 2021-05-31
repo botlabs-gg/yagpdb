@@ -70,7 +70,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 	permsMet := false
 	if len(additionalPermRoles) > 0 {
 		// Check if the user has one of the required roles
-		for _, r := range member.Roles {
+		for _, r := range member.Member.Roles {
 			if common.ContainsInt64Slice(additionalPermRoles, r) {
 				permsMet = true
 				break
@@ -904,7 +904,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			dur := parsed.Switches["d"].Value.(time.Duration)
 
 			// no point if the user has the role and is not updating the expiracy
-			if common.ContainsInt64Slice(member.Roles, role.ID) && dur <= 0 {
+			if common.ContainsInt64Slice(member.Member.Roles, role.ID) && dur <= 0 {
 				return "That user already has that role", nil
 			}
 

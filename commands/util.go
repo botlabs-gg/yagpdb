@@ -173,12 +173,12 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 					continue
 				}
 
-				if len(settings.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(settings.RequiredRoles, ms.Roles) {
+				if len(settings.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(settings.RequiredRoles, ms.Member.Roles) {
 					// missing required role
 					continue
 				}
 
-				if len(settings.IgnoreRoles) > 0 && common.ContainsInt64SliceOneOf(settings.IgnoreRoles, ms.Roles) {
+				if len(settings.IgnoreRoles) > 0 && common.ContainsInt64SliceOneOf(settings.IgnoreRoles, ms.Member.Roles) {
 					// has ignored role
 					continue
 				}

@@ -481,7 +481,7 @@ func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, da
 		return nil
 	}
 
-	for _, r := range member.Roles {
+	for _, r := range member.Member.Roles {
 		if common.ContainsInt64Slice(whitelistRoles, r) {
 			// we have a whitelist role!
 			return nil
@@ -526,7 +526,7 @@ func checkBlacklistRoles(guildRoles map[int64]string, blacklistRoles []int64, da
 	}
 
 	hasRole := int64(0)
-	for _, r := range member.Roles {
+	for _, r := range member.Member.Roles {
 		if common.ContainsInt64Slice(blacklistRoles, r) {
 			// we have a blacklist role!
 			hasRole = r
@@ -557,7 +557,7 @@ func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildSet, ms *dstate.M
 		return nil
 	}
 
-	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Roles)
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
 		return &CanExecuteError{
 			Type:    ReasonError,
