@@ -83,7 +83,7 @@ func CoreInit() error {
 
 // Init initializes the rest of the bot
 func Init() error {
-	CacheSet.RunGCLoop()
+	go CacheSet.RunGCLoop()
 
 	err := setupGlobalDGoSession()
 	if err != nil {
