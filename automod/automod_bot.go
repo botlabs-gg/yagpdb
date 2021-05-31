@@ -264,7 +264,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 
 	if rulesets == nil {
 		var err error
-		rulesets, err = p.FetchGuildRulesets(msg.GuildID)
+		rulesets, err = p.FetchGuildRulesets(gs.ID)
 		if err != nil {
 			logger.WithError(err).WithField("guild", msg.GuildID).Error("failed fetching triggers")
 			return false
