@@ -45,7 +45,7 @@ func (p *Plugin) AddCommands() {
 		Description:  "Opens a new ticket",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "subject", Type: dcmd.String},
+			{Name: "subject", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
@@ -66,6 +66,9 @@ func (p *Plugin) AddCommands() {
 				qm.Where("closed_at IS NULL"),
 				qm.Where("guild_id = ?", parsed.GuildData.GS.ID),
 				qm.Where("author_id = ?", parsed.Author.ID)).AllG(parsed.Context())
+			if err != nil {
+				return "failed checking current tickets...", err
+			}
 
 			count := 0
 			for _, v := range inCurrentTickets {
@@ -137,7 +140,7 @@ func (p *Plugin) AddCommands() {
 		Description:  "Adds a user to the ticket in this channel",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "target", Type: &commands.MemberArg{}},
+			{Name: "target", Type: &commands.MemberArg{}},
 		},
 
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -161,7 +164,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Added %s#%04d to the ticket", target.User.Username, target.User.Discriminator), nil
+			return fmt.Sprintf("Added %s#%s to the ticket", target.User.Username, target.User.Discriminator), nil
 		},
 	}
 
@@ -171,7 +174,7 @@ func (p *Plugin) AddCommands() {
 		Description:  "Removes a user from the ticket",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "target", Type: &commands.MemberArg{}},
+			{Name: "target", Type: &commands.MemberArg{}},
 		},
 
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -193,7 +196,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if !foundUser {
-				return fmt.Sprintf("%s#%04d is already not (explicitly) part of this ticket", target.User.Username, target.User.Discriminator), nil
+				return fmt.Sprintf("%s#%s is already not (explicitly) part of this ticket", target.User.Username, target.User.Discriminator), nil
 			}
 
 			err := common.BotSession.ChannelPermissionDelete(currentTicket.Ticket.ChannelID, target.User.ID)
@@ -201,7 +204,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Removed %s#%04d from the ticket", target.User.Username, target.User.Discriminator), nil
+			return fmt.Sprintf("Removed %s#%s from the ticket", target.User.Username, target.User.Discriminator), nil
 		},
 	}
 
@@ -211,7 +214,7 @@ func (p *Plugin) AddCommands() {
 		Description:  "Renames the ticket",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "new-name", Type: dcmd.String},
+			{Name: "new-name", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
@@ -250,7 +253,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"end", "delete"},
 		Description: "Closes the ticket",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "reason", Type: dcmd.String, Default: "none"},
+			{Name: "reason", Type: dcmd.String, Default: "none"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
@@ -577,7 +580,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 			}
 
 			fName := fmt.Sprintf("attachments-%d-%s-%s", ticket.LocalID, ticket.Title, ag[0].Filename)
-			_, err = common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly),
+			_, _ = common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly),
 				fName, fName, resp.Body)
 			continue
 		}
@@ -684,17 +687,17 @@ func transcriptChannel(conf *models.TicketConfig, adminOnly bool) int64 {
 func createTicketChannel(conf *models.TicketConfig, gs *dstate.GuildSet, authorID int64, subject string) (int64, *discordgo.Channel, error) {
 	// assemble the permission overwrites for the channel were about to create
 	overwrites := []*discordgo.PermissionOverwrite{
-		&discordgo.PermissionOverwrite{
+		{
 			Type:  "member",
 			ID:    authorID,
 			Allow: InTicketPerms,
 		},
-		&discordgo.PermissionOverwrite{
+		{
 			Type: "role",
 			ID:   gs.ID,
 			Deny: InTicketPerms,
 		},
-		&discordgo.PermissionOverwrite{
+		{
 			Type:  "member",
 			ID:    common.BotUser.ID,
 			Allow: InTicketPerms,
