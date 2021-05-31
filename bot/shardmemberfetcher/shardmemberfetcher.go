@@ -78,10 +78,9 @@ func (m *Manager) GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberS
 
 		// otherwise create a request
 		requests = append(requests, &MemberFetchRequest{
-			resp:         resultChan,
-			Member:       v,
-			Guild:        guildID,
-			NeedJoinedAt: false,
+			resp:   resultChan,
+			Member: v,
+			Guild:  guildID,
 		})
 	}
 
@@ -98,10 +97,6 @@ func (m *Manager) GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberS
 	return result, nil
 }
 
-func (m *Manager) GetMemberJoinedAt(guildID, userID int64) (*dstate.MemberState, error) {
-	return m.getMember(guildID, userID, true)
-}
-
 func (m *Manager) getMember(guildID, userID int64, joinedAt bool) (*dstate.MemberState, error) {
 	// check from state first
 
@@ -115,10 +110,9 @@ func (m *Manager) getMember(guildID, userID int64, joinedAt bool) (*dstate.Membe
 
 	req := []*MemberFetchRequest{
 		{
-			resp:         resultChan,
-			Member:       userID,
-			Guild:        guildID,
-			NeedJoinedAt: joinedAt,
+			resp:   resultChan,
+			Member: userID,
+			Guild:  guildID,
 		},
 	}
 
@@ -452,7 +446,7 @@ func (s *shardMemberFetcher) fetchSingleInner(req *MemberFetchRequest) (*dstate.
 
 	// it was already existant in the state
 	result := s.state.GetMember(req.Guild, req.Member)
-	if result != nil && result.Member != nil && (!req.NeedJoinedAt || result.Member.JoinedAt != "") {
+	if result != nil && result.Member != nil {
 		metricsProcessed.With(prometheus.Labels{"type": "state"}).Inc()
 		return result, nil
 	}
@@ -567,10 +561,9 @@ type FetchingGWState struct {
 }
 
 type MemberFetchRequest struct {
-	Member       int64
-	Guild        int64
-	NeedJoinedAt bool
-	resp         chan *MemberFetchResult
+	Member int64
+	Guild  int64
+	resp   chan *MemberFetchResult
 }
 
 type MemberFetchResult struct {

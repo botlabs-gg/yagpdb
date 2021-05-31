@@ -48,22 +48,3 @@ func GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberState, error) 
 
 	return result, nil
 }
-
-// GetMemberJoinedAt is the same as GetMember but it ensures the JoinedAt field is present
-func GetMemberJoinedAt(guildID, userID int64) (*dstate.MemberState, error) {
-	if memberFetcher != nil {
-		return memberFetcher.GetMember(guildID, userID)
-	}
-
-	ms := State.GetMember(guildID, userID)
-	if ms != nil && ms.Member != nil {
-		return ms, nil
-	}
-
-	member, err := common.BotSession.GuildMember(guildID, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return dstate.MemberStateFromMember(member), nil
-}

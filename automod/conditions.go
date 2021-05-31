@@ -410,7 +410,7 @@ func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings interface{
 	if data.MS.Member != nil && data.MS.Member.JoinedAt != "" {
 		joinedAt, _ = data.MS.Member.JoinedAt.Parse()
 	} else {
-		newMS, err := bot.GetMemberJoinedAt(data.GS.ID, data.MS.User.ID)
+		newMS, err := bot.GetMember(data.GS.ID, data.MS.User.ID)
 		if err != nil {
 			return false, err
 		}

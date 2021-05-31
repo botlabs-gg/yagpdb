@@ -301,7 +301,7 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 
 	dataCast := data.(*assignRoleEventdata)
 
-	member, err := bot.GetMemberJoinedAt(evt.GuildID, dataCast.UserID)
+	member, err := bot.GetMember(evt.GuildID, dataCast.UserID)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
 			return false, nil
@@ -352,7 +352,7 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 
 	if config.RequiredDuration > 0 {
 		// check the autorole duration
-		ms, err := bot.GetMemberJoinedAt(update.GuildID, update.User.ID)
+		ms, err := bot.GetMember(update.GuildID, update.User.ID)
 		if err != nil {
 			return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 		}

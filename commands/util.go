@@ -235,7 +235,7 @@ func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.
 		return nil, dcmd.NewSimpleUserError("Invalid mention or id")
 	}
 
-	member, err := bot.GetMemberJoinedAt(data.GuildData.GS.ID, id)
+	member, err := bot.GetMember(data.GuildData.GS.ID, id)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember, discordgo.ErrCodeUnknownUser) {
 			return nil, dcmd.NewSimpleUserError("User not a member of the server")
