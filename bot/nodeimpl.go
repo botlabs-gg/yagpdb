@@ -2,6 +2,7 @@ package bot
 
 import (
 	"os"
+	"runtime"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -121,22 +122,22 @@ func (n *NodeImpl) InitializeShardTransferTo(shard int, sessionID string, sequen
 }
 
 const (
-	EvtGuildState dshardorchestrator.EventType = 101
+	// This was a legacy format thats now unused
+	// EvtGuildState dshardorchestrator.EventType = 101
+
+	EvtGuildState dshardorchestrator.EventType = 102
 )
 
 // this should return when all user events has been sent, with the number of user events sent
 func (n *NodeImpl) StartShardTransferFrom(shard int) (numEventsSent int) {
-	panic("TODO: Not implemented")
-	// return n.SendGuilds(shard)
-	return 0
+	return n.SendGuilds(shard)
 }
 
 func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interface{}) {
-	panic("TODO: Not implemented")
 
 	if evt == EvtGuildState {
-		// dataCast := data.(*dstate.GuildSet)
-		// n.LoadGuildState(dataCast)
+		dataCast := data.(*dstate.GuildSet)
+		n.LoadGuildState(dataCast)
 	}
 
 	for _, v := range common.Plugins {
@@ -146,97 +147,59 @@ func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interf
 	}
 }
 
-// func (n *NodeImpl) SendGuilds(shard int) int {
-// 	started := time.Now()
+func (n *NodeImpl) SendGuilds(shard int) int {
+	started := time.Now()
 
-// 	totalSentEvents := 0
-// 	// start with the plugins
-// 	for _, v := range common.Plugins {
-// 		if migrator, ok := v.(ShardMigrationSender); ok {
-// 			totalSentEvents += migrator.ShardMigrationSend(shard)
-// 		}
-// 	}
+	totalSentEvents := 0
 
-// 	// Send the guilds on this shard
-// 	guildsToSend := make([]*dstate.GuildSet, 0)
-// 	State.RLock()
-// 	for _, v := range State.Guilds {
-// 		shardID := guildShardID(v.ID)
-// 		if int(shardID) == shard {
-// 			guildsToSend = append(guildsToSend, v)
-// 		}
-// 	}
-// 	State.RUnlock()
+	// start with the plugins
+	for _, v := range common.Plugins {
+		if migrator, ok := v.(ShardMigrationSender); ok {
+			totalSentEvents += migrator.ShardMigrationSend(shard)
+		}
+	}
 
-// 	workChan := make(chan *dstate.GuildSet)
-// 	var wg sync.WaitGroup
+	// Send the guilds on this shard
+	guildsToSend := State.GetShardGuilds(int64(shard))
 
-// 	// To speed this up we use multiple workers, this has to be done in a relatively short timespan otherwise we won't be able to resume
-// 	worker := func() {
-// 		for gs := range workChan {
-// 			State.Lock()
-// 			delete(State.Guilds, gs.ID)
-// 			State.Unlock()
+	workChan := make(chan *dstate.GuildSet)
+	var wg sync.WaitGroup
 
-// 			gs.RLock()
-// 			channels := make([]int64, 0, len(gs.Channels))
-// 			for _, c := range gs.Channels {
-// 				channels = append(channels, c.ID)
-// 			}
+	// To speed this up we use multiple workers, this has to be done in a relatively short timespan otherwise we won't be able to resume
+	worker := func() {
+		for gs := range workChan {
+			NodeConn.SendLogErr(EvtGuildState, gs, true)
+		}
 
-// 			NodeConn.SendLogErr(EvtGuildState, gs, true)
-// 			gs.RUnlock()
+		wg.Done()
+	}
 
-// 			State.Lock()
-// 			for _, c := range channels {
-// 				delete(State.Channels, c)
-// 			}
-// 			State.Unlock()
-// 		}
+	// spawn runtime.NumCPU - 2 workers
+	numCpu := runtime.NumCPU()
+	numWorkers := numCpu - 2
+	if numWorkers < 2 {
+		numWorkers = 2
+	}
 
-// 		wg.Done()
-// 	}
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go worker()
+	}
 
-// 	// spawn runtime.NumCPU - 2 workers
-// 	numCpu := runtime.NumCPU()
-// 	numWorkers := numCpu - 2
-// 	if numWorkers < 2 {
-// 		numWorkers = 2
-// 	}
+	for _, v := range guildsToSend {
+		workChan <- v
+	}
+	close(workChan)
+	wg.Wait()
 
-// 	for i := 0; i < numWorkers; i++ {
-// 		wg.Add(1)
-// 		go worker()
-// 	}
+	// clean up after ourselves
+	stateTracker.DelShard(int64(shard))
 
-// 	for _, v := range guildsToSend {
-// 		workChan <- v
-// 	}
-// 	close(workChan)
-// 	wg.Wait()
+	logger.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
+	totalSentEvents += len(guildsToSend)
+	return totalSentEvents
+}
 
-// 	logger.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
-// 	totalSentEvents += len(guildsToSend)
-// 	return totalSentEvents
-// }
-
-// func (n *NodeImpl) LoadGuildState(gs *dstate.GuildSet) {
-
-// 	for _, c := range gs.Channels {
-// 		c.Owner = gs
-// 		c.Guild = gs
-// 	}
-
-// 	for _, m := range gs.Members {
-// 		m.Guild = gs
-// 	}
-
-// 	gs.InitCache(State)
-
-// 	State.Lock()
-// 	State.Guilds[gs.ID] = gs
-// 	for _, c := range gs.Channels {
-// 		State.Channels[c.ID] = c
-// 	}
-// 	State.Unlock()
-// }
+func (n *NodeImpl) LoadGuildState(gs *dstate.GuildSet) {
+	stateTracker.SetGuild(gs)
+}
