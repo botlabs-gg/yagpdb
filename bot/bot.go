@@ -346,7 +346,7 @@ var (
 	})
 )
 
-var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Gateway connection logging channel", true)
+var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Remove offline members from state", true)
 
 // func setupState() {
 // 	// Things may rely on state being available at this point for initialization
@@ -402,9 +402,18 @@ var StateLimitsF func(guildID int64) (int, time.Duration) = func(guildID int64) 
 }
 
 func setupState() {
+
+	removeMembersDur := time.Duration(0)
+	if confStateRemoveOfflineMembers.GetBool() {
+		removeMembersDur = time.Hour
+	}
+
 	tracker := inmemorytracker.NewInMemoryTracker(inmemorytracker.TrackerConfig{
-		ChannelMessageLimitsF: StateLimitsF,
+		ChannelMessageLimitsF:     StateLimitsF,
+		RemoveOfflineMembersAfter: removeMembersDur,
 	}, int64(totalShardCount))
+
+	go tracker.RunGCLoop(time.Second)
 
 	eventsystem.DiscordState = tracker
 
