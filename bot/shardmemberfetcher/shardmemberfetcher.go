@@ -8,6 +8,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dstate/v3/inmemorytracker"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
@@ -335,19 +336,21 @@ OUTER_SEND:
 		go s.sendGWResult(req, nil)
 	}
 
-	// add to state
-	// gs.Lock()
-	// defer gs.Unlock()
+	// add to state if we can
+	cast, ok := s.state.(*inmemorytracker.InMemoryTracker)
+	if !ok {
+		return
+	}
 
-	// for _, v := range chunk.Members {
-	// 	if ms, ok := gs.Members[v.User.ID]; ok {
-	// 		if ms.MemberSet {
-	// 			continue
-	// 		}
-	// 	}
+	for _, v := range chunk.Members {
+		if ms := s.state.GetMember(guildID, v.User.ID); ms != nil && ms.Member != nil {
+			continue // already in state
+		}
 
-	// 	gs.MemberAddUpdate(false, v)
-	// }
+		ms := dstate.MemberStateFromMember(v)
+		ms.GuildID = guildID
+		cast.SetMember(ms)
+	}
 }
 
 func (s *shardMemberFetcher) sendResult(req *MemberFetchRequest, result *MemberFetchResult) {
@@ -368,6 +371,7 @@ func (s *shardMemberFetcher) sendGWResult(req *MemberFetchRequest, member *disco
 		metricsProcessed.With(prometheus.Labels{"type": "gateway"}).Add(1)
 
 		ms := dstate.MemberStateFromMember(member)
+		ms.GuildID = req.Guild
 		req.resp <- &MemberFetchResult{
 			Err:      nil,
 			Member:   ms,
@@ -462,7 +466,15 @@ func (s *shardMemberFetcher) fetchSingleInner(req *MemberFetchRequest) (*dstate.
 	metricsProcessed.With(prometheus.Labels{"type": "http"}).Inc()
 
 	result = dstate.MemberStateFromMember(m)
-	// gs.MemberAddUpdate(true, m)
+	result.GuildID = req.Guild // yes this field is not set...
+
+	// add to state if we can
+	if cast, ok := s.state.(*inmemorytracker.InMemoryTracker); ok {
+		if state_ms := s.state.GetMember(req.Guild, req.Member); state_ms == nil || state_ms.Member == nil {
+			// make a copy because we handed out references above and the below function might mutate it
+			cast.SetMember(result)
+		}
+	}
 
 	return result, nil
 }
