@@ -859,7 +859,10 @@ var ModerationCommands = []*commands.YAGCommand{
 					out += fmt.Sprintf("#%02d: %4d - %d\n", v.Rank, v.WarnCount, v.UserID)
 				}
 			}
-			out += "```\n"
+			var count int
+			common.GORM.Table("moderation_warnings").Where("guild_id = ?", parsed.GuildData.GS.ID).Count(&count)
+
+			out += "```\n" + fmt.Sprintf("Total Server Warnings: `%d`", count)
 
 			embed.Description = out
 
