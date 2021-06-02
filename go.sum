@@ -354,8 +354,9 @@ github.com/jonas747/dshardorchestrator/v2 v2.0.2/go.mod h1:wrqNpMI8eZ2mtiQU3ZL1m
 github.com/jonas747/dstate v0.0.0-20190905110424-f2ed8c6c957d/go.mod h1:5xeu+zy7jwCfnCA+A9CaWOV4UhQzGHvBVZ381l+jarM=
 github.com/jonas747/dstate v1.0.4 h1:TS1YcPJelsVOqgU8u+SKkQevEMi0klG9Agugj+TE8+0=
 github.com/jonas747/dstate v1.0.4/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
-github.com/jonas747/dstate/v3 v3.0.0-alpha7 h1:4N1mk9dTuluT80hnhJFz2u9ATMfmd/JV7RXV7B0geLk=
 github.com/jonas747/dstate/v3 v3.0.0-alpha7/go.mod h1:ZLma2mC/JA8G1Snz80Az6HWq7wXxzDqq+71DIPx9wBc=
+github.com/jonas747/dstate/v3 v3.0.0-alpha8 h1:sWFQ8Kp3jYdJi+UzgF50A6Q6TzwvlrO+wPG52WdzD9E=
+github.com/jonas747/dstate/v3 v3.0.0-alpha8/go.mod h1:ZLma2mC/JA8G1Snz80Az6HWq7wXxzDqq+71DIPx9wBc=
 github.com/jonas747/dutil v0.0.2/go.mod h1:FwfIRC0ShAEHhwUJ6JppfciiFrfOA/cAoyCECsfib8c=
 github.com/jonas747/dutil v0.0.3 h1:Qe4Qls2sBjAvBOqregFLyDuWG/gonK8BiqT9DHRhIg0=
 github.com/jonas747/dutil v0.0.3/go.mod h1:oMJ++hvPrAb7Kl2aAHntvjiMXQWfja5t8ZvX13RMbuE=
