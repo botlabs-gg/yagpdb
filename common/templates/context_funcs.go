@@ -17,8 +17,8 @@ import (
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 )
 
-var ErrTooManyCalls = errors.New("Too many calls to this function")
-var ErrTooManyAPICalls = errors.New("Too many potential discord api calls function")
+var ErrTooManyCalls = errors.New("too many calls to this function")
+var ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
 	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.MS == nil {
@@ -176,15 +176,15 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		return "", ErrTooManyCalls
 	}
 	if name == "" {
-		return "", errors.New("No template name passed")
+		return "", errors.New("no template name passed")
 	}
 	if c.CurrentFrame.isNestedTemplate {
-		return "", errors.New("Can't call this in a nested template")
+		return "", errors.New("can't call this in a nested template")
 	}
 
 	t := c.CurrentFrame.parsedTemplate.Lookup(name)
 	if t == nil {
-		return "", errors.New("Unknown template")
+		return "", errors.New("unknown template")
 	}
 
 	var cs *dstate.ChannelState
@@ -195,12 +195,12 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		} else {
 			cID := c.ChannelArg(channel)
 			if cID == 0 {
-				return "", errors.New("Unknown channel")
+				return "", errors.New("unknown channel")
 			}
 
 			cs = c.GS.GetChannel(cID)
 			if cs == nil {
-				return "", errors.New("Unknown channel")
+				return "", errors.New("unknown channel")
 			}
 		}
 	} else {
@@ -372,7 +372,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 
 		cid := c.ChannelArgNoDM(channel)
 		if cid == 0 {
-			return "", errors.New("Unknown channel")
+			return "", errors.New("unknown channel")
 		}
 
 		mID := ToInt64(msgID)
@@ -562,11 +562,7 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(ts.Member.Roles, r.ID) {
-				return true
-			}
-
-			return false
+			return common.ContainsInt64Slice(ts.Member.Roles, r.ID)
 		}
 	}
 
@@ -708,7 +704,7 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 
 	rid := ToInt64(role)
 	if rid == 0 {
-		return "", errors.New("No role id specified")
+		return "", errors.New("no role id specified")
 	}
 
 	err := common.AddRoleDS(c.MS, rid)
@@ -759,11 +755,11 @@ func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}
 
 	rid := ToInt64(role)
 	if rid == 0 {
-		return "", errors.New("No role id specified")
+		return "", errors.New("no role id specified")
 	}
 
 	if c.GS.GetRole(rid) == nil {
-		return "", errors.New("Unknown role")
+		return "", errors.New("unknown role")
 	}
 
 	if delay > 0 {
@@ -866,7 +862,7 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 4 {
-			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, userID, emoji)")
+			return reflect.Value{}, errors.New("not enough arguments (need channelID, messageID, userID, emoji)")
 		}
 
 		var cArg interface{}
@@ -902,7 +898,7 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
-			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, emojis[optional])")
+			return reflect.Value{}, errors.New("not enough arguments (need channelID, messageID, emojis[optional])")
 		}
 
 		var cArg interface{}
@@ -988,7 +984,7 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 	cstate := c.GS.GetChannel(cID)
 
 	if cstate == nil {
-		return nil, errors.New("Channel not in state")
+		return nil, errors.New("channel not in state")
 	}
 
 	return CtxChannelFromCS(cstate), nil
@@ -1033,7 +1029,7 @@ func (c *Context) tmplAddResponseReactions(values ...reflect.Value) (reflect.Val
 func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
-			return reflect.Value{}, errors.New("Not enough arguments (need channel and message-id)")
+			return reflect.Value{}, errors.New("not enough arguments (need channel and message-id)")
 		}
 
 		// cArg := args[0].Interface()
@@ -1205,7 +1201,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 
 	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
-		return "", errors.New("Unknown channel")
+		return "", errors.New("unknown channel")
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
@@ -1223,7 +1219,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 
 	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
-		return "", errors.New("Unknown channel")
+		return "", errors.New("unknown channel")
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {

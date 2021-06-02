@@ -81,16 +81,6 @@ var (
 		"currentTime": tmplCurrentTime,
 		"newDate":     tmplNewDate,
 
-		"escapeHere": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-		"escapeEveryone": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-		"escapeEveryoneHere": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
 		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
 		"humanizeDurationSeconds": tmplHumanizeDurationSeconds,
@@ -194,7 +184,6 @@ func (c *Context) setupContextFuncs() {
 func (c *Context) setupBaseData() {
 
 	if c.GS != nil {
-		// guild := c.GS.DeepCopy(false, true, true, false)
 		c.Data["Guild"] = c.GS
 		c.Data["Server"] = c.GS
 		c.Data["server"] = c.GS
@@ -265,6 +254,8 @@ func (c *Context) Execute(source string) (string, error) {
 		}
 
 	}
+
+	c.setupBaseData()
 
 	parsed, err := c.Parse(source)
 	if err != nil {
