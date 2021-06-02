@@ -44,6 +44,9 @@ var cmds = []*commands.YAGCommand{
 			{Name: "Time", Type: &commands.DurationArg{}},
 			{Name: "Message", Type: dcmd.String},
 		},
+		ArgSwitches: []*dcmd.ArgDef{
+			{Name: "channel", Help: "Optional target channel", Type: dcmd.Channel},
+		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -62,7 +65,22 @@ var cmds = []*commands.YAGCommand{
 				return "Can be max 365 days from now...", nil
 			}
 
-			_, err := NewReminder(parsed.Author.ID, parsed.GuildData.GS.ID, parsed.ChannelID, parsed.Args[1].Str(), when)
+			cID := parsed.ChannelID
+			c := parsed.Switch("channel")
+			if c.Value != nil {
+				cID = c.Value.(*dstate.ChannelState).ID
+
+				perms, err := parsed.GuildData.GS.MemberPermissions(true, cID, parsed.Author.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				if perms&discordgo.PermissionSendMessages != discordgo.PermissionSendMessages || perms&discordgo.PermissionReadMessages != discordgo.PermissionReadMessages {
+					return "You do not have permissions to send messages there", nil
+				}
+			}
+
+			_, err := NewReminder(parsed.Author.ID, parsed.GuildData.GS.ID, cID, parsed.Args[1].Str(), when)
 			if err != nil {
 				return nil, err
 			}
@@ -94,6 +112,9 @@ var cmds = []*commands.YAGCommand{
 		Description:         "Lists reminders in channel, only users with 'manage server' permissions can use this.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
+		ArgSwitches: []*dcmd.ArgDef{
+			{Name: "channel", Help: "Optional target channel", Type: dcmd.Channel},
+		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			ok, err := bot.AdminOrPermMS(parsed.ChannelID, parsed.GuildData.MS, discordgo.PermissionManageChannels)
 			if err != nil {
@@ -103,12 +124,32 @@ var cmds = []*commands.YAGCommand{
 				return "You do not have access to this command (requires manage channel permission)", nil
 			}
 
-			currentReminders, err := GetChannelReminders(parsed.ChannelID)
+			cID := parsed.ChannelID
+			c := parsed.Switch("channel")
+			if c.Value != nil {
+				cID = c.Value.(*dstate.ChannelState).ID
+
+				perms, err := parsed.GuildData.GS.MemberPermissions(true, cID, parsed.Author.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				if perms&discordgo.PermissionSendMessages != discordgo.PermissionSendMessages || perms&discordgo.PermissionReadMessages != discordgo.PermissionReadMessages {
+					return "You do not have permissions to send messages there", nil
+				}
+			}
+
+			currentReminders, err := GetChannelReminders(cID)
 			if err != nil {
 				return nil, err
 			}
 
-			out := "Reminders in this channel:\n"
+			if cID != parsed.ChannelID {
+				out := "Reminders in the selected channel:\n"
+			}
+			else {
+				out := "Reminders in this channel:\n"
+			}
 			out += stringReminders(currentReminders, true)
 			out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
 			return out, nil
