@@ -185,7 +185,7 @@ func tmplChannelOpts(channelTypes []discordgo.ChannelType, optionPrefix string) 
 	optsBuilder := tmplChannelOptsMulti(channelTypes, optionPrefix)
 	return func(channels []*discordgo.Channel, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
 
-		const unknownName = "Deleted channel"
+		// const unknownName = "Deleted channel"
 
 		var builder strings.Builder
 

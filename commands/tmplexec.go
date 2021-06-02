@@ -81,7 +81,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 		if ctx.CurrentFrame.CS != nil { //Check if CS is not a nil pointer
 			messageCopy.ChannelID = ctx.CurrentFrame.CS.ID
 		}
-		mc := &discordgo.MessageCreate{&messageCopy}
+		mc := &discordgo.MessageCreate{Message: &messageCopy}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
@@ -107,7 +107,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 
 		messageCopy.Member = botMember.DgoMember()
 
-		mc := &discordgo.MessageCreate{&messageCopy}
+		mc := &discordgo.MessageCreate{Message: &messageCopy}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}

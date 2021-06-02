@@ -28,8 +28,8 @@ import (
 )
 
 type ChannelOverrideForm struct {
-	Channels                []int64 `valid:"channel,true`
-	ChannelCategories       []int64 `valid:"channel,true`
+	Channels                []int64 `valid:"channel,true"`
+	ChannelCategories       []int64 `valid:"channel,true"`
 	Global                  bool
 	CommandsEnabled         bool
 	AutodeleteResponse      bool

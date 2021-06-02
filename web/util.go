@@ -291,8 +291,6 @@ func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, stat
 	}
 
 	http.Redirect(w, r, "/?error="+url.QueryEscape(err), http.StatusTemporaryRedirect)
-	return
-
 }
 
 func IsRequestPartial(ctx context.Context) bool {

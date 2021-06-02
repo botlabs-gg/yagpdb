@@ -84,8 +84,8 @@ func (p *ValidationTag) Len() int {
 }
 
 var (
-	ErrChannelNotFound = errors.New("Channel not found")
-	ErrRoleNotFound    = errors.New("Role not found")
+	ErrChannelNotFound = errors.New("channel not found")
+	ErrRoleNotFound    = errors.New("role not found")
 )
 
 // Probably needs some cleaning up
@@ -287,7 +287,7 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forc
 func ValidateIntMinMaxField(i int64, min, max int64) error {
 
 	if min != max && (i < min || i > max) {
-		return fmt.Errorf("Out of range (%d - %d)", min, max)
+		return fmt.Errorf("out of range (%d - %d)", min, max)
 	}
 
 	return nil
@@ -296,7 +296,7 @@ func ValidateIntMinMaxField(i int64, min, max int64) error {
 func ValidateFloatField(f float64, min, max float64) error {
 
 	if min != max && (f < min || f > max) {
-		return fmt.Errorf("Out of range (%f - %f)", min, max)
+		return fmt.Errorf("out of range (%f - %f)", min, max)
 	}
 
 	return nil
@@ -304,7 +304,7 @@ func ValidateFloatField(f float64, min, max float64) error {
 
 func ValidateRegexField(s string, max int) error {
 	if utf8.RuneCountInString(s) > max {
-		return fmt.Errorf("Too long (max %d)", max)
+		return fmt.Errorf("too long (max %d)", max)
 	}
 
 	_, err := regexp.Compile(s)
@@ -388,11 +388,11 @@ func ValidateStringField(s string, tags *ValidationTag, guild *dstate.GuildSet) 
 func ValidateNormalStringField(s string, min, max int) error {
 	rCount := utf8.RuneCountInString(s)
 	if rCount > max {
-		return fmt.Errorf("Too long (max %d)", max)
+		return fmt.Errorf("too long (max %d)", max)
 	}
 
 	if rCount < min {
-		return fmt.Errorf("Too short (min %d)", min)
+		return fmt.Errorf("too short (min %d)", min)
 	}
 
 	return nil
@@ -400,7 +400,7 @@ func ValidateNormalStringField(s string, min, max int) error {
 
 func ValidateTemplateField(s string, max int) error {
 	if utf8.RuneCountInString(s) > max {
-		return fmt.Errorf("Too long (max %d)", max)
+		return fmt.Errorf("too long (max %d)", max)
 	}
 
 	_, err := templates.NewContext(nil, nil, nil).Parse(s)
@@ -412,7 +412,7 @@ func ValidateChannelField(s int64, channels []dstate.ChannelState, allowEmpty bo
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("No channel specified")
+			return errors.New("no channel specified")
 		}
 	}
 
@@ -430,7 +430,7 @@ func ValidateRoleField(s int64, roles []discordgo.Role, allowEmpty bool) error {
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("No role specified (or role is above bot)")
+			return errors.New("no role specified (or role is above bot)")
 		}
 	}
 

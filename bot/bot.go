@@ -20,8 +20,6 @@ import (
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var (
@@ -252,11 +250,7 @@ func GuildCountsFunc() []int {
 	return result
 }
 
-// Standard implementation of the GatewayIdentifyRatelimiter
 type identifyRatelimiter struct {
-	ch   chan bool
-	once sync.Once
-
 	mu                   sync.Mutex
 	lastShardRatelimited int
 	lastRatelimitAt      time.Time
@@ -324,27 +318,27 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 	return true
 }
 
-var (
-	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_hits_total",
-		Help: "Cache hits in the satte cache",
-	})
+// var (
+// 	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "yagpdb_state_cache_hits_total",
+// 		Help: "Cache hits in the satte cache",
+// 	})
 
-	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_misses_total",
-		Help: "Cache misses in the sate cache",
-	})
+// 	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "yagpdb_state_cache_misses_total",
+// 		Help: "Cache misses in the sate cache",
+// 	})
 
-	metricsCacheEvictions = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_evicted_total",
-		Help: "Cache evictions",
-	})
+// 	metricsCacheEvictions = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "yagpdb_state_cache_evicted_total",
+// 		Help: "Cache evictions",
+// 	})
 
-	metricsCacheMemberEvictions = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_members_evicted_total",
-		Help: "Members evicted from state cache",
-	})
-)
+// 	metricsCacheMemberEvictions = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "yagpdb_state_members_evicted_total",
+// 		Help: "Members evicted from state cache",
+// 	})
+// )
 
 var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Remove offline members from state", true)
 
