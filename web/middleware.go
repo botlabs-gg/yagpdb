@@ -368,7 +368,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		var highest *discordgo.Role
+		var highest discordgo.Role
 		combinedPerms := 0
 		for _, role := range guildCast.Roles {
 			found := false
@@ -392,15 +392,14 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 				combinedPerms |= discordgo.PermissionAll
 			}
 
-			if highest == nil || dutil.IsRoleAbove(&role, highest) {
-				highest = &role
+			if highest.ID == 0 || dutil.IsRoleAbove(&role, &highest) {
+				highest = role
 			}
-
 		}
 
-		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, highest)
+		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, &highest)
 		ctx = context.WithValue(ctx, common.ContextKeyBotPermissions, combinedPerms)
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": highest, "BotPermissions": combinedPerms})
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": &highest, "BotPermissions": combinedPerms})
 		r = r.WithContext(ctx)
 	})
 }

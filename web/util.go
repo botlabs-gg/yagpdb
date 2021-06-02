@@ -209,7 +209,7 @@ func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool
 			userID = member.User.ID
 			roles = member.Roles
 
-			gWithConnected.Permissions = ContextMemberPerms(ctx)
+			gWithConnected.Permissions = int(ContextMemberPerms(ctx))
 			gWithConnected.Owner = userID == g.OwnerID
 		}
 
@@ -259,7 +259,7 @@ func StaticRoleProvider(roles []int64) func(guildID, userID int64) []int64 {
 	}
 }
 
-func HasPermissionCTX(ctx context.Context, aperms int) bool {
+func HasPermissionCTX(ctx context.Context, aperms int64) bool {
 	perms := ContextMemberPerms(ctx)
 	// Require manageserver, ownership of guild or ownership of bot
 	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator ||
@@ -314,13 +314,13 @@ func ContextMember(ctx context.Context) *discordgo.Member {
 	return i.(*discordgo.Member)
 }
 
-func ContextMemberPerms(ctx context.Context) int {
+func ContextMemberPerms(ctx context.Context) int64 {
 	i := ctx.Value(common.ContextKeyMemberPermissions)
 	if i == nil {
 		return 0
 	}
 
-	return i.(int)
+	return i.(int64)
 }
 
 func ParamOrEmpty(r *http.Request, key string) string {
