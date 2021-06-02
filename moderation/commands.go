@@ -1113,7 +1113,7 @@ func FindRole(gs *dstate.GuildSet, roleS string) *discordgo.Role {
 		trimmed := strings.TrimSpace(v.Name)
 
 		if strings.EqualFold(trimmed, roleS) {
-			return v
+			return &v
 		}
 	}
 

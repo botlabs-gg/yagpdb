@@ -125,7 +125,7 @@ func (r *RoleError) Error() string {
 }
 
 // Uses the role name from one of the passed roles with matching id instead of the id
-func (r *RoleError) PrettyError(roles []*discordgo.Role) string {
+func (r *RoleError) PrettyError(roles []discordgo.Role) string {
 	if r.Role == 0 {
 		return r.Message
 	}

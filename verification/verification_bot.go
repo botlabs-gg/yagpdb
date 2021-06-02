@@ -138,7 +138,9 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 		return
 	}
 
-	tmplCTX := templates.NewContext(gs, dstate.ChannelStateFromDgo(channel), ms)
+	cs := dstate.ChannelStateFromDgo(channel)
+
+	tmplCTX := templates.NewContext(gs, &cs, ms)
 	tmplCTX.Name = "dm_veification_message"
 	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), guildID, target.ID, token)
 
@@ -372,8 +374,9 @@ func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token 
 	if err != nil {
 		return err
 	}
+	cs := dstate.ChannelStateFromDgo(channel)
 
-	tmplCTX := templates.NewContext(gs, dstate.ChannelStateFromDgo(channel), ms)
+	tmplCTX := templates.NewContext(gs, &cs, ms)
 	tmplCTX.Name = "warn message"
 	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.User.ID, token)
 

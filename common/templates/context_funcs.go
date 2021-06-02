@@ -458,7 +458,7 @@ func (c *Context) tmplMentionRoleName(role string) string {
 		if r.Name == role {
 			if !common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, r.ID) {
 				c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, r.ID)
-				found = r
+				found = &r
 			}
 		}
 	}
@@ -808,7 +808,7 @@ func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (
 func (c *Context) findRoleByName(name string) *discordgo.Role {
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			return r
+			return &r
 		}
 	}
 

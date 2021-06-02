@@ -109,7 +109,7 @@ var (
 func TestValidationChannel(t *testing.T) {
 
 	g := &dstate.GuildSet{
-		Channels: []*dstate.ChannelState{
+		Channels: []dstate.ChannelState{
 			{
 				ID: 1,
 			},

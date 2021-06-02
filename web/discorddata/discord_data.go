@@ -110,14 +110,13 @@ func GetFullGuild(guildID int64) (*dstate.GuildSet, error) {
 				return nil, err
 			}
 
+			// does the API guarantee the order? i actually have no idea lmao
 			sort.Sort(dutil.Channels(channels))
+			sort.Sort(dutil.Roles(guild.Roles))
 			guild.Channels = channels
 
 			gs = dstate.GuildSetFromGuild(guild)
 		}
-
-		// TODO: Sort channels
-		sort.Sort(dutil.Roles(gs.Roles))
 
 		return gs, nil
 	})

@@ -3,14 +3,12 @@ package botrest
 import (
 	"net/http"
 	"os"
-	"sort"
 	"strconv"
 	"time"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/internalapi"
@@ -163,9 +161,6 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 
 	memberStates, _ := bot.GetMembers(gId, uIDsParsed...)
 
-	// Make sure the roles are in the proper order
-	sort.Sort(dutil.Roles(guild.Roles))
-
 	colors := make(map[string]int)
 	for _, ms := range memberStates {
 		// Find the highest role this user has with a color
@@ -259,7 +254,7 @@ func HandleNodeStatus(w http.ResponseWriter, r *http.Request) {
 		sumEvents := int64(0)
 		sumPeriodEvents := int64(0)
 
-		for j, _ := range totalEventStats[shardID] {
+		for j := range totalEventStats[shardID] {
 			sumEvents += totalEventStats[shardID][j]
 			sumPeriodEvents += periodEventStats[shardID][j]
 		}

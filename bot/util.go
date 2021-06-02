@@ -320,8 +320,8 @@ func MemberHighestRole(gs *dstate.GuildSet, ms *dstate.MemberState) *discordgo.R
 				continue
 			}
 
-			if highest == nil || dutil.IsRoleAbove(r, highest) {
-				highest = r
+			if highest == nil || dutil.IsRoleAbove(&r, highest) {
+				highest = &r
 			}
 
 			break

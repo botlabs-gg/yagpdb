@@ -203,7 +203,7 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err erro
 	return false, nil
 }
 
-func RefreshMuteOverrideForChannel(config *Config, channel *dstate.ChannelState) {
+func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) {
 	// Ignore the channel
 	if common.ContainsInt64Slice(config.MuteIgnoreChannels, channel.ID) {
 		return

@@ -11,7 +11,7 @@ import (
 func TestMemberHighestRole(t *testing.T) {
 	gs := &dstate.GuildSet{
 		GuildState: dstate.GuildState{},
-		Roles: []*discordgo.Role{
+		Roles: []discordgo.Role{
 			{ID: 10, Position: 10},
 			{ID: 5, Position: 5},
 			{ID: 100, Position: 1},
@@ -49,7 +49,7 @@ func TestIsMemberAbove(t *testing.T) {
 		GuildState: dstate.GuildState{
 			OwnerID: 99,
 		},
-		Roles: []*discordgo.Role{
+		Roles: []discordgo.Role{
 			{ID: 10, Position: 10},
 			{ID: 5, Position: 5},
 			{ID: 100, Position: 1},

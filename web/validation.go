@@ -407,7 +407,7 @@ func ValidateTemplateField(s string, max int) error {
 	return err
 }
 
-func ValidateChannelField(s int64, channels []*dstate.ChannelState, allowEmpty bool) error {
+func ValidateChannelField(s int64, channels []dstate.ChannelState, allowEmpty bool) error {
 	if s == 0 {
 		if allowEmpty {
 			return nil
@@ -425,7 +425,7 @@ func ValidateChannelField(s int64, channels []*dstate.ChannelState, allowEmpty b
 	return ErrChannelNotFound
 }
 
-func ValidateRoleField(s int64, roles []*discordgo.Role, allowEmpty bool) error {
+func ValidateRoleField(s int64, roles []discordgo.Role, allowEmpty bool) error {
 	if s == 0 {
 		if allowEmpty {
 			return nil

@@ -409,10 +409,10 @@ func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Da
 	var role discordgo.Role
 	for _, v := range roles {
 		if v.ID == id {
-			role = *v
+			role = v
 			return &role, nil
 		} else if v.Name == idName {
-			role = *v
+			role = v
 			return &role, nil
 		}
 	}

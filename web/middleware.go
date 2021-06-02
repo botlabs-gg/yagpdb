@@ -392,8 +392,8 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 				combinedPerms |= discordgo.PermissionAll
 			}
 
-			if highest == nil || dutil.IsRoleAbove(role, highest) {
-				highest = role
+			if highest == nil || dutil.IsRoleAbove(&role, highest) {
+				highest = &role
 			}
 
 		}
