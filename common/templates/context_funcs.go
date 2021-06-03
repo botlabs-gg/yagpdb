@@ -458,7 +458,10 @@ func (c *Context) tmplMentionRoleName(role string) string {
 		if r.Name == role {
 			if !common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, r.ID) {
 				c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, r.ID)
-				found = &r
+
+				// make a copy as the looping var is changing
+				cop := r
+				found = &cop
 			}
 		}
 	}
