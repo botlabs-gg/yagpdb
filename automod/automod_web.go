@@ -205,7 +205,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 
 	err = list.InsertG(r.Context(), boil.Infer())
 	if err == nil {
-		pubsub.EvictCacheSet(-1, cachedLists, g.ID)
+		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewList))
 	}
 	return tmpl, err
@@ -228,7 +228,7 @@ func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Requ
 	list.Content = strings.Fields(data.Content)
 	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
 	if err == nil {
-		pubsub.EvictCacheSet(-1, cachedLists, g.ID)
+		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedList))
 	}
 	return tmpl, err
@@ -245,7 +245,7 @@ func (p *Plugin) handlePostAutomodDeleteList(w http.ResponseWriter, r *http.Requ
 
 	_, err = list.DeleteG(r.Context())
 	if err == nil {
-		pubsub.EvictCacheSet(-1, cachedLists, g.ID)
+		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedList))
 	}
 	return tmpl, err
@@ -390,7 +390,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 		return tmpl, err
 	}
 
-	pubsub.EvictCacheSet(-1, cachedRulesets, g.ID)
+	pubsub.EvictCacheSet(cachedRulesets, g.ID)
 	featureflags.MarkGuildDirty(g.ID)
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedRuleset))
 
@@ -413,7 +413,7 @@ func (p *Plugin) handlePostAutomodDeleteRuleset(w http.ResponseWriter, r *http.R
 	delete(tmpl, "CurrentRuleset")
 
 	if rows > 0 {
-		pubsub.EvictCacheSet(-1, cachedRulesets, g.ID)
+		pubsub.EvictCacheSet(cachedRulesets, g.ID)
 		featureflags.MarkGuildDirty(g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedRuleset))
 	}
@@ -523,7 +523,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 
 	WebLoadRuleSettings(r, tmpl, ruleSet)
 
-	pubsub.EvictCacheSet(-1, cachedRulesets, g.ID)
+	pubsub.EvictCacheSet(cachedRulesets, g.ID)
 	featureflags.MarkGuildDirty(g.ID)
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedRule))
 
@@ -724,7 +724,7 @@ func (p *Plugin) handlePostAutomodDeleteRule(w http.ResponseWriter, r *http.Requ
 			_, err := v.DeleteG(r.Context())
 			if err == nil {
 				ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules[:k], ruleset.R.RulesetAutomodRules[k+1:]...)
-				pubsub.EvictCacheSet(-1, cachedRulesets, g.ID)
+				pubsub.EvictCacheSet(cachedRulesets, g.ID)
 				featureflags.MarkGuildDirty(g.ID)
 				go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedRule))
 			}

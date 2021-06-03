@@ -35,7 +35,7 @@ func (f Form) Save(guildID int64) error {
 		return err
 	}
 
-	pubsub.EvictCacheSet(-1, configCache, guildID)
+	pubsub.EvictCacheSet(configCache, guildID)
 	return nil
 }
 

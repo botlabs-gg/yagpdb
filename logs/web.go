@@ -168,7 +168,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
 	if err == nil {
-		pubsub.EvictCacheSet(-1, configCache, g.ID)
+		pubsub.EvictCacheSet(configCache, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
 
 	}

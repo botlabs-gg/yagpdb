@@ -56,13 +56,9 @@ func handleEvictCacheSet(evt *Event) {
 }
 
 // EvictCacheSet sends a pubsub to evict the key on slot on all nodes if guildID is set to -1, otherwise the bot worker for that guild is the only one that handles it
-func EvictCacheSet(guildID int64, slot *cacheset.Slot, key interface{}) {
+func EvictCacheSet(slot *cacheset.Slot, key interface{}) {
 	// key := slot.Name()
 	// common.CacheSet.EvictSlotEntry(slot.Name(), key)
-	if guildID == 0 {
-		guildID = -1
-	}
-
 	slot.Delete(key)
 
 	marshalledKey, err := json.Marshal(key)
@@ -71,7 +67,7 @@ func EvictCacheSet(guildID int64, slot *cacheset.Slot, key interface{}) {
 		return
 	}
 
-	err = Publish("evict_guild_cache", guildID, &evictCacheSetData{
+	err = Publish("evict_guild_cache", -1, &evictCacheSetData{
 		Name: slot.Name(),
 		Key:  marshalledKey,
 	})
