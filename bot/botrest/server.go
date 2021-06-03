@@ -83,23 +83,11 @@ func HandleGuild(w http.ResponseWriter, r *http.Request) {
 func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 	gId, _ := strconv.ParseInt(pat.Param(r, "guild"), 10, 64)
 
-	// guild := bot.State.GetGuild(gId)
-	// if guild == nil {
-	// 	internalapi.ServerError(w, r, errors.New("Guild not found"))
-	// 	return
-	// }
-
-	member := bot.State.GetMember(gId, common.BotUser.ID)
-	if member == nil {
+	member, err := bot.GetMember(gId, common.BotUser.ID)
+	if err != nil {
 		internalapi.ServerError(w, r, errors.New("Bot Member not found"))
 		return
 	}
-
-	// member := guild.MemberDGoCopy(true, common.BotUser.ID)
-	// if member == nil {
-	// 	internalapi.ServerError(w, r, errors.New("Bot Member not found"))
-	// 	return
-	// }
 
 	internalapi.ServeJson(w, r, member.DgoMember())
 }
