@@ -1,10 +1,9 @@
 package topic
 
 import (
-	"math/rand"
-
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/yagpdb/commands"
+	"math/rand"
 )
 
 var Command = &commands.YAGCommand{

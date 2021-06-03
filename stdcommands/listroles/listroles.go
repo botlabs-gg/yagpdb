@@ -2,11 +2,9 @@ package listroles
 
 import (
 	"fmt"
-	"sort"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/commands"
 )
 
@@ -26,13 +24,10 @@ var Command = &commands.YAGCommand{
 			noMana = true
 		}
 
-		data.GuildData.GS.Lock()
-		defer data.GuildData.GS.Unlock()
-
-		sort.Sort(dutil.Roles(data.GuildData.GS.Guild.Roles))
+		// sort.Sort(dutil.Roles(data.GuildData.GS.Roles))
 
 		counter := 0
-		for _, r := range data.GuildData.GS.Guild.Roles {
+		for _, r := range data.GuildData.GS.Roles {
 			if noMana && r.Managed {
 				continue
 			} else {
@@ -42,7 +37,7 @@ var Command = &commands.YAGCommand{
 			}
 		}
 		outFinal = fmt.Sprintf("Total role count: %d\n", counter)
-		outFinal += fmt.Sprintf("%s", "(ME = mention everyone perms)\n")
+		outFinal += "(ME = mention everyone perms)\n"
 		outFinal += out
 		return outFinal, nil
 	},

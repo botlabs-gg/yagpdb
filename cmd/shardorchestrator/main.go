@@ -58,7 +58,7 @@ func main() {
 		VersionArgs:    []string{"-version"},
 	}
 	orch.Logger = &dshardorchestrator.StdLogger{
-		Level: dshardorchestrator.LogWarning,
+		Level: dshardorchestrator.LogInfo,
 	}
 
 	if confLargeBotShardingEnabled.GetBool() {

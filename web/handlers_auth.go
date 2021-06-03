@@ -140,7 +140,7 @@ func CheckCSRFToken(token string) (bool, error) {
 	return num > 0, nil
 }
 
-var ErrNotLoggedIn = errors.New("Not logged in")
+var ErrNotLoggedIn = errors.New("not logged in")
 
 // AuthTokenFromB64 Retrives an oauth2 token from the base64 string
 // Returns an error if expired
@@ -173,7 +173,7 @@ func discordAuthTokenFromYag(yagToken string) (t *oauth2.Token, err error) {
 }
 
 var (
-	ErrDuplicateToken = errors.New("Somehow a duplicate token was found")
+	ErrDuplicateToken = errors.New("somehow a duplicate token was found")
 )
 
 // CreateCookieSession creates a session cookie where the value is the access token itself,
