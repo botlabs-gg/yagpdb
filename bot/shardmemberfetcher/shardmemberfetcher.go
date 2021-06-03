@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dstate/v3/inmemorytracker"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
@@ -38,7 +39,7 @@ var metricsGatewayChunkFailed = promauto.NewCounter(prometheus.CounterOpts{
 type GatewayRequestFunc func(guildID int64, userIDs []int64, nonce string) error
 
 type Manager struct {
-	state       *dstate.State
+	state       dstate.StateTracker
 	totalShards int64
 
 	fetchers      []*shardMemberFetcher
@@ -48,7 +49,7 @@ type Manager struct {
 	failedUsersCache *ccache.Cache
 }
 
-func NewManager(totalShards int64, state *dstate.State, f GatewayRequestFunc) *Manager {
+func NewManager(totalShards int64, state dstate.StateTracker, f GatewayRequestFunc) *Manager {
 	return &Manager{
 		totalShards:      totalShards,
 		state:            state,
@@ -62,37 +63,27 @@ func (m *Manager) GetMember(guildID, userID int64) (*dstate.MemberState, error) 
 }
 
 func (m *Manager) GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberState, error) {
-	gs := m.state.Guild(true, guildID)
-	if gs == nil {
-		return nil, errors.New("guild not found")
-	}
-
 	result := make([]*dstate.MemberState, 0, len(userIDs))
 
 	resultChan := make(chan *MemberFetchResult)
 	requests := make([]*MemberFetchRequest, 0, len(userIDs))
 
-	gs.RLock()
-
 	for _, v := range userIDs {
 
 		// check state first
-		ms := gs.MemberCopy(false, v)
-		if ms != nil && ms.MemberSet {
+		ms := m.state.GetMember(guildID, v)
+		if ms != nil && ms.Member != nil {
 			result = append(result, ms)
 			continue
 		}
 
 		// otherwise create a request
 		requests = append(requests, &MemberFetchRequest{
-			resp:         resultChan,
-			Member:       v,
-			Guild:        guildID,
-			NeedJoinedAt: false,
+			resp:   resultChan,
+			Member: v,
+			Guild:  guildID,
 		})
 	}
-
-	gs.RUnlock()
 
 	fetcher := m.findCreateFetcher(guildID)
 	fetcher.reqChan <- requests
@@ -107,19 +98,11 @@ func (m *Manager) GetMembers(guildID int64, userIDs ...int64) ([]*dstate.MemberS
 	return result, nil
 }
 
-func (m *Manager) GetMemberJoinedAt(guildID, userID int64) (*dstate.MemberState, error) {
-	return m.getMember(guildID, userID, true)
-}
-
 func (m *Manager) getMember(guildID, userID int64, joinedAt bool) (*dstate.MemberState, error) {
 	// check from state first
-	gs := m.state.Guild(true, guildID)
-	if gs == nil {
-		return nil, errors.New("guild not found")
-	}
 
-	ms := gs.MemberCopy(true, userID)
-	if ms != nil && ms.MemberSet && (!joinedAt || !ms.JoinedAt.IsZero()) {
+	ms := m.state.GetMember(guildID, userID)
+	if ms != nil && ms.Member != nil && (!joinedAt || ms.Member.JoinedAt != "") {
 		return ms, nil
 	}
 
@@ -128,10 +111,9 @@ func (m *Manager) getMember(guildID, userID int64, joinedAt bool) (*dstate.Membe
 
 	req := []*MemberFetchRequest{
 		{
-			resp:         resultChan,
-			Member:       userID,
-			Guild:        guildID,
-			NeedJoinedAt: joinedAt,
+			resp:   resultChan,
+			Member: userID,
+			Guild:  guildID,
 		},
 	}
 
@@ -203,7 +185,7 @@ func (m *Manager) HandleGuildmembersChunk(evt *eventsystem.EventData) {
 }
 
 type shardMemberFetcher struct {
-	state *dstate.State
+	state dstate.StateTracker
 
 	reqChan chan []*MemberFetchRequest
 
@@ -340,34 +322,34 @@ func (s *shardMemberFetcher) handleFinishedGateway(chunk *discordgo.GuildMembers
 
 	s.sortedQueue[guildID] = newQueue
 
-	gs := s.state.Guild(true, chunk.GuildID)
-
 	// send the results
 OUTER_SEND:
 	for _, req := range doneRequests {
 		for _, v := range chunk.Members {
 			if req.Member == v.User.ID {
-				go s.sendGWResult(gs, req, v)
+				go s.sendGWResult(req, v)
 				continue OUTER_SEND
 			}
 		}
 
 		// not found, sendn il
-		go s.sendGWResult(gs, req, nil)
+		go s.sendGWResult(req, nil)
 	}
 
-	// add to state
-	gs.Lock()
-	defer gs.Unlock()
+	// add to state if we can
+	cast, ok := s.state.(*inmemorytracker.InMemoryTracker)
+	if !ok {
+		return
+	}
 
 	for _, v := range chunk.Members {
-		if ms, ok := gs.Members[v.User.ID]; ok {
-			if ms.MemberSet {
-				continue
-			}
+		if ms := s.state.GetMember(guildID, v.User.ID); ms != nil && ms.Member != nil {
+			continue // already in state
 		}
 
-		gs.MemberAddUpdate(false, v)
+		ms := dstate.MemberStateFromMember(v)
+		ms.GuildID = guildID
+		cast.SetMember(ms)
 	}
 }
 
@@ -375,8 +357,8 @@ func (s *shardMemberFetcher) sendResult(req *MemberFetchRequest, result *MemberF
 	req.resp <- result
 }
 
-func (s *shardMemberFetcher) sendGWResult(gs *dstate.GuildState, req *MemberFetchRequest, member *discordgo.Member) {
-	if member == nil || gs == nil {
+func (s *shardMemberFetcher) sendGWResult(req *MemberFetchRequest, member *discordgo.Member) {
+	if member == nil {
 		metricsFailed.With(prometheus.Labels{"type": "gateway"}).Inc()
 
 		req.resp <- &MemberFetchResult{
@@ -388,7 +370,8 @@ func (s *shardMemberFetcher) sendGWResult(gs *dstate.GuildState, req *MemberFetc
 	} else {
 		metricsProcessed.With(prometheus.Labels{"type": "gateway"}).Add(1)
 
-		ms := dstate.MSFromDGoMember(gs, member)
+		ms := dstate.MemberStateFromMember(member)
+		ms.GuildID = req.Guild
 		req.resp <- &MemberFetchResult{
 			Err:      nil,
 			Member:   ms,
@@ -459,15 +442,15 @@ func (s *shardMemberFetcher) fetchSingle(req *MemberFetchRequest) {
 func (s *shardMemberFetcher) fetchSingleInner(req *MemberFetchRequest) (*dstate.MemberState, error) {
 
 	// check if its already in state first
-	gs := s.state.Guild(true, req.Guild)
+	gs := s.state.GetGuild(req.Guild)
 	if gs == nil {
 		metricsFailed.With(prometheus.Labels{"type": "state"}).Inc()
 		return nil, errors.New("guild not found in state")
 	}
 
 	// it was already existant in the state
-	result := gs.MemberCopy(true, req.Member)
-	if result != nil && result.MemberSet && (!req.NeedJoinedAt || !result.JoinedAt.IsZero()) {
+	result := s.state.GetMember(req.Guild, req.Member)
+	if result != nil && result.Member != nil {
 		metricsProcessed.With(prometheus.Labels{"type": "state"}).Inc()
 		return result, nil
 	}
@@ -482,8 +465,16 @@ func (s *shardMemberFetcher) fetchSingleInner(req *MemberFetchRequest) (*dstate.
 
 	metricsProcessed.With(prometheus.Labels{"type": "http"}).Inc()
 
-	result = dstate.MSFromDGoMember(gs, m)
-	gs.MemberAddUpdate(true, m)
+	result = dstate.MemberStateFromMember(m)
+	result.GuildID = req.Guild // yes this field is not set...
+
+	// add to state if we can
+	if cast, ok := s.state.(*inmemorytracker.InMemoryTracker); ok {
+		if state_ms := s.state.GetMember(req.Guild, req.Member); state_ms == nil || state_ms.Member == nil {
+			// make a copy because we handed out references above and the below function might mutate it
+			cast.SetMember(result)
+		}
+	}
 
 	return result, nil
 }
@@ -582,10 +573,9 @@ type FetchingGWState struct {
 }
 
 type MemberFetchRequest struct {
-	Member       int64
-	Guild        int64
-	NeedJoinedAt bool
-	resp         chan *MemberFetchResult
+	Member int64
+	Guild  int64
+	resp   chan *MemberFetchResult
 }
 
 type MemberFetchResult struct {

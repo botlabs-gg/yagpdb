@@ -84,18 +84,22 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		count = 300
 	}
 
+	gs := bot.State.GetGuild(guildID)
+	if gs == nil {
+		return nil, bot.ErrGuildNotFound
+	}
+
 	// Make a light copy of the channel
-	channel := bot.State.ChannelCopy(true, channelID)
+	channel := gs.GetChannel(channelID)
 	if channel == nil {
 		return nil, errors.New("Unknown channel")
 	}
 
-	msgs, err := bot.GetMessages(channel.ID, count, true)
+	msgs, err := bot.GetMessages(guildID, channel.ID, count, true)
 	if err != nil {
 		return nil, err
 	}
 
-	logMsgs := make([]*models.Messages2, 0, len(msgs))
 	logIds := make([]int64, 0, len(msgs))
 
 	tx, err := common.PQ.Begin()
@@ -121,8 +125,8 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			GuildID: guildID,
 			Content: body,
 
-			CreatedAt: v.ParsedCreated,
-			UpdatedAt: v.ParsedCreated,
+			CreatedAt: v.ParsedCreatedAt,
+			UpdatedAt: v.ParsedCreatedAt,
 
 			AuthorUsername: v.Author.Username + "#" + v.Author.Discriminator,
 			AuthorID:       v.Author.ID,
@@ -135,18 +139,17 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			return nil, errors.WrapIf(err, "message.insert")
 		}
 
-		logMsgs = append(logMsgs, messageModel)
 		logIds = append(logIds, v.ID)
 	}
 
-	id, err := common.GenLocalIncrID(channel.Guild.ID, "message_logs")
+	id, err := common.GenLocalIncrID(guildID, "message_logs")
 	if err != nil {
 		tx.Rollback()
 		return nil, errors.WrapIf(err, "log.gen_id")
 	}
 
 	log := &models.MessageLogs2{
-		GuildID:  channel.Guild.ID,
+		GuildID:  guildID,
 		ID:       int(id),
 		LegacyID: 0,
 

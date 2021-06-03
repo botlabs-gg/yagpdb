@@ -15,7 +15,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/common"
 )
 
@@ -51,7 +51,7 @@ type BotStopperHandler interface {
 }
 
 type ShardMigrationHandler interface {
-	GuildMigrated(guild *dstate.GuildState, toThisSlave bool)
+	GuildMigrated(guild *dstate.GuildSet, toThisSlave bool)
 }
 
 var metricsLeftGuilds = promauto.NewCounter(prometheus.CounterOpts{

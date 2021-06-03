@@ -13,7 +13,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -82,16 +82,6 @@ var (
 		"currentTime": tmplCurrentTime,
 		"newDate":     tmplNewDate,
 
-		"escapeHere": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-		"escapeEveryone": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-		"escapeEveryoneHere": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
 		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
 		"humanizeDurationSeconds": tmplHumanizeDurationSeconds,
@@ -125,7 +115,7 @@ var GuildPremiumFunc func(guildID int64) (bool, error)
 type Context struct {
 	Name string
 
-	GS      *dstate.GuildState
+	GS      *dstate.GuildSet
 	MS      *dstate.MemberState
 	Msg     *discordgo.Message
 	BotUser *discordgo.User
@@ -165,7 +155,7 @@ type contextFrame struct {
 	SendResponseInDM bool
 }
 
-func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
+func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
 	ctx := &Context{
 		GS: gs,
 		MS: ms,
@@ -199,10 +189,9 @@ func (c *Context) setupContextFuncs() {
 func (c *Context) setupBaseData() {
 
 	if c.GS != nil {
-		guild := c.GS.DeepCopy(false, true, true, false)
-		c.Data["Guild"] = guild
-		c.Data["Server"] = guild
-		c.Data["server"] = guild
+		c.Data["Guild"] = c.GS
+		c.Data["Server"] = c.GS
+		c.Data["server"] = c.GS
 	}
 
 	if c.CurrentFrame.CS != nil {
@@ -212,8 +201,8 @@ func (c *Context) setupBaseData() {
 	}
 
 	if c.MS != nil {
-		c.Data["Member"] = c.MS.DGoCopy()
-		c.Data["User"] = c.MS.DGoUser()
+		c.Data["Member"] = c.MS.DgoMember()
+		c.Data["User"] = &c.MS.User
 		c.Data["user"] = c.Data["User"]
 	}
 
@@ -266,18 +255,12 @@ func (c *Context) Execute(source string) (string, error) {
 				return "", errors.WithMessage(err, "ctx.Execute")
 			}
 
-			c.Msg.Member = member.DGoCopy()
+			c.Msg.Member = member.DgoMember()
 		}
 
 	}
 
-	if c.GS != nil {
-		c.GS.RLock()
-	}
 	c.setupBaseData()
-	if c.GS != nil {
-		c.GS.RUnlock()
-	}
 
 	parsed, err := c.Parse(source)
 	if err != nil {
@@ -383,7 +366,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		if c.CurrentFrame.CS != nil && c.CurrentFrame.CS.Type == discordgo.ChannelTypeDM {
 			channelID = c.CurrentFrame.CS.ID
 		} else {
-			privChannel, err := common.BotSession.UserChannelCreate(c.MS.ID)
+			privChannel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -465,7 +448,7 @@ func (c *Context) LogEntry() *logrus.Entry {
 	})
 
 	if c.MS != nil {
-		f = f.WithField("user", c.MS.ID)
+		f = f.WithField("user", c.MS.User.ID)
 	}
 
 	if c.CurrentFrame.CS != nil {
@@ -506,6 +489,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("addRoleID", c.tmplAddRoleID)
 	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
 
+	c.addContextFunc("setRoles", c.tmplSetRoles)
 	c.addContextFunc("addRoleName", c.tmplAddRoleName)
 	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
 

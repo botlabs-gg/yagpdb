@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/alfredxing/calc/compute"
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/yagpdb/commands"
 )
 

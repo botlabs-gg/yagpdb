@@ -4,11 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -146,7 +145,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
-	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildState) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }
@@ -204,13 +203,10 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 	return "Took away your role!", nil
 }
 
-func HumanizeAssignError(guild *dstate.GuildState, err error) (string, error) {
+func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 	if IsRoleCommandError(err) {
 		if roleError, ok := err.(*RoleError); ok {
-			guild.RLock()
-			defer guild.RUnlock()
-
-			return roleError.PrettyError(guild.Guild.Roles), nil
+			return roleError.PrettyError(guild.Roles), nil
 		}
 		return err.Error(), nil
 	}
@@ -342,10 +338,10 @@ OUTER:
 	return scheduledevents2.CheckDiscordErrRetry(err), err
 }
 
-type MenuCacheKey int64
+var menuCache = common.CacheSet.RegisterSlot("rolecommands_menus", nil, int64(0))
 
-func GetRolemenuCached(ctx context.Context, gs *dstate.GuildState, messageID int64) (*models.RoleMenu, error) {
-	result, err := gs.UserCacheFetch(MenuCacheKey(messageID), func() (interface{}, error) {
+func GetRolemenuCached(ctx context.Context, gs *dstate.GuildSet, messageID int64) (*models.RoleMenu, error) {
+	result, err := menuCache.GetCustomFetch(messageID, func(key interface{}) (interface{}, error) {
 		menu, err := FindRolemenuFull(ctx, messageID, gs.ID)
 		if err != nil {
 			if err != sql.ErrNoRows {
@@ -369,12 +365,8 @@ func GetRolemenuCached(ctx context.Context, gs *dstate.GuildState, messageID int
 }
 
 func ClearRolemenuCache(gID int64) {
-	gs := bot.State.Guild(true, gID)
-	if gs != nil {
-		ClearRolemenuCacheGS(gs)
-	}
-}
-
-func ClearRolemenuCacheGS(gs *dstate.GuildState) {
-	gs.UserCacheDellAllKeysType(MenuCacheKey(0))
+	menuCache.DeleteFunc(func(key interface{}, value interface{}) bool {
+		valueCast := value.(*models.RoleMenu)
+		return valueCast.GuildID == gID
+	})
 }
