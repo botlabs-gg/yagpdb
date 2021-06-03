@@ -405,15 +405,11 @@ func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Da
 		idName = ""
 	}
 
-	roles := data.GuildData.GS.Roles
-	var role discordgo.Role
-	for _, v := range roles {
+	for _, v := range data.GuildData.GS.Roles {
 		if v.ID == id {
-			role = v
-			return &role, nil
+			return &v, nil
 		} else if v.Name == idName {
-			role = v
-			return &role, nil
+			return &v, nil
 		}
 	}
 
