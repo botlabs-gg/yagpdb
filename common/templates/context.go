@@ -197,7 +197,7 @@ func (c *Context) setupBaseData() {
 
 	if c.MS != nil {
 		c.Data["Member"] = c.MS.DgoMember()
-		c.Data["User"] = c.MS.User
+		c.Data["User"] = &c.MS.User
 		c.Data["user"] = c.Data["User"]
 	}
 
