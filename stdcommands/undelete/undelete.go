@@ -28,17 +28,16 @@ var Command = &commands.YAGCommand{
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
 		targetUser := data.Switch("u").Int64()
 
-		channel := data.GuildData.CS
 		if data.Switch("channel").Value != nil {
-			channel = data.Switch("channel").Value.(*dstate.ChannelState)
+			channel := data.Switch("channel").Value.(*dstate.ChannelState)
 
-			ok, err := bot.AdminOrPermMS(channel.ID, data.GuildData.MS, discordgo.PermissionReadMessages)
+			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, channel.ID, data.GuildData.MS, discordgo.PermissionReadMessages)
 			if err != nil {
 				return nil, err
 			} else if !ok {
 				return "You do not have permission to view that channel.", nil
 			}
-		} 
+		}
 
 		if allUsers || targetUser != 0 {
 			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.ChannelID, data.GuildData.MS, discordgo.PermissionManageMessages)
@@ -79,11 +78,7 @@ var Command = &commands.YAGCommand{
 			// Match found!
 			timeSince := common.HumanizeDuration(precision, time.Since(msg.ParsedCreatedAt))
 
-<<<<<<< HEAD
-			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s: %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.ContentWithMentionsReplaced())
-=======
-			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s (ID %d): %s\n\n", timeSince, msg.ParsedCreated.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.Author.ID, msg.ContentWithMentionsReplaced())
->>>>>>> dev
+			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s (ID %d): %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.Author.ID, msg.ContentWithMentionsReplaced())
 			numFound++
 		}
 
