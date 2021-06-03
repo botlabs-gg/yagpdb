@@ -136,6 +136,10 @@
                 <div class="pull-right">
                     <button type="button" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-success" onclick="window.location.href = '/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/';" style="margin: 5px 5px 5px 0px!important">Edit</button>
                     <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/delete" style="margin: 5px 5px 5px 0px!important">Delete</button>
+                    {{if eq .TriggerType 5}}
+                        <button type="submit" class="btn btn-secondary" title="This will trigger this custom command immediately"
+                        formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/run_now" style="margin: 5px 5px 5px 0px!important">Run now</button>
+                    {{end}}
                 </div>
             </form>
             <h2 class="card-title">
@@ -220,7 +224,6 @@
     $('.collapse').on('shown.bs.collapse', function(){
     $(this).parent().find('.cc-collapsibleDown').removeClass('cc-collapsibleDown').addClass('cc-collapsibleUp');}).on('hidden.bs.collapse',function(){
         $(this).parent().find('.cc-collapsibleUp').removeClass('cc-collapsibleUp').addClass('cc-collapsibleDown');});
-    
 </script>
 {{template "cp_footer" .}}
 

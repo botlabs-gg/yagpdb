@@ -137,7 +137,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error occured while finding the server config", err
+				return "An error occurred while finding the server config", err
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -172,7 +172,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error occured while finding the server config", err
+				return "An error occurred while finding the server config", err
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -204,7 +204,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error occured while finding the server config", err
+				return "An error occurred while finding the server config", err
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -307,7 +307,7 @@ var cmds = []*commands.YAGCommand{
 
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error occured finding the server config", err
+				return "An error occurred finding the server config", err
 			}
 
 			score, rank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)

@@ -125,15 +125,15 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		var memberStatus string
+		state := [6]string{"Playing", "Streaming", "Listening", "Watching", "Custom", "Competing"}
 		if member.Presence == nil || member.Presence.Game == nil {
 			memberStatus = "Has no active status, is invisible/offline or is not in the bot's cache."
 		} else {
 			if member.Presence.Game.Type == 4 {
 				memberStatus = fmt.Sprintf("%s: %s", member.Presence.Game.Name, member.Presence.Game.State)
 			} else {
-				state := [4]string{"Playing", "Streaming", "Listening", "Watching"}
 				presenceName := "Unknown"
-				if member.Presence.Game.Type > 0 && len(state) > int(member.Presence.Game.Type) {
+				if member.Presence.Game.Type >= 0 && len(state) > int(member.Presence.Game.Type) {
 					presenceName = state[member.Presence.Game.Type]
 				}
 
@@ -379,7 +379,7 @@ var cmdClearNames = &commands.YAGCommand{
 		for _, v := range queries {
 			_, err := common.PQ.Exec(v, parsed.Author.ID)
 			if err != nil {
-				return "An error occured, join the support server for help", err
+				return "An error occurred, join the support server for help", err
 			}
 		}
 

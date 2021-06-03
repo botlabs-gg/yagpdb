@@ -513,7 +513,7 @@ func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonMissingRole,
-		Message: "You need atleast one of the server whitelist roles: " + humanizedRoles.String(),
+		Message: "You need at least one of the server whitelist roles: " + humanizedRoles.String(),
 	}
 }
 
@@ -581,7 +581,7 @@ func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildSet, ms *dstate.M
 
 	return &CanExecuteError{
 		Type:    ReasonUserMissingPerms,
-		Message: "You need atleast one of the following permissions to run this command: " + strings.Join(humanizedPerms, " or "),
+		Message: "You need at least one of the following permissions to run this command: " + strings.Join(humanizedPerms, " or "),
 	}
 }
 
@@ -627,7 +627,7 @@ OUTER:
 
 	return &CanExecuteError{
 		Type:    ReasonBotMissingPerms,
-		Message: "The bot needs atleast one of the following permissions to run this command: " + strings.Join(humanizedPerms, " or "),
+		Message: "The bot needs at least one of the following permissions to run this command: " + strings.Join(humanizedPerms, " or "),
 	}
 }
 

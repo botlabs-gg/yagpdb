@@ -22,17 +22,30 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "a", Help: "from all users"},
 		{Name: "u", Help: "from a specific user", Type: dcmd.UserID, Default: 0},
+		{Name: "channel", Help: "Optional target channel", Type: dcmd.Channel},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
 		targetUser := data.Switch("u").Int64()
+
+		channel := data.GuildData.CS
+		if data.Switch("channel").Value != nil {
+			channel = data.Switch("channel").Value.(*dstate.ChannelState)
+
+			ok, err := bot.AdminOrPermMS(channel.ID, data.GuildData.MS, discordgo.PermissionReadMessages)
+			if err != nil {
+				return nil, err
+			} else if !ok {
+				return "You do not have permission to view that channel.", nil
+			}
+		} 
 
 		if allUsers || targetUser != 0 {
 			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.ChannelID, data.GuildData.MS, discordgo.PermissionManageMessages)
 			if err != nil {
 				return nil, err
 			} else if !ok && targetUser == 0 {
-				return "You need `Manage Messages` permissions to view all users deleted messages", nil
+				return "You need `Manage Messages` permissions to view all users deleted messages.", nil
 			} else if !ok {
 				return "You need `Manage Messages` permissions to target a specific user other than yourself.", nil
 			}
@@ -66,7 +79,11 @@ var Command = &commands.YAGCommand{
 			// Match found!
 			timeSince := common.HumanizeDuration(precision, time.Since(msg.ParsedCreatedAt))
 
+<<<<<<< HEAD
 			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s: %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.ContentWithMentionsReplaced())
+=======
+			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s (ID %d): %s\n\n", timeSince, msg.ParsedCreated.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.Author.ID, msg.ContentWithMentionsReplaced())
+>>>>>>> dev
 			numFound++
 		}
 

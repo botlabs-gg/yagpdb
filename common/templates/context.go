@@ -19,6 +19,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack"
 )
 
 var (
@@ -102,6 +103,10 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 
 func init() {
 	RegisterSetupFunc(baseContextFuncs)
+
+	msgpack.RegisterExt(1, (*SDict)(nil))
+	msgpack.RegisterExt(2, (*Dict)(nil))
+	msgpack.RegisterExt(3, (*Slice)(nil))
 }
 
 // set by the premium package to return wether this guild is premium or not
@@ -266,13 +271,7 @@ func (c *Context) Execute(source string) (string, error) {
 	return c.executeParsed()
 }
 
-func (c *Context) executeParsed() (r string, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = errors.New("paniced!")
-		}
-	}()
-
+func (c *Context) executeParsed() (string, error) {
 	parsed := c.CurrentFrame.parsedTemplate
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
@@ -284,7 +283,7 @@ func (c *Context) executeParsed() (r string, err error) {
 	w := LimitWriter(&buf, 25000)
 
 	// started := time.Now()
-	err = parsed.Execute(w, c.Data)
+	err := parsed.Execute(w, c.Data)
 
 	// dur := time.Since(started)
 	if c.FixedOutput != "" {
@@ -490,6 +489,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("addRoleID", c.tmplAddRoleID)
 	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
 
+	c.addContextFunc("setRoles", c.tmplSetRoles)
 	c.addContextFunc("addRoleName", c.tmplAddRoleName)
 	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
 

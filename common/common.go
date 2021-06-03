@@ -179,6 +179,8 @@ func setupGlobalDGoSession() (err error) {
 
 	BotSession.Client.Transport = &LoggingTransport{Inner: innerTransport}
 
+	go updateConcurrentRequests()
+
 	return nil
 }
 
