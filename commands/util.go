@@ -8,9 +8,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 )
@@ -151,10 +151,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 	return func(data *dcmd.Data) (interface{}, error) {
 		// Only show stuff if atleast 1 of the commands in the container is enabled
 		if data.GuildData != nil {
-			data.GuildData.GS.RLock()
 			cParentID := data.GuildData.CS.ParentID
-			data.GuildData.GS.RUnlock()
-
 			ms := data.GuildData.MS
 
 			channelOverrides, err := GetOverridesForChannel(data.ChannelID, cParentID, data.GuildData.GS.ID)
@@ -176,12 +173,12 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 					continue
 				}
 
-				if len(settings.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(settings.RequiredRoles, ms.Roles) {
+				if len(settings.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(settings.RequiredRoles, ms.Member.Roles) {
 					// missing required role
 					continue
 				}
 
-				if len(settings.IgnoreRoles) > 0 && common.ContainsInt64SliceOneOf(settings.IgnoreRoles, ms.Roles) {
+				if len(settings.IgnoreRoles) > 0 && common.ContainsInt64SliceOneOf(settings.IgnoreRoles, ms.Member.Roles) {
 					// has ignored role
 					continue
 				}
@@ -238,7 +235,7 @@ func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.
 		return nil, dcmd.NewSimpleUserError("Invalid mention or id")
 	}
 
-	member, err := bot.GetMemberJoinedAt(data.GuildData.GS.ID, id)
+	member, err := bot.GetMember(data.GuildData.GS.ID, id)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember, discordgo.ErrCodeUnknownUser) {
 			return nil, dcmd.NewSimpleUserError("User not a member of the server")
@@ -256,7 +253,7 @@ func (ma *MemberArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, opt
 		return nil, err
 	}
 
-	return dstate.MSFromDGoMember(data.GuildData.GS, member), nil
+	return dstate.MemberStateFromMember(member), nil
 }
 
 func (ma *MemberArg) ExtractID(part string, data *dcmd.Data) int64 {
@@ -408,15 +405,11 @@ func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Da
 		idName = ""
 	}
 
-	roles := data.GuildData.GS.Guild.Roles
-	var role discordgo.Role
-	for _, v := range roles {
+	for _, v := range data.GuildData.GS.Roles {
 		if v.ID == id {
-			role = *v
-			return &role, nil
+			return &v, nil
 		} else if v.Name == idName {
-			role = *v
-			return &role, nil
+			return &v, nil
 		}
 	}
 

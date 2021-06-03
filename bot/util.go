@@ -10,7 +10,7 @@ import (
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -64,8 +64,9 @@ func SendDMEmbed(user int64, embed *discordgo.MessageEmbed) error {
 }
 
 var (
-	ErrStartingUp    = errors.New("Starting up, caches are being filled...")
-	ErrGuildNotFound = errors.New("Guild not found")
+	ErrStartingUp      = errors.New("Starting up, caches are being filled...")
+	ErrGuildNotFound   = errors.New("Guild not found")
+	ErrChannelNotFound = errors.New("Channel not found")
 )
 
 // AdminOrPerm is the same as AdminOrPermMS but only required a member ID
@@ -76,20 +77,23 @@ func AdminOrPerm(guildID int64, channelID int64, userID int64, needed int) (bool
 		return false, err
 	}
 
-	return AdminOrPermMS(channelID, ms, needed)
+	return AdminOrPermMS(guildID, channelID, ms, needed)
 }
 
 // AdminOrPermMS checks if the provided member has all of the needed permissions or is a admin
-func AdminOrPermMS(channelID int64, ms *dstate.MemberState, needed int) (bool, error) {
-	perms, err := ms.Guild.MemberPermissionsMS(true, channelID, ms)
+func AdminOrPermMS(guildID int64, channelID int64, ms *dstate.MemberState, needed int) (bool, error) {
+	guild := State.GetGuild(guildID)
+	if guild == nil {
+		return false, ErrGuildNotFound
+	}
+
+	perms, err := guild.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
 		return false, err
 	}
 
-	if needed != 0 {
-		if perms&needed == needed {
-			return true, nil
-		}
+	if needed != 0 && perms&int64(needed) == int64(needed) {
+		return true, nil
 	}
 
 	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
@@ -97,16 +101,6 @@ func AdminOrPermMS(channelID int64, ms *dstate.MemberState, needed int) (bool, e
 	}
 
 	return false, nil
-}
-
-// GuildName is a convenience function for getting the name of a guild
-func GuildName(gID int64) (name string) {
-	g := State.Guild(true, gID)
-	g.RLock()
-	name = g.Guild.Name
-	g.RUnlock()
-
-	return
 }
 
 func SnowflakeToTime(i int64) time.Time {
@@ -143,46 +137,46 @@ func updateAllShardStatuses() {
 // BotProbablyHasPermission returns true if its possible that the bot has the following permission,
 // it also returns true if the bot member could not be found or if the guild is not in state (hence, probably)
 func BotProbablyHasPermission(guildID int64, channelID int64, permission int) bool {
-	gs := State.Guild(true, guildID)
+	gs := State.GetGuild(guildID)
 	if gs == nil {
-		return true
+		return false
 	}
 
 	return BotProbablyHasPermissionGS(gs, channelID, permission)
 }
 
 // BotProbablyHasPermissionGS is the same as BotProbablyHasPermission but with a guildstate instead of guildid
-func BotProbablyHasPermissionGS(gs *dstate.GuildState, channelID int64, permission int) bool {
+func BotProbablyHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission int) bool {
 	ms, err := GetMember(gs.ID, common.BotUser.ID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("bot isnt a member of a guild?")
 		return false
 	}
 
-	perms, err := gs.MemberPermissionsMS(true, channelID, ms)
-	if err != nil && err != dstate.ErrChannelNotFound {
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
+	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
 		return true
 	}
 
-	if perms&permission == permission {
+	if perms&int64(permission) == int64(permission) {
 		return true
 	}
 
-	if perms&discordgo.PermissionAdministrator != 0 {
+	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
 		return true
 	}
 
 	return false
 }
 
-func BotPermissions(gs *dstate.GuildState, channelID int64) (int64, error) {
+func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
 	ms, err := GetMember(gs.ID, common.BotUser.ID)
 	if err != nil {
 		return 0, err
 	}
 
-	perms, err := gs.MemberPermissionsMS(true, channelID, ms)
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
 		return 0, err
 	}
@@ -200,7 +194,7 @@ func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp
 	return
 }
 
-func SendMessageGS(gs *dstate.GuildState, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
+func SendMessageGS(gs *dstate.GuildSet, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
 	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages) {
 		return false, nil, nil
 	}
@@ -220,7 +214,7 @@ func SendMessageEmbed(guildID int64, channelID int64, msg *discordgo.MessageEmbe
 	return
 }
 
-func SendMessageEmbedGS(gs *dstate.GuildState, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
+func SendMessageEmbedGS(gs *dstate.GuildSet, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
 	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
 		return false, nil, nil
 	}
@@ -277,10 +271,10 @@ func RefreshStatus(session *discordgo.Session) {
 
 // IsMemberAbove returns wether ms1 is above ms2 in terms of roles (e.g the highest role of ms1 is higher than the highest role of ms2)
 // assumes gs is locked, otherwise race conditions will occur
-func IsMemberAbove(gs *dstate.GuildState, ms1 *dstate.MemberState, ms2 *dstate.MemberState) bool {
-	if ms1.ID == gs.Guild.OwnerID {
+func IsMemberAbove(gs *dstate.GuildSet, ms1 *dstate.MemberState, ms2 *dstate.MemberState) bool {
+	if ms1.User.ID == gs.OwnerID {
 		return true
-	} else if ms2.ID == gs.Guild.OwnerID {
+	} else if ms2.User.ID == gs.OwnerID {
 		return false
 	}
 
@@ -303,8 +297,8 @@ func IsMemberAbove(gs *dstate.GuildState, ms1 *dstate.MemberState, ms2 *dstate.M
 
 // IsMemberAboveRole returns wether ms is above role
 // assumes gs is locked, otherwise race conditions will occur
-func IsMemberAboveRole(gs *dstate.GuildState, ms1 *dstate.MemberState, role *discordgo.Role) bool {
-	if ms1.ID == gs.Guild.OwnerID {
+func IsMemberAboveRole(gs *dstate.GuildSet, ms1 *dstate.MemberState, role *discordgo.Role) bool {
+	if ms1.User.ID == gs.OwnerID {
 		return true
 	}
 
@@ -318,16 +312,16 @@ func IsMemberAboveRole(gs *dstate.GuildState, ms1 *dstate.MemberState, role *dis
 }
 
 // MemberHighestRole returns the highest role for ms, assumes gs is rlocked, otherwise race conditions will occur
-func MemberHighestRole(gs *dstate.GuildState, ms *dstate.MemberState) *discordgo.Role {
+func MemberHighestRole(gs *dstate.GuildSet, ms *dstate.MemberState) *discordgo.Role {
 	var highest *discordgo.Role
-	for _, rID := range ms.Roles {
-		for _, r := range gs.Guild.Roles {
+	for _, rID := range ms.Member.Roles {
+		for _, r := range gs.Roles {
 			if r.ID != rID {
 				continue
 			}
 
-			if highest == nil || dutil.IsRoleAbove(r, highest) {
-				highest = r
+			if highest == nil || dutil.IsRoleAbove(&r, highest) {
+				highest = &r
 			}
 
 			break
@@ -338,34 +332,18 @@ func MemberHighestRole(gs *dstate.GuildState, ms *dstate.MemberState) *discordgo
 }
 
 func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
-	gs := State.Guild(true, guildID)
-	if gs == nil {
-		return nil
-	}
-
-	return GetUsersGS(gs, ids...)
-}
-
-func GetUsersGS(gs *dstate.GuildState, ids ...int64) []*discordgo.User {
-	gs.RLock()
-	defer gs.RUnlock()
-
 	resp := make([]*discordgo.User, 0, len(ids))
 	for _, id := range ids {
-		m := gs.Member(false, id)
+		m := State.GetMember(guildID, id)
 		if m != nil {
-			resp = append(resp, m.DGoUser())
+			resp = append(resp, &m.User)
 			continue
 		}
 
-		gs.RUnlock()
-
 		user, err := common.BotSession.User(id)
 
-		gs.RLock()
-
 		if err != nil {
-			logger.WithError(err).WithField("guild", gs.ID).Error("failed retrieving user from api")
+			logger.WithError(err).WithField("guild", guildID).Error("failed retrieving user from api")
 			resp = append(resp, &discordgo.User{
 				ID:       id,
 				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",
@@ -379,36 +357,7 @@ func GetUsersGS(gs *dstate.GuildState, ids ...int64) []*discordgo.User {
 	return resp
 }
 
-func EvictGSCache(guildID int64, key GSCacheKey) {
-	if Enabled {
-		evictGSCacheLocal(guildID, key)
-	} else {
-		evictGSCacheRemote(guildID, key)
-	}
-}
-
-func evictGSCacheLocal(guildID int64, key GSCacheKey) {
-	gs := State.Guild(true, guildID)
-	if gs == nil {
-		return
-	}
-
-	gs.UserCacheDel(key)
-}
-
 type GSCacheKey string
-
-func evictGSCacheRemote(guildID int64, key GSCacheKey) {
-	err := pubsub.Publish("bot_core_evict_gs_cache", guildID, key)
-	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("key", key).Error("failed evicting remote cache")
-	}
-}
-
-func handleEvictCachePubsub(evt *pubsub.Event) {
-	key := evt.Data.(*string)
-	evictGSCacheLocal(evt.TargetGuildInt, GSCacheKey(*key))
-}
 
 func CheckDiscordErrRetry(err error) bool {
 	if err == nil {

@@ -12,12 +12,12 @@ import (
 
 	"github.com/jonas747/dshardorchestrator/v2"
 	"github.com/jonas747/dshardorchestrator/v2/node"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/common"
 )
 
 func init() {
-	dshardorchestrator.RegisterUserEvent("GuildState", EvtGuildState, dstate.GuildState{})
+	dshardorchestrator.RegisterUserEvent("GuildState", EvtGuildState, dstate.GuildSet{})
 }
 
 // Implementation of DShardOrchestrator/Node/Interface
@@ -35,6 +35,8 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 
 	if totalShardCount == 0 {
 		totalShardCount = info.TotalShards
+		setupState()
+
 		ShardManager.SetNumShards(totalShardCount)
 		eventsystem.InitWorkers(totalShardCount)
 		ReadyTracker.initTotalShardCount(totalShardCount)
@@ -120,7 +122,10 @@ func (n *NodeImpl) InitializeShardTransferTo(shard int, sessionID string, sequen
 }
 
 const (
-	EvtGuildState dshardorchestrator.EventType = 101
+	// This was a legacy format thats now unused
+	// EvtGuildState dshardorchestrator.EventType = 101
+
+	EvtGuildState dshardorchestrator.EventType = 102
 )
 
 // this should return when all user events has been sent, with the number of user events sent
@@ -129,8 +134,9 @@ func (n *NodeImpl) StartShardTransferFrom(shard int) (numEventsSent int) {
 }
 
 func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interface{}) {
+
 	if evt == EvtGuildState {
-		dataCast := data.(*dstate.GuildState)
+		dataCast := data.(*dstate.GuildSet)
 		n.LoadGuildState(dataCast)
 	}
 
@@ -145,6 +151,7 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	started := time.Now()
 
 	totalSentEvents := 0
+
 	// start with the plugins
 	for _, v := range common.Plugins {
 		if migrator, ok := v.(ShardMigrationSender); ok {
@@ -153,40 +160,15 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	}
 
 	// Send the guilds on this shard
-	guildsToSend := make([]*dstate.GuildState, 0)
-	State.RLock()
-	for _, v := range State.Guilds {
-		shardID := guildShardID(v.ID)
-		if int(shardID) == shard {
-			guildsToSend = append(guildsToSend, v)
-		}
-	}
-	State.RUnlock()
+	guildsToSend := State.GetShardGuilds(int64(shard))
 
-	workChan := make(chan *dstate.GuildState)
+	workChan := make(chan *dstate.GuildSet)
 	var wg sync.WaitGroup
 
 	// To speed this up we use multiple workers, this has to be done in a relatively short timespan otherwise we won't be able to resume
 	worker := func() {
 		for gs := range workChan {
-			State.Lock()
-			delete(State.Guilds, gs.ID)
-			State.Unlock()
-
-			gs.RLock()
-			channels := make([]int64, 0, len(gs.Channels))
-			for _, c := range gs.Channels {
-				channels = append(channels, c.ID)
-			}
-
 			NodeConn.SendLogErr(EvtGuildState, gs, true)
-			gs.RUnlock()
-
-			State.Lock()
-			for _, c := range channels {
-				delete(State.Channels, c)
-			}
-			State.Unlock()
 		}
 
 		wg.Done()
@@ -210,28 +192,14 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	close(workChan)
 	wg.Wait()
 
+	// clean up after ourselves
+	stateTracker.DelShard(int64(shard))
+
 	logger.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
 	totalSentEvents += len(guildsToSend)
 	return totalSentEvents
 }
 
-func (n *NodeImpl) LoadGuildState(gs *dstate.GuildState) {
-
-	for _, c := range gs.Channels {
-		c.Owner = gs
-		c.Guild = gs
-	}
-
-	for _, m := range gs.Members {
-		m.Guild = gs
-	}
-
-	gs.InitCache(State)
-
-	State.Lock()
-	State.Guilds[gs.ID] = gs
-	for _, c := range gs.Channels {
-		State.Channels[c.ID] = c
-	}
-	State.Unlock()
+func (n *NodeImpl) LoadGuildState(gs *dstate.GuildSet) {
+	stateTracker.SetGuild(gs)
 }

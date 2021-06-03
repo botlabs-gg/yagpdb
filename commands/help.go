@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/common"
@@ -31,10 +31,8 @@ func CmdNotFound(search string) string {
 func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	target := data.Args[0].Str()
 
-	var resp []*discordgo.MessageEmbed
-
 	// Send the targetted help in the channel it was requested in
-	resp = dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
+	resp := dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
 	for _, v := range resp {
 		ensureEmbedLimits(v)
 	}

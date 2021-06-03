@@ -19,6 +19,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common/cacheset"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -35,6 +36,7 @@ var (
 	SQLX *sqlx.DB
 
 	RedisPool *radix.Pool
+	CacheSet  = cacheset.NewManager(time.Hour)
 
 	BotSession     *discordgo.Session
 	BotUser        *discordgo.User
@@ -81,6 +83,7 @@ func CoreInit() error {
 
 // Init initializes the rest of the bot
 func Init() error {
+	go CacheSet.RunGCLoop()
 
 	err := setupGlobalDGoSession()
 	if err != nil {
@@ -175,6 +178,8 @@ func setupGlobalDGoSession() (err error) {
 	}
 
 	BotSession.Client.Transport = &LoggingTransport{Inner: innerTransport}
+
+	go updateConcurrentRequests()
 
 	return nil
 }

@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands/models"
@@ -261,7 +261,7 @@ func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
 	// TODO: add queue?
 	waitForSlashCommandIDs()
 
-	gs := bot.State.Guild(true, evt.GuildCreate().ID)
+	gs := bot.State.GetGuild(evt.GuildCreate().ID)
 	if gs == nil {
 		panic("gs is nil")
 	}
@@ -285,7 +285,7 @@ func (p *Plugin) handleDiscordEventUpdateSlashCommandPermissions(evt *eventsyste
 	}
 }
 
-func updateSlashCommandGuildPermissions(gs *dstate.GuildState) (updated bool, err error) {
+func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err error) {
 	commandSettings, err := GetAllOverrides(context.Background(), gs.ID)
 	if err != nil {
 		return false, err
@@ -374,7 +374,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 }
 
 // Since we can't put permissions on subcommands we do a similar thing we do to command settings that is
-func ContainerSlashCommandPermissions(container *slashCommandsContainer, overrides []*models.CommandsChannelsOverride, gs *dstate.GuildState) ([]*discordgo.ApplicationCommandPermissions, error) {
+func ContainerSlashCommandPermissions(container *slashCommandsContainer, overrides []*models.CommandsChannelsOverride, gs *dstate.GuildSet) ([]*discordgo.ApplicationCommandPermissions, error) {
 	allowRoles, denyRoles, allowAll, denyAll, err := slashCommandPermissionsFromRolesFunc(container.rolesRunFunc, gs, container.defaultPermissions)
 	if err != nil {
 		return nil, err
@@ -401,7 +401,7 @@ func ContainerSlashCommandPermissions(container *slashCommandsContainer, overrid
 
 // merges all subcommand allow roles
 // and returns a common set of all subcommand deny roles
-func sumContainerSlashCommandsChildren(container *slashCommandsContainer, overrides []*models.CommandsChannelsOverride, gs *dstate.GuildState) (allowRoles []int64, denyRoles []int64, allowAll bool, denyAll bool, err error) {
+func sumContainerSlashCommandsChildren(container *slashCommandsContainer, overrides []*models.CommandsChannelsOverride, gs *dstate.GuildSet) (allowRoles []int64, denyRoles []int64, allowAll bool, denyAll bool, err error) {
 	allowRoles = make([]int64, 0)
 	denyRoles = make([]int64, 0)
 	allowAll = false
@@ -435,7 +435,7 @@ func sumContainerSlashCommandsChildren(container *slashCommandsContainer, overri
 	return
 }
 
-func toApplicationCommandPermissions(gs *dstate.GuildState, defaultEnabeld bool, allowRoles, denyRoles []int64, allowAll, denyAll bool) []*discordgo.ApplicationCommandPermissions {
+func toApplicationCommandPermissions(gs *dstate.GuildSet, defaultEnabeld bool, allowRoles, denyRoles []int64, allowAll, denyAll bool) []*discordgo.ApplicationCommandPermissions {
 	result := make([]*discordgo.ApplicationCommandPermissions, 0, 10)
 
 	// allGuildroles := guildRoles(gs)
@@ -503,7 +503,7 @@ func toApplicationCommandPermissions(gs *dstate.GuildState, defaultEnabeld bool,
 	return result
 }
 
-func (yc *YAGCommand) TopLevelSlashCommandPermissions(overrides []*models.CommandsChannelsOverride, gs *dstate.GuildState) ([]*discordgo.ApplicationCommandPermissions, error) {
+func (yc *YAGCommand) TopLevelSlashCommandPermissions(overrides []*models.CommandsChannelsOverride, gs *dstate.GuildSet) ([]*discordgo.ApplicationCommandPermissions, error) {
 
 	allowRoles, denyRoles, allowAll, denyAll, err := yc.SlashCommandPermissions(overrides, yc.DefaultEnabled, []*dcmd.Container{CommandSystem.Root}, gs)
 	if err != nil {
@@ -514,7 +514,7 @@ func (yc *YAGCommand) TopLevelSlashCommandPermissions(overrides []*models.Comman
 	return result, nil
 }
 
-func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChannelsOverride, defaultEnabeld bool, containerChain []*dcmd.Container, gs *dstate.GuildState) (allowRoles []int64, denyRoles []int64, allowAll bool, denyAll bool, err error) {
+func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChannelsOverride, defaultEnabeld bool, containerChain []*dcmd.Container, gs *dstate.GuildSet) (allowRoles []int64, denyRoles []int64, allowAll bool, denyAll bool, err error) {
 	allowRoles = make([]int64, 0)
 	denyRoles = make([]int64, 0)
 	allowAll = true
@@ -560,20 +560,20 @@ func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChanne
 			// Apply the inverse of the required roles to the deny roles, this effectively means were only blacklisting roles.
 			// which means the permissions need to be updated after any roles are added.
 		OUTER:
-			for _, v := range guildRoles(gs) {
+			for _, v := range gs.Roles {
 				for _, required := range commonRequiredRoles {
-					if v == required {
+					if v.ID == required {
 						continue OUTER
 					}
 				}
 
 				for _, alreadyDenied := range denyRoles {
-					if alreadyDenied == v {
+					if alreadyDenied == v.ID {
 						continue OUTER
 					}
 				}
 
-				denyRoles = append(denyRoles, v)
+				denyRoles = append(denyRoles, v.ID)
 			}
 		} else {
 			if allowAll {
@@ -591,31 +591,14 @@ func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChanne
 	return
 }
 
-func guildRoles(gs *dstate.GuildState) []int64 {
-	gs.RLock()
-	defer gs.RUnlock()
-
-	result := make([]int64, 0, len(gs.Guild.Roles))
-	for _, v := range gs.Guild.Roles {
-		if v.ID == gs.ID || v.Managed {
-			continue
-		}
-		result = append(result, v.ID)
-	}
-
-	return result
-}
-
-func findRolesWithDiscordPerms(gs *dstate.GuildState, requiredPerms []int64, defaultEnabled bool) []int64 {
-	gs.RLock()
-	defer gs.RUnlock()
+func findRolesWithDiscordPerms(gs *dstate.GuildSet, requiredPerms []int64, defaultEnabled bool) []int64 {
 
 	result := make([]int64, 0)
 
 	// check fixed required perms on the command
 
 OUTER:
-	for _, r := range gs.Guild.Roles {
+	for _, r := range gs.Roles {
 		perms := int64(r.Permissions)
 		for _, rp := range requiredPerms {
 			if perms&rp == rp || perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator || perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
@@ -740,7 +723,7 @@ func isSlashCommandEnabledChannelOverride(fullName string, override *models.Comm
 	return override.CommandsEnabled
 }
 
-func slashCommandPermissionsFromRolesFunc(rf RolesRunFunc, gs *dstate.GuildState, defaultEnabled bool) (allow []int64, deny []int64, allowAll bool, denyAll bool, err error) {
+func slashCommandPermissionsFromRolesFunc(rf RolesRunFunc, gs *dstate.GuildSet, defaultEnabled bool) (allow []int64, deny []int64, allowAll bool, denyAll bool, err error) {
 
 	roles, err := rf(gs)
 	if err != nil {
@@ -771,7 +754,7 @@ func slashCommandPermissionsFromRolesFunc(rf RolesRunFunc, gs *dstate.GuildState
 }
 
 func (p *Plugin) handleUpdateSlashCommandsPermissions(event *pubsub.Event) {
-	gs := bot.State.Guild(true, event.TargetGuildInt)
+	gs := bot.State.GetGuild(event.TargetGuildInt)
 	if gs == nil {
 		return
 	}
