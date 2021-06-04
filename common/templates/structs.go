@@ -24,6 +24,10 @@ type CtxChannel struct {
 	ParentID             int64                            `json:"parent_id"`
 }
 
+func (c *CtxChannel) Mention() string {
+	return "<#" + discordgo.StrID(c.ID) + ">"
+}
+
 func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 	ctxChannel := &CtxChannel{
 		ID:                   cs.ID,
