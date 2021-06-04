@@ -1,7 +1,6 @@
 package automod_legacy
 
-// This list is in alphabethical order
-// Open a pr or bug me on discord if you want a word added
+// These words are listed in in alphabethical order.
 var BuiltinSwearWords = map[string]bool{
 	"anal":        true,
 	"anus":        true,
@@ -59,8 +58,8 @@ var BuiltinSwearWords = map[string]bool{
 	"smegma":      true,
 	"spunk":       true,
 	"tit":         true,
-	"tranny":       true,
-	"trannies":     true,
+	"tranny":      true,
+	"trannies":    true,
 	"tosser":      true,
 	"turd":        true,
 	"twat":        true,
