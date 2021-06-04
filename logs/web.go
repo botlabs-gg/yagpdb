@@ -324,7 +324,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	tmpl["CanViewDeleted"] = canViewDeleted
 
 	// Convert into views with formatted dates and colors
-	const TimeFormat = "2006 Jan 02 15:04"
+	const TimeFormat = "2006 Jan 02 15:04:05"
 	messageViews := make([]*MessageView, len(messages))
 	for i := range messageViews {
 		m := messages[i]
