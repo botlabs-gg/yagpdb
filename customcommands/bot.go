@@ -388,7 +388,7 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, gs *dstate.GuildSet, cSta
 		return true
 	}
 
-	if !bot.BotProbablyHasPermissionGS(gs, cState.ID, discordgo.PermissionSendMessages) {
+	if hasPerms, _ := bot.BotHasPermissionGS(gs, cState.ID, discordgo.PermissionSendMessages); !hasPerms {
 		return true
 	}
 
@@ -432,7 +432,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !bot.BotProbablyHasPermissionGS(evt.GS, cState.ID, discordgo.PermissionSendMessages) {
+	if hasPerms, _ := bot.BotHasPermissionGS(evt.GS, cState.ID, discordgo.PermissionSendMessages); !hasPerms {
 		// don't run in channel we don't have perms in
 		return
 	}

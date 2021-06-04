@@ -136,38 +136,43 @@ func updateAllShardStatuses() {
 
 // BotProbablyHasPermission returns true if its possible that the bot has the following permission,
 // it also returns true if the bot member could not be found or if the guild is not in state (hence, probably)
-func BotProbablyHasPermission(guildID int64, channelID int64, permission int) bool {
+func BotHasPermission(guildID int64, channelID int64, permission int) (bool, error) {
 	gs := State.GetGuild(guildID)
 	if gs == nil {
-		return false
+		return false, ErrGuildNotFound
 	}
 
-	return BotProbablyHasPermissionGS(gs, channelID, permission)
+	return BotHasPermissionGS(gs, channelID, permission)
 }
 
 // BotProbablyHasPermissionGS is the same as BotProbablyHasPermission but with a guildstate instead of guildid
-func BotProbablyHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission int) bool {
+func BotHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission int) (bool, error) {
 	ms, err := GetMember(gs.ID, common.BotUser.ID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("bot isnt a member of a guild?")
-		return false
+		return false, err
 	}
 
 	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
-		return true
+		if is, _ := dstate.IsChannelNotFound(err); is {
+			// we silently ignore unknown channels
+			err = nil
+		} else {
+			logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
+			return false, err
+		}
 	}
 
 	if perms&int64(permission) == int64(permission) {
-		return true
+		return true, err
 	}
 
 	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
-		return true
+		return true, err
 	}
 
-	return false
+	return false, err
 }
 
 func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
@@ -185,8 +190,9 @@ func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
 }
 
 func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
-	if !BotProbablyHasPermission(guildID, channelID, discordgo.PermissionSendMessages) {
-		return false, nil, nil
+	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+	if !hasPerms {
+		return false, nil, err
 	}
 
 	resp, err = common.BotSession.ChannelMessageSend(channelID, msg)
@@ -195,18 +201,19 @@ func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp
 }
 
 func SendMessageGS(gs *dstate.GuildSet, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
-	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages) {
-		return false, nil, nil
+	hasPerms, err := BotHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+	if !hasPerms {
+		return false, nil, err
 	}
 
 	resp, err = common.BotSession.ChannelMessageSend(channelID, msg)
-	permsOK = true
-	return
+	return true, resp, err
 }
 
 func SendMessageEmbed(guildID int64, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
-	if !BotProbablyHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
-		return false, nil, nil
+	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks)
+	if !hasPerms {
+		return false, nil, err
 	}
 
 	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, msg)
@@ -215,8 +222,9 @@ func SendMessageEmbed(guildID int64, channelID int64, msg *discordgo.MessageEmbe
 }
 
 func SendMessageEmbedGS(gs *dstate.GuildSet, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
-	if !BotProbablyHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks) {
-		return false, nil, nil
+	hasPerms, err := BotHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks)
+	if !hasPerms {
+		return false, nil, err
 	}
 
 	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, msg)

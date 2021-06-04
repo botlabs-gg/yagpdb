@@ -190,8 +190,8 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 		if resp != nil {
 
-			if resp.Type == ReasonCooldown && data.TriggerType != dcmd.TriggerTypeSlashCommands {
-				if (data.GuildData != nil && bot.BotProbablyHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions)) || data.GuildData.GS == nil {
+			if resp.Type == ReasonCooldown && data.TriggerType != dcmd.TriggerTypeSlashCommands && data.GuildData != nil {
+				if hasPerms, _ := bot.BotHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions); hasPerms {
 					common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
 					return nil, nil
 				}

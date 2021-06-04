@@ -209,7 +209,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 		return
 	}
 
-	if !bot.BotProbablyHasPermission(channel.GuildID, channel.ID, discordgo.PermissionManageRoles) {
+	if hasPerms, _ := bot.BotHasPermission(channel.GuildID, channel.ID, discordgo.PermissionManageRoles); !hasPerms {
 		return
 	}
 

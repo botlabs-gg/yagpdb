@@ -57,9 +57,8 @@ func (p *Plugin) AddCommands() {
 				return "No category for ticket channels set", nil
 			}
 
-			if !bot.BotProbablyHasPermissionGS(parsed.GuildData.GS, parsed.ChannelID, InTicketPerms) {
+			if hasPerms, _ := bot.BotHasPermissionGS(parsed.GuildData.GS, parsed.ChannelID, InTicketPerms); !hasPerms {
 				return fmt.Sprintf("The bot is missing one of the following permissions: %s", common.HumanizePermissions(InTicketPerms)), nil
-				// return "", nil
 			}
 
 			inCurrentTickets, err := models.Tickets(
