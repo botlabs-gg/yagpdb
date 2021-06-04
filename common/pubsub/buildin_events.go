@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/jonas747/discordgo"
@@ -33,4 +34,26 @@ func handleGlobalRatelimtPusub(evt *Event) {
 
 func handleEvictCoreConfigCache(evt *Event) {
 	common.CoreServerConfigCache.Delete(int(evt.TargetGuildInt))
+}
+
+// EvictCacheSet backported version of the dev one
+func EvictCacheSet(slot string, key interface{}) {
+	marshalledKey, err := json.Marshal(key)
+	if err != nil {
+		logger.WithError(err).Error("failed marshaling CacheSet key")
+		return
+	}
+
+	err = Publish("evict_guild_cache", -1, &evictCacheSetData{
+		Name: slot,
+		Key:  marshalledKey,
+	})
+	if err != nil {
+		logger.WithError(err).Error("failed publishing guild cache eviction")
+	}
+}
+
+type evictCacheSetData struct {
+	Name string          `json:"name"`
+	Key  json.RawMessage `json:"key"`
 }
