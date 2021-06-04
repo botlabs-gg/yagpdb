@@ -200,7 +200,7 @@ func (s *Slot) DeleteFunc(f func(key interface{}, value interface{}) bool) int {
 
 	n := 0
 	for k, v := range s.values {
-		if f(k, v) {
+		if f(k, v.value) {
 			delete(s.values, k)
 			n++
 		}
