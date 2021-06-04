@@ -19,6 +19,7 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -206,6 +207,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 	err = list.InsertG(r.Context(), boil.Infer())
 	if err == nil {
 		bot.EvictGSCache(g.ID, CacheKeyLists)
+		pubsub.EvictCacheSet("amod2_lists", g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewList))
 	}
 	return tmpl, err
@@ -229,6 +231,7 @@ func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Requ
 	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
 	if err == nil {
 		bot.EvictGSCache(g.ID, CacheKeyLists)
+		pubsub.EvictCacheSet("amod2_lists", g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedList))
 	}
 	return tmpl, err
@@ -246,6 +249,7 @@ func (p *Plugin) handlePostAutomodDeleteList(w http.ResponseWriter, r *http.Requ
 	_, err = list.DeleteG(r.Context())
 	if err == nil {
 		bot.EvictGSCache(g.ID, CacheKeyLists)
+		pubsub.EvictCacheSet("amod2_lists", g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedList))
 	}
 	return tmpl, err
@@ -391,6 +395,8 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 	}
 
 	bot.EvictGSCache(g.ID, CacheKeyRulesets)
+	pubsub.EvictCacheSet("amod2_rulesets", g.ID)
+
 	featureflags.MarkGuildDirty(g.ID)
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedRuleset))
 
@@ -415,6 +421,7 @@ func (p *Plugin) handlePostAutomodDeleteRuleset(w http.ResponseWriter, r *http.R
 	if rows > 0 {
 		bot.EvictGSCache(g.ID, CacheKeyRulesets)
 		featureflags.MarkGuildDirty(g.ID)
+		pubsub.EvictCacheSet("amod2_rulesets", g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedRuleset))
 	}
 
@@ -524,6 +531,8 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	WebLoadRuleSettings(r, tmpl, ruleSet)
 
 	bot.EvictGSCache(g.ID, CacheKeyRulesets)
+	pubsub.EvictCacheSet("amod2_rulesets", g.ID)
+
 	featureflags.MarkGuildDirty(g.ID)
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedRule))
 
@@ -725,6 +734,7 @@ func (p *Plugin) handlePostAutomodDeleteRule(w http.ResponseWriter, r *http.Requ
 			if err == nil {
 				ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules[:k], ruleset.R.RulesetAutomodRules[k+1:]...)
 				bot.EvictGSCache(g.ID, CacheKeyRulesets)
+				pubsub.EvictCacheSet("amod2_rulesets", g.ID)
 				featureflags.MarkGuildDirty(g.ID)
 				go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedRule))
 			}

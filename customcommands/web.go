@@ -239,6 +239,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
 
+	pubsub.EvictCacheSet("custom_commands_message_trigger", activeGuild.ID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, nil
 }
@@ -305,6 +306,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
 
+	pubsub.EvictCacheSet("custom_commands_message_trigger", activeGuild.ID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }
@@ -337,6 +339,7 @@ func handleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	err = DelNextRunEvent(cmd.GuildID, cmd.LocalID)
 	featureflags.MarkGuildDirty(activeGuild.ID)
+	pubsub.EvictCacheSet("custom_commands_message_trigger", activeGuild.ID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }
@@ -384,7 +387,7 @@ func handleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: newGroup.Name}))
 
 	templateData["CurrentGroupID"] = dbModel.ID
-
+	pubsub.EvictCacheSet("custom_commands_message_trigger", activeGuild.ID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, nil
 }
@@ -411,7 +414,7 @@ func handleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: model.Name}))
 	}
-
+	pubsub.EvictCacheSet("custom_commands_message_trigger", activeGuild.ID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }
@@ -433,7 +436,7 @@ func handleDeleteGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	if rows > 0 {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedGroup, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: id}))
 	}
-
+	pubsub.EvictCacheSet("custom_commands_message_trigger", activeGuild.ID)
 	common.LogIgnoreError(pubsub.Publish("custom_commands_clear_cache", activeGuild.ID, nil), "failed creating pubsub cache eviction event", web.CtxLogger(ctx).Data)
 	return templateData, err
 }

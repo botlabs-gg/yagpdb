@@ -30,6 +30,7 @@ var (
 
 func (f Form) Save(guildID int64) error {
 	pubsub.Publish("autorole_stop_processing", guildID, nil)
+	pubsub.EvictCacheSet("autorole_config", guildID)
 
 	err := common.SetRedisJson(KeyGeneral(guildID), f.GeneralConfig)
 	if err != nil {

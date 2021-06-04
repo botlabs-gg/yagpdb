@@ -14,6 +14,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/logs/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/null/v8"
@@ -170,7 +171,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 	if err == nil {
 		bot.EvictGSCache(g.ID, CacheKeyConfig)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
-
+		pubsub.EvictCacheSet("logs_config", g.ID)
 	}
 	return tmpl, err
 }
