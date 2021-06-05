@@ -652,7 +652,7 @@ func (s Slice) Set(index int, item interface{}) (string, error) {
 }
 
 func (s Slice) AppendSlice(slice interface{}) (interface{}, error) {
-	val := reflect.ValueOf(slice)
+	val, _ := indirect(reflect.ValueOf(slice))
 	switch val.Kind() {
 	case reflect.Slice, reflect.Array:
 	// this is valid
