@@ -644,7 +644,7 @@ func queryFromArg(query interface{}) (*Query, error) {
 	for key, val := range querySdict {
 		switch key {
 			case "userID":
-			switch t := val.(type) {
+			switch val.(type) {
 				case int, int64:
 				q.UserID.Int64 = templates.ToInt64(val)
 				q.UserID.Valid = true
