@@ -647,7 +647,7 @@ func queryFromArg(query interface{}) (*Query, error) {
 			case "userID":
 			switch t := val.(type) {
 				case int, int64:
-				q.UserID.Int64 = templates.toInt64(val)
+				q.UserID.Int64 = templates.ToInt64(val)
 				q.UserID.Valid = true
 				
 				default:
