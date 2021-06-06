@@ -636,22 +636,39 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 
 func queryFromArg(query interface{}) (*Query, error) {
 
-	dict, err := templates.StringKeyDictionary(query)
+	querySdict, err := templates.StringKeyDictionary(query)
 	if err != nil {
 		return nil, err
 	}
 	
 	var q Query
-	encoded, err := json.Marshal(dict)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(encoded, &q)
-	if err != nil {
-		return nil, err
-	}
-	q.Pattern.String = limitString(q.Pattern.String, 256)
+	for key, val := range querySdict {
+		switch key {
+			case "userID":
+			switch t := val.(type) {
+				case int, int64:
+				q.UserID.Int64 = int64(val)
+				q.UserID.Valid = true
+				
+				default:
+				return &q, errors.New("Invalid UserID datatype in query. Must be a number")
+			}
+			
+			case "pattern":
+				q.Pattern.String = limitString(templates.ToString(val), 256)
+				q.Pattern.Valid = true
+			
+			case "reverse":
+			revFlag, ok := val.(bool)
+			if !ok {
+				return &q, errors.New("Invalid reverse flag datatype in query. Must be a boolean value.")
+			}
+			q.Reverse = revFlag
+			
+			default:
+			return &q, errors.New("Invalid Key: " + key + " passed to query constructor")
+		}
+				
 	return &q, nil
 }
 
