@@ -668,6 +668,7 @@ func queryFromArg(query interface{}) (*Query, error) {
 			default:
 			return &q, errors.New("Invalid Key: " + key + " passed to query constructor")
 		}
+	}
 				
 	return &q, nil
 }
