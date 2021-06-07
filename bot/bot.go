@@ -405,6 +405,7 @@ func setupState() {
 	tracker := inmemorytracker.NewInMemoryTracker(inmemorytracker.TrackerConfig{
 		ChannelMessageLimitsF:     StateLimitsF,
 		RemoveOfflineMembersAfter: removeMembersDur,
+		BotMemberID:               common.BotUser.ID,
 	}, int64(totalShardCount))
 
 	go tracker.RunGCLoop(time.Second)
