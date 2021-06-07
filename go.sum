@@ -355,8 +355,8 @@ github.com/jonas747/dstate v0.0.0-20190905110424-f2ed8c6c957d/go.mod h1:5xeu+zy7
 github.com/jonas747/dstate v1.0.4 h1:TS1YcPJelsVOqgU8u+SKkQevEMi0klG9Agugj+TE8+0=
 github.com/jonas747/dstate v1.0.4/go.mod h1:6EQjQnyxbdNzQJS9wANzHVzKCyTO+lsmH6t3aqZRNI8=
 github.com/jonas747/dstate/v3 v3.0.0/go.mod h1:ZLma2mC/JA8G1Snz80Az6HWq7wXxzDqq+71DIPx9wBc=
-github.com/jonas747/dstate/v3 v3.0.3 h1:LRfGVecYaXb+Hr28/elgJxQ5uWVbKAGXIpk8W5U10Pw=
-github.com/jonas747/dstate/v3 v3.0.3/go.mod h1:ZLma2mC/JA8G1Snz80Az6HWq7wXxzDqq+71DIPx9wBc=
+github.com/jonas747/dstate/v3 v3.0.4 h1:vLXFrfrxSFHbUH7sc/YaX6olxvHgmgopfXTgmDliGvw=
+github.com/jonas747/dstate/v3 v3.0.4/go.mod h1:ZLma2mC/JA8G1Snz80Az6HWq7wXxzDqq+71DIPx9wBc=
 github.com/jonas747/dutil v0.0.2/go.mod h1:FwfIRC0ShAEHhwUJ6JppfciiFrfOA/cAoyCECsfib8c=
 github.com/jonas747/dutil v0.0.3 h1:Qe4Qls2sBjAvBOqregFLyDuWG/gonK8BiqT9DHRhIg0=
 github.com/jonas747/dutil v0.0.3/go.mod h1:oMJ++hvPrAb7Kl2aAHntvjiMXQWfja5t8ZvX13RMbuE=
