@@ -71,9 +71,11 @@ type ScheduledUnbanData struct {
 }
 
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
-	if evt == bot.EvtGuildState {
-		gs := data.(*dstate.GuildSet)
-		go RefreshMuteOverrides(gs.ID, false)
+	if evt == bot.EvtMember {
+		ms := data.(*dstate.MemberState)
+		if ms.User.ID == common.BotUser.ID {
+			go RefreshMuteOverrides(ms.GuildID, false)
+		}
 	}
 }
 
