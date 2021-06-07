@@ -683,7 +683,7 @@ func (c *Context) takeRole(targetID int64, roleID int64, delay time.Duration) st
 		return ""
 	}
 
-	if common.ContainsInt64Slice(ms.Member.Roles, roleID) {
+	if !common.ContainsInt64Slice(ms.Member.Roles, roleID) {
 		return ""
 	}
 
