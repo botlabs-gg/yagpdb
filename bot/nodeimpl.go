@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -18,6 +19,7 @@ import (
 
 func init() {
 	dshardorchestrator.RegisterUserEvent("GuildState", EvtGuildState, dstate.GuildSet{})
+	dshardorchestrator.RegisterUserEvent("MemberState", EvtMember, dstate.MemberState{})
 }
 
 // Implementation of DShardOrchestrator/Node/Interface
@@ -126,6 +128,7 @@ const (
 	// EvtGuildState dshardorchestrator.EventType = 101
 
 	EvtGuildState dshardorchestrator.EventType = 102
+	EvtMember     dshardorchestrator.EventType = 103
 )
 
 // this should return when all user events has been sent, with the number of user events sent
@@ -137,7 +140,10 @@ func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interf
 
 	if evt == EvtGuildState {
 		dataCast := data.(*dstate.GuildSet)
-		n.LoadGuildState(dataCast)
+		stateTracker.SetGuild(dataCast)
+	} else if evt == EvtMember {
+		dataCast := data.(*dstate.MemberState)
+		stateTracker.SetMember(dataCast)
 	}
 
 	for _, v := range common.Plugins {
@@ -165,10 +171,18 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	workChan := make(chan *dstate.GuildSet)
 	var wg sync.WaitGroup
 
+	sentEvents := new(int32)
+
 	// To speed this up we use multiple workers, this has to be done in a relatively short timespan otherwise we won't be able to resume
 	worker := func() {
 		for gs := range workChan {
 			NodeConn.SendLogErr(EvtGuildState, gs, true)
+			if ms := State.GetMember(gs.ID, common.BotUser.ID); ms != nil {
+				NodeConn.SendLogErr(EvtMember, ms, true)
+				atomic.AddInt32(sentEvents, 2)
+			} else {
+				atomic.AddInt32(sentEvents, 1)
+			}
 		}
 
 		wg.Done()
@@ -195,11 +209,6 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	// clean up after ourselves
 	stateTracker.DelShard(int64(shard))
 
-	logger.Println("Took ", time.Since(started), " to transfer ", len(guildsToSend), "guildstates")
-	totalSentEvents += len(guildsToSend)
-	return totalSentEvents
-}
-
-func (n *NodeImpl) LoadGuildState(gs *dstate.GuildSet) {
-	stateTracker.SetGuild(gs)
+	logger.Printf("Took %s to transfer %d objects", time.Since(started), atomic.LoadInt32(sentEvents))
+	return int(atomic.LoadInt32(sentEvents))
 }
