@@ -338,10 +338,18 @@ OUTER:
 	return scheduledevents2.CheckDiscordErrRetry(err), err
 }
 
+type CacheKey struct {
+	GuildID   int64
+	MessageID int64
+}
+
 var menuCache = common.CacheSet.RegisterSlot("rolecommands_menus", nil, int64(0))
 
 func GetRolemenuCached(ctx context.Context, gs *dstate.GuildSet, messageID int64) (*models.RoleMenu, error) {
-	result, err := menuCache.GetCustomFetch(messageID, func(key interface{}) (interface{}, error) {
+	result, err := menuCache.GetCustomFetch(CacheKey{
+		GuildID:   gs.ID,
+		MessageID: messageID,
+	}, func(key interface{}) (interface{}, error) {
 		menu, err := FindRolemenuFull(ctx, messageID, gs.ID)
 		if err != nil {
 			if err != sql.ErrNoRows {
@@ -366,7 +374,7 @@ func GetRolemenuCached(ctx context.Context, gs *dstate.GuildSet, messageID int64
 
 func ClearRolemenuCache(gID int64) {
 	menuCache.DeleteFunc(func(key interface{}, value interface{}) bool {
-		valueCast := value.(*models.RoleMenu)
-		return valueCast.GuildID == gID
+		keyCast := key.(CacheKey)
+		return keyCast.GuildID == gID
 	})
 }
