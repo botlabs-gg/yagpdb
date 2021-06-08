@@ -225,7 +225,7 @@ func (s *Slot) gc(t time.Time) {
 }
 
 func (s *Slot) NewKey() interface{} {
-	return reflect.Indirect(reflect.New(s.keyType))
+	return reflect.New(s.keyType).Interface()
 }
 
 func (e *cachedEntry) expired(t time.Time) bool {
