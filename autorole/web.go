@@ -29,7 +29,6 @@ var (
 )
 
 func (f Form) Save(guildID int64) error {
-
 	err := common.SetRedisJson(KeyGeneral(guildID), f.GeneralConfig)
 	if err != nil {
 		return err
