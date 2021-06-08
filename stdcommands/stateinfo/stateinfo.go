@@ -32,11 +32,10 @@ func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 	shards := bot.ReadyTracker.GetProcessShards()
 
 	for _, shard := range shards {
-
 		guilds := bot.State.GetShardGuilds(int64(shard))
+		totalGuilds += len(guilds)
 
 		for _, g := range guilds {
-
 			guildChannel += len(g.Channels)
 		}
 	}
