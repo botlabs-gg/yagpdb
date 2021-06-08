@@ -170,7 +170,6 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 	if err == nil {
 		pubsub.EvictCacheSet(configCache, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
-		pubsub.EvictCacheSet("logs_config", g.ID)
 	}
 	return tmpl, err
 }
