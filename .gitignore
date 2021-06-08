@@ -20,3 +20,4 @@ cmd/shardorchestrator/shardorchestrator
 # The graw agent file
 *.agent
 *.exe
+cmd/shardorchestrator/capturepanics
