@@ -156,12 +156,12 @@ func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interf
 func (n *NodeImpl) SendGuilds(shard int) int {
 	started := time.Now()
 
-	totalSentEvents := 0
+	pluginSentEvents := 0
 
 	// start with the plugins
 	for _, v := range common.Plugins {
 		if migrator, ok := v.(ShardMigrationSender); ok {
-			totalSentEvents += migrator.ShardMigrationSend(shard)
+			pluginSentEvents += migrator.ShardMigrationSend(shard)
 		}
 	}
 
@@ -210,5 +210,5 @@ func (n *NodeImpl) SendGuilds(shard int) int {
 	stateTracker.DelShard(int64(shard))
 
 	logger.Printf("Took %s to transfer %d objects", time.Since(started), atomic.LoadInt32(sentEvents))
-	return int(atomic.LoadInt32(sentEvents))
+	return int(atomic.LoadInt32(sentEvents)) + pluginSentEvents
 }
