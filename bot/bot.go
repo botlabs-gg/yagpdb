@@ -184,7 +184,7 @@ func botReady() {
 		}
 
 		return nil
-	})
+	}, ReadyTracker)
 
 	serviceDetails := "Not using orchestrator"
 	if UsingOrchestrator {
