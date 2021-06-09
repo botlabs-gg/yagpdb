@@ -24,6 +24,8 @@ var (
 	confActiveShards            = config.RegisterOption("yagpdb.sharding.active_shards", "Shards active on this hoste, ex: '1-10,25'", "")
 	confLargeBotShardingEnabled = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
 	confBucketsPerNode          = config.RegisterOption("yagpdb.shard.buckets_per_node", "Number of buckets per node", 8)
+	confMaxShardsPerNode        = config.RegisterOption("yagpdb.shard.shards_per_node", "Max shards per node", 32)
+	confShardBucketSize         = config.RegisterOption("yagpdb.shard.shard_bucket_size", "Shards per bucket", 2)
 )
 
 func main() {
@@ -56,11 +58,11 @@ func main() {
 		VersionArgs:    []string{"-version"},
 	}
 	orch.Logger = &dshardorchestrator.StdLogger{
-		Level: dshardorchestrator.LogWarning,
+		Level: dshardorchestrator.LogInfo,
 	}
 
 	if confLargeBotShardingEnabled.GetBool() {
-		orch.ShardBucketSize = 2
+		orch.ShardBucketSize = confShardBucketSize.GetInt()
 		orch.BucketsPerNode = confBucketsPerNode.GetInt()
 	}
 
@@ -70,7 +72,7 @@ func main() {
 		orchestrator:   orch,
 	}
 
-	orch.MaxShardsPerNode = 32
+	orch.MaxShardsPerNode = confMaxShardsPerNode.GetInt()
 	orch.MaxNodeDowntimeBeforeRestart = time.Second * 10
 	orch.EnsureAllShardsRunning = true
 

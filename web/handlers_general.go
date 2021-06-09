@@ -16,11 +16,13 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/models"
 	"github.com/jonas747/yagpdb/common/patreon"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
@@ -369,7 +371,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 }
 
 func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
-	g := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)
 	if err != nil {
@@ -486,6 +488,8 @@ func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateDat
 	if err != nil {
 		return templateData, err
 	}
+
+	pubsub.Publish("evict_core_config_cache", g.ID, nil)
 
 	templateData["CoreConfig"] = m
 
