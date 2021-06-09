@@ -84,6 +84,11 @@ func (p *Plugin) AddCommands() {
 				return "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created", nil
 			}
 
+			// we manually insert the channel into gs for reliability
+			gs := *parsed.GuildData.GS
+			gs.Channels = make([]dstate.ChannelState, len(gs.Channels)+1)
+			copy(gs.Channels, parsed.GuildData.GS.Channels)
+
 			subject := parsed.Args[0].Str()
 			id, channel, err := createTicketChannel(conf, parsed.GuildData.GS, parsed.Author.ID, subject)
 			if err != nil {
@@ -110,7 +115,10 @@ func (p *Plugin) AddCommands() {
 
 			cs := dstate.ChannelStateFromDgo(channel)
 
-			tmplCTX := templates.NewContext(parsed.GuildData.GS, &cs, parsed.GuildData.MS)
+			// insert the channel into gs, TODO: Should we sort?
+			gs.Channels[len(gs.Channels)-1] = cs
+
+			tmplCTX := templates.NewContext(&gs, &cs, parsed.GuildData.MS)
 			tmplCTX.Name = "ticket open message"
 			tmplCTX.Data["Reason"] = parsed.Args[0].Str()
 			ticketOpenMsg := conf.TicketOpenMSG
