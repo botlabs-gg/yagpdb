@@ -850,12 +850,9 @@ func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (
 }
 
 func (c *Context) findRoleByID(id int64) *discordgo.Role {
-	c.GS.RLock()
-	defer c.GS.RUnlock()
-
-	for _, r := range c.GS.Guild.Roles {
+	for _, r := range c.GS.Roles {
 		if r.ID == id {
-			return r
+			return &r
 		}
 	}
 
