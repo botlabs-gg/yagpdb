@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -101,7 +101,7 @@ func tmplExpectArgs(ctx *templates.Context) interface{} {
 		split := dcmd.SplitArgs(stripped)
 
 		// create the dcmd data context used in the arg parsing
-		dcmdData, err := commands.CommandSystem.FillData(common.BotSession, msg)
+		dcmdData, err := commands.CommandSystem.FillDataLegacyMessage(common.BotSession, msg)
 		if err != nil {
 			return result, errors.WithMessage(err, "tmplExpectArgs")
 		}
@@ -145,7 +145,7 @@ func (pa *ParsedArgs) Get(index int) interface{} {
 		}
 
 		c := i.(*dstate.ChannelState)
-		return templates.CtxChannelFromCSLocked(c)
+		return templates.CtxChannelFromCS(c)
 	case *commands.MemberArg:
 		i := pa.parsed[index].Value
 		if i == nil {
@@ -153,7 +153,7 @@ func (pa *ParsedArgs) Get(index int) interface{} {
 		}
 
 		m := i.(*dstate.MemberState)
-		return m.DGoCopy()
+		return m.DgoMember()
 	case *commands.RoleArg:
 		i := pa.parsed[index].Value
 		if i == nil {
@@ -188,7 +188,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", errors.New("Unknown channel")
 		}
 
-		cs := ctx.GS.Channel(true, channelID)
+		cs := ctx.GS.GetChannel(channelID)
 		if cs == nil {
 			return "", errors.New("Channel not in state")
 		}
@@ -265,7 +265,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", errors.New("Unknown channel")
 		}
 
-		cs := ctx.GS.Channel(true, channelID)
+		cs := ctx.GS.GetChannel(channelID)
 		if cs == nil {
 			return "", errors.New("Channel not in state")
 		}
@@ -496,7 +496,7 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		ctx.GS.UserCacheDel(CacheKeyDBLimits)
+		cachedDBLimits.Delete(ctx.GS.ID)
 
 		keyStr := limitString(templates.ToString(key), 256)
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ?", ctx.GS.ID, userID, keyStr)).DeleteAll(context.Background(), common.PQ)
@@ -511,7 +511,7 @@ func tmplDBDelById(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		ctx.GS.UserCacheDel(CacheKeyDBLimits)
+		cachedDBLimits.Delete(ctx.GS.ID)
 
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND id = ?", ctx.GS.ID, userID, id)).DeleteAll(context.Background(), common.PQ)
 
@@ -599,15 +599,13 @@ func serializeValue(v interface{}) ([]byte, error) {
 }
 
 // returns true if were above db limit for the specified guild
-func CheckGuildDBLimit(gs *dstate.GuildState) (bool, error) {
+func CheckGuildDBLimit(gs *dstate.GuildSet) (bool, error) {
 	limitMuliplier := 1
 	if isPremium, _ := premium.IsGuildPremium(gs.ID); isPremium {
 		limitMuliplier = 10
 	}
 
-	gs.RLock()
-	limit := gs.Guild.MemberCount * 50 * limitMuliplier
-	gs.RUnlock()
+	limit := gs.MemberCount * 50 * int64(limitMuliplier)
 
 	curValues, err := cacheCheckDBLimit(gs)
 	if err != nil {
@@ -622,8 +620,10 @@ func getGuildCCDBNumValues(guildID int64) (int64, error) {
 	return count, err
 }
 
-func cacheCheckDBLimit(gs *dstate.GuildState) (int64, error) {
-	v, err := gs.UserCacheFetch(CacheKeyDBLimits, func() (interface{}, error) {
+var cachedDBLimits = common.CacheSet.RegisterSlot("custom_commands_db_limits", nil, int64(0))
+
+func cacheCheckDBLimit(gs *dstate.GuildSet) (int64, error) {
+	v, err := cachedDBLimits.GetCustomFetch(gs.ID, func(key interface{}) (interface{}, error) {
 		n, err := getGuildCCDBNumValues(gs.ID)
 		return n, err
 	})
@@ -642,7 +642,7 @@ func limitString(s string, l int) string {
 	}
 
 	lastValidLoc := 0
-	for i, _ := range s {
+	for i := range s {
 		if i > l {
 			break
 		}
@@ -750,7 +750,7 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 	return dec
 }
 
-func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildState, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
+func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
 	// convert them into lightdb entries and decode their values
 	entries := make([]*LightDBEntry, 0, len(rs))
 	for _, v := range rs {
@@ -781,9 +781,8 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildState
 			return entries
 		}
 
-		cop := member.DGoUser()
 		for _, v := range entries {
-			v.User = *cop
+			v.User = member.User
 		}
 
 		return entries
@@ -797,8 +796,8 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildState
 
 	for _, v := range entries {
 		for _, m := range members {
-			if m.ID == v.UserID {
-				v.User = *(m.DGoUser())
+			if m.User.ID == v.UserID {
+				v.User = m.User
 				break
 			}
 		}
