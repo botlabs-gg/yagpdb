@@ -602,25 +602,13 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 func handleResetChannelRatelimit(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	dataCast := data.(*ChannelRatelimitData)
 
-	g := bot.State.Guild(true, evt.GuildID)
+	g := bot.State.GetGuild(evt.GuildID)
 	if g == nil {
 		logger.WithField("guild", evt.GuildID).Error("Reset slowmode scheduled for guild not in state")
 		return false, nil
 	}
 
-	channels, err := common.BotSession.GuildChannels(evt.GuildID)
-	if err != nil {
-		return false, err
-	}
-
-	var channel *discordgo.Channel
-	for _, e := range channels {
-		if e.ID == dataCast.ChannelID {
-			channel = e
-			break
-		}
-	}
-
+	channel := g.GetChannel(dataCast.ChannelID)
 	if channel == nil {
 		logger.WithField("guild", evt.GuildID).Error("Reset slowmode scheduled for non existent channel")
 		return false, nil
