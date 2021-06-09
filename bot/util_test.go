@@ -5,18 +5,17 @@ import (
 	"testing"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 )
 
 func TestMemberHighestRole(t *testing.T) {
-	gs := &dstate.GuildState{
-		Guild: &discordgo.Guild{
-			Roles: []*discordgo.Role{
-				&discordgo.Role{ID: 10, Position: 10},
-				&discordgo.Role{ID: 5, Position: 5},
-				&discordgo.Role{ID: 100, Position: 1},
-				&discordgo.Role{ID: 102, Position: 1},
-			},
+	gs := &dstate.GuildSet{
+		GuildState: dstate.GuildState{},
+		Roles: []discordgo.Role{
+			{ID: 10, Position: 10},
+			{ID: 5, Position: 5},
+			{ID: 100, Position: 1},
+			{ID: 102, Position: 1},
 		},
 	}
 
@@ -32,7 +31,9 @@ func TestMemberHighestRole(t *testing.T) {
 	for i, v := range cases {
 		t.Run(fmt.Sprintf("case #%d", i), func(t *testing.T) {
 			ms := &dstate.MemberState{
-				Roles: v.Roles,
+				Member: &dstate.MemberFields{
+					Roles: v.Roles,
+				},
 			}
 
 			result := MemberHighestRole(gs, ms)
@@ -44,15 +45,15 @@ func TestMemberHighestRole(t *testing.T) {
 }
 
 func TestIsMemberAbove(t *testing.T) {
-	gs := &dstate.GuildState{
-		Guild: &discordgo.Guild{
+	gs := &dstate.GuildSet{
+		GuildState: dstate.GuildState{
 			OwnerID: 99,
-			Roles: []*discordgo.Role{
-				&discordgo.Role{ID: 10, Position: 10},
-				&discordgo.Role{ID: 5, Position: 5},
-				&discordgo.Role{ID: 100, Position: 1},
-				&discordgo.Role{ID: 102, Position: 1},
-			},
+		},
+		Roles: []discordgo.Role{
+			{ID: 10, Position: 10},
+			{ID: 5, Position: 5},
+			{ID: 100, Position: 1},
+			{ID: 102, Position: 1},
 		},
 	}
 
@@ -72,11 +73,15 @@ func TestIsMemberAbove(t *testing.T) {
 	for i, v := range cases {
 		t.Run(fmt.Sprintf("case #%d", i), func(t *testing.T) {
 			ms1 := &dstate.MemberState{
-				Roles: v.M1,
+				Member: &dstate.MemberFields{
+					Roles: v.M1,
+				},
 			}
 
 			ms2 := &dstate.MemberState{
-				Roles: v.M2,
+				Member: &dstate.MemberFields{
+					Roles: v.M2,
+				},
 			}
 
 			result := IsMemberAbove(gs, ms1, ms2)

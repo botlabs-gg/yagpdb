@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -64,7 +64,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	target, err := bot.GetMember(msg.GuildID, who.ID)
-	sender := dstate.MSFromDGoMember(evt.GS, msg.Member)
+	sender := dstate.MemberStateFromMember(msg.Member)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving target member")
 		return
@@ -137,7 +137,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error occured while finding the server config", err
+				return "An error occurred while finding the server config", err
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -148,10 +148,10 @@ var cmds = []*commands.YAGCommand{
 			targetUsername := strconv.FormatInt(targetID, 10)
 			targetMember, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
 			if targetMember != nil {
-				targetUsername = targetMember.Username
+				targetUsername = targetMember.User.Username
 			}
 
-			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.ID, targetID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.User.ID, targetID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
@@ -172,7 +172,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error occured while finding the server config", err
+				return "An error occurred while finding the server config", err
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -204,7 +204,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error occured while finding the server config", err
+				return "An error occurred while finding the server config", err
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -260,11 +260,11 @@ var cmds = []*commands.YAGCommand{
 				sender := entry.SenderUsername
 
 				for _, v := range members {
-					if v.ID == entry.ReceiverID {
-						receiver = v.Username + "#" + v.StrDiscriminator()
+					if v.User.ID == entry.ReceiverID {
+						receiver = v.User.Username + "#" + v.User.Discriminator
 					}
-					if v.ID == entry.SenderID {
-						sender = v.Username + "#" + v.StrDiscriminator()
+					if v.User.ID == entry.SenderID {
+						sender = v.User.Username + "#" + v.User.Discriminator
 					}
 				}
 
@@ -307,7 +307,7 @@ var cmds = []*commands.YAGCommand{
 
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error occured finding the server config", err
+				return "An error occurred finding the server config", err
 			}
 
 			score, rank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)

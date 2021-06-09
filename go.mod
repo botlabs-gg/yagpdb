@@ -24,13 +24,13 @@ require (
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/jonas747/cardsagainstdiscord v1.1.1-0.20200617121715-2c969a853358
+	github.com/jonas747/cardsagainstdiscord v1.1.1-0.20210604123907-2bdea9fc1f3e
 	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
-	github.com/jonas747/dcmd/v2 v2.0.3
+	github.com/jonas747/dcmd/v3 v3.0.2
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.5.5
-	github.com/jonas747/dshardorchestrator/v2 v2.0.1
-	github.com/jonas747/dstate/v2 v2.0.2
+	github.com/jonas747/discordgo v1.5.7
+	github.com/jonas747/dshardorchestrator/v2 v2.0.2
+	github.com/jonas747/dstate/v3 v3.0.7
 	github.com/jonas747/dutil v0.0.3
 	github.com/jonas747/go-reddit v0.1.2
 	github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc
@@ -82,4 +82,8 @@ require (
 
 // replace github.com/jonas747/discordgo => ../discordgo
 
-// replace github.com/jonas747/dcmd/v2 => ../dcmd
+// replace github.com/jonas747/dcmd/v3 => ../dcmd
+
+// replace github.com/jonas747/dstate/v3 => ../dstate
+
+// replace github.com/jonas747/dshardorchestrator/v2 => ../dshardorchestrator

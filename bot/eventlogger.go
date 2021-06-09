@@ -30,8 +30,6 @@ type eventLogger struct {
 
 	// perPeriod is the number of events proccessed the last period alone (the rate of events)
 	perPeriod [][]int64
-
-	numShards int
 }
 
 func (e *eventLogger) init(numShards int) {
@@ -40,12 +38,12 @@ func (e *eventLogger) init(numShards int) {
 	e.perPeriod = make([][]int64, numShards)
 
 	// Initialize these
-	for i, _ := range e.totalStats {
+	for i := range e.totalStats {
 		e.totalStats[i] = make([]*int64, len(eventsystem.AllEvents))
 		e.lastPeriod[i] = make([]int64, len(eventsystem.AllEvents))
 		e.perPeriod[i] = make([]int64, len(eventsystem.AllEvents))
 
-		for j, _ := range e.totalStats[i] {
+		for j := range e.totalStats[i] {
 			e.totalStats[i][j] = new(int64)
 		}
 	}
