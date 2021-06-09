@@ -303,6 +303,7 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 
 		if msg.Member != nil {
 			msg.Member.User = msg.Author
+			msg.Member.GuildID = msg.GuildID
 		}
 
 	} else {
@@ -312,6 +313,7 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 		}
 
 		edit.Member.User = edit.Author
+		edit.Member.GuildID = edit.GuildID
 	}
 }
 
