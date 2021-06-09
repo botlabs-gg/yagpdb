@@ -1282,22 +1282,20 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 	return "", err
 }
 
-// DEPRECATED: this function will return unreliable numbers anyways
 func (c *Context) tmplOnlineCount() (int, error) {
-	// if c.IncreaseCheckCallCounter("online_users", 1) {
-	// return 0, ErrTooManyCalls
-	// }
+	if c.IncreaseCheckCallCounter("online_users", 1) {
+		return 0, ErrTooManyCalls
+	}
 
-	// online := 0
-	// for _, v := range c.GS.Members {
-	// 	if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
-	// 		online++
-	// 	}
-	// }
+	gwc, err := common.BotSession.GuildWithCounts(c.GS.ID)
+	if err != nil {
+		return 0, err
+	}
 
-	return 0, nil
+	return gwc.ApproximatePresenceCount, nil
 }
 
+// DEPRECATED: this function will likely not return
 func (c *Context) tmplOnlineCountBots() (int, error) {
 	// if c.IncreaseCheckCallCounter("online_bots", 1) {
 	// 	return 0, ErrTooManyCalls
