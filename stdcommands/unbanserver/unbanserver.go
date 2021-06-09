@@ -1,7 +1,7 @@
 package unbanserver
 
 import (
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/stdcommands/util"
@@ -28,7 +28,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		if !unbanned {
-			return "Server wasnt banned", nil
+			return "Server wasn't banned", nil
 		}
 
 		return "Unbanned server", nil

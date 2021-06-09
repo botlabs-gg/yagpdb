@@ -7,6 +7,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
@@ -92,12 +93,13 @@ func keyFullGuild(guildID int64) string {
 // 3. Discord api
 //
 // It will will also make sure channels are included in the event we fall back to the discord API
-func GetFullGuild(guildID int64) (*discordgo.Guild, error) {
+func GetFullGuild(guildID int64) (*dstate.GuildSet, error) {
 	result, err := applicationCache.Fetch(keyFullGuild(guildID), time.Minute*10, func() (interface{}, error) {
-		guild, err := botrest.GetGuild(guildID)
+		gs, err := botrest.GetGuild(guildID)
 		if err != nil {
 			// fall back to discord API
-			guild, err = common.BotSession.Guild(guildID)
+
+			guild, err := common.BotSession.Guild(guildID)
 			if err != nil {
 				return nil, err
 			}
@@ -108,20 +110,22 @@ func GetFullGuild(guildID int64) (*discordgo.Guild, error) {
 				return nil, err
 			}
 
+			// does the API guarantee the order? i actually have no idea lmao
+			sort.Sort(dutil.Channels(channels))
+			sort.Sort(dutil.Roles(guild.Roles))
 			guild.Channels = channels
+
+			gs = dstate.GuildSetFromGuild(guild)
 		}
 
-		sort.Sort(dutil.Channels(guild.Channels))
-		sort.Sort(dutil.Roles(guild.Roles))
-
-		return guild, nil
+		return gs, nil
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return result.Value().(*discordgo.Guild), nil
+	return result.Value().(*dstate.GuildSet), nil
 }
 
 func keyGuildMember(guildID int64, userID int64) string {
