@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
@@ -82,7 +82,7 @@ type RunningCommand struct {
 	Command *YAGCommand
 }
 
-type RolesRunFunc func(gs *dstate.GuildState) ([]int64, error)
+type RolesRunFunc func(gs *dstate.GuildSet) ([]int64, error)
 
 // Slight extension to the simplecommand, it will check if the command is enabled in the HandleCommand func
 // And invoke a custom handlerfunc with provided redis client
@@ -195,10 +195,8 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		yc.logExecutionTime(time.Since(started), rawCommand, data.Author.Username)
 	}()
 
-	var cState *dstate.ChannelState
 	guildID := int64(0)
 	if data.GuildData != nil {
-		cState = data.GuildData.CS
 		guildID = data.GuildData.GS.ID
 	}
 
@@ -218,8 +216,9 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		TimeStamp:  time.Now(),
 	}
 
-	if cState != nil && cState.Guild != nil {
-		logEntry.GuildID = discordgo.StrID(cState.Guild.ID)
+	if data.GuildData != nil {
+		logEntry.GuildID = discordgo.StrID(data.GuildData.GS.ID)
+
 	}
 
 	metricsExcecutedCommands.With(prometheus.Labels{"name": "(other)", "trigger_type": triggerType}).Inc()
@@ -322,7 +321,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	if cmdData.GuildData != nil && cmdData.TriggerType != dcmd.TriggerTypeSlashCommands {
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
-			if !bot.BotProbablyHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks) {
+			if hasPerms, _ := bot.BotHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks); !hasPerms {
 				resp = "This command returned an embed but the bot does not have embed links permissions in this channel, cannot send the response."
 			}
 		}
@@ -398,28 +397,18 @@ type CanExecuteError struct {
 }
 
 // checks if the specified user can execute the command, and if so returns the settings for said command
-func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data, cState *dstate.ChannelState) (canExecute bool, resp *CanExecuteError, settings *CommandSettings, err error) {
+func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, resp *CanExecuteError, settings *CommandSettings, err error) {
 	// Check guild specific settings if not triggered from a DM
-	var guild *dstate.GuildState
+	if data.GuildData != nil {
+		guild := data.GuildData.GS
 
-	if data.Source != dcmd.TriggerSourceDM {
-
-		guild = cState.Guild
-
-		if guild == nil {
-			return false, &CanExecuteError{
-				Type:    ReasonError,
-				Message: "No guild?!?",
-			}, settings, errors.NewPlain("Not on a guild")
+		if data.TriggerType != dcmd.TriggerTypeSlashCommands {
+			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages); !hasPerms {
+				return false, nil, nil, nil
+			}
 		}
 
-		if data.TriggerType != dcmd.TriggerTypeSlashCommands && !bot.BotProbablyHasPermissionGS(guild, cState.ID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages) {
-			return false, nil, nil, nil
-		}
-
-		cop := cState.Copy(true)
-
-		settings, err = yc.GetSettings(data.ContainerChain, cState.ID, cop.ParentID, guild.ID)
+		settings, err = yc.GetSettings(data.ContainerChain, data.GuildData.CS.ID, data.GuildData.CS.ParentID, guild.ID)
 		if err != nil {
 			resp = &CanExecuteError{
 				Type:    ReasonError,
@@ -494,7 +483,7 @@ func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, da
 		return nil
 	}
 
-	for _, r := range member.Roles {
+	for _, r := range member.Member.Roles {
 		if common.ContainsInt64Slice(whitelistRoles, r) {
 			// we have a whitelist role!
 			return nil
@@ -539,7 +528,7 @@ func checkBlacklistRoles(guildRoles map[int64]string, blacklistRoles []int64, da
 	}
 
 	hasRole := int64(0)
-	for _, r := range member.Roles {
+	for _, r := range member.Member.Roles {
 		if common.ContainsInt64Slice(blacklistRoles, r) {
 			// we have a blacklist role!
 			hasRole = r
@@ -564,17 +553,17 @@ func checkBlacklistRoles(guildRoles map[int64]string, blacklistRoles []int64, da
 	}
 }
 
-func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildState, ms *dstate.MemberState, channelID int64) *CanExecuteError {
+func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildSet, ms *dstate.MemberState, channelID int64) *CanExecuteError {
 	// This command has permission sets required, if the user has one of them then allow this command to be used
 	if len(yc.RequireDiscordPerms) < 1 {
 		return nil
 	}
 
-	perms, err := gs.MemberPermissionsMS(true, channelID, ms)
+	perms, err := gs.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
 		return &CanExecuteError{
 			Type:    ReasonError,
-			Message: "Failed fetching member perms",
+			Message: "Failed fetching member perms?",
 		}
 	}
 
@@ -598,7 +587,7 @@ func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildState, ms *dstate
 	}
 }
 
-func (yc *YAGCommand) checkRequiredBotPerms(gs *dstate.GuildState, channelID int64) *CanExecuteError {
+func (yc *YAGCommand) checkRequiredBotPerms(gs *dstate.GuildSet, channelID int64) *CanExecuteError {
 	// This command has permission sets required, if the user has one of them then allow this command to be used
 	if len(yc.RequireBotPerms) < 1 {
 		return nil
@@ -644,11 +633,9 @@ OUTER:
 	}
 }
 
-func roleNames(gs *dstate.GuildState) map[int64]string {
-	gs.RLock()
-	defer gs.RUnlock()
+func roleNames(gs *dstate.GuildSet) map[int64]string {
 	result := make(map[int64]string)
-	for _, v := range gs.Guild.Roles {
+	for _, v := range gs.Roles {
 		result[v.ID] = v.Name
 	}
 

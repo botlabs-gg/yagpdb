@@ -980,7 +980,6 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 			// Both start and end index provided
 			startIndex = args[0]
 			endIndex = args[1]
-			break
 		default:
 			return reflect.Value{}, errors.Errorf("unexpected slice arguments %d", len(args))
 		}

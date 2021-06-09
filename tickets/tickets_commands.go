@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -45,7 +45,7 @@ func (p *Plugin) AddCommands() {
 		Description:  "Opens a new ticket",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "subject", Type: dcmd.String},
+			{Name: "subject", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
@@ -53,23 +53,25 @@ func (p *Plugin) AddCommands() {
 				return "Ticket system is disabled in this server, the server admins can enable it in the control panel.", nil
 			}
 
-			if parsed.GuildData.GS.Channel(true, conf.TicketsChannelCategory) == nil {
+			if parsed.GuildData.GS.GetChannel(conf.TicketsChannelCategory) == nil {
 				return "No category for ticket channels set", nil
 			}
 
-			if !bot.BotProbablyHasPermissionGS(parsed.GuildData.GS, parsed.ChannelID, InTicketPerms) {
+			if hasPerms, _ := bot.BotHasPermissionGS(parsed.GuildData.GS, parsed.ChannelID, InTicketPerms); !hasPerms {
 				return fmt.Sprintf("The bot is missing one of the following permissions: %s", common.HumanizePermissions(InTicketPerms)), nil
-				// return "", nil
 			}
 
 			inCurrentTickets, err := models.Tickets(
 				qm.Where("closed_at IS NULL"),
 				qm.Where("guild_id = ?", parsed.GuildData.GS.ID),
 				qm.Where("author_id = ?", parsed.Author.ID)).AllG(parsed.Context())
+			if err != nil {
+				return "failed checking current tickets...", err
+			}
 
 			count := 0
 			for _, v := range inCurrentTickets {
-				if parsed.GuildData.GS.Channel(true, v.ChannelID) != nil {
+				if parsed.GuildData.GS.GetChannel(v.ChannelID) != nil {
 					count++
 				}
 			}
@@ -106,7 +108,9 @@ func (p *Plugin) AddCommands() {
 
 			// send the first ticket message
 
-			tmplCTX := templates.NewContext(parsed.GuildData.GS, dstate.NewChannelState(parsed.GuildData.GS, parsed.GuildData.GS, channel), parsed.GuildData.MS)
+			cs := dstate.ChannelStateFromDgo(channel)
+
+			tmplCTX := templates.NewContext(parsed.GuildData.GS, &cs, parsed.GuildData.MS)
 			tmplCTX.Name = "ticket open message"
 			tmplCTX.Data["Reason"] = parsed.Args[0].Str()
 			ticketOpenMsg := conf.TicketOpenMSG
@@ -137,7 +141,7 @@ func (p *Plugin) AddCommands() {
 		Description:  "Adds a user to the ticket in this channel",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "target", Type: &commands.MemberArg{}},
+			{Name: "target", Type: &commands.MemberArg{}},
 		},
 
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -145,26 +149,23 @@ func (p *Plugin) AddCommands() {
 
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
 
-			parsed.GuildData.GS.RLock()
 		OUTER:
 			for _, v := range parsed.GuildData.CS.PermissionOverwrites {
-				if v.Type == "member" && v.ID == target.ID {
+				if v.Type == "member" && v.ID == target.User.ID {
 					if (v.Allow & InTicketPerms) == InTicketPerms {
-						parsed.GuildData.GS.RUnlock()
 						return "User is already part of the ticket", nil
 					}
 
 					break OUTER
 				}
 			}
-			parsed.GuildData.GS.RUnlock()
 
-			err := common.BotSession.ChannelPermissionSet(currentTicket.Ticket.ChannelID, target.ID, "member", InTicketPerms, 0)
+			err := common.BotSession.ChannelPermissionSet(currentTicket.Ticket.ChannelID, target.User.ID, "member", InTicketPerms, 0)
 			if err != nil {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Added %s#%04d to the ticket", target.Username, target.Discriminator), nil
+			return fmt.Sprintf("Added %s#%s to the ticket", target.User.Username, target.User.Discriminator), nil
 		},
 	}
 
@@ -174,7 +175,7 @@ func (p *Plugin) AddCommands() {
 		Description:  "Removes a user from the ticket",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "target", Type: &commands.MemberArg{}},
+			{Name: "target", Type: &commands.MemberArg{}},
 		},
 
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -184,10 +185,9 @@ func (p *Plugin) AddCommands() {
 
 			foundUser := false
 
-			parsed.GuildData.GS.RLock()
 		OUTER:
 			for _, v := range parsed.GuildData.CS.PermissionOverwrites {
-				if v.Type == "member" && v.ID == target.ID {
+				if v.Type == "member" && v.ID == target.User.ID {
 					if (v.Allow & InTicketPerms) == InTicketPerms {
 						foundUser = true
 					}
@@ -195,18 +195,17 @@ func (p *Plugin) AddCommands() {
 					break OUTER
 				}
 			}
-			parsed.GuildData.GS.RUnlock()
 
 			if !foundUser {
-				return fmt.Sprintf("%s#%04d is already not (explicitly) part of this ticket", target.Username, target.Discriminator), nil
+				return fmt.Sprintf("%s#%s is already not (explicitly) part of this ticket", target.User.Username, target.User.Discriminator), nil
 			}
 
-			err := common.BotSession.ChannelPermissionDelete(currentTicket.Ticket.ChannelID, target.ID)
+			err := common.BotSession.ChannelPermissionDelete(currentTicket.Ticket.ChannelID, target.User.ID)
 			if err != nil {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Removed %s#%04d from the ticket", target.Username, target.Discriminator), nil
+			return fmt.Sprintf("Removed %s#%s from the ticket", target.User.Username, target.User.Discriminator), nil
 		},
 	}
 
@@ -216,7 +215,7 @@ func (p *Plugin) AddCommands() {
 		Description:  "Renames the ticket",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "new-name", Type: dcmd.String},
+			{Name: "new-name", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
@@ -255,7 +254,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"end", "delete"},
 		Description: "Closes the ticket",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "reason", Type: dcmd.String, Default: "none"},
+			{Name: "reason", Type: dcmd.String, Default: "none"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
@@ -323,7 +322,6 @@ func (p *Plugin) AddCommands() {
 
 			modOverwrites := make([]*discordgo.PermissionOverwrite, 0)
 
-			parsed.GuildData.GS.RLock()
 			for _, ow := range parsed.GuildData.CS.PermissionOverwrites {
 				if ow.Type == "role" && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
 					if (ow.Allow & InTicketPerms) == InTicketPerms {
@@ -331,10 +329,9 @@ func (p *Plugin) AddCommands() {
 						isAdminsOnlyCurrently = false
 					}
 
-					modOverwrites = append(modOverwrites, ow)
+					modOverwrites = append(modOverwrites, &ow)
 				}
 			}
-			parsed.GuildData.GS.RUnlock()
 
 			// update existing overwrites
 			for _, v := range modOverwrites {
@@ -442,7 +439,7 @@ func (p *Plugin) AddCommands() {
 	commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
 }
 
-func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildState) ([]int64, error) {
+func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildSet) ([]int64, error) {
 	conf, err := models.FindTicketConfigG(context.Background(), gs.ID)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -482,7 +479,7 @@ type Ticket struct {
 	Participants []*models.TicketParticipant
 }
 
-func createLogs(gs *dstate.GuildState, conf *models.TicketConfig, ticket *models.Ticket, adminOnly bool) error {
+func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.Ticket, adminOnly bool) error {
 
 	if !conf.TicketsUseTXTTranscripts && !conf.DownloadAttachments {
 		return nil // nothing to do here
@@ -552,7 +549,7 @@ func createLogs(gs *dstate.GuildState, conf *models.TicketConfig, ticket *models
 		}
 	}
 
-	if conf.TicketsUseTXTTranscripts && gs.Channel(true, transcriptChannel(conf, adminOnly)) != nil {
+	if conf.TicketsUseTXTTranscripts && gs.GetChannel(transcriptChannel(conf, adminOnly)) != nil {
 		formattedTranscript := createTXTTranscript(ticket, msgs)
 
 		channel := transcriptChannel(conf, adminOnly)
@@ -563,7 +560,7 @@ func createLogs(gs *dstate.GuildState, conf *models.TicketConfig, ticket *models
 	}
 
 	// compress and send the attachments
-	if conf.DownloadAttachments && gs.Channel(true, transcriptChannel(conf, adminOnly)) != nil {
+	if conf.DownloadAttachments && gs.GetChannel(transcriptChannel(conf, adminOnly)) != nil {
 		archiveAttachments(conf, ticket, attachments, adminOnly)
 	}
 
@@ -584,7 +581,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 			}
 
 			fName := fmt.Sprintf("attachments-%d-%s-%s", ticket.LocalID, ticket.Title, ag[0].Filename)
-			_, err = common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly),
+			_, _ = common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly),
 				fName, fName, resp.Body)
 			continue
 		}
@@ -668,7 +665,6 @@ func ticketIsAdminOnly(conf *models.TicketConfig, cs *dstate.ChannelState) bool 
 
 	isAdminsOnlyCurrently := true
 
-	cs.Guild.RLock()
 	for _, ow := range cs.PermissionOverwrites {
 		if ow.Type == "role" && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
 			if (ow.Allow & InTicketPerms) == InTicketPerms {
@@ -677,7 +673,6 @@ func ticketIsAdminOnly(conf *models.TicketConfig, cs *dstate.ChannelState) bool 
 			}
 		}
 	}
-	cs.Guild.RUnlock()
 
 	return isAdminsOnlyCurrently
 }
@@ -690,20 +685,20 @@ func transcriptChannel(conf *models.TicketConfig, adminOnly bool) int64 {
 	return conf.TicketsTranscriptsChannel
 }
 
-func createTicketChannel(conf *models.TicketConfig, gs *dstate.GuildState, authorID int64, subject string) (int64, *discordgo.Channel, error) {
+func createTicketChannel(conf *models.TicketConfig, gs *dstate.GuildSet, authorID int64, subject string) (int64, *discordgo.Channel, error) {
 	// assemble the permission overwrites for the channel were about to create
 	overwrites := []*discordgo.PermissionOverwrite{
-		&discordgo.PermissionOverwrite{
+		{
 			Type:  "member",
 			ID:    authorID,
 			Allow: InTicketPerms,
 		},
-		&discordgo.PermissionOverwrite{
+		{
 			Type: "role",
 			ID:   gs.ID,
 			Deny: InTicketPerms,
 		},
-		&discordgo.PermissionOverwrite{
+		{
 			Type:  "member",
 			ID:    common.BotUser.ID,
 			Allow: InTicketPerms,
@@ -765,13 +760,18 @@ OUTER2:
 	return id, channel, nil
 }
 
-func applyChannelParentSettings(gs *dstate.GuildState, parentCategoryID int64, overwrites []*discordgo.PermissionOverwrite) []*discordgo.PermissionOverwrite {
-	cs := gs.ChannelCopy(true, parentCategoryID)
+func applyChannelParentSettings(gs *dstate.GuildSet, parentCategoryID int64, overwrites []*discordgo.PermissionOverwrite) []*discordgo.PermissionOverwrite {
+	cs := gs.GetChannel(parentCategoryID)
 	if cs == nil {
 		return overwrites
 	}
 
-	return applyChannelParentSettingsOverwrites(cs.PermissionOverwrites, overwrites)
+	channel_overwrites := make([]*discordgo.PermissionOverwrite, len(cs.PermissionOverwrites))
+	for i := 0; i < len(overwrites); i++ {
+		channel_overwrites[i] = &cs.PermissionOverwrites[i]
+	}
+
+	return applyChannelParentSettingsOverwrites(channel_overwrites, overwrites)
 }
 
 func applyChannelParentSettingsOverwrites(parentOverwrites []*discordgo.PermissionOverwrite, newChannelOverwrites []*discordgo.PermissionOverwrite) []*discordgo.PermissionOverwrite {

@@ -13,7 +13,11 @@ cmd/yagpdb/shutdown_logs
 cmd/yagpdb/safebrowsing_db
 cmd/yagpdb/static/video/*
 
+cmd/capturepanics/capturepanics
+cmd/shardorchestrator/shardorchestrator
+
 # We don't want filthy pre-configured config files here ! >:O
 # The graw agent file
 *.agent
 *.exe
+cmd/shardorchestrator/capturepanics

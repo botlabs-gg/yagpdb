@@ -14,12 +14,6 @@ import (
 	"goji.io/pat"
 )
 
-type CtxKey int
-
-const (
-	CurrentConfig CtxKey = iota
-)
-
 type GeneralForm struct {
 	Enabled bool
 }

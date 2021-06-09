@@ -3,7 +3,7 @@ package guildunavailable
 import (
 	"fmt"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/commands"
 )
@@ -23,6 +23,6 @@ var Command = &commands.YAGCommand{
 			return "Uh oh", err
 		}
 
-		return fmt.Sprintf("Guild (%d) unavailable: %v", guild.ID, guild.Unavailable), nil
+		return fmt.Sprintf("Guild (%d) unavailable: %v", guild.ID, !guild.Available), nil
 	},
 }

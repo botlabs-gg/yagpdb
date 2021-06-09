@@ -22,7 +22,7 @@ var (
 	confMaxWorkers = config.RegisterOption("yagpdb.mqueue.max_workers", "Max mqueue sending workers", 2)
 )
 
-// PluginWithSourceDisabler todo
+// PluginWithSourceDisabler
 type PluginWithSourceDisabler interface {
 	DisableFeed(elem *QueuedElement, err error)
 }
