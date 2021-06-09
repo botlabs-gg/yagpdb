@@ -9,9 +9,9 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
@@ -31,15 +31,13 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 		if targetMember != nil {
 			gs := cmdData.GuildData.GS
 
-			gs.RLock()
 			above := bot.IsMemberAbove(gs, cmdData.GuildData.MS, targetMember)
-			gs.RUnlock()
 
 			if !above {
-				return config, targetMember.DGoUser(), commands.NewUserError("Can't use moderation commands on users ranked the same or higher than you")
+				return config, &targetMember.User, commands.NewUserError("Can't use moderation commands on users ranked the same or higher than you")
 			}
 
-			return config, targetMember.DGoUser(), nil
+			return config, &targetMember.User, nil
 		}
 	}
 
@@ -72,7 +70,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 	permsMet := false
 	if len(additionalPermRoles) > 0 {
 		// Check if the user has one of the required roles
-		for _, r := range member.Roles {
+		for _, r := range member.Member.Roles {
 			if common.ContainsInt64Slice(additionalPermRoles, r) {
 				permsMet = true
 				break
@@ -82,7 +80,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 
 	if !permsMet && neededPerm != 0 {
 		// Fallback to legacy permissions
-		hasPerms, err := bot.AdminOrPermMS(cmdData.ChannelID, member, neededPerm)
+		hasPerms, err := bot.AdminOrPermMS(cmdData.GuildData.GS.ID, cmdData.ChannelID, member, neededPerm)
 		if err != nil || !hasPerms {
 			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm])
 		}
@@ -381,10 +379,10 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			temp, err := bot.GetMember(parsed.GuildData.GS.ID, parsed.Args[0].Int64())
 			if err != nil || temp == nil {
-				return err, err
+				return nil, err
 			}
 
-			target := temp.DGoUser()
+			target := temp.User
 
 			if target.ID == parsed.Author.ID {
 				return "You can't report yourself, silly.", nil
@@ -397,19 +395,29 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No report channel set up", nil
 			}
 
+			topContent := fmt.Sprintf("%s reported %s", parsed.Author.Mention(), target.Mention())
+
 			embed := &discordgo.MessageEmbed{
 				Author: &discordgo.MessageEmbedAuthor{
 					Name:    fmt.Sprintf("%s#%s (ID %d)", parsed.Author.Username, parsed.Author.Discriminator, parsed.Author.ID),
 					IconURL: discordgo.EndpointUserAvatar(parsed.Author.ID, parsed.Author.Avatar),
 				},
-				Description: fmt.Sprintf("🔍**Reported** %s#%s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))", target.Username, target.Discriminator, target.ID, parsed.Args[1].Value, logLink),
+				Description: fmt.Sprintf("🔍**Reported** %s#%s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))\n**Channel:** <#%d>", target.Username, target.Discriminator, target.ID, parsed.Args[1].Value, logLink, parsed.ChannelID),
 				Color:       0xee82ee,
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
 				},
 			}
 
-			_, err = common.BotSession.ChannelMessageSendEmbed(channelID, embed)
+			send := &discordgo.MessageSend{
+				Content: topContent,
+				Embed:   embed,
+				AllowedMentions: discordgo.AllowedMentions{
+					Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+				},
+			}
+
+			_, err = common.BotSession.ChannelMessageSendComplex(channelID, send)
 			if err != nil {
 				return "Something went wrong while sending your report!", err
 			}
@@ -454,7 +462,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Failed fetching bot member to check permissions", nil
 			}
 
-			canClear, err := bot.AdminOrPermMS(parsed.ChannelID, botMember, discordgo.PermissionManageMessages)
+			canClear, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, parsed.ChannelID, botMember, discordgo.PermissionManageMessages)
 			if err != nil || !canClear {
 				return "I need the `Manage Messages` permission to be able to clear messages", nil
 			}
@@ -549,7 +557,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
 			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
 		},
 	},
@@ -889,17 +897,14 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Couldn't find the specified role", nil
 			}
 
-			parsed.GuildData.GS.RLock()
 			if !bot.IsMemberAboveRole(parsed.GuildData.GS, parsed.GuildData.MS, role) {
-				parsed.GuildData.GS.RUnlock()
 				return "Can't give roles above you", nil
 			}
-			parsed.GuildData.GS.RUnlock()
 
 			dur := parsed.Switches["d"].Value.(time.Duration)
 
 			// no point if the user has the role and is not updating the expiracy
-			if common.ContainsInt64Slice(member.Roles, role.ID) && dur <= 0 {
+			if common.ContainsInt64Slice(member.Member.Roles, role.ID) && dur <= 0 {
 				return "That user already has that role", nil
 			}
 
@@ -967,12 +972,9 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Couldn't find the specified role", nil
 			}
 
-			parsed.GuildData.GS.RLock()
 			if !bot.IsMemberAboveRole(parsed.GuildData.GS, parsed.GuildData.MS, role) {
-				parsed.GuildData.GS.RUnlock()
 				return "Can't remove roles above you", nil
 			}
-			parsed.GuildData.GS.RUnlock()
 
 			err = common.RemoveRoleDS(member, role.ID)
 			if err != nil {
@@ -993,7 +995,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(guildID, channelID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -1017,20 +1019,20 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, inv
 		}
 	}
 
-	msgs, err := bot.GetMessages(channelID, fetchNum, false)
+	msgs, err := bot.GetMessages(guildID, channelID, fetchNum, false)
 	if err != nil {
 		return 0, err
 	}
 
 	toDelete := make([]int64, 0)
 	now := time.Now()
-	for i := len(msgs) - 1; i >= 0; i-- {
+	for i := 0; i < len(msgs); i++ {
 		if filterUser != 0 && msgs[i].Author.ID != filterUser {
 			continue
 		}
 
 		// Can only bulk delete messages up to 2 weeks (but add 1 minute buffer account for time sync issues and other smallies)
-		if now.Sub(msgs[i].ParsedCreated) > (time.Hour*24*14)-time.Minute {
+		if now.Sub(msgs[i].ParsedCreatedAt) > (time.Hour*24*14)-time.Minute {
 			continue
 		}
 
@@ -1046,12 +1048,12 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, inv
 		}
 
 		// Check max age
-		if maxAge != 0 && now.Sub(msgs[i].ParsedCreated) > maxAge {
+		if maxAge != 0 && now.Sub(msgs[i].ParsedCreatedAt) > maxAge {
 			continue
 		}
 
 		// Check min age
-		if minAge != 0 && now.Sub(msgs[i].ParsedCreated) < minAge {
+		if minAge != 0 && now.Sub(msgs[i].ParsedCreatedAt) < minAge {
 			continue
 		}
 
@@ -1095,26 +1097,23 @@ func AdvancedDeleteMessages(channelID int64, filterUser int64, regex string, inv
 	return len(toDelete), err
 }
 
-func FindRole(gs *dstate.GuildState, roleS string) *discordgo.Role {
+func FindRole(gs *dstate.GuildSet, roleS string) *discordgo.Role {
 	parsedNumber, parseErr := strconv.ParseInt(roleS, 10, 64)
 
-	gs.RLock()
-	defer gs.RUnlock()
 	if parseErr == nil {
-
 		// was a number, try looking by id
-		r := gs.RoleCopy(false, parsedNumber)
+		r := gs.GetRole(parsedNumber)
 		if r != nil {
 			return r
 		}
 	}
 
 	// otherwise search by name
-	for _, v := range gs.Guild.Roles {
+	for _, v := range gs.Roles {
 		trimmed := strings.TrimSpace(v.Name)
 
 		if strings.EqualFold(trimmed, roleS) {
-			return v
+			return &v
 		}
 	}
 

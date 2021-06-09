@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
@@ -95,7 +95,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			ok, err := bot.AdminOrPermMS(parsed.ChannelID, parsed.GuildData.MS, discordgo.PermissionManageChannels)
+			ok, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, parsed.ChannelID, parsed.GuildData.MS, discordgo.PermissionManageChannels)
 			if err != nil {
 				return nil, err
 			}
@@ -163,7 +163,7 @@ var cmds = []*commands.YAGCommand{
 				if reminder.GuildID != parsed.GuildData.GS.ID {
 					return "You can only delete reminders that are not your own in the guild the reminder was originally created", nil
 				}
-				ok, err := bot.AdminOrPermMS(reminder.ChannelIDInt(), parsed.GuildData.MS, discordgo.PermissionManageChannels)
+				ok, err := bot.AdminOrPermMS(reminder.GuildID, reminder.ChannelIDInt(), parsed.GuildData.MS, discordgo.PermissionManageChannels)
 				if err != nil {
 					return nil, err
 				}
@@ -213,7 +213,7 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 			member, _ := bot.GetMember(v.GuildID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
-				username = member.Username
+				username = member.User.Username
 			}
 			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, username, limitString(v.Message), timeFromNow, tStr)
 		}

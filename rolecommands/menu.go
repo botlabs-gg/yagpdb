@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -99,7 +99,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	model.R = model.R.NewStruct()
 	model.R.RoleGroup = group
 
-	ClearRolemenuCacheGS(parsed.GuildData.GS)
+	ClearRolemenuCache(parsed.GuildData.GS.ID)
 	recentMenusTracker.AddMenu(model.MessageID)
 	resp, err := NextRoleMenuSetupStep(parsed.Context(), model, true)
 	updateSetupMessage(parsed.Context(), model, resp)
@@ -152,7 +152,7 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	if resp != "" {
 		createSetupMessage(parsed.Context(), menu, resp, true)
 	}
-	ClearRolemenuCacheGS(parsed.GuildData.GS)
+	ClearRolemenuCache(parsed.GuildData.GS.ID)
 	return nil, err
 }
 
@@ -229,7 +229,7 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 	opts := rm.R.RoleMenuOptions
 	sort.Slice(opts, OptionsLessFunc(!rm.RoleGroupID.Valid, opts))
 
-	gs := bot.State.Guild(true, rm.GuildID)
+	gs := bot.State.GetGuild(rm.GuildID)
 	if gs == nil {
 		return errors.New("Guild not found")
 	}
@@ -319,7 +319,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
-				return "An unknown error occured, please retry adding that emoji", nil
+				return "An unknown error occurred, please retry adding that emoji", nil
 			}
 		}
 
@@ -359,7 +359,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 					return "I do not have permissions to update the menu message, please give me the proper permissions for me to update the menu message.", nil
 				default:
-					return "An error occured updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
+					return "An error occurred updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
 				}
 			}
 		}
@@ -469,9 +469,6 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 
 	gs := evt.GS
-	gs.RLock()
-	name := gs.Guild.Name
-	gs.RUnlock()
 
 	resp, err := MemberChooseOption(evt.Context(), menu, gs, option, uID, emoji, raAdd)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingPermissions) {
@@ -479,21 +476,21 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 
 	if resp != "" {
-		bot.SendDM(uID, "**"+name+"**: "+resp)
+		bot.SendDM(uID, "**"+gs.Name+"**: "+resp)
 	}
 }
 
-func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.GuildState, option *models.RoleMenuOption, userID int64, emoji *discordgo.Emoji, raAdd bool) (resp string, err error) {
+func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.GuildSet, option *models.RoleMenuOption, userID int64, emoji *discordgo.Emoji, raAdd bool) (resp string, err error) {
 	member, err := bot.GetMember(gs.ID, userID)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
 			return "", nil
 		}
 
-		return "An error occured giving you the role", err
+		return "An error occurred giving you the role", err
 	}
 
-	if member.Bot {
+	if member.User.Bot {
 		// ignore bots
 		return "", nil
 	}
@@ -724,7 +721,7 @@ func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	ClearRolemenuCacheGS(data.GuildData.GS)
+	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	return "Deleted. The bot will no longer listen for reactions on this message, you can even make another menu on it.", nil
 }
@@ -748,7 +745,7 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 		return "", err
 	}
 
-	ClearRolemenuCacheGS(data.GuildData.GS)
+	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	createSetupMessage(data.Context(), menu, "React on the emoji for the option you want to change", true)
 	return nil, nil
@@ -776,12 +773,12 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	ClearRolemenuCacheGS(data.GuildData.GS)
+	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	return "Menu marked as done", nil
 }
 
-func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildState, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
+func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
 	if userID != rm.OwnerID {
 		return "Someone is currently editing or setting up this menu, please wait", nil
 	}
@@ -892,16 +889,15 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 	}
 }
 
-func OptionName(gs *dstate.GuildState, opt *models.RoleMenuOption) string {
+func OptionName(gs *dstate.GuildSet, opt *models.RoleMenuOption) string {
 	if opt.RoleCommandID.Valid {
 		return opt.R.RoleCommand.Name
 	} else {
-		r := gs.RoleCopy(true, opt.StandaloneRoleID.Int64)
+		r := gs.GetRole(opt.StandaloneRoleID.Int64)
 		if r != nil {
 			return r.Name
 		} else {
 			return "unknown role"
 		}
 	}
-
 }

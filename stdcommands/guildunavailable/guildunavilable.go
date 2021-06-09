@@ -3,7 +3,7 @@ package guildunavailable
 import (
 	"fmt"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/commands"
 )
@@ -11,7 +11,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "IsGuildUnavailable",
-	Description:  "Returns wether the specified guild is unavilable or not",
+	Description:  "Returns whether the specified guild is unavailable or not",
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "guildid", Type: dcmd.BigInt, Default: int64(0)},
@@ -23,6 +23,6 @@ var Command = &commands.YAGCommand{
 			return "Uh oh", err
 		}
 
-		return fmt.Sprintf("Guild (%d) unavilable: %v", guild.ID, guild.Unavailable), nil
+		return fmt.Sprintf("Guild (%d) unavailable: %v", guild.ID, !guild.Available), nil
 	},
 }

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/commands"
@@ -35,11 +35,11 @@ var (
 
 //Command var needs a comment for lint :)
 var Command = &commands.YAGCommand{
-	CmdCategory:  commands.CategoryFun,
-	Name:         "HowLongToBeat",
-	Aliases:      []string{"hltb"},
-	RequiredArgs: 1,
-	Description:  "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their default. Without -p returns the first result.\nSwitch -p gives paginated output using Levenshtein distance sorting max 20 results.",
+	CmdCategory:         commands.CategoryFun,
+	Name:                "HowLongToBeat",
+	Aliases:             []string{"hltb"},
+	RequiredArgs:        1,
+	Description:         "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their default. Without -p returns the first result.\nSwitch -p gives paginated output using Levenshtein distance sorting max 20 results.",
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	Arguments: []*dcmd.ArgDef{
@@ -144,4 +144,3 @@ func embedCreator(hltbQuery []hltb, i int, paginated bool) *discordgo.MessageEmb
 func normaliseTitle(t string) string {
 	return strings.Join(strings.Fields(t), " ")
 }
-
