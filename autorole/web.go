@@ -29,13 +29,12 @@ var (
 )
 
 func (f Form) Save(guildID int64) error {
-	pubsub.Publish("autorole_stop_processing", guildID, nil)
-
 	err := common.SetRedisJson(KeyGeneral(guildID), f.GeneralConfig)
 	if err != nil {
 		return err
 	}
 
+	pubsub.EvictCacheSet(configCache, guildID)
 	return nil
 }
 
@@ -125,7 +124,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	enabledDisabled := ""
 	autoroleRole := "none"
 
-	if role := ag.Role(general.Role); role != nil {
+	if role := ag.GetRole(general.Role); role != nil {
 		templateData["WidgetEnabled"] = true
 		enabledDisabled = web.EnabledDisabledSpanStatus(true)
 		autoroleRole = html.EscapeString(role.Name)

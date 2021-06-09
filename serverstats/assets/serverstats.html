@@ -7,8 +7,10 @@
 
 <header class="page-header">
     <h2>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by YAGPDB.xyz</a>{{end}}</small></h2>
-
 </header>
+
+{{template "cp_alerts" .}}
+
 
 <div class="row">
     <div class="col-lg-12">

@@ -10,6 +10,7 @@ import (
 	"github.com/jonas747/yagpdb/bot/joinedguildsupdater"
 	"github.com/jonas747/yagpdb/bot/models"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -89,6 +90,13 @@ OUTER:
 		logger.Info("Left server while bot was down: ", v)
 		go guildRemoved(v)
 	}
+
+	guilds := make([]int64, len(evt.Guilds))
+	for i, v := range evt.Guilds {
+		guilds[i] = v.ID
+	}
+
+	featureflags.BatchInitCache(guilds)
 }
 
 var guildJoinHandler = joinedguildsupdater.NewUpdater()
@@ -158,9 +166,8 @@ func HandleGuildDelete(evt *eventsystem.EventData) (retry bool, err error) {
 }
 
 func HandleGuildMemberAdd(evt *eventsystem.EventData) (retry bool, err error) {
-	ma := evt.GuildMemberAdd()
-
-	failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
+	// ma := evt.GuildMemberAdd()
+	// failedUsersCache.Delete(discordgo.StrID(ma.GuildID) + ":" + discordgo.StrID(ma.User.ID))
 
 	guildJoinHandler.Incoming <- evt
 	return false, nil
@@ -174,7 +181,8 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 // StateHandler updates the world state
 // use AddHandlerBefore to add handler before this one, otherwise they will alwyas be after
 func StateHandler(evt *eventsystem.EventData) {
-	State.HandleEvent(ContextSession(evt.Context()), evt.EvtInterface)
+	stateTracker.HandleEvent(evt.Session, evt.EvtInterface)
+	// State.HandleEvent(ContextSession(evt.Context()), evt.EvtInterface)
 }
 
 func HandleGuildUpdate(evt *eventsystem.EventData) (retry bool, err error) {
@@ -295,6 +303,7 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 
 		if msg.Member != nil {
 			msg.Member.User = msg.Author
+			msg.Member.GuildID = msg.GuildID
 		}
 
 	} else {
@@ -304,6 +313,7 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 		}
 
 		edit.Member.User = edit.Author
+		edit.Member.GuildID = edit.GuildID
 	}
 }
 

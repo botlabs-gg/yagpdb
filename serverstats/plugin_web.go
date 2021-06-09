@@ -37,6 +37,12 @@ type FormData struct {
 func (p *Plugin) InitWeb() {
 	web.LoadHTMLTemplate("../../serverstats/assets/serverstats.html", "templates/plugins/serverstats.html")
 
+	web.AddSidebarItem(web.SidebarCategoryTopLevel, &web.SidebarItem{
+		Name: "Stats",
+		URL:  "stats",
+		Icon: "fas fa-chart-bar",
+	})
+
 	statsCPMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/stats"), statsCPMux)
 	web.CPMux.Handle(pat.New("/stats/*"), statsCPMux)
@@ -75,6 +81,10 @@ func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	}
 
 	templateData["Config"] = config
+
+	if confDeprecated.GetBool() {
+		templateData.AddAlerts(web.WarningAlert("Serverstats are deprecated in favor of the superior discord server insights. Recording of new stats may stop at any time and stats will no longer be available next month."))
+	}
 
 	return templateData, nil
 }
@@ -125,7 +135,7 @@ OUTER:
 
 	err := model.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist("public", "ignore_channels"), boil.Infer())
 	if err == nil {
-		go pubsub.Publish("server_stats_invalidate_cache", ag.ID, nil)
+		pubsub.EvictCacheSet(cachedConfig, ag.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 	}
 

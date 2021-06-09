@@ -19,11 +19,13 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common/cacheset"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
+	boilv4 "github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -34,9 +36,11 @@ var (
 	SQLX *sqlx.DB
 
 	RedisPool *radix.Pool
+	CacheSet  = cacheset.NewManager(time.Hour)
 
-	BotSession *discordgo.Session
-	BotUser    *discordgo.User
+	BotSession     *discordgo.Session
+	BotUser        *discordgo.User
+	BotApplication *discordgo.Application
 
 	RedisPoolSize = 0
 
@@ -79,6 +83,7 @@ func CoreInit() error {
 
 // Init initializes the rest of the bot
 func Init() error {
+	go CacheSet.RunGCLoop()
 
 	err := setupGlobalDGoSession()
 	if err != nil {
@@ -98,11 +103,23 @@ func Init() error {
 	logger.Info("Retrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("%#+v", err))
 	}
+
+	if !BotUser.Bot {
+		panic("This user is not a bot! Yags can only be used with bot accounts!")
+	}
+
 	BotSession.State.User = &discordgo.SelfUser{
 		User: BotUser,
 	}
+
+	app, err := BotSession.ApplicationMe()
+	if err != nil {
+		panic(fmt.Sprintf("%#+v", err))
+	}
+
+	BotApplication = app
 
 	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
@@ -161,6 +178,8 @@ func setupGlobalDGoSession() (err error) {
 	}
 
 	BotSession.Client.Transport = &LoggingTransport{Inner: innerTransport}
+
+	go updateConcurrentRequests()
 
 	return nil
 }
@@ -248,6 +267,7 @@ func connectDB(host, user, pass, dbName string, maxConns int) error {
 	PQ = db.DB()
 	SQLX = sqlx.NewDb(PQ, "postgres")
 	boil.SetDB(PQ)
+	boilv4.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(maxConns)
 		PQ.SetMaxIdleConns(maxConns)
