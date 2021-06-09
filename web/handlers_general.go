@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -370,7 +371,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 }
 
 func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
-	g := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)
 	if err != nil {

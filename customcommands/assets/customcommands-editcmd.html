@@ -197,7 +197,7 @@
                                     <div class="col-sm-8">
                                         <div class="form-group">
                                             <label>Channel</label>
-                                            <select name="context_channel" class="form-control">
+                                            <select id="time-trigger-channel" name="context_channel" class="form-control">
                                                 {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
                                             </select>
                                         </div>
@@ -361,6 +361,12 @@
                                     formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/delete">Delete</button>
                             </div>
                         </div>
+                        <div class="row mt-4" id="interval-cc-run-now">
+                            <div class="col">
+                                <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this custom command immediately"
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/run_now">Run now</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -431,6 +437,7 @@
         if (dropdown.val() === "interval_hours" || dropdown.val() === "interval_minutes") {
             // Interval triggers
 
+            $("#interval-cc-run-now").removeClass("hidden")
             $("#cc-time-trigger-details").removeClass("hidden");
 
             $("#cc-text-trigger-details").addClass("hidden");
@@ -438,6 +445,9 @@
             $("#cc-reaction-trigger-details").addClass("hidden")
 
             $("#trigger-warning").attr("hidden", true);
+
+            handleTimeTriggerChannelChange();
+            $("#time-trigger-no-channel-warning").removeClass("hidden");
 
         } else if (dropdown.val() === "reaction") {
             // Reaction triggers
@@ -448,7 +458,10 @@
             $("#cc-time-trigger-details").addClass("hidden");
             $("#cc-text-trigger-details").addClass("hidden");
 
+            $("#interval-cc-run-now").addClass("hidden")
+
             $("#trigger-warning").attr("hidden", true);
+            $("#time-trigger-no-channel-warning").addClass("hidden");
 
         } else if (isTextTrigger(dropdown.val())) {
             // Other message triggers
@@ -459,8 +472,11 @@
             $("#cc-reaction-trigger-details").addClass("hidden")
             $("#cc-time-trigger-details").addClass("hidden");
 
+            $("#interval-cc-run-now").addClass("hidden")
+
             $("#trigger-warning").attr("hidden", true);
             // $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
+            $("#time-trigger-no-channel-warning").addClass("hidden");
 
         } else {
             // No automatic trigger
@@ -470,9 +486,11 @@
             $("#cc-reaction-trigger-details").addClass("hidden")
             $("#cc-time-trigger-details").addClass("hidden");
 
+            $("#interval-cc-run-now").addClass("hidden")
 
             $("#trigger-warning").removeAttr("hidden");
             $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
+            $("#time-trigger-no-channel-warning").addClass("hidden");
         };
 
 
@@ -485,6 +503,7 @@
 
     $(function () {
         triggerTypeChanged();
+        handleTimeTriggerChannelChange();
         handleRestrictionChange($("#require-role-mode").prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
         handleRestrictionChange($("#require-channel-mode").prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
     })
@@ -508,6 +527,24 @@
     }
 
     var idGen = 0
+
+    $("#time-trigger-channel").change(handleTimeTriggerChannelChange);
+    function handleTimeTriggerChannelChange() {
+        const triggerType = $("#trigger-type-dropdown").val();
+        if (triggerType !== "interval_hours" && triggerType !== "interval_minutes") return;
+    
+        // if no channel is selected for an interval trigger, the command is
+        // effectively disabled as it has nowhere to run
+        const isChannelSelected = Boolean($("#time-trigger-channel").val());
+        
+        const existingWarning = $("#time-trigger-no-channel-warning");
+        if (existingWarning.length > 0 && isChannelSelected) {
+            // remove existing warning if a channel is selected
+            existingWarning.remove();
+        } else if (existingWarning.length === 0 && !isChannelSelected) {
+            addAlert("warning", "Selecting no channel for the command to run in effectively disables it, making it never run. If your command does not need to run in any specific channel, select a random one from the list instead.", "time-trigger-no-channel-warning");
+        }
+    }
 
     var requireNoRolesWarning = "Requiring no roles effectively disables your command, making it run for no one. If you want no role restrictions, set the mode to 'ignore roles' instead.";
     var requireNoChannelsWarning = "Requiring no channels effectively disables your command, making it run for no one. If you want no channel restrictions, set the mode to 'ignore channels' instead.";

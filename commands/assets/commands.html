@@ -120,18 +120,26 @@
 
     $("#prefix").keyup(function() {
         const prefix = $(this).val();
-        if (prefix.length === 0) return;
-
-        $("#example-command-usage > code").text(`${prefix}ping`);
-
-        const existingWarning = $("#trailing-space-warning");
-        if (prefix[prefix.length - 1] === " ") {
-            if (existingWarning.length > 0) return; // don't duplicate warnings
-            addAlert("warning", `You have a trailing space in your command prefix, meaning that while '${prefix}ping' would trigger, '${prefix.trimRight()}ping' would not.`, "trailing-space-warning")
-        } else if (existingWarning.length) {
-            existingWarning.remove();
-        }
+        handlePrefixChange(prefix);
     });
+
+	$(function() {
+		handlePrefixChange($("#prefix").val());
+	});
+
+	function handlePrefixChange(prefix) {
+		if (prefix.length === 0) return;
+
+		$("#example-command-usage > code").text(`${prefix}ping`);
+
+		const existingWarning = $("#trailing-space-warning");
+		if (prefix[prefix.length - 1] === " ") {
+			if (existingWarning.length > 0) return; // don't duplicate warnings
+			addAlert("warning", `You have a trailing space in your command prefix, meaning that while '${prefix}ping' would trigger, '${prefix.trimRight()}ping' would not.`, "trailing-space-warning")
+		} else if (existingWarning.length) {
+			existingWarning.remove();
+		}
+	}
 </script>
 
 <style>

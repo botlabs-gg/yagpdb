@@ -209,6 +209,9 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 			SourceID:        idStr,
 			UseWebhook:      true,
 			WebhookUsername: webhookUsername,
+			AllowedMentions: discordgo.AllowedMentions{
+				Parse: []discordgo.AllowedMentionType{},
+			},
 		}
 
 		if item.UseEmbeds {

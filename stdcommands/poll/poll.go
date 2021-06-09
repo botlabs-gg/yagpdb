@@ -2,7 +2,7 @@ package poll
 
 import (
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -54,9 +54,9 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		description += pollReactions[i] + " " + option.Str()
 	}
 
-	authorName := data.GuildData.MS.Nick
+	authorName := data.GuildData.MS.Member.Nick
 	if authorName == "" {
-		authorName = data.GuildData.MS.Username
+		authorName = data.GuildData.MS.User.Username
 	}
 
 	response := discordgo.MessageEmbed{
@@ -65,7 +65,7 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		Color:       0x65f442,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    authorName,
-			IconURL: discordgo.EndpointUserAvatar(data.GuildData.MS.ID, data.Author.Avatar),
+			IconURL: discordgo.EndpointUserAvatar(data.GuildData.MS.User.ID, data.Author.Avatar),
 		},
 	}
 
@@ -77,7 +77,7 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 	if err != nil {
 		return nil, errors.WrapIf(err, "failed to add poll description")
 	}
-	for i, _ := range options {
+	for i := range options {
 		common.BotSession.MessageReactionAdd(pollMsg.ChannelID, pollMsg.ID, pollReactions[i])
 	}
 	return nil, nil

@@ -33,6 +33,13 @@ var (
 	numWorkers = new(int32)
 )
 
+// type WebhookCacheKey struct {
+// 	GuildID   int64 `json:"guild_id"`
+// 	ChannelID int64 `json:"channel_id"`
+// }
+
+var webhookCache = common.CacheSet.RegisterSlot("mqueue_webhook", nil, int64(0))
+
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
@@ -408,7 +415,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		}
 	}
 
-	gs := bot.State.Guild(true, elem.Guild)
+	gs := bot.State.GetGuild(elem.Guild)
 	if gs == nil {
 		// another check just in case
 		if onGuild, err := common.BotIsOnGuild(elem.Guild); err == nil && !onGuild {
@@ -418,21 +425,13 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		}
 	}
 
-	var whI interface{}
-	// in some cases guild state may not be available (starting up and the like)
-	if gs != nil {
-		whI, err = gs.UserCacheFetch(cacheKeyWebhook(elem.Channel), func() (interface{}, error) {
-			return findCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
-		})
-	} else {
-		// fallback if no gs is available
-		whI, err = findCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
-		logger.WithField("guild", elem.Guild).Warn("Guild state not available, ignoring cache")
-	}
-
+	whI, err := webhookCache.GetCustomFetch(elem.Channel, func(key interface{}) (interface{}, error) {
+		return findCreateWebhook(elem.Guild, elem.Channel, elem.Source, avatar)
+	})
 	if err != nil {
 		return err
 	}
+
 	wh := whI.(*webhook)
 
 	webhookParams := &discordgo.WebhookParams{
@@ -453,9 +452,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 			return errors.WrapIf(err, "sql.delete")
 		}
 
-		if gs != nil {
-			gs.UserCacheDel(cacheKeyWebhook(elem.Channel))
-		}
+		webhookCache.Delete(elem.Channel)
 
 		return errors.New("deleted webhook")
 	}
