@@ -11,28 +11,24 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 )
 
-var ErrTooManyCalls = errors.New("Too many calls to this function")
-var ErrTooManyAPICalls = errors.New("Too many potential discord api calls function")
+var ErrTooManyCalls = errors.New("too many calls to this function")
+var ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
 	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.MS == nil {
 		return ""
 	}
 
-	c.GS.RLock()
-	gName := c.GS.Guild.Name
-	gIcon := discordgo.EndpointGuildIcon(c.GS.Guild.ID, c.GS.Guild.Icon)
-	memberID := c.MS.ID
-	c.GS.RUnlock()
+	gIcon := discordgo.EndpointGuildIcon(c.GS.ID, c.GS.Icon)
 
-	info := fmt.Sprintf("Custom Command DM from the server **%s**", gName)
-	embedInfo := fmt.Sprintf("Custom Command DM from the server %s", gName)
+	info := fmt.Sprintf("Custom Command DM from the server **%s**", c.GS.Name)
+	embedInfo := fmt.Sprintf("Custom Command DM from the server %s", c.GS.Name)
 	msgSend := &discordgo.MessageSend{
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
@@ -63,7 +59,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 		msgSend.Content = fmt.Sprintf("%s\n%s", info, fmt.Sprint(s...))
 	}
 
-	channel, err := common.BotSession.UserChannelCreate(memberID)
+	channel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
 	if err != nil {
 		return ""
 	}
@@ -73,9 +69,6 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 
 // ChannelArg converts a verity of types of argument into a channel, verifying that it exists
 func (c *Context) ChannelArg(v interface{}) int64 {
-
-	c.GS.RLock()
-	defer c.GS.RUnlock()
 
 	// Look for the channel
 	if v == nil && c.CurrentFrame.CS != nil {
@@ -110,11 +103,8 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 
 	if !verifiedExistence {
 		// Make sure the channel is part of the guild
-		for k, _ := range c.GS.Channels {
-			if k == cid {
-				verifiedExistence = true
-				break
-			}
+		if channel := c.GS.GetChannel(cid); channel != nil {
+			verifiedExistence = true
 		}
 	}
 
@@ -127,9 +117,6 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 
 // ChannelArgNoDM is the same as ChannelArg but will not accept DM channels
 func (c *Context) ChannelArgNoDM(v interface{}) int64 {
-
-	c.GS.RLock()
-	defer c.GS.RUnlock()
 
 	// Look for the channel
 	if v == nil && c.CurrentFrame.CS != nil {
@@ -164,11 +151,8 @@ func (c *Context) ChannelArgNoDM(v interface{}) int64 {
 
 	if !verifiedExistence {
 		// Make sure the channel is part of the guild
-		for k, _ := range c.GS.Channels {
-			if k == cid {
-				verifiedExistence = true
-				break
-			}
+		if channel := c.GS.GetChannel(cid); channel != nil {
+			verifiedExistence = true
 		}
 	}
 
@@ -192,15 +176,15 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		return "", ErrTooManyCalls
 	}
 	if name == "" {
-		return "", errors.New("No template name passed")
+		return "", errors.New("no template name passed")
 	}
 	if c.CurrentFrame.isNestedTemplate {
-		return "", errors.New("Can't call this in a nested template")
+		return "", errors.New("can't call this in a nested template")
 	}
 
 	t := c.CurrentFrame.parsedTemplate.Lookup(name)
 	if t == nil {
-		return "", errors.New("Unknown template")
+		return "", errors.New("unknown template")
 	}
 
 	var cs *dstate.ChannelState
@@ -211,29 +195,28 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		} else {
 			cID := c.ChannelArg(channel)
 			if cID == 0 {
-				return "", errors.New("Unknown channel")
+				return "", errors.New("unknown channel")
 			}
 
-			cs = c.GS.ChannelCopy(true, cID)
+			cs = c.GS.GetChannel(cID)
 			if cs == nil {
-				return "", errors.New("Unknown channel")
+				return "", errors.New("unknown channel")
 			}
 		}
 	} else {
 		if c.CurrentFrame.SendResponseInDM {
 			cs = c.CurrentFrame.CS
 		} else {
-			ch, err := common.BotSession.UserChannelCreate(c.MS.ID)
+			ch, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
 			if err != nil {
 				return "", err
 			}
 
 			cs = &dstate.ChannelState{
-				Owner: c.GS,
-				Guild: c.GS,
-				ID:    ch.ID,
-				Name:  c.MS.Username,
-				Type:  discordgo.ChannelTypeDM,
+				GuildID: c.GS.ID,
+				ID:      ch.ID,
+				Name:    c.MS.User.Username,
+				Type:    discordgo.ChannelTypeDM,
 			}
 		}
 	}
@@ -389,7 +372,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 
 		cid := c.ChannelArgNoDM(channel)
 		if cid == 0 {
-			return "", errors.New("Unknown channel")
+			return "", errors.New("unknown channel")
 		}
 
 		mID := ToInt64(msgID)
@@ -452,7 +435,7 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 		return ""
 	}
 
-	r := c.GS.RoleCopy(true, role)
+	r := c.GS.GetRole(role)
 	if r == nil {
 		return "(role not found)"
 	}
@@ -471,16 +454,17 @@ func (c *Context) tmplMentionRoleName(role string) string {
 	}
 
 	var found *discordgo.Role
-	c.GS.RLock()
-	for _, r := range c.GS.Guild.Roles {
+	for _, r := range c.GS.Roles {
 		if r.Name == role {
 			if !common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, r.ID) {
 				c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, r.ID)
-				found = r
+
+				// make a copy as the looping var is changing
+				cop := r
+				found = &cop
 			}
 		}
 	}
-	c.GS.RUnlock()
 	if found == nil {
 		return "(role not found)"
 	}
@@ -494,7 +478,7 @@ func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 		return false
 	}
 
-	contains := common.ContainsInt64Slice(c.MS.Roles, role)
+	contains := common.ContainsInt64Slice(c.MS.Member.Roles, role)
 	return contains
 }
 
@@ -503,12 +487,9 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 		return false, ErrTooManyCalls
 	}
 
-	c.GS.RLock()
-	defer c.GS.RUnlock()
-
-	for _, r := range c.GS.Guild.Roles {
+	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(c.MS.Roles, r.ID) {
+			if common.ContainsInt64Slice(c.MS.Member.Roles, r.ID) {
 				return true, nil
 			}
 
@@ -561,7 +542,7 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bo
 		return false
 	}
 
-	contains := common.ContainsInt64Slice(ts.Roles, role)
+	contains := common.ContainsInt64Slice(ts.Member.Roles, role)
 
 	return contains
 
@@ -582,21 +563,12 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
 		return false
 	}
 
-	c.GS.RLock()
-
-	for _, r := range c.GS.Guild.Roles {
+	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(ts.Roles, r.ID) {
-				c.GS.RUnlock()
-				return true
-			}
-
-			c.GS.RUnlock()
-			return false
+			return common.ContainsInt64Slice(ts.Member.Roles, r.ID)
 		}
 	}
 
-	c.GS.RUnlock()
 	return false
 
 }
@@ -616,20 +588,7 @@ func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string 
 		return ""
 	}
 
-	// Check to see if we can save a API request here
-	c.GS.RLock()
-	ms := c.GS.Member(false, targetID)
-	hasRole := false
-	if ms != nil {
-		hasRole = common.ContainsInt64Slice(ms.Roles, role)
-	}
-	c.GS.RUnlock()
-
-	if !hasRole {
-		common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role)
-	}
-
-	return ""
+	return c.giveRole(targetID, role)
 }
 
 func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
@@ -647,15 +606,23 @@ func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
 		return "no role by the name of " + name + " found"
 	}
 
-	// Maybe save a api request
-	ms := c.GS.Member(false, targetID)
-	if ms != nil {
-		if common.ContainsInt64Slice(ms.Roles, role.ID) {
-			return ""
-		}
+	return c.giveRole(targetID, role.ID)
+}
+
+func (c *Context) giveRole(targetID int64, roleID int64) string {
+	if c.GS.GetRole(roleID) == nil {
+		return "" // role does not exist
 	}
 
-	common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role.ID)
+	// Check to see if we can save a API request here
+	ms, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return ""
+	}
+
+	if !common.ContainsInt64Slice(ms.Member.Roles, roleID) {
+		common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, roleID)
+	}
 
 	return ""
 }
@@ -680,28 +647,7 @@ func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optiona
 		return ""
 	}
 
-	// Check to see if we can save a API request here, if this isn't delayed
-	if delay <= 0 {
-		c.GS.RLock()
-		ms := c.GS.Member(false, targetID)
-		hasRole := true
-		if ms != nil && ms.MemberSet {
-			hasRole = common.ContainsInt64Slice(ms.Roles, role)
-		}
-		c.GS.RUnlock()
-
-		if !hasRole {
-			return ""
-		}
-	}
-
-	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role, time.Now().Add(time.Second*time.Duration(delay)))
-	} else {
-		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
-	}
-
-	return ""
+	return c.takeRole(targetID, role, time.Second*time.Duration(delay))
 }
 
 func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs ...interface{}) string {
@@ -719,42 +665,80 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs
 		return ""
 	}
 
-	role := int64(0)
-	c.GS.RLock()
-	for _, r := range c.GS.Guild.Roles {
-		if strings.EqualFold(r.Name, name) {
-			role = r.ID
-
-			// Maybe save a api request, but only if this is not delayed
-			if delay <= 0 {
-				ms := c.GS.Member(false, targetID)
-				hasRole := true
-				if ms != nil && ms.MemberSet {
-					hasRole = common.ContainsInt64Slice(ms.Roles, role)
-				}
-
-				if !hasRole {
-					c.GS.RUnlock()
-					return ""
-				}
-			}
-
-			break
-		}
+	role := c.findRoleByName(name)
+	if role != nil {
+		return c.takeRole(targetID, role.ID, time.Second*time.Duration(delay))
 	}
-	c.GS.RUnlock()
 
-	if role == 0 {
+	return ""
+}
+
+func (c *Context) takeRole(targetID int64, roleID int64, delay time.Duration) string {
+	if c.GS.GetRole(roleID) == nil {
+		return "" // role does not exist
+	}
+
+	ms, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return ""
+	}
+
+	if !common.ContainsInt64Slice(ms.Member.Roles, roleID) {
 		return ""
 	}
 
 	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role, time.Now().Add(time.Second*time.Duration(delay)))
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, roleID, time.Now().Add(delay))
 	} else {
-		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role)
+		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, roleID)
 	}
 
 	return ""
+}
+
+func (c *Context) tmplSetRoles(target interface{}, roleSlice interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return "", nil
+	}
+
+	if c.IncreaseCheckCallCounter("set_roles"+discordgo.StrID(targetID), 1) {
+		return "", errors.New("Too many calls to setRoles for specific user ID (max 1 / user)")
+	}
+
+	rSlice := reflect.ValueOf(roleSlice)
+	switch rSlice.Kind() {
+	case reflect.Slice, reflect.Array:
+		// ok
+	default:
+		return "", errors.New("Value passed was not an array or slice")
+	}
+
+	if rSlice.Len() > 250 {
+		return "", errors.New("Length of slice passed was > 250 (Discord role limit)")
+	}
+
+	roles := make([]string, 0, rSlice.Len())
+	for i := 0; i < rSlice.Len(); i++ {
+		switch v := rSlice.Index(i).Interface().(type) {
+		case string:
+			roles = append(roles, v)
+		case int, int64:
+			roles = append(roles, discordgo.StrID(reflect.ValueOf(v).Int()))
+		default:
+			return "", errors.New("Could not convert slice to string slice")
+		}
+	}
+
+	err := common.BotSession.GuildMemberEdit(c.GS.ID, targetID, roles)
+	if err != nil {
+		return "", err
+	}
+	return "", nil
 }
 
 func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
@@ -768,7 +752,7 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 
 	rid := ToInt64(role)
 	if rid == 0 {
-		return "", errors.New("No role id specified")
+		return "", errors.New("no role id specified")
 	}
 
 	err := common.AddRoleDS(c.MS, rid)
@@ -789,14 +773,12 @@ func (c *Context) tmplAddRoleName(name string) (string, error) {
 	}
 
 	role := int64(0)
-	c.GS.RLock()
-	for _, r := range c.GS.Guild.Roles {
+	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
 			role = r.ID
 			break
 		}
 	}
-	c.GS.RUnlock()
 
 	if role == 0 {
 		return "", errors.New("No Role with name " + name + " found")
@@ -819,17 +801,17 @@ func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}
 		delay = tmplToInt(optionalArgs[0])
 	}
 
-	if c.MS == nil {
-		return "", nil
-	}
-
 	rid := ToInt64(role)
 	if rid == 0 {
-		return "", errors.New("No role id specified")
+		return "", errors.New("no role id specified")
+	}
+
+	if c.GS.GetRole(rid) == nil {
+		return "", errors.New("unknown role")
 	}
 
 	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
 		common.RemoveRoleDS(c.MS, rid)
 	}
@@ -857,7 +839,7 @@ func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (
 	}
 
 	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.ID, role.ID, time.Now().Add(time.Second*time.Duration(delay)))
+		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, role.ID, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
 		if err := common.RemoveRoleDS(c.MS, role.ID); err != nil {
 			return "", err
@@ -868,12 +850,9 @@ func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (
 }
 
 func (c *Context) findRoleByName(name string) *discordgo.Role {
-	c.GS.RLock()
-	defer c.GS.RUnlock()
-
-	for _, r := range c.GS.Guild.Roles {
+	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			return r
+			return &r
 		}
 	}
 
@@ -931,7 +910,7 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 4 {
-			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, userID, emoji)")
+			return reflect.Value{}, errors.New("not enough arguments (need channelID, messageID, userID, emoji)")
 		}
 
 		var cArg interface{}
@@ -967,7 +946,7 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
-			return reflect.Value{}, errors.New("Not enough arguments (need channelID, messageID, emojis[optional])")
+			return reflect.Value{}, errors.New("not enough arguments (need channelID, messageID, emojis[optional])")
 		}
 
 		var cArg interface{}
@@ -1036,7 +1015,7 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 		return nil, nil
 	}
 
-	return member.DGoCopy(), nil
+	return member.DgoMember(), nil
 }
 
 func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
@@ -1050,10 +1029,10 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
 	}
 
-	cstate := c.GS.ChannelCopy(true, cID)
+	cstate := c.GS.GetChannel(cID)
 
 	if cstate == nil {
-		return nil, errors.New("Channel not in state")
+		return nil, errors.New("channel not in state")
 	}
 
 	return CtxChannelFromCS(cstate), nil
@@ -1098,7 +1077,7 @@ func (c *Context) tmplAddResponseReactions(values ...reflect.Value) (reflect.Val
 func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
-			return reflect.Value{}, errors.New("Not enough arguments (need channel and message-id)")
+			return reflect.Value{}, errors.New("not enough arguments (need channel and message-id)")
 		}
 
 		// cArg := args[0].Interface()
@@ -1134,7 +1113,7 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 }
 
 func (c *Context) tmplCurrentUserAgeHuman() string {
-	t := bot.SnowflakeToTime(c.MS.ID)
+	t := bot.SnowflakeToTime(c.MS.User.ID)
 
 	humanized := common.HumanizeDuration(common.DurationPrecisionHours, time.Since(t))
 	if humanized == "" {
@@ -1145,14 +1124,14 @@ func (c *Context) tmplCurrentUserAgeHuman() string {
 }
 
 func (c *Context) tmplCurrentUserAgeMinutes() int {
-	t := bot.SnowflakeToTime(c.MS.ID)
+	t := bot.SnowflakeToTime(c.MS.User.ID)
 	d := time.Since(t)
 
 	return int(d.Seconds() / 60)
 }
 
 func (c *Context) tmplCurrentUserCreated() time.Time {
-	t := bot.SnowflakeToTime(c.MS.ID)
+	t := bot.SnowflakeToTime(c.MS.User.ID)
 	return t
 }
 
@@ -1211,7 +1190,7 @@ func (c *Context) reFindAll(r, s string, i ...int) ([]string, error) {
 		n = i[0]
 	}
 
-	if n > 1000 || n < 0 {
+	if n > 1000 || n <= 0 {
 		n = 1000
 	}
 
@@ -1229,7 +1208,7 @@ func (c *Context) reFindAllSubmatches(r, s string, i ...int) ([][]string, error)
 		n = i[0]
 	}
 
-	if n > 100 || n < 0 {
+	if n > 100 || n <= 0 {
 		n = 100
 	}
 
@@ -1256,7 +1235,7 @@ func (c *Context) reSplit(r, s string, i ...int) ([]string, error) {
 		n = i[0]
 	}
 
-	if n > 500 || n < 0 {
+	if n > 500 || n <= 0 {
 		n = 500
 	}
 
@@ -1270,7 +1249,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 
 	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
-		return "", errors.New("Unknown channel")
+		return "", errors.New("unknown channel")
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
@@ -1288,7 +1267,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 
 	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
-		return "", errors.New("Unknown channel")
+		return "", errors.New("unknown channel")
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
@@ -1303,40 +1282,36 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 	return "", err
 }
 
+// DEPRECATED: this function will return unreliable numbers anyways
 func (c *Context) tmplOnlineCount() (int, error) {
-	if c.IncreaseCheckCallCounter("online_users", 1) {
-		return 0, ErrTooManyCalls
-	}
+	// if c.IncreaseCheckCallCounter("online_users", 1) {
+	// return 0, ErrTooManyCalls
+	// }
 
-	online := 0
-	c.GS.RLock()
-	for _, v := range c.GS.Members {
-		if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
-			online++
-		}
-	}
-	c.GS.RUnlock()
+	// online := 0
+	// for _, v := range c.GS.Members {
+	// 	if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
+	// 		online++
+	// 	}
+	// }
 
-	return online, nil
+	return 0, nil
 }
 
 func (c *Context) tmplOnlineCountBots() (int, error) {
-	if c.IncreaseCheckCallCounter("online_bots", 1) {
-		return 0, ErrTooManyCalls
-	}
+	// if c.IncreaseCheckCallCounter("online_bots", 1) {
+	// 	return 0, ErrTooManyCalls
+	// }
 
-	botCount := 0
+	// botCount := 0
 
-	c.GS.RLock()
-	defer c.GS.RUnlock()
+	// for _, v := range c.GS.Members {
+	// 	if v.Bot && v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
+	// 		botCount++
+	// 	}
+	// }
 
-	for _, v := range c.GS.Members {
-		if v.Bot && v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
-			botCount++
-		}
-	}
-
-	return botCount, nil
+	return 0, nil
 }
 
 func (c *Context) tmplEditNickname(Nickname string) (string, error) {
@@ -1349,13 +1324,13 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 		return "", nil
 	}
 
-	if strings.Compare(c.MS.Nick, Nickname) == 0 {
+	if strings.Compare(c.MS.Member.Nick, Nickname) == 0 {
 
 		return "", nil
 
 	}
 
-	err := common.BotSession.GuildMemberNickname(c.GS.ID, c.MS.ID, Nickname)
+	err := common.BotSession.GuildMemberNickname(c.GS.ID, c.MS.User.ID, Nickname)
 	if err != nil {
 		return "", err
 	}

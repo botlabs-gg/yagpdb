@@ -11,8 +11,9 @@ import (
 	"unicode"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -27,8 +28,8 @@ import (
 )
 
 type ChannelOverrideForm struct {
-	Channels                []int64 `valid:"channel,true`
-	ChannelCategories       []int64 `valid:"channel,true`
+	Channels                []int64 `valid:"channel,true"`
+	ChannelCategories       []int64 `valid:"channel,true"`
 	Global                  bool
 	CommandsEnabled         bool
 	AutodeleteResponse      bool
@@ -202,7 +203,7 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 // Channel override handlers
 func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request, override *models.CommandsChannelsOverride) (web.TemplateData, error)) web.ControllerHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-		activeGuild := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+		activeGuild := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 
 		var override *models.CommandsChannelsOverride
 		var err error

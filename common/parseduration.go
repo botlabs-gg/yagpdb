@@ -1,4 +1,3 @@
-// Code duplicated directly from commands/util.go
 package common
 
 import (
@@ -13,9 +12,7 @@ import (
 // Parses a time string like 1day3h
 func ParseDuration(str string) (time.Duration, error) {
 	var dur time.Duration
-
-	currentNumBuf := ""
-	currentModifierBuf := ""
+	var currentNumBuf, currentModifierBuf string
 
 	// Parse the time
 	for _, v := range str {
@@ -32,7 +29,7 @@ func ParseDuration(str string) (time.Duration, error) {
 				}
 				d, err := parseDurationComponent(currentNumBuf, currentModifierBuf)
 				if err != nil {
-					return d, err
+					return 0, err
 				}
 
 				dur += d
@@ -51,7 +48,7 @@ func ParseDuration(str string) (time.Duration, error) {
 	if currentNumBuf != "" {
 		d, err := parseDurationComponent(currentNumBuf, currentModifierBuf)
 		if err != nil {
-			return dur, errors.WrapIf(err, "not a duration")
+			return 0, errors.WrapIf(err, "not a duration")
 		}
 
 		dur += d
@@ -68,22 +65,23 @@ func parseDurationComponent(numStr, modifierStr string) (time.Duration, error) {
 
 	parsedDur := time.Duration(parsedNum)
 
-	if strings.HasPrefix(modifierStr, "s") {
+	switch {
+	case strings.HasPrefix(modifierStr, "s"):
 		parsedDur = parsedDur * time.Second
-	} else if modifierStr == "" || (strings.HasPrefix(modifierStr, "m") && (len(modifierStr) < 2 || modifierStr[1] != 'o')) {
+	case modifierStr == "", (strings.HasPrefix(modifierStr, "m") && (len(modifierStr) < 2 || modifierStr[1] != 'o')):
 		parsedDur = parsedDur * time.Minute
-	} else if strings.HasPrefix(modifierStr, "h") {
+	case strings.HasPrefix(modifierStr, "h"):
 		parsedDur = parsedDur * time.Hour
-	} else if strings.HasPrefix(modifierStr, "d") {
+	case strings.HasPrefix(modifierStr, "d"):
 		parsedDur = parsedDur * time.Hour * 24
-	} else if strings.HasPrefix(modifierStr, "w") {
+	case strings.HasPrefix(modifierStr, "w"):
 		parsedDur = parsedDur * time.Hour * 24 * 7
-	} else if strings.HasPrefix(modifierStr, "mo") {
+	case strings.HasPrefix(modifierStr, "mo"):
 		parsedDur = parsedDur * time.Hour * 24 * 30
-	} else if strings.HasPrefix(modifierStr, "y") {
+	case strings.HasPrefix(modifierStr, "y"):
 		parsedDur = parsedDur * time.Hour * 24 * 365
-	} else {
-		return parsedDur, errors.New("couldn't figure out what '" + numStr + modifierStr + "` was")
+	default:
+		return 0, errors.New("couldn't figure out what '" + numStr + modifierStr + "` was")
 	}
 
 	return parsedDur, nil
