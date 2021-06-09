@@ -44,7 +44,7 @@ func Run() {
 	}
 
 	var storedRefreshToken string
-	common.RedisPool.Do(radix.Cmd(&storedRefreshToken, "GET", "patreon_refresh_token"))
+	_ = (radix.Cmd(&storedRefreshToken, "GET", "patreon_refresh_token"))
 
 	config := &oauth2.Config{
 		ClientID:     clientID,
@@ -232,7 +232,7 @@ func (t *TokenSourceSaver) Token() (*oauth2.Token, error) {
 	if err == nil {
 		if t.lastRefreshToken != tk.RefreshToken {
 			logger.Info("New refresh token")
-			common.RedisPool.Do(radix.Cmd(nil, "SET", "patreon_refresh_token", tk.RefreshToken))
+			_ = common.RedisPool.Do(radix.Cmd(nil, "SET", "patreon_refresh_token", tk.RefreshToken))
 			t.lastRefreshToken = tk.RefreshToken
 		}
 	}

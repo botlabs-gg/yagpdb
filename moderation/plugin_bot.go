@@ -168,7 +168,7 @@ func createMuteRole(config *Config, guildID int64) (int64, error) {
 	err = config.Save(guildID)
 	if err != nil {
 		// failed saving config, attempt to delete the role
-		common.BotSession.GuildRoleDelete(guildID, r.ID)
+		_ = common.BotSession.GuildRoleDelete(guildID, r.ID)
 		return 0, err
 	}
 
@@ -252,7 +252,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 	}
 
 	if changed {
-		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
+		_ = common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
 	}
 }
 
@@ -270,10 +270,10 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		action = MABanned
 
 		var i int
-		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
+		_ = common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyBannedUser(guildID, user.ID)))
 		if i > 0 {
 			// The bot banned the user earlier, don't make duplicate entries in the modlog
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
+			_ = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyBannedUser(guildID, user.ID)))
 			return
 		}
 
@@ -283,10 +283,10 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		user = evt.GuildBanRemove().User
 
 		var i int
-		common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
+		_ = common.RedisPool.Do(radix.Cmd(&i, "GET", RedisKeyUnbannedUser(guildID, user.ID)))
 		if i > 0 {
 			// The bot was the one that performed the unban
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
+			_ = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
 			if i == 2 {
 				//Bot performed non-scheduled unban, don't make duplicate entries in the modlog
 				return
@@ -415,7 +415,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 		}
 
 		// Don't bother doing anythign if this mute is almost up
-		if !currentMute.ExpiresAt.IsZero() && currentMute.ExpiresAt.Sub(time.Now()) < 5*time.Second {
+		if !currentMute.ExpiresAt.IsZero() && time.Until(currentMute.ExpiresAt) < 5*time.Second {
 			return false, nil
 		}
 
@@ -480,7 +480,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	for _, v := range removedRoles {
 		_, err := tx.Exec(queryStr, c.GuildID, c.Member.User.ID, v)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return true, errors.WithStackIf(err)
 		}
 	}
@@ -581,7 +581,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 		return false, nil
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
+	_ = common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
 
 	err = common.BotSession.GuildBanDelete(guildID, userID)
 	if err != nil {

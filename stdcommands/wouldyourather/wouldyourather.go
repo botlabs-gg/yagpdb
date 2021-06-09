@@ -29,7 +29,7 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇦")
+		_ = common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇦")
 		err = common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇧")
 		if err != nil {
 			return nil, err
@@ -40,19 +40,16 @@ var Command = &commands.YAGCommand{
 }
 
 func wouldYouRather() (q1 string, q2 string, err error) {
-	req, err := http.NewRequest("GET", "http://either.io/", nil)
+	resp, err := http.DefaultClient.Get("http://either.io/")
 	if err != nil {
-		panic(err)
+		return "", "", err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return
-	}
+	defer resp.Body.Close()
 
-	doc, err := goquery.NewDocumentFromResponse(resp)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		return
+		return "", "", err
 	}
 
 	r1 := doc.Find("div.result.result-1 > .option-text")

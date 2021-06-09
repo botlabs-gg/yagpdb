@@ -1,19 +1,10 @@
 package customcommands
 
-import (
-	"context"
-	"strconv"
-	"strings"
-
-	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/boil"
-)
-
 // contains stuff for migrating from redis to postgres based configs
 
-func migrateFromRedis() {
-	common.RedisPool.Do(radix.WithConn("custom_commands:", func(conn radix.Conn) error {
+// Unused
+/* func migrateFromRedis() {
+	_ = common.RedisPool.Do(radix.WithConn("custom_commands:", func(conn radix.Conn) error {
 		scanner := radix.NewScanner(conn, radix.ScanOpts{
 			Command: "scan",
 			Pattern: "custom_commands:*",
@@ -45,9 +36,10 @@ func migrateFromRedis() {
 
 		return nil
 	}))
-}
+} */
 
-func migrateGuildConfig(rc radix.Client, guildID int64) error {
+// Unused
+/* func migrateGuildConfig(rc radix.Client, guildID int64) error {
 	commands, _, err := LegacyGetCommands(guildID)
 	if err != nil || len(commands) < 1 {
 		return err
@@ -73,4 +65,4 @@ func migrateGuildConfig(rc radix.Client, guildID int64) error {
 	err = rc.Do(radix.Cmd(nil, "DEL", KeyCommands(guildID)))
 	logger.Println("migrated ", len(commands), " custom commands from ", guildID)
 	return err
-}
+} */

@@ -1,7 +1,6 @@
 package serverstats
 
 import (
-	"database/sql"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -189,7 +188,8 @@ func (mu *serverMemberStatsUpdater) flush() {
 	}
 }
 
-func (mu *serverMemberStatsUpdater) setUpdateMemberStatsPeriod(tx *sql.Tx, guildID int64, memberIncr int, numMembers int) error {
+// Unused
+/* func (mu *serverMemberStatsUpdater) setUpdateMemberStatsPeriod(tx *sql.Tx, guildID int64, memberIncr int, numMembers int) error {
 	joins := 0
 	leaves := 0
 	if memberIncr > 0 {
@@ -204,10 +204,10 @@ func (mu *serverMemberStatsUpdater) setUpdateMemberStatsPeriod(tx *sql.Tx, guild
 	_, err := tx.Exec(`INSERT INTO server_stats_hourly_periods_misc  (guild_id, t, num_members, joins, leaves, max_online, max_voice)
 VALUES ($1, $2, $3, $4, $5, 0, 0)
 ON CONFLICT (guild_id, t)
-DO UPDATE SET 
-joins = server_stats_hourly_periods_misc.joins + $4, 
-leaves = server_stats_hourly_periods_misc.leaves + $5, 
+DO UPDATE SET
+joins = server_stats_hourly_periods_misc.joins + $4,
+leaves = server_stats_hourly_periods_misc.leaves + $5,
 num_members = server_stats_hourly_periods_misc.num_members + $6;`, guildID, t, numMembers, joins, leaves, memberIncr)
 
 	return err
-}
+} */

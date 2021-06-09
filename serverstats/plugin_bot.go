@@ -19,7 +19,7 @@ import (
 )
 
 func MarkGuildAsToBeChecked(guildID int64) {
-	common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "serverstats_active_guilds", guildID))
+	_ = common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "serverstats_active_guilds", guildID))
 }
 
 var (

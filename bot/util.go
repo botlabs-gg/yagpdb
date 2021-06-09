@@ -124,7 +124,7 @@ func SetStatus(streaming, status string) {
 		logger.WithError(err2).Error("failed setting bot status in redis")
 	}
 
-	pubsub.Publish("bot_status_changed", -1, nil)
+	_ = pubsub.Publish("bot_status_changed", -1, nil)
 }
 
 func updateAllShardStatuses() {
@@ -270,9 +270,9 @@ func RefreshStatus(session *discordgo.Session) {
 	}
 
 	if streamingURL != "" {
-		session.UpdateStreamingStatus(0, status, streamingURL)
+		_ = session.UpdateStreamingStatus(0, status, streamingURL)
 	} else {
-		session.UpdateStatus(0, status)
+		_ = session.UpdateStatus(0, status)
 	}
 
 }

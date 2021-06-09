@@ -286,7 +286,7 @@ func CtxLogger(ctx context.Context) *logrus.Entry {
 func WriteErrorResponse(w http.ResponseWriter, r *http.Request, err string, statusCode int) {
 	if r.FormValue("partial") != "" {
 		w.WriteHeader(statusCode)
-		w.Write([]byte(`{"error": "` + err + `"}`))
+		_, _ = w.Write([]byte(`{"error": "` + err + `"}`))
 		return
 	}
 

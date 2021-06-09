@@ -87,7 +87,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	go analytics.RecordActiveUnit(msg.GuildID, &Plugin{}, "auto_add_rep")
 
 	content := fmt.Sprintf("Gave +1 %s to **%s**", conf.PointsName, who.Mention())
-	common.BotSession.ChannelMessageSend(msg.ChannelID, content)
+	_, _ = common.BotSession.ChannelMessageSend(msg.ChannelID, content)
 }
 
 var cmds = []*commands.YAGCommand{
@@ -409,8 +409,6 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 
 	newScore, newRank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)
 	if err != nil {
-		newScore = -1
-		newRank = -1
 		return nil, err
 	}
 

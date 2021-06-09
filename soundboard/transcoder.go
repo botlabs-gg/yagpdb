@@ -2,12 +2,6 @@ package soundboard
 
 import (
 	"context"
-	"github.com/jonas747/dca"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/jonas747/yagpdb/soundboard/models"
-	"goji.io/pat"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +10,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jonas747/dca"
+	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/backgroundworkers"
+	"github.com/jonas747/yagpdb/soundboard/models"
+	"goji.io/pat"
 )
 
 var (
@@ -127,7 +128,7 @@ func handleQueueItem(item string) error {
 
 		err = os.Remove(SoundFilePath(sound.ID, TranscodingStatusQueued))
 	} else {
-		os.Rename(SoundFilePath(sound.ID, TranscodingStatusQueued)+".dca", SoundFilePath(sound.ID, TranscodingStatusReady))
+		_ = os.Rename(SoundFilePath(sound.ID, TranscodingStatusQueued)+".dca", SoundFilePath(sound.ID, TranscodingStatusReady))
 	}
 	return err
 }
@@ -165,7 +166,7 @@ func (p *Plugin) bgworkerHandleGetSound(w http.ResponseWriter, r *http.Request) 
 	}
 
 	defer f.Close()
-	io.Copy(w, f)
+	_, _ = io.Copy(w, f)
 }
 
 func getSoundFromBGWorker(soundID int) (rc io.ReadCloser, err error) {

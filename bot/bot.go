@@ -90,11 +90,15 @@ func Run(nodeID string) {
 		NodeConn = node.NewNodeConn(&NodeImpl{}, orcheStratorAddress, common.VERSION, nodeID, nil)
 		NodeConn.Run()
 	} else {
-		ShardManager.Init()
+		_ = ShardManager.Init()
 		if usingFixedSharding {
-			go ShardManager.Session(fixedShardingID).Open()
+			go func() {
+				_ = ShardManager.Session(fixedShardingID).Open()
+			}()
 		} else {
-			go ShardManager.Start()
+			go func() {
+				_ = ShardManager.Start()
+			}()
 		}
 		botReady()
 	}
@@ -234,7 +238,7 @@ func StopAllPlugins(wg *sync.WaitGroup) {
 
 func Stop(wg *sync.WaitGroup) {
 	StopAllPlugins(wg)
-	ShardManager.StopAll()
+	_ = ShardManager.StopAll()
 	wg.Done()
 }
 

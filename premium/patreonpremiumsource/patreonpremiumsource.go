@@ -72,13 +72,13 @@ func UpdatePremiumSlots(ctx context.Context) error {
 
 	slots, err := models.PremiumSlots(qm.Where("source='patreon'"), qm.OrderBy("id desc")).All(ctx, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.WithMessage(err, "PremiumSlots")
 	}
 
 	patrons := patreon.ActivePoller.GetPatrons()
 	if len(patrons) == 0 {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil
 	}
 
@@ -110,7 +110,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				title := fmt.Sprintf("Patreon Slot #%d", i+len(userSlots))
 				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
-					tx.Rollback()
+					_ = tx.Rollback()
 					return errors.WithMessage(err, "CreatePremiumSlot")
 				}
 
@@ -128,7 +128,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 
 			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
 			if err != nil {
-				tx.Rollback()
+				_ = tx.Rollback()
 				return errors.WithMessage(err, "RemovePremiumSlots")
 			}
 		}
@@ -141,7 +141,7 @@ OUTER:
 			continue
 		}
 
-		for userID, _ := range sorted {
+		for userID := range sorted {
 			if userID == v.DiscordID {
 				continue OUTER
 			}
@@ -153,7 +153,7 @@ OUTER:
 			title := fmt.Sprintf("Patreon Slot #%d", i+1)
 			slot, err := premium.CreatePremiumSlot(ctx, tx, v.DiscordID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+1), -1, premium.PremiumTierPremium)
 			if err != nil {
-				tx.Rollback()
+				_ = tx.Rollback()
 				return errors.WithMessage(err, "new CreatePremiumSlot")
 			}
 

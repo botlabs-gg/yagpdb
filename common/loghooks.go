@@ -152,10 +152,11 @@ var numberRemover = strings.NewReplacer(
 	"9", "")
 
 var (
-	metricsNumRequestsPath = promauto.NewCounterVec(prometheus.CounterOpts{
+	// Unused
+	/* 	metricsNumRequestsPath = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "yagpdb_discord_http_requests_path_total",
 		Help: "Number of http requests to the discord API",
-	}, []string{"path"})
+	}, []string{"path"}) */
 
 	metrics429Path = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "yagpdb_discord_http_429_path_total",

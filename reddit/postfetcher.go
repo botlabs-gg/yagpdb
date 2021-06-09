@@ -97,7 +97,7 @@ func (p *PostFetcher) Run() {
 
 func (p *PostFetcher) initCursor() (int64, error) {
 	var storedID int64
-	common.RedisPool.Do(radix.Cmd(&storedID, "GET", p.LastScannedPostIDKey))
+	_ = common.RedisPool.Do(radix.Cmd(&storedID, "GET", p.LastScannedPostIDKey))
 	if storedID != 0 {
 		p.log.Info("reddit feed continuing from ", storedID)
 		return storedID, nil
@@ -177,7 +177,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 
 	if highestID != -1 {
 		p.LastID = highestID
-		common.RedisPool.Do(radix.FlatCmd(nil, "SET", p.LastScannedPostIDKey, highestID))
+		_ = common.RedisPool.Do(radix.FlatCmd(nil, "SET", p.LastScannedPostIDKey, highestID))
 	}
 
 	if !p.hasCaughtUp {

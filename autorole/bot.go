@@ -97,7 +97,7 @@ func saveGeneral(guildID int64, config *GeneralConfig) {
 	if err != nil {
 		logger.WithError(err).Error("Failed saving autorole config")
 	} else {
-		pubsub.Publish("autorole_stop_processing", guildID, nil)
+		_ = pubsub.Publish("autorole_stop_processing", guildID, nil)
 	}
 }
 
@@ -311,7 +311,7 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 	}
 
 	parsedT, _ := member.Member.JoinedAt.Parse()
-	memberDuration := time.Now().Sub(parsedT)
+	memberDuration := time.Since(parsedT)
 	if memberDuration < time.Duration(config.RequiredDuration)*time.Minute {
 		// settings may have been changed, re-schedule
 

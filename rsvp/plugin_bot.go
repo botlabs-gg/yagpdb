@@ -170,7 +170,7 @@ func (p *Plugin) AddCommands() {
 				}
 			}
 
-			UpdateEventEmbed(m)
+			_ = UpdateEventEmbed(m)
 
 			return fmt.Sprintf("Updated #%d to '%s' - with max %d participants, starting at: %s", m.LocalID, m.Title, m.MaxParticipants, m.StartsAt.Format("02 Jan 2006 15:04 MST")), nil
 		},
@@ -195,7 +195,7 @@ func (p *Plugin) AddCommands() {
 
 			var output strings.Builder
 			for _, v := range events {
-				timeUntil := v.StartsAt.Sub(time.Now())
+				timeUntil := time.Until(v.StartsAt)
 				humanized := common.HumanizeDuration(common.DurationPrecisionMinutes, timeUntil)
 
 				output.WriteString(fmt.Sprintf("#%2d: **%s** in `%s` https://ptb.discordapp.com/channels/%d/%d/%d\n",
@@ -326,7 +326,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		},
 	}
 
-	timeUntil := m.StartsAt.Sub(time.Now())
+	timeUntil := time.Until(m.StartsAt)
 	timeUntilStr := common.HumanizeDuration(common.DurationPrecisionMinutes, timeUntil)
 	if timeUntil > 0 {
 		timeUntilStr = "Starts in `" + timeUntilStr + "`"
@@ -501,7 +501,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 }
 
 func NextUpdateTime(m *models.RSVPSession) time.Time {
-	timeUntil := m.StartsAt.Sub(time.Now())
+	timeUntil := time.Until(m.StartsAt)
 
 	if timeUntil < time.Second*15 {
 		return time.Now().Add(time.Second * 1)
@@ -526,17 +526,17 @@ func (p *Plugin) handleScheduledUpdate(evt *eventModels.ScheduledEvent, data int
 	if err != nil {
 		code, _ := common.DiscordError(err)
 		if code == discordgo.ErrCodeUnknownMessage || code == discordgo.ErrCodeUnknownChannel {
-			m.DeleteG(context.Background())
+			_, _ = m.DeleteG(context.Background())
 			return false, nil
 		}
 
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	if m.StartsAt.Sub(time.Now()) < 1 {
-		p.startEvent(m)
+	if time.Until(m.StartsAt) < 1 {
+		_ = p.startEvent(m)
 		return false, nil
-	} else if m.StartsAt.Sub(time.Now()) < time.Minute*30 && !m.SentReminders && m.SendReminders {
+	} else if time.Until(m.StartsAt) < time.Minute*30 && !m.SentReminders && m.SendReminders {
 		m.SentReminders = true
 		_, err := m.UpdateG(context.Background(), boil.Whitelist("sent_reminders"))
 		if err != nil {
@@ -563,7 +563,7 @@ func (p *Plugin) startEvent(m *models.RSVPSession) error {
 
 	p.sendReminders(m, "Event starting now!", "The event you signed up for: **"+m.Title+"** is starting now!")
 
-	common.BotSession.MessageReactionsRemoveAll(m.ChannelID, m.MessageID)
+	_ = common.BotSession.MessageReactionsRemoveAll(m.ChannelID, m.MessageID)
 	_, err := m.DeleteG(context.Background())
 	return err
 }

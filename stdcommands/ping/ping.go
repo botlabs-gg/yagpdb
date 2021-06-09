@@ -49,8 +49,8 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	taken := time.Duration(time.Now().UnixNano() - parsed)
 
 	started := time.Now()
-	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Gateway (http send -> gateway receive time): "+taken.String())
+	_, _ = common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "Gateway (http send -> gateway receive time): "+taken.String())
 	httpPing := time.Since(started)
 
-	common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGateway: "+taken.String())
+	_, _ = common.BotSession.ChannelMessageEdit(m.ChannelID, m.ID, "HTTP API (Edit Msg): "+httpPing.String()+"\nGateway: "+taken.String())
 }

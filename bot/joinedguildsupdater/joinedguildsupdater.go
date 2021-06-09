@@ -156,7 +156,7 @@ func (u *updater) flush() {
 
 		if err != nil {
 			leftOver = u.processing
-			tx.Rollback()
+			_ = tx.Rollback()
 			logger.WithError(err).Error("failed updating joined guild, rollbacking...")
 			return
 		}
@@ -166,7 +166,7 @@ func (u *updater) flush() {
 	if err != nil {
 		logger.WithError(err).Error("failed comitting updating joined guild results")
 		leftOver = u.processing
-		tx.Rollback()
+		_ = tx.Rollback()
 		return
 	}
 }

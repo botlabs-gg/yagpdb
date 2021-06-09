@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	fmap  = make(map[string]interface{})
+	// Unused
+	// fmap  = make(map[string]interface{})
 	posts = make([]*Post, 0)
 )
 

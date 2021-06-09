@@ -21,8 +21,6 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common/cacheset"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
 	boilv4 "github.com/volatiletech/sqlboiler/v4/boil"
@@ -196,7 +194,8 @@ func InitTest() {
 	}
 }
 
-var (
+// Unused
+/* var (
 	metricsRedisReconnects = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "yagpdb_redis_reconnects_total",
 		Help: "Number of reconnects to the redis server",
@@ -205,7 +204,7 @@ var (
 		Name: "yagpdb_redis_retries_total",
 		Help: "Number of retries on redis commands",
 	})
-)
+) */
 
 func connectRedis(unitTests bool) (err error) {
 	maxConns := RedisPoolSize

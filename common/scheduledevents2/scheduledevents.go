@@ -288,7 +288,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 	}
 
 	// check if this event was changed after it was flushed
-	untilExec := item.TriggersAt.Sub(time.Now())
+	untilExec := time.Until(item.TriggersAt)
 	if untilExec > 5*time.Second {
 		// it was changed, re-flush it, or remove it
 		err = UpdateFlushedEvent(time.Now(), common.RedisPool, item)
@@ -357,7 +357,8 @@ func (se *ScheduledEvents) markDoneFast(id, guildID int64) {
 	}
 }
 
-func (se *ScheduledEvents) markDone(item *models.ScheduledEvent, runErr error) {
+// Unused
+/* func (se *ScheduledEvents) markDone(item *models.ScheduledEvent, runErr error) {
 	defer func() {
 		se.currentlyProcessingMU.Lock()
 		delete(se.currentlyProcessing, item.ID)
@@ -378,7 +379,7 @@ func (se *ScheduledEvents) markDone(item *models.ScheduledEvent, runErr error) {
 	if err != nil {
 		logger.WithError(err).Error("failed marking item as done in redis")
 	}
-}
+} */
 
 func (se *ScheduledEvents) markDoneID(id int64, guildID int64, runErr error) {
 	// item.Processed = true

@@ -80,14 +80,12 @@ func GenCommandsDocs() {
 	}
 
 	os.Stdout.Write(out.Bytes())
-
-	return
 }
 
 func GenConfigDocs() {
 
 	keys := make([]string, 0, len(config.Singleton.Options))
-	for k, _ := range config.Singleton.Options {
+	for k := range config.Singleton.Options {
 		keys = append(keys, k)
 	}
 

@@ -50,14 +50,14 @@ func RedeemCode(ctx context.Context, code string, userID int64) error {
 	// Query for the code model
 	c, err := models.PremiumCodes(qm.Where("code = ? AND user_id IS NULL", code), qm.For("UPDATE")).One(ctx, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.WithMessage(err, "models.PremiumCodes")
 	}
 
 	// model found, with no user attached, create the slot for it
 	slot, err := CreatePremiumSlot(ctx, tx, userID, "code", "Redeemed code", c.Message, c.ID, time.Duration(c.Duration), PremiumTierPremium)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.WithMessage(err, "CreatePremiumSlot")
 	}
 
@@ -68,7 +68,7 @@ func RedeemCode(ctx context.Context, code string, userID int64) error {
 
 	_, err = c.Update(ctx, tx, boil.Infer())
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.WithMessage(err, "Update")
 	}
 
@@ -190,7 +190,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 
 		dm += "```"
 
-		bot.SendDM(data.Author.ID, dm)
+		_ = bot.SendDM(data.Author.ID, dm)
 		return "Check yer dms", nil
 	}),
 }

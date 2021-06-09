@@ -135,7 +135,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 
 		err = messageModel.Upsert(ctx, tx, true, []string{"id"}, boil.Blacklist("deleted"), boil.Infer())
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return nil, errors.WrapIf(err, "message.insert")
 		}
 
@@ -144,7 +144,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 
 	id, err := common.GenLocalIncrID(guildID, "message_logs")
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, errors.WrapIf(err, "log.gen_id")
 	}
 
@@ -162,7 +162,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 
 	err = log.Insert(ctx, tx, boil.Infer())
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, errors.WrapIf(err, "log.insert")
 	}
 

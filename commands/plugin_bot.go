@@ -192,7 +192,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 			if resp.Type == ReasonCooldown && data.TriggerType != dcmd.TriggerTypeSlashCommands && data.GuildData != nil {
 				if hasPerms, _ := bot.BotHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions); hasPerms {
-					common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
+					_ = common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
 					return nil, nil
 				}
 			}
@@ -307,7 +307,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		}
 	}
 
-	CommandSystem.CheckMessageWtihPrefetchedPrefix(common.BotSession, evt.MessageCreate(), prefix)
+	_ = CommandSystem.CheckMessageWtihPrefetchedPrefix(common.BotSession, evt.MessageCreate(), prefix)
 	// CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
 }
 
@@ -394,7 +394,8 @@ var cmdPrefix = &YAGCommand{
 	},
 }
 
-func clearGlobalCommands() error {
+// Unused
+/* func clearGlobalCommands() error {
 	commands, err := common.BotSession.GetGlobalApplicationCommands(common.BotApplication.ID)
 	if err != nil {
 		return err
@@ -411,4 +412,4 @@ func clearGlobalCommands() error {
 
 	logger.Info("DONE")
 	return nil
-}
+} */

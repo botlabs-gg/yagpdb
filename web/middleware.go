@@ -38,7 +38,7 @@ var (
 func MiscMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		if !IsAcceptingRequests() {
-			w.Write([]byte(`{"error":"Shutting down, try again in a minute"}`))
+			_, _ = w.Write([]byte(`{"error":"Shutting down, try again in a minute"}`))
 			return
 		}
 
@@ -460,7 +460,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 					return
 				}
 
-				w.Write(encoded)
+				_, _ = w.Write(encoded)
 			}
 		}
 	}
@@ -519,7 +519,7 @@ func RequestLogger(logger io.Writer) func(http.Handler) http.Handler {
 				// date-format %d/%b/%Y
 				// time-format %H:%M:%S
 
-				logger.Write([]byte(out))
+				_, _ = logger.Write([]byte(out))
 			}()
 
 			inner.ServeHTTP(counter, r)
@@ -556,7 +556,7 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 		decoder.IgnoreUnknownKeys(true)
 		err = decoder.Decode(decoded, r.Form)
 
-		ok := true
+		var ok bool
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed decoding form")
 			tmpl.AddAlerts(ErrorAlert("Failed parsing form"))

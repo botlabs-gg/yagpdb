@@ -8,7 +8,6 @@ import (
 	"net/http/pprof"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"emperror.dev/errors"
@@ -36,8 +35,8 @@ type InternalAPIPlugin interface {
 }
 
 type Plugin struct {
-	srv   *http.Server
-	srvMU sync.Mutex
+	srv *http.Server
+	// srvMU sync.Mutex
 }
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
@@ -160,7 +159,7 @@ func ServerError(w http.ResponseWriter, r *http.Request, err error) bool {
 	encodedErr, _ := json.Marshal(err.Error())
 
 	w.WriteHeader(http.StatusInternalServerError)
-	w.Write(encodedErr)
+	_, _ = w.Write(encodedErr)
 	return true
 }
 

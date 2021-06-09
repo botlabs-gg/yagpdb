@@ -179,7 +179,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		if tooBig {
 			tmpl.AddAlerts(web.ErrorAlert("Max 10MB files allowed"))
 		}
-		dbModel.DeleteG(ctx)
+		_, _ = dbModel.DeleteG(ctx)
 		return tmpl, err
 	}
 

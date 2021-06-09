@@ -327,7 +327,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 		out += "`" + err.Error() + "`"
 	}
 
-	c.SendResponse(out)
+	_, _ = c.SendResponse(out)
 
 	return nil
 }
@@ -375,7 +375,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 	}
 
 	for _, v := range c.CurrentFrame.EmebdsToSend {
-		common.BotSession.ChannelMessageSendEmbed(channelID, v)
+		_, _ = common.BotSession.ChannelMessageSendEmbed(channelID, v)
 	}
 
 	if strings.TrimSpace(content) == "" || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
@@ -394,7 +394,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		if len(c.CurrentFrame.AddResponseReactionNames) > 0 {
 			go func(frame *contextFrame) {
 				for _, v := range frame.AddResponseReactionNames {
-					common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
+					_ = common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
 				}
 			}(c.CurrentFrame)
 		}

@@ -30,7 +30,7 @@ const (
 type CreateForm struct {
 	Subreddit  string `schema:"subreddit" valid:",1,100"`
 	Slow       bool   `schema:"slow"`
-	Channel    int64  `schema:"channel" valid:"channel,false`
+	Channel    int64  `schema:"channel" valid:"channel,false"`
 	ID         int64  `schema:"id"`
 	UseEmbeds  bool   `schema:"use_embeds"`
 	NSFWMode   int    `schema:"nsfw_filter"`
@@ -38,7 +38,7 @@ type CreateForm struct {
 }
 
 type UpdateForm struct {
-	Channel    int64 `schema:"channel" valid:"channel,false`
+	Channel    int64 `schema:"channel" valid:"channel,false"`
 	ID         int64 `schema:"id"`
 	UseEmbeds  bool  `schema:"use_embeds"`
 	NSFWMode   int   `schema:"nsfw_filter"`
@@ -156,10 +156,12 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Subreddit))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: watchItem.Subreddit}))
-	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
-		Subreddit: strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
-		Slow:      newElem.Slow,
-	})
+	go func() {
+		_ = pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+			Subreddit: strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+			Slow:      newElem.Slow,
+		})
+	}()
 
 	return templateData
 }
@@ -198,10 +200,12 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
-	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
-		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
-		Slow:      item.Slow,
-	})
+	go func() {
+		_ = pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+			Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+			Slow:      item.Slow,
+		})
+	}()
 
 	return templateData
 }
@@ -242,10 +246,12 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData["RedditConfig"] = currentConfig
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
-	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
-		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
-		Slow:      item.Slow,
-	})
+	go func() {
+		_ = pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+			Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+			Slow:      item.Slow,
+		})
+	}()
 
 	return templateData
 }

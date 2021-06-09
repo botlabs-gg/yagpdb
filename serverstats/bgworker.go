@@ -99,7 +99,7 @@ func (c *Compressor) runLoopLegacy(p *Plugin) {
 			// run cleanup of temporary stats
 			logger.Info("Cleaning up server stats")
 			started := time.Now()
-			p.cleanupOldStats(time.Now().Add(time.Hour * -30))
+			_ = p.cleanupOldStats(time.Now().Add(time.Hour * -30))
 			logger.Infof("Took %s to ckean up stats", time.Since(started))
 		}
 	}
@@ -142,14 +142,15 @@ func (c *Compressor) updateCompress(t time.Time, legacy bool) (ran bool, next ti
 	return true, next, nil
 }
 
-func (p *Plugin) getLastTimeRanHourly() time.Time {
+// Unused
+/* func (p *Plugin) getLastTimeRanHourly() time.Time {
 	var last int64
 	err := common.RedisPool.Do(radix.Cmd(&last, "GET", RedisKeyLastHourlyRan))
 	if err != nil {
 		logger.WithError(err).Error("[serverstats] failed getting last hourly worker run time")
 	}
 	return time.Unix(last, 0)
-}
+} */
 
 func (c *Compressor) RunCompressionLegacy(t time.Time) error {
 	logger.Info("Compressing server stats...")
@@ -212,7 +213,7 @@ func compressGuildLegacy(t time.Time, guildID int64, activeMsgs bool, misc bool)
 	}
 
 	// commit results into the compressed stats table
-	const updateQ = `INSERT INTO server_stats_periods_compressed 
+	const updateQ = `INSERT INTO server_stats_periods_compressed
 	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
 	VALUES ($1, $2, $3,      $4,            $5,            $6,       $7,     $8,   $9)
 	ON CONFLICT (guild_id, t) DO UPDATE SET
@@ -236,7 +237,7 @@ func compressGuildLegacy(t time.Time, guildID int64, activeMsgs bool, misc bool)
 	for _, v := range result {
 		_, err = tx.Exec(updateQ, guildID, v.T, isPremium, v.NumMessages, v.TotalMembers, v.MaxOnline, v.Joins, v.Leaves, v.MaxVoice)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return errors.WithStackIf(err)
 		}
 	}
@@ -245,7 +246,7 @@ func compressGuildLegacy(t time.Time, guildID int64, activeMsgs bool, misc bool)
 	if activeMsgs {
 		_, err = tx.Exec("UPDATE server_stats_hourly_periods_messages SET compressed=true WHERE t < $1 AND guild_id = $2;", t, guildID)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return errors.WithStackIf(err)
 		}
 	}
@@ -253,7 +254,7 @@ func compressGuildLegacy(t time.Time, guildID int64, activeMsgs bool, misc bool)
 	if misc {
 		_, err = tx.Exec("UPDATE server_stats_hourly_periods_misc SET compressed=true WHERE t < $1 AND guild_id = $2;", t, guildID)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return errors.WithStackIf(err)
 		}
 	}
@@ -280,7 +281,7 @@ type CompressedStats struct {
 
 func compressGuildMessageStats(t time.Time, guildID int64, mergeWith []*CompressedStats) ([]*CompressedStats, error) {
 
-	const q = `SELECT t, count 
+	const q = `SELECT t, count
 	FROM server_stats_hourly_periods_messages
 	WHERE t < $1 AND guild_id = $2 AND compressed=false;
 	`
@@ -325,7 +326,7 @@ OUTER:
 
 func compressGuildMiscStats(t time.Time, guildID int64) ([]*CompressedStats, error) {
 
-	const q = `SELECT t, num_members, max_online, joins, leaves, max_voice 
+	const q = `SELECT t, num_members, max_online, joins, leaves, max_voice
 	FROM server_stats_hourly_periods_misc
 	WHERE t < $1 AND guild_id = $2 AND compressed=false;
 	`
@@ -563,7 +564,7 @@ func (c *Compressor) saveCollectedStats(year, day int, stats map[int64]*GuildSta
 		return err
 	}
 
-	const updateQ = `INSERT INTO server_stats_periods_compressed 
+	const updateQ = `INSERT INTO server_stats_periods_compressed
 	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
 	VALUES ($1, $2, $3,      $4,            $5,            $6,       $7,     $8,   $9)
 	ON CONFLICT (guild_id, t) DO UPDATE SET
@@ -579,7 +580,7 @@ func (c *Compressor) saveCollectedStats(year, day int, stats map[int64]*GuildSta
 
 		_, err = tx.Exec(updateQ, g, t, isPremium, s.Messages, s.TotalMembers, s.OnlineMembers, s.Joins, s.Leaves, 0)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return errors.WithStackIf(err)
 		}
 	}
@@ -587,13 +588,13 @@ func (c *Compressor) saveCollectedStats(year, day int, stats map[int64]*GuildSta
 	// mark this day as compressed
 	err = common.RedisPool.Do(radix.Cmd(nil, "SADD", keyCompressionCompressionRanDays, fmt.Sprintf("%d:%d", year, day)))
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.WithStackIf(err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 
 		// try to rollback marking this guild as compressed
 		err2 := common.RedisPool.Do(radix.Cmd(nil, "SREM", keyCompressionCompressionRanDays, fmt.Sprintf("%d:%d", year, day)))

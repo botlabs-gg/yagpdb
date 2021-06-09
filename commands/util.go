@@ -221,11 +221,7 @@ func (ma *MemberArg) Matches(def *dcmd.ArgDef, part string) bool {
 
 	// Check for ID
 	_, err := strconv.ParseInt(part, 10, 64)
-	if err == nil {
-		return true
-	}
-
-	return false
+	return err == nil
 }
 
 func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {

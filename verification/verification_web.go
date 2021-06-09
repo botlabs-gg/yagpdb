@@ -188,7 +188,7 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 		return templateData, nil
 	}
 
-	valid, err := p.checkCAPTCHAResponse(r.FormValue("g-recaptcha-response"))
+	valid, _ := p.checkCAPTCHAResponse(r.FormValue("g-recaptcha-response"))
 
 	token := pat.Param(r, "token")
 	userID, _ := strconv.ParseInt(pat.Param(r, "user_id"), 10, 64)
@@ -227,9 +227,9 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 			return templateData, err
 		}
 
-		scheduledevents2.ScheduleEvent("verification_user_verified", g.ID, time.Now(), userID)
+		_ = scheduledevents2.ScheduleEvent("verification_user_verified", g.ID, time.Now(), userID)
 		verSession.SolvedAt = null.TimeFrom(time.Now())
-		verSession.UpdateG(ctx, boil.Infer())
+		_, _ = verSession.UpdateG(ctx, boil.Infer())
 
 		go analytics.RecordActiveUnit(g.ID, p, "completed")
 

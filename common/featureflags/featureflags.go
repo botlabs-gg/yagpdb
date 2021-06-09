@@ -41,7 +41,7 @@ type flagCache struct {
 
 func initCaches() []*flagCache {
 	result := make([]*flagCache, 10)
-	for i, _ := range result {
+	for i := range result {
 		result[i] = &flagCache{
 			cache: make(map[int64][]string),
 		}
@@ -213,7 +213,9 @@ const evictCachePubSubEvent = "feature_flags_updated"
 
 // UpdateGuildFlags updates the provided guilds feature flags
 func UpdateGuildFlags(guildID int64) error {
-	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	defer func() {
+		_ = pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	}()
 
 	var lastErr error
 	for _, p := range common.Plugins {
@@ -233,7 +235,9 @@ func UpdateGuildFlags(guildID int64) error {
 // UpdatePluginFeatureFlags updates the feature flags of the provided plugin for the provided guild
 func UpdatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 	defer EvictCacheForGuild(guildID)
-	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	defer func() {
+		_ = pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	}()
 	return updatePluginFeatureFlags(guildID, p)
 }
 

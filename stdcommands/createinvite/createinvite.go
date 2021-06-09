@@ -49,7 +49,7 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		bot.SendDM(data.Author.ID, "discord.gg/"+invite.Code)
+		_ = bot.SendDM(data.Author.ID, "discord.gg/"+invite.Code)
 		return "Sent invite expiring in 120 seconds and with 1 use in DM", nil
 	}),
 }

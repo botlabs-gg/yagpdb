@@ -2,18 +2,14 @@ package commands
 
 import (
 	"bytes"
-	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"sync/atomic"
-	"time"
 
 	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands/models"
 	"github.com/jonas747/yagpdb/common"
@@ -257,7 +253,8 @@ func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result 
 	}
 }
 
-func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
+// Unused
+/* func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
 	// TODO: add queue?
 	waitForSlashCommandIDs()
 
@@ -270,9 +267,10 @@ func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		logger.WithError(err).Error("failed updating guild slash command permissions")
 	}
-}
+} */
 
-func (p *Plugin) handleDiscordEventUpdateSlashCommandPermissions(evt *eventsystem.EventData) {
+// Unused
+/* func (p *Plugin) handleDiscordEventUpdateSlashCommandPermissions(evt *eventsystem.EventData) {
 	if evt.GS == nil {
 		return
 	}
@@ -283,9 +281,10 @@ func (p *Plugin) handleDiscordEventUpdateSlashCommandPermissions(evt *eventsyste
 	if err != nil {
 		logger.WithError(err).Error("failed updating guild slash command permissions")
 	}
-}
+} */
 
-func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err error) {
+// Unused
+/* func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err error) {
 	commandSettings, err := GetAllOverrides(context.Background(), gs.ID)
 	if err != nil {
 		return false, err
@@ -354,7 +353,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 	fmt.Println(string(serialized))
 
 	return true, nil
-}
+} */
 
 func handleInteractionCreate(evt *eventsystem.EventData) {
 	interaction := evt.InteractionCreate()
@@ -380,7 +379,7 @@ func ContainerSlashCommandPermissions(container *slashCommandsContainer, overrid
 		return nil, err
 	}
 
-	childAllows, childDenies, childAllowAll, childDenyAll, err := sumContainerSlashCommandsChildren(container, overrides, gs)
+	childAllows, childDenies, childAllowAll, childDenyAll, _ := sumContainerSlashCommandsChildren(container, overrides, gs)
 
 	if allowAll {
 		allowAll = childAllowAll
@@ -488,17 +487,17 @@ func toApplicationCommandPermissions(gs *dstate.GuildSet, defaultEnabeld bool, a
 				Permission: false,
 			})
 		}
-	} else {
-		// we cannot do this atm because of the max 10 limit of permission overwrites on commands, so keep it simple
+	} // else {
+	// we cannot do this atm because of the max 10 limit of permission overwrites on commands, so keep it simple
 
-		// for _, v := range denyRoles {
-		// 	result = append(result, &discordgo.ApplicationCommandPermissions{
-		// 		ID:         v,
-		// 		Kind:       discordgo.CommandPermissionTypeRole,
-		// 		Permission: false,
-		// 	})
-		// }
-	}
+	// for _, v := range denyRoles {
+	// 	result = append(result, &discordgo.ApplicationCommandPermissions{
+	// 		ID:         v,
+	// 		Kind:       discordgo.CommandPermissionTypeRole,
+	// 		Permission: false,
+	// 	})
+	// }
+	// }
 
 	return result
 }
@@ -753,7 +752,8 @@ func slashCommandPermissionsFromRolesFunc(rf RolesRunFunc, gs *dstate.GuildSet, 
 	}
 }
 
-func (p *Plugin) handleUpdateSlashCommandsPermissions(event *pubsub.Event) {
+// Unused
+/* func (p *Plugin) handleUpdateSlashCommandsPermissions(event *pubsub.Event) {
 	gs := bot.State.GetGuild(event.TargetGuildInt)
 	if gs == nil {
 		return
@@ -765,16 +765,17 @@ func (p *Plugin) handleUpdateSlashCommandsPermissions(event *pubsub.Event) {
 	if err != nil {
 		logger.WithError(err).Error("failed updating slash command permissions")
 	}
-}
+} */
 
-func waitForSlashCommandIDs() {
+// Unused
+/* func waitForSlashCommandIDs() {
 	for {
 		if atomic.LoadInt32(slashCommandsIdsSet) == 1 {
 			break
 		}
 		time.Sleep(time.Second)
 	}
-}
+} */
 
 func PubsubSendUpdateSlashCommandsPermissions(gID int64) {
 	err := pubsub.Publish("update_slash_command_permissions", gID, nil)

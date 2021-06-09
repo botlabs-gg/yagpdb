@@ -76,7 +76,7 @@ func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 		return
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire))
+	_ = common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire))
 
 	mute := r.MuteAfter > 0 && violations >= r.MuteAfter
 	kick := r.KickAfter > 0 && violations >= r.KickAfter

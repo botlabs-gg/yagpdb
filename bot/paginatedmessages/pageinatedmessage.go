@@ -255,7 +255,7 @@ OUTER:
 		}
 
 		// remove the reactions
-		common.BotSession.MessageReactionsRemoveAll(p.ChannelID, p.MessageID)
+		_ = common.BotSession.MessageReactionsRemoveAll(p.ChannelID, p.MessageID)
 
 		// remove it
 		menusLock.Lock()

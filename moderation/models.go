@@ -24,11 +24,11 @@ type Config struct {
 	KickMessage          string `valid:"template,5000"`
 
 	// Ban
-	BanEnabled        	bool
-	BanCmdRoles       	pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	BanReasonOptional 	bool
-	BanMessage        	string `valid:"template,5000"`
-	DefaultBanDeleteDays    sql.NullInt64 `gorm:"default:1" valid:"0,7"`
+	BanEnabled           bool
+	BanCmdRoles          pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	BanReasonOptional    bool
+	BanMessage           string        `valid:"template,5000"`
+	DefaultBanDeleteDays sql.NullInt64 `gorm:"default:1" valid:"0,7"`
 
 	// Mute/unmute
 	MuteEnabled             bool
@@ -98,7 +98,7 @@ func (c *Config) Save(guildID int64) error {
 		return err
 	}
 
-	pubsub.Publish("mod_refresh_mute_override", guildID, nil)
+	_ = pubsub.Publish("mod_refresh_mute_override", guildID, nil)
 	return err
 }
 

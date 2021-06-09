@@ -86,7 +86,7 @@ func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogActi
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownChannel) {
 			// disable the modlog
 			config.ActionChannel = ""
-			config.Save(config.GetGuildID())
+			_ = config.Save(config.GetGuildID())
 			return nil
 		}
 		return err

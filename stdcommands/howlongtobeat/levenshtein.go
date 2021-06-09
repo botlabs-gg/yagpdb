@@ -40,7 +40,6 @@ func levenshtein(str1, str2 []rune) (int, float64) {
 	}
 
 	levdistance := distance[str1len]
-	var similarity float64
-	similarity = (float64(str2len) - float64(levdistance)) / float64(str2len)
+	similarity := (float64(str2len) - float64(levdistance)) / float64(str2len)
 	return levdistance, similarity
 }

@@ -213,7 +213,9 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			newCtx.Data["ExecData"] = data
 			newCtx.Data["StackDepth"] = currentStackDepth + 1
 
-			go ExecuteCustomCommand(cmd, newCtx)
+			go func() {
+				_ = ExecuteCustomCommand(cmd, newCtx)
+			}()
 			return "", nil
 		}
 

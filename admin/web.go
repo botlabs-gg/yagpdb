@@ -123,18 +123,18 @@ func (p *Plugin) ProxyGetInternalAPI(path string) http.Handler {
 		sh, err := findServicehost(r)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error querying service hosts: " + err.Error()))
+			_, _ = w.Write([]byte("Error querying service hosts: " + err.Error()))
 			return
 		}
 
 		resp, err := http.Get("http://" + sh.InternalAPIAddress + path + debugStr)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error querying internal api: " + err.Error()))
+			_, _ = w.Write([]byte("Error querying internal api: " + err.Error()))
 			return
 		}
 
-		io.Copy(w, resp.Body)
+		_, _ = io.Copy(w, resp.Body)
 	})
 }
 
@@ -202,18 +202,18 @@ func (p *Plugin) handleLaunchNodeVersion(w http.ResponseWriter, r *http.Request)
 	client, err := createOrhcestatorRESTClient(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error querying service hosts: " + err.Error()))
+		_, _ = w.Write([]byte("Error querying service hosts: " + err.Error()))
 		return
 	}
 
 	ver, err := client.GetDeployedVersion()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error getting deployed version: " + err.Error()))
+		_, _ = w.Write([]byte("Error getting deployed version: " + err.Error()))
 		return
 	}
 
-	w.Write([]byte(ver))
+	_, _ = w.Write([]byte(ver))
 }
 
 func createOrhcestatorRESTClient(r *http.Request) (*rest.Client, error) {
@@ -305,23 +305,24 @@ func (p *Plugin) handleEditConfig(w http.ResponseWriter, r *http.Request) (web.T
 	return tmpl, nil
 }
 
-func (p *Plugin) handleGetShardSessions(w http.ResponseWriter, r *http.Request) {
+// Unused
+/* func (p *Plugin) handleGetShardSessions(w http.ResponseWriter, r *http.Request) {
 	client, err := createOrhcestatorRESTClient(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error querying service hosts: " + err.Error()))
+		_, _ = w.Write([]byte("Error querying service hosts: " + err.Error()))
 		return
 	}
 
 	ver, err := client.GetDeployedVersion()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error getting deployed version: " + err.Error()))
+		_, _ = w.Write([]byte("Error getting deployed version: " + err.Error()))
 		return
 	}
 
-	w.Write([]byte(ver))
-}
+	_, _ = w.Write([]byte(ver))
+} */
 
 func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
 
@@ -331,7 +332,7 @@ func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	sh, err := findServicehost(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error querying service hosts: " + err.Error()))
+		_, _ = w.Write([]byte("Error querying service hosts: " + err.Error()))
 		return
 	}
 
@@ -343,11 +344,11 @@ func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Post(fmt.Sprintf("http://%s/shard/%s/reconnect%s", sh.InternalAPIAddress, shardID, queryParams), "", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error querying internal api: " + err.Error()))
+		_, _ = w.Write([]byte("Error querying internal api: " + err.Error()))
 		return
 	}
 
-	io.Copy(w, resp.Body)
+	_, _ = io.Copy(w, resp.Body)
 }
 
 func (p *Plugin) handleReconnectAll(w http.ResponseWriter, r *http.Request) {
@@ -355,7 +356,7 @@ func (p *Plugin) handleReconnectAll(w http.ResponseWriter, r *http.Request) {
 	totalShards, err := common.ServicePoller.GetShardCount()
 	if err != nil {
 		logger.WithError(err).Error("failed getting total shard count")
-		w.Write([]byte("failed"))
+		_, _ = w.Write([]byte("failed"))
 		return
 	}
 

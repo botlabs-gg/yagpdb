@@ -267,21 +267,21 @@ func (s *SetupSession) Finish() {
 	// set up the proper message
 	err = UpdateEventEmbed(m)
 	if err != nil {
-		m.DeleteG(context.Background())
+		_, _ = m.DeleteG(context.Background())
 		s.abortError("failed updating the embed", err)
 		return
 	}
 
 	err = AddReactions(m.ChannelID, m.MessageID, m.MaxParticipants > 0)
 	if err != nil {
-		m.DeleteG(context.Background())
+		_, _ = m.DeleteG(context.Background())
 		s.abortError("failed adding reactions", err)
 		return
 	}
 
 	err = scheduledevents2.ScheduleEvent("rsvp_update_session", m.GuildID, NextUpdateTime(m), m.MessageID)
 	if err != nil {
-		m.DeleteG(context.Background())
+		_, _ = m.DeleteG(context.Background())
 		s.abortError("failed scheduling update", err)
 		return
 	}
@@ -294,10 +294,10 @@ func (s *SetupSession) Finish() {
 		toDelete = toDelete[len(toDelete)-100:]
 	}
 
-	common.BotSession.ChannelMessagesBulkDelete(s.SetupChannel, toDelete)
+	_ = common.BotSession.ChannelMessagesBulkDelete(s.SetupChannel, toDelete)
 	if s.followupMessageID != 0 {
-		common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, s.interactionToken)
-		common.BotSession.DeleteFollowupMessage(common.BotApplication.ID, s.interactionToken, s.followupMessageID)
+		_ = common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, s.interactionToken)
+		_ = common.BotSession.DeleteFollowupMessage(common.BotApplication.ID, s.interactionToken, s.followupMessageID)
 	}
 }
 

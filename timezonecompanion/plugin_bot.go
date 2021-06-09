@@ -109,7 +109,7 @@ func (p *Plugin) AddCommands() {
 				// Check whether the requested zone has an exact match in zones
 				found := false
 				for n, candidate := range zones {
-					if strings.ToLower(candidate) == strings.ToLower(parsed.Args[0].Str()) {
+					if strings.EqualFold(candidate, parsed.Args[0].Str()) {
 						found = true
 						// Select matching zone
 						zone = zones[n]
@@ -154,7 +154,7 @@ func (p *Plugin) AddCommands() {
 		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, toggle all channels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
+			{Name: "flags", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			allStr := parsed.Args[0].Str()
@@ -362,7 +362,7 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	common.BotSession.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+	_, _ = common.BotSession.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 		Timestamp: result.Time.Format(time.RFC3339),
 		Footer: &discordgo.MessageEmbedFooter{
 			Text: "Above time (" + result.Time.Format("15:04 MST") + ") in your local time",

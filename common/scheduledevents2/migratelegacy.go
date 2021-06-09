@@ -67,7 +67,7 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 		}
 
 		// remove it
-		common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events", fullEvent))
+		_ = common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events", fullEvent))
 		logrus.Info("[scheduledevents2] successfully migrated ", fullEvent)
 		numSuccess++
 	}

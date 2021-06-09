@@ -49,7 +49,7 @@ func (p *Plugin) handleInvalidateMemberCache(evt *eventsystem.EventData) (retry 
 }
 
 func pubEvictCache(keys ...string) {
-	pubsub.Publish("web_discorddata_evict", -1, EvictData{
+	_ = pubsub.Publish("web_discorddata_evict", -1, EvictData{
 		Keys: keys,
 	})
 }

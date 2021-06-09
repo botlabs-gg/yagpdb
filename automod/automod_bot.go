@@ -474,7 +474,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 		err = v.Insert(context.Background(), tx, boil.Infer())
 		if err != nil {
 			logger.WithError(err).Error("failed inserting logged triggered rule")
-			tx.Rollback()
+			_ = tx.Rollback()
 			return
 		}
 	}

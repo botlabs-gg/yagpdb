@@ -107,6 +107,6 @@ func writeLogs(prefix string, r *ring.Ring) {
 		fmt.Println("Failed writing panic logs: ", err)
 	} else {
 		defer f.Close()
-		f.Write(compiled)
+		_, _ = f.Write(compiled)
 	}
 }

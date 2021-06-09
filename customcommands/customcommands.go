@@ -227,22 +227,11 @@ func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
 	// check command specifc restrictions
 	for _, v := range cc.Channels {
 		if v == channel {
-			if cc.ChannelsWhitelistMode {
-				return true
-			}
-
-			// Ignore the channel
-			return false
+			return cc.ChannelsWhitelistMode
 		}
 	}
 
-	// Not found
-	if cc.ChannelsWhitelistMode {
-		return false
-	}
-
-	// Not in ignore list
-	return true
+	return !cc.ChannelsWhitelistMode
 }
 
 func CmdRunsForUser(cc *models.CustomCommand, ms *dstate.MemberState) bool {
@@ -260,29 +249,17 @@ func CmdRunsForUser(cc *models.CustomCommand, ms *dstate.MemberState) bool {
 	// check command specific restrictions
 	if len(cc.Roles) == 0 {
 		// Fast path
-		if cc.RolesWhitelistMode {
-			return false
-		}
-
-		return true
+		return !cc.RolesWhitelistMode
 	}
 
 	for _, v := range cc.Roles {
 		if common.ContainsInt64Slice(ms.Member.Roles, v) {
-			if cc.RolesWhitelistMode {
-				return true
-			}
-
-			return false
+			return cc.RolesWhitelistMode
 		}
 	}
 
 	// Not found
-	if cc.RolesWhitelistMode {
-		return false
-	}
-
-	return true
+	return !cc.RolesWhitelistMode
 }
 
 // Migrate modifies a CustomCommand to remove legacy fields.

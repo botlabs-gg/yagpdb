@@ -3,12 +3,13 @@ package safebrowsing
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/google/safebrowsing"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net/http"
 )
 
 var SafeBrowser *safebrowsing.SafeBrowser
@@ -44,7 +45,7 @@ func Shutdown() {
 }
 
 func returnNoMatches(w http.ResponseWriter) {
-	w.Write([]byte("[]"))
+	_, _ = w.Write([]byte("[]"))
 }
 
 func handleCheckMessage(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +75,7 @@ func handleCheckMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(marshalled)
+	_, _ = w.Write(marshalled)
 }
 
 func serverPerformLookup(input string) (threats [][]safebrowsing.URLThreat, err error) {

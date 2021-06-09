@@ -297,9 +297,15 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 			web.CtxLogger(ctx).WithError(err).Error("failed retrieving full model")
 		} else {
 			err = UpdateCommandNextRunTime(fullModel, true, true)
+			if err != nil {
+				web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("failed updating next custom command run time")
+			}
 		}
 	} else {
 		err = DelNextRunEvent(activeGuild.ID, dbModel.LocalID)
+		if err != nil {
+			web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("failed deleting next run event (customcommands/web.go #L 304)")
+		}
 	}
 
 	if err != nil {
@@ -390,7 +396,9 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		return templateData, nil
 	}
 
-	go pubsub.Publish("custom_commands_run_now", activeGuild.ID, cmd)
+	go func() {
+		_ = pubsub.Publish("custom_commands_run_now", activeGuild.ID, cmd)
+	}()
 
 	return templateData, nil
 }

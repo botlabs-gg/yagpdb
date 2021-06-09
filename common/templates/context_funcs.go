@@ -621,7 +621,7 @@ func (c *Context) giveRole(targetID int64, roleID int64) string {
 	}
 
 	if !common.ContainsInt64Slice(ms.Member.Roles, roleID) {
-		common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, roleID)
+		_ = common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, roleID)
 	}
 
 	return ""
@@ -688,9 +688,9 @@ func (c *Context) takeRole(targetID int64, roleID int64, delay time.Duration) st
 	}
 
 	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, roleID, time.Now().Add(delay))
+		_ = scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, roleID, time.Now().Add(delay))
 	} else {
-		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, roleID)
+		_ = common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, roleID)
 	}
 
 	return ""
@@ -811,9 +811,9 @@ func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}
 	}
 
 	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
+		_ = scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
-		common.RemoveRoleDS(c.MS, rid)
+		_ = common.RemoveRoleDS(c.MS, rid)
 	}
 
 	return "", nil
@@ -839,7 +839,7 @@ func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (
 	}
 
 	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, role.ID, time.Now().Add(time.Second*time.Duration(delay)))
+		_ = scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, role.ID, time.Now().Add(time.Second*time.Duration(delay)))
 	} else {
 		if err := common.RemoveRoleDS(c.MS, role.ID); err != nil {
 			return "", err
@@ -977,7 +977,7 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 		if c.IncreaseCheckGenericAPICall() {
 			return reflect.Value{}, ErrTooManyAPICalls
 		}
-		common.BotSession.MessageReactionsRemoveAll(cID, mID)
+		_ = common.BotSession.MessageReactionsRemoveAll(cID, mID)
 		return reflect.ValueOf(""), nil
 	}
 

@@ -136,7 +136,7 @@ func (c *CommonRoleSettings) CanRole(ctx context.Context, ms *dstate.MemberState
 
 	// First check cooldown
 	if c.ParentGroupMode == GroupModeSingle {
-		err = cooldownsDB.Update(func(tx *buntdb.Tx) error {
+		_ = cooldownsDB.Update(func(tx *buntdb.Tx) error {
 			_, replaced, _ := tx.Set(discordgo.StrID(ms.User.ID), "1", &buntdb.SetOptions{Expires: true, TTL: time.Second * 1})
 			if replaced {
 				onCD = true
@@ -300,7 +300,7 @@ func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.Mem
 	for _, v := range commands {
 		if common.ContainsInt64Slice(ms.Member.Roles, v.RoleId) {
 			if c.ModeSettings().SingleAutoToggleOff {
-				common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, v.RoleId)
+				_ = common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, v.RoleId)
 			} else {
 				return false, NewCommonRoleError("Max 1 role in **%s** is allowed", c)
 			}

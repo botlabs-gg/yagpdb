@@ -20,9 +20,11 @@ type PlayRequest struct {
 }
 
 var (
-	playQueues      = make(map[int64][]*PlayRequest)
-	playQueuesMutex sync.Mutex
-	Silence         = []byte{0xF8, 0xFF, 0xFE}
+	// Unused
+	// playQueues      = make(map[int64][]*PlayRequest)
+	// playQueuesMutex sync.Mutex
+
+	Silence = []byte{0xF8, 0xFF, 0xFE}
 
 	players   = make(map[int64]*Player)
 	playersmu = sync.NewCond(&sync.Mutex{})
@@ -117,7 +119,7 @@ func (p *Player) Run() {
 
 		// do a changechannel if we are in another channel and also voice is connected
 		if changeChannel && p.vc != nil {
-			p.vc.ChangeChannel(item.ChannelID, false, true)
+			_ = p.vc.ChangeChannel(item.ChannelID, false, true)
 		}
 
 		var err error
@@ -125,7 +127,7 @@ func (p *Player) Run() {
 		if err != nil {
 			logger.WithError(err).WithField("guild", p.GuildID).Error("Failed playing sound")
 			if item.CommandRanFrom != 0 {
-				common.BotSession.ChannelMessageSend(item.CommandRanFrom, "Failed playing the sound: `"+err.Error()+"` make sure you put a proper audio file, and did not for example link to a youtube video.")
+				_, _ = common.BotSession.ChannelMessageSend(item.CommandRanFrom, "Failed playing the sound: `"+err.Error()+"` make sure you put a proper audio file, and did not for example link to a youtube video.")
 			}
 		}
 	}
@@ -152,7 +154,7 @@ func (p *Player) waitForNextElement() {
 
 func (p *Player) exit() {
 	if p.vc != nil {
-		p.vc.Disconnect()
+		_ = p.vc.Disconnect()
 	}
 	if len(p.queue) > 0 {
 		p.queue = nil
@@ -204,7 +206,7 @@ func playSound(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Sess
 			return nil, common.ErrWithCaller(err)
 		}
 		<-vc.Connected
-		vc.Speaking(true)
+		_ = vc.Speaking(true)
 	}
 
 	// Start by sending some frames of silence

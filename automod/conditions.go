@@ -52,7 +52,7 @@ func (mrc *MemberRolesCondition) Description() string {
 
 func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Roles",
 			Key:  "Roles",
 			Kind: SettingTypeMultiRole,
@@ -141,7 +141,7 @@ func (cd *ChannelsCondition) Description() string {
 
 func (cd *ChannelsCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Channels",
 			Key:  "Channels",
 			Kind: SettingTypeMultiChannel,
@@ -232,7 +232,7 @@ func (cd *ChannelCategoriesCondition) Description() string {
 
 func (cd *ChannelCategoriesCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Categories",
 			Key:  "Categories",
 			Kind: SettingTypeMultiChannelCategories,
@@ -323,7 +323,7 @@ func (ac *AccountAgeCondition) Description() string {
 
 func (ac *AccountAgeCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Age in minutes",
 			Key:  "Treshold",
 			Kind: SettingTypeInt,
@@ -395,7 +395,7 @@ func (mc *MemberAgecondition) Description() string {
 
 func (mc *MemberAgecondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Age in minutes",
 			Key:  "Treshold",
 			Kind: SettingTypeInt,

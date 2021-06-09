@@ -516,7 +516,7 @@ func SqlTX(f func(tx *sql.Tx) error) error {
 	err = f(tx)
 
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 
@@ -533,7 +533,7 @@ func SendOwnerAlert(msgf string, args ...interface{}) {
 		return
 	}
 
-	BotSession.ChannelMessageSend(ch.ID, fmt.Sprintf(msgf, args...))
+	_, _ = BotSession.ChannelMessageSend(ch.ID, fmt.Sprintf(msgf, args...))
 }
 
 func IsOwner(userID int64) bool {

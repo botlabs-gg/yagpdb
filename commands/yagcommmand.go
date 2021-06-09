@@ -174,7 +174,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	// Send typing to indicate the bot's working
 	if confSetTyping.GetBool() && data.TriggerType != dcmd.TriggerTypeSlashCommands {
-		common.BotSession.ChannelTyping(data.ChannelID)
+		_ = common.BotSession.ChannelTyping(data.ChannelID)
 	}
 
 	logger := yc.Logger(data)
@@ -306,7 +306,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		if settings.DelTrigger {
 			go func() {
 				time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
-				common.BotSession.ChannelMessageDelete(cmdData.ChannelID, cmdData.TraditionalTriggerData.Message.ID)
+				_ = common.BotSession.ChannelMessageDelete(cmdData.ChannelID, cmdData.TraditionalTriggerData.Message.ID)
 			}()
 		}
 		return // Don't bother sending the reponse if it has no delete delay
@@ -330,7 +330,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	// Send the response
 	var replies []*discordgo.Message
 	if resp == nil && cmdData.TriggerType == dcmd.TriggerTypeSlashCommands {
-		common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, cmdData.SlashCommandTriggerData.Interaction.Token)
+		_ = common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, cmdData.SlashCommandTriggerData.Interaction.Token)
 	} else if resp != nil {
 		replies, err = dcmd.SendResponseInterface(cmdData, resp, true)
 		if err != nil {
@@ -356,9 +356,9 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 			}
 
 			if len(ids) == 1 {
-				common.BotSession.ChannelMessageDelete(cmdData.ChannelID, ids[0])
+				_ = common.BotSession.ChannelMessageDelete(cmdData.ChannelID, ids[0])
 			} else if len(ids) > 1 {
-				common.BotSession.ChannelMessagesBulkDelete(cmdData.ChannelID, ids)
+				_ = common.BotSession.ChannelMessagesBulkDelete(cmdData.ChannelID, ids)
 			}
 		}()
 	}
@@ -367,7 +367,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	if settings.DelTrigger && (!settings.DelResponse || settings.DelTriggerDelay != settings.DelResponseDelay) && cmdData.TraditionalTriggerData != nil {
 		go func() {
 			time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
-			common.BotSession.ChannelMessageDelete(cmdData.ChannelID, cmdData.TraditionalTriggerData.Message.ID)
+			_ = common.BotSession.ChannelMessageDelete(cmdData.ChannelID, cmdData.TraditionalTriggerData.Message.ID)
 		}()
 	}
 }
@@ -880,8 +880,9 @@ func (cs *YAGCommand) SetCooldownGuild(cc []*dcmd.Container, guildID int64) erro
 }
 
 func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
-	l := logger.WithField("cmd", yc.FindNameFromContainerChain(data.ContainerChain))
+	var l *logrus.Entry
 	if data != nil {
+		l = logger.WithField("cmd", yc.FindNameFromContainerChain(data.ContainerChain))
 		if data.Author != nil {
 			l = l.WithField("user_n", data.Author.Username)
 			l = l.WithField("user_id", data.Author.ID)
@@ -979,8 +980,6 @@ func removeRunningCommand(guildID, channelID, authorID int64, cmd *YAGCommand) {
 	}
 
 	runningcommandsLock.Unlock()
-
-	return
 }
 
 func (yc *YAGCommand) FindNameFromContainerChain(cc []*dcmd.Container) string {

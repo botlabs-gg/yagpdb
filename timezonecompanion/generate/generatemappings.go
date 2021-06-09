@@ -7,7 +7,8 @@ import (
 	"os"
 )
 
-const countrycsv = "generate/country.csv"
+// Unused
+// const countrycsv = "generate/country.csv"
 const zonecsv = "generate/zone.csv"
 
 func main() {
@@ -33,26 +34,26 @@ func main() {
 
 	defer zoneW.Close()
 
-	zoneW.WriteString(`package timezonecompanion
+	_, _ = zoneW.WriteString(`package timezonecompanion
 
 var CCToZones = map[string][]string{
 `)
 
 	for cc, z := range zones {
-		zoneW.WriteString(`"` + cc + `": []string{`)
+		_, _ = zoneW.WriteString(`"` + cc + `": []string{`)
 		for i, v := range z {
 			if i != 0 {
-				zoneW.WriteString(`, `)
+				_, _ = zoneW.WriteString(`, `)
 			}
 
-			zoneW.WriteString(`"` + v + `"`)
+			_, _ = zoneW.WriteString(`"` + v + `"`)
 		}
 
-		zoneW.WriteString(`},
+		_, _ = zoneW.WriteString(`},
 `)
 	}
 
-	zoneW.WriteString("}")
+	_, _ = zoneW.WriteString("}")
 }
 
 func ReadZones(f *os.File) map[string][]string {

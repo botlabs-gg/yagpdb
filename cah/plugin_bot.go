@@ -138,8 +138,8 @@ OUTER:
 		v.Stop()
 
 		v.Lock()
-		common.BotSession.ChannelMessageSend(v.MasterChannel, "**Cards Against Humanity:** Bot undergoing upgrade: Your game will resume in around 10 seconds.")
-		bot.NodeConn.Send(ShardMigrationEvtGame, v, false)
+		_, _ = common.BotSession.ChannelMessageSend(v.MasterChannel, "**Cards Against Humanity:** Bot undergoing upgrade: Your game will resume in around 10 seconds.")
+		_ = bot.NodeConn.Send(ShardMigrationEvtGame, v, false)
 		v.Unlock()
 	}
 

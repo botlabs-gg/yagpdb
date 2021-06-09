@@ -84,8 +84,8 @@ func requestCheckBotAdmins(skipRename bool, mainServer, adminRole, readOnlyRole 
 
 	// Swap the keys updated last round, assuming thats done
 	if !skipRename {
-		common.RedisPool.Do(radix.Cmd(nil, "RENAME", tmpRedisKeyAdmins, RedisKeyAdmins))
-		common.RedisPool.Do(radix.Cmd(nil, "RENAME", tmpRedisKeyReadOnlyAccess, RedisKeyReadOnlyAccess))
+		_ = common.RedisPool.Do(radix.Cmd(nil, "RENAME", tmpRedisKeyAdmins, RedisKeyAdmins))
+		_ = common.RedisPool.Do(radix.Cmd(nil, "RENAME", tmpRedisKeyReadOnlyAccess, RedisKeyReadOnlyAccess))
 	}
 
 	err := BatchMemberJobManager.NewBatchMemberJob(mainServer, func(g int64, members []*discordgo.Member) {

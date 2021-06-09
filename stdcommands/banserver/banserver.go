@@ -22,8 +22,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		err := common.BotSession.GuildLeave(data.Args[0].Int64())
 		if err == nil {
-
-			common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "banned_servers", data.Args[0].Int64()))
+			_ = common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "banned_servers", data.Args[0].Int64()))
 
 			return "Banned " + data.Args[0].Str(), nil
 		}

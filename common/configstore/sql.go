@@ -42,8 +42,6 @@ func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf Guild
 
 		return err
 	}
-
-	return nil
 }
 
 // conf is requried to be a pointer value

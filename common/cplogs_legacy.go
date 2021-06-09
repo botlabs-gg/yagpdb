@@ -37,7 +37,7 @@ func AddCPLogEntryLegacy(user *discordgo.User, guild int64, args ...interface{})
 
 	key := "cp_logs:" + discordgo.StrID(guild)
 	err = RedisPool.Do(radix.Cmd(nil, "LPUSH", key, string(serialized)))
-	RedisPool.Do(radix.Cmd(nil, "LTRIM", key, "0", "100"))
+	_ = RedisPool.Do(radix.Cmd(nil, "LTRIM", key, "0", "100"))
 	if err != nil {
 		logger.WithError(err).WithField("guild", guild).Error("Failed updating cp logs")
 	}

@@ -1,10 +1,11 @@
 package serverstats
 
 import (
+	"time"
+
 	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium"
-	"time"
 )
 
 func StartMigrationToV2Format() error {
@@ -60,7 +61,7 @@ func runV2Migration(premiumGuilds map[int64]time.Time, lastProgress *MigrationPr
 
 func migrateV2Chunk(name string, lastID int64, f func(lastID int64, premiumGuilds map[int64]time.Time) (newLastID int64, err error)) error {
 	defer func() {
-		updateSubProgress(name, lastID, false)
+		_ = updateSubProgress(name, lastID, false)
 	}()
 
 	for {
@@ -95,8 +96,8 @@ func migrateChunkV2Messages(lastID int64, premiumGuilds map[int64]time.Time) (ne
 	const qGetOld = `SELECT id, started, guild_id, count FROM server_stats_periods
 	WHERE id > $1 ORDER BY ID ASC LIMIT 5000;`
 
-	const qSetNew = `INSERT INTO server_stats_periods_compressed 
-	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice) 
+	const qSetNew = `INSERT INTO server_stats_periods_compressed
+	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
 	VALUES ($1, $2, $3,      $4,              $5,         $6,        $7,      $8,   $9)
 	ON CONFLICT (guild_id, t) DO UPDATE
 	SET num_messages = server_stats_periods_compressed.num_messages + $4`
@@ -142,7 +143,7 @@ func migrateChunkV2Messages(lastID int64, premiumGuilds map[int64]time.Time) (ne
 
 			_, err = tx.Exec(qSetNew, g, t, isPremium, count, 0, 0, 0, 0, 0)
 			if err != nil {
-				tx.Rollback()
+				_ = tx.Rollback()
 				return lastID, errors.WithStackIf(err)
 			}
 		}
@@ -165,8 +166,8 @@ func migrateChunkV2Members(lastID int64, premiumGuilds map[int64]time.Time) (new
 	FROM server_stats_member_periods
 	WHERE id > $1 ORDER BY ID ASC LIMIT 5000;`
 
-	const qSetNew = `INSERT INTO server_stats_periods_compressed 
-	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice) 
+	const qSetNew = `INSERT INTO server_stats_periods_compressed
+	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
 	VALUES ($1, $2, $3,      $4,              $5,         $6,        $7,      $8,   $9)
 	ON CONFLICT (guild_id, t) DO UPDATE
 	SET num_members = GREATEST(server_stats_periods_compressed.num_members, $5),
@@ -248,7 +249,7 @@ func migrateChunkV2Members(lastID int64, premiumGuilds map[int64]time.Time) (new
 
 			_, err = tx.Exec(qSetNew, g, t, isPremium, 0, row.NumMembers, row.MaxOnline, row.Joins, row.Leaves, 0)
 			if err != nil {
-				tx.Rollback()
+				_ = tx.Rollback()
 				return lastID, errors.WithStackIf(err)
 			}
 		}

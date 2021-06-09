@@ -160,10 +160,10 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed clearing past scheduled warn/kick events.")
 	}
 	if conf.WarnUnverifiedAfter > 0 && conf.WarnMessage != "" {
-		scheduledevents2.ScheduleEvent("verification_user_warn", guildID, time.Now().Add(time.Minute*time.Duration(conf.WarnUnverifiedAfter)), evt)
+		_ = scheduledevents2.ScheduleEvent("verification_user_warn", guildID, time.Now().Add(time.Minute*time.Duration(conf.WarnUnverifiedAfter)), evt)
 	}
 	if conf.KickUnverifiedAfter > 0 {
-		scheduledevents2.ScheduleEvent("verification_user_kick", guildID, time.Now().Add(time.Minute*time.Duration(conf.KickUnverifiedAfter)), evt)
+		_ = scheduledevents2.ScheduleEvent("verification_user_kick", guildID, time.Now().Add(time.Minute*time.Duration(conf.KickUnverifiedAfter)), evt)
 	}
 
 	p.logAction(guildID, conf.LogChannel, target, "New user joined waiting to be verified as a human", 0x47aaed)
@@ -574,7 +574,7 @@ func (p *Plugin) banAlts(ban *discordgo.GuildBanAdd, alts []*discordgo.User) {
 				logger.WithField("guild", ban.GuildID).WithField("user", v.ID).WithField("dupe-of", ban.User.ID).Info("banning alt account")
 				reason := fmt.Sprintf("Alt of banned user (%s#%s (%d))", ban.User.Username, ban.User.Discriminator, ban.User.ID)
 				markRecentlyBannedByVerification(ban.GuildID, v.ID)
-				moderation.BanUser(nil, ban.GuildID, nil, nil, common.BotUser, reason, v)
+				_ = moderation.BanUser(nil, ban.GuildID, nil, nil, common.BotUser, reason, v)
 				continue
 			}
 		}

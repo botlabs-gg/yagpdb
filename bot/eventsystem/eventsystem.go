@@ -19,7 +19,7 @@ import (
 var DiscordState dstate.StateTracker
 
 func init() {
-	for i, _ := range handlers {
+	for i := range handlers {
 		handlers[i] = make([][]*Handler, 3)
 	}
 }
@@ -69,9 +69,26 @@ func (e *EventData) Context() context.Context {
 }
 
 func (e *EventData) WithContext(ctx context.Context) *EventData {
-	cop := new(EventData)
-	*cop = *e
+	cop := e.Copy()
 	cop.ctx = ctx
+	return cop
+}
+
+func (e *EventData) Copy() *EventData {
+	if e == nil {
+		return nil
+	}
+
+	cop := new(EventData)
+	cop.cancelled = e.cancelled
+	cop.cs = e.cs
+	cop.ctx = e.ctx
+	cop.EvtInterface = e.EvtInterface
+	cop.GS = e.GS
+	cop.GuildFeatureFlags = e.GuildFeatureFlags
+	cop.Session = e.Session
+	cop.Type = e.Type
+
 	return cop
 }
 
@@ -329,7 +346,7 @@ var workers []chan *EventData
 func InitWorkers(totalShards int) {
 
 	workers = make([]chan *EventData, totalShards)
-	for i, _ := range workers {
+	for i := range workers {
 		workers[i] = make(chan *EventData, 1000)
 		go eventWorker(workers[i])
 	}

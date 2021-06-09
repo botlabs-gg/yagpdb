@@ -49,7 +49,7 @@ type Relationships struct {
 }
 
 type RelationShip struct {
-	Data *RelationshipData `json"data"`
+	Data *RelationshipData `json:"data"`
 }
 
 type RelationshipData struct {

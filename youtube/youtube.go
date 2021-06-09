@@ -82,9 +82,9 @@ type YoutubePlaylistID struct {
 var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 
 // Remove feeds if they don't point to a proper channel
-func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
+func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, ph error) {
 	// Remove it
-	err = common.GORM.Where("channel_id = ?", elem.Channel).Delete(ChannelSubscription{}).Error
+	err := common.GORM.Where("channel_id = ?", elem.Channel).Delete(ChannelSubscription{}).Error
 	if err != nil {
 		logger.WithError(err).Error("failed removing nonexistant channel")
 	} else {

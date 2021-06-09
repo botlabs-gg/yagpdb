@@ -27,13 +27,13 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 	shardsTotal, lastPeriod := bot.EventLogger.GetStats()
 
 	sortable := make([]*DiscordEvtEntry, len(eventsystem.AllDiscordEvents))
-	for i, _ := range sortable {
+	for i := range sortable {
 		sortable[i] = &DiscordEvtEntry{
 			Name: eventsystem.AllDiscordEvents[i].String(),
 		}
 	}
 
-	for i, _ := range shardsTotal {
+	for i := range shardsTotal {
 		if data.Args[0].Value != nil && data.Args[0].Int() != i {
 			continue
 		}

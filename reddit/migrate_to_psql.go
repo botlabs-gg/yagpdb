@@ -1,21 +1,18 @@
 package reddit
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"emperror.dev/errors"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/boil"
 )
 
+// Unused
 // migrateLegacyRedisFormatToPostgres migrates all feeds from all servers to postgres from the old legacy redis format
-func migrateLegacyRedisFormatToPostgres() {
+/* func migrateLegacyRedisFormatToPostgres() {
 	common.RedisPool.Do(radix.WithConn("guild_subreddit_watch:", func(conn radix.Conn) error {
 		scanner := radix.NewScanner(conn, radix.ScanOpts{
 			Command: "scan",
@@ -49,9 +46,10 @@ func migrateLegacyRedisFormatToPostgres() {
 
 		return nil
 	}))
-}
+} */
 
-func migrateGuildConfig(guildID int64) error {
+// Unused
+/* func migrateGuildConfig(guildID int64) error {
 	key := "guild_subreddit_watch:" + strconv.FormatInt(guildID, 10)
 
 	config, err := GetLegacyConfig(key)
@@ -79,7 +77,7 @@ func migrateGuildConfig(guildID int64) error {
 
 		err := m.Insert(context.Background(), tx, boil.Infer())
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return errors.WrapIff(err, "[%d:%d].insert", guildID, item.ID)
 		}
 	}
@@ -95,7 +93,7 @@ func migrateGuildConfig(guildID int64) error {
 	}
 
 	return nil
-}
+} */
 
 type LegacySubredditWatchItem struct {
 	Sub       string `json:"sub"`
@@ -109,7 +107,6 @@ func FindLegacyWatchItem(source []*LegacySubredditWatchItem, id int) *LegacySubr
 	for _, c := range source {
 		if c.ID == id {
 			return c
-			break
 		}
 	}
 	return nil

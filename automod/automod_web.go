@@ -351,7 +351,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 	// First wipe all previous rule data
 	_, err = models.AutomodRulesetConditions(qm.Where("guild_id = ? AND ruleset_id = ?", g.ID, ruleset.ID)).DeleteAll(r.Context(), tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return tmpl, err
 	}
 
@@ -370,7 +370,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 
 		err := proper.Insert(r.Context(), tx, boil.Infer())
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return tmpl, err
 		}
 	}
@@ -380,7 +380,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 	ruleset.Enabled = data.Enabled
 	_, err = ruleset.Update(r.Context(), tx, boil.Whitelist("name", "enabled"))
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return tmpl, err
 	}
 
@@ -489,7 +489,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	// First wipe all previous rule data
 	_, err = models.AutomodRuleData(qm.Where("guild_id = ? AND rule_id = ?", g.ID, currentRule.ID)).DeleteAll(r.Context(), tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return tmpl, err
 	}
 
@@ -500,7 +500,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 
 		err := part.Insert(r.Context(), tx, boil.Infer())
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return tmpl, err
 		}
 	}
@@ -508,7 +508,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	currentRule.Name = data.Name
 	_, err = currentRule.Update(r.Context(), tx, boil.Whitelist("name"))
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return tmpl, err
 	}
 

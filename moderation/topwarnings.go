@@ -2,7 +2,6 @@ package moderation
 
 import (
 	"database/sql"
-	"fmt"
 
 	//"github.com/jonas747/discordgo"
 	//"github.com/jonas747/dstate/v3"
@@ -61,7 +60,7 @@ func TopWarns(guildID int64, offset, limit int) ([]*WarnRankEntry, error) {
 		userSlice := bot.GetUsers(guildID, userID)
 		var username string
 		for _, u := range userSlice {
-			username = fmt.Sprintf("%s", u)
+			username = u.String()
 			break
 		}
 

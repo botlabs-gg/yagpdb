@@ -96,7 +96,7 @@ OUTER:
 		guilds[i] = v.ID
 	}
 
-	featureflags.BatchInitCache(guilds)
+	_ = featureflags.BatchInitCache(guilds)
 }
 
 var guildJoinHandler = joinedguildsupdater.NewUpdater()
@@ -135,10 +135,10 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	// check if the server is banned from using the bot
 	var banned bool
-	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
+	_ = common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
 	if banned {
 		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
-		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
+		_, _ = common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
 		err = common.BotSession.GuildLeave(g.ID)
 		if err != nil {
 			return CheckDiscordErrRetry(err), errors.WithStackIf(err)

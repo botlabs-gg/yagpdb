@@ -474,6 +474,4 @@ func fillEvent(evtData *EventData) {
 	default:
 		return
 	}
-
-	return
 }

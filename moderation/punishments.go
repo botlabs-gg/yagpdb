@@ -244,7 +244,7 @@ func DeleteMessages(guildID, channelID int64, filterUser int64, deleteNum, fetch
 
 func BanUserWithDuration(config *Config, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, deleteMessageDays int) error {
 	// Set a key in redis that marks that this user has appeared in the modlog already
-	common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyBannedUser(guildID, user.ID), "60", "1"))
+	_ = common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyBannedUser(guildID, user.ID), "60", "1"))
 	if deleteMessageDays > 7 {
 		deleteMessageDays = 7
 	}
@@ -299,7 +299,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	}
 
 	// Set a key in redis that marks that this user has appeared in the modlog already
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))
+	_ = common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))
 
 	err = common.BotSession.GuildBanDelete(guildID, user.ID)
 	if err != nil {
@@ -429,7 +429,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 		if alreadyMuted {
 			common.GORM.Delete(&currentMute)
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.User.ID)))
+			_ = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.User.ID)))
 		}
 	}
 

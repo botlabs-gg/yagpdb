@@ -568,7 +568,7 @@ OUTER:
 	s.fetchingGWState.Started = time.Now()
 	s.fetchingGWState.Members = ids
 
-	s.gwRequestFunc(biggestQueueGuild, ids, nonce)
+	_ = s.gwRequestFunc(biggestQueueGuild, ids, nonce)
 }
 
 type guildMemberIDPair struct {

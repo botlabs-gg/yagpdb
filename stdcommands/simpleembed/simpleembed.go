@@ -118,9 +118,7 @@ var Command = &commands.YAGCommand{
 }
 
 func ParseColor(raw string) (int, bool) {
-	if strings.HasPrefix(raw, "#") {
-		raw = raw[1:]
-	}
+	raw = strings.TrimPrefix(raw, "#")
 
 	// try to parse as hex color code first
 	parsed, err := strconv.ParseInt(raw, 16, 32)

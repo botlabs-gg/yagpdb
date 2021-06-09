@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"sort"
 	"strconv"
@@ -143,7 +142,7 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 	_, tmpl := GetCreateTemplateData(r.Context())
 
 	var joinedServers int
-	common.RedisPool.Do(radix.Cmd(&joinedServers, "SCARD", "connected_guilds"))
+	_ = common.RedisPool.Do(radix.Cmd(&joinedServers, "SCARD", "connected_guilds"))
 
 	tmpl["JoinedServers"] = joinedServers
 	tmpl["DemoServerID"] = confDemoServerID.GetString()
@@ -298,7 +297,8 @@ type HostStatus struct {
 	Nodes []*botrest.NodeStatus
 }
 
-func genFakeNodeStatuses(hosts int, nodes int, shards int) []*HostStatus {
+// Unused
+/* func genFakeNodeStatuses(hosts int, nodes int, shards int) []*HostStatus {
 	result := make([]*HostStatus, 0, hosts)
 
 	for hostI := 0; hostI < hosts; hostI++ {
@@ -337,7 +337,7 @@ func genFakeNodeStatuses(hosts int, nodes int, shards int) []*HostStatus {
 	}
 
 	return result
-}
+} */
 
 func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
 	ctx, tmpl := GetCreateTemplateData(r.Context())
@@ -404,7 +404,7 @@ func pollCommandsRan() {
 }
 
 func handleRobotsTXT(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(`User-agent: *
+	_, _ = w.Write([]byte(`User-agent: *
 Disallow: /manage/
 `))
 }
@@ -413,7 +413,7 @@ func handleAdsTXT(w http.ResponseWriter, r *http.Request) {
 	adsPath := ConfAdsTxt.GetString()
 	if adsPath == "" {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(``))
+		_, _ = w.Write([]byte(``))
 		return
 	}
 
@@ -423,7 +423,7 @@ func handleAdsTXT(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(f)
+	_, _ = w.Write(f)
 }
 
 type ControlPanelPlugin struct{}
@@ -489,7 +489,7 @@ func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateDat
 		return templateData, err
 	}
 
-	pubsub.Publish("evict_core_config_cache", g.ID, nil)
+	_ = pubsub.Publish("evict_core_config_cache", g.ID, nil)
 
 	templateData["CoreConfig"] = m
 
@@ -607,7 +607,7 @@ func GuildScopeCacheMW(plugin common.Plugin, inner http.Handler) http.Handler {
 				w.Header()[headerKey] = headerValue
 			}
 			w.WriteHeader(200)
-			w.Write(cast.RawResponse)
+			_, _ = w.Write(cast.RawResponse)
 			// CtxLogger(r.Context()).Info("cache hit")
 			return
 		}

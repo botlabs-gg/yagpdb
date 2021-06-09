@@ -275,7 +275,7 @@ func (p *Plugin) AddCommands() {
 			}()
 
 			// send a heads up that this can take a while
-			common.BotSession.ChannelMessageSend(parsed.ChannelID, "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
+			_, _ = common.BotSession.ChannelMessageSend(parsed.ChannelID, "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
 
 			currentTicket.Ticket.ClosedAt.Time = time.Now()
 			currentTicket.Ticket.ClosedAt.Valid = true
@@ -341,15 +341,13 @@ func (p *Plugin) AddCommands() {
 					if (v.Allow & InTicketPerms) != InTicketPerms {
 						// add it back to allows, remove from denies
 						newAllows := v.Allow | InTicketPerms
-						newDenies := v.Deny & (InTicketPerms ^ InTicketPerms)
-						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, "role", newAllows, newDenies)
+						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, "role", newAllows, 0)
 					}
 				} else {
 					// remove the mods from this ticket
 					if (v.Allow & InTicketPerms) == InTicketPerms {
 						// remove it from allows
-						newAllows := v.Allow & (InTicketPerms ^ InTicketPerms)
-						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, "role", newAllows, v.Deny)
+						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, "role", 0, v.Deny)
 					}
 				}
 
@@ -760,7 +758,8 @@ OUTER2:
 	return id, channel, nil
 }
 
-func applyChannelParentSettings(gs *dstate.GuildSet, parentCategoryID int64, overwrites []*discordgo.PermissionOverwrite) []*discordgo.PermissionOverwrite {
+// Unused
+/* func applyChannelParentSettings(gs *dstate.GuildSet, parentCategoryID int64, overwrites []*discordgo.PermissionOverwrite) []*discordgo.PermissionOverwrite {
 	cs := gs.GetChannel(parentCategoryID)
 	if cs == nil {
 		return overwrites
@@ -772,7 +771,7 @@ func applyChannelParentSettings(gs *dstate.GuildSet, parentCategoryID int64, ove
 	}
 
 	return applyChannelParentSettingsOverwrites(channel_overwrites, overwrites)
-}
+} */
 
 func applyChannelParentSettingsOverwrites(parentOverwrites []*discordgo.PermissionOverwrite, newChannelOverwrites []*discordgo.PermissionOverwrite) []*discordgo.PermissionOverwrite {
 OUTER:

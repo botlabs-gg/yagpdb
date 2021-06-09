@@ -70,7 +70,7 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if data.TraditionalTriggerData != nil {
-		common.BotSession.ChannelMessageDelete(data.ChannelID, data.TraditionalTriggerData.Message.ID)
+		_ = common.BotSession.ChannelMessageDelete(data.ChannelID, data.TraditionalTriggerData.Message.ID)
 	}
 
 	pollMsg, err := common.BotSession.ChannelMessageSendEmbed(data.ChannelID, &response)
@@ -78,7 +78,7 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		return nil, errors.WrapIf(err, "failed to add poll description")
 	}
 	for i := range options {
-		common.BotSession.MessageReactionAdd(pollMsg.ChannelID, pollMsg.ID, pollReactions[i])
+		_ = common.BotSession.MessageReactionAdd(pollMsg.ChannelID, pollMsg.ID, pollReactions[i])
 	}
 	return nil, nil
 }

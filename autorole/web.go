@@ -79,7 +79,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	tmpl["Autorole"] = general
 
 	var proc int
-	common.RedisPool.Do(radix.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
+	_ = common.RedisPool.Do(radix.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
 

@@ -40,7 +40,7 @@ func RunWorkers() {
 func StopWorkers(wg *sync.WaitGroup) {
 	logger.Info("Shutting down http server...")
 	if restServer != nil {
-		restServer.Shutdown(context.Background())
+		_ = restServer.Shutdown(context.Background())
 	}
 
 	for _, p := range common.Plugins {
