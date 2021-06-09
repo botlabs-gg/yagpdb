@@ -63,7 +63,7 @@ func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
 func (mrc *MemberRolesCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	settingsCast := settings.(*MemberRolesConditionData)
 	for _, r := range settingsCast.Roles {
-		if common.ContainsInt64Slice(data.MS.Roles, r) {
+		if common.ContainsInt64Slice(data.MS.Member.Roles, r) {
 			if mrc.Blacklist {
 				// Had a blacklist role, this condition is not met
 				return false, nil
@@ -334,7 +334,7 @@ func (ac *AccountAgeCondition) UserSettings() []*SettingDef {
 func (ac *AccountAgeCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	settingsCast := settings.(*AccountAgeConditionData)
 
-	created := bot.SnowflakeToTime(data.MS.ID)
+	created := bot.SnowflakeToTime(data.MS.User.ID)
 	minutes := int(time.Since(created).Minutes())
 	if minutes <= settingsCast.Treshold {
 		// account were made within threshold
@@ -406,13 +406,20 @@ func (mc *MemberAgecondition) UserSettings() []*SettingDef {
 func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	settingsCast := settings.(*MemberAgeConditionData)
 
-	joinedAt := data.MS.JoinedAt
-	if joinedAt.IsZero() {
-		newMS, err := bot.GetMemberJoinedAt(data.GS.ID, data.MS.ID)
+	var joinedAt time.Time
+	if data.MS.Member != nil && data.MS.Member.JoinedAt != "" {
+		joinedAt, _ = data.MS.Member.JoinedAt.Parse()
+	} else {
+		newMS, err := bot.GetMember(data.GS.ID, data.MS.User.ID)
 		if err != nil {
 			return false, err
 		}
-		joinedAt = newMS.JoinedAt
+
+		if newMS.Member != nil {
+			joinedAt, _ = newMS.Member.JoinedAt.Parse()
+		} else {
+			return false, nil
+		}
 	}
 
 	minutes := int(time.Since(joinedAt).Minutes())
@@ -476,10 +483,10 @@ func (bc *BotCondition) UserSettings() []*SettingDef {
 
 func (bc *BotCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	if bc.Ignore {
-		return !data.MS.Bot, nil
+		return !data.MS.User.Bot, nil
 	}
 
-	return data.MS.Bot, nil
+	return data.MS.User.Bot, nil
 }
 
 func (bc *BotCondition) MergeDuplicates(data []interface{}) interface{} {

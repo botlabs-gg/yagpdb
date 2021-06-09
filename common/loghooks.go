@@ -157,6 +157,11 @@ var (
 		Help: "Number of http requests to the discord API",
 	}, []string{"path"})
 
+	metrics429Path = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "yagpdb_discord_http_429_path_total",
+		Help: "Number of http requests to the discord API",
+	}, []string{"path"})
+
 	metricsNumRequestsResponseCode = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "yagpdb_discord_http_requests_response_code_total",
 		Help: "Number of http requests to the discord API",
@@ -166,6 +171,11 @@ var (
 		Name:       "yagpdb_discord_http_latency_seconds",
 		Help:       "Latency do the discord API",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+	})
+
+	metricsConcurrentRequests = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "yagpdb_http_concurrent_requests",
+		Help: "Number of concurrent requests returned from the ratelimiter",
 	})
 )
 
@@ -201,6 +211,10 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 		path = numberRemover.Replace(path)
 
 		metricsHTTPLatency.Observe(since)
+
+		if code == 429 {
+			metrics429Path.With(prometheus.Labels{"path": path}).Inc()
+		}
 		// metricsNumRequests.With(prometheus.Labels{"path": path})
 		metricsNumRequestsResponseCode.With(prometheus.Labels{"response_code": strconv.Itoa(code)}).Inc()
 
@@ -242,4 +256,12 @@ func GetPluginLogger(plugin Plugin) *logrus.Entry {
 
 func GetFixedPrefixLogger(prefix string) *logrus.Entry {
 	return logrus.WithField("p", prefix)
+}
+
+func updateConcurrentRequests() {
+	for {
+		time.Sleep(time.Second)
+		num := BotSession.Ratelimiter.CurrentConcurrentLocks()
+		metricsConcurrentRequests.Set(float64(num))
+	}
 }

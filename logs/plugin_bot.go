@@ -11,9 +11,9 @@ import (
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/common/config"
 
-	"github.com/jonas747/dcmd/v2"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -49,7 +49,7 @@ var cmdLogs = &commands.YAGCommand{
 	Description:     "Creates a log of the last messages in the current channel.",
 	LongDescription: "This includes deleted messages within an hour (or 12 hours for premium servers)",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
+		{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      false,
@@ -91,25 +91,26 @@ var cmdWhois = &commands.YAGCommand{
 			member = parsed.Args[0].Value.(*dstate.MemberState)
 		} else {
 			member = parsed.GuildData.MS
-			if sm := parsed.GuildData.GS.MemberCopy(true, member.ID); sm != nil {
+			if sm := bot.State.GetMember(parsed.GuildData.GS.ID, member.User.ID); sm != nil {
 				// Prefer state member over the one provided in the message, since it may have presence data
 				member = sm
 			}
 		}
 
 		nick := ""
-		if member.Nick != "" {
-			nick = " (" + member.Nick + ")"
+		if member.Member.Nick != "" {
+			nick = " (" + member.Member.Nick + ")"
 		}
 
 		joinedAtStr := ""
 		joinedAtDurStr := ""
-		if !member.MemberSet {
+		if member.Member == nil {
 			joinedAtStr = "Couldn't find out"
 			joinedAtDurStr = "Couldn't find out"
 		} else {
-			joinedAtStr = member.JoinedAt.UTC().Format(time.RFC822)
-			dur := time.Since(member.JoinedAt)
+			parsedJoinedAt, _ := member.Member.JoinedAt.Parse()
+			joinedAtStr = parsedJoinedAt.UTC().Format(time.RFC822)
+			dur := time.Since(parsedJoinedAt)
 			joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionHours, dur)
 		}
 
@@ -117,69 +118,75 @@ var cmdWhois = &commands.YAGCommand{
 			joinedAtDurStr = "Less than an hour ago"
 		}
 
-		t := bot.SnowflakeToTime(member.ID)
+		t := bot.SnowflakeToTime(member.User.ID)
 		createdDurStr := common.HumanizeDuration(common.DurationPrecisionHours, time.Since(t))
 		if createdDurStr == "" {
 			createdDurStr = "Less than an hour ago"
 		}
 
 		var memberStatus string
-		state := [4]string{"Playing", "Streaming", "Listening", "Watching"}
-		if !member.PresenceSet || member.PresenceGame == nil {
-			memberStatus = fmt.Sprintf("Has no active status, is invisible/offline or is not in the bot's cache.")
+		state := [6]string{"Playing", "Streaming", "Listening", "Watching", "Custom", "Competing"}
+		if member.Presence == nil || member.Presence.Game == nil {
+			memberStatus = "Has no active status, is invisible/offline or is not in the bot's cache."
 		} else {
-			if member.PresenceGame.Type == 4 {
-				memberStatus = fmt.Sprintf("%s: %s", member.PresenceGame.Name, member.PresenceGame.State)
+			if member.Presence.Game.Type == 4 {
+				memberStatus = fmt.Sprintf("%s: %s", member.Presence.Game.Name, member.Presence.Game.State)
 			} else {
-				memberStatus = fmt.Sprintf("%s: %s", state[member.PresenceGame.Type], member.PresenceGame.Name)
+				presenceName := "Unknown"
+				if member.Presence.Game.Type >= 0 && len(state) > int(member.Presence.Game.Type) {
+					presenceName = state[member.Presence.Game.Type]
+				}
+
+				memberStatus = fmt.Sprintf("%s: %s", presenceName, member.Presence.Game.Name)
 			}
 		}
 
 		embed := &discordgo.MessageEmbed{
-			Title: fmt.Sprintf("%s#%04d%s", member.Username, member.Discriminator, nick),
+			Title: fmt.Sprintf("%s#%s%s", member.User.Username, member.User.Discriminator, nick),
 			Fields: []*discordgo.MessageEmbedField{
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "ID",
-					Value:  discordgo.StrID(member.ID),
+					Value:  discordgo.StrID(member.User.ID),
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Avatar",
-					Value:  "[Link](" + discordgo.EndpointUserAvatar(member.ID, member.StrAvatar()) + ")",
+					Value:  "[Link](" + discordgo.EndpointUserAvatar(member.User.ID, member.User.Avatar) + ")",
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Account Created",
 					Value:  t.UTC().Format(time.RFC822),
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Account Age",
 					Value:  createdDurStr,
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Joined Server At",
 					Value:  joinedAtStr,
 					Inline: true,
-				}, &discordgo.MessageEmbedField{
+				},
+				{
 					Name:   "Join Server Age",
 					Value:  joinedAtDurStr,
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Status",
 					Value:  memberStatus,
 					Inline: true,
 				},
 			},
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: discordgo.EndpointUserAvatar(member.ID, member.StrAvatar()),
+				URL: discordgo.EndpointUserAvatar(member.User.ID, member.User.Avatar),
 			},
 		}
 
 		if config.UsernameLoggingEnabled.Bool {
-			usernames, err := GetUsernames(parsed.Context(), member.ID, 5, 0)
+			usernames, err := GetUsernames(parsed.Context(), member.User.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -203,7 +210,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		if config.NicknameLoggingEnabled.Bool {
 
-			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GuildData.GS.ID, 5, 0)
+			nicknames, err := GetNicknames(parsed.Context(), member.User.ID, parsed.GuildData.GS.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -372,7 +379,7 @@ var cmdClearNames = &commands.YAGCommand{
 		for _, v := range queries {
 			_, err := common.PQ.Exec(v, parsed.Author.ID)
 			if err != nil {
-				return "An error occured, join the support server for help", err
+				return "An error occurred, join the support server for help", err
 			}
 		}
 
@@ -411,21 +418,18 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	pu := evt.PresenceUpdate()
 	gs := evt.GS
 
-	gs.RLock()
-	defer gs.RUnlock()
-
-	ms := gs.Member(false, pu.User.ID)
-	if ms == nil || !ms.PresenceSet || !ms.MemberSet {
+	ms := bot.State.GetMember(gs.ID, pu.User.ID)
+	if ms == nil || ms.Presence == nil || ms.Member == nil {
 		queueEvt(pu)
 		return
 	}
 
-	if pu.User.Username != "" && pu.User.Username != ms.Username {
+	if pu.User.Username != "" && pu.User.Username != ms.User.Username {
 		queueEvt(pu)
 		return
 	}
 
-	if pu.Nick != ms.Nick {
+	if pu.Nick != ms.Member.Nick {
 		queueEvt(pu)
 		return
 	}
@@ -870,15 +874,15 @@ func EvtProcesserGCs() {
 	}
 }
 
-const CacheKeyConfig bot.GSCacheKey = "logs_config"
+var configCache = common.CacheSet.RegisterSlot("logs_config", nil, int64(0))
 
 func GetConfigCached(exec boil.ContextExecutor, gID int64) (*models.GuildLoggingConfig, error) {
-	gs := bot.State.Guild(true, gID)
+	gs := bot.State.GetGuild(gID)
 	if gs == nil {
 		return GetConfig(exec, context.Background(), gID)
 	}
 
-	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
+	v, err := configCache.GetCustomFetch(gs.ID, func(key interface{}) (interface{}, error) {
 		conf, err := GetConfig(exec, context.Background(), gID)
 		return conf, err
 	})
