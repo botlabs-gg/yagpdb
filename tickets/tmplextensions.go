@@ -80,7 +80,7 @@ func tmplCreateTicket(ctx *templates.Context) interface{} {
 			return nil, errors.New("tickets are disabled on this server")
 		}
 
-		gs, ticket, err := CreateTicket(context.Background(), ctx.GS, ms, conf, topic, false)
+		gs, ticket, err := CreateTicket(context.Background(), ctx.GS, ms, conf, topic, true)
 		ctx.GS = gs
 
 		if err != nil {
