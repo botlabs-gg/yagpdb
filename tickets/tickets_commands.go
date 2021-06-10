@@ -16,10 +16,8 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/tickets/models"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -53,93 +51,20 @@ func (p *Plugin) AddCommands() {
 				return "Ticket system is disabled in this server, the server admins can enable it in the control panel.", nil
 			}
 
-			if parsed.GuildData.GS.GetChannel(conf.TicketsChannelCategory) == nil {
-				return "No category for ticket channels set", nil
-			}
-
-			if hasPerms, _ := bot.BotHasPermissionGS(parsed.GuildData.GS, parsed.ChannelID, InTicketPerms); !hasPerms {
-				return fmt.Sprintf("The bot is missing one of the following permissions: %s", common.HumanizePermissions(InTicketPerms)), nil
-			}
-
-			inCurrentTickets, err := models.Tickets(
-				qm.Where("closed_at IS NULL"),
-				qm.Where("guild_id = ?", parsed.GuildData.GS.ID),
-				qm.Where("author_id = ?", parsed.Author.ID)).AllG(parsed.Context())
+			_, ticket, err := CreateTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str(), true)
 			if err != nil {
-				return "failed checking current tickets...", err
-			}
-
-			count := 0
-			for _, v := range inCurrentTickets {
-				if parsed.GuildData.GS.GetChannel(v.ChannelID) != nil {
-					count++
+				switch t := err.(type) {
+				case TicketUserError:
+					return string(t), nil
+				case *TicketUserError:
+					return string(*t), nil
 				}
-			}
 
-			if count >= 10 {
-				return "You're currently in over 10 open tickets on this server, please close some of the ones you're in.", nil
-			}
-
-			if len(parsed.Args[0].Str()) > 90 {
-				return "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created", nil
-			}
-
-			// we manually insert the channel into gs for reliability
-			gs := *parsed.GuildData.GS
-			gs.Channels = make([]dstate.ChannelState, len(gs.Channels)+1)
-			copy(gs.Channels, parsed.GuildData.GS.Channels)
-
-			subject := parsed.Args[0].Str()
-			id, channel, err := createTicketChannel(conf, parsed.GuildData.GS, parsed.Author.ID, subject)
-			if err != nil {
-				return "Failed creating the channel, make sure the bot has proper perms and the channel limit hasn't been reached.", nil
-			}
-
-			// create the db model for it
-			dbModel := &models.Ticket{
-				GuildID:               parsed.GuildData.GS.ID,
-				LocalID:               id,
-				ChannelID:             channel.ID,
-				Title:                 subject,
-				CreatedAt:             time.Now(),
-				AuthorID:              parsed.Author.ID,
-				AuthorUsernameDiscrim: parsed.Author.Username + "#" + parsed.Author.Discriminator,
-			}
-
-			err = dbModel.InsertG(parsed.Context(), boil.Infer())
-			if err != nil {
 				return nil, err
 			}
 
-			// send the first ticket message
-
-			cs := dstate.ChannelStateFromDgo(channel)
-
-			// insert the channel into gs, TODO: Should we sort?
-			gs.Channels[len(gs.Channels)-1] = cs
-
-			tmplCTX := templates.NewContext(&gs, &cs, parsed.GuildData.MS)
-			tmplCTX.Name = "ticket open message"
-			tmplCTX.Data["Reason"] = parsed.Args[0].Str()
-			ticketOpenMsg := conf.TicketOpenMSG
-			if ticketOpenMsg == "" {
-				ticketOpenMsg = DefaultTicketMsg
-			}
-
-			err = tmplCTX.ExecuteAndSendWithErrors(ticketOpenMsg, channel.ID)
-			if err != nil {
-				logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("failed sending ticket open message")
-			}
-
-			// send the log message
-			TicketLog(conf, parsed.GuildData.GS.ID, parsed.Author, &discordgo.MessageEmbed{
-				Title:       fmt.Sprintf("Ticket #%d opened", id),
-				Description: fmt.Sprintf("Subject: %s", subject),
-				Color:       0x5df948,
-			})
-
 			// Annn done setting up the ticket
-			return fmt.Sprintf("Ticket #%d opened in <#%d>", id, channel.ID), nil
+			return fmt.Sprintf("Ticket #%d opened in <#%d>", ticket.LocalID, ticket.ChannelID), nil
 		},
 	}
 
