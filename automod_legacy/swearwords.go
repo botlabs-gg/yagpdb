@@ -36,7 +36,7 @@ var BuiltinSwearWords = map[string]bool{
 	"fucks":       true,
 	"fudgepacker": true,
 	"genitals":    true,
-	"hell":        true,
+	"hell":        false,
 	"jerk":        true,
 	"jizz":        true,
 	"knobend":     true,
