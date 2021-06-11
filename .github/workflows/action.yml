@@ -17,8 +17,7 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v2.1
 
-      - if: ${{ !contains(steps.changed-files.outputs.modified_files, 'noCopy.txt') }}
-        name: master comment
+      - name: master comment
         uses: thollander/actions-comment-pull-request@master
         with:
           message: |
@@ -27,24 +26,6 @@ jobs:
             > push the changes you make to the dev branch (Jonas747/yagpdb/dev).
             
             If you still wish to keep this pull request open, please change the base branch.
-            For that, simply click the edit button next to the title of this pull request and select the new base;
-            To prevent conflicts, I suggest you first `git merge upstream/dev` on your local branch and push these new changes. Alternatively, `git rebase upstream/dev` on your local branch and then force-push.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - if: ${{ contains(steps.changed-files.outputs.modified_files, 'swearwords.go') }}
-        name: automod comment
-        uses: thollander/actions-comment-pull-request@master
-        with:
-          message: |
-            Hey @${{github.actor }}! Thank you for your interest in contributing to YAGPDB.
-            Unfortunately, basic automoderator will not receive **any** updates. To be able to use a custom list of swearwords, please use [automoderator v2](https://docs.yagpdb.xyz/tools-and-utilities/automoderator-v2).
-            As an alternative, you can amend your own words at the bottom of your basic automoderator settings.
-            For more information, please join the [support server](https://discord.gg/0vYlUK2XBKldPSMY).
-            
-            Additionally, please do not open pull requests against the `master` branch, as stated in [CONTRIBUTING.md](../../CONTRIBUTING.md):
-            > push the changes you make to the dev branch (Jonas747/yagpdb/dev).
-            
-            If you insist on wanting to keep this PR open, because it contains critical changes, please change the base branch to `dev`.
             For that, simply click the edit button next to the title of this pull request and select the new base;
             To prevent conflicts, I suggest you first `git merge upstream/dev` on your local branch and push these new changes. Alternatively, `git rebase upstream/dev` on your local branch and then force-push.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
