@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1334,4 +1335,178 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interface{}, error) {
+	if c.IncreaseCheckCallCounterPremium("sortfuncs", 1, 3) {
+		return "", ErrTooManyCalls
+	}
+
+	inputSlice := reflect.ValueOf(input)
+	switch inputSlice.Kind() {
+	case reflect.Slice, reflect.Array:
+		// valid
+	default:
+		return "", fmt.Errorf("Can not use type %s as input to the sort func", inputSlice.Type().String())
+	}
+
+	var dict SDict
+	var err error
+
+	// We have optional args to set the output of the func
+	//
+	// Reverse
+	// Reverses the order
+	// From [0 1 2] to [2 1 0]
+	//
+	// Subslices
+	// By default the function returns a single slice with all the values sorted.
+	// Setting subslices to true will make the function return a set of sublices
+	// based on the input type/kind
+	// From [1 2 3 a b c] to [[1 2 3] [a b c]]
+	//
+	// Emptyslices
+	// By default the function only returns the slices that had an input to them.
+	// If you sort only strings, the output would be a slice of strings.
+	// But with this flag the function returns all possible slices, this is helpful for indexing
+	// From [[1 2 3] [a b c] [map[a:1 b:2]]] to [[1 2 3] [] [a b c] [] [] [map[a:1 b:2]] []]
+	//
+	// We can have up to 7 subslices total:
+	// intSlice, floatSlice, stringSlice, timeSlice, sliceSlice, mapSlice and defaultSlice
+	//
+	// Note that the output will always be an `Slice` even if all the items
+	// of the slice are of a single type/kind
+	switch len(sortargs) {
+	case 0:
+		dict = SDict{
+			"reverse":     false,
+			"subslices":   false,
+			"emptyslices": false,
+		}
+	case 1:
+		dict, err = StringKeyDictionary(sortargs[0])
+		if err != nil {
+			return "", err
+		}
+	default:
+		dict, err = StringKeyDictionary(sortargs...)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	var intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice Slice
+
+	for i := 0; i < inputSlice.Len(); i++ {
+		switch t := inputSlice.Index(i).Interface().(type) {
+		case int, int64:
+			intSlice = append(intSlice, t)
+		case *int:
+			if t != nil {
+				intSlice = append(intSlice, *t)
+			}
+		case *int64:
+			if t != nil {
+				intSlice = append(intSlice, *t)
+			}
+		case float64:
+			floatSlice = append(floatSlice, t)
+		case *float64:
+			if t != nil {
+				floatSlice = append(floatSlice, *t)
+			}
+		case string:
+			stringSlice = append(stringSlice, t)
+		case *string:
+			if t != nil {
+				stringSlice = append(stringSlice, *t)
+			}
+		case time.Time:
+			timeSlice = append(timeSlice, t)
+		case *time.Time:
+			if t != nil {
+				timeSlice = append(timeSlice, *t)
+			}
+		default:
+			v := reflect.ValueOf(t)
+			switch v.Kind() {
+			case reflect.Slice:
+				csliceSlice = append(csliceSlice, t)
+			case reflect.Map:
+				mapSlice = append(mapSlice, t)
+			default:
+				defaultSlice = append(defaultSlice, t)
+			}
+		}
+	}
+
+	if dict.Get(strings.ToLower("reverse")) == true { // User wants the output in reversed order
+		sort.Slice(intSlice, func(i, j int) bool { return ToInt64(intSlice[i]) > ToInt64(intSlice[j]) })
+		sort.Slice(floatSlice, func(i, j int) bool { return ToFloat64(floatSlice[i]) > ToFloat64(floatSlice[j]) })
+		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) > ToString(stringSlice[j]) })
+		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[i].(time.Time).Before(timeSlice[j].(time.Time)) })
+		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) > getLen(csliceSlice[j]) })
+		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) > getLen(mapSlice[j]) })
+	} else { // User wants the output in standard order
+		sort.Slice(intSlice, func(i, j int) bool { return ToInt64(intSlice[i]) < ToInt64(intSlice[j]) })
+		sort.Slice(floatSlice, func(i, j int) bool { return ToFloat64(floatSlice[i]) < ToFloat64(floatSlice[j]) })
+		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) < ToString(stringSlice[j]) })
+		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[j].(time.Time).Before(timeSlice[i].(time.Time)) })
+		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) < getLen(csliceSlice[j]) })
+		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) < getLen(mapSlice[j]) })
+	}
+
+	if dict.Get(strings.ToLower("subslices")) == true { // User wants the output to be separated by type/kind
+		if dict.Get(strings.ToLower("emptyslices")) == true { // User wants the output to be filled with empty slices
+			outputSlice = append(outputSlice, intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice)
+		} else { // User only wants the subset of slices that contain data
+			if len(intSlice) > 0 {
+				outputSlice = append(outputSlice, intSlice)
+			}
+
+			if len(floatSlice) > 0 {
+				outputSlice = append(outputSlice, floatSlice)
+			}
+
+			if len(stringSlice) > 0 {
+				outputSlice = append(outputSlice, stringSlice)
+			}
+
+			if len(timeSlice) > 0 {
+				outputSlice = append(outputSlice, timeSlice)
+			}
+
+			if len(csliceSlice) > 0 {
+				outputSlice = append(outputSlice, csliceSlice)
+			}
+
+			if len(mapSlice) > 0 {
+				outputSlice = append(outputSlice, mapSlice)
+			}
+
+			if len(defaultSlice) > 0 {
+				outputSlice = append(outputSlice, defaultSlice)
+			}
+		}
+	} else { // User wants a single slice output, without any subset
+		outputSlice = append(outputSlice, intSlice...)
+		outputSlice = append(outputSlice, floatSlice...)
+		outputSlice = append(outputSlice, stringSlice...)
+		outputSlice = append(outputSlice, timeSlice...)
+		outputSlice = append(outputSlice, csliceSlice...)
+		outputSlice = append(outputSlice, mapSlice...)
+		outputSlice = append(outputSlice, defaultSlice...)
+	}
+
+	return outputSlice, nil
+}
+
+func getLen(from interface{}) int {
+	v := reflect.ValueOf(from)
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array, reflect.Map:
+		return v.Len()
+	default:
+		return 0
+	}
 }
