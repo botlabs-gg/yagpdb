@@ -1342,7 +1342,7 @@ func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interfac
 		return "", ErrTooManyCalls
 	}
 
-	inputSlice := reflect.ValueOf(input)
+	inputSlice, _ := indirect(reflect.ValueOf(input))
 	switch inputSlice.Kind() {
 	case reflect.Slice, reflect.Array:
 		// valid
