@@ -163,6 +163,9 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 		case *discordgo.User:
 			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
 			fakeMsg.Mentions = append(fakeMsg.Mentions, t)
+		case discordgo.User:
+			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
+			fakeMsg.Mentions = append(fakeMsg.Mentions, &t)
 		case []string:
 			for i, str := range t {
 				if i != 0 {
