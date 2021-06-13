@@ -566,7 +566,7 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 	var guilds []*discordgo.UserGuild
 	err := common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
 	if err != nil {
-		guilds, err = session.UserGuilds(100, 0, 0)
+		guilds, err = session.UserGuilds(0, 0, 0)
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed getting user guilds")
 			return nil, err
