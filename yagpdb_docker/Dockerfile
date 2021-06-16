@@ -20,9 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X github.com/jonas747/yagpdb/co
 FROM alpine:latest
 
 WORKDIR /app
-VOLUME \
-  /app/soundboard \
-  /app/cert
+VOLUME ["/app/soundboard", "/app/cert"]
 EXPOSE 80 443
 
 # We need the X.509 certificates for client TLS to work.
