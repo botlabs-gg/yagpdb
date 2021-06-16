@@ -29,10 +29,7 @@ EXPOSE 80 443
 # Also install tzdata, needed for Go timezone support,
 # and ffmpeg for soundboard support,
 # as the alpine image does not come with them by default.
-RUN apk --no-cache add \
-ca-certificates \
-ffmpeg \
-tzdata
+RUN apk --no-cache add ca-certificates ffmpeg tzdata
 
 COPY --from=builder /bin/yagpdb .
 
