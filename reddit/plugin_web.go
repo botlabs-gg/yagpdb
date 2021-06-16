@@ -30,7 +30,7 @@ const (
 type CreateForm struct {
 	Subreddit  string `schema:"subreddit" valid:",1,100"`
 	Slow       bool   `schema:"slow"`
-	Channel    int64  `schema:"channel" valid:"channel,false`
+	Channel    int64  `schema:"channel" valid:"channel,true`
 	ID         int64  `schema:"id"`
 	UseEmbeds  bool   `schema:"use_embeds"`
 	NSFWMode   int    `schema:"nsfw_filter"`
@@ -38,7 +38,7 @@ type CreateForm struct {
 }
 
 type UpdateForm struct {
-	Channel    int64 `schema:"channel" valid:"channel,false`
+	Channel    int64 `schema:"channel" valid:"channel,true`
 	ID         int64 `schema:"id"`
 	UseEmbeds  bool  `schema:"use_embeds"`
 	NSFWMode   int   `schema:"nsfw_filter"`
@@ -63,7 +63,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)
 	web.CPMux.Handle(pat.New("/reddit"), redditMux)
 
-	// Alll handlers here require guild channels present
+	// All handlers here require guild channels present
 	redditMux.Use(web.RequireBotMemberMW)
 	redditMux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	redditMux.Use(baseData)
