@@ -4,6 +4,7 @@ package logs
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -113,8 +114,14 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
 		}
 
-		if len(v.Embeds) > 0 {
-			body += fmt.Sprintf(" (%d embeds is not shown)", len(v.Embeds))
+		// serialise embeds to their underlying JSON
+		for count, embed := range v.Embeds {
+			marshalled, err := json.Marshal(embed)
+			if err != nil {
+				continue
+			}
+
+			body += fmt.Sprintf("\nEmbed %d: %s", count, marshalled)
 		}
 
 		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)
