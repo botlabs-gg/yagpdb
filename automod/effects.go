@@ -728,7 +728,7 @@ func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
 			Name: "Custom message",
 			Key:  "CustomReason",
 			Min:  0,
-			Max:  150,
+			Max:  280,
 			Kind: SettingTypeString,
 		},
 		{
