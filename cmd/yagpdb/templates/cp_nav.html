@@ -92,7 +92,7 @@
                     </li>
                 </ul>
             </div>
-        </div> 
+        </div>
 
         <script>
         $(function(){
@@ -162,7 +162,7 @@
             <i class="fas fa-bars" aria-label="Toggle sidebar"></i>
         </div>
     </div>
- 
+
     <div class="nano">
         <div class="nano-content">
             <nav id="menu" class="nav-main" role="navigation">
@@ -186,7 +186,7 @@
                         <ul class="nav nav-children">
                             {{range (index .SidebarItems "Core")}}
                             {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
-                            {{end}}                            
+                            {{end}}
                         </ul>
                     </li>
                     <li class="nav-parent   ">
@@ -229,7 +229,7 @@
                             <span>Documentation</span>
                         </a>
                     </li>
-                </ul> 
+                </ul>
             </nav>
         </div>
     </div>
@@ -255,7 +255,7 @@
 {{end}}
 {{end}}
 
-{{define "sidebar_item"}} 
+{{define "sidebar_item"}}
 {{$ag := .ActiveGuild}}
 {{$item := .Item}}
 <li>
@@ -300,7 +300,12 @@
 
         {{range $index, $element := .ManagedGuilds -}}{{if $element.Connected -}}
         <li>
-            <a role="menuitem" tabindex="-1" href="/manage/{{$element.ID}}/home"><i class="fas fa-wrench"></i>
+            <a role="menuitem" tabindex="-1" href="/manage/{{$element.ID}}/home">
+            {{if $element.Icon}}
+                <img src="https://cdn.discordapp.com/icons/{{$element.ID}}/{{$element.Icon}}?size=64" class="rounded-circle server-image"></img>
+            {{else}}
+                <i class="fas fa-wrench"></i>
+            {{end}}
                 {{$element.Name}}</a>
         </li>
         {{end}}{{end}}
@@ -321,4 +326,12 @@
         {{end}}
     </ul>
 </div>
+<style>
+.server-image {
+        width: 25px;
+        height: 25px;
+        margin-right: 3px;
+        vertical-align: middle;
+}
+</style>
 {{end}}
