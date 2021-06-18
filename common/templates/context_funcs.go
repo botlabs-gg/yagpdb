@@ -697,45 +697,89 @@ func (c *Context) takeRole(targetID int64, roleID int64, delay time.Duration) st
 	return ""
 }
 
-func (c *Context) tmplSetRoles(target interface{}, roleSlice interface{}) (string, error) {
+const DiscordRoleLimit = 250
+
+func (c *Context) tmplSetRoles(target interface{}, input interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
 	}
 
-	targetID := targetUserID(target)
+	var targetID int64
+	if target == nil {
+		// nil denotes the context member
+		if c.MS != nil {
+			targetID = c.MS.User.ID
+		}
+	} else {
+		targetID = targetUserID(target)
+	}
+
 	if targetID == 0 {
 		return "", nil
 	}
 
 	if c.IncreaseCheckCallCounter("set_roles"+discordgo.StrID(targetID), 1) {
-		return "", errors.New("Too many calls to setRoles for specific user ID (max 1 / user)")
+		return "", errors.New("too many calls for specific user ID (max 1 / user)")
 	}
 
-	rSlice := reflect.ValueOf(roleSlice)
-	switch rSlice.Kind() {
+	rv, _ := indirect(reflect.ValueOf(input))
+	switch rv.Kind() {
 	case reflect.Slice, reflect.Array:
 		// ok
 	default:
-		return "", errors.New("Value passed was not an array or slice")
+		return "", errors.New("value passed was not an array or slice")
 	}
 
-	if rSlice.Len() > 250 {
-		return "", errors.New("Length of slice passed was > 250 (Discord role limit)")
+	// use a map to easily handle duplicate roles
+	roles := make(map[int64]struct{})
+
+	// if users supply a slice of roles that does not contain a managed role of the member, the Discord API returns an error.
+	// add in the managed roles of the member by default so the user doesn't have to do it manually every time.
+	ms, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return "", nil
 	}
 
-	roles := make([]string, 0, rSlice.Len())
-	for i := 0; i < rSlice.Len(); i++ {
-		switch v := rSlice.Index(i).Interface().(type) {
-		case string:
-			roles = append(roles, v)
-		case int, int64:
-			roles = append(roles, discordgo.StrID(reflect.ValueOf(v).Int()))
-		default:
-			return "", errors.New("Could not convert slice to string slice")
+	for _, id := range ms.Member.Roles {
+		r := c.GS.GetRole(id)
+		if r != nil && r.Managed {
+			roles[id] = struct{}{}
 		}
 	}
 
-	err := common.BotSession.GuildMemberEdit(c.GS.ID, targetID, roles)
+	for i := 0; i < rv.Len(); i++ {
+		v, _ := indirect(rv.Index(i))
+		switch v.Kind() {
+		case reflect.Int, reflect.Int64:
+			roles[v.Int()] = struct{}{}
+		case reflect.String:
+			id, err := strconv.ParseInt(v.String(), 10, 64)
+			if err != nil {
+				return "", errors.New("could not parse string value into role ID")
+			}
+			roles[id] = struct{}{}
+		case reflect.Struct:
+			if r, ok := v.Interface().(discordgo.Role); ok {
+				roles[r.ID] = struct{}{}
+				break
+			}
+			fallthrough
+		default:
+			return "", errors.New("could not parse value into role ID")
+		}
+
+		if len(roles) > DiscordRoleLimit {
+			return "", fmt.Errorf("more than %d unique roles passed; %[1]d is the Discord role limit", DiscordRoleLimit)
+		}
+	}
+
+	// convert map to slice of keys (role IDs)
+	rs := make([]string, 0, len(roles))
+	for id := range roles {
+		rs = append(rs, discordgo.StrID(id))
+	}
+
+	err = common.BotSession.GuildMemberEdit(c.GS.ID, targetID, rs)
 	if err != nil {
 		return "", err
 	}
