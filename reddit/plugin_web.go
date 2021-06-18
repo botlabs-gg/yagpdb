@@ -135,13 +135,17 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		Subreddit:  strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
 		UseEmbeds:  newElem.UseEmbeds,
 		FilterNSFW: newElem.NSFWMode,
+		Disabled:   false,
 	}
 
 	if newElem.Slow {
 		watchItem.Slow = true
 		watchItem.MinUpvotes = newElem.MinUpvotes
 	}
-
+	
+	if watchItem.ChannelID == 0 {
+		watchItem.Disabled = true
+	}
 	err := watchItem.InsertG(ctx, boil.Infer())
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
@@ -189,7 +193,10 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	if item.Slow {
 		item.MinUpvotes = updated.MinUpvotes
 	}
-
+	
+	if item.ChannelID == 0 {
+		item.Disabled = true
+	}
 	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes", "disabled"))
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
