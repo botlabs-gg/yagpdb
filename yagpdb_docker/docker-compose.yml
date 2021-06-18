@@ -19,6 +19,7 @@ services:
     image: PUT_YOUR_OWN_IMAGE_HERE
     restart: unless-stopped
     command:
+      # - "/app/yagpdb"
       - "-all"
       - "-pa"
       - "-exthttps=false"
@@ -54,4 +55,3 @@ services:
       - default
     env_file:
       - db.env
-

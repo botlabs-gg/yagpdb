@@ -14,9 +14,15 @@ networks:
 
 services:
   app:
-    image: caskd/yagpdb
+    # We don't provide an official image, but there is a community-made image you can try:
+    #  - teyker/yagpdb (https://hub.docker.com/r/teyker/yagpdb)
+    #
+    # Note that we do not take responsibility for anything that happens as a result of using
+    # the image above.
+    image: PUT_YOUR_OWN_IMAGE_HERE
     restart: unless-stopped
     command:
+      # - "/app/yagpdb"
       - "-all"
       - "-pa"
       - "-exthttps=true"
@@ -50,4 +56,3 @@ services:
       - default
     env_file:
       - db.env
-
