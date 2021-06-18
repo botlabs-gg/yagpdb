@@ -114,13 +114,8 @@ var cmdWhois = &commands.YAGCommand{
 			}
 		}
 
-		nick := ""
-		if member.Member.Nick != "" {
-			nick = " (" + member.Member.Nick + ")"
-		}
+		var nick, joinedAtStr, joinedAtDurStr string
 
-		joinedAtStr := ""
-		joinedAtDurStr := ""
 		if member.Member == nil {
 			joinedAtStr = "Couldn't find out"
 			joinedAtDurStr = "Couldn't find out"
@@ -129,6 +124,10 @@ var cmdWhois = &commands.YAGCommand{
 			joinedAtStr = parsedJoinedAt.UTC().Format(time.RFC822)
 			dur := time.Since(parsedJoinedAt)
 			joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionHours, dur)
+
+			if member.Member.Nick != "" {
+				nick = " (" + member.Member.Nick + ")"
+			}
 		}
 
 		if joinedAtDurStr == "" {
