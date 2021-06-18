@@ -4,6 +4,8 @@ package eventsystem
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -90,9 +92,19 @@ func EmitEvent(data *EventData, evt Event) {
 	if len(h[2]) > 0 {
 		go func() {
 			defer func() {
-				if err := recover(); err != nil {
+				if errI := recover(); errI != nil {
 					stack := string(debug.Stack())
-					logrus.WithField(logrus.ErrorKey, err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
+
+					var err error
+					switch t := errI.(type) {
+					case error:
+						err = t
+					case string:
+						err = errors.New(t)
+					default:
+						err = fmt.Errorf("unknown error: %v", t)
+					}
+					logrus.WithError(err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
 				}
 			}()
 

@@ -23,6 +23,10 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
+type EvictCacheData struct {
+	GuildID int64 `json:"guild_id"`
+}
+
 // RegisterPlugin registers the mqueue plugin into the plugin system and also initializes it
 func RegisterPlugin() {
 	p := &Plugin{
@@ -31,12 +35,18 @@ func RegisterPlugin() {
 
 	common.RegisterPlugin(p)
 
-	pubsub.AddHandler("feature_flags_updated", handleInvalidateCacheFor, nil)
+	pubsub.AddHandler(evictCachePubSubEvent, handleInvalidateCacheFor, nil)
+	pubsub.AddHandler(evictCachePubSubEvent2, handleInvalidateCacheFor2, EvictCacheData{})
 }
 
 // Invalidate the cache when the rules have changed
 func handleInvalidateCacheFor(event *pubsub.Event) {
 	EvictCacheForGuild(event.TargetGuildInt)
+}
+
+func handleInvalidateCacheFor2(event *pubsub.Event) {
+	dataCast := event.Data.(*EvictCacheData)
+	EvictCacheForGuild(dataCast.GuildID)
 }
 
 // EvictCacheForGuild evicts the specified guild's featureflag cache

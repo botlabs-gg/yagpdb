@@ -253,7 +253,7 @@ func (p *Plugin) AddCommands() {
 
 			isAdminsOnlyCurrently := true
 
-			modOverwrites := make([]*discordgo.PermissionOverwrite, 0)
+			modOverwrites := make([]discordgo.PermissionOverwrite, 0)
 
 			for _, ow := range parsed.GuildData.CS.PermissionOverwrites {
 				if ow.Type == "role" && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
@@ -262,7 +262,7 @@ func (p *Plugin) AddCommands() {
 						isAdminsOnlyCurrently = false
 					}
 
-					modOverwrites = append(modOverwrites, &ow)
+					modOverwrites = append(modOverwrites, ow)
 				}
 			}
 
@@ -274,14 +274,14 @@ func (p *Plugin) AddCommands() {
 					if (v.Allow & InTicketPerms) != InTicketPerms {
 						// add it back to allows, remove from denies
 						newAllows := v.Allow | InTicketPerms
-						newDenies := v.Deny & (InTicketPerms ^ InTicketPerms)
+						newDenies := v.Deny & (^InTicketPerms)
 						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, "role", newAllows, newDenies)
 					}
 				} else {
 					// remove the mods from this ticket
 					if (v.Allow & InTicketPerms) == InTicketPerms {
 						// remove it from allows
-						newAllows := v.Allow & (InTicketPerms ^ InTicketPerms)
+						newAllows := v.Allow & (^InTicketPerms)
 						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, "role", newAllows, v.Deny)
 					}
 				}
