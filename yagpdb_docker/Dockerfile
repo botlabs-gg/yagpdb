@@ -1,7 +1,7 @@
 FROM golang:stretch as builder
 
 WORKDIR /appbuild/yagpdb
-COPY go.mod go.sum .
+COPY go.mod go.sum ./
 RUN go mod download
 
 # Handle templates for plugins automatically
