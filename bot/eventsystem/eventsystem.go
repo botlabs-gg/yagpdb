@@ -115,7 +115,9 @@ func EmitEvent(data *EventData, evt Event) {
 				return
 			}
 
-			data.GS = newGS
+			if newGS != nil {
+				data.GS = newGS
+			}
 		}
 
 		// attempt to fill in channel state if applicable
