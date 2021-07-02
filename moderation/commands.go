@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
@@ -149,6 +150,10 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
+			if utf8.RuneCountInString(reason) > 470 {
+				return "Error: Reason too long (can be max 470 characters).", nil
+			}
+
 			ddays := int(config.DefaultBanDeleteDays.Int64)
 			if parsed.Switches["ddays"].Value != nil {
 				ddays = parsed.Switches["ddays"].Int()
@@ -236,6 +241,10 @@ var ModerationCommands = []*commands.YAGCommand{
 			reason, err = MBaseCmdSecond(parsed, reason, config.KickReasonOptional, discordgo.PermissionKickMembers, config.KickCmdRoles, config.KickEnabled)
 			if err != nil {
 				return nil, err
+			}
+
+			if utf8.RuneCountInString(reason) > 470 {
+				return "Error: Reason too long (can be max 470 characters).", nil
 			}
 
 			var msg *discordgo.Message
