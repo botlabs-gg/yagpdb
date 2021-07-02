@@ -68,7 +68,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
-// ChannelArg converts a verity of types of argument into a channel, verifying that it exists
+// ChannelArg converts a variety of types of argument into a channel, verifying that it exists
 func (c *Context) ChannelArg(v interface{}) int64 {
 
 	// Look for the channel
@@ -894,6 +894,16 @@ func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (
 	return "", nil
 }
 
+func (c *Context) findRoleByID(id int64) *discordgo.Role {
+	for _, r := range c.GS.Roles {
+		if r.ID == id {
+			return &r
+		}
+	}
+
+	return nil
+}
+
 func (c *Context) findRoleByName(name string) *discordgo.Role {
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
@@ -1061,6 +1071,37 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	}
 
 	return member.DgoMember(), nil
+}
+
+func (c *Context) tmplGetRole(r interface{}) (*discordgo.Role, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	switch t := r.(type) {
+	case int, int64:
+		return c.findRoleByID(ToInt64(t)), nil
+	case string:
+		parsed, err := strconv.ParseInt(t, 10, 64)
+		if err == nil {
+			return c.findRoleByID(parsed), nil
+		}
+
+		if strings.HasPrefix(t, "<@&") && strings.HasSuffix(t, ">") {
+			re := regexp.MustCompile(`\d+`)
+			found := re.FindAllString(t, 1)
+			if len(found) > 0 {
+				parsedMention, err := strconv.ParseInt(found[0], 10, 64)
+				if err == nil {
+					return c.findRoleByID(parsedMention), nil
+				}
+			}
+		}
+
+		return c.findRoleByName(t), nil
+	default:
+		return nil, nil
+	}
 }
 
 func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
