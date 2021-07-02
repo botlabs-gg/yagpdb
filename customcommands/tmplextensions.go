@@ -45,7 +45,7 @@ func init() {
 		ctx.ContextFuncs["dbTopEntries"] = tmplDBTopEntries(ctx, false)
 		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
 		ctx.ContextFuncs["dbCount"] = tmplDBCount(ctx)
-		ctx.ContextFuncs["dbRank"]= tmplDBRank(ctx)
+		ctx.ContextFuncs["dbRank"] = tmplDBRank(ctx)
 	})
 }
 
@@ -337,9 +337,9 @@ func tmplCancelUniqueCC(ctx *templates.Context) interface{} {
 }
 
 type Query struct {
-	UserID  null.Int64 	`json:"user_id"`
-	Pattern null.String	`json:"pattern"`
-	Reverse bool		`json:"reverse"`
+	UserID  null.Int64  `json:"user_id"`
+	Pattern null.String `json:"pattern"`
+	Reverse bool        `json:"reverse"`
 }
 
 func tmplDBSet(ctx *templates.Context) interface{} {
@@ -535,12 +535,12 @@ func tmplDBDelMultiple(ctx *templates.Context) interface{} {
 		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
 			return "", templates.ErrTooManyCalls
 		}
-		
+
 		q, err := queryFromArg(query)
-		if err!= nil {
+		if err != nil {
 			return "", err
 		}
-		
+
 		amount := int(templates.ToInt64(iAmount))
 		if amount > 100 {
 			amount = 100
@@ -562,9 +562,9 @@ func tmplDBDelMultiple(ctx *templates.Context) interface{} {
 		if err != nil {
 			return "", err
 		}
-		
+
 		cleared, err := rows.DeleteAllG(context.Background())
-		ctx.GS.UserCacheDel(CacheKeyDBLimits)
+		cachedDBLimits.Delete(ctx.GS.ID)
 		return cleared, err
 	}
 }
@@ -578,17 +578,17 @@ func tmplDBRank(ctx *templates.Context) interface{} {
 		if ctx.IncreaseCheckCallCounterPremium("db_multiple", 2, 10) {
 			return "", templates.ErrTooManyCalls
 		}
-		
+
 		q, err := queryFromArg(query)
-		if err!= nil {
+		if err != nil {
 			return "", err
-		}	
-		
+		}
+
 		order := `DESC`
 		if q.Reverse {
 			order = `ASC`
 		}
-		
+
 		if q.UserID.Valid && (q.UserID.Int64 != userID) { // some optimization
 			return 0, nil
 		}
@@ -645,12 +645,12 @@ func tmplDBCount(ctx *templates.Context) interface{} {
 				pattern.Valid = true
 			default:
 				q, err := queryFromArg(arg)
-				if err!= nil {
+				if err != nil {
 					return "", err
 				}
 				userID = q.UserID
 				pattern = q.Pattern
-				
+
 			}
 
 		}
@@ -669,39 +669,38 @@ func queryFromArg(query interface{}) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var q Query
 	for key, val := range querySdict {
 		switch key {
-			case "userID":
+		case "userID":
 			switch val.(type) {
-				case int, int64:
+			case int, int64:
 				q.UserID.Int64 = templates.ToInt64(val)
 				q.UserID.Valid = true
-				
-				default:
+
+			default:
 				return &q, errors.New("Invalid UserID datatype in query. Must be a number")
 			}
-			
-			case "pattern":
-				q.Pattern.String = limitString(templates.ToString(val), 256)
-				q.Pattern.Valid = true
-			
-			case "reverse":
+
+		case "pattern":
+			q.Pattern.String = limitString(templates.ToString(val), 256)
+			q.Pattern.Valid = true
+
+		case "reverse":
 			revFlag, ok := val.(bool)
 			if !ok {
 				return &q, errors.New("Invalid reverse flag datatype in query. Must be a boolean value.")
 			}
 			q.Reverse = revFlag
-			
-			default:
+
+		default:
 			return &q, errors.New("Invalid Key: " + key + " passed to query constructor")
 		}
 	}
-				
+
 	return &q, nil
 }
-
 
 func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 	orderBy := "value_num DESC, id DESC"
