@@ -65,9 +65,9 @@ func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 			logger.WithError(err).Error("failed fetching guild data")
 		}
 
-		msg = fmt.Sprintf(":x: Left guild **%s** :(", common.ReplaceServerInvites(guildData.Name, int64(confBotLeavesJoins.GetInt()), "[removed-server-invite]"))
+		msg = fmt.Sprintf(":x: Left guild **%s** :(", common.ReplaceServerInvites(guildData.Name, 0, "[removed-server-invite]"))
 	case eventsystem.EventNewGuild:
-		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", common.ReplaceServerInvites(evt.GuildCreate().Guild.Name, int64(confBotLeavesJoins.GetInt()), "[removed-server-invite]"))
+		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", common.ReplaceServerInvites(evt.GuildCreate().Guild.Name, 0, "[removed-server-invite]"))
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)
