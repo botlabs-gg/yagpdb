@@ -50,6 +50,19 @@ type EventData struct {
 	l sync.Mutex
 }
 
+func (e *EventData) Clone() *EventData {
+	return &EventData{
+		EvtInterface:      e.EvtInterface,
+		Type:              e.Type,
+		ctx:               e.ctx,
+		Session:           e.Session,
+		GuildFeatureFlags: e.GuildFeatureFlags,
+		GS:                e.GS,
+		cs:                e.cs,
+		cancelled:         e.cancelled,
+	}
+}
+
 func NewEventData(session *discordgo.Session, t Event, evtInterface interface{}) *EventData {
 	return &EventData{
 		EvtInterface: evtInterface,
@@ -71,8 +84,7 @@ func (e *EventData) Context() context.Context {
 }
 
 func (e *EventData) WithContext(ctx context.Context) *EventData {
-	cop := new(EventData)
-	*cop = *e
+	cop := e.Clone()
 	cop.ctx = ctx
 	return cop
 }
@@ -88,6 +100,34 @@ func EmitEvent(data *EventData, evt Event) {
 
 	runEvents(h[0], data)
 	runEvents(h[1], data)
+
+	data = data.Clone()
+
+	// re-fetch state info after state had been updated
+	if guildEvt, ok := data.EvtInterface.(discordgo.GuildEvent); ok {
+		id := guildEvt.GetGuildID()
+		if id != 0 {
+			newGS := DiscordState.GetGuild(id)
+
+			// If guild state is not available for any guild related events, except creates and deletes, do not run the handlers
+			if newGS == nil && data.Type != EventGuildDelete {
+				logrus.Debugf("Skipped event as guild state info is not available: %v, %d", data.Type, guildEvt.GetGuildID())
+				return
+			}
+
+			if newGS != nil {
+				data.GS = newGS
+			}
+		}
+
+		// attempt to fill in channel state if applicable
+		if channelEvt, ok := data.EvtInterface.(discordgo.ChannelEvent); ok && data.GS != nil {
+			cs := data.GS.GetChannel(channelEvt.GetChannelID())
+			if cs != nil {
+				data.cs = cs
+			}
+		}
+	}
 
 	if len(h[2]) > 0 {
 		go func() {
