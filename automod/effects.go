@@ -700,7 +700,7 @@ func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface
 /////////////////////////////////////////////////////////////
 
 type SendChannelMessageEffectData struct {
-	CustomReason string `valid:",0,150,trimspace"`
+	CustomReason string `valid:",0,280,trimspace"`
 	PingUser     bool
 }
 
