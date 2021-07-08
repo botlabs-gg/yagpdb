@@ -42,6 +42,8 @@ var (
 		"urlescape": url.PathEscape,
 		"split":     strings.Split,
 		"title":     strings.Title,
+		"hasPrefix": strings.HasPrefix,
+		"hasSuffix": strings.HasSuffix,
 
 		// math
 		"add":               add,
