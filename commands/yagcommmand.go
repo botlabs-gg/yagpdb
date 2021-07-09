@@ -111,8 +111,9 @@ type YAGCommand struct {
 	RunInDM      bool // Set to enable this commmand in DM's
 	HideFromHelp bool // Set to hide from help
 
-	RequireDiscordPerms []int64   // Require users to have one of these permission sets to run the command
-	RequireBotPerms     [][]int64 // Discord permissions that the bot needs to run the command, (([0][0] && [0][1] && [0][2]) || ([1][0] && [1][1]...))
+	RequireDiscordPerms      []int64   // Require users to have one of these permission sets to run the command
+	RequiredDiscordPermsHelp string    // Optional message that shows up when users run the help command that documents user permission requirements for the command
+	RequireBotPerms          [][]int64 // Discord permissions that the bot needs to run the command, (([0][0] && [0][1] && [0][2]) || ([1][0] && [1][1]...))
 
 	Middlewares []dcmd.MiddleWareFunc
 
