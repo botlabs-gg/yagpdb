@@ -123,7 +123,7 @@ var metricsPubsubSkipped = promauto.NewCounterVec(prometheus.CounterOpts{
 func runPollEvents() error {
 	logger.Info("Listening for pubsub events")
 
-	conn, err := radix.PersistentPubSubWithOpts("tcp", common.ConfRedis.GetString())
+	conn, err := radix.PersistentPubSubWithOpts("tcp", common.RedisAddr)
 	if err != nil {
 		return err
 	}

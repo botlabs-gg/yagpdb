@@ -207,6 +207,17 @@ var (
 	})
 )
 
+var RedisAddr = loadRedisAddr()
+
+func loadRedisAddr() string {
+	addr := os.Getenv("YAGPDB_REDIS")
+	if addr == "" {
+		addr = "localhost:6379"
+	}
+
+	return addr
+}
+
 func connectRedis(unitTests bool) (err error) {
 	maxConns := RedisPoolSize
 	if maxConns == 0 {
@@ -220,10 +231,6 @@ func connectRedis(unitTests bool) (err error) {
 
 	// we kinda bypass the config system because the config system also relies on redis
 	// this way the only required env var is the redis address, and per-host specific things
-	addr := os.Getenv("YAGPDB_REDIS")
-	if addr == "" {
-		addr = "localhost:6379"
-	}
 
 	opts := []radix.PoolOpt{
 		radix.PoolOnEmptyWait(),
@@ -233,12 +240,14 @@ func connectRedis(unitTests bool) (err error) {
 
 	// if were running unit tests, use the 2nd db to avoid accidentally running tests against a main db
 	if unitTests {
-		radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
-			return radix.Dial(network, addr, radix.DialSelectDB(2))
-		})
+		opts = append(opts,
+			radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
+				return radix.Dial(network, addr, radix.DialSelectDB(2))
+			}),
+		)
 	}
 
-	RedisPool, err = radix.NewPool("tcp", addr, maxConns, opts...)
+	RedisPool, err = radix.NewPool("tcp", RedisAddr, maxConns, opts...)
 	return
 }
 

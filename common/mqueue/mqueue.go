@@ -1,17 +1,13 @@
 package mqueue
 
 import (
-	"encoding/json"
 	"net"
 	"net/http"
 	"time"
 
-	"github.com/jonas747/yagpdb/common/config"
-
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,7 +15,6 @@ var (
 	sources        = make(map[string]PluginWithSourceDisabler)
 	webhookSession *discordgo.Session
 	logger         = common.GetPluginLogger(&Plugin{})
-	confMaxWorkers = config.RegisterOption("yagpdb.mqueue.max_workers", "Max mqueue sending workers", 2)
 )
 
 // PluginWithSourceDisabler
@@ -39,6 +34,7 @@ var (
 
 // Plugin represents the mqueue plugin
 type Plugin struct {
+	server *MqueueServer
 }
 
 // PluginInfo implements common.Plugin
@@ -89,33 +85,9 @@ func RegisterSource(name string, source PluginWithSourceDisabler) {
 	sources[name] = source
 }
 
-func incrIDCounter() (next int64) {
-	err := common.RedisPool.Do(radix.Cmd(&next, "INCR", "mqueue_id_counter"))
-	if err != nil {
-		logger.WithError(err).Error("Failed increasing mqueue id counter")
-		return -1
-	}
-
-	return next
-}
-
-// QueueMessage queues a message in the message queue
-func QueueMessage(elem *QueuedElement) {
-	nextID := incrIDCounter()
-	if nextID == -1 {
-		return
-	}
-
-	elem.ID = nextID
-
-	serialized, err := json.Marshal(elem)
-	if err != nil {
-		logger.WithError(err).Error("Failed marshaling mqueue element")
-		return
-	}
-
-	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", "mqueue", "-1", string(serialized)))
-	if err != nil {
-		return
-	}
+type Storage interface {
+	GetFullQueue() ([]*workItem, error)
+	AppendItem(elem *QueuedElement) error
+	DelItem(elem *workItem) error
+	NextID() (int64, error)
 }
