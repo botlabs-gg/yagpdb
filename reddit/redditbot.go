@@ -203,10 +203,10 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
 
 		qm := &mqueue.QueuedElement{
-			Guild:           item.GuildID,
-			Channel:         item.ChannelID,
+			GuildID:         item.GuildID,
+			ChannelID:       item.ChannelID,
 			Source:          "reddit",
-			SourceID:        idStr,
+			SourceItemID:    idStr,
 			UseWebhook:      true,
 			WebhookUsername: webhookUsername,
 		}
