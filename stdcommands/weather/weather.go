@@ -23,14 +23,24 @@ var Command = &commands.YAGCommand{
 	RunInDM:      true,
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Where", Type: dcmd.String},
+		{Name: "Where", Type: dcmd.String},
+	},
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "imperial", Help: "Change units to imperial"},
 	},
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		where := data.Args[0].Str()
+		// use metrics as forced default
+		unit := "m"
 
-		req, err := http.NewRequest("GET", "http://wttr.in/"+where+"?m", nil)
+		// switch to imperial units - blame the API for that strange choice of "u"
+		if data.Switches["imperial"].Value != nil {
+			unit = "u"
+		}
+
+		req, err := http.NewRequest("GET", "http://wttr.in/"+where+"?"+unit, nil)
 		if err != nil {
 			return nil, err
 		}
