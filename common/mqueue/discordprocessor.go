@@ -110,8 +110,6 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	return
 }
 
-type cacheKeyWebhook int64
-
 var errGuildNotFound = errors.New("Guild not found")
 
 func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
@@ -128,7 +126,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		}
 	}
 
-	gs := bot.State.Guild(true, elem.GuildID)
+	gs := bot.State.GetGuild(elem.GuildID)
 	if gs == nil {
 		// another check just in case
 		if onGuild, err := common.BotIsOnGuild(elem.GuildID); err == nil && !onGuild {
@@ -138,18 +136,9 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 		}
 	}
 
-	var whI interface{}
-	// in some cases guild state may not be available (starting up and the like)
-	if gs != nil {
-		whI, err = gs.UserCacheFetch(cacheKeyWebhook(elem.ChannelID), func() (interface{}, error) {
-			return findCreateWebhook(elem.GuildID, elem.ChannelID, elem.Source, avatar)
-		})
-	} else {
-		// fallback if no gs is available
-		whI, err = findCreateWebhook(elem.GuildID, elem.ChannelID, elem.Source, avatar)
-		logger.WithField("guild", elem.GuildID).Warn("Guild state not available, ignoring cache")
-	}
-
+	whI, err := webhookCache.GetCustomFetch(elem.ChannelID, func(key interface{}) (interface{}, error) {
+		return findCreateWebhook(elem.GuildID, elem.ChannelID, elem.Source, avatar)
+	})
 	if err != nil {
 		return err
 	}
@@ -173,9 +162,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 			return errors.WrapIf(err, "sql.delete")
 		}
 
-		if gs != nil {
-			gs.UserCacheDel(cacheKeyWebhook(elem.ChannelID))
-		}
+		webhookCache.Delete(elem.ChannelID)
 
 		return errors.New("deleted webhook")
 	}
