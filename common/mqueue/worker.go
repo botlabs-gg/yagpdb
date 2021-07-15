@@ -153,6 +153,22 @@ OUTER:
 }
 
 func (m *MqueueServer) addWork(wi *workItem) {
+	if !bot.ReadyTracker.IsGuildShardReady(wi.elem.GuildID) && !m.forceAllShards {
+		// keep tracking totalwork
+		if m.totalWorkPresent {
+			for _, v := range m.totalWork {
+				if v.elem.ID == wi.elem.ID {
+					return
+				}
+			}
+
+			m.totalWork = append(m.totalWork, wi)
+		}
+		return
+	}
+
+	// otherwise add it to localwork
+	// TODO: should we also add it to totalwork here?
 	for _, v := range m.localWork {
 		if v.elem.ID == wi.elem.ID {
 			return
