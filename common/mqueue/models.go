@@ -11,15 +11,15 @@ import (
 // QueuedElement represents a queued message
 type QueuedElement struct {
 	// The channel to send the message in
-	ChannelID int64
-	GuildID   int64
+	ChannelID int64 `json:"Channel"`
+	GuildID   int64 `json:"Guild"`
 
 	ID int64
 
 	// Where this feed originated from, responsible for handling discord specific errors
 	Source string
 	// Could be stuff like reddit feed element id, youtube feed element id and so on
-	SourceItemID string
+	SourceItemID string `json:"SourceID"`
 
 	// The actual message as a simple string
 	MessageStr string `json:",omitempty"`
