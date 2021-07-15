@@ -42,6 +42,8 @@ var (
 		"urlescape": url.PathEscape,
 		"split":     strings.Split,
 		"title":     strings.Title,
+		"hasPrefix": strings.HasPrefix,
+		"hasSuffix": strings.HasSuffix,
 
 		// math
 		"add":               add,
@@ -510,6 +512,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getChannel", c.tmplGetChannel)
+	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("addReactions", c.tmplAddReactions)
 	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
 	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
@@ -529,6 +532,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("onlineCount", c.tmplOnlineCount)
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
 	c.addContextFunc("editNickname", c.tmplEditNickname)
+
+	c.addContextFunc("sort", c.tmplSort)
 }
 
 type limitedWriter struct {
@@ -584,7 +589,16 @@ func (d Dict) Set(key interface{}, value interface{}) string {
 }
 
 func (d Dict) Get(key interface{}) interface{} {
-	return d[key]
+	out, ok := d[key]
+	if !ok {
+		switch key.(type) {
+		case int:
+			out = d[ToInt64(key)]
+		case int64:
+			out = d[tmplToInt(key)]
+		}
+	}
+	return out
 }
 
 func (d Dict) Del(key interface{}) string {

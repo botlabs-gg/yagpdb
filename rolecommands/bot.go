@@ -65,6 +65,7 @@ func (p *Plugin) AddCommands() {
 	cmdRemoveRoleMenu := &commands.YAGCommand{
 		Name:                "Remove",
 		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"rm"},
 		Description:         "Removes a rolemenu from a message.",
 		LongDescription:     "The message won't be deleted and the bot will not do anything with reactions on that message\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},

@@ -51,12 +51,29 @@ var cmdLogs = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "channel", Help: "Optional channel to log instead", Type: dcmd.Channel},
+	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      false,
 	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 		num := cmd.Args[0].Int()
 
-		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GuildData.GS.ID, cmd.ChannelID, cmd.Author.Username, cmd.Author.ID, num)
+		cID := cmd.ChannelID
+		if cmd.Switch("channel").Value != nil {
+			cID = cmd.Switch("channel").Value.(*dstate.ChannelState).ID
+
+			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionReadMessageHistory)
+			if err != nil {
+				return "Failed checking permissions, please try again or join the support server.", err
+			}
+
+			if !hasPerms {
+				return "You do not have permissions to send messages there", nil
+			}
+		}
+
+		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GuildData.GS.ID, cID, cmd.Author.Username, cmd.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
 				return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
@@ -97,13 +114,8 @@ var cmdWhois = &commands.YAGCommand{
 			}
 		}
 
-		nick := ""
-		if member.Member.Nick != "" {
-			nick = " (" + member.Member.Nick + ")"
-		}
+		var nick, joinedAtStr, joinedAtDurStr string
 
-		joinedAtStr := ""
-		joinedAtDurStr := ""
 		if member.Member == nil {
 			joinedAtStr = "Couldn't find out"
 			joinedAtDurStr = "Couldn't find out"
@@ -112,6 +124,10 @@ var cmdWhois = &commands.YAGCommand{
 			joinedAtStr = parsedJoinedAt.UTC().Format(time.RFC822)
 			dur := time.Since(parsedJoinedAt)
 			joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionHours, dur)
+
+			if member.Member.Nick != "" {
+				nick = " (" + member.Member.Nick + ")"
+			}
 		}
 
 		if joinedAtDurStr == "" {

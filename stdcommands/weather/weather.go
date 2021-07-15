@@ -1,19 +1,23 @@
 package weather
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/lunixbochs/vtclean"
 )
 
-var TempRangeRegex = regexp.MustCompile("(-?[0-9]{1,3})( ?- ?(-?[0-9]{1,3}))? ?°C")
+var (
+	TempRangeRegex1 = regexp.MustCompile("(-?[0-9]{1,3})( ?- ?(-?[0-9]{1,3}))? ?°C")
+	TempRangeRegex2 = regexp.MustCompile(`(-?\+?[0-9]{1,3})( ?\((-?[0-9]{1,3})\))? ?°C`)
+	NumberRegex     = regexp.MustCompile(`-?\d{1,3}`)
+)
 
 var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryFun,
@@ -23,7 +27,7 @@ var Command = &commands.YAGCommand{
 	RunInDM:      true,
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Where", Type: dcmd.String},
+		{Name: "Where", Type: dcmd.String},
 	},
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
@@ -58,31 +62,10 @@ var Command = &commands.YAGCommand{
 				continue
 			}
 
-			tmpFrom := 0
-			tmpTo := 0
-			isRange := false
-
-			submatches := TempRangeRegex.FindStringSubmatch(v)
-			if len(submatches) < 2 {
-				continue
-			}
-
-			tmpFrom, _ = strconv.Atoi(submatches[1])
-
-			if len(submatches) >= 4 && submatches[3] != "" {
-				tmpTo, _ = strconv.Atoi(submatches[3])
-				isRange = true
-			}
-
-			// convert to fahernheit
-			tmpFrom = int(float64(tmpFrom)*1.8 + 32)
-			tmpTo = int(float64(tmpTo)*1.8 + 32)
-
-			v = strings.TrimRight(v, " ")
-			if isRange {
-				split[i] = v + fmt.Sprintf(" (%d-%d °F)", tmpFrom, tmpTo)
-			} else {
-				split[i] = v + fmt.Sprintf(" (%d °F)", tmpFrom)
+			if newS, converted := convTempFormat(TempRangeRegex1, v); converted {
+				split[i] = newS
+			} else if newS, converted := convTempFormat(TempRangeRegex2, v); converted {
+				split[i] = newS
 			}
 		}
 
@@ -97,4 +80,27 @@ var Command = &commands.YAGCommand{
 
 		return out, nil
 	},
+}
+
+func convTempFormat(regex *regexp.Regexp, input string) (string, bool) {
+	pos := regex.FindStringIndex(input)
+	if pos == nil {
+		return input, false
+	}
+
+	rest := strings.TrimSpace(input[pos[0]:])
+
+	doneso := NumberRegex.ReplaceAllStringFunc(rest, func(s string) string {
+		celcius, err := strconv.Atoi(s)
+		if err != nil {
+			return s
+		}
+
+		converted := int(float64(celcius)*1.8 + 32)
+		return strconv.Itoa(converted)
+	})
+
+	doneso = strings.ReplaceAll(doneso, "°C", "°F")
+
+	return strings.TrimRightFunc(input, unicode.IsSpace) + " / " + doneso, true
 }

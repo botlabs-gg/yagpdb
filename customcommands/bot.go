@@ -119,7 +119,7 @@ var cmdListCommands = &commands.YAGCommand{
 	Name:           "CustomCommands",
 	Aliases:        []string{"cc"},
 	Description:    "Shows a custom command specified by id or trigger, or lists them all",
-	ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
+	ArgumentCombos: [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
 		{Name: "Trigger", Type: dcmd.String},
@@ -183,8 +183,8 @@ var cmdListCommands = &commands.YAGCommand{
 				Reader: &buf,
 			}
 		}
-
-		if cc.TextTrigger != "" {
+		// Every text-based custom command trigger has a numerical value less than 5, so this is quite safe to do
+		if cc.TriggerType < 5 {
 			if ccFile != nil {
 				msg = &discordgo.MessageSend{
 					Content: fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` Group: `%s`",
