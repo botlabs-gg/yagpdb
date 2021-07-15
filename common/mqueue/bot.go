@@ -60,11 +60,6 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 }
 
 var (
-	// metricsQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
-	// 	Name: "yagpdb_mqueue_size_total",
-	// 	Help: "The size of the send message queue",
-	// })
-
 	metricsRatelimit = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "yagpdb_mqueue_ratelimits_total",
 		Help: "Ratelimits hit on the webhook session",
