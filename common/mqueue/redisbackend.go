@@ -54,11 +54,6 @@ func (rb *RedisBackend) AppendItem(elem *QueuedElement) error {
 		return err
 	}
 
-	err = rb.pool.Do(radix.Cmd(nil, "ZADD", "mqueue", "-1", string(serialized)))
-	if err != nil {
-		return err
-	}
-
 	err = rb.pool.Do(radix.Cmd(nil, "PUBLISH", mqueue_pubsub_key, string(serialized)))
 	return err
 }
