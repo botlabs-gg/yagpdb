@@ -247,8 +247,8 @@ func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*mod
 func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 	out := ""
 	for _, cc := range ccs {
-		switch cc.TextTrigger {
-		case "":
+		switch {
+		case cc.TriggerType >= 5:
 			out += fmt.Sprintf("`#%3d:` %s - Group: `%s`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
 		default:
 			out += fmt.Sprintf("`#%3d:` `%s`: %s - Group: `%s`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
