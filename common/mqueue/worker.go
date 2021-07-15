@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/jonas747/yagpdb/bot"
+	"github.com/jonas747/yagpdb/common/config"
 )
 
-const MaxConcurrentSends = 2
+var confMaxConcurrentSends = config.RegisterOption("yagpdb.mqueue.max_concurrent_sends", "Max number of concurrent sends that mqueue will do", 3)
 
 type workItem struct {
 	elem *QueuedElement
@@ -197,7 +198,7 @@ func removeFromWorkSlice(s []*workItem, wi *workItem) []*workItem {
 }
 
 func (m *MqueueServer) findWork() *workItem {
-	if len(m.activeWork)-m.ratelimitedWork >= MaxConcurrentSends {
+	if len(m.activeWork)-m.ratelimitedWork >= confMaxConcurrentSends.GetInt() {
 		return nil
 	}
 
