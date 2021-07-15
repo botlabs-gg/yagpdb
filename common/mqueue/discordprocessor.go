@@ -145,8 +145,9 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 	wh := whI.(*webhook)
 
 	webhookParams := &discordgo.WebhookParams{
-		Username: elem.WebhookUsername,
-		Content:  elem.MessageStr,
+		Username:        elem.WebhookUsername,
+		Content:         elem.MessageStr,
+		AllowedMentions: &discordgo.AllowedMentions{},
 	}
 
 	if elem.MessageEmbed != nil {
