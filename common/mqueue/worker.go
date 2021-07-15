@@ -50,21 +50,25 @@ type MqueueServer struct {
 	processor ItemProcessor
 
 	forceAllShards bool
+
+	recentSentTimes map[int64]time.Time
 }
 
 func NewServer(backend Storage, processor ItemProcessor) *MqueueServer {
 	return &MqueueServer{
-		PushWork:       make(chan *workItem),
-		clearTotalWork: make(chan bool),
-		Stop:           make(chan *sync.WaitGroup),
-		refreshWork:    make(chan bool),
-		doneWork:       make(chan *workResult),
-		backend:        backend,
-		processor:      processor,
+		PushWork:        make(chan *workItem),
+		clearTotalWork:  make(chan bool),
+		Stop:            make(chan *sync.WaitGroup),
+		refreshWork:     make(chan bool),
+		doneWork:        make(chan *workResult),
+		backend:         backend,
+		processor:       processor,
+		recentSentTimes: make(map[int64]time.Time),
 	}
 }
 
 func (m *MqueueServer) Run() {
+	gcTicker := time.NewTicker(time.Second * 10)
 	for {
 		select {
 		case wg := <-m.Stop:
@@ -81,6 +85,17 @@ func (m *MqueueServer) Run() {
 			m.addWork(wi)
 		case wi := <-m.doneWork:
 			m.finishWork(wi)
+		case <-gcTicker.C:
+			m.cleanRecentSentTimes()
+		}
+	}
+}
+
+func (m *MqueueServer) cleanRecentSentTimes() {
+	now := time.Now()
+	for c, v := range m.recentSentTimes {
+		if now.Sub(v) > time.Minute {
+			delete(m.recentSentTimes, c)
 		}
 	}
 }
@@ -186,6 +201,10 @@ func (m *MqueueServer) findWork() *workItem {
 		return nil
 	}
 
+	var highestSince time.Duration
+	var highestSinceWork *workItem
+	now := time.Now()
+
 	// find a work item that does not share a channel with any other item being processed (so ratelimits only take up max 1 worker)
 OUTER:
 	for _, v := range m.localWork {
@@ -196,28 +215,25 @@ OUTER:
 			}
 		}
 
-		// check the ratelimit for this channel, we skip elements being ratelimited
-		// var ratelimitWait time.Duration
-		// if v.elem.UseWebhook {
-		// 	b := webhookSession.Ratelimiter.GetBucket(discordgo.EndpointWebhookToken(v.elem.ChannelID))
-		// 	b.Lock()
-		// 	ratelimitWait = webhookSession.Ratelimiter.GetWaitTime(b, 1)
-		// 	b.Unlock()
-		// } else {
-		// 	b := common.BotSession.Ratelimiter.GetBucket(discordgo.EndpointChannelMessages(v.elem.ChannelID))
-		// 	b.Lock()
-		// 	ratelimitWait = common.BotSession.Ratelimiter.GetWaitTime(b, 1)
-		// 	b.Unlock()
-		// }
-
-		// if ratelimitWait > time.Millisecond*250 {
-		// 	continue
-		// }
-
-		return v
+		// Send in a channel we havne't sent a message in a while in
+		if lastT, exists := m.recentSentTimes[v.elem.ChannelID]; exists {
+			since := now.Sub(lastT)
+			if since > highestSince {
+				highestSince = since
+				highestSinceWork = v
+			}
+		} else {
+			// not tracked, send now
+			m.recentSentTimes[v.elem.ChannelID] = now
+			return v
+		}
 	}
 
-	return nil
+	if highestSinceWork != nil {
+		m.recentSentTimes[highestSinceWork.elem.ChannelID] = now
+	}
+
+	return highestSinceWork
 }
 
 type ItemProcessor interface {
