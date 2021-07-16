@@ -192,13 +192,13 @@ func (m *MqueueServer) checkRunNextWork() {
 func (m *MqueueServer) finishWork(wr *workResult) {
 	if !wr.retry {
 		m.backend.DelItem(wr.item)
-		m.activeWork = removeFromWorkSlice(m.activeWork, wr.item)
 		m.localWork = removeFromWorkSlice(m.localWork, wr.item)
 		if m.totalWorkPresent {
 			m.totalWork = removeFromWorkSlice(m.totalWork, wr.item)
 		}
 	}
 
+	m.activeWork = removeFromWorkSlice(m.activeWork, wr.item)
 	m.checkRunNextWork()
 }
 
