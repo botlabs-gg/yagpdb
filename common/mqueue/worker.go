@@ -11,8 +11,8 @@ import (
 var confMaxConcurrentSends = config.RegisterOption("yagpdb.mqueue.max_concurrent_sends", "Max number of concurrent sends that mqueue will do", 3)
 
 type workItem struct {
-	elem *QueuedElement
-	raw  []byte
+	Elem *QueuedElement
+	Raw  []byte
 }
 
 type workResult struct {
@@ -136,12 +136,12 @@ func (m *MqueueServer) refreshTotalWork() error {
 func (m *MqueueServer) refreshLocalWorkCached() {
 OUTER:
 	for _, wi := range m.totalWork {
-		if !bot.ReadyTracker.IsGuildShardReady(wi.elem.GuildID) && !m.forceAllShards {
+		if !bot.ReadyTracker.IsGuildShardReady(wi.Elem.GuildID) && !m.forceAllShards {
 			continue
 		}
 
 		for _, v := range m.localWork {
-			if v.elem.ID == wi.elem.ID {
+			if v.Elem.ID == wi.Elem.ID {
 				continue OUTER
 			}
 		}
@@ -153,11 +153,11 @@ OUTER:
 }
 
 func (m *MqueueServer) addWork(wi *workItem) {
-	if !bot.ReadyTracker.IsGuildShardReady(wi.elem.GuildID) && !m.forceAllShards {
+	if !bot.ReadyTracker.IsGuildShardReady(wi.Elem.GuildID) && !m.forceAllShards {
 		// keep tracking totalwork
 		if m.totalWorkPresent {
 			for _, v := range m.totalWork {
-				if v.elem.ID == wi.elem.ID {
+				if v.Elem.ID == wi.Elem.ID {
 					return
 				}
 			}
@@ -170,7 +170,7 @@ func (m *MqueueServer) addWork(wi *workItem) {
 	// otherwise add it to localwork
 	// TODO: should we also add it to totalwork here?
 	for _, v := range m.localWork {
-		if v.elem.ID == wi.elem.ID {
+		if v.Elem.ID == wi.Elem.ID {
 			return
 		}
 	}
@@ -204,7 +204,7 @@ func (m *MqueueServer) finishWork(wr *workResult) {
 
 func removeFromWorkSlice(s []*workItem, wi *workItem) []*workItem {
 	for i, v := range s {
-		if v.elem.ID == wi.elem.ID {
+		if v.Elem.ID == wi.Elem.ID {
 			s = append(s[:i], s[i+1:]...)
 			return s
 		}
@@ -227,13 +227,13 @@ OUTER:
 	for _, v := range m.localWork {
 		// Don't send 2 messages in a channel at the same time
 		for _, active := range m.activeWork {
-			if active.elem.ChannelID == v.elem.ChannelID {
+			if active.Elem.ChannelID == v.Elem.ChannelID {
 				continue OUTER
 			}
 		}
 
 		// Send in a channel we havne't sent a message in a while in
-		if lastT, exists := m.recentSentTimes[v.elem.ChannelID]; exists {
+		if lastT, exists := m.recentSentTimes[v.Elem.ChannelID]; exists {
 			since := now.Sub(lastT)
 			if since > highestSince {
 				highestSince = since
@@ -241,13 +241,13 @@ OUTER:
 			}
 		} else {
 			// not tracked, send now
-			m.recentSentTimes[v.elem.ChannelID] = now
+			m.recentSentTimes[v.Elem.ChannelID] = now
 			return v
 		}
 	}
 
 	if highestSinceWork != nil {
-		m.recentSentTimes[highestSinceWork.elem.ChannelID] = now
+		m.recentSentTimes[highestSinceWork.Elem.ChannelID] = now
 	}
 
 	return highestSinceWork

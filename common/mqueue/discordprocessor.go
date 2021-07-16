@@ -16,7 +16,7 @@ type DiscordProcessor struct {
 }
 
 func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
-	metricsProcessed.With(prometheus.Labels{"source": wi.elem.Source}).Inc()
+	metricsProcessed.With(prometheus.Labels{"source": wi.Elem.Source}).Inc()
 
 	retry := false
 	defer func() {
@@ -26,13 +26,13 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 		}
 	}()
 
-	queueLogger := logger.WithField("mq_id", wi.elem.ID)
+	queueLogger := logger.WithField("mq_id", wi.Elem.ID)
 
 	var err error
-	if wi.elem.UseWebhook {
-		err = trySendWebhook(queueLogger, wi.elem)
+	if wi.Elem.UseWebhook {
+		err = trySendWebhook(queueLogger, wi.Elem)
 	} else {
-		err = trySendNormal(queueLogger, wi.elem)
+		err = trySendNormal(queueLogger, wi.Elem)
 	}
 
 	if err == nil {
@@ -41,17 +41,17 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 
 	if e, ok := errors.Cause(err).(*discordgo.RESTError); ok {
 		if (e.Response != nil && e.Response.StatusCode >= 400 && e.Response.StatusCode < 500) || (e.Message != nil && e.Message.Code != 0) {
-			if source, ok := sources[wi.elem.Source]; ok {
-				maybeDisableFeed(source, wi.elem, e)
+			if source, ok := sources[wi.Elem.Source]; ok {
+				maybeDisableFeed(source, wi.Elem, e)
 			}
 
 			return
 		}
 	} else {
-		if onGuild, err := common.BotIsOnGuild(wi.elem.GuildID); !onGuild && err == nil {
-			if source, ok := sources[wi.elem.Source]; ok {
-				logger.WithError(err).Warnf("disabling feed item %s from %s to nonexistant guild", wi.elem.SourceItemID, wi.elem.Source)
-				source.DisableFeed(wi.elem, err)
+		if onGuild, err := common.BotIsOnGuild(wi.Elem.GuildID); !onGuild && err == nil {
+			if source, ok := sources[wi.Elem.Source]; ok {
+				logger.WithError(err).Warnf("disabling feed item %s from %s to nonexistant guild", wi.Elem.SourceItemID, wi.Elem.Source)
+				source.DisableFeed(wi.Elem, err)
 			}
 
 			return

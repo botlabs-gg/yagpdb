@@ -13,6 +13,12 @@ type RedisBackend struct {
 	pool *radix.Pool
 }
 
+func NewRedisBackend(pool *radix.Pool) *RedisBackend {
+	return &RedisBackend{
+		pool: pool,
+	}
+}
+
 func (rb *RedisBackend) GetFullQueue() ([]*workItem, error) {
 	var results [][]byte
 
@@ -31,8 +37,8 @@ func (rb *RedisBackend) GetFullQueue() ([]*workItem, error) {
 			logger.WithError(err).Error("Failed decoding queued mqueue element from full refresh")
 		} else {
 			totalWork = append(totalWork, &workItem{
-				elem: &dec,
-				raw:  v,
+				Elem: &dec,
+				Raw:  v,
 			})
 		}
 	}
@@ -59,7 +65,7 @@ func (rb *RedisBackend) AppendItem(elem *QueuedElement) error {
 }
 
 func (rb *RedisBackend) DelItem(item *workItem) error {
-	return rb.pool.Do(radix.Cmd(nil, "ZREM", "mqueue", string(item.raw)))
+	return rb.pool.Do(radix.Cmd(nil, "ZREM", "mqueue", string(item.Raw)))
 }
 
 func (rb *RedisBackend) NextID() (next int64, err error) {
@@ -106,8 +112,8 @@ func (rp *RedisPushServer) run() {
 		}
 
 		rp.pushwork <- &workItem{
-			elem: dec,
-			raw:  msg.Message,
+			Elem: dec,
+			Raw:  msg.Message,
 		}
 	}
 }
