@@ -124,6 +124,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool, enableSendDM bool) bool {
 	ctx := templates.NewContext(gs, cs, ms)
 	ctx.CurrentFrame.SendResponseInDM = cs.Type == discordgo.ChannelTypeDM
+	ctx.IsExecedByLeaveMessage = !enableSendDM
 
 	// since were changing the fields, we need a copy
 	msCop := *ms
