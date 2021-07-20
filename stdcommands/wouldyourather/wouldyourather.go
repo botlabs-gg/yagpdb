@@ -26,7 +26,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		embed := &discordgo.MessageEmbed{
-			Description: fmt.Sprintf("**EITHER...***🇦: %s\n\n**OR...**\n🇧 %s", q1, q2),
+			Description: fmt.Sprintf("**EITHER...**\n🇦: %s\n\n**OR...**\n🇧 %s", q1, q2),
 			Author: &discordgo.MessageEmbedAuthor{
 				Name:    "Would you rather...",
 				URL:     "https://either.io/",
