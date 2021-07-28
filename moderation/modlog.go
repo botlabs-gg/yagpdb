@@ -93,7 +93,7 @@ func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogActi
 	}
 
 	if emptyAuthor {
-		placeholder := fmt.Sprintf("Asssign an author and reason to this using **'reason %d your-reason-here`**", m.ID)
+		placeholder := fmt.Sprintf("Assign an author and reason to this using **`reason %d your-reason-here`**", m.ID)
 		updateEmbedReason(nil, placeholder, embed)
 		_, err = common.BotSession.ChannelMessageEditEmbed(channelID, m.ID, embed)
 	}

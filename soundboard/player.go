@@ -61,7 +61,7 @@ func RequestPlaySound(guildID int64, channelID, channelRanFrom int64, soundID in
 	return
 }
 
-func resetPlayerServer(guildID int64) string{
+func resetPlayerServer(guildID int64) string {
 	playersmu.L.Lock()
 
 	if p, ok := players[guildID]; ok {
@@ -71,7 +71,7 @@ func resetPlayerServer(guildID int64) string{
 		return ""
 	}
 	playersmu.L.Unlock()
-	
+
 	return "No active Player, nothing to reset."
 }
 
@@ -165,7 +165,7 @@ func (p *Player) checkIdleTooLong() {
 	defer t.Stop()
 	for {
 		<-t.C
-		
+
 		playersmu.L.Lock()
 		if p.stop {
 			playersmu.L.Unlock()
@@ -221,7 +221,7 @@ func playSound(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Sess
 			return vc, nil
 		}
 		playersmu.L.Unlock()
-		
+
 		frame, err := decoder.OpusFrame()
 		if err != nil {
 			if err != io.EOF {

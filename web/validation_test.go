@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v3"
 )
 
 type StringTestStruct struct {
@@ -108,9 +108,9 @@ var (
 
 func TestValidationChannel(t *testing.T) {
 
-	g := &discordgo.Guild{
-		Channels: []*discordgo.Channel{
-			&discordgo.Channel{
+	g := &dstate.GuildSet{
+		Channels: []dstate.ChannelState{
+			{
 				ID: 1,
 			},
 		},

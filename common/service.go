@@ -25,11 +25,12 @@ type serviceTracker struct {
 type ServiceType string
 
 const (
-	ServiceTypeBot         ServiceType = "bot"
-	ServiceTypeFrontend    ServiceType = "frontend"
-	ServiceTypeBGWorker    ServiceType = "bgworker"
-	ServiceTypeFeed        ServiceType = "feed"
-	ServiceTypeOrchestator ServiceType = "orchestrator"
+	ServiceTypeBot           ServiceType = "bot"
+	ServiceTypeFrontend      ServiceType = "frontend"
+	ServiceTypeBGWorker      ServiceType = "bgworker"
+	ServiceTypeConfigService ServiceType = "configservice"
+	ServiceTypeFeed          ServiceType = "feed"
+	ServiceTypeOrchestator   ServiceType = "orchestrator"
 )
 
 // Service represents a service or component of yagpdb
@@ -218,6 +219,26 @@ func (sp *servicePoller) GetShardAddress(shardID int) (string, error) {
 	}
 
 	return "", ErrNotFound
+}
+
+func (sp *servicePoller) GetShardNode(shardID int) (BotServiceDetails, error) {
+	sp.mu.Lock()
+	defer sp.mu.Unlock()
+
+	hosts, err := sp.getActiveServiceHosts()
+	if err != nil {
+		return BotServiceDetails{}, err
+	}
+
+	for _, h := range hosts {
+		for _, v := range h.Services {
+			if v.Type == ServiceTypeBot && ContainsIntSlice(v.BotDetails.RunningShards, shardID) {
+				return *v.BotDetails, nil
+			}
+		}
+	}
+
+	return BotServiceDetails{}, ErrNotFound
 }
 
 // GetGuildAddress returns the internal api addrress of the specified shard

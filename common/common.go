@@ -19,11 +19,13 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/yagpdb/common/cacheset"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/boil"
+	boilv4 "github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -34,9 +36,11 @@ var (
 	SQLX *sqlx.DB
 
 	RedisPool *radix.Pool
+	CacheSet  = cacheset.NewManager(time.Hour)
 
-	BotSession *discordgo.Session
-	BotUser    *discordgo.User
+	BotSession     *discordgo.Session
+	BotUser        *discordgo.User
+	BotApplication *discordgo.Application
 
 	RedisPoolSize = 0
 
@@ -79,6 +83,7 @@ func CoreInit() error {
 
 // Init initializes the rest of the bot
 func Init() error {
+	go CacheSet.RunGCLoop()
 
 	err := setupGlobalDGoSession()
 	if err != nil {
@@ -98,11 +103,23 @@ func Init() error {
 	logger.Info("Retrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("%#+v", err))
 	}
+
+	if !BotUser.Bot {
+		panic("This user is not a bot! Yags can only be used with bot accounts!")
+	}
+
 	BotSession.State.User = &discordgo.SelfUser{
 		User: BotUser,
 	}
+
+	app, err := BotSession.ApplicationMe()
+	if err != nil {
+		panic(fmt.Sprintf("%#+v", err))
+	}
+
+	BotApplication = app
 
 	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
 	if err != nil {
@@ -162,6 +179,8 @@ func setupGlobalDGoSession() (err error) {
 
 	BotSession.Client.Transport = &LoggingTransport{Inner: innerTransport}
 
+	go updateConcurrentRequests()
+
 	return nil
 }
 
@@ -188,6 +207,17 @@ var (
 	})
 )
 
+var RedisAddr = loadRedisAddr()
+
+func loadRedisAddr() string {
+	addr := os.Getenv("YAGPDB_REDIS")
+	if addr == "" {
+		addr = "localhost:6379"
+	}
+
+	return addr
+}
+
 func connectRedis(unitTests bool) (err error) {
 	maxConns := RedisPoolSize
 	if maxConns == 0 {
@@ -201,10 +231,6 @@ func connectRedis(unitTests bool) (err error) {
 
 	// we kinda bypass the config system because the config system also relies on redis
 	// this way the only required env var is the redis address, and per-host specific things
-	addr := os.Getenv("YAGPDB_REDIS")
-	if addr == "" {
-		addr = "localhost:6379"
-	}
 
 	opts := []radix.PoolOpt{
 		radix.PoolOnEmptyWait(),
@@ -214,12 +240,14 @@ func connectRedis(unitTests bool) (err error) {
 
 	// if were running unit tests, use the 2nd db to avoid accidentally running tests against a main db
 	if unitTests {
-		radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
-			return radix.Dial(network, addr, radix.DialSelectDB(2))
-		})
+		opts = append(opts,
+			radix.PoolConnFunc(func(network, addr string) (radix.Conn, error) {
+				return radix.Dial(network, addr, radix.DialSelectDB(2))
+			}),
+		)
 	}
 
-	RedisPool, err = radix.NewPool("tcp", addr, maxConns, opts...)
+	RedisPool, err = radix.NewPool("tcp", RedisAddr, maxConns, opts...)
 	return
 }
 
@@ -248,6 +276,7 @@ func connectDB(host, user, pass, dbName string, maxConns int) error {
 	PQ = db.DB()
 	SQLX = sqlx.NewDb(PQ, "postgres")
 	boil.SetDB(PQ)
+	boilv4.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(maxConns)
 		PQ.SetMaxIdleConns(maxConns)

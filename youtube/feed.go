@@ -170,12 +170,12 @@ func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle st
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Inc()
 
 	mqueue.QueueMessage(&mqueue.QueuedElement{
-		Guild:      parsedGuild,
-		Channel:    parsedChannel,
-		Source:     "youtube",
-		SourceID:   "",
-		MessageStr: content,
-		Priority:   2,
+		GuildID:      parsedGuild,
+		ChannelID:    parsedChannel,
+		Source:       "youtube",
+		SourceItemID: "",
+		MessageStr:   content,
+		Priority:     2,
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: parseMentions,
 		},
@@ -202,7 +202,7 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, yout
 		MentionEveryone: mentionEveryone,
 	}
 
-	call := p.YTService.Channels.List("snippet")
+	call := p.YTService.Channels.List([]string{"snippet"})
 	if youtubeChannelID != "" {
 		call = call.Id(youtubeChannelID)
 	} else {
@@ -325,7 +325,7 @@ func (p *Plugin) CheckVideo(videoID string, channelID string) error {
 		return nil
 	}
 
-	resp, err := p.YTService.Videos.List("snippet").Id(videoID).Do()
+	resp, err := p.YTService.Videos.List([]string{"snippet"}).Id(videoID).Do()
 	if err != nil || len(resp.Items) < 1 {
 		return err
 	}

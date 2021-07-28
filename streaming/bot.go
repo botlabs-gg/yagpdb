@@ -9,7 +9,7 @@ import (
 	"emperror.dev/errors"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -35,17 +35,16 @@ func (p *Plugin) BotInit() {
 func HandleUpdateStreaming(event *pubsub.Event) {
 	logger.Info("Received update streaming event ", event.TargetGuild)
 
-	gs := bot.State.Guild(true, event.TargetGuildInt)
+	gs := bot.State.GetGuild(event.TargetGuildInt)
 	if gs == nil {
 		return
 	}
 
-	gs.UserCacheDel(CacheKeyConfig)
-
+	cachedConfig.Delete(event.TargetGuildInt)
 	CheckGuildFull(gs, true)
 }
 
-func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
+func CheckGuildFull(gs *dstate.GuildSet, fetchMembers bool) {
 
 	config, err := GetConfig(gs.ID)
 	if err != nil {
@@ -57,46 +56,44 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 		return
 	}
 
-	gs.RLock()
-
 	var wg sync.WaitGroup
 
-	slowCheck := make([]*dstate.MemberState, 0, len(gs.Members))
+	slowCheck := make([]*dstate.MemberState, 0)
 
 	err = common.RedisPool.Do(radix.WithConn(KeyCurrentlyStreaming(gs.ID), func(conn radix.Conn) error {
-		for _, ms := range gs.Members {
 
-			if !ms.MemberSet || !ms.PresenceSet {
+		bot.State.IterateMembers(gs.ID, func(chunk []*dstate.MemberState) bool {
+			for _, ms := range chunk {
+				if ms.Member == nil || ms.Presence == nil {
 
-				if ms.PresenceSet && fetchMembers {
-					// If were fetching members, then fetch the missing members
-					// TODO: Maybe use the gateway request for this?
-					slowCheck = append(slowCheck, ms)
-					wg.Add(1)
-					go func(gID, uID int64) {
-						bot.GetMember(gID, uID)
-						wg.Done()
+					if ms.Presence != nil && fetchMembers {
+						// If were fetching members, then fetch the missing members
+						// TODO: Maybe use the gateway request for this?
+						slowCheck = append(slowCheck, ms)
+						wg.Add(1)
+						go func(gID, uID int64) {
+							bot.GetMember(gID, uID)
+							wg.Done()
 
-					}(gs.ID, ms.ID)
+						}(gs.ID, ms.User.ID)
+					}
+
+					continue
 				}
 
-				continue
+				err = CheckPresence(conn, config, ms, gs)
+
+				if err != nil {
+					logger.WithError(err).Error("Error checking presence")
+					continue
+				}
 			}
 
-			gs.RUnlock()
-			err = CheckPresence(conn, config, ms, gs)
-			gs.RLock()
-
-			if err != nil {
-				logger.WithError(err).Error("Error checking presence")
-				continue
-			}
-		}
+			return true
+		})
 
 		return nil
 	}))
-
-	gs.RUnlock()
 
 	if fetchMembers {
 		wg.Wait()
@@ -106,18 +103,14 @@ func CheckGuildFull(gs *dstate.GuildState, fetchMembers bool) {
 
 	logger.WithField("guild", gs.ID).Info("Starting slowcheck")
 
-	gs.RLock()
-	defer gs.RUnlock()
 	err = common.RedisPool.Do(radix.WithConn(KeyCurrentlyStreaming(gs.ID), func(conn radix.Conn) error {
 		for _, ms := range slowCheck {
 
-			if !ms.MemberSet || !ms.PresenceSet {
+			if ms.Member == nil || ms.Presence == nil {
 				continue
 			}
 
-			gs.RUnlock()
 			err = CheckPresence(conn, config, ms, gs)
-			gs.RLock()
 			if err != nil {
 				logger.WithError(err).Error("Error checking presence")
 				continue
@@ -137,7 +130,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
-	config, err := BotCachedGetConfig(evt.GS)
+	config, err := BotCachedGetConfig(evt.GS.ID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -146,13 +139,13 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
-	ms := evt.GS.MemberCopy(true, m.User.ID)
+	ms := bot.State.GetMember(m.GuildID, m.User.ID)
 	if ms == nil {
 		logger.WithField("guild", m.GuildID).Error("Member not found in state")
 		return false, nil
 	}
 
-	if !ms.PresenceSet {
+	if ms.Presence == nil {
 		return // no presence tracked, no poing in continuing
 	}
 
@@ -181,31 +174,30 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	if !config.Enabled {
 		return
 	}
-	gs := bot.State.Guild(true, g.ID)
+	gs := bot.State.GetGuild(g.ID)
 	if gs == nil {
 		logger.WithField("guild", g.ID).Error("Guild not found in state")
 		return
 	}
 
-	gs.RLock()
-	defer gs.RUnlock()
-
 	err = common.RedisPool.Do(radix.WithConn(KeyCurrentlyStreaming(g.ID), func(conn radix.Conn) error {
 
-		for _, ms := range gs.Members {
+		bot.State.IterateMembers(g.ID, func(chunk []*dstate.MemberState) bool {
+			for _, ms := range chunk {
 
-			if !ms.MemberSet || !ms.PresenceSet {
-				continue
+				if ms.Member == nil || ms.Presence == nil {
+					continue
+				}
+
+				err = CheckPresence(conn, config, ms, gs)
+				if err != nil {
+					logger.WithError(err).Error("Failed checking presence")
+				}
+
 			}
 
-			gs.RUnlock()
-			err = CheckPresence(conn, config, ms, gs)
-			gs.RLock()
-
-			if err != nil {
-				logger.WithError(err).Error("Failed checking presence")
-			}
-		}
+			return true
+		})
 
 		return nil
 	}))
@@ -220,12 +212,12 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 		return false, nil
 	}
 
-	config, err := BotCachedGetConfig(gs)
+	config, err := BotCachedGetConfig(gs.ID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
 
-	if !config.Enabled || (config.GiveRole == 0 && (config.AnnounceMessage == "" || gs.Channel(true, config.AnnounceChannel) == nil)) {
+	if !config.Enabled || (config.GiveRole == 0 && (config.AnnounceMessage == "" || gs.GetChannel(config.AnnounceChannel) == nil)) {
 		// Don't bother trying to send anything, its not "fully" enabled
 		return
 	}
@@ -238,7 +230,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	return false, nil
 }
 
-func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Presence, gs *dstate.GuildState) error {
+func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Presence, gs *dstate.GuildSet) error {
 	if !config.Enabled {
 		// RemoveStreaming(client, config, gs.ID, p.User.ID, member)
 		return nil
@@ -248,9 +240,9 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 
 	// Now the real fun starts
 	// Either add or remove the stream
-	if p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1 {
+	if p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1 && !p.User.Bot {
 
-		// Streaming
+		// Streaming and not a bot
 
 		if !config.MeetsRequirements(p.Roles, mainActivity.State, mainActivity.Details) {
 			RemoveStreaming(client, config, gs.ID, p.User.ID, p.Roles)
@@ -276,9 +268,8 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 				return errors.WithStackIf(err)
 			}
 
-			SendStreamingAnnouncement(config, gs, ms)
+			SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
 		}
-
 	} else {
 		// Not streaming
 		RemoveStreaming(client, config, gs.ID, p.User.ID, p.Roles)
@@ -301,7 +292,7 @@ func retrieveMainActivity(p *discordgo.Presence) *discordgo.Game {
 	return nil
 }
 
-func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, gs *dstate.GuildState) error {
+func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, gs *dstate.GuildSet) error {
 	if !config.Enabled {
 		// RemoveStreaming(client, config, gs.ID, p.User.ID, member)
 		return nil
@@ -309,21 +300,21 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 	// Now the real fun starts
 	// Either add or remove the stream
-	if ms.PresenceStatus != dstate.StatusOffline && ms.PresenceGame != nil && ms.PresenceGame.URL != "" && ms.PresenceGame.Type == 1 {
-		// Streaming
+	if ms.Presence != nil && ms.Presence.Status != dstate.StatusOffline && ms.Presence.Game != nil && ms.Presence.Game.URL != "" && ms.Presence.Game.Type == 1 && !ms.User.Bot {
+		// Streaming and not a bot
 
-		if !config.MeetsRequirements(ms.Roles, ms.PresenceGame.State, ms.PresenceGame.Details) {
-			RemoveStreaming(client, config, gs.ID, ms.ID, ms.Roles)
+		if !config.MeetsRequirements(ms.Member.Roles, ms.Presence.Game.State, ms.Presence.Game.Details) {
+			RemoveStreaming(client, config, gs.ID, ms.User.ID, ms.Member.Roles)
 			return nil
 		}
 
 		if config.GiveRole != 0 {
-			go GiveStreamingRole(gs.Guild.ID, ms.ID, config.GiveRole, ms.Roles)
+			go GiveStreamingRole(gs.ID, ms.User.ID, config.GiveRole, ms.Member.Roles)
 		}
 
 		// if true, then we were marked now, and not before
 		var markedNow bool
-		client.Do(radix.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), ms.ID))
+		client.Do(radix.FlatCmd(&markedNow, "SADD", KeyCurrentlyStreaming(gs.ID), ms.User.ID))
 		if !markedNow {
 			// Already marked
 			return nil
@@ -331,12 +322,12 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != 0 && config.AnnounceMessage != "" {
-			SendStreamingAnnouncement(config, gs, ms)
+			SendStreamingAnnouncement(config, gs, ms, ms.Presence.Game.URL, ms.Presence.Game.State, ms.Presence.Game.Details, ms.Presence.Game.Name)
 		}
 
 	} else {
 		// Not streaming
-		RemoveStreaming(client, config, gs.ID, ms.ID, ms.Roles)
+		RemoveStreaming(client, config, gs.ID, ms.User.ID, ms.Member.Roles)
 	}
 
 	return nil
@@ -396,10 +387,10 @@ func RemoveStreaming(client radix.Client, config *Config, guildID int64, memberI
 	// }
 }
 
-func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dstate.MemberState) {
+func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstate.MemberState, url string, gameName string, streamTitle string, streamPlatform string) {
 	// Only send one announcment every 1 hour
 	var resp string
-	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.ID)
+	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.User.ID)
 	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
 	if err != nil {
 		logger.WithError(err).Error("failed setting streaming announcment cooldown")
@@ -407,7 +398,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	}
 
 	if resp != "OK" {
-		logger.Info("streaming announcment cooldown: ", ms.ID)
+		logger.Info("streaming announcment cooldown: ", ms.User.ID)
 		return
 	}
 
@@ -431,11 +422,17 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildState, ms *dst
 	go analytics.RecordActiveUnit(guild.ID, &Plugin{}, "sent_streaming_announcement")
 
 	ctx := templates.NewContext(guild, nil, ms)
-	ctx.Data["URL"] = ms.PresenceGame.URL
-	ctx.Data["url"] = ms.PresenceGame.URL
-	ctx.Data["Game"] = ms.PresenceGame.State
-	ctx.Data["StreamTitle"] = ms.PresenceGame.Details
-	ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
+	// ctx.Data["URL"] = ms.PresenceGame.URL
+	// ctx.Data["url"] = ms.PresenceGame.URL
+	// ctx.Data["Game"] = ms.PresenceGame.State
+	// ctx.Data["StreamTitle"] = ms.PresenceGame.Details
+	// ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
+
+	ctx.Data["URL"] = url
+	ctx.Data["url"] = url
+	ctx.Data["Game"] = gameName
+	ctx.Data["StreamTitle"] = streamTitle
+	ctx.Data["StreamPlatform"] = streamPlatform
 
 	out, err := ctx.Execute(config.AnnounceMessage)
 	if err != nil {
@@ -506,15 +503,11 @@ func DisableStreamingRole(guildID int64) {
 	featureflags.MarkGuildDirty(guildID)
 }
 
-type CacheKey int
+var cachedConfig = common.CacheSet.RegisterSlot("streaming_configs", nil, int64(0))
 
-const (
-	CacheKeyConfig CacheKey = iota
-)
-
-func BotCachedGetConfig(gs *dstate.GuildState) (*Config, error) {
-	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
-		return GetConfig(gs.ID)
+func BotCachedGetConfig(guildID int64) (*Config, error) {
+	v, err := cachedConfig.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+		return GetConfig(guildID)
 	})
 
 	if err != nil {

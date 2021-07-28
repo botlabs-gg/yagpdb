@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/serverstats/messagestatscollector"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/mediocregopher/radix/v3"
@@ -36,18 +34,13 @@ func (p *Plugin) BotInit() {
 	memberSatatsUpdater = newServerMemberStatsUpdater()
 	go memberSatatsUpdater.run()
 
-	eventsystem.AddHandlerAsyncLastLegacy(p, handleUpdateMemberStats, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildMemberRemove, eventsystem.EventGuildCreate)
-
-	eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
-
-	pubsub.AddHandler("server_stats_invalidate_cache", func(evt *pubsub.Event) {
-		gs := bot.State.Guild(true, evt.TargetGuildInt)
-		if gs != nil {
-			gs.UserCacheDel(CacheKeyConfig)
-		}
-	}, nil)
-
-	go p.runOnlineUpdater()
+	if !confDeprecated.GetBool() {
+		eventsystem.AddHandlerAsyncLastLegacy(p, handleUpdateMemberStats, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildMemberRemove, eventsystem.EventGuildCreate)
+		eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
+		go p.runOnlineUpdater()
+	} else {
+		logger.Info("Not enabling server stats collecting due to deprecation flag being set")
+	}
 }
 
 func (p *Plugin) AddCommands() {
@@ -58,7 +51,7 @@ func (p *Plugin) AddCommands() {
 		Name:          "Stats",
 		Description:   "Shows server stats (if public stats are enabled)",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			config, err := GetConfig(data.Context(), data.GS.ID)
+			config, err := GetConfig(data.Context(), data.GuildData.GS.ID)
 			if err != nil {
 				return nil, errors.WithMessage(err, "getconfig")
 			}
@@ -67,7 +60,7 @@ func (p *Plugin) AddCommands() {
 				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.ConfHost.GetString()), nil
 			}
 
-			stats, err := RetrieveDailyStats(time.Now(), data.GS.ID)
+			stats, err := RetrieveDailyStats(time.Now(), data.GuildData.GS.ID)
 			if err != nil {
 				return nil, errors.WithMessage(err, "retrievefullstats")
 			}
@@ -79,13 +72,13 @@ func (p *Plugin) AddCommands() {
 
 			embed := &discordgo.MessageEmbed{
 				Title:       "Server stats",
-				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GS.ID),
+				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GuildData.GS.ID),
 				Fields: []*discordgo.MessageEmbedField{
-					&discordgo.MessageEmbedField{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Members Online", Value: fmt.Sprint(stats.Online), Inline: true},
-					&discordgo.MessageEmbedField{Name: "Total Members", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
+					{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
+					{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
+					{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
+					{Name: "Members Online", Value: fmt.Sprint(stats.Online), Inline: true},
+					{Name: "Total Members", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
 				},
 			}
 
@@ -113,7 +106,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	channel := evt.CS()
 
-	config, err := BotCachedFetchGuildConfig(evt.Context(), channel.Guild)
+	config, err := BotCachedFetchGuildConfig(evt.Context(), channel.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -126,15 +119,11 @@ func HandleMessageCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	return false, nil
 }
 
-type CacheKey int
+var cachedConfig = common.CacheSet.RegisterSlot("serverstats_config", nil, int64(0))
 
-const (
-	CacheKeyConfig CacheKey = iota
-)
-
-func BotCachedFetchGuildConfig(ctx context.Context, gs *dstate.GuildState) (*ServerStatsConfig, error) {
-	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
-		return GetConfig(ctx, gs.ID)
+func BotCachedFetchGuildConfig(ctx context.Context, guildID int64) (*ServerStatsConfig, error) {
+	v, err := cachedConfig.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+		return GetConfig(ctx, guildID)
 	})
 
 	if err != nil {
@@ -152,22 +141,19 @@ func (p *Plugin) runOnlineUpdater() {
 	time.Sleep(time.Minute * 1) // relieve startup preasure
 
 	ticker := time.NewTicker(time.Second * 10)
-	state := bot.State
 
-	var guildsToCheck []*dstate.GuildState
+	var guildsToCheck []int64
 	var i int
 	var numToCheckPerRun int
 
 	for {
-		select {
-		case <-ticker.C:
-		}
+		<-ticker.C
 
 		if len(guildsToCheck) < 0 || i >= len(guildsToCheck) {
 			// Copy the list of guilds so that we dont need to keep the entire state locked
 
 			i = 0
-			guildsToCheck = state.GuildsSlice(true)
+			guildsToCheck = guildSlice()
 
 			// Hit each guild once per hour more or less
 			numToCheckPerRun = len(guildsToCheck) / 250
@@ -185,7 +171,7 @@ func (p *Plugin) runOnlineUpdater() {
 			g := guildsToCheck[i]
 			online, total := p.checkGuildOnlineCount(g)
 
-			totalCounts[g.ID] = [2]int{online, total}
+			totalCounts[g] = [2]int{online, total}
 			checkedThisRound++
 		}
 
@@ -210,16 +196,33 @@ func (p *Plugin) runOnlineUpdater() {
 	}
 }
 
-func (p *Plugin) checkGuildOnlineCount(guild *dstate.GuildState) (online int, total int) {
+func guildSlice() []int64 {
+	result := make([]int64, 0, 100)
 
-	guild.RLock()
-	total = guild.Guild.MemberCount
-	for _, v := range guild.Members {
-		if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
-			online++
+	shards := bot.ReadyTracker.GetProcessShards()
+	for _, shard := range shards {
+		guilds := bot.State.GetShardGuilds(int64(shard))
+		for _, g := range guilds {
+			result = append(result, g.ID)
 		}
 	}
-	guild.RUnlock()
+
+	return result
+}
+
+func (p *Plugin) checkGuildOnlineCount(guildID int64) (online int, total int) {
+
+	g := bot.State.GetGuild(guildID)
+	if g != nil {
+		return 0, int(g.MemberCount)
+	}
+
+	// total = guild.MemberCount
+	// for _, v := range guild.Members {
+	// 	if v.PresenceSet && v.PresenceStatus != dstate.StatusOffline {
+	// 		online++
+	// 	}
+	// }
 
 	return online, total
 }

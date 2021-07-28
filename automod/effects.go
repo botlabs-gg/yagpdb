@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -115,70 +115,48 @@ func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings inte
 	settingsCast := settings.(*DeleteMessagesEffectData)
 	timeLimit := time.Now().Add(-time.Second * time.Duration(settingsCast.TimeLimit))
 
-	ctxData.GS.RLock()
-	defer ctxData.GS.RUnlock()
-
 	var channel *dstate.ChannelState
 	if ctxData.CS != nil {
 		channel = ctxData.CS
 	} else {
-
-		// no channel in context, attempt to find the last channel the user spoke in
-		var lastMessage *dstate.MessageState
-
-		for _, c := range ctxData.GS.Channels {
-			for i := len(c.Messages) - 1; i >= 0; i-- {
-				cMsg := c.Messages[i]
-
-				if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreated) {
-					break
-				}
-
-				if lastMessage != nil && lastMessage.ParsedCreated.After(cMsg.ParsedCreated) {
-					break
-				}
-
-				if cMsg.Author.ID == ctxData.MS.ID {
-					channel = c
-					lastMessage = cMsg
-					break
-				}
-			}
-		}
+		// do nothing for now
+		return nil
 	}
 
 	if channel == nil {
 		return nil
 	}
 
-	messages := make([]int64, 0, 100)
+	messages := bot.State.GetMessages(ctxData.GS.ID, ctxData.CS.ID, &dstate.MessagesQuery{
+		Limit: 1000,
+	})
 
-	for i := len(channel.Messages) - 1; i >= 0; i-- {
-		cMsg := channel.Messages[i]
+	deleteMessages := make([]int64, 0)
 
-		if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreated) {
+	for _, cMsg := range messages {
+		if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreatedAt) {
 			break
 		}
 
-		if cMsg.Author.ID != ctxData.MS.ID {
+		if cMsg.Author.ID != ctxData.MS.User.ID {
 			continue
 		}
 
-		messages = append(messages, cMsg.ID)
-		if len(messages) >= 100 || len(messages) >= settingsCast.NumMessages {
+		deleteMessages = append(deleteMessages, cMsg.ID)
+		if len(deleteMessages) >= 100 || len(deleteMessages) >= settingsCast.NumMessages {
 			break
 		}
 	}
 
-	if len(messages) < 0 {
+	if len(deleteMessages) < 0 {
 		return nil
 	}
 
 	go func(cs *dstate.ChannelState, messages []int64) {
 		// deleting messages too fast can sometimes make them still show in the discord client even after deleted
 		time.Sleep(500 * time.Millisecond)
-		bot.MessageDeleteQueue.DeleteMessages(cs.Guild.ID, cs.ID, messages...)
-	}(channel, messages)
+		bot.MessageDeleteQueue.DeleteMessages(cs.GuildID, cs.ID, messages...)
+	}(channel, deleteMessages)
 
 	return nil
 }
@@ -228,7 +206,7 @@ func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interf
 	settingsCast := settings.(*AddViolationEffectData)
 	violation := &models.AutomodViolation{
 		GuildID: ctxData.GS.ID,
-		UserID:  ctxData.MS.ID,
+		UserID:  ctxData.MS.User.ID,
 		RuleID:  null.Int64From(ctxData.CurrentRule.Model.ID),
 		Name:    settingsCast.Name,
 	}
@@ -294,7 +272,7 @@ func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		reason += ctxData.ConstructReason(true)
 	}
 
-	err := moderation.KickUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS.DGoUser())
+	err := moderation.KickUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, &ctxData.MS.User)
 	return err
 }
 
@@ -365,7 +343,7 @@ func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	}
 
 	duration := time.Duration(settingsCast.Duration) * time.Minute
-	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS.DGoUser(), duration, settingsCast.MessageDeleteDays)
+	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, &ctxData.MS.User, duration, settingsCast.MessageDeleteDays)
 	return err
 }
 
@@ -481,7 +459,7 @@ func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		reason += ctxData.ConstructReason(true)
 	}
 
-	err := moderation.WarnUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, ctxData.MS.DGoUser(), reason)
+	err := moderation.WarnUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, &ctxData.MS.User, reason)
 	return err
 }
 
@@ -528,18 +506,13 @@ func (sn *SetNicknameEffect) Description() (description string) {
 func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*SetNicknameEffectData)
 
-	curNick := ""
-	ctxData.GS.RLock()
-	curNick = ctxData.MS.Nick
-	ctxData.GS.RUnlock()
-
-	if curNick == settingsCast.NewName {
+	if ctxData.MS.Member.Nick == settingsCast.NewName {
 		// Avoid infinite recursion
 		return nil
 	}
 
 	logger.WithField("guild", ctxData.GS.ID).Info("set nickname: ", settingsCast.NewName)
-	err := common.BotSession.GuildMemberNickname(ctxData.GS.ID, ctxData.MS.ID, settingsCast.NewName)
+	err := common.BotSession.GuildMemberNickname(ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.NewName)
 	return err
 }
 
@@ -586,7 +559,7 @@ func (rv *ResetViolationsEffect) Description() (description string) {
 
 func (rv *ResetViolationsEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*ResetViolationsEffectData)
-	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.ID, settingsCast.Name)).DeleteAll(context.Background(), common.PQ)
+	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.Name)).DeleteAll(context.Background(), common.PQ)
 	return err
 }
 
@@ -646,7 +619,7 @@ func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	}
 
 	if settingsCast.Duration > 0 {
-		err := scheduledevents2.ScheduleRemoveRole(context.Background(), ctxData.GS.ID, ctxData.MS.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
+		err := scheduledevents2.ScheduleRemoveRole(context.Background(), ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
 		if err != nil {
 			return err
 		}
@@ -701,7 +674,7 @@ func (rf *RemoveRoleEffect) Description() (description string) {
 func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*RemoveRoleEffectData)
 
-	if !common.ContainsInt64Slice(ctxData.MS.Roles, settingsCast.Role) {
+	if !common.ContainsInt64Slice(ctxData.MS.Member.Roles, settingsCast.Role) {
 		return nil
 	}
 
@@ -715,7 +688,7 @@ func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface
 	}
 
 	if settingsCast.Duration > 0 {
-		err := scheduledevents2.ScheduleAddRole(context.Background(), ctxData.GS.ID, ctxData.MS.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
+		err := scheduledevents2.ScheduleAddRole(context.Background(), ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
 		if err != nil {
 			return err
 		}

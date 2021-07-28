@@ -11,16 +11,16 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/jonas747/yagpdb/stdcommands/util"
 	"github.com/lib/pq"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var (
@@ -55,7 +55,7 @@ func RedeemCode(ctx context.Context, code string, userID int64) error {
 	}
 
 	// model found, with no user attached, create the slot for it
-	slot, err := CreatePremiumSlot(ctx, tx, userID, "code", "Redeemed code", c.Message, c.ID, time.Duration(c.Duration))
+	slot, err := CreatePremiumSlot(ctx, tx, userID, "code", "Redeemed code", c.Message, c.ID, time.Duration(c.Duration), PremiumTierPremium)
 	if err != nil {
 		tx.Rollback()
 		return errors.WithMessage(err, "CreatePremiumSlot")
@@ -190,7 +190,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 
 		dm += "```"
 
-		bot.SendDM(data.Msg.Author.ID, dm)
+		bot.SendDM(data.Author.ID, dm)
 		return "Check yer dms", nil
 	}),
 }

@@ -6,7 +6,7 @@ package commands
 import (
 	"context"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands/models"
@@ -24,6 +24,7 @@ type CtxKey int
 const (
 	CtxKeyCmdSettings CtxKey = iota
 	CtxKeyChannelOverride
+	CtxKeyExecutedByCC
 )
 
 type MessageFilterFunc func(evt *eventsystem.EventData, msg *discordgo.Message) bool

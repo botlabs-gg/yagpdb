@@ -40,7 +40,7 @@ func Run(which []string) {
 			}
 
 			if !found {
-				logger.Info("Ignoring feed", plugin.PluginInfo().Name)
+				logger.Info("Ignoring feed ", plugin.PluginInfo().Name)
 				continue
 			}
 		}

@@ -12,6 +12,7 @@ import (
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
+	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -29,7 +30,7 @@ const (
 type CreateForm struct {
 	Subreddit  string `schema:"subreddit" valid:",1,100"`
 	Slow       bool   `schema:"slow"`
-	Channel    int64  `schema:"channel" valid:"channel,false`
+	Channel    int64  `schema:"channel" valid:"channel,true`
 	ID         int64  `schema:"id"`
 	UseEmbeds  bool   `schema:"use_embeds"`
 	NSFWMode   int    `schema:"nsfw_filter"`
@@ -37,7 +38,7 @@ type CreateForm struct {
 }
 
 type UpdateForm struct {
-	Channel    int64 `schema:"channel" valid:"channel,false`
+	Channel    int64 `schema:"channel" valid:"channel,true`
 	ID         int64 `schema:"id"`
 	UseEmbeds  bool  `schema:"use_embeds"`
 	NSFWMode   int   `schema:"nsfw_filter"`
@@ -62,7 +63,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)
 	web.CPMux.Handle(pat.New("/reddit"), redditMux)
 
-	// Alll handlers here require guild channels present
+	// All handlers here require guild channels present
 	redditMux.Use(web.RequireBotMemberMW)
 	redditMux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	redditMux.Use(baseData)
@@ -134,13 +135,17 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		Subreddit:  strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
 		UseEmbeds:  newElem.UseEmbeds,
 		FilterNSFW: newElem.NSFWMode,
+		Disabled:   false,
 	}
 
 	if newElem.Slow {
 		watchItem.Slow = true
 		watchItem.MinUpvotes = newElem.MinUpvotes
 	}
-
+	
+	if watchItem.ChannelID == 0 {
+		watchItem.Disabled = true
+	}
 	err := watchItem.InsertG(ctx, boil.Infer())
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
@@ -155,6 +160,10 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Subreddit))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: watchItem.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+		Slow:      newElem.Slow,
+	})
 
 	return templateData
 }
@@ -184,7 +193,10 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	if item.Slow {
 		item.MinUpvotes = updated.MinUpvotes
 	}
-
+	
+	if item.ChannelID == 0 {
+		item.Disabled = true
+	}
 	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes", "disabled"))
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
@@ -193,6 +205,10 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+		Slow:      item.Slow,
+	})
 
 	return templateData
 }
@@ -233,6 +249,10 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData["RedditConfig"] = currentConfig
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+		Slow:      item.Slow,
+	})
 
 	return templateData
 }

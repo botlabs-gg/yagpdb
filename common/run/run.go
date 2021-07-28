@@ -126,6 +126,13 @@ func Run() {
 		return
 	}
 
+	if flagRunWeb {
+		// web should handle all events
+		pubsub.FilterFunc = func(guildID int64) bool {
+			return true
+		}
+	}
+
 	if flagRunBot || flagRunEverything {
 		bot.Enabled = true
 	}
@@ -146,14 +153,21 @@ func Run() {
 		go web.Run()
 	}
 
-	if flagRunBot || flagRunEverything {
+	if flagRunBot || flagRunEverything || flagRunBWC {
 		mqueue.RegisterPlugin()
+	}
+
+	if flagRunBot || flagRunEverything {
 		botrest.RegisterPlugin()
 		bot.Run(flagNodeID)
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
-		go feeds.Run(strings.Split(flagRunFeeds, ","))
+		var runFeeds []string
+		if !flagRunEverything {
+			runFeeds = strings.Split(flagRunFeeds, ",")
+		}
+		go feeds.Run(runFeeds)
 	}
 
 	if flagRunBWC || flagRunEverything {

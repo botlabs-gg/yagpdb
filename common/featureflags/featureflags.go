@@ -9,6 +9,8 @@ import (
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // PluginWithFeatureFlags is a interface for plugins that provide their own feature-flags
@@ -17,6 +19,15 @@ type PluginWithFeatureFlags interface {
 
 	UpdateFeatureFlags(guildID int64) ([]string, error)
 	AllFeatureFlags() []string
+}
+
+// this provides a way to batch update flags initially during init
+// for example with premium, we can get all the premium guilds in 1 db query
+// as opposed to querying each individual guild individually
+type PluginWithBatchFeatureFlags interface {
+	PluginWithFeatureFlags
+
+	UpdateFeatureFlagsBatch() (map[int64][]string, error)
 }
 
 func keyGuildFlags(guildID int64) string {
@@ -70,6 +81,42 @@ func (c *flagCache) getGuildFlags(guildID int64) ([]string, error) {
 	return result, nil
 }
 
+func (c *flagCache) initCacheBatch(guilds []int64) error {
+	c.l.Lock()
+	defer c.l.Unlock()
+
+	actions := make([]radix.CmdAction, 0, len(guilds))
+	results := make([][]string, 0, len(guilds))
+	fetchingGuilds := make([]int64, 0, len(guilds))
+	i := 0
+	for _, g := range guilds {
+		if _, ok := c.cache[g]; ok {
+			continue // already in cache
+		}
+
+		results = append(results, make([]string, 0))
+		// results[g] = make([]string, 0)
+		actions = append(actions, radix.Cmd(&results[i], "SMEMBERS", keyGuildFlags(g)))
+		fetchingGuilds = append(fetchingGuilds, g)
+
+		i++
+	}
+
+	if len(actions) < 1 {
+		return nil
+	}
+
+	err := common.RedisPool.Do(radix.Pipeline(actions...))
+	if err != nil {
+		return err
+	}
+
+	for i, g := range fetchingGuilds {
+		c.cache[g] = results[i]
+	}
+	return nil
+}
+
 func (c *flagCache) invalidateGuild(guildID int64) {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -80,6 +127,36 @@ func (c *flagCache) invalidateGuild(guildID int64) {
 var (
 	caches = initCaches()
 )
+
+func BatchInitCache(guilds []int64) error {
+	logger.Infof("started preloading flag cache for %d guilds", len(guilds))
+	started := time.Now()
+
+	var wg sync.WaitGroup
+	for i := 0; i < len(caches); i++ {
+		toFetchHere := make([]int64, 0, len(guilds))
+
+		for _, g := range guilds {
+			cacheID := (g >> 22) % int64(len(caches))
+			if cacheID == int64(i) {
+				toFetchHere = append(toFetchHere, g)
+			}
+		}
+		wg.Add(1)
+		go func(cacheID int, guildsToFetch []int64) {
+			defer wg.Done()
+
+			err := caches[cacheID].initCacheBatch(toFetchHere)
+			if err != nil {
+				logger.WithError(err).Error("failed preloading flag cache")
+			}
+		}(i, toFetchHere)
+	}
+
+	wg.Wait()
+	logger.Infof("Preloading flag cache done, dur: %s", time.Since(started))
+	return nil
+}
 
 // GetGuildFlags returns the feature flags a guild has
 func GetGuildFlags(guildID int64) ([]string, error) {
@@ -127,18 +204,18 @@ func GuildHasFlagOrLogError(guildID int64, flag string) bool {
 	return hasFlag
 }
 
+var metricsFeatureFlagsUpdated = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "yagpdb_featureflags_updated_guilds_total",
+	Help: "Guilds featureflags has been updated for",
+})
+
 const evictCachePubSubEvent = "feature_flags_updated"
+const evictCachePubSubEvent2 = "feature_flags_updated_2"
 
 // UpdateGuildFlags updates the provided guilds feature flags
 func UpdateGuildFlags(guildID int64) error {
-	keyLock := fmt.Sprintf("feature_flags_updating:%d", guildID)
-	err := common.BlockingLockRedisKey(keyLock, time.Second*60, 60)
-	if err != nil {
-		return errors.WithStackIf(err)
-	}
-
-	defer common.UnlockRedisKey(keyLock)
 	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	defer pubsub.Publish(evictCachePubSubEvent2, -1, EvictCacheData{GuildID: guildID})
 
 	var lastErr error
 	for _, p := range common.Plugins {
@@ -150,12 +227,17 @@ func UpdateGuildFlags(guildID int64) error {
 		}
 	}
 
+	metricsFeatureFlagsUpdated.Inc()
+
 	return lastErr
 }
 
 // UpdatePluginFeatureFlags updates the feature flags of the provided plugin for the provided guild
 func UpdatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
+	defer EvictCacheForGuild(guildID)
 	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	defer pubsub.Publish(evictCachePubSubEvent2, -1, EvictCacheData{GuildID: guildID})
+
 	return updatePluginFeatureFlags(guildID, p)
 }
 
@@ -217,4 +299,28 @@ func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 	}
 
 	return nil
+}
+
+// in some scenarios manual flag management is usefull and since updating flags
+// dosen't trample over unknown flags its completely reliable aswelll
+func AddManualGuildFlags(guildID int64, flags ...string) error {
+	err := common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{keyGuildFlags(guildID)}, flags...)...))
+	if err == nil {
+		pubsub.PublishLogErr(evictCachePubSubEvent, guildID, nil)
+		pubsub.PublishLogErr(evictCachePubSubEvent2, -1, EvictCacheData{GuildID: guildID})
+	}
+
+	return err
+}
+
+// in some scenarios manual flag management is usefull and since updating flags
+// dosen't trample over unknown flags its completely reliable aswelll
+func RemoveManualGuildFlags(guildID int64, flags ...string) error {
+	err := common.RedisPool.Do(radix.Cmd(nil, "SREM", append([]string{keyGuildFlags(guildID)}, flags...)...))
+	if err == nil {
+		pubsub.PublishLogErr(evictCachePubSubEvent, guildID, nil)
+		pubsub.PublishLogErr(evictCachePubSubEvent2, -1, EvictCacheData{GuildID: guildID})
+	}
+
+	return err
 }

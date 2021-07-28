@@ -11,7 +11,7 @@ type MemberData struct {
 	ID            string        `json:"id"`
 	Relationships Relationships `json:"relationships"`
 
-	Attributes *MemberAttributes `json:attributes"`
+	Attributes *MemberAttributes `json:"attributes"`
 }
 
 const (

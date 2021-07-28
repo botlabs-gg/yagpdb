@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
@@ -34,7 +34,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 			// Assume it's an id
 			member, _ := bot.GetMember(tmplCtx.GS.ID, num)
 			if member != nil {
-				return member.DGoUser(), nil
+				return &member.User, nil
 			}
 
 			return nil, nil
@@ -58,7 +58,7 @@ func tmplUserArg(tmplCtx *templates.Context) interface{} {
 				member, _ := bot.GetMember(tmplCtx.GS.ID, id)
 				if member != nil {
 					// Found member
-					return member.DGoUser(), nil
+					return &member.User, nil
 				}
 
 			}
@@ -81,7 +81,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 		if ctx.CurrentFrame.CS != nil { //Check if CS is not a nil pointer
 			messageCopy.ChannelID = ctx.CurrentFrame.CS.ID
 		}
-		mc := &discordgo.MessageCreate{&messageCopy}
+		mc := &discordgo.MessageCreate{Message: &messageCopy}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
@@ -105,9 +105,9 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 			return "", errors.New("Failed fetching member")
 		}
 
-		messageCopy.Member = botMember.DGoCopy()
+		messageCopy.Member = botMember.DgoMember()
 
-		mc := &discordgo.MessageCreate{&messageCopy}
+		mc := &discordgo.MessageCreate{Message: &messageCopy}
 		if maxExec < 1 {
 			return "", errors.New("Max number of commands executed in custom command")
 		}
@@ -163,6 +163,9 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 		case *discordgo.User:
 			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
 			fakeMsg.Mentions = append(fakeMsg.Mentions, t)
+		case discordgo.User:
+			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
+			fakeMsg.Mentions = append(fakeMsg.Mentions, &t)
 		case []string:
 			for i, str := range t {
 				if i != 0 {
@@ -180,18 +183,18 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 
 	fakeMsg.Content = cmdLine
 
-	data, err := CommandSystem.FillData(common.BotSession, &fakeMsg)
+	data, err := CommandSystem.FillDataLegacyMessage(common.BotSession, &fakeMsg)
 	if err != nil {
 		return "", errors.WithMessage(err, "tmplExecCmd")
 	}
 
-	data.MsgStrippedPrefix = fakeMsg.Content
+	data.TraditionalTriggerData.MessageStrippedPrefix = fakeMsg.Content
 	foundCmd, foundContainer, rest := CommandSystem.Root.AbsFindCommandWithRest(cmdLine)
 	if foundCmd == nil {
 		return "Unknown command", nil
 	}
 
-	data.MsgStrippedPrefix = rest
+	data.TraditionalTriggerData.MessageStrippedPrefix = rest
 
 	data.Cmd = foundCmd
 	data.ContainerChain = []*dcmd.Container{CommandSystem.Root}
@@ -200,6 +203,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	}
 
 	data = data.WithContext(context.WithValue(data.Context(), paginatedmessages.CtxKeyNoPagination, true))
+	data = data.WithContext(context.WithValue(data.Context(), CtxKeyExecutedByCC, true))
 
 	cast := foundCmd.Command.(*YAGCommand)
 

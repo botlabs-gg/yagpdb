@@ -11,23 +11,23 @@ import (
 	"github.com/jonas747/yagpdb/bot/paginatedmessages"
 	"github.com/jonas747/yagpdb/common/config"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/logs/models"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdMigrate, cmdClearNames)
+	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdClearNames)
 }
 
 func (p *Plugin) BotInit() {
@@ -49,12 +49,31 @@ var cmdLogs = &commands.YAGCommand{
 	Description:     "Creates a log of the last messages in the current channel.",
 	LongDescription: "This includes deleted messages within an hour (or 12 hours for premium servers)",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
+		{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "channel", Help: "Optional channel to log instead", Type: dcmd.Channel},
+	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
 	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 		num := cmd.Args[0].Int()
 
-		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GS.ID, cmd.CS.ID, cmd.Msg.Author.Username, cmd.Msg.Author.ID, num)
+		cID := cmd.ChannelID
+		if cmd.Switch("channel").Value != nil {
+			cID = cmd.Switch("channel").Value.(*dstate.ChannelState).ID
+
+			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionReadMessageHistory)
+			if err != nil {
+				return "Failed checking permissions, please try again or join the support server.", err
+			}
+
+			if !hasPerms {
+				return "You do not have permissions to send messages there", nil
+			}
+		}
+
+		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GuildData.GS.ID, cID, cmd.Author.Username, cmd.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
 				return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
@@ -63,7 +82,7 @@ var cmdLogs = &commands.YAGCommand{
 			return "", err
 		}
 
-		return CreateLink(cmd.GS.ID, l.ID), err
+		return CreateLink(cmd.GuildData.GS.ID, l.ID), err
 	},
 }
 
@@ -76,8 +95,10 @@ var cmdWhois = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: &commands.MemberArg{}},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      false,
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
+		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -86,96 +107,102 @@ var cmdWhois = &commands.YAGCommand{
 		if parsed.Args[0].Value != nil {
 			member = parsed.Args[0].Value.(*dstate.MemberState)
 		} else {
-			member = parsed.MS
-			if sm := parsed.GS.MemberCopy(true, member.ID); sm != nil {
+			member = parsed.GuildData.MS
+			if sm := bot.State.GetMember(parsed.GuildData.GS.ID, member.User.ID); sm != nil {
 				// Prefer state member over the one provided in the message, since it may have presence data
 				member = sm
 			}
 		}
 
-		nick := ""
-		if member.Nick != "" {
-			nick = " (" + member.Nick + ")"
-		}
+		var nick, joinedAtStr, joinedAtDurStr string
 
-		joinedAtStr := ""
-		joinedAtDurStr := ""
-		if !member.MemberSet {
+		if member.Member == nil {
 			joinedAtStr = "Couldn't find out"
 			joinedAtDurStr = "Couldn't find out"
 		} else {
-			joinedAtStr = member.JoinedAt.UTC().Format(time.RFC822)
-			dur := time.Since(member.JoinedAt)
+			parsedJoinedAt, _ := member.Member.JoinedAt.Parse()
+			joinedAtStr = parsedJoinedAt.UTC().Format(time.RFC822)
+			dur := time.Since(parsedJoinedAt)
 			joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionHours, dur)
+
+			if member.Member.Nick != "" {
+				nick = " (" + member.Member.Nick + ")"
+			}
 		}
 
 		if joinedAtDurStr == "" {
 			joinedAtDurStr = "Less than an hour ago"
 		}
 
-		t := bot.SnowflakeToTime(member.ID)
+		t := bot.SnowflakeToTime(member.User.ID)
 		createdDurStr := common.HumanizeDuration(common.DurationPrecisionHours, time.Since(t))
 		if createdDurStr == "" {
 			createdDurStr = "Less than an hour ago"
 		}
 
 		var memberStatus string
-		state := [4]string{"Playing", "Streaming", "Listening", "Watching"}
-		if !member.PresenceSet || member.PresenceGame == nil {
-			memberStatus = fmt.Sprintf("Has no active status, is invisible/offline or is not in the bot's cache.")
+		state := [6]string{"Playing", "Streaming", "Listening", "Watching", "Custom", "Competing"}
+		if member.Presence == nil || member.Presence.Game == nil {
+			memberStatus = "Has no active status, is invisible/offline or is not in the bot's cache."
 		} else {
-			if member.PresenceGame.Type == 4 {
-				memberStatus = fmt.Sprintf("%s: %s", member.PresenceGame.Name, member.PresenceGame.State)
+			if member.Presence.Game.Type == 4 {
+				memberStatus = fmt.Sprintf("%s: %s", member.Presence.Game.Name, member.Presence.Game.State)
 			} else {
-				memberStatus = fmt.Sprintf("%s: %s", state[member.PresenceGame.Type], member.PresenceGame.Name)
+				presenceName := "Unknown"
+				if member.Presence.Game.Type >= 0 && len(state) > int(member.Presence.Game.Type) {
+					presenceName = state[member.Presence.Game.Type]
+				}
+
+				memberStatus = fmt.Sprintf("%s: %s", presenceName, member.Presence.Game.Name)
 			}
 		}
 
 		embed := &discordgo.MessageEmbed{
-			Title: fmt.Sprintf("%s#%04d%s", member.Username, member.Discriminator, nick),
+			Title: fmt.Sprintf("%s#%s%s", member.User.Username, member.User.Discriminator, nick),
 			Fields: []*discordgo.MessageEmbedField{
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "ID",
-					Value:  discordgo.StrID(member.ID),
+					Value:  discordgo.StrID(member.User.ID),
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Avatar",
-					Value:  "[Link](" + discordgo.EndpointUserAvatar(member.ID, member.StrAvatar()) + ")",
+					Value:  "[Link](" + discordgo.EndpointUserAvatar(member.User.ID, member.User.Avatar) + ")",
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Account Created",
 					Value:  t.UTC().Format(time.RFC822),
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Account Age",
 					Value:  createdDurStr,
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Joined Server At",
 					Value:  joinedAtStr,
 					Inline: true,
-				}, &discordgo.MessageEmbedField{
+				},
+				{
 					Name:   "Join Server Age",
 					Value:  joinedAtDurStr,
 					Inline: true,
 				},
-				&discordgo.MessageEmbedField{
+				{
 					Name:   "Status",
 					Value:  memberStatus,
 					Inline: true,
 				},
 			},
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: discordgo.EndpointUserAvatar(member.ID, member.StrAvatar()),
+				URL: discordgo.EndpointUserAvatar(member.User.ID, member.User.Avatar),
 			},
 		}
 
 		if config.UsernameLoggingEnabled.Bool {
-			usernames, err := GetUsernames(parsed.Context(), member.ID, 5, 0)
+			usernames, err := GetUsernames(parsed.Context(), member.User.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -199,7 +226,7 @@ var cmdWhois = &commands.YAGCommand{
 
 		if config.NicknameLoggingEnabled.Bool {
 
-			nicknames, err := GetNicknames(parsed.Context(), member.ID, parsed.GS.ID, 5, 0)
+			nicknames, err := GetNicknames(parsed.Context(), member.User.ID, parsed.GuildData.GS.ID, 5, 0)
 			if err != nil {
 				return err, err
 			}
@@ -240,8 +267,8 @@ var cmdUsernames = &commands.YAGCommand{
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		gID := int64(0)
-		if parsed.GS != nil {
-			config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
+		if parsed.GuildData != nil {
+			config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -250,11 +277,11 @@ var cmdUsernames = &commands.YAGCommand{
 				return "Username logging is disabled on this server", nil
 			}
 
-			gID = parsed.GS.ID
+			gID = parsed.GuildData.GS.ID
 		}
 
-		_, err := paginatedmessages.CreatePaginatedMessage(gID, parsed.Msg.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-			target := parsed.Msg.Author
+		_, err := paginatedmessages.CreatePaginatedMessage(gID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			target := parsed.Author
 			if parsed.Args[0].Value != nil {
 				target = parsed.Args[0].Value.(*discordgo.User)
 			}
@@ -302,12 +329,12 @@ var cmdNicknames = &commands.YAGCommand{
 		{Name: "User", Type: dcmd.User},
 	},
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GS.ID)
+		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		target := parsed.Msg.Author
+		target := parsed.Author
 		if parsed.Args[0].Value != nil {
 			target = parsed.Args[0].Value.(*discordgo.User)
 		}
@@ -316,11 +343,11 @@ var cmdNicknames = &commands.YAGCommand{
 			return "Nickname logging is disabled on this server", nil
 		}
 
-		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GS.ID, parsed.CS.ID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
 			offset := (page - 1) * 15
 
-			nicknames, err := GetNicknames(context.Background(), target.ID, parsed.GS.ID, 15, offset)
+			nicknames, err := GetNicknames(context.Background(), target.ID, parsed.GuildData.GS.ID, 15, offset)
 			if err != nil {
 				return nil, err
 			}
@@ -366,9 +393,9 @@ var cmdClearNames = &commands.YAGCommand{
 		}
 
 		for _, v := range queries {
-			_, err := common.PQ.Exec(v, parsed.Msg.Author.ID)
+			_, err := common.PQ.Exec(v, parsed.Author.ID)
 			if err != nil {
-				return "An error occured, join the support server for help", err
+				return "An error occurred, join the support server for help", err
 			}
 		}
 
@@ -407,21 +434,18 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	pu := evt.PresenceUpdate()
 	gs := evt.GS
 
-	gs.RLock()
-	defer gs.RUnlock()
-
-	ms := gs.Member(false, pu.User.ID)
-	if ms == nil || !ms.PresenceSet || !ms.MemberSet {
+	ms := bot.State.GetMember(gs.ID, pu.User.ID)
+	if ms == nil || ms.Presence == nil || ms.Member == nil {
 		queueEvt(pu)
 		return
 	}
 
-	if pu.User.Username != "" && pu.User.Username != ms.Username {
+	if pu.User.Username != "" && pu.User.Username != ms.User.Username {
 		queueEvt(pu)
 		return
 	}
 
-	if pu.Nick != ms.Nick {
+	if pu.Nick != ms.Member.Nick {
 		queueEvt(pu)
 		return
 	}
@@ -866,15 +890,15 @@ func EvtProcesserGCs() {
 	}
 }
 
-const CacheKeyConfig bot.GSCacheKey = "logs_config"
+var configCache = common.CacheSet.RegisterSlot("logs_config", nil, int64(0))
 
 func GetConfigCached(exec boil.ContextExecutor, gID int64) (*models.GuildLoggingConfig, error) {
-	gs := bot.State.Guild(true, gID)
+	gs := bot.State.GetGuild(gID)
 	if gs == nil {
 		return GetConfig(exec, context.Background(), gID)
 	}
 
-	v, err := gs.UserCacheFetch(CacheKeyConfig, func() (interface{}, error) {
+	v, err := configCache.GetCustomFetch(gs.ID, func(key interface{}) (interface{}, error) {
 		conf, err := GetConfig(exec, context.Background(), gID)
 		return conf, err
 	})

@@ -11,7 +11,7 @@ import (
 	"github.com/jonas747/yagpdb/premium"
 	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type PremiumSource struct{}
@@ -78,6 +78,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 
 	patrons := patreon.ActivePoller.GetPatrons()
 	if len(patrons) == 0 {
+		tx.Rollback()
 		return nil
 	}
 
@@ -106,8 +107,8 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		if slotsForPledge > len(userSlots) {
 			// Need to create more slots
 			for i := 0; i < slotsForPledge-len(userSlots); i++ {
-				title := fmt.Sprintf("Patreon Slot #%d", i+len(userSlots))
-				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+len(userSlots)), -1)
+				title := fmt.Sprintf("Patreon Slot #%d", 1+i+len(userSlots))
+				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
 					tx.Rollback()
 					return errors.WithMessage(err, "CreatePremiumSlot")
@@ -150,7 +151,7 @@ OUTER:
 		slots := CalcSlotsForPledge(v.AmountCents)
 		for i := 0; i < slots; i++ {
 			title := fmt.Sprintf("Patreon Slot #%d", i+1)
-			slot, err := premium.CreatePremiumSlot(ctx, tx, v.DiscordID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+1), -1)
+			slot, err := premium.CreatePremiumSlot(ctx, tx, v.DiscordID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+1), -1, premium.PremiumTierPremium)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "new CreatePremiumSlot")

@@ -36,18 +36,6 @@
                                 <li>Make a pledge on my <a href="https://patreon.com/yagpdb">Patreon</a>. Tiers above $3
                                     will grant you premium slots. It will take 2 minutes from you make a pledge to it
                                     being processed here.</li>
-                                <li>Other payment methods are also accepted, but requires manual intervention from me.
-                                    Full list: Paypal, Bitcoin, Bitcoin Cash, Ethereum, Litecoin and IOTA. Please see
-                                    the pricing below and contact me if you wanna donate using one of these methods
-                                    (pricing is monthly).
-                                    <ul>
-                                        <li>$3 = 1 premium slot</li>
-                                        <li>$5 = 2 premium slots</li>
-                                        <li>$7.50 = 3 premium slots</li>
-                                        <li>$10 = 5 premium slots</li>
-                                        <li>Anything above $10: 1 premium slot per $2</li>
-                                    </ul>
-                                </li>
                             </ul>
                         </div>
                     </section>
@@ -131,7 +119,8 @@
                 <ul>
                     <li>{{if not .Permanent}}Expires in:
                         <code>{{humanizeDurationHours (call $dot.PremiumSlotDurationRemaining .)}}</code>{{else}}Expires
-                        never{{end}}.</li>
+                        never{{end}}.
+                    </li>
                     {{if .Message}}<li>{{.Message}}</li>{{end}}
                 </ul>
 
@@ -144,7 +133,7 @@
 
 
                             {{$selected := .GuildID.Int64}}
-                            {{range  $dot.UserGuilds}}{{if .Connected}}
+                            {{range $dot.UserGuilds}}{{if .Connected}}
                             <option value="{{.ID}}" {{if eq .ID $selected}}{{$found = true}} selected {{end}}>{{.Name}}
                             </option>
                             {{end}}{{end}}
@@ -164,6 +153,35 @@
     {{end}}
     <!-- /.col-lg-12 -->
 </div>
+{{template "cp_footer" .}}
+
+{{end}}
+
+
+{{define "cp_premium_detach"}}
+{{template "cp_head" .}}
+
+<div class="page-header">
+    <h2>Detach premium slot</h2>
+</div>
+
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card card-featured card-featured-success">
+            <div class="card-body">
+                <div class="row">
+                    <h2><a href="/manage/{{.ActiveGuild.ID}}/home">Back to home</a></h2>
+                </div>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
 {{template "cp_footer" .}}
 
 {{end}}

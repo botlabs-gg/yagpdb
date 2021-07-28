@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -83,28 +82,25 @@ func runUpdateShardMetrics() {
 }
 
 func runUpdateGuildTotalsMetrics() {
-	guilds := State.GuildsSlice(true)
+	totalGuilds := 0
+	totalMembers := int64(0)
+	regions := make(map[string]int)
 
-	totalMembers := 0
-	result := make(map[string]int)
+	for _, shardID := range ReadyTracker.GetProcessShards() {
+		guilds := State.GetShardGuilds(int64(shardID))
 
-	for _, g := range guilds {
-		totalMembers += metricsCountGuild(g, result)
+		totalGuilds += len(guilds)
+
+		for _, g := range guilds {
+			totalMembers += g.MemberCount
+			regions[g.Region]++
+		}
+
+		for region, count := range regions {
+			metricsGuildRegionsTotal.With(prometheus.Labels{"region": region}).Set(float64(count))
+		}
 	}
 
-	for region, count := range result {
-		metricsGuildRegionsTotal.With(prometheus.Labels{"region": region}).Set(float64(count))
-	}
-
-	metricsGuildsTotal.Set(float64(len(guilds)))
+	metricsGuildsTotal.Set(float64(totalGuilds))
 	metricsMembersTotal.Set(float64(totalMembers))
-
-}
-
-func metricsCountGuild(g *dstate.GuildState, regions map[string]int) int {
-	g.RLock()
-	defer g.RUnlock()
-
-	regions[g.Guild.Region]++
-	return g.Guild.MemberCount
 }

@@ -317,7 +317,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	roleStr := "none / unknown"
 	indicatorRole := ""
-	if role := ag.Role(settings.VerifiedRole); role != nil {
+	if role := ag.GetRole(settings.VerifiedRole); role != nil {
 		roleStr = html.EscapeString(role.Name)
 		indicatorRole = web.Indicator(true)
 	} else {

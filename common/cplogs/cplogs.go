@@ -10,12 +10,14 @@ import (
 type ActionFormat struct {
 	Key          string
 	FormatString string
+	Found        bool
 }
 
 var actionFormats = make(map[string]*ActionFormat)
 
 // RegisterActionFormat sets up a action format, call this in your package init function
 func RegisterActionFormat(format *ActionFormat) string {
+	format.Found = true
 	actionFormats[format.Key] = format
 
 	return format.Key

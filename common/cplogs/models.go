@@ -58,7 +58,12 @@ type rawLogEntry struct {
 func (r *rawLogEntry) toLogEntry() *LogEntry {
 	format, ok := actionFormats[r.Action]
 	if !ok {
-		panic("unknown action format: " + r.Action)
+		format = &ActionFormat{
+			FormatString: r.Action,
+			Key:          r.Action,
+			Found:        false,
+		}
+		// panic("unknown action format: " + r.Action)
 	}
 
 	entry := &LogEntry{
@@ -75,10 +80,12 @@ func (r *rawLogEntry) toLogEntry() *LogEntry {
 		CreatedAt: r.CreatedAt,
 	}
 
-	if r.Param1Type > 0 {
-		entry.Action.Params = append(entry.Action.Params, readParam(r.Param1Type, r.Param1Int, r.Param1String))
-		if r.Param2Type > 0 {
-			entry.Action.Params = append(entry.Action.Params, readParam(r.Param2Type, r.Param2Int, r.Param2String))
+	if format.Found {
+		if r.Param1Type > 0 {
+			entry.Action.Params = append(entry.Action.Params, readParam(r.Param1Type, r.Param1Int, r.Param1String))
+			if r.Param2Type > 0 {
+				entry.Action.Params = append(entry.Action.Params, readParam(r.Param2Type, r.Param2Int, r.Param2String))
+			}
 		}
 	}
 

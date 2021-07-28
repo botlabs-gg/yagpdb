@@ -1,22 +1,16 @@
 package premium
 
 import (
-	"context"
-	"database/sql"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
+	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/premium/models"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const (
@@ -27,6 +21,27 @@ const (
 	RedisKeyPremiumGuildsTmp       = "premium_activated_guilds_tmp"
 	RedisKeyPremiumGuildLastActive = "premium_guild_last_active"
 )
+
+type PremiumTier int
+
+const (
+	PremiumTierNone    PremiumTier = 0
+	PremiumTierPremium PremiumTier = 1
+	PremiumTierPlus    PremiumTier = 2
+)
+
+func (p PremiumTier) String() string {
+	switch p {
+	case PremiumTierNone:
+		return "None"
+	case PremiumTierPlus:
+		return "Plus"
+	case PremiumTierPremium:
+		return "Paid"
+	}
+
+	return "unknown"
+}
 
 var (
 	confAllGuildsPremium = config.RegisterOption("yagpdb.premium.all_guilds_premium", "All servers have premium", false)
@@ -66,7 +81,51 @@ type RemovedPremiumGuildListener interface {
 	OnRemovedPremiumGuild(guildID int64) error
 }
 
-// IsGuildPremium return true if the provided guild has the premium status provided to it by a user
+var (
+	PremiumSources      []PremiumSource
+	GuildPremiumSources []GuildPremiumSource
+)
+
+type PremiumSource interface {
+	Init()
+	Names() (human string, idname string)
+}
+
+type GuildPremiumSource interface {
+	Name() string
+	GuildPremiumDetails(guildID int64) (tier PremiumTier, humanDetails []string, err error)
+	GuildPremiumTier(guildID int64) (PremiumTier, error)
+	AllGuildsPremiumTiers() (map[int64]PremiumTier, error)
+}
+
+func RegisterPremiumSource(source PremiumSource) {
+	PremiumSources = append(PremiumSources, source)
+}
+
+func RegisterGuildPremiumSource(source GuildPremiumSource) {
+	GuildPremiumSources = append(GuildPremiumSources, source)
+}
+
+func GuildPremiumTier(guildID int64) (PremiumTier, error) {
+	flags, err := featureflags.GetGuildFlags(guildID)
+	if err != nil {
+		return PremiumTierNone, err
+	}
+
+	if common.ContainsStringSlice(flags, FeatureFlagPremiumFull) {
+		return PremiumTierPremium, nil
+	}
+
+	if common.ContainsStringSlice(flags, FeatureFlagPremiumPlus) {
+		return PremiumTierPlus, nil
+	}
+
+	return PremiumTierNone, nil
+}
+
+// IsGuildPremium return true if the provided guild has the premium status or not
+// This is a legacy function mostly as anything equal to and above plus is counted as premium
+// if you want more granular control use the other functions
 func IsGuildPremium(guildID int64) (bool, error) {
 	if confAllGuildsPremium.GetBool() {
 		return true, nil
@@ -77,39 +136,12 @@ func IsGuildPremium(guildID int64) (bool, error) {
 		return false, nil
 	}
 
-	var premium bool
-	err := common.RedisPool.Do(radix.FlatCmd(&premium, "HEXISTS", RedisKeyPremiumGuilds, guildID))
-	return premium, errors.WithMessage(err, "IsGuildPremium")
+	return featureflags.GuildHasFlag(guildID, FeatureFlagPremiumPlus)
 }
 
-type CacheKey int
-
-const CacheKeyIsPremium CacheKey = 1
-
-// IsGuildPremium return true if the provided guild has the premium status provided to it by a user
+// This function is deprecated and is exactly the same as calling IsguildPremium
 func IsGuildPremiumCached(guildID int64) (bool, error) {
-	if confAllGuildsPremium.GetBool() {
-		return true, nil
-	}
-
-	if !bot.Enabled || bot.State == nil {
-		return IsGuildPremium(guildID)
-	}
-
-	gs := bot.State.Guild(true, guildID)
-	if gs == nil {
-		return IsGuildPremium(guildID)
-	}
-
-	v, err := gs.UserCacheFetch(CacheKeyIsPremium, func() (interface{}, error) {
-		return IsGuildPremium(guildID)
-	})
-
-	if err != nil {
-		return false, err
-	}
-
-	return v.(bool), nil
+	return IsGuildPremium(guildID)
 }
 
 func PremiumProvidedBy(guildID int64) (int64, error) {
@@ -162,153 +194,6 @@ func allGuildsOncePremiumAllPremiumEnabled() (map[int64]time.Time, error) {
 
 }
 
-// UserPremiumSlots returns all slots for a user
-func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.PremiumSlot, err error) {
-	slots, err = models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc")).AllG(ctx)
-	return
-}
-
-var (
-	PremiumSources []PremiumSource
-
-	ErrSlotNotFound        = errors.New("premium slot not found")
-	ErrGuildAlreadyPremium = errors.New("guild already assigned premium from another slot")
-)
-
-type PremiumSource interface {
-	Init()
-	Names() (human string, idname string)
-}
-
-func RegisterPremiumSource(source PremiumSource) {
-	PremiumSources = append(PremiumSources, source)
-}
-
-func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {
-	err := DetachSlotFromGuild(ctx, slot.ID, slot.UserID)
-	if err != nil {
-		return errors.WithMessage(err, "Detach")
-	}
-
-	// Attempt migrating the guild attached to the epxired slot to the next available slot the owner of the slot has
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		return errors.WithMessage(err, "BeginTX")
-	}
-
-	availableSlot, err := models.PremiumSlots(qm.Where("user_id = ? AND guild_id IS NULL and permanent = true", slot.UserID), qm.For("UPDATE")).One(ctx, tx)
-	if err != nil {
-		tx.Rollback()
-
-		// If there's no available slots to migrate the guild to, not much can be done
-		if errors.Cause(err) == sql.ErrNoRows {
-			return nil
-		}
-
-		return errors.WithMessage(err, "models.PremiumSlots")
-	}
-
-	availableSlot.AttachedAt = null.TimeFrom(time.Now())
-	availableSlot.GuildID = slot.GuildID
-
-	_, err = availableSlot.Update(ctx, tx, boil.Whitelist("attached_at", "guild_id"))
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "Update")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return errors.WithMessage(err, "Commit")
-	}
-
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, slot.GuildID.Int64, slot.UserID))
-	return errors.WithMessage(err, "HSET")
-}
-
-// RemovePremiumSlots removes the specifues premium slots and attempts to migrate to other permanent available ones
-// THIS SHOULD BE USED INSIDE A TRANSACTION ONLY, AS OTHERWISE RACE CONDITIONS BE UPON THEE
-func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID int64, slotsToRemove []int64) error {
-	userSlots, err := models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc"), qm.For("UPDATE")).All(ctx, exec)
-	if err != nil {
-		return errors.WithMessage(err, "models.PremiumSlots")
-	}
-
-	// Find the remainign free slots after the removal of the specified slots
-	remainingFreeSlots := make([]*models.PremiumSlot, 0)
-	for _, slot := range userSlots {
-		if slot.GuildID.Valid || !slot.Permanent || SlotDurationLeft(slot) <= 0 {
-			continue
-		}
-
-		for _, v := range slotsToRemove {
-			if v == slot.ID {
-				continue
-			}
-		}
-
-		remainingFreeSlots = append(remainingFreeSlots, slot)
-	}
-
-	freeSlotsUsed := 0
-
-	// Do the removal and migration
-	for _, removing := range slotsToRemove {
-		// Find the model first
-		var slot *models.PremiumSlot
-		for _, v := range userSlots {
-			if v.ID == removing {
-				slot = v
-				break
-			}
-		}
-
-		if slot == nil {
-			continue
-		}
-
-		if slot.GuildID.Valid && freeSlotsUsed < len(remainingFreeSlots) {
-			// We can migrate it
-			remainingFreeSlots[freeSlotsUsed].GuildID = slot.GuildID
-			remainingFreeSlots[freeSlotsUsed].AttachedAt = null.TimeFrom(time.Now())
-			freeSlotsUsed++
-		}
-
-		_, err = slot.Delete(ctx, exec)
-		if err != nil {
-			return errors.WithMessage(err, "slot.Delete")
-		}
-	}
-
-	// Update all the slots we migrated to
-	for i := 0; i < freeSlotsUsed; i++ {
-		_, err = remainingFreeSlots[i].Update(ctx, exec, boil.Whitelist("guild_id", "attached_at"))
-		if err != nil {
-			return errors.WithMessage(err, "remainingFreeSlots.Update")
-		}
-	}
-
-	return nil
-}
-
-func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID int64, source, title, message string, sourceSlotID int64, duration time.Duration) (*models.PremiumSlot, error) {
-	slot := &models.PremiumSlot{
-		UserID:   userID,
-		Source:   source,
-		SourceID: sourceSlotID,
-
-		Title:   title,
-		Message: message,
-
-		FullDuration:      int64(duration),
-		Permanent:         duration <= 0,
-		DurationRemaining: int64(duration),
-	}
-
-	err := slot.Insert(ctx, exec, boil.Infer())
-	return slot, err
-}
-
 func FindSource(sourceID string) PremiumSource {
 	for _, v := range PremiumSources {
 		if _, id := v.Names(); id == sourceID {
@@ -317,74 +202,6 @@ func FindSource(sourceID string) PremiumSource {
 	}
 
 	return nil
-}
-
-func SlotDurationLeft(slot *models.PremiumSlot) (duration time.Duration) {
-	if slot.Permanent {
-		return 0xfffffffffffffff
-	}
-
-	duration = time.Duration(slot.DurationRemaining)
-
-	if slot.GuildID.Valid {
-		duration -= time.Since(slot.AttachedAt.Time)
-	}
-
-	return duration
-}
-
-func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID int64) error {
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		return errors.WithMessage(err, "BeginTX")
-	}
-
-	_, err = tx.Exec("LOCK TABLE premium_slots IN EXCLUSIVE MODE")
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "Lock")
-	}
-
-	// Check if this guild is used in another slot
-	n, err := models.PremiumSlots(qm.Where("guild_id = ?", guildID)).Count(ctx, tx)
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "PremiumSlots.Count")
-	}
-
-	if n > 0 {
-		tx.Rollback()
-		return ErrGuildAlreadyPremium
-	}
-
-	n, err = models.PremiumSlots(qm.Where("id = ? AND user_id = ? AND guild_id IS NULL AND (permanent OR duration_remaining > 0)", slotID, userID)).UpdateAll(
-		ctx, tx, models.M{"guild_id": null.Int64From(guildID), "attached_at": time.Now()})
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "UpdateAll")
-	}
-
-	if n < 1 {
-		tx.Rollback()
-		return ErrSlotNotFound
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "Commit")
-	}
-
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, guildID, userID))
-	if err != nil {
-		return errors.WithStackIf(err)
-	}
-
-	err = scheduledevents2.ScheduleEvent("premium_guild_added", guildID, time.Now(), nil)
-	if err != nil {
-		return errors.WithStackIf(err)
-	}
-	return err
 }
 
 func handleNewPremiumGuild(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
@@ -400,54 +217,6 @@ func handleNewPremiumGuild(evt *schEventsModels.ScheduledEvent, data interface{}
 	return false, nil
 }
 
-func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error {
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		return errors.WithMessage(err, "BeginTX")
-	}
-
-	slot, err := models.PremiumSlots(qm.Where("id = ? AND user_id = ?", slotID, userID), qm.For("UPDATE")).One(ctx, tx)
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "PremiumSlots.One")
-	}
-
-	if slot == nil {
-		tx.Rollback()
-		return ErrSlotNotFound
-	}
-
-	oldGuildID := slot.GuildID.Int64
-
-	// Update the duration before we reset the guild_id to null
-	slot.DurationRemaining = int64(SlotDurationLeft(slot))
-	slot.GuildID = null.Int64{}
-	slot.AttachedAt = null.Time{}
-
-	_, err = slot.Update(ctx, tx, boil.Infer())
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "Update")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		errors.WithMessage(err, "Commit")
-	}
-
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, oldGuildID))
-	if err != nil {
-		return errors.WithStackIf(err)
-	}
-
-	err = scheduledevents2.ScheduleEvent("premium_guild_removed", oldGuildID, time.Now(), nil)
-	if err != nil {
-		return errors.WithStackIf(err)
-	}
-
-	return nil
-}
-
 func handleRemovedPremiumGuild(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	for _, v := range common.Plugins {
 		if cast, ok := v.(RemovedPremiumGuildListener); ok {
@@ -459,4 +228,84 @@ func handleRemovedPremiumGuild(evt *schEventsModels.ScheduledEvent, data interfa
 	}
 
 	return false, nil
+}
+
+var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
+var _ featureflags.PluginWithBatchFeatureFlags = (*Plugin)(nil)
+
+const (
+	FeatureFlagPremiumPlus = "premium_plus"
+	FeatureFlagPremiumFull = "premium_full"
+)
+
+func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
+	highestTier := PremiumTierNone
+
+	for _, v := range GuildPremiumSources {
+		tier, err := v.GuildPremiumTier(guildID)
+		if err != nil {
+			return nil, errors.WithMessage(err, "GuildPremiumTier")
+		}
+
+		if tier == PremiumTierPremium {
+			highestTier = tier
+		} else if highestTier == PremiumTierNone {
+			highestTier = tier
+		}
+	}
+
+	return tierFlags(highestTier), nil
+}
+
+func (p *Plugin) AllFeatureFlags() []string {
+	return []string{
+		FeatureFlagPremiumFull, // set if this server has the highest premium tier
+		FeatureFlagPremiumPlus, // set if this server has the lower premium tier
+	}
+}
+
+func (p *Plugin) UpdateFeatureFlagsBatch() (map[int64][]string, error) {
+	// fetch all the guild premium tiers and sort the highest one in each
+	highestTiers := make(map[int64]PremiumTier)
+
+	for _, v := range GuildPremiumSources {
+		guilds, err := v.AllGuildsPremiumTiers()
+		if err != nil {
+			return nil, errors.WithMessage(err, "AllGuildsPremiumTiers")
+		}
+
+		for guildID, tier := range guilds {
+			if tier == PremiumTierNone {
+				continue
+			}
+
+			if current, ok := highestTiers[guildID]; ok {
+				if tier == PremiumTierPremium {
+					highestTiers[guildID] = tier
+				} else if current == PremiumTierNone {
+					highestTiers[guildID] = tier
+				}
+			} else {
+				highestTiers[guildID] = tier
+			}
+		}
+	}
+
+	result := make(map[int64][]string)
+	for guildID, tier := range highestTiers {
+		guildFlags := tierFlags(tier)
+		result[guildID] = guildFlags
+	}
+
+	return result, nil
+}
+
+func tierFlags(tier PremiumTier) []string {
+	if tier == PremiumTierPremium {
+		return []string{FeatureFlagPremiumFull, FeatureFlagPremiumPlus}
+	} else if tier == PremiumTierPlus {
+		return []string{FeatureFlagPremiumPlus}
+	}
+
+	return nil
 }

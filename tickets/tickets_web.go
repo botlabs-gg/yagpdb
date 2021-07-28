@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/tickets/models"
@@ -92,6 +93,9 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 	}
+
+	commands.PubsubSendUpdateSlashCommandsPermissions(activeGuild.ID)
+
 	return templateData, err
 }
 

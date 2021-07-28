@@ -7,6 +7,36 @@
 
 {{template "cp_alerts" .}}
 
+<div id="delete-all-message-logs-modal" class="modal-block modal-full-color modal-block-danger mfp-hide">
+    <section class="card">
+        <header class="card-header">
+            <h2 class="card-title">Danger!</h2>
+        </header>
+        <div class="card-body">
+            <div class="modal-wrapper">
+                <div class="modal-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="modal-text">
+                    <h4>Delete ALL message logs?</h4>
+                    <p>This cannot be undone.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="card-footer">
+            <div class="row">
+                <div class="col-md-12 text-right">
+                    <form action="/manage/{{.ActiveGuild.ID}}/logging/delete_all" data-async-form
+                        method="post">
+                        <button class="btn btn-default modal-dismiss">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete them all!</button>
+                    </form>
+                </div>
+            </div>
+        </footer>
+    </section>
+</div>
+
 <div class="row">
     <div class="col-lg-12">
         <section class="card">
@@ -17,14 +47,16 @@
                 <form role="form" method="post" data-async-form data-async-form-alertsonly>
                     <div class="row">
                         <div class="col-lg-4 col-md-6">
-                            {{checkbox "UsernameLoggingEnabled" "UsernameLoggingEnabled" "Enable username logging" .Config.UsernameLoggingEnabled.Bool}}
+                            {{checkbox "UsernameLoggingEnabled" "UsernameLoggingEnabled" "Enable username logging"
+                            .Config.UsernameLoggingEnabled.Bool}}
                             <p>
-                                <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another server
-                                    with the bot on with this enabled, then their usernames will be logged even if
-                                    you disable it on your server.<br /></div>
+                            <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another server
+                                with the bot on with this enabled, then their usernames will be logged even if
+                                you disable it on your server.<br /></div>
                             </p>
 
-                            {{checkbox "NicknameLoggingEnabled" "NicknameLoggingEnabled" "Enable nickname logging" .Config.NicknameLoggingEnabled.Bool}}
+                            {{checkbox "NicknameLoggingEnabled" "NicknameLoggingEnabled" "Enable nickname logging"
+                            .Config.NicknameLoggingEnabled.Bool}}
                             <p>
                                 You can check a users past usernames and nicknames with the commands <code>whois</code>
                                 <code>usernames</code> and <code>nicknames</code>
@@ -32,11 +64,12 @@
                             <hr />
                         </div>
                         <div class="col-lg-4 col-md-6">
-                            {{checkbox "ManageMessagesCanViewDeleted" "ManageMessagesCanViewDeleted" "Allow members with <code>Manage Messages</code> permissions to view deleted messages" .Config.ManageMessagesCanViewDeleted.Bool}}
-                            {{checkbox "EveryoneCanViewDeleted" "EveryoneCanViewDeleted" "Allow everyone to view deleted messages" .Config.EveryoneCanViewDeleted.Bool}}
+                            {{checkbox "ManageMessagesCanViewDeleted" "ManageMessagesCanViewDeleted"
+                            "Allow members with <code>Manage Messages</code> permissions to view deleted messages"
+                            .Config.ManageMessagesCanViewDeleted.Bool}}
+                            {{checkbox "EveryoneCanViewDeleted" "EveryoneCanViewDeleted"
+                            "Allow everyone to view deleted messages" .Config.EveryoneCanViewDeleted.Bool}}
                             <hr />
-                        </div>
-                        <div class="col-lg-4 col-md 12">
                             <div class="form-group">
                                 <label>Blacklist channels from message logs</label><br />
                                 <select class="multiselect" id="blacklist-channels" name="BlacklistedChannels"
@@ -44,19 +77,33 @@
                                     {{textChannelOptionsMulti .ActiveGuild.Channels .ConfBlacklistedChannels}}
                                 </select>
                             </div>
+                        </div>
+                        <div class="col-lg-4 col-md 12">
+
                             <div class="form-group">
-                                <label>Restrict message log access</label><br>
+                                <p><b>Access control</b></p>
+                                <label>Mode</label><br>
+                                <select name="AccessMode" class="multiselect form-control"
+                                    id="blacklisted-roles-receive">
+                                    <option value="0" {{if eq .Config.AccessMode 0}} selected{{end}}>Members can view
+                                        message logs</option>
+                                    <option value="1" {{if eq .Config.AccessMode 1}} selected{{end}}>Everyone can view
+                                        message logs</option>
+                                </select>
+                                <label>Roles</label><br>
                                 <select name="MessageLogsAllowedRoles" class="multiselect form-control"
                                     multiple="multiple" id="blacklisted-roles-receive" data-plugin-multiselect
                                     data-placeholder="Everyone">
                                     {{roleOptionsMulti .ActiveGuild.Roles nil .Config.MessageLogsAllowedRoles}}
                                 </select>
-                                <p class="help-block">If none are set, everyone will be able to access message logs
-                                    (including users not logged in at all), otherwise access is restricted to only the
-                                    specified roles. Note: people with access to the control panel will always have
-                                    access to logs.</p>
-                                <hr />
                             </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#delete-all-message-logs-modal">
+                                Delete all logs
+                            </a>
                         </div>
                     </div>
                     <div class="row">
