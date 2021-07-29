@@ -76,6 +76,11 @@ func (p *STDLogProxy) Write(b []byte) (n int, err error) {
 	return
 }
 
+var metricsHighRatelimits = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "yagpdb_discord_high_ratelimits_total",
+	Help: "Ratelimits above 1000 seconds",
+})
+
 func discordLogger(msgL, caller int, format string, a ...interface{}) {
 	pc := make([]uintptr, 3)
 	runtime.Callers(caller+1, pc)
@@ -94,6 +99,10 @@ func discordLogger(msgL, caller int, format string, a ...interface{}) {
 		f.Warnf("[DG] "+format, a...)
 	default:
 		f.Infof("[DG] "+format, a...)
+	}
+
+	if strings.HasPrefix(format, "very high ratelimit") {
+		metricsHighRatelimits.Inc()
 	}
 }
 
