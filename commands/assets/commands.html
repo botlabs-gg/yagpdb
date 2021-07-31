@@ -130,7 +130,7 @@
 	function handlePrefixChange(prefix) {
 		if (prefix.length === 0) return;
 
-		$("#example-command-usage > code").text(`${prefix}ping`);
+		$("#example-command-usage > code").text(`${prefix}rolemenu create <name> -nodm`);
 
 		const existingWarning = $("#trailing-space-warning");
 		if (prefix[prefix.length - 1] === " ") {
