@@ -1,0 +1,172 @@
+{{define "cp_logging"}}
+{{template "cp_head" .}}
+
+<header class="page-header">
+    <h2>Message and username/nickname logs</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<div id="delete-all-message-logs-modal" class="modal-block modal-full-color modal-block-danger mfp-hide">
+    <section class="card">
+        <header class="card-header">
+            <h2 class="card-title">Danger!</h2>
+        </header>
+        <div class="card-body">
+            <div class="modal-wrapper">
+                <div class="modal-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="modal-text">
+                    <h4>Delete ALL message logs?</h4>
+                    <p>This cannot be undone.</p>
+                </div>
+            </div>
+        </div>
+        <footer class="card-footer">
+            <div class="row">
+                <div class="col-md-12 text-right">
+                    <form action="/manage/{{.ActiveGuild.ID}}/logging/delete_all" data-async-form
+                        method="post">
+                        <button class="btn btn-default modal-dismiss">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete them all!</button>
+                    </form>
+                </div>
+            </div>
+        </footer>
+    </section>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">General settings</h2>
+            </header>
+            <div class="card-body">
+                <form role="form" method="post" data-async-form data-async-form-alertsonly>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                            {{checkbox "UsernameLoggingEnabled" "UsernameLoggingEnabled" "Enable username logging"
+                            .Config.UsernameLoggingEnabled.Bool}}
+                            <p>
+                            <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another server
+                                with the bot on with this enabled, then their usernames will be logged even if
+                                you disable it on your server.<br /></div>
+                            </p>
+
+                            {{checkbox "NicknameLoggingEnabled" "NicknameLoggingEnabled" "Enable nickname logging"
+                            .Config.NicknameLoggingEnabled.Bool}}
+                            <p>
+                                You can check a users past usernames and nicknames with the commands <code>whois</code>
+                                <code>usernames</code> and <code>nicknames</code>
+                            </p>
+                            <hr />
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            {{checkbox "ManageMessagesCanViewDeleted" "ManageMessagesCanViewDeleted"
+                            "Allow members with <code>Manage Messages</code> permissions to view deleted messages"
+                            .Config.ManageMessagesCanViewDeleted.Bool}}
+                            {{checkbox "EveryoneCanViewDeleted" "EveryoneCanViewDeleted"
+                            "Allow everyone to view deleted messages" .Config.EveryoneCanViewDeleted.Bool}}
+                            <hr />
+                            <div class="form-group">
+                                <label>Blacklist channels from message logs</label><br />
+                                <select class="multiselect" id="blacklist-channels" name="BlacklistedChannels"
+                                    multiple="multiple" data-plugin-multiselect>
+                                    {{textChannelOptionsMulti .ActiveGuild.Channels .ConfBlacklistedChannels}}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md 12">
+
+                            <div class="form-group">
+                                <p><b>Access control</b></p>
+                                <label>Mode</label><br>
+                                <select name="AccessMode" class="multiselect form-control"
+                                    id="blacklisted-roles-receive">
+                                    <option value="0" {{if eq .Config.AccessMode 0}} selected{{end}}>Members can view
+                                        message logs</option>
+                                    <option value="1" {{if eq .Config.AccessMode 1}} selected{{end}}>Everyone can view
+                                        message logs</option>
+                                </select>
+                                <label>Roles</label><br>
+                                <select name="MessageLogsAllowedRoles" class="multiselect form-control"
+                                    multiple="multiple" id="blacklisted-roles-receive" data-plugin-multiselect
+                                    data-placeholder="Everyone">
+                                    {{roleOptionsMulti .ActiveGuild.Roles nil .Config.MessageLogsAllowedRoles}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#delete-all-message-logs-modal">
+                                Delete all logs
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <button type="submit" class="btn btn-success btn-lg btn-block">Save All Settings</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+        <!-- /.card -->
+        <section class="card">
+            <header class="card-header clearfix">
+                <h2 class="card-title">
+                    Public message logs on this server
+                    <div class="pull-right">{{if not .FirstPage}}<a href="?after={{.Newest}}"
+                            class="nav-link btn btn-sm btn-primary">Newer</a>{{end}}<a
+                            class="nav-link btn btn-sm btn-primary" href="?before={{.Oldest}}">Older</a></div>
+                </h2>
+            </header>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <tr>
+                            <th>ID</th>
+                            <th>Created</th>
+                            <th>Author</th>
+                            <th>Channel</th>
+                            <th>Actions</th>
+                        </tr>
+                        {{$g := .ActiveGuild.ID}}
+                        {{range .Logs}}
+                        <tr>
+                            <td>#{{.ID}}</td>
+                            <td>{{formatTime .CreatedAt}}</td>
+                            <td>{{.AuthorUsername}} ({{.AuthorID}})</td>
+                            <td>#{{.ChannelName}}</td>
+                            <td>
+                                <form method="post" data-async-form>
+                                    <input class="hidden" type="text" name="id" value="{{.ID}}" />
+                                    <button type="submit" formaction="/manage/{{$g}}/logging/fulldelete2"
+                                        class="btn btn-sm btn-danger" value="Delete" data-async-form>Delete</button>
+                                    <a class="btn btn-sm btn-primary" href="/public/{{$g}}/log/{{.ID}}">View</a>
+                                </form>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer clearfix">
+                Logs My man
+                <div class="pull-right">{{if not .FirstPage}}<a href="?after={{.Newest}}"
+                        class="nav-link btn btn-sm btn-primary">Newer</a>{{end}}<a
+                        class="nav-link btn btn-sm btn-primary" href="?before={{.Oldest}}">Older</a></div>
+            </div>
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+
+{{template "cp_footer" .}}
+
+{{end}}
