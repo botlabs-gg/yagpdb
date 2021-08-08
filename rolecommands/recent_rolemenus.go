@@ -115,5 +115,4 @@ func (r *RecentMenusTracker) loopCheck(treshold time.Time) {
 	}
 
 	r.RecentMenus = newList
-	logger.Infof("new list len: %d", len(newList))
 }

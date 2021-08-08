@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -370,7 +371,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 }
 
 func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
-	g := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)
 	if err != nil {
@@ -565,7 +566,7 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 	var guilds []*discordgo.UserGuild
 	err := common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
 	if err != nil {
-		guilds, err = session.UserGuilds(100, 0, 0)
+		guilds, err = session.UserGuilds(0, 0, 0)
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed getting user guilds")
 			return nil, err

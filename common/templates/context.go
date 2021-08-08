@@ -13,12 +13,13 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack"
 )
 
 var (
@@ -41,6 +42,8 @@ var (
 		"urlescape": url.PathEscape,
 		"split":     strings.Split,
 		"title":     strings.Title,
+		"hasPrefix": strings.HasPrefix,
+		"hasSuffix": strings.HasSuffix,
 
 		// math
 		"add":               add,
@@ -81,16 +84,6 @@ var (
 		"currentTime": tmplCurrentTime,
 		"newDate":     tmplNewDate,
 
-		"escapeHere": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-		"escapeEveryone": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-		"escapeEveryoneHere": func(s string) (string, error) {
-			return "", errors.New("function is removed in favor of better direct control over mentions, join support server and read the announcements for more info.")
-		},
-
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
 		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
 		"humanizeDurationSeconds": tmplHumanizeDurationSeconds,
@@ -112,6 +105,10 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 
 func init() {
 	RegisterSetupFunc(baseContextFuncs)
+
+	msgpack.RegisterExt(1, (*SDict)(nil))
+	msgpack.RegisterExt(2, (*Dict)(nil))
+	msgpack.RegisterExt(3, (*Slice)(nil))
 }
 
 // set by the premium package to return wether this guild is premium or not
@@ -120,7 +117,7 @@ var GuildPremiumFunc func(guildID int64) (bool, error)
 type Context struct {
 	Name string
 
-	GS      *dstate.GuildState
+	GS      *dstate.GuildSet
 	MS      *dstate.MemberState
 	Msg     *discordgo.Message
 	BotUser *discordgo.User
@@ -138,6 +135,8 @@ type Context struct {
 	RegexCache map[string]*regexp.Regexp
 
 	CurrentFrame *contextFrame
+
+	IsExecedByLeaveMessage bool
 
 	contextFuncsAdded bool
 }
@@ -160,7 +159,7 @@ type contextFrame struct {
 	SendResponseInDM bool
 }
 
-func NewContext(gs *dstate.GuildState, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
+func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
 	ctx := &Context{
 		GS: gs,
 		MS: ms,
@@ -194,10 +193,9 @@ func (c *Context) setupContextFuncs() {
 func (c *Context) setupBaseData() {
 
 	if c.GS != nil {
-		guild := c.GS.DeepCopy(false, true, true, false)
-		c.Data["Guild"] = guild
-		c.Data["Server"] = guild
-		c.Data["server"] = guild
+		c.Data["Guild"] = c.GS
+		c.Data["Server"] = c.GS
+		c.Data["server"] = c.GS
 	}
 
 	if c.CurrentFrame.CS != nil {
@@ -207,8 +205,8 @@ func (c *Context) setupBaseData() {
 	}
 
 	if c.MS != nil {
-		c.Data["Member"] = c.MS.DGoCopy()
-		c.Data["User"] = c.MS.DGoUser()
+		c.Data["Member"] = c.MS.DgoMember()
+		c.Data["User"] = &c.MS.User
 		c.Data["user"] = c.Data["User"]
 	}
 
@@ -261,18 +259,12 @@ func (c *Context) Execute(source string) (string, error) {
 				return "", errors.WithMessage(err, "ctx.Execute")
 			}
 
-			c.Msg.Member = member.DGoCopy()
+			c.Msg.Member = member.DgoMember()
 		}
 
 	}
 
-	if c.GS != nil {
-		c.GS.RLock()
-	}
 	c.setupBaseData()
-	if c.GS != nil {
-		c.GS.RUnlock()
-	}
 
 	parsed, err := c.Parse(source)
 	if err != nil {
@@ -283,14 +275,9 @@ func (c *Context) Execute(source string) (string, error) {
 	return c.executeParsed()
 }
 
-func (c *Context) executeParsed() (r string, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = errors.New("paniced!")
-		}
-	}()
-
+func (c *Context) executeParsed() (string, error) {
 	parsed := c.CurrentFrame.parsedTemplate
+
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
 	} else {
@@ -301,7 +288,7 @@ func (c *Context) executeParsed() (r string, err error) {
 	w := LimitWriter(&buf, 25000)
 
 	// started := time.Now()
-	err = parsed.Execute(w, c.Data)
+	err := parsed.Execute(w, c.Data)
 
 	// dur := time.Since(started)
 	if c.FixedOutput != "" {
@@ -374,7 +361,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 			return nil, nil
 		}
 
-		if !bot.BotProbablyHasPermissionGS(c.GS, c.CurrentFrame.CS.ID, discordgo.PermissionSendMessages) {
+		if hasPerms, _ := bot.BotHasPermissionGS(c.GS, c.CurrentFrame.CS.ID, discordgo.PermissionSendMessages); !hasPerms {
 			// don't bother sending the response if we dont have perms
 			return nil, nil
 		}
@@ -384,7 +371,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		if c.CurrentFrame.CS != nil && c.CurrentFrame.CS.Type == discordgo.ChannelTypeDM {
 			channelID = c.CurrentFrame.CS.ID
 		} else {
-			privChannel, err := common.BotSession.UserChannelCreate(c.MS.ID)
+			privChannel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -466,7 +453,7 @@ func (c *Context) LogEntry() *logrus.Entry {
 	})
 
 	if c.MS != nil {
-		f = f.WithField("user", c.MS.ID)
+		f = f.WithField("user", c.MS.User.ID)
 	}
 
 	if c.CurrentFrame.CS != nil {
@@ -507,6 +494,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("addRoleID", c.tmplAddRoleID)
 	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
 
+	c.addContextFunc("setRoles", c.tmplSetRoles)
 	c.addContextFunc("addRoleName", c.tmplAddRoleName)
 	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
 
@@ -527,6 +515,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getChannel", c.tmplGetChannel)
+	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("addReactions", c.tmplAddReactions)
 	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
 	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
@@ -546,6 +535,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("onlineCount", c.tmplOnlineCount)
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
 	c.addContextFunc("editNickname", c.tmplEditNickname)
+
+	c.addContextFunc("sort", c.tmplSort)
 }
 
 type limitedWriter struct {
@@ -601,7 +592,16 @@ func (d Dict) Set(key interface{}, value interface{}) string {
 }
 
 func (d Dict) Get(key interface{}) interface{} {
-	return d[key]
+	out, ok := d[key]
+	if !ok {
+		switch key.(type) {
+		case int:
+			out = d[ToInt64(key)]
+		case int64:
+			out = d[tmplToInt(key)]
+		}
+	}
+	return out
 }
 
 func (d Dict) Del(key interface{}) string {
@@ -653,7 +653,7 @@ func (s Slice) Set(index int, item interface{}) (string, error) {
 }
 
 func (s Slice) AppendSlice(slice interface{}) (interface{}, error) {
-	val := reflect.ValueOf(slice)
+	val, _ := indirect(reflect.ValueOf(slice))
 	switch val.Kind() {
 	case reflect.Slice, reflect.Array:
 	// this is valid

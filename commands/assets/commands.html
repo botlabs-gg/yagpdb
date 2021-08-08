@@ -6,6 +6,35 @@
 
 {{template "cp_alerts" .}}
 
+<div id="confirm-disable-all-commands-modal" class="modal" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0">
+            <div class="modal-header">
+                <h2 class="modal-title">Warning!</h2>
+            </div>
+
+            <div class="modal-body border-0">
+                <div class="modal-wrapper">
+                    <div class="modal-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="modal-text">
+                        <h4>Are you sure you want to disable all commands?</h4>
+                        <p>
+                            This will cause all commands to <b>not respond at all</b> unless enabled in other overrides.
+                            Unless you know precisely what you are doing, it is advised that you do not do this.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button id="cancel-disable-all-commands" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button class="btn btn-warning" data-dismiss="modal">Dismiss warning</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- /.row -->
 <div class="row">
     <div class="col-lg-12">
@@ -30,6 +59,9 @@
                             <div class="col-lg-6">
                                 <div class="form-group">
                                     <label for="prefix">Command Prefix</label>
+                                    <div class="row-lg-6">
+                                        <p id="example-command-usage">Example command usage: <code>{{.CommandPrefix}}ping</code></p>
+                                    </div>
                                     <input type="text" class="form-control" id="prefix" name="Prefix"
                                         value="{{.CommandPrefix}}">
                                 </div>
@@ -75,6 +107,67 @@
 </div>
 <!-- /.row -->
 
+<script>
+    $("#commands-enabled-global").click(function() {
+        if (!this.checked) {
+            $("#confirm-disable-all-commands-modal").modal("show");
+        }
+    });
+
+    $("#cancel-disable-all-commands").click(function() {
+        $("#commands-enabled-global").prop("checked", true).change();
+    });
+
+    $("#prefix").keyup(function() {
+        const prefix = $(this).val();
+        handlePrefixChange(prefix);
+    });
+
+	$(function() {
+		handlePrefixChange($("#prefix").val());
+	});
+
+	function handlePrefixChange(prefix) {
+		if (prefix.length === 0) return;
+
+		$("#example-command-usage > code").text(`${prefix}ping`);
+
+		const existingWarning = $("#trailing-space-warning");
+		if (prefix[prefix.length - 1] === " ") {
+			if (existingWarning.length > 0) return; // don't duplicate warnings
+			addAlert("warning", `You have a trailing space in your command prefix, meaning that while '${prefix}ping' would trigger, '${prefix.trimRight()}ping' would not.`, "trailing-space-warning")
+		} else if (existingWarning.length) {
+			existingWarning.remove();
+		}
+	}
+</script>
+
+<style>
+    .modal-header {
+        background-color: #212121;
+    }
+
+    .modal-body, .modal-footer {
+        background-color: #424242;
+    }
+
+    #cancel-disable-all-commands {
+        background-color: #9e9e9e;
+    }
+
+    #unsaved-changes-popup {
+        z-index: 10000;
+    }
+
+    .modal-backdrop {
+        z-index: 10001;
+    }
+
+    .modal {
+        z-index: 10002;
+    }
+</style>
+
 {{template "cp_footer" .}}
 
 {{end}}
@@ -85,7 +178,7 @@
     .Commands
 */}}
 {{define "commands_channel_override"}}
-<form data-async-form method="POST"
+<form data-async-form method="POST" {{if .Override.Global}}id="command-settings-global-form"{{end}}
     action="{{if .Override}}/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Override.Global}}global{{else}}{{.Override.ID}}{{end}}/update{{else}}/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/new{{end}}">
 
     {{if not .Override.Global}}
@@ -121,11 +214,19 @@
     </div>
     <div class="form-row">
         {{$desc := "All commands enabled?"}}
-        {{if .Override.Global}}{{$desc = `All commands enabled? <br><b>Warning: disabling this
-                will disable all commands unless enabled in other overrides</b>`}}{{end}}
         {{$commandsEnabled := true}}
         {{if .Override}}{{$commandsEnabled = .Override.CommandsEnabled}}{{end}}
-        {{checkbox "CommandsEnabled" (joinStr "" "commands-enabled-" .Override.ID) $desc $commandsEnabled}}
+
+        {{if not .Override.Global}}
+            {{checkbox "CommandsEnabled" (joinStr "" "commands-enabled-" .Override.ID) $desc $commandsEnabled}}
+        {{else}}
+            <div class="form-group d-flex align-items-center">
+                <input type="checkbox" class="tgl tgl-flat" name="CommandsEnabled" id="commands-enabled-global"
+                    {{if $commandsEnabled}} checked{{end}}>
+                <label for="commands-enabled-global" class="tgl-btn mb-2"></label>
+                <span class="ml-2 mb-2">{{$desc}}</span>
+            </div>
+        {{end}}
         <hr />
 
         <div class="form-group col-md-5 ml-2">

@@ -186,7 +186,7 @@ func (p *Poller) Poll() {
 				patron.Name = user.FirstName
 			}
 
-			if user.SocialConnections.Discord != nil && user.SocialConnections.Discord.UserID != "" {
+			if user.SocialConnections != nil && user.SocialConnections.Discord != nil && user.SocialConnections.Discord.UserID != "" {
 				discordID, _ := strconv.ParseInt(user.SocialConnections.Discord.UserID, 10, 64)
 				patron.DiscordID = discordID
 			}

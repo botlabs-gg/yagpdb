@@ -64,7 +64,7 @@ OUTER:
 }
 
 var (
-	ErrGuildNotOnProcess = errors.New("Guild not on process")
+	ErrGuildNotOnProcess = errors.New("guild not on process")
 )
 
 func (m *batchMemberJobManager) NewBatchMemberJob(guildID int64, f func(guildID int64, member []*discordgo.Member)) error {
@@ -72,7 +72,7 @@ func (m *batchMemberJobManager) NewBatchMemberJob(guildID int64, f func(guildID 
 		return ErrGuildNotOnProcess
 	}
 
-	gs := State.Guild(true, guildID)
+	gs := State.GetGuild(guildID)
 	if gs == nil {
 		return ErrGuildNotFound
 	}
@@ -92,7 +92,7 @@ func (m *batchMemberJobManager) NewBatchMemberJob(guildID int64, f func(guildID 
 
 	session := ShardManager.SessionForGuild(guildID)
 	if session == nil {
-		return errors.New("No session?")
+		return errors.New("no session?")
 	}
 	q := ""
 	session.GatewayManager.RequestGuildMembersComplex(&discordgo.RequestGuildMembersData{
@@ -109,7 +109,7 @@ func (m *batchMemberJobManager) SearchByUsername(guildID int64, query string) ([
 		return nil, ErrGuildNotOnProcess
 	}
 
-	gs := State.Guild(true, guildID)
+	gs := State.GetGuild(guildID)
 	if gs == nil {
 		return nil, ErrGuildNotFound
 	}
@@ -133,7 +133,7 @@ func (m *batchMemberJobManager) SearchByUsername(guildID int64, query string) ([
 
 	session := ShardManager.SessionForGuild(guildID)
 	if session == nil {
-		return nil, errors.New("No session?")
+		return nil, errors.New("no session?")
 	}
 
 	session.GatewayManager.RequestGuildMembersComplex(&discordgo.RequestGuildMembersData{
@@ -145,7 +145,7 @@ func (m *batchMemberJobManager) SearchByUsername(guildID int64, query string) ([
 	return m.waitResponse(time.Second*10, retCh)
 }
 
-var ErrTimeoutWaitingForMember = errors.New("Timeout waiting for members")
+var ErrTimeoutWaitingForMember = errors.New("timeout waiting for members")
 
 func (m *batchMemberJobManager) waitResponse(timeout time.Duration, retCh chan []*discordgo.Member) ([]*discordgo.Member, error) {
 	select {

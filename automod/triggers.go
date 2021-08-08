@@ -8,9 +8,10 @@ import (
 	"unicode"
 
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/automod_legacy"
+	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/safebrowsing"
 )
@@ -84,8 +85,8 @@ func (mc *MentionsTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (mc *MentionsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
-	dataCast := data.(*MentionsTriggerData)
+func (mc *MentionsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	dataCast := triggerCtx.Data.(*MentionsTriggerData)
 	if len(m.Mentions) >= dataCast.Treshold {
 		return true, nil
 	}
@@ -123,7 +124,7 @@ func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (alc *AnyLinkTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, stripped string, data interface{}) (bool, error) {
+func (alc *AnyLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	if common.LinkRegex.MatchString(forwardSlashReplacer.Replace(m.Content)) {
 		return true, nil
 	}
@@ -180,10 +181,10 @@ func (wl *WordListTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (wl *WordListTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
-	dataCast := data.(*WorldListTriggerData)
+func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	dataCast := triggerCtx.Data.(*WorldListTriggerData)
 
-	list, err := FindFetchGuildList(cs.Guild, dataCast.ListID)
+	list, err := FindFetchGuildList(triggerCtx.GS.ID, dataCast.ListID)
 	if err != nil {
 		return false, nil
 	}
@@ -259,10 +260,10 @@ func (dt *DomainTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (dt *DomainTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
-	dataCast := data.(*DomainTriggerData)
+func (dt *DomainTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	dataCast := triggerCtx.Data.(*DomainTriggerData)
 
-	list, err := FindFetchGuildList(cs.Guild, dataCast.ListID)
+	list, err := FindFetchGuildList(triggerCtx.GS.ID, dataCast.ListID)
 	if err != nil {
 		return false, nil
 	}
@@ -448,8 +449,8 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (caps *AllCapsTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
-	dataCast := data.(*AllCapsTriggerData)
+func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	dataCast := triggerCtx.Data.(*AllCapsTriggerData)
 
 	if len(m.Content) < dataCast.MinLength {
 		return false, nil
@@ -512,7 +513,7 @@ func (inv *ServerInviteTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (inv *ServerInviteTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+func (inv *ServerInviteTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	containsBadInvited := automod_legacy.CheckMessageForBadInvites(m.Content, m.GuildID)
 	return containsBadInvited, nil
 }
@@ -547,7 +548,7 @@ func (g *GoogleSafeBrowsingTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (g *GoogleSafeBrowsingTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+func (g *GoogleSafeBrowsingTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	threat, err := safebrowsing.CheckString(forwardSlashReplacer.Replace(m.Content))
 	if err != nil {
 		logger.WithError(err).Error("Failed checking urls against google safebrowser")
@@ -643,39 +644,38 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (s *SlowmodeTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	if s.Attachments && len(m.Attachments) < 1 {
 		return false, nil
 	}
 
-	settings := data.(*SlowmodeTriggerData)
+	settings := triggerCtx.Data.(*SlowmodeTriggerData)
 
 	within := time.Duration(settings.Interval) * time.Second
 	now := time.Now()
 
 	amount := 1
 
-	cs.Owner.RLock()
-	defer cs.Owner.RUnlock()
+	messages := bot.State.GetMessages(cs.GuildID, cs.ID, &dstate.MessagesQuery{
+		Limit: 1000,
+	})
 
 	// New messages are at the end
-	for i := len(cs.Messages) - 1; i >= 0; i-- {
-		cMsg := cs.Messages[i]
-
-		age := now.Sub(cMsg.ParsedCreated)
+	for _, v := range messages {
+		age := now.Sub(v.ParsedCreatedAt)
 		if age > within {
 			break
 		}
 
-		if m.ID == cMsg.ID {
+		if m.ID == v.ID {
 			continue
 		}
 
-		if !s.ChannelBased && cMsg.Author.ID != ms.ID {
+		if !s.ChannelBased && v.Author.ID != triggerCtx.MS.User.ID {
 			continue
 		}
 
-		if s.Attachments && len(cMsg.Attachments) < 1 {
+		if s.Attachments && len(v.Attachments) < 1 {
 			continue // were only checking messages with attachments
 		}
 
@@ -753,36 +753,32 @@ func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (mt *MultiMsgMentionTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+func (mt *MultiMsgMentionTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	if len(m.Mentions) < 1 {
 		return false, nil
 	}
 
-	settings := data.(*MultiMsgMentionTriggerData)
+	settings := triggerCtx.Data.(*MultiMsgMentionTriggerData)
 
 	within := time.Duration(settings.Interval) * time.Second
 	now := time.Now()
 
 	mentions := make([]int64, 0)
 
-	cs.Owner.RLock()
-	defer cs.Owner.RUnlock()
-	// New messages are at the end
-	for i := len(cs.Messages) - 1; i >= 0; i-- {
-		cMsg := cs.Messages[i]
+	messages := bot.State.GetMessages(cs.GuildID, cs.ID, &dstate.MessagesQuery{
+		Limit: 1000,
+	})
 
-		age := now.Sub(cMsg.ParsedCreated)
+	// New messages are at the end
+	for _, v := range messages {
+		age := now.Sub(v.ParsedCreatedAt)
 		if age > within {
 			break
 		}
 
-		if mt.ChannelBased || cMsg.Author.ID == ms.ID {
+		if mt.ChannelBased || v.Author.ID == triggerCtx.MS.GuildID {
 			// we only care about unique mentions, e.g mentioning the same user a ton wont do anythin
-			for _, msgMention := range cMsg.Mentions {
-				if msgMention == nil {
-					continue
-				}
-
+			for _, msgMention := range v.Mentions {
 				if settings.CountDuplicates || !common.ContainsInt64Slice(mentions, msgMention.ID) {
 					mentions = append(mentions, msgMention.ID)
 				}
@@ -829,8 +825,8 @@ func (r *MessageRegexTrigger) Description() string {
 	return "Triggers when a message matches the provided regex"
 }
 
-func (r *MessageRegexTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
-	dataCast := data.(*BaseRegexTriggerData)
+func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	dataCast := triggerCtx.Data.(*BaseRegexTriggerData)
 
 	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
 		re, err := regexp.Compile(dataCast.Regex)
@@ -908,9 +904,9 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 
-	settingsCast := data.(*SpamTriggerData)
+	settingsCast := triggerCtx.Data.(*SpamTriggerData)
 
 	mToCheckAgainst := strings.TrimSpace(strings.ToLower(m.Content))
 
@@ -918,35 +914,34 @@ func (spam *SpamTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.Channel
 
 	timeLimit := time.Now().Add(-time.Second * time.Duration(settingsCast.TimeLimit))
 
-	cs.Owner.RLock()
-	for i := len(cs.Messages) - 1; i >= 0; i-- {
-		cMsg := cs.Messages[i]
+	messages := bot.State.GetMessages(cs.GuildID, cs.ID, &dstate.MessagesQuery{
+		Limit: 1000,
+	})
 
-		if cMsg.ID == m.ID {
+	for _, v := range messages {
+		if v.ID == m.ID {
 			continue
 		}
 
-		if cMsg.Author.ID != m.Author.ID {
+		if v.Author.ID != m.Author.ID {
 			continue
 		}
 
-		if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreated) {
+		if settingsCast.TimeLimit > 0 && timeLimit.After(v.ParsedCreatedAt) {
 			// if this message was created before the time limit, then break out
 			break
 		}
 
-		if len(cMsg.Attachments) > 0 {
+		if len(v.Attachments) > 0 {
 			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
 		}
 
-		if strings.ToLower(strings.TrimSpace(cMsg.Content)) == mToCheckAgainst {
+		if strings.ToLower(strings.TrimSpace(v.Content)) == mToCheckAgainst {
 			count++
 		} else {
 			break
 		}
 	}
-
-	cs.Owner.RUnlock()
 
 	if count >= settingsCast.Treshold {
 		return true, nil
@@ -979,8 +974,8 @@ func (r *NicknameRegexTrigger) Description() string {
 	return "Triggers when a members nickname matches the provided regex"
 }
 
-func (r *NicknameRegexTrigger) CheckNickname(ms *dstate.MemberState, data interface{}) (bool, error) {
-	dataCast := data.(*BaseRegexTriggerData)
+func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
+	dataCast := t.Data.(*BaseRegexTriggerData)
 
 	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
 		re, err := regexp.Compile(dataCast.Regex)
@@ -996,7 +991,7 @@ func (r *NicknameRegexTrigger) CheckNickname(ms *dstate.MemberState, data interf
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(ms.Nick) {
+	if re.MatchString(t.MS.Member.Nick) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1055,15 +1050,15 @@ func (nwl *NicknameWordlistTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (nwl *NicknameWordlistTrigger) CheckNickname(ms *dstate.MemberState, data interface{}) (bool, error) {
-	dataCast := data.(*NicknameWordlistTriggerData)
+func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, error) {
+	dataCast := t.Data.(*NicknameWordlistTriggerData)
 
-	list, err := FindFetchGuildList(ms.Guild, dataCast.ListID)
+	list, err := FindFetchGuildList(t.GS.ID, dataCast.ListID)
 	if err != nil {
 		return false, nil
 	}
 
-	fields := strings.Fields(PrepareMessageForWordCheck(ms.Nick))
+	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
 
 	for _, mf := range fields {
 		contained := false
@@ -1112,8 +1107,8 @@ func (r *UsernameRegexTrigger) Description() string {
 	return "Triggers when a member joins with a username that matches the provided regex"
 }
 
-func (r *UsernameRegexTrigger) CheckUsername(ms *dstate.MemberState, data interface{}) (bool, error) {
-	dataCast := data.(*BaseRegexTriggerData)
+func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
+	dataCast := t.Data.(*BaseRegexTriggerData)
 
 	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
 		re, err := regexp.Compile(dataCast.Regex)
@@ -1129,7 +1124,7 @@ func (r *UsernameRegexTrigger) CheckUsername(ms *dstate.MemberState, data interf
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(ms.Username) {
+	if re.MatchString(t.MS.User.Username) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1188,15 +1183,15 @@ func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (uwl *UsernameWordlistTrigger) CheckUsername(ms *dstate.MemberState, data interface{}) (bool, error) {
-	dataCast := data.(*UsernameWorldlistData)
+func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, error) {
+	dataCast := t.Data.(*UsernameWorldlistData)
 
-	list, err := FindFetchGuildList(ms.Guild, dataCast.ListID)
+	list, err := FindFetchGuildList(t.GS.ID, dataCast.ListID)
 	if err != nil {
 		return false, nil
 	}
 
-	fields := strings.Fields(PrepareMessageForWordCheck(ms.Username))
+	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
 
 	for _, mf := range fields {
 		contained := false
@@ -1248,8 +1243,8 @@ func (uv *UsernameInviteTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (uv *UsernameInviteTrigger) CheckUsername(ms *dstate.MemberState, data interface{}) (bool, error) {
-	if common.ContainsInvite(ms.Username, true, true) != nil {
+func (uv *UsernameInviteTrigger) CheckUsername(t *TriggerContext) (bool, error) {
+	if common.ContainsInvite(t.MS.User.Username, true, true) != nil {
 		return true, nil
 	}
 
@@ -1283,7 +1278,7 @@ func (mj *MemberJoinTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (mj *MemberJoinTrigger) CheckJoin(ms *dstate.MemberState, data interface{}) (isAffected bool, err error) {
+func (mj *MemberJoinTrigger) CheckJoin(t *TriggerContext) (isAffected bool, err error) {
 	return true, nil
 }
 
@@ -1323,7 +1318,7 @@ func (mat *MessageAttachmentTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (mat *MessageAttachmentTrigger) CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (bool, error) {
+func (mat *MessageAttachmentTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	contains := len(m.Attachments) > 0
 	if contains && mat.RequiresAttachment {
 		return true, nil

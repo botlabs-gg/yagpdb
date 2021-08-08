@@ -1,10 +1,13 @@
 package pubsub
 
 import (
+	"encoding/json"
+	"reflect"
 	"time"
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/common"
+	"github.com/jonas747/yagpdb/common/cacheset"
 )
 
 // PublishRatelimit publishes a new global ratelimit hit on discord
@@ -33,4 +36,42 @@ func handleGlobalRatelimtPusub(evt *Event) {
 
 func handleEvictCoreConfigCache(evt *Event) {
 	common.CoreServerConfigCache.Delete(int(evt.TargetGuildInt))
+}
+
+type evictCacheSetData struct {
+	Name string          `json:"name"`
+	Key  json.RawMessage `json:"key"`
+}
+
+func handleEvictCacheSet(evt *Event) {
+	cast := evt.Data.(*evictCacheSetData)
+	if slot := common.CacheSet.FindSlot(cast.Name); slot != nil {
+		t := slot.NewKey()
+		err := json.Unmarshal(cast.Key, t)
+		if err != nil {
+			logger.WithError(err).Error("failed unmarshaling CacheSet key")
+		}
+
+		keyConv := reflect.Indirect(reflect.ValueOf(t)).Interface()
+		slot.Delete(keyConv)
+	}
+}
+
+// EvictCacheSet sends a pubsub to evict the key on slot on all nodes if guildID is set to -1, otherwise the bot worker for that guild is the only one that handles it
+func EvictCacheSet(slot *cacheset.Slot, key interface{}) {
+	slot.Delete(key)
+
+	marshalledKey, err := json.Marshal(key)
+	if err != nil {
+		logger.WithError(err).Error("failed marshaling CacheSet key")
+		return
+	}
+
+	err = Publish("evict_cache_set", -1, &evictCacheSetData{
+		Name: slot.Name(),
+		Key:  marshalledKey,
+	})
+	if err != nil {
+		logger.WithError(err).Error("failed publishing guild cache eviction")
+	}
 }

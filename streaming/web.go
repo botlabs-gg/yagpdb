@@ -129,7 +129,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	roleStr := "none / unknown"
 	indicatorRole := ""
-	if role := ag.Role(config.GiveRole); role != nil {
+	if role := ag.GetRole(config.GiveRole); role != nil {
 		roleStr = html.EscapeString(role.Name)
 		indicatorRole = web.Indicator(true)
 	} else {
@@ -139,7 +139,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	indicatorMessage := ""
 	channelStr := "none / unknown"
 
-	if channel := ag.Channel(config.AnnounceChannel); channel != nil {
+	if channel := ag.GetChannel(config.AnnounceChannel); channel != nil {
 		indicatorMessage = web.Indicator(true)
 		channelStr = html.EscapeString(channel.Name)
 	} else {

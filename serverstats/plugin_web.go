@@ -135,7 +135,7 @@ OUTER:
 
 	err := model.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist("public", "ignore_channels"), boil.Infer())
 	if err == nil {
-		go pubsub.Publish("server_stats_invalidate_cache", ag.ID, nil)
+		pubsub.EvictCacheSet(cachedConfig, ag.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 	}
 

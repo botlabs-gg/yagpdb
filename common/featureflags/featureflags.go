@@ -210,10 +210,12 @@ var metricsFeatureFlagsUpdated = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 const evictCachePubSubEvent = "feature_flags_updated"
+const evictCachePubSubEvent2 = "feature_flags_updated_2"
 
 // UpdateGuildFlags updates the provided guilds feature flags
 func UpdateGuildFlags(guildID int64) error {
 	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	defer pubsub.Publish(evictCachePubSubEvent2, -1, EvictCacheData{GuildID: guildID})
 
 	var lastErr error
 	for _, p := range common.Plugins {
@@ -234,6 +236,8 @@ func UpdateGuildFlags(guildID int64) error {
 func UpdatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 	defer EvictCacheForGuild(guildID)
 	defer pubsub.Publish(evictCachePubSubEvent, guildID, nil)
+	defer pubsub.Publish(evictCachePubSubEvent2, -1, EvictCacheData{GuildID: guildID})
+
 	return updatePluginFeatureFlags(guildID, p)
 }
 
@@ -303,6 +307,7 @@ func AddManualGuildFlags(guildID int64, flags ...string) error {
 	err := common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{keyGuildFlags(guildID)}, flags...)...))
 	if err == nil {
 		pubsub.PublishLogErr(evictCachePubSubEvent, guildID, nil)
+		pubsub.PublishLogErr(evictCachePubSubEvent2, -1, EvictCacheData{GuildID: guildID})
 	}
 
 	return err
@@ -314,6 +319,7 @@ func RemoveManualGuildFlags(guildID int64, flags ...string) error {
 	err := common.RedisPool.Do(radix.Cmd(nil, "SREM", append([]string{keyGuildFlags(guildID)}, flags...)...))
 	if err == nil {
 		pubsub.PublishLogErr(evictCachePubSubEvent, guildID, nil)
+		pubsub.PublishLogErr(evictCachePubSubEvent2, -1, EvictCacheData{GuildID: guildID})
 	}
 
 	return err

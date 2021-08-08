@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dcmd/v3"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 )
@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 	Description:  "Shows the top games on this server",
 	HideFromHelp: true,
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "all"},
+		{Name: "all"},
 	},
 	RunFunc: cmdFuncTopCommands,
 }
@@ -28,7 +28,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	if allSwitch != nil && allSwitch.Bool() {
 		all = true
 
-		if admin, err := bot.IsBotAdmin(data.Msg.Author.ID); !admin || err != nil {
+		if admin, err := bot.IsBotAdmin(data.Author.ID); !admin || err != nil {
 			if err != nil {
 				return nil, err
 			}
@@ -41,12 +41,15 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	fastResult := make(map[string]int)
 
 	if all {
-		guilds := bot.State.GuildsSlice(true)
-		for _, g := range guilds {
-			checkGuild(fastResult, g)
+		processShards := bot.ReadyTracker.GetProcessShards()
+		for _, shard := range processShards {
+			guilds := bot.State.GetShardGuilds(int64(shard))
+			for _, g := range guilds {
+				checkGuild(fastResult, g)
+			}
 		}
 	} else {
-		checkGuild(fastResult, data.GS)
+		checkGuild(fastResult, data.GuildData.GS)
 	}
 
 	// then we convert and sort it
@@ -75,22 +78,24 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	return out, nil
 }
 
-func checkGuild(dst map[string]int, gs *dstate.GuildState) {
-	gs.RLock()
-	defer gs.RUnlock()
+func checkGuild(dst map[string]int, gs *dstate.GuildSet) {
 
-	for _, ms := range gs.Members {
-		if !ms.PresenceSet || ms.PresenceGame == nil || ms.PresenceGame.Name == "" {
-			continue
+	bot.State.IterateMembers(gs.ID, func(chunk []*dstate.MemberState) bool {
+		for _, ms := range chunk {
+			if ms.Presence == nil || ms.Presence.Game == nil || ms.Presence.Game.Name == "" {
+				continue
+			}
+
+			if ms.User.Bot {
+				continue
+			}
+
+			name := ms.Presence.Game.Name
+			dst[name]++
 		}
 
-		if ms.Bot {
-			continue
-		}
-
-		name := ms.PresenceGame.Name
-		dst[name]++
-	}
+		return true
+	})
 }
 
 type TopGameResult struct {

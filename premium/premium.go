@@ -247,7 +247,9 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 			return nil, errors.WithMessage(err, "GuildPremiumTier")
 		}
 
-		if tier > highestTier {
+		if tier == PremiumTierPremium {
+			highestTier = tier
+		} else if highestTier == PremiumTierNone {
 			highestTier = tier
 		}
 	}
@@ -278,7 +280,9 @@ func (p *Plugin) UpdateFeatureFlagsBatch() (map[int64][]string, error) {
 			}
 
 			if current, ok := highestTiers[guildID]; ok {
-				if tier > current {
+				if tier == PremiumTierPremium {
+					highestTiers[guildID] = tier
+				} else if current == PremiumTierNone {
 					highestTiers[guildID] = tier
 				}
 			} else {

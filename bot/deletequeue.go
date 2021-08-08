@@ -36,7 +36,7 @@ func (q *messageDeleteQueue) DeleteMessages(guildID int64, channel int64, ids ..
 	}
 
 	if guildID != 0 {
-		if !BotProbablyHasPermission(guildID, channel, discordgo.PermissionManageMessages) {
+		if hasPerms, _ := BotHasPermission(guildID, channel, discordgo.PermissionManageMessages); !hasPerms {
 			q.Unlock()
 			return
 		}

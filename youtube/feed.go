@@ -170,12 +170,12 @@ func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle st
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Inc()
 
 	mqueue.QueueMessage(&mqueue.QueuedElement{
-		Guild:      parsedGuild,
-		Channel:    parsedChannel,
-		Source:     "youtube",
-		SourceID:   "",
-		MessageStr: content,
-		Priority:   2,
+		GuildID:      parsedGuild,
+		ChannelID:    parsedChannel,
+		Source:       "youtube",
+		SourceItemID: "",
+		MessageStr:   content,
+		Priority:     2,
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: parseMentions,
 		},

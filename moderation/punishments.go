@@ -9,7 +9,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -32,21 +33,15 @@ const (
 {{if .Reason}}**Reason:** {{.Reason}}{{end}}`
 )
 
-func getMemberWithFallback(gs *dstate.GuildState, user *discordgo.User) (ms *dstate.MemberState, notFound bool) {
+func getMemberWithFallback(gs *dstate.GuildSet, user *discordgo.User) (ms *dstate.MemberState, notFound bool) {
 	ms, err := bot.GetMember(gs.ID, user.ID)
 	if err != nil {
 		// Fallback
 		logger.WithError(err).WithField("guild", gs.ID).Info("Failed retrieving member")
 		ms = &dstate.MemberState{
-			ID:       user.ID,
-			Guild:    gs,
-			Username: user.Username,
-			Bot:      user.Bot,
+			User:    *user,
+			GuildID: gs.ID,
 		}
-
-		parsedDiscrim, _ := strconv.ParseInt(user.Discriminator, 10, 32)
-		ms.Discriminator = int32(parsedDiscrim)
-		ms.ParseAvatar(user.Avatar)
 
 		return ms, true
 	}
@@ -77,7 +72,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		channelID = channel.ID
 	}
 
-	gs := bot.State.Guild(true, guildID)
+	gs := bot.State.GetGuild(guildID)
 
 	member, memberNotFound := getMemberWithFallback(gs, user)
 	if !memberNotFound {
@@ -85,7 +80,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		if p == PunishmentKick {
 			msg = config.KickMessage
 		}
-		sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason)
+		sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason, -1)
 	}
 
 	logLink := ""
@@ -146,7 +141,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	return err
 }
 
-func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildState, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string) {
+func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildSet, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int) {
 	if dmMsg == "" {
 		dmMsg = DefaultDMMessage
 	}
@@ -165,6 +160,10 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 	ctx.Data["ModAction"] = action
 	ctx.Data["Message"] = message
 
+	if warningID != -1 {
+		ctx.Data["WarningID"] = warningID
+	}
+
 	if duration < 1 {
 		ctx.Data["HumanDuration"] = "permanently"
 	}
@@ -176,7 +175,7 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 	}
 
 	if strings.TrimSpace(executed) != "" {
-		err = bot.SendDM(member.ID, "**"+bot.GuildName(gs.ID)+":** "+executed)
+		err = bot.SendDM(member.User.ID, "**"+gs.Name+":** "+executed)
 		if err != nil {
 			logger.WithError(err).Error("failed sending punish DM")
 		}
@@ -199,24 +198,24 @@ func KickUser(config *Config, guildID int64, channel *dstate.ChannelState, messa
 	}
 
 	if channel != nil {
-		_, err = DeleteMessages(channel.ID, user.ID, 100, 100)
+		_, err = DeleteMessages(guildID, channel.ID, user.ID, 100, 100)
 	}
 	return err
 }
 
-func DeleteMessages(channelID int64, filterUser int64, deleteNum, fetchNum int) (int, error) {
-	msgs, err := bot.GetMessages(channelID, fetchNum, false)
+func DeleteMessages(guildID, channelID int64, filterUser int64, deleteNum, fetchNum int) (int, error) {
+	msgs, err := bot.GetMessages(guildID, channelID, fetchNum, false)
 	if err != nil {
 		return 0, err
 	}
 
 	toDelete := make([]int64, 0)
 	now := time.Now()
-	for i := len(msgs) - 1; i >= 0; i-- {
+	for i := 0; i < len(msgs); i++ {
 		if filterUser == 0 || msgs[i].Author.ID == filterUser {
 
 			// Can only bulk delete messages up to 2 weeks (but add 1 minute buffer account for time sync issues and other smallies)
-			if now.Sub(msgs[i].ParsedCreated) > (time.Hour*24*14)-time.Minute {
+			if now.Sub(msgs[i].ParsedCreatedAt) > (time.Hour*24*14)-time.Minute {
 				continue
 			}
 
@@ -287,7 +286,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	//Delete all future Unban Events
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
 	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
-	
+
 	//We need details for user only if unban is to be logged in modlog. Thus we can save a potential api call by directly attempting an unban in other cases.
 	if config.LogUnbans && config.IntActionChannel() != 0 {
 		// check if they're already banned
@@ -298,18 +297,18 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 		}
 		user = guildBan.User
 	}
-		
+
 	// Set a key in redis that marks that this user has appeared in the modlog already
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))	
-	
+	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))
+
 	err = common.BotSession.GuildBanDelete(guildID, user.ID)
 	if err != nil {
 		notbanned, err := isNotFound(err)
 		return notbanned, err
 	}
-	
+
 	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
-	
+
 	//modLog Entry handling
 	if config.LogUnbans {
 		err = CreateModlogEmbed(config, author, action, user, reason, "")
@@ -317,7 +316,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	return false, err
 }
 
-func isNotFound (err error) (bool, error) {
+func isNotFound(err error) (bool, error) {
 	if err != nil {
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
 			if cast.Response.StatusCode == 404 {
@@ -328,6 +327,7 @@ func isNotFound (err error) (bool, error) {
 	}
 	return false, nil
 }
+
 const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
@@ -350,12 +350,12 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	}
 
 	// To avoid unexpected things from happening, make sure were only updating the mute of the player 1 place at a time
-	LockMute(member.ID)
-	defer UnlockMute(member.ID)
+	LockMute(member.User.ID)
+	defer UnlockMute(member.User.ID)
 
 	// Look for existing mute
 	currentMute := MuteModel{}
-	err = common.GORM.Where(&MuteModel{UserID: member.ID, GuildID: guildID}).First(&currentMute).Error
+	err = common.GORM.Where(&MuteModel{UserID: member.User.ID, GuildID: guildID}).First(&currentMute).Error
 	alreadyMuted := err != gorm.ErrRecordNotFound
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return common.ErrWithCaller(err)
@@ -364,7 +364,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	// Insert/update the mute entry in the database
 	if !alreadyMuted {
 		currentMute = MuteModel{
-			UserID:  member.ID,
+			UserID:  member.User.ID,
 			GuildID: guildID,
 		}
 	}
@@ -379,12 +379,12 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	}
 
 	// no matter what, if were unmuting or muting, we wanna make sure we dont have duplicated unmute events
-	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unmute' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, member.ID)).DeleteAll(context.Background(), common.PQ)
+	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unmute' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, member.User.ID)).DeleteAll(context.Background(), common.PQ)
 	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
 
 	if mute {
 		// Apply the roles to the user
-		removedRoles, err := AddMemberMuteRole(config, member.ID, member.Roles)
+		removedRoles, err := AddMemberMuteRole(config, member.User.ID, member.Member.Roles)
 		if err != nil {
 			return errors.WithMessage(err, "AddMemberMuteRole")
 		}
@@ -414,7 +414,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 		if duration > 0 {
 			err = scheduledevents2.ScheduleEvent("moderation_unmute", guildID, time.Now().Add(time.Minute*time.Duration(duration)), &ScheduledUnmuteData{
-				UserID: member.ID,
+				UserID: member.User.ID,
 			})
 			if err != nil {
 				return errors.WithMessage(err, "failed scheduling unmute")
@@ -422,14 +422,14 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		}
 	} else {
 		// Remove the mute role, and give back the role the bot took
-		err = RemoveMemberMuteRole(config, member.ID, member.Roles, currentMute)
+		err = RemoveMemberMuteRole(config, member.User.ID, member.Member.Roles, currentMute)
 		if err != nil {
 			return errors.WithMessage(err, "failed removing mute role")
 		}
 
 		if alreadyMuted {
 			common.GORM.Delete(&currentMute)
-			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.ID)))
+			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyMutedUser(guildID, member.User.ID)))
 		}
 	}
 
@@ -452,13 +452,13 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		dmMsg = config.MuteMessage
 	}
 
-	gs := bot.State.Guild(true, guildID)
+	gs := bot.State.GetGuild(guildID)
 	if gs != nil {
-		sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason)
+		sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1)
 	}
 
 	// Create the modlog entry
-	return CreateModlogEmbed(config, author, action, member.DGoUser(), reason, logLink)
+	return CreateModlogEmbed(config, author, action, &member.User, reason, logLink)
 }
 
 func AddMemberMuteRole(config *Config, id int64, currentRoles []int64) (removedRoles []int64, err error) {
@@ -490,8 +490,34 @@ func AddMemberMuteRole(config *Config, id int64, currentRoles []int64) (removedR
 }
 
 func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute MuteModel) (err error) {
+	newMemberRoles := decideUnmuteRoles(config, currentRoles, mute)
+	err = common.BotSession.GuildMemberEdit(config.GuildID, id, newMemberRoles)
+	return
+}
 
-	newMemberRoles := make([]string, 0, len(currentRoles)+len(config.MuteRemoveRoles))
+func decideUnmuteRoles(config *Config, currentRoles []int64, mute MuteModel) []string {
+	newMemberRoles := make([]string, 0)
+
+	gs := bot.State.GetGuild(config.GuildID)
+	botState, err := bot.GetMember(gs.ID, common.BotUser.ID)
+
+	if err != nil || botState == nil { // We couldn't find the bot on state, so keep old behaviour
+		for _, r := range currentRoles {
+			if r != config.IntMuteRole() {
+				newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
+			}
+		}
+
+		for _, r := range mute.RemovedRoles {
+			if !common.ContainsInt64Slice(currentRoles, r) && gs.GetRole(r) != nil {
+				newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
+			}
+		}
+
+		return newMemberRoles
+	}
+
+	yagHighest := bot.MemberHighestRole(gs, botState)
 
 	for _, v := range currentRoles {
 		if v != config.IntMuteRole() {
@@ -500,14 +526,13 @@ func RemoveMemberMuteRole(config *Config, id int64, currentRoles []int64, mute M
 	}
 
 	for _, v := range mute.RemovedRoles {
-		if !common.ContainsInt64Slice(currentRoles, v) {
+		r := gs.GetRole(v)
+		if !common.ContainsInt64Slice(currentRoles, v) && r != nil && dutil.IsRoleAbove(yagHighest, r) {
 			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
 		}
 	}
 
-	err = common.BotSession.GuildMemberEdit(config.GuildID, id, newMemberRoles)
-
-	return
+	return newMemberRoles
 }
 
 func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *discordgo.Message, author *discordgo.User, target *discordgo.User, message string) error {
@@ -540,10 +565,10 @@ func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *
 		return common.ErrWithCaller(err)
 	}
 
-	gs := bot.State.Guild(true, guildID)
+	gs := bot.State.GetGuild(guildID)
 	ms, _ := bot.GetMember(guildID, target.ID)
 	if gs != nil && ms != nil {
-		sendPunishDM(config, config.WarnMessage, MAWarned, gs, channel, msg, author, ms, -1, message)
+		sendPunishDM(config, config.WarnMessage, MAWarned, gs, channel, msg, author, ms, -1, message, int(warning.ID))
 	}
 
 	// go bot.SendDM(target.ID, fmt.Sprintf("**%s**: You have been warned for: %s", bot.GuildName(guildID), message))

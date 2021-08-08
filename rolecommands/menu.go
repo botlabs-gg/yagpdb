@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dstate/v3"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -28,7 +28,7 @@ import (
 var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
-	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
+	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
@@ -45,9 +45,9 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	}
 
 	model := &models.RoleMenu{
-		GuildID:   parsed.GS.ID,
-		OwnerID:   parsed.Msg.Author.ID,
-		ChannelID: parsed.Msg.ChannelID,
+		GuildID:   parsed.GuildData.GS.ID,
+		OwnerID:   parsed.Author.ID,
+		ChannelID: parsed.ChannelID,
 
 		RoleGroupID:                null.Int64From(group.ID),
 		OwnMessage:                 true,
@@ -65,7 +65,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		model.OwnMessage = false
 
 		id := parsed.Switches["m"].Int64()
-		msg, err = common.BotSession.ChannelMessage(parsed.CS.ID, id)
+		msg, err = common.BotSession.ChannelMessage(parsed.ChannelID, id)
 		if err != nil {
 			return nil, err
 		}
@@ -74,7 +74,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	} else {
 
 		// set up the message if not provided
-		msg, err = common.BotSession.ChannelMessageSend(parsed.CS.ID, "Role menu\nSetting up...")
+		msg, err = common.BotSession.ChannelMessageSend(parsed.ChannelID, "Role menu\nSetting up...")
 		if err != nil {
 			_, dErr := common.DiscordError(err)
 			errStr := "Failed creating the menu message, check the permissions on the channel"
@@ -99,7 +99,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	model.R = model.R.NewStruct()
 	model.R.RoleGroup = group
 
-	ClearRolemenuCacheGS(parsed.GS)
+	ClearRolemenuCache(parsed.GuildData.GS.ID)
 	recentMenusTracker.AddMenu(model.MessageID)
 	resp, err := NextRoleMenuSetupStep(parsed.Context(), model, true)
 	updateSetupMessage(parsed.Context(), model, resp)
@@ -108,7 +108,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 
 func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
 	mID := parsed.Args[0].Int64()
-	menu, err := FindRolemenuFull(parsed.Context(), mID, parsed.GS.ID)
+	menu, err := FindRolemenuFull(parsed.Context(), mID, parsed.GuildData.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
@@ -132,7 +132,7 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	if menu.RoleGroupID.Valid {
 		// re-enter setup mode for role group linked menus to add missing options
 		menu.SetupMSGID = 0
-		menu.OwnerID = parsed.Msg.Author.ID
+		menu.OwnerID = parsed.Author.ID
 		menu.State = RoleMenuStateSettingUp
 	}
 
@@ -152,7 +152,7 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	if resp != "" {
 		createSetupMessage(parsed.Context(), menu, resp, true)
 	}
-	ClearRolemenuCacheGS(parsed.GS)
+	ClearRolemenuCache(parsed.GuildData.GS.ID)
 	return nil, err
 }
 
@@ -229,7 +229,7 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 	opts := rm.R.RoleMenuOptions
 	sort.Slice(opts, OptionsLessFunc(!rm.RoleGroupID.Valid, opts))
 
-	gs := bot.State.Guild(true, rm.GuildID)
+	gs := bot.State.GetGuild(rm.GuildID)
 	if gs == nil {
 		return errors.New("Guild not found")
 	}
@@ -319,7 +319,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
-				return "An unknown error occured, please retry adding that emoji", nil
+				return "An unknown error occurred, please retry adding that emoji", nil
 			}
 		}
 
@@ -359,7 +359,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 					return "I do not have permissions to update the menu message, please give me the proper permissions for me to update the menu message.", nil
 				default:
-					return "An error occured updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
+					return "An error occurred updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
 				}
 			}
 		}
@@ -418,11 +418,8 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 	_, checkDB := recentMenusTracker.CheckRecentTrackedMenu(evt.GS.ID, mID)
 	if !checkDB {
-		logger.Debug("skipped db check for menus becuase of recent tracked menus")
 		return
 	}
-
-	logger.Debug("CheckDB was trddddue")
 
 	menu, err := GetRolemenuCached(evt.Context(), evt.GS, mID)
 	if err != nil {
@@ -472,9 +469,6 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 
 	gs := evt.GS
-	gs.RLock()
-	name := gs.Guild.Name
-	gs.RUnlock()
 
 	resp, err := MemberChooseOption(evt.Context(), menu, gs, option, uID, emoji, raAdd)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingPermissions) {
@@ -482,21 +476,21 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 
 	if resp != "" {
-		bot.SendDM(uID, "**"+name+"**: "+resp)
+		bot.SendDM(uID, "**"+gs.Name+"**: "+resp)
 	}
 }
 
-func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.GuildState, option *models.RoleMenuOption, userID int64, emoji *discordgo.Emoji, raAdd bool) (resp string, err error) {
+func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.GuildSet, option *models.RoleMenuOption, userID int64, emoji *discordgo.Emoji, raAdd bool) (resp string, err error) {
 	member, err := bot.GetMember(gs.ID, userID)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
 			return "", nil
 		}
 
-		return "An error occured giving you the role", err
+		return "An error occurred giving you the role", err
 	}
 
-	if member.Bot {
+	if member.User.Bot {
 		// ignore bots
 		return "", nil
 	}
@@ -689,7 +683,7 @@ func FindRolemenuFull(ctx context.Context, mID int64, guildID int64) (*models.Ro
 
 func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
-	menu, err := FindRolemenuFull(data.Context(), mID, data.GS.ID)
+	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
@@ -713,12 +707,12 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 		}
 	}
 
-	return nil, nil
+	return "Done resetting rolemenu!", nil
 }
 
 func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
-	menu, err := FindRolemenuFull(data.Context(), mID, data.GS.ID)
+	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
@@ -727,14 +721,14 @@ func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	ClearRolemenuCacheGS(data.GS)
+	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	return "Deleted. The bot will no longer listen for reactions on this message, you can even make another menu on it.", nil
 }
 
 func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
-	menu, err := FindRolemenuFull(data.Context(), mID, data.GS.ID)
+	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
@@ -744,14 +738,14 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	}
 
 	menu.State = RoleMenuStateEditingOptionSelecting
-	menu.OwnerID = data.Msg.Author.ID
+	menu.OwnerID = data.Author.ID
 	menu.SetupMSGID = 0
 	_, err = menu.UpdateG(data.Context(), boil.Whitelist("state", "owner_id", "setup_msg_id"))
 	if err != nil {
 		return "", err
 	}
 
-	ClearRolemenuCacheGS(data.GS)
+	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	createSetupMessage(data.Context(), menu, "React on the emoji for the option you want to change", true)
 	return nil, nil
@@ -759,7 +753,7 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 
 func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
-	menu, err := FindRolemenuFull(data.Context(), mID, data.GS.ID)
+	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
 		return "Couldn't find menu", nil
 	}
@@ -779,12 +773,12 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	ClearRolemenuCacheGS(data.GS)
+	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	return "Menu marked as done", nil
 }
 
-func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildState, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
+func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
 	if userID != rm.OwnerID {
 		return "Someone is currently editing or setting up this menu, please wait", nil
 	}
@@ -895,16 +889,15 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 	}
 }
 
-func OptionName(gs *dstate.GuildState, opt *models.RoleMenuOption) string {
+func OptionName(gs *dstate.GuildSet, opt *models.RoleMenuOption) string {
 	if opt.RoleCommandID.Valid {
 		return opt.R.RoleCommand.Name
 	} else {
-		r := gs.RoleCopy(true, opt.StandaloneRoleID.Int64)
+		r := gs.GetRole(opt.StandaloneRoleID.Int64)
 		if r != nil {
 			return r.Name
 		} else {
 			return "unknown role"
 		}
 	}
-
 }

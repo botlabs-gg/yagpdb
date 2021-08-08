@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dcmd"
+	"github.com/jonas747/dcmd/v3"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
@@ -33,17 +33,17 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"setz", "tzset"},
 		Description: "Sets your timezone, used for various purposes such as auto conversion. Give it your country.",
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "Timezone", Type: dcmd.String},
+			{Name: "Timezone", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Switch: "u", Name: "Display current"},
-			&dcmd.ArgDef{Switch: "d", Name: "Delete TZ record"},
+			{Name: "u", Help: "Display current"},
+			{Name: "d", Help: "Delete TZ record"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
 			localTZ := time.Now().Location()
 			userZone, userOffset := time.Now().In(localTZ).Zone()
-			getUserTZ := GetUserTimezone(parsed.Msg.Author.ID)
+			getUserTZ := GetUserTimezone(parsed.Author.ID)
 			tzState := "server's"
 
 			if getUserTZ != nil {
@@ -67,7 +67,7 @@ func (p *Plugin) AddCommands() {
 				if getUserTZ != nil {
 
 					m := &models.UserTimezone{
-						UserID:       parsed.Msg.Author.ID,
+						UserID:       parsed.Author.ID,
 						TimezoneName: localTZ.String(),
 					}
 					_, err := m.DeleteG(parsed.Context())
@@ -83,7 +83,7 @@ func (p *Plugin) AddCommands() {
 			zones := FindZone(parsed.Args[0].Str())
 			// No zones matching user input
 			if len(zones) < 1 {
-				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
+				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <https://kevinnovak.github.io/Time-Zone-Picker/> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
 			}
 			// Multiple zones matching user input
 			note := ""
@@ -94,7 +94,7 @@ func (p *Plugin) AddCommands() {
 						return paginatedTimezones(zones)(nil, 1)
 					}
 					_, err := paginatedmessages.CreatePaginatedMessage(
-						parsed.GS.ID, parsed.CS.ID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
+						parsed.GuildData.GS.ID, parsed.ChannelID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
 					return nil, err
 				}
 
@@ -118,7 +118,7 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 				if !found {
-					out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
+					out := "More than 1 result, reuse the command with one of the following:\n" + matches + "\n" + userTZ
 					return out, nil
 				}
 			} else {
@@ -135,7 +135,7 @@ func (p *Plugin) AddCommands() {
 			name, _ := time.Now().In(loc).Zone()
 
 			m := &models.UserTimezone{
-				UserID:       parsed.Msg.Author.ID,
+				UserID:       parsed.Author.ID,
 				TimezoneName: zone,
 			}
 
@@ -151,7 +151,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         commands.CategoryTool,
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv", "ttc"},
-		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
+		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, toggle all channels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
@@ -164,11 +164,11 @@ func (p *Plugin) AddCommands() {
 			}
 
 			insert := false
-			conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GS.ID)
+			conf, err := models.FindTimezoneGuildConfigG(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				if err == sql.ErrNoRows {
 					conf = &models.TimezoneGuildConfig{
-						GuildID: parsed.GS.ID,
+						GuildID: parsed.GuildData.GS.ID,
 					}
 					insert = true
 				} else {
@@ -192,13 +192,13 @@ func (p *Plugin) AddCommands() {
 
 				found := false
 				for i, v := range conf.DisabledInChannels {
-					if v == parsed.CS.ID {
+					if v == parsed.ChannelID {
 						found = true
 						conf.DisabledInChannels = append(conf.DisabledInChannels[:i], conf.DisabledInChannels[i+1:]...)
 						status = "on"
 
 						if conf.NewChannelsDisabled {
-							conf.EnabledInChannels = append(conf.EnabledInChannels, parsed.CS.ID)
+							conf.EnabledInChannels = append(conf.EnabledInChannels, parsed.ChannelID)
 						}
 
 						break
@@ -206,10 +206,10 @@ func (p *Plugin) AddCommands() {
 				}
 
 				if !found {
-					conf.DisabledInChannels = append(conf.DisabledInChannels, parsed.CS.ID)
+					conf.DisabledInChannels = append(conf.DisabledInChannels, parsed.ChannelID)
 
 					for i, v := range conf.EnabledInChannels {
-						if v == parsed.CS.ID {
+						if v == parsed.ChannelID {
 							conf.EnabledInChannels = append(conf.EnabledInChannels[:i], conf.EnabledInChannels[i+1:]...)
 						}
 					}

@@ -4,6 +4,7 @@ package logs
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -84,18 +85,22 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		count = 300
 	}
 
+	gs := bot.State.GetGuild(guildID)
+	if gs == nil {
+		return nil, bot.ErrGuildNotFound
+	}
+
 	// Make a light copy of the channel
-	channel := bot.State.ChannelCopy(true, channelID)
+	channel := gs.GetChannel(channelID)
 	if channel == nil {
 		return nil, errors.New("Unknown channel")
 	}
 
-	msgs, err := bot.GetMessages(channel.ID, count, true)
+	msgs, err := bot.GetMessages(guildID, channel.ID, count, true)
 	if err != nil {
 		return nil, err
 	}
 
-	logMsgs := make([]*models.Messages2, 0, len(msgs))
 	logIds := make([]int64, 0, len(msgs))
 
 	tx, err := common.PQ.Begin()
@@ -109,8 +114,14 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
 		}
 
-		if len(v.Embeds) > 0 {
-			body += fmt.Sprintf(" (%d embeds is not shown)", len(v.Embeds))
+		// serialise embeds to their underlying JSON
+		for count, embed := range v.Embeds {
+			marshalled, err := json.Marshal(embed)
+			if err != nil {
+				continue
+			}
+
+			body += fmt.Sprintf("\nEmbed %d: %s", count, marshalled)
 		}
 
 		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)
@@ -121,8 +132,8 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			GuildID: guildID,
 			Content: body,
 
-			CreatedAt: v.ParsedCreated,
-			UpdatedAt: v.ParsedCreated,
+			CreatedAt: v.ParsedCreatedAt,
+			UpdatedAt: v.ParsedCreatedAt,
 
 			AuthorUsername: v.Author.Username + "#" + v.Author.Discriminator,
 			AuthorID:       v.Author.ID,
@@ -135,18 +146,17 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			return nil, errors.WrapIf(err, "message.insert")
 		}
 
-		logMsgs = append(logMsgs, messageModel)
 		logIds = append(logIds, v.ID)
 	}
 
-	id, err := common.GenLocalIncrID(channel.Guild.ID, "message_logs")
+	id, err := common.GenLocalIncrID(guildID, "message_logs")
 	if err != nil {
 		tx.Rollback()
 		return nil, errors.WrapIf(err, "log.gen_id")
 	}
 
 	log := &models.MessageLogs2{
-		GuildID:  channel.Guild.ID,
+		GuildID:  guildID,
 		ID:       int(id),
 		LegacyID: 0,
 
