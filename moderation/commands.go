@@ -567,7 +567,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			time.Sleep(time.Second)
 
 			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
-			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
+			deleteMessageWord := "messages"
+			if numDeleted == 1 {
+				deleteMessageWord = "message"
+			}
+			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d %s! :')", numDeleted, deleteMessageWord), true), err
 		},
 	},
 	{
