@@ -31,7 +31,6 @@ require (
 	github.com/jonas747/discordgo v1.6.4-0.20210729123146-b76329c02faf
 	github.com/jonas747/dshardorchestrator/v2 v2.0.2
 	github.com/jonas747/dstate/v3 v3.0.8
-	github.com/jonas747/dutil v0.0.3
 	github.com/jonas747/go-reddit v0.1.2
 	github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc
 	github.com/jonas747/jdshardmanager v1.0.1

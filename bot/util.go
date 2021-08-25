@@ -11,7 +11,6 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
@@ -300,7 +299,7 @@ func IsMemberAbove(gs *dstate.GuildSet, ms1 *dstate.MemberState, ms2 *dstate.Mem
 		return true
 	}
 
-	return dutil.IsRoleAbove(highestMS1, highestMS2)
+	return common.IsRoleAbove(highestMS1, highestMS2)
 }
 
 // IsMemberAboveRole returns wether ms is above role
@@ -316,7 +315,7 @@ func IsMemberAboveRole(gs *dstate.GuildSet, ms1 *dstate.MemberState, role *disco
 		return false
 	}
 
-	return dutil.IsRoleAbove(highestMSRole, role)
+	return common.IsRoleAbove(highestMSRole, role)
 }
 
 // MemberHighestRole returns the highest role for ms, assumes gs is rlocked, otherwise race conditions will occur
@@ -328,7 +327,7 @@ func MemberHighestRole(gs *dstate.GuildSet, ms *dstate.MemberState) *discordgo.R
 				continue
 			}
 
-			if highest == nil || dutil.IsRoleAbove(&r, highest) {
+			if highest == nil || common.IsRoleAbove(&r, highest) {
 				highest = &r
 			}
 

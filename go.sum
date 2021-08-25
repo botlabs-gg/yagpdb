@@ -363,8 +363,6 @@ github.com/jonas747/dstate/v3 v3.0.0/go.mod h1:ZLma2mC/JA8G1Snz80Az6HWq7wXxzDqq+
 github.com/jonas747/dstate/v3 v3.0.8 h1:ilMM49pymJKyKuA4iOmiM2cvwF3VpquxV2s2snC7bx8=
 github.com/jonas747/dstate/v3 v3.0.8/go.mod h1:ZLma2mC/JA8G1Snz80Az6HWq7wXxzDqq+71DIPx9wBc=
 github.com/jonas747/dutil v0.0.2/go.mod h1:FwfIRC0ShAEHhwUJ6JppfciiFrfOA/cAoyCECsfib8c=
-github.com/jonas747/dutil v0.0.3 h1:Qe4Qls2sBjAvBOqregFLyDuWG/gonK8BiqT9DHRhIg0=
-github.com/jonas747/dutil v0.0.3/go.mod h1:oMJ++hvPrAb7Kl2aAHntvjiMXQWfja5t8ZvX13RMbuE=
 github.com/jonas747/go-reddit v0.1.2 h1:SDgHvC9ouFIdtbB+dlu8T5lHxAjoypz1NE7CuQN+YOI=
 github.com/jonas747/go-reddit v0.1.2/go.mod h1:9HN8PKMjEmDmJE3C71GsR6piXo1AxPrkxjQ/nZOe8Lo=
 github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc h1:yVJb07+MRPLTZ6wz3mgZeRp5+jly+zSOFnGmTGGVR+k=

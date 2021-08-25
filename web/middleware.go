@@ -16,7 +16,6 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -392,7 +391,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 				combinedPerms |= discordgo.PermissionAll
 			}
 
-			if highest.ID == 0 || dutil.IsRoleAbove(&role, &highest) {
+			if highest.ID == 0 || common.IsRoleAbove(&role, &highest) {
 				highest = role
 			}
 		}

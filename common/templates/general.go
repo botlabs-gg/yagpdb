@@ -13,7 +13,6 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
 	"github.com/jonas747/yagpdb/common"
 )
 
@@ -589,7 +588,7 @@ func tmplHumanizeThousands(input interface{}) string {
 }
 
 func roleIsAbove(a, b *discordgo.Role) bool {
-	return dutil.IsRoleAbove(a, b)
+	return common.IsRoleAbove(a, b)
 }
 
 func randInt(args ...interface{}) int {

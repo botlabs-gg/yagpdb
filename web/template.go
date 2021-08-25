@@ -10,7 +10,7 @@ import (
 
 	"github.com/jonas747/discordgo"
 	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/dutil"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 )
 
@@ -109,7 +109,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
-			if dutil.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
+			if common.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
 				output += " disabled"
 				optName += " (role is above bot)"
 			}
@@ -168,7 +168,7 @@ OUTER:
 
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
-			if dutil.IsRoleAbove(&role, highestBotRole) || highestBotRole.ID == role.ID {
+			if common.IsRoleAbove(&role, highestBotRole) || highestBotRole.ID == role.ID {
 				if !optIsSelected {
 					builder.WriteString(" disabled")
 				}
