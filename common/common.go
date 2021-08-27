@@ -18,7 +18,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/common/cacheset"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"

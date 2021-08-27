@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 )
 
 func TestInheritPermissionsFromCategory(t *testing.T) {
@@ -17,14 +17,14 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 			ParentOverwrites: []*discordgo.PermissionOverwrite{},
 			InputOverwrites: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 			},
 			ExpectedOutput: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
@@ -34,24 +34,24 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 			ParentOverwrites: []*discordgo.PermissionOverwrite{},
 			InputOverwrites: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    2,
 					Allow: InTicketPerms,
 				},
 			},
 			ExpectedOutput: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    2,
 					Allow: InTicketPerms,
 				},
@@ -60,36 +60,36 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 		{ // 2, basic parent check
 			ParentOverwrites: []*discordgo.PermissionOverwrite{
 				{
-					Type: "role",
+					Type: discordgo.PermissionOverwriteTypeRole,
 					ID:   3,
 					Deny: discordgo.PermissionReadMessages,
 				},
 			},
 			InputOverwrites: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    2,
 					Allow: InTicketPerms,
 				},
 			},
 			ExpectedOutput: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    2,
 					Allow: InTicketPerms,
 				},
 				{
-					Type: "role",
+					Type: discordgo.PermissionOverwriteTypeRole,
 					ID:   3,
 					Deny: discordgo.PermissionReadMessages,
 				},
@@ -98,31 +98,31 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 		{ // 3, allow/deny flip check
 			ParentOverwrites: []*discordgo.PermissionOverwrite{
 				{
-					Type: "role",
+					Type: discordgo.PermissionOverwriteTypeRole,
 					ID:   2,
 					Deny: discordgo.PermissionReadMessages,
 				},
 			},
 			InputOverwrites: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    2,
 					Allow: InTicketPerms,
 				},
 			},
 			ExpectedOutput: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    2,
 					Allow: InTicketPerms,
 				},
@@ -131,41 +131,41 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 		{ // 4, multiples
 			ParentOverwrites: []*discordgo.PermissionOverwrite{
 				{
-					Type: "role",
+					Type: discordgo.PermissionOverwriteTypeRole,
 					ID:   2,
 					Deny: discordgo.PermissionReadMessages,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    3,
 					Allow: discordgo.PermissionReadMessages,
 				},
 			},
 			InputOverwrites: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    2,
 					Allow: InTicketPerms,
 				},
 			},
 			ExpectedOutput: []*discordgo.PermissionOverwrite{
 				{
-					Type:  "member",
+					Type:  discordgo.PermissionOverwriteTypeMember,
 					ID:    1,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    2,
 					Allow: InTicketPerms,
 				},
 				{
-					Type:  "role",
+					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    3,
 					Allow: discordgo.PermissionReadMessages,
 				},

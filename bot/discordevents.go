@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/bot/joinedguildsupdater"
 	"github.com/jonas747/yagpdb/bot/models"

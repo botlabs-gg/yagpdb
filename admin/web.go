@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dshardorchestrator/v2/orchestrator/rest"
+	"github.com/jonas747/dshardorchestrator/v3/orchestrator/rest"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"

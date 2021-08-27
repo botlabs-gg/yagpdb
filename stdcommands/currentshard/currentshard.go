@@ -3,7 +3,7 @@ package currentshard
 import (
 	"fmt"
 
-	"github.com/jonas747/dcmd/v3"
+	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/commands"
