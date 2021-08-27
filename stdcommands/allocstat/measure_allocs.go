@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/jonas747/dcmd/v3"
+	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/stdcommands/util"

@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/featureflags"
 	"github.com/sirupsen/logrus"

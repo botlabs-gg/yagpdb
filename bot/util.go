@@ -9,8 +9,8 @@ import (
 	"emperror.dev/errors"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
@@ -69,7 +69,7 @@ var (
 )
 
 // AdminOrPerm is the same as AdminOrPermMS but only required a member ID
-func AdminOrPerm(guildID int64, channelID int64, userID int64, needed int) (bool, error) {
+func AdminOrPerm(guildID int64, channelID int64, userID int64, needed int64) (bool, error) {
 	// Ensure the member is in state
 	ms, err := GetMember(guildID, userID)
 	if err != nil {
@@ -80,7 +80,7 @@ func AdminOrPerm(guildID int64, channelID int64, userID int64, needed int) (bool
 }
 
 // AdminOrPermMS checks if the provided member has all of the needed permissions or is a admin
-func AdminOrPermMS(guildID int64, channelID int64, ms *dstate.MemberState, needed int) (bool, error) {
+func AdminOrPermMS(guildID int64, channelID int64, ms *dstate.MemberState, needed int64) (bool, error) {
 	guild := State.GetGuild(guildID)
 	if guild == nil {
 		return false, ErrGuildNotFound
@@ -135,7 +135,7 @@ func updateAllShardStatuses() {
 
 // BotProbablyHasPermission returns true if its possible that the bot has the following permission,
 // it also returns true if the bot member could not be found or if the guild is not in state (hence, probably)
-func BotHasPermission(guildID int64, channelID int64, permission int) (bool, error) {
+func BotHasPermission(guildID int64, channelID int64, permission int64) (bool, error) {
 	gs := State.GetGuild(guildID)
 	if gs == nil {
 		return false, ErrGuildNotFound
@@ -145,7 +145,7 @@ func BotHasPermission(guildID int64, channelID int64, permission int) (bool, err
 }
 
 // BotProbablyHasPermissionGS is the same as BotProbablyHasPermission but with a guildstate instead of guildid
-func BotHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission int) (bool, error) {
+func BotHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission int64) (bool, error) {
 	ms, err := GetMember(gs.ID, common.BotUser.ID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("bot isnt a member of a guild?")

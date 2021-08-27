@@ -13,7 +13,7 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"

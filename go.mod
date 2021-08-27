@@ -24,17 +24,16 @@ require (
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/jonas747/cardsagainstdiscord v1.1.1-0.20210604123907-2bdea9fc1f3e
-	github.com/jonas747/dca v0.0.0-20190317094138-10e959e9d3e8
-	github.com/jonas747/dcmd/v3 v3.0.2
+	github.com/jonas747/cardsagainstdiscord/v2 v2.0.0
+	github.com/jonas747/dca/v2 v2.0.0
+	github.com/jonas747/dcmd/v4 v4.0.1
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo v1.6.4-0.20210729123146-b76329c02faf
-	github.com/jonas747/dshardorchestrator/v2 v2.0.2
-	github.com/jonas747/dstate/v3 v3.0.8
+	github.com/jonas747/discordgo/v2 v2.0.1
+	github.com/jonas747/dshardorchestrator/v3 v3.0.0
+	github.com/jonas747/dstate/v4 v4.0.1
 	github.com/jonas747/go-reddit v0.1.2
 	github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc
-	github.com/jonas747/jdshardmanager v1.0.1
-	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 // indirect
+	github.com/jonas747/jdshardmanager/v2 v2.0.0
 	github.com/jonas747/template v1.1.2
 	github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f
 	github.com/justinian/dice v0.0.0-20170728002755-6a18b51d929c // indirect
@@ -64,7 +63,7 @@ require (
 	github.com/volatiletech/strmangle v0.0.1
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20210503195802-e9a32991a82e
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
