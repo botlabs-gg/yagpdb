@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -142,7 +142,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		watchItem.Slow = true
 		watchItem.MinUpvotes = newElem.MinUpvotes
 	}
-	
+
 	if watchItem.ChannelID == 0 {
 		watchItem.Disabled = true
 	}
@@ -193,7 +193,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	if item.Slow {
 		item.MinUpvotes = updated.MinUpvotes
 	}
-	
+
 	if item.ChannelID == 0 {
 		item.Disabled = true
 	}

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/tickets/models"

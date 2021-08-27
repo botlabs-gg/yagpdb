@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/templates"
 )
@@ -37,12 +37,12 @@ func mTemplate(name string, values ...interface{}) (template.HTML, error) {
 	return template.HTML(buf.String()), nil
 }
 
-var permsString = map[string]int{
+var permsString = map[string]int64{
 	"ManageRoles":    discordgo.PermissionManageRoles,
 	"ManageMessages": discordgo.PermissionManageMessages,
 }
 
-func hasPerm(botPerms int, checkPerm string) (bool, error) {
+func hasPerm(botPerms int64, checkPerm string) (bool, error) {
 	p, ok := permsString[checkPerm]
 	if !ok {
 		return false, errors.New("Unknown permission: " + checkPerm)

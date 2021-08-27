@@ -6,7 +6,7 @@
 package eventsystem
 
 import (
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 )
 
 type Event int

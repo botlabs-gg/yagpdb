@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/jonas747/dcmd/v3"
+	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/dice"
 	"github.com/jonas747/yagpdb/commands"
 )

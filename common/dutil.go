@@ -1,6 +1,6 @@
 package common
 
-import "github.com/jonas747/discordgo"
+import "github.com/jonas747/discordgo/v2"
 
 // IsRoleAbove returns wether role a is above b, checking positions first, and if they're the same
 // (both being 1, new roles always have 1 as position)

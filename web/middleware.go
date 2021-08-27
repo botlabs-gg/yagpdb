@@ -14,8 +14,8 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/gorilla/schema"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -368,7 +368,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 		}
 
 		var highest discordgo.Role
-		combinedPerms := 0
+		combinedPerms := int64(0)
 		for _, role := range guildCast.Roles {
 			found := false
 			if role.ID == guildCast.ID {
@@ -698,16 +698,16 @@ func checkControllerError(ctx context.Context, data TemplateData, err error) {
 	CtxLogger(ctx).WithError(err).Error("Web handler reported an error")
 }
 
-func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
+func RequirePermMW(perms ...int64) func(http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			permsInterface := ctx.Value(common.ContextKeyBotPermissions)
-			currentPerms := 0
+			currentPerms := int64(0)
 			if permsInterface == nil {
 				logger.Warn("Requires perms but no permsinterface available")
 			} else {
-				currentPerms = permsInterface.(int)
+				currentPerms = permsInterface.(int64)
 			}
 
 			has := ""

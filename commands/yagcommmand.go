@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
@@ -900,7 +900,7 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 }
 
 func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
-	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetDisableInDM(!yc.RunInDM)
+	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetEnableInDM(yc.RunInDM).SetEnableInGuildChannels(true)
 	trigger = trigger.SetHideFromHelp(yc.HideFromHelp)
 	if len(yc.Middlewares) > 0 {
 		trigger = trigger.SetMiddlewares(yc.Middlewares...)

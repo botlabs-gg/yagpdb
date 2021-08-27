@@ -20,7 +20,7 @@ import (
 	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
