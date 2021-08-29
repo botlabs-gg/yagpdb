@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -359,7 +360,7 @@ func setupRoutes() *goji.Mux {
 	return RootMux
 }
 
-var StaticFileserverDir = "."
+var StaticFilesFS fs.FS = frontend.StaticFiles
 
 func setupRootMux() {
 	mux := goji.NewMux()
@@ -375,7 +376,7 @@ func setupRootMux() {
 	}
 
 	// Setup fileserver
-	mux.Handle(pat.Get("/static/*"), http.FileServer(http.FS(frontend.StaticFiles)))
+	mux.Handle(pat.Get("/static/*"), http.FileServer(http.FS(StaticFilesFS)))
 	mux.Handle(pat.Get("/robots.txt"), http.HandlerFunc(handleRobotsTXT))
 	mux.Handle(pat.Get("/ads.txt"), http.HandlerFunc(handleAdsTXT))
 
