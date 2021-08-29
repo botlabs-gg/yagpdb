@@ -445,6 +445,3 @@ var sideBarItems = make(map[string][]*SidebarItem)
 func AddSidebarItem(category string, sItem *SidebarItem) {
 	sideBarItems[category] = append(sideBarItems[category], sItem)
 }
-
-// Resolves the path to template files in testing mode
-var TestingTemplatePathResolver func(in string) string
