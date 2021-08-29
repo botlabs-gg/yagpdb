@@ -12,8 +12,8 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/template"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
@@ -42,6 +42,8 @@ var (
 		"urlescape": url.PathEscape,
 		"split":     strings.Split,
 		"title":     strings.Title,
+		"hasPrefix": strings.HasPrefix,
+		"hasSuffix": strings.HasSuffix,
 
 		// math
 		"add":               add,
@@ -133,6 +135,8 @@ type Context struct {
 	RegexCache map[string]*regexp.Regexp
 
 	CurrentFrame *contextFrame
+
+	IsExecedByLeaveMessage bool
 
 	contextFuncsAdded bool
 }
@@ -273,6 +277,7 @@ func (c *Context) Execute(source string) (string, error) {
 
 func (c *Context) executeParsed() (string, error) {
 	parsed := c.CurrentFrame.parsedTemplate
+
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
 	} else {
@@ -356,7 +361,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 			return nil, nil
 		}
 
-		if !bot.BotProbablyHasPermissionGS(c.GS, c.CurrentFrame.CS.ID, discordgo.PermissionSendMessages) {
+		if hasPerms, _ := bot.BotHasPermissionGS(c.GS, c.CurrentFrame.CS.ID, discordgo.PermissionSendMessages); !hasPerms {
 			// don't bother sending the response if we dont have perms
 			return nil, nil
 		}
@@ -510,6 +515,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getChannel", c.tmplGetChannel)
+	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("addReactions", c.tmplAddReactions)
 	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
 	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
@@ -529,6 +535,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("onlineCount", c.tmplOnlineCount)
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
 	c.addContextFunc("editNickname", c.tmplEditNickname)
+
+	c.addContextFunc("sort", c.tmplSort)
 }
 
 type limitedWriter struct {
@@ -584,7 +592,16 @@ func (d Dict) Set(key interface{}, value interface{}) string {
 }
 
 func (d Dict) Get(key interface{}) interface{} {
-	return d[key]
+	out, ok := d[key]
+	if !ok {
+		switch key.(type) {
+		case int:
+			out = d[ToInt64(key)]
+		case int64:
+			out = d[tmplToInt(key)]
+		}
+	}
+	return out
 }
 
 func (d Dict) Del(key interface{}) string {
@@ -636,7 +653,7 @@ func (s Slice) Set(index int, item interface{}) (string, error) {
 }
 
 func (s Slice) AppendSlice(slice interface{}) (interface{}, error) {
-	val := reflect.ValueOf(slice)
+	val, _ := indirect(reflect.ValueOf(slice))
 	switch val.Kind() {
 	case reflect.Slice, reflect.Array:
 	// this is valid

@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 // Generates the wrapper event handlers for discordgo events
@@ -28,7 +29,7 @@ const templateSource = `// GENERATED using events_gen.go
 package eventsystem
 
 import (
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 )
 
 type Event int
@@ -113,7 +114,7 @@ func CheckErr(errMsg string, err error) {
 func main() {
 	pkgs, err := packages.Load(&packages.Config{
 		Mode: packages.LoadFiles,
-	}, "github.com/jonas747/discordgo")
+	}, "github.com/jonas747/discordgo/v2")
 
 	if err != nil {
 		panic(err)

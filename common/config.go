@@ -22,7 +22,6 @@ var (
 	ConfPQUsername = config.RegisterOption("yagpdb.pqusername", "Postgres user", "postgres")
 	ConfPQPassword = config.RegisterOption("yagpdb.pqpassword", "Postgres passoword", "")
 	ConfPQDB       = config.RegisterOption("yagpdb.pqdb", "Postgres database", "yagpdb")
-	ConfRedis      = config.RegisterOption("yagpdb.redis", "Redis address", "localhost:6379")
 
 	ConfMaxCCR            = config.RegisterOption("yagpdb.max_ccr", "Maximum number of concurrent outgoing requests to discord", 25)
 	ConfDisableKeepalives = config.RegisterOption("yagpdb.disable_keepalives", "Disables keepalive connections for outgoing requests to discord, this shouldn't be needed but i had networking issues once so i had to", false)

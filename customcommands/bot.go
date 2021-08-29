@@ -20,9 +20,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -112,6 +112,8 @@ type DelayedRunCCData struct {
 	Member  *dstate.MemberState
 
 	UserKey interface{} `json:"user_key"`
+
+	IsExecedByLeaveMessage bool `json:"is_execed_by_leave_message"`
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -119,7 +121,7 @@ var cmdListCommands = &commands.YAGCommand{
 	Name:           "CustomCommands",
 	Aliases:        []string{"cc"},
 	Description:    "Shows a custom command specified by id or trigger, or lists them all",
-	ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
+	ArgumentCombos: [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
 		{Name: "Trigger", Type: dcmd.String},
@@ -183,8 +185,8 @@ var cmdListCommands = &commands.YAGCommand{
 				Reader: &buf,
 			}
 		}
-
-		if cc.TextTrigger != "" {
+		// Every text-based custom command trigger has a numerical value less than 5, so this is quite safe to do
+		if cc.TriggerType < 5 {
 			if ccFile != nil {
 				msg = &discordgo.MessageSend{
 					Content: fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` Group: `%s`",
@@ -247,8 +249,8 @@ func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*mod
 func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 	out := ""
 	for _, cc := range ccs {
-		switch cc.TextTrigger {
-		case "":
+		switch {
+		case cc.TriggerType >= 5:
 			out += fmt.Sprintf("`#%3d:` %s - Group: `%s`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
 		default:
 			out += fmt.Sprintf("`#%3d:` `%s`: %s - Group: `%s`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
@@ -305,6 +307,8 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		tmplCtx.Msg = dataCast.Message
 		tmplCtx.Data["Message"] = dataCast.Message
 	}
+
+	tmplCtx.IsExecedByLeaveMessage = dataCast.IsExecedByLeaveMessage
 
 	// decode userdata
 	if len(dataCast.UserData) > 0 {
@@ -388,7 +392,7 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, gs *dstate.GuildSet, cSta
 		return true
 	}
 
-	if !bot.BotProbablyHasPermissionGS(gs, cState.ID, discordgo.PermissionSendMessages) {
+	if hasPerms, _ := bot.BotHasPermissionGS(gs, cState.ID, discordgo.PermissionSendMessages); !hasPerms {
 		return true
 	}
 
@@ -432,7 +436,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !bot.BotProbablyHasPermissionGS(evt.GS, cState.ID, discordgo.PermissionSendMessages) {
+	if hasPerms, _ := bot.BotHasPermissionGS(evt.GS, cState.ID, discordgo.PermissionSendMessages); !hasPerms {
 		// don't run in channel we don't have perms in
 		return
 	}
@@ -720,7 +724,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	go analytics.RecordActiveUnit(cmd.GuildID, &Plugin{}, "executed_cc")
 
 	// pick a response and execute it
-	f.Info("Custom command triggered")
+	f.Debug("Custom command triggered")
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)

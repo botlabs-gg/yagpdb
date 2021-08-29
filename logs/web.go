@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -170,7 +170,6 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 	if err == nil {
 		pubsub.EvictCacheSet(configCache, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
-
 	}
 	return tmpl, err
 }
@@ -324,7 +323,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	tmpl["CanViewDeleted"] = canViewDeleted
 
 	// Convert into views with formatted dates and colors
-	const TimeFormat = "2006 Jan 02 15:04"
+	const TimeFormat = "2006 Jan 02 15:04:05"
 	messageViews := make([]*MessageView, len(messages))
 	for i := range messageViews {
 		m := messages[i]

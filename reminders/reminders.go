@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/mqueue"
 	"github.com/jonas747/yagpdb/common/scheduledevents2"
@@ -62,11 +62,11 @@ func (r *Reminder) Trigger() error {
 	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
 
 	mqueue.QueueMessage(&mqueue.QueuedElement{
-		Source:   "reminder",
-		SourceID: "",
+		Source:       "reminder",
+		SourceItemID: "",
 
-		Guild:   r.GuildID,
-		Channel: r.ChannelIDInt(),
+		GuildID:   r.GuildID,
+		ChannelID: r.ChannelIDInt(),
 
 		MessageStr: "**Reminder** <@" + r.UserID + ">: " + common.ReplaceServerInvites(r.Message, r.GuildID, "(removed-invite)"),
 		AllowedMentions: discordgo.AllowedMentions{

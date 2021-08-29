@@ -2,9 +2,10 @@ package pubsub
 
 import (
 	"encoding/json"
+	"reflect"
 	"time"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cacheset"
 )
@@ -46,19 +47,18 @@ func handleEvictCacheSet(evt *Event) {
 	cast := evt.Data.(*evictCacheSetData)
 	if slot := common.CacheSet.FindSlot(cast.Name); slot != nil {
 		t := slot.NewKey()
-		err := json.Unmarshal(cast.Key, &t)
+		err := json.Unmarshal(cast.Key, t)
 		if err != nil {
 			logger.WithError(err).Error("failed unmarshaling CacheSet key")
 		}
 
-		slot.Delete(t)
+		keyConv := reflect.Indirect(reflect.ValueOf(t)).Interface()
+		slot.Delete(keyConv)
 	}
 }
 
 // EvictCacheSet sends a pubsub to evict the key on slot on all nodes if guildID is set to -1, otherwise the bot worker for that guild is the only one that handles it
 func EvictCacheSet(slot *cacheset.Slot, key interface{}) {
-	// key := slot.Name()
-	// common.CacheSet.EvictSlotEntry(slot.Name(), key)
 	slot.Delete(key)
 
 	marshalledKey, err := json.Marshal(key)
@@ -67,7 +67,7 @@ func EvictCacheSet(slot *cacheset.Slot, key interface{}) {
 		return
 	}
 
-	err = Publish("evict_guild_cache", -1, &evictCacheSetData{
+	err = Publish("evict_cache_set", -1, &evictCacheSetData{
 		Name: slot.Name(),
 		Key:  marshalledKey,
 	})

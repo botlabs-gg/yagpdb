@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -209,7 +209,7 @@ func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool
 			userID = member.User.ID
 			roles = member.Roles
 
-			gWithConnected.Permissions = int(ContextMemberPerms(ctx))
+			gWithConnected.Permissions = ContextMemberPerms(ctx)
 			gWithConnected.Owner = userID == g.OwnerID
 		}
 

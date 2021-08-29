@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
+	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
@@ -18,6 +19,7 @@ func Commands() *dcmd.Container {
 	container.AddMidlewares(util.RequireBotAdmin)
 	container.AddCommand(getGuild, getGuild.GetTrigger())
 	container.AddCommand(getMember, getMember.GetTrigger())
+	container.AddCommand(botMember, botMember.GetTrigger())
 
 	return container
 }
@@ -86,4 +88,31 @@ func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
 	}
 
 	return fmt.Sprintf("Fetched: %v, ```json\n%s\n```", didFetch, string(serialized)), nil
+}
+
+var botMember = &commands.YAGCommand{
+	CmdCategory:  commands.CategoryDebug,
+	Name:         "botmember",
+	Description:  "Responds with state debug info",
+	HideFromHelp: true,
+	RunFunc:      cmdFuncBotMember,
+}
+
+func cmdFuncBotMember(data *dcmd.Data) (interface{}, error) {
+	shards := bot.ReadyTracker.GetProcessShards()
+
+	numFound := 0
+	numNotFound := 0
+	for _, v := range shards {
+		guilds := bot.State.GetShardGuilds(int64(v))
+		for _, g := range guilds {
+			if ms := bot.State.GetMember(g.ID, common.BotUser.ID); ms != nil {
+				numFound++
+			} else {
+				numNotFound++
+			}
+		}
+	}
+
+	return fmt.Sprintf("Bot member found on %d/%d guilds", numFound, numFound+numNotFound), nil
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/jonas747/yagpdb/stdcommands/info"
 	"github.com/jonas747/yagpdb/stdcommands/invite"
 	"github.com/jonas747/yagpdb/stdcommands/leaveserver"
+	"github.com/jonas747/yagpdb/stdcommands/listflags"
 	"github.com/jonas747/yagpdb/stdcommands/listroles"
 	"github.com/jonas747/yagpdb/stdcommands/memstats"
 	"github.com/jonas747/yagpdb/stdcommands/ping"
@@ -118,6 +119,7 @@ func (p *Plugin) AddCommands() {
 		sleep.Command,
 		toggledbg.Command,
 		globalrl.Command,
+		listflags.Command,
 	)
 
 	statedbg.Commands()
