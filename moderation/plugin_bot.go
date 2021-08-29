@@ -8,9 +8,9 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dshardorchestrator/v3"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"
@@ -71,9 +71,11 @@ type ScheduledUnbanData struct {
 }
 
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
-	if evt == bot.EvtGuildState {
-		gs := data.(*dstate.GuildSet)
-		go RefreshMuteOverrides(gs.ID, false)
+	if evt == bot.EvtMember {
+		ms := data.(*dstate.MemberState)
+		if ms.User.ID == common.BotUser.ID {
+			go RefreshMuteOverrides(ms.GuildID, false)
+		}
 	}
 }
 
@@ -153,7 +155,7 @@ func createMuteRole(config *Config, guildID int64) (int64, error) {
 
 	r, err := common.BotSession.GuildRoleCreateComplex(guildID, discordgo.RoleCreate{
 		Name:        "Muted - (by yagpdb)",
-		Permissions: "0",
+		Permissions: 0,
 		Mentionable: false,
 		Color:       0,
 		Hoist:       false,
@@ -209,7 +211,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 		return
 	}
 
-	if !bot.BotProbablyHasPermission(channel.GuildID, channel.ID, discordgo.PermissionManageRoles) {
+	if hasPerms, _ := bot.BotHasPermission(channel.GuildID, channel.ID, discordgo.PermissionManageRoles); !hasPerms {
 		return
 	}
 
@@ -217,7 +219,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 
 	// Check for existing override
 	for _, v := range channel.PermissionOverwrites {
-		if v.Type == "role" && v.ID == config.IntMuteRole() {
+		if v.Type == discordgo.PermissionOverwriteTypeRole && v.ID == config.IntMuteRole() {
 			override = &v
 			break
 		}
@@ -227,7 +229,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 	if config.MuteDisallowReactionAdd {
 		MuteDeniedChannelPermsFinal = MuteDeniedChannelPermsFinal | discordgo.PermissionAddReactions
 	}
-	allows := 0
+	allows := int64(0)
 	denies := MuteDeniedChannelPermsFinal
 	changed := true
 
@@ -250,7 +252,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 	}
 
 	if changed {
-		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
+		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), discordgo.PermissionOverwriteTypeRole, allows, denies)
 	}
 }
 

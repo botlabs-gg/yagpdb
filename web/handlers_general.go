@@ -15,8 +15,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -566,7 +566,7 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 	var guilds []*discordgo.UserGuild
 	err := common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
 	if err != nil {
-		guilds, err = session.UserGuilds(100, 0, 0)
+		guilds, err = session.UserGuilds(0, 0, 0)
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed getting user guilds")
 			return nil, err

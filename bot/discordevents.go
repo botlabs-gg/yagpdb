@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/bot/joinedguildsupdater"
 	"github.com/jonas747/yagpdb/bot/models"
@@ -303,6 +303,7 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 
 		if msg.Member != nil {
 			msg.Member.User = msg.Author
+			msg.Member.GuildID = msg.GuildID
 		}
 
 	} else {
@@ -312,6 +313,7 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 		}
 
 		edit.Member.User = edit.Author
+		edit.Member.GuildID = edit.GuildID
 	}
 }
 

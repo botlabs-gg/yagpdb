@@ -3,9 +3,9 @@ package cah
 import (
 	"fmt"
 
-	"github.com/jonas747/cardsagainstdiscord"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator/v2"
+	"github.com/jonas747/cardsagainstdiscord/v2"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dshardorchestrator/v3"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/commands"

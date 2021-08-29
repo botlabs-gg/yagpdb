@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands"
 	"github.com/jonas747/yagpdb/common"
@@ -53,7 +53,7 @@ var Command = &commands.YAGCommand{
 		resp := "Up to 10 last deleted messages (last hour or 12 hours for premium): \n\n"
 		numFound := 0
 
-		messages := bot.State.GetMessages(data.GuildData.GS.ID, data.GuildData.CS.ID, &dstate.MessagesQuery{Limit: 100})
+		messages := bot.State.GetMessages(data.GuildData.GS.ID, data.GuildData.CS.ID, &dstate.MessagesQuery{Limit: 100, IncludeDeleted: true})
 		for _, msg := range messages {
 			if !msg.Deleted {
 				continue

@@ -6,15 +6,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/dstate/v3/inmemorytracker"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
+	"github.com/jonas747/dstate/v4/inmemorytracker"
 	"github.com/jonas747/yagpdb/bot/eventsystem"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/karlseguin/ccache"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
+
+type ReadyTracker interface {
+	IsShardReady(shardID int) bool
+}
 
 var metricsRequests = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "yagpdb_memberfetcher_requests_total",
@@ -47,14 +51,16 @@ type Manager struct {
 	gwRequestFunc GatewayRequestFunc
 
 	failedUsersCache *ccache.Cache
+	rTracker         ReadyTracker
 }
 
-func NewManager(totalShards int64, state dstate.StateTracker, f GatewayRequestFunc) *Manager {
+func NewManager(totalShards int64, state dstate.StateTracker, f GatewayRequestFunc, rt ReadyTracker) *Manager {
 	return &Manager{
 		totalShards:      totalShards,
 		state:            state,
 		gwRequestFunc:    f,
 		failedUsersCache: ccache.New(ccache.Configure()),
+		rTracker:         rt,
 	}
 }
 
@@ -162,6 +168,7 @@ func (m *Manager) findCreateFetcher(guildID int64) *shardMemberFetcher {
 
 		finishedSingle:  make(chan *MemberFetchResult),
 		finishedGateway: make(chan *discordgo.GuildMembersChunk),
+		rTracker:        m.rTracker,
 	}
 
 	go fetcher.run()
@@ -204,6 +211,8 @@ type shardMemberFetcher struct {
 	failedCache *ccache.Cache
 
 	gwRequestFunc GatewayRequestFunc
+
+	rTracker ReadyTracker
 }
 
 func (s *shardMemberFetcher) run() {
@@ -480,6 +489,9 @@ func (s *shardMemberFetcher) fetchSingleInner(req *MemberFetchRequest) (*dstate.
 }
 
 func (s *shardMemberFetcher) checkSendNextGatewayRequest() {
+	if !s.rTracker.IsShardReady(int(s.shardID)) {
+		return
+	}
 
 	if !s.fetchingGWState.Finished {
 		if time.Since(s.fetchingGWState.Started) > time.Minute {

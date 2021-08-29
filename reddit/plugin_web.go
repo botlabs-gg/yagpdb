@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -30,7 +30,7 @@ const (
 type CreateForm struct {
 	Subreddit  string `schema:"subreddit" valid:",1,100"`
 	Slow       bool   `schema:"slow"`
-	Channel    int64  `schema:"channel" valid:"channel,false`
+	Channel    int64  `schema:"channel" valid:"channel,true`
 	ID         int64  `schema:"id"`
 	UseEmbeds  bool   `schema:"use_embeds"`
 	NSFWMode   int    `schema:"nsfw_filter"`
@@ -38,7 +38,7 @@ type CreateForm struct {
 }
 
 type UpdateForm struct {
-	Channel    int64 `schema:"channel" valid:"channel,false`
+	Channel    int64 `schema:"channel" valid:"channel,true`
 	ID         int64 `schema:"id"`
 	UseEmbeds  bool  `schema:"use_embeds"`
 	NSFWMode   int   `schema:"nsfw_filter"`
@@ -63,7 +63,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)
 	web.CPMux.Handle(pat.New("/reddit"), redditMux)
 
-	// Alll handlers here require guild channels present
+	// All handlers here require guild channels present
 	redditMux.Use(web.RequireBotMemberMW)
 	redditMux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	redditMux.Use(baseData)
@@ -135,6 +135,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		Subreddit:  strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
 		UseEmbeds:  newElem.UseEmbeds,
 		FilterNSFW: newElem.NSFWMode,
+		Disabled:   false,
 	}
 
 	if newElem.Slow {
@@ -142,6 +143,9 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		watchItem.MinUpvotes = newElem.MinUpvotes
 	}
 
+	if watchItem.ChannelID == 0 {
+		watchItem.Disabled = true
+	}
 	err := watchItem.InsertG(ctx, boil.Infer())
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
@@ -190,6 +194,9 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 		item.MinUpvotes = updated.MinUpvotes
 	}
 
+	if item.ChannelID == 0 {
+		item.Disabled = true
+	}
 	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes", "disabled"))
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData

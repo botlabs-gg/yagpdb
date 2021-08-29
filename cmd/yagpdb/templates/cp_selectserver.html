@@ -66,10 +66,11 @@
                 <h2 class="card-title">Thanks to my patrons!</h2>
             </header>
             <div class="card-body">
-                {{range .activePatrons}}
+                {{range .activePatrons}}{{if ge .AmountCents 1000}}
                 <img class="avatar" src="{{.Avatar}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{.Name}}"></img>
-                {{end}}
+                {{end}}{{end}}
                 <br>
+                <p>Only showing patrons above $10</p>
                 <p>Patreon tiers above 3$ will grant you premium slots you can assign to servers, see <a href="/premium">the premium page</a> for more info.</p>
             </div>
         </section>

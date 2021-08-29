@@ -2,30 +2,29 @@ package mqueue
 
 import (
 	"database/sql"
+	"time"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/common"
 )
 
 // QueuedElement represents a queued message
 type QueuedElement struct {
 	// The channel to send the message in
-	Channel int64
-	Guild   int64
+	ChannelID int64 `json:"Channel"`
+	GuildID   int64 `json:"Guild"`
 
 	ID int64
 
 	// Where this feed originated from, responsible for handling discord specific errors
 	Source string
 	// Could be stuff like reddit feed element id, youtube feed element id and so on
-	SourceID string
+	SourceItemID string `json:"SourceID"`
 
 	// The actual message as a simple string
-	// specify only one of MessageStr or MessageEmbed
 	MessageStr string `json:",omitempty"`
 
 	// The actual message as an embed
-	// specify only one of MessageStr or MessageEmbed
 	MessageEmbed *discordgo.MessageEmbed `json:",omitempty"`
 
 	UseWebhook      bool
@@ -35,6 +34,8 @@ type QueuedElement struct {
 
 	// When the queue grows, the feeds with the highest priority gets sent first
 	Priority int
+
+	CreatedAt time.Time
 }
 
 type webhook struct {

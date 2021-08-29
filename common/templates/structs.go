@@ -1,8 +1,10 @@
 package templates
 
 import (
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"errors"
+
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 // CtxChannel is almost a 1:1 copy of dstate.ChannelState, its needed because we cant axpose all those state methods
@@ -23,8 +25,11 @@ type CtxChannel struct {
 	ParentID             int64                            `json:"parent_id"`
 }
 
-func (c *CtxChannel) Mention() string {
-	return "<#" + discordgo.StrID(c.ID) + ">"
+func (c *CtxChannel) Mention() (string, error) {
+	if c == nil {
+		return "", errors.New("channel not found")
+	}
+	return "<#" + discordgo.StrID(c.ID) + ">", nil
 }
 
 func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {

@@ -153,8 +153,11 @@ func Run() {
 		go web.Run()
 	}
 
-	if flagRunBot || flagRunEverything {
+	if flagRunBot || flagRunEverything || flagRunBWC {
 		mqueue.RegisterPlugin()
+	}
+
+	if flagRunBot || flagRunEverything {
 		botrest.RegisterPlugin()
 		bot.Run(flagNodeID)
 	}

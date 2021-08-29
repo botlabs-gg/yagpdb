@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/analytics"
 	"github.com/jonas747/yagpdb/bot"
 	"github.com/jonas747/yagpdb/commands/models"
@@ -321,7 +321,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	if cmdData.GuildData != nil && cmdData.TriggerType != dcmd.TriggerTypeSlashCommands {
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
-			if !bot.BotProbablyHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks) {
+			if hasPerms, _ := bot.BotHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks); !hasPerms {
 				resp = "This command returned an embed but the bot does not have embed links permissions in this channel, cannot send the response."
 			}
 		}
@@ -402,8 +402,10 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 	if data.GuildData != nil {
 		guild := data.GuildData.GS
 
-		if data.TriggerType != dcmd.TriggerTypeSlashCommands && !bot.BotProbablyHasPermissionGS(guild, data.ChannelID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages) {
-			return false, nil, nil, nil
+		if data.TriggerType != dcmd.TriggerTypeSlashCommands {
+			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages); !hasPerms {
+				return false, nil, nil, nil
+			}
 		}
 
 		settings, err = yc.GetSettings(data.ContainerChain, data.GuildData.CS.ID, data.GuildData.CS.ParentID, guild.ID)
@@ -898,7 +900,7 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 }
 
 func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
-	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetDisableInDM(!yc.RunInDM)
+	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetEnableInDM(yc.RunInDM).SetEnableInGuildChannels(true)
 	trigger = trigger.SetHideFromHelp(yc.HideFromHelp)
 	if len(yc.Middlewares) > 0 {
 		trigger = trigger.SetMiddlewares(yc.Middlewares...)

@@ -5,6 +5,9 @@ import (
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Manager struct {
@@ -118,9 +121,12 @@ func (s *Slot) Get(key interface{}) (interface{}, error) {
 
 func (s *Slot) GetCustomFetch(key interface{}, fetcher FetcherFunc) (interface{}, error) {
 	// fast path
-	if v := s.GetNoFetch(key); v != nil {
+	if v := s.getNoFetch(key); v != nil {
+		metricsCacheHits.Add(1)
 		return v, nil
 	}
+
+	metricsCacheMisses.Add(1)
 
 	// item was not in cache, we need to fetch it
 	s.valuesmu.Lock()
@@ -166,7 +172,7 @@ func (s *Slot) GetCustomFetch(key interface{}, fetcher FetcherFunc) (interface{}
 	}
 }
 
-func (s *Slot) GetNoFetch(key interface{}) interface{} {
+func (s *Slot) getNoFetch(key interface{}) interface{} {
 	s.valuesmu.RLock()
 	defer s.valuesmu.RUnlock()
 
@@ -194,7 +200,7 @@ func (s *Slot) DeleteFunc(f func(key interface{}, value interface{}) bool) int {
 
 	n := 0
 	for k, v := range s.values {
-		if f(k, v) {
+		if f(k, v.value) {
 			delete(s.values, k)
 			n++
 		}
@@ -219,9 +225,21 @@ func (s *Slot) gc(t time.Time) {
 }
 
 func (s *Slot) NewKey() interface{} {
-	return reflect.Indirect(reflect.New(s.keyType))
+	return reflect.New(s.keyType).Interface()
 }
 
 func (e *cachedEntry) expired(t time.Time) bool {
 	return t.After(e.expiresAt)
 }
+
+var (
+	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_cacheset_cache_hits_total",
+		Help: "Cache hits in the satte cache",
+	})
+
+	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "yagpdb_cacheset_cache_misses_total",
+		Help: "Cache misses in the sate cache",
+	})
+)
