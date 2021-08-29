@@ -1,6 +1,7 @@
 package autorole
 
 import (
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
@@ -16,6 +17,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/autorole.html
+var PageHTML string
 
 type Form struct {
 	GeneralConfig `valid:"traverse"`
@@ -43,7 +47,7 @@ func (f Form) Name() string {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../autorole/assets/autorole.html", "templates/plugins/autorole.html")
+	web.AddHTMLTemplate("autorole/assets/autorole.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Autorole",

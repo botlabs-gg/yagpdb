@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -13,13 +14,16 @@ import (
 	"goji.io/pat"
 )
 
+//go:embed assets/moderation.html
+var PageHTML string
+
 var (
 	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_settings_updated", FormatString: "Updated moderation config"})
 	panelLogKeyClearWarnings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_warnings_cleared", FormatString: "Cleared %d moderation user warnings"})
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../moderation/assets/moderation.html", "templates/plugins/moderation.html")
+	web.AddHTMLTemplate("moderation/assets/moderation.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Moderation",

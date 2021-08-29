@@ -1,6 +1,7 @@
 package soundboard
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"io"
@@ -20,6 +21,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/soundboard.html
+var PageHTML string
 
 type PostForm struct {
 	ID   int
@@ -46,7 +50,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../soundboard/assets/soundboard.html", "templates/plugins/soundboard.html")
+	web.AddHTMLTemplate("soundboard/assets/soundboard.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFun, &web.SidebarItem{
 		Name: "Soundboard",
 		URL:  "soundboard/",

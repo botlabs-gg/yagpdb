@@ -1,6 +1,6 @@
 module github.com/jonas747/yagpdb
 
-go 1.13
+go 1.16
 
 require (
 	emperror.dev/errors v0.4.3
@@ -69,7 +69,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	google.golang.org/api v0.40.0
-	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
 

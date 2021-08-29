@@ -1,6 +1,7 @@
 package automod_legacy
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -14,6 +15,9 @@ import (
 	"goji.io/pat"
 )
 
+//go:embed assets/automod_legacy.html
+var PageHTML string
+
 type GeneralForm struct {
 	Enabled bool
 }
@@ -21,7 +25,7 @@ type GeneralForm struct {
 var panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automod_legacy_settings_updated", FormatString: "Updated legacy automod settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../automod_legacy/assets/automod_legacy.html", "templates/plugins/automod_legacy.html")
+	web.AddHTMLTemplate("automod_legacy/assets/automod_legacy.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Basic Automoderator",

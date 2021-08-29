@@ -2,15 +2,13 @@ package customcommands
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
 	"github.com/jonas747/discordgo/v2"
@@ -21,11 +19,19 @@ import (
 	yagtemplate "github.com/jonas747/yagpdb/common/templates"
 	"github.com/jonas747/yagpdb/customcommands/models"
 	"github.com/jonas747/yagpdb/web"
+	"github.com/mediocregopher/radix/v3"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/customcommands-editcmd.html
+var PageHTMLEditCmd string
+
+//go:embed assets/customcommands.html
+var PageHTMLMain string
 
 // GroupForm is the form bindings used when creating or updating groups
 type GroupForm struct {
@@ -50,8 +56,8 @@ var (
 
 // InitWeb implements web.Plugin
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../customcommands/assets/customcommands.html", "templates/plugins/customcommands.html")
-	web.LoadHTMLTemplate("../../customcommands/assets/customcommands-editcmd.html", "templates/plugins/customcommands-editcmd.html")
+	web.AddHTMLTemplate("customcommands/assets/customcommands.html", PageHTMLMain)
+	web.AddHTMLTemplate("customcommands/assets/customcommands-editcmd.html", PageHTMLEditCmd)
 	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
 		Name: "Custom commands",
 		URL:  "customcommands",

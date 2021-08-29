@@ -1,6 +1,7 @@
 package reputation
 
 import (
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
@@ -18,6 +19,12 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/reputation_leaderboard.html
+var PageHTMLLeaderboard string
+
+//go:embed assets/reputation_settings.html
+var PageHTMLSettings string
 
 type PostConfigForm struct {
 	Enabled                 bool
@@ -55,8 +62,8 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../reputation/assets/reputation_settings.html", "templates/plugins/reputation_settings.html")
-	web.LoadHTMLTemplate("../../reputation/assets/reputation_leaderboard.html", "templates/plugins/reputation_leaderboard.html")
+	web.AddHTMLTemplate("reputation/assets/reputation_settings.html", PageHTMLSettings)
+	web.AddHTMLTemplate("reputation/assets/reputation_leaderboard.html", PageHTMLLeaderboard)
 	web.AddSidebarItem(web.SidebarCategoryFun, &web.SidebarItem{
 		Name: "Reputation",
 		URL:  "reputation",

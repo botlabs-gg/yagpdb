@@ -3,6 +3,7 @@ package premium
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
@@ -22,6 +23,9 @@ import (
 	"goji.io/pat"
 )
 
+//go:embed assets/premium.html
+var PageHTML string
+
 type CtxKey int
 
 var (
@@ -32,7 +36,7 @@ var (
 var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../premium/assets/premium.html", "templates/plugins/premium.html")
+	web.AddHTMLTemplate("premium/assets/premium.html", PageHTML)
 
 	web.CPMux.Use(PremiumGuildMW)
 	web.ServerPublicMux.Use(PremiumGuildMW)

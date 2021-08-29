@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -20,6 +21,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/reddit.html
+var PageHTML string
 
 type CtxKey int
 
@@ -52,7 +56,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../reddit/assets/reddit.html", "templates/plugins/reddit.html")
+	web.AddHTMLTemplate("reddit/assets/reddit.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Reddit",
 		URL:  "reddit",

@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -13,10 +14,13 @@ import (
 	"goji.io/pat"
 )
 
+//go:embed assets/notifications_general.html
+var PageHTML string
+
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "notifications_settings", FormatString: "Updated server notification settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../notifications/assets/notifications_general.html", "templates/plugins/notifications_general.html")
+	web.AddHTMLTemplate("notifications/assets/notifications_general.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "General",
 		URL:  "notifications/general",

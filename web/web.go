@@ -15,6 +15,7 @@ import (
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/jonas747/yagpdb/common/patreon"
 	yagtmpl "github.com/jonas747/yagpdb/common/templates"
+	"github.com/jonas747/yagpdb/frontend"
 	"github.com/jonas747/yagpdb/web/discordblog"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
@@ -118,7 +119,7 @@ func loadTemplates() {
 	}
 
 	for _, v := range coreTemplates {
-		LoadHTMLTemplate(v, v)
+		loadCoreHTMLTemplate(v)
 	}
 }
 
@@ -374,7 +375,7 @@ func setupRootMux() {
 	}
 
 	// Setup fileserver
-	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(StaticFileserverDir)))
+	mux.Handle(pat.Get("/static/*"), http.FileServer(http.FS(frontend.StaticFiles)))
 	mux.Handle(pat.Get("/robots.txt"), http.HandlerFunc(handleRobotsTXT))
 	mux.Handle(pat.Get("/ads.txt"), http.HandlerFunc(handleAdsTXT))
 
@@ -408,16 +409,18 @@ func legacyCPRedirHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/manage"+trimmed, http.StatusMovedPermanently)
 }
 
-func LoadHTMLTemplate(pathTesting, pathProd string) {
-	path := pathProd
-	if common.Testing {
-		path = pathTesting
-		if TestingTemplatePathResolver != nil {
-			path = TestingTemplatePathResolver(path)
-		}
-	}
+func AddHTMLTemplate(name, contents string) {
+	Templates = Templates.New(name)
+	Templates = template.Must(Templates.Parse(contents))
+}
 
-	Templates = template.Must(Templates.ParseFiles(path))
+func loadCoreHTMLTemplate(path string) {
+	contents, err := frontend.CoreTemplates.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	Templates = Templates.New(path)
+	Templates = template.Must(Templates.Parse(string(contents)))
 }
 
 const (

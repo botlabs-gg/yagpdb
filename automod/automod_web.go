@@ -2,6 +2,7 @@ package automod
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -26,6 +27,9 @@ import (
 	"goji.io/pat"
 )
 
+//go:embed assets/automod.html
+var PageHTML string
+
 type CtxKey int
 
 const (
@@ -49,7 +53,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../automod/assets/automod.html", "templates/plugins/automod.html")
+	web.AddHTMLTemplate("automod/assets/automod.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Automoderator v2",
 		URL:  "automod",

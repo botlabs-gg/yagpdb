@@ -2,6 +2,7 @@ package commands
 
 import (
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
@@ -26,6 +27,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/commands.html
+var PageHTML string
 
 type ChannelOverrideForm struct {
 	Channels                []int64 `valid:"channel,true"`
@@ -64,7 +68,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../commands/assets/commands.html", "templates/plugins/commands.html")
+	web.AddHTMLTemplate("commands/assets/commands.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
 		Name: "Command settings",
 		URL:  "commands/settings",

@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"context"
+	_ "embed"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -30,6 +31,9 @@ const (
 	CurrentConfig CtxKey = iota
 )
 
+//go:embed assets/youtube.html
+var PageHTML string
+
 var (
 	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_added_feed", FormatString: "Added youtube feed from %s"})
 	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_removed_feed", FormatString: "Removed youtube feed from %s"})
@@ -45,7 +49,7 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../youtube/assets/youtube.html", "templates/plugins/youtube.html")
+	web.AddHTMLTemplate("youtube/assets/youtube.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Youtube",
 		URL:  "youtube",
