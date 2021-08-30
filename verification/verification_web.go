@@ -2,6 +2,7 @@ package verification
 
 import (
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -24,6 +25,12 @@ import (
 	"goji.io/pat"
 )
 
+//go:embed assets/verification_control_panel.html
+var PageHTMLControlPanel string
+
+//go:embed assets/verification_verify_page.html
+var PageHTMLVerifyPage string
+
 type FormData struct {
 	Enabled             bool
 	VerifiedRole        int64  `valid:"role"`
@@ -38,8 +45,8 @@ type FormData struct {
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "verification_updated_settings", FormatString: "Updated verification settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../verification/assets/verification_control_panel.html", "templates/plugins/verification_control_panel.html")
-	web.LoadHTMLTemplate("../../verification/assets/verification_verify_page.html", "templates/plugins/verification_verify_page.html")
+	web.AddHTMLTemplate("verification/assets/verification_control_panel.html", PageHTMLControlPanel)
+	web.AddHTMLTemplate("verification/assets/verification_verify_page.html", PageHTMLVerifyPage)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Verification",

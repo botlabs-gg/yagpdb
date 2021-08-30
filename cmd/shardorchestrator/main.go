@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/dshardorchestrator/v2/orchestrator"
-	"github.com/jonas747/dshardorchestrator/v2/orchestrator/rest"
+	"github.com/jonas747/dshardorchestrator/v3"
+	"github.com/jonas747/dshardorchestrator/v3/orchestrator"
+	"github.com/jonas747/dshardorchestrator/v3/orchestrator/rest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
 	"github.com/mediocregopher/radix/v3"
@@ -30,7 +30,7 @@ var (
 
 func main() {
 	common.RedisPoolSize = 2
-	err := common.CoreInit()
+	err := common.CoreInit(true)
 	if err != nil {
 		panic("failed initializing: " + err.Error())
 	}

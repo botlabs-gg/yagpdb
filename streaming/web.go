@@ -2,12 +2,13 @@ package streaming
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
 	"net/http"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/featureflags"
@@ -16,6 +17,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/streaming.html
+var PageHTML string
 
 type ConextKey int
 
@@ -26,7 +30,7 @@ const (
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "streaming_settings_updated", FormatString: "Updated streaming settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../streaming/assets/streaming.html", "templates/plugins/streaming.html")
+	web.AddHTMLTemplate("streaming/assets/streaming.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Streaming",
 		URL:  "streaming",

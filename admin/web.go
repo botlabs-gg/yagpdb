@@ -1,6 +1,7 @@
 package admin
 
 import (
+	_ "embed"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dshardorchestrator/v2/orchestrator/rest"
+	"github.com/jonas747/dshardorchestrator/v3/orchestrator/rest"
 	"github.com/jonas747/yagpdb/bot/botrest"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/config"
@@ -20,10 +21,16 @@ import (
 	"goji.io/pat"
 )
 
+//go:embed assets/bot_admin_panel.html
+var PageHTMLPanel string
+
+//go:embed assets/bot_admin_config.html
+var PageHTMLConfig string
+
 // InitWeb implements web.Plugin
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../admin/assets/bot_admin_panel.html", "templates/plugins/bot_admin_panel.html")
-	web.LoadHTMLTemplate("../../admin/assets/bot_admin_config.html", "templates/plugins/bot_admin_config.html")
+	web.AddHTMLTemplate("admin/assets/bot_admin_panel.html", PageHTMLPanel)
+	web.AddHTMLTemplate("admin/assets/bot_admin_config.html", PageHTMLConfig)
 
 	mux := goji.SubMux()
 	web.RootMux.Handle(pat.New("/admin/*"), mux)

@@ -2,6 +2,7 @@ package twitter
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -18,6 +19,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/twitter.html
+var PageHTML string
 
 type CtxKey int
 
@@ -45,7 +49,7 @@ var (
 
 func (p *Plugin) InitWeb() {
 
-	web.LoadHTMLTemplate("../../twitter/assets/twitter.html", "templates/plugins/twitter.html")
+	web.AddHTMLTemplate("twitter/assets/twitter.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Twitter Feeds",
 		URL:  "twitter",

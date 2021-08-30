@@ -2,6 +2,7 @@ package automod
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -13,7 +14,7 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/yagpdb/automod/models"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
@@ -25,6 +26,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/automod.html
+var PageHTML string
 
 type CtxKey int
 
@@ -49,7 +53,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../automod/assets/automod.html", "templates/plugins/automod.html")
+	web.AddHTMLTemplate("automod/assets/automod.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Automoderator v2",
 		URL:  "automod",

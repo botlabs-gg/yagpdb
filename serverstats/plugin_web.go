@@ -2,6 +2,7 @@ package serverstats
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/yagpdb/common"
 	"github.com/jonas747/yagpdb/common/cplogs"
 	"github.com/jonas747/yagpdb/common/pubsub"
@@ -24,6 +25,9 @@ import (
 	"goji.io/pat"
 )
 
+//go:embed assets/serverstats.html
+var PageHTML string
+
 var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)
 var WebConfigCache = rcache.NewInt(cacheConfigFetcher, time.Minute)
 
@@ -35,7 +39,7 @@ type FormData struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../serverstats/assets/serverstats.html", "templates/plugins/serverstats.html")
+	web.AddHTMLTemplate("serverstats/assets/serverstats.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTopLevel, &web.SidebarItem{
 		Name: "Stats",
