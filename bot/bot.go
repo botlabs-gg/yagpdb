@@ -303,8 +303,9 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 	}
 
 	// normally 16, but thats a bit too fast for us, so we use 4
-	currentBucket := shardID / 4
-	lastBucket := rl.lastShardRatelimited / 4
+	bucketSize := common.ConfShardBucketSize.GetInt()
+	currentBucket := shardID / bucketSize
+	lastBucket := rl.lastShardRatelimited / bucketSize
 
 	if currentBucket != lastBucket {
 		return false

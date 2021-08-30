@@ -30,6 +30,12 @@ var (
 
 	confMaxSQLConns = config.RegisterOption("yagdb.pq_max_conns", "Max connections to postgres", 3)
 
+	ConfTotalShards             = config.RegisterOption("yagpdb.sharding.total_shards", "Total number shards", 0)
+	ConfActiveShards            = config.RegisterOption("yagpdb.sharding.active_shards", "Shards active on this hoste, ex: '1-10,25'", "")
+	ConfLargeBotShardingEnabled = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
+	ConfBucketsPerNode          = config.RegisterOption("yagpdb.shard.buckets_per_node", "Number of buckets per node", 8)
+	ConfShardBucketSize         = config.RegisterOption("yagpdb.shard.shard_bucket_size", "Shards per bucket", 2)
+
 	BotOwners []int64
 )
 
