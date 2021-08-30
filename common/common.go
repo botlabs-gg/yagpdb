@@ -57,7 +57,7 @@ var (
 )
 
 // CoreInit initializes the essential parts
-func CoreInit() error {
+func CoreInit(loadConfig bool) error {
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -73,9 +73,11 @@ func CoreInit() error {
 		return err
 	}
 
-	err = LoadConfig()
-	if err != nil {
-		return err
+	if loadConfig {
+		err = LoadConfig()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

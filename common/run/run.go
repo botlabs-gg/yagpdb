@@ -100,7 +100,7 @@ func Init() {
 
 	log.Info("Starting YAGPDB version " + common.VERSION)
 
-	err := common.CoreInit()
+	err := common.CoreInit(true)
 	if err != nil {
 		log.WithError(err).Fatal("Failed running core init ")
 	}

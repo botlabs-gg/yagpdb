@@ -30,7 +30,7 @@ var (
 
 func main() {
 	common.RedisPoolSize = 2
-	err := common.CoreInit()
+	err := common.CoreInit(true)
 	if err != nil {
 		panic("failed initializing: " + err.Error())
 	}
