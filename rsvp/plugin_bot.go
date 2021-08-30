@@ -42,7 +42,7 @@ func (p *Plugin) AddCommands() {
 		HelpEmoji:   "🎟",
 		EmbedColor:  0x42b9f4,
 	}
-	container := commands.CommandSystem.Root.Sub("events", "event")
+	container, _ := commands.CommandSystem.Root.Sub("events", "event")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
 	cmdCreateEvent := &commands.YAGCommand{

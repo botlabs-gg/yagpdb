@@ -14,7 +14,7 @@ import (
 )
 
 func Commands() *dcmd.Container {
-	container := commands.CommandSystem.Root.Sub("state")
+	container, _ := commands.CommandSystem.Root.Sub("state")
 	container.Description = "utilities for debugging state stuff"
 	container.AddMidlewares(util.RequireBotAdmin)
 	container.AddCommand(getGuild, getGuild.GetTrigger())

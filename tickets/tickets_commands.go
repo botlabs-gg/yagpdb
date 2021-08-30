@@ -318,7 +318,7 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	container := commands.CommandSystem.Root.Sub("tickets", "ticket")
+	container, _ := commands.CommandSystem.Root.Sub("tickets", "ticket")
 	container.Description = "Command to manage the ticket system"
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 	container.AddMidlewares(

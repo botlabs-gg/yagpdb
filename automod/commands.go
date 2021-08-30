@@ -365,7 +365,7 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	container := commands.CommandSystem.Root.Sub("automod", "amod")
+	container, _ := commands.CommandSystem.Root.Sub("automod", "amod")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 	container.Description = "Commands for managing automod"
 
