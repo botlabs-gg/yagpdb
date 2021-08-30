@@ -1093,10 +1093,6 @@ func AdvancedDeleteMessages(guildID, channelID int64, filterUser int64, regex st
 
 	if len(toDelete) < 1 {
 		return 0, nil
-	}
-
-	if len(toDelete) < 1 {
-		return 0, nil
 	} else if len(toDelete) == 1 {
 		err = common.BotSession.ChannelMessageDelete(channelID, toDelete[0])
 	} else {
