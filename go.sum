@@ -386,8 +386,8 @@ github.com/jonas747/dcmd/v4 v4.0.1/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjx
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69/go.mod h1:m242ZgUE5Rw5Pmc35yiSSyGAxXCiO/QWJZ244MDpanI=
 github.com/jonas747/discordgo/v2 v2.0.0/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
-github.com/jonas747/discordgo/v2 v2.0.1 h1:FYwS8i1/fiujpQ5burYW79210E6csy8/riTOqQ0B7mI=
-github.com/jonas747/discordgo/v2 v2.0.1/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
+github.com/jonas747/discordgo/v2 v2.0.3 h1:GIxRCrw8nYswwmnj45H21G2H2fh4sKRxrTMyFOZuR9w=
+github.com/jonas747/discordgo/v2 v2.0.3/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
 github.com/jonas747/dshardorchestrator/v3 v3.0.0 h1:DPvwSLkZvM282BbohISKMIELTbcVB25Q385YyGVkc8c=
 github.com/jonas747/dshardorchestrator/v3 v3.0.0/go.mod h1:rBuluqm4X+z439q8a6X1k/1MvZ0Mwj7Ig2mveD04mVw=
 github.com/jonas747/dstate/v4 v4.0.1/go.mod h1:WRIGuYoVmr+N4ecy/8P61byGBscd3+W4aj26avbhSn0=
