@@ -56,6 +56,9 @@ func main() {
 	if common.ConfLargeBotShardingEnabled.GetBool() {
 		orch.ShardBucketSize = common.ConfShardBucketSize.GetInt()
 		orch.BucketsPerNode = common.ConfBucketsPerNode.GetInt()
+	} else {
+		orch.ShardBucketSize = 1
+		orch.BucketsPerNode = common.ConfBucketsPerNode.GetInt()
 	}
 
 	updateScript := "updateversion.sh"
