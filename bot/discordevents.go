@@ -2,6 +2,7 @@ package bot
 
 import (
 	"runtime/debug"
+	"sync/atomic"
 	"time"
 
 	"emperror.dev/errors"
@@ -249,6 +250,35 @@ func ConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy) eventsystem.Han
 					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
 				}
 			}()
+
+			inner(evt)
+		}()
+	})
+}
+
+func LimitedConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy, limit int64, sleepDur time.Duration) eventsystem.HandlerFuncLegacy {
+	counter := new(int64)
+
+	return eventsystem.HandlerFuncLegacy(func(evt *eventsystem.EventData) {
+		go func() {
+			defer func() {
+				atomic.AddInt64(counter, -1)
+
+				if err := recover(); err != nil {
+					stack := string(debug.Stack())
+					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
+				}
+			}()
+
+			for {
+				// spin lock
+				if atomic.AddInt64(counter, 1) <= limit {
+					break
+				} else {
+					atomic.AddInt64(counter, -1)
+					time.Sleep(sleepDur)
+				}
+			}
 
 			inner(evt)
 		}()
