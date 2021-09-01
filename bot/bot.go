@@ -40,7 +40,6 @@ var (
 	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
 	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
 	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
-	confLargeBotShardingEnabled  = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
 
 	confFixedShardingConfig = config.RegisterOption("yagpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")
 
@@ -290,7 +289,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 }
 
 func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
-	if !confLargeBotShardingEnabled.GetBool() {
+	if !common.ConfLargeBotShardingEnabled.GetBool() {
 		// only works with large bot sharding enabled
 		return false
 	}

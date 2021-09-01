@@ -38,6 +38,7 @@ func main() {
 	}
 
 	logrus.Info("Running shards (", len(activeShards), "): ", activeShards)
+	logrus.Info("Large bot sharding: ", common.ConfLargeBotShardingEnabled.GetBool())
 
 	orch := orchestrator.NewStandardOrchestrator(common.BotSession)
 	orch.FixedTotalShardCount = totalShards
@@ -70,6 +71,8 @@ func main() {
 	orch.MaxShardsPerNode = orch.ShardBucketSize * orch.BucketsPerNode
 	orch.MaxNodeDowntimeBeforeRestart = time.Second * 10
 	orch.EnsureAllShardsRunning = true
+
+	logrus.Infof("%#v+n", *orch)
 
 	err = orch.Start("127.0.0.1:7447")
 	if err != nil {
