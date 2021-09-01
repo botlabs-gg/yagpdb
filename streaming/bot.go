@@ -254,7 +254,7 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 		}
 
 		if config.GiveRole != 0 {
-			go GiveStreamingRole(client, gs.ID, p.User.ID, config.GiveRole, ms.Member.Roles)
+			go GiveStreamingRole(gs.ID, p.User.ID, config.GiveRole, ms.Member.Roles)
 		}
 
 		// if true, then we were marked now, and not before
@@ -313,7 +313,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 		}
 
 		if config.GiveRole != 0 {
-			go GiveStreamingRole(client, gs.ID, ms.User.ID, config.GiveRole, ms.Member.Roles)
+			go GiveStreamingRole(gs.ID, ms.User.ID, config.GiveRole, ms.Member.Roles)
 		}
 
 		// if true, then we were marked now, and not before
@@ -459,7 +459,7 @@ func SendStreamingAnnouncement(client radix.Client, config *Config, guild *dstat
 	}
 }
 
-func GiveStreamingRole(client radix.Client, guildID, memberID, streamingRole int64, currentUserRoles []int64) {
+func GiveStreamingRole(guildID, memberID, streamingRole int64, currentUserRoles []int64) {
 	if streamingRole == 0 {
 		return
 	}
@@ -478,7 +478,7 @@ func GiveStreamingRole(client radix.Client, guildID, memberID, streamingRole int
 		}
 
 		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).Error("Failed adding streaming role")
-		client.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
+		common.RedisPool.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
 	}
 }
 
