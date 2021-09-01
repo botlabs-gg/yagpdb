@@ -84,6 +84,9 @@ func (r *readyTracker) IsShardReady(shardID int) bool {
 }
 
 func (r *readyTracker) GetProcessShards() []int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	shards := make([]int, 0, totalShardCount)
 	for s, active := range r.allProcessShards {
 		if active {
