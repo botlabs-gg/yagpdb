@@ -35,18 +35,6 @@ jobs: # basic units of work in a run
           paths:
             - "/go/pkg"
 
-      - run:
-          name: Prepare arifacts
-          command: |
-            mkdir -p cmd/yagpdb/templates/plugins
-            cp */assets/* cmd/yagpdb/templates/plugins/
-
-            tar -cvf misc_artifacts.tar cmd/yagpdb/templates/ cmd/yagpdb/static/
-            
-      - store_artifacts:
-          path: misc_artifacts.tar
-          destination: misc
-
       - store_artifacts:
           path: /go/bin/
           destination: binaries
