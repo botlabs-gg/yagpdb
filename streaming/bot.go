@@ -273,7 +273,7 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 				return errors.WithStackIf(err)
 			}
 
-			SendStreamingAnnouncement(client, config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
+			go SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
 		}
 	} else {
 		// Not streaming
@@ -327,7 +327,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != 0 && config.AnnounceMessage != "" {
-			SendStreamingAnnouncement(client, config, gs, ms, ms.Presence.Game.URL, ms.Presence.Game.State, ms.Presence.Game.Details, ms.Presence.Game.Name)
+			go SendStreamingAnnouncement(config, gs, ms, ms.Presence.Game.URL, ms.Presence.Game.State, ms.Presence.Game.Details, ms.Presence.Game.Name)
 		}
 
 	} else {
@@ -401,11 +401,11 @@ func RemoveStreaming(client radix.Client, config *Config, guildID int64, memberI
 	// }
 }
 
-func SendStreamingAnnouncement(client radix.Client, config *Config, guild *dstate.GuildSet, ms *dstate.MemberState, url string, gameName string, streamTitle string, streamPlatform string) {
+func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstate.MemberState, url string, gameName string, streamTitle string, streamPlatform string) {
 	// Only send one announcment every 1 hour
 	var resp string
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.User.ID)
-	err := client.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
+	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
 	if err != nil {
 		logger.WithError(err).Error("failed setting streaming announcment cooldown")
 		return
