@@ -128,14 +128,19 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		"guild":  g.ID,
 	}).Debug("Joined guild")
 
-	var n int
-	err = common.RedisPool.Do(radix.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
+	saddRes := 0
+	isBanned := false
+
+	err = common.RedisPool.Do(radix.Pipeline(
+		radix.Cmd(&saddRes, "SADD", "connected_guilds", discordgo.StrID(g.ID)),
+		radix.Cmd(&isBanned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)),
+	))
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
 
 	// check if this server is new
-	if n > 0 {
+	if saddRes > 0 {
 		logger.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
 		go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventNewGuild, g), eventsystem.EventNewGuild)
 
@@ -144,9 +149,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	}
 
 	// check if the server is banned from using the bot
-	var banned bool
-	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
-	if banned {
+	if isBanned {
 		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
 		err = common.BotSession.GuildLeave(g.ID)
