@@ -51,6 +51,14 @@ func addBotHandlers() {
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, handleResumed, eventsystem.EventResumed)
 }
 
+var (
+	connectedGuildsCache = common.CacheSet.RegisterSlot("bot_connected_guilds", func(_ interface{}) (interface{}, error) {
+		var listedServers []int64
+		err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
+		return listedServers, err
+	}, 0)
+)
+
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
 
@@ -68,8 +76,9 @@ func HandleReady(data *eventsystem.EventData) {
 	common.BotSession.State.Unlock()
 
 	var listedServers []int64
-	err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
-	if err != nil {
+	if listedServersI, err := connectedGuildsCache.Get(0); err == nil {
+		listedServers = listedServersI.([]int64)
+	} else {
 		logger.WithError(err).Error("Failed retrieving connected servers")
 	}
 
