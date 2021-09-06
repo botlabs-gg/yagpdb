@@ -28,7 +28,7 @@ const (
 
 type Rule interface {
 	Check(m *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error)
-	ShouldIgnore(msg *discordgo.Message, m *dstate.MemberState) bool
+	ShouldIgnore(cs *dstate.ChannelState, msg *discordgo.Message, m *dstate.MemberState) bool
 	GetMuteDuration() int
 }
 
@@ -94,12 +94,12 @@ func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 }
 
 // Returns true if this rule should be ignored
-func (r BaseRule) ShouldIgnore(evt *discordgo.Message, ms *dstate.MemberState) bool {
+func (r BaseRule) ShouldIgnore(cs *dstate.ChannelState, evt *discordgo.Message, ms *dstate.MemberState) bool {
 	if !r.Enabled {
 		return true
 	}
 
-	strC := discordgo.StrID(evt.ChannelID)
+	strC := discordgo.StrID(common.ChannelOrThreadParentID(cs))
 	for _, ignoreChannel := range r.IgnoreChannels {
 		if ignoreChannel == strC {
 			return true

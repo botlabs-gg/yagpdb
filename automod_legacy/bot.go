@@ -109,7 +109,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	// We gonna need to have this locked while we check
 	for _, r := range rules {
-		if r.ShouldIgnore(m, member) {
+		if r.ShouldIgnore(cs, m, member) {
 			continue
 		}
 		didCheck = true
