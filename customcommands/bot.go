@@ -284,7 +284,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		return true, nil
 	}
 
-	cs := gs.GetChannel(dataCast.ChannelID)
+	cs := gs.GetChannelOrThread(dataCast.ChannelID)
 	if cs == nil {
 		// don't reschedule if channel is deleted, make sure its actually not there, and not just a discord downtime
 		if !gs.Available {
@@ -493,7 +493,7 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, gs *dstate.Guild
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
-	cs := evt.CS()
+	cs := evt.CSOrThread()
 
 	if !evt.HasFeatureFlag(featureFlagHasCommands) {
 		return
@@ -550,7 +550,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, ms) {
+		if !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) {
 			continue
 		}
 
@@ -586,7 +586,7 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, reaction.ChannelID) {
+		if !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) {
 			continue
 		}
 
