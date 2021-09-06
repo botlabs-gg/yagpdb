@@ -14,6 +14,7 @@ type CtxChannel struct {
 	ID        int64
 	GuildID   int64
 	IsPrivate bool
+	IsThread  bool
 
 	Name                 string                           `json:"name"`
 	Type                 discordgo.ChannelType            `json:"type"`
@@ -42,6 +43,7 @@ func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 	ctxChannel := &CtxChannel{
 		ID:                   cs.ID,
 		IsPrivate:            cs.IsPrivate(),
+		IsThread:             cs.Type.IsThread(),
 		GuildID:              cs.GuildID,
 		Name:                 cs.Name,
 		Type:                 cs.Type,

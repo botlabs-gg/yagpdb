@@ -202,6 +202,12 @@ func (c *Context) setupBaseData() {
 		channel := CtxChannelFromCS(c.CurrentFrame.CS)
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
+
+		if parentID := common.ChannelOrThreadParentID(c.CurrentFrame.CS); parentID != c.CurrentFrame.CS.ID {
+			c.Data["ChannelOrThreadParent"] = CtxChannelFromCS(c.GS.GetChannelOrThread(parentID))
+		} else {
+			c.Data["ChannelOrThreadParent"] = channel
+		}
 	}
 
 	if c.MS != nil {
@@ -515,6 +521,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getChannel", c.tmplGetChannel)
+	c.addContextFunc("getThread", c.tmplGetThread)
+	c.addContextFunc("getChannelOrThread", c.tmplGetChannelOrThread)
 	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("addReactions", c.tmplAddReactions)
 	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
