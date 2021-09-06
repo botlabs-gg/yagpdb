@@ -79,7 +79,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		return false
 	}
 
-	cs := evt.GS.GetChannel(m.ChannelID)
+	cs := evt.GS.GetChannelOrThread(m.ChannelID)
 	if cs == nil {
 		logger.WithField("channel", m.ChannelID).Error("Channel not found in state")
 		return false
