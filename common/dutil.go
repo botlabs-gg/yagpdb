@@ -51,7 +51,7 @@ func (r DiscordRoles) Swap(i, j int) {
 
 // ChannelOrThreadParentID returns either cs.ID for channels or cs.ParentID for threads
 func ChannelOrThreadParentID(cs *dstate.ChannelState) int64 {
-	if cs.Type == discordgo.ChannelTypeGuildPrivateThread || cs.Type == discordgo.ChannelTypeGuildPublicThread {
+	if cs.Type.IsThread() {
 		return cs.ParentID
 	}
 
