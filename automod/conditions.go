@@ -155,7 +155,7 @@ func (cd *ChannelsCondition) IsMet(data *TriggeredRuleData, settings interface{}
 		return true, nil
 	}
 
-	if common.ContainsInt64Slice(settingsCast.Channels, data.CS.ID) {
+	if common.ContainsInt64Slice(settingsCast.Channels, common.ChannelOrThreadParentID(data.CS)) {
 		if cd.Blacklist {
 			// Blacklisted channel
 			return false, nil
@@ -246,7 +246,18 @@ func (cd *ChannelCategoriesCondition) IsMet(data *TriggeredRuleData, settings in
 		return true, nil
 	}
 
-	if common.ContainsInt64Slice(settingsCast.Categories, data.CS.ParentID) {
+	// fetch thread parent if needed
+	parentID := data.CS.ParentID
+	if data.CS.Type.IsThread() {
+		threadParent := data.GS.GetChannel(data.CS.ParentID)
+		if threadParent == nil {
+			return false, nil
+		}
+
+		parentID = threadParent.ID
+	}
+
+	if common.ContainsInt64Slice(settingsCast.Categories, parentID) {
 		if cd.Blacklist {
 			// blacklisted channel category
 			return false, nil

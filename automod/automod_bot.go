@@ -50,7 +50,7 @@ func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message
 		return true
 	}
 
-	cs := evt.GS.GetChannel(msg.ChannelID)
+	cs := evt.GS.GetChannelOrThread(msg.ChannelID)
 	if cs == nil {
 		return true
 	}
