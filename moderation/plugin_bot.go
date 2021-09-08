@@ -32,7 +32,7 @@ const (
 	ContextKeyConfig ContextKey = iota
 )
 
-const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
+const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak | discordgo.PermissionUsePublicThreads | discordgo.PermissionUsePrivateThreads
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotInitHandler = (*Plugin)(nil)
