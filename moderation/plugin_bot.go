@@ -76,10 +76,8 @@ func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data in
 		if ms.User.ID == common.BotUser.ID {
 			go func(gID int64) {
 				// relieve startup preasure, sleep for up to 60 minutes
-				if time.Since(started) < time.Minute {
-					sleep := time.Second * time.Duration(100+rand.Intn(60*60))
-					time.Sleep(sleep)
-				}
+				sleep := time.Second * time.Duration(100+rand.Intn(60*60))
+				time.Sleep(sleep)
 
 				RefreshMuteOverrides(gID, false)
 			}(ms.GuildID)
