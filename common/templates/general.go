@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"math"
 	"math/rand"
 	"reflect"
@@ -240,6 +241,29 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				ContentType: "text/plain",
 				Reader:      &buf,
 			}
+
+		case "image":
+			if val == nil {
+				return nil, errors.New("need an arguement for the image")
+			}
+			str := fmt.Sprint(val)
+			img, err := http.Get(str)
+			if err != nil {
+				return nil, errors.New("error while trying to get the image")
+			}
+
+			imageName := "image.png"
+			imageType := "image/png"
+			if strings.HasSuffix(strings.ToLower(str), ".gif") {
+				imageName = "image.gif"
+				imageType = "image/gif"
+			}
+			msg.File = &discordgo.File{
+				Name: imageName,
+				ContentType: imageType,
+				Reader: img.Body,
+			}
+
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
