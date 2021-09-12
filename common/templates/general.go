@@ -244,7 +244,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 		case "image":
 			if val == nil {
-				return nil, errors.New("need an arguement for the image")
+				return nil, errors.New("need an argument for the image")
 			}
 			str := fmt.Sprint(val)
 			img, err := http.Get(str)
