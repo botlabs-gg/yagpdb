@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jonas747/yagpdb/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/customcommands/models"
 	"github.com/volatiletech/null"
 )
 

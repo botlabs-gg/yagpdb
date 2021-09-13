@@ -12,12 +12,12 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/template"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 )

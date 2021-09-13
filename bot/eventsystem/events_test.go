@@ -3,7 +3,7 @@ package eventsystem
 import (
 	"testing"
 
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common"
 
 	"github.com/jonas747/discordgo/v2"
 )

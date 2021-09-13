@@ -3,9 +3,9 @@ package define
 import (
 	"fmt"
 
+	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/dpatrie/urbandictionary"
 	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/yagpdb/commands"
 )
 
 var Command = &commands.YAGCommand{

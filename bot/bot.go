@@ -9,16 +9,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/bot/shardmemberfetcher"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dshardorchestrator/v3/node"
 	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/dstate/v4/inmemorytracker"
 	dshardmanager "github.com/jonas747/jdshardmanager/v2"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/bot/shardmemberfetcher"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
 )
 

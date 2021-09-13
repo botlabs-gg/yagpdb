@@ -46,7 +46,7 @@ If you have docker-compose installed, it will offer the fastest route to getting
 up-and-running.
 
 ```bash
-git clone https://github.com/jonas747/yagpdb
+git clone https://github.com/botlabs-gg/yagpdb
 cp yagpdb/yagpdb_docker/{app.example.env,app.env}
 cp yagpdb/yagpdb_docker/{db.example.env,db.env}
 ```
@@ -99,8 +99,8 @@ I'm working towards making YAGPDB fully `go get ...`-able
 git clone -b yagpdb https://github.com/jonas747/discordgo $GOPATH/src/github.com/jonas747/discordgo
 git clone -b dgofork https://github.com/jonas747/dutil $GOPATH/src/github.com/jonas747/dutil
 git clone -b dgofork https://github.com/jonas747/dshardmanager $GOPATH/src/github.com/jonas747/dshardmanager
-go get -v -d github.com/jonas747/yagpdb/cmd/yagpdb
-cd $GOPATH/src/github.com/jonas747/yagpdb/cmd/yagpdb
+go get -v -d github.com/botlabs-gg/yagpdb/cmd/yagpdb
+cd $GOPATH/src/github.com/botlabs-gg/yagpdb/cmd/yagpdb
 go build
 ```
 
@@ -136,7 +136,7 @@ So if you're behind a NAT, forward those, if not you can either use the `-pa` sw
 
 **Planned plugins**
 
-[See the Issues Tab for more](https://github.com/jonas747/yagpdb/issues)
+[See the Issues Tab for more](https://github.com/botlabs-gg/yagpdb/issues)
 
 ### Core packages:
 

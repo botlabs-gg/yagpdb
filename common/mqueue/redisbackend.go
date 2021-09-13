@@ -3,7 +3,7 @@ package mqueue
 import (
 	"encoding/json"
 
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/mediocregopher/radix/v3"
 )
 

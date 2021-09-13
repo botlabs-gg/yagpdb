@@ -3,9 +3,9 @@ package safebrowsing
 import (
 	"encoding/json"
 	"errors"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
 	"github.com/google/safebrowsing"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"

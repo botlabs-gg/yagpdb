@@ -1,10 +1,10 @@
 package setstatus
 
 import (
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/stdcommands/util"
 	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
 )
 
 var Command = &commands.YAGCommand{

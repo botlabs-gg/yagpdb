@@ -8,13 +8,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
 	"github.com/mediocregopher/radix/v3"
 
+	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/jonas747/dshardorchestrator/v3"
 	"github.com/jonas747/dshardorchestrator/v3/node"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/common"
 )
 
 func init() {
