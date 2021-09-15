@@ -283,8 +283,8 @@ func setupRoutes() *goji.Mux {
 	ServerPubliAPIMux.Use(LoadCoreConfigMiddleware)
 	ServerPubliAPIMux.Use(SetGuildMemberMiddleware)
 
-	RootMux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
-	RootMux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
+	RootMux.Handle(pat.New("/api/:server"), ServerPubliAPIMux)
+	RootMux.Handle(pat.New("/api/:server/*"), ServerPubliAPIMux)
 
 	ServerPubliAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChanenlPermissions)))
 
