@@ -1,8 +1,8 @@
 package bot
 
 import (
+	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/common"
 )
 
 // GetMessages Gets messages from state if possible, if not then it retrieves from the discord api

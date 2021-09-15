@@ -9,13 +9,13 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/rolecommands/models"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/tidwall/buntdb"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )

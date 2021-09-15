@@ -6,16 +6,16 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/automod/models"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -50,7 +50,7 @@ func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message
 		return true
 	}
 
-	cs := evt.GS.GetChannel(msg.ChannelID)
+	cs := evt.GS.GetChannelOrThread(msg.ChannelID)
 	if cs == nil {
 		return true
 	}

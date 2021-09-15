@@ -12,15 +12,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/botlabs-gg/yagpdb/automod/models"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -641,8 +641,9 @@ func ReadRuleRowData(guild *dstate.GuildSet, tmpl web.TemplateData, rawData []Ru
 			}
 
 			// Perform the validation
-			validationOK = web.ValidateForm(guild, tmpl, dst)
-			if !validationOK {
+			errs := web.ValidateForm(guild, tmpl)
+			if !errs.IsOK() {
+				errs.AddToTemplate(tmpl)
 				return nil, false, nil
 			}
 

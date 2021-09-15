@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/logs"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/logs"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -453,7 +453,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 	gs := bot.State.GetGuild(guildID)
 	if gs != nil {
-		sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1)
+		go sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1)
 	}
 
 	// Create the modlog entry

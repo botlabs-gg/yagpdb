@@ -10,14 +10,14 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/rsvp/models"
+	"github.com/botlabs-gg/yagpdb/timezonecompanion"
 	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/jonas747/yagpdb/rsvp/models"
-	"github.com/jonas747/yagpdb/timezonecompanion"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 

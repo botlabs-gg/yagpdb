@@ -2,10 +2,10 @@ package automod_legacy
 
 import (
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/web"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})

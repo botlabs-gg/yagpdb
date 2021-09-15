@@ -12,13 +12,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/tickets/models"
 	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/tickets/models"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )

@@ -1,6 +1,9 @@
 package common
 
-import "github.com/jonas747/discordgo/v2"
+import (
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
+)
 
 // IsRoleAbove returns wether role a is above b, checking positions first, and if they're the same
 // (both being 1, new roles always have 1 as position)
@@ -44,4 +47,14 @@ func (r DiscordRoles) Less(i, j int) bool {
 
 func (r DiscordRoles) Swap(i, j int) {
 	r[i], r[j] = r[j], r[i]
+}
+
+// ChannelOrThreadParentID returns either cs.ID for channels or cs.ParentID for threads
+func ChannelOrThreadParentID(cs *dstate.ChannelState) int64 {
+	if cs.Type.IsThread() {
+		return cs.ParentID
+	}
+
+	return cs.ID
+
 }

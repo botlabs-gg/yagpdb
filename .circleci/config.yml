@@ -6,7 +6,7 @@ jobs: # basic units of work in a run
       - image: circleci/golang:1.16 #
 
     # directory where steps are run. Path must conform to the Go Workspace requirements
-    working_directory: /go/src/github.com/jonas747/yagpdb
+    working_directory: /go/src/github.com/botlabs-gg/yagpdb
 
     steps: # steps that comprise the `build` job
       - checkout # check out source code to working directory
@@ -23,7 +23,7 @@ jobs: # basic units of work in a run
           command: |
             VERSION=$(git describe --tags)
             cd cmd/yagpdb
-            go install -i -ldflags "-X github.com/jonas747/yagpdb/common.VERSION=${VERSION}"
+            go install -i -ldflags "-X github.com/botlabs-gg/yagpdb/common.VERSION=${VERSION}"
             cd -
       - run: cd cmd/shardorchestrator && go install -i && cd -
       - run: cd cmd/capturepanics && go install -i && cd -

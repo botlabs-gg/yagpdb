@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/jonas747/dshardorchestrator/v3"
 	"github.com/jonas747/dshardorchestrator/v3/orchestrator"
 	"github.com/jonas747/dshardorchestrator/v3/orchestrator/rest"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 
-	_ "github.com/jonas747/yagpdb/bot" // register the custom orchestrator events
+	_ "github.com/botlabs-gg/yagpdb/bot" // register the custom orchestrator events
 )
 
 var ()
