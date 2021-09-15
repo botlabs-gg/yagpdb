@@ -47,8 +47,8 @@ var BuiltinSwearWords = map[string]bool{
 	"nigga":       true,
 	"penis":       true,
 	"piss":        true,
-	"poop":        true,
-	"pube":        true,
+	"متناك":        true,
+	"كسمك":        true,
 	"pussy":       true,
 	"scrotum":     true,
 	"sex":         true,
@@ -72,5 +72,5 @@ var BuiltinSwearWords = map[string]bool{
 	"fvck":        true,
 	"asshat":      true,
 	"pu55y":       true,
-	"pen1s":       true,
+	"fuck":       true,
 }
