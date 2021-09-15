@@ -530,30 +530,29 @@ func RequestLogger(logger io.Writer) func(http.Handler) http.Handler {
 	return handler
 }
 
-// Parses a form
 func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
+	return innerFormParserMW(inner, dst, false)
+}
+
+func APIFormParserMW(inner http.Handler, dst interface{}) http.Handler {
+	return innerFormParserMW(inner, dst, true)
+}
+
+func innerFormParserMW(inner http.Handler, dst interface{}, apiResponse bool) http.Handler {
+	typ := reflect.TypeOf(dst)
+
 	mw := func(w http.ResponseWriter, r *http.Request) {
-		var err error
-		if strings.Contains(r.Header.Get("content-type"), "multipart/form-data") {
-			err = r.ParseMultipartForm(100000)
-		} else {
-			err = r.ParseForm()
-		}
-
-		if err != nil {
-			panic(err)
-		}
-
-		ctx := r.Context()
-		guild, tmpl := GetBaseCPContextData(ctx)
-
-		typ := reflect.TypeOf(dst)
-
-		// Decode the form into the destination struct
+		contentType := strings.ToLower(r.Header.Get("content-type"))
 		decoded := reflect.New(typ).Interface()
-		decoder := schema.NewDecoder()
-		decoder.IgnoreUnknownKeys(true)
-		err = decoder.Decode(decoded, r.Form)
+		ctx := r.Context()
+
+		err := decodeBody(r, contentType, decoded)
+		if err != nil {
+			CtxLogger(r.Context()).WithError(err).Error("Failed decoding body")
+			return
+		}
+
+		guild, tmpl := GetBaseCPContextData(ctx)
 
 		ok := true
 		if err != nil {
@@ -562,7 +561,16 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 			ok = false
 		} else {
 			// Perform validation
-			ok = ValidateForm(guild, tmpl, decoded)
+			validationErrors := ValidateForm(guild, decoded)
+			ok = validationErrors.IsOK()
+
+			if !apiResponse {
+				validationErrors.AddToTemplate(tmpl)
+			} else if !ok {
+				// End the request here
+				writeValidationResponse(w, validationErrors)
+				return
+			}
 		}
 
 		newCtx := context.WithValue(ctx, common.ContextKeyParsedForm, decoded)
@@ -570,7 +578,48 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 		inner.ServeHTTP(w, r.WithContext(newCtx))
 	}
 	return http.HandlerFunc(mw)
+}
 
+func writeValidationResponse(w http.ResponseWriter, res ValidationResult) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	resp := map[string]interface{}{
+		"type":           "ValidationError",
+		"field_errors":   res.FieldErrors,
+		"general_errors": res.GeneralErrors,
+	}
+	encoded, _ := json.Marshal(resp)
+	w.Write(encoded)
+}
+
+func decodeBody(r *http.Request, contentType string, dst interface{}) error {
+	switch contentType {
+	case "application/json":
+		defer r.Body.Close()
+		decoder := json.NewDecoder(r.Body)
+		return decoder.Decode(dst)
+	case "multipart/form-data":
+		err := r.ParseMultipartForm(100000)
+		if err != nil {
+			return err
+		}
+
+		return decodeBodyForm(r, contentType, dst)
+	default:
+		err := r.ParseForm()
+		if err != nil {
+			return err
+		}
+
+		return decodeBodyForm(r, contentType, dst)
+	}
+
+}
+
+func decodeBodyForm(r *http.Request, contentType string, dst interface{}) error {
+	decoder := schema.NewDecoder()
+	decoder.IgnoreUnknownKeys(true)
+	return decoder.Decode(dst, r.Form)
 }
 
 type SimpleConfigSaver interface {
