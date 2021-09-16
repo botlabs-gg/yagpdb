@@ -36,7 +36,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.Post("/notifications/general"), postHandler)
 	web.CPMux.Handle(pat.Post("/notifications/general/"), postHandler)
 
-	web.ServerPubliAPIMux.Handle(pat.Get("/welcome_messages"), web.RequireServerAdminMiddleware(web.APIHandler(HandleNotificationsGetAPI)))
+	web.ServerPublicAPIMux.Handle(pat.Get("/welcome_messages"), web.RequireServerAdminMiddleware(web.APIHandler(HandleNotificationsGetAPI)))
 }
 
 func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} {

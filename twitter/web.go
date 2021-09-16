@@ -72,7 +72,7 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 	mux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 
-	web.ServerPubliAPIMux.Handle(pat.Post("/twitter/new"), web.RequireServerAdminMiddleware(web.APIFormParserMW(web.APIHandler(p.handleNewFeed), Form{})))
+	web.ServerPublicAPIMux.Handle(pat.Post("/twitter/new"), web.RequireServerAdminMiddleware(web.APIFormParserMW(web.APIHandler(p.handleNewFeed), Form{})))
 }
 
 func (p *Plugin) HandleTwitter(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
