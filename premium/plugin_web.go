@@ -40,6 +40,7 @@ func (p *Plugin) InitWeb() {
 
 	web.CPMux.Use(PremiumGuildMW)
 	web.ServerPublicMux.Use(PremiumGuildMW)
+	web.ServerPubliAPIMux.Use(PremiumGuildMW)
 
 	submux := goji.SubMux()
 	web.RootMux.Handle(pat.New("/premium"), submux)
