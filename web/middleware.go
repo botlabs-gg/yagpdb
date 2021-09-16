@@ -124,7 +124,7 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		session, err := discorddata.GetSession(cookie.Value, discordAuthTokenFromYag)
+		session, err := discorddata.GetSession(cookie.Value, DiscordAuthTokenFromYag)
 		if err != nil {
 			if errors.Cause(err) != ErrNotLoggedIn {
 				CtxLogger(r.Context()).WithError(err).Error("invalid session")
