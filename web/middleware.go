@@ -559,6 +559,13 @@ func innerFormParserMW(inner http.Handler, dst interface{}, apiResponse bool) ht
 			CtxLogger(ctx).WithError(err).Error("Failed decoding form")
 			tmpl.AddAlerts(ErrorAlert("Failed parsing form"))
 			ok = false
+			if apiResponse {
+				verrs := ValidationResult{
+					GeneralErrors: []string{"Failed decoding body: " + err.Error()},
+				}
+				writeValidationResponse(w, verrs)
+				return
+			}
 		} else {
 			// Perform validation
 			validationErrors := ValidateForm(guild, decoded)
