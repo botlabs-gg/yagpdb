@@ -1,0 +1,12 @@
+# Denote the vendored directory, since its name differs from
+# otherwise recognised names.
+**/vendorr/** linguist-vendored
+
+# Force batch scripts to always have CRLF line endings, so that if this repo
+# is accessed in Windows via file share from *nix, these scripts will still work.
+*.{cmd,[cC][mM][dD]} text eol=crlf
+*.{bat,[bB][aA][tT]} text eol=crlf
+
+# Force bash/shell scripts to always use LF line endings so that if this repo
+# is accessed in *nix via file share from Windows, these scripts will still work.
+*.sh text eol=lf
