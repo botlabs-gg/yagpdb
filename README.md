@@ -1,25 +1,6 @@
 # YAGPDB - Yet Another General Purpose Discord Bot
 
-YAGPDB is a multifunctional, modular Discord bot. It is modular in that sense, that for most things plugins exist -- However, some plugins may depend on other plugins.
-
-## Table of Contents
-
-<details>
-<summary>Expand</summary>
-
-* [Plugins](#Plugins)
-* [Useful Links](#Useful-Links)
-* [Selfhosting](#Selfhosting)
-  - [General Setup](#General-Bot-Setup)
-  - [Dockerized](#Hosting-Dockerized)
-  - [Standalone](#Hosting-Standalone)
-    + [Requirements](#Requirements)
-    + [Setting Up](#Setting-Up)
-* [Databases](#Databases)
-  - [Updating](#Updating)
-* [Contributing](#Contributing)
-
-</details>
+YAGPDB is a multifunctional, modular Discord bot. It is modular in the sense that for most things plugins exist -- However, some plugins may depend on other plugins.
 
 ## Plugins
 
@@ -92,7 +73,7 @@ docker-compose -f yagpdb/yagpdb_docker/docker-compose.dev.yml up
 
 #### Requirements
 
-* Recent GoLang (1.16 and newer is recommended)
+* Golang 1.16 or above
 * PostgreSQL 9.6 or later
 * Redis version 3.x or later
 
