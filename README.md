@@ -23,13 +23,13 @@ YAGPDB is a multifunctional, modular Discord bot. It is modular in that sense, t
 
 ## Plugins
 
-* YouTube-Feed
-* Stream-Announcements
+* YouTube Feed
+* Stream Announcements
 * Server Stats
 * Soundboard
 * Reputation
 * Reminders
-* Reddit-Feed
+* Reddit Feed
 * Notifications
 * Moderation
 * Logs
