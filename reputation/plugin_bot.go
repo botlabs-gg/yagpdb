@@ -98,7 +98,7 @@ var cmds = []*commands.YAGCommand{
 		Description:  "Takes away rep from someone",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.User},
+			{Name: "User", Type: dcmd.UserID},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
 		SlashCommandEnabled: true,
@@ -117,7 +117,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.User},
+			{Name: "User", Type: dcmd.UserID},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: CmdGiveRep,
@@ -295,14 +295,14 @@ var cmds = []*commands.YAGCommand{
 		Name:        "Rep",
 		Description: "Shows yours or the specified users current rep and rank",
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.User},
+			{Name: "User", Type: dcmd.UserID},
 		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			target := parsed.Author
+			target := parsed.Author.ID
 			if parsed.Args[0].Value != nil {
-				target = parsed.Args[0].Value.(*discordgo.User)
+				target = parsed.Args[0].Int64()
 			}
 
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
@@ -310,7 +310,7 @@ var cmds = []*commands.YAGCommand{
 				return "An error occurred finding the server config", err
 			}
 
-			score, rank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)
+			score, rank, err := GetUserStats(parsed.GuildData.GS.ID, target)
 
 			if err != nil {
 				if err == ErrUserNotFound {
@@ -320,12 +320,17 @@ var cmds = []*commands.YAGCommand{
 				}
 			}
 
+			receiver, err := bot.GetMember(parsed.GuildData.GS.ID, target)
+			if err != nil {
+				return nil, err
+			}
+
 			rankStr := "#ω"
 			if rank != -1 {
 				rankStr = strconv.FormatInt(int64(rank), 10)
 			}
 
-			return fmt.Sprintf("**%s**: **%d** %s (#**%s**)", target.Username, score, conf.PointsName, rankStr), nil
+			return fmt.Sprintf("**%s**: **%d** %s (#**%s**)", receiver.User.Username, score, conf.PointsName, rankStr), nil
 		},
 	},
 	{
@@ -377,7 +382,7 @@ var cmds = []*commands.YAGCommand{
 }
 
 func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
-	target := parsed.Args[0].Value.(*discordgo.User)
+	target := parsed.Args[0].Int64()
 
 	conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 	if err != nil {
@@ -386,12 +391,12 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 
 	pointsName := conf.PointsName
 
-	if target.ID == parsed.Author.ID {
+	if target == parsed.Author.ID {
 		return fmt.Sprintf("You can't modify your own %s... **Silly**", pointsName), nil
 	}
 
 	sender := parsed.GuildData.MS
-	receiver, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
+	receiver, err := bot.GetMember(parsed.GuildData.GS.ID, target)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +412,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	newScore, newRank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)
+	newScore, newRank, err := GetUserStats(parsed.GuildData.GS.ID, target)
 	if err != nil {
 		newScore = -1
 		newRank = -1
@@ -424,6 +429,6 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 		targetStr = "from"
 	}
 
-	msg := fmt.Sprintf("%s `%d` %s %s **%s** (current: `#%d` - `%d`)", actionStr, amount, pointsName, targetStr, target.Username, newRank, newScore)
+	msg := fmt.Sprintf("%s `%d` %s %s **%s** (current: `#%d` - `%d`)", actionStr, amount, pointsName, targetStr, receiver.User.Username, newRank, newScore)
 	return msg, nil
 }
