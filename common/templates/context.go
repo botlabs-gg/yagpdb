@@ -385,8 +385,10 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		}
 	}
 
+	isDM := c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate())
+
 	for _, v := range c.CurrentFrame.EmebdsToSend {
-		if c.CurrentFrame.SendResponseInDM {
+		if isDM {
 			v.Footer = &discordgo.MessageEmbedFooter{
 				Text:    "Custom Command DM from the server " + c.GS.Name,
 				IconURL: c.GS.Icon,
@@ -401,7 +403,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		return nil, nil
 	}
 
-	if c.CurrentFrame.SendResponseInDM {
+	if isDM {
 		content = "Custom Command DM from the server **" + c.GS.Name + "**\n" + content
 	}
 
