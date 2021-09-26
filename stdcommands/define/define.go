@@ -3,6 +3,8 @@ package define
 import (
 	"fmt"
 	"math/rand"
+	"net/url"
+	"regexp"
 
 	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
 	"github.com/botlabs-gg/yagpdb/commands"
@@ -73,14 +75,14 @@ func embedCreator(udResult []urbandictionary.Result, i int) *discordgo.MessageEm
 	}
 	example := "None given"
 	if len(udResult[i].Example) > 0 {
-		example = udResult[i].Example
+		example = linkReferencedTerms(udResult[i].Example)
 	}
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name: udResult[i].Word,
 			URL:  udResult[i].Permalink,
 		},
-		Description: fmt.Sprintf("**Definition**: %s", definition),
+		Description: fmt.Sprintf("**Definition**: %s", linkReferencedTerms(definition)),
 		Color:       int(rand.Int63n(16777215)),
 		Fields: []*discordgo.MessageEmbedField{
 			&discordgo.MessageEmbedField{Name: "Example:", Value: example},
@@ -93,4 +95,15 @@ func embedCreator(udResult []urbandictionary.Result, i int) *discordgo.MessageEm
 	}
 
 	return embed
+}
+
+const urbanDictionaryDefineEndpoint = "https://www.urbandictionary.com/define.php?term="
+
+var termRefRe = regexp.MustCompile(`\[.+?\]`)
+
+func linkReferencedTerms(def string) string {
+	return termRefRe.ReplaceAllStringFunc(def, func(match string) string {
+		term := match[1 : len(match)-1]
+		return fmt.Sprintf("[%s](%s%s)", term, urbanDictionaryDefineEndpoint, url.QueryEscape(term))
+	})
 }
