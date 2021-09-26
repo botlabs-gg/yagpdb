@@ -11,13 +11,13 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/null"
@@ -131,10 +131,9 @@ type CustomCommand struct {
 
 var _ web.CustomValidator = (*CustomCommand)(nil)
 
-func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
+func (cc *CustomCommand) Validate(vctx *web.ValidationContext) {
 	if len(cc.Responses) > MaxUserMessages {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Too many responses, max %d", MaxUserMessages)))
-		return false
+		vctx.PushError(fmt.Errorf("too many responses, max %d", MaxUserMessages))
 	}
 
 	foundOkayResponse := false
@@ -146,8 +145,7 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 	}
 
 	if !foundOkayResponse {
-		tmpl.AddAlerts(web.ErrorAlert("No response set"))
-		return false
+		vctx.PushError(errors.New("No response set"))
 	}
 
 	combinedSize := 0
@@ -156,16 +154,12 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 	}
 
 	if combinedSize > 10000 {
-		tmpl.AddAlerts(web.ErrorAlert("Max combined command size can be 10k"))
-		return false
+		vctx.PushError(errors.New("Max combined command size can be 10k"))
 	}
 
 	if cc.TriggerTypeForm == "interval_minutes" && cc.TimeTriggerInterval < 5 {
-		tmpl.AddAlerts(web.ErrorAlert("Minimum interval is now 5 minutes (was recently from 1)"))
-		return false
+		vctx.PushError(errors.New("Minimum interval is now 5 minutes (was recently from 1)"))
 	}
-
-	return true
 }
 
 func (cc *CustomCommand) ToDBModel() *models.CustomCommand {

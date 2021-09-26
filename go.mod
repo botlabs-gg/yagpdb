@@ -1,6 +1,6 @@
-module github.com/jonas747/yagpdb
+module github.com/botlabs-gg/yagpdb
 
-go 1.13
+go 1.16
 
 require (
 	emperror.dev/errors v0.4.3
@@ -26,11 +26,11 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonas747/cardsagainstdiscord/v2 v2.0.0
 	github.com/jonas747/dca/v2 v2.0.0
-	github.com/jonas747/dcmd/v4 v4.0.1
+	github.com/jonas747/dcmd/v4 v4.0.3
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo/v2 v2.0.1
+	github.com/jonas747/discordgo/v2 v2.0.6
 	github.com/jonas747/dshardorchestrator/v3 v3.0.0
-	github.com/jonas747/dstate/v4 v4.0.2
+	github.com/jonas747/dstate/v4 v4.0.4
 	github.com/jonas747/go-reddit v0.1.2
 	github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc
 	github.com/jonas747/jdshardmanager/v2 v2.0.0
@@ -69,7 +69,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	google.golang.org/api v0.40.0
-	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
 

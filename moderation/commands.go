@@ -9,16 +9,16 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	"github.com/jinzhu/gorm"
 	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
@@ -1089,10 +1089,6 @@ func AdvancedDeleteMessages(guildID, channelID int64, filterUser int64, regex st
 		if len(toDelete) >= deleteNum || len(toDelete) >= 100 {
 			break
 		}
-	}
-
-	if len(toDelete) < 1 {
-		return 0, nil
 	}
 
 	if len(toDelete) < 1 {

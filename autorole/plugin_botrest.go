@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/internalapi"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/internalapi"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"

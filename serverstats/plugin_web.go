@@ -2,6 +2,7 @@ package serverstats
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -10,19 +11,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/serverstats/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/serverstats/models"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/karlseguin/rcache"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/serverstats.html
+var PageHTML string
 
 var WebStatsCache = rcache.New(cacheChartFetcher, time.Minute)
 var WebConfigCache = rcache.NewInt(cacheConfigFetcher, time.Minute)
@@ -35,7 +39,7 @@ type FormData struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../serverstats/assets/serverstats.html", "templates/plugins/serverstats.html")
+	web.AddHTMLTemplate("serverstats/assets/serverstats.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTopLevel, &web.SidebarItem{
 		Name: "Stats",

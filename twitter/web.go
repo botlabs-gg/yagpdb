@@ -2,22 +2,26 @@ package twitter
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/twitter/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/go-twitter/twitter"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/twitter/models"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/twitter.html
+var PageHTML string
 
 type CtxKey int
 
@@ -28,7 +32,6 @@ const (
 type Form struct {
 	TwitterUser    string `valid:",1,256"`
 	DiscordChannel int64  `valid:"channel,false"`
-	ID             int64
 }
 
 type EditForm struct {
@@ -45,7 +48,7 @@ var (
 
 func (p *Plugin) InitWeb() {
 
-	web.LoadHTMLTemplate("../../twitter/assets/twitter.html", "templates/plugins/twitter.html")
+	web.AddHTMLTemplate("twitter/assets/twitter.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Twitter Feeds",
 		URL:  "twitter",
@@ -68,6 +71,8 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, EditForm{}))
 	mux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 	mux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
+
+	web.ServerPublicAPIMux.Handle(pat.Post("/twitter/new"), web.RequireServerAdminMiddleware(web.APIFormParserMW(web.APIHandler(p.handleNewFeed), Form{})))
 }
 
 func (p *Plugin) HandleTwitter(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -145,6 +150,70 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.ScreenName}))
 	}
 	return templateData, err
+}
+
+func (p *Plugin) handleNewFeed(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
+	activeGuild, _ := web.GetBaseCPContextData(ctx)
+
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		return web.NewPublicError("Twitter feeds are paid premium only")
+	}
+
+	// limit it to max 25 feeds
+	currentCount, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return err
+	}
+
+	if currentCount >= 25 {
+		return web.NewPublicError("Max 25 feeds per server")
+	}
+
+	globalCount, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return err
+	}
+
+	if globalCount >= 4000 {
+		return web.NewPublicError("Bot hit max feeds, contact bot owner")
+	}
+
+	form := ctx.Value(common.ContextKeyParsedForm).(*Form)
+
+	// search up the ID
+	users, _, err := p.twitterAPI.Users.Lookup(&twitter.UserLookupParams{
+		ScreenName: []string{form.TwitterUser},
+	})
+	if err != nil {
+		if cast, ok := err.(twitter.APIError); ok {
+			if cast.Errors[0].Code == 17 {
+				return web.NewPublicError("User not found")
+			}
+		}
+		return err
+	}
+
+	if len(users) < 1 {
+		return web.NewPublicError("Twitter user not found")
+	}
+
+	user := users[0]
+
+	m := &models.TwitterFeed{
+		GuildID:         activeGuild.ID,
+		TwitterUsername: user.ScreenName,
+		TwitterUserID:   user.ID,
+		ChannelID:       form.DiscordChannel,
+		Enabled:         true,
+	}
+
+	err = m.InsertG(ctx, boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.ScreenName}))
+	}
+
+	return m
 }
 
 type ContextKey int

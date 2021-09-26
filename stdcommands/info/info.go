@@ -3,9 +3,9 @@ package info
 import (
 	"fmt"
 
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
 )
 
 var Command = &commands.YAGCommand{
@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 		info := fmt.Sprintf(`**YAGPDB - Yet Another General Purpose Discord Bot**
 This bot focuses on being configurable and therefore is one of the more advanced bots.
 It can perform a range of general purpose functionality (Reddit feeds, various commands, moderation utilities, automoderator functionality and so on) and it's configured through a web control panel.
-I'm currently being run and developed by Jonas747#0001 (105487308693757952) but the bot is open source (<https://github.com/jonas747/yagpdb>), so if you know Go and want to make some contributions, feel free to make a PR.
+I'm currently being run and developed by Jonas747#0001 (105487308693757952) but the bot is open source (<https://github.com/botlabs-gg/yagpdb>), so if you know Go and want to make some contributions, feel free to make a PR.
 Control panel: <https://%s/manage>
 				`, common.ConfHost.GetString())
 

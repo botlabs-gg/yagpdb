@@ -15,11 +15,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/common/cacheset"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common/cacheset"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -57,7 +57,7 @@ var (
 )
 
 // CoreInit initializes the essential parts
-func CoreInit() error {
+func CoreInit(loadConfig bool) error {
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -73,9 +73,11 @@ func CoreInit() error {
 		return err
 	}
 
-	err = LoadConfig()
-	if err != nil {
-		return err
+	if loadConfig {
+		err = LoadConfig()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

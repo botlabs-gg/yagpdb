@@ -3,13 +3,13 @@ package mqueue
 import (
 	"sync"
 
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot"
 )
 
 // type WebhookCacheKey struct {

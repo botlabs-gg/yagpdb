@@ -1,18 +1,22 @@
 package automod_legacy
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/automod_legacy.html
+var PageHTML string
 
 type GeneralForm struct {
 	Enabled bool
@@ -21,7 +25,7 @@ type GeneralForm struct {
 var panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automod_legacy_settings_updated", FormatString: "Updated legacy automod settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../automod_legacy/assets/automod_legacy.html", "templates/plugins/automod_legacy.html")
+	web.AddHTMLTemplate("automod_legacy/assets/automod_legacy.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Basic Automoderator",

@@ -5,18 +5,19 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"emperror.dev/errors"
 
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/common/templates"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/templates"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -25,7 +26,7 @@ func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + d
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.LimitedConcurrentEventHandler(HandleGuildCreate, 10, time.Millisecond*200), eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
@@ -272,7 +273,7 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 				return errors.WithStackIf(err)
 			}
 
-			SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
+			go SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
 		}
 	} else {
 		// Not streaming
@@ -326,7 +327,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != 0 && config.AnnounceMessage != "" {
-			SendStreamingAnnouncement(config, gs, ms, ms.Presence.Game.URL, ms.Presence.Game.State, ms.Presence.Game.Details, ms.Presence.Game.Name)
+			go SendStreamingAnnouncement(config, gs, ms, ms.Presence.Game.URL, ms.Presence.Game.State, ms.Presence.Game.Details, ms.Presence.Game.Name)
 		}
 
 	} else {

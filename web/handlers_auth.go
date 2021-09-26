@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/models"
+	"github.com/botlabs-gg/yagpdb/web/discorddata"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/models"
-	"github.com/jonas747/yagpdb/web/discorddata"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
@@ -144,7 +144,7 @@ var ErrNotLoggedIn = errors.New("not logged in")
 
 // AuthTokenFromB64 Retrives an oauth2 token from the base64 string
 // Returns an error if expired
-func discordAuthTokenFromYag(yagToken string) (t *oauth2.Token, err error) {
+func DiscordAuthTokenFromYag(yagToken string) (t *oauth2.Token, err error) {
 	if yagToken == "none" {
 		return nil, ErrNotLoggedIn
 	}

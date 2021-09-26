@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,13 +10,13 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	schEvtsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/rolecommands/models"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/null/v8"
 	v3_qm "github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -23,6 +24,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/rolecommands.html
+var PageHTML string
 
 var (
 	panelLogKeyNewCommand        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_new_command", FormatString: "Created a new role command: %s"})
@@ -61,7 +65,7 @@ type FormGroup struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../rolecommands/assets/rolecommands.html", "templates/plugins/rolecommands.html")
+	web.AddHTMLTemplate("rolecommands/assets/rolecommands.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Role Commands",

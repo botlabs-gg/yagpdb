@@ -1,17 +1,21 @@
 package moderation
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/web"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/moderation.html
+var PageHTML string
 
 var (
 	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_settings_updated", FormatString: "Updated moderation config"})
@@ -19,7 +23,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../moderation/assets/moderation.html", "templates/plugins/moderation.html")
+	web.AddHTMLTemplate("moderation/assets/moderation.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Moderation",

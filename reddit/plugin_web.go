@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,17 +10,20 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/reddit/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/reddit/models"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/reddit.html
+var PageHTML string
 
 type CtxKey int
 
@@ -52,7 +56,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../reddit/assets/reddit.html", "templates/plugins/reddit.html")
+	web.AddHTMLTemplate("reddit/assets/reddit.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Reddit",
 		URL:  "reddit",

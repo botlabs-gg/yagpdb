@@ -3,11 +3,11 @@ package cah
 import (
 	"strings"
 
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/jonas747/cardsagainstdiscord/v2"
 	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
 	"github.com/sirupsen/logrus"
 )
 
@@ -105,7 +105,7 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	container := commands.CommandSystem.Root.Sub("cah")
+	container, _ := commands.CommandSystem.Root.Sub("cah")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 	container.Description = "Playt cards against humanity!"
 
