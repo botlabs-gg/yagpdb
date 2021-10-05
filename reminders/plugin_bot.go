@@ -56,7 +56,7 @@ var cmds = []*commands.YAGCommand{
 
 			durString := common.HumanizeDuration(common.DurationPrecisionSeconds, fromNow)
 			when := time.Now().Add(fromNow)
-			tStr := when.UTC().Format(time.RFC822)
+			tUnix := fmt.Sprint(when.Unix())
 
 			if when.After(time.Now().Add(time.Hour * 24 * 366)) {
 				return "Can be max 365 days from now...", nil
@@ -67,7 +67,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "Set a reminder in " + durString + " from now (" + tStr + ")\nView reminders with the reminders command", nil
+			return "Set a reminder in " + durString + " from now (<t:" + tUnix + ":f>)\nView reminders with the reminders command", nil
 		},
 	},
 	{
@@ -205,18 +205,18 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 		parsedCID, _ := strconv.ParseInt(v.ChannelID, 10, 64)
 
 		t := time.Unix(v.When, 0)
+		tUnix := t.Unix()
 		timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, t)
-		tStr := t.Format(time.RFC822)
 		if !displayUsernames {
 			channel := "<#" + discordgo.StrID(parsedCID) + ">"
-			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, channel, limitString(v.Message), timeFromNow, tStr)
+			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (<t:%d:f>)\n", v.ID, channel, limitString(v.Message), timeFromNow, tUnix)
 		} else {
 			member, _ := bot.GetMember(v.GuildID, v.UserIDInt())
 			username := "Unknown user"
 			if member != nil {
 				username = member.User.Username
 			}
-			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (%s)\n", v.ID, username, limitString(v.Message), timeFromNow, tStr)
+			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (<t:%d:f>)\n", v.ID, username, limitString(v.Message), timeFromNow, tUnix)
 		}
 	}
 	return out
