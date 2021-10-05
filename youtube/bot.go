@@ -9,7 +9,7 @@ import (
 
 func (p *Plugin) Status() (string, string) {
 	var unique int
-	common.RedisPool.Do(radix.Cmd(&unique, "ZCARD", "youtube_subbed_channels"))
+	common.RedisPool.Do(radix.Cmd(&unique, "ZCARD", RedisKeyWebSubChannels))
 
 	var numChannels int
 	common.GORM.Model(&ChannelSubscription{}).Count(&numChannels)
