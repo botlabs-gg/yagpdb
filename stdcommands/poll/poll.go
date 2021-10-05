@@ -11,10 +11,11 @@ import (
 var (
 	pollReactions = [...]string{"1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"}
 	Command       = &commands.YAGCommand{
-		CmdCategory:  commands.CategoryTool,
-		Name:         "Poll",
-		Description:  "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink`",
-		RequiredArgs: 3,
+		CmdCategory:         commands.CategoryTool,
+		Name:                "Poll",
+		Description:         "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink`",
+		RequiredArgs:        3,
+		SlashCommandEnabled: true,
 		Arguments: []*dcmd.ArgDef{
 			{
 				Name: "Topic",

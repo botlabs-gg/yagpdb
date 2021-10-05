@@ -43,7 +43,7 @@ import (
 )
 
 type CustomValidator interface {
-	Validate(tmplData TemplateData) (ok bool)
+	Validate(ctx *ValidationContext)
 }
 
 type ValidationTag struct {
@@ -88,12 +88,78 @@ var (
 	ErrRoleNotFound    = errors.New("role not found")
 )
 
+type ValidationError struct {
+	Path   string `json:"path"`
+	PathGo string `json:"path_go"`
+	Err    string `json:"err"`
+}
+
+type StructPath struct {
+	field    reflect.StructField
+	index    int
+	hasIndex bool
+}
+
+type ValidationContext struct {
+	field_errors   []ValidationError
+	general_errors []string
+	guild          *dstate.GuildSet
+	form           interface{}
+	currenPath     []*StructPath
+}
+
+type ValidationResult struct {
+	FieldErrors   []ValidationError `json:"field_errors"`
+	GeneralErrors []string          `json:"general_errors"`
+}
+
+func (vr *ValidationResult) IsOK() bool {
+	return len(vr.FieldErrors) == 0 && len(vr.GeneralErrors) == 0
+}
+
+func (vr *ValidationResult) AddToTemplate(tmpl TemplateData) {
+	for _, vErr := range vr.GeneralErrors {
+		tmpl.AddAlerts(ErrorAlert(vErr))
+	}
+
+	for _, vErr := range vr.FieldErrors {
+
+		prettyField := ""
+		for _, r := range vErr.PathGo {
+			if unicode.IsUpper(r) {
+				if prettyField != "" {
+					prettyField += " "
+				}
+			}
+
+			if r == '.' {
+				prettyField += " ->"
+			} else {
+				prettyField += string(r)
+			}
+
+		}
+		prettyField = strings.TrimSpace(prettyField)
+		tmpl.AddAlerts(ErrorAlert(prettyField, ": ", vErr.Err))
+	}
+}
+
 // Probably needs some cleaning up
-func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) bool {
+func ValidateForm(guild *dstate.GuildSet, form interface{}) ValidationResult {
+	ctx := &ValidationContext{
+		guild: guild,
+		form:  form,
+	}
+	ctx.validateForm(form)
 
-	ok := true
+	return ValidationResult{
+		FieldErrors:   ctx.field_errors,
+		GeneralErrors: ctx.general_errors,
+	}
+}
 
-	v := reflect.Indirect(reflect.ValueOf(form))
+func (vctx *ValidationContext) validateForm(current interface{}) {
+	v := reflect.Indirect(reflect.ValueOf(current))
 	t := v.Type()
 
 	// Walk over each field and look for valid tag
@@ -118,14 +184,14 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 			err = ValidateIntMinMaxField(int64(cv), int64(min), int64(max))
 		case int64:
 			var keep bool
-			keep, err = ValidateIntField(cv, validationTag, guild, false)
+			keep, err = ValidateIntField(cv, validationTag, vctx.guild, false)
 			if err == nil && !keep {
 				vField.SetInt(0)
 			}
 		case sql.NullInt64:
 			var keep bool
 			var newNullInt sql.NullInt64
-			keep, err = ValidateIntField(cv.Int64, validationTag, guild, false)
+			keep, err = ValidateIntField(cv.Int64, validationTag, vctx.guild, false)
 			if err == nil && !keep {
 				vField.Set(reflect.ValueOf(newNullInt))
 			}
@@ -137,14 +203,14 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 			err = ValidateFloatField(float64(cv), min, max)
 		case string:
 			var newS string
-			newS, err = ValidateStringField(cv, validationTag, guild)
+			newS, err = ValidateStringField(cv, validationTag, vctx.guild)
 			if err == nil {
 				vField.SetString(newS)
 			}
 		case []string:
 			newSlice := make([]string, 0, len(cv))
 			for _, s := range cv {
-				newS, e := ValidateStringField(s, validationTag, guild)
+				newS, e := ValidateStringField(s, validationTag, vctx.guild)
 				if e != nil {
 					err = e
 					break
@@ -156,7 +222,7 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 			}
 			vField.Set(reflect.ValueOf(newSlice))
 		case []int64:
-			newSlice, e := ValidateIntSliceField(cv, validationTag, guild)
+			newSlice, e := ValidateIntSliceField(cv, validationTag, vctx.guild)
 			if e != nil {
 				err = e
 				break
@@ -164,7 +230,7 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 
 			vField.Set(reflect.ValueOf(newSlice))
 		case pq.Int64Array:
-			newSlice, e := ValidateIntSliceField(cv, validationTag, guild)
+			newSlice, e := ValidateIntSliceField(cv, validationTag, vctx.guild)
 			if e != nil {
 				err = e
 				break
@@ -176,15 +242,18 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 			switch tField.Type.Kind() {
 			case reflect.Struct, reflect.Ptr:
 				addr := reflect.Indirect(vField).Addr()
-				innerOk := ValidateForm(guild, tmpl, addr.Interface())
-				if !innerOk {
-					ok = false
-				}
+
+				vctx.PushPath(tField)
+				vctx.validateForm(addr.Interface())
+				vctx.PopPath()
+
 			case reflect.Slice:
+				// validate all slice elements
 				sl := reflect.Indirect(vField)
 				for i := 0; i < sl.Len(); i++ {
-					innerOk := ValidateForm(guild, tmpl, sl.Index(i).Addr().Interface())
-					ok = ok && innerOk
+					vctx.PushPathWithIndex(tField, i)
+					vctx.validateForm(sl.Index(i).Addr().Interface())
+					vctx.PopPath()
 				}
 			}
 		}
@@ -192,31 +261,126 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 		if err != nil {
 
 			// Create a pretty name for the field by turing: "AnnounceMessage" into "Announce Message"
-			prettyField := ""
-			for _, r := range tField.Name {
-				if unicode.IsUpper(r) {
-					if prettyField != "" {
-						prettyField += " "
-					}
-				}
+			// prettyField := ""
+			// for _, r := range tField.Name {
+			// 	if unicode.IsUpper(r) {
+			// 		if prettyField != "" {
+			// 			prettyField += " "
+			// 		}
+			// 	}
 
-				prettyField += string(r)
-			}
-			prettyField = strings.TrimSpace(prettyField)
+			// 	prettyField += string(r)
+			// }
+			// prettyField = strings.TrimSpace(prettyField)
 
-			tmpl.AddAlerts(ErrorAlert(prettyField, ": ", err.Error()))
-			ok = false
+			// tmpl.AddAlerts(ErrorAlert(prettyField, ": ", err.Error()))
+			// ok = false
+			vctx.PushFieldError(tField, err)
 		}
 	}
 
-	if validator, okc := form.(CustomValidator); okc {
-		ok2 := validator.Validate(tmpl)
-		if !ok2 {
-			ok = false
+	if validator, okc := current.(CustomValidator); okc {
+		validator.Validate(vctx)
+	}
+}
+
+func (vctx *ValidationContext) StringPath(seperator string) string {
+	path := ""
+	for i, v := range vctx.currenPath {
+		if i != 0 {
+			path += seperator
+		}
+
+		path += v.field.Name
+		if v.hasIndex {
+			path += "[" + strconv.Itoa(v.index) + "]"
 		}
 	}
 
-	return ok
+	return path
+}
+
+func (vctx *ValidationContext) StringPathJson() string {
+	path := ""
+	for i, v := range vctx.currenPath {
+		if i != 0 {
+			path += "."
+		}
+
+		path += JsonTagName(v.field.Name, v.field.Tag.Get("json"))
+		if v.hasIndex {
+			path += "[" + strconv.Itoa(v.index) + "]"
+		}
+	}
+
+	return path
+}
+
+func JsonTagName(fieldName string, jsonTag string) string {
+	if jsonTag == "" {
+		return fieldName
+	}
+
+	split := strings.Split(jsonTag, ",")
+	return split[0]
+}
+
+func (vctx *ValidationContext) PushError(err error) {
+	vctx.general_errors = append(vctx.general_errors, err.Error())
+}
+
+func (vctx *ValidationContext) PushFieldError(field reflect.StructField, err error) {
+	pathPrefix := vctx.StringPath(".")
+	if pathPrefix != "" {
+		pathPrefix += "."
+	}
+
+	pathPrefixJson := vctx.StringPathJson()
+	if pathPrefixJson != "" {
+		pathPrefixJson += "."
+	}
+
+	vctx.field_errors = append(vctx.field_errors, ValidationError{
+		PathGo: pathPrefix + field.Name,
+		Path:   pathPrefixJson + JsonTagName(field.Name, string(field.Tag.Get("json"))),
+		Err:    err.Error(),
+	})
+}
+
+func (vctx *ValidationContext) PushFieldErrorWithIndex(field reflect.StructField, index int, err error) {
+	pathPrefix := vctx.StringPath(".")
+	if pathPrefix != "" {
+		pathPrefix += "."
+	}
+
+	pathPrefixJson := vctx.StringPathJson()
+	if pathPrefixJson != "" {
+		pathPrefixJson += "."
+	}
+
+	vctx.field_errors = append(vctx.field_errors, ValidationError{
+		PathGo: pathPrefix + field.Name + "[" + strconv.Itoa(index) + "]",
+		Path:   pathPrefix + JsonTagName(field.Name, field.Tag.Get("json")+"["+strconv.Itoa(index)+"]"),
+		Err:    err.Error(),
+	})
+}
+
+func (vctx *ValidationContext) PushPath(field reflect.StructField) {
+	vctx.currenPath = append(vctx.currenPath, &StructPath{
+		field: field,
+	})
+}
+
+func (vctx *ValidationContext) PushPathWithIndex(field reflect.StructField, index int) {
+	vctx.currenPath = append(vctx.currenPath, &StructPath{
+		field:    field,
+		index:    index,
+		hasIndex: true,
+	})
+}
+
+func (vctx *ValidationContext) PopPath() {
+	vctx.currenPath = vctx.currenPath[:len(vctx.currenPath)-1]
 }
 
 func readMinMax(valid *ValidationTag) (float64, float64) {

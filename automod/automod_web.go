@@ -641,8 +641,9 @@ func ReadRuleRowData(guild *dstate.GuildSet, tmpl web.TemplateData, rawData []Ru
 			}
 
 			// Perform the validation
-			validationOK = web.ValidateForm(guild, tmpl, dst)
-			if !validationOK {
+			errs := web.ValidateForm(guild, tmpl)
+			if !errs.IsOK() {
+				errs.AddToTemplate(tmpl)
 				return nil, false, nil
 			}
 

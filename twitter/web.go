@@ -32,7 +32,6 @@ const (
 type Form struct {
 	TwitterUser    string `valid:",1,256"`
 	DiscordChannel int64  `valid:"channel,false"`
-	ID             int64
 }
 
 type EditForm struct {
@@ -72,6 +71,8 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, EditForm{}))
 	mux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 	mux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
+
+	web.ServerPublicAPIMux.Handle(pat.Post("/twitter/new"), web.RequireServerAdminMiddleware(web.APIFormParserMW(web.APIHandler(p.handleNewFeed), Form{})))
 }
 
 func (p *Plugin) HandleTwitter(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -149,6 +150,70 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.ScreenName}))
 	}
 	return templateData, err
+}
+
+func (p *Plugin) handleNewFeed(w http.ResponseWriter, r *http.Request) interface{} {
+	ctx := r.Context()
+	activeGuild, _ := web.GetBaseCPContextData(ctx)
+
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		return web.NewPublicError("Twitter feeds are paid premium only")
+	}
+
+	// limit it to max 25 feeds
+	currentCount, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return err
+	}
+
+	if currentCount >= 25 {
+		return web.NewPublicError("Max 25 feeds per server")
+	}
+
+	globalCount, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return err
+	}
+
+	if globalCount >= 4000 {
+		return web.NewPublicError("Bot hit max feeds, contact bot owner")
+	}
+
+	form := ctx.Value(common.ContextKeyParsedForm).(*Form)
+
+	// search up the ID
+	users, _, err := p.twitterAPI.Users.Lookup(&twitter.UserLookupParams{
+		ScreenName: []string{form.TwitterUser},
+	})
+	if err != nil {
+		if cast, ok := err.(twitter.APIError); ok {
+			if cast.Errors[0].Code == 17 {
+				return web.NewPublicError("User not found")
+			}
+		}
+		return err
+	}
+
+	if len(users) < 1 {
+		return web.NewPublicError("Twitter user not found")
+	}
+
+	user := users[0]
+
+	m := &models.TwitterFeed{
+		GuildID:         activeGuild.ID,
+		TwitterUsername: user.ScreenName,
+		TwitterUserID:   user.ID,
+		ChannelID:       form.DiscordChannel,
+		Enabled:         true,
+	}
+
+	err = m.InsertG(ctx, boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.ScreenName}))
+	}
+
+	return m
 }
 
 type ContextKey int

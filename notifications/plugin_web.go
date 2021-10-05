@@ -35,6 +35,8 @@ func (p *Plugin) InitWeb() {
 
 	web.CPMux.Handle(pat.Post("/notifications/general"), postHandler)
 	web.CPMux.Handle(pat.Post("/notifications/general/"), postHandler)
+
+	web.ServerPublicAPIMux.Handle(pat.Get("/welcome_messages"), web.RequireServerAdminMiddleware(web.APIHandler(HandleNotificationsGetAPI)))
 }
 
 func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} {
@@ -73,6 +75,44 @@ func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.Templa
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
 	return templateData, nil
+}
+
+type ConfigResponse struct {
+	GuildID int64 `json:"guild_id,string"`
+
+	JoinServerEnabled bool     `json:"join_server_enabled"`
+	JoinServerChannel int64    `json:"join_server_channel,string"`
+	JoinServerMsgs    []string `json:"join_server_msg"`
+	JoinDMEnabled     bool     `json:"join_dm_enabled"`
+	JoinDMMsg         string   `json:"join_dm_msg"`
+
+	LeaveEnabled bool     `json:"leave_enabled"`
+	LeaveChannel int64    `json:"leave_channel,string"`
+	LeaveMsgs    []string `json:"leave_msg"`
+
+	CensorInvites bool `json:"censor_invites"`
+}
+
+func HandleNotificationsGetAPI(w http.ResponseWriter, r *http.Request) interface{} {
+	activeGuild := web.ContextGuild(r.Context())
+	conf, err := GetConfig(activeGuild.ID)
+	if err != nil {
+		web.CtxLogger(r.Context()).WithError(err).Error("failed retrieving config")
+		return err
+	}
+
+	return ConfigResponse{
+		GuildID:           conf.GuildID,
+		JoinServerEnabled: conf.JoinServerEnabled,
+		JoinServerChannel: conf.JoinServerChannelInt(),
+		JoinServerMsgs:    conf.JoinServerMsgs,
+		JoinDMEnabled:     conf.JoinDMEnabled,
+		JoinDMMsg:         conf.JoinDMMsg,
+		LeaveEnabled:      conf.LeaveEnabled,
+		LeaveChannel:      conf.LeaveChannelInt(),
+		LeaveMsgs:         conf.LeaveMsgs,
+		CensorInvites:     conf.CensorInvites,
+	}
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
