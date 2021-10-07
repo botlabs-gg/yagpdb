@@ -75,7 +75,7 @@ var throwThings = []string{
 	"a firewall",
 	"a brand new shiny server rack with terrible cable management",
 	"the worlds oldest server rack with perfect cable management",
-	"a roll of velcro, for cable management",
+	"cable ties, for cable management",
 	"a brand new hard drive",
 	"an old spindle hard drive",
 	"LMGTFY",
