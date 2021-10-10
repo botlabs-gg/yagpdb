@@ -91,7 +91,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	}
 
 	// Make a light copy of the channel
-	channel := gs.GetChannel(channelID)
+	channel := gs.GetChannelOrThread(channelID)
 	if channel == nil {
 		return nil, errors.New("Unknown channel")
 	}
