@@ -750,7 +750,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "DelWarning",
-		Aliases:       []string{"dw"},
+		Aliases:       []string{"dw", "delwarn", "deletewarning"},
 		Description:   "Deletes a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
