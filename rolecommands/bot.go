@@ -137,9 +137,9 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdListGroups := &commands.YAGCommand{
-		Name: "List",
+		Name: "Listgroups",
 		CmdCategory: categoryRoleMenu,
-		Aliases: []string{"listgroups", "groups"},
+		Aliases: []string{"list", "groups"},
 		Description: "Lists all role groups",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RunFunc: cmdFuncRoleMenuListGroups,
