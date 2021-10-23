@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -776,6 +777,34 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	return "Menu marked as done", nil
+}
+
+func cmdFuncRoleMenuListGroups(data *dcmd.Data) (interface{}, error) {
+	groups, err := models.RoleGroups(qm.Where("guild_id=?", data.GuildData.GS.ID), qm.Select("name")).AllG(data.Context())
+	if err != nil {
+		return err, err
+	}
+
+	var builder strings.Builder
+	builder.WriteString("Here's a list of your role groups:\n```\n")
+
+	if len(groups) == 0 {
+		builder.WriteString("None...\n```")
+		return builder.String(), nil
+	}
+
+	for i, group := range groups {
+		// Don't let the message become too huge
+		if i > 10 {
+			fmt.Fprintf(&builder, "...%d more groups are not shown.\n", len(groups) - i)
+			break
+		}
+
+		fmt.Fprintf(&builder, "%d) %s\n", i, group.Name)
+	}
+
+	builder.WriteString("```")
+	return builder.String(), nil
 }
 
 func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
