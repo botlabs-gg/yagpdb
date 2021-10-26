@@ -795,12 +795,12 @@ func cmdFuncRoleMenuListGroups(data *dcmd.Data) (interface{}, error) {
 
 	for i, group := range groups {
 		// Don't let the message become too huge
-		if i > 10 {
-			fmt.Fprintf(&builder, "...%d more groups are not shown.\n", len(groups) - i)
+		if i >= 10 {
+			fmt.Fprintf(&builder, "...%d more groups are not shown.\n", len(groups)-i)
 			break
 		}
 
-		fmt.Fprintf(&builder, "%d) %s\n", i, group.Name)
+		fmt.Fprintf(&builder, "%d) %s\n", i+1, group.Name)
 	}
 
 	builder.WriteString("```")
