@@ -20,7 +20,7 @@ JARVIS is a multifunctional, modular Discord bot. It is modular in the sense tha
 ## Useful Links
 
 * [Homepage](https://yagpdb.xyz)
-* [Support Server](https://discord.gg/4udtcA5)
+* [Support Server](https://discord.gg/uZctq7UaPR)
 * [Documentation](https://docs.yagpdb.xyz)
 
 ## Selfhosting
