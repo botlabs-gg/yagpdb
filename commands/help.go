@@ -68,8 +68,8 @@ func createInteractiveHelp(userID int64, helpEmbeds []*discordgo.MessageEmbed) (
 
 	// prepend a introductionairy first page
 	firstPage := &discordgo.MessageEmbed{
-		Title: "YAGPDB Help!",
-		Description: `YAGPDB is a multipurpose discord bot that is configured through the web interface at https://yagpdb.xyz.
+		Title: "JARVIS Help!",
+		Description: `JARVIS is a multipurpose discord bot that is configured through the web interface at https://yagpdb.xyz.
 For more in depth help and information you should visit https://docs.yagpdb.xyz/ as this command only shows information about commands.
 		
 		

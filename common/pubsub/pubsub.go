@@ -112,12 +112,12 @@ var metricsPubsubEvents = promauto.NewCounterVec(prometheus.CounterOpts{
 
 var metricsPubsubSent = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "yagpdb_pubsub_events_sent_total",
-	Help: "YAGPDB pubsub sent events",
+	Help: "JARVIS pubsub sent events",
 }, []string{"event"})
 
 var metricsPubsubSkipped = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "yagpdb_pubsub_events_skipped__total",
-	Help: "YAGPDB pubsub skipped events (unmatched target, unknown evt etc)",
+	Help: "JARVIS pubsub skipped events (unmatched target, unknown evt etc)",
 }, []string{"event"})
 
 func runPollEvents() error {

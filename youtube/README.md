@@ -13,7 +13,7 @@ Then a video was published (but uploaded a long time ago):
  1. vid1 - uploaded 6pm - published 6pm
  2. vid3 - uploaded 5pm - published 11pm
 
-vid3 was published after the latest video, but still appears at the bottom. This causes issues, as we now have no idea when to stop looking. Currently YAGPDB handles this fine as long as it's not uploaded longer than 50 videos ago, in which case it may or may not catch it.
+vid3 was published after the latest video, but still appears at the bottom. This causes issues, as we now have no idea when to stop looking. Currently JARVIS handles this fine as long as it's not uploaded longer than 50 videos ago, in which case it may or may not catch it.
 
 In the future, I'll do a hybrid mode with search. Those super late published videos however will show up in Discord super late. I cannot use search for 100% either because it costs 100 times for api quota to use, meaning it could be up to hours behind.
 

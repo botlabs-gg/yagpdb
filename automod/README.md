@@ -1,4 +1,4 @@
-This is version 2 of YAGPDB automoderator, v1 was scrapped and is deprecated, this version has been made from scratch and its goal is to be much more flexible and capable.
+This is version 2 of JARVIS automoderator, v1 was scrapped and is deprecated, this version has been made from scratch and its goal is to be much more flexible and capable.
 
 Quick design brainstorm:
  - Servers can create several rulesets

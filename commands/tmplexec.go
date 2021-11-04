@@ -92,7 +92,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 	execBot := func(cmd string, args ...interface{}) (interface{}, error) {
 
 		botUserCopy := *common.BotUser
-		botUserCopy.Username = "YAGPDB (cc: " + ctx.Msg.Author.Username + "#" + ctx.Msg.Author.Discriminator + ")"
+		botUserCopy.Username = "JARVIS (cc: " + ctx.Msg.Author.Username + "#" + ctx.Msg.Author.Discriminator + ")"
 
 		messageCopy := *ctx.Msg
 		messageCopy.Author = &botUserCopy

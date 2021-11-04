@@ -32,7 +32,7 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
 }
 
-// YAGPDB event
+// JARVIS event
 func HandleUpdateStreaming(event *pubsub.Event) {
 	logger.Info("Received update streaming event ", event.TargetGuild)
 

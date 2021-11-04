@@ -1,6 +1,6 @@
-# YAGPDB - Yet Another General Purpose Discord Bot
+# JARVIS - Just A Rather Very Intelligent System
 
-YAGPDB is a multifunctional, modular Discord bot. It is modular in the sense that for most things plugins exist -- However, some plugins may depend on other plugins.
+JARVIS is a multifunctional, modular Discord bot. It is modular in the sense that for most things plugins exist -- However, some plugins may depend on other plugins.
 
 ## Plugins
 
@@ -97,7 +97,7 @@ See `./yagpdb -help` for all usable run flags. The webserver listens by default 
 
 ## Databases
 
-YAGPDB uses Redis for light data and caching, and postgresql for most configurations and heavy data, such as logs.
+JARVIS uses Redis for light data and caching, and postgresql for most configurations and heavy data, such as logs.
 
 ### Updating
 
