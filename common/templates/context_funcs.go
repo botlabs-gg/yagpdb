@@ -402,6 +402,36 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 	}
 }
 
+func (c *Context) tmplPinMessage(channel, msgID interface{}) (string, error) {
+	cID := c.ChannelArgNoDM(channel)
+	if cID == 0 {
+		return "", errors.New("unknown channel")
+	}
+
+	mID := ToInt64(msgID)
+	err := common.BotSession.ChannelMessagePin(cID, mID)
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
+
+func (c *Context) tmplUnpinMessage(channel, msgID interface{}) (string, error) {
+	cID := c.ChannelArgNoDM(channel)
+	if cID == 0 {
+		return "", errors.New("unknown channel")
+	}
+
+	mID := ToInt64(msgID)
+	err := common.BotSession.ChannelMessageUnpin(cID, mID)
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
+
 func (c *Context) tmplMentionEveryone() string {
 	c.CurrentFrame.MentionEveryone = true
 	return "@everyone"
