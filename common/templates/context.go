@@ -499,8 +499,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
 	c.addContextFunc("editMessage", c.tmplEditMessage(true))
 	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
-	c.addContextFunc("pinMessage", c.tmplPinMessage)
-	c.addContextFunc("unpinMessage", c.tmplUnpinMessage)
+	c.addContextFunc("pinMessage", c.tmplHandlePinMessage(true))
+	c.addContextFunc("unpinMessage", c.tmplHandlePinMessage(false))
 
 	// Mentions
 	c.addContextFunc("mentionEveryone", c.tmplMentionEveryone)

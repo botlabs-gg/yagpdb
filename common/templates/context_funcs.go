@@ -402,34 +402,30 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 	}
 }
 
-func (c *Context) tmplPinMessage(channel, msgID interface{}) (string, error) {
-	cID := c.ChannelArgNoDM(channel)
-	if cID == 0 {
-		return "", errors.New("unknown channel")
-	}
+func (c *Context) tmplHandlePinMessage(mode bool) func(channel, msgID interface{}) (string, error) {
+	return func(channel, msgID interface{}) (string, error) {
+		if c.IncreaseCheckCallCounter("messagePins", 5) {
+			return "", ErrTooManyCalls
+		}
 
-	mID := ToInt64(msgID)
-	err := common.BotSession.ChannelMessagePin(cID, mID)
-	if err != nil {
-		return "", err
-	}
-
-	return "", nil
-}
-
-func (c *Context) tmplUnpinMessage(channel, msgID interface{}) (string, error) {
-	cID := c.ChannelArgNoDM(channel)
-	if cID == 0 {
-		return "", errors.New("unknown channel")
-	}
-
-	mID := ToInt64(msgID)
-	err := common.BotSession.ChannelMessageUnpin(cID, mID)
-	if err != nil {
-		return "", err
-	}
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return "", errors.New("unknown channel")
+		}
+		mID := ToInt64(msgID)
+		var err error
+		if mode {
+			err = common.BotSession.ChannelMessagePin(cID, mID)
+		} else {
+			err = common.BotSession.ChannelMessageUnpin(cID, mID)
+		}
+		
+		if err != nil {
+			return "", err
+		}
 
 	return "", nil
+	}
 }
 
 func (c *Context) tmplMentionEveryone() string {
