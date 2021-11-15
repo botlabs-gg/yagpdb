@@ -402,9 +402,9 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 	}
 }
 
-func (c *Context) tmplHandlePinMessage(mode bool) func(channel, msgID interface{}) (string, error) {
+func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (string, error) {
 	return func(channel, msgID interface{}) (string, error) {
-		if c.IncreaseCheckCallCounter("messagePins", 5) {
+		if c.IncreaseCheckCallCounter("message_pins", 5) {
 			return "", ErrTooManyCalls
 		}
 
@@ -414,17 +414,12 @@ func (c *Context) tmplHandlePinMessage(mode bool) func(channel, msgID interface{
 		}
 		mID := ToInt64(msgID)
 		var err error
-		if mode {
-			err = common.BotSession.ChannelMessagePin(cID, mID)
-		} else {
+		if unpin {
 			err = common.BotSession.ChannelMessageUnpin(cID, mID)
+		} else {
+			err = common.BotSession.ChannelMessagePin(cID, mID)
 		}
-		
-		if err != nil {
-			return "", err
-		}
-
-	return "", nil
+		return "", err
 	}
 }
 
