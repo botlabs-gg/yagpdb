@@ -3,6 +3,7 @@ package premium
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
@@ -11,16 +12,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/premium/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/premium.html
+var PageHTML string
 
 type CtxKey int
 
@@ -32,7 +36,7 @@ var (
 var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../premium/assets/premium.html", "templates/plugins/premium.html")
+	web.AddHTMLTemplate("premium/assets/premium.html", PageHTML)
 
 	web.CPMux.Use(PremiumGuildMW)
 	web.ServerPublicMux.Use(PremiumGuildMW)

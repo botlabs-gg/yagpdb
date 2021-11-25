@@ -5,16 +5,16 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cacheset"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cacheset"
+	"github.com/jonas747/discordgo/v2"
 )
 
 // PublishRatelimit publishes a new global ratelimit hit on discord
 func PublishRatelimit(rl *discordgo.RateLimit) {
-	logger.Printf("Got 429: %s, %d", rl.Bucket, rl.RetryAfter)
+	logger.Printf("Got 429: %s, %s", rl.Bucket, rl.RetryAfterDur())
 
-	reset := time.Now().Add(rl.RetryAfter * time.Millisecond)
+	reset := time.Now().Add(rl.RetryAfterDur())
 	err := Publish("global_ratelimit", -1, &globalRatelimitTriggeredEventData{
 		Bucket: rl.Bucket,
 		Reset:  reset,

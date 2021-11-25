@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/internalapi"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/internalapi"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -327,13 +327,37 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := bot.ShardManager.Sessions[parsed].GatewayManager.Reconnect(forceReidentify)
+	if forceReidentify {
+		err := bot.ShardManager.Sessions[parsed].Close()
+		if err != nil {
+			internalapi.ServerError(w, r, errors.New("failed stopping shard: "+err.Error()))
+			return
+		}
+	}
+
+	sessionID, sequence := bot.ShardManager.Sessions[parsed].GatewayManager.GetSessionInfo()
+
+	var err error
+	if forceReidentify {
+		bot.ShardManager.Sessions[parsed].GatewayManager.SetSessionInfo("", 0)
+		err = bot.ShardManager.Sessions[parsed].GatewayManager.Open()
+	} else {
+		err = bot.ShardManager.Sessions[parsed].GatewayManager.Reconnect(forceReidentify)
+	}
 	if err != nil {
 		internalapi.ServerError(w, r, errors.WithMessage(err, "Reconnect"))
 		return
 	}
 
-	internalapi.ServeJson(w, r, "ok")
+	internalapi.ServeJson(w, r, ReconnectResponse{
+		SessionID: sessionID,
+		Sequence:  sequence,
+	})
+}
+
+type ReconnectResponse struct {
+	SessionID string `json:"session_id"`
+	Sequence  int64  `json:"sequence"`
 }
 
 func RestartAll(reidentify bool) {

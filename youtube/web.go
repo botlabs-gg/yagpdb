@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"context"
+	_ "embed"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -14,11 +15,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"
@@ -29,6 +30,9 @@ type CtxKey int
 const (
 	CurrentConfig CtxKey = iota
 )
+
+//go:embed assets/youtube.html
+var PageHTML string
 
 var (
 	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_added_feed", FormatString: "Added youtube feed from %s"})
@@ -45,7 +49,7 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../youtube/assets/youtube.html", "templates/plugins/youtube.html")
+	web.AddHTMLTemplate("youtube/assets/youtube.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Youtube",
 		URL:  "youtube",
