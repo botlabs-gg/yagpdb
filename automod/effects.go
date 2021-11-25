@@ -752,7 +752,6 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 	}
 
 	settingsCast := settings.(*SendChannelMessageEffectData)
-
 	msgSend := &discordgo.MessageSend{}
 
 	if settingsCast.PingUser {
