@@ -101,7 +101,10 @@ func checkHierarchy(cmdData *dcmd.Data, targetID int64) error {
 	}
 
 	gs := cmdData.GuildData.GS
-	targetMember, _ := bot.GetMember(gs.ID, targetID)
+	targetMember, err := bot.GetMember(gs.ID, targetID)
+	if err != nil {
+		return nil
+	}
 
 	above := bot.IsMemberAbove(gs, botMember, targetMember)
 
