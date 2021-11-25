@@ -8,17 +8,17 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/common/config"
 
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/logs/models"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/logs/models"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
@@ -114,13 +114,8 @@ var cmdWhois = &commands.YAGCommand{
 			}
 		}
 
-		nick := ""
-		if member.Member.Nick != "" {
-			nick = " (" + member.Member.Nick + ")"
-		}
+		var nick, joinedAtStr, joinedAtDurStr string
 
-		joinedAtStr := ""
-		joinedAtDurStr := ""
 		if member.Member == nil {
 			joinedAtStr = "Couldn't find out"
 			joinedAtDurStr = "Couldn't find out"
@@ -129,6 +124,10 @@ var cmdWhois = &commands.YAGCommand{
 			joinedAtStr = parsedJoinedAt.UTC().Format(time.RFC822)
 			dur := time.Since(parsedJoinedAt)
 			joinedAtDurStr = common.HumanizeDuration(common.DurationPrecisionHours, dur)
+
+			if member.Member.Nick != "" {
+				nick = " (" + member.Member.Nick + ")"
+			}
 		}
 
 		if joinedAtDurStr == "" {
@@ -442,11 +441,6 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) {
 	}
 
 	if pu.User.Username != "" && pu.User.Username != ms.User.Username {
-		queueEvt(pu)
-		return
-	}
-
-	if pu.Nick != ms.Member.Nick {
 		queueEvt(pu)
 		return
 	}

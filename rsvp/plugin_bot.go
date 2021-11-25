@@ -10,17 +10,17 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	eventModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/rsvp/models"
-	"github.com/jonas747/yagpdb/timezonecompanion"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	eventModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/rsvp/models"
+	"github.com/botlabs-gg/yagpdb/timezonecompanion"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -42,7 +42,7 @@ func (p *Plugin) AddCommands() {
 		HelpEmoji:   "🎟",
 		EmbedColor:  0x42b9f4,
 	}
-	container := commands.CommandSystem.Root.Sub("events", "event")
+	container, _ := commands.CommandSystem.Root.Sub("events", "event")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 
 	cmdCreateEvent := &commands.YAGCommand{

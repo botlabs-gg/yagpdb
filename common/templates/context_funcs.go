@@ -11,18 +11,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 var ErrTooManyCalls = errors.New("too many calls to this function")
 var ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
-	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.MS == nil {
+	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.IsExecedByLeaveMessage {
 		return ""
 	}
 
@@ -68,16 +68,13 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
-// ChannelArg converts a verity of types of argument into a channel, verifying that it exists
-func (c *Context) ChannelArg(v interface{}) int64 {
-
+func (c *Context) baseChannelArg(v interface{}) *dstate.ChannelState {
 	// Look for the channel
 	if v == nil && c.CurrentFrame.CS != nil {
 		// No channel passed, assume current channel
-		return c.CurrentFrame.CS.ID
+		return c.CurrentFrame.CS
 	}
 
-	verifiedExistence := false
 	var cid int64
 	if v != nil {
 		switch t := v.(type) {
@@ -93,78 +90,50 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 				// Channel name, look for it
 				for _, v := range c.GS.Channels {
 					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
-						cid = v.ID
-						verifiedExistence = true
-						break
+						return &v
 					}
 				}
 			}
 		}
 	}
 
-	if !verifiedExistence {
-		// Make sure the channel is part of the guild
-		if channel := c.GS.GetChannel(cid); channel != nil {
-			verifiedExistence = true
-		}
-	}
+	return c.GS.GetChannelOrThread(cid)
+}
 
-	if !verifiedExistence {
+// ChannelArg converts a variety of types of argument into a channel, verifying that it exists
+func (c *Context) ChannelArg(v interface{}) int64 {
+	cs := c.baseChannelArg(v)
+	if cs == nil {
 		return 0
 	}
 
-	return cid
+	return cs.ID
 }
 
 // ChannelArgNoDM is the same as ChannelArg but will not accept DM channels
 func (c *Context) ChannelArgNoDM(v interface{}) int64 {
-
-	// Look for the channel
-	if v == nil && c.CurrentFrame.CS != nil {
-		// No channel passed, assume current channel
-		v = c.CurrentFrame.CS.ID
-	}
-
-	verifiedExistence := false
-	var cid int64
-	if v != nil {
-		switch t := v.(type) {
-		case int, int64:
-			// Channel id passed
-			cid = ToInt64(t)
-		case string:
-			parsed, err := strconv.ParseInt(t, 10, 64)
-			if err == nil {
-				// Channel id passed in string format
-				cid = parsed
-			} else {
-				// Channel name, look for it
-				for _, v := range c.GS.Channels {
-					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
-						cid = v.ID
-						verifiedExistence = true
-						break
-					}
-				}
-			}
-		}
-	}
-
-	if !verifiedExistence {
-		// Make sure the channel is part of the guild
-		if channel := c.GS.GetChannel(cid); channel != nil {
-			verifiedExistence = true
-		}
-	}
-
-	if !verifiedExistence {
+	cs := c.baseChannelArg(v)
+	if cs == nil || cs.IsPrivate() {
 		return 0
 	}
 
-	return cid
+	return cs.ID
+}
+
+func (c *Context) ChannelArgNoDMNoThread(v interface{}) int64 {
+	cs := c.baseChannelArg(v)
+	if cs == nil || cs.IsPrivate() || cs.Type.IsThread() {
+		return 0
+	}
+
+	return cs.ID
 }
 
 func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
+	if c.IsExecedByLeaveMessage {
+		return "", errors.New("Can't use sendTemplateDM on leave msg")
+	}
+
 	return c.sendNestedTemplate(nil, true, name, data...)
 }
 
@@ -334,6 +303,12 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			return ""
 		}
 
+		isDM := cid != c.ChannelArgNoDM(channel)
+		gName := c.GS.Name
+		info := fmt.Sprintf("Custom Command DM from the server **%s**", gName)
+		embedInfo := fmt.Sprintf("Custom Command DM from the server %s", gName)
+		icon := discordgo.EndpointGuildIcon(c.GS.ID, c.GS.Icon)
+
 		var m *discordgo.Message
 		msgSend := &discordgo.MessageSend{
 			AllowedMentions: discordgo.AllowedMentions{
@@ -343,16 +318,34 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		var err error
 
 		switch typedMsg := msg.(type) {
-
 		case *discordgo.MessageEmbed:
+			if isDM {
+				typedMsg.Footer = &discordgo.MessageEmbedFooter{
+					Text:    embedInfo,
+					IconURL: icon,
+				}
+			}
 			msgSend.Embed = typedMsg
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
-			msgSend.AllowedMentions = discordgo.AllowedMentions{
-				Parse: parseMentions,
+			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
+
+			if isDM {
+				if typedMsg.Embed != nil {
+					typedMsg.Embed.Footer = &discordgo.MessageEmbedFooter{
+						Text:    embedInfo,
+						IconURL: icon,
+					}
+				} else {
+					typedMsg.Content = info + "\n" + typedMsg.Content
+				}
 			}
 		default:
-			msgSend.Content = fmt.Sprint(msg)
+			if isDM {
+				msgSend.Content = info + "\n" + ToString(msg)
+			} else {
+				msgSend.Content = ToString(msg)
+			}
 		}
 
 		m, err = common.BotSession.ChannelMessageSendComplex(cid, msgSend)
@@ -697,45 +690,89 @@ func (c *Context) takeRole(targetID int64, roleID int64, delay time.Duration) st
 	return ""
 }
 
-func (c *Context) tmplSetRoles(target interface{}, roleSlice interface{}) (string, error) {
+const DiscordRoleLimit = 250
+
+func (c *Context) tmplSetRoles(target interface{}, input interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
 	}
 
-	targetID := targetUserID(target)
+	var targetID int64
+	if target == nil {
+		// nil denotes the context member
+		if c.MS != nil {
+			targetID = c.MS.User.ID
+		}
+	} else {
+		targetID = targetUserID(target)
+	}
+
 	if targetID == 0 {
 		return "", nil
 	}
 
 	if c.IncreaseCheckCallCounter("set_roles"+discordgo.StrID(targetID), 1) {
-		return "", errors.New("Too many calls to setRoles for specific user ID (max 1 / user)")
+		return "", errors.New("too many calls for specific user ID (max 1 / user)")
 	}
 
-	rSlice := reflect.ValueOf(roleSlice)
-	switch rSlice.Kind() {
+	rv, _ := indirect(reflect.ValueOf(input))
+	switch rv.Kind() {
 	case reflect.Slice, reflect.Array:
 		// ok
 	default:
-		return "", errors.New("Value passed was not an array or slice")
+		return "", errors.New("value passed was not an array or slice")
 	}
 
-	if rSlice.Len() > 250 {
-		return "", errors.New("Length of slice passed was > 250 (Discord role limit)")
+	// use a map to easily handle duplicate roles
+	roles := make(map[int64]struct{})
+
+	// if users supply a slice of roles that does not contain a managed role of the member, the Discord API returns an error.
+	// add in the managed roles of the member by default so the user doesn't have to do it manually every time.
+	ms, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return "", nil
 	}
 
-	roles := make([]string, 0, rSlice.Len())
-	for i := 0; i < rSlice.Len(); i++ {
-		switch v := rSlice.Index(i).Interface().(type) {
-		case string:
-			roles = append(roles, v)
-		case int, int64:
-			roles = append(roles, discordgo.StrID(reflect.ValueOf(v).Int()))
-		default:
-			return "", errors.New("Could not convert slice to string slice")
+	for _, id := range ms.Member.Roles {
+		r := c.GS.GetRole(id)
+		if r != nil && r.Managed {
+			roles[id] = struct{}{}
 		}
 	}
 
-	err := common.BotSession.GuildMemberEdit(c.GS.ID, targetID, roles)
+	for i := 0; i < rv.Len(); i++ {
+		v, _ := indirect(rv.Index(i))
+		switch v.Kind() {
+		case reflect.Int, reflect.Int64:
+			roles[v.Int()] = struct{}{}
+		case reflect.String:
+			id, err := strconv.ParseInt(v.String(), 10, 64)
+			if err != nil {
+				return "", errors.New("could not parse string value into role ID")
+			}
+			roles[id] = struct{}{}
+		case reflect.Struct:
+			if r, ok := v.Interface().(discordgo.Role); ok {
+				roles[r.ID] = struct{}{}
+				break
+			}
+			fallthrough
+		default:
+			return "", errors.New("could not parse value into role ID")
+		}
+
+		if len(roles) > DiscordRoleLimit {
+			return "", fmt.Errorf("more than %d unique roles passed; %[1]d is the Discord role limit", DiscordRoleLimit)
+		}
+	}
+
+	// convert map to slice of keys (role IDs)
+	rs := make([]string, 0, len(roles))
+	for id := range roles {
+		rs = append(rs, discordgo.StrID(id))
+	}
+
+	err = common.BotSession.GuildMemberEdit(c.GS.ID, targetID, rs)
 	if err != nil {
 		return "", err
 	}
@@ -848,6 +885,16 @@ func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (
 	}
 
 	return "", nil
+}
+
+func (c *Context) findRoleByID(id int64) *discordgo.Role {
+	for _, r := range c.GS.Roles {
+		if r.ID == id {
+			return &r
+		}
+	}
+
+	return nil
 }
 
 func (c *Context) findRoleByName(name string) *discordgo.Role {
@@ -1019,6 +1066,37 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	return member.DgoMember(), nil
 }
 
+func (c *Context) tmplGetRole(r interface{}) (*discordgo.Role, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	switch t := r.(type) {
+	case int, int64:
+		return c.findRoleByID(ToInt64(t)), nil
+	case string:
+		parsed, err := strconv.ParseInt(t, 10, 64)
+		if err == nil {
+			return c.findRoleByID(parsed), nil
+		}
+
+		if strings.HasPrefix(t, "<@&") && strings.HasSuffix(t, ">") {
+			re := regexp.MustCompile(`\d+`)
+			found := re.FindAllString(t, 1)
+			if len(found) > 0 {
+				parsedMention, err := strconv.ParseInt(found[0], 10, 64)
+				if err == nil {
+					return c.findRoleByID(parsedMention), nil
+				}
+			}
+		}
+
+		return c.findRoleByName(t), nil
+	default:
+		return nil, nil
+	}
+}
+
 func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 
 	if c.IncreaseCheckGenericAPICall() {
@@ -1034,6 +1112,46 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 
 	if cstate == nil {
 		return nil, errors.New("channel not in state")
+	}
+
+	return CtxChannelFromCS(cstate), nil
+}
+
+func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
+
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+	}
+
+	cstate := c.GS.GetThread(cID)
+
+	if cstate == nil {
+		return nil, errors.New("thread not in state")
+	}
+
+	return CtxChannelFromCS(cstate), nil
+}
+
+func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, error) {
+
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+	}
+
+	cstate := c.GS.GetChannelOrThread(cID)
+
+	if cstate == nil {
+		return nil, errors.New("thread/channel not in state")
 	}
 
 	return CtxChannelFromCS(cstate), nil
@@ -1248,7 +1366,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArgNoDM(channel)
+	cID := c.ChannelArgNoDMNoThread(channel)
 	if cID == 0 {
 		return "", errors.New("unknown channel")
 	}
@@ -1266,7 +1384,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArgNoDM(channel)
+	cID := c.ChannelArgNoDMNoThread(channel)
 	if cID == 0 {
 		return "", errors.New("unknown channel")
 	}

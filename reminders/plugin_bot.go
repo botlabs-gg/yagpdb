@@ -7,14 +7,14 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})
@@ -37,7 +37,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "Remindme",
-		Description:  "Schedules a reminder, example: 'remindme 1h30min are you alive still?'",
+		Description:  "Schedules a reminder, example: 'remindme 1h30min are you still alive?'",
 		Aliases:      []string{"remind", "reminder"},
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
@@ -91,7 +91,8 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "CReminders",
-		Description:         "Lists reminders in channel, only users with 'manage server' permissions can use this.",
+		Aliases:             []string{"channelreminders"},
+		Description:         "Lists reminders in channel, only users with 'manage channel' permissions can use this.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {

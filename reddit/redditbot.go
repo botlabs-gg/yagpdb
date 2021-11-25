@@ -10,14 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/feeds"
+	"github.com/botlabs-gg/yagpdb/reddit/models"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/go-reddit"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/reddit/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -203,10 +203,10 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
 
 		qm := &mqueue.QueuedElement{
-			Guild:           item.GuildID,
-			Channel:         item.ChannelID,
+			GuildID:         item.GuildID,
+			ChannelID:       item.ChannelID,
 			Source:          "reddit",
-			SourceID:        idStr,
+			SourceItemID:    idStr,
 			UseWebhook:      true,
 			WebhookUsername: webhookUsername,
 			AllowedMentions: discordgo.AllowedMentions{

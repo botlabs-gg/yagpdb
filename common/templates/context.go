@@ -12,12 +12,12 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/jonas747/template"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 )
@@ -42,6 +42,8 @@ var (
 		"urlescape": url.PathEscape,
 		"split":     strings.Split,
 		"title":     strings.Title,
+		"hasPrefix": strings.HasPrefix,
+		"hasSuffix": strings.HasSuffix,
 
 		// math
 		"add":               add,
@@ -134,6 +136,8 @@ type Context struct {
 
 	CurrentFrame *contextFrame
 
+	IsExecedByLeaveMessage bool
+
 	contextFuncsAdded bool
 }
 
@@ -198,6 +202,12 @@ func (c *Context) setupBaseData() {
 		channel := CtxChannelFromCS(c.CurrentFrame.CS)
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
+
+		if parentID := common.ChannelOrThreadParentID(c.CurrentFrame.CS); parentID != c.CurrentFrame.CS.ID {
+			c.Data["ChannelOrThreadParent"] = CtxChannelFromCS(c.GS.GetChannelOrThread(parentID))
+		} else {
+			c.Data["ChannelOrThreadParent"] = channel
+		}
 	}
 
 	if c.MS != nil {
@@ -273,6 +283,7 @@ func (c *Context) Execute(source string) (string, error) {
 
 func (c *Context) executeParsed() (string, error) {
 	parsed := c.CurrentFrame.parsedTemplate
+
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
 	} else {
@@ -374,13 +385,26 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		}
 	}
 
+	isDM := c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate())
+
 	for _, v := range c.CurrentFrame.EmebdsToSend {
+		if isDM {
+			v.Footer = &discordgo.MessageEmbedFooter{
+				Text:    "Custom Command DM from the server " + c.GS.Name,
+				IconURL: c.GS.Icon,
+			}
+		}
+
 		common.BotSession.ChannelMessageSendEmbed(channelID, v)
 	}
 
 	if strings.TrimSpace(content) == "" || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
 		// no point in sending the response if it gets deleted immedietely
 		return nil, nil
+	}
+
+	if isDM {
+		content = "Custom Command DM from the server **" + c.GS.Name + "**\n" + content
 	}
 
 	m, err := common.BotSession.ChannelMessageSendComplex(channelID, c.MessageSend(content))
@@ -510,6 +534,9 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getChannel", c.tmplGetChannel)
+	c.addContextFunc("getThread", c.tmplGetThread)
+	c.addContextFunc("getChannelOrThread", c.tmplGetChannelOrThread)
+	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("addReactions", c.tmplAddReactions)
 	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
 	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)

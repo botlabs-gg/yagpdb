@@ -1,7 +1,7 @@
 {{define "cp_selectserver"}}
 
 {{template "cp_head" .}}
-<header class="page-header"><h2>News and updates</h2></header>
+<header class="page-header"><h2>News and Updates</h2></header>
 <div class="row">
     <div class="col-lg-7">
 
@@ -11,8 +11,8 @@
                 <h2 class="card-title">Bot added to <b>{{.JoinedGuild.Name}}!</b></h2>
             </header>
             <div class="card-body">
-                <p>You manage this bot through a web control panel, if you need any help or want to contact the owner you can join the support server (There is a link above)</p>
-                <p>I'm working on adding proper documentation and guides but at this moment the documentation is very lacking, and it may seem a bit complicated. As as I said earlier, join the support server if you have any questions, although please do try a little on your own first, as I and the support team's time is limited.</p>
+                <p>You manage this bot through a web control panel, if you need any help you can join the support server (There is a link above)</p>
+                <p>The documentation for the bot can be found at <a class="link" href="https://docs.yagpdb.xyz/">docs.yagpdb.xyz</a>. Join the support server if you have any questions, although please do try a little on your own first, as the support team's time is limited.</p>
                 {{if .User}}
                 <a class="btn btn-primary" href="/manage/{{.JoinedGuild.ID}}/home">Click here to start managing it</a><br/>
                 {{else}}
@@ -63,13 +63,14 @@
         {{if .patreonActive}}
         <section class="card">
             <header class="card-header">
-                <h2 class="card-title">Thanks to my patrons!</h2>
+                <h2 class="card-title">Thanks to our patrons!</h2>
             </header>
             <div class="card-body">
-                {{range .activePatrons}}
+                {{range .activePatrons}}{{if ge .AmountCents 1000}}
                 <img class="avatar" src="{{.Avatar}}" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{.Name}}"></img>
-                {{end}}
+                {{end}}{{end}}
                 <br>
+                <p>Only showing patrons above $10</p>
                 <p>Patreon tiers above 3$ will grant you premium slots you can assign to servers, see <a href="/premium">the premium page</a> for more info.</p>
             </div>
         </section>
@@ -79,9 +80,8 @@
                 <h2 class="card-title">Check out...</h2>
             </header>
             <div class="card-body">
-                <p>YAGPDB is open source! The project is hosted on github here: <a href="https://github.com/jonas747/yagpdb">jonas747/yagpdb</a>.</p>
-                <p><a href="https://docs.yagpdb.xyz/donating" target="_blank">Donate using patreon, bitcoin and other cryptos!</a> Donating $3 or more will grant you premium slots you can assign to servers!</p>
-                <p>Looking to buy the ad space? <a href="https://docs.yagpdb.xyz/donating#advertisement" target="_blank">Click here for more info</a>.</p>
+                <p>YAGPDB is open source! The project is hosted on GitHub here: <a href="https://github.com/botlabs-gg/yagpdb">botlabs-gg/yagpdb</a>.</p>
+                <p><a href="https://docs.yagpdb.xyz/donating" target="_blank">Donate via patreon!</a> Donating $3 or more will grant you premium slots you can assign to servers!</p>
                 <p>Looking for the YAGPDB <a href="https://discord.gg/4udtcA5">Discord server</a>?</p>
             </div>
         </section>

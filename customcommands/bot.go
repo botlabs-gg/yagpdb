@@ -13,28 +13,28 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/premium"
 	"github.com/jonas747/template"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/premium"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/keylock"
-	"github.com/jonas747/yagpdb/common/multiratelimit"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/keylock"
+	"github.com/botlabs-gg/yagpdb/common/multiratelimit"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/stdcommands/util"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/null"
@@ -112,6 +112,8 @@ type DelayedRunCCData struct {
 	Member  *dstate.MemberState
 
 	UserKey interface{} `json:"user_key"`
+
+	IsExecedByLeaveMessage bool `json:"is_execed_by_leave_message"`
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -119,7 +121,7 @@ var cmdListCommands = &commands.YAGCommand{
 	Name:           "CustomCommands",
 	Aliases:        []string{"cc"},
 	Description:    "Shows a custom command specified by id or trigger, or lists them all",
-	ArgumentCombos: [][]int{[]int{0}, []int{1}, []int{}},
+	ArgumentCombos: [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
 		{Name: "Trigger", Type: dcmd.String},
@@ -183,8 +185,8 @@ var cmdListCommands = &commands.YAGCommand{
 				Reader: &buf,
 			}
 		}
-
-		if cc.TextTrigger != "" {
+		// Every text-based custom command trigger has a numerical value less than 5, so this is quite safe to do
+		if cc.TriggerType < 5 {
 			if ccFile != nil {
 				msg = &discordgo.MessageSend{
 					Content: fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` Group: `%s`",
@@ -247,8 +249,8 @@ func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*mod
 func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 	out := ""
 	for _, cc := range ccs {
-		switch cc.TextTrigger {
-		case "":
+		switch {
+		case cc.TriggerType >= 5:
 			out += fmt.Sprintf("`#%3d:` %s - Group: `%s`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
 		default:
 			out += fmt.Sprintf("`#%3d:` `%s`: %s - Group: `%s`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
@@ -282,7 +284,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		return true, nil
 	}
 
-	cs := gs.GetChannel(dataCast.ChannelID)
+	cs := gs.GetChannelOrThread(dataCast.ChannelID)
 	if cs == nil {
 		// don't reschedule if channel is deleted, make sure its actually not there, and not just a discord downtime
 		if !gs.Available {
@@ -305,6 +307,8 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		tmplCtx.Msg = dataCast.Message
 		tmplCtx.Data["Message"] = dataCast.Message
 	}
+
+	tmplCtx.IsExecedByLeaveMessage = dataCast.IsExecedByLeaveMessage
 
 	// decode userdata
 	if len(dataCast.UserData) > 0 {
@@ -489,7 +493,7 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, gs *dstate.Guild
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
-	cs := evt.CS()
+	cs := evt.CSOrThread()
 
 	if !evt.HasFeatureFlag(featureFlagHasCommands) {
 		return
@@ -546,7 +550,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, ms) {
+		if !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) {
 			continue
 		}
 
@@ -582,7 +586,7 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, reaction.ChannelID) {
+		if !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) {
 			continue
 		}
 
@@ -700,7 +704,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		"channel_name": csCop.Name,
 	})
 
-	// do not allow concurrect executions of the same custom command, to prevent most common kinds of abuse
+	// do not allow concurrent executions of the same custom command, to prevent most common kinds of abuse
 	lockKey := CCExecKey{
 		GuildID: cmd.GuildID,
 		CCID:    cmd.LocalID,
@@ -720,13 +724,13 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	go analytics.RecordActiveUnit(cmd.GuildID, &Plugin{}, "executed_cc")
 
 	// pick a response and execute it
-	f.Info("Custom command triggered")
+	f.Debug("Custom command triggered")
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)
 
 	if utf8.RuneCountInString(out) > 2000 {
-		out = "Custom command response was longer than 2k (contact an admin on the server...)"
+		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (contact an admin on the server...)"
 	}
 
 	go updatePostCommandRan(cmd, err)
