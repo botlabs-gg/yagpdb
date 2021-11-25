@@ -1,22 +1,26 @@
 package notifications
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/configstore"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
 	"goji.io/pat"
 )
+
+//go:embed assets/notifications_general.html
+var PageHTML string
 
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "notifications_settings", FormatString: "Updated server notification settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../notifications/assets/notifications_general.html", "templates/plugins/notifications_general.html")
+	web.AddHTMLTemplate("notifications/assets/notifications_general.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "General",
 		URL:  "notifications/general",

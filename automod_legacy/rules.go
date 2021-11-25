@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/safebrowsing"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -29,7 +29,7 @@ const (
 
 type Rule interface {
 	Check(m *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error)
-	ShouldIgnore(msg *discordgo.Message, m *dstate.MemberState) bool
+	ShouldIgnore(cs *dstate.ChannelState, msg *discordgo.Message, m *dstate.MemberState) bool
 	GetMuteDuration() int
 }
 
@@ -95,12 +95,12 @@ func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 }
 
 // Returns true if this rule should be ignored
-func (r BaseRule) ShouldIgnore(evt *discordgo.Message, ms *dstate.MemberState) bool {
+func (r BaseRule) ShouldIgnore(cs *dstate.ChannelState, evt *discordgo.Message, ms *dstate.MemberState) bool {
 	if !r.Enabled {
 		return true
 	}
 
-	strC := discordgo.StrID(evt.ChannelID)
+	strC := discordgo.StrID(common.ChannelOrThreadParentID(cs))
 	for _, ignoreChannel := range r.IgnoreChannels {
 		if ignoreChannel == strC {
 			return true

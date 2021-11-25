@@ -2,19 +2,20 @@ package poll
 
 import (
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
 )
 
 var (
 	pollReactions = [...]string{"1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"}
 	Command       = &commands.YAGCommand{
-		CmdCategory:  commands.CategoryTool,
-		Name:         "Poll",
-		Description:  "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink`",
-		RequiredArgs: 3,
+		CmdCategory:         commands.CategoryTool,
+		Name:                "Poll",
+		Description:         "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink`",
+		RequiredArgs:        3,
+		SlashCommandEnabled: true,
 		Arguments: []*dcmd.ArgDef{
 			{
 				Name: "Topic",
