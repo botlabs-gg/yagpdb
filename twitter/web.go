@@ -2,22 +2,26 @@ package twitter
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/twitter/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/go-twitter/twitter"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/twitter/models"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/twitter.html
+var PageHTML string
 
 type CtxKey int
 
@@ -45,7 +49,7 @@ var (
 
 func (p *Plugin) InitWeb() {
 
-	web.LoadHTMLTemplate("../../twitter/assets/twitter.html", "templates/plugins/twitter.html")
+	web.AddHTMLTemplate("twitter/assets/twitter.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Twitter Feeds",
 		URL:  "twitter",

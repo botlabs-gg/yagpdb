@@ -6,11 +6,10 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/karlseguin/ccache"
 	"golang.org/x/oauth2"
 )
@@ -111,8 +110,8 @@ func GetFullGuild(guildID int64) (*dstate.GuildSet, error) {
 			}
 
 			// does the API guarantee the order? i actually have no idea lmao
-			sort.Sort(dutil.Channels(channels))
-			sort.Sort(dutil.Roles(guild.Roles))
+			sort.Sort(common.DiscordChannels(channels))
+			sort.Sort(common.DiscordRoles(guild.Roles))
 			guild.Channels = channels
 
 			gs = dstate.GuildSetFromGuild(guild)

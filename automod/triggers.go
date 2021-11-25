@@ -7,13 +7,13 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/automod_legacy"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/automod/models"
+	"github.com/botlabs-gg/yagpdb/automod_legacy"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/safebrowsing"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")

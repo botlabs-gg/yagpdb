@@ -2,12 +2,6 @@ package soundboard
 
 import (
 	"context"
-	"github.com/jonas747/dca"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/jonas747/yagpdb/soundboard/models"
-	"goji.io/pat"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +10,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/backgroundworkers"
+	"github.com/botlabs-gg/yagpdb/soundboard/models"
+	"github.com/jonas747/dca/v2"
+	"goji.io/pat"
 )
 
 var (

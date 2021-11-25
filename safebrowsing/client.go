@@ -3,8 +3,8 @@ package safebrowsing
 import (
 	"emperror.dev/errors"
 	"encoding/json"
+	"github.com/botlabs-gg/yagpdb/common/backgroundworkers"
 	"github.com/google/safebrowsing"
-	"github.com/jonas747/yagpdb/common/backgroundworkers"
 	"io/ioutil"
 	"net/http"
 	"strings"

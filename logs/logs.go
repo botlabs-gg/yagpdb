@@ -4,16 +4,17 @@ package logs
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/logs/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/logs/models"
+	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -90,7 +91,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	}
 
 	// Make a light copy of the channel
-	channel := gs.GetChannel(channelID)
+	channel := gs.GetChannelOrThread(channelID)
 	if channel == nil {
 		return nil, errors.New("Unknown channel")
 	}
@@ -113,8 +114,14 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			body += fmt.Sprintf(" (Attachment: %s)", attachment.URL)
 		}
 
-		if len(v.Embeds) > 0 {
-			body += fmt.Sprintf(" (%d embeds is not shown)", len(v.Embeds))
+		// serialise embeds to their underlying JSON
+		for count, embed := range v.Embeds {
+			marshalled, err := json.Marshal(embed)
+			if err != nil {
+				continue
+			}
+
+			body += fmt.Sprintf("\nEmbed %d: %s", count, marshalled)
 		}
 
 		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)

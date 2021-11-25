@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/patreon"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/patreon"
+	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/premium/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -107,7 +107,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		if slotsForPledge > len(userSlots) {
 			// Need to create more slots
 			for i := 0; i < slotsForPledge-len(userSlots); i++ {
-				title := fmt.Sprintf("Patreon Slot #%d", i+len(userSlots))
+				title := fmt.Sprintf("Patreon Slot #%d", 1+i+len(userSlots))
 				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
 					tx.Rollback()
