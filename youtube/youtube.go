@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/premium"
 	"google.golang.org/api/youtube/v3"
 )
 
@@ -84,11 +84,11 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	// Remove it
-	err = common.GORM.Where("channel_id = ?", elem.Channel).Delete(ChannelSubscription{}).Error
+	err = common.GORM.Where("channel_id = ?", elem.ChannelID).Delete(ChannelSubscription{}).Error
 	if err != nil {
 		logger.WithError(err).Error("failed removing nonexistant channel")
 	} else {
-		logger.WithField("channel", elem.Channel).Info("Removed youtube feed to nonexistant channel")
+		logger.WithField("channel", elem.ChannelID).Info("Removed youtube feed to nonexistant channel")
 	}
 }
 

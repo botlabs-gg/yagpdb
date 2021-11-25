@@ -38,17 +38,17 @@
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800|Shadows+Into+Light" rel="stylesheet" type="text/css">
 
     <!-- Vendor CSS -->
-    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.css" />
-    <link rel="stylesheet" href="/static/vendor/animate/animate.css">
+    <link rel="stylesheet" href="/static/vendorr/bootstrap/css/bootstrap.css" />
+    <link rel="stylesheet" href="/static/vendorr/animate/animate.css">
 
-    <link rel="stylesheet" href="/static/vendor/font-awesome/css/all.min.css" />
-    <link rel="stylesheet" href="/static/vendor/magnific-popup/magnific-popup.css" />
-    <link rel="stylesheet" href="/static/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.css" />
+    <link rel="stylesheet" href="/static/vendorr/font-awesome/css/all.min.css" />
+    <link rel="stylesheet" href="/static/vendorr/magnific-popup/magnific-popup.css" />
+    <link rel="stylesheet" href="/static/vendorr/bootstrap-datepicker/css/bootstrap-datepicker3.css" />
 
-    <link rel="stylesheet" href="/static/vendor/select2/css/select2.css" />
-    <link rel="stylesheet" href="/static/vendor/select2-bootstrap-theme/select2-bootstrap.min.css" />
-    <link rel="stylesheet" href="/static/vendor/bootstrap-multiselect/bootstrap-multiselect.css" />
-    <link rel="stylesheet" href="/static/vendor/pnotify/pnotify.custom.css" />
+    <link rel="stylesheet" href="/static/vendorr/select2/css/select2.css" />
+    <link rel="stylesheet" href="/static/vendorr/select2-bootstrap-theme/select2-bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/vendorr/bootstrap-multiselect/bootstrap-multiselect.css" />
+    <link rel="stylesheet" href="/static/vendorr/pnotify/pnotify.custom.css" />
 
     <!-- Theme CSS -->
     <link rel="stylesheet" href="/static/css/theme.css?{{.StartedAtUnix}}" />
@@ -60,9 +60,9 @@
     <link rel="stylesheet" href="/static/css/custom.css?{{.StartedAtUnix}}">
 
     <!-- Head Libs -->
-    <script src="/static/vendor/modernizr/modernizr.js"></script>
+    <script src="/static/vendorr/modernizr/modernizr.js"></script>
 
-    <script src="/static/vendor/jquery/jquery.js"></script>
+    <script src="/static/vendorr/jquery/jquery.js"></script>
 
     {{if .ExtraHead}}
         {{.ExtraHead}}
@@ -121,17 +121,17 @@
     </script>
 
     <!-- Vendor -->
-    <script src="/static/vendor/jquery-browser-mobile/jquery.browser.mobile.js"></script>
-    <script src="/static/vendor/popper/umd/popper.min.js"></script>
-    <script src="/static/vendor/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/static/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
-    <script src="/static/vendor/common/common.js"></script>
-    <script src="/static/vendor/nanoscroller/nanoscroller.js"></script>
-    <script src="/static/vendor/magnific-popup/jquery.magnific-popup.js"></script>
-    <script src="/static/vendor/jquery-placeholder/jquery-placeholder.js"></script>
-    <script src="/static/vendor/select2/js/select2.js"></script>
-    <script src="/static/vendor/bootstrap-multiselect/bootstrap-multiselect.js?4"></script>
-    <script src="/static/vendor/pnotify/pnotify.custom.js"></script>
+    <script src="/static/vendorr/jquery-browser-mobile/jquery.browser.mobile.js"></script>
+    <script src="/static/vendorr/popper/umd/popper.min.js"></script>
+    <script src="/static/vendorr/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/static/vendorr/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="/static/vendorr/common/common.js"></script>
+    <script src="/static/vendorr/nanoscroller/nanoscroller.js"></script>
+    <script src="/static/vendorr/magnific-popup/jquery.magnific-popup.js"></script>
+    <script src="/static/vendorr/jquery-placeholder/jquery-placeholder.js"></script>
+    <script src="/static/vendorr/select2/js/select2.js"></script>
+    <script src="/static/vendorr/bootstrap-multiselect/bootstrap-multiselect.js?4"></script>
+    <script src="/static/vendorr/pnotify/pnotify.custom.js"></script>
     <script src="/static/vendor/sortable/Sortable.js"></script>
 
     <!-- Theme Base, Components and Settings -->
@@ -192,7 +192,7 @@ For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></
 {{end}}
 
 {{/*Specific template helpers*/}}
-{{define "template_helper_user"}}<code>{{"{{"}}.User.(ID/Username/Mention/Discriminator/Bot){{"}}"}}</code>{{end}}
-{{define "template_helper_guild"}}<code>{{"{{"}}.Server.(ID/Name/Icon/Owner/Permissions){{"}}"}}</code>{{end}}
+{{define "template_helper_user"}}<code>{{"{{"}}.User{{"}}"}}: <a href="https://docs.yagpdb.xyz/reference/templates#user"><code>.User</code> object documentation.</a></code>{{end}}
+{{define "template_helper_guild"}}<code>{{"{{"}}.Guild{{"}}"}}<a href="https://docs.yagpdb.xyz/reference/templates#guild-server"><code>.Guild</code> object reference.</a></code>{{end}}
 
 {{define "set_roles"}}<script>var activeGuildRoles = JSON.parse('{{json .ActiveGuild.Roles}}');</script>{{end}}

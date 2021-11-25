@@ -6,18 +6,19 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
@@ -49,7 +50,7 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 
 }
 
-func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, neededPerm int, additionalPermRoles []int64, enabled bool) (oreason string, err error) {
+func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, neededPerm int64, additionalPermRoles []int64, enabled bool) (oreason string, err error) {
 	cmdName := cmdData.Cmd.Trigger.Names[0]
 	oreason = reason
 	if !enabled {
@@ -149,6 +150,10 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
+			if utf8.RuneCountInString(reason) > 470 {
+				return "Error: Reason too long (can be max 470 characters).", nil
+			}
+
 			ddays := int(config.DefaultBanDeleteDays.Int64)
 			if parsed.Switches["ddays"].Value != nil {
 				ddays = parsed.Switches["ddays"].Int()
@@ -236,6 +241,10 @@ var ModerationCommands = []*commands.YAGCommand{
 			reason, err = MBaseCmdSecond(parsed, reason, config.KickReasonOptional, discordgo.PermissionKickMembers, config.KickCmdRoles, config.KickEnabled)
 			if err != nil {
 				return nil, err
+			}
+
+			if utf8.RuneCountInString(reason) > 470 {
+				return "Error: Reason too long (can be max 470 characters).", nil
 			}
 
 			var msg *discordgo.Message
@@ -558,7 +567,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			time.Sleep(time.Second)
 
 			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
-			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
+			deleteMessageWord := "messages"
+			if numDeleted == 1 {
+				deleteMessageWord = "message"
+			}
+			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d %s! :')", numDeleted, deleteMessageWord), true), err
 		},
 	},
 	{
@@ -737,7 +750,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "DelWarning",
-		Aliases:       []string{"dw"},
+		Aliases:       []string{"dw", "delwarn", "deletewarning"},
 		Description:   "Deletes a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -1080,10 +1093,6 @@ func AdvancedDeleteMessages(guildID, channelID int64, filterUser int64, regex st
 		if len(toDelete) >= deleteNum || len(toDelete) >= 100 {
 			break
 		}
-	}
-
-	if len(toDelete) < 1 {
-		return 0, nil
 	}
 
 	if len(toDelete) < 1 {

@@ -132,18 +132,18 @@ func (s *serviceTracker) update() {
 		return
 	}
 
+	err = RedisPool.Do(radix.FlatCmd(nil, "ZADD", ServicesRedisKey, time.Now().Unix(), serialized))
+	if err != nil {
+		logger.WithError(err).Error("failed updating service host")
+		return
+	}
+
 	if !bytes.Equal(serialized, s.lastUpdate) {
 		err = RedisPool.Do(radix.FlatCmd(nil, "ZREM", ServicesRedisKey, s.lastUpdate))
 		if err != nil {
 			logger.WithError(err).Error("failed removing service host")
 			return
 		}
-	}
-
-	err = RedisPool.Do(radix.FlatCmd(nil, "ZADD", ServicesRedisKey, time.Now().Unix(), serialized))
-	if err != nil {
-		logger.WithError(err).Error("failed updating service host")
-		return
 	}
 
 	s.lastUpdate = serialized

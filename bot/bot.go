@@ -9,16 +9,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator/v2/node"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/dstate/v3/inmemorytracker"
-	dshardmanager "github.com/jonas747/jdshardmanager"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/bot/shardmemberfetcher"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/bot/shardmemberfetcher"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dshardorchestrator/v3/node"
+	"github.com/jonas747/dstate/v4"
+	"github.com/jonas747/dstate/v4/inmemorytracker"
+	dshardmanager "github.com/jonas747/jdshardmanager/v2"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -40,7 +40,6 @@ var (
 	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
 	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
 	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
-	confLargeBotShardingEnabled  = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
 
 	confFixedShardingConfig = config.RegisterOption("yagpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")
 
@@ -290,7 +289,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 }
 
 func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
-	if !confLargeBotShardingEnabled.GetBool() {
+	if !common.ConfLargeBotShardingEnabled.GetBool() {
 		// only works with large bot sharding enabled
 		return false
 	}
@@ -303,8 +302,9 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 	}
 
 	// normally 16, but thats a bit too fast for us, so we use 4
-	currentBucket := shardID / 4
-	lastBucket := rl.lastShardRatelimited / 4
+	bucketSize := common.ConfShardBucketSize.GetInt()
+	currentBucket := shardID / bucketSize
+	lastBucket := rl.lastShardRatelimited / bucketSize
 
 	if currentBucket != lastBucket {
 		return false

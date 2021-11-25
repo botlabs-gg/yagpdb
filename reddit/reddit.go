@@ -8,12 +8,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/reddit/models"
 	"github.com/jonas747/go-reddit"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/reddit/models"
 )
 
 const (
@@ -41,14 +41,14 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
-	if strings.Contains(elem.SourceID, ":") {
+	if strings.Contains(elem.SourceItemID, ":") {
 		// legacy format leftover, ignore...
 		return
 	}
 
-	feedID, err := strconv.ParseInt(elem.SourceID, 10, 64)
+	feedID, err := strconv.ParseInt(elem.SourceItemID, 10, 64)
 	if err != nil {
-		logger.WithError(err).WithField("source_id", elem.SourceID).Error("failed parsing sourceID!??!")
+		logger.WithError(err).WithField("source_id", elem.SourceItemID).Error("failed parsing sourceID!??!")
 		return
 	}
 

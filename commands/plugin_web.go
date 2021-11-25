@@ -2,6 +2,7 @@ package commands
 
 import (
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
@@ -11,14 +12,14 @@ import (
 	"unicode"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/commands/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/commands/models"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -26,6 +27,9 @@ import (
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/commands.html
+var PageHTML string
 
 type ChannelOverrideForm struct {
 	Channels                []int64 `valid:"channel,true"`
@@ -64,7 +68,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../commands/assets/commands.html", "templates/plugins/commands.html")
+	web.AddHTMLTemplate("commands/assets/commands.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
 		Name: "Command settings",
 		URL:  "commands/settings",

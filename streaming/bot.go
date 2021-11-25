@@ -5,18 +5,19 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"emperror.dev/errors"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -25,7 +26,7 @@ func KeyCurrentlyStreaming(gID int64) string { return "currently_streaming:" + d
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.LimitedConcurrentEventHandler(HandleGuildCreate, 10, time.Millisecond*200), eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	pubsub.AddHandler("update_streaming", HandleUpdateStreaming, nil)
@@ -240,17 +241,21 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 
 	// Now the real fun starts
 	// Either add or remove the stream
-	if p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1 {
+	if p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1 && !p.User.Bot {
 
-		// Streaming
+		// Streaming and not a bot
+		ms, err := bot.GetMember(gs.ID, p.User.ID)
+		if err != nil {
+			return err
+		}
 
-		if !config.MeetsRequirements(p.Roles, mainActivity.State, mainActivity.Details) {
-			RemoveStreaming(client, config, gs.ID, p.User.ID, p.Roles)
+		if !config.MeetsRequirements(ms.Member.Roles, mainActivity.State, mainActivity.Details) {
+			RemoveStreaming(client, config, gs.ID, p.User.ID, ms.Member.Roles)
 			return nil
 		}
 
 		if config.GiveRole != 0 {
-			go GiveStreamingRole(gs.ID, p.User.ID, config.GiveRole, p.Roles)
+			go GiveStreamingRole(gs.ID, p.User.ID, config.GiveRole, ms.Member.Roles)
 		}
 
 		// if true, then we were marked now, and not before
@@ -268,11 +273,11 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 				return errors.WithStackIf(err)
 			}
 
-			SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
+			go SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
 		}
 	} else {
 		// Not streaming
-		RemoveStreaming(client, config, gs.ID, p.User.ID, p.Roles)
+		RemoveStreamingSparse(client, config, gs.ID, p.User.ID)
 	}
 
 	return nil
@@ -300,8 +305,8 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 	// Now the real fun starts
 	// Either add or remove the stream
-	if ms.Presence != nil && ms.Presence.Status != dstate.StatusOffline && ms.Presence.Game != nil && ms.Presence.Game.URL != "" && ms.Presence.Game.Type == 1 {
-		// Streaming
+	if ms.Presence != nil && ms.Presence.Status != dstate.StatusOffline && ms.Presence.Game != nil && ms.Presence.Game.URL != "" && ms.Presence.Game.Type == 1 && !ms.User.Bot {
+		// Streaming and not a bot
 
 		if !config.MeetsRequirements(ms.Member.Roles, ms.Presence.Game.State, ms.Presence.Game.Details) {
 			RemoveStreaming(client, config, gs.ID, ms.User.ID, ms.Member.Roles)
@@ -322,7 +327,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != 0 && config.AnnounceMessage != "" {
-			SendStreamingAnnouncement(config, gs, ms, ms.Presence.Game.URL, ms.Presence.Game.State, ms.Presence.Game.Details, ms.Presence.Game.Name)
+			go SendStreamingAnnouncement(config, gs, ms, ms.Presence.Game.URL, ms.Presence.Game.State, ms.Presence.Game.Details, ms.Presence.Game.Name)
 		}
 
 	} else {
@@ -373,6 +378,15 @@ func (config *Config) MeetsRequirements(roles []int64, activityState, activityDe
 	}
 
 	return true
+}
+
+func RemoveStreamingSparse(client radix.Client, config *Config, guildID int64, memberID int64) {
+	var removed bool
+	client.Do(radix.FlatCmd(&removed, "SREM", KeyCurrentlyStreaming(guildID), memberID))
+
+	if removed && config.GiveRole != 0 {
+		common.BotSession.GuildMemberRoleRemove(guildID, memberID, config.GiveRole)
+	}
 }
 
 func RemoveStreaming(client radix.Client, config *Config, guildID int64, memberID int64, currentRoles []int64) {
