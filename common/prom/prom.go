@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/config"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )

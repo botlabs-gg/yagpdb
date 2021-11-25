@@ -8,16 +8,15 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/logs"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/logs"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -455,7 +454,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 	gs := bot.State.GetGuild(guildID)
 	if gs != nil {
-		sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1)
+		go sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1)
 	}
 
 	// Create the modlog entry
@@ -528,7 +527,7 @@ func decideUnmuteRoles(config *Config, currentRoles []int64, mute MuteModel) []s
 
 	for _, v := range mute.RemovedRoles {
 		r := gs.GetRole(v)
-		if !common.ContainsInt64Slice(currentRoles, v) && r != nil && dutil.IsRoleAbove(yagHighest, r) {
+		if !common.ContainsInt64Slice(currentRoles, v) && r != nil && common.IsRoleAbove(yagHighest, r) {
 			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
 		}
 	}

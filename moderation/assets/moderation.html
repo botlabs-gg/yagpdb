@@ -1,5 +1,5 @@
-{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author.(Username/ID/Discriminator){{"}}"}}</code> - The author of
-the punishment{{end}}
+{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author{{"}}"}}</code> - The author of
+the punishment, is an <a href="https://docs.yagpdb.xyz/reference/templates#user"><code>.User</code> object. </a>{{end}}
 
 {{define "cp_moderation"}}
 {{template "cp_head" .}}

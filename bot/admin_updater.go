@@ -3,10 +3,10 @@ package bot
 import (
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 )
 

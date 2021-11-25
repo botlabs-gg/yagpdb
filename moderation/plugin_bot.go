@@ -8,18 +8,18 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dshardorchestrator/v3"
+	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -33,7 +33,7 @@ const (
 	ContextKeyConfig ContextKey = iota
 )
 
-const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
+const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak | discordgo.PermissionUsePublicThreads | discordgo.PermissionUsePrivateThreads
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -81,7 +81,13 @@ func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data in
 	if evt == bot.EvtMember {
 		ms := data.(*dstate.MemberState)
 		if ms.User.ID == common.BotUser.ID {
-			go RefreshMuteOverrides(ms.GuildID, false)
+			go func(gID int64) {
+				// relieve startup preasure, sleep for up to 60 minutes
+				sleep := time.Second * time.Duration(100+rand.Intn(60*180))
+				time.Sleep(sleep)
+
+				RefreshMuteOverrides(gID, false)
+			}(ms.GuildID)
 		}
 	}
 }
@@ -104,8 +110,8 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	gc := evt.GuildCreate()
 
 	// relieve startup preasure, sleep for up to 10 minutes
-	if time.Since(started) < time.Minute {
-		sleep := time.Second * time.Duration(100+rand.Intn(600))
+	if time.Since(started) < time.Minute*10 {
+		sleep := time.Second * time.Duration(100+rand.Intn(60*180))
 		time.Sleep(sleep)
 	}
 
@@ -162,7 +168,7 @@ func createMuteRole(config *Config, guildID int64) (int64, error) {
 
 	r, err := common.BotSession.GuildRoleCreateComplex(guildID, discordgo.RoleCreate{
 		Name:        "Muted - (by yagpdb)",
-		Permissions: "0",
+		Permissions: 0,
 		Mentionable: false,
 		Color:       0,
 		Hoist:       false,
@@ -226,7 +232,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 
 	// Check for existing override
 	for _, v := range channel.PermissionOverwrites {
-		if v.Type == "role" && v.ID == config.IntMuteRole() {
+		if v.Type == discordgo.PermissionOverwriteTypeRole && v.ID == config.IntMuteRole() {
 			override = &v
 			break
 		}
@@ -236,7 +242,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 	if config.MuteDisallowReactionAdd {
 		MuteDeniedChannelPermsFinal = MuteDeniedChannelPermsFinal | discordgo.PermissionAddReactions
 	}
-	allows := 0
+	allows := int64(0)
 	denies := MuteDeniedChannelPermsFinal
 	changed := true
 
@@ -259,7 +265,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 	}
 
 	if changed {
-		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
+		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), discordgo.PermissionOverwriteTypeRole, allows, denies)
 	}
 }
 

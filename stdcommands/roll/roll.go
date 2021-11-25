@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/jonas747/dcmd/v3"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/dice"
-	"github.com/jonas747/yagpdb/commands"
 )
 
 var Command = &commands.YAGCommand{
@@ -25,7 +25,7 @@ var Command = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		if data.Args[1].Value != nil {
 			// Special dice syntax if string
-			r, _, err := dice.Roll(data.Args[1].Str())
+			r, _, err := dice.Roll(strings.ToLower(data.Args[1].Str()))
 			if err != nil {
 				return err.Error(), nil
 			}

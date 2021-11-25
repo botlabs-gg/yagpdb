@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/discordgo/v2"
 )
 
 var (

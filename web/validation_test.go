@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/dstate/v4"
 )
 
 type StringTestStruct struct {

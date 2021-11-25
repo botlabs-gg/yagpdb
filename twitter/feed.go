@@ -7,13 +7,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/discordgo"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/feeds"
+	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/twitter/models"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/go-twitter/twitter"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/twitter/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -193,11 +193,11 @@ OUTER:
 		go analytics.RecordActiveUnit(v.GuildID, p, "posted_twitter_message")
 
 		mqueue.QueueMessage(&mqueue.QueuedElement{
-			Source:   "twitter",
-			SourceID: strconv.FormatInt(v.ID, 10),
+			Source:       "twitter",
+			SourceItemID: strconv.FormatInt(v.ID, 10),
 
-			Guild:   v.GuildID,
-			Channel: v.ChannelID,
+			GuildID:   v.GuildID,
+			ChannelID: v.ChannelID,
 
 			MessageEmbed:    embed,
 			UseWebhook:      true,
