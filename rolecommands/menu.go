@@ -6,20 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/rolecommands/models"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -776,6 +777,34 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	return "Menu marked as done", nil
+}
+
+func cmdFuncRoleMenuListGroups(data *dcmd.Data) (interface{}, error) {
+	groups, err := models.RoleGroups(qm.Where("guild_id=?", data.GuildData.GS.ID), qm.Select("name")).AllG(data.Context())
+	if err != nil {
+		return err, err
+	}
+
+	var builder strings.Builder
+	builder.WriteString("Here's a list of your role groups:\n```\n")
+
+	if len(groups) == 0 {
+		builder.WriteString("None...\n```")
+		return builder.String(), nil
+	}
+
+	for i, group := range groups {
+		// Don't let the message become too huge
+		if i >= 10 {
+			fmt.Fprintf(&builder, "...%d more groups are not shown.\n", len(groups)-i)
+			break
+		}
+
+		fmt.Fprintf(&builder, "%d) %s\n", i+1, group.Name)
+	}
+
+	builder.WriteString("```")
+	return builder.String(), nil
 }
 
 func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {

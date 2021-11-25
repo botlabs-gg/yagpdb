@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/automod/models"
+	"github.com/botlabs-gg/yagpdb/automod/models"
 )
 
 type ParsedRuleset struct {

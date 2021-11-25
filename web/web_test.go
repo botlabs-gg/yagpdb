@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/models"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/models"
+	"github.com/jonas747/discordgo/v2"
 )
 
 func createUserGuild(connected bool, owner bool, manageServer bool) *common.GuildWithConnected {
-	perms := 0
+	perms := int64(0)
 	if manageServer {
 		perms = discordgo.PermissionManageServer
 	}

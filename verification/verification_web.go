@@ -2,6 +2,7 @@ package verification
 
 import (
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -11,18 +12,24 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/jonas747/yagpdb/verification/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/verification/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
 )
+
+//go:embed assets/verification_control_panel.html
+var PageHTMLControlPanel string
+
+//go:embed assets/verification_verify_page.html
+var PageHTMLVerifyPage string
 
 type FormData struct {
 	Enabled             bool
@@ -38,8 +45,8 @@ type FormData struct {
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "verification_updated_settings", FormatString: "Updated verification settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../verification/assets/verification_control_panel.html", "templates/plugins/verification_control_panel.html")
-	web.LoadHTMLTemplate("../../verification/assets/verification_verify_page.html", "templates/plugins/verification_verify_page.html")
+	web.AddHTMLTemplate("verification/assets/verification_control_panel.html", PageHTMLControlPanel)
+	web.AddHTMLTemplate("verification/assets/verification_verify_page.html", PageHTMLVerifyPage)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Verification",
