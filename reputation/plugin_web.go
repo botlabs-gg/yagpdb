@@ -1,23 +1,30 @@
 package reputation
 
 import (
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
 	"net/http"
 	"strconv"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/reputation/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/reputation/models"
+	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/reputation_leaderboard.html
+var PageHTMLLeaderboard string
+
+//go:embed assets/reputation_settings.html
+var PageHTMLSettings string
 
 type PostConfigForm struct {
 	Enabled                 bool
@@ -55,8 +62,8 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../reputation/assets/reputation_settings.html", "templates/plugins/reputation_settings.html")
-	web.LoadHTMLTemplate("../../reputation/assets/reputation_leaderboard.html", "templates/plugins/reputation_leaderboard.html")
+	web.AddHTMLTemplate("reputation/assets/reputation_settings.html", PageHTMLSettings)
+	web.AddHTMLTemplate("reputation/assets/reputation_leaderboard.html", PageHTMLLeaderboard)
 	web.AddSidebarItem(web.SidebarCategoryFun, &web.SidebarItem{
 		Name: "Reputation",
 		URL:  "reputation",

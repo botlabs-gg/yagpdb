@@ -4,18 +4,20 @@ import (
 	"crypto/tls"
 	"flag"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/patreon"
-	yagtmpl "github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/web/discordblog"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/patreon"
+	yagtmpl "github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/frontend"
+	"github.com/botlabs-gg/yagpdb/web/discordblog"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
@@ -118,7 +120,7 @@ func loadTemplates() {
 	}
 
 	for _, v := range coreTemplates {
-		LoadHTMLTemplate(v, v)
+		loadCoreHTMLTemplate(v)
 	}
 }
 
@@ -358,7 +360,7 @@ func setupRoutes() *goji.Mux {
 	return RootMux
 }
 
-var StaticFileserverDir = "."
+var StaticFilesFS fs.FS = frontend.StaticFiles
 
 func setupRootMux() {
 	mux := goji.NewMux()
@@ -374,7 +376,7 @@ func setupRootMux() {
 	}
 
 	// Setup fileserver
-	mux.Handle(pat.Get("/static/*"), http.FileServer(http.Dir(StaticFileserverDir)))
+	mux.Handle(pat.Get("/static/*"), http.FileServer(http.FS(StaticFilesFS)))
 	mux.Handle(pat.Get("/robots.txt"), http.HandlerFunc(handleRobotsTXT))
 	mux.Handle(pat.Get("/ads.txt"), http.HandlerFunc(handleAdsTXT))
 
@@ -408,16 +410,18 @@ func legacyCPRedirHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/manage"+trimmed, http.StatusMovedPermanently)
 }
 
-func LoadHTMLTemplate(pathTesting, pathProd string) {
-	path := pathProd
-	if common.Testing {
-		path = pathTesting
-		if TestingTemplatePathResolver != nil {
-			path = TestingTemplatePathResolver(path)
-		}
-	}
+func AddHTMLTemplate(name, contents string) {
+	Templates = Templates.New(name)
+	Templates = template.Must(Templates.Parse(contents))
+}
 
-	Templates = template.Must(Templates.ParseFiles(path))
+func loadCoreHTMLTemplate(path string) {
+	contents, err := frontend.CoreTemplates.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	Templates = Templates.New(path)
+	Templates = template.Must(Templates.Parse(string(contents)))
 }
 
 const (
@@ -442,6 +446,3 @@ var sideBarItems = make(map[string][]*SidebarItem)
 func AddSidebarItem(category string, sItem *SidebarItem) {
 	sideBarItems[category] = append(sideBarItems[category], sItem)
 }
-
-// Resolves the path to template files in testing mode
-var TestingTemplatePathResolver func(in string) string

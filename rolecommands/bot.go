@@ -4,17 +4,17 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	schEvtsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/rolecommands/models"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -65,6 +65,7 @@ func (p *Plugin) AddCommands() {
 	cmdRemoveRoleMenu := &commands.YAGCommand{
 		Name:                "Remove",
 		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"rm"},
 		Description:         "Removes a rolemenu from a message.",
 		LongDescription:     "The message won't be deleted and the bot will not do anything with reactions on that message\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
@@ -135,7 +136,17 @@ func (p *Plugin) AddCommands() {
 		RunFunc: cmdFuncRoleMenuComplete,
 	}
 
-	menuContainer := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
+	cmdListGroups := &commands.YAGCommand{
+		Name: "Listgroups",
+		CmdCategory: categoryRoleMenu,
+		Aliases: []string{"list", "groups"},
+		Description: "Lists all role groups",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
+		RunFunc: cmdFuncRoleMenuListGroups,
+	}
+
+	menuContainer, t := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
+	t.SetEnabledInThreads(false)
 	menuContainer.Description = "Command for managing role menus"
 
 	const notFoundMessage = "Unknown rolemenu command, if you've used this before it was recently revamped.\nTry almost the same command but `rolemenu create ...` and `rolemenu update ...` instead (replace '...' with the rest of the command).\nSee `help rolemenu` for all rolemenu commands."
@@ -147,6 +158,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
+	menuContainer.AddCommand(cmdListGroups, cmdListGroups.GetTrigger())
 	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
