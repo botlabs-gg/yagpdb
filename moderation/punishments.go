@@ -276,7 +276,7 @@ func BanUser(config *Config, guildID int64, channel *dstate.ChannelState, messag
 	return BanUserWithDuration(config, guildID, channel, message, author, reason, user, 0, 1)
 }
 
-func LockUnlockRole(config *Config, lock bool, gs *dstate.GuildState, channel *dstate.ChannelState, authorMember *dstate.MemberState, modlogAuthor *discordgo.User, reason, roleS string, force bool, totalPerms int, dur time.Duration) (interface{}, error) {
+func LockUnlockRole(config *Config, lock bool, gs *dstate.GuildSet, channel *dstate.ChannelState, authorMember *dstate.MemberState, modlogAuthor *discordgo.User, reason, roleS string, force bool, totalPerms int64, dur time.Duration) (interface{}, error) {
 	config, err := getConfigIfNotSet(gs.ID, config)
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
@@ -295,12 +295,9 @@ func LockUnlockRole(config *Config, lock bool, gs *dstate.GuildState, channel *d
 		return "No role with the Name or ID `" + roleS + "` found.", nil
 	}
 
-	gs.RLock()
 	if !bot.IsMemberAboveRole(gs, authorMember, role) {
-		gs.RUnlock()
 		return "You can't lock/unlock roles above you.", nil
 	}
-	gs.RUnlock()
 
 	if dur > 0 && dur < time.Minute {
 		dur = time.Minute
@@ -328,10 +325,9 @@ func LockUnlockRole(config *Config, lock bool, gs *dstate.GuildState, channel *d
 		return nil, common.ErrWithCaller(err)
 	}
 
-	var newPerms int
+	var newPerms int64
 	action := MAUnlock
-	outDur := ""
-	outPerms := ""
+	var outDur, outPerms string
 	if !alreadyLocked {
 		currentLockdown.GuildID = gs.ID
 		currentLockdown.RoleID = role.ID
@@ -367,13 +363,13 @@ func LockUnlockRole(config *Config, lock bool, gs *dstate.GuildState, channel *d
 	} else {
 
 		if totalPerms == 0 { //This happens during scheduled Unlock events
-			totalPerms = int(currentLockdown.PermsToggle)
+			totalPerms = currentLockdown.PermsToggle
 			force = currentLockdown.Overwrite
 		}
 		if force {
 			newPerms = role.Permissions | totalPerms
 		} else {
-			newPerms = role.Permissions | (int(currentLockdown.PermsOriginal) & totalPerms)
+			newPerms = role.Permissions | (currentLockdown.PermsOriginal & totalPerms)
 		}
 	}
 
@@ -413,7 +409,6 @@ func LockUnlockRole(config *Config, lock bool, gs *dstate.GuildState, channel *d
 	}
 
 	return fmt.Sprintf("%s **%s** is now **%s** %s\nRole affected: %s  -  ID: `%d`%s", action.Emoji, out, action.Prefix, outDur, role.Name, role.ID, outPerms), err
-
 }
 
 func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason string, user *discordgo.User) (bool, error) {

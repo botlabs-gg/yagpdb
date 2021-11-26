@@ -396,13 +396,10 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 	}
 }
 
-// Since updating mutes are now a complex operation with removing roles and whatnot,
-// to avoid weird bugs from happening we lock it so it can only be updated one place per user
-func LockRoleLockdownMW(next func(evt *eventsystem.EventData, PermsData int) (retry bool, err error)) eventsystem.HandlerFunc {
+func LockRoleLockdownMW(next func(evt *eventsystem.EventData, PermsData int64) (retry bool, err error)) eventsystem.HandlerFunc {
 	return func(evt *eventsystem.EventData) (retry bool, err error) {
-		var roleID int64
-		roleUpdate := false
-		rolePerms := 0
+		var roleID, rolePerms int64
+		var roleUpdate bool
 		// TODO: add utility functions to the eventdata struct for fetching things like these?
 		if evt.Type == eventsystem.EventGuildRoleDelete {
 			roleID = evt.GuildRoleDelete().RoleID
@@ -435,15 +432,15 @@ func LockRoleLockdownMW(next func(evt *eventsystem.EventData, PermsData int) (re
 		}
 
 		// If it's a role update update event and locked perms remain locked, dont do anything
-		if roleUpdate && int(currentLockdown.PermsToggle)&rolePerms == 0 {
+		if roleUpdate && currentLockdown.PermsToggle&rolePerms == 0 {
 			return false, nil
 		}
 
-		return next(evt, int(currentLockdown.PermsToggle))
+		return next(evt, currentLockdown.PermsToggle)
 	}
 }
 
-func HandleGuildRoleDelete(evt *eventsystem.EventData, togglePerms int) (retry bool, err error) {
+func HandleGuildRoleDelete(evt *eventsystem.EventData, togglePerms int64) (retry bool, err error) {
 	data := evt.GuildRoleDelete()
 
 	// remove all existing unlock events for this role irrespective of lock or unlock event
@@ -462,7 +459,7 @@ func HandleGuildRoleDelete(evt *eventsystem.EventData, togglePerms int) (retry b
 	return false, nil
 }
 
-func HandleGuildRoleUpdate(evt *eventsystem.EventData, togglePerms int) (retry bool, err error) {
+func HandleGuildRoleUpdate(evt *eventsystem.EventData, togglePerms int64) (retry bool, err error) {
 	role := evt.GuildRoleUpdate().Role
 	newPerms := role.Permissions &^ togglePerms
 	_, err = common.BotSession.GuildRoleEdit(evt.GS.ID, role.ID, role.Name, role.Color, role.Hoist, newPerms, role.Mentionable)
@@ -689,7 +686,7 @@ func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) 
 	guildID := evt.GuildID
 	roleID := int(unlockData.RoleID)
 
-	g := bot.State.Guild(true, guildID)
+	g := bot.State.GetGuild(guildID)
 	if g == nil {
 		logger.WithField("guild", guildID).Error("Unlock scheduled for guild not in state")
 		return false, nil
@@ -697,7 +694,13 @@ func handleScheduledUnlock(evt *seventsmodels.ScheduledEvent, data interface{}) 
 
 	reason := "Timed lockdown expired."
 
-	_, err = LockUnlockRole(nil, false, g, nil, g.MemberCopy(true, common.BotUser.ID), common.BotUser, reason, strconv.Itoa(roleID), false, 0, 0)
+	botMember, err := bot.GetMember(g.ID, common.BotUser.ID)
+	if err != nil || botMember == nil {
+		logger.WithField("guild", guildID).Error("Bot not find in state for unlock event")
+		return true, nil
+	}
+
+	_, err = LockUnlockRole(nil, false, g, nil, botMember, common.BotUser, reason, strconv.Itoa(roleID), false, 0, 0)
 
 	if err != nil {
 		logger.WithField("guild", guildID).WithError(err).Error("failed role unlock")

@@ -40,10 +40,10 @@ the punishment, is an <a href="https://docs.yagpdb.xyz/reference/templates#user"
                                 class="indicator indicator-{{if .ModConfig.WarnCommandsEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#lockdown" aria-controls="lockdown" role="tab"
-                        data-toggle="tab">
-                        Lockdown <span
-                            class="indicator indicator-{{if .ModConfig.LockdownCmdEnabled}}success{{else}}danger{{end}}"></span>
-                    </a></li>
+                            data-toggle="tab">
+                            Lockdown <span
+                                class="indicator indicator-{{if .ModConfig.LockdownCmdEnabled}}success{{else}}danger{{end}}"></span>
+                        </a></li>
                 </ul>
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane active" id="general">{{template "moderation_general" .}}</div>

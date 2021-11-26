@@ -56,8 +56,7 @@ func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogActi
 		}
 	}
 
-	name := ""
-	discriminator := ""
+	var name, discriminator string
 	var id int64
 	switch t := target.(type) {
 	case *discordgo.User:
