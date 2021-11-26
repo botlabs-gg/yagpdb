@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -90,6 +90,7 @@ func PublishLogErr(evt string, target int64, data interface{}) {
 func PollEvents() {
 	AddHandler("global_ratelimit", handleGlobalRatelimtPusub, globalRatelimitTriggeredEventData{})
 	AddHandler("evict_core_config_cache", handleEvictCoreConfigCache, nil)
+	AddHandler("evict_cache_set", handleEvictCacheSet, evictCacheSetData{})
 
 	common.BotSession.AddHandler(func(s *discordgo.Session, r *discordgo.RateLimit) {
 		if r.Global {
@@ -122,7 +123,7 @@ var metricsPubsubSkipped = promauto.NewCounterVec(prometheus.CounterOpts{
 func runPollEvents() error {
 	logger.Info("Listening for pubsub events")
 
-	conn, err := radix.PersistentPubSubWithOpts("tcp", common.ConfRedis.GetString())
+	conn, err := radix.PersistentPubSubWithOpts("tcp", common.RedisAddr)
 	if err != nil {
 		return err
 	}

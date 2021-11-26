@@ -2,13 +2,15 @@ package wouldyourather
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 
 	"emperror.dev/errors"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
 )
 
 var Command = &commands.YAGCommand{
@@ -23,8 +25,21 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		content := fmt.Sprintf("**Would you rather** (*<http://either.io>*)\n🇦 %s\n **OR**\n🇧 %s", q1, q2)
-		msg, err := common.BotSession.ChannelMessageSend(data.ChannelID, content)
+		embed := &discordgo.MessageEmbed{
+			Description: fmt.Sprintf("**EITHER...**\n🇦 %s\n\n**OR...**\n🇧 %s", q1, q2),
+			Author: &discordgo.MessageEmbedAuthor{
+				Name:    "Would you rather...",
+				URL:     "https://either.io/",
+				IconURL: "https://yagpdb.xyz/static/icons/favicon-32x32.png",
+			},
+			Footer: &discordgo.MessageEmbedFooter{
+				Text:    fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
+				IconURL: discordgo.EndpointUserAvatar(data.Author.ID, data.Author.Avatar),
+			},
+			Color: rand.Intn(16777215),
+		}
+
+		msg, err := common.BotSession.ChannelMessageSendEmbed(data.ChannelID, embed)
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +65,7 @@ func wouldYouRather() (q1 string, q2 string, err error) {
 		return
 	}
 
-	doc, err := goquery.NewDocumentFromResponse(resp)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		return
 	}

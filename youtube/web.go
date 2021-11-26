@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"context"
+	_ "embed"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -10,14 +11,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"
@@ -28,6 +30,9 @@ type CtxKey int
 const (
 	CurrentConfig CtxKey = iota
 )
+
+//go:embed assets/youtube.html
+var PageHTML string
 
 var (
 	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_added_feed", FormatString: "Added youtube feed from %s"})
@@ -44,7 +49,7 @@ type Form struct {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../youtube/assets/youtube.html", "templates/plugins/youtube.html")
+	web.AddHTMLTemplate("youtube/assets/youtube.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Youtube",
 		URL:  "youtube",
@@ -106,11 +111,13 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
 
-	if data.YoutubeChannelID == "" && data.YoutubeChannelUser == "" {
+	cID := trimYouTubeURLParts(data.YoutubeChannelID)
+	username := trimYouTubeURLParts(data.YoutubeChannelUser)
+	if cID == "" && username == "" {
 		return templateData.AddAlerts(web.ErrorAlert("Neither channelid or username specified.")), errors.New("ChannelID and username not specified")
 	}
 
-	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, data.YoutubeChannelID, data.YoutubeChannelUser, data.MentionEveryone)
+	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, cID, username, data.MentionEveryone)
 	if err != nil {
 		if err == ErrNoChannel {
 			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("Channel not found")
@@ -121,6 +128,20 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.YoutubeChannelName}))
 
 	return templateData, nil
+}
+
+// See https://regex101.com/r/18Ttrq/1/ for some examples of what this matches.
+var youtubeURLPartRegexp = regexp.MustCompile(`(?i)\A(?:https?://)?(?:www\.)?youtube\.com/(?:(?:c|channel|user)/)?`)
+
+// trimYouTubeURLParts removes the leading YouTube URL parts from v if present.
+// For example, 'youtube.com/user/123' will be transformed to '123'.
+func trimYouTubeURLParts(v string) string {
+	loc := youtubeURLPartRegexp.FindStringIndex(v)
+	if loc == nil {
+		return v
+	}
+
+	return v[loc[1]:]
 }
 
 type ContextKey int

@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "ViewPerms",
-	Description: "Shows you or the targets permissions in this channel",
+	Description: "Shows you or the target's permissions in this channel",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "target", Type: dcmd.UserID, Default: int64(0)},
+		{Name: "target", Type: dcmd.UserID, Default: int64(0)},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		var target *dstate.MemberState
@@ -36,12 +36,12 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		perms, err := data.GuildData.GS.MemberPermissionsMS(true, data.GuildData.CS.ID, target)
+		perms, err := data.GuildData.GS.GetMemberPermissions(data.GuildData.CS.ID, target.User.ID, target.Member.Roles)
 		if err != nil {
 			return "Unable to calculate perms", err
 		}
 
 		humanized := common.HumanizePermissions(int64(perms))
-		return fmt.Sprintf("Perms of %s in this channel\n`%d`\n%s", target.Username, perms, strings.Join(humanized, ", ")), nil
+		return fmt.Sprintf("Perms of %s in this channel\n`%d`\n%s", target.User.Username, perms, strings.Join(humanized, ", ")), nil
 	},
 }

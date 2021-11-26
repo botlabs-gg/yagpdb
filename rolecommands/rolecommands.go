@@ -9,13 +9,13 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/rolecommands/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/tidwall/buntdb"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -64,7 +64,7 @@ func RegisterPlugin() {
 }
 
 func FindToggleRole(ctx context.Context, ms *dstate.MemberState, name string) (gaveRole bool, err error) {
-	cmd, err := models.RoleCommands(qm.Where("guild_id=?", ms.Guild.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
+	cmd, err := models.RoleCommands(qm.Where("guild_id=?", ms.GuildID), qm.Where("name ILIKE ?", name), qm.Load("RoleGroup.RoleCommands")).OneG(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -125,7 +125,7 @@ func (r *RoleError) Error() string {
 }
 
 // Uses the role name from one of the passed roles with matching id instead of the id
-func (r *RoleError) PrettyError(roles []*discordgo.Role) string {
+func (r *RoleError) PrettyError(roles []discordgo.Role) string {
 	if r.Role == 0 {
 		return r.Message
 	}

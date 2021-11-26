@@ -35,9 +35,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/lib/pq"
 )
 
@@ -83,12 +84,12 @@ func (p *ValidationTag) Len() int {
 }
 
 var (
-	ErrChannelNotFound = errors.New("Channel not found")
-	ErrRoleNotFound    = errors.New("Role not found")
+	ErrChannelNotFound = errors.New("channel not found")
+	ErrRoleNotFound    = errors.New("role not found")
 )
 
 // Probably needs some cleaning up
-func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) bool {
+func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) bool {
 
 	ok := true
 
@@ -127,7 +128,7 @@ func ValidateForm(guild *discordgo.Guild, tmpl TemplateData, form interface{}) b
 			keep, err = ValidateIntField(cv.Int64, validationTag, guild, false)
 			if err == nil && !keep {
 				vField.Set(reflect.ValueOf(newNullInt))
-			} 
+			}
 		case float64:
 			min, max := readMinMax(validationTag)
 			err = ValidateFloatField(cv, min, max)
@@ -226,7 +227,7 @@ func readMinMax(valid *ValidationTag) (float64, float64) {
 	return min, max
 }
 
-func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *discordgo.Guild) (filtered []int64, err error) {
+func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *dstate.GuildSet) (filtered []int64, err error) {
 	filtered = make([]int64, 0, len(is))
 	for _, integer := range is {
 		keep, err := ValidateIntField(integer, tags, guild, true)
@@ -242,7 +243,7 @@ func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *discordgo.Gui
 	return filtered, nil
 }
 
-func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild, forceAllowEmpty bool) (keep bool, err error) {
+func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forceAllowEmpty bool) (keep bool, err error) {
 	kind, _ := tags.Str(0)
 
 	if kind != "role" && kind != "channel" {
@@ -286,7 +287,7 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *discordgo.Guild, forc
 func ValidateIntMinMaxField(i int64, min, max int64) error {
 
 	if min != max && (i < min || i > max) {
-		return fmt.Errorf("Out of range (%d - %d)", min, max)
+		return fmt.Errorf("out of range (%d - %d)", min, max)
 	}
 
 	return nil
@@ -295,7 +296,7 @@ func ValidateIntMinMaxField(i int64, min, max int64) error {
 func ValidateFloatField(f float64, min, max float64) error {
 
 	if min != max && (f < min || f > max) {
-		return fmt.Errorf("Out of range (%f - %f)", min, max)
+		return fmt.Errorf("out of range (%f - %f)", min, max)
 	}
 
 	return nil
@@ -303,14 +304,14 @@ func ValidateFloatField(f float64, min, max float64) error {
 
 func ValidateRegexField(s string, max int) error {
 	if utf8.RuneCountInString(s) > max {
-		return fmt.Errorf("Too long (max %d)", max)
+		return fmt.Errorf("too long (max %d)", max)
 	}
 
 	_, err := regexp.Compile(s)
 	return err
 }
 
-func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) (str string, err error) {
+func ValidateStringField(s string, tags *ValidationTag, guild *dstate.GuildSet) (str string, err error) {
 	maxLen := 2000
 
 	str = s
@@ -387,11 +388,11 @@ func ValidateStringField(s string, tags *ValidationTag, guild *discordgo.Guild) 
 func ValidateNormalStringField(s string, min, max int) error {
 	rCount := utf8.RuneCountInString(s)
 	if rCount > max {
-		return fmt.Errorf("Too long (max %d)", max)
+		return fmt.Errorf("too long (max %d)", max)
 	}
 
 	if rCount < min {
-		return fmt.Errorf("Too short (min %d)", min)
+		return fmt.Errorf("too short (min %d)", min)
 	}
 
 	return nil
@@ -399,19 +400,19 @@ func ValidateNormalStringField(s string, min, max int) error {
 
 func ValidateTemplateField(s string, max int) error {
 	if utf8.RuneCountInString(s) > max {
-		return fmt.Errorf("Too long (max %d)", max)
+		return fmt.Errorf("too long (max %d)", max)
 	}
 
 	_, err := templates.NewContext(nil, nil, nil).Parse(s)
 	return err
 }
 
-func ValidateChannelField(s int64, channels []*discordgo.Channel, allowEmpty bool) error {
+func ValidateChannelField(s int64, channels []dstate.ChannelState, allowEmpty bool) error {
 	if s == 0 {
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("No channel specified")
+			return errors.New("no channel specified")
 		}
 	}
 
@@ -424,12 +425,12 @@ func ValidateChannelField(s int64, channels []*discordgo.Channel, allowEmpty boo
 	return ErrChannelNotFound
 }
 
-func ValidateRoleField(s int64, roles []*discordgo.Role, allowEmpty bool) error {
+func ValidateRoleField(s int64, roles []discordgo.Role, allowEmpty bool) error {
 	if s == 0 {
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("No role specified (or role is above bot)")
+			return errors.New("no role specified (or role is above bot)")
 		}
 	}
 

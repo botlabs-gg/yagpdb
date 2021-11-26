@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
 )
 
 var cmdHelp = &YAGCommand{
@@ -31,10 +31,8 @@ func CmdNotFound(search string) string {
 func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	target := data.Args[0].Str()
 
-	var resp []*discordgo.MessageEmbed
-
 	// Send the targetted help in the channel it was requested in
-	resp = dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
+	resp := dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
 	for _, v := range resp {
 		ensureEmbedLimits(v)
 	}
@@ -65,7 +63,7 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 func createInteractiveHelp(userID int64, helpEmbeds []*discordgo.MessageEmbed) (interface{}, error) {
 	channel, err := common.BotSession.UserChannelCreate(userID)
 	if err != nil {
-		return "Something went wrong, maybe you have DM's disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
+		return "Something went wrong, maybe you have DMs disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
 	}
 
 	// prepend a introductionairy first page

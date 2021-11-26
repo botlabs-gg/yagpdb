@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"html/template"
@@ -9,18 +10,24 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/logs/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/logs/models"
+	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/logs_control_panel.html
+var PageHTMLControlPanel string
+
+//go:embed assets/logs_view.html
+var PageHTMLView string
 
 var AuthorColors = []string{
 	"7c7cff", // blue-ish
@@ -54,8 +61,8 @@ var (
 )
 
 func (lp *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../logs/assets/logs_control_panel.html", "templates/plugins/logs_control_panel.html")
-	web.LoadHTMLTemplate("../../logs/assets/logs_view.html", "templates/plugins/logs_view.html")
+	web.AddHTMLTemplate("logs/assets/logs_control_panel.html", PageHTMLControlPanel)
+	web.AddHTMLTemplate("logs/assets/logs_view.html", PageHTMLView)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Logging",
@@ -168,9 +175,8 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
 	if err == nil {
-		bot.EvictGSCache(g.ID, CacheKeyConfig)
+		pubsub.EvictCacheSet(configCache, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
-
 	}
 	return tmpl, err
 }
@@ -181,7 +187,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*DeleteData)
 	if data.ID == 0 {
-		return tmpl, errors.New("ID is blank!")
+		return tmpl, errors.New("id is blank")
 	}
 
 	_, err := models.MessageLogs2s(
@@ -324,7 +330,7 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	tmpl["CanViewDeleted"] = canViewDeleted
 
 	// Convert into views with formatted dates and colors
-	const TimeFormat = "2006 Jan 02 15:04"
+	const TimeFormat = "2006 Jan 02 15:04:05"
 	messageViews := make([]*MessageView, len(messages))
 	for i := range messageViews {
 		m := messages[i]

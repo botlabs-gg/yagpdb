@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/jonas747/discordgo/v2"
 )
 
 type Plugin struct{}

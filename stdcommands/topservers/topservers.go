@@ -3,10 +3,10 @@ package topservers
 import (
 	"fmt"
 
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/yagpdb/bot/models"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/bot/models"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dcmd/v4"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -19,7 +19,7 @@ var Command = &commands.YAGCommand{
 		{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int, Default: 0},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		{Name: "id", Type: dcmd.Int},
+		{Name: "id", Type: dcmd.BigInt},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		skip := data.Args[0].Int()

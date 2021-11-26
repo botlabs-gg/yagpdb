@@ -12,15 +12,39 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/discordgo/v2"
 )
 
 // dictionary creates a map[string]interface{} from the given parameters by
 // walking the parameters and treating them as key-value pairs.  The number
 // of parameters must be even.
 func Dictionary(values ...interface{}) (Dict, error) {
+
+	if len(values) == 1 {
+		val, isNil := indirect(reflect.ValueOf(values[0]))
+		if isNil || values[0] == nil {
+			return nil, errors.New("dict: nil value passed")
+		}
+
+		if Dict, ok := val.Interface().(Dict); ok {
+			return Dict, nil
+		}
+
+		switch val.Kind() {
+		case reflect.Map:
+			iter := val.MapRange()
+			mapCopy := make(map[interface{}]interface{})
+			for iter.Next() {
+				mapCopy[iter.Key().Interface()] = iter.Value().Interface()
+			}
+			return Dict(mapCopy), nil
+		default:
+			return nil, errors.New("cannot convert data of type: " + reflect.TypeOf(values[0]).String())
+		}
+
+	}
+
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
@@ -564,7 +588,7 @@ func tmplHumanizeThousands(input interface{}) string {
 }
 
 func roleIsAbove(a, b *discordgo.Role) bool {
-	return dutil.IsRoleAbove(a, b)
+	return common.IsRoleAbove(a, b)
 }
 
 func randInt(args ...interface{}) int {
@@ -829,27 +853,16 @@ func ToFloat64(from interface{}) float64 {
 
 func ToDuration(from interface{}) time.Duration {
 	switch t := from.(type) {
-	case int:
-		return time.Duration(int64(t))
-	case int32:
-		return time.Duration(int64(t))
-	case int64:
-		return time.Duration(int64(t))
-	case float32:
-		return time.Duration(int64(t))
-	case float64:
-		return time.Duration(int64(t))
-	case uint:
-		return time.Duration(int64(t))
-	case uint32:
-		return time.Duration(int64(t))
-	case uint64:
-		return time.Duration(int64(t))
+	case int, int32, int64, float32, float64, uint, uint32, uint64:
+		return time.Duration(ToInt64(t))
 	case string:
-		parsed, _ := common.ParseDuration(t)
+		parsed, err := common.ParseDuration(t)
+		if parsed < time.Second || err != nil {
+			return 0
+		}
 		return parsed
 	case time.Duration:
-		return time.Duration(t)
+		return t
 	default:
 		return 0
 	}
@@ -966,7 +979,6 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 			// Both start and end index provided
 			startIndex = args[0]
 			endIndex = args[1]
-			break
 		default:
 			return reflect.Value{}, errors.Errorf("unexpected slice arguments %d", len(args))
 		}

@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/feeds"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/feeds"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/oauth2/google"
@@ -170,12 +170,12 @@ func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle st
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Inc()
 
 	mqueue.QueueMessage(&mqueue.QueuedElement{
-		Guild:      parsedGuild,
-		Channel:    parsedChannel,
-		Source:     "youtube",
-		SourceID:   "",
-		MessageStr: content,
-		Priority:   2,
+		GuildID:      parsedGuild,
+		ChannelID:    parsedChannel,
+		Source:       "youtube",
+		SourceItemID: "",
+		MessageStr:   content,
+		Priority:     2,
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: parseMentions,
 		},

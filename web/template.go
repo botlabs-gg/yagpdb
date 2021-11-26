@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 func prettyTime(t time.Time) string {
@@ -36,12 +37,12 @@ func mTemplate(name string, values ...interface{}) (template.HTML, error) {
 	return template.HTML(buf.String()), nil
 }
 
-var permsString = map[string]int{
+var permsString = map[string]int64{
 	"ManageRoles":    discordgo.PermissionManageRoles,
 	"ManageMessages": discordgo.PermissionManageMessages,
 }
 
-func hasPerm(botPerms int, checkPerm string) (bool, error) {
+func hasPerm(botPerms int64, checkPerm string) (bool, error) {
 	p, ok := permsString[checkPerm]
 	if !ok {
 		return false, errors.New("Unknown permission: " + checkPerm)
@@ -57,7 +58,7 @@ func hasPerm(botPerms int, checkPerm string) (bool, error) {
 // 1. current selected roleid
 // 2. default empty display name
 // 3. default unknown display name
-func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, args ...interface{}) template.HTML {
+func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, args ...interface{}) template.HTML {
 	hasCurrentSelected := len(args) > 0
 	var currentSelected int64
 	if hasCurrentSelected {
@@ -108,7 +109,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
-			if dutil.IsRoleAbove(role, highestBotRole) || role.ID == highestBotRole.ID {
+			if common.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
 				output += " disabled"
 				optName += " (role is above bot)"
 			}
@@ -124,7 +125,7 @@ func tmplRoleDropdown(roles []*discordgo.Role, highestBotRole *discordgo.Role, a
 }
 
 // Same as tmplRoleDropdown but supports multiple selections
-func tmplRoleDropdownMutli(roles []*discordgo.Role, highestBotRole *discordgo.Role, selections []int64) template.HTML {
+func tmplRoleDropdownMutli(roles []discordgo.Role, highestBotRole *discordgo.Role, selections []int64) template.HTML {
 
 	var builder strings.Builder
 
@@ -167,7 +168,7 @@ OUTER:
 
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
-			if dutil.IsRoleAbove(role, highestBotRole) || highestBotRole.ID == role.ID {
+			if common.IsRoleAbove(&role, highestBotRole) || highestBotRole.ID == role.ID {
 				if !optIsSelected {
 					builder.WriteString(" disabled")
 				}
@@ -183,9 +184,9 @@ OUTER:
 
 func tmplChannelOpts(channelTypes []discordgo.ChannelType, optionPrefix string) interface{} {
 	optsBuilder := tmplChannelOptsMulti(channelTypes, optionPrefix)
-	return func(channels []*discordgo.Channel, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
+	return func(channels []dstate.ChannelState, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
 
-		const unknownName = "Deleted channel"
+		// const unknownName = "Deleted channel"
 
 		var builder strings.Builder
 
@@ -215,8 +216,8 @@ func tmplChannelOpts(channelTypes []discordgo.ChannelType, optionPrefix string) 
 	}
 }
 
-func tmplChannelOptsMulti(channelTypes []discordgo.ChannelType, optionPrefix string) func(channels []*discordgo.Channel, selections []int64) template.HTML {
-	return func(channels []*discordgo.Channel, selections []int64) template.HTML {
+func tmplChannelOptsMulti(channelTypes []discordgo.ChannelType, optionPrefix string) func(channels []dstate.ChannelState, selections []int64) template.HTML {
+	return func(channels []dstate.ChannelState, selections []int64) template.HTML {
 
 		var builder strings.Builder
 

@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	textapi "github.com/AYLIEN/aylien_textapi_go"
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/dstate/v4"
 )
 
 var (
@@ -82,7 +82,7 @@ func (p *Plugin) AddCommands() {
 			} else {
 
 				// Get the message to analyze
-				msgs, err := bot.GetMessages(cmd.ChannelID, 100, false)
+				msgs, err := bot.GetMessages(cmd.GuildData.GS.ID, cmd.ChannelID, 100, false)
 				if err != nil {
 					return "", err
 				}

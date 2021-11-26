@@ -3,8 +3,8 @@ package bot
 import (
 	"sync"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/discordgo/v2"
 )
 
 var MessageDeleteQueue = &messageDeleteQueue{
@@ -36,7 +36,7 @@ func (q *messageDeleteQueue) DeleteMessages(guildID int64, channel int64, ids ..
 	}
 
 	if guildID != 0 {
-		if !BotProbablyHasPermission(guildID, channel, discordgo.PermissionManageMessages) {
+		if hasPerms, _ := BotHasPermission(guildID, channel, discordgo.PermissionManageMessages); !hasPerms {
 			q.Unlock()
 			return
 		}

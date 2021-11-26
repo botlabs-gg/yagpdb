@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot/models"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/bot/models"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/stdcommands/util"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -66,48 +65,17 @@ var Command = &commands.YAGCommand{
 	}),
 }
 
-func CheckGuild(gs *dstate.GuildState, nameToMatch string, userToMatch int64) *Candidate {
+func CheckGuild(gs *dstate.GuildSet, nameToMatch string, userToMatch int64) *Candidate {
 	if nameToMatch != "" {
-		gl := strings.ToLower(gs.Guild.Name)
+		gl := strings.ToLower(gs.Name)
 		if gl != nameToMatch && !strings.Contains(gl, nameToMatch) {
-			return nil
-		}
-	}
-
-	foundUser := false
-	if userToMatch != 0 {
-		for _, ms := range gs.Members {
-			if ms.ID == userToMatch {
-				foundUser = true
-				break
-			}
-		}
-
-		if !foundUser {
 			return nil
 		}
 	}
 
 	candidate := &Candidate{
 		ID:   gs.ID,
-		Name: gs.Guild.Name,
-	}
-
-	if foundUser {
-		if gs.Guild.OwnerID == userToMatch {
-			candidate.Owner = true
-		}
-
-		perms, _ := gs.MemberPermissions(false, 0, userToMatch)
-		if perms&discordgo.PermissionAdministrator != 0 {
-			candidate.Admin = true
-		}
-
-		if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionKickMembers != 0 || perms&discordgo.PermissionBanMembers != 0 {
-			candidate.Mod = true
-		}
-
-		candidate.UserMatch = true
+		Name: gs.Name,
 	}
 
 	return candidate

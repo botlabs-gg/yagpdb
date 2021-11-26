@@ -3,22 +3,23 @@ package bot
 //go:generate sqlboiler --no-hooks psql
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator/v2/node"
-	"github.com/jonas747/dstate/v2"
-	dshardmanager "github.com/jonas747/jdshardmanager"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/bot/shardmemberfetcher"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dshardorchestrator/v3/node"
+	"github.com/jonas747/dstate/v4"
+	"github.com/jonas747/dstate/v4/inmemorytracker"
+	dshardmanager "github.com/jonas747/jdshardmanager/v2"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var (
@@ -26,7 +27,9 @@ var (
 	Started      = time.Now()
 	Enabled      bool // wether the bot is set to run at some point in this process
 	Running      bool // wether the bot is currently running
-	State        *dstate.State
+	State        dstate.StateTracker
+	stateTracker *inmemorytracker.InMemoryTracker
+
 	ShardManager *dshardmanager.Manager
 
 	NodeConn          *node.Conn
@@ -37,7 +40,6 @@ var (
 	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
 	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
 	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
-	confLargeBotShardingEnabled  = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
 
 	confFixedShardingConfig = config.RegisterOption("yagpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")
 
@@ -79,7 +81,6 @@ func Run(nodeID string) {
 		setupStandalone()
 	}
 
-	go MemberFetcher.Run()
 	go mergedMessageSender()
 
 	Running = true
@@ -103,7 +104,6 @@ func setup() {
 
 	discordgo.IdentifyRatelimiter = &identifyRatelimiter{}
 
-	setupState()
 	addBotHandlers()
 	setupShardManager()
 }
@@ -120,6 +120,7 @@ func setupStandalone() {
 		usingFixedSharding = true
 		ShardManager.SetNumShards(totalShardCount)
 	}
+	setupState()
 
 	EventLogger.init(totalShardCount)
 	eventsystem.InitWorkers(totalShardCount)
@@ -167,7 +168,22 @@ func botReady() {
 		updateAllShardStatuses()
 	}, nil)
 
-	pubsub.AddHandler("bot_core_evict_gs_cache", handleEvictCachePubsub, "")
+	memberFetcher = shardmemberfetcher.NewManager(int64(totalShardCount), State, func(guildID int64, userIDs []int64, nonce string) error {
+		shardID := guildShardID(guildID)
+		session := ShardManager.Session(shardID)
+		if session != nil {
+			session.GatewayManager.RequestGuildMembersComplex(&discordgo.RequestGuildMembersData{
+				GuildID:   guildID,
+				Presences: false,
+				UserIDs:   userIDs,
+				Nonce:     nonce,
+			})
+		} else {
+			return errors.New("session not found")
+		}
+
+		return nil
+	}, ReadyTracker)
 
 	serviceDetails := "Not using orchestrator"
 	if UsingOrchestrator {
@@ -224,21 +240,16 @@ func Stop(wg *sync.WaitGroup) {
 func GuildCountsFunc() []int {
 	numShards := ShardManager.GetNumShards()
 	result := make([]int, numShards)
-	State.RLock()
-	for _, v := range State.Guilds {
-		shard := (v.ID >> 22) % int64(numShards)
-		result[shard]++
+
+	for i := 0; i < numShards; i++ {
+		guilds := State.GetShardGuilds(int64(i))
+		result[i] = len(guilds)
 	}
-	State.RUnlock()
 
 	return result
 }
 
-// Standard implementation of the GatewayIdentifyRatelimiter
 type identifyRatelimiter struct {
-	ch   chan bool
-	once sync.Once
-
 	mu                   sync.Mutex
 	lastShardRatelimited int
 	lastRatelimitAt      time.Time
@@ -278,7 +289,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 }
 
 func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
-	if !confLargeBotShardingEnabled.GetBool() {
+	if !common.ConfLargeBotShardingEnabled.GetBool() {
 		// only works with large bot sharding enabled
 		return false
 	}
@@ -291,8 +302,9 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 	}
 
 	// normally 16, but thats a bit too fast for us, so we use 4
-	currentBucket := shardID / 4
-	lastBucket := rl.lastShardRatelimited / 4
+	bucketSize := common.ConfShardBucketSize.GetInt()
+	currentBucket := shardID / bucketSize
+	lastBucket := rl.lastShardRatelimited / bucketSize
 
 	if currentBucket != lastBucket {
 		return false
@@ -306,77 +318,102 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 	return true
 }
 
-var (
-	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_hits_total",
-		Help: "Cache hits in the satte cache",
-	})
+// var (
+// 	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "yagpdb_state_cache_hits_total",
+// 		Help: "Cache hits in the satte cache",
+// 	})
 
-	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_misses_total",
-		Help: "Cache misses in the sate cache",
-	})
+// 	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "yagpdb_state_cache_misses_total",
+// 		Help: "Cache misses in the sate cache",
+// 	})
 
-	metricsCacheEvictions = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_cache_evicted_total",
-		Help: "Cache evictions",
-	})
+// 	metricsCacheEvictions = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "yagpdb_state_cache_evicted_total",
+// 		Help: "Cache evictions",
+// 	})
 
-	metricsCacheMemberEvictions = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_state_members_evicted_total",
-		Help: "Members evicted from state cache",
-	})
-)
+// 	metricsCacheMemberEvictions = promauto.NewCounter(prometheus.CounterOpts{
+// 		Name: "yagpdb_state_members_evicted_total",
+// 		Help: "Members evicted from state cache",
+// 	})
+// )
 
-var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Gateway connection logging channel", true)
+var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Remove offline members from state", true)
+
+// func setupState() {
+// 	// Things may rely on state being available at this point for initialization
+// 	State = dstate.NewState()
+// 	State.MaxChannelMessages = 1000
+// 	State.MaxMessageAge = time.Hour
+// 	// State.Debug = true
+// 	State.ThrowAwayDMMessages = true
+// 	State.TrackPrivateChannels = false
+// 	State.CacheExpirey = time.Hour * 2
+
+// 	if confStateRemoveOfflineMembers.GetBool() {
+// 		State.RemoveOfflineMembers = true
+// 	}
+
+// 	go State.RunGCWorker()
+
+// 	eventsystem.DiscordState = State
+
+// 	// track cache hits/misses
+// 	go func() {
+// 		lastHits := int64(0)
+// 		lastMisses := int64(0)
+// 		lastEvictionsCache := int64(0)
+// 		lastEvictionsMembers := int64(0)
+
+// 		ticker := time.NewTicker(time.Minute)
+// 		for {
+// 			<-ticker.C
+
+// 			stats := State.StateStats()
+// 			deltaHits := stats.CacheHits - lastHits
+// 			deltaMisses := stats.CacheMisses - lastMisses
+// 			lastHits = stats.CacheHits
+// 			lastMisses = stats.CacheMisses
+
+// 			metricsCacheHits.Add(float64(deltaHits))
+// 			metricsCacheMisses.Add(float64(deltaMisses))
+
+// 			metricsCacheEvictions.Add(float64(stats.UserCachceEvictedTotal - lastEvictionsCache))
+// 			metricsCacheMemberEvictions.Add(float64(stats.MembersRemovedTotal - lastEvictionsMembers))
+
+// 			lastEvictionsCache = stats.UserCachceEvictedTotal
+// 			lastEvictionsMembers = stats.MembersRemovedTotal
+
+// 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
+// 		}
+// 	}()
+// }
+
+var StateLimitsF func(guildID int64) (int, time.Duration) = func(guildID int64) (int, time.Duration) {
+	return 1000, time.Hour
+}
 
 func setupState() {
-	// Things may rely on state being available at this point for initialization
-	State = dstate.NewState()
-	State.MaxChannelMessages = 1000
-	State.MaxMessageAge = time.Hour
-	// State.Debug = true
-	State.ThrowAwayDMMessages = true
-	State.TrackPrivateChannels = false
-	State.CacheExpirey = time.Hour * 2
 
+	removeMembersDur := time.Duration(0)
 	if confStateRemoveOfflineMembers.GetBool() {
-		State.RemoveOfflineMembers = true
+		removeMembersDur = time.Hour
 	}
 
-	go State.RunGCWorker()
+	tracker := inmemorytracker.NewInMemoryTracker(inmemorytracker.TrackerConfig{
+		ChannelMessageLimitsF:     StateLimitsF,
+		RemoveOfflineMembersAfter: removeMembersDur,
+		BotMemberID:               common.BotUser.ID,
+	}, int64(totalShardCount))
 
-	eventsystem.DiscordState = State
+	go tracker.RunGCLoop(time.Second)
 
-	// track cache hits/misses
-	go func() {
-		lastHits := int64(0)
-		lastMisses := int64(0)
-		lastEvictionsCache := int64(0)
-		lastEvictionsMembers := int64(0)
+	eventsystem.DiscordState = tracker
 
-		ticker := time.NewTicker(time.Minute)
-		for {
-			<-ticker.C
-
-			stats := State.StateStats()
-			deltaHits := stats.CacheHits - lastHits
-			deltaMisses := stats.CacheMisses - lastMisses
-			lastHits = stats.CacheHits
-			lastMisses = stats.CacheMisses
-
-			metricsCacheHits.Add(float64(deltaHits))
-			metricsCacheMisses.Add(float64(deltaMisses))
-
-			metricsCacheEvictions.Add(float64(stats.UserCachceEvictedTotal - lastEvictionsCache))
-			metricsCacheMemberEvictions.Add(float64(stats.MembersRemovedTotal - lastEvictionsMembers))
-
-			lastEvictionsCache = stats.UserCachceEvictedTotal
-			lastEvictionsMembers = stats.MembersRemovedTotal
-
-			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
-		}
-	}()
+	stateTracker = tracker
+	State = tracker
 }
 
 func setupShardManager() {

@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
@@ -132,8 +132,6 @@ func (d DurationFormatPrecision) FromSeconds(in int64) int64 {
 	}
 
 	panic("We shouldn't be here")
-
-	return 0
 }
 
 func pluralize(val int64) string {
@@ -255,14 +253,14 @@ func AddRole(member *discordgo.Member, role int64, guildID int64) error {
 }
 
 func AddRoleDS(ms *dstate.MemberState, role int64) error {
-	for _, v := range ms.Roles {
+	for _, v := range ms.Member.Roles {
 		if v == role {
 			// Already has the role
 			return nil
 		}
 	}
 
-	return BotSession.GuildMemberRoleAdd(ms.Guild.ID, ms.ID, role)
+	return BotSession.GuildMemberRoleAdd(ms.GuildID, ms.User.ID, role)
 }
 
 func RemoveRole(member *discordgo.Member, role int64, guildID int64) error {
@@ -277,9 +275,9 @@ func RemoveRole(member *discordgo.Member, role int64, guildID int64) error {
 }
 
 func RemoveRoleDS(ms *dstate.MemberState, role int64) error {
-	for _, r := range ms.Roles {
+	for _, r := range ms.Member.Roles {
 		if r == role {
-			return BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, r)
+			return BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, r)
 		}
 	}
 
@@ -287,7 +285,7 @@ func RemoveRoleDS(ms *dstate.MemberState, role int64) error {
 	return nil
 }
 
-var StringPerms = map[int]string{
+var StringPerms = map[int64]string{
 	discordgo.PermissionReadMessages:       "Read Messages",
 	discordgo.PermissionSendMessages:       "Send Messages",
 	discordgo.PermissionSendTTSMessages:    "Send TTS Messages",

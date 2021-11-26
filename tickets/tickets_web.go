@@ -2,18 +2,22 @@ package tickets
 
 import (
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/tickets/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/tickets/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
 )
+
+//go:embed assets/tickets_control_panel.html
+var PageHTML string
 
 type FormData struct {
 	GuildID                            int64
@@ -32,7 +36,7 @@ type FormData struct {
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "tickets_updated_settings", FormatString: "Updated ticket settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../tickets/assets/tickets_control_panel.html", "templates/plugins/tickets_control_panel.html")
+	web.AddHTMLTemplate("tickets_control_panel.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Ticket System",

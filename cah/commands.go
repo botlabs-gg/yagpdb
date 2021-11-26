@@ -3,11 +3,11 @@ package cah
 import (
 	"strings"
 
-	"github.com/jonas747/cardsagainstdiscord"
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/jonas747/cardsagainstdiscord/v2"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/dstate/v4"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,7 +19,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"c"},
 		Description: "Creates a Cards Against Humanity game in this channel, add packs after commands, or * for all packs. (-v for vote mode without a card czar).",
 		Arguments: []*dcmd.ArgDef{
-			{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * for all of them."},
+			{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs separated by space, or * for all of them."},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "v", Help: "Vote mode - players vote instead of having a card czar."},
@@ -48,7 +48,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryFun,
 		Description: "Ends a Cards Against Humanity game that is ongoing in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
-			isAdmin, err := bot.AdminOrPermMS(data.ChannelID, data.GuildData.MS, 0)
+			isAdmin, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.ChannelID, data.GuildData.MS, 0)
 			if err == nil && isAdmin {
 				err = p.Manager.RemoveGame(data.ChannelID)
 			} else {
@@ -105,7 +105,7 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	container := commands.CommandSystem.Root.Sub("cah")
+	container, _ := commands.CommandSystem.Root.Sub("cah")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 	container.Description = "Playt cards against humanity!"
 
@@ -113,7 +113,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())
 	container.AddCommand(cmdKick, cmdKick.GetTrigger())
 	container.AddCommand(cmdPacks, cmdPacks.GetTrigger())
-	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildState) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }

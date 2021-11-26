@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 var Command = &commands.YAGCommand{
@@ -21,17 +22,29 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "a", Help: "from all users"},
 		{Name: "u", Help: "from a specific user", Type: dcmd.UserID, Default: 0},
+		{Name: "channel", Help: "Optional target channel", Type: dcmd.Channel},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
 		targetUser := data.Switch("u").Int64()
 
+		if data.Switch("channel").Value != nil {
+			channel := data.Switch("channel").Value.(*dstate.ChannelState)
+
+			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, channel.ID, data.GuildData.MS, discordgo.PermissionReadMessages)
+			if err != nil {
+				return nil, err
+			} else if !ok {
+				return "You do not have permission to view that channel.", nil
+			}
+		}
+
 		if allUsers || targetUser != 0 {
-			ok, err := bot.AdminOrPermMS(data.ChannelID, data.GuildData.MS, discordgo.PermissionManageMessages)
+			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.ChannelID, data.GuildData.MS, discordgo.PermissionManageMessages)
 			if err != nil {
 				return nil, err
 			} else if !ok && targetUser == 0 {
-				return "You need `Manage Messages` permissions to view all users deleted messages", nil
+				return "You need `Manage Messages` permissions to view all users deleted messages.", nil
 			} else if !ok {
 				return "You need `Manage Messages` permissions to target a specific user other than yourself.", nil
 			}
@@ -40,12 +53,8 @@ var Command = &commands.YAGCommand{
 		resp := "Up to 10 last deleted messages (last hour or 12 hours for premium): \n\n"
 		numFound := 0
 
-		data.GuildData.GS.RLock()
-		defer data.GuildData.GS.RUnlock()
-
-		for i := len(data.GuildData.CS.Messages) - 1; i >= 0 && numFound < 10; i-- {
-			msg := data.GuildData.CS.Messages[i]
-
+		messages := bot.State.GetMessages(data.GuildData.GS.ID, data.GuildData.CS.ID, &dstate.MessagesQuery{Limit: 100, IncludeDeleted: true})
+		for _, msg := range messages {
 			if !msg.Deleted {
 				continue
 			}
@@ -59,17 +68,17 @@ var Command = &commands.YAGCommand{
 			}
 
 			precision := common.DurationPrecisionHours
-			if time.Since(msg.ParsedCreated) < time.Hour {
+			if time.Since(msg.ParsedCreatedAt) < time.Hour {
 				precision = common.DurationPrecisionMinutes
-				if time.Since(msg.ParsedCreated) < time.Minute {
+				if time.Since(msg.ParsedCreatedAt) < time.Minute {
 					precision = common.DurationPrecisionSeconds
 				}
 			}
 
 			// Match found!
-			timeSince := common.HumanizeDuration(precision, time.Since(msg.ParsedCreated))
+			timeSince := common.HumanizeDuration(precision, time.Since(msg.ParsedCreatedAt))
 
-			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s: %s\n\n", timeSince, msg.ParsedCreated.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.ContentWithMentionsReplaced())
+			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s (ID %d): %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.Author.ID, msg.ContentWithMentionsReplaced())
 			numFound++
 		}
 

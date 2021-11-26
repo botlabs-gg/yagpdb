@@ -1,21 +1,25 @@
 package autorole
 
 import (
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
 	"net/http"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/autorole.html
+var PageHTML string
 
 type Form struct {
 	GeneralConfig `valid:"traverse"`
@@ -29,13 +33,12 @@ var (
 )
 
 func (f Form) Save(guildID int64) error {
-	pubsub.Publish("autorole_stop_processing", guildID, nil)
-
 	err := common.SetRedisJson(KeyGeneral(guildID), f.GeneralConfig)
 	if err != nil {
 		return err
 	}
 
+	pubsub.EvictCacheSet(configCache, guildID)
 	return nil
 }
 
@@ -44,7 +47,7 @@ func (f Form) Name() string {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../autorole/assets/autorole.html", "templates/plugins/autorole.html")
+	web.AddHTMLTemplate("autorole/assets/autorole.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Autorole",
@@ -125,7 +128,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	enabledDisabled := ""
 	autoroleRole := "none"
 
-	if role := ag.Role(general.Role); role != nil {
+	if role := ag.GetRole(general.Role); role != nil {
 		templateData["WidgetEnabled"] = true
 		enabledDisabled = web.EnabledDisabledSpanStatus(true)
 		autoroleRole = html.EscapeString(role.Name)

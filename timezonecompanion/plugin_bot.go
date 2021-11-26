@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/timezonecompanion/models"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/timezonecompanion/models"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -83,7 +83,7 @@ func (p *Plugin) AddCommands() {
 			zones := FindZone(parsed.Args[0].Str())
 			// No zones matching user input
 			if len(zones) < 1 {
-				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <http://kevalbhatt.github.io/timezone-picker> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
+				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <https://kevinnovak.github.io/Time-Zone-Picker/> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
 			}
 			// Multiple zones matching user input
 			note := ""
@@ -118,7 +118,7 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 				if !found {
-					out := "More than 1 result, reuse the command with a one of the following:\n" + matches + "\n" + userTZ
+					out := "More than 1 result, reuse the command with one of the following:\n" + matches + "\n" + userTZ
 					return out, nil
 				}
 			} else {
@@ -151,7 +151,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         commands.CategoryTool,
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv", "ttc"},
-		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, its on by default, toggle all channels by giving it `all`",
+		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, toggle all channels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},

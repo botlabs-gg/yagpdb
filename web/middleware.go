@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/web/discorddata"
 	"github.com/gorilla/schema"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dutil"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/web/discorddata"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/miolini/datacounter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -242,7 +242,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-func getGuild(ctx context.Context, guildID int64) (*discordgo.Guild, error) {
+func getGuild(ctx context.Context, guildID int64) (*dstate.GuildSet, error) {
 	guild, err := discorddata.GetFullGuild(guildID)
 	if err != nil {
 		CtxLogger(ctx).WithError(err).Warn("failed getting guild from discord fallback, nothing more we can do...")
@@ -292,7 +292,7 @@ func LoadCoreConfigMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		g := v.(*discordgo.Guild)
+		g := v.(*dstate.GuildSet)
 
 		coreConf := common.GetCoreServerConfCached(g.ID)
 
@@ -362,13 +362,13 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		guildCast := guild.(*discordgo.Guild)
+		guildCast := guild.(*dstate.GuildSet)
 		if len(guildCast.Roles) < 1 { // Not full guild
 			return
 		}
 
-		var highest *discordgo.Role
-		combinedPerms := 0
+		var highest discordgo.Role
+		combinedPerms := int64(0)
 		for _, role := range guildCast.Roles {
 			found := false
 			if role.ID == guildCast.ID {
@@ -391,15 +391,14 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 				combinedPerms |= discordgo.PermissionAll
 			}
 
-			if highest == nil || dutil.IsRoleAbove(role, highest) {
+			if highest.ID == 0 || common.IsRoleAbove(&role, &highest) {
 				highest = role
 			}
-
 		}
 
-		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, highest)
+		ctx = context.WithValue(ctx, common.ContextKeyHighestBotRole, &highest)
 		ctx = context.WithValue(ctx, common.ContextKeyBotPermissions, combinedPerms)
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": highest, "BotPermissions": combinedPerms})
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{"HighestRole": &highest, "BotPermissions": combinedPerms})
 		r = r.WithContext(ctx)
 	})
 }
@@ -693,22 +692,22 @@ func checkControllerError(ctx context.Context, data TemplateData, err error) {
 	if cast, ok := err.(*PublicError); ok {
 		data.AddAlerts(ErrorAlert(cast.Error()))
 	} else {
-		data.AddAlerts(ErrorAlert("An error occured... Contact support if you're having issues."))
+		data.AddAlerts(ErrorAlert("An error occurred... Contact support if you're having issues."))
 	}
 
 	CtxLogger(ctx).WithError(err).Error("Web handler reported an error")
 }
 
-func RequirePermMW(perms ...int) func(http.Handler) http.Handler {
+func RequirePermMW(perms ...int64) func(http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			permsInterface := ctx.Value(common.ContextKeyBotPermissions)
-			currentPerms := 0
+			currentPerms := int64(0)
 			if permsInterface == nil {
 				logger.Warn("Requires perms but no permsinterface available")
 			} else {
-				currentPerms = permsInterface.(int)
+				currentPerms = permsInterface.(int64)
 			}
 
 			has := ""
@@ -770,7 +769,7 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
 			} else if m != nil {
 				// calculate permissions
-				perms := discordgo.MemberPermissions(guild, nil, m)
+				perms := dstate.CalculatePermissions(&guild.GuildState, guild.Roles, nil, m.User.ID, m.Roles)
 
 				ctx = context.WithValue(r.Context(), common.ContextKeyUserMember, m)
 				ctx = context.WithValue(ctx, common.ContextKeyMemberPermissions, perms)

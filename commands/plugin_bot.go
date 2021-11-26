@@ -10,12 +10,12 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 var (
@@ -46,7 +46,7 @@ func (p *Plugin) BotInit() {
 
 }
 
-func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (ms *dstate.MemberState, err error) {
+func (p *Plugin) customUsernameSearchFunc(tracker dstate.StateTracker, gs *dstate.GuildSet, query string) (ms *dstate.MemberState, err error) {
 	logger.Info("Searching by username: ", query)
 	members, err := bot.BatchMemberJobManager.SearchByUsername(gs.ID, query)
 	if err != nil {
@@ -85,7 +85,7 @@ func (p *Plugin) customUsernameSearchFunc(gs *dstate.GuildState, query string) (
 	}
 
 	if len(fullMatches) == 1 {
-		return dstate.MSFromDGoMember(gs, fullMatches[0]), nil
+		return dstate.MemberStateFromMember(fullMatches[0]), nil
 	}
 
 	if len(fullMatches) == 0 && len(partialMatches) == 0 {
@@ -167,10 +167,8 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			return resp, err
 		}
 		guildID := int64(0)
-		var cs *dstate.ChannelState
 		if data.GuildData != nil {
 			guildID = data.GuildData.GS.ID
-			cs = data.GuildData.CS
 		}
 
 		// Lock the command for execution
@@ -185,30 +183,30 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)
 
 		// Check if the user can execute the command
-		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data, cs)
+		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
 		if err != nil {
 			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
 		}
 
-		if resp != "" {
-			if resp == ReasonCooldown {
-				switch data.TriggerType {
-				case dcmd.TriggerTypeSlashCommands:
-					common.BotSession.CreateFollowupMessage(data.SlashCommandTriggerData.Interaction.ApplicationID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.WebhookParams{
-						Flags:   64,
-						Content: "Command is on cooldown.",
-					})
-				default:
-					if (data.GuildData != nil && bot.BotProbablyHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions)) || data.GuildData.GS == nil {
-						common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
-					}
+		if resp != nil {
+
+			if resp.Type == ReasonCooldown && data.TriggerType != dcmd.TriggerTypeSlashCommands && data.GuildData != nil {
+				if hasPerms, _ := bot.BotHasPermissionGS(data.GuildData.GS, data.GuildData.CS.ID, discordgo.PermissionAddReactions); hasPerms {
+					common.BotSession.MessageReactionAdd(data.ChannelID, data.TraditionalTriggerData.Message.ID, "⏳")
+					return nil, nil
 				}
 			}
 
-			return &EphemeralOrNone{
-				Content: "You're unable to run this command: " + resp,
-			}, nil
-
+			switch resp.Type {
+			case ReasonBotMissingPerms:
+				return &EphemeralOrGuild{
+					Content: "You're unable to run this command:\n> " + resp.Message,
+				}, nil
+			default:
+				return &EphemeralOrNone{
+					Content: "You're unable to run this command:\n> " + resp.Message,
+				}, nil
+			}
 		}
 
 		if !canExecute {
@@ -378,7 +376,7 @@ var cmdPrefix = &YAGCommand{
 	Description: "Shows command prefix of the current server, or the specified server",
 	CmdCategory: CategoryTool,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "Server-ID", Type: dcmd.Int, Default: 0},
+		{Name: "Server-ID", Type: dcmd.BigInt, Default: 0},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {

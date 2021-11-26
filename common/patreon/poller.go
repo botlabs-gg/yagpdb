@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common/patreon/patreonapi"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
@@ -186,7 +186,7 @@ func (p *Poller) Poll() {
 				patron.Name = user.FirstName
 			}
 
-			if user.SocialConnections.Discord != nil && user.SocialConnections.Discord.UserID != "" {
+			if user.SocialConnections != nil && user.SocialConnections.Discord != nil && user.SocialConnections.Discord.UserID != "" {
 				discordID, _ := strconv.ParseInt(user.SocialConnections.Discord.UserID, 10, 64)
 				patron.DiscordID = discordID
 			}

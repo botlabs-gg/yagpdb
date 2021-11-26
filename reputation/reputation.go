@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/reputation/models"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/reputation/models"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -163,7 +163,7 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return nil
 	}
 
-	ok, err := CheckSetCooldown(conf, sender.ID)
+	ok, err := CheckSetCooldown(conf, sender.User.ID)
 	if err != nil || !ok {
 		if err == nil {
 			err = ErrCooldown
@@ -171,24 +171,22 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return
 	}
 
-	err = insertUpdateUserRep(ctx, guildID, receiver.ID, amount)
+	err = insertUpdateUserRep(ctx, guildID, receiver.User.ID, amount)
 	if err != nil {
 		// Clear the cooldown since it failed updating the rep
-		ClearCooldown(guildID, sender.ID)
+		ClearCooldown(guildID, sender.User.ID)
 		return
 	}
 
-	receiver.Guild.RLock()
-	defer receiver.Guild.RUnlock()
-	receiverUsername := receiver.Username + "#" + receiver.StrDiscriminator()
-	senderUsername := sender.Username + "#" + sender.StrDiscriminator()
+	receiverUsername := receiver.User.Username + "#" + receiver.User.Discriminator
+	senderUsername := sender.User.Username + "#" + sender.User.Discriminator
 
 	// Add the log element
 	entry := &models.ReputationLog{
 		GuildID:          guildID,
-		SenderID:         sender.ID,
+		SenderID:         sender.User.ID,
 		SenderUsername:   senderUsername,
-		ReceiverID:       receiver.ID,
+		ReceiverID:       receiver.User.ID,
 		ReceiverUsername: receiverUsername,
 		SetFixedAmount:   false,
 		Amount:           amount,
@@ -218,38 +216,38 @@ DO UPDATE SET points = reputation_users.points + $4;
 // Returns a user error if the sender can not modify the rep of receiver
 // Admins are always able to modify the rep of everyone
 func CanModifyRep(conf *models.ReputationConfig, sender, receiver *dstate.MemberState) error {
-	if common.ContainsInt64SliceOneOf(sender.Roles, conf.AdminRoles) {
+	if common.ContainsInt64SliceOneOf(sender.Member.Roles, conf.AdminRoles) {
 		return nil
 	}
 
-	if len(conf.RequiredGiveRoles) > 0 && !common.ContainsInt64SliceOneOf(sender.Roles, conf.RequiredGiveRoles) {
+	if len(conf.RequiredGiveRoles) > 0 && !common.ContainsInt64SliceOneOf(sender.Member.Roles, conf.RequiredGiveRoles) {
 		return ErrMissingRequiredGiveRole
 	}
 
-	if len(conf.RequiredReceiveRoles) > 0 && !common.ContainsInt64SliceOneOf(receiver.Roles, conf.RequiredReceiveRoles) {
+	if len(conf.RequiredReceiveRoles) > 0 && !common.ContainsInt64SliceOneOf(receiver.Member.Roles, conf.RequiredReceiveRoles) {
 		return ErrMissingRequiredReceiveRole
 	}
 
-	if common.ContainsInt64SliceOneOf(sender.Roles, conf.BlacklistedGiveRoles) {
+	if common.ContainsInt64SliceOneOf(sender.Member.Roles, conf.BlacklistedGiveRoles) {
 		return ErrBlacklistedGive
 	}
 
-	if common.ContainsInt64SliceOneOf(receiver.Roles, conf.BlacklistedReceiveRoles) {
+	if common.ContainsInt64SliceOneOf(receiver.Member.Roles, conf.BlacklistedReceiveRoles) {
 		return ErrBlacklistedReceive
 	}
 
 	return nil
 }
 
-func IsAdmin(gs *dstate.GuildState, member *dstate.MemberState, config *models.ReputationConfig) bool {
+func IsAdmin(gs *dstate.GuildSet, member *dstate.MemberState, config *models.ReputationConfig) bool {
 
-	memberPerms, _ := gs.MemberPermissions(false, gs.ID, member.ID)
+	memberPerms, _ := gs.GetMemberPermissions(0, member.User.ID, member.Member.Roles)
 
 	if memberPerms&discordgo.PermissionManageServer != 0 {
 		return true
 	}
 
-	if common.ContainsInt64SliceOneOf(member.Roles, config.AdminRoles) {
+	if common.ContainsInt64SliceOneOf(member.Member.Roles, config.AdminRoles) {
 		return true
 	}
 
@@ -343,7 +341,7 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 		tmp, err = bot.GetMembers(guildID, userIDs...)
 		if tmp != nil {
 			for _, v := range tmp {
-				members = append(members, v.DGoCopy())
+				members = append(members, v.DgoMember())
 			}
 		}
 	} else {

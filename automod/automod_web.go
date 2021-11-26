@@ -2,6 +2,7 @@ package automod
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -11,20 +12,23 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/botlabs-gg/yagpdb/automod/models"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/automod.html
+var PageHTML string
 
 type CtxKey int
 
@@ -49,7 +53,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../automod/assets/automod.html", "templates/plugins/automod.html")
+	web.AddHTMLTemplate("automod/assets/automod.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Automoderator v2",
 		URL:  "automod",
@@ -205,7 +209,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 
 	err = list.InsertG(r.Context(), boil.Infer())
 	if err == nil {
-		bot.EvictGSCache(g.ID, CacheKeyLists)
+		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewList))
 	}
 	return tmpl, err
@@ -228,7 +232,7 @@ func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Requ
 	list.Content = strings.Fields(data.Content)
 	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
 	if err == nil {
-		bot.EvictGSCache(g.ID, CacheKeyLists)
+		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedList))
 	}
 	return tmpl, err
@@ -245,7 +249,7 @@ func (p *Plugin) handlePostAutomodDeleteList(w http.ResponseWriter, r *http.Requ
 
 	_, err = list.DeleteG(r.Context())
 	if err == nil {
-		bot.EvictGSCache(g.ID, CacheKeyLists)
+		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedList))
 	}
 	return tmpl, err
@@ -390,7 +394,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 		return tmpl, err
 	}
 
-	bot.EvictGSCache(g.ID, CacheKeyRulesets)
+	pubsub.EvictCacheSet(cachedRulesets, g.ID)
 	featureflags.MarkGuildDirty(g.ID)
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedRuleset))
 
@@ -413,7 +417,7 @@ func (p *Plugin) handlePostAutomodDeleteRuleset(w http.ResponseWriter, r *http.R
 	delete(tmpl, "CurrentRuleset")
 
 	if rows > 0 {
-		bot.EvictGSCache(g.ID, CacheKeyRulesets)
+		pubsub.EvictCacheSet(cachedRulesets, g.ID)
 		featureflags.MarkGuildDirty(g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedRuleset))
 	}
@@ -523,7 +527,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 
 	WebLoadRuleSettings(r, tmpl, ruleSet)
 
-	bot.EvictGSCache(g.ID, CacheKeyRulesets)
+	pubsub.EvictCacheSet(cachedRulesets, g.ID)
 	featureflags.MarkGuildDirty(g.ID)
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedRule))
 
@@ -599,7 +603,7 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 	return
 }
 
-func ReadRuleRowData(guild *discordgo.Guild, tmpl web.TemplateData, rawData []RuleRowData, form url.Values, namePrefix string) (result []*models.AutomodRuleDatum, validationOK bool, err error) {
+func ReadRuleRowData(guild *dstate.GuildSet, tmpl web.TemplateData, rawData []RuleRowData, form url.Values, namePrefix string) (result []*models.AutomodRuleDatum, validationOK bool, err error) {
 	parsedSettings := make([]*ParsedPart, 0, len(rawData))
 
 	for i, entry := range rawData {
@@ -724,7 +728,7 @@ func (p *Plugin) handlePostAutomodDeleteRule(w http.ResponseWriter, r *http.Requ
 			_, err := v.DeleteG(r.Context())
 			if err == nil {
 				ruleset.R.RulesetAutomodRules = append(ruleset.R.RulesetAutomodRules[:k], ruleset.R.RulesetAutomodRules[k+1:]...)
-				bot.EvictGSCache(g.ID, CacheKeyRulesets)
+				pubsub.EvictCacheSet(cachedRulesets, g.ID)
 				featureflags.MarkGuildDirty(g.ID)
 				go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedRule))
 			}

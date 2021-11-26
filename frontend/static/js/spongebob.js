@@ -231,8 +231,10 @@ function updateSelectedMenuItem(pathname) {
 	}
 }
 
-function addAlert(kind, msg) {
-	$("<div/>").addClass("row").append(
+function addAlert(kind, msg, id) {
+	const alert = $(`<div/>`);
+	if (id !== undefined) alert.prop("id", id)
+	alert.addClass("row").append(
 		$("<div/>").addClass("col-lg-12").append(
 			$("<div/>").addClass("alert alert-" + kind).text(msg)
 		)
@@ -341,15 +343,15 @@ function initPlugins(partial) {
 var discordPermissions = {
 	read: {
 		name: "Read Messages",
-		perm: 0x400
+		perm: BigInt(0x400),
 	},
 	send: {
 		name: "Send Messages",
-		perm: 0x800
+		perm: BigInt(0x800),
 	},
 	embed: {
 		name: "Embed Links",
-		perm: 0x4000
+		perm: BigInt(0x4000),
 	},
 }
 var cachedChannelPerms = {};
@@ -420,7 +422,7 @@ function validateChannelDropdown(dropdown, currentElem, channel, perms) {
 				return;
 			}
 
-			var channelPerms = parseInt(this.responseText);
+			var channelPerms = BigInt(this.responseText);
 			cachedChannelPerms[channel].perms = channelPerms;
 			cachedChannelPerms[channel].lastChecked = Date.now();
 

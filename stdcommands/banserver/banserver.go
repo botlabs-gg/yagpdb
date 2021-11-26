@@ -1,10 +1,10 @@
 package banserver
 
 import (
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/stdcommands/util"
+	"github.com/jonas747/dcmd/v4"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "server", Type: dcmd.Int},
+		{Name: "server", Type: dcmd.BigInt},
 	},
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		err := common.BotSession.GuildLeave(data.Args[0].Int64())

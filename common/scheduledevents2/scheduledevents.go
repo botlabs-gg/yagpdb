@@ -20,10 +20,10 @@ import (
 	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/jonas747/discordgo/v2"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -219,7 +219,7 @@ func (se *ScheduledEvents) checkShouldSkipRemove(id int64, guildID int64) (skip 
 	}
 
 	// make sure the guild is available
-	gs := bot.State.Guild(true, guildID)
+	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
 		onGuild, err := common.BotIsOnGuild(guildID)
 		if err != nil {
@@ -232,11 +232,7 @@ func (se *ScheduledEvents) checkShouldSkipRemove(id int64, guildID int64) (skip 
 		return true, false
 	}
 
-	gs.RLock()
-	unavailable := gs.Guild.Unavailable
-	gs.RUnlock()
-
-	if unavailable {
+	if !gs.Available {
 		// wait until the guild is available before handling this event
 		return true, false
 	}

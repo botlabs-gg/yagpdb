@@ -4,9 +4,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/automod/models"
+	"github.com/botlabs-gg/yagpdb/automod/models"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 // maps rule part indentifiers to actual condition types
@@ -153,7 +153,7 @@ type MergeableRulePart interface {
 type TriggeredRuleData struct {
 	// Should always be available
 	Plugin  *Plugin
-	GS      *dstate.GuildState
+	GS      *dstate.GuildSet
 	MS      *dstate.MemberState
 	Ruleset *ParsedRuleset
 
@@ -208,11 +208,17 @@ func (t *TriggeredRuleData) ConstructReason(includePrevious bool) string {
 	return builder.String()
 }
 
+type TriggerContext struct {
+	GS   *dstate.GuildSet
+	MS   *dstate.MemberState
+	Data interface{}
+}
+
 // MessageCondition is a active condition that needs to run on a message
 type MessageTrigger interface {
 	RulePart
 
-	CheckMessage(ms *dstate.MemberState, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string, data interface{}) (isAffected bool, err error)
+	CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (isAffected bool, err error)
 }
 
 // ViolationListener is a trigger that gets triggered on a violation
@@ -226,19 +232,19 @@ type ViolationListener interface {
 type NicknameListener interface {
 	RulePart
 
-	CheckNickname(ms *dstate.MemberState, data interface{}) (isAffected bool, err error)
+	CheckNickname(triggerCtx *TriggerContext) (isAffected bool, err error)
 }
 
 // UsernameListener is a trigger that gets triggered on a nickname change
 type UsernameListener interface {
 	RulePart
 
-	CheckUsername(ms *dstate.MemberState, data interface{}) (isAffected bool, err error)
+	CheckUsername(triggerCtx *TriggerContext) (isAffected bool, err error)
 }
 
 // JoinListener is triggers that does stuff when members joins
 type JoinListener interface {
 	RulePart
 
-	CheckJoin(ms *dstate.MemberState, data interface{}) (isAffected bool, err error)
+	CheckJoin(triggerCtx *TriggerContext) (isAffected bool, err error)
 }

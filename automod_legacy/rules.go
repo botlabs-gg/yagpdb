@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/safebrowsing"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -27,7 +28,7 @@ const (
 
 type Rule interface {
 	Check(m *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error)
-	ShouldIgnore(msg *discordgo.Message, m *dstate.MemberState) bool
+	ShouldIgnore(cs *dstate.ChannelState, msg *discordgo.Message, m *dstate.MemberState) bool
 	GetMuteDuration() int
 }
 
@@ -93,19 +94,19 @@ func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 }
 
 // Returns true if this rule should be ignored
-func (r BaseRule) ShouldIgnore(evt *discordgo.Message, ms *dstate.MemberState) bool {
+func (r BaseRule) ShouldIgnore(cs *dstate.ChannelState, evt *discordgo.Message, ms *dstate.MemberState) bool {
 	if !r.Enabled {
 		return true
 	}
 
-	strC := discordgo.StrID(evt.ChannelID)
+	strC := discordgo.StrID(common.ChannelOrThreadParentID(cs))
 	for _, ignoreChannel := range r.IgnoreChannels {
 		if ignoreChannel == strC {
 			return true
 		}
 	}
 
-	for _, role := range ms.Roles {
+	for _, role := range ms.Member.Roles {
 		if r.IgnoreRoleInt() == role {
 			return true
 		}
@@ -129,7 +130,7 @@ func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del b
 
 	del = true
 
-	punishment, err = s.PushViolation(KeyViolations(cs.Guild.ID, evt.Author.ID, "spam"))
+	punishment, err = s.PushViolation(KeyViolations(cs.GuildID, evt.Author.ID, "spam"))
 	if err != nil {
 		return
 	}
@@ -140,23 +141,22 @@ func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del b
 }
 
 func (s *SpamRule) FindSpam(evt *discordgo.Message, cs *dstate.ChannelState) bool {
-	cs.Owner.RLock()
-	defer cs.Owner.RUnlock()
-
 	within := time.Duration(s.Within) * time.Second
 	now := time.Now()
 
 	amount := 1
 
-	for i := len(cs.Messages) - 1; i >= 0; i-- {
-		cMsg := cs.Messages[i]
+	messages := bot.State.GetMessages(cs.GuildID, cs.ID, &dstate.MessagesQuery{
+		Limit: 1000,
+	})
 
-		age := now.Sub(cMsg.ParsedCreated)
+	for _, v := range messages {
+		age := now.Sub(v.ParsedCreatedAt)
 		if age > within {
 			break
 		}
 
-		if cMsg.Author.ID == evt.Author.ID && evt.ID != cMsg.ID {
+		if v.Author.ID == evt.Author.ID && evt.ID != v.ID {
 			amount++
 		}
 	}
@@ -169,13 +169,13 @@ type InviteRule struct {
 }
 
 func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
-	if !CheckMessageForBadInvites(evt.ContentWithMentionsReplaced(), cs.Guild.ID) {
+	if !CheckMessageForBadInvites(evt.ContentWithMentionsReplaced(), cs.GuildID) {
 		return
 	}
 
 	del = true
 
-	punishment, err = i.PushViolation(KeyViolations(cs.Guild.ID, evt.Author.ID, "invite"))
+	punishment, err = i.PushViolation(KeyViolations(cs.GuildID, evt.Author.ID, "invite"))
 	if err != nil {
 		return
 	}
@@ -251,7 +251,7 @@ func (m *MentionRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (de
 
 	del = true
 
-	punishment, err = m.PushViolation(KeyViolations(cs.Guild.ID, evt.Author.ID, "mention"))
+	punishment, err = m.PushViolation(KeyViolations(cs.GuildID, evt.Author.ID, "mention"))
 	if err != nil {
 		return
 	}
@@ -270,7 +270,7 @@ func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 	}
 
 	del = true
-	punishment, err = l.PushViolation(KeyViolations(cs.Guild.ID, evt.Author.ID, "links"))
+	punishment, err = l.PushViolation(KeyViolations(cs.GuildID, evt.Author.ID, "links"))
 	if err != nil {
 		return
 	}
@@ -310,7 +310,7 @@ func (w *WordsRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 
 	// Fonud a bad word!
 	del = true
-	punishment, err = w.PushViolation(KeyViolations(cs.Guild.ID, evt.Author.ID, "badword"))
+	punishment, err = w.PushViolation(KeyViolations(cs.GuildID, evt.Author.ID, "badword"))
 
 	msg = fmt.Sprintf("The word `%s` is banned, watch your language.", word)
 	return
@@ -368,7 +368,7 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 		return
 	}
 
-	punishment, err = s.PushViolation(KeyViolations(cs.Guild.ID, evt.Author.ID, "badlink"))
+	punishment, err = s.PushViolation(KeyViolations(cs.GuildID, evt.Author.ID, "badlink"))
 	extraInfo := ""
 	if threatList != "" {
 		extraInfo = "(sb: " + threatList + ")"

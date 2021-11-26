@@ -8,12 +8,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 type DurationArg struct {
@@ -33,12 +32,12 @@ func (d *DurationArg) Matches(def *dcmd.ArgDef, part string) bool {
 		return false
 	}
 
-	_, err := ParseDuration(part)
+	_, err := common.ParseDuration(part)
 	return err == nil
 }
 
 func (d *DurationArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
-	dur, err := ParseDuration(part)
+	dur, err := common.ParseDuration(part)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +58,7 @@ func (d *DurationArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, op
 	if err != nil {
 		return nil, err
 	}
-	dur, err := ParseDuration(s)
+	dur, err := common.ParseDuration(s)
 	if err != nil {
 		return nil, err
 	}
@@ -81,86 +80,6 @@ func (d *DurationArg) HelpName() string {
 
 func (d *DurationArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {
 	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
-}
-
-// Parses a time string like 1day3h
-func ParseDuration(str string) (time.Duration, error) {
-	var dur time.Duration
-
-	currentNumBuf := ""
-	currentModifierBuf := ""
-
-	// Parse the time
-	for _, v := range str {
-		// Ignore whitespace
-		if unicode.Is(unicode.White_Space, v) {
-			continue
-		}
-
-		if unicode.IsNumber(v) {
-			// If we reached a number and the modifier was also set, parse the last duration component before starting a new one
-			if currentModifierBuf != "" {
-				if currentNumBuf == "" {
-					currentNumBuf = "1"
-				}
-				d, err := parseDurationComponent(currentNumBuf, currentModifierBuf)
-				if err != nil {
-					return d, err
-				}
-
-				dur += d
-
-				currentNumBuf = ""
-				currentModifierBuf = ""
-			}
-
-			currentNumBuf += string(v)
-
-		} else {
-			currentModifierBuf += string(v)
-		}
-	}
-
-	if currentNumBuf != "" {
-		d, err := parseDurationComponent(currentNumBuf, currentModifierBuf)
-		if err != nil {
-			return dur, errors.WrapIf(err, "not a duration")
-		}
-
-		dur += d
-	}
-
-	return dur, nil
-}
-
-func parseDurationComponent(numStr, modifierStr string) (time.Duration, error) {
-	parsedNum, err := strconv.ParseInt(numStr, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	parsedDur := time.Duration(parsedNum)
-
-	if strings.HasPrefix(modifierStr, "s") {
-		parsedDur = parsedDur * time.Second
-	} else if modifierStr == "" || (strings.HasPrefix(modifierStr, "m") && (len(modifierStr) < 2 || modifierStr[1] != 'o')) {
-		parsedDur = parsedDur * time.Minute
-	} else if strings.HasPrefix(modifierStr, "h") {
-		parsedDur = parsedDur * time.Hour
-	} else if strings.HasPrefix(modifierStr, "d") {
-		parsedDur = parsedDur * time.Hour * 24
-	} else if strings.HasPrefix(modifierStr, "w") {
-		parsedDur = parsedDur * time.Hour * 24 * 7
-	} else if strings.HasPrefix(modifierStr, "mo") {
-		parsedDur = parsedDur * time.Hour * 24 * 30
-	} else if strings.HasPrefix(modifierStr, "y") {
-		parsedDur = parsedDur * time.Hour * 24 * 365
-	} else {
-		return parsedDur, errors.New("couldn't figure out what '" + numStr + modifierStr + "` was")
-	}
-
-	return parsedDur, nil
-
 }
 
 type DurationOutOfRangeError struct {
@@ -232,10 +151,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 	return func(data *dcmd.Data) (interface{}, error) {
 		// Only show stuff if atleast 1 of the commands in the container is enabled
 		if data.GuildData != nil {
-			data.GuildData.GS.RLock()
 			cParentID := data.GuildData.CS.ParentID
-			data.GuildData.GS.RUnlock()
-
 			ms := data.GuildData.MS
 
 			channelOverrides, err := GetOverridesForChannel(data.ChannelID, cParentID, data.GuildData.GS.ID)
@@ -257,12 +173,12 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 					continue
 				}
 
-				if len(settings.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(settings.RequiredRoles, ms.Roles) {
+				if len(settings.RequiredRoles) > 0 && !common.ContainsInt64SliceOneOf(settings.RequiredRoles, ms.Member.Roles) {
 					// missing required role
 					continue
 				}
 
-				if len(settings.IgnoreRoles) > 0 && common.ContainsInt64SliceOneOf(settings.IgnoreRoles, ms.Roles) {
+				if len(settings.IgnoreRoles) > 0 && common.ContainsInt64SliceOneOf(settings.IgnoreRoles, ms.Member.Roles) {
 					// has ignored role
 					continue
 				}
@@ -319,7 +235,7 @@ func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.
 		return nil, dcmd.NewSimpleUserError("Invalid mention or id")
 	}
 
-	member, err := bot.GetMemberJoinedAt(data.GuildData.GS.ID, id)
+	member, err := bot.GetMember(data.GuildData.GS.ID, id)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember, discordgo.ErrCodeUnknownUser) {
 			return nil, dcmd.NewSimpleUserError("User not a member of the server")
@@ -337,7 +253,7 @@ func (ma *MemberArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, opt
 		return nil, err
 	}
 
-	return dstate.MSFromDGoMember(data.GuildData.GS, member), nil
+	return dstate.MemberStateFromMember(member), nil
 }
 
 func (ma *MemberArg) ExtractID(part string, data *dcmd.Data) int64 {
@@ -489,15 +405,11 @@ func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Da
 		idName = ""
 	}
 
-	roles := data.GuildData.GS.Guild.Roles
-	var role discordgo.Role
-	for _, v := range roles {
+	for _, v := range data.GuildData.GS.Roles {
 		if v.ID == id {
-			role = *v
-			return &role, nil
+			return &v, nil
 		} else if v.Name == idName {
-			role = *v
-			return &role, nil
+			return &v, nil
 		}
 	}
 

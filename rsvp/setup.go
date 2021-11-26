@@ -10,13 +10,14 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/jonas747/yagpdb/rsvp/models"
-	"github.com/jonas747/yagpdb/timezonecompanion"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/rsvp/models"
+	"github.com/botlabs-gg/yagpdb/timezonecompanion"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -51,6 +52,13 @@ type SetupSession struct {
 	LastAction time.Time
 	stopCH     chan bool
 	stopped    bool
+
+	// the following fields are only set if 1) sendInitialMessage was called
+	// with interaction data and 2) the interaction response was sent
+	// successfully
+
+	followupMessageID int64
+	interactionToken  string
 }
 
 func (s *SetupSession) handleMessage(m *discordgo.Message) {
@@ -88,7 +96,7 @@ func (s *SetupSession) handleMessage(m *discordgo.Message) {
 func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 	targetChannel := int64(0)
 
-	gs := bot.State.Guild(true, m.GuildID)
+	gs := bot.State.GetGuild(m.GuildID)
 	if gs == nil {
 		logger.WithField("guild", m.GuildID).Error("Guild not found")
 		return
@@ -101,27 +109,25 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 		// channel mention
 		idStr := m.Content[2 : len(m.Content)-1]
 		if parsed, err := strconv.ParseInt(idStr, 10, 64); err == nil {
-			if gs.Channel(true, parsed) != nil {
+			if gs.GetChannel(parsed) != nil {
 				targetChannel = parsed
 			}
 		}
 	} else {
 		// search by name
 		nameSearch := strings.ReplaceAll(m.Content, " ", "-")
-		gs.RLock()
 		for _, v := range gs.Channels {
 			if strings.EqualFold(v.Name, nameSearch) {
 				targetChannel = v.ID
 				break
 			}
 		}
-		gs.RUnlock()
 	}
 
 	if targetChannel == 0 {
 		// search by ID
 		if parsed, err := strconv.ParseInt(m.Content, 10, 64); err == nil {
-			if gs.Channel(true, parsed) != nil {
+			if gs.GetChannel(parsed) != nil {
 				targetChannel = parsed
 			}
 		}
@@ -132,7 +138,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 		return
 	}
 
-	hasPerms, err := bot.AdminOrPermMS(targetChannel, dstate.MSFromDGoMember(gs, m.Member), discordgo.PermissionSendMessages)
+	hasPerms, err := bot.AdminOrPermMS(m.GuildID, targetChannel, dstate.MemberStateFromMember(m.Member), discordgo.PermissionSendMessages)
 	if err != nil {
 		s.sendMessage("Failed retrieving your pems, check with bot owner")
 		logger.WithError(err).WithField("guild", gs.ID).Error("failed calculating permissions")
@@ -289,6 +295,10 @@ func (s *SetupSession) Finish() {
 	}
 
 	common.BotSession.ChannelMessagesBulkDelete(s.SetupChannel, toDelete)
+	if s.followupMessageID != 0 {
+		common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, s.interactionToken)
+		common.BotSession.DeleteFollowupMessage(common.BotApplication.ID, s.interactionToken, s.followupMessageID)
+	}
 }
 
 func (s *SetupSession) abortError(msg string, err error) {
@@ -352,6 +362,23 @@ func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
 		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
 	} else {
 		s.setupMessages = append(s.setupMessages, m.ID)
+	}
+}
+
+func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...interface{}) {
+	send := &discordgo.MessageSend{Content: "[RSVP Event Setup]: " + fmt.Sprintf(msgf, args...)}
+	msgs, err := data.SendFollowupMessage(send, discordgo.AllowedMentions{})
+	if err != nil {
+		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
+		return
+	}
+
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		s.followupMessageID = msgs[0].ID
+		s.interactionToken = data.SlashCommandTriggerData.Interaction.Token
+	default:
+		s.setupMessages = append(s.setupMessages, msgs[0].ID)
 	}
 }
 

@@ -4,11 +4,11 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/dstate/v2"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/soundboard/models"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/soundboard/models"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/dstate/v4"
 )
 
 func (p *Plugin) AddCommands() {
@@ -46,7 +46,7 @@ func (p *Plugin) AddCommands() {
 
 				if sound == nil {
 					return "Sound not found, " + ListSounds(sounds, member), nil
-				} else if !CanPlaySound(sound, member.Roles) {
+				} else if !CanPlaySound(sound, member.Member.Roles) {
 					return "You can't play that sound, either you have a blacklisted role or missing a required role for this sound", nil
 				}
 
@@ -64,11 +64,8 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 
-				data.GuildData.GS.RLock()
-				defer data.GuildData.GS.RUnlock()
-
 				var voiceChannel int64
-				vs := data.GuildData.GS.VoiceState(false, data.Author.ID)
+				vs := data.GuildData.GS.GetVoiceState(data.Author.ID)
 				if vs != nil {
 					voiceChannel = vs.ChannelID
 				}
@@ -109,7 +106,7 @@ func ListSounds(sounds []*models.SoundboardSound, ms *dstate.MemberState) string
 	restricted := ""
 
 	for _, sound := range sounds {
-		if CanPlaySound(sound, ms.Roles) {
+		if CanPlaySound(sound, ms.Member.Roles) {
 			canPlay += "`" + sound.Name + "`, "
 		} else {
 			restricted += "`" + sound.Name + "`, "

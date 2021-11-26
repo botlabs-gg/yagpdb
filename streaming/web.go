@@ -2,20 +2,24 @@ package streaming
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
 	"net/http"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/jonas747/discordgo/v2"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/streaming.html
+var PageHTML string
 
 type ConextKey int
 
@@ -26,7 +30,7 @@ const (
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "streaming_settings_updated", FormatString: "Updated streaming settings"})
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../streaming/assets/streaming.html", "templates/plugins/streaming.html")
+	web.AddHTMLTemplate("streaming/assets/streaming.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Streaming",
 		URL:  "streaming",
@@ -129,7 +133,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	roleStr := "none / unknown"
 	indicatorRole := ""
-	if role := ag.Role(config.GiveRole); role != nil {
+	if role := ag.GetRole(config.GiveRole); role != nil {
 		roleStr = html.EscapeString(role.Name)
 		indicatorRole = web.Indicator(true)
 	} else {
@@ -139,7 +143,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	indicatorMessage := ""
 	channelStr := "none / unknown"
 
-	if channel := ag.Channel(config.AnnounceChannel); channel != nil {
+	if channel := ag.GetChannel(config.AnnounceChannel); channel != nil {
 		indicatorMessage = web.Indicator(true)
 		channelStr = html.EscapeString(channel.Name)
 	} else {

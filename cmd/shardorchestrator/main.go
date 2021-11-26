@@ -8,44 +8,37 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/dshardorchestrator/v2/orchestrator"
-	"github.com/jonas747/dshardorchestrator/v2/orchestrator/rest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/jonas747/dshardorchestrator/v3"
+	"github.com/jonas747/dshardorchestrator/v3/orchestrator"
+	"github.com/jonas747/dshardorchestrator/v3/orchestrator/rest"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 
-	_ "github.com/jonas747/yagpdb/bot" // register the custom orchestrator events
+	_ "github.com/botlabs-gg/yagpdb/bot" // register the custom orchestrator events
 )
 
-var (
-	confTotalShards             = config.RegisterOption("yagpdb.sharding.total_shards", "Total number shards", 0)
-	confActiveShards            = config.RegisterOption("yagpdb.sharding.active_shards", "Shards active on this hoste, ex: '1-10,25'", "")
-	confLargeBotShardingEnabled = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
-	confBucketsPerNode          = config.RegisterOption("yagpdb.shard.buckets_per_node", "Number of buckets per node", 8)
-	confMaxShardsPerNode        = config.RegisterOption("yagpdb.shard.shards_per_node", "Max shards per node", 32)
-	confShardBucketSize         = config.RegisterOption("yagpdb.shard.shard_bucket_size", "Shards per bucket", 2)
-)
+var ()
 
 func main() {
 	common.RedisPoolSize = 2
-	err := common.CoreInit()
+	err := common.CoreInit(true)
 	if err != nil {
 		panic("failed initializing: " + err.Error())
 	}
 
 	activeShards := ReadActiveShards()
-	totalShards := confTotalShards.GetInt()
+	totalShards := common.ConfTotalShards.GetInt()
 	if totalShards < 1 {
 		panic("YAGPDB_SHARDING_TOTAL_SHARDS needs to be set to a resonable number of total shards")
 	}
 
-	if len(activeShards) < 0 {
+	if len(activeShards) < 1 {
 		panic("YAGPDB_SHARDING_ACTIVE_SHARDS is not set, needs to be set to the shards that should be active on this host, ex: '1-49,60-99'")
 	}
 
 	logrus.Info("Running shards (", len(activeShards), "): ", activeShards)
+	logrus.Info("Large bot sharding: ", common.ConfLargeBotShardingEnabled.GetBool())
 
 	orch := orchestrator.NewStandardOrchestrator(common.BotSession)
 	orch.FixedTotalShardCount = totalShards
@@ -58,12 +51,15 @@ func main() {
 		VersionArgs:    []string{"-version"},
 	}
 	orch.Logger = &dshardorchestrator.StdLogger{
-		Level: dshardorchestrator.LogWarning,
+		Level: dshardorchestrator.LogInfo,
 	}
 
-	if confLargeBotShardingEnabled.GetBool() {
-		orch.ShardBucketSize = confShardBucketSize.GetInt()
-		orch.BucketsPerNode = confBucketsPerNode.GetInt()
+	if common.ConfLargeBotShardingEnabled.GetBool() {
+		orch.ShardBucketSize = common.ConfShardBucketSize.GetInt()
+		orch.BucketsPerNode = common.ConfBucketsPerNode.GetInt()
+	} else {
+		orch.ShardBucketSize = 1
+		orch.BucketsPerNode = common.ConfBucketsPerNode.GetInt()
 	}
 
 	updateScript := "updateversion.sh"
@@ -72,9 +68,11 @@ func main() {
 		orchestrator:   orch,
 	}
 
-	orch.MaxShardsPerNode = confMaxShardsPerNode.GetInt()
+	orch.MaxShardsPerNode = orch.ShardBucketSize * orch.BucketsPerNode
 	orch.MaxNodeDowntimeBeforeRestart = time.Second * 10
 	orch.EnsureAllShardsRunning = true
+
+	logrus.Infof("%#v+n", *orch)
 
 	err = orch.Start("127.0.0.1:7447")
 	if err != nil {
@@ -124,7 +122,7 @@ func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 }
 
 func ReadActiveShards() []int {
-	str := confActiveShards.GetString()
+	str := common.ConfActiveShards.GetString()
 	split := strings.Split(str, ",")
 
 	shards := make([]int, 0)

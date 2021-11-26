@@ -3,12 +3,12 @@ package dcallvoice
 import (
 	"fmt"
 
-	"github.com/jonas747/dcmd/v2"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/stdcommands/util"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
 )
 
 var Command = &commands.YAGCommand{
@@ -21,13 +21,15 @@ var Command = &commands.YAGCommand{
 
 		vcs := make([]*discordgo.VoiceState, 0)
 
-		guilds := bot.State.GuildsSlice(true)
-
-		for _, g := range guilds {
-			vc := g.VoiceState(true, common.BotUser.ID)
-			if vc != nil {
-				vcs = append(vcs, vc)
-				go bot.ShardManager.SessionForGuild(g.ID).GatewayManager.ChannelVoiceLeave(g.ID)
+		processShards := bot.ReadyTracker.GetProcessShards()
+		for _, shard := range processShards {
+			guilds := bot.State.GetShardGuilds(int64(shard))
+			for _, g := range guilds {
+				vc := g.GetVoiceState(common.BotUser.ID)
+				if vc != nil {
+					vcs = append(vcs, vc)
+					go bot.ShardManager.SessionForGuild(g.ID).GatewayManager.ChannelVoiceLeave(g.ID)
+				}
 			}
 		}
 
