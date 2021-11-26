@@ -85,7 +85,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Get("/logs"), web.APIHandler(HandleLogsJson))
 
 	web.ServerPublicMux.Handle(pat.Get("/reputation/leaderboard"), web.RenderHandler(HandleGetReputation, "cp_reputation_leaderboard"))
-	web.ServerPubliAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
+	web.ServerPublicAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
 }
 
 func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
