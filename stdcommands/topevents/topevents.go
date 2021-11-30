@@ -51,7 +51,7 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 		out = fmt.Sprintf("Stats for shard %d:\n", data.Args[0].Int())
 	}
 
-	out += "```\n#     Total  -   /s  - Event\n"
+	out += "\n#     Total  -   /s  - Event\n"
 	sum := int64(0)
 	sumPerSecond := float64(0)
 	for k, entry := range sortable {
@@ -61,7 +61,7 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 	}
 
 	out += fmt.Sprintf("\nTotal: %d, Events per second: %.1f", sum, sumPerSecond)
-	out += "\n```"
+	out += "\n"
 
 	return out, nil
 }
