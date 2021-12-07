@@ -147,7 +147,6 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	ctx.DisabledContextFuncs = disableFuncs
 
 	msg, err := ctx.Execute(tmpl)
-
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Warnf("Failed parsing/executing %s template", name)
 		return false
@@ -159,6 +158,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	}
 
 	if cs.Type == discordgo.ChannelTypeDM {
+		msg = "DM sent from server **" + gs.Name + "** (ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
 		_, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
 	} else if !ctx.CurrentFrame.DelResponse {
 		send := ctx.MessageSend("")
