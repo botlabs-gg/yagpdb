@@ -125,6 +125,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	if strings.TrimSpace(msg) == "" {
 		msg = DefaultDMMessage
 	}
+	msg = "DM sent from server **" + gs.Name + "**(ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
 
 	ms, err := bot.GetMember(guildID, target.ID)
 	if err != nil {
