@@ -438,6 +438,7 @@ var Adjectives = []string{
 	"fumbling",
 	"functional",
 	"funny",
+	"furry",
 	"fussy",
 	"fuzzy",
 	"gargantuan",
