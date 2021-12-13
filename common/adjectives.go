@@ -384,6 +384,7 @@ var Adjectives = []string{
 	"feline",
 	"female",
 	"feminine",
+	"festive",
 	"few",
 	"fickle",
 	"filthy",
