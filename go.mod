@@ -43,7 +43,7 @@ require (
 	github.com/lib/pq v1.2.1-0.20191011153232-f91d3411e481
 	github.com/lunixbochs/vtclean v1.0.0
 	github.com/mediocregopher/radix/v3 v3.7.0
-	github.com/microcosm-cc/bluemonday v1.0.15
+	github.com/microcosm-cc/bluemonday v1.0.16
 	github.com/miolini/datacounter v0.0.0-20190724021726-aa48df3a02c1
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -53,7 +53,7 @@ require (
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/sirupsen/logrus v1.4.2
-	github.com/tidwall/buntdb v1.2.4
+	github.com/tidwall/buntdb v1.2.8
 	github.com/tkuchiki/go-timezone v0.1.5-0.20200504234801-f58f9e3b062f
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/volatiletech/null v8.0.0+incompatible
