@@ -318,6 +318,8 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				return "I do not have access to that emoji, i can only use emojis from servers im on.", nil
 			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
+			case discordgo.ErrCodeTooManyReactions:
+				return "There are too many reactions on this message, please remove some (max 20)", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
 				return "An unknown error occurred, please retry adding that emoji", nil
@@ -359,6 +361,8 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				switch code {
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 					return "I do not have permissions to update the menu message, please give me the proper permissions for me to update the menu message.", nil
+				case discordgo.ErrCodeTooManyReactions:
+					return "There are too many reactions on this message, please remove some (max 20)", nil
 				default:
 					return "An error occurred updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
 				}
