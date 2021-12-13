@@ -52,6 +52,7 @@ var (
 		"div":               tmplDiv,
 		"mod":               tmplMod,
 		"fdiv":              tmplFDiv,
+		"cbrt":              tmplCbrt,
 		"sqrt":              tmplSqrt,
 		"pow":               tmplPow,
 		"log":               tmplLog,
