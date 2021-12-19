@@ -630,6 +630,11 @@ func (d Dict) Del(key interface{}) string {
 	return ""
 }
 
+func (d Dict) HasKey(k interface{}) (ok bool) {
+	_, ok = d[k]
+	return
+}
+
 type SDict map[string]interface{}
 
 func (d SDict) Set(key string, value interface{}) string {
@@ -644,6 +649,11 @@ func (d SDict) Get(key string) interface{} {
 func (d SDict) Del(key string) string {
 	delete(d, key)
 	return ""
+}
+
+func (d SDict) HasKey(k string) (ok bool) {
+	_, ok = d[k]
+	return
 }
 
 type Slice []interface{}
