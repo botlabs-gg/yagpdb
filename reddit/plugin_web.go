@@ -142,6 +142,10 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		Disabled:   false,
 	}
 
+	if !CheckSubreddit(newElem.Subreddit) {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("No such subreddit %s", newElem.Subreddit)))
+	}
+
 	if newElem.Slow {
 		watchItem.Slow = true
 		watchItem.MinUpvotes = newElem.MinUpvotes

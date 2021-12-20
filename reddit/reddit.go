@@ -4,6 +4,9 @@ package reddit
 
 import (
 	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -108,4 +111,40 @@ func MaxFeedForCtx(ctx context.Context) int {
 	}
 
 	return GuildMaxFeedsNormal
+}
+
+func CheckSubreddit(name string) bool {
+	var redditData struct {
+		Data struct {
+			Dist     int `json:"dist"`
+			Children []struct {
+			}
+		} `json:"data"`
+	}
+
+	query := "https://api.reddit.com/subreddits/search.api?q=" + name
+	req, err := http.NewRequest("GET", query, nil)
+	if err != nil {
+		return false
+	}
+
+	req.Header.Set("User-Agent", UserAgent())
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false
+	}
+
+	err = json.Unmarshal(body, &redditData)
+	if err != nil {
+		return false
+	}
+
+	return redditData.Data.Dist > 0 && len(redditData.Data.Children) > 0
 }
