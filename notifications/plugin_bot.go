@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -147,7 +147,6 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	ctx.DisabledContextFuncs = disableFuncs
 
 	msg, err := ctx.Execute(tmpl)
-
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Warnf("Failed parsing/executing %s template", name)
 		return false
@@ -159,6 +158,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	}
 
 	if cs.Type == discordgo.ChannelTypeDM {
+		msg = "DM sent from server **" + gs.Name + "** (ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
 		_, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
 	} else if !ctx.CurrentFrame.DelResponse {
 		send := ctx.MessageSend("")

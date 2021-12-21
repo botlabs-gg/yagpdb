@@ -12,13 +12,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/dcmd/v3"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/tickets/models"
+	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/tickets/models"
+	"github.com/jonas747/dcmd/v4"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -84,7 +84,7 @@ func (p *Plugin) AddCommands() {
 
 		OUTER:
 			for _, v := range parsed.GuildData.CS.PermissionOverwrites {
-				if v.Type == "member" && v.ID == target.User.ID {
+				if v.Type == discordgo.PermissionOverwriteTypeMember && v.ID == target.User.ID {
 					if (v.Allow & InTicketPerms) == InTicketPerms {
 						return "User is already part of the ticket", nil
 					}
@@ -93,7 +93,7 @@ func (p *Plugin) AddCommands() {
 				}
 			}
 
-			err := common.BotSession.ChannelPermissionSet(currentTicket.Ticket.ChannelID, target.User.ID, "member", InTicketPerms, 0)
+			err := common.BotSession.ChannelPermissionSet(currentTicket.Ticket.ChannelID, target.User.ID, discordgo.PermissionOverwriteTypeMember, InTicketPerms, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -120,7 +120,7 @@ func (p *Plugin) AddCommands() {
 
 		OUTER:
 			for _, v := range parsed.GuildData.CS.PermissionOverwrites {
-				if v.Type == "member" && v.ID == target.User.ID {
+				if v.Type == discordgo.PermissionOverwriteTypeMember && v.ID == target.User.ID {
 					if (v.Allow & InTicketPerms) == InTicketPerms {
 						foundUser = true
 					}
@@ -256,7 +256,7 @@ func (p *Plugin) AddCommands() {
 			modOverwrites := make([]discordgo.PermissionOverwrite, 0)
 
 			for _, ow := range parsed.GuildData.CS.PermissionOverwrites {
-				if ow.Type == "role" && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+				if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
 					if (ow.Allow & InTicketPerms) == InTicketPerms {
 						// one of the mod roles has ticket perms, this is not a admin ticket currently
 						isAdminsOnlyCurrently = false
@@ -275,14 +275,14 @@ func (p *Plugin) AddCommands() {
 						// add it back to allows, remove from denies
 						newAllows := v.Allow | InTicketPerms
 						newDenies := v.Deny & (^InTicketPerms)
-						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, "role", newAllows, newDenies)
+						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, discordgo.PermissionOverwriteTypeRole, newAllows, newDenies)
 					}
 				} else {
 					// remove the mods from this ticket
 					if (v.Allow & InTicketPerms) == InTicketPerms {
 						// remove it from allows
 						newAllows := v.Allow & (^InTicketPerms)
-						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, "role", newAllows, v.Deny)
+						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, discordgo.PermissionOverwriteTypeRole, newAllows, v.Deny)
 					}
 				}
 
@@ -303,7 +303,7 @@ func (p *Plugin) AddCommands() {
 					}
 
 					// need to create a new overwrite
-					err := common.BotSession.ChannelPermissionSet(parsed.ChannelID, v, "role", InTicketPerms, 0)
+					err := common.BotSession.ChannelPermissionSet(parsed.ChannelID, v, discordgo.PermissionOverwriteTypeRole, InTicketPerms, 0)
 					if err != nil {
 						logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] failed to create channel overwrite")
 					}
@@ -318,7 +318,7 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	container := commands.CommandSystem.Root.Sub("tickets", "ticket")
+	container, _ := commands.CommandSystem.Root.Sub("tickets", "ticket")
 	container.Description = "Command to manage the ticket system"
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 	container.AddMidlewares(
@@ -599,7 +599,7 @@ func ticketIsAdminOnly(conf *models.TicketConfig, cs *dstate.ChannelState) bool 
 	isAdminsOnlyCurrently := true
 
 	for _, ow := range cs.PermissionOverwrites {
-		if ow.Type == "role" && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+		if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
 			if (ow.Allow & InTicketPerms) == InTicketPerms {
 				// one of the mod roles has ticket perms, this is not a admin ticket currently
 				isAdminsOnlyCurrently = false
@@ -622,17 +622,17 @@ func createTicketChannel(conf *models.TicketConfig, gs *dstate.GuildSet, authorI
 	// assemble the permission overwrites for the channel were about to create
 	overwrites := []*discordgo.PermissionOverwrite{
 		{
-			Type:  "member",
+			Type:  discordgo.PermissionOverwriteTypeMember,
 			ID:    authorID,
 			Allow: InTicketPerms,
 		},
 		{
-			Type: "role",
+			Type: discordgo.PermissionOverwriteTypeRole,
 			ID:   gs.ID,
 			Deny: InTicketPerms,
 		},
 		{
-			Type:  "member",
+			Type:  discordgo.PermissionOverwriteTypeMember,
 			ID:    common.BotUser.ID,
 			Allow: InTicketPerms,
 		},
@@ -642,7 +642,7 @@ func createTicketChannel(conf *models.TicketConfig, gs *dstate.GuildSet, authorI
 OUTER:
 	for _, v := range conf.ModRoles {
 		for _, po := range overwrites {
-			if po.Type == "role" && po.ID == v {
+			if po.Type == discordgo.PermissionOverwriteTypeRole && po.ID == v {
 				po.Allow |= InTicketPerms
 				continue OUTER
 			}
@@ -650,7 +650,7 @@ OUTER:
 
 		// not found in existing
 		overwrites = append(overwrites, &discordgo.PermissionOverwrite{
-			Type:  "role",
+			Type:  discordgo.PermissionOverwriteTypeRole,
 			ID:    v,
 			Allow: InTicketPerms,
 		})
@@ -660,7 +660,7 @@ OUTER:
 OUTER2:
 	for _, v := range conf.AdminRoles {
 		for _, po := range overwrites {
-			if po.Type == "role" && po.ID == v {
+			if po.Type == discordgo.PermissionOverwriteTypeRole && po.ID == v {
 				po.Allow |= InTicketPerms
 				continue OUTER2
 			}
@@ -668,7 +668,7 @@ OUTER2:
 
 		// not found in existing
 		overwrites = append(overwrites, &discordgo.PermissionOverwrite{
-			Type:  "role",
+			Type:  discordgo.PermissionOverwriteTypeRole,
 			ID:    v,
 			Allow: InTicketPerms,
 		})

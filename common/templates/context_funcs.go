@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 var ErrTooManyCalls = errors.New("too many calls to this function")
@@ -68,16 +68,13 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
-// ChannelArg converts a variety of types of argument into a channel, verifying that it exists
-func (c *Context) ChannelArg(v interface{}) int64 {
-
+func (c *Context) baseChannelArg(v interface{}) *dstate.ChannelState {
 	// Look for the channel
 	if v == nil && c.CurrentFrame.CS != nil {
 		// No channel passed, assume current channel
-		return c.CurrentFrame.CS.ID
+		return c.CurrentFrame.CS
 	}
 
-	verifiedExistence := false
 	var cid int64
 	if v != nil {
 		switch t := v.(type) {
@@ -93,75 +90,43 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 				// Channel name, look for it
 				for _, v := range c.GS.Channels {
 					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
-						cid = v.ID
-						verifiedExistence = true
-						break
+						return &v
 					}
 				}
 			}
 		}
 	}
 
-	if !verifiedExistence {
-		// Make sure the channel is part of the guild
-		if channel := c.GS.GetChannel(cid); channel != nil {
-			verifiedExistence = true
-		}
-	}
+	return c.GS.GetChannelOrThread(cid)
+}
 
-	if !verifiedExistence {
+// ChannelArg converts a variety of types of argument into a channel, verifying that it exists
+func (c *Context) ChannelArg(v interface{}) int64 {
+	cs := c.baseChannelArg(v)
+	if cs == nil {
 		return 0
 	}
 
-	return cid
+	return cs.ID
 }
 
 // ChannelArgNoDM is the same as ChannelArg but will not accept DM channels
 func (c *Context) ChannelArgNoDM(v interface{}) int64 {
-
-	// Look for the channel
-	if v == nil && c.CurrentFrame.CS != nil {
-		// No channel passed, assume current channel
-		v = c.CurrentFrame.CS.ID
-	}
-
-	verifiedExistence := false
-	var cid int64
-	if v != nil {
-		switch t := v.(type) {
-		case int, int64:
-			// Channel id passed
-			cid = ToInt64(t)
-		case string:
-			parsed, err := strconv.ParseInt(t, 10, 64)
-			if err == nil {
-				// Channel id passed in string format
-				cid = parsed
-			} else {
-				// Channel name, look for it
-				for _, v := range c.GS.Channels {
-					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
-						cid = v.ID
-						verifiedExistence = true
-						break
-					}
-				}
-			}
-		}
-	}
-
-	if !verifiedExistence {
-		// Make sure the channel is part of the guild
-		if channel := c.GS.GetChannel(cid); channel != nil {
-			verifiedExistence = true
-		}
-	}
-
-	if !verifiedExistence {
+	cs := c.baseChannelArg(v)
+	if cs == nil || cs.IsPrivate() {
 		return 0
 	}
 
-	return cid
+	return cs.ID
+}
+
+func (c *Context) ChannelArgNoDMNoThread(v interface{}) int64 {
+	cs := c.baseChannelArg(v)
+	if cs == nil || cs.IsPrivate() || cs.Type.IsThread() {
+		return 0
+	}
+
+	return cs.ID
 }
 
 func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
@@ -282,8 +247,20 @@ func (c *Context) checkSafeStringDictNoRecursion(d SDict, n int) bool {
 			}
 		}
 
+		if cast, ok := v.(*Dict); ok {
+			if !c.checkSafeDictNoRecursion(*cast, n+1) {
+				return false
+			}
+		}
+
 		if cast, ok := v.(SDict); ok {
 			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(*SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(*cast, n+1) {
 				return false
 			}
 		}
@@ -308,8 +285,20 @@ func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
 			}
 		}
 
+		if cast, ok := v.(*Dict); ok {
+			if !c.checkSafeDictNoRecursion(*cast, n+1) {
+				return false
+			}
+		}
+
 		if cast, ok := v.(SDict); ok {
 			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(*SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(*cast, n+1) {
 				return false
 			}
 		}
@@ -1005,9 +994,20 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 		if cID == 0 {
 			return reflect.ValueOf("non-existing channel"), nil
 		}
+		
+		var mID, uID int64
+		
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
+		}
 
-		mID := ToInt64(args[1].Interface())
-		uID := targetUserID(args[2].Interface())
+		if args[2].IsValid() {
+			uID = targetUserID(args[2].Interface())
+		}
+
+		if uID == 0 {
+			return reflect.ValueOf("non-existing user"), nil
+		}
 
 		for _, reaction := range args[3:] {
 
@@ -1042,7 +1042,10 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 			return reflect.ValueOf("non-existing channel"), nil
 		}
 
-		mID := ToInt64(args[1].Interface())
+		var mID int64
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
+		}
 
 		if len(args) > 2 {
 			for _, emoji := range args[2:] {
@@ -1152,6 +1155,46 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 	return CtxChannelFromCS(cstate), nil
 }
 
+func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
+
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+	}
+
+	cstate := c.GS.GetThread(cID)
+
+	if cstate == nil {
+		return nil, errors.New("thread not in state")
+	}
+
+	return CtxChannelFromCS(cstate), nil
+}
+
+func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, error) {
+
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+	}
+
+	cstate := c.GS.GetChannelOrThread(cID)
+
+	if cstate == nil {
+		return nil, errors.New("thread/channel not in state")
+	}
+
+	return CtxChannelFromCS(cstate), nil
+}
+
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if c.Msg == nil {
@@ -1201,10 +1244,13 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 		}
 
 		cID := c.ChannelArg(cArg)
-		mID := ToInt64(args[1].Interface())
-
 		if cID == 0 {
 			return reflect.ValueOf(""), nil
+		}
+		
+		var mID int64
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
 		}
 
 		for i, reaction := range args {
@@ -1361,7 +1407,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArgNoDM(channel)
+	cID := c.ChannelArgNoDMNoThread(channel)
 	if cID == 0 {
 		return "", errors.New("unknown channel")
 	}
@@ -1379,7 +1425,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArgNoDM(channel)
+	cID := c.ChannelArgNoDMNoThread(channel)
 	if cID == 0 {
 		return "", errors.New("unknown channel")
 	}
@@ -1455,7 +1501,7 @@ func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interfac
 		return "", ErrTooManyCalls
 	}
 
-	inputSlice := reflect.ValueOf(input)
+	inputSlice, _ := indirect(reflect.ValueOf(input))
 	switch inputSlice.Kind() {
 	case reflect.Slice, reflect.Array:
 		// valid
@@ -1511,7 +1557,8 @@ func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interfac
 	var intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice Slice
 
 	for i := 0; i < inputSlice.Len(); i++ {
-		switch t := inputSlice.Index(i).Interface().(type) {
+		iv, _ := indirect(inputSlice.Index(i))
+		switch t := iv.Interface().(type) {
 		case int, int64:
 			intSlice = append(intSlice, t)
 		case *int:
@@ -1615,7 +1662,7 @@ func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interfac
 }
 
 func getLen(from interface{}) int {
-	v := reflect.ValueOf(from)
+	v, _ := indirect(reflect.ValueOf(from))
 	switch v.Kind() {
 	case reflect.Slice, reflect.Array, reflect.Map:
 		return v.Len()

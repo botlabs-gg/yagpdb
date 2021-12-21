@@ -3,8 +3,8 @@ package templates
 import (
 	"errors"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate/v3"
+	"github.com/jonas747/discordgo/v2"
+	"github.com/jonas747/dstate/v4"
 )
 
 // CtxChannel is almost a 1:1 copy of dstate.ChannelState, its needed because we cant axpose all those state methods
@@ -14,6 +14,7 @@ type CtxChannel struct {
 	ID        int64
 	GuildID   int64
 	IsPrivate bool
+	IsThread  bool
 
 	Name                 string                           `json:"name"`
 	Type                 discordgo.ChannelType            `json:"type"`
@@ -42,6 +43,7 @@ func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 	ctxChannel := &CtxChannel{
 		ID:                   cs.ID,
 		IsPrivate:            cs.IsPrivate(),
+		IsThread:             cs.Type.IsThread(),
 		GuildID:              cs.GuildID,
 		Name:                 cs.Name,
 		Type:                 cs.Type,

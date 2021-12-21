@@ -58,9 +58,9 @@
                         <div class="row">
                             <div class="col-lg-6">
                                 <div class="form-group">
-                                    <label for="prefix">Command Prefix</label>
+                                    <label for="prefix">Command Prefix<br><b>Note: Changing the prefix does not change the flag usage in commands. They will still begin with <code>-</code></b></label>
                                     <div class="row-lg-6">
-                                        <p id="example-command-usage">Example command usage: <code>{{.CommandPrefix}}ping</code></p>
+                                        <p id="example-command-usage">Example command usage: <code>{{.CommandPrefix}}rolemenu create &lt;name&gt; -nodm</code></p>
                                     </div>
                                     <input type="text" class="form-control" id="prefix" name="Prefix"
                                         value="{{.CommandPrefix}}">
@@ -130,7 +130,7 @@
 	function handlePrefixChange(prefix) {
 		if (prefix.length === 0) return;
 
-		$("#example-command-usage > code").text(`${prefix}ping`);
+		$("#example-command-usage > code").text(`${prefix}rolemenu create <name> -nodm`);
 
 		const existingWarning = $("#trailing-space-warning");
 		if (prefix[prefix.length - 1] === " ") {

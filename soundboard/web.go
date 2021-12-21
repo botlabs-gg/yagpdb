@@ -1,6 +1,7 @@
 package soundboard
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"io"
@@ -11,15 +12,18 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/soundboard/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/soundboard/models"
+	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/soundboard.html
+var PageHTML string
 
 type PostForm struct {
 	ID   int
@@ -46,7 +50,7 @@ var (
 )
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../soundboard/assets/soundboard.html", "templates/plugins/soundboard.html")
+	web.AddHTMLTemplate("soundboard/assets/soundboard.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFun, &web.SidebarItem{
 		Name: "Soundboard",
 		URL:  "soundboard/",
