@@ -605,11 +605,84 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	}
 }
 
+func isMaybeContainer(v interface{}) bool {
+	rv, _ := indirect(reflect.ValueOf(v))
+	switch rv.Kind() {
+	case reflect.Array, reflect.Slice, reflect.Interface, reflect.Map, reflect.Struct:
+		return true
+	default:
+		return false
+	}
+}
+
+// Cyclic value detection is modified from encoding/json/encode.go.
+const startDetectingCyclesAfter = 250
+
+type cyclicValueDetector struct {
+	ptrLevel uint
+	ptrSeen  map[interface{}]struct{}
+}
+
+func (c *cyclicValueDetector) Check(v reflect.Value) error {
+	v, _ = indirect(v)
+	switch v.Kind() {
+	case reflect.Map:
+		if c.ptrLevel++; c.ptrLevel > startDetectingCyclesAfter {
+			ptr := v.Pointer()
+			if _, ok := c.ptrSeen[ptr]; ok {
+				return fmt.Errorf("encountered a cycle via %s", v.Type())
+			}
+			c.ptrSeen[ptr] = struct{}{}
+		}
+
+		it := v.MapRange()
+		for it.Next() {
+			if err := c.Check(it.Value()); err != nil {
+				return err
+			}
+		}
+		c.ptrLevel--
+		return nil
+	case reflect.Array, reflect.Slice:
+		if c.ptrLevel++; c.ptrLevel > startDetectingCyclesAfter {
+			ptr := struct {
+				ptr uintptr
+				len int
+			}{v.Pointer(), v.Len()}
+			if _, ok := c.ptrSeen[ptr]; ok {
+				return fmt.Errorf("encountered a cycle via %s", v.Type())
+			}
+			c.ptrSeen[ptr] = struct{}{}
+		}
+
+		for i := 0; i < v.Len(); i++ {
+			elem := v.Index(i)
+			if err := c.Check(elem); err != nil {
+				return err
+			}
+		}
+		c.ptrLevel--
+		return nil
+	default:
+		return nil
+	}
+}
+
+func detectCyclicValue(v interface{}) error {
+	c := &cyclicValueDetector{ptrSeen: make(map[interface{}]struct{})}
+	return c.Check(reflect.ValueOf(v))
+}
+
 type Dict map[interface{}]interface{}
 
-func (d Dict) Set(key interface{}, value interface{}) string {
+func (d Dict) Set(key interface{}, value interface{}) (string, error) {
 	d[key] = value
-	return ""
+	if isMaybeContainer(value) {
+		if err := detectCyclicValue(d); err != nil {
+			return "", err
+		}
+	}
+	return "", nil
 }
 
 func (d Dict) Get(key interface{}) interface{} {
@@ -632,9 +705,14 @@ func (d Dict) Del(key interface{}) string {
 
 type SDict map[string]interface{}
 
-func (d SDict) Set(key string, value interface{}) string {
+func (d SDict) Set(key string, value interface{}) (string, error) {
 	d[key] = value
-	return ""
+	if isMaybeContainer(value) {
+		if err := detectCyclicValue(d); err != nil {
+			return "", err
+		}
+	}
+	return "", nil
 }
 
 func (d SDict) Get(key string) interface{} {
@@ -661,7 +739,6 @@ func (s Slice) Append(item interface{}) (interface{}, error) {
 		result := reflect.Append(reflect.ValueOf(&s).Elem(), reflect.ValueOf(v))
 		return result.Interface(), nil
 	}
-
 }
 
 func (s Slice) Set(index int, item interface{}) (string, error) {
@@ -670,6 +747,11 @@ func (s Slice) Set(index int, item interface{}) (string, error) {
 	}
 
 	s[index] = item
+	if isMaybeContainer(item) {
+		if err := detectCyclicValue(s); err != nil {
+			return "", err
+		}
+	}
 	return "", nil
 }
 
