@@ -8,7 +8,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -37,7 +37,10 @@ var (
 func AntiFishQuery(phisingQuery string) (*AntiFish, error) {
 	antiFish := AntiFish{}
 	phisingQuery = strings.Replace(phisingQuery, "\n", " ", -1)
-	queryString := fmt.Sprintf(`{"message":"%s"}`, phisingQuery)
+	queryBytes, _ := json.Marshal(struct {
+		Message string `json:"message"`
+	}{phisingQuery})
+	queryString := string(queryBytes)
 
 	u := &url.URL{
 		Scheme: antiFishScheme,
@@ -52,7 +55,7 @@ func AntiFishQuery(phisingQuery string) (*AntiFish, error) {
 	r.Header.Add("Content-Type", "application/json")
 	r.Header.Add("Accept", "*/*")
 	r.Header.Add("Content-Length", strconv.Itoa(len(queryString)))
-	r.Header.Add("User-Agent", "Mozilla-PAGST1.12")
+	r.Header.Add("User-Agent", "YAGPDB")
 
 	resp, err := client.Do(r)
 	if err != nil {
@@ -72,7 +75,7 @@ func AntiFishQuery(phisingQuery string) (*AntiFish, error) {
 	r.Body.Close()
 	defer resp.Body.Close()
 
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
