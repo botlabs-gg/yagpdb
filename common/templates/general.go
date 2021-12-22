@@ -1018,6 +1018,11 @@ func tmplNewDate(year, monthInt, day, hour, min, sec int, location ...string) (t
 	return time.Date(year, month, day, hour, min, sec, 0, loc), nil
 }
 
+func tmplWeekNumber(t time.Time) (week int) {
+	_, week = t.ISOWeek()
+	return
+}
+
 func tmplHumanizeDurationHours(in time.Duration) string {
 	return common.HumanizeDuration(common.DurationPrecisionHours, in)
 }

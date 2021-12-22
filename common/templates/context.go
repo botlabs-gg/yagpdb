@@ -85,6 +85,7 @@ var (
 		"seq":             sequence,
 		"currentTime":     tmplCurrentTime,
 		"newDate":         tmplNewDate,
+		"weekNumber":      tmplWeekNumber,
 
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
 		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
