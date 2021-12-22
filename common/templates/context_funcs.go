@@ -426,6 +426,27 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 	}
 }
 
+func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (string, error) {
+	return func(channel, msgID interface{}) (string, error) {
+		if c.IncreaseCheckCallCounter("message_pins", 5) {
+			return "", ErrTooManyCalls
+		}
+
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return "", errors.New("unknown channel")
+		}
+		mID := ToInt64(msgID)
+		var err error
+		if unpin {
+			err = common.BotSession.ChannelMessageUnpin(cID, mID)
+		} else {
+			err = common.BotSession.ChannelMessagePin(cID, mID)
+		}
+		return "", err
+	}
+}
+
 func (c *Context) tmplMentionEveryone() string {
 	c.CurrentFrame.MentionEveryone = true
 	return "@everyone"
