@@ -72,7 +72,7 @@ var (
 		"kindOf":             KindOf,
 
 		"formatTime":      tmplFormatTime,
-		"snowflakeToTime": bot.SnowflakeToTime,
+		"snowflakeToTime": tmplSnowflakeToTime,
 		"loadLocation":    time.LoadLocation,
 		"json":            tmplJson,
 		"in":              in,

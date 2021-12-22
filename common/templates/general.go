@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/jonas747/discordgo/v2"
 )
@@ -905,6 +906,10 @@ func tmplFormatTime(t time.Time, args ...string) string {
 	}
 
 	return t.Format(layout)
+}
+
+func tmplSnowflakeToTime(i int64) time.Time {
+	return bot.SnowflakeToTime(i).UTC()
 }
 
 type variadicFunc func([]reflect.Value) (reflect.Value, error)
