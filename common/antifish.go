@@ -34,12 +34,12 @@ var (
 	antiFishHostPath = "check"
 )
 
-func AntiFishQuery(phisingQuery string) (*AntiFish, error) {
+func AntiFishQuery(phishingQuery string) (*AntiFish, error) {
 	antiFish := AntiFish{}
-	phisingQuery = strings.Replace(phisingQuery, "\n", " ", -1)
+	phishingQuery = strings.Replace(phishingQuery, "\n", " ", -1)
 	queryBytes, _ := json.Marshal(struct {
 		Message string `json:"message"`
-	}{phisingQuery})
+	}{phishingQuery})
 	queryString := string(queryBytes)
 
 	u := &url.URL{
