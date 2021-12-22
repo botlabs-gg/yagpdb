@@ -556,11 +556,7 @@ func (g *AntiFishDetectorTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 			return false, nil
 		}
 
-		if antiFish.Match {
-			return true, nil
-		}
-
-		return false, nil
+		return antiFish.Match, nil
 	}
 
 	return false, nil
