@@ -908,8 +908,8 @@ func tmplFormatTime(t time.Time, args ...string) string {
 	return t.Format(layout)
 }
 
-func tmplSnowflakeToTime(i int64) time.Time {
-	return bot.SnowflakeToTime(i).UTC()
+func tmplSnowflakeToTime(v interface{}) time.Time {
+	return bot.SnowflakeToTime(ToInt64(v)).UTC()
 }
 
 type variadicFunc func([]reflect.Value) (reflect.Value, error)
