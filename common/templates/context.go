@@ -532,6 +532,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("deleteMessageReaction", c.tmplDelMessageReaction)
 	c.addContextFunc("deleteAllMessageReactions", c.tmplDelAllMessageReactions)
 	c.addContextFunc("getMessage", c.tmplGetMessage)
+	c.addContextFunc("getAllMessageReactions", c.tmplGetAllMessageReactions)
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getChannel", c.tmplGetChannel)
 	c.addContextFunc("getThread", c.tmplGetThread)

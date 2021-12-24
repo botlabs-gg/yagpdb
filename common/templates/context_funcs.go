@@ -994,9 +994,9 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 		if cID == 0 {
 			return reflect.ValueOf("non-existing channel"), nil
 		}
-		
+
 		var mID, uID int64
-		
+
 		if args[1].IsValid() {
 			mID = ToInt64(args[1].Interface())
 		}
@@ -1084,6 +1084,53 @@ func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message
 
 	message, _ := common.BotSession.ChannelMessage(cID, mID)
 	return message, nil
+}
+
+const (
+	fetchBatchSize            = 100                 // max count Discord API supports fetching in one call
+	maxSupportedReactionCount = fetchBatchSize * 50 // 50 API calls
+)
+
+func (c *Context) tmplGetAllMessageReactions(channel, msgID, emoji interface{}) (interface{}, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	if c.IncreaseCheckCallCounter("get_all_message_reactions", 1) {
+		return nil, errors.New("can call getAllMessageReactions at max once")
+	}
+
+	cID := c.ChannelArgNoDM(channel)
+	if cID == 0 {
+		return nil, nil
+	}
+
+	mID := ToInt64(msgID)
+	e := ToString(emoji)
+
+	var (
+		users []*discordgo.User
+		after int64 = 0
+	)
+
+	// Discord API limits amount to fetch per call to 100; there may be more reactions than that, so loop to get all
+	for {
+		received, err := common.BotSession.MessageReactions(cID, mID, e, fetchBatchSize, 0, after)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(received)+len(users) > maxSupportedReactionCount {
+			return nil, fmt.Errorf("exceeded maximum supported number of reactions total (%d)", maxSupportedReactionCount)
+		}
+
+		users = append(users, received...)
+		if len(received) < fetchBatchSize {
+			return users, nil
+		}
+
+		after = received[len(received)-1].ID
+	}
 }
 
 func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
@@ -1247,7 +1294,7 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 		if cID == 0 {
 			return reflect.ValueOf(""), nil
 		}
-		
+
 		var mID int64
 		if args[1].IsValid() {
 			mID = ToInt64(args[1].Interface())
