@@ -270,7 +270,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", errors.New("Unknown channel")
 		}
 
-		cs := ctx.GS.GetChannel(channelID)
+		cs := ctx.GS.GetChannelOrThread(channelID)
 		if cs == nil {
 			return "", errors.New("Channel not in state")
 		}
