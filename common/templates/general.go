@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/jonas747/discordgo/v2"
 )
@@ -517,6 +518,15 @@ func tmplSqrt(arg interface{}) float64 {
 	}
 }
 
+func tmplCbrt(arg interface{}) float64 {
+	switch arg.(type) {
+	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+		return math.Cbrt(ToFloat64(arg))
+	default:
+		return math.NaN()
+	}
+}
+
 func tmplPow(argX, argY interface{}) float64 {
 	var xyValue float64
 	var xySlice []float64
@@ -907,6 +917,10 @@ func tmplFormatTime(t time.Time, args ...string) string {
 	return t.Format(layout)
 }
 
+func tmplSnowflakeToTime(v interface{}) time.Time {
+	return bot.SnowflakeToTime(ToInt64(v)).UTC()
+}
+
 type variadicFunc func([]reflect.Value) (reflect.Value, error)
 
 // callVariadic allows the given function to be called with either a variadic
@@ -1011,6 +1025,11 @@ func tmplNewDate(year, monthInt, day, hour, min, sec int, location ...string) (t
 	}
 
 	return time.Date(year, month, day, hour, min, sec, 0, loc), nil
+}
+
+func tmplWeekNumber(t time.Time) (week int) {
+	_, week = t.ISOWeek()
+	return
 }
 
 func tmplHumanizeDurationHours(in time.Duration) string {

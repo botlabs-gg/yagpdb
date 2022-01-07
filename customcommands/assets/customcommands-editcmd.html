@@ -6,6 +6,12 @@
 
 {{template "cp_alerts" .}}
 
+<style>
+    .cc-editor {
+        font-family: Consolas, monospace;
+    }
+</style>
+
 <!-- Nav -->
 <div class="row">
     <div class="col">
@@ -256,7 +262,7 @@
                                     <!-- Use .btn-add for simplicity and let the page loader adjust. -->
                                     {{range .CC.Responses}}
                                     <div class="entry input-group  input-group-sm">
-                                        <textarea class="form-control response-text-area tab-textbox" name="responses"
+                                        <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
                                             placeholder="Command body here" rows="5"
                                             oninput="onCCChanged(this)">{{.}}</textarea>
                                         <span class="input-group-append">
@@ -267,7 +273,7 @@
                                     </div>
                                     {{else}}
                                     <div class="entry input-group  input-group-sm">
-                                        <textarea class="form-control response-text-area tab-textbox" name="responses"
+                                        <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
                                             placeholder="Command body here" rows="5"
                                             oninput="onCCChanged(this)"></textarea>
                                         <span class="input-group-append">
@@ -514,6 +520,10 @@
         var combinedLength = 0;
         textAreas.forEach(function (elem) {
             combinedLength += elem.value.length;
+            // The data received on the backend contains "\r\n" while it is simply "\n" on the JS side.
+            // Adjust for this discrepancy by double-counting newline characters.
+            const newlines = elem.value.match(/\n/g);
+            if (newlines) combinedLength += newlines.length;
         })
 
         var display = textArea.parentElement.parentElement.querySelector(".cc-length-counter")
