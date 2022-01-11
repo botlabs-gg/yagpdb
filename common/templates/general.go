@@ -645,7 +645,7 @@ func tmplBitwiseOr(args ...interface{}) (res int) {
 	return
 }
 
-func tmplBitwiseXOR(arg1, arg2 interface{}) int {
+func tmplBitwiseXor(arg1, arg2 interface{}) int {
 	return tmplToInt(arg1) ^ tmplToInt(arg2)
 }
 

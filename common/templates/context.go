@@ -76,7 +76,7 @@ var (
 		// bitwise ops
 		"bitwiseAnd":        tmplBitwiseAnd,
 		"bitwiseOr":         tmplBitwiseOr,
-		"bitwiseXOR":        tmplBitwiseXOR,
+		"bitwiseXor":        tmplBitwiseXor,
 		"bitwiseNot":        tmplBitwiseNot,
 		"bitwiseAndNot":     tmplBitwiseAndNot,
 		"bitwiseLeftShift":  tmplBitwiseLeftShift,
