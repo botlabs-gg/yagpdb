@@ -32,10 +32,11 @@ type BitFlowAntiFishResponse struct {
 }
 
 var (
-	hyperphishURL            = "https://api.hyperphish.com/gimme-domains"
-	bitflowAntiFishURL       = "https://anti-fish.bitflow.dev/check"
-	RedisKeyHyperfishDomains = "hyperfish_domains"
+	hyperphishURL      = "https://api.hyperphish.com/gimme-domains"
+	bitflowAntiFishURL = "https://anti-fish.bitflow.dev/check"
 )
+
+const RedisKeyHyperfishDomains = "hyperfish_domains"
 
 var logger = common.GetPluginLogger(&Plugin{})
 
