@@ -58,7 +58,7 @@ func fetchHyperfishDomains() ([]string, error) {
 		return nil, err
 	}
 	domains := make([]string, 0)
-	err = json.NewDecoder(resp.Body).Decode((&domains))
+	err = json.NewDecoder(resp.Body).Decode(&domains)
 	if err != nil {
 		return nil, err
 	}
