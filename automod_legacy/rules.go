@@ -504,11 +504,11 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 	}
 
 	if s.ScamLinkProtection {
-		badDomain, err := antiphishing.CheckMessageForPhishingDomains(message)
+		scamLink, err := antiphishing.CheckMessageForPhishingDomains(message)
 		if err != nil {
 			logger.WithError(err).Error("Failed checking urls against google safebrowser")
-		} else if badDomain != nil {
-			return true, *badDomain, "SCAM LINK"
+		} else if scamLink != nil {
+			return true, *scamLink, "SCAM LINK"
 		}
 	}
 
