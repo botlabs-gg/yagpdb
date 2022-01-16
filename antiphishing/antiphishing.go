@@ -32,8 +32,9 @@ type BitFlowAntiFishResponse struct {
 }
 
 var (
-	hyperphishURL      = "https://api.hyperphish.com/gimme-domains"
-	bitflowAntiFishURL = "https://anti-fish.bitflow.dev/check"
+	hyperphishURL            = "https://api.hyperphish.com/gimme-domains"
+	bitflowAntiFishURL       = "https://anti-fish.bitflow.dev/check"
+	RedisKeyHyperfishDomains = "hyperfish_domains"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})
@@ -72,33 +73,33 @@ func saveHyperfishDomains() ([]string, error) {
 		return nil, err
 	}
 
-	//clear old domains incase there was a false positive
-	redisDelErr := common.RedisPool.Do(radix.Cmd(nil, "DEL", "hyperfish_domains"))
-	if redisDelErr != nil {
-		return nil, redisDelErr
+	// clear old domains incase there was a false positive
+	args := append([]string{RedisKeyHyperfishDomains}, domains...)
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyHyperfishDomains))
+	if err != nil {
+		return nil, err
 	}
-	//save new domains to set
-	args := append([]string{"hyperfish_domains"}, domains...)
-	redisSaveErr := common.RedisPool.Do(radix.Cmd(nil, "SADD", args...))
-	if redisSaveErr != nil {
-		return nil, redisSaveErr
+	// and save new domains to redis set
+	err = common.RedisPool.Do(radix.Cmd(nil, "SADD", args...))
+	if err != nil {
+		return nil, err
 	}
 	return domains, nil
 }
 
-func queryHyperFish(input string) (*bool, error) {
+func queryHyperFish(input string) (bool, error) {
 	isBadDomain := false
 	link, err := url.Parse(input)
 	if err != nil {
 		logrus.WithError(err).Error(`[antiphishing] failed to parse url`)
-		return nil, err
+		return false, err
 	}
-	redisErr := common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", "hyperfish_domains", link.Hostname()))
-	if redisErr != nil {
-		logrus.WithError(redisErr).Error(`[antiphishing] failed to check for hyperfish_domains`)
-		return nil, redisErr
+	err = common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", RedisKeyHyperfishDomains, link.Hostname()))
+	if err != nil {
+		logrus.WithError(err).Error(`[antiphishing] failed to check for hyperfish_domains`)
+		return false, err
 	}
-	return &isBadDomain, redisErr
+	return isBadDomain, nil
 }
 
 func queryBitflowAntiFish(input []string) (*BitFlowAntiFishResponse, error) {
@@ -127,9 +128,9 @@ func queryBitflowAntiFish(input []string) (*BitFlowAntiFishResponse, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		respError := fmt.Errorf("[antiphishing] Unable to fetch data from AntiFish API, status-code %d", resp.StatusCode)
-		logrus.WithError(respError)
-		return nil, respError
+		err = fmt.Errorf("[antiphishing] Unable to fetch data from AntiFish API, status-code %d", resp.StatusCode)
+		logrus.WithError(err)
+		return nil, err
 	}
 
 	req.Body.Close()
@@ -141,43 +142,43 @@ func queryBitflowAntiFish(input []string) (*BitFlowAntiFishResponse, error) {
 		return nil, err
 	}
 
-	jsonErr := json.Unmarshal(bytes, &bitflowAntifishResponse)
+	err = json.Unmarshal(bytes, &bitflowAntifishResponse)
 	if err != nil {
-		logrus.WithError(jsonErr).Error(("[antiphishing] Error parsing JSON from bitflowAntiFish API"))
-		return nil, jsonErr
+		logrus.WithError(err).Error(("[antiphishing] Error parsing JSON from bitflowAntiFish API"))
+		return nil, err
 	}
 
 	return &bitflowAntifishResponse, nil
 }
 
-func checkPhishingDomains(input []string) (*string, error) {
-	i := 0
-	for range input {
-		isPhishingLink, err := queryHyperFish(input[i])
+func queryPhishingLinks(input []string) (string, error) {
+	for _, link := range input {
+		isPhishingLink, err := queryHyperFish(link)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		if *isPhishingLink {
-			return &input[i], err
+		if isPhishingLink {
+			return link, err
 		}
 	}
 
+	//if link is not in hyperfish, query BitFlow
 	bitflowAntifishResponse, err := queryBitflowAntiFish(input)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	if bitflowAntifishResponse.Match {
-		return &bitflowAntifishResponse.Matches[0].URL, err
+		return bitflowAntifishResponse.Matches[0].URL, err
 	}
 
-	return nil, nil
+	return "", nil
 }
 
-func CheckMessageForPhishingDomains(input string) (*string, error) {
+func CheckMessageForPhishingDomains(input string) (string, error) {
 	matches := common.LinkRegex.FindAllString(input, -1)
 	if len(matches) < 1 {
-		return nil, nil
+		return "", nil
 	}
 
-	return checkPhishingDomains(matches)
+	return queryPhishingLinks(matches)
 }

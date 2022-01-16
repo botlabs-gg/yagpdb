@@ -556,7 +556,7 @@ func (a *AntiPhishingLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 		return false, nil
 	}
 
-	if badDomain != nil {
+	if badDomain != "" {
 		return true, nil
 	}
 
