@@ -35,15 +35,16 @@ var (
 		"toByte":     ToByte,
 
 		// string manipulation
-		"joinStr":   joinStrings,
-		"lower":     strings.ToLower,
-		"upper":     strings.ToUpper,
-		"slice":     slice,
-		"urlescape": url.PathEscape,
-		"split":     strings.Split,
-		"title":     strings.Title,
 		"hasPrefix": strings.HasPrefix,
 		"hasSuffix": strings.HasSuffix,
+		"joinStr":   joinStrings,
+		"lower":     strings.ToLower,
+		"slice":     slice,
+		"split":     strings.Split,
+		"title":     strings.Title,
+		"trimSpace": strings.TrimSpace,
+		"upper":     strings.ToUpper,
+		"urlescape": url.PathEscape,
 
 		// math
 		"add":               add,
