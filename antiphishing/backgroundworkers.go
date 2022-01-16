@@ -25,7 +25,7 @@ func (p *Plugin) RunBackgroundWorker() {
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
-	wg.Done()
+	p.stopWorkers <- wg
 }
 
 func hyperfishUpdateRunner() {
@@ -35,6 +35,6 @@ func hyperfishUpdateRunner() {
 	if err != nil {
 		logger.WithError(err).Error("Failed to save Hyperfish flagged Domains")
 	} else {
-		logger.Infof("[antifishing] Took %s to save %v Hyperfish flagged Domains", time.Since(started), len(*domains))
+		logger.Infof("[antifishing] Took %s to save %v Hyperfish flagged Domains", time.Since(started), len(domains))
 	}
 }

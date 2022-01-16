@@ -101,11 +101,12 @@ func queryHyperFish(input string) (*bool, error) {
 	return &isBadDomain, redisErr
 }
 
-func queryBitflowAntiFish(input string) (*bool, error) {
+func queryBitflowAntiFish(input []string) (*BitFlowAntiFishResponse, error) {
 	bitflowAntifishResponse := BitFlowAntiFishResponse{}
+	stringifiedUrlList := strings.Join(input, ",")
 	queryBytes, _ := json.Marshal(struct {
 		Message string `json:"message"`
-	}{input})
+	}{stringifiedUrlList})
 	queryString := string(queryBytes)
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", bitflowAntiFishURL, strings.NewReader(queryString))
@@ -122,7 +123,7 @@ func queryBitflowAntiFish(input string) (*bool, error) {
 
 	if resp.StatusCode == 404 {
 		bitflowAntifishResponse.Match = false
-		return &bitflowAntifishResponse.Match, nil
+		return &bitflowAntifishResponse, nil
 	}
 
 	if resp.StatusCode != 200 {
@@ -146,7 +147,7 @@ func queryBitflowAntiFish(input string) (*bool, error) {
 		return nil, jsonErr
 	}
 
-	return &bitflowAntifishResponse.Match, nil
+	return &bitflowAntifishResponse, nil
 }
 
 func checkPhishingDomains(input []string) (*string, error) {
@@ -159,14 +160,16 @@ func checkPhishingDomains(input []string) (*string, error) {
 		if *isPhishingLink {
 			return &input[i], err
 		}
-		isPhishingLink, err = queryBitflowAntiFish(input[i])
-		if err != nil {
-			return nil, err
-		}
-		if *isPhishingLink {
-			return &input[i], err
-		}
 	}
+
+	bitflowAntifishResponse, err := queryBitflowAntiFish(input)
+	if err != nil {
+		return nil, err
+	}
+	if bitflowAntifishResponse.Match {
+		return &bitflowAntifishResponse.Matches[0].URL, err
+	}
+
 	return nil, nil
 }
 
