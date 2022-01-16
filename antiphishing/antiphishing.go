@@ -52,7 +52,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
-func fetchHyperfishDomains() (*[]string, error) {
+func fetchHyperfishDomains() ([]string, error) {
 	resp, err := http.Get(hyperphishURL)
 	if err != nil {
 		return nil, err
@@ -63,10 +63,10 @@ func fetchHyperfishDomains() (*[]string, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	return &domains, nil
+	return domains, nil
 }
 
-func saveHyperfishDomains() (*[]string, error) {
+func saveHyperfishDomains() ([]string, error) {
 	domains, err := fetchHyperfishDomains()
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func saveHyperfishDomains() (*[]string, error) {
 		return nil, redisDelErr
 	}
 	//save new domains to set
-	args := append([]string{"hyperfish_domains"}, *domains...)
+	args := append([]string{"hyperfish_domains"}, domains...)
 	redisSaveErr := common.RedisPool.Do(radix.Cmd(nil, "SADD", args...))
 	if redisSaveErr != nil {
 		return nil, redisSaveErr
