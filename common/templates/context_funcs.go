@@ -513,6 +513,11 @@ func (c *Context) tmplMentionRoleName(role string) string {
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 	role := ToInt64(roleID)
+	
+	if c.MS == nil {
+		return false
+	}
+	
 	if role == 0 {
 		return false
 	}
@@ -525,7 +530,11 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 	if c.IncreaseCheckStateLock() {
 		return false, ErrTooManyCalls
 	}
-
+	
+	if c.MS == nil {
+		return false, nil
+	}
+	
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
 			if common.ContainsInt64Slice(c.MS.Member.Roles, r.ID) {
