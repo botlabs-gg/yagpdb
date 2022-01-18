@@ -514,7 +514,7 @@ func (c *Context) tmplMentionRoleName(role string) string {
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 	role := ToInt64(roleID)
 	
-	if c.MS == nil {
+	if c.MS == nil || c.MS.Member == nil {
 		return false
 	}
 	
@@ -531,7 +531,7 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 		return false, ErrTooManyCalls
 	}
 	
-	if c.MS == nil {
+	if c.MS == nil || c.MS.Member == nil {
 		return false, nil
 	}
 	
