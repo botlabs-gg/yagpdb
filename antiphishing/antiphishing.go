@@ -31,12 +31,22 @@ type BitFlowAntiFishResponse struct {
 	} `json:"matches"`
 }
 
+type SinkingYachtsRecentDomainsResponse struct {
+	Type    string   `json:"type"`
+	Domains []string `json:"domains"`
+}
+
 var (
-	hyperphishURL      = "https://api.hyperphish.com/gimme-domains"
-	bitflowAntiFishURL = "https://anti-fish.bitflow.dev/check"
+	phishingDomainApiBaseUrl          = "https://phish.sinking.yachts/v2"
+	getAllPhishingDomainsUrl          = fmt.Sprintf("%s/%s", phishingDomainApiBaseUrl, "all")
+	getRecentPhishingDomainUpdatesUrl = fmt.Sprintf("%s/%s", phishingDomainApiBaseUrl, "recent")
 )
 
-const RedisKeyHyperfishDomains = "hyperfish_domains"
+var (
+	fallbackPhishingUrlCheckAPI = "https://anti-fish.bitflow.dev/check"
+)
+
+const RedisKeyPhishingDomains = "phishing_domains"
 
 var logger = common.GetPluginLogger(&Plugin{})
 
@@ -54,29 +64,85 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
-func fetchHyperfishDomains() ([]string, error) {
-	resp, err := http.Get(hyperphishURL)
+func getAllPhishingDomains() ([]string, error) {
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", getAllPhishingDomainsUrl, nil)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "*/*")
+	req.Header.Add("X-identify", "YAGPDB")
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	domains := make([]string, 0)
 	err = json.NewDecoder(resp.Body).Decode(&domains)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 	return domains, nil
 }
 
-func saveHyperfishDomains() ([]string, error) {
-	domains, err := fetchHyperfishDomains()
+func getRecentlyUpdatedPhishingDomains(seconds uint32) ([]string, []string, error) {
+	client := &http.Client{}
+	reqUrl := fmt.Sprintf("%s/%v", getRecentPhishingDomainUpdatesUrl, seconds)
+	req, _ := http.NewRequest("GET", reqUrl, nil)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "*/*")
+	req.Header.Add("X-identify", "YAGPDB")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+	recentlyUpdatedDomains := make([]SinkingYachtsRecentDomainsResponse, 0)
+	err = json.NewDecoder(resp.Body).Decode(&recentlyUpdatedDomains)
+	if err != nil {
+		return nil, nil, err
+	}
+	added := make([]string, 0)
+	deleted := make([]string, 0)
+	for _, change := range recentlyUpdatedDomains {
+		if change.Type == "add" {
+			added = append(added, change.Domains...)
+		} else if change.Type == "delete" {
+			deleted = append(deleted, change.Domains...)
+		}
+	}
+	return added, deleted, nil
+}
+
+func updateCachedPhishingDomains(seconds uint32) ([]string, []string, error) {
+	added, deleted, err := getRecentlyUpdatedPhishingDomains(seconds)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(deleted) > 0 {
+		deletedArgs := append([]string{RedisKeyPhishingDomains}, deleted...)
+		err = common.RedisPool.Do(radix.Cmd(nil, "SREM", deletedArgs...))
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	if len(added) > 0 {
+		addedArgs := append([]string{RedisKeyPhishingDomains}, added...)
+		err = common.RedisPool.Do(radix.Cmd(nil, "SADD", addedArgs...))
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return added, deleted, nil
+}
+
+func cacheAllPhishingDomains() ([]string, error) {
+	domains, err := getAllPhishingDomains()
 	if err != nil {
 		return nil, err
 	}
 
 	// clear old domains incase there was a false positive
-	args := append([]string{RedisKeyHyperfishDomains}, domains...)
-	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyHyperfishDomains))
+	args := append([]string{RedisKeyPhishingDomains}, domains...)
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyPhishingDomains))
 	if err != nil {
 		return nil, err
 	}
@@ -88,22 +154,22 @@ func saveHyperfishDomains() ([]string, error) {
 	return domains, nil
 }
 
-func queryHyperFish(input string) (bool, error) {
+func checkCacheForPhishingDomain(input string) (bool, error) {
 	isBadDomain := false
 	link, err := url.Parse(input)
 	if err != nil {
 		logrus.WithError(err).Error(`[antiphishing] failed to parse url`)
 		return false, err
 	}
-	err = common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", RedisKeyHyperfishDomains, link.Hostname()))
+	err = common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", RedisKeyPhishingDomains, link.Hostname()))
 	if err != nil {
-		logrus.WithError(err).Error(`[antiphishing] failed to check for hyperfish_domains`)
+		logrus.WithError(err).Error(`[antiphishing] failed to check for phishing domains`)
 		return false, err
 	}
 	return isBadDomain, nil
 }
 
-func queryBitflowAntiFish(input []string) (*BitFlowAntiFishResponse, error) {
+func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error) {
 	bitflowAntifishResponse := BitFlowAntiFishResponse{}
 	stringifiedUrlList := strings.Join(input, ",")
 	queryBytes, _ := json.Marshal(struct {
@@ -111,7 +177,7 @@ func queryBitflowAntiFish(input []string) (*BitFlowAntiFishResponse, error) {
 	}{stringifiedUrlList})
 	queryString := string(queryBytes)
 	client := &http.Client{}
-	req, _ := http.NewRequest("POST", bitflowAntiFishURL, strings.NewReader(queryString))
+	req, _ := http.NewRequest("POST", fallbackPhishingUrlCheckAPI, strings.NewReader(queryString))
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "*/*")
 	req.Header.Add("Content-Length", strconv.Itoa(len(queryString)))
@@ -129,7 +195,7 @@ func queryBitflowAntiFish(input []string) (*BitFlowAntiFishResponse, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("[antiphishing] Unable to fetch data from AntiFish API, status-code %d", resp.StatusCode)
+		err = fmt.Errorf("[antiphishing] Unable to fetch data from bitflowAntiFish API, status-code %d", resp.StatusCode)
 		logrus.WithError(err)
 		return nil, err
 	}
@@ -154,7 +220,7 @@ func queryBitflowAntiFish(input []string) (*BitFlowAntiFishResponse, error) {
 
 func queryPhishingLinks(input []string) (string, error) {
 	for _, link := range input {
-		isPhishingLink, err := queryHyperFish(link)
+		isPhishingLink, err := checkCacheForPhishingDomain(link)
 		if err != nil {
 			return "", err
 		}
@@ -163,8 +229,8 @@ func queryPhishingLinks(input []string) (string, error) {
 		}
 	}
 
-	//if link is not in hyperfish, query BitFlow
-	bitflowAntifishResponse, err := queryBitflowAntiFish(input)
+	//if domain in link is not in cache, query BitFlow as as fallback
+	bitflowAntifishResponse, err := checkRemoteForPhishingUrl(input)
 	if err != nil {
 		return "", err
 	}
