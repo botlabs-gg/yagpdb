@@ -542,7 +542,7 @@ func (a *AntiPhishingLinkTrigger) DataType() interface{} {
 }
 
 func (a *AntiPhishingLinkTrigger) Description() string {
-	return "Triggers on messages that are considered to contain scam links by Sinking.Yacht and BitFlow Antifish API"
+	return "Triggers on messages that have scam links flagged by SinkingYachts and BitFlow AntiPhishing APIs"
 }
 
 func (a *AntiPhishingLinkTrigger) UserSettings() []*SettingDef {
