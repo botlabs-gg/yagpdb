@@ -7,6 +7,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/botlabs-gg/yagpdb/antiphishing"
 	"github.com/botlabs-gg/yagpdb/automod/models"
 	"github.com/botlabs-gg/yagpdb/automod_legacy"
 	"github.com/botlabs-gg/yagpdb/bot"
@@ -520,6 +521,46 @@ func (inv *ServerInviteTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dst
 
 func (inv *ServerInviteTrigger) MergeDuplicates(data []interface{}) interface{} {
 	return data[0] // no point in having duplicates of this
+}
+
+/////////////////////////////////////////////////////////////
+
+var _ MessageTrigger = (*AntiPhishingLinkTrigger)(nil)
+
+type AntiPhishingLinkTrigger struct{}
+
+func (a *AntiPhishingLinkTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (a *AntiPhishingLinkTrigger) Name() string {
+	return "Flagged Scam links"
+}
+
+func (a *AntiPhishingLinkTrigger) DataType() interface{} {
+	return nil
+}
+
+func (a *AntiPhishingLinkTrigger) Description() string {
+	return "Triggers on messages that have scam links flagged by SinkingYachts and BitFlow AntiPhishing APIs"
+}
+
+func (a *AntiPhishingLinkTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (a *AntiPhishingLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	badDomain, err := antiphishing.CheckMessageForPhishingDomains(forwardSlashReplacer.Replace(m.Content))
+	if err != nil {
+		logger.WithError(err).Error("Failed to check url ")
+		return false, nil
+	}
+
+	if badDomain != "" {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 /////////////////////////////////////////////////////////////
