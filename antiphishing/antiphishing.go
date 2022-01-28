@@ -5,10 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-<<<<<<< HEAD
-=======
-	"net/url"
->>>>>>> e6ab4f5661ba6eac14be30d2a53960d151807f58
 	"strconv"
 	"strings"
 	"sync"
