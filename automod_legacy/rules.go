@@ -508,7 +508,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 		if err != nil {
 			logger.WithError(err).Error("Failed checking urls against antiphishing APIs")
 		} else if scamLink != "" {
-			return true, scamLink, "SCAM LINK"
+			return true, scamLink, ""
 		}
 	}
 

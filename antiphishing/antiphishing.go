@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -154,16 +153,15 @@ func cacheAllPhishingDomains() ([]string, error) {
 	return domains, nil
 }
 
-func checkCacheForPhishingDomain(input string) (bool, error) {
+func checkCacheForPhishingDomain(link string) (bool, error) {
 	isBadDomain := false
-	link, err := url.Parse(input)
-	if err != nil {
-		logrus.WithError(err).Error(`[antiphishing] failed to parse url`)
-		return false, err
+	domain := common.DomainFinderRegex.FindString(link)
+	if len(domain) == 0 {
+		return false, nil
 	}
-	err = common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", RedisKeyPhishingDomains, link.Hostname()))
+	err := common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", RedisKeyPhishingDomains, domain))
 	if err != nil {
-		logrus.WithError(err).Error(`[antiphishing] failed to check for phishing domains`)
+		logrus.WithError(err).Error(`[antiphishing] failed to check for phishing domains, error from cache`)
 		return false, err
 	}
 	return isBadDomain, nil
