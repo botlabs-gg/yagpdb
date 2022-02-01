@@ -186,31 +186,13 @@
 {{define "automod_legacy_banned_websites"}}
 <div class="col-lg-12">
     {{mTemplate "automod_legacy_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Sites "Name" "Sites"}}
-
     {{checkbox "Sites.GoogleSafeBrowsingEnabled" "automod-google-safebrowsing" `Enable <b>Google safebrowsing</b> integration` .AutomodConfig.Sites.GoogleSafeBrowsingEnabled}}
     <p>Detects sites that contains malware, scams, and other dangerous sites</p>
     <hr />
-    <!-- <p><b>Google safe browsing integration <i>(Coming soon!)</i></b></p> -->
-    <!-- <div class="checkbox">
-            <label>
-                <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing malware site detection
-            </label>
-        </div>
-        <div class="checkbox">
-            <label>
-                <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing social engineering site detection
-            </label>
-        </div>
-        <div class="checkbox">
-            <label>
-                <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing unwanted software site detection
-            </label>
-        </div>
-        <div class="checkbox">
-            <label>
-                <input type="checkbox" name="Sites.BuiltinBadSites" {{if .AutomodConfig.Sites.BuiltinBadSites }} checked{{end}} disabled> Enable safe browsing potentially harmfull application site detection
-            </label>
-        </div> -->
+
+    {{checkbox "Sites.ScamLinkProtection" "automod-scamlink-protection" `Enable <b>Scam link protection </b>` .AutomodConfig.Sites.ScamLinkProtection}}
+    <p>Detects common scam links on Discord</p>
+    <hr />
 
     <div class="form-group">
         <label>User-defined banned sites</label>
