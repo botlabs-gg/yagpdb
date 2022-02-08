@@ -1,7 +1,7 @@
 /* Add here all your JS customizations */
 
 /* This one is meant for tab-indent to be active in all textarea if marked tags; does not feature undo */
-$(document).delegate('.tab-textbox', 'keydown', function(e) { 
+$(document).delegate('.tab-textbox, textarea.form-control', 'keydown', function(e) { 
 var keyCode = e.keyCode || e.which; 
 
     if (keyCode == 9) {
