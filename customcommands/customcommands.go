@@ -160,13 +160,13 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 		return false
 	}
 
-	if cc.TriggerTypeForm == "interval_minutes" && (cc.TimeTriggerInterval < 5 || cc.TimeTriggerInterval > 32400) {
-		tmpl.AddAlerts(web.ErrorAlert("Mintue intervals can be between 5 and 32400"))
+	if cc.TriggerTypeForm == "interval_minutes" && (cc.TimeTriggerInterval < 5 || cc.TimeTriggerInterval > 44640) {
+		tmpl.AddAlerts(web.ErrorAlert("Minute intervals can be between 5 and 44640(1 Month)"))
 		return false
 	}
 
-	if cc.TriggerTypeForm == "interval_hours" && (cc.TimeTriggerInterval < 1 || cc.TimeTriggerInterval > 540) {
-		tmpl.AddAlerts(web.ErrorAlert("Hourly intervals can be between 1 and 540"))
+	if cc.TriggerTypeForm == "interval_hours" && (cc.TimeTriggerInterval < 1 || cc.TimeTriggerInterval > 744) {
+		tmpl.AddAlerts(web.ErrorAlert("Hourly intervals can be between 1 and 744 (1 Month)"))
 	}
 
 	return true
