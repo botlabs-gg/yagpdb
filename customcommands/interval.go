@@ -21,7 +21,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		return time.Time{}
 	}
 
-	if cc.TimeTriggerInterval < 5 || cc.TimeTriggerInterval > 44640 {
+	if cc.TimeTriggerInterval < MinIntervalTriggerDurationMinutes || cc.TimeTriggerInterval > MaxIntervalTriggerDurationMinutes {
 		// the interval is out of bounds and should never run
 		return time.Time{}
 	}

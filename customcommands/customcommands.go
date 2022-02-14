@@ -29,6 +29,14 @@ var (
 	logger     = common.GetPluginLogger(&Plugin{})
 )
 
+// Setting it to 1 Month approx
+const (
+	MinIntervalTriggerDurationMinutes = 5
+	MinIntervalTriggerDurationHours   = 1
+	MaxIntervalTriggerDurationHours   = 744
+	MaxIntervalTriggerDurationMinutes = 44640
+)
+
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
 
 type Plugin struct{}
@@ -160,13 +168,14 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 		return false
 	}
 
-	if cc.TriggerTypeForm == "interval_minutes" && (cc.TimeTriggerInterval < 5 || cc.TimeTriggerInterval > 44640) {
-		tmpl.AddAlerts(web.ErrorAlert("Minute intervals can be between 5 and 44640(1 Month)"))
+	if cc.TriggerTypeForm == "interval_minutes" && (cc.TimeTriggerInterval < MinIntervalTriggerDurationMinutes || cc.TimeTriggerInterval > MaxIntervalTriggerDurationMinutes) {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Minute interval can be between %v and %v", MinIntervalTriggerDurationMinutes, MaxIntervalTriggerDurationMinutes)))
 		return false
 	}
 
-	if cc.TriggerTypeForm == "interval_hours" && (cc.TimeTriggerInterval < 1 || cc.TimeTriggerInterval > 744) {
-		tmpl.AddAlerts(web.ErrorAlert("Hourly intervals can be between 1 and 744 (1 Month)"))
+	if cc.TriggerTypeForm == "interval_hours" && (cc.TimeTriggerInterval < MinIntervalTriggerDurationHours || cc.TimeTriggerInterval > MaxIntervalTriggerDurationHours) {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Hour interval can be between %v and %v", MinIntervalTriggerDurationHours, MaxIntervalTriggerDurationHours)))
+		return false
 	}
 
 	return true
