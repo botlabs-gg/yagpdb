@@ -132,7 +132,6 @@ func KindOf(input interface{}, flag ...bool) (string, error) { //flag used only 
 }
 
 func StructToSdict(value interface{}) (SDict, error) {
-
 	val, isNil := indirect(reflect.ValueOf(value))
 	typeOfS := val.Type()
 	if isNil || value == nil {
@@ -146,9 +145,7 @@ func StructToSdict(value interface{}) (SDict, error) {
 	fields := make(map[string]interface{})
 	for i := 0; i < val.NumField(); i++ {
 		curr := val.Field(i)
-		if curr.CanSet() {
-			fields[typeOfS.Field(i).Name] = curr.Interface()
-		}
+		fields[typeOfS.Field(i).Name] = curr.Interface()
 	}
 	return SDict(fields), nil
 
