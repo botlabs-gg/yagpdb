@@ -21,6 +21,11 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		return time.Time{}
 	}
 
+	if cc.TimeTriggerInterval < MinIntervalTriggerDurationMinutes || cc.TimeTriggerInterval > MaxIntervalTriggerDurationMinutes {
+		// the interval is out of bounds and should never run
+		return time.Time{}
+	}
+
 	tNext := cc.LastRun.Time.Add(time.Minute * time.Duration(cc.TimeTriggerInterval))
 	// run it immedietely if this is the case
 	if tNext.Before(now) {

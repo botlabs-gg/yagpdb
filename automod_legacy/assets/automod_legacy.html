@@ -118,13 +118,13 @@
 
     <div class="form-group">
         <label for="NumMessages">Number of messages:</label>
-        <input type="number" class="form-control" name="Spam.NumMessages"
+        <input type="number" min="0" class="form-control" name="Spam.NumMessages"
             value="{{.AutomodConfig.Spam.NumMessages}}"></input>
         <p class="help-block">Number of messages sent within the time frame below for it to be triggered:</p>
     </div>
     <div class="form-group">
         <label for="Within">Within (seconds):</label>
-        <input type="number" class="form-control" name="Spam.Within" value="{{.AutomodConfig.Spam.Within}}"></input>
+        <input type="number" min="0" class="form-control" name="Spam.Within" value="{{.AutomodConfig.Spam.Within}}"></input>
         <p class="help-block">The timeframe to check messages from.</p>
     </div>
     <p>Something decent to just protect from raw spam could be five messages within two seconds. Normal users won't come
@@ -139,7 +139,7 @@
 
     <div class="form-group">
         <label for="Treshold">Mention Threshold</label>
-        <input type="number" class="form-control" name="Mention.Treshold"
+        <input type="number" min="0" class="form-control" name="Mention.Treshold"
             value="{{.AutomodConfig.Mention.Treshold}}"></input>
         <p class="help-block">The number of mentions in a message for it to trigger.<br>
             If it's set to 5, then someone mentioning five people or more would trigger this.</p>
@@ -215,7 +215,7 @@
 <hr />
 <div class="form-group">
     <label for="ViolationsExpire">Violations expire after (minutes):</label>
-    <input type="number" class="form-control" name="{{.Name}}.ViolationsExpire"
+    <input type="number" min="0" max="44640" class="form-control" name="{{.Name}}.ViolationsExpire"
         value="{{.Rule.ViolationsExpire}}"></input>
     <p class="help-block">When this many minutes have passed without any violations, the users violations are forgotten,
         maximum is one month (44640 minutes).</p>
@@ -225,22 +225,22 @@
 <div class="form-group row">
     <div class="col-lg-2">
         <label for="MuteAfter">Mute after: <small>(Set up role in moderation)</small></label>
-        <input type="number" class="form-control" placeholder="" value="{{.Rule.MuteAfter}}" name="{{.Name}}.MuteAfter">
+        <input type="number" min="0" class="form-control" placeholder="" value="{{.Rule.MuteAfter}}" name="{{.Name}}.MuteAfter">
     </div>
 
     <div class="col-lg-3">
         <label for="BanAfter">Mute duration <b>(minutes)</b>:</label>
-        <input type="number" class="form-control" placeholder="" value="{{.Rule.MuteDuration}}"
+        <input type="number" min="0" class="form-control" placeholder="" value="{{.Rule.MuteDuration}}"
             name="{{.Name}}.MuteDuration">
     </div>
 
     <div class="col-lg-3 col-lg-offset-1">
         <label for="KickAfter">Kick after:</label>
-        <input type="number" class="form-control" placeholder="" value="{{.Rule.KickAfter}}" name="{{.Name}}.KickAfter">
+        <input type="number" min="0" class="form-control" placeholder="" value="{{.Rule.KickAfter}}" name="{{.Name}}.KickAfter">
     </div>
     <div class="col-lg-3">
         <label for="BanAfter">Ban after <b>(Be careful with this)</b>:</label>
-        <input type="number" class="form-control" placeholder="" value="{{.Rule.BanAfter}}" name="{{.Name}}.BanAfter">
+        <input type="number" min="0" class="form-control" placeholder="" value="{{.Rule.BanAfter}}" name="{{.Name}}.BanAfter">
     </div>
 </div>
 <p class="help-block">Punish based on number of violations >:O. (Punishment is disabled if set below 1.)</p>

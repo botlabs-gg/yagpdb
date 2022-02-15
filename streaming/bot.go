@@ -146,6 +146,11 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
+	if ms.User.Bot {
+		logger.WithField("isBot", m.User.Bot).Error("Ignoring Bots")
+		return false, nil
+	}
+
 	if ms.Presence == nil {
 		return // no presence tracked, no poing in continuing
 	}

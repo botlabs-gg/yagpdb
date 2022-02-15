@@ -45,6 +45,9 @@ var (
 		"trimSpace": strings.TrimSpace,
 		"upper":     strings.ToUpper,
 		"urlescape": url.PathEscape,
+		"print":     withOutputLimit(fmt.Sprint, MaxStringLength),
+		"println":   withOutputLimit(fmt.Sprintln, MaxStringLength),
+		"printf":    withOutputLimitF(fmt.Sprintf, MaxStringLength),
 
 		// math
 		"add":               add,
@@ -828,4 +831,24 @@ func (s Slice) StringSlice(flag ...bool) interface{} {
 	}
 
 	return StringSlice
+}
+
+func withOutputLimit(f func(...interface{}) string, limit int) func(...interface{}) (string, error) {
+	return func(args ...interface{}) (string, error) {
+		out := f(args...)
+		if len(out) > limit {
+			return "", fmt.Errorf("string grew too long: length %d (max %d)", len(out), limit)
+		}
+		return out, nil
+	}
+}
+
+func withOutputLimitF(f func(string, ...interface{}) string, limit int) func(string, ...interface{}) (string, error) {
+	return func(format string, args ...interface{}) (string, error) {
+		out := f(format, args...)
+		if len(out) > limit {
+			return "", fmt.Errorf("string grew too long: length %d (max %d)", len(out), limit)
+		}
+		return out, nil
+	}
 }
