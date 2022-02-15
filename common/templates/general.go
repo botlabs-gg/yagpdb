@@ -213,11 +213,14 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 	msg := &discordgo.MessageSend{}
 
+	// Default filename
+	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
+
 	for key, val := range messageSdict {
 
 		switch key {
 		case "content":
-			msg.Content = fmt.Sprint(val)
+			msg.Content = ToString(val)
 		case "embed":
 			if val == nil {
 				continue
@@ -228,7 +231,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			}
 			msg.Embed = embed
 		case "file":
-			stringFile := fmt.Sprint(val)
+			stringFile := ToString(val)
 			if len(stringFile) > 100000 {
 				return nil, errors.New("file length for send message builder exceeded size limit")
 			}
@@ -236,14 +239,20 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			buf.WriteString(stringFile)
 
 			msg.File = &discordgo.File{
-				Name:        "Attachment.txt",
 				ContentType: "text/plain",
 				Reader:      &buf,
 			}
+		case "filename":
+			// Cut the filename to a reasonable length if it's too long
+			filename = common.CutStringShort(ToString(val), 64)
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
 
+	}
+	if msg.File != nil {
+		// We hardcode the extension to .txt to prevent possible abuse via .bat or other possible harmful/easily corruptable file formats
+		msg.File.Name = filename + ".txt"
 	}
 
 	return msg, nil
