@@ -228,7 +228,7 @@ the punishment, is an <a href="https://docs.yagpdb.xyz/reference/templates#user"
 
         <div class="form-group">
             <label>Default mute duration in minutes. Set to 0 for infinite</label>
-            <input type="number" name="DefaultMuteDuration.Int64" class="form-control"
+            <input type="number" min="0" name="DefaultMuteDuration.Int64" class="form-control"
                 value="{{.ModConfig.DefaultMuteDuration.Int64}}">
         </div>
         <hr />
@@ -351,7 +351,7 @@ the punishment, is an <a href="https://docs.yagpdb.xyz/reference/templates#user"
         
         <div class="form-group">
             <label>Default number of days of messages to delete while banning. Range 0 to 7.</label>
-            <input type="number" name="DefaultBanDeleteDays.Int64" class="form-control"
+            <input type="number" min="0" max="7" name="DefaultBanDeleteDays.Int64" class="form-control"
                 value="{{.ModConfig.DefaultBanDeleteDays.Int64}}">
         </div>
         <hr />
