@@ -217,6 +217,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 }
 
 type UpdateListData struct {
+	Name    string `valid:",1,50"`
 	Content string `valid:",0,5000"`
 }
 
@@ -230,8 +231,9 @@ func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Requ
 		return nil, err
 	}
 
+	list.Name = data.Name
 	list.Content = strings.Fields(data.Content)
-	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
+	_, err = list.UpdateG(r.Context(), boil.Whitelist("name", "content"))
 	if err == nil {
 		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedList))
