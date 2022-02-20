@@ -145,7 +145,9 @@ func StructToSdict(value interface{}) (SDict, error) {
 	fields := make(map[string]interface{})
 	for i := 0; i < val.NumField(); i++ {
 		curr := val.Field(i)
-		fields[typeOfS.Field(i).Name] = curr.Interface()
+		if curr.CanInterface() {
+			fields[typeOfS.Field(i).Name] = curr.Interface()
+		}
 	}
 	return SDict(fields), nil
 
@@ -315,7 +317,7 @@ func indirect(v reflect.Value) (rv reflect.Value, isNil bool) {
 func in(l interface{}, v interface{}) bool {
 	lv, _ := indirect(reflect.ValueOf(l))
 	vv := reflect.ValueOf(v)
-	
+
 	if !reflect.ValueOf(vv).IsZero() {
 		switch lv.Kind() {
 		case reflect.Array, reflect.Slice:
