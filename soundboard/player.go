@@ -115,13 +115,8 @@ func (p *Player) Run() {
 		p.timeLastPlay = time.Now()
 		playersmu.L.Unlock()
 
-		// do a changechannel if we are in another channel and also voice is connected
-		if changeChannel && p.vc != nil {
-			p.vc.ChangeChannel(item.ChannelID, false, true)
-		}
-
 		var err error
-		p.vc, err = playSound(p, p.vc, bot.ShardManager.SessionForGuild(p.GuildID), item)
+		p.vc, err = playSound(p, p.vc, bot.ShardManager.SessionForGuild(p.GuildID), item, changeChannel)
 		if err != nil {
 			logger.WithError(err).WithField("guild", p.GuildID).Error("Failed playing sound")
 			if item.CommandRanFrom != 0 {
@@ -182,7 +177,7 @@ func (p *Player) checkIdleTooLong() {
 	}
 }
 
-func playSound(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Session, req *PlayRequest) (*discordgo.VoiceConnection, error) {
+func playSound(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Session, req *PlayRequest, changeChannel bool) (*discordgo.VoiceConnection, error) {
 	logger.Info("Playing sound ", req.Sound)
 
 	// Open the sound and create a new decoder
@@ -195,7 +190,7 @@ func playSound(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Sess
 	decoder := dca.NewDecoder(reader)
 
 	// Either use the passed voice connection, or create a new one
-	if vc == nil || !vc.Ready {
+	if changeChannel || vc == nil || !vc.Ready {
 		vc, err = session.GatewayManager.ChannelVoiceJoin(req.GuildID, req.ChannelID, false, true)
 		if err != nil {
 			if err == discordgo.ErrTimeoutWaitingForVoice {
