@@ -174,7 +174,7 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 	}
 
 	if cc.TriggerTypeForm == "interval_hours" && (cc.TimeTriggerInterval < MinIntervalTriggerDurationHours || cc.TimeTriggerInterval > MaxIntervalTriggerDurationHours) {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Hour interval can be between %v and %v", MinIntervalTriggerDurationHours, MaxIntervalTriggerDurationHours)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Hourly interval can be between %v and %v", MinIntervalTriggerDurationHours, MaxIntervalTriggerDurationHours)))
 		return false
 	}
 
