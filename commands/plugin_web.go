@@ -38,8 +38,8 @@ type ChannelOverrideForm struct {
 	CommandsEnabled         bool
 	AutodeleteResponse      bool
 	AutodeleteTrigger       bool
-	AutodeleteResponseDelay int
-	AutodeleteTriggerDelay  int
+	AutodeleteResponseDelay int     `valid:"0,3600"`
+	AutodeleteTriggerDelay  int     `valid:"0,3600"`
 	RequireRoles            []int64 `valid:"role,true"`
 	IgnoreRoles             []int64 `valid:"role,true"`
 }
@@ -49,8 +49,8 @@ type CommandOverrideForm struct {
 	CommandsEnabled         bool
 	AutodeleteResponse      bool
 	AutodeleteTrigger       bool
-	AutodeleteResponseDelay int
-	AutodeleteTriggerDelay  int
+	AutodeleteResponseDelay int     `valid:"0,3600"`
+	AutodeleteTriggerDelay  int     `valid:"0,3600"`
 	RequireRoles            []int64 `valid:"role,true"`
 	IgnoreRoles             []int64 `valid:"role,true"`
 }
