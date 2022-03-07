@@ -9,7 +9,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
-	github.com/alfredxing/calc v0.0.0-20180827002445-77daf576f976
+	github.com/ei14/calc v0.0.0-20220307064635-62ca623f5da1
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/dghubble/oauth1 v0.6.0
 	github.com/didip/tollbooth v4.0.2+incompatible
