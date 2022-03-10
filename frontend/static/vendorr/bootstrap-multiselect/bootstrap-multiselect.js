@@ -403,7 +403,7 @@
             buttonClass: 'btn btn-default',
             inheritClass: false,
             buttonWidth: 'auto',
-            buttonContainer: '<div class="btn-group dropup" />',
+            buttonContainer: '<div class="btn-group dropdown" />',
             dropRight: false,
             dropUp: false,
             selectedClass: 'active',
