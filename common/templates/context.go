@@ -35,15 +35,19 @@ var (
 		"toByte":     ToByte,
 
 		// string manipulation
-		"joinStr":   joinStrings,
-		"lower":     strings.ToLower,
-		"upper":     strings.ToUpper,
-		"slice":     slice,
-		"urlescape": url.PathEscape,
-		"split":     strings.Split,
-		"title":     strings.Title,
 		"hasPrefix": strings.HasPrefix,
 		"hasSuffix": strings.HasSuffix,
+		"joinStr":   joinStrings,
+		"lower":     strings.ToLower,
+		"slice":     slice,
+		"split":     strings.Split,
+		"title":     strings.Title,
+		"trimSpace": strings.TrimSpace,
+		"upper":     strings.ToUpper,
+		"urlescape": url.PathEscape,
+		"print":     withOutputLimit(fmt.Sprint, MaxStringLength),
+		"println":   withOutputLimit(fmt.Sprintln, MaxStringLength),
+		"printf":    withOutputLimitF(fmt.Sprintf, MaxStringLength),
 
 		// math
 		"add":               add,
@@ -52,6 +56,7 @@ var (
 		"div":               tmplDiv,
 		"mod":               tmplMod,
 		"fdiv":              tmplFDiv,
+		"cbrt":              tmplCbrt,
 		"sqrt":              tmplSqrt,
 		"pow":               tmplPow,
 		"log":               tmplLog,
@@ -71,18 +76,21 @@ var (
 		"complexMessageEdit": CreateMessageEdit,
 		"kindOf":             KindOf,
 
-		"formatTime":  tmplFormatTime,
-		"json":        tmplJson,
-		"in":          in,
-		"inFold":      inFold,
-		"roleAbove":   roleIsAbove,
-		"adjective":   common.RandomAdjective,
-		"noun":        common.RandomNoun,
-		"randInt":     randInt,
-		"shuffle":     shuffle,
-		"seq":         sequence,
-		"currentTime": tmplCurrentTime,
-		"newDate":     tmplNewDate,
+		"formatTime":      tmplFormatTime,
+		"snowflakeToTime": tmplSnowflakeToTime,
+		"loadLocation":    time.LoadLocation,
+		"json":            tmplJson,
+		"in":              in,
+		"inFold":          inFold,
+		"roleAbove":       roleIsAbove,
+		"adjective":       common.RandomAdjective,
+		"noun":            common.RandomNoun,
+		"randInt":         randInt,
+		"shuffle":         shuffle,
+		"seq":             sequence,
+		"currentTime":     tmplCurrentTime,
+		"newDate":         tmplNewDate,
+		"weekNumber":      tmplWeekNumber,
 
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
 		"humanizeDurationMinutes": tmplHumanizeDurationMinutes,
@@ -499,6 +507,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
 	c.addContextFunc("editMessage", c.tmplEditMessage(true))
 	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
+	c.addContextFunc("pinMessage", c.tmplPinMessage(false))
+	c.addContextFunc("unpinMessage", c.tmplPinMessage(true))
 
 	// Mentions
 	c.addContextFunc("mentionEveryone", c.tmplMentionEveryone)
@@ -536,6 +546,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getChannel", c.tmplGetChannel)
 	c.addContextFunc("getThread", c.tmplGetThread)
 	c.addContextFunc("getChannelOrThread", c.tmplGetChannelOrThread)
+	c.addContextFunc("getPinCount", c.tmplGetChannelPinCount)
 	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("addReactions", c.tmplAddReactions)
 	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
@@ -605,11 +616,84 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	}
 }
 
+func isMaybeContainer(v interface{}) bool {
+	rv, _ := indirect(reflect.ValueOf(v))
+	switch rv.Kind() {
+	case reflect.Array, reflect.Slice, reflect.Interface, reflect.Map, reflect.Struct:
+		return true
+	default:
+		return false
+	}
+}
+
+// Cyclic value detection is modified from encoding/json/encode.go.
+const startDetectingCyclesAfter = 250
+
+type cyclicValueDetector struct {
+	ptrLevel uint
+	ptrSeen  map[interface{}]struct{}
+}
+
+func (c *cyclicValueDetector) Check(v reflect.Value) error {
+	v, _ = indirect(v)
+	switch v.Kind() {
+	case reflect.Map:
+		if c.ptrLevel++; c.ptrLevel > startDetectingCyclesAfter {
+			ptr := v.Pointer()
+			if _, ok := c.ptrSeen[ptr]; ok {
+				return fmt.Errorf("encountered a cycle via %s", v.Type())
+			}
+			c.ptrSeen[ptr] = struct{}{}
+		}
+
+		it := v.MapRange()
+		for it.Next() {
+			if err := c.Check(it.Value()); err != nil {
+				return err
+			}
+		}
+		c.ptrLevel--
+		return nil
+	case reflect.Array, reflect.Slice:
+		if c.ptrLevel++; c.ptrLevel > startDetectingCyclesAfter {
+			ptr := struct {
+				ptr uintptr
+				len int
+			}{v.Pointer(), v.Len()}
+			if _, ok := c.ptrSeen[ptr]; ok {
+				return fmt.Errorf("encountered a cycle via %s", v.Type())
+			}
+			c.ptrSeen[ptr] = struct{}{}
+		}
+
+		for i := 0; i < v.Len(); i++ {
+			elem := v.Index(i)
+			if err := c.Check(elem); err != nil {
+				return err
+			}
+		}
+		c.ptrLevel--
+		return nil
+	default:
+		return nil
+	}
+}
+
+func detectCyclicValue(v interface{}) error {
+	c := &cyclicValueDetector{ptrSeen: make(map[interface{}]struct{})}
+	return c.Check(reflect.ValueOf(v))
+}
+
 type Dict map[interface{}]interface{}
 
-func (d Dict) Set(key interface{}, value interface{}) string {
+func (d Dict) Set(key interface{}, value interface{}) (string, error) {
 	d[key] = value
-	return ""
+	if isMaybeContainer(value) {
+		if err := detectCyclicValue(d); err != nil {
+			return "", err
+		}
+	}
+	return "", nil
 }
 
 func (d Dict) Get(key interface{}) interface{} {
@@ -630,11 +714,21 @@ func (d Dict) Del(key interface{}) string {
 	return ""
 }
 
+func (d Dict) HasKey(k interface{}) (ok bool) {
+	_, ok = d[k]
+	return
+}
+
 type SDict map[string]interface{}
 
-func (d SDict) Set(key string, value interface{}) string {
+func (d SDict) Set(key string, value interface{}) (string, error) {
 	d[key] = value
-	return ""
+	if isMaybeContainer(value) {
+		if err := detectCyclicValue(d); err != nil {
+			return "", err
+		}
+	}
+	return "", nil
 }
 
 func (d SDict) Get(key string) interface{} {
@@ -644,6 +738,11 @@ func (d SDict) Get(key string) interface{} {
 func (d SDict) Del(key string) string {
 	delete(d, key)
 	return ""
+}
+
+func (d SDict) HasKey(k string) (ok bool) {
+	_, ok = d[k]
+	return
 }
 
 type Slice []interface{}
@@ -661,7 +760,6 @@ func (s Slice) Append(item interface{}) (interface{}, error) {
 		result := reflect.Append(reflect.ValueOf(&s).Elem(), reflect.ValueOf(v))
 		return result.Interface(), nil
 	}
-
 }
 
 func (s Slice) Set(index int, item interface{}) (string, error) {
@@ -670,6 +768,11 @@ func (s Slice) Set(index int, item interface{}) (string, error) {
 	}
 
 	s[index] = item
+	if isMaybeContainer(item) {
+		if err := detectCyclicValue(s); err != nil {
+			return "", err
+		}
+	}
 	return "", nil
 }
 
@@ -728,4 +831,24 @@ func (s Slice) StringSlice(flag ...bool) interface{} {
 	}
 
 	return StringSlice
+}
+
+func withOutputLimit(f func(...interface{}) string, limit int) func(...interface{}) (string, error) {
+	return func(args ...interface{}) (string, error) {
+		out := f(args...)
+		if len(out) > limit {
+			return "", fmt.Errorf("string grew too long: length %d (max %d)", len(out), limit)
+		}
+		return out, nil
+	}
+}
+
+func withOutputLimitF(f func(string, ...interface{}) string, limit int) func(string, ...interface{}) (string, error) {
+	return func(format string, args ...interface{}) (string, error) {
+		out := f(format, args...)
+		if len(out) > limit {
+			return "", fmt.Errorf("string grew too long: length %d (max %d)", len(out), limit)
+		}
+		return out, nil
+	}
 }

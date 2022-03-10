@@ -17,6 +17,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/moderation"
 	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
@@ -216,6 +217,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 }
 
 type UpdateListData struct {
+	Name    string `valid:",1,50"`
 	Content string `valid:",0,5000"`
 }
 
@@ -229,8 +231,9 @@ func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Requ
 		return nil, err
 	}
 
+	list.Name = data.Name
 	list.Content = strings.Fields(data.Content)
-	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
+	_, err = list.UpdateG(r.Context(), boil.Whitelist("name", "content"))
 	if err == nil {
 		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedList))
@@ -488,6 +491,22 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	tx, err := common.PQ.BeginTx(r.Context(), nil)
 	if err != nil {
 		return tmpl, err
+	}
+
+	anyMute := false
+	for _, effect := range effects {
+		if effect.TypeID == 304 {
+			anyMute = true
+			break
+		}
+	}
+	if anyMute {
+		conf, err := moderation.GetConfig(g.ID)
+		if err != nil || conf.MuteRole == "" {
+			tx.Rollback()
+			tmpl.AddAlerts(web.ErrorAlert("No mute role set, please configure one."))
+			return tmpl, nil
+		}
 	}
 
 	// First wipe all previous rule data

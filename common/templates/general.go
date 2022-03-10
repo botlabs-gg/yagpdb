@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/jonas747/discordgo/v2"
 )
@@ -131,7 +132,6 @@ func KindOf(input interface{}, flag ...bool) (string, error) { //flag used only 
 }
 
 func StructToSdict(value interface{}) (SDict, error) {
-
 	val, isNil := indirect(reflect.ValueOf(value))
 	typeOfS := val.Type()
 	if isNil || value == nil {
@@ -145,7 +145,7 @@ func StructToSdict(value interface{}) (SDict, error) {
 	fields := make(map[string]interface{})
 	for i := 0; i < val.NumField(); i++ {
 		curr := val.Field(i)
-		if curr.CanSet() {
+		if curr.CanInterface() {
 			fields[typeOfS.Field(i).Name] = curr.Interface()
 		}
 	}
@@ -215,11 +215,14 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 	msg := &discordgo.MessageSend{}
 
+	// Default filename
+	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
+
 	for key, val := range messageSdict {
 
 		switch key {
 		case "content":
-			msg.Content = fmt.Sprint(val)
+			msg.Content = ToString(val)
 		case "embed":
 			if val == nil {
 				continue
@@ -230,7 +233,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			}
 			msg.Embed = embed
 		case "file":
-			stringFile := fmt.Sprint(val)
+			stringFile := ToString(val)
 			if len(stringFile) > 100000 {
 				return nil, errors.New("file length for send message builder exceeded size limit")
 			}
@@ -238,14 +241,20 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			buf.WriteString(stringFile)
 
 			msg.File = &discordgo.File{
-				Name:        "Attachment.txt",
 				ContentType: "text/plain",
 				Reader:      &buf,
 			}
+		case "filename":
+			// Cut the filename to a reasonable length if it's too long
+			filename = common.CutStringShort(ToString(val), 64)
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
 
+	}
+	if msg.File != nil {
+		// We hardcode the extension to .txt to prevent possible abuse via .bat or other possible harmful/easily corruptable file formats
+		msg.File.Name = filename + ".txt"
 	}
 
 	return msg, nil
@@ -309,38 +318,40 @@ func in(l interface{}, v interface{}) bool {
 	lv, _ := indirect(reflect.ValueOf(l))
 	vv := reflect.ValueOf(v)
 
-	switch lv.Kind() {
-	case reflect.Array, reflect.Slice:
-		for i := 0; i < lv.Len(); i++ {
-			lvv := lv.Index(i)
-			lvv, isNil := indirect(lvv)
-			if isNil {
-				continue
-			}
-			switch lvv.Kind() {
-			case reflect.String:
-				if vv.Type() == lvv.Type() && vv.String() == lvv.String() {
-					return true
+	if !reflect.ValueOf(vv).IsZero() {
+		switch lv.Kind() {
+		case reflect.Array, reflect.Slice:
+			for i := 0; i < lv.Len(); i++ {
+				lvv := lv.Index(i)
+				lvv, isNil := indirect(lvv)
+				if isNil {
+					continue
 				}
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				switch vv.Kind() {
+				switch lvv.Kind() {
+				case reflect.String:
+					if vv.Type() == lvv.Type() && vv.String() == lvv.String() {
+						return true
+					}
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					if vv.Int() == lvv.Int() {
-						return true
+					switch vv.Kind() {
+					case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+						if vv.Int() == lvv.Int() {
+							return true
+						}
 					}
-				}
-			case reflect.Float32, reflect.Float64:
-				switch vv.Kind() {
 				case reflect.Float32, reflect.Float64:
-					if vv.Float() == lvv.Float() {
-						return true
+					switch vv.Kind() {
+					case reflect.Float32, reflect.Float64:
+						if vv.Float() == lvv.Float() {
+							return true
+						}
 					}
 				}
 			}
-		}
-	case reflect.String:
-		if vv.Type() == lv.Type() && strings.Contains(lv.String(), vv.String()) {
-			return true
+		case reflect.String:
+			if vv.Type() == lv.Type() && strings.Contains(lv.String(), vv.String()) {
+				return true
+			}
 		}
 	}
 
@@ -514,6 +525,15 @@ func tmplSqrt(arg interface{}) float64 {
 		return math.Sqrt(ToFloat64(arg))
 	default:
 		return math.Sqrt(-1)
+	}
+}
+
+func tmplCbrt(arg interface{}) float64 {
+	switch arg.(type) {
+	case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+		return math.Cbrt(ToFloat64(arg))
+	default:
+		return math.NaN()
 	}
 }
 
@@ -907,6 +927,10 @@ func tmplFormatTime(t time.Time, args ...string) string {
 	return t.Format(layout)
 }
 
+func tmplSnowflakeToTime(v interface{}) time.Time {
+	return bot.SnowflakeToTime(ToInt64(v)).UTC()
+}
+
 type variadicFunc func([]reflect.Value) (reflect.Value, error)
 
 // callVariadic allows the given function to be called with either a variadic
@@ -1011,6 +1035,11 @@ func tmplNewDate(year, monthInt, day, hour, min, sec int, location ...string) (t
 	}
 
 	return time.Date(year, month, day, hour, min, sec, 0, loc), nil
+}
+
+func tmplWeekNumber(t time.Time) (week int) {
+	_, week = t.ISOWeek()
+	return
 }
 
 func tmplHumanizeDurationHours(in time.Duration) string {

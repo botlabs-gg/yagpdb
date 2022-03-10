@@ -146,6 +146,11 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
+	if ms.User.Bot {
+		logger.WithField("isBot", m.User.Bot).Error("Ignoring Bots")
+		return false, nil
+	}
+
 	if ms.Presence == nil {
 		return // no presence tracked, no poing in continuing
 	}
@@ -233,22 +238,20 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 
 func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Presence, gs *dstate.GuildSet) error {
 	if !config.Enabled {
-		// RemoveStreaming(client, config, gs.ID, p.User.ID, member)
 		return nil
 	}
 
 	mainActivity := retrieveMainActivity(p)
+	ms, err := bot.GetMember(gs.ID, p.User.ID)
+	if err != nil {
+		return err
+	}
 
 	// Now the real fun starts
 	// Either add or remove the stream
-	if p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1 && !p.User.Bot {
+	if p.Status != discordgo.StatusOffline && mainActivity != nil && mainActivity.URL != "" && mainActivity.Type == 1 && !ms.User.Bot {
 
 		// Streaming and not a bot
-		ms, err := bot.GetMember(gs.ID, p.User.ID)
-		if err != nil {
-			return err
-		}
-
 		if !config.MeetsRequirements(ms.Member.Roles, mainActivity.State, mainActivity.Details) {
 			RemoveStreaming(client, config, gs.ID, p.User.ID, ms.Member.Roles)
 			return nil
@@ -268,11 +271,9 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 
 		// Send the streaming announcement if enabled
 		if config.AnnounceChannel != 0 && config.AnnounceMessage != "" {
-			ms, err := bot.GetMember(gs.ID, p.User.ID)
 			if err != nil {
 				return errors.WithStackIf(err)
 			}
-
 			go SendStreamingAnnouncement(config, gs, ms, mainActivity.URL, mainActivity.State, mainActivity.Details, mainActivity.Name)
 		}
 	} else {
@@ -299,7 +300,6 @@ func retrieveMainActivity(p *discordgo.Presence) *discordgo.Game {
 
 func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, gs *dstate.GuildSet) error {
 	if !config.Enabled {
-		// RemoveStreaming(client, config, gs.ID, p.User.ID, member)
 		return nil
 	}
 

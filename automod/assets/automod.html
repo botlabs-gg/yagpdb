@@ -298,7 +298,7 @@ table{
                     <div class="pull-right">
                         <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/automod/list/{{.ID}}/delete">Delete</button>
                     </div>
-                    <h2 class="card-title">List: {{.Name}}</h2>
+                    <h2 class="card-title">List: <span contenteditable="true" data-content-editable-form="Name" class="content-editable-form">{{.Name}}</span></h2>
                 </header>
                 <div class="card-body">
                     <div class="form-group">
