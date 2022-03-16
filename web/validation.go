@@ -220,14 +220,11 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 }
 
 func readMinMax(valid *ValidationTag) (float64, float64, bool) {
-	onlyMin := false
+
 	min, _ := valid.Float(0)
 	max, _ := valid.Float(1)
-	if valid.values[1] == "" {
-		onlyMin = true
-	}
 
-	return min, max, onlyMin
+	return min, max, valid.values[1] == "" // Last value is a flag which represents that only min value is provided
 }
 
 func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *dstate.GuildSet) (filtered []int64, err error) {
