@@ -29,10 +29,10 @@ var PageHTMLSettings string
 type PostConfigForm struct {
 	Enabled                 bool
 	EnableThanksDetection   bool
-	PointsName              string `valid:",50"`
-	Cooldown                int    `valid:"0,86401"` // One day
-	MaxGiveAmount           int64
-	MaxRemoveAmount         int64
+	PointsName              string  `valid:",50"`
+	Cooldown                int     `valid:"0,86401"` // One day
+	MaxGiveAmount           int64   `valid:"0,"`
+	MaxRemoveAmount         int64   `valid:"0,"`
 	RequiredGiveRoles       []int64 `valid:"role,true"`
 	RequiredReceiveRoles    []int64 `valid:"role,true"`
 	BlacklistedGiveRoles    []int64 `valid:"role,true"`

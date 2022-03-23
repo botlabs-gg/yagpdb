@@ -57,7 +57,7 @@
                 {{$Dot := .}}
                 {{range .FeedItems}}
                 <form id="feed-item-{{.ID}}" data-async-form method="post"
-                    action="/manage/{{$Dot.ActiveGuild.ID}}/reddit/{{.ID}}/update">
+                    action="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/update">
                     <div class="row border-bottom border-secondary pb-3 {{if not .Enabled}}feed-item-disabled{{end}}">
                         <input type="text" class="hidden" name="id" value="{{.ID}}">
                         <div class="form-group col">
