@@ -49,6 +49,18 @@ func TestNextRunTimeImpossible(t *testing.T) {
 	if !next.IsZero() {
 		t.Error("next time is not zero: ", next)
 	}
+
+	cc.TimeTriggerExcludingDays = nil
+	next = CalcNextRunTime(cc, time.Now())
+	if !next.IsZero() {
+		t.Error("next time is not zero: ", next)
+	}
+
+	cc.TimeTriggerInterval = 44641
+	next = CalcNextRunTime(cc, time.Now())
+	if !next.IsZero() {
+		t.Error("next time is not zero: ", next)
+	}
 }
 
 func TestNextRunTimeExcludingHours(t *testing.T) {
