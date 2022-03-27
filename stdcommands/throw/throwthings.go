@@ -117,4 +117,11 @@ var throwThings = []string{
 	"squares",
 	"a duck",
 	"lily from at&t",
+	"aGkgaGV4IGRlY29kZQ==",
+	"a pipebomb",
+	"19 dollar fortnite card",
+	"pluto",
+	"the sun",
+	"Amazon Alexa",
+	"the word \"kakorrhaphiophobia\""
 }
