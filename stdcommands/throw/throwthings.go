@@ -123,5 +123,5 @@ var throwThings = []string{
 	"pluto",
 	"the sun",
 	"Amazon Alexa",
-	"the word \"kakorrhaphiophobia\""
+	"the word \"kakorrhaphiophobia\"",
 }
