@@ -403,8 +403,8 @@ github.com/jonas747/jdshardmanager/v2 v2.0.0 h1:coBcJ57KvjuvYCpoWDCwIwb/ch14szKk
 github.com/jonas747/jdshardmanager/v2 v2.0.0/go.mod h1:DHf5c16KoFOJgXA48Hn1ZjqPnx4bzUbnLb9UBJQGoGc=
 github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 h1:Kyv+zTfWIGRNaz/4+lS+CxvuKVZSKFz/6G8E3BKKBRs=
 github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757/go.mod h1:cZnNmdLiLpihzgIVqiaQppi9Ts3D4qF/M45//yW35nI=
-github.com/jonas747/template v1.1.3 h1:Q8HdXz8/4O+hTveXKAwHYyQjYcjLrLKqAGOfVHpoqVw=
-github.com/jonas747/template v1.1.3/go.mod h1:gAPqCURcbB4rsYIzAsvcZyyflNZHNG6FQcUZBtLUzXg=
+github.com/jonas747/template v1.1.2 h1:eCAU81MpcC0gij9NitXt+ECCf436OxklvJA+CHWjqxA=
+github.com/jonas747/template v1.1.2/go.mod h1:gAPqCURcbB4rsYIzAsvcZyyflNZHNG6FQcUZBtLUzXg=
 github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f h1:z2IO+m8BMTZJeubJxWrXEwhCCRewm6Tu/XDrrL44OLI=
 github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f/go.mod h1:FcMTsyR9FGTdWt9RboWas5IJ+i5NlozhLtNkCRYC3+A=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
