@@ -160,6 +160,7 @@ func checkCacheForPhishingDomain(link string) (bool, error) {
 	if len(domain) == 0 {
 		return false, nil
 	}
+	domain = strings.ToLower(domain)
 	err := common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", RedisKeyPhishingDomains, domain))
 	if err != nil {
 		logrus.WithError(err).Error(`[antiphishing] failed to check for phishing domains, error from cache`)

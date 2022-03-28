@@ -147,7 +147,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	}
 
 	if ms.User.Bot {
-		logger.WithField("isBot", m.User.Bot).Error("Ignoring Bots")
+		logger.WithField("isBot", m.User.Bot).Info("Ignoring Bots")
 		return false, nil
 	}
 

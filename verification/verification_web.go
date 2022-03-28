@@ -35,8 +35,8 @@ type FormData struct {
 	Enabled             bool
 	VerifiedRole        int64  `valid:"role"`
 	PageContent         string `valid:",10000"`
-	KickUnverifiedAfter int
-	WarnUnverifiedAfter int
+	KickUnverifiedAfter int    `valid:"0,"`
+	WarnUnverifiedAfter int    `valid:"0,"`
 	WarnMessage         string `valid:"template,10000"`
 	DMMessage           string `valid:"template,10000"`
 	LogChannel          int64  `valid:"channel,true"`
