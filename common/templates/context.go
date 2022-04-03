@@ -2,11 +2,13 @@ package templates
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -717,6 +719,24 @@ func (d Dict) Del(key interface{}) string {
 func (d Dict) HasKey(k interface{}) (ok bool) {
 	_, ok = d[k]
 	return
+}
+
+func (d Dict) MarshalJSON() ([]byte, error) {
+	md := make(map[string]interface{})
+	for k, v := range d {
+		krv := reflect.ValueOf(k)
+		switch krv.Kind() {
+		case reflect.String:
+			md[krv.String()] = v
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			md[strconv.FormatInt(krv.Int(), 10)] = v
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			md[strconv.FormatUint(krv.Uint(), 10)] = v
+		default:
+			return nil, fmt.Errorf("cannot encode dict with key type %s; only string and integer keys are supported", krv.Type())
+		}
+	}
+	return json.Marshal(md)
 }
 
 type SDict map[string]interface{}
