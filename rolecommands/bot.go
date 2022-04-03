@@ -136,6 +136,15 @@ func (p *Plugin) AddCommands() {
 		RunFunc: cmdFuncRoleMenuComplete,
 	}
 
+	cmdListGroups := &commands.YAGCommand{
+		Name: "Listgroups",
+		CmdCategory: categoryRoleMenu,
+		Aliases: []string{"list", "groups"},
+		Description: "Lists all role groups",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
+		RunFunc: cmdFuncRoleMenuListGroups,
+	}
+
 	menuContainer, t := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
 	t.SetEnabledInThreads(false)
 	menuContainer.Description = "Command for managing role menus"
@@ -149,6 +158,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
+	menuContainer.AddCommand(cmdListGroups, cmdListGroups.GetTrigger())
 	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})

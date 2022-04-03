@@ -7,6 +7,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/botlabs-gg/yagpdb/antiphishing"
 	"github.com/botlabs-gg/yagpdb/automod/models"
 	"github.com/botlabs-gg/yagpdb/automod_legacy"
 	"github.com/botlabs-gg/yagpdb/bot"
@@ -71,7 +72,7 @@ func (mc *MentionsTrigger) Name() string {
 }
 
 func (mc *MentionsTrigger) Description() string {
-	return "Triggers when a message includes more than x unique mentions."
+	return "Triggers when a message includes x unique mentions."
 }
 
 func (mc *MentionsTrigger) UserSettings() []*SettingDef {
@@ -343,7 +344,7 @@ func (vt *ViolationsTrigger) Name() string {
 }
 
 func (vt *ViolationsTrigger) Description() string {
-	return "Triggers when a user has more than x violations within y minutes."
+	return "Triggers when a user has x violations within y minutes."
 }
 
 func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
@@ -427,7 +428,7 @@ func (caps *AllCapsTrigger) Name() string {
 }
 
 func (caps *AllCapsTrigger) Description() string {
-	return "Triggers when a message contains more than x% of just capitalized letters"
+	return "Triggers when a message contains x% of just capitalized letters"
 }
 
 func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
@@ -524,6 +525,46 @@ func (inv *ServerInviteTrigger) MergeDuplicates(data []interface{}) interface{} 
 
 /////////////////////////////////////////////////////////////
 
+var _ MessageTrigger = (*AntiPhishingLinkTrigger)(nil)
+
+type AntiPhishingLinkTrigger struct{}
+
+func (a *AntiPhishingLinkTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (a *AntiPhishingLinkTrigger) Name() string {
+	return "Flagged Scam links"
+}
+
+func (a *AntiPhishingLinkTrigger) DataType() interface{} {
+	return nil
+}
+
+func (a *AntiPhishingLinkTrigger) Description() string {
+	return "Triggers on messages that have scam links flagged by SinkingYachts and BitFlow AntiPhishing APIs"
+}
+
+func (a *AntiPhishingLinkTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (a *AntiPhishingLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	badDomain, err := antiphishing.CheckMessageForPhishingDomains(forwardSlashReplacer.Replace(m.Content))
+	if err != nil {
+		logger.WithError(err).Error("Failed to check url ")
+		return false, nil
+	}
+
+	if badDomain != "" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+/////////////////////////////////////////////////////////////
+
 var _ MessageTrigger = (*GoogleSafeBrowsingTrigger)(nil)
 
 type GoogleSafeBrowsingTrigger struct{}
@@ -606,17 +647,17 @@ func (s *SlowmodeTrigger) Name() string {
 func (s *SlowmodeTrigger) Description() string {
 	if s.ChannelBased {
 		if s.Attachments {
-			return "Triggers when a channel has more than x attachments within y seconds"
+			return "Triggers when a channel has x attachments within y seconds"
 		}
 
-		return "Triggers when a channel has more than x messages in y seconds."
+		return "Triggers when a channel has x messages in y seconds."
 	}
 
 	if s.Attachments {
-		return "Triggers when a user has more than x attachments within y seconds in a single channel"
+		return "Triggers when a user has x attachments within y seconds in a single channel"
 	}
 
-	return "Triggers when a user has more than x messages in y seconds in a single channel."
+	return "Triggers when a user has x messages in y seconds in a single channel."
 }
 
 func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
@@ -725,10 +766,10 @@ func (mt *MultiMsgMentionTrigger) Name() string {
 
 func (mt *MultiMsgMentionTrigger) Description() string {
 	if mt.ChannelBased {
-		return "Triggers when a channel has more than x unique mentions in y seconds"
+		return "Triggers when a channel has x unique mentions in y seconds"
 	}
 
-	return "Triggers when a user has sent more than x unique mentions in y seconds in a single channel"
+	return "Triggers when a user has sent x unique mentions in y seconds in a single channel"
 }
 
 func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
@@ -776,7 +817,7 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 			break
 		}
 
-		if mt.ChannelBased || v.Author.ID == triggerCtx.MS.GuildID {
+		if mt.ChannelBased || v.Author.ID == triggerCtx.MS.User.ID {
 			// we only care about unique mentions, e.g mentioning the same user a ton wont do anythin
 			for _, msgMention := range v.Mentions {
 				if settings.CountDuplicates || !common.ContainsInt64Slice(mentions, msgMention.ID) {

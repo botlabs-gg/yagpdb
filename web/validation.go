@@ -114,8 +114,8 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 		// Perform validation based on value type
 		switch cv := vField.Interface().(type) {
 		case int:
-			min, max := readMinMax(validationTag)
-			err = ValidateIntMinMaxField(int64(cv), int64(min), int64(max))
+			min, max, onlyMin := readMinMax(validationTag)
+			err = ValidateIntMinMaxField(int64(cv), int64(min), int64(max), onlyMin)
 		case int64:
 			var keep bool
 			keep, err = ValidateIntField(cv, validationTag, guild, false)
@@ -130,11 +130,11 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 				vField.Set(reflect.ValueOf(newNullInt))
 			}
 		case float64:
-			min, max := readMinMax(validationTag)
-			err = ValidateFloatField(cv, min, max)
+			min, max, onlyMin := readMinMax(validationTag)
+			err = ValidateFloatField(cv, min, max, onlyMin)
 		case float32:
-			min, max := readMinMax(validationTag)
-			err = ValidateFloatField(float64(cv), min, max)
+			min, max, onlyMin := readMinMax(validationTag)
+			err = ValidateFloatField(float64(cv), min, max, onlyMin)
 		case string:
 			var newS string
 			newS, err = ValidateStringField(cv, validationTag, guild)
@@ -219,12 +219,12 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 	return ok
 }
 
-func readMinMax(valid *ValidationTag) (float64, float64) {
+func readMinMax(valid *ValidationTag) (float64, float64, bool) {
 
 	min, _ := valid.Float(0)
 	max, _ := valid.Float(1)
 
-	return min, max
+	return min, max, valid.values[1] == "" // Last value is a flag which represents that only min value is provided
 }
 
 func ValidateIntSliceField(is []int64, tags *ValidationTag, guild *dstate.GuildSet) (filtered []int64, err error) {
@@ -248,8 +248,8 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forc
 
 	if kind != "role" && kind != "channel" {
 		// Treat as min max
-		min, max := readMinMax(tags)
-		return true, ValidateIntMinMaxField(i, int64(min), int64(max))
+		min, max, onlyMin := readMinMax(tags)
+		return true, ValidateIntMinMaxField(i, int64(min), int64(max), onlyMin)
 	}
 
 	if kind == "" {
@@ -284,7 +284,11 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forc
 
 }
 
-func ValidateIntMinMaxField(i int64, min, max int64) error {
+func ValidateIntMinMaxField(i int64, min, max int64, onlyMin bool) error {
+
+	if onlyMin && i < min {
+		return fmt.Errorf("should be at least %d", min)
+	}
 
 	if min != max && (i < min || i > max) {
 		return fmt.Errorf("out of range (%d - %d)", min, max)
@@ -293,7 +297,11 @@ func ValidateIntMinMaxField(i int64, min, max int64) error {
 	return nil
 }
 
-func ValidateFloatField(f float64, min, max float64) error {
+func ValidateFloatField(f float64, min, max float64, onlyMin bool) error {
+
+	if onlyMin && f < min {
+		return fmt.Errorf("should be at least %f", min)
+	}
 
 	if min != max && (f < min || f > max) {
 		return fmt.Errorf("out of range (%f - %f)", min, max)

@@ -567,7 +567,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			time.Sleep(time.Second)
 
 			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
-			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d message(s)! :')", numDeleted), true), err
+			deleteMessageWord := "messages"
+			if numDeleted == 1 {
+				deleteMessageWord = "message"
+			}
+			return dcmd.NewTemporaryResponse(time.Second*5, fmt.Sprintf("Deleted %d %s! :')", numDeleted, deleteMessageWord), true), err
 		},
 	},
 	{
@@ -660,7 +664,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Name:          "Warnings",
 		Description:   "Lists warning of a user.",
 		Aliases:       []string{"Warns"},
-		RequiredArgs:  0,
+		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID, Default: 0},
 			{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
@@ -694,7 +698,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 				return &discordgo.MessageEmbed{
 					Title:       fmt.Sprintf("Warning#%d - User : %s", warn[0].ID, warn[0].UserID),
-					Description: fmt.Sprintf("`%20s` - **Reason** : %s", warn[0].CreatedAt.UTC().Format(time.RFC822), warn[0].Message),
+					Description: fmt.Sprintf("<t:%d:f> - **Reason** : %s", warn[0].CreatedAt.Unix(), warn[0].Message),
 					Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("By: %s (%13s)", warn[0].AuthorUsernameDiscrim, warn[0].AuthorID)},
 				}, nil
 			}
@@ -746,7 +750,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "DelWarning",
-		Aliases:       []string{"dw"},
+		Aliases:       []string{"dw", "delwarn", "deletewarning"},
 		Description:   "Deletes a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -859,7 +863,10 @@ var ModerationCommands = []*commands.YAGCommand{
 					out += fmt.Sprintf("#%02d: %4d - %d\n", v.Rank, v.WarnCount, v.UserID)
 				}
 			}
-			out += "```\n"
+			var count int
+			common.GORM.Table("moderation_warnings").Where("guild_id = ?", parsed.GuildData.GS.ID).Count(&count)
+
+			out += "```\n" + fmt.Sprintf("Total Server Warnings: `%d`", count)
 
 			embed.Description = out
 
@@ -1161,7 +1168,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 
 			for _, entry := range result {
 
-				entry_formatted := fmt.Sprintf("#%d: `%20s` - By: **%s** (%13s) \n **Reason:** %s", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
+				entry_formatted := fmt.Sprintf("#%d: <t:%d:f> - By: **%s** (%13s) \n **Reason:** %s", entry.ID, entry.CreatedAt.Unix(), entry.AuthorUsernameDiscrim, entry.AuthorID, entry.Message)
 				if len([]rune(entry_formatted)) > 900 {
 					entry_formatted = common.CutStringShort(entry_formatted, 900)
 				}

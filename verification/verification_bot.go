@@ -125,6 +125,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	if strings.TrimSpace(msg) == "" {
 		msg = DefaultDMMessage
 	}
+	msg = "DM sent from server **" + gs.Name + "**(ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
 
 	ms, err := bot.GetMember(guildID, target.ID)
 	if err != nil {
@@ -280,6 +281,18 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 	return false, nil
 }
 
+func (p *Plugin) checkMemberAlreadyVerified(ms *dstate.MemberState, conf *models.VerificationConfig) bool {
+	if !common.ContainsInt64Slice(ms.Member.Roles, conf.VerifiedRole) {
+		return false
+	}
+
+	err := p.clearScheduledEvents(context.Background(), ms.GuildID, ms.User.ID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", ms.GuildID).WithField("user", ms.User.ID).Error("failed clearing past scheduled warn/kick events")
+	}
+	return true
+}
+
 func (p *Plugin) clearScheduledEvents(ctx context.Context, guildID, userID int64) error {
 	_, err := seventsmodels.ScheduledEvents(
 		qm.Where("(event_name='verification_user_warn' OR event_name='verification_user_kick')"),
@@ -339,6 +352,10 @@ func (p *Plugin) CheckBanned(guildID int64, users []*discordgo.User) (*discordgo
 }
 
 func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
+	if p.checkMemberAlreadyVerified(ms, conf) {
+		return false, nil
+	}
+
 	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
 		return false, nil
@@ -389,6 +406,9 @@ func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token 
 }
 
 func (p *Plugin) handleKickUser(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
+	if p.checkMemberAlreadyVerified(ms, conf) {
+		return false, nil
+	}
 
 	dataCast := rawData.(*VerificationEventData)
 

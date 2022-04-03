@@ -247,8 +247,20 @@ func (c *Context) checkSafeStringDictNoRecursion(d SDict, n int) bool {
 			}
 		}
 
+		if cast, ok := v.(*Dict); ok {
+			if !c.checkSafeDictNoRecursion(*cast, n+1) {
+				return false
+			}
+		}
+
 		if cast, ok := v.(SDict); ok {
 			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(*SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(*cast, n+1) {
 				return false
 			}
 		}
@@ -273,8 +285,20 @@ func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
 			}
 		}
 
+		if cast, ok := v.(*Dict); ok {
+			if !c.checkSafeDictNoRecursion(*cast, n+1) {
+				return false
+			}
+		}
+
 		if cast, ok := v.(SDict); ok {
 			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(*SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(*cast, n+1) {
 				return false
 			}
 		}
@@ -402,6 +426,27 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 	}
 }
 
+func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (string, error) {
+	return func(channel, msgID interface{}) (string, error) {
+		if c.IncreaseCheckCallCounter("message_pins", 5) {
+			return "", ErrTooManyCalls
+		}
+
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return "", errors.New("unknown channel")
+		}
+		mID := ToInt64(msgID)
+		var err error
+		if unpin {
+			err = common.BotSession.ChannelMessageUnpin(cID, mID)
+		} else {
+			err = common.BotSession.ChannelMessagePin(cID, mID)
+		}
+		return "", err
+	}
+}
+
 func (c *Context) tmplMentionEveryone() string {
 	c.CurrentFrame.MentionEveryone = true
 	return "@everyone"
@@ -468,6 +513,11 @@ func (c *Context) tmplMentionRoleName(role string) string {
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 	role := ToInt64(roleID)
+	
+	if c.MS == nil || c.MS.Member == nil {
+		return false
+	}
+	
 	if role == 0 {
 		return false
 	}
@@ -480,7 +530,11 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 	if c.IncreaseCheckStateLock() {
 		return false, ErrTooManyCalls
 	}
-
+	
+	if c.MS == nil || c.MS.Member == nil {
+		return false, nil
+	}
+	
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
 			if common.ContainsInt64Slice(c.MS.Member.Roles, r.ID) {
@@ -970,9 +1024,20 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 		if cID == 0 {
 			return reflect.ValueOf("non-existing channel"), nil
 		}
+		
+		var mID, uID int64
+		
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
+		}
 
-		mID := ToInt64(args[1].Interface())
-		uID := targetUserID(args[2].Interface())
+		if args[2].IsValid() {
+			uID = targetUserID(args[2].Interface())
+		}
+
+		if uID == 0 {
+			return reflect.ValueOf("non-existing user"), nil
+		}
 
 		for _, reaction := range args[3:] {
 
@@ -1007,7 +1072,10 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 			return reflect.ValueOf("non-existing channel"), nil
 		}
 
-		mID := ToInt64(args[1].Interface())
+		var mID int64
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
+		}
 
 		if len(args) > 2 {
 			for _, emoji := range args[2:] {
@@ -1157,6 +1225,24 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 	return CtxChannelFromCS(cstate), nil
 }
 
+func (c *Context) tmplGetChannelPinCount(channel interface{}) (int, error) {
+	if c.IncreaseCheckCallCounterPremium("count_pins", 2, 4) {
+		return 0, ErrTooManyCalls
+	}
+
+	cID := c.ChannelArgNoDM(channel)
+	if cID == 0 {
+		return 0, errors.New("unknown channel")
+	}
+
+	msg, err := common.BotSession.ChannelMessagesPinned(cID)
+	if err != nil {
+		return 0, err
+	}
+
+	return len(msg), nil
+}
+
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if c.Msg == nil {
@@ -1206,10 +1292,13 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 		}
 
 		cID := c.ChannelArg(cArg)
-		mID := ToInt64(args[1].Interface())
-
 		if cID == 0 {
 			return reflect.ValueOf(""), nil
+		}
+		
+		var mID int64
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
 		}
 
 		for i, reaction := range args {
@@ -1460,7 +1549,7 @@ func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interfac
 		return "", ErrTooManyCalls
 	}
 
-	inputSlice := reflect.ValueOf(input)
+	inputSlice, _ := indirect(reflect.ValueOf(input))
 	switch inputSlice.Kind() {
 	case reflect.Slice, reflect.Array:
 		// valid
@@ -1516,7 +1605,8 @@ func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interfac
 	var intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice Slice
 
 	for i := 0; i < inputSlice.Len(); i++ {
-		switch t := inputSlice.Index(i).Interface().(type) {
+		iv, _ := indirect(inputSlice.Index(i))
+		switch t := iv.Interface().(type) {
 		case int, int64:
 			intSlice = append(intSlice, t)
 		case *int:
@@ -1620,7 +1710,7 @@ func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interfac
 }
 
 func getLen(from interface{}) int {
-	v := reflect.ValueOf(from)
+	v, _ := indirect(reflect.ValueOf(from))
 	switch v.Kind() {
 	case reflect.Slice, reflect.Array, reflect.Map:
 		return v.Len()

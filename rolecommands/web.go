@@ -56,8 +56,8 @@ type FormGroup struct {
 
 	Mode int
 
-	MultipleMax int
-	MultipleMin int
+	MultipleMax int `valid:"0,250"`
+	MultipleMin int `valid:"0,250"`
 
 	SingleAutoToggleOff   bool
 	SingleRequireOne      bool

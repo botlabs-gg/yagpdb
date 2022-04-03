@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -317,6 +318,8 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				return "I do not have access to that emoji, i can only use emojis from servers im on.", nil
 			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
+			case discordgo.ErrCodeTooManyReactions:
+				return "There are too many reactions on this message, please remove some (max 20)", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
 				return "An unknown error occurred, please retry adding that emoji", nil
@@ -358,6 +361,8 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				switch code {
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 					return "I do not have permissions to update the menu message, please give me the proper permissions for me to update the menu message.", nil
+				case discordgo.ErrCodeTooManyReactions:
+					return "There are too many reactions on this message, please remove some (max 20)", nil
 				default:
 					return "An error occurred updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
 				}
@@ -776,6 +781,34 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	ClearRolemenuCache(data.GuildData.GS.ID)
 
 	return "Menu marked as done", nil
+}
+
+func cmdFuncRoleMenuListGroups(data *dcmd.Data) (interface{}, error) {
+	groups, err := models.RoleGroups(qm.Where("guild_id=?", data.GuildData.GS.ID), qm.Select("name")).AllG(data.Context())
+	if err != nil {
+		return err, err
+	}
+
+	var builder strings.Builder
+	builder.WriteString("Here's a list of your role groups:\n```\n")
+
+	if len(groups) == 0 {
+		builder.WriteString("None...\n```")
+		return builder.String(), nil
+	}
+
+	for i, group := range groups {
+		// Don't let the message become too huge
+		if i >= 10 {
+			fmt.Fprintf(&builder, "...%d more groups are not shown.\n", len(groups)-i)
+			break
+		}
+
+		fmt.Fprintf(&builder, "%d) %s\n", i+1, group.Name)
+	}
+
+	builder.WriteString("```")
+	return builder.String(), nil
 }
 
 func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {

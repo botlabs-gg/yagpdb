@@ -29,10 +29,10 @@ var PageHTMLSettings string
 type PostConfigForm struct {
 	Enabled                 bool
 	EnableThanksDetection   bool
-	PointsName              string `valid:",50"`
-	Cooldown                int    `valid:"0,86401"` // One day
-	MaxGiveAmount           int64
-	MaxRemoveAmount         int64
+	PointsName              string  `valid:",50"`
+	Cooldown                int     `valid:"0,86401"` // One day
+	MaxGiveAmount           int64   `valid:"0,"`
+	MaxRemoveAmount         int64   `valid:"0,"`
 	RequiredGiveRoles       []int64 `valid:"role,true"`
 	RequiredReceiveRoles    []int64 `valid:"role,true"`
 	BlacklistedGiveRoles    []int64 `valid:"role,true"`
@@ -85,7 +85,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Get("/logs"), web.APIHandler(HandleLogsJson))
 
 	web.ServerPublicMux.Handle(pat.Get("/reputation/leaderboard"), web.RenderHandler(HandleGetReputation, "cp_reputation_leaderboard"))
-	web.ServerPubliAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
+	web.ServerPublicAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
 }
 
 func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {

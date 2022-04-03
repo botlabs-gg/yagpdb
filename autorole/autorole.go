@@ -37,7 +37,7 @@ func RegisterPlugin() {
 
 type GeneralConfig struct {
 	Role             int64 `json:",string" valid:"role,true"`
-	RequiredDuration int
+	RequiredDuration int   `valid:"0,"`
 
 	RequiredRoles []int64 `valid:"role,true"`
 	IgnoreRoles   []int64 `valid:"role,true"`

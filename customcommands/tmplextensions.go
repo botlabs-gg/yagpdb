@@ -77,7 +77,7 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 	case "userid":
 		def.Type = dcmd.UserID
 	case "channel":
-		def.Type = dcmd.Channel
+		def.Type = dcmd.ChannelOrThread
 	case "member":
 		def.Type = &commands.MemberArg{}
 	case "role":
@@ -190,7 +190,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", errors.New("Unknown channel")
 		}
 
-		cs := ctx.GS.GetChannel(channelID)
+		cs := ctx.GS.GetChannelOrThread(channelID)
 		if cs == nil {
 			return "", errors.New("Channel not in state")
 		}
@@ -270,7 +270,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", errors.New("Unknown channel")
 		}
 
-		cs := ctx.GS.GetChannel(channelID)
+		cs := ctx.GS.GetChannelOrThread(channelID)
 		if cs == nil {
 			return "", errors.New("Channel not in state")
 		}
