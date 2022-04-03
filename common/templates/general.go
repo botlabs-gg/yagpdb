@@ -440,7 +440,7 @@ var mathConstantsMap = map[string]float64{
 	//base
 	"e":   math.E,
 	"pi":  math.Pi,
-	"phi": math.Pi,
+	"phi": math.Phi,
 
 	// square roots
 	"sqrt2":   math.Sqrt2,
