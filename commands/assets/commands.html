@@ -238,7 +238,7 @@
                             {{if .Override.AutodeleteTrigger}}checked{{end}}>
                     </span>
                 </span>
-                <input type="number" class="form-control" placeholder="Seconds..."
+                <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
                     value="{{if .Override}}{{.Override.AutodeleteTriggerDelay}}{{else}}10{{end}}"
                     name="AutodeleteTriggerDelay">
             </div>
@@ -252,7 +252,7 @@
                             {{if .Override.AutodeleteResponse}}checked{{end}}>
                     </span>
                 </span>
-                <input type="number" class="form-control" placeholder="Seconds..."
+                <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
                     value="{{if .Override}}{{.Override.AutodeleteResponseDelay}}{{else}}10{{end}}"
                     name="AutodeleteResponseDelay">
             </div>
@@ -357,7 +357,7 @@
                                         {{if .Override.AutodeleteTrigger}}checked{{end}}>
                                 </span>
                             </span>
-                            <input type="number" class="form-control" placeholder="Seconds..."
+                            <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
                                 value="{{if .Override}}{{.Override.AutodeleteTriggerDelay}}{{else}}10{{end}}"
                                 name="AutodeleteTriggerDelay">
                         </div>
@@ -371,7 +371,7 @@
                                         {{if .Override.AutodeleteResponse}}checked{{end}}>
                                 </span>
                             </span>
-                            <input type="number" class="form-control" placeholder="Seconds..."
+                            <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
                                 value="{{if .Override}}{{.Override.AutodeleteResponseDelay}}{{else}}10{{end}}"
                                 name="AutodeleteResponseDelay">
                         </div>

@@ -695,6 +695,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	tmplCtx.Name = "CC #" + strconv.Itoa(int(cmd.LocalID))
 	tmplCtx.Data["CCID"] = cmd.LocalID
 	tmplCtx.Data["CCRunCount"] = cmd.RunCount + 1
+	tmplCtx.Data["CCTrigger"] = cmd.TextTrigger
 
 	csCop := tmplCtx.CurrentFrame.CS
 	f := logger.WithFields(logrus.Fields{

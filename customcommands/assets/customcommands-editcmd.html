@@ -196,7 +196,7 @@
                                     <div class="col-sm-4">
                                         <div class="form-group">
                                             <label>Interval</label>
-                                            <input type="number" class="form-control" name="time_trigger_interval"
+                                            <input type="number" min="0" class="form-control" name="time_trigger_interval"
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                                         </div>
                                     </div>
@@ -370,7 +370,7 @@
                         <div class="row mt-4" id="interval-cc-run-now">
                             <div class="col">
                                 <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this custom command immediately"
-                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/run_now">Run now</button>
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update_and_run">Run now</button>
                             </div>
                         </div>
                     </form>

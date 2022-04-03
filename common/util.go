@@ -23,7 +23,8 @@ import (
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/)?(www\.)?[-a-zA-Z0-9@:%_\+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
+var LinkRegex = regexp.MustCompile(`(?i)([a-z\d]+://)?((\w+:\w+@)?([a-z\d.-]+\.[a-z]{2,64})(:\d+)?(/.*)?)`)
+var DomainFinderRegex = regexp.MustCompile(`(?i)(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,61}[a-z\d]`)
 
 type GuildWithConnected struct {
 	*discordgo.UserGuild

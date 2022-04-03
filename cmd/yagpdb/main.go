@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/antiphishing"
 	"github.com/botlabs-gg/yagpdb/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/common/prom"
 	"github.com/botlabs-gg/yagpdb/common/run"
@@ -57,6 +58,7 @@ func main() {
 	// Setup plugins
 	analytics.RegisterPlugin()
 	safebrowsing.RegisterPlugin()
+	antiphishing.RegisterPlugin()
 	discordlogger.Register()
 	commands.RegisterPlugin()
 	stdcommands.RegisterPlugin()

@@ -27,19 +27,19 @@
                             </div>
                             <div class="form-group">
                                 <label for="cooldown">Rep cooldown in seconds</label>
-                                <input type="number" class="form-control" id="cooldown" name="Cooldown"
+                                <input type="number" min="0" class="form-control" id="cooldown" name="Cooldown"
                                     value="{{.RepSettings.Cooldown}}">
                             </div>
                             <div class="form-group">
                                 <label for="max-rep-amount-give">Maximum amount of rep that can be given in one
                                     command.</label>
-                                <input type="number" class="form-control" id="max-rep-amount-give" name="MaxGiveAmount"
+                                <input type="number" min="0" class="form-control" id="max-rep-amount-give" name="MaxGiveAmount"
                                     value="{{.RepSettings.MaxGiveAmount}}">
                             </div>
                             <div class="form-group">
                                 <label for="max-rep-amount-remove">Maximum amount of rep that can be removed in one
                                     command.</label>
-                                <input type="number" class="form-control" id="max-rep-amount-remove"
+                                <input type="number" min="0" class="form-control" id="max-rep-amount-remove"
                                     name="MaxRemoveAmount" value="{{.RepSettings.MaxRemoveAmount}}">
                             </div>
                         </div>

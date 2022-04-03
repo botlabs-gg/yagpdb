@@ -1,3 +1,4 @@
+---
 name: Comment PR
 
 on:
@@ -6,26 +7,25 @@ on:
       - master
 
 jobs:
-  comment:
+  comment_pr:
+    name: Comment PR to master
     runs-on: ubuntu-latest
-    name: Comment on Pull Request
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v2.1
-
-      - name: master comment
-        uses: thollander/actions-comment-pull-request@master
+      - name: Comment
+        if: ${{ github.actor != 'ashishjh-bst' || github.actor != github.repository_owner }}
+        uses: thollander/actions-comment-pull-request@v1
         with:
           message: |
             Hey @${{ github.actor }}! Thank you for your pull request.
-            However, please do not open pull requests against the `master` branch, as stated in [CONTRIBUTING.md](../../CONTRIBUTING.md):
-            > push the changes you make to the dev branch (Jonas747/yagpdb/dev).
-            
-            If you still wish to keep this pull request open, please change the base branch.
-            For that, simply click the edit button next to the title of this pull request and select the new base;
-            To prevent conflicts, I suggest you first `git merge upstream/dev` on your local branch and push these new changes. Alternatively, `git rebase upstream/dev` on your local branch and then force-push.
+            However, please do not open pull requests against `master`, as stated in
+            [CONTRIBUTING.md](../../CONTRIBUTING.md):
+            > [...] make a PR to the dev branch (botlabs-gg/yagpdb/dev)
+
+            To change the base branch, edit the this pull request and select the new base.
+            To prevent conflicts, either `git merge upstream/dev` to your local branch, or
+            rebase your local branch onto dev, like so: `git rebase upstream/dev`.
+            Afterwards, (force) push your branch, and you're set!
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

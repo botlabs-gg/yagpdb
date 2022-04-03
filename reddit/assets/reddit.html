@@ -84,7 +84,7 @@
                 </div>
                 {{if .Slow}}<div class="form-group col">
                     <label>Minimum needed score</label>
-                    <input type="number" name="min_upvotes" value="5" class="form-control">
+                    <input type="number" min="0" name="min_upvotes" value="5" class="form-control">
                 </div>{{end}}
             </div>
 
@@ -129,7 +129,7 @@
                 </div>
                 {{if .Slow}}<div class="form-group col">
                     <label>Minimum needed score</label>
-                    <input type="number" name="min_upvotes" value="{{.MinUpvotes}}" class="form-control">
+                    <input type="number" min="0" name="min_upvotes" value="{{.MinUpvotes}}" class="form-control">
                 </div>{{end}}
             </div>
         </div>

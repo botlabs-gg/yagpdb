@@ -115,4 +115,7 @@ var throwThings = []string{
 	"doors",
 	"pie",
 	"squares",
+	"a duck",
+	"lily from at&t",
+	"couples therapy",
 }
