@@ -47,6 +47,7 @@ var (
 		"trimSpace": strings.TrimSpace,
 		"upper":     strings.ToUpper,
 		"urlescape": url.PathEscape,
+    "urlunescape": url.PathUnescape,
 		"print":     withOutputLimit(fmt.Sprint, MaxStringLength),
 		"println":   withOutputLimit(fmt.Sprintln, MaxStringLength),
 		"printf":    withOutputLimitF(fmt.Sprintf, MaxStringLength),
