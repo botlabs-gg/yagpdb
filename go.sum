@@ -381,8 +381,8 @@ github.com/jonas747/cardsagainstdiscord/v2 v2.0.0/go.mod h1:xdZuVfXMpehXRK0hccKt
 github.com/jonas747/dca/v2 v2.0.0 h1:27SRgmKjJFA6jequrkkAmpx1c7AZ8OsMbTzdxGLUiHw=
 github.com/jonas747/dca/v2 v2.0.0/go.mod h1:WDY2/zvnIu1JbKQUG4SJW9FcVRWYRKlGe+fz0ZR96BM=
 github.com/jonas747/dcmd/v4 v4.0.1/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
-github.com/jonas747/dcmd/v4 v4.0.3 h1:vSTPfJcaf34V9KW44jRz0D3PqIA/TGtZ7Jof2Kq8fpc=
-github.com/jonas747/dcmd/v4 v4.0.3/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
+github.com/jonas747/dcmd/v4 v4.0.4 h1:ESr1t+AqjmBvTyfzP+MAy0dT/L9gkia0KSK0OgAW6yQ=
+github.com/jonas747/dcmd/v4 v4.0.4/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69/go.mod h1:m242ZgUE5Rw5Pmc35yiSSyGAxXCiO/QWJZ244MDpanI=
 github.com/jonas747/discordgo/v2 v2.0.0/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
