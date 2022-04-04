@@ -26,7 +26,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonas747/cardsagainstdiscord/v2 v2.0.0
 	github.com/jonas747/dca/v2 v2.0.0
-	github.com/jonas747/dcmd/v4 v4.0.3
+	github.com/jonas747/dcmd/v4 v4.0.4
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
 	github.com/jonas747/discordgo/v2 v2.0.6
 	github.com/jonas747/dshardorchestrator/v3 v3.0.0
