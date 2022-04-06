@@ -104,7 +104,7 @@ func runFlushNewEvents() error {
 // flushEventToRedis flushes an event to redis, this is done as a performance improvement as the postgres db is only queried as often
 func flushEventToRedis(c radix.Client, evt *models.ScheduledEvent) error {
 	v := fmt.Sprintf("%d:%d", evt.ID, evt.GuildID)
-	err := c.Do(radix.Cmd(nil, "ZADD", "scheduled_events_soon", strconv.FormatInt(evt.TriggersAt.UTC().Unix(), 10), v))
+	err := c.Do(radix.Cmd(nil, "ZADD", "scheduled_events_soon", strconv.FormatInt(evt.TriggersAt.UTC().UnixMicro(), 10), v))
 	if err != nil {
 		return err
 	}
