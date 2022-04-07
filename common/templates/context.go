@@ -2,11 +2,13 @@ package templates
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -35,38 +37,40 @@ var (
 		"toByte":     ToByte,
 
 		// string manipulation
-		"hasPrefix": strings.HasPrefix,
-		"hasSuffix": strings.HasSuffix,
-		"joinStr":   joinStrings,
-		"lower":     strings.ToLower,
-		"slice":     slice,
-		"split":     strings.Split,
-		"title":     strings.Title,
-		"trimSpace": strings.TrimSpace,
-		"upper":     strings.ToUpper,
-		"urlescape": url.PathEscape,
-		"print":     withOutputLimit(fmt.Sprint, MaxStringLength),
-		"println":   withOutputLimit(fmt.Sprintln, MaxStringLength),
-		"printf":    withOutputLimitF(fmt.Sprintf, MaxStringLength),
+		"hasPrefix":   strings.HasPrefix,
+		"hasSuffix":   strings.HasSuffix,
+		"joinStr":     joinStrings,
+		"lower":       strings.ToLower,
+		"slice":       slice,
+		"split":       strings.Split,
+		"title":       strings.Title,
+		"trimSpace":   strings.TrimSpace,
+		"upper":       strings.ToUpper,
+		"urlescape":   url.PathEscape,
+		"urlunescape": url.PathUnescape,
+		"print":       withOutputLimit(fmt.Sprint, MaxStringLength),
+		"println":     withOutputLimit(fmt.Sprintln, MaxStringLength),
+		"printf":      withOutputLimitF(fmt.Sprintf, MaxStringLength),
 
 		// math
-		"add":               add,
-		"sub":               tmplSub,
-		"mult":              tmplMult,
-		"div":               tmplDiv,
-		"mod":               tmplMod,
-		"fdiv":              tmplFDiv,
-		"cbrt":              tmplCbrt,
-		"sqrt":              tmplSqrt,
-		"pow":               tmplPow,
-		"log":               tmplLog,
-		"round":             tmplRound,
-		"roundCeil":         tmplRoundCeil,
-		"roundFloor":        tmplRoundFloor,
-		"roundEven":         tmplRoundEven,
-		"humanizeThousands": tmplHumanizeThousands,
+		"add":        add,
+		"cbrt":       tmplCbrt,
+		"div":        tmplDiv,
+		"fdiv":       tmplFDiv,
+		"log":        tmplLog,
+		"mathConst":  tmplMathConstant,
+		"mod":        tmplMod,
+		"mult":       tmplMult,
+		"pow":        tmplPow,
+		"round":      tmplRound,
+		"roundCeil":  tmplRoundCeil,
+		"roundEven":  tmplRoundEven,
+		"roundFloor": tmplRoundFloor,
+		"sqrt":       tmplSqrt,
+		"sub":        tmplSub,
 
 		// misc
+		"humanizeThousands":  tmplHumanizeThousands,
 		"dict":               Dictionary,
 		"sdict":              StringKeyDictionary,
 		"structToSdict":      StructToSdict,
@@ -717,6 +721,24 @@ func (d Dict) Del(key interface{}) string {
 func (d Dict) HasKey(k interface{}) (ok bool) {
 	_, ok = d[k]
 	return
+}
+
+func (d Dict) MarshalJSON() ([]byte, error) {
+	md := make(map[string]interface{})
+	for k, v := range d {
+		krv := reflect.ValueOf(k)
+		switch krv.Kind() {
+		case reflect.String:
+			md[krv.String()] = v
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			md[strconv.FormatInt(krv.Int(), 10)] = v
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			md[strconv.FormatUint(krv.Uint(), 10)] = v
+		default:
+			return nil, fmt.Errorf("cannot encode dict with key type %s; only string and integer keys are supported", krv.Type())
+		}
+	}
+	return json.Marshal(md)
 }
 
 type SDict map[string]interface{}

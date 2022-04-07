@@ -77,8 +77,6 @@ github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuy
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
-github.com/alfredxing/calc v0.0.0-20180827002445-77daf576f976 h1:+jyVKPjl5Y39thM0ZlVrRqKjSO/Upr5tP9ZQGELv8gw=
-github.com/alfredxing/calc v0.0.0-20180827002445-77daf576f976/go.mod h1:/HQknSiD7YKT15DoHXuiXezQfNPBUm8PeqFaTxeA3HU=
 github.com/andybalholm/cascadia v1.0.0 h1:hOCXnnZ5A+3eVDX8pvgl4kofXv2ELss0bKcqRySc45o=
 github.com/andybalholm/cascadia v1.0.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9PqHO0sqidkEA4Y=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
@@ -149,6 +147,8 @@ github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25Kn
 github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5mFgVsvEsIPBvNs=
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
+github.com/ei14/calc v0.0.0-20220307064635-62ca623f5da1 h1:BE0moD036cgXSB9WfhqA4o+RyH7Tlqx+V5Ys/P9Np8Q=
+github.com/ei14/calc v0.0.0-20220307064635-62ca623f5da1/go.mod h1:6NJNLNXVmKw1eea3XvpI286ab0HMbRqpye7CwPGZk4k=
 github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385/go.mod h1:0vRUJqYpeSZifjYj7uP3BG/gKcuzL9xWVV/Y+cK33KM=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
@@ -381,8 +381,8 @@ github.com/jonas747/cardsagainstdiscord/v2 v2.0.0/go.mod h1:xdZuVfXMpehXRK0hccKt
 github.com/jonas747/dca/v2 v2.0.0 h1:27SRgmKjJFA6jequrkkAmpx1c7AZ8OsMbTzdxGLUiHw=
 github.com/jonas747/dca/v2 v2.0.0/go.mod h1:WDY2/zvnIu1JbKQUG4SJW9FcVRWYRKlGe+fz0ZR96BM=
 github.com/jonas747/dcmd/v4 v4.0.1/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
-github.com/jonas747/dcmd/v4 v4.0.3 h1:vSTPfJcaf34V9KW44jRz0D3PqIA/TGtZ7Jof2Kq8fpc=
-github.com/jonas747/dcmd/v4 v4.0.3/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
+github.com/jonas747/dcmd/v4 v4.0.4 h1:ESr1t+AqjmBvTyfzP+MAy0dT/L9gkia0KSK0OgAW6yQ=
+github.com/jonas747/dcmd/v4 v4.0.4/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69/go.mod h1:m242ZgUE5Rw5Pmc35yiSSyGAxXCiO/QWJZ244MDpanI=
 github.com/jonas747/discordgo/v2 v2.0.0/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
