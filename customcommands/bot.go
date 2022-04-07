@@ -431,7 +431,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	cState := evt.CS()
+	cState := evt.CSOrThread()
 	if cState == nil {
 		return
 	}
