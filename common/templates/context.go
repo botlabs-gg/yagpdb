@@ -253,37 +253,39 @@ func (c *Context) setupBaseData() {
 	c.Data["UnixEpoch"] = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	// permissions
-	c.Data["PermissionReadMessages"] = discordgo.PermissionReadMessages
-	c.Data["PermissionSendMessages"] = discordgo.PermissionSendMessages
-	c.Data["PermissionSendTTSMessages"] = discordgo.PermissionSendTTSMessages
-	c.Data["PermissionManageMessages"] = discordgo.PermissionManageMessages
-	c.Data["PermissionEmbedLinks"] = discordgo.PermissionEmbedLinks
-	c.Data["PermissionAttachFiles"] = discordgo.PermissionAttachFiles
-	c.Data["PermissionReadMessageHistory"] = discordgo.PermissionReadMessageHistory
-	c.Data["PermissionMentionEveryone"] = discordgo.PermissionMentionEveryone
-	c.Data["PermissionUseExternalEmojis"] = discordgo.PermissionUseExternalEmojis
+	c.Data["Permissions"] = map[string]int64{
+		"ReadMessages":       discordgo.PermissionReadMessages,
+		"SendMessages":       discordgo.PermissionSendMessages,
+		"SendTTSMessages":    discordgo.PermissionSendTTSMessages,
+		"ManageMessages":     discordgo.PermissionManageMessages,
+		"EmbedLinks":         discordgo.PermissionEmbedLinks,
+		"AttachFiles":        discordgo.PermissionAttachFiles,
+		"ReadMessageHistory": discordgo.PermissionReadMessageHistory,
+		"MentionEveryone":    discordgo.PermissionMentionEveryone,
+		"UseExternalEmojis":  discordgo.PermissionUseExternalEmojis,
 
-	c.Data["PermissionVoiceConnect"] = discordgo.PermissionVoiceConnect
-	c.Data["PermissionVoiceSpeak"] = discordgo.PermissionVoiceSpeak
-	c.Data["PermissionVoiceMuteMembers"] = discordgo.PermissionVoiceMuteMembers
-	c.Data["PermissionVoiceDeafenMembers"] = discordgo.PermissionVoiceDeafenMembers
-	c.Data["PermissionVoiceMoveMembers"] = discordgo.PermissionVoiceMoveMembers
-	c.Data["PermissionVoiceUseVAD"] = discordgo.PermissionVoiceUseVAD
+		"VoiceConnect":       discordgo.PermissionVoiceConnect,
+		"VoiceSpeak":         discordgo.PermissionVoiceSpeak,
+		"VoiceMuteMembers":   discordgo.PermissionVoiceMuteMembers,
+		"VoiceDeafenMembers": discordgo.PermissionVoiceDeafenMembers,
+		"VoiceMoveMembers":   discordgo.PermissionVoiceMoveMembers,
+		"VoiceUseVAD":        discordgo.PermissionVoiceUseVAD,
 
-	c.Data["PermissionChangeNickname"] = discordgo.PermissionChangeNickname
-	c.Data["PermissionManageNicknames"] = discordgo.PermissionManageNicknames
-	c.Data["PermissionManageRoles"] = discordgo.PermissionManageRoles
-	c.Data["PermissionManageWebhooks"] = discordgo.PermissionManageWebhooks
-	c.Data["PermissionManageEmojis"] = discordgo.PermissionManageEmojis
+		"ChangeNickname":  discordgo.PermissionChangeNickname,
+		"ManageNicknames": discordgo.PermissionManageNicknames,
+		"ManageRoles":     discordgo.PermissionManageRoles,
+		"ManageWebhooks":  discordgo.PermissionManageWebhooks,
+		"ManageEmojis":    discordgo.PermissionManageEmojis,
 
-	c.Data["PermissionCreateInstantInvite"] = discordgo.PermissionCreateInstantInvite
-	c.Data["PermissionKickMembers"] = discordgo.PermissionKickMembers
-	c.Data["PermissionBanMembers"] = discordgo.PermissionBanMembers
-	c.Data["PermissionAdministrator"] = discordgo.PermissionAdministrator
-	c.Data["PermissionManageChannels"] = discordgo.PermissionManageChannels
-	c.Data["PermissionManageServer"] = discordgo.PermissionManageServer
-	c.Data["PermissionAddReactions"] = discordgo.PermissionAddReactions
-	c.Data["PermissionViewAuditLogs"] = discordgo.PermissionViewAuditLogs
+		"CreateInstantInvite": discordgo.PermissionCreateInstantInvite,
+		"KickMembers":         discordgo.PermissionKickMembers,
+		"BanMembers":          discordgo.PermissionBanMembers,
+		"Administrator":       discordgo.PermissionAdministrator,
+		"ManageChannels":      discordgo.PermissionManageChannels,
+		"ManageServer":        discordgo.PermissionManageServer,
+		"AddReactions":        discordgo.PermissionAddReactions,
+		"ViewAuditLogs":       discordgo.PermissionViewAuditLogs,
+	}
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
