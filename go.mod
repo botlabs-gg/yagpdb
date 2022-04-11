@@ -9,11 +9,11 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
-	github.com/ei14/calc v0.0.0-20220307064635-62ca623f5da1
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/dghubble/oauth1 v0.6.0
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/dpatrie/urbandictionary v0.0.0-20151214192647-3b38cbf4cb81
+	github.com/ei14/calc v0.0.0-20220307072502-adbe43bdf801
 	github.com/ericlagergren/decimal v0.0.0-20190729173012-f05d33913e5a // indirect
 	github.com/fatih/structs v1.1.0
 	github.com/friendsofgo/errors v0.9.2
@@ -36,7 +36,7 @@ require (
 	github.com/jonas747/jdshardmanager/v2 v2.0.0
 	github.com/jonas747/template v1.1.3
 	github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f
-	github.com/justinian/dice v0.0.0-20170728002755-6a18b51d929c // indirect
+	github.com/justinian/dice v0.0.0-20170728002755-6a18b51d929c
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/rcache v1.0.1
@@ -69,6 +69,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	google.golang.org/api v0.40.0
+	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
 
