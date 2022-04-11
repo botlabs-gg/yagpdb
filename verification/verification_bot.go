@@ -38,6 +38,7 @@ type VerificationEventData struct {
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerFirstLegacy(p, p.handleMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleBanAdd, eventsystem.EventGuildBanAdd)
 	scheduledevents2.RegisterHandler("verification_user_verified", int64(0), ScheduledEventMW(p.handleUserVerifiedScheduledEvent))
 	scheduledevents2.RegisterHandler("verification_user_warn", VerificationEventData{}, ScheduledEventMW(p.handleWarnUserVerification))
@@ -56,19 +57,12 @@ func RandStringRunes(n int) string {
 	return string(b)
 }
 
-func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
-	m := evt.GuildMemberAdd()
-
-	if m.User.Bot {
-		return
-	}
-
-	conf, err := models.FindVerificationConfigG(context.Background(), m.GuildID)
+func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
+	conf, err := models.FindVerificationConfigG(context.Background(), member.GuildID)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logger.WithError(err).WithField("guild", m.GuildID).WithField("user", m.User.ID).Error("unable to retrieve config")
+			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("unable to retrieve config")
 		}
-
 		// either no config or an error occured
 		return
 	}
@@ -77,9 +71,32 @@ func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
 		return
 	}
 
-	go analytics.RecordActiveUnit(m.GuildID, p, "process_started")
+	go analytics.RecordActiveUnit(member.GuildID, p, "process_started")
 
-	go p.startVerificationProcess(conf, m.GuildID, m.User)
+	go p.startVerificationProcess(conf, member.GuildID, member.User)
+}
+
+func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
+	addEvt := evt.GuildMemberAdd()
+
+	if addEvt.User.Bot || addEvt.Pending {
+		return
+	}
+
+	p.handleVerificationAfterScreening(addEvt.Member)
+}
+
+func (p *Plugin) handleMemberUpdate(evt *eventsystem.EventData) {
+	updateEvt := evt.GuildMemberUpdate()
+
+	if updateEvt.User.Bot || updateEvt.Pending {
+		return
+	}
+
+	memberState := bot.State.GetMember(updateEvt.GuildID, updateEvt.User.ID)
+	if memberState.Pending && !updateEvt.Pending {
+		p.handleVerificationAfterScreening(updateEvt.Member)
+	}
 }
 
 func (p *Plugin) createVerificationSession(userID, guildID int64) (string, error) {
