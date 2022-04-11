@@ -94,7 +94,7 @@ func (p *Plugin) handleMemberUpdate(evt *eventsystem.EventData) {
 	}
 
 	memberState := bot.State.GetMember(updateEvt.GuildID, updateEvt.User.ID)
-	if memberState.Pending && !updateEvt.Pending {
+	if memberState != nil && memberState.Member.Pending && !updateEvt.Pending {
 		p.handleVerificationAfterScreening(updateEvt.Member)
 	}
 }

@@ -23,9 +23,9 @@ require (
 	github.com/jonas747/dca/v2 v2.0.0
 	github.com/jonas747/dcmd/v4 v4.0.4
 	github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69
-	github.com/jonas747/discordgo/v2 v2.0.6
+	github.com/jonas747/discordgo/v2 v2.0.8
 	github.com/jonas747/dshardorchestrator/v3 v3.0.0
-	github.com/jonas747/dstate/v4 v4.0.5-0.20211005064429-2e2fa8a2a1cd
+	github.com/jonas747/dstate/v4 v4.0.6
 	github.com/jonas747/go-reddit v0.1.2
 	github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc
 	github.com/jonas747/jdshardmanager/v2 v2.0.0
