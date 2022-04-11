@@ -93,8 +93,12 @@ func (p *Plugin) handleMemberUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	memberState := bot.State.GetMember(updateEvt.GuildID, updateEvt.User.ID)
-	if memberState.Pending && !updateEvt.Pending {
+	memberState, err := bot.GetMember(updateEvt.GuildID, updateEvt.User.ID)
+	if err != nil {
+		logger.WithError(err).Error("Failed to fetch member")
+		return
+	}
+	if memberState != nil && memberState.Member.Pending && !updateEvt.Pending {
 		p.handleVerificationAfterScreening(updateEvt.Member)
 	}
 }

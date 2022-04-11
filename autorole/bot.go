@@ -328,7 +328,7 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 		return bot.CheckDiscordErrRetry(err), err
 	}
 
-	if config.AssignRoleAfterScreening && member.Pending {
+	if config.AssignRoleAfterScreening && member.Member.Pending {
 		// Return if Membership Screening is pending
 		return
 	}
@@ -368,8 +368,15 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 			return
 		}
 
-		prevMemberState := bot.State.GetMember(update.GuildID, update.User.ID)
-		if prevMemberState.Pending && !update.Pending {
+		prevMemberState, err := bot.GetMember(update.GuildID, update.User.ID)
+		if err != nil {
+			if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
+				return false, nil
+			}
+
+			return bot.CheckDiscordErrRetry(err), err
+		}
+		if prevMemberState != nil && prevMemberState.Member.Pending && !update.Pending {
 			// The user has completed membership screening just now
 			return assignRoleAfterScreening(config, evt, update.Member)
 		}
