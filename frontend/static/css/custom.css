@@ -553,6 +553,8 @@ html.dark select optgroup {
 
 .question-tooltip {
   margin-left: 0.25rem;
+  display: inline-flex;
+  align-items: center;
 }
 
 html.dark .question-tooltip {
