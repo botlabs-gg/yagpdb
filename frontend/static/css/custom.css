@@ -550,3 +550,11 @@ html.dark select optgroup {
   padding: 1em;
   pointer-events: auto;
 }
+
+.question-tooltip {
+  margin-left: 0.25rem;
+}
+
+html.dark .question-tooltip {
+  color: #ed9c28;
+}
