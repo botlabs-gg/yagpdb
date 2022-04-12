@@ -11,6 +11,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/premium"
 	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
@@ -97,6 +98,10 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
+
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		return tmpl.AddAlerts(web.ErrorAlert("Full scan is paid premium only")), nil
+	}
 
 	err := botRestPostFullScan(activeGuild.ID)
 	if err != nil {
