@@ -457,99 +457,6 @@ func (c *Context) tmplMentionHere() string {
 	return "@here"
 }
 
-func (c *Context) tmplMentionRoleID(roleID interface{}) string {
-	if c.IncreaseCheckStateLock() {
-		return ""
-	}
-
-	var role int64
-	switch r := roleID.(type) {
-	case int64:
-		role = r
-	case int:
-		role = int64(r)
-	case string:
-		role, _ = strconv.ParseInt(r, 10, 64)
-	default:
-		return ""
-	}
-
-	r := c.GS.GetRole(role)
-	if r == nil {
-		return "(role not found)"
-	}
-
-	if common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, role) {
-		return "<@&" + discordgo.StrID(role) + ">"
-	}
-
-	c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, role)
-	return "<@&" + discordgo.StrID(role) + ">"
-}
-
-func (c *Context) tmplMentionRoleName(role string) string {
-	if c.IncreaseCheckStateLock() {
-		return ""
-	}
-
-	var found *discordgo.Role
-	for _, r := range c.GS.Roles {
-		if r.Name == role {
-			if !common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, r.ID) {
-				c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, r.ID)
-
-				// make a copy as the looping var is changing
-				cop := r
-				found = &cop
-			}
-		}
-	}
-	if found == nil {
-		return "(role not found)"
-	}
-
-	return "<@&" + discordgo.StrID(found.ID) + ">"
-}
-
-func (c *Context) tmplHasRoleID(roleID interface{}) bool {
-	role := ToInt64(roleID)
-	
-	if c.MS == nil || c.MS.Member == nil {
-		return false
-	}
-	
-	if role == 0 {
-		return false
-	}
-
-	contains := common.ContainsInt64Slice(c.MS.Member.Roles, role)
-	return contains
-}
-
-func (c *Context) tmplHasRoleName(name string) (bool, error) {
-	if c.IncreaseCheckStateLock() {
-		return false, ErrTooManyCalls
-	}
-	
-	if c.MS == nil || c.MS.Member == nil {
-		return false, nil
-	}
-	
-	for _, r := range c.GS.Roles {
-		if strings.EqualFold(r.Name, name) {
-			if common.ContainsInt64Slice(c.MS.Member.Roles, r.ID) {
-				return true, nil
-			}
-
-			return false, nil
-
-		}
-	}
-
-	// Role not found, default to false
-	return false, nil
-}
-
 func targetUserID(input interface{}) int64 {
 	switch t := input.(type) {
 	case *discordgo.User:
@@ -568,180 +475,6 @@ func targetUserID(input interface{}) int64 {
 	default:
 		return ToInt64(input)
 	}
-}
-
-func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
-	if c.IncreaseCheckStateLock() {
-		return false
-	}
-
-	targetID := targetUserID(target)
-	if targetID == 0 {
-		return false
-	}
-
-	ts, err := bot.GetMember(c.GS.ID, targetID)
-	if err != nil {
-		return false
-	}
-
-	role := ToInt64(roleID)
-	if role == 0 {
-		return false
-	}
-
-	contains := common.ContainsInt64Slice(ts.Member.Roles, role)
-
-	return contains
-
-}
-
-func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
-	if c.IncreaseCheckStateLock() {
-		return false
-	}
-
-	targetID := targetUserID(target)
-	if targetID == 0 {
-		return false
-	}
-
-	ts, err := bot.GetMember(c.GS.ID, targetID)
-	if err != nil {
-		return false
-	}
-
-	for _, r := range c.GS.Roles {
-		if strings.EqualFold(r.Name, name) {
-			return common.ContainsInt64Slice(ts.Member.Roles, r.ID)
-		}
-	}
-
-	return false
-
-}
-
-func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string {
-	if c.IncreaseCheckGenericAPICall() {
-		return ""
-	}
-
-	targetID := targetUserID(target)
-	if targetID == 0 {
-		return ""
-	}
-
-	role := ToInt64(roleID)
-	if role == 0 {
-		return ""
-	}
-
-	return c.giveRole(targetID, role)
-}
-
-func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
-	if c.IncreaseCheckGenericAPICall() {
-		return ""
-	}
-
-	targetID := targetUserID(target)
-	if targetID == 0 {
-		return ""
-	}
-
-	role := c.findRoleByName(name)
-	if role == nil {
-		return "no role by the name of " + name + " found"
-	}
-
-	return c.giveRole(targetID, role.ID)
-}
-
-func (c *Context) giveRole(targetID int64, roleID int64) string {
-	if c.GS.GetRole(roleID) == nil {
-		return "" // role does not exist
-	}
-
-	// Check to see if we can save a API request here
-	ms, err := bot.GetMember(c.GS.ID, targetID)
-	if err != nil {
-		return ""
-	}
-
-	if !common.ContainsInt64Slice(ms.Member.Roles, roleID) {
-		common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, roleID)
-	}
-
-	return ""
-}
-
-func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
-	if c.IncreaseCheckGenericAPICall() {
-		return ""
-	}
-
-	delay := 0
-	if len(optionalArgs) > 0 {
-		delay = tmplToInt(optionalArgs[0])
-	}
-
-	targetID := targetUserID(target)
-	if targetID == 0 {
-		return ""
-	}
-
-	role := ToInt64(roleID)
-	if role == 0 {
-		return ""
-	}
-
-	return c.takeRole(targetID, role, time.Second*time.Duration(delay))
-}
-
-func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs ...interface{}) string {
-	if c.IncreaseCheckGenericAPICall() {
-		return ""
-	}
-
-	delay := 0
-	if len(optionalArgs) > 0 {
-		delay = tmplToInt(optionalArgs[0])
-	}
-
-	targetID := targetUserID(target)
-	if targetID == 0 {
-		return ""
-	}
-
-	role := c.findRoleByName(name)
-	if role != nil {
-		return c.takeRole(targetID, role.ID, time.Second*time.Duration(delay))
-	}
-
-	return ""
-}
-
-func (c *Context) takeRole(targetID int64, roleID int64, delay time.Duration) string {
-	if c.GS.GetRole(roleID) == nil {
-		return "" // role does not exist
-	}
-
-	ms, err := bot.GetMember(c.GS.ID, targetID)
-	if err != nil {
-		return ""
-	}
-
-	if !common.ContainsInt64Slice(ms.Member.Roles, roleID) {
-		return ""
-	}
-
-	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, roleID, time.Now().Add(delay))
-	} else {
-		common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, roleID)
-	}
-
-	return ""
 }
 
 const DiscordRoleLimit = 250
@@ -833,114 +566,6 @@ func (c *Context) tmplSetRoles(target interface{}, input interface{}) (string, e
 	return "", nil
 }
 
-func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
-	}
-
-	if c.MS == nil {
-		return "", nil
-	}
-
-	rid := ToInt64(role)
-	if rid == 0 {
-		return "", errors.New("no role id specified")
-	}
-
-	err := common.AddRoleDS(c.MS, rid)
-	if err != nil {
-		return "", err
-	}
-
-	return "", nil
-}
-
-func (c *Context) tmplAddRoleName(name string) (string, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
-	}
-
-	if c.MS == nil {
-		return "", nil
-	}
-
-	role := int64(0)
-	for _, r := range c.GS.Roles {
-		if strings.EqualFold(r.Name, name) {
-			role = r.ID
-			break
-		}
-	}
-
-	if role == 0 {
-		return "", errors.New("No Role with name " + name + " found")
-	}
-
-	if err := common.AddRoleDS(c.MS, role); err != nil {
-		return "", err
-	}
-
-	return "", nil
-}
-
-func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}) (string, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
-	}
-
-	delay := 0
-	if len(optionalArgs) > 0 {
-		delay = tmplToInt(optionalArgs[0])
-	}
-
-	rid := ToInt64(role)
-	if rid == 0 {
-		return "", errors.New("no role id specified")
-	}
-
-	if c.GS.GetRole(rid) == nil {
-		return "", errors.New("unknown role")
-	}
-
-	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, rid, time.Now().Add(time.Second*time.Duration(delay)))
-	} else {
-		common.RemoveRoleDS(c.MS, rid)
-	}
-
-	return "", nil
-}
-
-func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (string, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
-	}
-
-	delay := 0
-	if len(optionalArgs) > 0 {
-		delay = tmplToInt(optionalArgs[0])
-	}
-
-	if c.MS == nil {
-		return "", nil
-	}
-
-	role := c.findRoleByName(name)
-	if role == nil {
-		return "", errors.New("No Role with name " + name + " found")
-	}
-
-	if delay > 0 {
-		scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, role.ID, time.Now().Add(time.Second*time.Duration(delay)))
-	} else {
-		if err := common.RemoveRoleDS(c.MS, role.ID); err != nil {
-			return "", err
-		}
-	}
-
-	return "", nil
-}
-
 func (c *Context) findRoleByID(id int64) *discordgo.Role {
 	for _, r := range c.GS.Roles {
 		if r.ID == id {
@@ -1024,9 +649,9 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 		if cID == 0 {
 			return reflect.ValueOf("non-existing channel"), nil
 		}
-		
+
 		var mID, uID int64
-		
+
 		if args[1].IsValid() {
 			mID = ToInt64(args[1].Interface())
 		}
@@ -1132,37 +757,6 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	}
 
 	return member.DgoMember(), nil
-}
-
-func (c *Context) tmplGetRole(r interface{}) (*discordgo.Role, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return nil, ErrTooManyAPICalls
-	}
-
-	switch t := r.(type) {
-	case int, int64:
-		return c.findRoleByID(ToInt64(t)), nil
-	case string:
-		parsed, err := strconv.ParseInt(t, 10, 64)
-		if err == nil {
-			return c.findRoleByID(parsed), nil
-		}
-
-		if strings.HasPrefix(t, "<@&") && strings.HasSuffix(t, ">") {
-			re := regexp.MustCompile(`\d+`)
-			found := re.FindAllString(t, 1)
-			if len(found) > 0 {
-				parsedMention, err := strconv.ParseInt(found[0], 10, 64)
-				if err == nil {
-					return c.findRoleByID(parsedMention), nil
-				}
-			}
-		}
-
-		return c.findRoleByName(t), nil
-	default:
-		return nil, nil
-	}
 }
 
 func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
@@ -1295,7 +889,7 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 		if cID == 0 {
 			return reflect.ValueOf(""), nil
 		}
-		
+
 		var mID int64
 		if args[1].IsValid() {
 			mID = ToInt64(args[1].Interface())
@@ -1716,5 +1310,401 @@ func getLen(from interface{}) int {
 		return v.Len()
 	default:
 		return 0
+	}
+}
+
+// c.FindRole accepts all possible role inputs (names, IDs and mentions)
+// and tries to find them on the current context
+func (c *Context) FindRole(role interface{}) *discordgo.Role {
+	switch t := role.(type) {
+	case string:
+		parsed, err := strconv.ParseInt(t, 10, 64)
+		if err == nil {
+			return c.GS.GetRole(parsed)
+		}
+
+		if strings.HasPrefix(t, "<@&") && strings.HasSuffix(t, ">") && (len(t) > 4) {
+			parsedMention, err := strconv.ParseInt(t[3:len(t)-1], 10, 64)
+			if err == nil {
+				return c.GS.GetRole(parsedMention)
+			}
+		}
+
+		if t == "@everyone" { // If it's the everyone role, we just use the guild ID
+			return c.GS.GetRole(c.GS.ID)
+		}
+
+		// It's a name after all
+		return c.findRoleByName(t)
+	default:
+		int64Role := ToInt64(t)
+		if int64Role == 0 {
+			return nil
+		}
+
+		return c.GS.GetRole(int64Role)
+	}
+}
+
+func (c *Context) getRole(r interface{}) (*discordgo.Role, error) {
+	if c.IncreaseCheckStateLock() {
+		return nil, ErrTooManyCalls
+	}
+
+	return c.FindRole(r), nil
+}
+
+func (c *Context) tmplGetRole(roleInput interface{}) (*discordgo.Role, error) {
+	return c.getRole(roleInput)
+}
+
+func (c *Context) tmplGetRoleID(roleID interface{}) (*discordgo.Role, error) {
+	return c.getRole(roleID)
+}
+
+func (c *Context) tmplGetRoleName(roleName string) (*discordgo.Role, error) {
+	return c.getRole(roleName)
+}
+
+func (c *Context) mentionRole(roleInput interface{}) (string, error) {
+	if c.IncreaseCheckStateLock() {
+		return "", ErrTooManyCalls
+	}
+
+	role := c.FindRole(roleInput)
+	if role == nil {
+		return "", errors.New("role not found")
+	}
+
+	if common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, role.ID) {
+		return role.Mention(), nil
+	}
+
+	c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, role.ID)
+	return role.Mention(), nil
+}
+
+func (c *Context) tmplMentionRole(roleInput interface{}) (string, error) {
+	return c.mentionRole(roleInput)
+}
+
+func (c *Context) tmplMentionRoleID(roleID interface{}) (string, error) {
+	return c.mentionRole(roleID)
+}
+
+func (c *Context) tmplMentionRoleName(roleName string) (string, error) {
+	return c.mentionRole(roleName)
+}
+
+func (c *Context) hasRole(roleInput interface{}) (bool, error) {
+	if c.IncreaseCheckStateLock() {
+		return false, ErrTooManyCalls
+	}
+
+	if c.MS == nil || c.MS.Member == nil {
+		return false, errors.New("Member is nil")
+	}
+
+	role := c.FindRole(roleInput)
+	if role == nil {
+		return false, fmt.Errorf("Role %v not found", roleInput)
+	}
+
+	return common.ContainsInt64Slice(c.MS.Member.Roles, role.ID), nil
+}
+
+func (c *Context) tmplHasRole(roleInput interface{}) (bool, error) {
+	return c.hasRole(roleInput)
+}
+
+func (c *Context) tmplHasRoleID(roleID interface{}) (bool, error) {
+	return c.hasRole(roleID)
+}
+
+func (c *Context) tmplHasRoleName(roleName string) (bool, error) {
+	return c.hasRole(roleName)
+}
+
+func (c *Context) targetHasRole(target interface{}, roleInput interface{}) (bool, error) {
+	if c.IncreaseCheckStateLock() {
+		return false, ErrTooManyCalls
+	}
+
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return false, fmt.Errorf("Target %v not found", target)
+	}
+
+	ms, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return false, err
+	}
+
+	if ms == nil {
+		return false, errors.New("MemberState not found")
+	}
+
+	role := c.FindRole(roleInput)
+	if role == nil {
+		return false, fmt.Errorf("Role %v not found", roleInput)
+	}
+
+	return common.ContainsInt64Slice(ms.Member.Roles, role.ID), nil
+}
+
+func (c *Context) tmplTargetHasRole(target interface{}, roleInput interface{}) (bool, error) {
+	return c.targetHasRole(target, roleInput)
+}
+
+func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) (bool, error) {
+	return c.targetHasRole(target, roleID)
+
+}
+
+func (c *Context) tmplTargetHasRoleName(target interface{}, roleName string) (bool, error) {
+	return c.targetHasRole(target, roleName)
+}
+
+func (c *Context) giveRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	if c.IncreaseCheckStateLock() {
+		return "", ErrTooManyCalls
+	}
+
+	var delay time.Duration
+	if len(optionalArgs) > 0 {
+		delay = c.validateDurationDelay(optionalArgs[0])
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return "", fmt.Errorf("Target %v not found", target)
+	}
+
+	role := c.FindRole(roleInput)
+	if role == nil {
+		return "", fmt.Errorf("Role %v not found", roleInput)
+	}
+
+	if delay > time.Second {
+		err := scheduledevents2.ScheduleAddRole(context.Background(), c.GS.ID, targetID, role.ID, time.Now().Add(delay))
+		if err != nil {
+			return "", err
+		}
+	} else {
+		ms, err := bot.GetMember(c.GS.ID, targetID)
+		var hasRole bool
+		if ms != nil && err == nil {
+			hasRole = common.ContainsInt64Slice(ms.Member.Roles, role.ID)
+		}
+
+		if hasRole {
+			// User already has this role, nothing to be done
+			return "", nil
+		}
+
+		err = common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role.ID)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return "", nil
+}
+
+func (c *Context) tmplGiveRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+	return c.giveRole(target, roleInput, optionalArgs...)
+}
+
+func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) (string, error) {
+	return c.giveRole(target, roleID, optionalArgs...)
+}
+
+func (c *Context) tmplGiveRoleName(target interface{}, roleName string, optionalArgs ...interface{}) (string, error) {
+	return c.giveRole(target, roleName, optionalArgs...)
+}
+
+func (c *Context) addRole(roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	if c.IncreaseCheckStateLock() {
+		return "", ErrTooManyCalls
+	}
+
+	var delay time.Duration
+	if len(optionalArgs) > 0 {
+		delay = c.validateDurationDelay(optionalArgs[0])
+	}
+
+	if c.MS == nil {
+		return "", errors.New("tmplAddRole called on context with nil MemberState")
+	}
+
+	role := c.FindRole(roleInput)
+	if role == nil {
+		return "", fmt.Errorf("Role %v not found", roleInput)
+	}
+
+	if delay > time.Second {
+		err := scheduledevents2.ScheduleAddRole(context.Background(), c.GS.ID, c.MS.User.ID, role.ID, time.Now().Add(delay))
+		if err != nil {
+			return "", err
+		}
+	} else {
+		err := common.AddRoleDS(c.MS, role.ID)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return "", nil
+}
+
+func (c *Context) tmplAddRole(roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+	return c.addRole(roleInput, optionalArgs...)
+}
+
+func (c *Context) tmplAddRoleID(roleID interface{}, optionalArgs ...interface{}) (string, error) {
+	return c.addRole(roleID, optionalArgs...)
+}
+
+func (c *Context) tmplAddRoleName(roleName string, optionalArgs ...interface{}) (string, error) {
+	return c.addRole(roleName, optionalArgs...)
+}
+
+func (c *Context) takeRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	if c.IncreaseCheckStateLock() {
+		return "", ErrTooManyCalls
+	}
+
+	var delay time.Duration
+	if len(optionalArgs) > 0 {
+		delay = c.validateDurationDelay(optionalArgs[0])
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return "", fmt.Errorf("Target %v not found", target)
+	}
+
+	role := c.FindRole(roleInput)
+	if role == nil {
+		return "", fmt.Errorf("Role %v not found", roleInput)
+	}
+
+	if delay > time.Second {
+		err := scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role.ID, time.Now().Add(delay))
+		if err != nil {
+			return "", err
+		}
+	} else {
+		ms, err := bot.GetMember(c.GS.ID, targetID)
+		hasRole := true
+		if ms != nil && err == nil {
+			hasRole = common.ContainsInt64Slice(ms.Member.Roles, role.ID)
+		}
+
+		if !hasRole {
+			// User does not have the role, nothing to be done
+			return "", nil
+		}
+
+		err = common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role.ID)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return "", nil
+}
+
+func (c *Context) tmplTakeRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+	return c.takeRole(target, roleInput, optionalArgs...)
+}
+
+func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) (string, error) {
+	return c.takeRole(target, roleID, optionalArgs...)
+}
+
+func (c *Context) tmplTakeRoleName(target interface{}, roleName string, optionalArgs ...interface{}) (string, error) {
+	return c.takeRole(target, roleName, optionalArgs...)
+}
+
+func (c *Context) removeRole(roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	if c.IncreaseCheckStateLock() {
+		return "", ErrTooManyCalls
+	}
+
+	var delay time.Duration
+	if len(optionalArgs) > 0 {
+		delay = c.validateDurationDelay(optionalArgs[0])
+	}
+
+	if c.MS == nil {
+		return "", errors.New("removeRole called on context with nil MemberState")
+	}
+
+	role := c.FindRole(roleInput)
+	if role == nil {
+		return "", fmt.Errorf("Role %v not found", roleInput)
+	}
+
+	if delay > time.Second {
+		err := scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, c.MS.User.ID, role.ID, time.Now().Add(delay))
+		if err != nil {
+			return "", err
+		}
+	} else {
+		err := common.RemoveRoleDS(c.MS, role.ID)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return "", nil
+}
+
+func (c *Context) tmplRemoveRole(roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+	return c.removeRole(roleInput, optionalArgs...)
+}
+
+func (c *Context) tmplRemoveRoleID(roleID interface{}, optionalArgs ...interface{}) (string, error) {
+	return c.removeRole(roleID, optionalArgs...)
+}
+
+func (c *Context) tmplRemoveRoleName(roleName string, optionalArgs ...interface{}) (string, error) {
+	return c.removeRole(roleName, optionalArgs...)
+}
+
+func (c *Context) validateDurationDelay(in interface{}) time.Duration {
+	switch t := in.(type) {
+	case int, int64:
+		return time.Second * ToDuration(t)
+	case string:
+		conv := ToInt64(t)
+		if conv != 0 {
+			return time.Second * ToDuration(conv)
+		}
+
+		return ToDuration(t)
+	default:
+		return ToDuration(t)
 	}
 }
