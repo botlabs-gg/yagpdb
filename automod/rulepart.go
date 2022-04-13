@@ -46,6 +46,8 @@ var RulePartMap = map[int]RulePart{
 	31: &MessageAttachmentTrigger{},
 	32: &MessageAttachmentTrigger{RequiresAttachment: true},
 	33: &AntiPhishingLinkTrigger{},
+	34: &MessageLengthTrigger{},
+	35: &MessageLengthTrigger{Inverted: true},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
