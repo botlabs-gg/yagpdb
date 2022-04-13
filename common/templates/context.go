@@ -517,6 +517,7 @@ func baseContextFuncs(c *Context) {
 	// Mentions
 	c.addContextFunc("mentionEveryone", c.tmplMentionEveryone)
 	c.addContextFunc("mentionHere", c.tmplMentionHere)
+	c.addContextFunc("mentionRole", c.tmplMentionRole)
 	c.addContextFunc("mentionRoleName", c.tmplMentionRoleName)
 	c.addContextFunc("mentionRoleID", c.tmplMentionRoleID)
 

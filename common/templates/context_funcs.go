@@ -566,16 +566,6 @@ func (c *Context) tmplSetRoles(target interface{}, input interface{}) (string, e
 	return "", nil
 }
 
-func (c *Context) findRoleByID(id int64) *discordgo.Role {
-	for _, r := range c.GS.Roles {
-		if r.ID == id {
-			return &r
-		}
-	}
-
-	return nil
-}
-
 func (c *Context) findRoleByName(name string) *discordgo.Role {
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
