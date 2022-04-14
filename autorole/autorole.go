@@ -53,8 +53,6 @@ const (
 	FullScanCancelled
 )
 
-var cancelFullScan = make(chan bool)
-
 func GetGeneralConfig(guildID int64) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}
 	err := common.GetRedisJson(KeyGeneral(guildID), conf)

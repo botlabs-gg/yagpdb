@@ -116,7 +116,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	tmpl["ProcessingETA"] = int(proc / 60)
 
 	// If any goroutine is running according to previous flow
-	workingOnFullScan := WorkingOnFullScan(activeGuild.ID)
+	workingOnFullScan := WorkingOnFullScanLegacy(activeGuild.ID)
 	if workingOnFullScan {
 		tmpl["FullScanActive"] = workingOnFullScan
 	}
@@ -157,12 +157,11 @@ func handleCancelFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateD
 		return tmpl.AddAlerts(web.ErrorAlert("Full scan is not active. Please refresh the page.")), nil
 	}
 
-	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(activeGuild.ID), "100", strconv.Itoa(FullScanCancelled)))
+	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(activeGuild.ID), "10", strconv.Itoa(FullScanCancelled)))
 	if err != nil {
 		logger.WithError(err).Error("Failed marking Full scan as cancelled")
 	}
 
-	cancelFullScan <- true
 	return tmpl, nil
 }
 

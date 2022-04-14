@@ -210,14 +210,32 @@ func RedisKeyFullScanAssignedRoles(gID int64) string {
 	return "autorole_full_scan_assigned_roles:" + strconv.FormatInt(gID, 10)
 }
 
+func isFullScanCancelled(guildID int64) bool {
+	var status int
+	err := common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(guildID)))
+	if err != nil {
+		logger.WithError(err).Error("Failed getting full scan status")
+	}
+	return status == FullScanCancelled
+}
+
+func stopFullScan(guildID int64) {
+	logger.WithField("guild", guildID).Info("Autorole full scan cancelled")
+	err := common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyFullScanStatus(guildID), RedisKeyFullScanAutoroleMembers(guildID), RedisKeyFullScanAssignedRoles(guildID)))
+	if err != nil {
+		logger.WithError(err).Error("Failed deleting the full scan related keys from redis")
+	}
+}
+
 func handleGuildChunk(evt *eventsystem.EventData) {
 	chunk := evt.GuildMembersChunk()
-	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "100", strconv.Itoa(FullScanStarted)))
-	if err != nil {
-		logger.WithError(err).Error("failed marking full scan status as started")
+	guildID := chunk.GuildID
+	if chunk.Nonce == "" || strconv.Itoa(int(guildID)) != chunk.Nonce {
+		// This event was not triggered by Full Scan
+		return
 	}
 
-	config, err := GetGeneralConfig(chunk.GuildID)
+	config, err := GetGeneralConfig(guildID)
 	if err != nil {
 		return
 	}
@@ -225,11 +243,16 @@ func handleGuildChunk(evt *eventsystem.EventData) {
 	if config.Role == 0 || config.OnlyOnJoin {
 		return
 	}
-	go iterateGuildChunkMembers(chunk.GuildID, config, chunk)
+	go iterateGuildChunkMembers(guildID, config, chunk)
 }
 
 // Iterate through all the members in the chunk, and add them to set, if autorole needs to be assigned to them
 func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *discordgo.GuildMembersChunk) {
+	if isFullScanCancelled(guildID) {
+		return
+	}
+
+	lastTimeFullScanStatusRefreshed := time.Now()
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "100", strconv.Itoa(FullScanIterating)))
 	if err != nil {
 		logger.WithError(err).Error("Failed marking full scan iterating")
@@ -263,11 +286,29 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 		if err != nil {
 			logger.WithError(err).Error("Failed adding user to the set")
 		}
+
+		if time.Since(lastTimeFullScanStatusRefreshed) > time.Second*50 {
+			if isFullScanCancelled(guildID) {
+				stopFullScan(guildID)
+				return
+			}
+
+			lastTimeFullScanStatusRefreshed = time.Now()
+			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "100", strconv.Itoa(FullScanIterating)))
+			if err != nil {
+				logger.WithError(err).Error("Failed refreshing full scan iterating")
+			}
+		}
 	}
 
 	if chunk.ChunkIndex+1 == chunk.ChunkCount {
+		if isFullScanCancelled(guildID) {
+			stopFullScan(guildID)
+			return
+		}
+
 		// All chunks are processed, launching a go routine to start assigning autorole to the members in the set
-		err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "100", strconv.Itoa(FullScanIterationDone)))
+		err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "10", strconv.Itoa(FullScanIterationDone)))
 		if err != nil {
 			logger.WithError(err).Error("Failed marking Full scan iteration complete")
 		}
@@ -301,6 +342,7 @@ func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigne
 			logger.WithError(err).WithField("user", ms.User.ID).WithField("guild", guildID).Error("failed adding autorole role")
 		}
 		if disabled {
+			logger.Info("assignRole returned disabled=true")
 			return true
 		}
 		*rolesAssigned += 1
@@ -309,10 +351,11 @@ func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigne
 	if err != nil {
 		logger.WithError(err).Error("Failed setting roles assigned count")
 	}
-	return false
+	return isFullScanCancelled(guildID)
 }
 
 func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
+	lastTimeFullScanStatusRefreshed := time.Now()
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(guildID), "100", strconv.Itoa(FullScanAssigningRole)))
 	if err != nil {
 		logger.WithError(err).Error("Failed marking Full scan assigning role")
@@ -325,32 +368,40 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 	}
 
 	rolesAssigned := 0
-OUTER:
 	for {
-		select {
-		case <-cancelFullScan:
-			logger.WithField("guild", guildID).Info("Full scan is cancelled by the user.")
-			break OUTER
-		default:
-			assignmentDone := handleAssignFullScanRole(guildID, config, &rolesAssigned, totalMembers)
-			if assignmentDone {
-				break OUTER
-			}
+		assignmentDone := handleAssignFullScanRole(guildID, config, &rolesAssigned, totalMembers)
+		if assignmentDone {
+			break
 		}
+
 		// Sleep for 1 second to prevent hitting discord's rate limits
 		time.Sleep(time.Second * 1)
+
+		if isFullScanCancelled(guildID) {
+			stopFullScan(guildID)
+			return
+		}
+
+		if time.Since(lastTimeFullScanStatusRefreshed) > time.Second*50 {
+			lastTimeFullScanStatusRefreshed = time.Now()
+			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(guildID), "100", strconv.Itoa(FullScanAssigningRole)))
+			if err != nil {
+				logger.WithError(err).Error("Failed refreshing Full scan assigning role")
+			}
+		}
 	}
+	logger.WithField("guild", guildID).Info("Autorole full scan completed")
 	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyFullScanStatus(guildID), RedisKeyFullScanAutoroleMembers(guildID), RedisKeyFullScanAssignedRoles(guildID)))
 	if err != nil {
 		logger.WithError(err).Error("Failed deleting the full scan related keys from redis")
 	}
 }
 
-func WorkingOnFullScan(guildID int64) bool {
+func WorkingOnFullScanLegacy(guildID int64) bool {
 	var b bool
 	err := common.RedisPool.Do(radix.Cmd(&b, "EXISTS", RedisKeyGuildChunkProecssing(guildID)))
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("failed checking WorkingOnFullScan")
+		logger.WithError(err).WithField("guild", guildID).Error("failed checking WorkingOnFullScanLegacy")
 		return false
 	}
 
