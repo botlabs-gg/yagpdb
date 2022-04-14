@@ -6,6 +6,7 @@ import (
 	"html"
 	"html/template"
 	"net/http"
+	"strconv"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/common"
@@ -70,6 +71,7 @@ func (p *Plugin) InitWeb() {
 	muxer.Handle(pat.Get("/"), getHandler)
 
 	muxer.Handle(pat.Post("/fullscan"), web.ControllerPostHandler(handlePostFullScan, getHandler, nil))
+	muxer.Handle(pat.Post("/fullscan/cancel"), web.ControllerPostHandler(handleCancelFullScan, getHandler, nil))
 
 	muxer.Handle(pat.Post(""), web.SimpleConfigSaverHandler(Form{}, getHandler, panelLogKeyUpdatedSettings))
 	muxer.Handle(pat.Post("/"), web.SimpleConfigSaverHandler(Form{}, getHandler, panelLogKeyUpdatedSettings))
@@ -83,13 +85,41 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general
 
+	var status int
+	fullScanActive := false
+	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(activeGuild.ID)))
+	if status > 0 {
+		fullScanActive = true
+		var fullScanStatus string
+		switch status {
+		case FullScanStarted:
+			fullScanStatus = "Started"
+		case FullScanIterating:
+			fullScanStatus = "Iterating through the members"
+		case FullScanIterationDone:
+			fullScanStatus = "Iteration completed"
+		case FullScanAssigningRole:
+			fullScanStatus = "Assigning roles"
+			var assignedRoles string
+			common.RedisPool.Do(radix.Cmd(&assignedRoles, "GET", RedisKeyFullScanAssignedRoles(activeGuild.ID)))
+			tmpl["AssignedRoles"] = assignedRoles
+		case FullScanCancelled:
+			fullScanStatus = "Cancelled"
+		}
+		tmpl["FullScanStatus"] = fullScanStatus
+	}
+	tmpl["FullScanActive"] = fullScanActive
+
 	var proc int
 	common.RedisPool.Do(radix.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
 
-	fullScanActive := WorkingOnFullScan(activeGuild.ID)
-	tmpl["FullScanActive"] = fullScanActive
+	// If any goroutine is running according to previous flow
+	workingOnFullScan := WorkingOnFullScan(activeGuild.ID)
+	if workingOnFullScan {
+		tmpl["FullScanActive"] = workingOnFullScan
+	}
 
 	return tmpl
 
@@ -114,6 +144,25 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyStartedFullScan))
 
+	return tmpl, nil
+}
+
+func handleCancelFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
+	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
+
+	var status int64
+	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(activeGuild.ID)))
+	if status == 0 {
+		return tmpl.AddAlerts(web.ErrorAlert("Full scan is not active. Please refresh the page.")), nil
+	}
+
+	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(activeGuild.ID), "100", strconv.Itoa(FullScanCancelled)))
+	if err != nil {
+		logger.WithError(err).Error("Failed marking Full scan as cancelled")
+	}
+
+	cancelFullScan <- true
 	return tmpl, nil
 }
 
