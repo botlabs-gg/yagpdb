@@ -529,7 +529,7 @@ func (mc *MessageEditedCondition) Name() string {
 
 func (mc *MessageEditedCondition) Description() string {
 	if mc.NewMessage {
-		return "Ignore edited messages"
+		return "Only examine new messages"
 	}
 	return "Only examine edited messages"
 }
