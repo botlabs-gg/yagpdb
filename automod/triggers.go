@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/botlabs-gg/yagpdb/antiphishing"
 	"github.com/botlabs-gg/yagpdb/automod/models"
@@ -1372,4 +1373,59 @@ func (mat *MessageAttachmentTrigger) CheckMessage(triggerCtx *TriggerContext, cs
 
 func (mat *MessageAttachmentTrigger) MergeDuplicates(data []interface{}) interface{} {
 	return data[0] // no point in having duplicates of this
+}
+
+/////////////////////////////////////////////////////////////
+
+var _ MessageTrigger = (*MessageLengthTrigger)(nil)
+
+type MessageLengthTrigger struct {
+	Inverted bool
+}
+type MessageLengthTriggerData struct {
+	Length int
+}
+
+func (ml *MessageLengthTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (ml *MessageLengthTrigger) DataType() interface{} {
+	return &MessageLengthTriggerData{}
+}
+
+func (ml *MessageLengthTrigger) Name() (name string) {
+	if ml.Inverted {
+		return "Message with less than x characters"
+	}
+
+	return "Message with more than x characters"
+}
+
+func (ml *MessageLengthTrigger) Description() (description string) {
+	if ml.Inverted {
+		return "Triggers on messages where the content length is lesser than the specified value"
+	}
+
+	return "Triggers on messages where the content length is greater than the specified value"
+}
+
+func (ml *MessageLengthTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name: "Length",
+			Key:  "Length",
+			Kind: SettingTypeInt,
+		},
+	}
+}
+
+func (ml *MessageLengthTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	dataCast := triggerCtx.Data.(*MessageLengthTriggerData)
+
+	if ml.Inverted {
+		return utf8.RuneCountInString(m.Content) < dataCast.Length, nil
+	}
+
+	return utf8.RuneCountInString(m.Content) > dataCast.Length, nil
 }
