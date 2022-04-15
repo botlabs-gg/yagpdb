@@ -23,7 +23,7 @@
                         <label for="autorole-duration">Minutes of membership required for role (<b>Disclaimer:</b> Will
                             not work if you have it set to only give roles on join)</label>
                         <input type="number" min="0" class="form-control" id="autorole-duration" name="RequiredDuration"
-                            placeholder="" value="{{.Autorole.RequiredDuration}}">
+                            placeholder="" value="{{if .Autorole.OnlyOnJoin}}0{{else}}{{.Autorole.RequiredDuration}}{{end}}" {{if .Autorole.OnlyOnJoin}}disabled{{end}}>
                     </div>
                     <div class="form-group">
                         <label>Require one of these roles to be present on the member</label><br />
@@ -40,7 +40,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards.` .Autorole.OnlyOnJoin}}
+                        {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards.` .Autorole.OnlyOnJoin `onchange="toggleOnlyOnJoin(this)"`}}
                     </div>
 
                     <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA:
@@ -83,6 +83,19 @@
     </div>
     <!-- /.row -->
 </form>
+
+<script>
+    function toggleOnlyOnJoin(onlyOnJoin) {
+        const autoroleDuration = document.getElementById("autorole-duration");
+        if (onlyOnJoin.checked) {
+            autoroleDuration.setAttribute("disabled", "");
+            autoroleDuration.value = "0";
+        } else {
+            autoroleDuration.removeAttribute("disabled");
+        }
+    }
+</script>
+
 {{template "cp_footer" .}}
 
 {{end}}

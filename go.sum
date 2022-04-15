@@ -381,8 +381,8 @@ github.com/jonas747/cardsagainstdiscord/v2 v2.0.0/go.mod h1:xdZuVfXMpehXRK0hccKt
 github.com/jonas747/dca/v2 v2.0.0 h1:27SRgmKjJFA6jequrkkAmpx1c7AZ8OsMbTzdxGLUiHw=
 github.com/jonas747/dca/v2 v2.0.0/go.mod h1:WDY2/zvnIu1JbKQUG4SJW9FcVRWYRKlGe+fz0ZR96BM=
 github.com/jonas747/dcmd/v4 v4.0.1/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
-github.com/jonas747/dcmd/v4 v4.0.3 h1:vSTPfJcaf34V9KW44jRz0D3PqIA/TGtZ7Jof2Kq8fpc=
-github.com/jonas747/dcmd/v4 v4.0.3/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
+github.com/jonas747/dcmd/v4 v4.0.4 h1:ESr1t+AqjmBvTyfzP+MAy0dT/L9gkia0KSK0OgAW6yQ=
+github.com/jonas747/dcmd/v4 v4.0.4/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69/go.mod h1:m242ZgUE5Rw5Pmc35yiSSyGAxXCiO/QWJZ244MDpanI=
 github.com/jonas747/discordgo/v2 v2.0.0/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
@@ -403,8 +403,8 @@ github.com/jonas747/jdshardmanager/v2 v2.0.0 h1:coBcJ57KvjuvYCpoWDCwIwb/ch14szKk
 github.com/jonas747/jdshardmanager/v2 v2.0.0/go.mod h1:DHf5c16KoFOJgXA48Hn1ZjqPnx4bzUbnLb9UBJQGoGc=
 github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757 h1:Kyv+zTfWIGRNaz/4+lS+CxvuKVZSKFz/6G8E3BKKBRs=
 github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757/go.mod h1:cZnNmdLiLpihzgIVqiaQppi9Ts3D4qF/M45//yW35nI=
-github.com/jonas747/template v1.1.2 h1:eCAU81MpcC0gij9NitXt+ECCf436OxklvJA+CHWjqxA=
-github.com/jonas747/template v1.1.2/go.mod h1:gAPqCURcbB4rsYIzAsvcZyyflNZHNG6FQcUZBtLUzXg=
+github.com/jonas747/template v1.1.5 h1:n4h7S3DowLZOPV6PaRRzxDdx/slcV3lxC0TgzciLA5I=
+github.com/jonas747/template v1.1.5/go.mod h1:gAPqCURcbB4rsYIzAsvcZyyflNZHNG6FQcUZBtLUzXg=
 github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f h1:z2IO+m8BMTZJeubJxWrXEwhCCRewm6Tu/XDrrL44OLI=
 github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f/go.mod h1:FcMTsyR9FGTdWt9RboWas5IJ+i5NlozhLtNkCRYC3+A=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
