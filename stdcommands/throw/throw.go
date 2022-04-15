@@ -12,6 +12,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "Throw",
+	Aliases:     []string{"yeet"},
 	Description: "Throwing things is cool.",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Target", Type: dcmd.User},
