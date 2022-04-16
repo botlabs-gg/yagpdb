@@ -15,6 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/stdcommands/currentshard"
 	"github.com/botlabs-gg/yagpdb/stdcommands/currenttime"
 	"github.com/botlabs-gg/yagpdb/stdcommands/customembed"
+	"github.com/botlabs-gg/tagpdb/stdcommands/dadjoke"
 	"github.com/botlabs-gg/yagpdb/stdcommands/dcallvoice"
 	"github.com/botlabs-gg/yagpdb/stdcommands/define"
 	"github.com/botlabs-gg/yagpdb/stdcommands/dogfact"
@@ -79,6 +80,7 @@ func (p *Plugin) AddCommands() {
 		calc.Command,
 		topic.Command,
 		catfact.Command,
+		dadjoke.Command,
 		dogfact.Command,
 		advice.Command,
 		ping.Command,
