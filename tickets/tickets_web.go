@@ -113,7 +113,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		return templateData, err
 	}
 
-	enabled := settings.Enabled
+	enabled := settings != nil && settings.Enabled
 
 	templateData["WidgetTitle"] = "Tickets"
 	templateData["SettingsPath"] = "/tickets/settings"
