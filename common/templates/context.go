@@ -16,6 +16,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/common/prefix"
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
@@ -208,6 +209,7 @@ func (c *Context) setupBaseData() {
 		c.Data["Guild"] = c.GS
 		c.Data["Server"] = c.GS
 		c.Data["server"] = c.GS
+		c.Data["ServerPrefix"] = prefix.GetPrefixIgnoreError(c.GS.ID)
 	}
 
 	if c.CurrentFrame.CS != nil {

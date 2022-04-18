@@ -16,6 +16,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	prfx "github.com/botlabs-gg/yagpdb/common/prefix"
 	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/discordgo/v2"
@@ -175,7 +176,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	templateData["GlobalCommandSettings"] = global
 	templateData["ChannelOverrides"] = channelOverrides
 
-	prefix, _ := GetCommandPrefixRedis(activeGuild.ID)
+	prefix, _ := prfx.GetCommandPrefixRedis(activeGuild.ID)
 
 	templateData["CommandPrefix"] = prefix
 
@@ -448,7 +449,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["SettingsPath"] = "/commands/settings"
 	templateData["WidgetEnabled"] = true
 
-	prefix, err := GetCommandPrefixRedis(ag.ID)
+	prefix, err := prfx.GetCommandPrefixRedis(ag.ID)
 	if err != nil {
 		return templateData, err
 	}
