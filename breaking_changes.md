@@ -1,5 +1,10 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
+**18th Apr 2022 (1.32.0-dev)**
+
+ - Autorole Full scan feature is now paid premium only, and the configuration form is disabled when full scan is active.
+ - Minimum required redis version is 5.x.
+
 **27th Jul 2019 (1.19.12-dev)**
 
  - You can't access old message logs unless you migrate them from the old format using the `migratelogs` owner only command. Be careful and only run this once as otherwise you'll have duplicate log entries.

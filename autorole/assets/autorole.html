@@ -67,10 +67,9 @@
                     <h4 class="card-title">Perform a retro-active full scan</h4>
                 </header>
                 <div class="card-body">
-                    <p>YAGPDB already performs a scan of your server every minute, but this only includes online/cached
-                        members, it would take up too many resources to keep absolutely all members in the state.</p>
-                    <p>Therefore you can use this to perform a full scan of your server.</p>
-                    <p>You will have to wait a couple minutes in-between each completed scan.{{if .FullScanActive}} To cancel active full scan, use the button shown below (Cancelling full scan may take upto 2 minutes).{{end}}</p>
+                    <p>This feature scans the server completely, and assigns the autorole to the eligible members (if they don't have the role already).</p>
+                    <p>This is a resource intensive process, and the time taken is directly proportional to the number of members in the server.</p>
+                    <p>The form above to update the Autorole configuration will be disabled when the full scan is active.{{if .FullScanActive}} To cancel active full scan, use the button shown below (Cancelling full scan may take upto 2 minutes).{{end}}</p>
                     {{if .FullScanActive}}
                         <div class="text-danger"><b>Already performing a full scan</b></div>
                         <p>
