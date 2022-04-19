@@ -74,7 +74,7 @@ docker-compose -f yagpdb/yagpdb_docker/docker-compose.dev.yml up
 
 * Golang 1.16 or above
 * PostgreSQL 9.6 or later
-* Redis version 3.x or later
+* Redis version 5.x or later
 
 #### Setting Up
 
