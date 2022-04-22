@@ -29,7 +29,7 @@ require (
 	github.com/jonas747/go-reddit v0.1.2
 	github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc
 	github.com/jonas747/jdshardmanager/v2 v2.0.0
-	github.com/jonas747/template v1.1.5
+	github.com/jonas747/template v1.1.6
 	github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f
 	github.com/justinian/dice v0.0.0-20170728002755-6a18b51d929c
 	github.com/karlseguin/ccache v2.0.3+incompatible
