@@ -228,6 +228,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
+		ArgSwitches: []*dcmd.ArgDef{
+			{Name: "cl", Help: "Messages to delete", Type: dcmd.Int},
+		},
 		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionKickMembers}},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
@@ -247,11 +250,23 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Error: Reason too long (can be max 470 characters).", nil
 			}
 
+			toDel := -1
+			if parsed.Switches["cl"].Value != nil {
+				toDel = parsed.Switches["cl"].Int()
+
+				if toDel < 0 {
+					return "Error: Num is too small (has to be within 1 - 100)", nil
+				} else if toDel > 100 {
+					return "Error: Num is too big (has to be within 1 - 100)", nil
+				}
+			}
+
 			var msg *discordgo.Message
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = KickUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target)
+
+			err = KickUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, toDel)
 			if err != nil {
 				return nil, err
 			}
