@@ -29,7 +29,7 @@ var Command = &commands.YAGCommand{
 			return nil , err
 		}
 		//Set the headers that will be sent to the API to determine the response.
-		req.Header.Set("Accept", "application/json", "User-Agent", "Discord bot (https://github.com/savage4618/yagpdb)")
+		req.Header.Set("Accept", "application/json", "User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 
 		client := &http.Client{}
 		apiResp, err := client.Do(req)
