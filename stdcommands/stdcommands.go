@@ -15,7 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/stdcommands/currentshard"
 	"github.com/botlabs-gg/yagpdb/stdcommands/currenttime"
 	"github.com/botlabs-gg/yagpdb/stdcommands/customembed"
-	"github.com/botlabs-gg/tagpdb/stdcommands/dadjoke"
+	"github.com/botlabs-gg/yagpdb/stdcommands/dadjoke"
 	"github.com/botlabs-gg/yagpdb/stdcommands/dcallvoice"
 	"github.com/botlabs-gg/yagpdb/stdcommands/define"
 	"github.com/botlabs-gg/yagpdb/stdcommands/dogfact"
