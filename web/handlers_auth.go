@@ -52,7 +52,8 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
-	url += "&prompt=none"
+	// disabled prompt to see if the multiple requests are still happening when user expliclity consents to login
+	// url += "&prompt=none"
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
