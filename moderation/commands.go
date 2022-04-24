@@ -229,7 +229,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Reason", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "cl", Help: "Messages to delete", Type: dcmd.Int},
+			{Name: "cl", Help: "Messages to delete", Type: &dcmd.IntArg{Min: 1, Max: 100}},
 		},
 		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionKickMembers}},
 		SlashCommandEnabled: true,
@@ -253,12 +253,6 @@ var ModerationCommands = []*commands.YAGCommand{
 			toDel := -1
 			if parsed.Switches["cl"].Value != nil {
 				toDel = parsed.Switches["cl"].Int()
-
-				if toDel < 0 {
-					return "Error: Num is too small (has to be within 1 - 100)", nil
-				} else if toDel > 100 {
-					return "Error: Num is too big (has to be within 1 - 100)", nil
-				}
 			}
 
 			var msg *discordgo.Message
