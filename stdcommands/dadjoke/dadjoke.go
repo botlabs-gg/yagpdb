@@ -11,8 +11,8 @@ import (
 //Create the struct that we will serialize the api respone into.
 type Joke struct {
 	ID string `json:"id"`
-	JOKE string `json:"joke"`
-	STATUS int `json:"status"`
+	Joke string `json:"joke"`
+	Status int `json:"status"`
 }
 
 var Command = &commands.YAGCommand{
@@ -32,26 +32,24 @@ var Command = &commands.YAGCommand{
 		req.Header.Set("Accept", "application/json")
 		req.Header.Add("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 
-		client := &http.Client{}
-		apiResp, err := client.Do(req)
+		apiResp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			return nil , err
 		}
 		//Once the rest of the function is done close our connection the API.
 		defer apiResp.Body.Close()
 		//Read the API response.
-		bytes, err := ioutil.ReadAll(apiResp.Body)
+		bytes, err := io.ReadAll(apiResp.Body)
 		if err != nil {
 			return nil , err
 		}
 		//Create our struct and unmarshal the content into it.
-		joke1 := Joke{}
-		jsonErr := json.Unmarshal(bytes,&joke1)
-		if jsonErr != nil {
-			return nil , jsonErr
+		var joke := Joke{}
+		err := json.Unmarshal(bytes,&joke1)
+		if err != nil {
+			return nil , err
 		}
 		//Return the joke - the other pieces are unneeded and ignored. 
-		resp := joke1.JOKE
-		return resp , nil
+		return joke.Joke , nil
 	},
 }
