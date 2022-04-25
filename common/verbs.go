@@ -32,4 +32,6 @@ var Verbs = []string{
 	"change",
 	"climb",
 	"confirm",
+	"consist",
+	"contain",
 }
