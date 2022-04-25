@@ -15,6 +15,7 @@ var Verbs = []string{
 	"agree",
 	"allow",
 	"bake",
+	"blush",
 	"be",
 	"bear",
 	"beg",
