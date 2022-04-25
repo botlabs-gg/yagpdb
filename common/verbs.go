@@ -31,4 +31,5 @@ var Verbs = []string{
 	"catch",
 	"change",
 	"climb",
-},
+	"confirm",
+}
