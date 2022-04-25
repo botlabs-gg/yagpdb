@@ -84,6 +84,10 @@ func RandomNoun() string {
 	return Nouns[rand.Intn(len(Nouns))]
 }
 
+func RandomVerb() string {
+	return Verbs[rand.Intn(len(Verbs))]
+}
+
 type DurationFormatPrecision int
 
 const (

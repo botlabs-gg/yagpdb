@@ -90,6 +90,7 @@ var (
 		"roleAbove":       roleIsAbove,
 		"adjective":       common.RandomAdjective,
 		"noun":            common.RandomNoun,
+		"verb":            common.RandomVerb,
 		"randInt":         randInt,
 		"shuffle":         shuffle,
 		"seq":             sequence,
