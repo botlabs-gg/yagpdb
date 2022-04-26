@@ -230,12 +230,14 @@ func (c *Context) setupBaseData() {
 		c.Data["user"] = c.Data["User"]
 	}
 
-	c.Data["TimeSecond"] = time.Second
-	c.Data["TimeMinute"] = time.Minute
-	c.Data["TimeHour"] = time.Hour
-	c.Data["UnixEpoch"] = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 	c.Data["DiscordEpoch"] = time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+	c.Data["DomainRegex"] = common.DomainFinderRegex.String()
 	c.Data["IsPremium"] = c.IsPremium
+	c.Data["LinkRegex"] = common.LinkRegex.String()
+	c.Data["TimeHour"] = time.Hour
+	c.Data["TimeMinute"] = time.Minute
+	c.Data["TimeSecond"] = time.Second
+	c.Data["UnixEpoch"] = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
