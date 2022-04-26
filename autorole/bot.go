@@ -36,7 +36,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, onMemberJoin, eventsystem.EventGuildMemberAdd)
 	// eventsystem.AddHandlerAsyncLast(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleGuildChunk, eventsystem.EventGuildMembersChunk)
-	eventsystem.AddHandlerFirst(p, handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(p, handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 
 	scheduledevents2.RegisterHandler("autorole_assign_role", assignRoleEventdata{}, handleAssignRole)
 
@@ -97,34 +97,6 @@ func saveGeneral(guildID int64, config *GeneralConfig) {
 	}
 }
 
-// Function to assign autorole to the user, or to schedule an event to assign the autorole
-// This function gets triggered in either of the following ways:
-// 1. A user joined a guild with membership screening completed.
-// 2. The user joined the guild previously, but has completed membership screening just now.
-func assignRoleAfterScreening(config *GeneralConfig, evt *eventsystem.EventData, member *discordgo.Member) (retry bool, err error) {
-	if config.Role == 0 || evt.GS.GetRole(config.Role) == nil {
-		return
-	}
-
-	memberJoinedAt, _ := member.JoinedAt.Parse()
-
-	memberDuration := time.Since(memberJoinedAt)
-	configDuration := time.Duration(config.RequiredDuration) * time.Minute
-
-	if (config.RequiredDuration < 1 || config.OnlyOnJoin || configDuration <= memberDuration) && config.CanAssignTo(member.Roles, memberJoinedAt) {
-		_, retry, err = assignRole(config, member.GuildID, member.User.ID)
-		return retry, err
-	}
-
-	if !config.OnlyOnJoin {
-		err = scheduledevents2.ScheduleEvent("autorole_assign_role", member.GuildID,
-			time.Now().Add(configDuration-memberDuration), &assignRoleEventdata{UserID: member.User.ID})
-		return bot.CheckDiscordErrRetry(err), err
-	}
-
-	return
-}
-
 func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	addEvt := evt.GuildMemberAdd()
 
@@ -133,12 +105,28 @@ func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 		return true, errors.WithStackIf(err)
 	}
 
-	if config.AssignRoleAfterScreening && addEvt.Pending {
-		// Return if Membership Screening is pending
+	if config.Role == 0 || evt.GS.GetRole(config.Role) == nil {
 		return
 	}
 
-	return assignRoleAfterScreening(config, evt, addEvt.Member)
+	// ms := evt.GS.MemberCopy(true, addEvt.User.ID)
+	// if ms == nil {
+	// 	logger.Error("Member not found in add event")
+	// 	return
+	// }
+
+	if config.RequiredDuration < 1 && config.CanAssignTo(addEvt.Roles, time.Now()) {
+		_, retry, err = assignRole(config, addEvt.GuildID, addEvt.User.ID)
+		return retry, err
+	}
+
+	if config.RequiredDuration > 0 && !config.OnlyOnJoin {
+		err = scheduledevents2.ScheduleEvent("autorole_assign_role", addEvt.GuildID,
+			time.Now().Add(time.Minute*time.Duration(config.RequiredDuration)), &assignRoleEventdata{UserID: addEvt.User.ID})
+		return bot.CheckDiscordErrRetry(err), err
+	}
+
+	return false, nil
 }
 
 func assignRole(config *GeneralConfig, guildID int64, targetID int64) (disabled bool, retry bool, err error) {
@@ -255,11 +243,6 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 	}
 
 	for _, m := range chunk.Members {
-
-		if config.AssignRoleAfterScreening && m.Pending {
-			// Skip if Membership Screening is pending this member
-			continue
-		}
 
 		joinedAt, err := m.JoinedAt.Parse()
 		if err != nil {
@@ -435,11 +418,6 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 		return bot.CheckDiscordErrRetry(err), err
 	}
 
-	if config.AssignRoleAfterScreening && member.Member.Pending {
-		// Return if Membership Screening is pending
-		return
-	}
-
 	parsedT, _ := member.Member.JoinedAt.Parse()
 	memberDuration := time.Since(parsedT)
 	configDuration := time.Duration(config.RequiredDuration) * time.Minute
@@ -467,23 +445,6 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	config, err := GuildCacheGetGeneralConfig(update.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
-	}
-
-	if config.AssignRoleAfterScreening {
-		if update.Pending {
-			// Return if Membership Screening is pending
-			return
-		}
-
-		prevMemberState := bot.State.GetMember(update.GuildID, update.User.ID)
-		if prevMemberState == nil && !update.Pending {
-			return assignRoleAfterScreening(config, evt, update.Member)
-		}
-		if prevMemberState != nil && prevMemberState.Member.Pending && !update.Pending {
-			// The user has completed membership screening just now
-			return assignRoleAfterScreening(config, evt, update.Member)
-		}
-
 	}
 
 	if config.Role == 0 || config.OnlyOnJoin || evt.GS.GetRole(config.Role) == nil {
