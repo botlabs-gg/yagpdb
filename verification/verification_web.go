@@ -20,6 +20,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/web"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
@@ -196,6 +197,9 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	valid, err := p.checkCAPTCHAResponse(r.FormValue("g-recaptcha-response"))
+	if err != nil {
+		logrus.WithError(err).Error("Failed recaptcha response")
+	}
 
 	token := pat.Param(r, "token")
 	userID, _ := strconv.ParseInt(pat.Param(r, "user_id"), 10, 64)

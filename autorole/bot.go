@@ -12,7 +12,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	scheduledEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/jonas747/dcmd/v4"
@@ -92,12 +91,9 @@ var roleCommands = []*commands.YAGCommand{
 // }
 
 func saveGeneral(guildID int64, config *GeneralConfig) {
-
 	err := common.SetRedisJson(KeyGeneral(guildID), config)
 	if err != nil {
 		logger.WithError(err).Error("Failed saving autorole config")
-	} else {
-		pubsub.Publish("autorole_stop_processing", guildID, nil)
 	}
 }
 
@@ -445,7 +441,7 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 	}
 
 	parsedT, _ := member.Member.JoinedAt.Parse()
-	memberDuration := time.Now().Sub(parsedT)
+	memberDuration := time.Since(parsedT)
 	configDuration := time.Duration(config.RequiredDuration) * time.Minute
 	if memberDuration < configDuration {
 		// settings may have been changed, re-schedule
@@ -479,18 +475,15 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 			return
 		}
 
-		prevMemberState, err := bot.GetMember(update.GuildID, update.User.ID)
-		if err != nil {
-			if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
-				return false, nil
-			}
-
-			return bot.CheckDiscordErrRetry(err), err
+		prevMemberState := bot.State.GetMember(update.GuildID, update.User.ID)
+		if prevMemberState == nil && !update.Pending {
+			return assignRoleAfterScreening(config, evt, update.Member)
 		}
 		if prevMemberState != nil && prevMemberState.Member.Pending && !update.Pending {
 			// The user has completed membership screening just now
 			return assignRoleAfterScreening(config, evt, update.Member)
 		}
+
 	}
 
 	if config.Role == 0 || config.OnlyOnJoin || evt.GS.GetRole(config.Role) == nil {
