@@ -14,8 +14,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/lib/template"
 	"github.com/botlabs-gg/yagpdb/premium"
-	"github.com/jonas747/template"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 

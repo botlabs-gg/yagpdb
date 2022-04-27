@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jonas747/template/parse"
+	"github.com/botlabs-gg/yagpdb/lib/template/parse"
 )
 
 const (

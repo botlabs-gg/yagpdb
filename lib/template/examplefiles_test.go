@@ -5,7 +5,7 @@
 package template_test
 
 import (
-	"github.com/jonas747/template"
+	"github.com/botlabs-gg/yagpdb/lib/template"
 	"io"
 	"io/ioutil"
 	"log"
