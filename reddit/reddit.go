@@ -11,9 +11,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/mqueue"
 	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/lib/go-reddit"
 	"github.com/botlabs-gg/yagpdb/premium"
 	"github.com/botlabs-gg/yagpdb/reddit/models"
-	"github.com/jonas747/go-reddit"
 )
 
 const (
