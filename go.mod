@@ -34,7 +34,6 @@ require (
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757
 	github.com/jonas747/template v1.1.6
 	github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f
 	github.com/json-iterator/go v1.1.9
