@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jonas747/dshardorchestrator/v3"
-	"github.com/jonas747/dshardorchestrator/v3/node"
-	"github.com/jonas747/dshardorchestrator/v3/orchestrator"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/node"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/orchestrator"
 )
 
 var testServerAddr = "127.0.0.1:7447"

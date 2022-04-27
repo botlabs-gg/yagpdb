@@ -10,7 +10,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/lib/cardsagainstdiscord"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	"github.com/jonas747/dshardorchestrator/v3"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator"
 )
 
 const ShardMigrationEvtGame = 110

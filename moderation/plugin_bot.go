@@ -16,8 +16,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dshardorchestrator/v3"
 	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 )

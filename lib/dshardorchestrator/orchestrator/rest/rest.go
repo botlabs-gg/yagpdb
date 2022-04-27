@@ -1,8 +1,8 @@
 package rest
 
 import (
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/orchestrator"
 	"github.com/gin-gonic/gin"
-	"github.com/jonas747/dshardorchestrator/v3/orchestrator"
 )
 
 type RESTAPI struct {

@@ -5,10 +5,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dshardorchestrator/v3"
-	"github.com/jonas747/dshardorchestrator/v3/orchestrator"
-	"github.com/jonas747/dshardorchestrator/v3/orchestrator/rest"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/orchestrator"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/orchestrator/rest"
 )
 
 func main() {
