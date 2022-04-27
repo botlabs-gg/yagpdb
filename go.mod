@@ -3,7 +3,6 @@ module github.com/botlabs-gg/yagpdb
 go 1.17
 
 require (
-	cloud.google.com/go v0.74.0 // indirect
 	emperror.dev/errors v0.4.3
 	github.com/AYLIEN/aylien_textapi_go v0.6.0
 	github.com/NYTimes/gziphandler v1.1.1
@@ -87,6 +86,8 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 )
 
+require cloud.google.com/go v0.74.0 // indirect
+
 require (
 	github.com/AlekSi/pointer v1.1.0
 	github.com/Masterminds/goutils v1.1.0 // indirect
@@ -167,13 +168,3 @@ require (
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
-
-// replace github.com/jonas747/discordgo => ../discordgo
-
-// replace github.com/jonas747/dcmd/v3 => ../dcmd
-
-// replace github.com/jonas747/dstate/v3 => ../dstate
-
-// replace github.com/jonas747/dshardorchestrator/v2 => ../dshardorchestrator
-
-// replace github.com/jonas747/template => ../template
