@@ -9,7 +9,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/lib/cardsagainstdiscord"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/jonas747/dstate/v4/inmemorytracker"
 )
 

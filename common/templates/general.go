@@ -14,7 +14,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 )
 
 // dictionary creates a map[string]interface{} from the given parameters by

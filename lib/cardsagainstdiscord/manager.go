@@ -3,7 +3,7 @@ package cardsagainstdiscord
 import (
 	"sync"
 
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 )
 
 type GameManager struct {

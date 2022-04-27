@@ -9,8 +9,8 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/models"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/web/discorddata"
-	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )

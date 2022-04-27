@@ -3,7 +3,7 @@ package dcmd
 import (
 	"strings"
 
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 )
 
 var (

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 )
 
 func main() {

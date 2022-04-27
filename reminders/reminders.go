@@ -8,8 +8,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/mqueue"
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo/v2"
 	"github.com/sirupsen/logrus"
 )
 

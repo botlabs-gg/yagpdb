@@ -5,7 +5,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 

@@ -15,7 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	scheduledEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 )
 

@@ -13,7 +13,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/featureflags"
 	prfx "github.com/botlabs-gg/yagpdb/common/prefix"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
