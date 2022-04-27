@@ -9,7 +9,7 @@ import (
 	"unicode"
 
 	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/lunixbochs/vtclean"
 )
 

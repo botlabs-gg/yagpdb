@@ -6,8 +6,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/analytics"
 	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/soundboard/models"
-	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/dstate/v4"
 )
 

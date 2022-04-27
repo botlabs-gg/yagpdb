@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
 	"github.com/lib/pq"

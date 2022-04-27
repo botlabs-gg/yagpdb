@@ -12,8 +12,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dcmd/v4"
 	"github.com/jonas747/discordgo/v2"
 )
 

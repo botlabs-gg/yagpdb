@@ -10,7 +10,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dstate/v4"
 )

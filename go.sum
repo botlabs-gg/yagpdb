@@ -376,8 +376,6 @@ github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfC
 github.com/jmoiron/sqlx v1.2.0 h1:41Ip0zITnmWNR/vHV+S4m+VoUivnWY5E4OJfLZjCJMA=
 github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
-github.com/jonas747/dcmd/v4 v4.0.4 h1:ESr1t+AqjmBvTyfzP+MAy0dT/L9gkia0KSK0OgAW6yQ=
-github.com/jonas747/dcmd/v4 v4.0.4/go.mod h1:zB66YQzC+J0swveHEiEQlY+lZ3y5LbqjEjxe6MnUJTY=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
 github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69/go.mod h1:m242ZgUE5Rw5Pmc35yiSSyGAxXCiO/QWJZ244MDpanI=
 github.com/jonas747/discordgo/v2 v2.0.0/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
@@ -385,7 +383,6 @@ github.com/jonas747/discordgo/v2 v2.0.8 h1:9Sek0e2BOZx2PyqWUlmpg342oB3fWY2itQZS7
 github.com/jonas747/discordgo/v2 v2.0.8/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
 github.com/jonas747/dshardorchestrator/v3 v3.0.0 h1:DPvwSLkZvM282BbohISKMIELTbcVB25Q385YyGVkc8c=
 github.com/jonas747/dshardorchestrator/v3 v3.0.0/go.mod h1:rBuluqm4X+z439q8a6X1k/1MvZ0Mwj7Ig2mveD04mVw=
-github.com/jonas747/dstate/v4 v4.0.1/go.mod h1:WRIGuYoVmr+N4ecy/8P61byGBscd3+W4aj26avbhSn0=
 github.com/jonas747/dstate/v4 v4.0.6 h1:anAVIq8xlwq7nPrtNDl0FJnN7bR59w9aCcutYfj4Jcg=
 github.com/jonas747/dstate/v4 v4.0.6/go.mod h1:Uwb5pxmoWLe1HMoidnF1BfQRK+NNkSupLw1Qa0XoGik=
 github.com/jonas747/go-reddit v0.1.2 h1:SDgHvC9ouFIdtbB+dlu8T5lHxAjoypz1NE7CuQN+YOI=

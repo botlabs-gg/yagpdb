@@ -8,7 +8,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
 	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/jonas747/discordgo/v2"
 )
 

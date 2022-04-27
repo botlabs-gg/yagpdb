@@ -10,7 +10,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/config"
 
 	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 )
 
 func GenCommandsDocs() {

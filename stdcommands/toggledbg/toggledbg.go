@@ -5,8 +5,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/stdcommands/util"
-	"github.com/jonas747/dcmd/v4"
 )
 
 var Command = &commands.YAGCommand{
