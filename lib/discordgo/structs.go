@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/gojay"
+	"github.com/botlabs-gg/yagpdb/lib/gojay"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 )

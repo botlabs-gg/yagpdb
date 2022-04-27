@@ -3,10 +3,12 @@ module github.com/botlabs-gg/yagpdb
 go 1.17
 
 require (
+	cloud.google.com/go v0.74.0 // indirect
 	emperror.dev/errors v0.4.3
 	github.com/AYLIEN/aylien_textapi_go v0.6.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
+	github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/dghubble/oauth1 v0.6.0
@@ -18,11 +20,13 @@ require (
 	github.com/friendsofgo/errors v0.9.2
 	github.com/getsentry/sentry-go v0.7.0
 	github.com/gin-gonic/gin v1.7.4
+	github.com/go-errors/errors v1.0.1
 	github.com/go-openapi/strfmt v0.20.2 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.1.0
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/safebrowsing v0.0.0-20190624211811-bbf0d20d26b3
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/websocket v1.4.2
@@ -30,20 +34,23 @@ require (
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/jonas747/gojay v0.0.0-20190906102056-b3bd5c8fcd50
 	github.com/jonas747/jdshardmanager/v2 v2.0.0
 	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757
 	github.com/jonas747/template v1.1.6
 	github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f
+	github.com/json-iterator/go v1.1.9
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/rcache v1.0.1
 	github.com/lib/pq v1.2.1-0.20191011153232-f91d3411e481
 	github.com/lunixbochs/vtclean v1.0.0
+	github.com/mailru/easyjson v0.0.0-20190312143242-1de009706dbe
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mediocregopher/radix/v3 v3.7.0
 	github.com/microcosm-cc/bluemonday v1.0.16
 	github.com/miolini/datacounter v0.0.0-20190724021726-aa48df3a02c1
 	github.com/mitchellh/cli v1.1.2
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -55,6 +62,8 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/buntdb v1.2.8
 	github.com/tkuchiki/go-timezone v0.1.5-0.20200504234801-f58f9e3b062f
+	github.com/viant/assertly v0.4.8
+	github.com/viant/toolbox v0.24.0
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
@@ -71,17 +80,18 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/api v0.40.0
+	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
 require (
+	github.com/francoispqt/gojay v1.2.13
 	github.com/jarcoal/httpmock v1.0.4
 	github.com/justinian/dice v1.0.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 )
 
 require (
-	cloud.google.com/go v0.74.0 // indirect
 	github.com/AlekSi/pointer v1.1.0 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
@@ -105,7 +115,6 @@ require (
 	github.com/go-playground/validator/v10 v10.4.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
@@ -116,7 +125,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jonas747/discordgo/v2 v2.0.0 // indirect
-	github.com/json-iterator/go v1.1.9 // indirect
+	github.com/jonas747/gojay v0.0.0-20190906102056-b3bd5c8fcd50 // indirect
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -127,8 +136,6 @@ require (
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -165,7 +172,6 @@ require (
 	google.golang.org/grpc v1.34.0 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
 
 // replace github.com/jonas747/discordgo => ../discordgo

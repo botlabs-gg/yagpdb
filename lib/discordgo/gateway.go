@@ -28,9 +28,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/lib/gojay"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	"github.com/jonas747/gojay"
 )
 
 var (
