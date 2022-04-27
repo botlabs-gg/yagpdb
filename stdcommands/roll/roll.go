@@ -7,7 +7,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
-	"github.com/jonas747/dice"
+	"github.com/botlabs-gg/yagpdb/lib/dice"
 )
 
 var Command = &commands.YAGCommand{
