@@ -138,7 +138,7 @@ OUTER:
 			}
 		}
 
-		builder.WriteString(fmt.Sprintf(`<option value="0" selected>Deleted role: %d</option>\n`, sr))
+		builder.WriteString(fmt.Sprintf(`<option value="%[1]d" selected>Deleted role: %[1]d</option>\n`, sr))
 	}
 
 	for k, role := range roles {

@@ -72,7 +72,6 @@ func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
 		// either no config or an error occured
 		return
 	}
-
 	if !conf.Enabled {
 		return
 	}

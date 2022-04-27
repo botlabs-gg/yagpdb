@@ -99,6 +99,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(handleUpdateCommand, getCmdHandler, CustomCommand{}))
 	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(handleDeleteCommand, getHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/run_now"), web.ControllerPostHandler(handleRunCommandNow, getCmdHandler, nil))
+	subMux.Handle(pat.Post("/commands/:cmd/update_and_run"), web.ControllerPostHandler(handleUpdateAndRunNow, getCmdHandler, CustomCommand{}))
 
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(handleUpdateGroup, getGroupHandler, GroupForm{}))
@@ -399,6 +400,14 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	go pubsub.Publish("custom_commands_run_now", activeGuild.ID, cmd)
 
 	return templateData, nil
+}
+
+func handleUpdateAndRunNow(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	updateData, err := handleUpdateCommand(w, r)
+	if err != nil {
+		return updateData, err
+	}
+	return handleRunCommandNow(w, r)
 }
 
 // allow for max 5 triggers with intervals of less than 10 minutes

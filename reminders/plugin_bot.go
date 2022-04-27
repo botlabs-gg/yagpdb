@@ -67,7 +67,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "Set a reminder in " + durString + " from now (<t:" + tUnix + ":f>)\nView reminders with the reminders command", nil
+			return "Set a reminder in " + durString + " from now (<t:" + tUnix + ":f>)\nView reminders with the `Reminders` command", nil
 		},
 	},
 	{

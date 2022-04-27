@@ -436,6 +436,58 @@ func tmplSub(args ...interface{}) interface{} {
 	}
 }
 
+var mathConstantsMap = map[string]float64{
+	//base
+	"e":   math.E,
+	"pi":  math.Pi,
+	"phi": math.Phi,
+
+	// square roots
+	"sqrt2":   math.Sqrt2,
+	"sqrte":   math.SqrtE,
+	"sqrtpi":  math.SqrtPi,
+	"sqrtphi": math.SqrtPhi,
+
+	// logarithms
+	"ln2":    math.Ln2,
+	"log2e":  math.Log2E,
+	"ln10":   math.Ln10,
+	"log10e": math.Log10E,
+
+	// floating-point limit values
+	"maxfloat32":             math.MaxFloat32,
+	"smallestnonzerofloat32": math.SmallestNonzeroFloat32,
+	"maxfloat64":             math.MaxFloat64,
+	"smallestnonzerofloat64": math.SmallestNonzeroFloat64,
+
+	// integer limit values
+	/* commented out, go v1.16 does not have these
+	"maxint": math.MaxInt,
+	"minint": math.MinInt,*/
+	"maxint8":  math.MaxInt8,
+	"minint8":  math.MinInt8,
+	"maxint16": math.MaxInt16,
+	"minint16": math.MinInt16,
+	"maxint32": math.MaxInt32,
+	"minint32": math.MinInt32,
+	"maxint64": math.MaxInt64,
+	"minint64": math.MinInt64,
+	//"maxuint":math.MaxUint,
+	"maxuint8":  math.MaxUint8,
+	"maxuint16": math.MaxUint16,
+	"maxuint32": math.MaxUint32,
+	"maxuint64": math.MaxUint64,
+}
+
+func tmplMathConstant(arg string) float64 {
+	constant := mathConstantsMap[strings.ToLower(arg)]
+	if constant == 0 {
+		return math.NaN()
+	}
+
+	return constant
+}
+
 func tmplMult(args ...interface{}) interface{} {
 	if len(args) < 1 {
 		return 0
@@ -613,7 +665,7 @@ func roleIsAbove(a, b *discordgo.Role) bool {
 	return common.IsRoleAbove(a, b)
 }
 
-func randInt(args ...interface{}) int {
+func randInt(args ...interface{}) (int, error) {
 	min := int64(0)
 	max := int64(10)
 	if len(args) >= 2 {
@@ -623,8 +675,13 @@ func randInt(args ...interface{}) int {
 		max = ToInt64(args[0])
 	}
 
-	r := rand.Int63n(max - min)
-	return int(r + min)
+	diff := max - min
+	if diff <= 0 {
+		return 0, errors.New("start must be strictly less than stop")
+	}
+
+	r := rand.Int63n(diff)
+	return int(r + min), nil
 }
 
 func tmplRound(args ...interface{}) float64 {
@@ -778,6 +835,10 @@ func tmplToInt(from interface{}) int {
 		return int(parsed)
 	case time.Duration:
 		return int(t)
+	case time.Month:
+		return int(t)
+	case time.Weekday:
+		return int(t)
 	default:
 		return 0
 	}
@@ -805,6 +866,10 @@ func ToInt64(from interface{}) int64 {
 		parsed, _ := strconv.ParseInt(t, 10, 64)
 		return parsed
 	case time.Duration:
+		return int64(t)
+	case time.Month:
+		return int64(t)
+	case time.Weekday:
 		return int64(t)
 	default:
 		return 0
@@ -864,6 +929,10 @@ func ToFloat64(from interface{}) float64 {
 		parsed, _ := strconv.ParseFloat(t, 64)
 		return parsed
 	case time.Duration:
+		return float64(t)
+	case time.Month:
+		return float64(t)
+	case time.Weekday:
 		return float64(t)
 	default:
 		return 0
