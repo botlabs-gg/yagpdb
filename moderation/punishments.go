@@ -13,9 +13,9 @@ import (
 	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/common/templates"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/logs"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )

@@ -15,7 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	schEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"

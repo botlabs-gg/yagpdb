@@ -7,7 +7,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/botlabs-gg/yagpdb/lib/cardsagainstdiscord"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/sirupsen/logrus"
 )
 

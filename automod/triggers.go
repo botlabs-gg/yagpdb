@@ -14,8 +14,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/safebrowsing"
-	"github.com/jonas747/dstate/v4"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")

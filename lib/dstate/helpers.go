@@ -3,7 +3,7 @@ package dstate
 import (
 	"time"
 
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 )
 
 func GuildSetFromGuild(guild *discordgo.Guild) *GuildSet {

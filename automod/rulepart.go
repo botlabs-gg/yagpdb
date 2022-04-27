@@ -6,7 +6,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/automod/models"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 // maps rule part indentifiers to actual condition types

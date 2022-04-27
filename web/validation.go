@@ -38,7 +38,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/templates"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/lib/pq"
 )
 

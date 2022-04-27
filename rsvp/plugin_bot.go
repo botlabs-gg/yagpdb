@@ -18,9 +18,9 @@ import (
 	eventModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/rsvp/models"
 	"github.com/botlabs-gg/yagpdb/timezonecompanion"
-	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )

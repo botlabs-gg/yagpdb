@@ -8,8 +8,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	schEvtsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/rolecommands/models"
-	"github.com/jonas747/dstate/v4"
 	"github.com/tidwall/buntdb"
 	v3_qm "github.com/volatiletech/sqlboiler/queries/qm"
 )

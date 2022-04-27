@@ -13,9 +13,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/rolecommands/models"
 	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/dstate/v4"
 	"github.com/tidwall/buntdb"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )

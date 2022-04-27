@@ -16,7 +16,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 const (

@@ -12,7 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/config"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 var (

@@ -28,7 +28,6 @@ require (
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/jonas747/dstate/v4 v4.0.6
 	github.com/jonas747/go-reddit v0.1.2
 	github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc
 	github.com/jonas747/gojay v0.0.0-20190906102056-b3bd5c8fcd50
@@ -76,7 +75,7 @@ require (
 )
 
 require (
-	github.com/justinian/dice v0.0.0-20170728002755-6a18b51d929c
+	github.com/justinian/dice v1.0.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 )
 
@@ -118,7 +117,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jarcoal/httpmock v1.0.4 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jonas747/discordgo/v2 v2.0.8 // indirect
+	github.com/jonas747/discordgo/v2 v2.0.0 // indirect
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect

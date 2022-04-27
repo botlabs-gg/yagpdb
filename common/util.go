@@ -14,7 +14,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"

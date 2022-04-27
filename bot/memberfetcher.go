@@ -3,7 +3,7 @@ package bot
 import (
 	"github.com/botlabs-gg/yagpdb/bot/shardmemberfetcher"
 	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 var (

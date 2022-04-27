@@ -14,7 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator"
 	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/node"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 func init() {

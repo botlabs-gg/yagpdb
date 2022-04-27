@@ -19,7 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/prefix"
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/jonas747/template"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"

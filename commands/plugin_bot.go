@@ -16,7 +16,7 @@ import (
 	prfx "github.com/botlabs-gg/yagpdb/common/prefix"
 	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 var (

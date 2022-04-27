@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 // CtxChannel is almost a 1:1 copy of dstate.ChannelState, its needed because we cant axpose all those state methods

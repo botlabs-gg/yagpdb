@@ -8,7 +8,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/analytics"
 	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 
 	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
