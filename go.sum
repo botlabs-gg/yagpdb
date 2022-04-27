@@ -394,8 +394,6 @@ github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhB
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jonas747/discordgo/v2 v2.0.0 h1:NM2ieCaaQdBWHWoDG2EV5mfvOeofua7sSZDkghHeak4=
 github.com/jonas747/discordgo/v2 v2.0.0/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
-github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc h1:yVJb07+MRPLTZ6wz3mgZeRp5+jly+zSOFnGmTGGVR+k=
-github.com/jonas747/go-twitter v0.0.0-20200706234916-1d17060b92bc/go.mod h1:SHFdr8GWpwGAEKgpyL+yG0eDEEr/CxzNRQgBpxsj40w=
 github.com/jonas747/gojay v0.0.0-20190906102056-b3bd5c8fcd50 h1:wsd5JxAZeqlRlj2tWklZmlWB7ojU7ksPR2X0rk4VzWI=
 github.com/jonas747/gojay v0.0.0-20190906102056-b3bd5c8fcd50/go.mod h1:e5tzLnqryDTnlHxS8vbZRvoMiO851Qb02WY2EoC6Dzs=
 github.com/jonas747/jdshardmanager/v2 v2.0.0 h1:coBcJ57KvjuvYCpoWDCwIwb/ch14szKkFjkZL6bIovQ=

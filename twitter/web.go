@@ -10,10 +10,10 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/lib/go-twitter/twitter"
 	"github.com/botlabs-gg/yagpdb/premium"
 	"github.com/botlabs-gg/yagpdb/twitter/models"
 	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/go-twitter/twitter"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
