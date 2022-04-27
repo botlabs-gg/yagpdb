@@ -8,7 +8,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/jonas747/cardsagainstdiscord/v2"
+	"github.com/botlabs-gg/yagpdb/lib/cardsagainstdiscord"
 	"github.com/jonas747/discordgo/v2"
 	"github.com/jonas747/dshardorchestrator/v3"
 )
