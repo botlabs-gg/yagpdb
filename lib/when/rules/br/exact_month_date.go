@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/when/rules"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules"
 )
 
 func ExactMonthDate(s rules.Strategy) rules.Rule {

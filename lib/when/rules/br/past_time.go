@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/AlekSi/pointer"
-	"github.com/jonas747/when/rules"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules"
 	"github.com/pkg/errors"
 )
 

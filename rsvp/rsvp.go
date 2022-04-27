@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/lib/when"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules"
+	wcommon "github.com/botlabs-gg/yagpdb/lib/when/rules/common"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules/en"
 	"github.com/botlabs-gg/yagpdb/timezonecompanion/trules"
-	"github.com/jonas747/when"
-	"github.com/jonas747/when/rules"
-	wcommon "github.com/jonas747/when/rules/common"
-	"github.com/jonas747/when/rules/en"
 )
 
 var (

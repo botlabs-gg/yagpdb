@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jonas747/when"
-	"github.com/jonas747/when/rules"
-	"github.com/jonas747/when/rules/common"
+	"github.com/botlabs-gg/yagpdb/lib/when"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules/common"
 )
 
 func TestSlashDMY(t *testing.T) {

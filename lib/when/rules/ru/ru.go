@@ -1,6 +1,6 @@
 package ru
 
-import "github.com/jonas747/when/rules"
+import "github.com/botlabs-gg/yagpdb/lib/when/rules"
 
 var All = []rules.Rule{
 	Weekday(rules.Override),

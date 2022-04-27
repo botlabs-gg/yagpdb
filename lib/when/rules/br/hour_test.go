@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jonas747/when"
-	"github.com/jonas747/when/rules"
-	"github.com/jonas747/when/rules/br"
+	"github.com/botlabs-gg/yagpdb/lib/when"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules/br"
 )
 
 func TestHour(t *testing.T) {

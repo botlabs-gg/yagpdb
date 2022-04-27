@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/when/rules"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules"
 )
 
 // <[]string{"third of march", "third", "", "march", "", ""}>

@@ -4,11 +4,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jonas747/when/rules"
-	"github.com/jonas747/when/rules/br"
-	"github.com/jonas747/when/rules/common"
-	"github.com/jonas747/when/rules/en"
-	"github.com/jonas747/when/rules/ru"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules/br"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules/common"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules/en"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules/ru"
 	"github.com/pkg/errors"
 )
 
