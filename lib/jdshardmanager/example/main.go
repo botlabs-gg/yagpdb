@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	dshardmanager "github.com/jonas747/jdshardmanager/v2"
+	dshardmanager "github.com/botlabs-gg/yagpdb/lib/jdshardmanager"
 )
 
 var (

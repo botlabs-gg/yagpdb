@@ -34,7 +34,6 @@ require (
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/jonas747/jdshardmanager/v2 v2.0.0
 	github.com/jonas747/ogg v0.0.0-20161220051205-b4f6f4cf3757
 	github.com/jonas747/template v1.1.6
 	github.com/jonas747/when v0.0.3-0.20201118193825-7feeddcd993f
@@ -124,8 +123,6 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jonas747/discordgo/v2 v2.0.0 // indirect
-	github.com/jonas747/gojay v0.0.0-20190906102056-b3bd5c8fcd50 // indirect
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/text v0.2.0 // indirect

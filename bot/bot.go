@@ -18,7 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/node"
 	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/lib/dstate/inmemorytracker"
-	dshardmanager "github.com/jonas747/jdshardmanager/v2"
+	dshardmanager "github.com/botlabs-gg/yagpdb/lib/jdshardmanager"
 	"github.com/mediocregopher/radix/v3"
 )
 
