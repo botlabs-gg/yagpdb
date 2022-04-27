@@ -376,8 +376,6 @@ github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfC
 github.com/jmoiron/sqlx v1.2.0 h1:41Ip0zITnmWNR/vHV+S4m+VoUivnWY5E4OJfLZjCJMA=
 github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
-github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69 h1:npnwg0oLHdEZs4KXXk2092gEuHx2jePVyrNIJXMsCBw=
-github.com/jonas747/dice v0.0.0-20170619144252-7735f6ee7b69/go.mod h1:m242ZgUE5Rw5Pmc35yiSSyGAxXCiO/QWJZ244MDpanI=
 github.com/jonas747/discordgo/v2 v2.0.0/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
 github.com/jonas747/discordgo/v2 v2.0.8 h1:9Sek0e2BOZx2PyqWUlmpg342oB3fWY2itQZS7G4xL1A=
 github.com/jonas747/discordgo/v2 v2.0.8/go.mod h1:xmbc+LSRXpPe4/tS311/b+wW54chZ5VWct5Z859dhnk=
