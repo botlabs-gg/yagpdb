@@ -23,22 +23,22 @@ func TestTimestampParse(t *testing.T) {
 	}
 }
 
-func TestEmojiNameUnqualify(t *testing.T) {
-	cases := []struct {
-		have string
-		want string
-	}{
-		{"⚔️", "⚔"},
-		{"⚔", "⚔"},
-		{":crossed_swords:", "⚔"},
-		{"1o57:442605016813928449", "1o57:442605016813928449"},
-	}
+// func TestEmojiNameUnqualify(t *testing.T) {
+// 	cases := []struct {
+// 		have string
+// 		want string
+// 	}{
+// 		{"⚔️", "⚔"},
+// 		{"⚔", "⚔"},
+// 		{":crossed_swords:", "⚔"},
+// 		{"1o57:442605016813928449", "1o57:442605016813928449"},
+// 	}
 
-	for _, c := range cases {
-		emoji := EmojiName{c.have}
-		if emoji.String() != c.want {
-			t.Errorf("Failed to strip emoji qualifier: '%s' -> '%s' not '%s'",
-				c.have, emoji.String(), c.want)
-		}
-	}
-}
+// 	for _, c := range cases {
+// 		emoji := EmojiName{c.have}
+// 		if emoji.String() != c.want {
+// 			t.Errorf("Failed to strip emoji qualifier: '%s' -> '%s' not '%s'",
+// 				c.have, emoji.String(), c.want)
+// 		}
+// 	}
+// }
