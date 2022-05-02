@@ -12,7 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"

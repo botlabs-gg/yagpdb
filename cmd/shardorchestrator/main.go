@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dshardorchestrator/v3"
-	"github.com/jonas747/dshardorchestrator/v3/orchestrator"
-	"github.com/jonas747/dshardorchestrator/v3/orchestrator/rest"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/orchestrator"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/orchestrator/rest"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 

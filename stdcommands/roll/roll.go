@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/dice"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/lib/dice"
 )
 
 var Command = &commands.YAGCommand{

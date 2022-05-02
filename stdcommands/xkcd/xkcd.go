@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 )
 
 type Xkcd struct {

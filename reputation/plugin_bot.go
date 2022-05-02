@@ -8,16 +8,16 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/analytics"
 	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 
 	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/reputation/models"
 	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 

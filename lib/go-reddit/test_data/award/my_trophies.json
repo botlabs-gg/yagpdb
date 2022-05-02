@@ -1,0 +1,19 @@
+{
+  "kind": "TrophyList",
+  "data": {
+    "trophies": [
+      {
+        "kind": "t6",
+        "data": {
+          "icon_70": "https://s3.amazonaws.com/redditstatic/award/n00b-70.png",
+          "description": null,
+          "url": null,
+          "icon_40": "https://s3.amazonaws.com/redditstatic/award/n00b-40.png",
+          "award_id": "j",
+          "id": "1j045a",
+          "name": "New User"
+        }
+      }
+    ]
+  }
+}

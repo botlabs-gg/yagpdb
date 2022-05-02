@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/timezonecompanion"
-	"github.com/jonas747/dcmd/v4"
 	"github.com/tkuchiki/go-timezone"
 )
 

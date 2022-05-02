@@ -3,7 +3,7 @@ package prefix
 import (
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 )
 

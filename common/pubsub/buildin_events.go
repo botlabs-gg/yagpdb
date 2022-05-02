@@ -7,7 +7,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/cacheset"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 )
 
 // PublishRatelimit publishes a new global ratelimit hit on discord

@@ -14,9 +14,9 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 
 	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dshardorchestrator/v3"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 const (

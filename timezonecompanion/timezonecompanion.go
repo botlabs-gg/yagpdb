@@ -5,9 +5,9 @@ package timezonecompanion
 
 import (
 	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/lib/when"
+	"github.com/botlabs-gg/yagpdb/lib/when/rules"
 	"github.com/botlabs-gg/yagpdb/timezonecompanion/trules"
-	"github.com/jonas747/when"
-	"github.com/jonas747/when/rules"
 )
 
 type Plugin struct {

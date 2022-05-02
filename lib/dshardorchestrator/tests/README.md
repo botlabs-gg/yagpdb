@@ -1,0 +1,1 @@
+This folder holds full integration tests between node and orchestrator

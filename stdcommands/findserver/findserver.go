@@ -6,9 +6,9 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/bot/models"
 	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/stdcommands/util"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/dstate/v4"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 

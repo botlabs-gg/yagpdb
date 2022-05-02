@@ -9,8 +9,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
 	"goji.io"
 	"goji.io/pat"
 )

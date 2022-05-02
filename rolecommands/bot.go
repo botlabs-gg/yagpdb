@@ -11,10 +11,10 @@ import (
 	"github.com/botlabs-gg/yagpdb/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
 	schEvtsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/rolecommands/models"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -137,12 +137,12 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdListGroups := &commands.YAGCommand{
-		Name: "Listgroups",
-		CmdCategory: categoryRoleMenu,
-		Aliases: []string{"list", "groups"},
-		Description: "Lists all role groups",
+		Name:                "Listgroups",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"list", "groups"},
+		Description:         "Lists all role groups",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
-		RunFunc: cmdFuncRoleMenuListGroups,
+		RunFunc:             cmdFuncRoleMenuListGroups,
 	}
 
 	menuContainer, t := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")

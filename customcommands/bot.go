@@ -14,8 +14,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/botlabs-gg/yagpdb/analytics"
+	"github.com/botlabs-gg/yagpdb/lib/template"
 	"github.com/botlabs-gg/yagpdb/premium"
-	"github.com/jonas747/template"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -31,10 +31,10 @@ import (
 	schEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/common/templates"
 	"github.com/botlabs-gg/yagpdb/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/stdcommands/util"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/null"

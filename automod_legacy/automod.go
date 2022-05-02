@@ -4,8 +4,8 @@ import (
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})

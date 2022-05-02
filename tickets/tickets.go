@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/tickets/models"
-	"github.com/jonas747/discordgo/v2"
 )
 
 type Plugin struct{}

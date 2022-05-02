@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
 )
 
 var MessageDeleteQueue = &messageDeleteQueue{

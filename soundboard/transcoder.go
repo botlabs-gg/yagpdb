@@ -14,8 +14,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/commands"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/backgroundworkers"
+	"github.com/botlabs-gg/yagpdb/lib/dca"
 	"github.com/botlabs-gg/yagpdb/soundboard/models"
-	"github.com/jonas747/dca/v2"
 	"goji.io/pat"
 )
 

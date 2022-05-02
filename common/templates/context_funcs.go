@@ -14,8 +14,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/bot"
 	"github.com/botlabs-gg/yagpdb/common"
 	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 var ErrTooManyCalls = errors.New("too many calls to this function")
@@ -513,11 +513,11 @@ func (c *Context) tmplMentionRoleName(role string) string {
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 	role := ToInt64(roleID)
-	
+
 	if c.MS == nil || c.MS.Member == nil {
 		return false
 	}
-	
+
 	if role == 0 {
 		return false
 	}
@@ -530,11 +530,11 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 	if c.IncreaseCheckStateLock() {
 		return false, ErrTooManyCalls
 	}
-	
+
 	if c.MS == nil || c.MS.Member == nil {
 		return false, nil
 	}
-	
+
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
 			if common.ContainsInt64Slice(c.MS.Member.Roles, r.ID) {
@@ -1024,9 +1024,9 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 		if cID == 0 {
 			return reflect.ValueOf("non-existing channel"), nil
 		}
-		
+
 		var mID, uID int64
-		
+
 		if args[1].IsValid() {
 			mID = ToInt64(args[1].Interface())
 		}
@@ -1295,7 +1295,7 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 		if cID == 0 {
 			return reflect.ValueOf(""), nil
 		}
-		
+
 		var mID int64
 		if args[1].IsValid() {
 			mID = ToInt64(args[1].Interface())

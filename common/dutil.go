@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/lib/dstate"
 )
 
 // IsRoleAbove returns wether role a is above b, checking positions first, and if they're the same
