@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/lib/dcmd"
 )
 
 type Joke struct {
