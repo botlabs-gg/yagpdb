@@ -78,6 +78,7 @@ var RulePartMap = map[int]RulePart{
 	309: &GiveRoleEffect{},
 	311: &EnableChannelSlowmodeEffect{},
 	312: &RemoveRoleEffect{},
+	313: &SendChannelMessageEffect{},
 }
 
 var InverseRulePartMap = make(map[RulePart]int)
