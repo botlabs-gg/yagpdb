@@ -187,7 +187,7 @@ var (
 )
 
 func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
-	err = common.GORM.Where("youtube_channel_id = ?", channel).Find(&result).Error
+	err = common.GORM.Where("youtube_channel_id = ? AND enabled = true", channel).Find(&result).Error
 	return
 }
 
@@ -200,6 +200,7 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, yout
 		GuildID:         discordgo.StrID(guildID),
 		ChannelID:       discordgo.StrID(discordChannelID),
 		MentionEveryone: mentionEveryone,
+		Enabled:         true,
 	}
 
 	call := p.YTService.Channels.List([]string{"snippet"})
@@ -245,7 +246,7 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
 	var count int
-	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
+	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ? AND enabled = true", channel).Count(&count).Error
 	if err != nil || count > 0 {
 		if err != nil {
 			logger.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")
@@ -374,7 +375,7 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 
 func (p *Plugin) getRemoveSubs(channelID string) ([]*ChannelSubscription, error) {
 	var subs []*ChannelSubscription
-	err := common.GORM.Where("youtube_channel_id = ?", channelID).Find(&subs).Error
+	err := common.GORM.Where("youtube_channel_id = ? AND enabled = true", channelID).Find(&subs).Error
 	if err != nil {
 		return subs, err
 	}
