@@ -46,6 +46,7 @@ type Form struct {
 	DiscordChannel     int64 `valid:"channel,false"`
 	ID                 uint
 	MentionEveryone    bool
+	Enabled            bool
 }
 
 func (p *Plugin) InitWeb() {
@@ -183,6 +184,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 
 	sub.MentionEveryone = data.MentionEveryone
 	sub.ChannelID = discordgo.StrID(data.DiscordChannel)
+	sub.Enabled = data.Enabled
 
 	err = common.GORM.Save(sub).Error
 	if err == nil {

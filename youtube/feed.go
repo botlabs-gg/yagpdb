@@ -200,6 +200,7 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, yout
 		GuildID:         discordgo.StrID(guildID),
 		ChannelID:       discordgo.StrID(discordChannelID),
 		MentionEveryone: mentionEveryone,
+		Enabled:         true,
 	}
 
 	call := p.YTService.Channels.List([]string{"snippet"})
@@ -366,7 +367,9 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 	}
 
 	for _, sub := range subs {
-		p.sendNewVidMessage(sub.GuildID, sub.ChannelID, video.Snippet.ChannelTitle, video.Id, sub.MentionEveryone)
+		if sub.Enabled {
+			p.sendNewVidMessage(sub.GuildID, sub.ChannelID, video.Snippet.ChannelTitle, video.Id, sub.MentionEveryone)
+		}
 	}
 
 	return nil

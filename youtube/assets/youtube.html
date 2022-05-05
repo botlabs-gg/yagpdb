@@ -65,6 +65,7 @@
                             <th>Youtube</th>
                             <th>Discord channel</th>
                             <th>Mention everyone</th>
+                            <th>Enabled</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -83,6 +84,9 @@
                             </td>
                             <td>
                                 {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}
+                            </td>
+                            <td>
+                                {{checkbox "Enabled" (joinStr "" "feed-enabled-" .ID) `Enabled` .Enabled (joinStr "" `form="sub-item-` .ID `"`)}}
                             </td>
                             <td>
                                 <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success"
