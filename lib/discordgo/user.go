@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/lib/gojay"
+	"github.com/botlabs-gg/yagpdb/v2/lib/gojay"
 )
 
 // A User stores all data for an individual Discord user.
