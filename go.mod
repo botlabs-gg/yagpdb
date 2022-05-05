@@ -7,7 +7,7 @@ require (
 	github.com/AYLIEN/aylien_textapi_go v0.6.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
-	github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23
+	github.com/buger/jsonparser v1.0.0
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/dghubble/oauth1 v0.6.0
