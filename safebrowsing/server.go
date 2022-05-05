@@ -3,12 +3,13 @@ package safebrowsing
 import (
 	"encoding/json"
 	"errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/config"
-	"github.com/google/safebrowsing"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/google/safebrowsing"
+	"github.com/sirupsen/logrus"
 )
 
 var SafeBrowser *safebrowsing.SafeBrowser

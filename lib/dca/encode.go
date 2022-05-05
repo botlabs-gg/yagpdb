@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/lib/ogg"
+	"github.com/botlabs-gg/yagpdb/v2/lib/ogg"
 )
 
 // AudioApplication is an application profile for opus encoding

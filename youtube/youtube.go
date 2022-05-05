@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/config"
-	"github.com/botlabs-gg/yagpdb/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"google.golang.org/api/youtube/v3"
 )
 

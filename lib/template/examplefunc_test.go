@@ -5,10 +5,11 @@
 package template_test
 
 import (
-	"github.com/botlabs-gg/yagpdb/lib/template"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/botlabs-gg/yagpdb/v2/lib/template"
 )
 
 // This example demonstrates a custom function to process template text.

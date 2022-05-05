@@ -2,9 +2,10 @@ package serverstats
 
 import (
 	"context"
-	"github.com/botlabs-gg/yagpdb/common/testutils"
 	"testing"
 	"time"
+
+	"github.com/botlabs-gg/yagpdb/v2/common/testutils"
 )
 
 func TestMigrationToV2FormatMsgs(t *testing.T) {

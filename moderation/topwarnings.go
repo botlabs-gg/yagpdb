@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	//"github.com/botlabs-gg/yagpdb/lib/discordgo"
-	//"github.com/botlabs-gg/yagpdb/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
+	// "github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	// "github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
 )
 
 type WarnRankEntry struct {

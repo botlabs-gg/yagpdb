@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/common"
 )
 
 var (

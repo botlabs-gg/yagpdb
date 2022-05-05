@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/botlabs-gg/yagpdb/lib/dshardorchestrator/orchestrator"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/orchestrator"
 	"github.com/gin-gonic/gin"
 )
 
