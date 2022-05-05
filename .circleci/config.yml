@@ -17,7 +17,8 @@ jobs: # basic units of work in a run
       # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           keys:
             - v1-pkg-cache
-     
+      - run: sudo apt-get update
+      - run: sudo apt-get install ffmpeg
       - run: 
           name: main yagpdb binary build
           command: |
@@ -25,8 +26,8 @@ jobs: # basic units of work in a run
             cd cmd/yagpdb
             go install -ldflags "-X github.com/botlabs-gg/yagpdb/v2/common.VERSION=${VERSION}"
             cd -
-      - run: cd cmd/shardorchestrator && go install -i && cd -
-      - run: cd cmd/capturepanics && go install -i && cd -
+      - run: cd cmd/shardorchestrator && go install && cd -
+      - run: cd cmd/capturepanics && go install && cd -
 
       - run: go test -v ./...
 
