@@ -34,8 +34,15 @@ func (p *Plugin) BotInit() {
 
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
+var repDisabledError = "**Rep command is disabled on this server. Enable it from the control panel.**"
+
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate()
+
+	conf, err := GetConfig(evt.Context(), msg.GuildID)
+	if err != nil || !conf.Enabled || conf.DisableThanksDetection {
+		return
+	}
 
 	if !bot.IsNormalUserMessage(msg.Message) {
 		return
@@ -55,11 +62,6 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	if !evt.HasFeatureFlag(featureFlagThanksEnabled) {
-		return
-	}
-
-	conf, err := GetConfig(evt.Context(), msg.GuildID)
-	if err != nil || !conf.Enabled || conf.DisableThanksDetection {
 		return
 	}
 
@@ -140,6 +142,10 @@ var cmds = []*commands.YAGCommand{
 				return "An error occurred while finding the server config", err
 			}
 
+			if !conf.Enabled {
+				return repDisabledError, nil
+			}
+
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
 				return "You're not a reputation admin. (no manage server perms and no rep admin role)", nil
 			}
@@ -173,6 +179,10 @@ var cmds = []*commands.YAGCommand{
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occurred while finding the server config", err
+			}
+
+			if !conf.Enabled {
+				return repDisabledError, nil
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -382,6 +392,10 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 	conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	if !conf.Enabled {
+		return repDisabledError, nil
 	}
 
 	pointsName := conf.PointsName
