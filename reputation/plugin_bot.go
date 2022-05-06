@@ -34,15 +34,8 @@ func (p *Plugin) BotInit() {
 
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
-var repDisabledError = "**Rep command is disabled on this server. Enable it from the control panel.**"
-
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate()
-
-	conf, err := GetConfig(evt.Context(), msg.GuildID)
-	if err != nil || !conf.Enabled || conf.DisableThanksDetection {
-		return
-	}
 
 	if !bot.IsNormalUserMessage(msg.Message) {
 		return
@@ -62,6 +55,11 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	if !evt.HasFeatureFlag(featureFlagThanksEnabled) {
+		return
+	}
+
+	conf, err := GetConfig(evt.Context(), msg.GuildID)
+	if err != nil || !conf.Enabled || conf.DisableThanksDetection {
 		return
 	}
 
@@ -100,7 +98,7 @@ var cmds = []*commands.YAGCommand{
 		Description:  "Takes away rep from someone",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
 		SlashCommandEnabled: true,
@@ -119,7 +117,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: CmdGiveRep,
@@ -140,10 +138,6 @@ var cmds = []*commands.YAGCommand{
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occurred while finding the server config", err
-			}
-
-			if !conf.Enabled {
-				return repDisabledError, nil
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -179,10 +173,6 @@ var cmds = []*commands.YAGCommand{
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
 				return "An error occurred while finding the server config", err
-			}
-
-			if !conf.Enabled {
-				return repDisabledError, nil
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -305,16 +295,14 @@ var cmds = []*commands.YAGCommand{
 		Name:        "Rep",
 		Description: "Shows yours or the specified users current rep and rank",
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.User},
 		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			target := parsed.Author
 			if parsed.Args[0].Value != nil {
-				targetID := parsed.Args[0].Int64()
-				member, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
-				target = &member.User
+				target = parsed.Args[0].Value.(*discordgo.User)
 			}
 
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
@@ -389,17 +377,11 @@ var cmds = []*commands.YAGCommand{
 }
 
 func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
-	targetID := parsed.Args[0].Int64()
-	member, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
-	target := member.User
+	target := parsed.Args[0].Value.(*discordgo.User)
 
 	conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 	if err != nil {
 		return nil, err
-	}
-
-	if !conf.Enabled {
-		return repDisabledError, nil
 	}
 
 	pointsName := conf.PointsName
