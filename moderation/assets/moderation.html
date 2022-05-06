@@ -167,6 +167,10 @@ the punishment, is an <a href="https://docs.yagpdb.xyz/reference/templates#user"
         <hr />
         {{checkbox "LogBans" "log-bans" "Log ban events not made through the bot" .ModConfig.LogBans}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+
+        <hr />
+        {{checkbox "LogKicks" "log-kicks" "Log kick events not made through the bot" .ModConfig.LogKicks}}
+        <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
     </div>
 </div>
 {{end}}
@@ -348,7 +352,7 @@ the punishment, is an <a href="https://docs.yagpdb.xyz/reference/templates#user"
 
         {{checkbox "BanReasonOptional" "BanReasonOptional" "Make the <code>reason</code> optional" .ModConfig.BanReasonOptional}}
         <hr />
-        
+
         <div class="form-group">
             <label>Default number of days of messages to delete while banning. Range 0 to 7.</label>
             <input type="number" min="0" max="7" name="DefaultBanDeleteDays.Int64" class="form-control"

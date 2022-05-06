@@ -381,6 +381,11 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 		return
 	}
 
+	if !config.LogKicks {
+		// User doesn't want us to log kicks not made through yag
+		return
+	}
+
 	err := CreateModlogEmbed(config, author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
