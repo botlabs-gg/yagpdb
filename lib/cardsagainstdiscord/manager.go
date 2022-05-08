@@ -22,22 +22,30 @@ func NewGameManager(sessionProvider SessionProvider) *GameManager {
 
 func (gm *GameManager) CreateGame(guildID int64, channelID int64, userID int64, username string, voteMode bool, packs ...string) (*Game, error) {
 	allPacks := false
+	allResponseOnly := true
 	for _, v := range packs {
 		if v == "*" {
 			allPacks = true
+			allResponseOnly = false
 			break
 		}
 
-		_, ok := Packs[v]
+		p, ok := Packs[v]
 		if !ok {
 			return nil, &ErrUnknownPack{
 				PassedPack: v,
 			}
 		}
+		if len(p.Prompts) > 0 {
+			allResponseOnly = false
+		}
 	}
 
 	if len(packs) < 1 && !allPacks {
 		return nil, ErrNoPacks
+	}
+	if allResponseOnly {
+		return nil, ErrAllPacksResponseOnly
 	}
 
 	if allPacks {
