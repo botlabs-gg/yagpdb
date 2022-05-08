@@ -147,8 +147,13 @@
                                     <div class="col-sm-12">
                                         <div class="form-group">
                                             <label>Trigger</label>
-                                            <input type="text" class="form-control" name="trigger" placeholder="fun"
-                                                value="{{.CC.TextTrigger}}">
+                                            <div class="input-group mb-2">
+                                                <div class="input-group-prepend" id="command-trigger-prepended-prefix">
+                                                    <div class="input-group-text">{{.CommandPrefix}}</div>
+                                                </div>
+                                                <input type="text" class="form-control" name="trigger" placeholder="fun"
+                                                    value="{{.CC.TextTrigger}}">
+                                            </div>
 
                                             {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
 
@@ -499,6 +504,8 @@
             $("#time-trigger-no-channel-warning").addClass("hidden");
         };
 
+        if (dropdown.val() === "cmd") $("#command-trigger-prepended-prefix").show();
+        else $("#command-trigger-prepended-prefix").hide();
 
         $("#trigger-help").children().each(function (i, v) {
             $(v).attr("hidden", true);
