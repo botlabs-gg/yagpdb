@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/fuzzy"
 )
 
 type GameManager struct {
@@ -30,8 +31,13 @@ func (gm *GameManager) CreateGame(guildID int64, channelID int64, userID int64, 
 
 		_, ok := Packs[v]
 		if !ok {
+			validPacks := make([]string, 0, len(Packs))
+			for k, _ := range Packs {
+				validPacks = append(validPacks, k)
+			}
 			return nil, &ErrUnknownPack{
-				PassedPack: v,
+				PassedPack:  v,
+				Suggestions: fuzzy.Select(validPacks, v, fuzzy.WithLimit(3)),
 			}
 		}
 	}

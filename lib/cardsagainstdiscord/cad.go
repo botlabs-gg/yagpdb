@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/pkg/errors"
 )
@@ -94,11 +95,15 @@ var (
 )
 
 type ErrUnknownPack struct {
-	PassedPack string
+	PassedPack  string
+	Suggestions []string
 }
 
 func (e *ErrUnknownPack) Error() string {
-	return "Unknown pack `" + e.PassedPack + "`"
+	if len(e.Suggestions) == 0 {
+		return "Unknown pack `" + e.PassedPack + "`"
+	}
+	return fmt.Sprintf("Unknown pack `%s`; did you mean %s?", e.PassedPack, common.FormatList(e.Suggestions, "or"))
 }
 
 func HumanizeError(err error) string {
