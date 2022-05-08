@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"database/sql"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -210,6 +211,19 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		}
 
 		model.RoleGroupID = null.Int64From(group.ID)
+	}
+
+	const q = `
+		SELECT max(position)
+		FROM role_commands
+		WHERE $1::bigint IS NULL AND role_group_id IS NULL
+			OR role_group_ID = $1::bigint
+	`
+	var maxExistingPos sql.NullInt64
+	if err := common.PQ.QueryRow(q, model.RoleGroupID).Scan(&maxExistingPos); err != nil {
+		return tmpl, err
+	} else if maxExistingPos.Valid {
+		model.Position = maxExistingPos.Int64 + 1 // place new role command last
 	}
 
 	err := model.InsertG(r.Context(), boil.Infer())
