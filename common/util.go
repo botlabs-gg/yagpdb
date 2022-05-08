@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"emperror.dev/errors"
@@ -586,4 +587,23 @@ func SplitSendMessage(channelID int64, contents string, allowedMentions discordg
 	}
 
 	return result, nil
+}
+
+func FormatList(list []string, conjunction string) string {
+	var sb strings.Builder
+	for i, item := range list {
+		if i > 0 {
+			sb.WriteString(", ")
+			if i == len(list)-1 {
+				sb.WriteString(conjunction)
+				if conjunction != "" {
+					sb.WriteByte(' ')
+				}
+			}
+		}
+		sb.WriteByte('`')
+		sb.WriteString(item)
+		sb.WriteByte('`')
+	}
+	return sb.String()
 }
