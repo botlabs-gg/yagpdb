@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/fuzzy"
+	"github.com/botlabs-gg/yagpdb/v2/lib/jarowinkler"
 )
 
 type GameManager struct {
@@ -37,7 +37,7 @@ func (gm *GameManager) CreateGame(guildID int64, channelID int64, userID int64, 
 			}
 			return nil, &ErrUnknownPack{
 				PassedPack:  v,
-				Suggestions: fuzzy.Select(validPacks, v, fuzzy.WithLimit(3)),
+				Suggestions: jarowinkler.Select(validPacks, v, jarowinkler.WithLimit(3)),
 			}
 		}
 	}

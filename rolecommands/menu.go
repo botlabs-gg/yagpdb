@@ -19,7 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/v2/lib/fuzzy"
+	"github.com/botlabs-gg/yagpdb/v2/lib/jarowinkler"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
 	"github.com/volatiletech/null/v8"
@@ -46,7 +46,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 				names[i] = group.Name
 			}
 
-			suggestions := fuzzy.Select(names, name, fuzzy.WithLimit(3))
+			suggestions := jarowinkler.Select(names, name, jarowinkler.WithLimit(3))
 			if len(suggestions) == 0 {
 				return genericHelpMessage, nil
 			}

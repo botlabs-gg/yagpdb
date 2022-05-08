@@ -1,5 +1,5 @@
-// Package fuzzy implements fuzzy matching based on the Jaro-Winkler metric.
-package fuzzy
+// Package jarowinkler implements fuzzy matching based on the Jaro-Winkler metric.
+package jarowinkler
 
 import (
 	"sort"
