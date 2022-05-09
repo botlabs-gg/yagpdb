@@ -29,6 +29,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listflags"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listroles"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/memstats"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/owldictionary"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/ping"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/poll"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/roll"
@@ -124,6 +125,12 @@ func (p *Plugin) AddCommands() {
 
 	statedbg.Commands()
 
+	if !owldictionary.ShouldRegister() {
+		common.GetPluginLogger(p).Warn("Owlbot API token not provided, skipping adding dictionary command...")
+		return
+	}
+
+	commands.AddRootCommands(p, owldictionary.Command)
 }
 
 func (p *Plugin) BotInit() {
