@@ -143,12 +143,12 @@
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div class="form-group">
-                                            <label>Trigger</label>
+                                            <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <div class="input-group mb-2">
                                                 <div class="input-group-prepend" id="command-trigger-prepended-prefix">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
                                                 </div>
-                                                <input type="text" class="form-control" name="trigger" placeholder="fun"
+                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
                                                     value="{{.CC.TextTrigger}}">
                                             </div>
 
@@ -522,6 +522,13 @@
         handleRestrictionChange($("#require-role-mode").prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
         handleRestrictionChange($("#require-channel-mode").prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
     })
+
+    $("#trigger").keyup(function() {
+        const trigger = $(this).val();
+        $("#trigger-length")
+            .text(trigger.length)
+            .toggleClass("text-danger", trigger.length > 1000);
+    });
 
     function onCCChanged(textArea) {
         var textAreas = textArea.parentElement.parentElement.querySelectorAll("textarea")
