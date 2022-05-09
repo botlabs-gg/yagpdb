@@ -11,6 +11,7 @@
 package discordgo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -62,6 +63,35 @@ func newRestError(req *http.Request, resp *http.Response, body []byte) *RESTErro
 
 func (r RESTError) Error() string {
 	return fmt.Sprintf("HTTP %s, %s", r.Response.Status, r.ResponseBody)
+}
+
+// A NullableID is a nullable snowflake ID that represents null as the value 0.
+// It marshals into "null" if its value is 0, and otherwise marshals into the
+// string representation of its value. Unmarshaling behaves similarly, and
+// accepts null, string, and integer values.
+type NullableID int64
+
+func (i NullableID) MarshalJSON() ([]byte, error) {
+	if i == 0 {
+		return []byte("null"), nil
+	}
+	out := []byte{'"'}
+	out = strconv.AppendInt(out, int64(i), 10)
+	return append(out, '"'), nil
+}
+
+func (i *NullableID) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("null")) {
+		*i = 0
+		return nil
+	}
+
+	if len(data) > 2 && data[0] == '"' && data[len(data)-1] == '"' {
+		data = data[1 : len(data)-1]
+	}
+	v, err := strconv.ParseInt(string(data), 10, 64)
+	*i = NullableID(v)
+	return err
 }
 
 // IDSlice Is a slice of snowflake id's that properly marshals and unmarshals the way discord expects them to
