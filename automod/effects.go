@@ -10,6 +10,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
 	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
@@ -701,6 +702,7 @@ func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface
 
 type SendChannelMessageEffectData struct {
 	CustomReason string `valid:",0,280,trimspace"`
+	Duration     int    `valid:",0,3600,trimspace"`
 	PingUser     bool
 }
 
@@ -730,6 +732,14 @@ func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
 			Min:  0,
 			Max:  280,
 			Kind: SettingTypeString,
+		},
+		{
+			Name:    "Delete sent message after x seconds (0 for non-deletion)",
+			Key:     "Duration",
+			Kind:    SettingTypeInt,
+			Default: 0,
+			Min:     0,
+			Max:     3600,
 		},
 		{
 			Name:    "Ping user committing the infraction",
@@ -768,7 +778,11 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 		msgSend.Content += ctxData.ConstructReason(true)
 	}
 
-	_, err := common.BotSession.ChannelMessageSendComplex(ctxData.CS.ID, msgSend)
+	messageID, err := common.BotSession.ChannelMessageSendComplex(ctxData.CS.ID, msgSend)
+	if settingsCast.Duration > 0 {
+		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, ctxData.CS.ID, messageID.ID, settingsCast.Duration)
+	}
+
 	return err
 }
 
