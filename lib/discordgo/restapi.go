@@ -952,14 +952,14 @@ func (s *Session) GuildMemberEdit(guildID, userID int64, roles []string) (err er
 // GuildMemberMove moves a guild member from one voice channel to another/none
 //  guildID   : The ID of a Guild.
 //  userID    : The ID of a User.
-//  channelID : The ID of a channel to move user to, or null?
+//  channelID : The ID of a channel to move user to. Use 0 to disconnect the member.
 // NOTE : I am not entirely set on the name of this function and it may change
 // prior to the final 1.0.0 release of Discordgo
 func (s *Session) GuildMemberMove(guildID, userID, channelID int64) (err error) {
 
 	data := struct {
-		ChannelID int64 `json:"channel_id,string"`
-	}{channelID}
+		ChannelID NullableID `json:"channel_id,string"`
+	}{NullableID(channelID)}
 
 	_, err = s.RequestWithBucketID("PATCH", EndpointGuildMember(guildID, userID), data, EndpointGuildMember(guildID, 0))
 	if err != nil {

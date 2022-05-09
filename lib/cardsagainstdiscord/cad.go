@@ -91,6 +91,7 @@ var (
 	ErrNotGM                = errors.New("You're not the game master")
 	ErrStoppedAlready       = errors.New("Game already stopped")
 	ErrPlayerNotInGame      = errors.New("Player not in your game")
+	ErrAllPacksResponseOnly = errors.New("The set of packs specified are all response-only; at least one pack that has prompts is needed to start a game")
 )
 
 type ErrUnknownPack struct {
@@ -104,7 +105,7 @@ func (e *ErrUnknownPack) Error() string {
 func HumanizeError(err error) string {
 	err = errors.Cause(err)
 
-	if err == ErrGameAlreadyInChannel || err == ErrPlayerAlreadyInGame || err == ErrGameNotFound || err == ErrGameFull || err == ErrNoPacks || err == ErrNotGM || err == ErrStoppedAlready || err == ErrPlayerNotInGame {
+	if err == ErrGameAlreadyInChannel || err == ErrPlayerAlreadyInGame || err == ErrGameNotFound || err == ErrGameFull || err == ErrNoPacks || err == ErrNotGM || err == ErrStoppedAlready || err == ErrPlayerNotInGame || err == ErrAllPacksResponseOnly {
 		return err.Error()
 	}
 

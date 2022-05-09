@@ -14,6 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	yagtemplate "github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
@@ -74,12 +75,13 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Use(func(inner http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
-			_, templateData := web.GetBaseCPContextData(r.Context())
+			g, templateData := web.GetBaseCPContextData(r.Context())
 			strTriggerTypes := map[int]string{}
 			for k, v := range triggerStrings {
 				strTriggerTypes[int(k)] = v
 			}
 			templateData["CCTriggerTypes"] = strTriggerTypes
+			templateData["CommandPrefix"], _ = prfx.GetCommandPrefixRedis(g.ID)
 
 			inner.ServeHTTP(w, r)
 		}

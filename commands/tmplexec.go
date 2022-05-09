@@ -26,8 +26,8 @@ func init() {
 // Returns a user from either id, mention string or if the input is just a user, a user...
 func tmplUserArg(tmplCtx *templates.Context) interface{} {
 	return func(v interface{}) (interface{}, error) {
-		if tmplCtx.IncreaseCheckCallCounter("commands_user_arg", 5) {
-			return nil, errors.New("Max calls to userarg (5) reached")
+		if tmplCtx.IncreaseCheckGenericAPICall() {
+			return nil, templates.ErrTooManyAPICalls
 		}
 
 		if num := templates.ToInt64(v); num != 0 {
