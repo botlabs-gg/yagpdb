@@ -322,6 +322,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
+			common.BotSession.GuildMemberMove(parsed.GuildData.GS.ID, target.ID, 0)
 			return GenericCmdResp(MAMute, target, d, true, false), nil
 		},
 	},
