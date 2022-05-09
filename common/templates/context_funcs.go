@@ -458,10 +458,6 @@ func (c *Context) tmplMentionHere() string {
 }
 
 func (c *Context) tmplMentionRoleID(roleID interface{}) string {
-	if c.IncreaseCheckStateLock() {
-		return ""
-	}
-
 	var role int64
 	switch r := roleID.(type) {
 	case int64:
@@ -488,10 +484,6 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 }
 
 func (c *Context) tmplMentionRoleName(role string) string {
-	if c.IncreaseCheckStateLock() {
-		return ""
-	}
-
 	var found *discordgo.Role
 	for _, r := range c.GS.Roles {
 		if r.Name == role {
@@ -527,10 +519,6 @@ func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 }
 
 func (c *Context) tmplHasRoleName(name string) (bool, error) {
-	if c.IncreaseCheckStateLock() {
-		return false, ErrTooManyCalls
-	}
-
 	if c.MS == nil || c.MS.Member == nil {
 		return false, nil
 	}
@@ -570,54 +558,54 @@ func targetUserID(input interface{}) int64 {
 	}
 }
 
-func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
-	if c.IncreaseCheckStateLock() {
-		return false
+func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) (bool, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
 	}
 
 	targetID := targetUserID(target)
 	if targetID == 0 {
-		return false
+		return false, nil
 	}
 
 	ts, err := bot.GetMember(c.GS.ID, targetID)
 	if err != nil {
-		return false
+		return false, nil
 	}
 
 	role := ToInt64(roleID)
 	if role == 0 {
-		return false
+		return false, nil
 	}
 
 	contains := common.ContainsInt64Slice(ts.Member.Roles, role)
 
-	return contains
+	return contains, nil
 
 }
 
-func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
-	if c.IncreaseCheckStateLock() {
-		return false
+func (c *Context) tmplTargetHasRoleName(target interface{}, name string) (bool, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
 	}
 
 	targetID := targetUserID(target)
 	if targetID == 0 {
-		return false
+		return false, nil
 	}
 
 	ts, err := bot.GetMember(c.GS.ID, targetID)
 	if err != nil {
-		return false
+		return false, nil
 	}
 
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			return common.ContainsInt64Slice(ts.Member.Roles, r.ID)
+			return common.ContainsInt64Slice(ts.Member.Roles, r.ID), nil
 		}
 	}
 
-	return false
+	return false, nil
 
 }
 
