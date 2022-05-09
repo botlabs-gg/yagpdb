@@ -1113,6 +1113,8 @@ func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message
 	mID := ToInt64(msgID)
 
 	message, _ := common.BotSession.ChannelMessage(cID, mID)
+	// get message endpoint doesn't return guild ID, so just patch it in to make message.Link work
+	message.GuildID = c.GS.ID
 	return message, nil
 }
 
