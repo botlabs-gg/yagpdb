@@ -56,6 +56,7 @@ type Config struct {
 	ReportEnabled bool
 	ActionChannel string `valid:"channel,true"`
 	ReportChannel string `valid:"channel,true"`
+	ErrorChannel  string `valid:"channel,true"`
 	LogUnbans     bool
 	LogBans       bool
 	LogKicks      bool `gorm:"default:true"`
@@ -77,6 +78,11 @@ func (c *Config) IntActionChannel() (r int64) {
 
 func (c *Config) IntReportChannel() (r int64) {
 	r, _ = strconv.ParseInt(c.ReportChannel, 10, 64)
+	return
+}
+
+func (c *Config) IntErrorChannel() (r int64) {
+	r, _ = strconv.ParseInt(c.ErrorChannel, 10, 64)
 	return
 }
 

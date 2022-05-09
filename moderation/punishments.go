@@ -2,6 +2,7 @@ package moderation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -140,6 +141,14 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	return err
 }
 
+var ActionMap = map[string]string{
+	"Muted":   "Mute DM",
+	"Unmuted": "Unmute DM",
+	"Kicked":  "Kick DM",
+	"Banned":  "Ban DM",
+	"Warned":  "Warn DM",
+}
+
 func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildSet, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int) {
 	if dmMsg == "" {
 		dmMsg = DefaultDMMessage
@@ -171,6 +180,10 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
 		executed = "Failed executing template."
+
+		if config.ErrorChannel != "" {
+			_, _, _ = bot.SendMessage(gs.ID, config.IntErrorChannel(), fmt.Sprintf("Failed executing punishment DM (Action: `%s`).\nError: `%v`", ActionMap[action.Prefix], err))
+		}
 	}
 
 	if strings.TrimSpace(executed) != "" {
