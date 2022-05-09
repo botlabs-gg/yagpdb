@@ -50,6 +50,35 @@ func TestParseArgDefs(t *testing.T) {
 	}
 }
 
+var Sink int
+
+func BenchmarkSplitArgs(b *testing.B) {
+	benchmarks := []struct {
+		name string
+		in   string
+	}{
+		{"very short input", "-xkcd"},
+		{"short input", "-send bar baz"},
+		{"medium-length input", "-simpleembed -title abc -desc xyz -color ff0000"},
+		{"medium-length input with quoted text", `-simpleembed -title "foo bar baz" -desc "hello world"`},
+		{"long input", `-ce {
+			"title": "example title",
+			"color" 1234,
+			"description": "very interesting test case\n",
+			"timestamp": "",
+			"author": {},
+			"image": { "url": "" }
+		}`},
+	}
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				Sink += len(SplitArgs(bm.in))
+			}
+		})
+	}
+}
+
 func TestParseSwitches(t *testing.T) {
 	cases := []struct {
 		name         string
