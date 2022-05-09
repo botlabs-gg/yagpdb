@@ -131,7 +131,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -144,14 +144,14 @@ var cmds = []*commands.YAGCommand{
 				return "You're not a reputation admin. (no manage server perms and no rep admin role)", nil
 			}
 
-			targetID := parsed.Args[0].Int64()
-			targetUsername := strconv.FormatInt(targetID, 10)
-			targetMember, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
+			target := parsed.Args[0].Value.(*discordgo.User)
+			targetUsername := target.Username
+			targetMember, _ := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if targetMember != nil {
 				targetUsername = targetMember.User.Username
 			}
 
-			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.User.ID, targetID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.User.ID, target.ID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
@@ -167,7 +167,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.User},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
@@ -179,14 +179,14 @@ var cmds = []*commands.YAGCommand{
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
 
-			target := parsed.Args[0].Int64()
+			target := parsed.Args[0].Value.(*discordgo.User)
 
-			err = DelRep(parsed.Context(), parsed.GuildData.GS.ID, target)
+			err = DelRep(parsed.Context(), parsed.GuildData.GS.ID, target.ID)
 			if err != nil {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Deleted all of %d's %s.", target, conf.PointsName), nil
+			return fmt.Sprintf("Deleted all of %s's %s.", target.Username, conf.PointsName), nil
 		},
 	},
 	{
@@ -198,7 +198,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.UserID},
+			{Name: "User", Type: dcmd.User},
 			{Name: "Page", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -211,12 +211,12 @@ var cmds = []*commands.YAGCommand{
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
 
-			targetID := parsed.Args[0].Int64()
+			target := parsed.Args[0].Value.(*discordgo.User)
 
 			const entriesPerPage = 20
 			offset := (parsed.Args[1].Int() - 1) * entriesPerPage
 
-			logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", parsed.GuildData.GS.ID, targetID, targetID), qm.OrderBy("id desc"), qm.Limit(entriesPerPage), qm.Offset(offset)).AllG(parsed.Context())
+			logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", parsed.GuildData.GS.ID, target.ID, target.ID), qm.OrderBy("id desc"), qm.Limit(entriesPerPage), qm.Offset(offset)).AllG(parsed.Context())
 			if err != nil {
 				return nil, err
 			}
@@ -227,12 +227,12 @@ var cmds = []*commands.YAGCommand{
 
 			// grab the up to date info on as many users as we can
 			membersToGrab := make([]int64, 1, len(logEntries))
-			membersToGrab[0] = targetID
+			membersToGrab[0] = target.ID
 
 		OUTER:
 			for _, entry := range logEntries {
 				for _, v := range membersToGrab {
-					if entry.ReceiverID == targetID {
+					if entry.ReceiverID == target.ID {
 						if v == entry.SenderID {
 							continue OUTER
 						}
@@ -243,7 +243,7 @@ var cmds = []*commands.YAGCommand{
 					}
 				}
 
-				if entry.ReceiverID == targetID {
+				if entry.ReceiverID == target.ID {
 					membersToGrab = append(membersToGrab, entry.SenderID)
 				} else {
 					membersToGrab = append(membersToGrab, entry.ReceiverID)
