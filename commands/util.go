@@ -21,19 +21,22 @@ type DurationArg struct {
 
 var _ dcmd.ArgType = (*DurationArg)(nil)
 
-func (d *DurationArg) Matches(def *dcmd.ArgDef, part string) bool {
+func (d *DurationArg) CheckCompatibility(def *dcmd.ArgDef, part string) dcmd.CompatibilityResult {
 	if len(part) < 1 {
-		return false
+		return dcmd.Incompatible
 	}
 
 	// We "need" the first character to be a number
 	r, _ := utf8.DecodeRuneInString(part)
 	if !unicode.IsNumber(r) {
-		return false
+		return dcmd.Incompatible
 	}
 
 	_, err := common.ParseDuration(part)
-	return err == nil
+	if err != nil {
+		return dcmd.Incompatible
+	}
+	return dcmd.CompatibilityGood
 }
 
 func (d *DurationArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
@@ -213,19 +216,14 @@ type MemberArg struct{}
 
 var _ dcmd.ArgType = (*MemberArg)(nil)
 
-func (ma *MemberArg) Matches(def *dcmd.ArgDef, part string) bool {
+func (ma *MemberArg) CheckCompatibility(def *dcmd.ArgDef, part string) dcmd.CompatibilityResult {
 	// Check for mention
 	if strings.HasPrefix(part, "<@") && strings.HasSuffix(part, ">") {
-		return true
+		return dcmd.DetermineSnowflakeCompatibility(strings.TrimPrefix(part[2:len(part)-1], "!"))
 	}
 
 	// Check for ID
-	_, err := strconv.ParseInt(part, 10, 64)
-	if err == nil {
-		return true
-	}
-
-	return false
+	return dcmd.DetermineSnowflakeCompatibility(part)
 }
 
 func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
@@ -373,23 +371,17 @@ type RoleArg struct{}
 
 var _ dcmd.ArgType = (*RoleArg)(nil)
 
-func (ra *RoleArg) Matches(def *dcmd.ArgDef, part string) bool {
+func (ra *RoleArg) CheckCompatibility(def *dcmd.ArgDef, part string) dcmd.CompatibilityResult {
 	// Check for mention
 	if strings.HasPrefix(part, "<@&") && strings.HasSuffix(part, ">") {
-		return true
+		return dcmd.DetermineSnowflakeCompatibility(part[3 : len(part)-1])
 	}
 
-	// Check for ID
-	_, err := strconv.ParseInt(part, 10, 64)
-	if err == nil {
-		return true
+	if part != "" {
+		// role name can be essentially any string
+		return dcmd.CompatibilityGood
 	}
-
-	if len(part) > 0 {
-		return true
-	}
-
-	return false
+	return dcmd.Incompatible
 }
 
 func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Data) (interface{}, error) {
