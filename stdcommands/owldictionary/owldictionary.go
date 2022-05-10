@@ -18,6 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/sirupsen/logrus"
 )
 
 var confOwlbotToken = config.RegisterOption("yagpdb.owlbot_token", "Owlbot API token", "")
@@ -74,6 +75,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		_, err = paginatedmessages.CreatePaginatedMessage(data.GuildData.GS.ID, data.ChannelID, 1, len(res.Definitions), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			logrus.Info(page, len(res.Definitions))
 			if page > len(res.Definitions) {
 				return nil, paginatedmessages.ErrNoResults
 			}
