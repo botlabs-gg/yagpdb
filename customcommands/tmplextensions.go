@@ -73,7 +73,7 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 	case "string":
 		def.Type = dcmd.String
 	case "user":
-		def.Type = dcmd.UserReqMention
+		def.Type = dcmd.User
 	case "userid":
 		def.Type = dcmd.UserID
 	case "channel":

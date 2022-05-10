@@ -155,6 +155,14 @@ var cmds = []*commands.YAGCommand{
 			targetMember, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
 			if targetMember != nil {
 				targetUsername = targetMember.User.Username
+			} else {
+				prevMember, err := userPresentInRepLog(targetID, parsed.GuildData.GS.ID, parsed)
+				if err != nil {
+					return nil, err
+				}
+				if !prevMember {
+					return "Invalid User. This user never received/gave rep in this server", nil
+				}
 			}
 
 			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.User.ID, targetID, int64(parsed.Args[1].Int()))
@@ -440,4 +448,17 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 
 	msg := fmt.Sprintf("%s `%d` %s %s **%s** (current: `#%d` - `%d`)", actionStr, amount, pointsName, targetStr, target.Username, newRank, newScore)
 	return msg, nil
+}
+
+// Function that checks if the given user has ever received/gave rep in the given server
+func userPresentInRepLog(userID int64, guildID int64, parsed *dcmd.Data) (found bool, err error) {
+	logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", guildID, userID, userID), qm.OrderBy("id desc"), qm.Limit(1)).AllG(parsed.Context())
+	if err != nil {
+		return false, err
+	}
+
+	if len(logEntries) < 1 {
+		return false, nil
+	}
+	return true, nil
 }

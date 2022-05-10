@@ -412,7 +412,6 @@ var (
 	Float           = &FloatArg{}
 	String          = &StringArg{}
 	User            = &UserArg{}
-	UserReqMention  = &UserArg{RequireMention: true}
 	UserID          = &UserIDArg{}
 	Channel         = &ChannelArg{}
 	ChannelOrThread = &ChannelArg{AllowThreads: true}
@@ -571,19 +570,13 @@ func (s *StringArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCom
 	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
 }
 
-// UserArg matches and parses user argument, optionally searching for the member if RequireMention is false
-type UserArg struct {
-	RequireMention bool
-}
+// UserArg matches and parses user argument (mention/username/nickname/ID)
+type UserArg struct{}
 
 var _ ArgType = (*UserArg)(nil)
 
 func (u *UserArg) Matches(def *ArgDef, part string) bool {
-	if u.RequireMention {
-		return strings.HasPrefix(part, "<@") && strings.HasSuffix(part, ">")
-	}
-
-	// username searches are enabled, any string can be used
+	// Username/ID searches are enabled, any string can be used
 	return true
 }
 
@@ -603,16 +596,29 @@ func (u *UserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interf
 			}
 		}
 		return nil, &ImproperMention{part}
-	} else if !u.RequireMention && data.GuildData != nil {
-		// Search for username
-		m, err := FindDiscordMemberByName(data.System.State, data.GuildData.GS, part)
-		if m != nil {
-			return &m.User, nil
+	}
+
+	id, err := strconv.ParseInt(part, 10, 64)
+	if err == nil {
+		member := data.System.State.GetMember(data.GuildData.GS.ID, id)
+		if member != nil {
+			return &member.User, nil
+		}
+
+		m, err := data.Session.GuildMember(data.GuildData.GS.ID, id)
+		if err == nil {
+			member = dstate.MemberStateFromMember(m)
+			return &member.User, nil
 		}
 		return nil, err
 	}
 
-	return nil, &ImproperMention{part}
+	// Search for username
+	m, err := FindDiscordMemberByName(data.System.State, data.GuildData.GS, part)
+	if m != nil {
+		return &m.User, nil
+	}
+	return nil, err
 }
 
 func (u *UserArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error) {
@@ -621,9 +627,6 @@ func (u *UserArg) ParseFromInteraction(def *ArgDef, data *Data, options *SlashCo
 }
 
 func (u *UserArg) HelpName() string {
-	if u.RequireMention {
-		return "User Mention"
-	}
 	return "User"
 }
 
