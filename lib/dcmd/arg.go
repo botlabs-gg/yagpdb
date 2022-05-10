@@ -641,14 +641,16 @@ func (s *StringArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCom
 	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
 }
 
-// UserArg matches and parses user argument (mention/username/nickname/ID)
+// UserArg matches and parses user argument (mention/ID)
 type UserArg struct{}
 
 var _ ArgType = (*UserArg)(nil)
 
 func (u *UserArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResult {
-	// Username/ID searches are enabled, any string can be used
-	return CompatibilityGood
+	if strings.HasPrefix(part, "<@") && strings.HasSuffix(part, ">") {
+		return DetermineSnowflakeCompatibility(strings.TrimPrefix(part, "!"))
+	}
+	return DetermineSnowflakeCompatibility(part)
 }
 
 func (u *UserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
@@ -670,24 +672,19 @@ func (u *UserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interf
 	}
 
 	id, err := strconv.ParseInt(part, 10, 64)
-	if err == nil {
-		member := data.System.State.GetMember(data.GuildData.GS.ID, id)
-		if member != nil {
-			return &member.User, nil
-		}
-
-		m, err := data.Session.GuildMember(data.GuildData.GS.ID, id)
-		if err == nil {
-			member = dstate.MemberStateFromMember(m)
-			return &member.User, nil
-		}
+	if err != nil {
 		return nil, err
 	}
 
-	// Search for username
-	m, err := FindDiscordMemberByName(data.System.State, data.GuildData.GS, part)
-	if m != nil {
-		return &m.User, nil
+	member := data.System.State.GetMember(data.GuildData.GS.ID, id)
+	if member != nil {
+		return &member.User, nil
+	}
+
+	m, err := data.Session.GuildMember(data.GuildData.GS.ID, id)
+	if err == nil {
+		member = dstate.MemberStateFromMember(m)
+		return &member.User, nil
 	}
 	return nil, err
 }
