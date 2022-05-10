@@ -80,7 +80,8 @@ var Command = &commands.YAGCommand{
 
 			return createOwlbotDefinitionEmbed(&res, res.Definitions[page-1]), nil
 		})
-		return "", err
+
+		return nil, err
 	},
 }
 
