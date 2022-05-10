@@ -131,7 +131,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.User},
+			{Name: "User", Type: dcmd.UserID},
 			{Name: "Num", Type: dcmd.Int},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -144,14 +144,22 @@ var cmds = []*commands.YAGCommand{
 				return "You're not a reputation admin. (no manage server perms and no rep admin role)", nil
 			}
 
-			target := parsed.Args[0].Value.(*discordgo.User)
-			targetUsername := target.Username
-			targetMember, _ := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
+			targetID := parsed.Args[0].Int64()
+			targetUsername := strconv.FormatInt(targetID, 10)
+			targetMember, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
 			if targetMember != nil {
 				targetUsername = targetMember.User.Username
+			} else {
+				prevMember, err := userPresentInRepLog(targetID, parsed.GuildData.GS.ID, parsed)
+				if err != nil {
+					return nil, err
+				}
+				if !prevMember {
+					return "Invalid User. This user never received/gave rep in this server", nil
+				}
 			}
 
-			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.User.ID, target.ID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.User.ID, targetID, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
@@ -167,7 +175,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.User},
+			{Name: "User", Type: dcmd.UserID},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
@@ -179,14 +187,14 @@ var cmds = []*commands.YAGCommand{
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
 
-			target := parsed.Args[0].Value.(*discordgo.User)
+			target := parsed.Args[0].Int64()
 
-			err = DelRep(parsed.Context(), parsed.GuildData.GS.ID, target.ID)
+			err = DelRep(parsed.Context(), parsed.GuildData.GS.ID, target)
 			if err != nil {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Deleted all of %s's %s.", target.Username, conf.PointsName), nil
+			return fmt.Sprintf("Deleted all of %d's %s.", target, conf.PointsName), nil
 		},
 	},
 	{
@@ -198,7 +206,7 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "User", Type: dcmd.User},
+			{Name: "User", Type: dcmd.UserID},
 			{Name: "Page", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -211,12 +219,12 @@ var cmds = []*commands.YAGCommand{
 				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
 			}
 
-			target := parsed.Args[0].Value.(*discordgo.User)
+			targetID := parsed.Args[0].Int64()
 
 			const entriesPerPage = 20
 			offset := (parsed.Args[1].Int() - 1) * entriesPerPage
 
-			logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", parsed.GuildData.GS.ID, target.ID, target.ID), qm.OrderBy("id desc"), qm.Limit(entriesPerPage), qm.Offset(offset)).AllG(parsed.Context())
+			logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", parsed.GuildData.GS.ID, targetID, targetID), qm.OrderBy("id desc"), qm.Limit(entriesPerPage), qm.Offset(offset)).AllG(parsed.Context())
 			if err != nil {
 				return nil, err
 			}
@@ -227,12 +235,12 @@ var cmds = []*commands.YAGCommand{
 
 			// grab the up to date info on as many users as we can
 			membersToGrab := make([]int64, 1, len(logEntries))
-			membersToGrab[0] = target.ID
+			membersToGrab[0] = targetID
 
 		OUTER:
 			for _, entry := range logEntries {
 				for _, v := range membersToGrab {
-					if entry.ReceiverID == target.ID {
+					if entry.ReceiverID == targetID {
 						if v == entry.SenderID {
 							continue OUTER
 						}
@@ -243,7 +251,7 @@ var cmds = []*commands.YAGCommand{
 					}
 				}
 
-				if entry.ReceiverID == target.ID {
+				if entry.ReceiverID == targetID {
 					membersToGrab = append(membersToGrab, entry.SenderID)
 				} else {
 					membersToGrab = append(membersToGrab, entry.ReceiverID)
@@ -426,4 +434,17 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 
 	msg := fmt.Sprintf("%s `%d` %s %s **%s** (current: `#%d` - `%d`)", actionStr, amount, pointsName, targetStr, target.Username, newRank, newScore)
 	return msg, nil
+}
+
+// Function that checks if the given user has ever received/gave rep in the given server
+func userPresentInRepLog(userID int64, guildID int64, parsed *dcmd.Data) (found bool, err error) {
+	logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", guildID, userID, userID), qm.OrderBy("id desc"), qm.Limit(1)).AllG(parsed.Context())
+	if err != nil {
+		return false, err
+	}
+
+	if len(logEntries) < 1 {
+		return false, nil
+	}
+	return true, nil
 }
