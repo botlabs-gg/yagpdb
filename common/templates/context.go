@@ -53,6 +53,9 @@ var (
 		"println":     withOutputLimit(fmt.Sprintln, MaxStringLength),
 		"printf":      withOutputLimitF(fmt.Sprintf, MaxStringLength),
 
+		// regexp
+		"reQuoteMeta": regexp.QuoteMeta,
+
 		// math
 		"add":        add,
 		"cbrt":       tmplCbrt,
