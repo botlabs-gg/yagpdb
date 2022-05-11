@@ -29,7 +29,7 @@ jobs: # basic units of work in a run
       - run: cd cmd/shardorchestrator && go install && cd -
       - run: cd cmd/capturepanics && go install && cd -
 
-      - run: go test -v ./...
+      - run: go test ./...
 
       - save_cache: # Store cache in the /go/pkg directory
           key: v1-pkg-cache
