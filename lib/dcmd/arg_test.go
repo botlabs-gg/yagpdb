@@ -14,7 +14,7 @@ func TestIntArg(t *testing.T) {
 	assert.Equal(t, CompatibilityGood, Int.CheckCompatibility(nil, part), "Should have excellent compatibility")
 
 	v, err := Int.ParseFromMessage(nil, part, nil)
-	assert.NoError(t, err, "Should parse sucessfully")
+	assert.NoError(t, err, "Should parse successfully")
 	assert.Equal(t, v, expected, "Should be equal")
 
 	assert.Equal(t, Incompatible, Int.CheckCompatibility(nil, "12hello21"), "Should be incompatible")
@@ -47,7 +47,10 @@ func TestUserIDArg(t *testing.T) {
 		compat CompatibilityResult
 		result int64
 	}{
-		{"123", CompatibilityGood, 123},
+		{"10548730869375795", CompatibilityGood, 10548730869375795},
+		{"1054873086937579521", CompatibilityGood, 1054873086937579521},
+		{"1231231211", CompatibilityPoor, 1231231211},
+		{"123", CompatibilityPoor, 123},
 		{"hello", Incompatible, 321},
 		{"<@105487308693757952>", CompatibilityGood, 105487308693757952},
 	}
@@ -56,10 +59,10 @@ func TestUserIDArg(t *testing.T) {
 		t.Run("case_"+c.part, func(t *testing.T) {
 			arg := &UserIDArg{}
 			compat := arg.CheckCompatibility(nil, c.part)
-			assert.Equal(t, c.compat, compat, "Compitability result doesn't match")
+			assert.Equal(t, c.compat, compat, "Compatibility result doesn't match")
 			if compat != Incompatible {
 				parsed, err := arg.ParseFromMessage(nil, c.part, d)
-				assert.NoError(t, err, "Should parse sucessfully")
+				assert.NoError(t, err, "Should parse successfully")
 				assert.Equal(t, c.result, parsed)
 			}
 		})
