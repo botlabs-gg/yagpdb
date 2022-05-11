@@ -79,22 +79,7 @@ type CmdWithArgDefs interface {
 		```
 		As you can see, the integers are indexes in the argument definitions returned. The above combos will allow any combination or arguments, even none.
 
-		Important: Argument combos can only allow multiple orders or arguments with different types. It cannot for example detect the difference between 2 text arguments passed.
-		Here's some notes on different types and how well they differentiate:
-
-		user to number:
-			user to number can always be differentiated between, unless a username is provided instead of a mention,
-			if a username consists of only numbers then it would think that that user is a number, if you use this you need to set the
-			RequireMention flag.
-
-		user to string:
-			this is also pretty reliable, but the RequireMention flag is pretty much required here.
-
-		string to number:
-			this can work if you know the string will never itself be a number.
-
-		Note: you can force arguments to become strings by putting them in quotes or code blocks.
-
+		Argument combos generally work as expected in non-ambiguous cases, but it cannot for example detect the difference between two text arguments.
 	*/
 	ArgDefs(data *Data) (args []*ArgDef, required int, combos [][]int)
 }

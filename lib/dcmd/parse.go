@@ -1,6 +1,7 @@
 package dcmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -456,9 +457,21 @@ func SplitArgs(in string) []*RawArg {
 	return rawArgs
 }
 
+type comboStats struct {
+	combo  []int
+	compat struct{ poorMatches, goodMatches int }
+}
+
+func (c1 *comboStats) BetterThan(c2 *comboStats) bool {
+	compat1, compat2 := c1.compat, c2.compat
+	if compat1.goodMatches != compat2.goodMatches {
+		return compat1.goodMatches > compat2.goodMatches
+	}
+	return compat1.poorMatches > compat2.poorMatches
+}
+
 // Finds a proper argument combo from the provided args
 func FindCombo(defs []*ArgDef, combos [][]int, args []*RawArg) (combo []int, ok bool) {
-
 	if len(combos) < 1 {
 		out := make([]int, len(defs))
 		for k := range out {
@@ -467,31 +480,39 @@ func FindCombo(defs []*ArgDef, combos [][]int, args []*RawArg) (combo []int, ok 
 		return out, true
 	}
 
-	var selectedCombo []int
-
-	// Find a possible match
-OUTER:
+	bestStats := new(comboStats)
 	for _, combo := range combos {
-		if len(combo) > len(args) {
-			// No match
+		stats, comboOK := collectComboStats(combo, defs, args)
+		if !comboOK {
 			continue
 		}
-
-		// See if this combos arguments matches that of the parsed command
-		for i, comboArg := range combo {
-			def := defs[comboArg]
-
-			if !def.Type.Matches(def, args[i].Str) {
-				continue OUTER
-			}
-		}
-
-		// We got a match, if this match is stronger than the last one set it as selected
-		if len(combo) > len(selectedCombo) || !ok {
-			selectedCombo = combo
+		if !ok || stats.BetterThan(bestStats) {
+			bestStats = stats
 			ok = true
 		}
 	}
 
-	return selectedCombo, ok
+	return bestStats.combo, ok
+}
+
+func collectComboStats(combo []int, defs []*ArgDef, args []*RawArg) (stats *comboStats, ok bool) {
+	if len(combo) > len(args) {
+		return nil, false
+	}
+
+	stats = &comboStats{combo: combo}
+	for i, defPos := range combo {
+		def := defs[defPos]
+		switch compat := def.Type.CheckCompatibility(def, args[i].Str); compat {
+		case Incompatible:
+			return nil, false
+		case CompatibilityPoor:
+			stats.compat.poorMatches++
+		case CompatibilityGood:
+			stats.compat.goodMatches++
+		default:
+			panic(fmt.Sprintf("dcmd: got unexpected compatibility result while selecting combo: %s", compat))
+		}
+	}
+	return stats, true
 }

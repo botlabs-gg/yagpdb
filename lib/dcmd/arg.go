@@ -2,6 +2,7 @@ package dcmd
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -392,8 +393,8 @@ func (sopts *SlashCommandsParseOptions) ExpectChannelOpt(name string) (*discordg
 
 // ArgType is the interface argument types has to implement,
 type ArgType interface {
-	// Return true if this argument part matches this type
-	Matches(def *ArgDef, part string) bool
+	// CheckCompatibility reports the degree to which the input matches the type.
+	CheckCompatibility(def *ArgDef, part string) CompatibilityResult
 
 	// Attempt to parse it, returning any error if one occured.
 	ParseFromMessage(def *ArgDef, part string, data *Data) (val interface{}, err error)
@@ -403,6 +404,59 @@ type ArgType interface {
 	HelpName() string
 
 	SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption
+}
+
+// CompatibilityResult indicates the degree to which a value matches a type.
+type CompatibilityResult int
+
+const (
+	// Incompatible indicates that the value does not match the type at all. For example,
+	// the string "abc" would be incompatible with an integer type.
+	Incompatible CompatibilityResult = iota
+
+	// CompatibilityPoor indicates that the value superficially matches the
+	// type, but violates some required constraint or property. For example, 11
+	// would have poor compatibility with an integer type with range limited to
+	// [0, 10].
+	CompatibilityPoor
+
+	// CompatibilityGood indicates that the value matches the type well. For
+	// example, 204255221017214977 would have good compatibility with a user
+	// type as it has the correct length for a Discord snowflake though the ID
+	// may not correspond to a valid user. Similarly, 10 would have good compatibility
+	// with an unbounded integer type.
+	CompatibilityGood
+)
+
+func (c CompatibilityResult) String() string {
+	switch c {
+	case Incompatible:
+		return "incompatible"
+	case CompatibilityPoor:
+		return "poor compatibility"
+	case CompatibilityGood:
+		return "good compatibility"
+	default:
+		return fmt.Sprintf("CompatibilityResult(%d)", c)
+	}
+}
+
+// DetermineSnowflakeCompatibility returns CompatibilityGood if s could represent
+// a Discord snowflake ID and Incompatible otherwise.
+func DetermineSnowflakeCompatibility(s string) CompatibilityResult {
+	_, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return Incompatible
+	}
+
+	const (
+		minSnowflakeLength = 17
+		maxSnowflakeLength = 19
+	)
+	if len(s) < minSnowflakeLength || len(s) > maxSnowflakeLength {
+		return CompatibilityPoor
+	}
+	return CompatibilityGood
 }
 
 var (
@@ -430,10 +484,17 @@ type IntArg struct {
 
 var _ ArgType = (*IntArg)(nil)
 
-func (i *IntArg) Matches(def *ArgDef, part string) bool {
-	_, err := strconv.ParseInt(part, 10, 64)
-	return err == nil
+func (i *IntArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResult {
+	v, err := strconv.ParseInt(part, 10, 64)
+	if err != nil {
+		return Incompatible
+	}
+	if i.Min == i.Max || i.Min <= v && v <= i.Max {
+		return CompatibilityGood
+	}
+	return CompatibilityPoor
 }
+
 func (i *IntArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
 	v, err := strconv.ParseInt(part, 10, 64)
 	if err != nil {
@@ -498,10 +559,17 @@ type FloatArg struct {
 
 var _ ArgType = (*FloatArg)(nil)
 
-func (f *FloatArg) Matches(def *ArgDef, part string) bool {
-	_, err := strconv.ParseFloat(part, 64)
-	return err == nil
+func (f *FloatArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResult {
+	v, err := strconv.ParseFloat(part, 64)
+	if err != nil {
+		return Incompatible
+	}
+	if f.Min == f.Max || f.Min <= v && v <= f.Max {
+		return CompatibilityGood
+	}
+	return CompatibilityPoor
 }
+
 func (f *FloatArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
 	v, err := strconv.ParseFloat(part, 64)
 	if err != nil {
@@ -552,7 +620,10 @@ type StringArg struct{}
 
 var _ ArgType = (*StringArg)(nil)
 
-func (s *StringArg) Matches(def *ArgDef, part string) bool { return true }
+func (s *StringArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResult {
+	return CompatibilityGood
+}
+
 func (s *StringArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
 	return part, nil
 }
@@ -570,14 +641,16 @@ func (s *StringArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCom
 	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
 }
 
-// UserArg matches and parses user argument (mention/username/nickname/ID)
+// UserArg matches and parses user argument (mention/ID)
 type UserArg struct{}
 
 var _ ArgType = (*UserArg)(nil)
 
-func (u *UserArg) Matches(def *ArgDef, part string) bool {
-	// Username/ID searches are enabled, any string can be used
-	return true
+func (u *UserArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResult {
+	if strings.HasPrefix(part, "<@") && strings.HasSuffix(part, ">") {
+		return DetermineSnowflakeCompatibility(strings.TrimPrefix(part, "!"))
+	}
+	return DetermineSnowflakeCompatibility(part)
 }
 
 func (u *UserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
@@ -599,24 +672,19 @@ func (u *UserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interf
 	}
 
 	id, err := strconv.ParseInt(part, 10, 64)
-	if err == nil {
-		member := data.System.State.GetMember(data.GuildData.GS.ID, id)
-		if member != nil {
-			return &member.User, nil
-		}
-
-		m, err := data.Session.GuildMember(data.GuildData.GS.ID, id)
-		if err == nil {
-			member = dstate.MemberStateFromMember(m)
-			return &member.User, nil
-		}
+	if err != nil {
 		return nil, err
 	}
 
-	// Search for username
-	m, err := FindDiscordMemberByName(data.System.State, data.GuildData.GS, part)
-	if m != nil {
-		return &m.User, nil
+	member := data.System.State.GetMember(data.GuildData.GS.ID, id)
+	if member != nil {
+		return &member.User, nil
+	}
+
+	m, err := data.Session.GuildMember(data.GuildData.GS.ID, id)
+	if err == nil {
+		member = dstate.MemberStateFromMember(m)
+		return &member.User, nil
 	}
 	return nil, err
 }
@@ -710,15 +778,14 @@ type UserIDArg struct{}
 
 var _ ArgType = (*UserIDArg)(nil)
 
-func (u *UserIDArg) Matches(def *ArgDef, part string) bool {
+func (u *UserIDArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResult {
 	// Check for mention
 	if strings.HasPrefix(part, "<@") && strings.HasSuffix(part, ">") {
-		return true
+		return DetermineSnowflakeCompatibility(strings.TrimPrefix(part[2:len(part)-1], "!"))
 	}
 
 	// Check for ID
-	_, err := strconv.ParseInt(part, 10, 64)
-	return err == nil
+	return DetermineSnowflakeCompatibility(part)
 }
 
 func (u *UserIDArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
@@ -780,15 +847,14 @@ type ChannelArg struct {
 
 var _ ArgType = (*ChannelArg)(nil)
 
-func (ca *ChannelArg) Matches(def *ArgDef, part string) bool {
+func (ca *ChannelArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResult {
 	// Check for mention
 	if strings.HasPrefix(part, "<#") && strings.HasSuffix(part, ">") {
-		return true
+		return DetermineSnowflakeCompatibility(part[2 : len(part)-1])
 	}
 
 	// Check for ID
-	_, err := strconv.ParseInt(part, 10, 64)
-	return err == nil
+	return DetermineSnowflakeCompatibility(part)
 }
 
 func (ca *ChannelArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {
@@ -886,24 +952,23 @@ type AdvUserArg struct {
 
 var _ ArgType = (*AdvUserArg)(nil)
 
-func (u *AdvUserArg) Matches(def *ArgDef, part string) bool {
+func (u *AdvUserArg) CheckCompatibility(def *ArgDef, part string) CompatibilityResult {
 	if strings.HasPrefix(part, "<@") && strings.HasSuffix(part, ">") {
-		return true
+		return DetermineSnowflakeCompatibility(strings.TrimPrefix(part[2:len(part)-1], "!"))
 	}
 
 	if u.EnableUserID {
-		_, err := strconv.ParseInt(part, 10, 64)
-		if err == nil {
-			return true
+		if DetermineSnowflakeCompatibility(part[2:len(part)-1]) == CompatibilityGood {
+			return CompatibilityGood
 		}
 	}
 
 	if u.EnableUsernameSearch {
 		// username search
-		return true
+		return CompatibilityGood
 	}
 
-	return false
+	return Incompatible
 }
 
 func (u *AdvUserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interface{}, error) {

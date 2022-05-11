@@ -212,13 +212,13 @@ var cmds = []*commands.YAGCommand{
 		Name:                "RepLog",
 		Aliases:             []string{"replogs"},
 		Description:         "Shows the rep log for the specified user.",
-		RequiredArgs:        1,
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Page", Type: dcmd.Int, Default: 1},
 		},
+		ArgumentCombos: [][]int{{}, {0}, {1}, {0, 1}},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
@@ -230,6 +230,9 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			targetID := parsed.Args[0].Int64()
+			if targetID == 0 {
+				targetID = parsed.Author.ID
+			}
 
 			const entriesPerPage = 20
 			offset := (parsed.Args[1].Int() - 1) * entriesPerPage
