@@ -36,9 +36,10 @@ type GeneralConfig struct {
 	Role             int64 `json:",string" valid:"role,true"`
 	RequiredDuration int   `valid:"0,"`
 
-	RequiredRoles []int64 `valid:"role,true"`
-	IgnoreRoles   []int64 `valid:"role,true"`
-	OnlyOnJoin    bool
+	RequiredRoles            []int64 `valid:"role,true"`
+	IgnoreRoles              []int64 `valid:"role,true"`
+	OnlyOnJoin               bool
+	AssignRoleAfterScreening bool
 }
 
 const (
