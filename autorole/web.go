@@ -115,12 +115,6 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
 
-	// If any goroutine is running according to previous flow
-	workingOnFullScan := WorkingOnFullScanLegacy(activeGuild.ID)
-	if workingOnFullScan {
-		tmpl["FullScanActive"] = workingOnFullScan
-	}
-
 	return tmpl
 
 }
