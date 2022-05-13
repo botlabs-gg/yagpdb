@@ -62,7 +62,7 @@
                     <form class="form-horizontal" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
                         data-async-form>
-                        <div class="row">
+                        <div class="row" style="margin-bottom: 20px;">
                             <div class="col-6">
                                 <div class="form-group">
                                     <label>Name </label>
@@ -113,10 +113,11 @@
                         </div>
                     </form>
                     {{end}}
+                    <p>You have created <code>{{.CCCount}}</code> custom commands against the total limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/commands/new">
                         <input type="text" name="GroupID" hidden
                             value="{{if .CurrentCommandGroup}}{{.CurrentCommandGroup.ID}}{{end}}">
-                        <button type="submit" class="btn btn-success">Create
+                        <button type="submit" class="btn btn-success" {{if ge .CCCount .CCLimit}}disabled{{end}}>Create
                             a new Custom Command</button>
                     </form>
                 </div>
