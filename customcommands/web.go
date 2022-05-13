@@ -18,6 +18,7 @@ import (
 	yagtemplate "github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/null"
@@ -107,7 +108,8 @@ func (p *Plugin) InitWeb() {
 }
 
 func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	groupID := int64(0)
 	if v, ok := templateData["CurrentGroupID"]; ok {
@@ -120,6 +122,13 @@ func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	templateData["HLJSBuiltins"] = langBuiltins.String()
+
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return templateData, err
+	}
+
+	updateTemplateWithCountData(int(count), templateData, ctx)
 
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
@@ -146,8 +155,17 @@ func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 }
 
 func handleGetCommandsGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	groupID, _ := strconv.ParseInt(pat.Param(r, "group"), 10, 64)
+
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return templateData, err
+	}
+
+	updateTemplateWithCountData(int(count), templateData, ctx)
+
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
 
@@ -583,4 +601,16 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	return templateData, err
+}
+
+func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx context.Context) {
+	maxCommands := MaxCommandsForContext(ctx)
+	templateData["CCCount"] = count
+	templateData["CCLimit"] = maxCommands
+
+	additionalMessage := ""
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with YAGPDB premium)", MaxCommandsPremium)
+	}
+	templateData["AdditionalMessage"] = additionalMessage
 }
