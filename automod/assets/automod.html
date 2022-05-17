@@ -353,7 +353,6 @@ $(function(){
         options: JSON.parse({{json .UserSettings}})
     }
     {{end}}
-    console.log(partMap)
 
     function namePrefixFromKind(kind){
         namePrefix = "Triggers."
@@ -374,7 +373,6 @@ $(function(){
         var rowIndex = tbody.children().length;
         var row = createPartRow(kind, rowIndex)
 
-        console.log("Creating new: ", kind, rowIndex)
         tbody.append(row);
     })
 

@@ -141,6 +141,15 @@
     {{template "googleAnalytics" .}}
 </body>
 
+<script>
+    var observer = new MutationObserver(function(mutations) {
+        $("a").filter(function(){
+            return this.host !== location.host
+        }).attr("target","_blank");
+    });
+    observer.observe(document.querySelector("body"), { childList: true, subtree: true });
+</script>
+
 </html>
 {{end}}{{end}}
 
