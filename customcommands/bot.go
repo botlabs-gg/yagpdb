@@ -905,8 +905,8 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 }
 
 func updatePostCommandRan(cmd *models.CustomCommand, runErr error) {
-	const qNoErr = "UPDATE custom_commands SET run_count = run_count + 1 WHERE guild_id=$1 AND local_id=$2"
-	const qErr = "UPDATE custom_commands SET run_count = run_count + 1, last_error=$3, last_error_time=now() WHERE guild_id=$1 AND local_id=$2"
+	const qNoErr = "UPDATE custom_commands SET run_count = run_count + 1, last_run=now() WHERE guild_id=$1 AND local_id=$2"
+	const qErr = "UPDATE custom_commands SET run_count = run_count + 1, last_run=now(), last_error=$3, last_error_time=now() WHERE guild_id=$1 AND local_id=$2"
 
 	var err error
 	if runErr == nil {
