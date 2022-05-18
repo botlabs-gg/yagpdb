@@ -9,6 +9,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/jarowinkler"
 )
 
 func getGameData(searchTitle string) (string, error) {
@@ -74,7 +75,7 @@ func parseGameData(gameName string, toReader *strings.Reader) ([]hltb, error) {
 
 		queryParsed.GameTitle = strings.TrimSpace(sel.Find("h3").Text())
 		queryParsed.PureTitle = strings.TrimSpace(sel.Find("a").AttrOr("title", "")) //a tag has game title without &() etc
-		queryParsed.LevDistance, queryParsed.LevSimilarity = levenshtein([]rune(gameName), []rune(queryParsed.PureTitle))
+		queryParsed.JaroWinklerSimilarity = jarowinkler.Similarity([]rune(gameName), []rune(queryParsed.PureTitle))
 
 		/*if sel.Find(".search_list_tidbit_short").Length() > 0 { //maybe for future use
 			queryParsed.OnlineGame = true

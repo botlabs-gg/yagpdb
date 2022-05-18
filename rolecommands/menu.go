@@ -19,6 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/lib/jarowinkler"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
 	"github.com/volatiletech/null/v8"
@@ -29,10 +30,28 @@ import (
 var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
-	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
+	name := parsed.Args[0].Str()
+	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
-			return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
+			const genericHelpMessage = "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel."
+
+			groups, err := models.RoleGroups(models.RoleGroupWhere.GuildID.EQ(parsed.GuildData.GS.ID), qm.Select(models.RoleGroupColumns.Name)).AllG(parsed.Context())
+			if err != nil {
+				return genericHelpMessage, nil
+			}
+
+			names := make([]string, len(groups))
+			for i, group := range groups {
+				names[i] = group.Name
+			}
+
+			suggestions := jarowinkler.Select(names, name, jarowinkler.WithLimit(3))
+			if len(suggestions) == 0 {
+				return genericHelpMessage, nil
+			}
+
+			return fmt.Sprintf("Did not find a role group with the name `%s`; did you mean %s?", name, common.FormatList(suggestions, "or")), nil
 		}
 
 		return nil, err
