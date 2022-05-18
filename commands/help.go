@@ -63,8 +63,12 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 			humanizedPerms := make([]string, 0, len(yc.RequireDiscordPerms))
 			for _, v := range yc.RequireDiscordPerms {
 				h := common.HumanizePermissions(v)
-				joined := strings.Join(h, " and ")
-				humanizedPerms = append(humanizedPerms, "("+joined+")")
+				if len(h) == 1 {
+					humanizedPerms = append(humanizedPerms, h[0])
+				} else {
+					joined := strings.Join(h, " and ")
+					humanizedPerms = append(humanizedPerms, "("+joined+")")
+				}
 			}
 			requiredPerms = strings.Join(humanizedPerms, " or ")
 		}
