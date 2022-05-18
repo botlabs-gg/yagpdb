@@ -966,7 +966,7 @@ func (c *Context) tmplHasPermissions(needed int64) (bool, error) {
 		return true, nil
 	}
 
-	return c.msHasPerms(c.MS, c.CurrentFrame.CS.ID, needed)
+	return c.hasPerms(c.MS, c.CurrentFrame.CS.ID, needed)
 }
 
 func (c *Context) tmplTargetHasPermissions(target interface{}, needed int64) (bool, error) {
@@ -992,7 +992,7 @@ func (c *Context) tmplTargetHasPermissions(target interface{}, needed int64) (bo
 		return false, err
 	}
 
-	return c.msHasPerms(ms, c.CurrentFrame.CS.ID, needed)
+	return c.hasPerms(ms, c.CurrentFrame.CS.ID, needed)
 }
 
 func (c *Context) tmplGetTargetPermissionsIn(target interface{}, channel interface{}) (int64, error) {
@@ -1018,7 +1018,7 @@ func (c *Context) tmplGetTargetPermissionsIn(target interface{}, channel interfa
 	return c.GS.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 }
 
-func (c *Context) msHasPerms(ms *dstate.MemberState, channelID int64, needed int64) (bool, error) {
+func (c *Context) hasPerms(ms *dstate.MemberState, channelID int64, needed int64) (bool, error) {
 	perms, err := c.GS.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
 	if err != nil {
 		return false, err
