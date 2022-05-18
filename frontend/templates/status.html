@@ -3,7 +3,7 @@
 {{template "cp_head" .}}
 
 <header class="page-header">
-	<h2>Bot status</h2>
+	<h2>Bot status <span class="refresh-message"></span></h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -27,6 +27,19 @@
 		</ul>
 	</div>
 </section>
+<script>
+  let maxRefreshTimer = 30000;
+  let interval = 1000;
+  let totalExpired = 0;
+    setInterval(()=>{
+      if(totalExpired < maxRefreshTimer){
+        $(".refresh-message").text(`(Refreshing in ${Math.ceil((maxRefreshTimer - totalExpired)/1000)} seconds)`);
+        totalExpired += interval;
+        return;
+      }
+      window.location.reload()
+  }, interval)
+</script>
 
 <style>
 	.shard {
