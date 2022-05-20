@@ -458,6 +458,7 @@ var execTests = []execTest{
 	{"try catch use error", "{{try}}{{.MyError true}}{{catch}}{{.}}{{end}}", "my error", tVal, true},
 	{"nested try catch", "{{try}}{{.MyError true}}{{catch}}{{try}}{{$.MyError true}}{{catch}}abc{{end}}{{end}}", "abc", tVal, true},
 	{"try catch with panic", "{{try}}{{makemap 1}}{{catch}}x{{end}}", "", tVal, false}, // shouldn't catch panics
+	{"try catch with error marked as uncatchable", "{{try}}{{returnUncatchableError}}{{catch}}BAD{{end}}", "", tVal, false},
 	{"strips error fields", "{{try}}{{returnError}}{{catch}}{{.X}}{{end}}", "", tVal, false},
 	{"keeps original error message", "{{try}}{{returnError}}{{catch}}{{.Error}}{{end}}", "bye", tVal, true},
 	{"does not strip errors wrapped using PassthroughError", "{{try}}{{returnPassthroughError}}{{catch}}{{.X}}{{end}}", "1", tVal, true},
@@ -793,6 +794,10 @@ func returnPassthroughError() (string, error) {
 	return "", PassthroughError(customError{1, "hi"})
 }
 
+func returnUncatchableError() (string, error) {
+	return "", UncatchableError(errors.New("foo"))
+}
+
 func returnError() (string, error) {
 	return "", customError{1, "bye"}
 }
@@ -816,6 +821,7 @@ func testExecute(execTests []execTest, template *Template, t *testing.T) {
 		"vfunc":                  vfunc,
 		"zeroArgs":               zeroArgs,
 		"returnPassthroughError": returnPassthroughError,
+		"returnUncatchableError": returnUncatchableError,
 		"returnError":            returnError,
 	}
 	for _, test := range execTests {
@@ -1691,6 +1697,14 @@ func TestExecutePanicDuringCall(t *testing.T) {
 func TestPassthroughError(t *testing.T) {
 	const msg = "msg"
 	err := PassthroughError(errors.New(msg))
+	if err.Error() != msg {
+		t.Fatalf("err.Error() = %q, want %q", err.Error(), msg)
+	}
+}
+
+func TestUncatchableError(t *testing.T) {
+	const msg = "msg"
+	err := UncatchableError(errors.New(msg))
 	if err.Error() != msg {
 		t.Fatalf("err.Error() = %q, want %q", err.Error(), msg)
 	}

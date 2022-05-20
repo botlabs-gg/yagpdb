@@ -134,6 +134,22 @@ func PassthroughError(err error) error {
 	return passthroughError{err}
 }
 
+// UncatchableError wraps err in such a way that it will not be handled by a
+// try-catch action.
+func UncatchableError(err error) error {
+	return uncatchableError{err}
+}
+
+// uncatchableError is a wrapper type indicating that the wrapped error should
+// not be ignored by a try-catch action.
+type uncatchableError struct {
+	Err error
+}
+
+func (u uncatchableError) Error() string {
+	return u.Err.Error()
+}
+
 // passthroughError is a wrapper type indicating that the wrapped error should
 // not be stripped of additional information if handled by a try action.
 type passthroughError struct {
@@ -872,9 +888,14 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 	// If we have an error that is not nil, stop execution and return that
 	// error to the caller.
 	if err != nil {
-		// If the call panicked instead of returning a normal error, or if we are not in a try action,
-		// stop execution and report the error.
-		if panicked || s.tryDepth == 0 {
+		reportError := panicked || s.tryDepth == 0
+		if _, ok := err.(uncatchableError); ok {
+			reportError = true
+		}
+
+		// Stop execution immediately if the error can't be caught, or if it was
+		// a panic.
+		if reportError {
 			s.at(node)
 			s.errorf("error calling %s: %v", name, err)
 		}
