@@ -109,7 +109,7 @@ var cmds = []*commands.YAGCommand{
 			if parsed.Args[1].Int() < 0 {
 				// If the user is trying to use GiveRep command, check if they can execute it
 				if canExecute, err := canExecuteRepCmd("GiveRep", parsed); !canExecute {
-					return err, nil
+					return fmt.Sprintf("**You can't take negative rep**. %s", err), nil
 				}
 			}
 			parsed.Args[1].Value = -parsed.Args[1].Int()
@@ -132,7 +132,7 @@ var cmds = []*commands.YAGCommand{
 			if parsed.Args[1].Int() < 0 {
 				// If the user is trying to use TakeRep command, check if they can execute it
 				if canExecute, err := canExecuteRepCmd("TakeRep", parsed); !canExecute {
-					return err, nil
+					return fmt.Sprintf("**You can't give negative rep**. %s", err), nil
 				}
 			}
 			return CmdGiveRep(parsed)
@@ -492,5 +492,5 @@ func canExecuteRepCmd(cmdName string, parsed *dcmd.Data) (bool, string) {
 	} else if err != nil {
 		mesg += err.Error()
 	}
-	return false, fmt.Sprintf("**You tried executing %s command which resulted in error.** %s", cmdName, mesg)
+	return false, mesg
 }
