@@ -63,6 +63,8 @@ var (
 		"fdiv":       tmplFDiv,
 		"log":        tmplLog,
 		"mathConst":  tmplMathConstant,
+		"max":        tmplMax,
+		"min":        tmplMin,
 		"mod":        tmplMod,
 		"mult":       tmplMult,
 		"pow":        tmplPow,
