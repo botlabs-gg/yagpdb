@@ -84,18 +84,20 @@
                                 <p><b>Access control</b></p>
                                 <label>Mode</label><br>
                                 <select name="AccessMode" class="multiselect form-control"
-                                    id="blacklisted-roles-receive">
+                                    id="message-logs-access-mode" onchange="toggleAccessMode(this)">
                                     <option value="0" {{if eq .Config.AccessMode 0}} selected{{end}}>Members can view
                                         message logs</option>
                                     <option value="1" {{if eq .Config.AccessMode 1}} selected{{end}}>Everyone can view
                                         message logs</option>
                                 </select>
-                                <label>Roles</label><br>
-                                <select name="MessageLogsAllowedRoles" class="multiselect form-control"
-                                    multiple="multiple" id="blacklisted-roles-receive" data-plugin-multiselect
-                                    data-placeholder="Everyone">
-                                    {{roleOptionsMulti .ActiveGuild.Roles nil .Config.MessageLogsAllowedRoles}}
-                                </select>
+                                <div id="roles-selector" {{if eq .Config.AccessMode 1}}hidden{{end}} style="margin: 1em 0;">
+                                    <label>Roles</label><br>
+                                    <select name="MessageLogsAllowedRoles" class="multiselect form-control"
+                                        multiple="multiple" id="message-logs-allowed-roles" data-plugin-multiselect
+                                        data-placeholder="None selected">
+                                        {{roleOptionsMulti .ActiveGuild.Roles nil .Config.MessageLogsAllowedRoles}}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -168,5 +170,16 @@
 <!-- /.row -->
 
 {{template "cp_footer" .}}
+
+<script>
+    function toggleAccessMode(accessMode) {
+        const rolesSelector = document.getElementById("roles-selector")
+        if (accessMode.value === "1") {
+            rolesSelector.setAttribute("hidden", "")
+        } else {
+            rolesSelector.removeAttribute("hidden")
+        }
+    }
+</script>
 
 {{end}}
