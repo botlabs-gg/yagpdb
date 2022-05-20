@@ -106,6 +106,12 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Args[1].Int() < 0 {
+				// If the user is trying to use GiveRep command, check if they can execute it
+				if canExecute, err := canExecuteRepCmd("GiveRep", parsed); !canExecute {
+					return err, nil
+				}
+			}
 			parsed.Args[1].Value = -parsed.Args[1].Int()
 			return CmdGiveRep(parsed)
 		},
@@ -122,7 +128,15 @@ var cmds = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
-		RunFunc: CmdGiveRep,
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Args[1].Int() < 0 {
+				// If the user is trying to use TakeRep command, check if they can execute it
+				if canExecute, err := canExecuteRepCmd("TakeRep", parsed); !canExecute {
+					return err, nil
+				}
+			}
+			return CmdGiveRep(parsed)
+		},
 	},
 	{
 		CmdCategory:         commands.CategoryFun,
@@ -464,4 +478,19 @@ func userPresentInRepLog(userID int64, guildID int64, parsed *dcmd.Data) (found 
 		return false, nil
 	}
 	return true, nil
+}
+
+func canExecuteRepCmd(cmdName string, parsed *dcmd.Data) (bool, string) {
+	yagCmd := commands.YAGCommand{Name: cmdName}
+	canExecute, resp, _, err := yagCmd.CheckCanExecuteCommand(parsed)
+	mesg := ""
+	if canExecute {
+		return true, mesg
+	}
+	if resp != nil {
+		mesg += resp.Message
+	} else if err != nil {
+		mesg += err.Error()
+	}
+	return false, fmt.Sprintf("**You tried executing %s command which resulted in error.** %s", cmdName, mesg)
 }
