@@ -33,7 +33,6 @@ var Command = &commands.YAGCommand{
 			},
 			Footer: &discordgo.MessageEmbedFooter{
 				Text:    fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
-				IconURL: discordgo.EndpointUserAvatar(data.Author.ID, data.Author.Avatar),
 			},
 			Color: rand.Intn(16777215),
 		}
