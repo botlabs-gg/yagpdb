@@ -634,12 +634,13 @@
             addAlert("warning", warningText, warningID);
         }
     }
-    $(document).bind('keypress', (e) => {
+    $(document).bind('keydown', (e) => {
       let event = e.originalEvent;
       if(event.altKey && event.shiftKey && event.code === 'KeyS'){
         const saveCCbutton = document.querySelector("#save-custom-command");
         if(saveCCbutton){
          saveCCbutton.click();
+         return false;
         }
       } 
     });
