@@ -106,11 +106,8 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Args[1].Int() < 0 {
-				// If the user is trying to use GiveRep command, check if they can execute it
-				if canExecute, err := canExecuteRepCmd("GiveRep", parsed); !canExecute {
-					return fmt.Sprintf("**You can't take negative rep**. %s", err), nil
-				}
+			if parsed.Args[1].Int() < 1 {
+				return "**rep amount should be greater than or equal to 1**", nil
 			}
 			parsed.Args[1].Value = -parsed.Args[1].Int()
 			return CmdGiveRep(parsed)
@@ -129,11 +126,8 @@ var cmds = []*commands.YAGCommand{
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Args[1].Int() < 0 {
-				// If the user is trying to use TakeRep command, check if they can execute it
-				if canExecute, err := canExecuteRepCmd("TakeRep", parsed); !canExecute {
-					return fmt.Sprintf("**You can't give negative rep**. %s", err), nil
-				}
+			if parsed.Args[1].Int() < 1 {
+				return "**rep amount should be greater than or equal to 1**", nil
 			}
 			return CmdGiveRep(parsed)
 		},
@@ -478,19 +472,4 @@ func userPresentInRepLog(userID int64, guildID int64, parsed *dcmd.Data) (found 
 		return false, nil
 	}
 	return true, nil
-}
-
-func canExecuteRepCmd(cmdName string, parsed *dcmd.Data) (bool, string) {
-	yagCmd := commands.YAGCommand{Name: cmdName}
-	canExecute, resp, _, err := yagCmd.CheckCanExecuteCommand(parsed)
-	mesg := ""
-	if canExecute {
-		return true, mesg
-	}
-	if resp != nil {
-		mesg += resp.Message
-	} else if err != nil {
-		mesg += err.Error()
-	}
-	return false, mesg
 }

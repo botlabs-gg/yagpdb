@@ -397,7 +397,7 @@ type CanExecuteError struct {
 }
 
 // checks if the specified user can execute the command, and if so returns the settings for said command
-func (yc *YAGCommand) CheckCanExecuteCommand(data *dcmd.Data) (canExecute bool, resp *CanExecuteError, settings *CommandSettings, err error) {
+func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, resp *CanExecuteError, settings *CommandSettings, err error) {
 	// Check guild specific settings if not triggered from a DM
 	if data.GuildData != nil {
 		guild := data.GuildData.GS

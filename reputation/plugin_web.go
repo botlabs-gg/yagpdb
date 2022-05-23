@@ -31,8 +31,8 @@ type PostConfigForm struct {
 	EnableThanksDetection   bool
 	PointsName              string  `valid:",50"`
 	Cooldown                int     `valid:"0,86401"` // One day
-	MaxGiveAmount           int64   `valid:"0,"`
-	MaxRemoveAmount         int64   `valid:"0,"`
+	MaxGiveAmount           int64   `valid:"1,"`
+	MaxRemoveAmount         int64   `valid:"1,"`
 	RequiredGiveRoles       []int64 `valid:"role,true"`
 	RequiredReceiveRoles    []int64 `valid:"role,true"`
 	BlacklistedGiveRoles    []int64 `valid:"role,true"`

@@ -45,11 +45,12 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func DefaultConfig(guildID int64) *models.ReputationConfig {
 	return &models.ReputationConfig{
-		GuildID:       guildID,
-		PointsName:    "Rep",
-		Enabled:       false,
-		Cooldown:      120,
-		MaxGiveAmount: 1,
+		GuildID:         guildID,
+		PointsName:      "Rep",
+		Enabled:         false,
+		Cooldown:        120,
+		MaxGiveAmount:   1,
+		MaxRemoveAmount: 1,
 	}
 }
 

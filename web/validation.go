@@ -286,8 +286,11 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forc
 
 func ValidateIntMinMaxField(i int64, min, max int64, onlyMin bool) error {
 
-	if onlyMin && i < min {
-		return fmt.Errorf("should be at least %d", min)
+	if onlyMin {
+		if i < min {
+			return fmt.Errorf("should be at least %d", min)
+		}
+		return nil
 	}
 
 	if min != max && (i < min || i > max) {
@@ -299,8 +302,11 @@ func ValidateIntMinMaxField(i int64, min, max int64, onlyMin bool) error {
 
 func ValidateFloatField(f float64, min, max float64, onlyMin bool) error {
 
-	if onlyMin && f < min {
-		return fmt.Errorf("should be at least %f", min)
+	if onlyMin {
+		if f < min {
+			return fmt.Errorf("should be at least %f", min)
+		}
+		return nil
 	}
 
 	if min != max && (f < min || f > max) {
