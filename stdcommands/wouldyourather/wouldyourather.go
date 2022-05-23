@@ -30,11 +30,9 @@ var Command = &commands.YAGCommand{
 			Author: &discordgo.MessageEmbedAuthor{
 				Name:    "Would you rather...",
 				URL:     "https://either.io/",
-				IconURL: "https://yagpdb.xyz/static/icons/favicon-32x32.png",
 			},
 			Footer: &discordgo.MessageEmbedFooter{
 				Text:    fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
-				IconURL: discordgo.EndpointUserAvatar(data.Author.ID, data.Author.Avatar),
 			},
 			Color: rand.Intn(16777215),
 		}
