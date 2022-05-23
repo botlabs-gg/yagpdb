@@ -457,7 +457,6 @@
 
     function triggerTypeChanged() {
         var dropdown = $("#trigger-type-dropdown")
-        console.log("wewwooewewooo", dropdown.val());
         if (dropdown.val() === "interval_hours" || dropdown.val() === "interval_minutes") {
             // Interval triggers
 
@@ -471,6 +470,8 @@
             $("#trigger-warning").attr("hidden", true);
 
             handleTimeTriggerChannelChange();
+            $("#require-no-channels-warning").addClass("hidden");
+            $("#require-no-roles-warning").addClass("hidden");
             $("#time-trigger-no-channel-warning").removeClass("hidden");
 
         } else if (dropdown.val() === "reaction") {
@@ -485,6 +486,8 @@
             $("#interval-cc-run-now").addClass("hidden")
 
             $("#trigger-warning").attr("hidden", true);
+            $("#require-no-channels-warning").removeClass("hidden");
+            $("#require-no-roles-warning").removeClass("hidden");
             $("#time-trigger-no-channel-warning").addClass("hidden");
 
         } else if (isTextTrigger(dropdown.val())) {
@@ -499,6 +502,8 @@
             $("#interval-cc-run-now").addClass("hidden")
 
             $("#trigger-warning").attr("hidden", true);
+            $("#require-no-channels-warning").removeClass("hidden");
+            $("#require-no-roles-warning").removeClass("hidden");
             // $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
             $("#time-trigger-no-channel-warning").addClass("hidden");
 
@@ -514,6 +519,8 @@
 
             $("#trigger-warning").removeAttr("hidden");
             $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
+            $("#require-no-channels-warning").addClass("hidden");
+            $("#require-no-roles-warning").addClass("hidden");
             $("#time-trigger-no-channel-warning").addClass("hidden");
         };
 
