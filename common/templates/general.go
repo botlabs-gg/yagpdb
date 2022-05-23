@@ -607,6 +607,42 @@ func tmplPow(argX, argY interface{}) float64 {
 	return math.Pow(xySlice[0], xySlice[1])
 }
 
+func tmplMax(argX, argY interface{}) float64 {
+	var xyValue float64
+	var xySlice []float64
+
+	switchSlice := []interface{}{argX, argY}
+
+	for _, v := range switchSlice {
+		switch v.(type) {
+		case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+			xyValue = ToFloat64(v)
+		default:
+			xyValue = math.NaN()
+		}
+		xySlice = append(xySlice, xyValue)
+	}
+	return math.Max(xySlice[0], xySlice[1])
+}
+
+func tmplMin(argX, argY interface{}) float64 {
+	var xyValue float64
+	var xySlice []float64
+
+	switchSlice := []interface{}{argX, argY}
+
+	for _, v := range switchSlice {
+		switch v.(type) {
+		case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+			xyValue = ToFloat64(v)
+		default:
+			xyValue = math.NaN()
+		}
+		xySlice = append(xySlice, xyValue)
+	}
+	return math.Min(xySlice[0], xySlice[1])
+}
+
 /*tmplLog is a function for templates using (log base of x = logarithm) as return value.
 It is using natural logarithm as default to change the base.*/
 func tmplLog(arguments ...interface{}) (float64, error) {
