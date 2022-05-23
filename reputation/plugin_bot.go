@@ -107,6 +107,9 @@ var cmds = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Args[1].Int() < 1 {
+				return "**rep amount should be greater than or equal to 1**", nil
+			}
 			parsed.Args[1].Value = -parsed.Args[1].Int()
 			return CmdGiveRep(parsed)
 		},
@@ -123,7 +126,12 @@ var cmds = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
-		RunFunc: CmdGiveRep,
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Args[1].Int() < 1 {
+				return "**rep amount should be greater than or equal to 1**", nil
+			}
+			return CmdGiveRep(parsed)
+		},
 	},
 	{
 		CmdCategory:         commands.CategoryFun,
