@@ -542,10 +542,10 @@
     }
 
     $(function () {
-        triggerTypeChanged();
         handleTimeTriggerChannelChange();
         handleRestrictionChange($("#require-role-mode").prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
         handleRestrictionChange($("#require-channel-mode").prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
+        triggerTypeChanged();
     })
 
     $("#trigger").keyup(function() {
