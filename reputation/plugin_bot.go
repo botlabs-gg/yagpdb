@@ -32,7 +32,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
-var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
+var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|gracias|merci|danke|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
 var repDisabledError = "**Rep command is disabled on this server. Enable it from the control panel.**"
 
