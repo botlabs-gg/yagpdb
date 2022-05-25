@@ -125,18 +125,19 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Ban",
 		Aliases:       []string{"banid"},
-		Description:   "Bans a member, specify a duration with -d and specify number of days of messages to delete with -ddays (0 to 7)",
+		Description:   "Bans a member, specify number of days of messages to delete with -ddays (0 to 7)",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
+			{Name: "Duration", Type: &commands.DurationArg{}, Default: time.Duration(0)},
 			{Name: "Reason", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "d", Help: "Duration", Type: &commands.DurationArg{}, Default: time.Duration(0)},
-			{Name: "ddays", Help: "Delete Days", Type: dcmd.Int},
+			{Name: "ddays", Help: "Number of days of messages to delete", Type: dcmd.Int},
 		},
 		RequiredDiscordPermsHelp: "BanMembers or ManageServer",
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionBanMembers}},
+		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -145,7 +146,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			reason := SafeArgString(parsed, 1)
+			reason := SafeArgString(parsed, 2)
 			reason, err = MBaseCmdSecond(parsed, reason, config.BanReasonOptional, discordgo.PermissionBanMembers, config.BanCmdRoles, config.BanEnabled)
 			if err != nil {
 				return nil, err
@@ -159,16 +160,18 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.Switches["ddays"].Value != nil {
 				ddays = parsed.Switches["ddays"].Int()
 			}
+			banDuration := parsed.Args[1].Value.(time.Duration)
+
 			var msg *discordgo.Message
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = BanUserWithDuration(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, parsed.Switches["d"].Value.(time.Duration), ddays)
+			err = BanUserWithDuration(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, banDuration, ddays)
 			if err != nil {
 				return nil, err
 			}
 
-			return GenericCmdResp(MABanned, target, parsed.Switch("d").Value.(time.Duration), true, false), nil
+			return GenericCmdResp(MABanned, target, banDuration, true, false), nil
 		},
 	},
 	{
