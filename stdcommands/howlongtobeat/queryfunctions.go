@@ -23,6 +23,10 @@ func getGameData(searchTitle string) (string, error) {
 	data.Add("length_min", "")           // game length min
 	data.Add("length_max", "")           // game length max
 	data.Add("detail", "")               // extra information with user_stats ala speedruns, user rating etc...
+	data.Add("v", "")
+	data.Add("f", "")
+	data.Add("g", "")
+	data.Add("randomize", "0")
 
 	u := &url.URL{
 		Scheme:   hltbScheme,
@@ -39,6 +43,8 @@ func getGameData(searchTitle string) (string, error) {
 	r.Header.Add("Accept", "*/*")
 	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 	r.Header.Add("User-Agent", "Mozilla-PAGST1.12")
+	r.Header.Add("origin", "https://howlongtobeat.com")
+	r.Header.Add("referer", "https://howlongtobeat.com/")
 
 	resp, err := client.Do(r)
 	if err != nil {
