@@ -909,7 +909,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
-			{Name: "Role", Type: dcmd.String},
+			{Name: "Role", Type: &commands.RoleArg{}},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "d", Default: time.Duration(0), Help: "Duration", Type: &commands.DurationArg{}},
@@ -934,7 +934,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			role := FindRole(parsed.GuildData.GS, parsed.Args[1].Str())
+			role := parsed.Args[1].Value.(*discordgo.Role)
 			if role == nil {
 				return "Couldn't find the specified role", nil
 			}
@@ -988,7 +988,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
-			{Name: "Role", Type: dcmd.String},
+			{Name: "Role", Type: &commands.RoleArg{}},
 		},
 		RequiredDiscordPermsHelp: "ManageRoles or ManageServer",
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
@@ -1010,7 +1010,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			role := FindRole(parsed.GuildData.GS, parsed.Args[1].Str())
+			role := parsed.Args[1].Value.(*discordgo.Role)
 			if role == nil {
 				return "Couldn't find the specified role", nil
 			}
