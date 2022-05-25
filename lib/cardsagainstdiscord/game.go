@@ -451,14 +451,18 @@ func (g *Game) Tick() {
 		}
 
 		if time.Since(g.StateEntered) >= PickWinnerDuration {
+			noVotes := true
 			for _, v := range g.Players {
 				if v.VotedFor != 0 {
+					noVotes = false
 					g.allVoted()
 					break
 				}
 			}
 
-			g.pickWinnerExpired()
+			if noVotes {
+				g.pickWinnerExpired()
+			}
 		}
 	}
 
