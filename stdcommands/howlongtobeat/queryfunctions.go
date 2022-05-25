@@ -43,7 +43,8 @@ func getGameData(searchTitle string) (string, error) {
 	r.Header.Add("Accept", "*/*")
 	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 	r.Header.Add("User-Agent", "Mozilla-PAGST1.12")
-	r.Header.Add("Referer", "https://howlongtobeat.com/")
+	r.Header.Add("origin", "https://howlongtobeat.com")
+	r.Header.Add("referer", "https://howlongtobeat.com/")
 
 	resp, err := client.Do(r)
 	if err != nil {
