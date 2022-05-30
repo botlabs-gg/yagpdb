@@ -1146,16 +1146,16 @@ func tmplWeekNumber(t time.Time) (week int) {
 	return
 }
 
-func tmplHumanizeDurationHours(in time.Duration) string {
-	return common.HumanizeDuration(common.DurationPrecisionHours, in)
+func tmplHumanizeDurationHours(in interface{}) string {
+	return common.HumanizeDuration(common.DurationPrecisionHours, ToDuration(in))
 }
 
-func tmplHumanizeDurationMinutes(in time.Duration) string {
-	return common.HumanizeDuration(common.DurationPrecisionMinutes, in)
+func tmplHumanizeDurationMinutes(in interface{}) string {
+	return common.HumanizeDuration(common.DurationPrecisionMinutes, ToDuration(in))
 }
 
-func tmplHumanizeDurationSeconds(in time.Duration) string {
-	return common.HumanizeDuration(common.DurationPrecisionSeconds, in)
+func tmplHumanizeDurationSeconds(in interface{}) string {
+	return common.HumanizeDuration(common.DurationPrecisionSeconds, ToDuration(in))
 }
 
 func tmplHumanizeTimeSinceDays(in time.Time) string {
