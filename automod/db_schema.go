@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS automod_rules (
 CREATE INDEX IF NOT EXISTS automod_rules_guild_idx ON automod_rules(guild_id);
 
 `, `
+CREATE INDEX IF NOT EXISTS automod_rules_ruleset_idx ON automod_rules(ruleset_id);
+
+`, `
 CREATE TABLE IF NOT EXISTS automod_rule_data (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
@@ -53,6 +56,9 @@ CREATE TABLE IF NOT EXISTS automod_ruleset_conditions (
 CREATE INDEX IF NOT EXISTS automod_ruleset_conditions_guild_idx ON automod_ruleset_conditions(guild_id);
 
 `, `
+CREATE INDEX IF NOT EXISTS automod_ruleset_conditions_ruleset_idx ON automod_ruleset_conditions(ruleset_id);
+
+`, `
 CREATE TABLE IF NOT EXISTS automod_violations (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
@@ -68,6 +74,9 @@ CREATE TABLE IF NOT EXISTS automod_violations (
 CREATE INDEX IF NOT EXISTS automod_violations_guild_idx ON automod_violations(guild_id);
 `, `
 CREATE INDEX IF NOT EXISTS automod_violations_user_idx ON automod_violations(user_id);
+
+`, `
+CREATE INDEX IF NOT EXISTS automod_violations_rule_idx ON automod_violations(rule_id);
 
 `, `
 CREATE TABLE IF NOT EXISTS automod_lists (
