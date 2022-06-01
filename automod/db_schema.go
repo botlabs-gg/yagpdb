@@ -76,9 +76,6 @@ CREATE INDEX IF NOT EXISTS automod_violations_guild_idx ON automod_violations(gu
 CREATE INDEX IF NOT EXISTS automod_violations_user_idx ON automod_violations(user_id);
 
 `, `
-CREATE INDEX IF NOT EXISTS automod_violations_rule_idx ON automod_violations(rule_id);
-
-`, `
 CREATE TABLE IF NOT EXISTS automod_lists (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
