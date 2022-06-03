@@ -582,13 +582,14 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 			continue
 		}
 
-		err := bot.SendDMEmbed(v.UserID, &discordgo.MessageEmbed{
-			Title:       title,
-			Description: desc,
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: "From the server: " + serverName,
-			},
-		})
+		err := bot.SendDMEmbed(v.UserID,
+			&discordgo.MessageEmbed{
+				Title:       title,
+				Description: desc,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: "From the server: " + serverName,
+				},
+			})
 
 		if err != nil {
 			logger.WithError(err).WithField("guild", m.GuildID).Error("failed sending reminder")

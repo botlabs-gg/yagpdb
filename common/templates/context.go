@@ -410,6 +410,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 
 	isDM := c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate())
 
+	var embeds []*discordgo.MessageEmbed
 	for _, v := range c.CurrentFrame.EmebdsToSend {
 		if isDM {
 			v.Footer = &discordgo.MessageEmbedFooter{
@@ -417,9 +418,9 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 				IconURL: c.GS.Icon,
 			}
 		}
-
-		common.BotSession.ChannelMessageSendEmbed(channelID, v)
+		embeds = append(embeds, v)
 	}
+	common.BotSession.ChannelMessageSendEmbedList(channelID, embeds)
 
 	if strings.TrimSpace(content) == "" || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
 		// no point in sending the response if it gets deleted immedietely

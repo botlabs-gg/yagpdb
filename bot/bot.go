@@ -57,6 +57,8 @@ var (
 		discordgo.GatewayIntentGuildMessageReactions,
 		discordgo.GatewayIntentDirectMessages,
 		discordgo.GatewayIntentDirectMessageReactions,
+		discordgo.GatewayIntentMessageContent,
+		discordgo.GatewayIntentGuildScheduledEvents,
 	}
 )
 

@@ -26,7 +26,11 @@ type Punishment int
 const (
 	PunishmentKick Punishment = iota
 	PunishmentBan
+	PunishmentTimeout
 )
+
+const MaxTimeOutDuration = 40320 * time.Minute
+const MinTimeOutDuration = time.Minute
 
 const (
 	DefaultDMMessage = `You have been {{.ModAction}}
@@ -58,13 +62,21 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	}
 
 	var action ModlogAction
-	if p == PunishmentKick {
+	switch p {
+	case PunishmentKick:
 		action = MAKick
-	} else {
+	case PunishmentBan:
 		action = MABanned
 		if duration > 0 {
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
+	case PunishmentTimeout:
+		action = MATimedOut
+		if duration > 0 {
+			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
+		}
+	default:
+		return errors.New("invalid punishment type")
 	}
 
 	var channelID int64
@@ -102,6 +114,12 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 			banDeleteDays = variadicBanDeleteDays[0]
 		}
 		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, fullReason, banDeleteDays)
+	case PunishmentTimeout:
+		if duration < MinTimeOutDuration || duration > MaxTimeOutDuration {
+			return errors.New(fmt.Sprintf("timeout duration should be between %s and %s minutes", MinTimeOutDuration, MaxTimeOutDuration))
+		}
+		expireTime := time.Now().Add(duration)
+		err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, &expireTime, fullReason)
 	}
 
 	if err != nil {
@@ -142,11 +160,12 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 }
 
 var ActionMap = map[string]string{
-	"Muted":   "Mute DM",
-	"Unmuted": "Unmute DM",
-	"Kicked":  "Kick DM",
-	"Banned":  "Ban DM",
-	"Warned":  "Warn DM",
+	"Muted":     "Mute DM",
+	"Unmuted":   "Unmute DM",
+	"Kicked":    "Kick DM",
+	"Banned":    "Ban DM",
+	"Warned":    "Warn DM",
+	"Timed Out": "Time-out DM",
 }
 
 func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildSet, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int) {
@@ -178,7 +197,7 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 
 	executed, err := ctx.Execute(dmMsg)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Warn("Failed executing pusnishment DM")
+		logger.WithError(err).WithField("guild", gs.ID).Warn("Failed executing punishment DM")
 		executed = "Failed executing template."
 
 		if config.ErrorChannel != "" {
@@ -329,6 +348,32 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 		err = CreateModlogEmbed(config, author, action, user, reason, "")
 	}
 	return false, err
+}
+
+func TimeoutUser(config *Config, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration) error {
+	err := punish(config, PunishmentTimeout, guildID, channel, message, author, reason, user, duration, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RemoveTimeout(config *Config, guildID int64, author *discordgo.User, reason string, user *discordgo.User) error {
+	config, err := getConfigIfNotSet(guildID, config)
+	if err != nil {
+		return common.ErrWithCaller(err)
+	}
+	action := MATimeOutRemoved
+
+	err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, nil, reason)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
+	err = CreateModlogEmbed(config, author, action, user, reason, "")
+	return err
 }
 
 func isNotFound(err error) (bool, error) {

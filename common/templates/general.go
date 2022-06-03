@@ -213,10 +213,15 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		return nil, err
 	}
 
-	msg := &discordgo.MessageSend{}
+	msg := &discordgo.MessageSend{
+		AllowedMentions: discordgo.AllowedMentions{},
+	}
 
 	// Default filename
 	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
+	embeds := []*discordgo.MessageEmbed{}
+	// limitation from discord
+	maxEmbeds := 10
 
 	for key, val := range messageSdict {
 
@@ -227,11 +232,24 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			if val == nil {
 				continue
 			}
-			embed, err := CreateEmbed(val)
-			if err != nil {
-				return nil, err
+			switch val.(type) {
+			case Slice, []*discordgo.MessageEmbed:
+				v, _ := indirect(reflect.ValueOf(val))
+				for i := 0; i < v.Len() && i < maxEmbeds; i++ {
+					embed, err := CreateEmbed(v.Index(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					embeds = append(embeds, embed)
+				}
+				msg.Embeds = embeds
+			default:
+				embed, err := CreateEmbed(val)
+				if err != nil {
+					return nil, err
+				}
+				msg.Embeds = []*discordgo.MessageEmbed{embed}
 			}
-			msg.Embed = embed
 		case "file":
 			stringFile := ToString(val)
 			if len(stringFile) > 100000 {
@@ -273,7 +291,9 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 		return nil, err
 	}
 	msg := &discordgo.MessageEdit{}
-
+	embeds := []*discordgo.MessageEmbed{}
+	// limitation from discord
+	maxEmbeds := 10
 	for key, val := range messageSdict {
 
 		switch key {
@@ -282,14 +302,26 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			msg.Content = &temp
 		case "embed":
 			if val == nil {
-				msg.Embed = (&discordgo.MessageEmbed{}).MarshalNil(true)
 				continue
 			}
-			embed, err := CreateEmbed(val)
-			if err != nil {
-				return nil, err
+			switch val.(type) {
+			case Slice, []*discordgo.MessageEmbed:
+				v, _ := indirect(reflect.ValueOf(val))
+				for i := 0; i < v.Len() && i < maxEmbeds; i++ {
+					embed, err := CreateEmbed(v.Index(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					embeds = append(embeds, embed)
+				}
+				msg.Embeds = embeds
+			default:
+				embed, err := CreateEmbed(val)
+				if err != nil {
+					return nil, err
+				}
+				msg.Embeds = []*discordgo.MessageEmbed{embed}
 			}
-			msg.Embed = embed
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}

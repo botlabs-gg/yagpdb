@@ -110,6 +110,9 @@ const (
 
 	GatewayIntentDirectMessageTyping GatewayIntent = 1 << 14
 	// - TYPING_START
+	GatewayIntentMessageContent GatewayIntent = 1 << 15
+
+	GatewayIntentGuildScheduledEvents GatewayIntent = 1 << 16
 )
 
 // max size of buffers before they're discarded (e.g after a big incmoing event)

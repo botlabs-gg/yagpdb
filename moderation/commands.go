@@ -381,6 +381,98 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 	{
 		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "Timeout",
+		Description:   "Timeouts a member",
+		Arguments: []*dcmd.ArgDef{
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Duration", Type: &commands.DurationArg{}},
+			{Name: "Reason", Type: dcmd.String},
+		},
+		RequiredDiscordPermsHelp: "TimeoutMembers/ModerateMembers or ManageServer",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionModerateMembers}},
+		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
+		SlashCommandEnabled:      true,
+		DefaultEnabled:           false,
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
+			if err != nil {
+				return nil, err
+			}
+
+			reason := parsed.Args[2].Str()
+			reason, err = MBaseCmdSecond(parsed, reason, config.TimeoutReasonOptional, discordgo.PermissionModerateMembers, config.TimeoutCmdRoles, config.TimeoutEnabled)
+			if err != nil {
+				return nil, err
+			}
+
+			d := time.Duration(config.DefaultMuteDuration.Int64) * time.Minute
+			if parsed.Args[1].Value != nil {
+				d = parsed.Args[1].Value.(time.Duration)
+			}
+			if d < time.Minute {
+				d = time.Minute
+			}
+
+			logger.Info(d.Seconds())
+
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
+			if err != nil || member == nil {
+				return "Member not found", err
+			}
+
+			var msg *discordgo.Message
+			if parsed.TraditionalTriggerData != nil {
+				msg = parsed.TraditionalTriggerData.Message
+			}
+			err = TimeoutUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, &member.User, d)
+			if err != nil {
+				return nil, err
+			}
+
+			return GenericCmdResp(MATimedOut, target, d, true, false), nil
+		},
+	}, {
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "RemoveTimeOut",
+		Description:   "Removes a members timeout",
+		RequiredArgs:  1,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Reason", Type: dcmd.String},
+		},
+		RequiredDiscordPermsHelp: "TimeoutMember/ModerateMember or ManageServer",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionModerateMembers}},
+		SlashCommandEnabled:      true,
+		DefaultEnabled:           false,
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
+			if err != nil {
+				return nil, err
+			}
+
+			reason := parsed.Args[1].Str()
+			reason, err = MBaseCmdSecond(parsed, reason, config.TimeoutRemoveReasonOptional, discordgo.PermissionModerateMembers, config.TimeoutCmdRoles, config.TimeoutEnabled)
+			if err != nil {
+				return nil, err
+			}
+
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
+			if err != nil || member == nil {
+				return "Member not found", err
+			}
+
+			err = RemoveTimeout(config, parsed.GuildData.GS.ID, parsed.Author, reason, &member.User)
+			if err != nil {
+				return nil, err
+			}
+
+			return GenericCmdResp(MATimeOutRemoved, target, 0, false, true), nil
+		},
+	},
+	{
+		CustomEnabled: true,
 		Cooldown:      5,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Report",
@@ -437,7 +529,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			send := &discordgo.MessageSend{
 				Content: topContent,
-				Embed:   embed,
+				Embeds:  []*discordgo.MessageEmbed{embed},
 				AllowedMentions: discordgo.AllowedMentions{
 					Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
 				},

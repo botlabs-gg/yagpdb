@@ -30,6 +30,14 @@ type Config struct {
 	BanMessage           string        `valid:"template,5000"`
 	DefaultBanDeleteDays sql.NullInt64 `gorm:"default:1" valid:"0,7"`
 
+	// Timeout
+	TimeoutEnabled              bool
+	TimeoutCmdRoles             pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	TimeoutReasonOptional       bool
+	TimeoutRemoveReasonOptional bool
+	TimeoutMessage              string        `valid:"template,5000"`
+	DefaultTimeoutDuration      sql.NullInt64 `gorm:"default:10" valid:"0,"`
+
 	// Mute/unmute
 	MuteEnabled             bool
 	MuteCmdRoles            pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
@@ -60,6 +68,7 @@ type Config struct {
 	LogUnbans     bool
 	LogBans       bool
 	LogKicks      bool `gorm:"default:true"`
+	LogTimeouts   bool
 
 	GiveRoleCmdEnabled bool
 	GiveRoleCmdModlog  bool

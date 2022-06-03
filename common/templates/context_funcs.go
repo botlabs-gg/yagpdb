@@ -42,13 +42,22 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 			Text:    embedInfo,
 			IconURL: gIcon,
 		}
-		msgSend.Embed = t
-	case *discordgo.MessageSend:
-		msgSend = t
-		if msgSend.Embed != nil {
-			msgSend.Embed.Footer = &discordgo.MessageEmbedFooter{
+		msgSend.Embeds = []*discordgo.MessageEmbed{t}
+	case []*discordgo.MessageEmbed:
+		for _, e := range t {
+			e.Footer = &discordgo.MessageEmbedFooter{
 				Text:    embedInfo,
 				IconURL: gIcon,
+			}
+		}
+	case *discordgo.MessageSend:
+		msgSend = t
+		if len(msgSend.Embeds) > 0 {
+			for _, e := range msgSend.Embeds {
+				e.Footer = &discordgo.MessageEmbedFooter{
+					Text:    embedInfo,
+					IconURL: gIcon,
+				}
 			}
 			break
 		}
@@ -349,16 +358,26 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 					IconURL: icon,
 				}
 			}
-			msgSend.Embed = typedMsg
+			msgSend.Embeds = []*discordgo.MessageEmbed{typedMsg}
+		case []*discordgo.MessageEmbed:
+			if isDM {
+				for _, e := range typedMsg {
+					e.Footer = &discordgo.MessageEmbedFooter{
+						Text:    embedInfo,
+						IconURL: icon,
+					}
+				}
+			}
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
 			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
-
 			if isDM {
-				if typedMsg.Embed != nil {
-					typedMsg.Embed.Footer = &discordgo.MessageEmbedFooter{
-						Text:    embedInfo,
-						IconURL: icon,
+				if len(typedMsg.Embeds) > 0 {
+					for _, e := range msgSend.Embeds {
+						e.Footer = &discordgo.MessageEmbedFooter{
+							Text:    embedInfo,
+							IconURL: icon,
+						}
 					}
 				} else {
 					typedMsg.Content = info + "\n" + typedMsg.Content
@@ -403,14 +422,29 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 		switch typedMsg := msg.(type) {
 
 		case *discordgo.MessageEmbed:
-			msgEdit.Embed = typedMsg
+			msgEdit.Embeds = []*discordgo.MessageEmbed{typedMsg}
+		case []*discordgo.MessageEmbed:
+			msgEdit.Embeds = typedMsg
 		case *discordgo.MessageEdit:
-			//If both Embed and string are explicitly set as null, give an error message.
-			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" && typedMsg.Embed != nil && typedMsg.Embed.GetMarshalNil() {
-				return "", errors.New("both content and embed cannot be null")
+			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
+			//If there are no Embeds and string are explicitly set as null, give an error message.
+			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
+				if len(typedMsg.Embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+
+				//only keep valid embeds
+				for _, e := range typedMsg.Embeds {
+					if e != nil && !e.GetMarshalNil() {
+						embeds = append(typedMsg.Embeds, e)
+					}
+				}
+				if len(embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
 			}
 			msgEdit.Content = typedMsg.Content
-			msgEdit.Embed = typedMsg.Embed
+			msgEdit.Embeds = typedMsg.Embeds
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp

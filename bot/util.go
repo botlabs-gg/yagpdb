@@ -62,6 +62,15 @@ func SendDMEmbed(user int64, embed *discordgo.MessageEmbed) error {
 	return err
 }
 
+func SendDMEmbedList(user int64, embeds []*discordgo.MessageEmbed) error {
+	channel, err := common.BotSession.UserChannelCreate(user)
+	if err != nil {
+		return err
+	}
+	_, err = common.BotSession.ChannelMessageSendEmbedList(channel.ID, embeds)
+	return err
+}
+
 var (
 	ErrStartingUp      = errors.New("Starting up, caches are being filled...")
 	ErrGuildNotFound   = errors.New("Guild not found")
@@ -208,25 +217,24 @@ func SendMessageGS(gs *dstate.GuildSet, channelID int64, msg string) (permsOK bo
 	resp, err = common.BotSession.ChannelMessageSend(channelID, msg)
 	return true, resp, err
 }
-
-func SendMessageEmbed(guildID int64, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
+func SendMessageEmbed(guildID int64, channelID int64, embed *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
 	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks)
 	if !hasPerms {
 		return false, nil, err
 	}
 
-	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, msg)
+	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, embed)
 	permsOK = true
 	return
 }
 
-func SendMessageEmbedGS(gs *dstate.GuildSet, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
-	hasPerms, err := BotHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks)
+func SendMessageEmbedList(guildID int64, channelID int64, embeds []*discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
+	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks)
 	if !hasPerms {
 		return false, nil, err
 	}
 
-	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, msg)
+	resp, err = common.BotSession.ChannelMessageSendEmbedList(channelID, embeds)
 	permsOK = true
 	return
 }

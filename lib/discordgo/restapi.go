@@ -52,6 +52,11 @@ func (s *Session) Request(method, urlStr string, data interface{}) (response []b
 
 // RequestWithBucketID makes a (GET/POST/...) Requests to Discord REST API with JSON data.
 func (s *Session) RequestWithBucketID(method, urlStr string, data interface{}, bucketID string) (response []byte, err error) {
+	return s.RequestWithBucketIDAndHeaders(method, urlStr, data, nil, bucketID)
+}
+
+// RequestWithBucketID makes a (GET/POST/...) Requests to Discord REST API with JSON data.
+func (s *Session) RequestWithBucketIDAndHeaders(method, urlStr string, data interface{}, headers map[string]string, bucketID string) (response []byte, err error) {
 	var body []byte
 	if data != nil {
 		body, err = json.Marshal(data)
@@ -60,18 +65,18 @@ func (s *Session) RequestWithBucketID(method, urlStr string, data interface{}, b
 		}
 	}
 
-	return s.request(method, urlStr, "application/json", body, bucketID)
+	return s.request(method, urlStr, "application/json", body, headers, bucketID)
 }
 
 // request makes a (GET/POST/...) Requests to Discord REST API.
 // Sequence is the sequence number, if it fails with a 502 it will
 // retry with sequence+1 until it either succeeds or sequence >= session.MaxRestRetries
-func (s *Session) request(method, urlStr, contentType string, b []byte, bucketID string) (response []byte, err error) {
+func (s *Session) request(method, urlStr, contentType string, b []byte, headers map[string]string, bucketID string) (response []byte, err error) {
 	if bucketID == "" {
 		bucketID = strings.SplitN(urlStr, "?", 2)[0]
 	}
 
-	return s.RequestWithBucket(method, urlStr, contentType, b, s.Ratelimiter.GetBucket(bucketID))
+	return s.RequestWithBucket(method, urlStr, contentType, b, headers, s.Ratelimiter.GetBucket(bucketID))
 }
 
 type ReaderWithMockClose struct {
@@ -83,12 +88,12 @@ func (rwmc *ReaderWithMockClose) Close() error {
 }
 
 // RequestWithLockedBucket makes a request using a bucket that's already been locked
-func (s *Session) RequestWithBucket(method, urlStr, contentType string, b []byte, bucket *Bucket) (response []byte, err error) {
+func (s *Session) RequestWithBucket(method, urlStr, contentType string, b []byte, headers map[string]string, bucket *Bucket) (response []byte, err error) {
 
 	for i := 0; i < s.MaxRestRetries; i++ {
 		var retry bool
 		var ratelimited bool
-		response, retry, ratelimited, err = s.doRequest(method, urlStr, contentType, b, bucket)
+		response, retry, ratelimited, err = s.doRequest(method, urlStr, contentType, b, headers, bucket)
 		if !retry {
 			break
 		}
@@ -115,13 +120,13 @@ const (
 )
 
 // doRequest makes a request using a bucket
-func (s *Session) doRequest(method, urlStr, contentType string, b []byte, bucket *Bucket) (response []byte, retry bool, ratelimitRetry bool, err error) {
+func (s *Session) doRequest(method, urlStr, contentType string, b []byte, headers map[string]string, bucket *Bucket) (response []byte, retry bool, ratelimitRetry bool, err error) {
 
 	if atomic.LoadInt32(s.tokenInvalid) != 0 {
 		return nil, false, false, ErrTokenInvalid
 	}
 
-	req, resp, err := s.innerDoRequest(method, urlStr, contentType, b, bucket)
+	req, resp, err := s.innerDoRequest(method, urlStr, contentType, b, headers, bucket)
 	if err != nil {
 		return nil, true, false, err
 	}
@@ -196,7 +201,7 @@ func (s *Session) doRequest(method, urlStr, contentType string, b []byte, bucket
 	return
 }
 
-func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, bucket *Bucket) (*http.Request, *http.Response, error) {
+func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, headers map[string]string, bucket *Bucket) (*http.Request, *http.Response, error) {
 	bucketLockID := s.Ratelimiter.LockBucketObject(bucket)
 	defer func() {
 		err := bucket.Release(nil, bucketLockID)
@@ -219,6 +224,13 @@ func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, b
 		return &ReaderWithMockClose{bytes.NewReader(b)}, nil
 	}
 
+	// we may need to send a request with extra headers
+	if headers != nil {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
+
 	// Not used on initial login..
 	// TODO: Verify if a login, otherwise complain about no-token
 	if s.Token != "" {
@@ -232,7 +244,7 @@ func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, b
 	}
 
 	// TODO: Make a configurable static variable.
-	req.Header.Set("User-Agent", fmt.Sprintf("DiscordBot (https://github.com/jonas747/discordgo, v%s)", VERSION))
+	req.Header.Set("User-Agent", fmt.Sprintf("DiscordBot (https://github.com/botlabs-gg/discordgo, v%s)", VERSION))
 
 	// for things such as stats collecting in the roundtripper for example
 	ctx := context.WithValue(req.Context(), CtxKeyRatelimitBucket, bucket)
@@ -255,91 +267,6 @@ func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, b
 func unmarshal(data []byte, v interface{}) error {
 	err := json.Unmarshal(data, v)
 	return err
-}
-
-// ------------------------------------------------------------------------------------------------
-// Functions specific to Discord Sessions
-// ------------------------------------------------------------------------------------------------
-
-// Login asks the Discord server for an authentication token.
-//
-// NOTE: While email/pass authentication is supported by DiscordGo it is
-// HIGHLY DISCOURAGED by Discord. Please only use email/pass to obtain a token
-// and then use that authentication token for all future connections.
-// Also, doing any form of automation with a user (non Bot) account may result
-// in that account being permanently banned from Discord.
-func (s *Session) Login(email, password string) (err error) {
-
-	data := struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}{email, password}
-
-	response, err := s.RequestWithBucketID("POST", EndpointLogin, data, EndpointLogin)
-	if err != nil {
-		return
-	}
-
-	temp := struct {
-		Token string `json:"token"`
-		MFA   bool   `json:"mfa"`
-	}{}
-
-	err = unmarshal(response, &temp)
-	if err != nil {
-		return
-	}
-
-	s.Token = temp.Token
-	s.MFA = temp.MFA
-	return
-}
-
-// Register sends a Register request to Discord, and returns the authentication token
-// Note that this account is temporary and should be verified for future use.
-// Another option is to save the authentication token external, but this isn't recommended.
-func (s *Session) Register(username string) (token string, err error) {
-
-	data := struct {
-		Username string `json:"username"`
-	}{username}
-
-	response, err := s.RequestWithBucketID("POST", EndpointRegister, data, EndpointRegister)
-	if err != nil {
-		return
-	}
-
-	temp := struct {
-		Token string `json:"token"`
-	}{}
-
-	err = unmarshal(response, &temp)
-	if err != nil {
-		return
-	}
-
-	token = temp.Token
-	return
-}
-
-// Logout sends a logout request to Discord.
-// This does not seem to actually invalidate the token.  So you can still
-// make API calls even after a Logout.  So, it seems almost pointless to
-// even use.
-func (s *Session) Logout() (err error) {
-
-	//  _, err = s.Request("POST", LOGOUT, fmt.Sprintf(`{"token": "%s"}`, s.Token))
-
-	if s.Token == "" {
-		return
-	}
-
-	data := struct {
-		Token string `json:"token"`
-	}{s.Token}
-
-	_, err = s.RequestWithBucketID("POST", EndpointLogout, data, EndpointLogout)
-	return
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -820,11 +747,12 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID int64, reason string,
 		data["delete_message_days"] = days
 	}
 
+	headers := make(map[string]string)
 	if reason != "" {
-		data["reason"] = reason
+		headers["X-Audit-Log-Reason"] = reason
 	}
 
-	_, err = s.RequestWithBucketID("PUT", uri, data, EndpointGuildBan(guildID, 0))
+	_, err = s.RequestWithBucketIDAndHeaders("PUT", uri, data, headers, EndpointGuildBan(guildID, 0))
 	return
 }
 
@@ -983,6 +911,34 @@ func (s *Session) GuildMemberNickname(guildID, userID int64, nickname string) (e
 	return
 }
 
+// GuildMemberTimeoutWithReason times out a guild member with a mandatory reason
+//  guildID   : The ID of a Guild.
+//  userID    : The ID of a User.
+//  until     : The timestamp for how long a member should be timed out.
+//              Set to nil to remove timeout.
+// reason    : The reason for the timeout
+func (s *Session) GuildMemberTimeoutWithReason(guildID int64, userID int64, until *time.Time, reason string) (err error) {
+	data := struct {
+		CommunicationDisabledUntil *time.Time `json:"communication_disabled_until"`
+	}{until}
+
+	headers := make(map[string]string)
+	if reason != "" {
+		headers["X-Audit-Log-Reason"] = reason
+	}
+	_, err = s.RequestWithBucketIDAndHeaders("PATCH", EndpointGuildMember(guildID, userID), data, headers, EndpointGuildMember(guildID, 0))
+	return
+}
+
+// GuildMemberTimeout times out a guild member
+//  guildID   : The ID of a Guild.
+//  userID    : The ID of a User.
+//  until     : The timestamp for how long a member should be timed out.
+//              Set to nil to remove timeout.
+func (s *Session) GuildMemberTimeout(guildID int64, userID int64, until *time.Time, reason string) (err error) {
+	return s.GuildMemberTimeoutWithReason(guildID, userID, until, reason)
+}
+
 // GuildMemberNicknameMe updates the nickname the current user
 // guildID   : The ID of a guild
 // nickname  : The new nickname
@@ -1023,7 +979,7 @@ func (s *Session) GuildMemberRoleRemove(guildID, userID, roleID int64) (err erro
 // guildID   : The ID of a Guild.
 func (s *Session) GuildChannels(guildID int64) (st []*Channel, err error) {
 
-	body, err := s.request("GET", EndpointGuildChannels(guildID), "", nil, EndpointGuildChannels(guildID))
+	body, err := s.request("GET", EndpointGuildChannels(guildID), "", nil, nil, EndpointGuildChannels(guildID))
 	if err != nil {
 		return
 	}
@@ -1638,18 +1594,30 @@ var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 // ChannelMessageSendComplex sends a message to the given channel.
 // channelID : The ID of a Channel.
 // data      : The message struct to send.
-func (s *Session) ChannelMessageSendComplex(channelID int64, data *MessageSend) (st *Message, err error) {
-	if data.Embed != nil && data.Embed.Type == "" {
-		data.Embed.Type = "rich"
+func (s *Session) ChannelMessageSendComplex(channelID int64, msg *MessageSend) (st *Message, err error) {
+	if len(msg.Embeds) > 0 {
+		totalNils := 0
+		for i := 0; i < len(msg.Embeds); i++ {
+			if msg.Embeds[i] != nil && msg.Embeds[i].GetMarshalNil() {
+				if msg.Embeds[i].Type == "" {
+					msg.Embeds[i].Type = "rich"
+				}
+			} else {
+				totalNils++
+			}
+		}
+		if len(msg.Embeds) > 0 && totalNils == len(msg.Embeds) {
+			msg.Embeds = nil
+		}
 	}
 
 	endpoint := EndpointChannelMessages(channelID)
 
 	// TODO: Remove this when compatibility is not required.
-	files := data.Files
-	if data.File != nil {
+	files := msg.Files
+	if msg.File != nil {
 		if files == nil {
-			files = []*File{data.File}
+			files = []*File{msg.File}
 		} else {
 			err = fmt.Errorf("cannot specify both File and Files")
 			return
@@ -1662,7 +1630,7 @@ func (s *Session) ChannelMessageSendComplex(channelID int64, data *MessageSend) 
 		bodywriter := multipart.NewWriter(body)
 
 		var payload []byte
-		payload, err = json.Marshal(data)
+		payload, err = json.Marshal(msg)
 		if err != nil {
 			return
 		}
@@ -1706,9 +1674,9 @@ func (s *Session) ChannelMessageSendComplex(channelID int64, data *MessageSend) 
 			return
 		}
 
-		response, err = s.request("POST", endpoint, bodywriter.FormDataContentType(), body.Bytes(), endpoint)
+		response, err = s.request("POST", endpoint, bodywriter.FormDataContentType(), body.Bytes(), nil, endpoint)
 	} else {
-		response, err = s.RequestWithBucketID("POST", endpoint, data, endpoint)
+		response, err = s.RequestWithBucketID("POST", endpoint, msg, endpoint)
 	}
 	if err != nil {
 		return
@@ -1728,12 +1696,21 @@ func (s *Session) ChannelMessageSendTTS(channelID int64, content string) (*Messa
 	})
 }
 
+// ChannelMessageSendEmbeds sends a message to the given channel with list of embedded data.
+// channelID : The ID of a Channel.
+// embed     : The list embed data to send.
+func (s *Session) ChannelMessageSendEmbedList(channelID int64, embeds []*MessageEmbed) (*Message, error) {
+	return s.ChannelMessageSendComplex(channelID, &MessageSend{
+		Embeds: embeds,
+	})
+}
+
 // ChannelMessageSendEmbed sends a message to the given channel with embedded data.
 // channelID : The ID of a Channel.
 // embed     : The embed data to send.
 func (s *Session) ChannelMessageSendEmbed(channelID int64, embed *MessageEmbed) (*Message, error) {
 	return s.ChannelMessageSendComplex(channelID, &MessageSend{
-		Embed: embed,
+		Embeds: []*MessageEmbed{embed},
 	})
 }
 
@@ -1749,8 +1726,20 @@ func (s *Session) ChannelMessageEdit(channelID, messageID int64, content string)
 // ChannelMessageEditComplex edits an existing message, replacing it entirely with
 // the given MessageEdit struct
 func (s *Session) ChannelMessageEditComplex(m *MessageEdit) (st *Message, err error) {
-	if m.Embed != nil && m.Embed.Type == "" {
-		m.Embed.Type = "rich"
+	if len(m.Embeds) > 0 {
+		totalNils := 0
+		for i := 0; i < len(m.Embeds); i++ {
+			if m.Embeds[i] != nil && m.Embeds[i].GetMarshalNil() {
+				if m.Embeds[i].Type == "" {
+					m.Embeds[i].Type = "rich"
+				}
+			} else {
+				totalNils++
+			}
+		}
+		if len(m.Embeds) > 0 && totalNils == len(m.Embeds) {
+			m.Embeds = nil
+		}
 	}
 
 	response, err := s.RequestWithBucketID("PATCH", EndpointChannelMessage(m.Channel, m.ID), m, EndpointChannelMessage(m.Channel, 0))
@@ -1767,7 +1756,15 @@ func (s *Session) ChannelMessageEditComplex(m *MessageEdit) (st *Message, err er
 // messageID : The ID of a Message
 // embed     : The embed data to send
 func (s *Session) ChannelMessageEditEmbed(channelID, messageID int64, embed *MessageEmbed) (*Message, error) {
-	return s.ChannelMessageEditComplex(NewMessageEdit(channelID, messageID).SetEmbed(embed))
+	return s.ChannelMessageEditComplex(NewMessageEdit(channelID, messageID).SetEmbeds([]*MessageEmbed{embed}))
+}
+
+// ChannelMessageEditEmbeds edits an existing message with a list of embedded data.
+// channelID : The ID of a Channel
+// messageID : The ID of a Message
+// embeds     : The list of embed data to send
+func (s *Session) ChannelMessageEditEmbedList(channelID, messageID int64, embeds []*MessageEmbed) (*Message, error) {
+	return s.ChannelMessageEditComplex(NewMessageEdit(channelID, messageID).SetEmbeds(embeds))
 }
 
 // ChannelMessageDelete deletes a message from the Channel.
@@ -2282,7 +2279,7 @@ func (s *Session) WebhookExecuteComplex(webhookID int64, token string, wait bool
 			return
 		}
 
-		response, err = s.request("POST", endpoint, bodywriter.FormDataContentType(), body.Bytes(), EndpointWebhookToken(webhookID, token))
+		response, err = s.request("POST", endpoint, bodywriter.FormDataContentType(), body.Bytes(), nil, EndpointWebhookToken(webhookID, token))
 	} else {
 		response, err = s.RequestWithBucketID("POST", endpoint, data, EndpointWebhookToken(webhookID, token))
 	}
