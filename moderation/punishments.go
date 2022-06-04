@@ -364,7 +364,7 @@ func RemoveTimeout(config *Config, guildID int64, author *discordgo.User, reason
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
-	action := MATimeOutRemoved
+	action := MATimeoutRemoved
 
 	err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, nil, reason)
 	if err != nil {

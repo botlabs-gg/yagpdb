@@ -1731,7 +1731,6 @@ func (s *Session) ChannelMessageEditComplex(msg *MessageEdit) (st *Message, err 
 		embeds = nil
 	} else {
 		for _, e := range msg.Embeds {
-			log.Printf("%v, %v", e, e.GetMarshalNil())
 			if e == nil {
 				totalNils++
 			} else {

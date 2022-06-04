@@ -435,8 +435,8 @@ var ModerationCommands = []*commands.YAGCommand{
 	}, {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
-		Name:          "RemoveTimeOut",
-		Description:   "Removes a members timeout",
+		Name:          "RemoveTimeout",
+		Description:   "Removes a member's timeout",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -473,7 +473,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return GenericCmdResp(MATimeOutRemoved, target, 0, false, true), nil
+			return GenericCmdResp(MATimeoutRemoved, target, 0, false, true), nil
 		},
 	},
 	{

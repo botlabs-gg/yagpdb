@@ -34,7 +34,7 @@ var (
 	MAUnbanned       = ModlogAction{Prefix: "Unbanned", Emoji: "🔓", Color: 0x62c65f}
 	MAWarned         = ModlogAction{Prefix: "Warned", Emoji: "⚠", Color: 0xfca253}
 	MATimedOut       = ModlogAction{Prefix: "Timed out", Emoji: "⏱", Color: 0x9b59b6}
-	MATimeOutRemoved = ModlogAction{Prefix: "Time-out removed ", Emoji: "⏱", Color: 0x9b59b6}
+	MATimeoutRemoved = ModlogAction{Prefix: "Time-out removed ", Emoji: "⏱", Color: 0x9b59b6}
 	MAGiveRole       = ModlogAction{Prefix: "", Emoji: "➕", Color: 0x53fcf9}
 	MARemoveRole     = ModlogAction{Prefix: "", Emoji: "➖", Color: 0x53fcf9}
 )
