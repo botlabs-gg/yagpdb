@@ -456,7 +456,7 @@ func (timeout *TimeoutUserEffect) Name() (name string) {
 }
 
 func (timeout *TimeoutUserEffect) Description() (description string) {
-	return "Mutes the user"
+	return "Timeouts the user"
 }
 
 func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
