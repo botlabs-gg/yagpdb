@@ -10,6 +10,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/go-twitter/twitter"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
@@ -58,6 +59,7 @@ func (p *Plugin) InitWeb() {
 	})
 
 	mux := goji.SubMux()
+	mux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	web.CPMux.Handle(pat.New("/twitter/*"), mux)
 	web.CPMux.Handle(pat.New("/twitter"), mux)
 
