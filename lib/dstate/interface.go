@@ -237,11 +237,12 @@ type MemberState struct {
 }
 
 type MemberFields struct {
-	JoinedAt discordgo.Timestamp
-	Roles    []int64
-	Nick     string
-	Avatar   string
-	Pending  bool
+	JoinedAt                   discordgo.Timestamp
+	Roles                      []int64
+	Nick                       string
+	Avatar                     string
+	Pending                    bool
+	CommunicationDisabledUntil *time.Time
 }
 
 type PresenceStatus int32
@@ -281,11 +282,12 @@ func MemberStateFromMember(member *discordgo.Member) *MemberState {
 		GuildID: member.GuildID,
 
 		Member: &MemberFields{
-			JoinedAt: member.JoinedAt,
-			Roles:    member.Roles,
-			Nick:     member.Nick,
-			Avatar:   member.Avatar,
-			Pending:  member.Pending,
+			JoinedAt:                   member.JoinedAt,
+			Roles:                      member.Roles,
+			Nick:                       member.Nick,
+			Avatar:                     member.Avatar,
+			Pending:                    member.Pending,
+			CommunicationDisabledUntil: member.CommunicationDisabledUntil,
 		},
 		Presence: nil,
 	}
@@ -299,13 +301,14 @@ func (ms *MemberState) DgoMember() *discordgo.Member {
 	}
 
 	m := &discordgo.Member{
-		GuildID:  ms.GuildID,
-		JoinedAt: ms.Member.JoinedAt,
-		Nick:     ms.Member.Nick,
-		Avatar:   ms.Member.Avatar,
-		Roles:    ms.Member.Roles,
-		User:     &ms.User,
-		Pending:  ms.Member.Pending,
+		GuildID:                    ms.GuildID,
+		JoinedAt:                   ms.Member.JoinedAt,
+		Nick:                       ms.Member.Nick,
+		Avatar:                     ms.Member.Avatar,
+		Roles:                      ms.Member.Roles,
+		User:                       &ms.User,
+		Pending:                    ms.Member.Pending,
+		CommunicationDisabledUntil: ms.Member.CommunicationDisabledUntil,
 	}
 
 	if ms.Member != nil {

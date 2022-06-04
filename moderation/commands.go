@@ -406,7 +406,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			d := time.Duration(config.DefaultMuteDuration.Int64) * time.Minute
+			d := time.Duration(config.DefaultTimeoutDuration.Int64) * time.Minute
 			if parsed.Args[1].Value != nil {
 				d = parsed.Args[1].Value.(time.Duration)
 			}
@@ -453,7 +453,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			reason := parsed.Args[1].Str()
-			reason, err = MBaseCmdSecond(parsed, reason, config.TimeoutRemoveReasonOptional, discordgo.PermissionModerateMembers, config.TimeoutCmdRoles, config.TimeoutEnabled)
+			reason, err = MBaseCmdSecond(parsed, reason, config.TimeoutReasonOptional, discordgo.PermissionModerateMembers, config.TimeoutCmdRoles, config.TimeoutEnabled)
 			if err != nil {
 				return nil, err
 			}
@@ -461,6 +461,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
+			}
+
+			memberTimeout := member.Member.CommunicationDisabledUntil
+			if memberTimeout == nil || memberTimeout.Before(time.Now()) {
+				return "Member is not timed out", nil
 			}
 
 			err = RemoveTimeout(config, parsed.GuildData.GS.ID, parsed.Author, reason, &member.User)

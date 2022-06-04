@@ -36,7 +36,7 @@ type Config struct {
 	TimeoutReasonOptional       bool
 	TimeoutRemoveReasonOptional bool
 	TimeoutMessage              string        `valid:"template,5000"`
-	DefaultTimeoutDuration      sql.NullInt64 `gorm:"default:10" valid:"0,"`
+	DefaultTimeoutDuration      sql.NullInt64 `gorm:"default:10" valid:"0,40320"`
 
 	// Mute/unmute
 	MuteEnabled             bool

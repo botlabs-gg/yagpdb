@@ -1595,20 +1595,23 @@ var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 // channelID : The ID of a Channel.
 // data      : The message struct to send.
 func (s *Session) ChannelMessageSendComplex(channelID int64, msg *MessageSend) (st *Message, err error) {
-	if len(msg.Embeds) > 0 {
-		totalNils := 0
-		for i := 0; i < len(msg.Embeds); i++ {
-			if msg.Embeds[i] != nil && msg.Embeds[i].GetMarshalNil() {
-				if msg.Embeds[i].Type == "" {
-					msg.Embeds[i].Type = "rich"
-				}
-			} else {
-				totalNils++
+	totalNils := 0
+	totalEmbeds := len(msg.Embeds)
+	embeds := make([]*MessageEmbed, 0, len(msg.Embeds))
+	for _, e := range msg.Embeds {
+		if e == nil {
+			totalNils++
+		} else {
+			if e.Type != "" {
+				e.Type = "rich"
 			}
+			embeds = append(embeds, e)
 		}
-		if len(msg.Embeds) > 0 && totalNils == len(msg.Embeds) {
-			msg.Embeds = nil
-		}
+	}
+	if totalEmbeds > 0 && totalNils == totalEmbeds {
+		msg.Embeds = nil
+	} else {
+		msg.Embeds = embeds
 	}
 
 	endpoint := EndpointChannelMessages(channelID)
@@ -1725,24 +1728,32 @@ func (s *Session) ChannelMessageEdit(channelID, messageID int64, content string)
 
 // ChannelMessageEditComplex edits an existing message, replacing it entirely with
 // the given MessageEdit struct
-func (s *Session) ChannelMessageEditComplex(m *MessageEdit) (st *Message, err error) {
-	if len(m.Embeds) > 0 {
-		totalNils := 0
-		for i := 0; i < len(m.Embeds); i++ {
-			if m.Embeds[i] != nil && m.Embeds[i].GetMarshalNil() {
-				if m.Embeds[i].Type == "" {
-					m.Embeds[i].Type = "rich"
-				}
-			} else {
+func (s *Session) ChannelMessageEditComplex(msg *MessageEdit) (st *Message, err error) {
+	totalNils := 0
+	totalEmbeds := len(msg.Embeds)
+	embeds := make([]*MessageEmbed, 0, len(msg.Embeds))
+	if totalEmbeds == 0 {
+		embeds = nil
+	} else {
+		for _, e := range msg.Embeds {
+			log.Printf("%v, %v", e, e.GetMarshalNil())
+			if e == nil {
 				totalNils++
+			} else {
+				if e.Type != "" {
+					e.Type = "rich"
+				}
+				embeds = append(embeds, e)
 			}
 		}
-		if len(m.Embeds) > 0 && totalNils == len(m.Embeds) {
-			m.Embeds = nil
+		if totalNils == totalEmbeds {
+			msg.Embeds = nil
+		} else {
+			msg.Embeds = embeds
 		}
 	}
 
-	response, err := s.RequestWithBucketID("PATCH", EndpointChannelMessage(m.Channel, m.ID), m, EndpointChannelMessage(m.Channel, 0))
+	response, err := s.RequestWithBucketID("PATCH", EndpointChannelMessage(msg.Channel, msg.ID), msg, EndpointChannelMessage(msg.Channel, 0))
 	if err != nil {
 		return
 	}
