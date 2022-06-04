@@ -213,16 +213,10 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		return nil, err
 	}
 
-	msg := &discordgo.MessageSend{
-		AllowedMentions: discordgo.AllowedMentions{},
-	}
+	msg := &discordgo.MessageSend{}
 
 	// Default filename
 	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
-	embeds := []*discordgo.MessageEmbed{}
-	// limitation from discord
-	maxEmbeds := 10
-
 	for key, val := range messageSdict {
 
 		switch key {
@@ -232,18 +226,17 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			if val == nil {
 				continue
 			}
-			switch val.(type) {
-			case Slice, []*discordgo.MessageEmbed:
-				v, _ := indirect(reflect.ValueOf(val))
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				const maxEmbeds = 10 // Discord limitation
 				for i := 0; i < v.Len() && i < maxEmbeds; i++ {
 					embed, err := CreateEmbed(v.Index(i).Interface())
 					if err != nil {
 						return nil, err
 					}
-					embeds = append(embeds, embed)
+					msg.Embeds = append(msg.Embeds, embed)
 				}
-				msg.Embeds = embeds
-			default:
+			} else {
 				embed, err := CreateEmbed(val)
 				if err != nil {
 					return nil, err
@@ -291,9 +284,6 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 		return nil, err
 	}
 	msg := &discordgo.MessageEdit{}
-	embeds := []*discordgo.MessageEmbed{}
-	// limitation from discord
-	maxEmbeds := 10
 	for key, val := range messageSdict {
 
 		switch key {
@@ -304,18 +294,17 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			if val == nil {
 				continue
 			}
-			switch val.(type) {
-			case Slice, []*discordgo.MessageEmbed:
-				v, _ := indirect(reflect.ValueOf(val))
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				const maxEmbeds = 10 // Discord limitation
 				for i := 0; i < v.Len() && i < maxEmbeds; i++ {
 					embed, err := CreateEmbed(v.Index(i).Interface())
 					if err != nil {
 						return nil, err
 					}
-					embeds = append(embeds, embed)
+					msg.Embeds = append(msg.Embeds, embed)
 				}
-				msg.Embeds = embeds
-			default:
+			} else {
 				embed, err := CreateEmbed(val)
 				if err != nil {
 					return nil, err
