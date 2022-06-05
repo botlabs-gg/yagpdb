@@ -24,6 +24,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/guildunavailable"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/howlongtobeat"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/info"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/inspire"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/invite"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/leaveserver"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listflags"
@@ -99,6 +100,7 @@ func (p *Plugin) AddCommands() {
 		topgames.Command,
 		xkcd.Command,
 		howlongtobeat.Command,
+		inspire.Command,
 
 		// Maintenance
 		stateinfo.Command,
