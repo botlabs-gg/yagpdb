@@ -430,7 +430,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return GenericCmdResp(MATimeoutAddedTo, target, d, true, false), nil
+			return GenericCmdResp(MATimeoutAdded, target, d, true, false), nil
 		},
 	}, {
 		CustomEnabled: true,
@@ -473,7 +473,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return GenericCmdResp(MATimeoutRemovedFrom, target, 0, false, true), nil
+			return GenericCmdResp(MATimeoutRemoved, target, 0, false, true), nil
 		},
 	},
 	{
