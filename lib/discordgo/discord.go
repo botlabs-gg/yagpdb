@@ -17,10 +17,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
@@ -136,19 +134,7 @@ func New(args ...interface{}) (s *Session, err error) {
 	// Otherwise get auth token from Discord, if a token was specified
 	// Discord will verify it for free, or log the user in if it is
 	// invalid.
-	if pass == "" {
-		s.Token = auth
-	} else {
-		err = s.Login(auth, pass)
-		if err != nil || s.Token == "" {
-			if s.MFA {
-				err = ErrMFA
-			} else {
-				err = fmt.Errorf("Unable to fetch discord authentication token. %v", err)
-			}
-			return
-		}
-	}
+	s.Token = auth
 
 	// The Session is now able to have RestAPI methods called on it.
 	// It is recommended that you now call Open() so that events will trigger.
@@ -162,22 +148,6 @@ func CheckRetry(_ context.Context, resp *http.Response, err error) (bool, error)
 	}
 
 	return false, nil
-}
-
-type retryableLogger struct{}
-
-func (r *retryableLogger) Printf(format string, args ...interface{}) {
-	s := fmt.Sprintf(format, args...)
-
-	if strings.Contains(s, "[DEBUG]") {
-		return
-	}
-
-	if strings.HasSuffix(s, "\n") {
-		s = s[:len(s)-1]
-	}
-
-	log.Println(s)
 }
 
 func StrID(id int64) string {

@@ -159,7 +159,7 @@ type File struct {
 // MessageSend stores all parameters you can send with ChannelMessageSendComplex.
 type MessageSend struct {
 	Content         string          `json:"content,omitempty"`
-	Embed           *MessageEmbed   `json:"embed,omitempty"`
+	Embeds          []*MessageEmbed `json:"embeds,omitempty"`
 	Tts             bool            `json:"tts"`
 	Files           []*File         `json:"-"`
 	AllowedMentions AllowedMentions `json:"allowed_mentions"`
@@ -172,7 +172,7 @@ type MessageSend struct {
 // is also where you should get the instance from.
 type MessageEdit struct {
 	Content         *string          `json:"content,omitempty"`
-	Embed           *MessageEmbed    `json:"embed,omitempty"`
+	Embeds          []*MessageEmbed  `json:"embeds,omitempty"`
 	AllowedMentions *AllowedMentions `json:"allowed_mentions,omitempty"`
 
 	ID      int64
@@ -195,10 +195,10 @@ func (m *MessageEdit) SetContent(str string) *MessageEdit {
 	return m
 }
 
-// SetEmbed is a convenience function for setting the embed,
+// SetEmbeds is a convenience function for setting the embeds,
 // so you can chain commands.
-func (m *MessageEdit) SetEmbed(embed *MessageEmbed) *MessageEdit {
-	m.Embed = embed
+func (m *MessageEdit) SetEmbeds(embeds []*MessageEmbed) *MessageEdit {
+	m.Embeds = embeds
 	return m
 }
 
