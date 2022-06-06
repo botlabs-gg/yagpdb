@@ -152,12 +152,7 @@ func (p *Plugin) removeAllSubsForChannel(channel string) {
 	go p.MaybeRemoveChannelWatch(channel)
 }
 
-func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle string, videoID string, mentionEveryone bool) {
-	content := fmt.Sprintf("**%s** uploaded a new youtube video!\n%s", channelTitle, "https://www.youtube.com/watch?v="+videoID)
-	if mentionEveryone {
-		content += " @everyone"
-	}
-
+func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle string, videoID string, mentionEveryone bool, content string) {
 	parsedChannel, _ := strconv.ParseInt(discordChannel, 10, 64)
 	parsedGuild, _ := strconv.ParseInt(guild, 10, 64)
 
@@ -195,12 +190,13 @@ var (
 	ErrNoChannel = errors.New("No channel with that id found")
 )
 
-func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, youtubeUsername string, mentionEveryone bool) (*ChannelSubscription, error) {
+func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, youtubeUsername string, mentionEveryone bool, publishLivestream bool) (*ChannelSubscription, error) {
 	sub := &ChannelSubscription{
-		GuildID:         discordgo.StrID(guildID),
-		ChannelID:       discordgo.StrID(discordChannelID),
-		MentionEveryone: mentionEveryone,
-		Enabled:         true,
+		GuildID:           discordgo.StrID(guildID),
+		ChannelID:         discordgo.StrID(discordChannelID),
+		MentionEveryone:   mentionEveryone,
+		PublishLivestream: publishLivestream,
+		Enabled:           true,
 	}
 
 	call := p.YTService.Channels.List([]string{"snippet"})
@@ -332,12 +328,6 @@ func (p *Plugin) CheckVideo(videoID string, channelID string) error {
 	}
 
 	item := resp.Items[0]
-
-	if item.Snippet.LiveBroadcastContent != "none" {
-		// ignore livestreams for now, might enable them at some point
-		return nil
-	}
-
 	parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 	if err != nil {
 		return errors.New("Failed parsing youtube timestamp: " + err.Error() + ": " + item.Snippet.PublishedAt)
@@ -368,7 +358,28 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 
 	for _, sub := range subs {
 		if sub.Enabled {
-			p.sendNewVidMessage(sub.GuildID, sub.ChannelID, video.Snippet.ChannelTitle, video.Id, sub.MentionEveryone)
+			var content string
+
+			//if livestream notifications are disabled, and the video is a livestream, don't post it
+			if !sub.PublishLivestream && video.Snippet.LiveBroadcastContent != "none" {
+				continue
+			}
+
+			switch video.Snippet.LiveBroadcastContent {
+			case "live":
+				content = fmt.Sprintf("**%s** started a livestream now!\n%s", video.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+video.Id)
+			case "upcoming":
+				content = fmt.Sprintf("**%s** will be livestreaming <t:%s:R>!\n%s", video.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+video.Id, video.LiveStreamingDetails.ScheduledStartTime)
+			case "completed":
+				content = fmt.Sprintf("**%s** completed a livestream!\n%s", video.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+video.Id)
+			default:
+				content = fmt.Sprintf("**%s** uploaded a new youtube video!\n%s", video.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+video.Id)
+			}
+
+			if sub.MentionEveryone {
+				content += " @everyone"
+			}
+			p.sendNewVidMessage(sub.GuildID, sub.ChannelID, video.Snippet.ChannelTitle, video.Id, sub.MentionEveryone, content)
 		}
 	}
 
