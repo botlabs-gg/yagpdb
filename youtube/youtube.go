@@ -67,6 +67,7 @@ type ChannelSubscription struct {
 	YoutubeChannelID   string
 	YoutubeChannelName string
 	MentionEveryone    bool
+	PublishLivestream  bool
 	Enabled            bool `sql:"DEFAULT:true"`
 }
 

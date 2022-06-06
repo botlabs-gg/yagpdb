@@ -44,6 +44,7 @@
                     </div>
 
                     {{checkbox "MentionEveryone" "new-mention-everyone" `Mention everyone` false}}
+                    {{checkbox "PublishLivestream" "new-publish-livestream" `Publish livestreams` false}}
                     <button type="submit" class="btn btn-success">Add</button>
                 </form>
             </div>
@@ -65,6 +66,7 @@
                             <th>Youtube</th>
                             <th>Discord channel</th>
                             <th>Mention everyone</th>
+                            <th>Publish livestreams</th>
                             <th>Enabled</th>
                             <th>Actions</th>
                         </tr>
@@ -83,6 +85,9 @@
                             </td>
                             <td>
                                 {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}
+                            </td>
+                            <td>
+                                {{checkbox "PublishLivestream" (joinStr "" "publish-livestream-" .ID) `Publish livestreams` .PublishLivestream (joinStr "" `form="sub-item-` .ID `"`)}}
                             </td>
                             <td>
                                 {{checkbox "Enabled" (joinStr "" "feed-enabled-" .ID) `Enabled` .Enabled (joinStr "" `form="sub-item-` .ID `"`)}}

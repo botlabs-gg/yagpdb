@@ -46,6 +46,7 @@ type Form struct {
 	DiscordChannel     int64 `valid:"channel,false"`
 	ID                 uint
 	MentionEveryone    bool
+	PublishLivestream  bool
 	Enabled            bool
 }
 
@@ -115,13 +116,13 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	cID := trimYouTubeURLParts(data.YoutubeChannelID)
 	username := trimYouTubeURLParts(data.YoutubeChannelUser)
 	if cID == "" && username == "" {
-		return templateData.AddAlerts(web.ErrorAlert("Neither channelid or username specified.")), errors.New("ChannelID and username not specified")
+		return templateData.AddAlerts(web.ErrorAlert("Neither channelid or username specified.")), errors.New("channelID or username not specified")
 	}
 
-	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, cID, username, data.MentionEveryone)
+	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, cID, username, data.MentionEveryone, data.PublishLivestream)
 	if err != nil {
 		if err == ErrNoChannel {
-			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("Channel not found")
+			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("channel not found")
 		}
 		return templateData, err
 	}
@@ -183,6 +184,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
 
 	sub.MentionEveryone = data.MentionEveryone
+	sub.PublishLivestream = data.PublishLivestream
 	sub.ChannelID = discordgo.StrID(data.DiscordChannel)
 	sub.Enabled = data.Enabled
 
@@ -264,7 +266,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = p.CheckVideo(parsed.VideoId, parsed.ChannelID)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Failed parsing checking new yotuube video")
+		web.CtxLogger(ctx).WithError(err).Error("Failed parsing checking new youtube video")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
