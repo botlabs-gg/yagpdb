@@ -160,12 +160,12 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 }
 
 var ActionMap = map[string]string{
-	"Muted":     "Mute DM",
-	"Unmuted":   "Unmute DM",
-	"Kicked":    "Kick DM",
-	"Banned":    "Ban DM",
-	"Warned":    "Warn DM",
-	"Timed Out": "Time-out DM",
+	"Muted":         "Mute DM",
+	"Unmuted":       "Unmute DM",
+	"Kicked":        "Kick DM",
+	"Banned":        "Ban DM",
+	"Warned":        "Warn DM",
+	"Timeout Added": "Timeout DM",
 }
 
 func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildSet, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int) {
