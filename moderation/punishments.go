@@ -71,7 +71,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
 	case PunishmentTimeout:
-		action = MATimedOut
+		action = MATimeoutAddedTo
 		if duration > 0 {
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
@@ -160,12 +160,12 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 }
 
 var ActionMap = map[string]string{
-	"Muted":         "Mute DM",
-	"Unmuted":       "Unmute DM",
-	"Kicked":        "Kick DM",
-	"Banned":        "Ban DM",
-	"Warned":        "Warn DM",
-	"Timeout Added": "Timeout DM",
+	MAMute.Prefix:           "Mute DM",
+	MAUnmute.Prefix:         "Unmute DM",
+	MAKick.Prefix:           "Kick DM",
+	MABanned.Prefix:         "Ban DM",
+	MAWarned.Prefix:         "Warn DM",
+	MATimeoutAddedTo.Prefix: "Timeout DM",
 }
 
 func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildSet, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int) {
@@ -364,7 +364,7 @@ func RemoveTimeout(config *Config, guildID int64, author *discordgo.User, reason
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
-	action := MATimeoutRemoved
+	action := MATimeoutRemovedFrom
 
 	err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, nil, reason)
 	if err != nil {
