@@ -294,7 +294,7 @@ func updateCustomMessage(ctx context.Context, rm *models.RoleMenu) error {
 		if err != nil {
 			logger.WithError(err).WithField("message_id", rm.MessageID).Error("failed decoding rolemenu embed")
 		} else {
-			edit.Embed = &decoded
+			edit.Embeds = []*discordgo.MessageEmbed{&decoded}
 		}
 	}
 

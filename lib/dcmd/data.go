@@ -166,8 +166,8 @@ func (d *Data) SendFollowupMessage(reply interface{}, allowedMentions discordgo.
 				params.File = t.Files[0]
 			}
 
-			if t.Embed != nil {
-				params.Embeds = []*discordgo.MessageEmbed{t.Embed}
+			if len(t.Embeds) > 0 {
+				params.Embeds = t.Embeds
 			}
 
 			m, err := d.Session.CreateFollowupMessage(d.SlashCommandTriggerData.Interaction.ApplicationID, d.SlashCommandTriggerData.Interaction.Token, params)

@@ -306,7 +306,7 @@ func (e *EphemeralOrGuild) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 	default:
 		send := &discordgo.MessageSend{
 			Content:         e.Content,
-			Embed:           e.Embed,
+			Embeds:          []*discordgo.MessageEmbed{e.Embed},
 			AllowedMentions: discordgo.AllowedMentions{},
 		}
 

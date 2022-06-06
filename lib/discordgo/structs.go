@@ -767,6 +767,10 @@ type Member struct {
 
 	// Whether the user has not yet passed the guild's Membership Screening requirements
 	Pending bool `json:"pending"`
+
+	// The time at which the member's timeout will expire.
+	// Time in the past or nil if the user is not timed out.
+	TimeoutExpiresAt *time.Time `json:"communication_disabled_until"`
 }
 
 func (m *Member) GetGuildID() int64 {
