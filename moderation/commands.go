@@ -463,7 +463,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			memberTimeout := member.Member.CommunicationDisabledUntil
+			memberTimeout := member.Member.TimeoutExpiresAt
 			if memberTimeout == nil || memberTimeout.Before(time.Now()) {
 				return "Member is not timed out", nil
 			}

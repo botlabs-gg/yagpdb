@@ -914,7 +914,7 @@ func (s *Session) GuildMemberNickname(guildID, userID int64, nickname string) (e
 // reason    : The reason for the timeout
 func (s *Session) GuildMemberTimeoutWithReason(guildID int64, userID int64, until *time.Time, reason string) (err error) {
 	data := struct {
-		CommunicationDisabledUntil *time.Time `json:"communication_disabled_until"`
+		TimeoutExpiresAt *time.Time `json:"communication_disabled_until"`
 	}{until}
 
 	headers := make(map[string]string)
