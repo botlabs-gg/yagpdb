@@ -62,16 +62,20 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	}
 
 	var action ModlogAction
+	var msg string
 	switch p {
 	case PunishmentKick:
 		action = MAKick
+		msg = config.KickMessage
 	case PunishmentBan:
 		action = MABanned
+		msg = config.BanMessage
 		if duration > 0 {
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
 	case PunishmentTimeout:
-		action = MATimeoutAddedTo
+		action = MATimeoutAdded
+		msg = config.TimeoutMessage
 		if duration > 0 {
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
@@ -85,13 +89,8 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	}
 
 	gs := bot.State.GetGuild(guildID)
-
 	member, memberNotFound := getMemberWithFallback(gs, user)
 	if !memberNotFound {
-		msg := config.BanMessage
-		if p == PunishmentKick {
-			msg = config.KickMessage
-		}
 		sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason, -1)
 	}
 
@@ -160,12 +159,12 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 }
 
 var ActionMap = map[string]string{
-	MAMute.Prefix:           "Mute DM",
-	MAUnmute.Prefix:         "Unmute DM",
-	MAKick.Prefix:           "Kick DM",
-	MABanned.Prefix:         "Ban DM",
-	MAWarned.Prefix:         "Warn DM",
-	MATimeoutAddedTo.Prefix: "Timeout DM",
+	MAMute.Prefix:         "Mute DM",
+	MAUnmute.Prefix:       "Unmute DM",
+	MAKick.Prefix:         "Kick DM",
+	MABanned.Prefix:       "Ban DM",
+	MAWarned.Prefix:       "Warn DM",
+	MATimeoutAdded.Prefix: "Timeout DM",
 }
 
 func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildSet, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int) {
@@ -364,7 +363,7 @@ func RemoveTimeout(config *Config, guildID int64, author *discordgo.User, reason
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
-	action := MATimeoutRemovedFrom
+	action := MATimeoutRemoved
 
 	err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, nil, reason)
 	if err != nil {
