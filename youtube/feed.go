@@ -360,20 +360,16 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 		if sub.Enabled {
 			var content string
 
-			//if livestream notifications are disabled, and the video is a livestream, don't post it
-			if !sub.PublishLivestream && video.Snippet.LiveBroadcastContent != "none" {
-				continue
-			}
-
 			switch video.Snippet.LiveBroadcastContent {
 			case "live":
+				if !sub.PublishLivestream {
+					continue
+				}
 				content = fmt.Sprintf("**%s** started a livestream now!\n%s", video.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+video.Id)
-			case "upcoming":
-				content = fmt.Sprintf("**%s** will be livestreaming <t:%s:R>!\n%s", video.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+video.Id, video.LiveStreamingDetails.ScheduledStartTime)
-			case "completed":
-				content = fmt.Sprintf("**%s** completed a livestream!\n%s", video.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+video.Id)
-			default:
+			case "none":
 				content = fmt.Sprintf("**%s** uploaded a new youtube video!\n%s", video.Snippet.ChannelTitle, "https://www.youtube.com/watch?v="+video.Id)
+			default:
+				continue
 			}
 
 			if sub.MentionEveryone {
