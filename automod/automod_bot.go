@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/automod/models"
@@ -194,6 +195,10 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 	evtData := evt.GuildMemberUpdate()
+	// ignore timedout users
+	if evtData.Member.TimeoutExpiresAt.After(time.Now()) {
+		return
+	}
 
 	ms := dstate.MemberStateFromMember(evtData.Member)
 	if ms.Member.Nick == "" {
