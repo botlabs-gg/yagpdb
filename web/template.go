@@ -182,11 +182,9 @@ OUTER:
 	return template.HTML(builder.String())
 }
 
-func tmplChannelOpts(channelTypes []discordgo.ChannelType, optionPrefix string) interface{} {
-	optsBuilder := tmplChannelOptsMulti(channelTypes, optionPrefix)
+func tmplChannelOpts(channelTypes []discordgo.ChannelType) interface{} {
+	optsBuilder := tmplChannelOptsMulti(channelTypes)
 	return func(channels []dstate.ChannelState, selection interface{}, allowEmpty bool, emptyName string) template.HTML {
-
-		// const unknownName = "Deleted channel"
 
 		var builder strings.Builder
 
@@ -216,20 +214,28 @@ func tmplChannelOpts(channelTypes []discordgo.ChannelType, optionPrefix string) 
 	}
 }
 
-func tmplChannelOptsMulti(channelTypes []discordgo.ChannelType, optionPrefix string) func(channels []dstate.ChannelState, selections []int64) template.HTML {
+func tmplChannelOptsMulti(channelTypes []discordgo.ChannelType) func(channels []dstate.ChannelState, selections []int64) template.HTML {
 	return func(channels []dstate.ChannelState, selections []int64) template.HTML {
 
 		var builder strings.Builder
 
-		channelOpt := func(id int64, name string) {
+		channelOpt := func(id int64, name string, channelType discordgo.ChannelType) {
 			builder.WriteString(`<option value="` + discordgo.StrID(id) + "\"")
 			for _, selected := range selections {
 				if selected == id {
 					builder.WriteString(" selected")
 				}
 			}
-
-			builder.WriteString(">" + template.HTMLEscapeString(name) + "</option>")
+			var prefix string
+			switch channelType {
+			case discordgo.ChannelTypeGuildText:
+				prefix = "#"
+			case discordgo.ChannelTypeGuildVoice:
+				prefix = "🔊"
+			default:
+				prefix = ""
+			}
+			builder.WriteString(">" + template.HTMLEscapeString(prefix+name) + "</option>")
 		}
 
 		// Channels without a category
@@ -238,7 +244,7 @@ func tmplChannelOptsMulti(channelTypes []discordgo.ChannelType, optionPrefix str
 				continue
 			}
 
-			channelOpt(c.ID, optionPrefix+c.Name)
+			channelOpt(c.ID, c.Name, c.Type)
 		}
 
 		// Group channels by category
@@ -254,7 +260,7 @@ func tmplChannelOptsMulti(channelTypes []discordgo.ChannelType, optionPrefix str
 						continue
 					}
 
-					channelOpt(c.ID, optionPrefix+c.Name)
+					channelOpt(c.ID, c.Name, c.Type)
 				}
 				builder.WriteString("</optgroup>")
 			}

@@ -94,14 +94,14 @@ func init() {
 		"roleOptions":      tmplRoleDropdown,
 		"roleOptionsMulti": tmplRoleDropdownMutli,
 
-		"textChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews}, "#"),
-		"textChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews}, "#"),
+		"textChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews, discordgo.ChannelTypeGuildVoice}),
+		"textChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews, discordgo.ChannelTypeGuildVoice}),
 
-		"voiceChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildVoice}, ""),
-		"voiceChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildVoice}, ""),
+		"voiceChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildVoice}),
+		"voiceChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildVoice}),
 
-		"catChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildCategory}, ""),
-		"catChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildCategory}, ""),
+		"catChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildCategory}),
+		"catChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildCategory}),
 	})
 
 	Templates = Templates.Funcs(yagtmpl.StandardFuncMap)
