@@ -195,8 +195,8 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 	evtData := evt.GuildMemberUpdate()
-	// ignore timedout users
-	if evtData.Member.TimeoutExpiresAt.After(time.Now()) {
+	member := evtData.Member
+	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
 		return
 	}
 
