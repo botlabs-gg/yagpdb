@@ -919,7 +919,7 @@ func (s *Session) GuildMemberTimeoutWithReason(guildID int64, userID int64, unti
 
 	headers := make(map[string]string)
 	if reason != "" {
-		headers["X-Audit-Log-Reason"] = reason
+		headers["X-Audit-Log-Reason"] = url.QueryEscape(reason)
 	}
 	_, err = s.RequestWithBucketID("PATCH", EndpointGuildMember(guildID, userID), data, headers, EndpointGuildMember(guildID, 0))
 	return
