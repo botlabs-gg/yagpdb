@@ -436,8 +436,8 @@ func (timeout *TimeoutUserEffect) UserSettings() []*SettingDef {
 		&SettingDef{
 			Name:    "Duration (minutes)",
 			Key:     "Duration",
-			Min:     int(moderation.MinTimeOutDuration),
-			Max:     int(moderation.MaxTimeOutDuration),
+			Min:     int(moderation.MinTimeOutDuration.Minutes()),
+			Max:     int(moderation.MaxTimeOutDuration.Minutes()),
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
