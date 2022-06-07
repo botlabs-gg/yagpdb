@@ -744,7 +744,7 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID int64, reason string,
 
 	headers := make(map[string]string)
 	if reason != "" {
-		headers["X-Audit-Log-Reason"] = reason
+		headers["X-Audit-Log-Reason"] = url.QueryEscape(reason)
 	}
 
 	_, err = s.RequestWithBucketID("PUT", uri, data, headers, EndpointGuildBan(guildID, 0))
