@@ -99,7 +99,7 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	if elem.MessageStr != "" {
 		_, err = common.BotSession.ChannelMessageSendComplex(elem.ChannelID, &discordgo.MessageSend{
 			Content:         elem.MessageStr,
-			AllowedMentions: elem.AllowedMentions,
+			AllowedMentions: &elem.AllowedMentions,
 		})
 	} else if elem.MessageEmbed != nil {
 		_, err = common.BotSession.ChannelMessageSendEmbed(elem.ChannelID, elem.MessageEmbed)

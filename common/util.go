@@ -68,7 +68,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 func SendTempMessage(session *discordgo.Session, duration time.Duration, cID int64, msg string) {
 	m, err := BotSession.ChannelMessageSendComplex(cID, &discordgo.MessageSend{
 		Content:         msg,
-		AllowedMentions: AllowedMentionsParseUsers,
+		AllowedMentions: &AllowedMentionsParseUsers,
 	})
 	if err != nil {
 		return
@@ -619,7 +619,7 @@ func SplitSendMessage(channelID int64, contents string, allowedMentions discordg
 		var m *discordgo.Message
 		m, err = BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 			Content:         v,
-			AllowedMentions: allowedMentions,
+			AllowedMentions: &allowedMentions,
 		})
 
 		if err != nil {

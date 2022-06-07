@@ -82,7 +82,7 @@ func (d *DurationArg) HelpName() string {
 }
 
 func (d *DurationArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionString)}
 }
 
 type DurationOutOfRangeError struct {
@@ -284,7 +284,7 @@ func (ma *MemberArg) HelpName() string {
 }
 
 func (ma *MemberArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeUser)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionUser)}
 }
 
 type EphemeralOrGuild struct {
@@ -307,7 +307,7 @@ func (e *EphemeralOrGuild) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 		send := &discordgo.MessageSend{
 			Content:         e.Content,
 			Embeds:          []*discordgo.MessageEmbed{e.Embed},
-			AllowedMentions: discordgo.AllowedMentions{},
+			AllowedMentions: &discordgo.AllowedMentions{},
 		}
 
 		return data.SendFollowupMessage(send, discordgo.AllowedMentions{})
@@ -414,7 +414,7 @@ func (ra *RoleArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, optio
 }
 
 func (ra *RoleArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeRole)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionRole)}
 }
 
 func (ra *RoleArg) ExtractID(part string, data *dcmd.Data) interface{} {

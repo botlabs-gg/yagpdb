@@ -48,6 +48,7 @@ func (p *Plugin) BotInit() {
 
 		handleReactionAdd(ra)
 	}, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, handleInteractionCreate, eventsystem.EventInteractionCreate)
 
 	pubsub.AddHandler("dm_reaction", func(evt *pubsub.Event) {
 		dataCast := evt.Data.(*discordgo.MessageReactionAdd)
@@ -69,16 +70,6 @@ func handleReactionAdd(ra *discordgo.MessageReactionAdd) {
 		}
 	}
 	menusLock.Unlock()
-}
-
-func (p *Plugin) StopBot(wg *sync.WaitGroup) {
-	menusLock.Lock()
-	for _, v := range activePaginatedMessages {
-		go v.Stop()
-	}
-	menusLock.Unlock()
-
-	wg.Done()
 }
 
 type PaginatedMessage struct {
@@ -106,61 +97,6 @@ const (
 )
 
 type PagerFunc func(p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error)
-
-func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pagerFunc PagerFunc) (*PaginatedMessage, error) {
-	if initPage < 1 {
-		initPage = 1
-	}
-
-	pm := &PaginatedMessage{
-		GuildID:   guildID,
-		ChannelID: channelID,
-
-		CurrentPage:    initPage,
-		MaxPage:        maxPages,
-		lastUpdateTime: time.Now(),
-		stopCh:         make(chan bool),
-		Navigate:       pagerFunc,
-	}
-
-	embed, err := pagerFunc(pm, initPage)
-	if err != nil {
-		return nil, err
-	}
-
-	footer := "Page " + strconv.Itoa(initPage)
-	if pm.MaxPage > 0 {
-		footer += "/" + strconv.Itoa(pm.MaxPage)
-	}
-	embed.Footer = &discordgo.MessageEmbedFooter{
-		Text: footer,
-	}
-	embed.Timestamp = time.Now().Format(time.RFC3339)
-
-	msg, err := common.BotSession.ChannelMessageSendEmbed(channelID, embed)
-	if err != nil {
-		return nil, err
-	}
-
-	pm.MessageID = msg.ID
-	pm.LastResponse = embed
-
-	err = common.BotSession.MessageReactionAdd(channelID, msg.ID, EmojiPrev)
-	if err != nil {
-		return nil, err
-	}
-	err = common.BotSession.MessageReactionAdd(channelID, msg.ID, EmojiNext)
-	if err != nil {
-		return nil, err
-	}
-
-	menusLock.Lock()
-	activePaginatedMessages = append(activePaginatedMessages, pm)
-	menusLock.Unlock()
-
-	go pm.ticker()
-	return pm, nil
-}
 
 func (p *PaginatedMessage) HandleReactionAdd(ra *discordgo.MessageReactionAdd) {
 

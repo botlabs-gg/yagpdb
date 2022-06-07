@@ -79,7 +79,7 @@ func SplitSendMessage(data *Data, contents string, allowedMentions discordgo.All
 		default:
 			m, err = data.Session.ChannelMessageSendComplex(data.ChannelID, &discordgo.MessageSend{
 				Content:         v,
-				AllowedMentions: allowedMentions,
+				AllowedMentions: &allowedMentions,
 			})
 		}
 
