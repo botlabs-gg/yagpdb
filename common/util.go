@@ -314,6 +314,7 @@ var StringPerms = map[int64]string{
 	discordgo.PermissionManageChannels:      "Manage Channels",
 	discordgo.PermissionManageServer:        "Manage Server",
 	discordgo.PermissionManageWebhooks:      "Manage Webhooks",
+	discordgo.PermissionModerateMembers:     "Moderate Members / Timeout Members",
 }
 
 func ErrWithCaller(err error) error {
