@@ -456,6 +456,10 @@ func HandleMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	c := evt.GuildMemberUpdate()
+	// ignore timedout users
+	if c.Member.TimeoutExpiresAt.After(time.Now()) {
+		return false, nil
+	}
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
