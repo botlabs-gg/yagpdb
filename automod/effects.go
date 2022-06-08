@@ -836,7 +836,7 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 
 	if settingsCast.PingUser {
 		msgSend.Content = "<@" + discordgo.StrID(ctxData.MS.User.ID) + ">\n"
-		msgSend.AllowedMentions = discordgo.AllowedMentions{
+		msgSend.AllowedMentions = &discordgo.AllowedMentions{
 			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
 		}
 	}

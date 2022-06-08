@@ -1009,14 +1009,15 @@ type Webhook struct {
 
 // WebhookParams is a struct for webhook params, used in the WebhookExecute command.
 type WebhookParams struct {
-	Content         string           `json:"content,omitempty"`
-	Username        string           `json:"username,omitempty"`
-	AvatarURL       string           `json:"avatar_url,omitempty"`
-	TTS             bool             `json:"tts,omitempty"`
-	File            *File            `json:"-,omitempty"`
-	Embeds          []*MessageEmbed  `json:"embeds,omitempty"`
-	Flags           int64            `json:"flags,omitempty"`
-	AllowedMentions *AllowedMentions `json:"allowed_mentions,omitempty"`
+	Content         string             `json:"content,omitempty"`
+	Username        string             `json:"username,omitempty"`
+	AvatarURL       string             `json:"avatar_url,omitempty"`
+	TTS             bool               `json:"tts,omitempty"`
+	File            *File              `json:"-, omitempty"`
+	Components      []MessageComponent `json:"components"`
+	Embeds          []*MessageEmbed    `json:"embeds,omitempty"`
+	Flags           int64              `json:"flags,omitempty"`
+	AllowedMentions *AllowedMentions   `json:"allowed_mentions,omitempty"`
 }
 
 // MessageReaction stores the data for a message reaction.
@@ -1111,86 +1112,11 @@ type InviteUser struct {
 	Username      string `json:"username"`
 }
 
-// An ApplicationCommand is the base "command" model that belongs to an application. This is what you are creating when you POST a new command.
-type ApplicationCommand struct {
-	ID                int64                       `json:"id,string"`                    // unique id of the command
-	ApplicationID     int64                       `json:"application_id,string"`        // unique id of the parent application
-	Name              string                      `json:"name"`                         // 1-32 character name matching ^[\w-]{1,32}$
-	Description       string                      `json:"description"`                  // 1-100 character description
-	Options           []*ApplicationCommandOption `json:"options"`                      // the parameters for the command
-	DefaultPermission *bool                       `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
-}
-
 type CreateApplicationCommandRequest struct {
 	Name              string                      `json:"name"`                         // 1-32 character name matching ^[\w-]{1,32}$
 	Description       string                      `json:"description"`                  // 1-100 character description
 	Options           []*ApplicationCommandOption `json:"options"`                      // the parameters for the command
 	DefaultPermission *bool                       `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
-}
-
-type ApplicationCommandOption struct {
-	Kind        ApplicationCommandOptionType      `json:"type"`        // value of ApplicationCommandOptionType
-	Name        string                            `json:"name"`        // 1-32 character name matching ^[\w-]{1,32}$
-	Description string                            `json:"description"` // 1-100 character description
-	Required    bool                              `json:"required"`    // if the parameter is required or optional--default false
-	Choices     []*ApplicationCommandOptionChoice `json:"choices"`     // of ApplicationCommandOptionChoice	choices for string and int types for the user to pick from
-	Options     []*ApplicationCommandOption       `json:"options"`     // of ApplicationCommandOption	if the option is a subcommand or subcommand group type, this nested options will be the parameters
-}
-
-type ApplicationCommandOptionType int
-
-const (
-	CommandOptionTypeSubCommand      ApplicationCommandOptionType = 1
-	CommandOptionTypeSubCommandGroup ApplicationCommandOptionType = 2
-	CommandOptionTypeString          ApplicationCommandOptionType = 3
-	CommandOptionTypeInteger         ApplicationCommandOptionType = 4
-	CommandOptionTypeBoolean         ApplicationCommandOptionType = 5
-	CommandOptionTypeUser            ApplicationCommandOptionType = 6
-	CommandOptionTypeChannel         ApplicationCommandOptionType = 7
-	CommandOptionTypeRole            ApplicationCommandOptionType = 8
-)
-
-// If you specify choices for an option, they are the only valid values for a user to pick
-type ApplicationCommandOptionChoice struct {
-	Name  string      `json:"name"`  //	1-100 character choice name
-	Value interface{} `json:"value"` // 	value of the choice, up to 100 characters if string
-}
-
-// GuildApplicationCommandPermissions is returned when fetching the permissions for a command in a guild
-type GuildApplicationCommandPermissions struct {
-	ID            int64                            `json:"id,string"`             //	the id of the command
-	ApplicationID int64                            `json:"application_id,string"` //	the id of the application the command belongs to
-	GuildID       int64                            `json:"guild_id,string"`       //	the id of the guild
-	Permissions   []*ApplicationCommandPermissions `json:"permissions"`           // of ApplicationCommandPermissions	the permissions for the command in the guild
-}
-
-// ApplicationCommandPermissions allow you to enable or disable commands for specific users or roles within a guild.
-type ApplicationCommandPermissions struct {
-	ID         int64                            `json:"id,string"`  //	the id of the role or user
-	Kind       ApplicationCommandPermissionType `json:"type"`       //	role or user
-	Permission bool                             `json:"permission"` //	true to allow, false, to disallow
-}
-
-type ApplicationCommandPermissionType int
-
-const (
-	CommandPermissionTypeRole ApplicationCommandPermissionType = 1
-	CommandPermissionTypeUser ApplicationCommandPermissionType = 2
-)
-
-// Interaction is the base "thing" that is sent when a user invokes a command, and is the same for Slash Commands and other future interaction types.
-type Interaction struct {
-	ID            int64           `json:"id,string"`             // id of the interaction
-	ApplicationID int64           `json:"application_id,string"` // id of the application this interaction is for
-	Kind          InteractionType `json:"type"`                  // the type of interaction
-	GuildID       int64           `json:"guild_id,string"`       // the guild it was sent from
-	ChannelID     int64           `json:"channel_id,string"`     // the channel it was sent from
-	Member        *Member         `json:"member"`                // member object	guild member data for the invoking user, including permissions
-	User          *User           `json:"user"`                  // object	user object for the invoking user, if invoked in a DM
-	Token         string          `json:"token"`                 // a continuation token for responding to the interaction
-	Version       int             `json:"version"`               // read-only property, always
-
-	DataCommand *ApplicationCommandInteractionData
 }
 
 type interactionTemp struct {
@@ -1204,59 +1130,6 @@ type interactionTemp struct {
 	User          *User           `json:"user"`                  // object	user object for the invoking user, if invoked in a DM
 	Token         string          `json:"token"`                 // a continuation token for responding to the interaction
 	Version       int             `json:"version"`               // read-only property, always
-}
-
-// Interaction requires custom unmarshal logic because of the Data field being dependant on the interaction type
-func (a *Interaction) UnmarshalJSON(b []byte) error {
-	var temp *interactionTemp
-	err := json.Unmarshal(b, &temp)
-	if err != nil {
-		return err
-	}
-
-	*a = Interaction{
-		ID:            temp.ID,
-		ApplicationID: temp.ApplicationID,
-		Kind:          temp.Kind,
-		GuildID:       temp.GuildID,
-		ChannelID:     temp.ChannelID,
-		Member:        temp.Member,
-		User:          temp.User,
-		Token:         temp.Token,
-		Version:       temp.Version,
-	}
-
-	switch temp.Kind {
-	case InteractionTypeApplicationCommand:
-		err = json.Unmarshal(temp.Data, &a.DataCommand)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-type InteractionType int
-
-const (
-	InteractionTypePing               InteractionType = 1
-	InteractionTypeApplicationCommand InteractionType = 2
-)
-
-type ApplicationCommandInteractionData struct {
-	ID       int64                                      `json:"id,string"` // the ID of the invoked command
-	Name     string                                     `json:"name"`      // the name of the invoked command
-	Resolved ApplicationCommandInteractionDataResolved  `json:"resolved"`  // converted users + roles + channels
-	Options  []*ApplicationCommandInteractionDataOption `json:"options"`   // of ApplicationCommandInteractionDataOption the params + values from the user
-}
-
-// this might need a custom unmarshal function
-type ApplicationCommandInteractionDataResolved struct {
-	Users    map[int64]*User    `json:"users"`
-	Members  map[int64]*Member  `json:"members"`
-	Roles    map[int64]*Role    `json:"roles"`
-	Channels map[int64]*Channel `json:"channels"`
 }
 
 func (a *ApplicationCommandInteractionDataResolved) UnmarshalJSON(b []byte) error {
@@ -1315,22 +1188,9 @@ type applicationCommandInteractionDataResolvedTemp struct {
 	Channels map[string]*Channel `json:"channels"`
 }
 
-// Value types:
-//
-// CommandOptionTypeString: string
-// CommandOptionTypeInteger: int64
-// CommandOptionTypeBoolean: bool
-// User, Channel, Role: int64 snowflake
-type ApplicationCommandInteractionDataOption struct {
-	Name    string                                     `json:"name"`    // the name of the parameter
-	Kind    ApplicationCommandOptionType               `json:"type"`    // value of ApplicationCommandOptionType
-	Value   interface{}                                `json:"value"`   // the value of the pair
-	Options []*ApplicationCommandInteractionDataOption `json:"options"` // present if this option is a group or subcommand
-}
-
 type applicationCommandInteractionDataOptionTemporary struct {
 	Name    string                                     `json:"name"`    // the name of the parameter
-	Kind    ApplicationCommandOptionType               `json:"type"`    // value of ApplicationCommandOptionType
+	Type    ApplicationCommandOptionType               `json:"type"`    // value of ApplicationCommandOptionType
 	Value   json.RawMessage                            `json:"value"`   // the value of the pair
 	Options []*ApplicationCommandInteractionDataOption `json:"options"` // present if this option is a group or subcommand
 }
@@ -1344,65 +1204,43 @@ func (a *ApplicationCommandInteractionDataOption) UnmarshalJSON(b []byte) error 
 
 	*a = ApplicationCommandInteractionDataOption{
 		Name:    temp.Name,
-		Kind:    temp.Kind,
+		Type:    temp.Type,
 		Options: temp.Options,
 	}
 
-	switch temp.Kind {
-	case CommandOptionTypeString:
+	switch temp.Type {
+	case ApplicationCommandOptionString:
 		v := ""
 		err = json.Unmarshal(temp.Value, &v)
 		a.Value = v
-	case CommandOptionTypeInteger:
+	case ApplicationCommandOptionInteger:
 		v := int64(0)
 		err = json.Unmarshal(temp.Value, &v)
 		a.Value = v
-	case CommandOptionTypeBoolean:
+	case ApplicationCommandOptionBoolean:
 		v := false
 		err = json.Unmarshal(temp.Value, &v)
 		a.Value = v
-	case CommandOptionTypeUser, CommandOptionTypeChannel, CommandOptionTypeRole:
+	case ApplicationCommandOptionUser, ApplicationCommandOptionChannel, ApplicationCommandOptionRole:
 		// parse the snowflake
 		v := ""
 		err = json.Unmarshal(temp.Value, &v)
 		if err == nil {
 			a.Value, err = strconv.ParseInt(v, 10, 64)
 		}
-	case CommandOptionTypeSubCommand:
-	case CommandOptionTypeSubCommandGroup:
+	case ApplicationCommandOptionSubCommand:
+	case ApplicationCommandOptionSubCommandGroup:
 	}
 
 	return err
 }
 
-type InteractionResponse struct {
-	Kind InteractionResponseType                    `json:"type"` // the type of response
-	Data *InteractionApplicationCommandCallbackData `json:"data"` // an optional response message
-}
-
-type InteractionResponseType int
-
-const (
-	InteractionResponseTypePong                             InteractionResponseType = 1 // ACK a Ping
-	InteractionResponseTypeAcknowledge                      InteractionResponseType = 2 // DEPRECATED ACK a command without sending a message, eating the user's input
-	InteractionResponseTypeChannelMessage                   InteractionResponseType = 3 // DEPRECATED respond with a message, eating the user's input
-	InteractionResponseTypeChannelMessageWithSource         InteractionResponseType = 4 // respond to an interaction with a message
-	InteractionResponseTypeDeferredChannelMessageWithSource InteractionResponseType = 5 // ACK an interaction and edit a response later, the user sees a loading state
-)
-
 type InteractionApplicationCommandCallbackData struct {
-	Tts             bool             `json:"tts,omitempty"`              //	is the response TTS
+	TTS             bool             `json:"tts,omitempty"`              //	is the response TTS
 	Content         *string          `json:"content,omitempty"`          //	message content
 	Embeds          []MessageEmbed   `json:"embeds,omitempty"`           // supports up to 10 embeds
 	AllowedMentions *AllowedMentions `json:"allowed_mentions,omitempty"` // allowed mentions object
 	Flags           int              `json:"flags,omitempty"`            //	set to 64 to make your response ephemeral
-}
-
-type MessageInteraction struct {
-	ID   int64           `json:"id,string"` // id of the interaction
-	Kind InteractionType `json:"type"`      // the type of interaction
-	Name string          `json:"name"`      // the name of the ApplicationCommand
-	User User            `json:"user"`      // object the user who invoked the interaction
 }
 
 type ThreadMetadata struct {

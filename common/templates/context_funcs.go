@@ -31,7 +31,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	info := fmt.Sprintf("Custom Command DM from the server **%s**", c.GS.Name)
 	embedInfo := fmt.Sprintf("Custom Command DM from the server %s", c.GS.Name)
 	msgSend := &discordgo.MessageSend{
-		AllowedMentions: discordgo.AllowedMentions{
+		AllowedMentions: &discordgo.AllowedMentions{
 			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
 		},
 	}
@@ -344,7 +344,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 
 		var m *discordgo.Message
 		msgSend := &discordgo.MessageSend{
-			AllowedMentions: discordgo.AllowedMentions{
+			AllowedMentions: &discordgo.AllowedMentions{
 				Parse: parseMentions,
 			},
 		}
@@ -370,7 +370,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			}
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
-			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
+			msgSend.AllowedMentions = &discordgo.AllowedMentions{Parse: parseMentions}
 			if isDM {
 				if len(typedMsg.Embeds) > 0 {
 					for _, e := range msgSend.Embeds {
