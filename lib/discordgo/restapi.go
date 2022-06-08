@@ -1690,7 +1690,7 @@ func (s *Session) ChannelMessageSendComplex(channelID int64, msg *MessageSend) (
 func (s *Session) ChannelMessageSendTTS(channelID int64, content string) (*Message, error) {
 	return s.ChannelMessageSendComplex(channelID, &MessageSend{
 		Content: content,
-		Tts:     true,
+		TTS:     true,
 	})
 }
 
@@ -1709,6 +1709,29 @@ func (s *Session) ChannelMessageSendEmbedList(channelID int64, embeds []*Message
 func (s *Session) ChannelMessageSendEmbed(channelID int64, embed *MessageEmbed) (*Message, error) {
 	return s.ChannelMessageSendComplex(channelID, &MessageSend{
 		Embeds: []*MessageEmbed{embed},
+	})
+}
+
+// ChannelMessageSendEmbeds sends a message to the given channel with multiple embedded data.
+// channelID : The ID of a Channel.
+// embeds    : The embeds data to send.
+func (s *Session) ChannelMessageSendEmbeds(channelID int64, embeds []*MessageEmbed) (*Message, error) {
+	return s.ChannelMessageSendComplex(channelID, &MessageSend{
+		Embeds: embeds,
+	})
+}
+
+// ChannelMessageSendReply sends a message to the given channel with reference data.
+// channelID : The ID of a Channel.
+// content   : The message to send.
+// reference : The message reference to send.
+func (s *Session) ChannelMessageSendReply(channelID int64, content string, reference *MessageReference) (*Message, error) {
+	if reference == nil {
+		return nil, fmt.Errorf("reply attempted with nil message reference")
+	}
+	return s.ChannelMessageSendComplex(channelID, &MessageSend{
+		Content:   content,
+		Reference: reference,
 	})
 }
 

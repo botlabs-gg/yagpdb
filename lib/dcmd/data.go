@@ -157,8 +157,8 @@ func (d *Data) SendFollowupMessage(reply interface{}, allowedMentions discordgo.
 		case TriggerTypeSlashCommands:
 			params := &discordgo.WebhookParams{
 				Content:         t.Content,
-				TTS:             t.Tts,
-				AllowedMentions: &t.AllowedMentions,
+				TTS:             t.TTS,
+				AllowedMentions: t.AllowedMentions,
 				File:            t.File,
 			}
 

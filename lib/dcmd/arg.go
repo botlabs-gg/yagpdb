@@ -27,7 +27,7 @@ func (def *ArgDef) StandardSlashCommandOption(typ discordgo.ApplicationCommandOp
 	return &discordgo.ApplicationCommandOption{
 		Name:        def.Name,
 		Description: desc,
-		Kind:        typ,
+		Type:        typ,
 	}
 }
 
@@ -546,9 +546,9 @@ func (i *IntArg) HelpName() string {
 
 func (i *IntArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
 	if i.InteractionString {
-		return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
+		return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionString)}
 	}
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeInteger)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionInteger)}
 }
 
 // FloatArg matches and parses float arguments
@@ -612,7 +612,7 @@ func (f *FloatArg) HelpName() string {
 }
 
 func (f *FloatArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionString)}
 }
 
 // StringArg matches and parses float arguments
@@ -638,7 +638,7 @@ func (s *StringArg) HelpName() string {
 }
 
 func (s *StringArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeString)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionString)}
 }
 
 // UserArg matches and parses user argument (mention/ID)
@@ -699,7 +699,7 @@ func (u *UserArg) HelpName() string {
 }
 
 func (u *UserArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeUser)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionUser)}
 }
 
 var CustomUsernameSearchFunc func(state dstate.StateTracker, gs *dstate.GuildSet, query string) (*dstate.MemberState, error)
@@ -836,7 +836,7 @@ func (u *UserIDArg) HelpName() string {
 }
 
 func (u *UserIDArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeUser)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionUser)}
 }
 
 // UserIDArg matches a mention or a plain id, the user does not have to be a part of the server
@@ -922,7 +922,7 @@ func (ca *ChannelArg) HelpName() string {
 }
 
 func (ca *ChannelArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.CommandOptionTypeChannel)}
+	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionChannel)}
 }
 
 type AdvUserMatch struct {
@@ -1106,8 +1106,8 @@ func (u *AdvUserArg) HelpName() string {
 
 func (u *AdvUserArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
 	// Give the user the ability to pick one of these, sadly discord slash commands does not have a basic "one of" type
-	optID := def.StandardSlashCommandOption(discordgo.CommandOptionTypeInteger)
-	optUser := def.StandardSlashCommandOption(discordgo.CommandOptionTypeUser)
+	optID := def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionInteger)
+	optUser := def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionUser)
 
 	optID.Name = optID.Name + "-ID"
 

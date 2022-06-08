@@ -151,7 +151,7 @@ func sortInteractionArgDefs(data *Data, defs []*ArgDef, required int, combos [][
 		if v.Type != nil {
 			defOpts = v.Type.SlashCommandOptions(v)
 		} else {
-			defOpts = []*discordgo.ApplicationCommandOption{v.StandardSlashCommandOption(discordgo.CommandOptionTypeBoolean)}
+			defOpts = []*discordgo.ApplicationCommandOption{v.StandardSlashCommandOption(discordgo.ApplicationCommandOptionBoolean)}
 		}
 
 		sortedEntry := &sortedInteractionArg{
