@@ -179,7 +179,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 		cmdLine += " "
 	}
 
-	logger.Info("Custom template is executing a command: %s for guild %v", cmdLine, tmplCtx.Msg.GuildID)
+	logger.Infof("Custom template is executing a command: %s for guild %v", cmdLine, tmplCtx.Msg.GuildID)
 
 	fakeMsg.Content = cmdLine
 
