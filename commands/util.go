@@ -339,11 +339,13 @@ func (e *EphemeralOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 		// 	Content: "Failed running the command.",
 		// })
 
-		// Yeah so because the original reaction response is not marked as ephemeral, and there's no way to change that, just delete it i guess...
-		// because otherwise the followup message turns into the original response
-		err := data.Session.DeleteInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token)
-		if err != nil {
-			return nil, err
+		if yc, ok := data.Cmd.Command.(*YAGCommand); ok && !yc.IsResponseEphemeral {
+			// Yeah so because the original reaction response is not marked as ephemeral, and there's no way to change that, just delete it i guess...
+			// because otherwise the followup message turns into the original response
+			err := data.Session.DeleteInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		m, err := data.Session.CreateFollowupMessage(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
