@@ -99,8 +99,10 @@ func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pa
 	}
 
 	footer := "Page " + strconv.Itoa(initPage)
+	nextButtonDisabled := false
 	if pm.MaxPage > 0 {
 		footer += "/" + strconv.Itoa(pm.MaxPage)
+		nextButtonDisabled = initPage >= pm.MaxPage
 	}
 	embed.Footer = &discordgo.MessageEmbedFooter{
 		Text: footer,
@@ -109,7 +111,7 @@ func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pa
 
 	msg, err := common.BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 		Embeds:     []*discordgo.MessageEmbed{embed},
-		Components: createNavigationButtons(true, initPage >= maxPages),
+		Components: createNavigationButtons(true, nextButtonDisabled),
 	})
 	if err != nil {
 		return nil, err
@@ -172,8 +174,10 @@ func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate
 
 	p.CurrentPage = newPage
 	footer := "Page " + strconv.Itoa(newPage)
+	nextButtonDisabled := false
 	if p.MaxPage > 0 {
 		footer += "/" + strconv.Itoa(p.MaxPage)
+		nextButtonDisabled = newPage >= p.MaxPage
 	}
 
 	newMsg.Footer = &discordgo.MessageEmbedFooter{
@@ -183,7 +187,7 @@ func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate
 
 	_, err = common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
 		Embeds:     []*discordgo.MessageEmbed{newMsg},
-		Components: createNavigationButtons(newPage <= 1, newPage >= p.MaxPage),
+		Components: createNavigationButtons(newPage <= 1, nextButtonDisabled),
 		Channel:    ic.ChannelID,
 		ID:         ic.Message.ID,
 	})
