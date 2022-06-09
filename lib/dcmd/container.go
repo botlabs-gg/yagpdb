@@ -145,16 +145,6 @@ func (c *Container) Run(data *Data) (interface{}, error) {
 
 	}
 
-	// pong the interaction
-	if data.TriggerType == TriggerTypeSlashCommands {
-		err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Were extra smart about extracting the options so that we can
 	// provide more commands than there actually are (e.g by-id and by-user subcommands that resolve to the same command)
 	if data.TriggerType == TriggerTypeSlashCommands && len(data.SlashCommandTriggerData.Options) == 1 && data.SlashCommandTriggerData.Options[0].Type == discordgo.ApplicationCommandOptionSubCommand {

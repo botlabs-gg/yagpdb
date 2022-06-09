@@ -144,6 +144,8 @@ type YAGCommand struct {
 	RolesRunFunc RolesRunFunc
 
 	slashCommandID int64
+
+	IsResponseEphemeral bool
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation

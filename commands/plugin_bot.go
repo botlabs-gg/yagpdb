@@ -172,6 +172,20 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			guildID = data.GuildData.GS.ID
 		}
 
+		if data.TriggerType == dcmd.TriggerTypeSlashCommands {
+			// Acknowledge the interaction
+			response := discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+			}
+			if yc.IsResponseEphemeral {
+				response.Data = &discordgo.InteractionResponseData{Flags: 64}
+			}
+			err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &response)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		// Lock the command for execution
 		if !BlockingAddRunningCommand(guildID, data.ChannelID, data.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
