@@ -254,6 +254,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
+			if err != nil || member == nil {
+				return "Member not found", err
+			}
+
 			if utf8.RuneCountInString(reason) > 470 {
 				return "Error: Reason too long (can be max 470 characters).", nil
 			}
@@ -769,6 +774,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled)
 			if err != nil {
 				return nil, err
+			}
+
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
+			if err != nil || member == nil {
+				return "Member not found", err
 			}
 
 			var msg *discordgo.Message
