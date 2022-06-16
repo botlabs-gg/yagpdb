@@ -1590,25 +1590,7 @@ var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
 // channelID : The ID of a Channel.
 // data      : The message struct to send.
 func (s *Session) ChannelMessageSendComplex(channelID int64, msg *MessageSend) (st *Message, err error) {
-	totalNils := 0
-	totalEmbeds := len(msg.Embeds)
-	embeds := make([]*MessageEmbed, 0, len(msg.Embeds))
-	for _, e := range msg.Embeds {
-		if e == nil {
-			totalNils++
-		} else {
-			if e.Type != "" {
-				e.Type = "rich"
-			}
-			embeds = append(embeds, e)
-		}
-	}
-	if totalEmbeds > 0 && totalNils == totalEmbeds {
-		msg.Embeds = nil
-	} else {
-		msg.Embeds = embeds
-	}
-
+	msg.Embeds = ValidateComplexMessageEmbeds(msg.Embeds)
 	endpoint := EndpointChannelMessages(channelID)
 
 	// TODO: Remove this when compatibility is not required.
@@ -1747,29 +1729,7 @@ func (s *Session) ChannelMessageEdit(channelID, messageID int64, content string)
 // ChannelMessageEditComplex edits an existing message, replacing it entirely with
 // the given MessageEdit struct
 func (s *Session) ChannelMessageEditComplex(msg *MessageEdit) (st *Message, err error) {
-	totalNils := 0
-	totalEmbeds := len(msg.Embeds)
-	embeds := make([]*MessageEmbed, 0, len(msg.Embeds))
-	if totalEmbeds == 0 {
-		embeds = nil
-	} else {
-		for _, e := range msg.Embeds {
-			if e == nil {
-				totalNils++
-			} else {
-				if e.Type != "" {
-					e.Type = "rich"
-				}
-				embeds = append(embeds, e)
-			}
-		}
-		if totalNils == totalEmbeds {
-			msg.Embeds = nil
-		} else {
-			msg.Embeds = embeds
-		}
-	}
-
+	msg.Embeds = ValidateComplexMessageEmbeds(msg.Embeds)
 	response, err := s.RequestWithBucketID("PATCH", EndpointChannelMessage(msg.Channel, msg.ID), msg, nil, EndpointChannelMessage(msg.Channel, 0))
 	if err != nil {
 		return

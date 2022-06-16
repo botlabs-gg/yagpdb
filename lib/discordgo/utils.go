@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/textproto"
+	"reflect"
 )
 
 // MultipartBodyWithJSON returns the contentType and body for a discord request
@@ -61,4 +62,30 @@ func MultipartBodyWithJSON(data interface{}, files []*File) (requestContentType 
 	}
 
 	return bodywriter.FormDataContentType(), body.Bytes(), nil
+}
+
+func IsEmbedEmpty(embed *MessageEmbed) bool {
+	return reflect.DeepEqual(embed, &MessageEmbed{})
+}
+
+func ValidateComplexMessageEmbeds(embeds []*MessageEmbed) []*MessageEmbed {
+	totalNils := 0
+	totalEmbeds := len(embeds)
+	parsedEmbeds := make([]*MessageEmbed, 0, totalEmbeds)
+
+	for _, e := range embeds {
+		if e == nil || IsEmbedEmpty(e) {
+			totalNils++
+		} else {
+			if e.Type != "" {
+				e.Type = "rich"
+			}
+			parsedEmbeds = append(parsedEmbeds, e)
+		}
+	}
+	if totalEmbeds > 0 && totalNils == totalEmbeds {
+		return nil
+	}
+
+	return parsedEmbeds
 }
