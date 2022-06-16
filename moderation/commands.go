@@ -419,9 +419,9 @@ var ModerationCommands = []*commands.YAGCommand{
 			if d < time.Minute {
 				d = time.Minute
 			}
-
-			logger.Info(d.Seconds())
-
+			if d > MaxTimeOutDuration {
+				return fmt.Sprintf("Error: Max duration of Timeouts can be %v days", (MaxTimeOutDuration.Hours() / 24)), nil
+			}
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
