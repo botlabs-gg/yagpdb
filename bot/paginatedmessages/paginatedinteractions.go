@@ -30,7 +30,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 }
 
 func handlePageChange(ic *discordgo.InteractionCreate, pageMod int) {
-	if ic.Member.User.ID == common.BotUser.ID {
+	if (ic.Member != nil && ic.Member.User.ID == common.BotUser.ID) || (ic.User != nil && ic.User.ID == common.BotUser.ID) {
 		return
 	}
 
