@@ -209,7 +209,7 @@ type MessageSend struct {
 	TTS             bool               `json:"tts"`
 	Components      []MessageComponent `json:"components"`
 	Files           []*File            `json:"-"`
-	AllowedMentions *AllowedMentions   `json:"allowed_mentions,omitempty"`
+	AllowedMentions AllowedMentions    `json:"allowed_mentions,omitempty"`
 	Reference       *MessageReference  `json:"message_reference,omitempty"`
 
 	// TODO: Remove this when compatibility is not required.
@@ -222,7 +222,7 @@ type MessageEdit struct {
 	Content         *string            `json:"content,omitempty"`
 	Components      []MessageComponent `json:"components"`
 	Embeds          []*MessageEmbed    `json:"embeds,omitempty"`
-	AllowedMentions *AllowedMentions   `json:"allowed_mentions,omitempty"`
+	AllowedMentions AllowedMentions    `json:"allowed_mentions,omitempty"`
 	Flags           MessageFlags       `json:"flags,omitempty"`
 
 	ID      int64

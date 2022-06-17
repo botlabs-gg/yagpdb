@@ -1580,7 +1580,8 @@ func (s *Session) ChannelMessageAck(channelID, messageID int64, lastToken string
 // content   : The message to send.
 func (s *Session) ChannelMessageSend(channelID int64, content string) (*Message, error) {
 	return s.ChannelMessageSendComplex(channelID, &MessageSend{
-		Content: content,
+		Content:         content,
+		AllowedMentions: AllowedMentions{},
 	})
 }
 

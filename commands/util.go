@@ -307,7 +307,7 @@ func (e *EphemeralOrGuild) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 		send := &discordgo.MessageSend{
 			Content:         e.Content,
 			Embeds:          []*discordgo.MessageEmbed{e.Embed},
-			AllowedMentions: &discordgo.AllowedMentions{},
+			AllowedMentions: discordgo.AllowedMentions{},
 		}
 
 		return data.SendFollowupMessage(send, discordgo.AllowedMentions{})
