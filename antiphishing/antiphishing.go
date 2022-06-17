@@ -18,6 +18,10 @@ type Plugin struct {
 	stopWorkers chan *sync.WaitGroup
 }
 
+type HeptagramAntiFishResponse struct {
+	scamDetected bool `json:"scamDetected"`
+}
+
 type BitFlowAntiFishResponse struct {
 	Match   bool `json:"match"`
 	Matches []struct {
