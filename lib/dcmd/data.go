@@ -158,7 +158,7 @@ func (d *Data) SendFollowupMessage(reply interface{}, allowedMentions discordgo.
 			params := &discordgo.WebhookParams{
 				Content:         t.Content,
 				TTS:             t.TTS,
-				AllowedMentions: t.AllowedMentions,
+				AllowedMentions: &t.AllowedMentions,
 				File:            t.File,
 			}
 

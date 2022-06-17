@@ -275,7 +275,7 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 func updateCustomMessage(ctx context.Context, rm *models.RoleMenu) error {
 	edit := discordgo.MessageEdit{
 		ID:              rm.MessageID,
-		AllowedMentions: &discordgo.AllowedMentions{},
+		AllowedMentions: discordgo.AllowedMentions{},
 		Channel:         rm.ChannelID,
 	}
 
