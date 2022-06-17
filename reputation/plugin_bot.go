@@ -53,16 +53,20 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	if !evt.HasFeatureFlag(featureFlagThanksEnabled) {
+		return
+	}
+
 	if !thanksRegex.MatchString(msg.Content) {
+		return
+	}
+
+	if !isThanksDetectionAllowedInChannel(conf, msg.ChannelID) {
 		return
 	}
 
 	who := msg.Mentions[0]
 	if who.ID == msg.Author.ID {
-		return
-	}
-
-	if !evt.HasFeatureFlag(featureFlagThanksEnabled) {
 		return
 	}
 
@@ -512,4 +516,15 @@ func userPresentInRepLog(userID int64, guildID int64, parsed *dcmd.Data) (found 
 		return false, nil
 	}
 	return true, nil
+}
+
+// Checks if the thanks detection is allowed to be run in the given channel
+func isThanksDetectionAllowedInChannel(config *models.ReputationConfig, channelID int64) bool {
+	if len(config.WhitelistedThanksChannels) > 0 && common.ContainsInt64Slice(config.WhitelistedThanksChannels, channelID) {
+		return true
+	}
+	if len(config.BlacklistedThanksChannels) > 0 && common.ContainsInt64Slice(config.BlacklistedThanksChannels, channelID) {
+		return false
+	}
+	return len(config.WhitelistedThanksChannels) == 0 && len(config.BlacklistedThanksChannels) == 0
 }
