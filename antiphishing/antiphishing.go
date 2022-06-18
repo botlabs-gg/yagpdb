@@ -79,7 +79,19 @@ func getAllPhishingDomains() ([]string, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	domains := make([]string, 0)
+
+	req2, _ := http.NewRequest("GET", "https://api.heptagrambotproject.com/locked/all/scam/links", nil)
+	req2.Header.Add("Content-Type", "application/json")
+	req2.Header.Add("Accept", "*/*")
+	req2.Header.Add("X-identify", "YAGPDB")
+	resp2, err := client.Do(req2)
+	if err != nil {
+		return nil, err
+	}
+	defer resp2.Body.Close()
+
+	// get both responses and merge them in an single array
+	var domains []string
 	err = json.NewDecoder(resp.Body).Decode(&domains)
 	if err != nil {
 		return nil, err
