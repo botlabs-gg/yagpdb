@@ -54,6 +54,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberTimeoutChange, eventsystem.EventGuildMemberUpdate)
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)
@@ -260,6 +261,54 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 	if changed {
 		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), discordgo.PermissionOverwriteTypeRole, allows, denies)
 	}
+}
+
+func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err error) {
+	data := evt.GuildMemberUpdate()
+	//ignore members who aren't timedout or have been timedout in the past
+	if data.TimeoutExpiresAt == nil || data.TimeoutExpiresAt.Before(time.Now()) {
+		return false, nil
+	}
+
+	config, err := GetConfig(data.GuildID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	// no modlog channel setup
+	if config.IntActionChannel() == 0 {
+		return false, nil
+	}
+	// If we poll the audit log too fast then there sometimes wont be a audit log entry
+	time.Sleep(time.Second * 3)
+
+	author, entry := FindAuditLogEntry(data.GuildID, discordgo.AuditLogActionMemberUpdate, data.User.ID, time.Second*5)
+	if entry == nil || author == nil {
+		return false, nil
+	}
+	logger.Infof("got timeout event %v", entry)
+
+	if entry.Changes[0].Key != "communication_disabled_until" {
+		return false, nil
+	}
+
+	if author.ID == common.BotUser.ID {
+		// Bot performed the timeout, don't make duplicate modlog entries
+		return false, nil
+	}
+
+	if !config.LogTimeouts {
+		// User doesn't want us to log timeouts not made through yag
+		return false, nil
+	}
+
+	err = CreateModlogEmbed(config, author, MATimeoutAdded, data.User, entry.Reason, "")
+	if err != nil {
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending timeout log message")
+		return false, errors.WithStackIf(err)
+	}
+
+	return false, nil
 }
 
 func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
