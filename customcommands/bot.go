@@ -946,7 +946,7 @@ func CheckMatch(globalPrefix string, cmd *models.CustomCommand, msg string) (mat
 	case CommandTriggerStartsWith:
 		cmdMatch += `\A` + regexp.QuoteMeta(trigger)
 	case CommandTriggerContains:
-		cmdMatch += `\A.*` + regexp.QuoteMeta(trigger)
+		cmdMatch += regexp.QuoteMeta(trigger)
 	case CommandTriggerRegex:
 		cmdMatch += trigger
 	case CommandTriggerExact:
