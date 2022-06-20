@@ -389,6 +389,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Timeout",
 		Description:   "Timeout a member",
+		Aliases:       []string{"to"},
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Duration", Type: &commands.DurationArg{}},
@@ -442,6 +443,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "RemoveTimeout",
+		Aliases:       []string{"untimeout", "cleartimeout", "deltimeout", "rto"},
 		Description:   "Removes a member's timeout",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
