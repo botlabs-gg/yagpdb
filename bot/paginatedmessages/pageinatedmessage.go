@@ -60,7 +60,7 @@ func (p *Plugin) BotInit() {
 		case paginationPrev:
 			handlePageChange(dataCast, -1)
 		}
-	}, discordgo.MessageReactionAdd{})
+	}, discordgo.InteractionCreate{})
 }
 
 type PaginatedMessage struct {
