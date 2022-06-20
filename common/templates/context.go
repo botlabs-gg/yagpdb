@@ -75,6 +75,15 @@ var (
 		"sqrt":       tmplSqrt,
 		"sub":        tmplSub,
 
+		// bitwise ops
+		"bitwiseAnd":        tmplBitwiseAnd,
+		"bitwiseOr":         tmplBitwiseOr,
+		"bitwiseXor":        tmplBitwiseXor,
+		"bitwiseNot":        tmplBitwiseNot,
+		"bitwiseAndNot":     tmplBitwiseAndNot,
+		"bitwiseLeftShift":  tmplBitwiseLeftShift,
+		"bitwiseRightShift": tmplBitwiseRightShift,
+
 		// misc
 		"humanizeThousands":  tmplHumanizeThousands,
 		"dict":               Dictionary,
@@ -245,6 +254,41 @@ func (c *Context) setupBaseData() {
 	c.Data["TimeMinute"] = time.Minute
 	c.Data["TimeSecond"] = time.Second
 	c.Data["UnixEpoch"] = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	// permissions
+	c.Data["Permissions"] = map[string]int64{
+		"ReadMessages":       discordgo.PermissionReadMessages,
+		"SendMessages":       discordgo.PermissionSendMessages,
+		"SendTTSMessages":    discordgo.PermissionSendTTSMessages,
+		"ManageMessages":     discordgo.PermissionManageMessages,
+		"EmbedLinks":         discordgo.PermissionEmbedLinks,
+		"AttachFiles":        discordgo.PermissionAttachFiles,
+		"ReadMessageHistory": discordgo.PermissionReadMessageHistory,
+		"MentionEveryone":    discordgo.PermissionMentionEveryone,
+		"UseExternalEmojis":  discordgo.PermissionUseExternalEmojis,
+
+		"VoiceConnect":       discordgo.PermissionVoiceConnect,
+		"VoiceSpeak":         discordgo.PermissionVoiceSpeak,
+		"VoiceMuteMembers":   discordgo.PermissionVoiceMuteMembers,
+		"VoiceDeafenMembers": discordgo.PermissionVoiceDeafenMembers,
+		"VoiceMoveMembers":   discordgo.PermissionVoiceMoveMembers,
+		"VoiceUseVAD":        discordgo.PermissionVoiceUseVAD,
+
+		"ChangeNickname":  discordgo.PermissionChangeNickname,
+		"ManageNicknames": discordgo.PermissionManageNicknames,
+		"ManageRoles":     discordgo.PermissionManageRoles,
+		"ManageWebhooks":  discordgo.PermissionManageWebhooks,
+		"ManageEmojis":    discordgo.PermissionManageEmojis,
+
+		"CreateInstantInvite": discordgo.PermissionCreateInstantInvite,
+		"KickMembers":         discordgo.PermissionKickMembers,
+		"BanMembers":          discordgo.PermissionBanMembers,
+		"Administrator":       discordgo.PermissionAdministrator,
+		"ManageChannels":      discordgo.PermissionManageChannels,
+		"ManageServer":        discordgo.PermissionManageServer,
+		"AddReactions":        discordgo.PermissionAddReactions,
+		"ViewAuditLogs":       discordgo.PermissionViewAuditLogs,
+	}
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
@@ -547,6 +591,11 @@ func baseContextFuncs(c *Context) {
 
 	c.addContextFunc("targetHasRoleID", c.tmplTargetHasRoleID)
 	c.addContextFunc("targetHasRoleName", c.tmplTargetHasRoleName)
+
+	// permission funcs
+	c.addContextFunc("hasPermissions", c.tmplHasPermissions)
+	c.addContextFunc("targetHasPermissions", c.tmplTargetHasPermissions)
+	c.addContextFunc("getTargetPermissionsIn", c.tmplGetTargetPermissionsIn)
 
 	c.addContextFunc("deleteResponse", c.tmplDelResponse)
 	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
