@@ -25,64 +25,70 @@ import (
 
 // ReputationConfig is an object representing the database table.
 type ReputationConfig struct {
-	GuildID                 int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	PointsName              string           `boil:"points_name" json:"points_name" toml:"points_name" yaml:"points_name"`
-	Enabled                 bool             `boil:"enabled" json:"enabled" toml:"enabled" yaml:"enabled"`
-	Cooldown                int              `boil:"cooldown" json:"cooldown" toml:"cooldown" yaml:"cooldown"`
-	MaxGiveAmount           int64            `boil:"max_give_amount" json:"max_give_amount" toml:"max_give_amount" yaml:"max_give_amount"`
-	RequiredGiveRole        null.String      `boil:"required_give_role" json:"required_give_role,omitempty" toml:"required_give_role" yaml:"required_give_role,omitempty"`
-	RequiredReceiveRole     null.String      `boil:"required_receive_role" json:"required_receive_role,omitempty" toml:"required_receive_role" yaml:"required_receive_role,omitempty"`
-	BlacklistedGiveRole     null.String      `boil:"blacklisted_give_role" json:"blacklisted_give_role,omitempty" toml:"blacklisted_give_role" yaml:"blacklisted_give_role,omitempty"`
-	BlacklistedReceiveRole  null.String      `boil:"blacklisted_receive_role" json:"blacklisted_receive_role,omitempty" toml:"blacklisted_receive_role" yaml:"blacklisted_receive_role,omitempty"`
-	AdminRole               null.String      `boil:"admin_role" json:"admin_role,omitempty" toml:"admin_role" yaml:"admin_role,omitempty"`
-	DisableThanksDetection  bool             `boil:"disable_thanks_detection" json:"disable_thanks_detection" toml:"disable_thanks_detection" yaml:"disable_thanks_detection"`
-	MaxRemoveAmount         int64            `boil:"max_remove_amount" json:"max_remove_amount" toml:"max_remove_amount" yaml:"max_remove_amount"`
-	AdminRoles              types.Int64Array `boil:"admin_roles" json:"admin_roles,omitempty" toml:"admin_roles" yaml:"admin_roles,omitempty"`
-	RequiredGiveRoles       types.Int64Array `boil:"required_give_roles" json:"required_give_roles,omitempty" toml:"required_give_roles" yaml:"required_give_roles,omitempty"`
-	RequiredReceiveRoles    types.Int64Array `boil:"required_receive_roles" json:"required_receive_roles,omitempty" toml:"required_receive_roles" yaml:"required_receive_roles,omitempty"`
-	BlacklistedGiveRoles    types.Int64Array `boil:"blacklisted_give_roles" json:"blacklisted_give_roles,omitempty" toml:"blacklisted_give_roles" yaml:"blacklisted_give_roles,omitempty"`
-	BlacklistedReceiveRoles types.Int64Array `boil:"blacklisted_receive_roles" json:"blacklisted_receive_roles,omitempty" toml:"blacklisted_receive_roles" yaml:"blacklisted_receive_roles,omitempty"`
+	GuildID                   int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	PointsName                string           `boil:"points_name" json:"points_name" toml:"points_name" yaml:"points_name"`
+	Enabled                   bool             `boil:"enabled" json:"enabled" toml:"enabled" yaml:"enabled"`
+	Cooldown                  int              `boil:"cooldown" json:"cooldown" toml:"cooldown" yaml:"cooldown"`
+	MaxGiveAmount             int64            `boil:"max_give_amount" json:"max_give_amount" toml:"max_give_amount" yaml:"max_give_amount"`
+	RequiredGiveRole          null.String      `boil:"required_give_role" json:"required_give_role,omitempty" toml:"required_give_role" yaml:"required_give_role,omitempty"`
+	RequiredReceiveRole       null.String      `boil:"required_receive_role" json:"required_receive_role,omitempty" toml:"required_receive_role" yaml:"required_receive_role,omitempty"`
+	BlacklistedGiveRole       null.String      `boil:"blacklisted_give_role" json:"blacklisted_give_role,omitempty" toml:"blacklisted_give_role" yaml:"blacklisted_give_role,omitempty"`
+	BlacklistedReceiveRole    null.String      `boil:"blacklisted_receive_role" json:"blacklisted_receive_role,omitempty" toml:"blacklisted_receive_role" yaml:"blacklisted_receive_role,omitempty"`
+	AdminRole                 null.String      `boil:"admin_role" json:"admin_role,omitempty" toml:"admin_role" yaml:"admin_role,omitempty"`
+	DisableThanksDetection    bool             `boil:"disable_thanks_detection" json:"disable_thanks_detection" toml:"disable_thanks_detection" yaml:"disable_thanks_detection"`
+	MaxRemoveAmount           int64            `boil:"max_remove_amount" json:"max_remove_amount" toml:"max_remove_amount" yaml:"max_remove_amount"`
+	AdminRoles                types.Int64Array `boil:"admin_roles" json:"admin_roles,omitempty" toml:"admin_roles" yaml:"admin_roles,omitempty"`
+	RequiredGiveRoles         types.Int64Array `boil:"required_give_roles" json:"required_give_roles,omitempty" toml:"required_give_roles" yaml:"required_give_roles,omitempty"`
+	RequiredReceiveRoles      types.Int64Array `boil:"required_receive_roles" json:"required_receive_roles,omitempty" toml:"required_receive_roles" yaml:"required_receive_roles,omitempty"`
+	BlacklistedGiveRoles      types.Int64Array `boil:"blacklisted_give_roles" json:"blacklisted_give_roles,omitempty" toml:"blacklisted_give_roles" yaml:"blacklisted_give_roles,omitempty"`
+	BlacklistedReceiveRoles   types.Int64Array `boil:"blacklisted_receive_roles" json:"blacklisted_receive_roles,omitempty" toml:"blacklisted_receive_roles" yaml:"blacklisted_receive_roles,omitempty"`
+	WhitelistedThanksChannels types.Int64Array `boil:"whitelisted_thanks_channels" json:"whitelisted_thanks_channels,omitempty" toml:"whitelisted_thanks_channels" yaml:"whitelisted_thanks_channels,omitempty"`
+	BlacklistedThanksChannels types.Int64Array `boil:"blacklisted_thanks_channels" json:"blacklisted_thanks_channels,omitempty" toml:"blacklisted_thanks_channels" yaml:"blacklisted_thanks_channels,omitempty"`
 
 	R *reputationConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L reputationConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ReputationConfigColumns = struct {
-	GuildID                 string
-	PointsName              string
-	Enabled                 string
-	Cooldown                string
-	MaxGiveAmount           string
-	RequiredGiveRole        string
-	RequiredReceiveRole     string
-	BlacklistedGiveRole     string
-	BlacklistedReceiveRole  string
-	AdminRole               string
-	DisableThanksDetection  string
-	MaxRemoveAmount         string
-	AdminRoles              string
-	RequiredGiveRoles       string
-	RequiredReceiveRoles    string
-	BlacklistedGiveRoles    string
-	BlacklistedReceiveRoles string
+	GuildID                   string
+	PointsName                string
+	Enabled                   string
+	Cooldown                  string
+	MaxGiveAmount             string
+	RequiredGiveRole          string
+	RequiredReceiveRole       string
+	BlacklistedGiveRole       string
+	BlacklistedReceiveRole    string
+	AdminRole                 string
+	DisableThanksDetection    string
+	MaxRemoveAmount           string
+	AdminRoles                string
+	RequiredGiveRoles         string
+	RequiredReceiveRoles      string
+	BlacklistedGiveRoles      string
+	BlacklistedReceiveRoles   string
+	WhitelistedThanksChannels string
+	BlacklistedThanksChannels string
 }{
-	GuildID:                 "guild_id",
-	PointsName:              "points_name",
-	Enabled:                 "enabled",
-	Cooldown:                "cooldown",
-	MaxGiveAmount:           "max_give_amount",
-	RequiredGiveRole:        "required_give_role",
-	RequiredReceiveRole:     "required_receive_role",
-	BlacklistedGiveRole:     "blacklisted_give_role",
-	BlacklistedReceiveRole:  "blacklisted_receive_role",
-	AdminRole:               "admin_role",
-	DisableThanksDetection:  "disable_thanks_detection",
-	MaxRemoveAmount:         "max_remove_amount",
-	AdminRoles:              "admin_roles",
-	RequiredGiveRoles:       "required_give_roles",
-	RequiredReceiveRoles:    "required_receive_roles",
-	BlacklistedGiveRoles:    "blacklisted_give_roles",
-	BlacklistedReceiveRoles: "blacklisted_receive_roles",
+	GuildID:                   "guild_id",
+	PointsName:                "points_name",
+	Enabled:                   "enabled",
+	Cooldown:                  "cooldown",
+	MaxGiveAmount:             "max_give_amount",
+	RequiredGiveRole:          "required_give_role",
+	RequiredReceiveRole:       "required_receive_role",
+	BlacklistedGiveRole:       "blacklisted_give_role",
+	BlacklistedReceiveRole:    "blacklisted_receive_role",
+	AdminRole:                 "admin_role",
+	DisableThanksDetection:    "disable_thanks_detection",
+	MaxRemoveAmount:           "max_remove_amount",
+	AdminRoles:                "admin_roles",
+	RequiredGiveRoles:         "required_give_roles",
+	RequiredReceiveRoles:      "required_receive_roles",
+	BlacklistedGiveRoles:      "blacklisted_give_roles",
+	BlacklistedReceiveRoles:   "blacklisted_receive_roles",
+	WhitelistedThanksChannels: "whitelisted_thanks_channels",
+	BlacklistedThanksChannels: "blacklisted_thanks_channels",
 }
 
 // Generated where
@@ -170,41 +176,45 @@ func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
 }
 
 var ReputationConfigWhere = struct {
-	GuildID                 whereHelperint64
-	PointsName              whereHelperstring
-	Enabled                 whereHelperbool
-	Cooldown                whereHelperint
-	MaxGiveAmount           whereHelperint64
-	RequiredGiveRole        whereHelpernull_String
-	RequiredReceiveRole     whereHelpernull_String
-	BlacklistedGiveRole     whereHelpernull_String
-	BlacklistedReceiveRole  whereHelpernull_String
-	AdminRole               whereHelpernull_String
-	DisableThanksDetection  whereHelperbool
-	MaxRemoveAmount         whereHelperint64
-	AdminRoles              whereHelpertypes_Int64Array
-	RequiredGiveRoles       whereHelpertypes_Int64Array
-	RequiredReceiveRoles    whereHelpertypes_Int64Array
-	BlacklistedGiveRoles    whereHelpertypes_Int64Array
-	BlacklistedReceiveRoles whereHelpertypes_Int64Array
+	GuildID                   whereHelperint64
+	PointsName                whereHelperstring
+	Enabled                   whereHelperbool
+	Cooldown                  whereHelperint
+	MaxGiveAmount             whereHelperint64
+	RequiredGiveRole          whereHelpernull_String
+	RequiredReceiveRole       whereHelpernull_String
+	BlacklistedGiveRole       whereHelpernull_String
+	BlacklistedReceiveRole    whereHelpernull_String
+	AdminRole                 whereHelpernull_String
+	DisableThanksDetection    whereHelperbool
+	MaxRemoveAmount           whereHelperint64
+	AdminRoles                whereHelpertypes_Int64Array
+	RequiredGiveRoles         whereHelpertypes_Int64Array
+	RequiredReceiveRoles      whereHelpertypes_Int64Array
+	BlacklistedGiveRoles      whereHelpertypes_Int64Array
+	BlacklistedReceiveRoles   whereHelpertypes_Int64Array
+	WhitelistedThanksChannels whereHelpertypes_Int64Array
+	BlacklistedThanksChannels whereHelpertypes_Int64Array
 }{
-	GuildID:                 whereHelperint64{field: "\"reputation_configs\".\"guild_id\""},
-	PointsName:              whereHelperstring{field: "\"reputation_configs\".\"points_name\""},
-	Enabled:                 whereHelperbool{field: "\"reputation_configs\".\"enabled\""},
-	Cooldown:                whereHelperint{field: "\"reputation_configs\".\"cooldown\""},
-	MaxGiveAmount:           whereHelperint64{field: "\"reputation_configs\".\"max_give_amount\""},
-	RequiredGiveRole:        whereHelpernull_String{field: "\"reputation_configs\".\"required_give_role\""},
-	RequiredReceiveRole:     whereHelpernull_String{field: "\"reputation_configs\".\"required_receive_role\""},
-	BlacklistedGiveRole:     whereHelpernull_String{field: "\"reputation_configs\".\"blacklisted_give_role\""},
-	BlacklistedReceiveRole:  whereHelpernull_String{field: "\"reputation_configs\".\"blacklisted_receive_role\""},
-	AdminRole:               whereHelpernull_String{field: "\"reputation_configs\".\"admin_role\""},
-	DisableThanksDetection:  whereHelperbool{field: "\"reputation_configs\".\"disable_thanks_detection\""},
-	MaxRemoveAmount:         whereHelperint64{field: "\"reputation_configs\".\"max_remove_amount\""},
-	AdminRoles:              whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"admin_roles\""},
-	RequiredGiveRoles:       whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"required_give_roles\""},
-	RequiredReceiveRoles:    whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"required_receive_roles\""},
-	BlacklistedGiveRoles:    whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"blacklisted_give_roles\""},
-	BlacklistedReceiveRoles: whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"blacklisted_receive_roles\""},
+	GuildID:                   whereHelperint64{field: "\"reputation_configs\".\"guild_id\""},
+	PointsName:                whereHelperstring{field: "\"reputation_configs\".\"points_name\""},
+	Enabled:                   whereHelperbool{field: "\"reputation_configs\".\"enabled\""},
+	Cooldown:                  whereHelperint{field: "\"reputation_configs\".\"cooldown\""},
+	MaxGiveAmount:             whereHelperint64{field: "\"reputation_configs\".\"max_give_amount\""},
+	RequiredGiveRole:          whereHelpernull_String{field: "\"reputation_configs\".\"required_give_role\""},
+	RequiredReceiveRole:       whereHelpernull_String{field: "\"reputation_configs\".\"required_receive_role\""},
+	BlacklistedGiveRole:       whereHelpernull_String{field: "\"reputation_configs\".\"blacklisted_give_role\""},
+	BlacklistedReceiveRole:    whereHelpernull_String{field: "\"reputation_configs\".\"blacklisted_receive_role\""},
+	AdminRole:                 whereHelpernull_String{field: "\"reputation_configs\".\"admin_role\""},
+	DisableThanksDetection:    whereHelperbool{field: "\"reputation_configs\".\"disable_thanks_detection\""},
+	MaxRemoveAmount:           whereHelperint64{field: "\"reputation_configs\".\"max_remove_amount\""},
+	AdminRoles:                whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"admin_roles\""},
+	RequiredGiveRoles:         whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"required_give_roles\""},
+	RequiredReceiveRoles:      whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"required_receive_roles\""},
+	BlacklistedGiveRoles:      whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"blacklisted_give_roles\""},
+	BlacklistedReceiveRoles:   whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"blacklisted_receive_roles\""},
+	WhitelistedThanksChannels: whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"whitelisted_thanks_channels\""},
+	BlacklistedThanksChannels: whereHelpertypes_Int64Array{field: "\"reputation_configs\".\"blacklisted_thanks_channels\""},
 }
 
 // ReputationConfigRels is where relationship names are stored.
@@ -224,8 +234,8 @@ func (*reputationConfigR) NewStruct() *reputationConfigR {
 type reputationConfigL struct{}
 
 var (
-	reputationConfigAllColumns            = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "disable_thanks_detection", "max_remove_amount", "admin_roles", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles"}
-	reputationConfigColumnsWithoutDefault = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "admin_roles", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles"}
+	reputationConfigAllColumns            = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "disable_thanks_detection", "max_remove_amount", "admin_roles", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles", "whitelisted_thanks_channels", "blacklisted_thanks_channels"}
+	reputationConfigColumnsWithoutDefault = []string{"guild_id", "points_name", "enabled", "cooldown", "max_give_amount", "required_give_role", "required_receive_role", "blacklisted_give_role", "blacklisted_receive_role", "admin_role", "admin_roles", "required_give_roles", "required_receive_roles", "blacklisted_give_roles", "blacklisted_receive_roles", "whitelisted_thanks_channels", "blacklisted_thanks_channels"}
 	reputationConfigColumnsWithDefault    = []string{"disable_thanks_detection", "max_remove_amount"}
 	reputationConfigPrimaryKeyColumns     = []string{"guild_id"}
 )
