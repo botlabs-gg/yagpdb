@@ -520,11 +520,11 @@ func userPresentInRepLog(userID int64, guildID int64, parsed *dcmd.Data) (found 
 
 // Checks if the thanks detection is allowed to be run in the given channel
 func isThanksDetectionAllowedInChannel(config *models.ReputationConfig, channelID int64) bool {
-	if len(config.WhitelistedThanksChannels) > 0 && common.ContainsInt64Slice(config.WhitelistedThanksChannels, channelID) {
-		return true
+	if len(config.WhitelistedThanksChannels) > 0 {
+		return common.ContainsInt64Slice(config.WhitelistedThanksChannels, channelID)
 	}
-	if len(config.BlacklistedThanksChannels) > 0 && common.ContainsInt64Slice(config.BlacklistedThanksChannels, channelID) {
-		return false
+	if len(config.BlacklistedThanksChannels) > 0 {
+		return !common.ContainsInt64Slice(config.BlacklistedThanksChannels, channelID)
 	}
-	return len(config.WhitelistedThanksChannels) == 0 && len(config.BlacklistedThanksChannels) == 0
+	return true
 }
