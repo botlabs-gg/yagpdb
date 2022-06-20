@@ -84,6 +84,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 			output += `selected`
 		}
 		output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
+		output += `<optgroup label="────────────"></optgroup>`
 	}
 
 	found := false

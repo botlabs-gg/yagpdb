@@ -34,7 +34,7 @@ var PageHTMLVerifyPage string
 
 type FormData struct {
 	Enabled             bool
-	VerifiedRole        int64  `valid:"role"`
+	VerifiedRole        int64  `valid:"role,true"`
 	PageContent         string `valid:",10000"`
 	KickUnverifiedAfter int    `valid:"0,"`
 	WarnUnverifiedAfter int    `valid:"0,"`
@@ -81,12 +81,21 @@ func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.
 		err = nil
 	}
 
+	roleInvalid := true
+	for _, role := range g.Roles {
+		if role.ID == settings.VerifiedRole {
+			roleInvalid = false
+			break
+		}
+	}
+
 	if settings != nil && settings.DMMessage == "" {
 		settings.DMMessage = DefaultDMMessage
 	}
 
 	templateData["DefaultPageContent"] = DefaultPageContent
 	templateData["PluginSettings"] = settings
+	templateData["RoleInvalid"] = roleInvalid
 
 	return templateData, err
 }

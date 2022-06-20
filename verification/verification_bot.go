@@ -97,6 +97,20 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 	if !conf.Enabled {
 		return
 	}
+	gs := bot.State.GetGuild(member.GuildID)
+	roleInvalid := true
+	for _, role := range gs.Roles {
+		if role.ID == conf.VerifiedRole {
+			roleInvalid = false
+			break
+		}
+	}
+	if roleInvalid {
+		cop := *conf
+		cop.Enabled = false
+		cop.UpdateG(context.Background(), boil.Whitelist("enabled"))
+		return
+	}
 
 	// Check if member is already verified, if yes then remove any scheduled events
 	if common.ContainsInt64Slice(member.Roles, conf.VerifiedRole) {
