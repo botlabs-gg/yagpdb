@@ -49,6 +49,7 @@ func addBotHandlers() {
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleRatelimit, eventsystem.EventRateLimit)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, ReadyTracker.handleReadyOrResume, eventsystem.EventReady, eventsystem.EventResumed)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, handleResumed, eventsystem.EventResumed)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleInteractionCreate, eventsystem.EventInteractionCreate)
 }
 
 var (
@@ -309,6 +310,20 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 	err := pubsub.Publish("dm_reaction", -1, ra)
 	if err != nil {
 		logger.WithError(err).Error("failed publishing dm reaction")
+	}
+}
+
+func HandleInteractionCreate(evt *eventsystem.EventData) {
+	ic := evt.InteractionCreate()
+	if ic.GuildID != 0 {
+		return
+	}
+	if ic.User.ID == common.BotUser.ID {
+		return
+	}
+	err := pubsub.Publish("dm_integration", -1, ic)
+	if err != nil {
+		logger.WithError(err).Error("failed publishing dm interaction")
 	}
 }
 
