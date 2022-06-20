@@ -744,7 +744,7 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID int64, reason string,
 
 	headers := make(map[string]string)
 	if reason != "" {
-		headers["X-Audit-Log-Reason"] = url.QueryEscape(reason)
+		headers["X-Audit-Log-Reason"] = url.PathEscape(reason)
 	}
 
 	_, err = s.RequestWithBucketID("PUT", uri, data, headers, EndpointGuildBan(guildID, 0))
@@ -919,7 +919,7 @@ func (s *Session) GuildMemberTimeoutWithReason(guildID int64, userID int64, unti
 
 	headers := make(map[string]string)
 	if reason != "" {
-		headers["X-Audit-Log-Reason"] = url.QueryEscape(reason)
+		headers["X-Audit-Log-Reason"] = url.PathEscape(reason)
 	}
 	_, err = s.RequestWithBucketID("PATCH", EndpointGuildMember(guildID, userID), data, headers, EndpointGuildMember(guildID, 0))
 	return
