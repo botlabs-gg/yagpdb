@@ -170,31 +170,11 @@ $(function(){
         function updateBotStatusAlert() {
             $.getJSON("/status.json", function(data) {
                 const shardID = Number(BigInt("{{.ActiveGuild.ID}}") >> BigInt(22)) % data.total_shards;
-            
                 let removeAlert = true;
                 if (data.offline_shards && data.offline_shards.includes(shardID)) {
                     upsertAlert("The shard the bot is on for your server is currently offline. Most functionality will not work as expected. Join the support server for more information if this issue persists.");
                     removeAlert = false;
-                } else {
-                    if (data.host_statuses) {
-                        loop: for (const host of data.host_statuses) {
-                            if (!host.Nodes) continue;
-                            for (const node of host.Nodes) {
-                                if (!node.shards) continue;
-                                for (const shard of node.shards) {
-                                    if (shard.shard_id === shardID) {
-                                        if (shard.events_per_second < 1) {
-                                            upsertAlert("The shard the bot is on for your server is currently having issues. Functionality may be limited. Join the support server for more information if this issue persists.");
-                                            removeAlert = false;
-                                        }
-                                        break loop;
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
-
                 if (removeAlert) $("#shard-problems-warning").remove();
             });
         }
