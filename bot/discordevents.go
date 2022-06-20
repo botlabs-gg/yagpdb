@@ -321,7 +321,7 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	if ic.User.ID == common.BotUser.ID {
 		return
 	}
-	err := pubsub.Publish("dm_integration", -1, ic)
+	err := pubsub.Publish("dm_interaction", -1, ic)
 	if err != nil {
 		logger.WithError(err).Error("failed publishing dm interaction")
 	}
