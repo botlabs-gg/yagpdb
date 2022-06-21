@@ -318,6 +318,9 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	if ic.GuildID != 0 {
 		return
 	}
+	if ic.User == nil {
+		return
+	}
 	if ic.User != nil && ic.User.ID == common.BotUser.ID {
 		return
 	}
