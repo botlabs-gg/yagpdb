@@ -193,12 +193,12 @@ func (vio *AddViolationEffect) Description() (description string) {
 func (vio *AddViolationEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
-			Name:    "Name",
-			Key:     "Name",
-			Kind:    SettingTypeString,
-			Min:     1,
-			Max:     50,
-			Default: "violation name",
+			Name:        "Name",
+			Key:         "Name",
+			Kind:        SettingTypeString,
+			Min:         1,
+			Max:         50,
+			Placeholder: "Enter name for the violation",
 		},
 	}
 }
