@@ -41,14 +41,31 @@ var (
 )
 
 type Form struct {
-	YoutubeChannelID   string
-	YoutubeChannelUser string
-	DiscordChannel     int64 `valid:"channel,false"`
-	ID                 uint
-	MentionEveryone    bool
-	PublishLivestream  bool
-	Enabled            bool
+	YoutubeUrl        string
+	DiscordChannel    int64 `valid:"channel,false"`
+	ID                uint
+	MentionEveryone   bool
+	PublishLivestream bool
+	Enabled           bool
 }
+
+type ytUrlType int
+
+const (
+	ytUrlTypeVideo ytUrlType = iota
+	ytUrlTypeCustom
+	ytUrlTypeChannel
+	ytUrlTypeUser
+	ytUrlTypeInvalid
+)
+
+var (
+	ytUrlRegex        = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com`)
+	ytVideoUrlRegex   = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]+).*`)
+	ytChannelUrlRegex = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(channel)\/(UC[\w-]{21}[AQgw])$`)
+	ytCustomUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(c\/)?([\w-]+)$`)
+	ytUserUrlRegex    = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(user\/)([\w-]+)$`)
+)
 
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("youtube/assets/youtube.html", PageHTML)
@@ -112,14 +129,17 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
-
-	cID := trimYouTubeURLParts(data.YoutubeChannelID)
-	username := trimYouTubeURLParts(data.YoutubeChannelUser)
-	if cID == "" && username == "" {
-		return templateData.AddAlerts(web.ErrorAlert("Neither channelid or username specified.")), errors.New("channelID or username not specified")
+	url := data.YoutubeUrl
+	if !ytUrlRegex.MatchString(url) {
+		return templateData.AddAlerts(web.ErrorAlert("THAT IS NOT A YOUTUBE LINK!")), nil
+	}
+	ytChannel, err := p.getYtChannel(url)
+	if err != nil {
+		logger.WithError(err).Errorf("Error occured fetching channel for url %s", url)
+		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
 	}
 
-	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, cID, username, data.MentionEveryone, data.PublishLivestream)
+	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, ytChannel, data.MentionEveryone, data.PublishLivestream)
 	if err != nil {
 		if err == ErrNoChannel {
 			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("channel not found")
@@ -130,20 +150,6 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.YoutubeChannelName}))
 
 	return templateData, nil
-}
-
-// See https://regex101.com/r/18Ttrq/1/ for some examples of what this matches.
-var youtubeURLPartRegexp = regexp.MustCompile(`(?i)\A(?:https?://)?(?:www\.)?youtube\.com/(?:(?:c|channel|user)/)?`)
-
-// trimYouTubeURLParts removes the leading YouTube URL parts from v if present.
-// For example, 'youtube.com/user/123' will be transformed to '123'.
-func trimYouTubeURLParts(v string) string {
-	loc := youtubeURLPartRegexp.FindStringIndex(v)
-	if loc == nil {
-		return v
-	}
-
-	return v[loc[1]:]
 }
 
 type ContextKey int

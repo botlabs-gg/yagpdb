@@ -143,15 +143,6 @@ func (p *Plugin) syncWebSubs() {
 		return nil
 	}))
 }
-
-func (p *Plugin) removeAllSubsForChannel(channel string) {
-	err := common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
-	if err != nil {
-		logger.WithError(err).WithField("yt_channel", channel).Error("failed removing channel")
-	}
-	go p.MaybeRemoveChannelWatch(channel)
-}
-
 func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle string, videoID string, mentionEveryone bool, content string) {
 	parsedChannel, _ := strconv.ParseInt(discordChannel, 10, 64)
 	parsedGuild, _ := strconv.ParseInt(guild, 10, 64)
@@ -187,10 +178,86 @@ func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
 }
 
 var (
-	ErrNoChannel = errors.New("No channel with that id found")
+	ErrNoChannel = errors.New("no channel with that id found")
 )
 
-func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, youtubeUsername string, mentionEveryone bool, publishLivestream bool) (*ChannelSubscription, error) {
+func (p *Plugin) parseYtUrl(url string) (t ytUrlType, id string, err error) {
+	if ytVideoUrlRegex.MatchString(url) {
+		capturingGroups := ytVideoUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][4]) > 0 {
+			return ytUrlTypeVideo, capturingGroups[0][4], nil
+		}
+	} else if ytChannelUrlRegex.MatchString(url) {
+		capturingGroups := ytChannelUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
+			return ytUrlTypeChannel, capturingGroups[0][5], nil
+		}
+	} else if ytCustomUrlRegex.MatchString(url) {
+		capturingGroups := ytCustomUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
+			return ytUrlTypeCustom, capturingGroups[0][5], nil
+		}
+	} else if ytUserUrlRegex.MatchString(url) {
+		capturingGroups := ytUserUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
+			return ytUrlTypeUser, capturingGroups[0][5], nil
+		}
+	}
+	return ytUrlTypeInvalid, "", errors.New("invalid or incomplete url")
+}
+
+func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) {
+	urlType, id, err := p.parseYtUrl(url)
+
+	if err != nil {
+		return nil, err
+	}
+	var cResp *youtube.ChannelListResponse
+	channelListCall := p.YTService.Channels.List([]string{"snippet"})
+
+	switch urlType {
+	case ytUrlTypeChannel:
+		channelListCall = channelListCall.Id(id)
+	case ytUrlTypeUser:
+		channelListCall = channelListCall.ForUsername(id)
+	case ytUrlTypeCustom:
+		searchListCall := p.YTService.Search.List([]string{"snippet"})
+		searchListCall = searchListCall.Q(id).Type("channel")
+		sResp, err := searchListCall.Do()
+		if err != nil {
+			return nil, common.ErrWithCaller(err)
+		}
+		if len(sResp.Items) < 1 {
+			return nil, ErrNoChannel
+		}
+		channelListCall = channelListCall.Id(sResp.Items[0].Id.ChannelId)
+	case ytUrlTypeVideo:
+		searchListCall := p.YTService.Search.List([]string{"snippet"})
+		searchListCall = searchListCall.Q(id).Type("video")
+		sResp, err := searchListCall.Do()
+
+		if err != nil {
+			return nil, common.ErrWithCaller(err)
+		}
+		if len(sResp.Items) < 1 {
+			return nil, ErrNoChannel
+		}
+		channelListCall = channelListCall.Id(sResp.Items[0].Snippet.ChannelId)
+	default:
+		return nil, common.ErrWithCaller(errors.New("invalid youtube Url"))
+	}
+	cResp, err = channelListCall.Do()
+
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	}
+	if len(cResp.Items) < 1 {
+		return nil, ErrNoChannel
+	}
+	return cResp.Items[0], nil
+}
+
+func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool) (*ChannelSubscription, error) {
 	sub := &ChannelSubscription{
 		GuildID:           discordgo.StrID(guildID),
 		ChannelID:         discordgo.StrID(discordChannelID),
@@ -199,26 +266,10 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, yout
 		Enabled:           true,
 	}
 
-	call := p.YTService.Channels.List([]string{"snippet"})
-	if youtubeChannelID != "" {
-		call = call.Id(youtubeChannelID)
-	} else {
-		call = call.ForUsername(youtubeUsername)
-	}
+	sub.YoutubeChannelName = ytChannel.Snippet.Title
+	sub.YoutubeChannelID = ytChannel.Id
 
-	cResp, err := call.Do()
-	if err != nil {
-		return nil, common.ErrWithCaller(err)
-	}
-
-	if len(cResp.Items) < 1 {
-		return nil, ErrNoChannel
-	}
-
-	sub.YoutubeChannelName = cResp.Items[0].Snippet.Title
-	sub.YoutubeChannelID = cResp.Items[0].Id
-
-	err = common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
+	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
 	if err != nil {
 		return nil, err
 	}
