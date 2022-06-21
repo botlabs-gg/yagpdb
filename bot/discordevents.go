@@ -318,7 +318,7 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	if ic.GuildID != 0 {
 		return
 	}
-	if ic.User.ID == common.BotUser.ID {
+	if ic.User != nil && ic.User.ID == common.BotUser.ID {
 		return
 	}
 	err := pubsub.Publish("dm_interaction", -1, ic)

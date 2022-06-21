@@ -37,21 +37,9 @@ func RegisterPlugin() {
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
-		ic := evt.InteractionCreate()
-		if ic.GuildID == 0 {
-			// DM reactions are handled through pubsub, see below
-			return
-		}
-		switch ic.MessageComponentData().CustomID {
-		case paginationNext:
-			handlePageChange(ic, 1)
-		case paginationPrev:
-			handlePageChange(ic, -1)
-		}
-	}, eventsystem.EventInteractionCreate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleInteractionCreate, eventsystem.EventInteractionCreate)
 
+	// this just handles interaction events from DMS
 	pubsub.AddHandler("dm_interaction", func(evt *pubsub.Event) {
 		dataCast := evt.Data.(*discordgo.InteractionCreate)
 		switch dataCast.MessageComponentData().CustomID {
