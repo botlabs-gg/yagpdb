@@ -162,14 +162,14 @@ type Context struct {
 
 	RegexCache map[string]*regexp.Regexp
 
-	CurrentFrame *contextFrame
+	CurrentFrame *ContextFrame
 
 	IsExecedByLeaveMessage bool
 
 	contextFuncsAdded bool
 }
 
-type contextFrame struct {
+type ContextFrame struct {
 	CS *dstate.ChannelState
 
 	MentionEveryone bool
@@ -198,7 +198,7 @@ func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberS
 		Data:         make(map[string]interface{}),
 		Counters:     make(map[string]int),
 
-		CurrentFrame: &contextFrame{
+		CurrentFrame: &ContextFrame{
 			CS: cs,
 		},
 	}
@@ -381,9 +381,9 @@ func (c *Context) executeParsed() (string, error) {
 }
 
 // creates a new context frame and returns the old one
-func (c *Context) newContextFrame(cs *dstate.ChannelState) *contextFrame {
+func (c *Context) newContextFrame(cs *dstate.ChannelState) *ContextFrame {
 	old := c.CurrentFrame
-	c.CurrentFrame = &contextFrame{
+	c.CurrentFrame = &ContextFrame{
 		CS:               cs,
 		isNestedTemplate: true,
 	}
@@ -484,7 +484,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		}
 
 		if len(c.CurrentFrame.AddResponseReactionNames) > 0 {
-			go func(frame *contextFrame) {
+			go func(frame *ContextFrame) {
 				for _, v := range frame.AddResponseReactionNames {
 					common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
 				}
