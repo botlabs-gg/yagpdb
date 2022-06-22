@@ -119,7 +119,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("Go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
+		return fmt.Errorf("go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
 	}
 
 	logger.Info("Websub: Subscribed to channel ", ytChannelID)
@@ -150,7 +150,7 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("Go bad status code: %d (%s)", resp.StatusCode, resp.Status)
+		return fmt.Errorf("go bad status code: %d (%s)", resp.StatusCode, resp.Status)
 	}
 
 	logger.Info("Websub: UnSubscribed to channel ", ytChannelID)
