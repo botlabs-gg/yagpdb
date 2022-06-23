@@ -131,11 +131,11 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
 	url := data.YoutubeUrl
 	if !ytUrlRegex.MatchString(url) {
-		return templateData.AddAlerts(web.ErrorAlert("THAT IS NOT A YOUTUBE LINK!")), nil
+		return templateData.AddAlerts(web.ErrorAlert("That is not a <u>youtube.com</u> link, check the examples for a valid link ")), nil
 	}
 	ytChannel, err := p.getYtChannel(url)
 	if err != nil {
-		logger.WithError(err).Errorf("Error occured fetching channel for url %s", url)
+		logger.WithError(err).Errorf("error occurred fetching channel for url %s", url)
 		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
 	}
 
