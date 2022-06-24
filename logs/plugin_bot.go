@@ -49,7 +49,7 @@ var cmdLogs = &commands.YAGCommand{
 	Description:     "Creates a log of the last messages in the current channel.",
 	LongDescription: "This includes deleted messages within an hour (or 12 hours for premium servers)",
 	Arguments: []*dcmd.ArgDef{
-		{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
+		{Name: "Count", Default: 100, Type: dcmd.Int, MinValue: common.NewFloat64(2), MaxValue: 250},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "channel", Help: "Optional channel to log instead", Type: dcmd.Channel},

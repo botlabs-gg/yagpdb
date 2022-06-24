@@ -133,7 +133,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Reason", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "ddays", Help: "Number of days of messages to delete", Type: dcmd.Int},
+			{Name: "ddays", Help: "Number of days of messages to delete", Type: dcmd.Int, MinValue: common.NewFloat64(0), MaxValue: 7},
 		},
 		RequiredDiscordPermsHelp: "BanMembers or ManageServer",
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionBanMembers}},
@@ -237,7 +237,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		RequiredDiscordPermsHelp: "KickMembers or ManageServer",
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "cl", Help: "Messages to delete", Type: &dcmd.IntArg{Min: 1, Max: 100}},
+			{Name: "cl", Help: "Messages to delete", Type: dcmd.Int, MinValue: common.NewFloat64(1), MaxValue: 100},
 		},
 		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionKickMembers}},
 		SlashCommandEnabled: true,
@@ -569,7 +569,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Num", Type: &dcmd.IntArg{Min: 1, Max: 100}},
+			{Name: "Num", Type: dcmd.Int, MinValue: common.NewFloat64(1), MaxValue: 100},
 			{Name: "User", Type: dcmd.UserID, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{

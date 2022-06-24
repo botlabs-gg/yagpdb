@@ -12,10 +12,12 @@ import (
 
 // ArgDef represents a argument definition, either a switch or plain arg
 type ArgDef struct {
-	Name    string
-	Type    ArgType
-	Help    string
-	Default interface{}
+	Name     string
+	Type     ArgType
+	Help     string
+	Default  interface{}
+	MinValue *float64
+	MaxValue float64
 }
 
 func (def *ArgDef) StandardSlashCommandOption(typ discordgo.ApplicationCommandOptionType) *discordgo.ApplicationCommandOption {
@@ -545,10 +547,17 @@ func (i *IntArg) HelpName() string {
 }
 
 func (i *IntArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
+	opt := def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionInteger)
 	if i.InteractionString {
-		return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionString)}
+		opt = def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionString)
 	}
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionInteger)}
+	if def.MinValue != nil {
+		opt.MinValue = def.MinValue
+	}
+	if def.MaxValue != 0 {
+		opt.MaxValue = def.MaxValue
+	}
+	return []*discordgo.ApplicationCommandOption{opt}
 }
 
 // FloatArg matches and parses float arguments
@@ -612,7 +621,14 @@ func (f *FloatArg) HelpName() string {
 }
 
 func (f *FloatArg) SlashCommandOptions(def *ArgDef) []*discordgo.ApplicationCommandOption {
-	return []*discordgo.ApplicationCommandOption{def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionString)}
+	opt := def.StandardSlashCommandOption(discordgo.ApplicationCommandOptionString)
+	if def.MinValue != nil {
+		opt.MinValue = def.MinValue
+	}
+	if def.MaxValue != 0 {
+		opt.MaxValue = def.MaxValue
+	}
+	return []*discordgo.ApplicationCommandOption{opt}
 }
 
 // StringArg matches and parses float arguments

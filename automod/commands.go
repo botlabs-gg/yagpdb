@@ -307,7 +307,7 @@ func (p *Plugin) AddCommands() {
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "ma", Help: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "minage", Help: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			{Name: "num", Help: "Max Violations Cleared", Default: 2000, Type: &dcmd.IntArg{Min: 0, Max: 2000}},
+			{Name: "num", Help: "Max Violations Cleared", Default: 2000, Type: dcmd.Int, MinValue: common.NewFloat64(0), MaxValue: 2000},
 			{Name: "old", Help: "Preferentially Clear Older Violations"},
 			{Name: "skip", Help: "Amount Skipped", Default: 0, Type: dcmd.Int},
 		},
