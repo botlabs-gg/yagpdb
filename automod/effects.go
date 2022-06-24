@@ -849,11 +849,14 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 	}
 
 	messageID, err := common.BotSession.ChannelMessageSendComplex(ctxData.CS.ID, msgSend)
+	if err != nil {
+		logger.WithError(err).Error("Failed to send message for AutomodV2")
+		return err
+	}
 	if settingsCast.Duration > 0 {
 		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, ctxData.CS.ID, messageID.ID, settingsCast.Duration)
 	}
-
-	return err
+	return nil
 }
 
 func (send *SendChannelMessageEffect) MergeDuplicates(data []interface{}) interface{} {
