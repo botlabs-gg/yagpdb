@@ -439,7 +439,7 @@ func (timeout *TimeoutUserEffect) UserSettings() []*SettingDef {
 			Min:     int(moderation.MinTimeOutDuration.Minutes()),
 			Max:     int(moderation.MaxTimeOutDuration.Minutes()),
 			Kind:    SettingTypeInt,
-			Default: 10,
+			Default: int(moderation.DefaultTimeoutDuration.Minutes()),
 		},
 		&SettingDef{
 			Name: "Custom message (empty for default)",
