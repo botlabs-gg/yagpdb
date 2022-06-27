@@ -193,12 +193,12 @@ func (vio *AddViolationEffect) Description() (description string) {
 func (vio *AddViolationEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
-			Name:    "Name",
-			Key:     "Name",
-			Kind:    SettingTypeString,
-			Min:     1,
-			Max:     50,
-			Default: "violation name",
+			Name:        "Name",
+			Key:         "Name",
+			Kind:        SettingTypeString,
+			Min:         1,
+			Max:         50,
+			Placeholder: "Enter name for the violation",
 		},
 	}
 }
@@ -439,7 +439,7 @@ func (timeout *TimeoutUserEffect) UserSettings() []*SettingDef {
 			Min:     int(moderation.MinTimeOutDuration.Minutes()),
 			Max:     int(moderation.MaxTimeOutDuration.Minutes()),
 			Kind:    SettingTypeInt,
-			Default: 10,
+			Default: int(moderation.DefaultTimeoutDuration.Minutes()),
 		},
 		&SettingDef{
 			Name: "Custom message (empty for default)",
@@ -848,12 +848,15 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 		msgSend.Content += ctxData.ConstructReason(true)
 	}
 
-	messageID, err := common.BotSession.ChannelMessageSendComplex(ctxData.CS.ID, msgSend)
-	if settingsCast.Duration > 0 {
-		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, ctxData.CS.ID, messageID.ID, settingsCast.Duration)
+	message, err := common.BotSession.ChannelMessageSendComplex(ctxData.CS.ID, msgSend)
+	if err != nil {
+		logger.WithError(err).Error("Failed to send message for AutomodV2")
+		return err
 	}
-
-	return err
+	if settingsCast.Duration > 0 && message != nil {
+		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, ctxData.CS.ID, message.ID, settingsCast.Duration)
+	}
+	return nil
 }
 
 func (send *SendChannelMessageEffect) MergeDuplicates(data []interface{}) interface{} {

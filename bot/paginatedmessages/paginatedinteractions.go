@@ -10,6 +10,11 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
+const (
+	EmojiNext = "⮕"
+	EmojiPrev = "⬅"
+)
+
 var (
 	activePaginatedMessagesMap = make(map[int64]*PaginatedMessage)
 	paginationNext             = "pagination_next"
@@ -21,6 +26,12 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 	if ic.Type != discordgo.InteractionMessageComponent {
 		return
 	}
+
+	if ic.GuildID == 0 {
+		//DM interactions are handled via pubsub
+		return
+	}
+
 	switch ic.MessageComponentData().CustomID {
 	case paginationNext:
 		handlePageChange(ic, 1)
@@ -30,7 +41,11 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 }
 
 func handlePageChange(ic *discordgo.InteractionCreate, pageMod int) {
-	if (ic.Member != nil && ic.Member.User.ID == common.BotUser.ID) || (ic.User != nil && ic.User.ID == common.BotUser.ID) {
+	if ic.Member != nil && ic.Member.User.ID == common.BotUser.ID {
+		return
+	}
+
+	if ic.User != nil && ic.User.ID == common.BotUser.ID {
 		return
 	}
 
@@ -62,13 +77,13 @@ func createNavigationButtons(prevDisabled bool, nextDisabled bool) []discordgo.M
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				discordgo.Button{
-					Label:    "Prev",
+					Label:    EmojiPrev,
 					Style:    discordgo.PrimaryButton,
 					Disabled: prevDisabled,
 					CustomID: paginationPrev,
 				},
 				discordgo.Button{
-					Label:    "Next",
+					Label:    EmojiNext,
 					Style:    discordgo.PrimaryButton,
 					Disabled: nextDisabled,
 					CustomID: paginationNext,

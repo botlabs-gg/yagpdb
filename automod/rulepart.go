@@ -121,11 +121,12 @@ const (
 )
 
 type SettingDef struct {
-	Name     string
-	Key      string
-	Kind     SettingType
-	Min, Max int
-	Default  interface{} `json:",omitempty"`
+	Name        string
+	Key         string
+	Kind        SettingType
+	Min, Max    int
+	Default     interface{} `json:",omitempty"`
+	Placeholder string      `json:",omitempty"`
 }
 
 type RulePartType int

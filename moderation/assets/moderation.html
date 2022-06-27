@@ -219,7 +219,7 @@ the punishment, is an <a href="https://docs.yagpdb.xyz/reference/templates#user"
         <div class="form-group">
             <label>Default timeout duration in minutes</label>
             <input type="number" min="1" max="40320" name="DefaultTimeoutDuration.Int64" class="form-control"
-                value="{{.ModConfig.DefaultTimeoutDuration.Int64}}">
+                value="{{or .ModConfig.DefaultTimeoutDuration.Int64 .DefaultTimeoutDuration}}">
         </div>
         <hr />
     </div>

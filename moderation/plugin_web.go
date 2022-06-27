@@ -54,6 +54,7 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	templateData["DefaultDMMessage"] = DefaultDMMessage
+	templateData["DefaultTimeoutDuration"] = int(DefaultTimeoutDuration.Minutes())
 
 	if _, ok := templateData["ModConfig"]; !ok {
 		config, err := GetConfig(activeGuild.ID)
