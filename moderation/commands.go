@@ -1027,9 +1027,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Role", Type: &commands.RoleArg{}},
-		},
-		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "d", Default: time.Duration(0), Help: "Duration", Type: &commands.DurationArg{}},
+			{Name: "Duration", Type: &commands.DurationArg{}, Default: time.Duration(0)},
 		},
 		RequiredDiscordPermsHelp: "ManageRoles or ManageServer",
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
@@ -1060,7 +1058,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Can't give roles above you", nil
 			}
 
-			dur := parsed.Switches["d"].Value.(time.Duration)
+			dur := parsed.Args[2].Value.(time.Duration)
 
 			// no point if the user has the role and is not updating the expiracy
 			if common.ContainsInt64Slice(member.Member.Roles, role.ID) && dur <= 0 {
