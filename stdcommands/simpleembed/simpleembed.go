@@ -14,7 +14,7 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:         commands.CategoryFun,
+	CmdCategory:         commands.CategoryTool,
 	Name:                "SimpleEmbed",
 	Aliases:             []string{"se"},
 	Description:         "A more simpler version of CustomEmbed, controlled completely using switches.",
