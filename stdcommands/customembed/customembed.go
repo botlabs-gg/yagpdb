@@ -9,7 +9,7 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:         commands.CategoryFun,
+	CmdCategory:         commands.CategoryTool,
 	Name:                "CustomEmbed",
 	Aliases:             []string{"ce"},
 	Description:         "Creates an embed from what you give it in json form: https://docs.yagpdb.xyz/others/custom-embeds",
