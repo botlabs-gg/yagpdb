@@ -138,7 +138,7 @@ func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
 
 func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	if menu.State == RoleMenuStateSettingUp {
-		return "Already setting this menu up", nil
+		return "Already setting this menu up, use `rolemenu complete ...` to complete the setup.", nil
 	}
 
 	if parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool) {
@@ -758,7 +758,7 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if menu.State != RoleMenuStateDone {
-		return "This menu isn't 'done' (still being edited, or made)", nil
+		return "This menu isn't 'done' (still being edited, or made), use `rolemenu complete ...` to complete the setup.", nil
 	}
 
 	menu.State = RoleMenuStateEditingOptionSelecting
@@ -787,7 +787,7 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if !menu.RoleGroupID.Valid {
-		return "Uh oh i haven't added editing of standalone menus yet. (will be added very soon)", nil
+		return "Uh oh, I haven't added editing of standalone menus yet. (will be added very soon)", nil
 	}
 
 	menu.State = RoleMenuStateDone
