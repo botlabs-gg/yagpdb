@@ -614,13 +614,15 @@ type SlowmodeTriggerData struct {
 	Treshold                 int
 	Interval                 int
 	SingleMessageAttachments bool
+	SingleMessageLinks       bool
 }
 
 var _ MessageTrigger = (*SlowmodeTrigger)(nil)
 
 type SlowmodeTrigger struct {
 	ChannelBased bool
-	Attachments  bool // whether this trigger checks any messages or just attachments
+	Attachments  bool // whether this trigger checks attachments or not
+	Links        bool // whether this trigger checks links or not
 }
 
 func (s *SlowmodeTrigger) Kind() RulePartType {
@@ -636,12 +638,17 @@ func (s *SlowmodeTrigger) Name() string {
 		if s.Attachments {
 			return "x channel attachments in y seconds"
 		}
-
+		if s.Links {
+			return "x channel links in y seconds"
+		}
 		return "x channel messages in y seconds"
 	}
 
 	if s.Attachments {
 		return "x user attachments in y seconds"
+	}
+	if s.Links {
+		return "x user links in y seconds"
 	}
 	return "x user messages in y seconds"
 }
@@ -651,29 +658,38 @@ func (s *SlowmodeTrigger) Description() string {
 		if s.Attachments {
 			return "Triggers when a channel has x attachments within y seconds"
 		}
-
+		if s.Links {
+			return "Triggers when a channel has x links within y seconds"
+		}
 		return "Triggers when a channel has x messages in y seconds."
 	}
 
 	if s.Attachments {
 		return "Triggers when a user has x attachments within y seconds in a single channel"
 	}
-
+	if s.Links {
+		return "Triggers when a channel has x links within y seconds"
+	}
 	return "Triggers when a user has x messages in y seconds in a single channel."
 }
 
 func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 	defaultMessages := 5
 	defaultInterval := 5
+	thresholdName := "Messages"
 
 	if s.Attachments {
 		defaultMessages = 10
 		defaultInterval = 60
+		thresholdName = "Attachments"
+	} else if s.Links {
+		defaultInterval = 60
+		thresholdName = "Links"
 	}
 
 	settings := []*SettingDef{
 		&SettingDef{
-			Name:    "Messages",
+			Name:    thresholdName,
 			Key:     "Treshold",
 			Kind:    SettingTypeInt,
 			Default: defaultMessages,
@@ -693,6 +709,13 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 			Kind:    SettingTypeBool,
 			Default: false,
 		})
+	} else if s.Links {
+		settings = append(settings, &SettingDef{
+			Name:    "Also count multiple links in single message",
+			Key:     "SingleMessageLinks",
+			Kind:    SettingTypeBool,
+			Default: false,
+		})
 	}
 
 	return settings
@@ -700,6 +723,10 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 
 func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	if s.Attachments && len(m.Attachments) < 1 {
+		return false, nil
+	}
+
+	if s.Links && !common.LinkRegex.MatchString(forwardSlashReplacer.Replace(m.Content)) {
 		return false, nil
 	}
 
@@ -730,17 +757,29 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 				continue // we're only checking messages with attachments
 			}
 			if settings.SingleMessageAttachments {
-				// Add the count of all attachements of this message to the amount
+				// Add the count of all attachments of this message to the amount
 				amount += len(v.Attachments)
-				continue
+			} else {
+				amount++
 			}
+		} else if s.Links {
+			linksLen := len(common.LinkRegex.FindAllString(forwardSlashReplacer.Replace(v.Content), -1))
+			if linksLen < 1 {
+				continue // we're only checking messages with links
+			}
+			if settings.SingleMessageLinks {
+				// Add the count of all links of this message to the amount
+				amount += linksLen
+			} else {
+				amount++
+			}
+		} else {
+			amount++
 		}
 
-		amount++
-	}
-
-	if amount >= settings.Treshold {
-		return true, nil
+		if amount >= settings.Treshold {
+			return true, nil
+		}
 	}
 
 	return false, nil
