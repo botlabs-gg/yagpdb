@@ -561,7 +561,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			// Don't bother sending confirmation if it is done in the report channel
-			if channelID != parsed.ChannelID {
+			if channelID != parsed.ChannelID || parsed.SlashCommandTriggerData != nil {
 				return "User reported to the proper authorities!", nil
 			}
 
