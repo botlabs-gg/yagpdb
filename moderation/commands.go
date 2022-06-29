@@ -533,7 +533,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No report channel set up", nil
 			}
 
-			topContent := fmt.Sprintf("%s reported %s", parsed.Author.Mention(), target.Mention())
+			topContent := fmt.Sprintf("%s reported **%s#%s (ID %d)**", parsed.Author.Mention(), target.Username, target.Discriminator, target.ID)
 
 			embed := &discordgo.MessageEmbed{
 				Author: &discordgo.MessageEmbedAuthor{
@@ -561,7 +561,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			// Don't bother sending confirmation if it is done in the report channel
-			if channelID != parsed.ChannelID {
+			if channelID != parsed.ChannelID || parsed.SlashCommandTriggerData != nil {
 				return "User reported to the proper authorities!", nil
 			}
 
@@ -595,6 +595,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgumentCombos:           [][]int{{0}, {0, 1}, {1, 0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
+		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			botMember, err := bot.GetMember(parsed.GuildData.GS.ID, common.BotUser.ID)
 			if err != nil {
