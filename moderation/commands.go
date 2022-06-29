@@ -503,6 +503,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
+		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
