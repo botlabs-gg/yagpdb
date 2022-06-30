@@ -585,6 +585,7 @@ function submitForm(form, url, alertsOnly) {
 	}
 
 	navigate(url, "POST", serialized, false, true, alertsOnly, function () {
+		hideUnsavedChangesPopup($(form)[0])
 		if (currentTab) {
 			$(".tabs a[href='" + currentTab + "']").tab("show");
 		}
