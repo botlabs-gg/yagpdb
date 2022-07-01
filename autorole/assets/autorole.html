@@ -42,6 +42,13 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <h4>Notice:</h4>
+                            <p>
+                            Automatically adding any role on join bypasses Discord's protections such as
+                            <a
+                                href="https://support.discord.com/hc/en-us/articles/216679607-What-are-Verification-levels-" target="_blank"><b>Verification Levels</b></a>
+                            and <a href="https://support.discord.com/hc/en-us/articles/1500000466882-Rules-Screening-FAQ" target="_blank"><b>Rule Screening</b></a>.
+                            </p>
                             {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards. (<b>Note:</b> Above mentioned conditions will be checked before assigning the role)` .Autorole.OnlyOnJoin `onchange="toggleOnlyOnJoin(this)"`}}
                         </div>
                         <div class="form-group">
