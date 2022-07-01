@@ -176,7 +176,8 @@ var cmdListCommands = &commands.YAGCommand{
 		var ccFile *discordgo.File
 		var msg *discordgo.MessageSend
 
-		if data.Switches["file"].Value != nil {
+		responses := fmt.Sprintf("```\n%s\n```", strings.Join(cc.Responses, "```\n```"))
+		if data.Switches["file"].Value != nil || len(responses) >= 2000 {
 			var buf bytes.Buffer
 			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
 
@@ -213,6 +214,7 @@ var cmdListCommands = &commands.YAGCommand{
 			return msg, nil
 
 		}
+
 		return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
 			cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64],
 			highlight, strings.Join(cc.Responses, "```\n```")), nil
