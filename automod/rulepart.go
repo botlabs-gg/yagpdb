@@ -48,6 +48,8 @@ var RulePartMap = map[int]RulePart{
 	33: &AntiPhishingLinkTrigger{},
 	34: &MessageLengthTrigger{},
 	35: &MessageLengthTrigger{Inverted: true},
+	36: &SlowmodeTrigger{Links: true, ChannelBased: false},
+	37: &SlowmodeTrigger{Links: true, ChannelBased: true},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
