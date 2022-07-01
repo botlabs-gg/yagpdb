@@ -363,7 +363,7 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 
 	currentField := firstField
 	for _, v := range lines {
-		if utf8.RuneCountInString(currentField.Value)+utf8.RuneCountInString(v) >= 2000 {
+		if utf8.RuneCountInString(currentField.Value)+utf8.RuneCountInString(v) >= 1024 {
 			currentField = &discordgo.MessageEmbedField{
 				Name:  "...",
 				Value: v + "\n",
