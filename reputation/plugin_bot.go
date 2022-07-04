@@ -378,9 +378,13 @@ var cmds = []*commands.YAGCommand{
 			page := parsed.Args[0].Int()
 			if id := parsed.Switch("user").Int64(); id != 0 {
 				const query = `
-					SELECT RANK() OVER (ORDER BY points DESC)
-					FROM reputation_users
-					WHERE guild_id = $1 AND user_id = $2
+					SELECT pos
+					FROM (
+						SELECT ROW_NUMBER() OVER (ORDER BY points DESC) AS pos, user_id
+						FROM reputation_users
+						WHERE guild_id = $1
+					) as ordered_users
+					WHERE user_id = $2
 				`
 
 				var pos int
@@ -392,7 +396,7 @@ var cmds = []*commands.YAGCommand{
 					return "Failed finding that user on the leaderboard, try again", err
 				}
 
-				page = pos/15 + 1
+				page = (pos-1)/15 + 1 // pos and page are both one-based
 			}
 
 			if page < 1 {
