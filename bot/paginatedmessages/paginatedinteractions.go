@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	EmojiNext = "⮕"
-	EmojiPrev = "⬅"
+	EmojiNext = "▶"
+	EmojiPrev = "◀"
 )
 
 var (
