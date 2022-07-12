@@ -11,14 +11,16 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	yagtemplate "github.com/botlabs-gg/yagpdb/common/templates"
-	"github.com/botlabs-gg/yagpdb/customcommands/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	yagtemplate "github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -74,12 +76,13 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Use(func(inner http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
-			_, templateData := web.GetBaseCPContextData(r.Context())
+			g, templateData := web.GetBaseCPContextData(r.Context())
 			strTriggerTypes := map[int]string{}
 			for k, v := range triggerStrings {
 				strTriggerTypes[int(k)] = v
 			}
 			templateData["CCTriggerTypes"] = strTriggerTypes
+			templateData["CommandPrefix"], _ = prfx.GetCommandPrefixRedis(g.ID)
 
 			inner.ServeHTTP(w, r)
 		}
@@ -107,7 +110,8 @@ func (p *Plugin) InitWeb() {
 }
 
 func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	groupID := int64(0)
 	if v, ok := templateData["CurrentGroupID"]; ok {
@@ -120,6 +124,13 @@ func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	templateData["HLJSBuiltins"] = langBuiltins.String()
+
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return templateData, err
+	}
+
+	updateTemplateWithCountData(int(count), templateData, ctx)
 
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
@@ -146,8 +157,17 @@ func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 }
 
 func handleGetCommandsGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	groupID, _ := strconv.ParseInt(pat.Param(r, "group"), 10, 64)
+
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return templateData, err
+	}
+
+	updateTemplateWithCountData(int(count), templateData, ctx)
+
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
 
@@ -583,4 +603,16 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	return templateData, err
+}
+
+func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx context.Context) {
+	maxCommands := MaxCommandsForContext(ctx)
+	templateData["CCCount"] = count
+	templateData["CCLimit"] = maxCommands
+
+	additionalMessage := ""
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with YAGPDB premium)", MaxCommandsPremium)
+	}
+	templateData["AdditionalMessage"] = additionalMessage
 }

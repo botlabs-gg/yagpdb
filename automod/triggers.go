@@ -8,14 +8,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/botlabs-gg/yagpdb/antiphishing"
-	"github.com/botlabs-gg/yagpdb/automod/models"
-	"github.com/botlabs-gg/yagpdb/automod_legacy"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/safebrowsing"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/antiphishing"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/automod_legacy"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
@@ -611,8 +611,9 @@ func (g *GoogleSafeBrowsingTrigger) MergeDuplicates(data []interface{}) interfac
 /////////////////////////////////////////////////////////////
 
 type SlowmodeTriggerData struct {
-	Treshold int
-	Interval int
+	Treshold                 int
+	Interval                 int
+	SingleMessageAttachments bool
 }
 
 var _ MessageTrigger = (*SlowmodeTrigger)(nil)
@@ -670,7 +671,7 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 		defaultInterval = 60
 	}
 
-	return []*SettingDef{
+	settings := []*SettingDef{
 		&SettingDef{
 			Name:    "Messages",
 			Key:     "Treshold",
@@ -684,6 +685,17 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 			Default: defaultInterval,
 		},
 	}
+
+	if s.Attachments {
+		settings = append(settings, &SettingDef{
+			Name:    "Also count multiple attachments in single message",
+			Key:     "SingleMessageAttachments",
+			Kind:    SettingTypeBool,
+			Default: false,
+		})
+	}
+
+	return settings
 }
 
 func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
@@ -696,7 +708,7 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 	within := time.Duration(settings.Interval) * time.Second
 	now := time.Now()
 
-	amount := 1
+	amount := 0
 
 	messages := bot.State.GetMessages(cs.GuildID, cs.ID, &dstate.MessagesQuery{
 		Limit: 1000,
@@ -709,16 +721,19 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 			break
 		}
 
-		if m.ID == v.ID {
-			continue
-		}
-
 		if !s.ChannelBased && v.Author.ID != triggerCtx.MS.User.ID {
 			continue
 		}
 
-		if s.Attachments && len(v.Attachments) < 1 {
-			continue // were only checking messages with attachments
+		if s.Attachments {
+			if len(v.Attachments) < 1 {
+				continue // we're only checking messages with attachments
+			}
+			if settings.SingleMessageAttachments {
+				// Add the count of all attachements of this message to the amount
+				amount += len(v.Attachments)
+				continue
+			}
 		}
 
 		amount++

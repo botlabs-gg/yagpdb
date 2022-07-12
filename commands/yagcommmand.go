@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands/models"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -111,8 +111,9 @@ type YAGCommand struct {
 	RunInDM      bool // Set to enable this commmand in DM's
 	HideFromHelp bool // Set to hide from help
 
-	RequireDiscordPerms []int64   // Require users to have one of these permission sets to run the command
-	RequireBotPerms     [][]int64 // Discord permissions that the bot needs to run the command, (([0][0] && [0][1] && [0][2]) || ([1][0] && [1][1]...))
+	RequireDiscordPerms      []int64   // Require users to have one of these permission sets to run the command
+	RequiredDiscordPermsHelp string    // Optional message that shows up when users run the help command that documents user permission requirements for the command
+	RequireBotPerms          [][]int64 // Discord permissions that the bot needs to run the command, (([0][0] && [0][1] && [0][2]) || ([1][0] && [1][1]...))
 
 	Middlewares []dcmd.MiddleWareFunc
 
@@ -143,6 +144,8 @@ type YAGCommand struct {
 	RolesRunFunc RolesRunFunc
 
 	slashCommandID int64
+
+	IsResponseEphemeral bool
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation

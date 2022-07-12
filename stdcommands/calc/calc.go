@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/botlabs-gg/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/ei14/calc/compute"
-	"github.com/jonas747/dcmd/v4"
 )
 
 var (

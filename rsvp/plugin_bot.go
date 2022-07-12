@@ -10,17 +10,17 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	eventModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/rsvp/models"
-	"github.com/botlabs-gg/yagpdb/timezonecompanion"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	eventModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/rsvp/models"
+	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -582,13 +582,14 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 			continue
 		}
 
-		err := bot.SendDMEmbed(v.UserID, &discordgo.MessageEmbed{
-			Title:       title,
-			Description: desc,
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: "From the server: " + serverName,
-			},
-		})
+		err := bot.SendDMEmbed(v.UserID,
+			&discordgo.MessageEmbed{
+				Title:       title,
+				Description: desc,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: "From the server: " + serverName,
+				},
+			})
 
 		if err != nil {
 			logger.WithError(err).WithField("guild", m.GuildID).Error("failed sending reminder")

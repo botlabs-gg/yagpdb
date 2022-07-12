@@ -10,13 +10,13 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/common"
-	prfx "github.com/botlabs-gg/yagpdb/common/prefix"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var (
@@ -170,6 +170,20 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		guildID := int64(0)
 		if data.GuildData != nil {
 			guildID = data.GuildData.GS.ID
+		}
+
+		if data.TriggerType == dcmd.TriggerTypeSlashCommands {
+			// Acknowledge the interaction
+			response := discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+			}
+			if yc.IsResponseEphemeral {
+				response.Data = &discordgo.InteractionResponseData{Flags: 64}
+			}
+			err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &response)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		// Lock the command for execution

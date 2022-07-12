@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/reputation/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/reputation/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -27,32 +27,36 @@ var PageHTMLLeaderboard string
 var PageHTMLSettings string
 
 type PostConfigForm struct {
-	Enabled                 bool
-	EnableThanksDetection   bool
-	PointsName              string  `valid:",50"`
-	Cooldown                int     `valid:"0,86401"` // One day
-	MaxGiveAmount           int64   `valid:"0,"`
-	MaxRemoveAmount         int64   `valid:"0,"`
-	RequiredGiveRoles       []int64 `valid:"role,true"`
-	RequiredReceiveRoles    []int64 `valid:"role,true"`
-	BlacklistedGiveRoles    []int64 `valid:"role,true"`
-	BlacklistedReceiveRoles []int64 `valid:"role,true"`
-	AdminRoles              []int64 `valid:"role,true"`
+	Enabled                   bool
+	EnableThanksDetection     bool
+	PointsName                string  `valid:",50"`
+	Cooldown                  int     `valid:"0,86401"` // One day
+	MaxGiveAmount             int64   `valid:"1,"`
+	MaxRemoveAmount           int64   `valid:"1,"`
+	RequiredGiveRoles         []int64 `valid:"role,true"`
+	RequiredReceiveRoles      []int64 `valid:"role,true"`
+	BlacklistedGiveRoles      []int64 `valid:"role,true"`
+	BlacklistedReceiveRoles   []int64 `valid:"role,true"`
+	AdminRoles                []int64 `valid:"role,true"`
+	WhitelistedThanksChannels []int64 `valid:"channel,true"`
+	BlacklistedThanksChannels []int64 `valid:"channel,true"`
 }
 
 func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 	return &models.ReputationConfig{
-		PointsName:              p.PointsName,
-		Enabled:                 p.Enabled,
-		Cooldown:                p.Cooldown,
-		MaxGiveAmount:           p.MaxGiveAmount,
-		MaxRemoveAmount:         p.MaxRemoveAmount,
-		RequiredGiveRoles:       p.RequiredGiveRoles,
-		RequiredReceiveRoles:    p.RequiredReceiveRoles,
-		BlacklistedGiveRoles:    p.BlacklistedGiveRoles,
-		BlacklistedReceiveRoles: p.BlacklistedReceiveRoles,
-		AdminRoles:              p.AdminRoles,
-		DisableThanksDetection:  !p.EnableThanksDetection,
+		PointsName:                p.PointsName,
+		Enabled:                   p.Enabled,
+		Cooldown:                  p.Cooldown,
+		MaxGiveAmount:             p.MaxGiveAmount,
+		MaxRemoveAmount:           p.MaxRemoveAmount,
+		RequiredGiveRoles:         p.RequiredGiveRoles,
+		RequiredReceiveRoles:      p.RequiredReceiveRoles,
+		BlacklistedGiveRoles:      p.BlacklistedGiveRoles,
+		BlacklistedReceiveRoles:   p.BlacklistedReceiveRoles,
+		AdminRoles:                p.AdminRoles,
+		DisableThanksDetection:    !p.EnableThanksDetection,
+		WhitelistedThanksChannels: p.WhitelistedThanksChannels,
+		BlacklistedThanksChannels: p.BlacklistedThanksChannels,
 	}
 }
 
@@ -123,6 +127,8 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 		"blacklisted_receive_roles",
 		"admin_roles",
 		"disable_thanks_detection",
+		"whitelisted_thanks_channels",
+		"blacklisted_thanks_channels",
 	), boil.Infer())
 
 	if err == nil {

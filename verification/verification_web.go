@@ -12,12 +12,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	"github.com/botlabs-gg/yagpdb/verification/models"
-	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/verification/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
 	"github.com/sirupsen/logrus"
@@ -34,7 +34,7 @@ var PageHTMLVerifyPage string
 
 type FormData struct {
 	Enabled             bool
-	VerifiedRole        int64  `valid:"role"`
+	VerifiedRole        int64  `valid:"role,true"`
 	PageContent         string `valid:",10000"`
 	KickUnverifiedAfter int    `valid:"0,"`
 	WarnUnverifiedAfter int    `valid:"0,"`
@@ -81,12 +81,21 @@ func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.
 		err = nil
 	}
 
+	roleInvalid := true
+	for _, role := range g.Roles {
+		if role.ID == settings.VerifiedRole {
+			roleInvalid = false
+			break
+		}
+	}
+
 	if settings != nil && settings.DMMessage == "" {
 		settings.DMMessage = DefaultDMMessage
 	}
 
 	templateData["DefaultPageContent"] = DefaultPageContent
 	templateData["PluginSettings"] = settings
+	templateData["RoleInvalid"] = roleInvalid
 
 	return templateData, err
 }

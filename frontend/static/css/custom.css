@@ -551,3 +551,12 @@ html.dark select optgroup {
 html.dark .question-tooltip {
   color: #ed9c28;
 }
+
+.feedlink {
+  color: #777;
+}
+
+html.dark .feedlink {
+  color: #abb4be;
+
+}

@@ -7,10 +7,10 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 var Command = &commands.YAGCommand{
@@ -30,11 +30,9 @@ var Command = &commands.YAGCommand{
 			Author: &discordgo.MessageEmbedAuthor{
 				Name:    "Would you rather...",
 				URL:     "https://either.io/",
-				IconURL: "https://yagpdb.xyz/static/icons/favicon-32x32.png",
 			},
 			Footer: &discordgo.MessageEmbedFooter{
 				Text:    fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
-				IconURL: discordgo.EndpointUserAvatar(data.Author.ID, data.Author.Avatar),
 			},
 			Color: rand.Intn(16777215),
 		}

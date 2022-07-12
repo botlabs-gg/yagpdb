@@ -1,8 +1,8 @@
 package autorole
 
 import (
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 var configCache = common.CacheSet.RegisterSlot("autorole_config", func(key interface{}) (interface{}, error) {
@@ -36,9 +36,10 @@ type GeneralConfig struct {
 	Role             int64 `json:",string" valid:"role,true"`
 	RequiredDuration int   `valid:"0,"`
 
-	RequiredRoles []int64 `valid:"role,true"`
-	IgnoreRoles   []int64 `valid:"role,true"`
-	OnlyOnJoin    bool
+	RequiredRoles            []int64 `valid:"role,true"`
+	IgnoreRoles              []int64 `valid:"role,true"`
+	OnlyOnJoin               bool
+	AssignRoleAfterScreening bool
 }
 
 const (

@@ -44,6 +44,9 @@
                         <div class="form-group">
                             {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards. (<b>Note:</b> Above mentioned conditions will be checked before assigning the role)` .Autorole.OnlyOnJoin `onchange="toggleOnlyOnJoin(this)"`}}
                         </div>
+                        <div class="form-group">
+                            {{checkbox "AssignRoleAfterScreening" "AssignRoleAfterScreening" `Only assign the role after a member has completed Discord's Membership Screening` .Autorole.AssignRoleAfterScreening}}
+                        </div>
                         <br/>
                         <button type="submit" class="btn btn-success btn-lg btn-block">Save</button>
                     </div>

@@ -10,12 +10,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/reddit/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -42,11 +42,12 @@ type CreateForm struct {
 }
 
 type UpdateForm struct {
-	Channel    int64 `schema:"channel" valid:"channel,true`
-	ID         int64 `schema:"id"`
-	UseEmbeds  bool  `schema:"use_embeds"`
-	NSFWMode   int   `schema:"nsfw_filter"`
-	MinUpvotes int   `schema:"min_upvotes" valid:"0,"`
+	Channel     int64 `schema:"channel" valid:"channel,true`
+	ID          int64 `schema:"id"`
+	UseEmbeds   bool  `schema:"use_embeds"`
+	NSFWMode    int   `schema:"nsfw_filter"`
+	MinUpvotes  int   `schema:"min_upvotes" valid:"0,"`
+	FeedEnabled bool  `schema:"feed_enabled"`
 }
 
 var (
@@ -147,9 +148,6 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		watchItem.MinUpvotes = newElem.MinUpvotes
 	}
 
-	if watchItem.ChannelID == 0 {
-		watchItem.Disabled = true
-	}
 	err := watchItem.InsertG(ctx, boil.Infer())
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
@@ -193,14 +191,11 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	item.ChannelID = updated.Channel
 	item.UseEmbeds = updated.UseEmbeds
 	item.FilterNSFW = updated.NSFWMode
-	item.Disabled = false
+	item.Disabled = !updated.FeedEnabled
 	if item.Slow {
 		item.MinUpvotes = updated.MinUpvotes
 	}
 
-	if item.ChannelID == 0 {
-		item.Disabled = true
-	}
 	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes", "disabled"))
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData

@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS reputation_configs (
 `, `
 ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS disable_thanks_detection BOOLEAN NOT NULL DEFAULT false;
 `, `
+ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS whitelisted_thanks_channels BIGINT[];
+`, `
+ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS blacklisted_thanks_channels BIGINT[];
+`, `
 DO $$
 BEGIN
 
@@ -52,7 +56,7 @@ IF (SELECT COUNT(*) FROM information_schema.columns WHERE table_name='reputation
 	-- blacklisted rec roles
 	ALTER TABLE reputation_configs ADD COLUMN blacklisted_receive_roles BIGINT[];
 	UPDATE reputation_configs SET blacklisted_receive_roles=ARRAY[blacklisted_receive_role]::BIGINT[] WHERE blacklisted_receive_role IS NOT NULL AND blacklisted_receive_role != '';
-	
+
 END IF;
 END $$;
 `, `

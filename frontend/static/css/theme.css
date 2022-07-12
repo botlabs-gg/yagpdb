@@ -10588,6 +10588,7 @@ html[xmlns] .clearfix {
 /* Popover */
 .popover .popover-header {
 	margin: 0 !important;
+	color: inherit;
 }
 
 /* Modals */

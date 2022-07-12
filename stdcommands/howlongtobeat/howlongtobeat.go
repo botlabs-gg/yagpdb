@@ -6,23 +6,22 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 type hltb struct {
-	GameTitle     string
-	PureTitle     string //useful for Levenshtein calculation, symbol clutter removed
-	GameURL       string
-	ImageURL      string
-	MainStory     []string
-	MainExtra     []string
-	Completionist []string
-	LevDistance   int
-	LevSimilarity float64
-	OnlineGame    bool
+	GameTitle             string
+	PureTitle             string //useful for Jaro-Winkler similarity calculation, symbol clutter removed
+	GameURL               string
+	ImageURL              string
+	MainStory             []string
+	MainExtra             []string
+	Completionist         []string
+	JaroWinklerSimilarity float64
+	OnlineGame            bool
 }
 
 var (
@@ -39,7 +38,7 @@ var Command = &commands.YAGCommand{
 	Name:                "HowLongToBeat",
 	Aliases:             []string{"hltb"},
 	RequiredArgs:        1,
-	Description:         "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their default. Without -p returns the first result.\nSwitch -p gives paginated output using Levenshtein distance sorting max 20 results.",
+	Description:         "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their default. Without -p returns the first result.\nSwitch -p gives paginated output using the Jaro-Winkler similarity metric sorting max 20 results.",
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	Arguments: []*dcmd.ArgDef{
@@ -94,7 +93,7 @@ var Command = &commands.YAGCommand{
 				data.GuildData.GS.ID, data.ChannelID, 1, len(hltbQuery), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					i := page - 1
 					sort.SliceStable(hltbQuery, func(i, j int) bool {
-						return hltbQuery[i].LevDistance < hltbQuery[j].LevDistance
+						return hltbQuery[i].JaroWinklerSimilarity > hltbQuery[j].JaroWinklerSimilarity
 					})
 					paginatedEmbed := embedCreator(hltbQuery, i, paginatedView)
 					return paginatedEmbed, nil
@@ -136,7 +135,7 @@ func embedCreator(hltbQuery []hltb, i int, paginated bool) *discordgo.MessageEmb
 			&discordgo.MessageEmbedField{Name: hltbQuery[i].Completionist[0], Value: hltbQuery[i].Completionist[1]})
 	}
 	if paginated {
-		embed.Description = fmt.Sprintf("Lev distance: %d\nTerm similarity: %.1f%%", hltbQuery[i].LevDistance, hltbQuery[i].LevSimilarity*100)
+		embed.Description = fmt.Sprintf("Term similarity: %.1f%%", hltbQuery[i].JaroWinklerSimilarity*100)
 	}
 	return embed
 }

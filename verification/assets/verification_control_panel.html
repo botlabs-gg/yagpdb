@@ -27,7 +27,11 @@
                             <div class="form-group">
                                 <label>Verified Role</label><br>
                                 <select name="VerifiedRole" class="form-control">
+                                    {{if .RoleInvalid}}
+                                    {{roleOptions .ActiveGuild.Roles .HighestRole nil "No role selected"}}
+                                    {{else}}
                                     {{roleOptions .ActiveGuild.Roles .HighestRole .PluginSettings.VerifiedRole}}
+                                    {{end}}
                                 </select>
                             </div>
 

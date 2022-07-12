@@ -1,11 +1,12 @@
 package safebrowsing
 
 import (
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/backgroundworkers"
-	"goji.io/pat"
 	"net/http"
 	"sync"
+
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
+	"goji.io/pat"
 )
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)

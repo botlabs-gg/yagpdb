@@ -9,16 +9,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/bot/shardmemberfetcher"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/config"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dshardorchestrator/v3/node"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/dstate/v4/inmemorytracker"
-	dshardmanager "github.com/jonas747/jdshardmanager/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/bot/shardmemberfetcher"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/node"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate/inmemorytracker"
+	dshardmanager "github.com/botlabs-gg/yagpdb/v2/lib/jdshardmanager"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -57,6 +57,8 @@ var (
 		discordgo.GatewayIntentGuildMessageReactions,
 		discordgo.GatewayIntentDirectMessages,
 		discordgo.GatewayIntentDirectMessageReactions,
+		discordgo.GatewayIntentMessageContent,
+		discordgo.GatewayIntentGuildScheduledEvents,
 	}
 )
 

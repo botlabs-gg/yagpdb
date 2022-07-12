@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/config"
-	"github.com/botlabs-gg/yagpdb/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"google.golang.org/api/youtube/v3"
 )
 
@@ -67,6 +67,8 @@ type ChannelSubscription struct {
 	YoutubeChannelID   string
 	YoutubeChannelName string
 	MentionEveryone    bool
+	PublishLivestream  bool
+	Enabled            bool `sql:"DEFAULT:true"`
 }
 
 func (c *ChannelSubscription) TableName() string {
@@ -117,7 +119,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("Go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
+		return fmt.Errorf("go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
 	}
 
 	logger.Info("Websub: Subscribed to channel ", ytChannelID)
@@ -148,7 +150,7 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("Go bad status code: %d (%s)", resp.StatusCode, resp.Status)
+		return fmt.Errorf("go bad status code: %d (%s)", resp.StatusCode, resp.Status)
 	}
 
 	logger.Info("Websub: UnSubscribed to channel ", ytChannelID)

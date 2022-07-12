@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/templates"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 func init() {
@@ -26,8 +26,8 @@ func init() {
 // Returns a user from either id, mention string or if the input is just a user, a user...
 func tmplUserArg(tmplCtx *templates.Context) interface{} {
 	return func(v interface{}) (interface{}, error) {
-		if tmplCtx.IncreaseCheckCallCounter("commands_user_arg", 5) {
-			return nil, errors.New("Max calls to userarg (5) reached")
+		if tmplCtx.IncreaseCheckGenericAPICall() {
+			return nil, templates.ErrTooManyAPICalls
 		}
 
 		if num := templates.ToInt64(v); num != 0 {
@@ -179,7 +179,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 		cmdLine += " "
 	}
 
-	logger.Info("Custom template is executing a command:", cmdLine)
+	logger.Infof("Custom template is executing a command: %s for guild %v", cmdLine, tmplCtx.Msg.GuildID)
 
 	fakeMsg.Content = cmdLine
 

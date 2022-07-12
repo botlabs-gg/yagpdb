@@ -168,7 +168,7 @@ var Catfacts = []string{
 	`All cats have claws, and all except the cheetah sheath them when at rest.`,
 	`Two members of the cat family are distinct from all others: the clouded leopard and the cheetah. The clouded leopard does not roar like other big cats, nor does it groom or rest like small cats. The cheetah is unique because it is a running cat; all others are leaping cats. They are leaping cats because they slowly stalk their prey and then leap on it.`,
 	`A cat lover is called an Ailurophilia (Greek: cat+lover).`,
-	`In Japan, cats are thought to have the power to turn into super spirits when they die. This may be because according to the Buddhist religion, the body of the cat is the temporary resting place of very spiritual people.i`,
+	`In Japan, cats are thought to have the power to turn into super spirits when they die. This may be because according to the Buddhist religion, the body of the cat is the temporary resting place of very spiritual people.`,
 	`Most cats had short hair until about 100 years ago, when it became fashionable to own cats and experiment with breeding.`,
 	`One reason that kittens sleep so much is because a growth hormone is released only during sleep.`,
 	`Cats have about 130,000 hairs per square inch (20,155 hairs per square centimeter).`,

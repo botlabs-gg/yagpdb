@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 // dictionary creates a map[string]interface{} from the given parameters by
@@ -217,7 +217,6 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 	// Default filename
 	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
-
 	for key, val := range messageSdict {
 
 		switch key {
@@ -227,11 +226,23 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			if val == nil {
 				continue
 			}
-			embed, err := CreateEmbed(val)
-			if err != nil {
-				return nil, err
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				const maxEmbeds = 10 // Discord limitation
+				for i := 0; i < v.Len() && i < maxEmbeds; i++ {
+					embed, err := CreateEmbed(v.Index(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					msg.Embeds = append(msg.Embeds, embed)
+				}
+			} else {
+				embed, err := CreateEmbed(val)
+				if err != nil {
+					return nil, err
+				}
+				msg.Embeds = []*discordgo.MessageEmbed{embed}
 			}
-			msg.Embed = embed
 		case "file":
 			stringFile := ToString(val)
 			if len(stringFile) > 100000 {
@@ -273,7 +284,6 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 		return nil, err
 	}
 	msg := &discordgo.MessageEdit{}
-
 	for key, val := range messageSdict {
 
 		switch key {
@@ -282,14 +292,25 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			msg.Content = &temp
 		case "embed":
 			if val == nil {
-				msg.Embed = (&discordgo.MessageEmbed{}).MarshalNil(true)
 				continue
 			}
-			embed, err := CreateEmbed(val)
-			if err != nil {
-				return nil, err
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				const maxEmbeds = 10 // Discord limitation
+				for i := 0; i < v.Len() && i < maxEmbeds; i++ {
+					embed, err := CreateEmbed(v.Index(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					msg.Embeds = append(msg.Embeds, embed)
+				}
+			} else {
+				embed, err := CreateEmbed(val)
+				if err != nil {
+					return nil, err
+				}
+				msg.Embeds = []*discordgo.MessageEmbed{embed}
 			}
-			msg.Embed = embed
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
@@ -461,18 +482,17 @@ var mathConstantsMap = map[string]float64{
 	"smallestnonzerofloat64": math.SmallestNonzeroFloat64,
 
 	// integer limit values
-	/* commented out, go v1.16 does not have these
-	"maxint": math.MaxInt,
-	"minint": math.MinInt,*/
-	"maxint8":  math.MaxInt8,
-	"minint8":  math.MinInt8,
-	"maxint16": math.MaxInt16,
-	"minint16": math.MinInt16,
-	"maxint32": math.MaxInt32,
-	"minint32": math.MinInt32,
-	"maxint64": math.MaxInt64,
-	"minint64": math.MinInt64,
-	//"maxuint":math.MaxUint,
+	"maxint":    math.MaxInt,
+	"minint":    math.MinInt,
+	"maxint8":   math.MaxInt8,
+	"minint8":   math.MinInt8,
+	"maxint16":  math.MaxInt16,
+	"minint16":  math.MinInt16,
+	"maxint32":  math.MaxInt32,
+	"minint32":  math.MinInt32,
+	"maxint64":  math.MaxInt64,
+	"minint64":  math.MinInt64,
+	"maxuint":   math.MaxUint,
 	"maxuint8":  math.MaxUint8,
 	"maxuint16": math.MaxUint16,
 	"maxuint32": math.MaxUint32,
@@ -607,6 +627,42 @@ func tmplPow(argX, argY interface{}) float64 {
 	return math.Pow(xySlice[0], xySlice[1])
 }
 
+func tmplMax(argX, argY interface{}) float64 {
+	var xyValue float64
+	var xySlice []float64
+
+	switchSlice := []interface{}{argX, argY}
+
+	for _, v := range switchSlice {
+		switch v.(type) {
+		case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+			xyValue = ToFloat64(v)
+		default:
+			xyValue = math.NaN()
+		}
+		xySlice = append(xySlice, xyValue)
+	}
+	return math.Max(xySlice[0], xySlice[1])
+}
+
+func tmplMin(argX, argY interface{}) float64 {
+	var xyValue float64
+	var xySlice []float64
+
+	switchSlice := []interface{}{argX, argY}
+
+	for _, v := range switchSlice {
+		switch v.(type) {
+		case int, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64:
+			xyValue = ToFloat64(v)
+		default:
+			xyValue = math.NaN()
+		}
+		xySlice = append(xySlice, xyValue)
+	}
+	return math.Min(xySlice[0], xySlice[1])
+}
+
 /*tmplLog is a function for templates using (log base of x = logarithm) as return value.
 It is using natural logarithm as default to change the base.*/
 func tmplLog(arguments ...interface{}) (float64, error) {
@@ -632,6 +688,37 @@ func tmplLog(arguments ...interface{}) (float64, error) {
 	}
 
 	return logarithm, nil
+}
+
+func tmplBitwiseAnd(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) & tmplToInt(arg2)
+}
+
+func tmplBitwiseOr(args ...interface{}) (res int) {
+	for _, arg := range args {
+		res |= tmplToInt(arg)
+	}
+	return
+}
+
+func tmplBitwiseXor(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) ^ tmplToInt(arg2)
+}
+
+func tmplBitwiseNot(arg interface{}) int {
+	return ^tmplToInt(arg)
+}
+
+func tmplBitwiseAndNot(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) &^ tmplToInt(arg2)
+}
+
+func tmplBitwiseLeftShift(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) << tmplToInt(arg2)
+}
+
+func tmplBitwiseRightShift(arg1, arg2 interface{}) int {
+	return tmplToInt(arg1) >> tmplToInt(arg2)
 }
 
 //tmplHumanizeThousands comma separates thousands
@@ -1111,16 +1198,16 @@ func tmplWeekNumber(t time.Time) (week int) {
 	return
 }
 
-func tmplHumanizeDurationHours(in time.Duration) string {
-	return common.HumanizeDuration(common.DurationPrecisionHours, in)
+func tmplHumanizeDurationHours(in interface{}) string {
+	return common.HumanizeDuration(common.DurationPrecisionHours, ToDuration(in))
 }
 
-func tmplHumanizeDurationMinutes(in time.Duration) string {
-	return common.HumanizeDuration(common.DurationPrecisionMinutes, in)
+func tmplHumanizeDurationMinutes(in interface{}) string {
+	return common.HumanizeDuration(common.DurationPrecisionMinutes, ToDuration(in))
 }
 
-func tmplHumanizeDurationSeconds(in time.Duration) string {
-	return common.HumanizeDuration(common.DurationPrecisionSeconds, in)
+func tmplHumanizeDurationSeconds(in interface{}) string {
+	return common.HumanizeDuration(common.DurationPrecisionSeconds, ToDuration(in))
 }
 
 func tmplHumanizeTimeSinceDays(in time.Time) string {

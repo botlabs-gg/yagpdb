@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/antiphishing"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/safebrowsing"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/antiphishing"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -78,7 +78,7 @@ func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 		return
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire))
+	common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire*60))
 
 	mute := r.MuteAfter > 0 && violations >= r.MuteAfter
 	kick := r.KickAfter > 0 && violations >= r.KickAfter

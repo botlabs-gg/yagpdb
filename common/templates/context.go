@@ -14,13 +14,13 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/prefix"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/template"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/lib/template"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 )
@@ -53,6 +53,9 @@ var (
 		"println":     withOutputLimit(fmt.Sprintln, MaxStringLength),
 		"printf":      withOutputLimitF(fmt.Sprintf, MaxStringLength),
 
+		// regexp
+		"reQuoteMeta": regexp.QuoteMeta,
+
 		// math
 		"add":        add,
 		"cbrt":       tmplCbrt,
@@ -60,6 +63,8 @@ var (
 		"fdiv":       tmplFDiv,
 		"log":        tmplLog,
 		"mathConst":  tmplMathConstant,
+		"max":        tmplMax,
+		"min":        tmplMin,
 		"mod":        tmplMod,
 		"mult":       tmplMult,
 		"pow":        tmplPow,
@@ -69,6 +74,15 @@ var (
 		"roundFloor": tmplRoundFloor,
 		"sqrt":       tmplSqrt,
 		"sub":        tmplSub,
+
+		// bitwise ops
+		"bitwiseAnd":        tmplBitwiseAnd,
+		"bitwiseOr":         tmplBitwiseOr,
+		"bitwiseXor":        tmplBitwiseXor,
+		"bitwiseNot":        tmplBitwiseNot,
+		"bitwiseAndNot":     tmplBitwiseAndNot,
+		"bitwiseLeftShift":  tmplBitwiseLeftShift,
+		"bitwiseRightShift": tmplBitwiseRightShift,
 
 		// misc
 		"humanizeThousands":  tmplHumanizeThousands,
@@ -90,6 +104,7 @@ var (
 		"roleAbove":       roleIsAbove,
 		"adjective":       common.RandomAdjective,
 		"noun":            common.RandomNoun,
+		"verb":            common.RandomVerb,
 		"randInt":         randInt,
 		"shuffle":         shuffle,
 		"seq":             sequence,
@@ -147,14 +162,14 @@ type Context struct {
 
 	RegexCache map[string]*regexp.Regexp
 
-	CurrentFrame *contextFrame
+	CurrentFrame *ContextFrame
 
 	IsExecedByLeaveMessage bool
 
 	contextFuncsAdded bool
 }
 
-type contextFrame struct {
+type ContextFrame struct {
 	CS *dstate.ChannelState
 
 	MentionEveryone bool
@@ -183,7 +198,7 @@ func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberS
 		Data:         make(map[string]interface{}),
 		Counters:     make(map[string]int),
 
-		CurrentFrame: &contextFrame{
+		CurrentFrame: &ContextFrame{
 			CS: cs,
 		},
 	}
@@ -225,17 +240,55 @@ func (c *Context) setupBaseData() {
 	}
 
 	if c.MS != nil {
+		c.Data["BotUser"] = common.BotUser
 		c.Data["Member"] = c.MS.DgoMember()
 		c.Data["User"] = &c.MS.User
 		c.Data["user"] = c.Data["User"]
 	}
 
-	c.Data["TimeSecond"] = time.Second
-	c.Data["TimeMinute"] = time.Minute
-	c.Data["TimeHour"] = time.Hour
-	c.Data["UnixEpoch"] = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 	c.Data["DiscordEpoch"] = time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC)
+	c.Data["DomainRegex"] = common.DomainFinderRegex.String()
 	c.Data["IsPremium"] = c.IsPremium
+	c.Data["LinkRegex"] = common.LinkRegex.String()
+	c.Data["TimeHour"] = time.Hour
+	c.Data["TimeMinute"] = time.Minute
+	c.Data["TimeSecond"] = time.Second
+	c.Data["UnixEpoch"] = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	// permissions
+	c.Data["Permissions"] = map[string]int64{
+		"ReadMessages":       discordgo.PermissionReadMessages,
+		"SendMessages":       discordgo.PermissionSendMessages,
+		"SendTTSMessages":    discordgo.PermissionSendTTSMessages,
+		"ManageMessages":     discordgo.PermissionManageMessages,
+		"EmbedLinks":         discordgo.PermissionEmbedLinks,
+		"AttachFiles":        discordgo.PermissionAttachFiles,
+		"ReadMessageHistory": discordgo.PermissionReadMessageHistory,
+		"MentionEveryone":    discordgo.PermissionMentionEveryone,
+		"UseExternalEmojis":  discordgo.PermissionUseExternalEmojis,
+
+		"VoiceConnect":       discordgo.PermissionVoiceConnect,
+		"VoiceSpeak":         discordgo.PermissionVoiceSpeak,
+		"VoiceMuteMembers":   discordgo.PermissionVoiceMuteMembers,
+		"VoiceDeafenMembers": discordgo.PermissionVoiceDeafenMembers,
+		"VoiceMoveMembers":   discordgo.PermissionVoiceMoveMembers,
+		"VoiceUseVAD":        discordgo.PermissionVoiceUseVAD,
+
+		"ChangeNickname":  discordgo.PermissionChangeNickname,
+		"ManageNicknames": discordgo.PermissionManageNicknames,
+		"ManageRoles":     discordgo.PermissionManageRoles,
+		"ManageWebhooks":  discordgo.PermissionManageWebhooks,
+		"ManageEmojis":    discordgo.PermissionManageEmojis,
+
+		"CreateInstantInvite": discordgo.PermissionCreateInstantInvite,
+		"KickMembers":         discordgo.PermissionKickMembers,
+		"BanMembers":          discordgo.PermissionBanMembers,
+		"Administrator":       discordgo.PermissionAdministrator,
+		"ManageChannels":      discordgo.PermissionManageChannels,
+		"ManageServer":        discordgo.PermissionManageServer,
+		"AddReactions":        discordgo.PermissionAddReactions,
+		"ViewAuditLogs":       discordgo.PermissionViewAuditLogs,
+	}
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
@@ -328,9 +381,9 @@ func (c *Context) executeParsed() (string, error) {
 }
 
 // creates a new context frame and returns the old one
-func (c *Context) newContextFrame(cs *dstate.ChannelState) *contextFrame {
+func (c *Context) newContextFrame(cs *dstate.ChannelState) *ContextFrame {
 	old := c.CurrentFrame
-	c.CurrentFrame = &contextFrame{
+	c.CurrentFrame = &ContextFrame{
 		CS:               cs,
 		isNestedTemplate: true,
 	}
@@ -401,6 +454,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 
 	isDM := c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate())
 
+	var embeds []*discordgo.MessageEmbed
 	for _, v := range c.CurrentFrame.EmebdsToSend {
 		if isDM {
 			v.Footer = &discordgo.MessageEmbedFooter{
@@ -408,9 +462,9 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 				IconURL: c.GS.Icon,
 			}
 		}
-
-		common.BotSession.ChannelMessageSendEmbed(channelID, v)
+		embeds = append(embeds, v)
 	}
+	common.BotSession.ChannelMessageSendEmbedList(channelID, embeds)
 
 	if strings.TrimSpace(content) == "" || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
 		// no point in sending the response if it gets deleted immedietely
@@ -430,7 +484,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		}
 
 		if len(c.CurrentFrame.AddResponseReactionNames) > 0 {
-			go func(frame *contextFrame) {
+			go func(frame *ContextFrame) {
 				for _, v := range frame.AddResponseReactionNames {
 					common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
 				}
@@ -473,10 +527,6 @@ func (c *Context) IncreaseCheckCallCounterPremium(key string, normalLimit, premi
 
 func (c *Context) IncreaseCheckGenericAPICall() bool {
 	return c.IncreaseCheckCallCounter("api_call", 100)
-}
-
-func (c *Context) IncreaseCheckStateLock() bool {
-	return c.IncreaseCheckCallCounter("state_lock", 500)
 }
 
 func (c *Context) LogEntry() *logrus.Entry {
@@ -541,6 +591,11 @@ func baseContextFuncs(c *Context) {
 
 	c.addContextFunc("targetHasRoleID", c.tmplTargetHasRoleID)
 	c.addContextFunc("targetHasRoleName", c.tmplTargetHasRoleName)
+
+	// permission funcs
+	c.addContextFunc("hasPermissions", c.tmplHasPermissions)
+	c.addContextFunc("targetHasPermissions", c.tmplTargetHasPermissions)
+	c.addContextFunc("getTargetPermissionsIn", c.tmplGetTargetPermissionsIn)
 
 	c.addContextFunc("deleteResponse", c.tmplDelResponse)
 	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
@@ -622,10 +677,10 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	}
 }
 
-func isMaybeContainer(v interface{}) bool {
+func isContainer(v interface{}) bool {
 	rv, _ := indirect(reflect.ValueOf(v))
 	switch rv.Kind() {
-	case reflect.Array, reflect.Slice, reflect.Interface, reflect.Map, reflect.Struct:
+	case reflect.Array, reflect.Slice, reflect.Map:
 		return true
 	default:
 		return false
@@ -694,9 +749,9 @@ type Dict map[interface{}]interface{}
 
 func (d Dict) Set(key interface{}, value interface{}) (string, error) {
 	d[key] = value
-	if isMaybeContainer(value) {
+	if isContainer(value) {
 		if err := detectCyclicValue(d); err != nil {
-			return "", err
+			return "", template.UncatchableError(err)
 		}
 	}
 	return "", nil
@@ -747,9 +802,9 @@ type SDict map[string]interface{}
 
 func (d SDict) Set(key string, value interface{}) (string, error) {
 	d[key] = value
-	if isMaybeContainer(value) {
+	if isContainer(value) {
 		if err := detectCyclicValue(d); err != nil {
-			return "", err
+			return "", template.UncatchableError(err)
 		}
 	}
 	return "", nil
@@ -792,9 +847,9 @@ func (s Slice) Set(index int, item interface{}) (string, error) {
 	}
 
 	s[index] = item
-	if isMaybeContainer(item) {
+	if isContainer(item) {
 		if err := detectCyclicValue(s); err != nil {
-			return "", err
+			return "", template.UncatchableError(err)
 		}
 	}
 	return "", nil

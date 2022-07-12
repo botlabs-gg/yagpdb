@@ -14,26 +14,34 @@
             <div class="card-body">
                 <!-- <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter" -->
                 <form class="" method="post" action="/manage/{{.ActiveGuild.ID}}/youtube">
-                    <p><b>Provide either channel ID OR username.</b> Only one of them, not both.<br>
-                        When you go to the channel page, if the address bar has for example
-                        <code>youtube.com/user/h3h3Productions</code> then the username is h3h3Productions.<br>
-                        If it's <code>youtube.com/channel/UCt-ERbX-2yA6cAqfdKOlUwQ</code> then the id is
-                        <code>UCt-ERbX-2yA6cAqfdKOlUwQ.</code><br>
-                        For any questions join the support server above</p>
+                    <p>
+                      <b>Provide either link of youtube channel or video or username </b> 
+                      <br>
+                      <b><u>Only youtube.com links are supported</u></b>
+                      <br>
+                      <u>Direct channel and Video links</u> are preffered as they have the highest accuracy
+                      <br>Custom url links can lead to incorrect channels sometimes
+                      <br>
+                      <br>
+                       <u>Examples of each type of link:</u>
+                          <br>
+                         Direct channel link:  <b>https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw</b>
+                          <br>
+                         Video link: <b>https://www.youtube.com/watch?v=dQw4w9WgXcQ</b>
+                          <br>
+                         User link: <b>https://www.youtube.com/user/MontyPython</b> 
+                          <br>
+                         Custom link: <b>https://www.youtube.com/c/Taskmaster</b>
+                          <br> 
+                        </br>
+                        For any questions join the support server of the bot
+                    </p>
                     <div class="form-group">
-                        <label for="yt-channel-id">Youtube Channel ID</label>
+                        <label for="yt-channel-url">Link</label>
                         <div class="input-group input-group-sm">
                             <span class="input-group-prepend"><span
-                                    class="input-group-text">youtube.com/channel/</span></span>
-                            <input type="text" class="form-control" id="yt-channel-id" name="YoutubeChannelID">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="yt-channel-user">Youtube Username</label>
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-prepend"><span
-                                    class="input-group-text">youtube.com/user/</span></span>
-                            <input type="text" class="form-control" id="yt-channel-user" name="YoutubeChannelUser">
+                                    class="input-group-text"></span></span>
+                            <input type="text" class="form-control" placeholder="Enter link of youtube channel or video or user" id="yt-url" name="YoutubeUrl">
                         </div>
                     </div>
                     <div class="form-group">
@@ -44,7 +52,8 @@
                     </div>
 
                     {{checkbox "MentionEveryone" "new-mention-everyone" `Mention everyone` false}}
-                    <button type="submit" class="btn btn-success">Add</button>
+                    {{checkbox "PublishLivestream" "new-publish-livestream" `Publish livestreams` false}}
+                    <button type="submit" id="yt-add-btn" disabled="true" class="btn btn-success">Add</button>
                 </form>
             </div>
         </section>
@@ -65,6 +74,8 @@
                             <th>Youtube</th>
                             <th>Discord channel</th>
                             <th>Mention everyone</th>
+                            <th>Publish livestreams</th>
+                            <th>Enabled</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -72,8 +83,7 @@
                         {{range .Subs}}
                         <tr>
                             <td>
-                                <p class="form-control-static"><b>{{.YoutubeChannelName}}</b> -
-                                    <code>{{.YoutubeChannelID}}</code></p>
+                                <p class="form-control-static"><a class="feedlink" href="https://youtube.com/channel/{{.YoutubeChannelID}}" target="_blank"><b>{{.YoutubeChannelName}}</b></a> - <code>{{.YoutubeChannelID}}</code></p>
                             </td>
                             <td>
                                 <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel"
@@ -83,6 +93,12 @@
                             </td>
                             <td>
                                 {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}
+                            </td>
+                            <td>
+                                {{checkbox "PublishLivestream" (joinStr "" "publish-livestream-" .ID) `Publish livestreams` .PublishLivestream (joinStr "" `form="sub-item-` .ID `"`)}}
+                            </td>
+                            <td>
+                                {{checkbox "Enabled" (joinStr "" "feed-enabled-" .ID) `Enabled` .Enabled (joinStr "" `form="sub-item-` .ID `"`)}}
                             </td>
                             <td>
                                 <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success"
@@ -104,24 +120,17 @@
 <!-- /.row -->
 <script>
     $(function () {
-        var idInput = $("#yt-channel-id");
-        var userInput = $("#yt-channel-user");
+        let input = $("#yt-url");
+        let addButton = $("#yt-add-btn")
 
-        userInput.on("input", function (arg) {
-            if (userInput.val().length > 0) {
-                idInput.attr("disabled", true);
-            } else {
-                idInput.attr("disabled", false);
-            }
-        })
-
-
-        idInput.on("input", function (arg) {
-            if (idInput.val().length > 0) {
-                userInput.attr("disabled", true);
-            } else {
-                userInput.attr("disabled", false);
-            }
+        input.on("input", function (arg) {
+          let ytUrl = input.val()
+          let ytLinkRegex = new RegExp("^(https?:\/\/)?((www|m)\.)?youtube\.com",'g')
+            if (!ytUrl || !ytLinkRegex.test(ytUrl)) {
+              addButton.attr("disabled", true);
+            }else{
+              addButton.attr("disabled", false)
+            } 
         })
     })
 </script>

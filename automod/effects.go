@@ -5,14 +5,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/automod/models"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/moderation"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -192,12 +193,12 @@ func (vio *AddViolationEffect) Description() (description string) {
 func (vio *AddViolationEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
-			Name:    "Name",
-			Key:     "Name",
-			Kind:    SettingTypeString,
-			Min:     1,
-			Max:     50,
-			Default: "violation name",
+			Name:        "Name",
+			Key:         "Name",
+			Kind:        SettingTypeString,
+			Min:         1,
+			Max:         50,
+			Placeholder: "Enter name for the violation",
 		},
 	}
 }
@@ -272,7 +273,7 @@ func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		reason += ctxData.ConstructReason(true)
 	}
 
-	err := moderation.KickUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, &ctxData.MS.User)
+	err := moderation.KickUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, &ctxData.MS.User, -1)
 	return err
 }
 
@@ -410,6 +411,76 @@ func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 }
 
 func (mute *MuteUserEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
+}
+
+///////////////////////////////////////////////////////
+
+type TimeoutUserEffect struct{}
+
+type TimeoutUserEffectData struct {
+	Duration     int    `valid:",0,40320,trimspace"`
+	CustomReason string `valid:",0,150,trimspace"`
+}
+
+func (timeout *TimeoutUserEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (timeout *TimeoutUserEffect) DataType() interface{} {
+	return &TimeoutUserEffectData{}
+}
+
+func (timeout *TimeoutUserEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		&SettingDef{
+			Name:    "Duration (minutes)",
+			Key:     "Duration",
+			Min:     int(moderation.MinTimeOutDuration.Minutes()),
+			Max:     int(moderation.MaxTimeOutDuration.Minutes()),
+			Kind:    SettingTypeInt,
+			Default: int(moderation.DefaultTimeoutDuration.Minutes()),
+		},
+		&SettingDef{
+			Name: "Custom message (empty for default)",
+			Key:  "CustomReason",
+			Min:  0,
+			Max:  150,
+			Kind: SettingTypeString,
+		},
+	}
+}
+
+func (timeout *TimeoutUserEffect) Name() (name string) {
+	return "Timeout user"
+}
+
+func (timeout *TimeoutUserEffect) Description() (description string) {
+	return "Timeout the user"
+}
+
+func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	// if a user is timed out, do not apply the effect again.
+	member := ctxData.MS.Member
+	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
+		return nil
+	}
+
+	settingsCast := settings.(*TimeoutUserEffectData)
+
+	reason := "Automoderator:\n"
+	if settingsCast.CustomReason != "" {
+		reason += settingsCast.CustomReason
+	} else {
+		reason += ctxData.ConstructReason(true)
+	}
+
+	duration := time.Duration(settingsCast.Duration) * time.Minute
+	err := moderation.TimeoutUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, &ctxData.MS.User, duration)
+	return err
+}
+
+func (timeout *TimeoutUserEffect) MergeDuplicates(data []interface{}) interface{} {
 	return data[0]
 }
 
@@ -695,6 +766,101 @@ func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface
 	}
 
 	return nil
+}
+
+/////////////////////////////////////////////////////////////
+
+type SendChannelMessageEffectData struct {
+	CustomReason string `valid:",0,280,trimspace"`
+	Duration     int    `valid:",0,3600,trimspace"`
+	PingUser     bool
+}
+
+type SendChannelMessageEffect struct{}
+
+func (send *SendChannelMessageEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (send *SendChannelMessageEffect) DataType() interface{} {
+	return &SendChannelMessageEffectData{}
+}
+
+func (send *SendChannelMessageEffect) Name() (name string) {
+	return "Send Message"
+}
+
+func (send *SendChannelMessageEffect) Description() (description string) {
+	return "Sends the message on the channel the rule was triggered"
+}
+
+func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name: "Custom message",
+			Key:  "CustomReason",
+			Min:  0,
+			Max:  280,
+			Kind: SettingTypeString,
+		},
+		{
+			Name:    "Delete sent message after x seconds (0 for non-deletion)",
+			Key:     "Duration",
+			Kind:    SettingTypeInt,
+			Default: 0,
+			Min:     0,
+			Max:     3600,
+		},
+		{
+			Name:    "Ping user committing the infraction",
+			Key:     "PingUser",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
+	}
+}
+
+func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	// Ignore bots
+	if ctxData.MS.User.Bot {
+		return nil
+	}
+
+	// If we dont have any channel data, we can't send a message
+	if ctxData.CS == nil {
+		return nil
+	}
+
+	settingsCast := settings.(*SendChannelMessageEffectData)
+	msgSend := &discordgo.MessageSend{}
+
+	if settingsCast.PingUser {
+		msgSend.Content = "<@" + discordgo.StrID(ctxData.MS.User.ID) + ">\n"
+		msgSend.AllowedMentions = discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+		}
+	}
+
+	msgSend.Content += "Automoderator:\n"
+	if settingsCast.CustomReason != "" {
+		msgSend.Content += settingsCast.CustomReason
+	} else {
+		msgSend.Content += ctxData.ConstructReason(true)
+	}
+
+	message, err := common.BotSession.ChannelMessageSendComplex(ctxData.CS.ID, msgSend)
+	if err != nil {
+		logger.WithError(err).Error("Failed to send message for AutomodV2")
+		return err
+	}
+	if settingsCast.Duration > 0 && message != nil {
+		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, ctxData.CS.ID, message.ID, settingsCast.Duration)
+	}
+	return nil
+}
+
+func (send *SendChannelMessageEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0] // no user data
 }
 
 /////////////////////////////////////////////////////////////

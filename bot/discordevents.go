@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/bot/joinedguildsupdater"
-	"github.com/botlabs-gg/yagpdb/bot/models"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/bot/joinedguildsupdater"
+	"github.com/botlabs-gg/yagpdb/v2/bot/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -49,6 +49,7 @@ func addBotHandlers() {
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleRatelimit, eventsystem.EventRateLimit)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, ReadyTracker.handleReadyOrResume, eventsystem.EventReady, eventsystem.EventResumed)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, handleResumed, eventsystem.EventResumed)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleInteractionCreate, eventsystem.EventInteractionCreate)
 }
 
 var (
@@ -309,6 +310,24 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 	err := pubsub.Publish("dm_reaction", -1, ra)
 	if err != nil {
 		logger.WithError(err).Error("failed publishing dm reaction")
+	}
+}
+
+func HandleInteractionCreate(evt *eventsystem.EventData) {
+	ic := evt.InteractionCreate()
+	if ic.GuildID != 0 {
+		return
+	}
+	if ic.User == nil {
+		return
+	}
+
+	if ic.User.ID == common.BotUser.ID {
+		return
+	}
+	err := pubsub.Publish("dm_interaction", -1, ic)
+	if err != nil {
+		logger.WithError(err).Error("failed publishing dm interaction")
 	}
 }
 

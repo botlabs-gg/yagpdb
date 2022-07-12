@@ -9,12 +9,13 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
@@ -82,6 +83,10 @@ func RandomAdjective() string {
 
 func RandomNoun() string {
 	return Nouns[rand.Intn(len(Nouns))]
+}
+
+func RandomVerb() string {
+	return Verbs[rand.Intn(len(Verbs))]
 }
 
 type DurationFormatPrecision int
@@ -309,6 +314,7 @@ var StringPerms = map[int64]string{
 	discordgo.PermissionManageChannels:      "Manage Channels",
 	discordgo.PermissionManageServer:        "Manage Server",
 	discordgo.PermissionManageWebhooks:      "Manage Webhooks",
+	discordgo.PermissionModerateMembers:     "Moderate Members / Timeout Members",
 }
 
 func ErrWithCaller(err error) error {
@@ -374,6 +380,9 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
 		res = append(res, "ManageServer")
 	}
+	if perms&discordgo.PermissionViewGuildInsights == discordgo.PermissionViewGuildInsights {
+		res = append(res, "ViewGuildInsights")
+	}
 
 	if perms&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
 		res = append(res, "ReadMessages")
@@ -402,7 +411,15 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionUseExternalEmojis == discordgo.PermissionUseExternalEmojis {
 		res = append(res, "UseExternalEmojis")
 	}
-
+	if perms&discordgo.PermissionUseExternalStickers == discordgo.PermissionUseExternalStickers {
+		res = append(res, "UseExternalStickers")
+	}
+	if perms&discordgo.PermissionUseApplicationCommands == discordgo.PermissionUseApplicationCommands {
+		res = append(res, "UseApplicationCommands")
+	}
+	if perms&discordgo.PermissionUseEmbeddedActivities == discordgo.PermissionUseEmbeddedActivities {
+		res = append(res, "UseEmbeddedActivities")
+	}
 	// Constants for the different bit offsets of voice permissions
 	if perms&discordgo.PermissionVoiceConnect == discordgo.PermissionVoiceConnect {
 		res = append(res, "VoiceConnect")
@@ -422,7 +439,15 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionVoiceUseVAD == discordgo.PermissionVoiceUseVAD {
 		res = append(res, "VoiceUseVAD")
 	}
-
+	if perms&discordgo.PermissionPrioritySpeaker == discordgo.PermissionPrioritySpeaker {
+		res = append(res, "PrioritySpeaker")
+	}
+	if perms&discordgo.PermissionRequestToSpeak == discordgo.PermissionRequestToSpeak {
+		res = append(res, "RequestToSpeak")
+	}
+	if perms&discordgo.PermissionStream == discordgo.PermissionStream {
+		res = append(res, "Stream")
+	}
 	// Constants for general management.
 	if perms&discordgo.PermissionChangeNickname == discordgo.PermissionChangeNickname {
 		res = append(res, "ChangeNickname")
@@ -436,12 +461,15 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionManageWebhooks == discordgo.PermissionManageWebhooks {
 		res = append(res, "ManageWebhooks")
 	}
-	if perms&discordgo.PermissionManageEmojis == discordgo.PermissionManageEmojis {
-		res = append(res, "ManageEmojis")
+	if perms&discordgo.PermissionManageEmojisAndStickers == discordgo.PermissionManageEmojisAndStickers {
+		res = append(res, "ManageEmojisAndStickers")
 	}
 
 	if perms&discordgo.PermissionCreateInstantInvite == discordgo.PermissionCreateInstantInvite {
 		res = append(res, "CreateInstantInvite")
+	}
+	if perms&discordgo.PermissionModerateMembers == discordgo.PermissionModerateMembers {
+		res = append(res, "ModerateMembers")
 	}
 	if perms&discordgo.PermissionKickMembers == discordgo.PermissionKickMembers {
 		res = append(res, "KickMembers")
@@ -452,13 +480,29 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionManageChannels == discordgo.PermissionManageChannels {
 		res = append(res, "ManageChannels")
 	}
+	if perms&discordgo.PermissionManageEvents == discordgo.PermissionManageEvents {
+		res = append(res, "ManageEvents")
+	}
+
+	if perms&discordgo.PermissionManageThreads == discordgo.PermissionManageThreads {
+		res = append(res, "ManageThreads")
+	}
+	if perms&discordgo.PermissionUsePublicThreads == discordgo.PermissionUsePublicThreads {
+		res = append(res, "UsePublicThreads")
+	}
+	if perms&discordgo.PermissionUsePrivateThreads == discordgo.PermissionUsePrivateThreads {
+		res = append(res, "UsePrivateThreads")
+	}
+	if perms&discordgo.PermissionSendMessagesInThreads == discordgo.PermissionSendMessagesInThreads {
+		res = append(res, "SendMessagesInThreads")
+	}
+
 	if perms&discordgo.PermissionAddReactions == discordgo.PermissionAddReactions {
 		res = append(res, "AddReactions")
 	}
 	if perms&discordgo.PermissionViewAuditLogs == discordgo.PermissionViewAuditLogs {
 		res = append(res, "ViewAuditLogs")
 	}
-
 	return
 }
 
@@ -586,4 +630,23 @@ func SplitSendMessage(channelID int64, contents string, allowedMentions discordg
 	}
 
 	return result, nil
+}
+
+func FormatList(list []string, conjunction string) string {
+	var sb strings.Builder
+	for i, item := range list {
+		if i > 0 {
+			sb.WriteString(", ")
+			if i == len(list)-1 {
+				sb.WriteString(conjunction)
+				if conjunction != "" {
+					sb.WriteByte(' ')
+				}
+			}
+		}
+		sb.WriteByte('`')
+		sb.WriteString(item)
+		sb.WriteByte('`')
+	}
+	return sb.String()
 }

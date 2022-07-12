@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/templates"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -157,18 +157,28 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 		return false
 	}
 
+	var m *discordgo.Message
 	if cs.Type == discordgo.ChannelTypeDM {
 		msg = "DM sent from server **" + gs.Name + "** (ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
-		_, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
-	} else if !ctx.CurrentFrame.DelResponse {
-		send := ctx.MessageSend("")
-		bot.QueueMergedMessage(cs.ID, msg, send.AllowedMentions)
+		m, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
 	} else {
-		var m *discordgo.Message
-		m, err = common.BotSession.ChannelMessageSendComplex(cs.ID, ctx.MessageSend(msg))
-		if err == nil && ctx.CurrentFrame.DelResponse {
-			templates.MaybeScheduledDeleteMessage(gs.ID, cs.ID, m.ID, ctx.CurrentFrame.DelResponseDelay)
+		if len(ctx.CurrentFrame.AddResponseReactionNames) > 0 || ctx.CurrentFrame.DelResponse {
+			m, err = common.BotSession.ChannelMessageSendComplex(cs.ID, ctx.MessageSend(msg))
+			if err == nil && ctx.CurrentFrame.DelResponse {
+				templates.MaybeScheduledDeleteMessage(gs.ID, cs.ID, m.ID, ctx.CurrentFrame.DelResponseDelay)
+			}
+		} else {
+			send := ctx.MessageSend("")
+			bot.QueueMergedMessage(cs.ID, msg, send.AllowedMentions)
 		}
+	}
+
+	if err == nil && m != nil && len(ctx.CurrentFrame.AddResponseReactionNames) > 0 {
+		go func(frame *templates.ContextFrame) {
+			for _, v := range frame.AddResponseReactionNames {
+				common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
+			}
+		}(ctx.CurrentFrame)
 	}
 
 	if err != nil {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 var cmdHelp = &YAGCommand{
@@ -43,8 +43,41 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 			return CmdNotFound(target), nil
 		}
 
-		// Send short help in same channel
-		return resp, nil
+		// see if we can find the permissions the command needs and add that info to the help message
+		cmd, _ := data.ContainerChain[0].AbsFindCommand(target)
+		if cmd == nil {
+			return resp, nil
+		}
+
+		yc, ok := cmd.Command.(*YAGCommand)
+		if !ok {
+			return resp, nil
+		}
+
+		if len(yc.RequireDiscordPerms) == 0 && yc.RequiredDiscordPermsHelp == "" {
+			return resp, nil
+		}
+
+		requiredPerms := yc.RequiredDiscordPermsHelp
+		if requiredPerms == "" {
+			humanizedPerms := make([]string, 0, len(yc.RequireDiscordPerms))
+			for _, v := range yc.RequireDiscordPerms {
+				h := common.HumanizePermissions(v)
+				if len(h) == 1 {
+					humanizedPerms = append(humanizedPerms, h[0])
+				} else {
+					joined := strings.Join(h, " and ")
+					humanizedPerms = append(humanizedPerms, "("+joined+")")
+				}
+			}
+			requiredPerms = strings.Join(humanizedPerms, " or ")
+		}
+
+		embed := resp[0]
+		embed.Footer = &discordgo.MessageEmbedFooter{
+			Text: "Required permissions: " + requiredPerms,
+		}
+		return embed, nil
 	}
 
 	// Send full help in DM

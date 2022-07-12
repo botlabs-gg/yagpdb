@@ -9,12 +9,12 @@ import (
 	"strconv"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/premium"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"
@@ -114,12 +114,6 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	common.RedisPool.Do(radix.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
-
-	// If any goroutine is running according to previous flow
-	workingOnFullScan := WorkingOnFullScanLegacy(activeGuild.ID)
-	if workingOnFullScan {
-		tmpl["FullScanActive"] = workingOnFullScan
-	}
 
 	return tmpl
 

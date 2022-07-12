@@ -7,14 +7,15 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})
@@ -44,6 +45,9 @@ var cmds = []*commands.YAGCommand{
 			{Name: "Time", Type: &commands.DurationArg{}},
 			{Name: "Message", Type: dcmd.String},
 		},
+		ArgSwitches: []*dcmd.ArgDef{
+			{Name: "channel", Type: dcmd.Channel},
+		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -62,7 +66,21 @@ var cmds = []*commands.YAGCommand{
 				return "Can be max 365 days from now...", nil
 			}
 
-			_, err := NewReminder(parsed.Author.ID, parsed.GuildData.GS.ID, parsed.ChannelID, parsed.Args[1].Str(), when)
+			id := parsed.ChannelID
+			if c := parsed.Switch("channel"); c.Value != nil {
+				id = c.Value.(*dstate.ChannelState).ID
+
+				hasPerms, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, id, parsed.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+				if err != nil {
+					return "Failed checking permissions, please try again or join the support server.", err
+				}
+
+				if !hasPerms {
+					return "You do not have permissions to send messages there", nil
+				}
+			}
+
+			_, err := NewReminder(parsed.Author.ID, parsed.GuildData.GS.ID, id, parsed.Args[1].Str(), when)
 			if err != nil {
 				return nil, err
 			}

@@ -15,11 +15,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/common/cacheset"
+	"github.com/botlabs-gg/yagpdb/v2/common/cacheset"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
-	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"

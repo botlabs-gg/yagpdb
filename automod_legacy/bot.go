@@ -3,15 +3,15 @@ package automod_legacy
 import (
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/moderation"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/karlseguin/ccache"
 )
 
@@ -156,7 +156,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		case PunishMute:
 			err = moderation.MuteUnmuteUser(nil, true, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
 		case PunishKick:
-			err = moderation.KickUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User)
+			err = moderation.KickUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User, -1)
 		case PunishBan:
 			err = moderation.BanUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User)
 		}

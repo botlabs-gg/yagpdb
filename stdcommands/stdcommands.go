@@ -1,55 +1,58 @@
 package stdcommands
 
 import (
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/stdcommands/advice"
-	"github.com/botlabs-gg/yagpdb/stdcommands/allocstat"
-	"github.com/botlabs-gg/yagpdb/stdcommands/banserver"
-	"github.com/botlabs-gg/yagpdb/stdcommands/calc"
-	"github.com/botlabs-gg/yagpdb/stdcommands/catfact"
-	"github.com/botlabs-gg/yagpdb/stdcommands/ccreqs"
-	"github.com/botlabs-gg/yagpdb/stdcommands/createinvite"
-	"github.com/botlabs-gg/yagpdb/stdcommands/currentshard"
-	"github.com/botlabs-gg/yagpdb/stdcommands/currenttime"
-	"github.com/botlabs-gg/yagpdb/stdcommands/customembed"
-	"github.com/botlabs-gg/yagpdb/stdcommands/dcallvoice"
-	"github.com/botlabs-gg/yagpdb/stdcommands/define"
-	"github.com/botlabs-gg/yagpdb/stdcommands/dogfact"
-	"github.com/botlabs-gg/yagpdb/stdcommands/findserver"
-	"github.com/botlabs-gg/yagpdb/stdcommands/globalrl"
-	"github.com/botlabs-gg/yagpdb/stdcommands/guildunavailable"
-	"github.com/botlabs-gg/yagpdb/stdcommands/howlongtobeat"
-	"github.com/botlabs-gg/yagpdb/stdcommands/info"
-	"github.com/botlabs-gg/yagpdb/stdcommands/invite"
-	"github.com/botlabs-gg/yagpdb/stdcommands/leaveserver"
-	"github.com/botlabs-gg/yagpdb/stdcommands/listflags"
-	"github.com/botlabs-gg/yagpdb/stdcommands/listroles"
-	"github.com/botlabs-gg/yagpdb/stdcommands/memstats"
-	"github.com/botlabs-gg/yagpdb/stdcommands/ping"
-	"github.com/botlabs-gg/yagpdb/stdcommands/poll"
-	"github.com/botlabs-gg/yagpdb/stdcommands/roll"
-	"github.com/botlabs-gg/yagpdb/stdcommands/setstatus"
-	"github.com/botlabs-gg/yagpdb/stdcommands/simpleembed"
-	"github.com/botlabs-gg/yagpdb/stdcommands/sleep"
-	"github.com/botlabs-gg/yagpdb/stdcommands/statedbg"
-	"github.com/botlabs-gg/yagpdb/stdcommands/stateinfo"
-	"github.com/botlabs-gg/yagpdb/stdcommands/throw"
-	"github.com/botlabs-gg/yagpdb/stdcommands/toggledbg"
-	"github.com/botlabs-gg/yagpdb/stdcommands/topcommands"
-	"github.com/botlabs-gg/yagpdb/stdcommands/topevents"
-	"github.com/botlabs-gg/yagpdb/stdcommands/topgames"
-	"github.com/botlabs-gg/yagpdb/stdcommands/topic"
-	"github.com/botlabs-gg/yagpdb/stdcommands/topservers"
-	"github.com/botlabs-gg/yagpdb/stdcommands/unbanserver"
-	"github.com/botlabs-gg/yagpdb/stdcommands/undelete"
-	"github.com/botlabs-gg/yagpdb/stdcommands/viewperms"
-	"github.com/botlabs-gg/yagpdb/stdcommands/weather"
-	"github.com/botlabs-gg/yagpdb/stdcommands/wouldyourather"
-	"github.com/botlabs-gg/yagpdb/stdcommands/xkcd"
-	"github.com/botlabs-gg/yagpdb/stdcommands/yagstatus"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/advice"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/allocstat"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/banserver"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/calc"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/catfact"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/ccreqs"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/createinvite"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/currentshard"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/currenttime"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/customembed"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dadjoke"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dcallvoice"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/define"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dogfact"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/findserver"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/globalrl"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/guildunavailable"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/howlongtobeat"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/info"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/inspire"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/invite"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/leaveserver"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listflags"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listroles"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/memstats"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/owldictionary"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/ping"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/poll"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/roll"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/setstatus"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/simpleembed"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/sleep"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/statedbg"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/stateinfo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/throw"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/toggledbg"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/topcommands"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/topevents"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/topgames"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/topic"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/topservers"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/unbanserver"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/undelete"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/viewperms"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/weather"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/wouldyourather"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/xkcd"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/yagstatus"
 )
 
 var (
@@ -79,6 +82,7 @@ func (p *Plugin) AddCommands() {
 		calc.Command,
 		topic.Command,
 		catfact.Command,
+		dadjoke.Command,
 		dogfact.Command,
 		advice.Command,
 		ping.Command,
@@ -96,6 +100,7 @@ func (p *Plugin) AddCommands() {
 		topgames.Command,
 		xkcd.Command,
 		howlongtobeat.Command,
+		inspire.Command,
 
 		// Maintenance
 		stateinfo.Command,
@@ -122,6 +127,12 @@ func (p *Plugin) AddCommands() {
 
 	statedbg.Commands()
 
+	if !owldictionary.ShouldRegister() {
+		common.GetPluginLogger(p).Warn("Owlbot API token not provided, skipping adding dictionary command...")
+		return
+	}
+
+	commands.AddRootCommands(p, owldictionary.Command)
 }
 
 func (p *Plugin) BotInit() {

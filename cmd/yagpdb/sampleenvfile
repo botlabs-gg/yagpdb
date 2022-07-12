@@ -71,6 +71,9 @@ YAGPDB_DISABLE_REQUEST_LOGGING=""
 YAGPDB_AYLIENAPPID="aylien app id here"
 YAGPDB_AYLIENAPPKEY="aylien app key here"
 
+# Owlbot
+YAGPDB_OWLBOT_TOKEN=
+
 # Reddit
 # You'll need to get a permanent refresh token using a script or something, i should probably make a easy way to do it but eh...
 YAGPDB_REDDIT_CLIENTID="Reddit application clientid here"

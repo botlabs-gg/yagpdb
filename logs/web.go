@@ -10,13 +10,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/bot/botrest"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/logs/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/logs/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"goji.io"
@@ -224,29 +224,30 @@ func HandleLogsCPDeleteAll(w http.ResponseWriter, r *http.Request) (web.Template
 }
 
 func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.GuildLoggingConfig) bool {
-	_, tmpl := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	_, tmpl := web.GetBaseCPContextData(ctx)
 
-	isAdmin, _ := web.IsAdminRequest(r.Context(), r)
-
-	// check if were allowed access to logs on this server
-	if isAdmin || config.AccessMode == AccessModeEveryone {
-		return true
-	}
-
-	member := web.ContextMember(r.Context())
+	member := web.ContextMember(ctx)
 	if member == nil {
 		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to members only."))
 		return false
 	}
 
-	if len(config.MessageLogsAllowedRoles) > 0 {
-		if !common.ContainsInt64SliceOneOf(member.Roles, config.MessageLogsAllowedRoles) {
-			tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, you don't have any of them."))
-			return false
-		}
+	memberPermissions := web.ContextMemberPerms(ctx)
+	guild := web.ContextGuild(ctx)
+
+	// if access mode is everyone or the user is the owner or they have administrator/manage server perms, then they can access the logs
+	if (config.AccessMode == 1) || (member.User.ID == guild.OwnerID) || (memberPermissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator) || (memberPermissions&discordgo.PermissionManageServer == discordgo.PermissionManageServer) {
+		return true
 	}
 
-	return true
+	// If the user has one of the allowed roles
+	if len(config.MessageLogsAllowedRoles) > 0 && common.ContainsInt64SliceOneOf(member.Roles, config.MessageLogsAllowedRoles) {
+		return true
+	}
+
+	tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, you don't have any of them."))
+	return false
 }
 
 type ctxKey int

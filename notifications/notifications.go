@@ -1,12 +1,13 @@
 package notifications
 
 import (
-	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/configstore"
-	"golang.org/x/net/context"
 	"strconv"
 	"strings"
+
+	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
+	"golang.org/x/net/context"
 )
 
 const (
