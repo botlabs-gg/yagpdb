@@ -210,10 +210,9 @@ table{
 {{range $i, $rule := .CurrentRuleset.R.RulesetAutomodRules}}
 <div class="row">
     <div class="col">
-        <form action="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/update" method="post" data-async-form-alertsonly>
+        <form action="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/update" method="post" data-async-form data-async-form-alertsonly>
             <!-- Pressing enter uses the first button for some reason -->
             <button class="hidden" type="submit"></button>
-            <input class="hidden" type="text" name="Name" value="{{.Name}}">
 
             <section class="card card-featured card-featured-warning">
                 <header class="card-header">
