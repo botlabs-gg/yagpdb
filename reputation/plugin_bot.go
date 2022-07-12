@@ -139,6 +139,22 @@ var cmds = []*commands.YAGCommand{
 	},
 	{
 		CmdCategory:         commands.CategoryFun,
+		Name:                "GiveRepTemp",
+		Aliases:             []string{},
+		Description:         "Gives rep to someone",
+		RequiredArgs:        1,
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "User", Type: dcmd.User},
+			{Name: "Num", Type: dcmd.Int, Default: 1},
+			{Name: "Note", Type: dcmd.String},
+		},
+		ArgumentCombos: [][]int{{0}, {0, 1}, {0, 2}, {0, 1, 2}}, // allow optional Note that will be ignored
+		RunFunc:        CmdGiveRep,
+	},
+	{
+		CmdCategory:         commands.CategoryFun,
 		Name:                "SetRep",
 		Aliases:             []string{"SetRepID"}, // alias for legacy reasons, used to be a standalone command
 		Description:         "Sets someones rep, this is an admin command and bypasses cooldowns and other restrictions.",
