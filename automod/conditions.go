@@ -17,7 +17,8 @@ type Condition interface {
 /////////////////////////////////////////////////////////////////
 
 type MemberRolesConditionData struct {
-	Roles []int64
+	Roles           []int64
+	RequireAllRoles bool
 }
 
 var _ Condition = (*MemberRolesCondition)(nil)
@@ -51,27 +52,45 @@ func (mrc *MemberRolesCondition) Description() string {
 }
 
 func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
-	return []*SettingDef{
+	settings := []*SettingDef{
 		&SettingDef{
 			Name: "Roles",
 			Key:  "Roles",
 			Kind: SettingTypeMultiRole,
 		},
 	}
+	if !mrc.Blacklist {
+		settings = append(settings, &SettingDef{
+			Name:    "Require all selected roles",
+			Key:     "RequireAllRoles",
+			Kind:    SettingTypeBool,
+			Default: false,
+		})
+	}
+	return settings
 }
 
 func (mrc *MemberRolesCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	settingsCast := settings.(*MemberRolesConditionData)
+	allRolesPresent := false
 	for _, r := range settingsCast.Roles {
 		if common.ContainsInt64Slice(data.MS.Member.Roles, r) {
 			if mrc.Blacklist {
 				// Had a blacklist role, this condition is not met
 				return false, nil
-			} else {
+			} else if !settingsCast.RequireAllRoles {
 				// Had a whitelist role, this condition is met
 				return true, nil
 			}
+			allRolesPresent = true
+		} else if settingsCast.RequireAllRoles {
+			// One of the required roles is not present for the member
+			return false, nil
 		}
+	}
+
+	if allRolesPresent {
+		return true, nil
 	}
 
 	if mrc.Blacklist {
