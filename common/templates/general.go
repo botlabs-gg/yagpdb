@@ -258,6 +258,10 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		case "filename":
 			// Cut the filename to a reasonable length if it's too long
 			filename = common.CutStringShort(ToString(val), 64)
+		case "reply":
+			msg.Reference = &discordgo.MessageReference{
+				MessageID: val.(int64),
+			}
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
