@@ -383,6 +383,9 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 					typedMsg.Content = info + "\n" + typedMsg.Content
 				}
 			}
+			if msgSend.Reference != nil && msgSend.Reference.ChannelID == 0 {
+				msgSend.Reference.ChannelID = cid
+			}
 		default:
 			if isDM {
 				msgSend.Content = info + "\n" + ToString(msg)
