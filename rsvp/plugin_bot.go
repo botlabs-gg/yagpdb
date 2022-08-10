@@ -369,9 +369,8 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	embed.Description = timeUntilStr
 
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name: "Times",
-		Value: fmt.Sprintf("UTC: `%s`\nLook at the bottom of this message to see when the event starts in your local time.",
-			UTCTime.Format(timeFormat)),
+		Name:  "Time",
+		Value: fmt.Sprintf("<t:%d> (UTC: `%s`)", m.StartsAt.Unix(), UTCTime.Format(timeFormat)),
 	}, &discordgo.MessageEmbedField{
 		Name:  "Reactions usage",
 		Value: "React to mark you as a participant, undecided, or not joining",

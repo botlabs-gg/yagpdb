@@ -201,7 +201,7 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 
 	in := common.HumanizeDuration(common.DurationPrecisionMinutes, t.Time.Sub(now))
 
-	s.sendMessage("Set the starting time of the event to **%s** (in **%s**), is this correct? (`yes/no`)", t.Time.Format("02 Jan 2006 15:04 MST"), in)
+	s.sendMessage("Set the starting time of the event to **<t:%d>** (%s) (in **%s**), is this correct? (`yes/no`)", t.Time.Unix(), t.Time.UTC().Format("02 Jan 2006 15:04 MST"), in)
 }
 
 func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) {
