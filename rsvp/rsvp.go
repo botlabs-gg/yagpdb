@@ -19,6 +19,13 @@ var (
 	dateParser *when.Parser
 )
 
+const (
+	EventAccepted  = "event_accepted"
+	EventRejected  = "event_rejected"
+	EventWaitlist  = "event_waitlist"
+	EventUndecided = "event_undecided"
+)
+
 func init() {
 	dateParser = when.New(&rules.Options{
 		Distance:     10,

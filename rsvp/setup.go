@@ -201,7 +201,7 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 
 	in := common.HumanizeDuration(common.DurationPrecisionMinutes, t.Time.Sub(now))
 
-	s.sendMessage("Set the starting time of the event to **%s** (in **%s**), is this correct? (`yes/no`)", t.Time.Format("02 Jan 2006 15:04 MST"), in)
+	s.sendMessage("Set the starting time of the event to **<t:%d>** (%s) (in **%s**), is this correct? (`yes/no`)", t.Time.Unix(), t.Time.UTC().Format("02 Jan 2006 15:04 MST"), in)
 }
 
 func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) {
@@ -221,7 +221,11 @@ func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) 
 func (s *SetupSession) Finish() {
 
 	// reserve the message
-	reservedMessage, err := common.BotSession.ChannelMessageSendEmbed(s.Channel, &discordgo.MessageEmbed{Description: "Setting up RSVP Event..."})
+	reservedMessage, err := common.BotSession.ChannelMessageSendComplex(s.Channel, &discordgo.MessageSend{
+		Embeds:     []*discordgo.MessageEmbed{{Description: "Setting up RSVP Event..."}},
+		Components: createInteractionButtons(),
+	})
+
 	if err != nil {
 		if code, _ := common.DiscordError(err); code != 0 {
 			if code == discordgo.ErrCodeMissingPermissions || code == discordgo.ErrCodeMissingAccess {
@@ -269,13 +273,6 @@ func (s *SetupSession) Finish() {
 	if err != nil {
 		m.DeleteG(context.Background())
 		s.abortError("failed updating the embed", err)
-		return
-	}
-
-	err = AddReactions(m.ChannelID, m.MessageID, m.MaxParticipants > 0)
-	if err != nil {
-		m.DeleteG(context.Background())
-		s.abortError("failed adding reactions", err)
 		return
 	}
 
@@ -383,27 +380,8 @@ func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...
 }
 
 const (
-	EmojiJoining    = "✅"
+	EmojiJoining    = "✓"
 	EmojiMaybe      = "❔"
-	EmojiNotJoining = "❌"
+	EmojiNotJoining = "X"
 	EmojiWaitlist   = "🕐"
 )
-
-var EventReactionsWithLimit = []string{EmojiJoining, EmojiNotJoining, EmojiWaitlist, EmojiMaybe}
-var EventReactionsNoLimit = []string{EmojiJoining, EmojiNotJoining, EmojiMaybe}
-
-func AddReactions(channelID, messageID int64, isLimit bool) error {
-	list := EventReactionsNoLimit
-	if isLimit {
-		list = EventReactionsWithLimit
-	}
-
-	for _, r := range list {
-		err := common.BotSession.MessageReactionAdd(channelID, messageID, r)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
