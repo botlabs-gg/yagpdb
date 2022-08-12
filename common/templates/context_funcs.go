@@ -1119,9 +1119,9 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 	return ""
 }
 
-//Deletes reactions from a message either via reaction trigger or argument-set of emojis,
-//needs channelID, messageID, userID, list of emojis - up to twenty
-//can be run once per CC.
+// Deletes reactions from a message either via reaction trigger or argument-set of emojis,
+// needs channelID, messageID, userID, list of emojis - up to twenty
+// can be run once per CC.
 func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value, error) {
 
 	f := func(args []reflect.Value) (reflect.Value, error) {
@@ -1343,22 +1343,33 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 	return CtxChannelFromCS(cstate), nil
 }
 
-func (c *Context) tmplGetChannelPinCount(channel interface{}) (int, error) {
-	if c.IncreaseCheckCallCounterPremium("count_pins", 2, 4) {
-		return 0, ErrTooManyCalls
-	}
+func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (interface{}, error) {
+	return func(channel interface{}) (interface{}, error) {
+		if c.IncreaseCheckCallCounterPremium("channel_pins", 2, 4) {
+			return 0, ErrTooManyCalls
+		}
 
-	cID := c.ChannelArgNoDM(channel)
-	if cID == 0 {
-		return 0, errors.New("unknown channel")
-	}
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return 0, errors.New("unknown channel")
+		}
 
-	msg, err := common.BotSession.ChannelMessagesPinned(cID)
-	if err != nil {
-		return 0, err
-	}
+		msg, err := common.BotSession.ChannelMessagesPinned(cID)
+		if err != nil {
+			return 0, err
+		}
 
-	return len(msg), nil
+		if pinCount {
+			return len(msg), nil
+		}
+
+		ids := []int64{}
+		for _, v := range msg {
+			ids = append(ids, v.ID)
+		}
+
+		return ids, nil
+	}
 }
 
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {
