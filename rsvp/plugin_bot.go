@@ -473,7 +473,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		Embeds:  []*discordgo.MessageEmbed{embed},
 	}
 
-	if m.StartsAt.Sub(time.Now()) < 1 {
+	if m.StartsAt.Before(time.Now()) {
 		// Remove the buttons if event has started
 		editMessage.Components = []discordgo.MessageComponent{}
 	}
