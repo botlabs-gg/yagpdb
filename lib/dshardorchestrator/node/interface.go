@@ -12,10 +12,10 @@ type Interface interface {
 	SessionEstablished(info SessionInfo)
 
 	// StopShard should disconnect the specific shard, and return the session info for resumes
-	StopShard(shard int) (sessionID string, sequence int64)
+	StopShard(shard int) (sessionID string, sequence int64, resumeGatewayUrl string)
 
 	// ResumeShard should resume the speficic shard
-	ResumeShard(shard int, sessionID string, sequence int64)
+	ResumeShard(shard int, sessionID string, sequence int64, resumeGatewayUrl string)
 
 	// AddNewShards should add the following new shards to this node, doing the complete identify flow
 	AddNewShards(shards ...int)
@@ -24,11 +24,9 @@ type Interface interface {
 	Shutdown()
 
 	// InitializeShardTransferFrom should prepare the shard for a outgoing transfer to another node, disconnecting it and returning the session info
-	InitializeShardTransferFrom(shard int) (sessionID string, sequence int64)
+	InitializeShardTransferFrom(shard int) (sessionID string, sequence int64, resumeGatewayUrl string)
 
-	// InitializeShardTransferTo should prepare for a incoming shard transfer, ResumeShard is called aswell so this is not needed in most cases
-	InitializeShardTransferTo(shard int, sessionID string, sequence int64)
-
+	InitializeShardTransferTo(shard int, sessionID string, sequence int64, resumeGatewayUrl string)
 	// StartShardTransferFrom should return when all user events has been sent, with the number of user events sent
 	StartShardTransferFrom(shard int) (numEventsSent int)
 

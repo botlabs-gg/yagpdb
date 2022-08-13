@@ -28,8 +28,9 @@ type PrepareShardmigrationData struct {
 	Origin  bool
 	ShardID int
 
-	SessionID string
-	Sequence  int64
+	SessionID        string
+	Sequence         int64
+	ResumeGatewayUrl string
 }
 
 type StartshardMigrationData struct {

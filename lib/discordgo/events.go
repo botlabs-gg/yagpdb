@@ -63,12 +63,13 @@ func (evt *Event) NKeys() int {
 
 // A Ready stores all data for the websocket READY event.
 type Ready struct {
-	Version         int          `json:"v"`
-	SessionID       string       `json:"session_id"`
-	User            *SelfUser    `json:"user"`
-	ReadState       []*ReadState `json:"read_state"`
-	PrivateChannels []*Channel   `json:"private_channels"`
-	Guilds          []*Guild     `json:"guilds"`
+	Version          int          `json:"v"`
+	SessionID        string       `json:"session_id"`
+	User             *SelfUser    `json:"user"`
+	ReadState        []*ReadState `json:"read_state"`
+	PrivateChannels  []*Channel   `json:"private_channels"`
+	Guilds           []*Guild     `json:"guilds"`
+	ResumeGatewayUrl string       `json:"resume_gateway_url"`
 
 	// Undocumented fields
 	Settings          *Settings            `json:"user_settings"`

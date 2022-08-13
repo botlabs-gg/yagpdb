@@ -113,7 +113,7 @@ func TestMigrateShard(t *testing.T) {
 		SessionEstablishedFunc: func(info node.SessionInfo) {
 			sessionWaitChan <- info
 		},
-		ResumeShardFunc: func(shard int, sessionID string, sequence int64) {
+		ResumeShardFunc: func(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 			shardStartedChan <- shard
 		},
 		AddNewShardFunc: func(shards ...int) {
@@ -135,7 +135,7 @@ func TestMigrateShard(t *testing.T) {
 		SessionEstablishedFunc: func(info node.SessionInfo) {
 			sessionWaitChan <- info
 		},
-		ResumeShardFunc: func(shard int, sessionID string, sequence int64) {
+		ResumeShardFunc: func(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 			dataReceivedMU.Lock()
 			for i, v := range dataReceived {
 				if !v {
@@ -268,7 +268,7 @@ func TestMigrateNode(t *testing.T) {
 		SessionEstablishedFunc: func(info node.SessionInfo) {
 			sessionWaitChan <- info
 		},
-		ResumeShardFunc: func(shard int, sessionID string, sequence int64) {
+		ResumeShardFunc: func(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 			shardStartedChan <- shard
 		},
 		AddNewShardFunc: func(shards ...int) {
@@ -295,7 +295,7 @@ func TestMigrateNode(t *testing.T) {
 		SessionEstablishedFunc: func(info node.SessionInfo) {
 			sessionWaitChan <- info
 		},
-		ResumeShardFunc: func(shard int, sessionID string, sequence int64) {
+		ResumeShardFunc: func(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 			dataReceivedMU.Lock()
 			for i, v := range dataReceived {
 				if !v {
