@@ -60,7 +60,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 	}
 }
 
-func (n *NodeImpl) StopShard(shard int) (sessionID string, sequence int64) {
+func (n *NodeImpl) StopShard(shard int) (sessionID string, sequence int64, resumeGatewayUrl string) {
 	ReadyTracker.shardRemoved(shard)
 
 	n.lastTimeFreedMemorymu.Lock()
@@ -80,14 +80,14 @@ func (n *NodeImpl) StopShard(shard int) (sessionID string, sequence int64) {
 		logger.WithError(err).Error("failed stopping shard: ", err)
 	}
 
-	sessionID, sequence = ShardManager.Sessions[shard].GatewayManager.GetSessionInfo()
+	sessionID, sequence, resumeGatewayUrl = ShardManager.Sessions[shard].GatewayManager.GetSessionInfo()
 	return
 }
 
-func (n *NodeImpl) ResumeShard(shard int, sessionID string, sequence int64) {
+func (n *NodeImpl) ResumeShard(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 	ReadyTracker.shardsAdded(shard)
 
-	ShardManager.Sessions[shard].GatewayManager.SetSessionInfo(sessionID, sequence)
+	ShardManager.Sessions[shard].GatewayManager.SetSessionInfo(sessionID, sequence, resumeGatewayUrl)
 	err := ShardManager.Sessions[shard].GatewayManager.Open()
 	if err != nil {
 		logger.WithError(err).Error("Failed migrating shard")
@@ -98,7 +98,7 @@ func (n *NodeImpl) AddNewShards(shards ...int) {
 	ReadyTracker.shardsAdded(shards...)
 
 	for _, shard := range shards {
-		ShardManager.Sessions[shard].GatewayManager.SetSessionInfo("", 0)
+		ShardManager.Sessions[shard].GatewayManager.SetSessionInfo("", 0, "")
 
 		go ShardManager.Sessions[shard].GatewayManager.Open()
 	}
@@ -115,11 +115,11 @@ func (n *NodeImpl) Shutdown() {
 	os.Exit(0)
 }
 
-func (n *NodeImpl) InitializeShardTransferFrom(shard int) (sessionID string, sequence int64) {
+func (n *NodeImpl) InitializeShardTransferFrom(shard int) (sessionID string, sequence int64, resumeGatewayUrl string) {
 	return n.StopShard(shard)
 }
 
-func (n *NodeImpl) InitializeShardTransferTo(shard int, sessionID string, sequence int64) {
+func (n *NodeImpl) InitializeShardTransferTo(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 	// this isn't actually needed, as startshard will be called with the same session details
 }
 

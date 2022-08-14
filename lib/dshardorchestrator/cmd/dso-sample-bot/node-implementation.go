@@ -25,12 +25,12 @@ func (b *Bot) SessionEstablished(info node.SessionInfo) {
 	b.mu.Unlock()
 }
 
-func (b *Bot) StopShard(shard int) (sessionID string, sequence int64) {
+func (b *Bot) StopShard(shard int) (sessionID string, sequence int64, resumeGatewayUrl string) {
 	b.mu.Lock()
 	for i, v := range b.sessions {
 		if v.ShardID == shard {
 			v.Close()
-			sessionID, sequence = v.GatewayManager.GetSessionInfo()
+			sessionID, sequence, resumeGatewayUrl = v.GatewayManager.GetSessionInfo()
 			b.sessions[i] = nil
 			b.sessions = append(b.sessions[:i], b.sessions[i+1:]...)
 		}
@@ -40,7 +40,7 @@ func (b *Bot) StopShard(shard int) (sessionID string, sequence int64) {
 	return
 }
 
-func (b *Bot) StartShard(shard int, sessionID string, sequence int64) {
+func (b *Bot) StartShard(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 	nodeID := Node.GetIDLock()
 
 	b.mu.Lock()
@@ -59,7 +59,7 @@ func (b *Bot) StartShard(shard int, sessionID string, sequence int64) {
 		return
 	}
 
-	newSession.GatewayManager.SetSessionInfo(sessionID, sequence)
+	newSession.GatewayManager.SetSessionInfo(sessionID, sequence, resumeGatewayUrl)
 	newSession.ShardID = shard
 	newSession.ShardCount = b.totalShards
 
@@ -92,11 +92,11 @@ func (b *Bot) Shutdown() {
 	os.Exit(0)
 }
 
-func (b *Bot) InitializeShardTransferFrom(shard int) (sessionID string, sequence int64) {
+func (b *Bot) InitializeShardTransferFrom(shard int) (sessionID string, sequence int64, resumeGatewayUrl string) {
 	return b.StopShard(shard)
 }
 
-func (b *Bot) InitializeShardTransferTo(shard int, sessionID string, sequence int64) {
+func (b *Bot) InitializeShardTransferTo(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 	// this isn't actually needed, as startshard will be called with the same session details
 }
 
@@ -113,6 +113,6 @@ func (b *Bot) AddNewShards(shards ...int) {
 
 }
 
-func (b *Bot) ResumeShard(shard int, sessionID string, sequence int64) {
+func (b *Bot) ResumeShard(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 
 }

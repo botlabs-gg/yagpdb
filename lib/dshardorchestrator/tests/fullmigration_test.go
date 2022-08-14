@@ -61,7 +61,7 @@ func TestFullMigration(t *testing.T) {
 		SessionEstablishedFunc: func(info node.SessionInfo) {
 			sessionWaitChan <- info
 		},
-		ResumeShardFunc: func(shard int, sessionID string, sequence int64) {
+		ResumeShardFunc: func(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 			shardStartedChan <- shard
 		},
 		AddNewShardFunc: func(shards ...int) {
@@ -92,7 +92,7 @@ func TestFullMigration(t *testing.T) {
 		SessionEstablishedFunc: func(info node.SessionInfo) {
 			sessionWaitChan <- info
 		},
-		ResumeShardFunc: func(shard int, sessionID string, sequence int64) {
+		ResumeShardFunc: func(shard int, sessionID string, sequence int64, resumeGatewayUrl string) {
 			dataReceivedMU.Lock()
 			for i, v := range dataReceived {
 				if !v {

@@ -285,8 +285,9 @@ func HandleNodeStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 type shardSessionInfo struct {
-	ShardID   int
-	SessionID string
+	ShardID          int
+	SessionID        string
+	ResumeGatewayUrl string
 }
 
 func HandleGetShardSessions(w http.ResponseWriter, r *http.Request) {
@@ -301,10 +302,11 @@ func HandleGetShardSessions(w http.ResponseWriter, r *http.Request) {
 	// get general shard stats
 	for _, shardID := range processShards {
 		shard := bot.ShardManager.Sessions[shardID]
-		sessionID, _ := shard.GatewayManager.GetSessionInfo()
+		sessionID, _, resumeGatewayUrl := shard.GatewayManager.GetSessionInfo()
 		result = append(result, &shardSessionInfo{
-			ShardID:   shardID,
-			SessionID: sessionID,
+			ShardID:          shardID,
+			SessionID:        sessionID,
+			ResumeGatewayUrl: resumeGatewayUrl,
 		})
 	}
 
@@ -335,11 +337,11 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sessionID, sequence := bot.ShardManager.Sessions[parsed].GatewayManager.GetSessionInfo()
+	sessionID, sequence, resumeGatewayUrl := bot.ShardManager.Sessions[parsed].GatewayManager.GetSessionInfo()
 
 	var err error
 	if forceReidentify {
-		bot.ShardManager.Sessions[parsed].GatewayManager.SetSessionInfo("", 0)
+		bot.ShardManager.Sessions[parsed].GatewayManager.SetSessionInfo("", 0, "")
 		err = bot.ShardManager.Sessions[parsed].GatewayManager.Open()
 	} else {
 		err = bot.ShardManager.Sessions[parsed].GatewayManager.Reconnect(forceReidentify)
@@ -350,14 +352,16 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	internalapi.ServeJson(w, r, ReconnectResponse{
-		SessionID: sessionID,
-		Sequence:  sequence,
+		SessionID:        sessionID,
+		Sequence:         sequence,
+		ResumeGatewayUrl: resumeGatewayUrl,
 	})
 }
 
 type ReconnectResponse struct {
-	SessionID string `json:"session_id"`
-	Sequence  int64  `json:"sequence"`
+	SessionID        string `json:"session_id"`
+	Sequence         int64  `json:"sequence"`
+	ResumeGatewayUrl string `json:"resume_gateway_url"`
 }
 
 func RestartAll(reidentify bool) {
