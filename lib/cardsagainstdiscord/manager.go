@@ -182,6 +182,7 @@ func (gm *GameManager) RemoveGame(gameID int64) error {
 
 	delete(gm.ActiveGames, g.MasterChannel)
 	delete(gm.ActiveGames, g.GameMaster)
+	g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
 	for _, v := range g.Players {
 		if v.InGame {
 			delete(gm.ActiveGames, v.ID)
@@ -219,6 +220,7 @@ func (gm *GameManager) TryAdminRemoveGame(admin int64) error {
 	// Remove all references to the game
 	delete(gm.ActiveGames, g.MasterChannel)
 	delete(gm.ActiveGames, g.GameMaster)
+	g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
 	for _, v := range g.Players {
 		if v.InGame {
 			delete(gm.ActiveGames, v.ID)
@@ -230,29 +232,36 @@ func (gm *GameManager) TryAdminRemoveGame(admin int64) error {
 	return nil
 }
 
-func (gm *GameManager) HandleReactionAdd(ra *discordgo.MessageReactionAdd) {
-	cid := ra.ChannelID
-	userID := ra.UserID
+func (gm *GameManager) HandleInteractionCreate(ic *discordgo.InteractionCreate) {
+	if ic.Type != discordgo.InteractionMessageComponent {
+		return
+	}
 
+	if ic.GuildID == 0 {
+		//DM interactions are handled via pubsub
+		return
+	}
+
+	gm.HandleCahInteraction(ic)
+}
+
+func (gm *GameManager) HandleCahInteraction(ic *discordgo.InteractionCreate) {
+	cid := ic.ChannelID
 	gm.RLock()
 	if game, ok := gm.ActiveGames[cid]; ok {
 		gm.RUnlock()
-		game.HandleRectionAdd(ra)
-	} else if game, ok := gm.ActiveGames[userID]; ok {
+		game.HandleRectionAdd(ic)
+	} else if ic.User != nil {
 		gm.RUnlock()
-		game.HandleRectionAdd(ra)
-	} else {
-		gm.RUnlock()
-	}
-}
-
-func (gm *GameManager) HandleMessageCreate(msgCreate *discordgo.MessageCreate) {
-	userID := msgCreate.Author.ID
-
-	gm.RLock()
-	if game, ok := gm.ActiveGames[userID]; ok {
-		gm.RUnlock()
-		game.HandleMessageCreate(msgCreate)
+		if ic.Type == discordgo.InteractionModalSubmit && ic.ModalSubmitData().CustomID == CahBlankCardModal {
+			if game, ok := gm.ActiveGames[ic.User.ID]; ok {
+				game.HandleMessageCreate(ic)
+			}
+			return
+		}
+		if game, ok := gm.ActiveGames[ic.User.ID]; ok {
+			game.HandleRectionAdd(ic)
+		}
 	} else {
 		gm.RUnlock()
 	}
