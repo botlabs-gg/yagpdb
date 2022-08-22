@@ -165,6 +165,16 @@ func (gm *GameManager) AdminKickUser(admin, playerID int64) error {
 	return nil
 }
 
+func (p *Player) removeLastMenuReactions(session *discordgo.Session) {
+	if p.LastReactionMenu != 0 {
+		session.ChannelMessageEditComplex(&discordgo.MessageEdit{
+			Channel:    p.Channel,
+			ID:         p.LastReactionMenu,
+			Components: []discordgo.MessageComponent{},
+		})
+	}
+}
+
 func (gm *GameManager) RemoveGame(gameID int64) error {
 	gm.Lock()
 	defer gm.Unlock()
@@ -186,6 +196,7 @@ func (gm *GameManager) RemoveGame(gameID int64) error {
 	for _, v := range g.Players {
 		if v.InGame {
 			delete(gm.ActiveGames, v.ID)
+			v.removeLastMenuReactions(g.Session)
 		}
 	}
 
@@ -224,6 +235,7 @@ func (gm *GameManager) TryAdminRemoveGame(admin int64) error {
 	for _, v := range g.Players {
 		if v.InGame {
 			delete(gm.ActiveGames, v.ID)
+			v.removeLastMenuReactions(g.Session)
 		}
 	}
 

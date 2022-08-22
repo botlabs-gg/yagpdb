@@ -1370,17 +1370,11 @@ func (p *Player) PresentBoard(session *discordgo.Session, currentPrompt *PromptC
 	embed := &discordgo.MessageEmbed{
 		Title:       fmt.Sprintf("Pick %d card(s)!", currentPrompt.NumPick),
 		Description: currentPrompt.PlaceHolder(),
-		Fields: []*discordgo.MessageEmbedField{
-			&discordgo.MessageEmbedField{
-				Name: "Options",
-			},
-		},
 	}
 
 	options := []discordgo.SelectMenuOption{}
 
 	for i, v := range p.Cards {
-		embed.Fields[0].Value += CardSelectionEmojis[i] + ": " + string(v) + "\n"
 		cardValue := string(v)
 		selectMenuOption := discordgo.SelectMenuOption{
 			Value: CardSelectionEmojis[i],
