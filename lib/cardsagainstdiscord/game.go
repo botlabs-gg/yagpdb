@@ -795,7 +795,7 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 	for i := 0; i < len(g.Responses); i++ {
 		selections := g.Responses[i].Selections
 		chosenOption := selections[0]
-		if len(g.Responses[i].Selections) > 1 {
+		if len(selections) > 1 {
 			for j := 1; j < len(selections); j++ {
 				chosenOption += ", " + selections[j]
 			}
@@ -1405,13 +1405,7 @@ func (p *Player) PresentBoard(session *discordgo.Session, currentPrompt *PromptC
 		return
 	}
 
-	if p.LastReactionMenu != 0 {
-		session.ChannelMessageEditComplex(&discordgo.MessageEdit{
-			Channel:    p.Channel,
-			ID:         p.LastReactionMenu,
-			Components: []discordgo.MessageComponent{},
-		})
-	}
+	p.removeLastMenuReactions(session)
 
 	p.LastReactionMenu = resp.ID
 }
