@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Link contains information about a link.
@@ -164,6 +166,11 @@ func (c *Client) getLinks(subreddit string, sort, before, after string) ([]*Link
 		return nil, err
 	}
 
+	logrus.Debugf("Response Headers for %v", req.URL)
+	for k, v := range resp.Header {
+		logrus.Debugf("%s:%s", k, v)
+	}
+
 	if resp.StatusCode != 200 {
 		return nil, NewError(resp)
 	}
@@ -218,6 +225,10 @@ func (c *Client) LinksInfo(fullnames []string) ([]*Link, error) {
 
 	defer resp.Body.Close()
 
+	logrus.Debugf("Response Headers for %v", req.URL)
+	for k, v := range resp.Header {
+		logrus.Debugf("%s:%s", k, v)
+	}
 	d, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
