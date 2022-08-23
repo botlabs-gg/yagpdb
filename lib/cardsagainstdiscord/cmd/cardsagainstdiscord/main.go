@@ -47,12 +47,8 @@ func main() {
 
 	session.AddHandler(state.HandleEvent)
 	session.AddHandler(cmdSys.HandleMessageCreate)
-	session.AddHandler(func(s *discordgo.Session, ra *discordgo.MessageReactionAdd) {
-		go cahManager.HandleReactionAdd(ra)
-	})
-
-	session.AddHandler(func(s *discordgo.Session, msg *discordgo.MessageCreate) {
-		go cahManager.HandleMessageCreate(msg)
+	session.AddHandler(func(s *discordgo.Session, ic *discordgo.InteractionCreate) {
+		go cahManager.HandleInteractionCreate(ic)
 	})
 
 	err = session.Open()
