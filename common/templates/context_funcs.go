@@ -1363,12 +1363,12 @@ func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (i
 			return len(msg), nil
 		}
 
-		ids := []int64{}
-		for _, v := range msg {
-			ids = append(ids, v.ID)
+		pinnedMessages := make([]discordgo.Message, 0, len(msg))
+		for _, m := range msg {
+			pinnedMessages = append(pinnedMessages, *m)
 		}
 
-		return ids, nil
+		return pinnedMessages, nil
 	}
 }
 
