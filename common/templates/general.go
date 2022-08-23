@@ -671,8 +671,10 @@ func tmplMin(argX, argY interface{}) float64 {
 	return math.Min(xySlice[0], xySlice[1])
 }
 
-/*tmplLog is a function for templates using (log base of x = logarithm) as return value.
-It is using natural logarithm as default to change the base.*/
+/*
+tmplLog is a function for templates using (log base of x = logarithm) as return value.
+It is using natural logarithm as default to change the base.
+*/
 func tmplLog(arguments ...interface{}) (float64, error) {
 	var x, base, logarithm float64
 
@@ -729,7 +731,7 @@ func tmplBitwiseRightShift(arg1, arg2 interface{}) int {
 	return tmplToInt(arg1) >> tmplToInt(arg2)
 }
 
-//tmplHumanizeThousands comma separates thousands
+// tmplHumanizeThousands comma separates thousands
 func tmplHumanizeThousands(input interface{}) string {
 	var f1, f2 string
 
@@ -1080,6 +1082,16 @@ func tmplJson(v interface{}) (string, error) {
 	}
 
 	return string(b), nil
+}
+
+func tmplJSONToSDict(v interface{}) (SDict, error) {
+	var toSDict SDict
+	err := json.Unmarshal([]byte(v.(string)), &toSDict)
+	if err != nil {
+		return nil, err
+	}
+
+	return toSDict, nil
 }
 
 func tmplFormatTime(t time.Time, args ...string) string {

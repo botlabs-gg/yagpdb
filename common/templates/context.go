@@ -99,6 +99,7 @@ var (
 		"snowflakeToTime": tmplSnowflakeToTime,
 		"loadLocation":    time.LoadLocation,
 		"json":            tmplJson,
+		"jsonToSdict":     tmplJSONToSDict,
 		"in":              in,
 		"inFold":          inFold,
 		"roleAbove":       roleIsAbove,
