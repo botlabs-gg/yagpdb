@@ -668,7 +668,7 @@ func (s *SlowmodeTrigger) Description() string {
 		return "Triggers when a user has x attachments within y seconds in a single channel"
 	}
 	if s.Links {
-		return "Triggers when a channel has x links within y seconds"
+		return "Triggers when a user has x links within y seconds in a single channel"
 	}
 	return "Triggers when a user has x messages in y seconds in a single channel."
 }
