@@ -45,10 +45,10 @@ func (mrc *MemberRolesCondition) Name() string {
 
 func (mrc *MemberRolesCondition) Description() string {
 	if mrc.Blacklist {
-		return "Ignore users with atleast one of these roles from this rule"
+		return "Ignore users with at least one of these roles from this rule"
 	}
 
-	return "Require atleast one of these roles on the user"
+	return "Require at least one of these roles on the user"
 }
 
 func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
