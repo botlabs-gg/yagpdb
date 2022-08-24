@@ -1086,7 +1086,7 @@ func tmplJson(v interface{}) (string, error) {
 
 func tmplJSONToSDict(v interface{}) (SDict, error) {
 	var toSDict SDict
-	err := json.Unmarshal([]byte(v.(string)), &toSDict)
+	err := json.Unmarshal([]byte(ToString(v)), &toSDict)
 	if err != nil {
 		return nil, err
 	}
