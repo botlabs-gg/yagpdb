@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/sirupsen/logrus"
 )
 
 type GameState int
@@ -898,7 +899,7 @@ func (g *Game) removeOldInteractions(cID, mID int64) {
 	})
 }
 
-func (g *Game) HandleRectionAdd(ic *discordgo.InteractionCreate) {
+func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 	g.Lock()
 	defer g.Unlock()
 
@@ -908,6 +909,7 @@ func (g *Game) HandleRectionAdd(ic *discordgo.InteractionCreate) {
 			Type: discordgo.InteractionResponseDeferredMessageUpdate,
 		})
 		if err != nil {
+			logrus.WithError(err).Error("Failed Creating CAH Response")
 			return
 		}
 	}

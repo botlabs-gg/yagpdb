@@ -641,21 +641,20 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	// Pong the interaction
-	err := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDeferredMessageUpdate,
-	})
-	if err != nil {
-		return
-	}
-
 	eventResponse := ic.MessageComponentData().CustomID
-
 	joining := eventResponse == EventAccepted
 	notJoining := eventResponse == EventRejected
 	maybe := eventResponse == EventUndecided
 	waitlist := eventResponse == EventWaitlist
 	if !joining && !notJoining && !maybe && !waitlist {
+		return
+	}
+
+	// Pong the interaction
+	err := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+	})
+	if err != nil {
 		return
 	}
 
