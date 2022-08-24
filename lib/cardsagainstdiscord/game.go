@@ -925,7 +925,6 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 		user = ic.User
 	}
 	player := g.findPlayer(user.ID)
-	log.Printf("interaction %v game %v, player %v", ic, g, player)
 	if ic.Message.ID == g.LastMenuMessage {
 		switch ic.MessageComponentData().CustomID {
 		case CahGameJoined:
