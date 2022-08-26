@@ -463,7 +463,7 @@ var errorTests = []parseTest{
 		hasError, `unclosed left paren`},
 	{"rparen",
 		"{{.X 1 2 3)}}",
-		hasError, `unexpected ")"`},
+		hasError, `unexpected right paren`},
 	{"space",
 		"{{`x`3}}",
 		hasError, `in operand`},
