@@ -849,11 +849,6 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 		s.errorf("can't call method/function %q with %d results", name, typ.NumOut())
 	}
 
-	// Special case for builtin execTemplate.
-	if fun == builtinExecTemplate {
-		return s.callExecTemplate(dot, node, args, final)
-	}
-
 	// Build the arg list.
 	argv := make([]reflect.Value, numIn)
 	// Args must be evaluated. Fixed args first.
@@ -884,6 +879,12 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 		}
 		argv[i] = s.validateType(final, t)
 	}
+
+	// Special case for builtin execTemplate.
+	if fun == builtinExecTemplate {
+		return s.callExecTemplate(dot, node, argv)
+	}
+
 	v, panicked, err := safeCall(fun, argv)
 	// If we have an error that is not nil, stop execution and return that
 	// error to the caller.
@@ -907,28 +908,19 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 	return v
 }
 
-func (s *state) callExecTemplate(dot reflect.Value, node parse.Node, args []parse.Node, final reflect.Value) reflect.Value {
+func (s *state) callExecTemplate(dot reflect.Value, node parse.Node, args []reflect.Value) reflect.Value {
 	s.at(node)
 	s.incrOPs(100)
 
-	argv := make([]reflect.Value, 0, 2)
-	if len(args) > 0 {
-		argv = append(argv, s.evalArg(dot, stringType, args[0]))
+	if len(args) > 2 {
+		s.errorf("too many args for execTemplate: want at most 2 got %d", len(args))
 	}
-	if len(args) > 1 {
-		argv = append(argv, s.evalArg(dot, reflectValueType, args[1]).Interface().(reflect.Value))
-	}
-	if final != missingVal && len(argv) < 2 {
-		if len(argv) == 0 {
-			final = s.validateType(final, stringType)
-		}
-		argv = append(argv, final)
-	}
-
-	name := argv[0].String()
+	// evalCall ensures that we have at least one argument and the first is a
+	// string, so this is safe.
+	name := args[0].String()
 	var newDot reflect.Value
-	if len(argv) > 1 {
-		newDot = argv[1]
+	if len(args) > 1 {
+		newDot = args[1]
 	}
 
 	tmpl := s.tmpl.tmpl[name]
