@@ -190,7 +190,7 @@ $(function(){
 
         async function checkShardOffline() {
             const data = await fetch("/status.json").then((resp) => resp.json());
-            const shardId = Number(BigInt("{{.ActiveGuild.ID}}") >> 22n) % data.total_shards;
+            const shardId = Number(BigInt("{{.ActiveGuild.ID}}") >> BigInt(22)) % data.total_shards;
             return data.offline_shards && data.offline_shards.includes(shardId);
         }
 
