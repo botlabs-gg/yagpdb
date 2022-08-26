@@ -137,7 +137,17 @@ func (l *lexer) next() rune {
 		l.width = 0
 		return eof
 	}
-	r, w := utf8.DecodeRuneInString(l.input[l.pos:])
+
+	var (
+		r rune
+		w int
+	)
+	// Fast path for ASCII. See https://github.com/golang/go/issues/31666.
+	if l.input[l.pos] < utf8.RuneSelf {
+		r, w = rune(l.input[l.pos]), 1
+	} else {
+		r, w = utf8.DecodeRuneInString(l.input[l.pos:])
+	}
 	l.width = Pos(w)
 	l.pos += l.width
 	if r == '\n' {
