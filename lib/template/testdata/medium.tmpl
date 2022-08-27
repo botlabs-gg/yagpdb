@@ -1,0 +1,30 @@
+{{/*
+	Separates predefined flags from positional arguments within input.
+	See <https://yagpdb-cc.github.io/code-snippets/parse-flags> for more information.
+
+	Licensed under the terms of the Unlicense.
+	Author: jo3-l <https://github.com/jo3-l>
+*/}}
+
+{{define "parseFlags"}}
+	{{.Set "Out" (sdict
+		"Positional" (cslice)
+		"Flags" (dict)
+		"Switches" (dict)
+	)}}
+
+	{{$curFlag := ""}}
+	{{$lastIdx := sub (len .Args) 1}}
+	{{range $i, $arg := .Args}}
+		{{- if $curFlag}}
+			{{- $.Out.Flags.Set $curFlag $arg}}
+			{{- $curFlag = ""}}
+		{{- else if and ($id := $.Flags.Get $arg) (ne $i $lastIdx)}}
+			{{- $curFlag = $id}}
+		{{- else if $id := $.Switches.Get $arg}}
+			{{- $.Out.Switches.Set $id true}}
+		{{- else}}
+			{{- $.Out.Set "Positional" ($.Out.Positional.Append $arg)}}
+		{{- end -}}
+	{{end}}
+{{end}}
