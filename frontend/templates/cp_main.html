@@ -167,16 +167,31 @@ $(function(){
     });
 
     {{if .ActiveGuild}}
-        function updateBotStatusAlert() {
-            $.getJSON("/status.json", function(data) {
-                const shardID = Number(BigInt("{{.ActiveGuild.ID}}") >> BigInt(22)) % data.total_shards;
-                let removeAlert = true;
-                if (data.offline_shards && data.offline_shards.includes(shardID)) {
-                    upsertAlert("The shard the bot is on for your server is currently offline. Most functionality will not work as expected. Join the support server for more information if this issue persists.");
-                    removeAlert = false;
+        async function runShardOfflineChecker() {
+            let wasOffline = await checkShardOffline();
+            setInterval(async () => {
+                const currentlyOffline = await checkShardOffline();
+
+                // To prevent spurious warnings during routine shard reconnections,
+                // only show an alert if a shard appears to be offline for two
+                // checks in a row.
+                if (wasOffline && currentlyOffline) {
+                    upsertAlert(
+                        "The shard the bot is on for your server is currently offline; some functionality may not work as expected. \
+                        Join the support server for more information if this issue persists."
+                    );
+                } else {
+                    $("#shard-problems-warning").remove();
                 }
-                if (removeAlert) $("#shard-problems-warning").remove();
-            });
+
+                wasOffline = currentlyOffline;
+            }, 15_000);
+        }
+
+        async function checkShardOffline() {
+            const data = await fetch("/status.json").then((resp) => resp.json());
+            const shardId = Number(BigInt("{{.ActiveGuild.ID}}") >> BigInt(22)) % data.total_shards;
+            return data.offline_shards && data.offline_shards.includes(shardId);
         }
 
         function upsertAlert(msg) {
@@ -187,15 +202,8 @@ $(function(){
             }
         }
 
-        // we need BigInt support to run the alert update loop (to compute the shard #)
-        // luckily all modern browsers have supported it for a reasonable
-        // while (https://caniuse.com/bigint) so this should not be a huge
-        // issue.
-        if (typeof BigInt !== "undefined") {
-            console.log("Running bot status update alert loop");
-            updateBotStatusAlert();
-            setInterval(updateBotStatusAlert, 30_000 /* 30 seconds */);
-        }
+        // Computing the shard number requires BigInt support.
+        if (typeof BigInt !== "undefined") runShardOfflineChecker();
     {{end}}
 })
 </script>
