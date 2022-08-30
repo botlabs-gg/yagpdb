@@ -165,6 +165,8 @@ type Context struct {
 
 	CurrentFrame *ContextFrame
 
+	// See DelayedRunCCData.CallChain.
+	ExecCallChain          []time.Time
 	IsExecedByLeaveMessage bool
 
 	contextFuncsAdded bool

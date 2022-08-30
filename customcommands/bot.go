@@ -105,9 +105,16 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 }
 
 type DelayedRunCCData struct {
-	ChannelID int64  `json:"channel_id"`
-	CmdID     int64  `json:"cmd_id"`
-	UserData  []byte `json:"data"`
+	// CallChain is a rolling window tracking the previous execution times in
+	// the execCC call chain for ratelimiting purposes. For example, if command
+	// 1 calls command 2 at time t1 which then proceeds to call command 3 at
+	// time t2, the call chain for command 3 would be [t1, t2].
+	//
+	// See comments in tmplRunCC for further information.
+	CallChain []time.Time `json:"call_chain"`
+	ChannelID int64       `json:"channel_id"`
+	CmdID     int64       `json:"cmd_id"`
+	UserData  []byte      `json:"data"`
 
 	Message *discordgo.Message
 	Member  *dstate.MemberState
@@ -312,6 +319,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		tmplCtx.Data["Message"] = dataCast.Message
 	}
 
+	tmplCtx.ExecCallChain = dataCast.CallChain
 	tmplCtx.IsExecedByLeaveMessage = dataCast.IsExecedByLeaveMessage
 
 	// decode userdata

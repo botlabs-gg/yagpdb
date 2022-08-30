@@ -180,23 +180,12 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		opts, err := parseRunCCOptions(ctx, ccID, channel, delaySeconds, data)
 		if err != nil {
-			return "", errors.New("Couldn't find custom command")
+			return "", err
 		}
 
-		channelID := ctx.ChannelArg(channel)
-		if channelID == 0 {
-			return "", errors.New("Unknown channel")
-		}
-
-		cs := ctx.GS.GetChannelOrThread(channelID)
-		if cs == nil {
-			return "", errors.New("Channel not in state")
-		}
-
-		actualDelay := templates.ToInt64(delaySeconds)
-		if actualDelay <= 0 {
+		if opts.Delay <= 0 {
 			currentStackDepthI := ctx.Data["StackDepth"]
 			currentStackDepth := 0
 			if currentStackDepthI != nil {
@@ -207,7 +196,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 				return "", errors.New("Max nested immediate execCC calls reached (2)")
 			}
 
-			newCtx := templates.NewContext(ctx.GS, cs, ctx.MS)
+			newCtx := templates.NewContext(ctx.GS, opts.CS, ctx.MS)
 			if ctx.Msg != nil {
 				newCtx.Msg = ctx.Msg
 				newCtx.Data["Message"] = ctx.Msg
@@ -216,34 +205,33 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			newCtx.Data["StackDepth"] = currentStackDepth + 1
 			newCtx.IsExecedByLeaveMessage = ctx.IsExecedByLeaveMessage
 
-			go ExecuteCustomCommand(cmd, newCtx)
+			go ExecuteCustomCommand(opts.Cmd, newCtx)
 			return "", nil
 		}
 
+		expectedCallTime := time.Now().Add(opts.Delay)
+		newCallChain, err := updateCallChain(ctx.ExecCallChain, expectedCallTime)
+
 		m := &DelayedRunCCData{
-			ChannelID: channelID,
-			CmdID:     cmd.LocalID,
+			ChannelID: opts.CS.ID,
+			CmdID:     opts.Cmd.LocalID,
 
 			Member:  ctx.MS,
 			Message: ctx.Msg,
 
+			CallChain:              newCallChain,
 			IsExecedByLeaveMessage: ctx.IsExecedByLeaveMessage,
 		}
 
 		// embed data using msgpack to include type information
 		if data != nil {
-			encoded, err := msgpack.Marshal(data)
+			m.UserData, err = encodeRunCCUserData(data)
 			if err != nil {
 				return "", err
 			}
-
-			m.UserData = encoded
-			if len(m.UserData) > CCMaxDataLimit {
-				return "", errors.New("ExecData is too big")
-			}
 		}
 
-		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
+		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, expectedCallTime, m)
 		if err != nil {
 			return "", errors.WrapIf(err, "failed scheduling cc run")
 		}
@@ -263,64 +251,116 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		opts, err := parseRunCCOptions(ctx, ccID, channel, delaySeconds, data)
 		if err != nil {
-			return "", errors.New("Couldn't find custom command")
+			return "", err
 		}
 
-		channelID := ctx.ChannelArg(channel)
-		if channelID == 0 {
-			return "", errors.New("Unknown channel")
-		}
-
-		cs := ctx.GS.GetChannelOrThread(channelID)
-		if cs == nil {
-			return "", errors.New("Channel not in state")
-		}
-
-		actualDelay := templates.ToInt64(delaySeconds)
-		if actualDelay <= 0 {
+		if opts.Delay <= 0 {
 			return "", nil
+		}
+
+		expectedCallTime := time.Now().Add(opts.Delay)
+		newCallChain, err := updateCallChain(ctx.ExecCallChain, expectedCallTime)
+		if err != nil {
+			return "", err
 		}
 
 		stringedKey := templates.ToString(key)
 
 		m := &DelayedRunCCData{
-			ChannelID: channelID,
-			CmdID:     cmd.LocalID,
+			ChannelID: opts.CS.ID,
+			CmdID:     opts.Cmd.LocalID,
 
 			Member:  ctx.MS,
 			Message: ctx.Msg,
 			UserKey: stringedKey,
 
+			CallChain:              newCallChain,
 			IsExecedByLeaveMessage: ctx.IsExecedByLeaveMessage,
 		}
 
 		// embed data using msgpack to include type information
 		if data != nil {
-			encoded, err := msgpack.Marshal(data)
+			m.UserData, err = encodeRunCCUserData(data)
 			if err != nil {
 				return "", err
 			}
-
-			m.UserData = encoded
 		}
 
 		// since this is a unique, remove existing ones
 		_, err = scheduledmodels.ScheduledEvents(
 			qm.Where("event_name='cc_delayed_run' AND  guild_id = ? AND (data->>'user_key')::text = ? AND (data->>'cmd_id')::bigint = ? AND processed = false",
-				ctx.GS.ID, stringedKey, cmd.LocalID)).DeleteAll(context.Background(), common.PQ)
+				ctx.GS.ID, stringedKey, opts.Cmd.LocalID)).DeleteAll(context.Background(), common.PQ)
 		if err != nil {
 			return "", err
 		}
 
-		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
+		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, expectedCallTime, m)
 		if err != nil {
 			return "", errors.WrapIf(err, "failed scheduling cc run")
 		}
 
 		return "", nil
 	}
+}
+
+func parseRunCCOptions(ctx *templates.Context, ccID int, channel interface{}, delaySeconds interface{}, data interface{}) (*runCCOpts, error) {
+	cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+	if err != nil {
+		return nil, errors.New("couldn't find custom command")
+	}
+
+	channelID := ctx.ChannelArg(channel)
+	if channelID == 0 {
+		return nil, errors.New("unknown channel")
+	}
+
+	cs := ctx.GS.GetChannelOrThread(channelID)
+	if cs == nil {
+		return nil, errors.New("channel not in state")
+	}
+
+	return &runCCOpts{
+		Cmd:   cmd,
+		CS:    cs,
+		Delay: time.Second * time.Duration(templates.ToInt64(delaySeconds)),
+	}, nil
+}
+
+type runCCOpts struct {
+	Cmd   *models.CustomCommand
+	CS    *dstate.ChannelState
+	Delay time.Duration
+}
+
+func encodeRunCCUserData(data interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := msgpack.NewEncoder(templates.LimitWriter(&buf, int64(CCMaxDataLimit)))
+	err := enc.Encode(data)
+	return buf.Bytes(), err
+}
+
+// Limit execCC chains to 20/5m.
+const (
+	chainWindowDur = 5 * time.Minute
+	maxChainDepth  = 20
+)
+
+func updateCallChain(chain []time.Time, expectedCallTime time.Time) ([]time.Time, error) {
+	// Move the window past entries that are now irrelevant.
+	for len(chain) > 0 && time.Since(chain[0]) > chainWindowDur {
+		chain = chain[1:]
+	}
+
+	if len(chain) >= maxChainDepth {
+		return nil, errors.New("execCC chains cannot exceed a depth of 20 in 5 minutes")
+	}
+
+	// Take care not to mutate the original chain.
+	updated := make([]time.Time, len(chain), len(chain)+1)
+	copy(updated, chain)
+	return append(updated, expectedCallTime), nil
 }
 
 // tmplCancelUniqueCC cancels a scheduled cc execution in the future with the provided cc id and key
