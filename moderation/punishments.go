@@ -95,7 +95,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 
 	fullReason := reason
 	if author.ID != common.BotUser.ID {
-		fullReason = author.Username + "#" + author.Discriminator + ": " + reason
+		fullReason = "Reason: " + reason
 	}
 
 	switch p {
