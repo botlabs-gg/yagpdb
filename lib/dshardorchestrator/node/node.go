@@ -39,8 +39,9 @@ type Conn struct {
 	shardmigrationTotalUserEvts int
 
 	// gateway settings
-	discordSessionID string
-	discordSequence  int64
+	discordSessionID        string
+	discordSequence         int64
+	discordResumeGatewayUrl string
 }
 
 // NewNodeConn returns a new node connection
@@ -220,14 +221,16 @@ func (c *Conn) handlePrepareShardMigration(data *dshardorchestrator.PrepareShard
 		c.removeShard(data.ShardID)
 		c.mu.Unlock()
 
-		session, seq := c.bot.InitializeShardTransferFrom(data.ShardID)
+		session, seq, resumeGatewayUrl := c.bot.InitializeShardTransferFrom(data.ShardID)
 		data.SessionID = session
 		data.Sequence = seq
+		data.ResumeGatewayUrl = resumeGatewayUrl
 		go c.SendLogErr(dshardorchestrator.EvtPrepareShardmigration, data, true)
 	} else {
 		c.mu.Lock()
 		c.discordSessionID = data.SessionID
 		c.discordSequence = data.Sequence
+		c.discordResumeGatewayUrl = data.ResumeGatewayUrl
 
 		c.shardMigrationMode = dshardorchestrator.ShardMigrationModeTo
 		c.shardMigrationShard = data.ShardID
@@ -239,7 +242,7 @@ func (c *Conn) handlePrepareShardMigration(data *dshardorchestrator.PrepareShard
 		}
 		c.mu.Unlock()
 
-		c.bot.InitializeShardTransferTo(data.ShardID, data.SessionID, data.Sequence)
+		c.bot.InitializeShardTransferTo(data.ShardID, data.SessionID, data.Sequence, data.ResumeGatewayUrl)
 		go c.SendLogErr(dshardorchestrator.EvtPrepareShardmigration, data, true)
 	}
 }
@@ -278,7 +281,7 @@ func (c *Conn) handleUserEvt(msg *dshardorchestrator.Message) {
 }
 
 func (c *Conn) finishShardMigrationTo() {
-	go c.bot.ResumeShard(c.shardMigrationShard, c.discordSessionID, c.discordSequence)
+	go c.bot.ResumeShard(c.shardMigrationShard, c.discordSessionID, c.discordSequence, c.discordResumeGatewayUrl)
 
 	go c.SendLogErr(dshardorchestrator.EvtStartShards, &dshardorchestrator.StartShardsData{
 		ShardIDs: []int{c.shardMigrationShard},

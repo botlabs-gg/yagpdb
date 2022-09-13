@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/sirupsen/logrus"
 )
 
 type GameState int
@@ -32,7 +33,7 @@ Picking winner             |
 
 const (
 	GameStatePreGame          GameState = 0 // Before the game starts
-	GameStatePreRoundDelay    GameState = 1 // Countdown before a roundn starts
+	GameStatePreRoundDelay    GameState = 1 // Countdown before a round starts
 	GameStatePickingResponses GameState = 2 // Players are picking responses for the prompt card
 	GameStatePickingWinner    GameState = 3 // Cardzar is picking the winning response
 	GameStateEnded            GameState = 4 // Game is over, someone won
@@ -66,6 +67,14 @@ var (
 	JoinEmoji      = "➕"
 	LeaveEmoji     = "➖"
 	PlayPauseEmoji = "⏯"
+
+	CahGameJoined    = "cah_game_joined"
+	CahGameLeft      = "cah_game_left"
+	CahGamePlayPause = "cah_game_play"
+
+	CahCardSelectMenu = "cah_card_select"
+	CahBlankCardModal = "cah_blank_card"
+	CahTextInput      = "cah_text_input"
 )
 
 type Game struct {
@@ -116,6 +125,30 @@ type PickedResonse struct {
 	Selections []ResponseCard
 }
 
+func GetCommonCahButtons() []discordgo.MessageComponent {
+	return []discordgo.MessageComponent{
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					Emoji:    discordgo.ComponentEmoji{Name: JoinEmoji},
+					Style:    discordgo.SuccessButton,
+					CustomID: CahGameJoined,
+				},
+				discordgo.Button{
+					Emoji:    discordgo.ComponentEmoji{Name: LeaveEmoji},
+					Style:    discordgo.DangerButton,
+					CustomID: CahGameLeft,
+				},
+				discordgo.Button{
+					Emoji:    discordgo.ComponentEmoji{Name: PlayPauseEmoji},
+					Style:    discordgo.PrimaryButton,
+					CustomID: CahGamePlayPause,
+				},
+			},
+		},
+	}
+}
+
 func (g *Game) Created() error {
 	g.LastAction = time.Now()
 
@@ -124,7 +157,10 @@ func (g *Game) Created() error {
 		Description: fmt.Sprintf("React with %s to join and %s to leave, the game master can start/stop the game with %s", JoinEmoji, LeaveEmoji, PlayPauseEmoji),
 	}
 
-	msg, err := g.Session.ChannelMessageSendEmbed(g.MasterChannel, embed)
+	msg, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
+		Components: GetCommonCahButtons(),
+		Embeds:     []*discordgo.MessageEmbed{embed},
+	})
 	if err != nil {
 		return err
 	}
@@ -138,7 +174,6 @@ func (g *Game) Created() error {
 
 	go g.runTicker()
 
-	go g.addCommonMenuReactions(msg.ID)
 	g.tickerRunning = true
 	return nil
 }
@@ -344,10 +379,13 @@ func (g *Game) sendAnnouncmentMenu(msg string) {
 		Description: msg,
 	}
 
-	m, err := g.Session.ChannelMessageSendEmbed(g.MasterChannel, embed)
+	m, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
+		Embeds:     []*discordgo.MessageEmbed{embed},
+		Components: GetCommonCahButtons(),
+	})
 	if err == nil {
+		g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
 		g.LastMenuMessage = m.ID
-		go g.addCommonMenuReactions(m.ID)
 	}
 }
 
@@ -635,10 +673,13 @@ func (g *Game) presentStartRound() {
 		Fields: fields,
 	}
 
-	m, err := g.Session.ChannelMessageSendEmbed(g.MasterChannel, embed)
+	m, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
+		Embeds:     []*discordgo.MessageEmbed{embed},
+		Components: GetCommonCahButtons(),
+	})
 	if err == nil {
+		g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
 		g.LastMenuMessage = m.ID
-		go g.addCommonMenuReactions(m.ID)
 	}
 }
 
@@ -751,25 +792,74 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 		}
 	}
 
+	voteOptions := []discordgo.SelectMenuOption{}
+	for i := 0; i < len(g.Responses); i++ {
+		selections := g.Responses[i].Selections
+		chosenOption := selections[0]
+		if len(selections) > 1 {
+			for j := 1; j < len(selections); j++ {
+				chosenOption += ", " + selections[j]
+			}
+		}
+		option := discordgo.SelectMenuOption{
+			Label: string(chosenOption),
+			Value: CardSelectionEmojis[i],
+		}
+		if len(string(chosenOption)) > 100 {
+			option.Label = string(chosenOption)[:100]
+		}
+		voteOptions = append(voteOptions, option)
+	}
+
+	voteOptionsComponent := []discordgo.MessageComponent{
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.SelectMenu{
+					CustomID: CahCardSelectMenu,
+					Options:  voteOptions,
+				},
+			},
+		},
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					Emoji:    discordgo.ComponentEmoji{Name: JoinEmoji},
+					Style:    discordgo.SuccessButton,
+					CustomID: CahGameJoined,
+				},
+				discordgo.Button{
+					Emoji:    discordgo.ComponentEmoji{Name: LeaveEmoji},
+					Style:    discordgo.DangerButton,
+					CustomID: CahGameLeft,
+				},
+				discordgo.Button{
+					Emoji:    discordgo.ComponentEmoji{Name: PlayPauseEmoji},
+					Style:    discordgo.PrimaryButton,
+					CustomID: CahGamePlayPause,
+				},
+			},
+		},
+	}
+
 	if edit {
-		g.Session.ChannelMessageEditEmbed(g.MasterChannel, g.LastMenuMessage, embed)
+		g.Session.ChannelMessageEditComplex(&discordgo.MessageEdit{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: voteOptionsComponent,
+			Channel:    g.MasterChannel,
+			ID:         g.LastMenuMessage,
+		})
 		return
 	}
 
-	msg, err := g.Session.ChannelMessageSendEmbed(g.MasterChannel, embed)
+	msg, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
+		Embeds:     []*discordgo.MessageEmbed{embed},
+		Components: voteOptionsComponent,
+	})
 	if err != nil {
 		return
 	}
 
-	numOptions := len(g.Responses)
-	go func() {
-		for i := 0; i < numOptions; i++ {
-			g.Session.MessageReactionAdd(g.MasterChannel, msg.ID, CardSelectionEmojis[i])
-		}
-
-		g.addCommonMenuReactions(msg.ID)
-	}()
-
+	g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
 	g.LastMenuMessage = msg.ID
 }
 
@@ -781,9 +871,12 @@ func (g *Game) pickWinnerExpired() {
 		content = fmt.Sprintf("<@%d> didn't pick a winner in %d seconds, skipping round...", g.CurrentCardCzar, int(PickWinnerDuration.Seconds()))
 	}
 
-	msg, err := g.Session.ChannelMessageSend(g.MasterChannel, content)
-	if err == nil {
-		go g.addCommonMenuReactions(msg.ID)
+	_, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
+		Content:    content,
+		Components: GetCommonCahButtons(),
+	})
+	if err != nil {
+		return
 	}
 
 	g.setState(GameStatePreRoundDelay)
@@ -795,25 +888,46 @@ func (g *Game) gameExpired() {
 	g.stop()
 }
 
-func (g *Game) addCommonMenuReactions(mID int64) {
-	g.Session.MessageReactionAdd(g.MasterChannel, mID, JoinEmoji)
-	g.Session.MessageReactionAdd(g.MasterChannel, mID, LeaveEmoji)
-	g.Session.MessageReactionAdd(g.MasterChannel, mID, PlayPauseEmoji)
+func (g *Game) removeOldInteractions(cID, mID int64) {
+	if mID == 0 {
+		return
+	}
+	g.Session.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		Channel:    cID,
+		ID:         mID,
+		Components: []discordgo.MessageComponent{},
+	})
 }
 
-func (g *Game) HandleRectionAdd(ra *discordgo.MessageReactionAdd) {
+func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 	g.Lock()
 	defer g.Unlock()
+
+	if g.State != GameStatePickingResponses {
+		// Pong the interaction
+		err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseDeferredMessageUpdate,
+		})
+		if err != nil {
+			logrus.WithError(err).Error("Failed Creating CAH Response")
+			return
+		}
+	}
 
 	if g.State == GameStateEnded {
 		return
 	}
 
-	player := g.findPlayer(ra.UserID)
-
-	if ra.MessageID == g.LastMenuMessage {
-		switch ra.Emoji.Name {
-		case JoinEmoji:
+	var user *discordgo.User
+	if ic.Member != nil {
+		user = ic.Member.User
+	} else {
+		user = ic.User
+	}
+	player := g.findPlayer(user.ID)
+	if ic.Message.ID == g.LastMenuMessage {
+		switch ic.MessageComponentData().CustomID {
+		case CahGameJoined:
 			if player != nil && player.InGame {
 				return
 			}
@@ -822,17 +936,12 @@ func (g *Game) HandleRectionAdd(ra *discordgo.MessageReactionAdd) {
 				username := ""
 
 				if player == nil {
-					member, err := g.Session.GuildMember(g.GuildID, ra.UserID)
-					if err != nil || member.User.Bot {
-						return
-					}
-
-					username = member.User.Username
+					username = user.Username
 				} else {
 					username = player.Username
 				}
 
-				if err := g.Manager.PlayerTryJoinGame(g.MasterChannel, ra.UserID, username); err == nil {
+				if err := g.Manager.PlayerTryJoinGame(g.MasterChannel, user.ID, username); err == nil {
 					g.Lock()
 					g.LastAction = time.Now()
 					g.Unlock()
@@ -840,16 +949,16 @@ func (g *Game) HandleRectionAdd(ra *discordgo.MessageReactionAdd) {
 			}()
 
 			return
-		case LeaveEmoji:
-			go g.Manager.PlayerTryLeaveGame(ra.UserID)
+		case CahGameLeft:
+			go g.Manager.PlayerTryLeaveGame(user.ID)
 			g.LastAction = time.Now()
 			return
-		case PlayPauseEmoji:
+		case CahGamePlayPause:
 			g.LastAction = time.Now()
-			if g.State == GameStatePreGame && g.GameMaster == ra.UserID {
+			if g.State == GameStatePreGame && g.GameMaster == user.ID {
 				g.setState(GameStatePreRoundDelay)
 				go g.sendAnnouncment(fmt.Sprintf("Starting in %d seconds", int(PreRoundDelayDuration.Seconds())), false)
-			} else if g.GameMaster == ra.UserID {
+			} else if g.GameMaster == user.ID {
 				for _, v := range g.Players {
 					v.SelectedCards = nil
 				}
@@ -863,7 +972,6 @@ func (g *Game) HandleRectionAdd(ra *discordgo.MessageReactionAdd) {
 			return
 		default:
 		}
-
 	}
 
 	// From here on out only players can take actions
@@ -873,20 +981,21 @@ func (g *Game) HandleRectionAdd(ra *discordgo.MessageReactionAdd) {
 
 	switch g.State {
 	case GameStatePickingResponses:
-		if ra.MessageID != player.LastReactionMenu {
+		if ic.Message.ID != player.LastReactionMenu || ic.MessageComponentData().CustomID != CahCardSelectMenu {
 			return
 		}
+		response := ic.MessageComponentData().Values[0]
 
 		g.LastAction = time.Now()
-		g.playerPickedResponseReaction(player, ra)
+		g.playerPickedResponseReaction(player, response, ic)
 	case GameStatePickingWinner:
-		if ra.MessageID != g.LastMenuMessage || (player.ID != g.CurrentCardCzar && !g.VoteMode) {
+		if ic.Message.ID != g.LastMenuMessage || (player.ID != g.CurrentCardCzar && !g.VoteMode) || ic.MessageComponentData().CustomID != CahCardSelectMenu {
 			return
 		}
 
 		emojiIndex := -1
 		for i, v := range CardSelectionEmojis {
-			if v == ra.Emoji.Name {
+			if v == ic.MessageComponentData().Values[0] {
 				emojiIndex = i
 				break
 			}
@@ -932,13 +1041,20 @@ func (g *Game) HandleRectionAdd(ra *discordgo.MessageReactionAdd) {
 	}
 }
 
-func (g *Game) HandleMessageCreate(msg *discordgo.MessageCreate) {
+func (g *Game) HandleMessageCreate(ic *discordgo.InteractionCreate) {
 	g.Lock()
 	defer g.Unlock()
 
+	if ic.User == nil {
+		// Only check dm messages
+		return
+	}
+
+	cardResponse := ic.ModalSubmitData().Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value
+
 	var player *Player
 	for _, v := range g.Players {
-		if v.ID == msg.Author.ID {
+		if v.ID == ic.User.ID {
 			player = v
 			break
 		}
@@ -951,18 +1067,24 @@ func (g *Game) HandleMessageCreate(msg *discordgo.MessageCreate) {
 	for _, v := range player.SelectedCards {
 		card := player.Cards[v]
 		if card == BlankCard {
-			player.Cards[v] = ResponseCard(FilterEveryoneMentions(msg.ContentWithMentionsReplaced()))
+			player.Cards[v] = ResponseCard(FilterEveryoneMentions(cardResponse))
 
-			msg := "Selected **" + msg.ContentWithMentionsReplaced() + "**, "
+			msg := "Selected **" + cardResponse + "**, "
 			if len(player.SelectedCards) < g.CurrentPropmpt.NumPick {
 				msg += fmt.Sprintf("select %d more card(s)", g.CurrentPropmpt.NumPick-len(player.SelectedCards))
 			} else {
 				msg += fmt.Sprintf("go to <#%d> and wait for the other players to finish their selections, the winner will be picked there", g.MasterChannel)
 			}
 
-			go g.Session.ChannelMessageSendEmbed(player.Channel, &discordgo.MessageEmbed{
-				Description: msg,
+			err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Embeds: []*discordgo.MessageEmbed{{Description: msg}},
+				},
 			})
+			if err != nil {
+				return
+			}
 			break
 		}
 	}
@@ -1079,26 +1201,29 @@ func (g *Game) presentWinners(winningPicks []*PickedResonse) {
 		Color:       15276265,
 	}
 
-	msg, err := g.Session.ChannelMessageSendEmbed(g.MasterChannel, embed)
+	msg, err := g.Session.ChannelMessageSendComplex(g.MasterChannel, &discordgo.MessageSend{
+		Embeds:     []*discordgo.MessageEmbed{embed},
+		Components: GetCommonCahButtons(),
+	})
 	// msg, err := g.Session.ChannelMessageSend(g.MasterChannel, content)
 	if err != nil {
 		return
 	}
 
 	if !wonFullGame {
+		g.removeOldInteractions(g.MasterChannel, g.LastMenuMessage)
 		g.LastMenuMessage = msg.ID
-		g.addCommonMenuReactions(msg.ID)
 	}
 }
 
-func (g *Game) playerPickedResponseReaction(player *Player, ra *discordgo.MessageReactionAdd) {
+func (g *Game) playerPickedResponseReaction(player *Player, response string, ic *discordgo.InteractionCreate) {
 	if len(player.SelectedCards) >= g.CurrentPropmpt.NumPick {
 		return
 	}
 
 	emojiIndex := -1
 	for i, v := range CardSelectionEmojis {
-		if v == ra.Emoji.Name {
+		if v == response {
 			emojiIndex = i
 			break
 		}
@@ -1122,7 +1247,18 @@ func (g *Game) playerPickedResponseReaction(player *Player, ra *discordgo.Messag
 	}
 
 	card := player.Cards[emojiIndex]
+	if card != BlankCard {
+		// Pong the interaction
+		err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseDeferredMessageUpdate,
+		})
+		if err != nil {
+			return
+		}
+	}
+
 	respMsg := ""
+	var showTextModal bool
 	if card == BlankCard && player.FilingBlankCard {
 		// Picked a blank card while already filing another blank card
 		respMsg = "You're already filling in another blank card"
@@ -1133,6 +1269,7 @@ func (g *Game) playerPickedResponseReaction(player *Player, ra *discordgo.Messag
 		if card == BlankCard {
 			respMsg += "Selected a blank card, type in your own response here now"
 			player.FilingBlankCard = true
+			showTextModal = true
 		} else {
 			respMsg = fmt.Sprintf("Selected **%s**", card)
 			if len(player.SelectedCards) >= g.CurrentPropmpt.NumPick {
@@ -1142,11 +1279,30 @@ func (g *Game) playerPickedResponseReaction(player *Player, ra *discordgo.Messag
 			}
 		}
 	}
-
-	embed := &discordgo.MessageEmbed{
-		Description: respMsg,
+	if showTextModal {
+		g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseModal,
+			Data: &discordgo.InteractionResponseData{
+				CustomID: CahBlankCardModal,
+				Title:    "Blank Card",
+				Components: []discordgo.MessageComponent{
+					discordgo.ActionsRow{
+						Components: []discordgo.MessageComponent{
+							discordgo.TextInput{
+								CustomID:  CahTextInput,
+								Label:     "Enter your response",
+								Style:     discordgo.TextInputShort,
+								Required:  true,
+								MaxLength: 200,
+							},
+						},
+					},
+				},
+			},
+		})
+		return
 	}
-	go g.Session.ChannelMessageSendEmbed(player.Channel, embed)
+	go g.Session.ChannelMessageSendEmbed(player.Channel, &discordgo.MessageEmbed{Description: respMsg})
 }
 
 func (g *Game) loadFromSerializedState() {
@@ -1216,27 +1372,42 @@ func (p *Player) PresentBoard(session *discordgo.Session, currentPrompt *PromptC
 	embed := &discordgo.MessageEmbed{
 		Title:       fmt.Sprintf("Pick %d card(s)!", currentPrompt.NumPick),
 		Description: currentPrompt.PlaceHolder(),
-		Fields: []*discordgo.MessageEmbedField{
-			&discordgo.MessageEmbedField{
-				Name: "Options",
-			},
-		},
 	}
+
+	options := []discordgo.SelectMenuOption{}
 
 	for i, v := range p.Cards {
-		embed.Fields[0].Value += CardSelectionEmojis[i] + ": " + string(v) + "\n"
+		cardValue := string(v)
+		selectMenuOption := discordgo.SelectMenuOption{
+			Value: CardSelectionEmojis[i],
+		}
+		if len(cardValue) > 100 {
+			selectMenuOption.Label = cardValue[:100]
+			if len(cardValue) > 200 {
+				selectMenuOption.Description = cardValue[100:200]
+			} else {
+				selectMenuOption.Description = cardValue[100:]
+			}
+		} else {
+			selectMenuOption.Label = cardValue
+		}
+		options = append(options, selectMenuOption)
 	}
 
-	resp, err := session.ChannelMessageSendEmbed(p.Channel, embed)
+	resp, err := session.ChannelMessageSendComplex(p.Channel, &discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{embed},
+		Components: []discordgo.MessageComponent{discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{discordgo.SelectMenu{
+				Options:  options,
+				CustomID: CahCardSelectMenu,
+			}},
+		}},
+	})
 	if err != nil {
 		return
 	}
 
-	p.LastReactionMenu = resp.ID
+	p.removeLastMenuReactions(session)
 
-	if currentCardCzar != p.ID {
-		for i, _ := range p.Cards {
-			session.MessageReactionAdd(p.Channel, resp.ID, CardSelectionEmojis[i])
-		}
-	}
+	p.LastReactionMenu = resp.ID
 }

@@ -125,9 +125,9 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 			continue
 		}
 
-		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-		// logger.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
-		p.handlePost(v, 0)
+		since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
+		logger.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+		go p.handlePost(v, 0)
 	}
 }
 

@@ -247,7 +247,7 @@ type CommandNode struct {
 }
 
 func (t *Tree) newCommand(pos Pos) *CommandNode {
-	return &CommandNode{tr: t, NodeType: NodeCommand, Pos: pos}
+	return &CommandNode{tr: t, NodeType: NodeCommand, Pos: pos, Args: make([]Node, 0, 4)}
 }
 
 func (c *CommandNode) append(arg Node) {

@@ -18,6 +18,9 @@ var Command = &commands.YAGCommand{
 	Name:        "WouldYouRather",
 	Aliases:     []string{"wyr"},
 	Description: "Get presented with 2 options.",
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "raw", Help: "Raw output"},
+	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 
 		q1, q2, err := wouldYouRather()
@@ -25,14 +28,20 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
+		wyrDescription := fmt.Sprintf("**EITHER...**\n🇦 %s\n\n **OR...**\n🇧 %s", q1, q2)
+
+		if data.Switches["raw"].Value != nil && data.Switches["raw"].Value.(bool) {
+			return wyrDescription, nil
+		}
+
 		embed := &discordgo.MessageEmbed{
-			Description: fmt.Sprintf("**EITHER...**\n🇦 %s\n\n**OR...**\n🇧 %s", q1, q2),
+			Description: wyrDescription,
 			Author: &discordgo.MessageEmbedAuthor{
-				Name:    "Would you rather...",
-				URL:     "https://either.io/",
+				Name: "Would you rather...",
+				URL:  "https://either.io/",
 			},
 			Footer: &discordgo.MessageEmbedFooter{
-				Text:    fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
+				Text: fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
 			},
 			Color: rand.Intn(16777215),
 		}

@@ -774,6 +774,7 @@ type SendChannelMessageEffectData struct {
 	CustomReason string `valid:",0,280,trimspace"`
 	Duration     int    `valid:",0,3600,trimspace"`
 	PingUser     bool
+	LogChannel   int64
 }
 
 type SendChannelMessageEffect struct{}
@@ -817,6 +818,12 @@ func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
+		{
+			Name:    "Channel to send message in (Leave None to send message in same channel)",
+			Key:     "LogChannel",
+			Kind:    SettingTypeChannel,
+			Default: nil,
+		},
 	}
 }
 
@@ -826,12 +833,13 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 		return nil
 	}
 
+	settingsCast := settings.(*SendChannelMessageEffectData)
+
 	// If we dont have any channel data, we can't send a message
-	if ctxData.CS == nil {
+	if ctxData.CS == nil && settingsCast.LogChannel == 0 {
 		return nil
 	}
 
-	settingsCast := settings.(*SendChannelMessageEffectData)
 	msgSend := &discordgo.MessageSend{}
 
 	if settingsCast.PingUser {
@@ -848,13 +856,20 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 		msgSend.Content += ctxData.ConstructReason(true)
 	}
 
-	message, err := common.BotSession.ChannelMessageSendComplex(ctxData.CS.ID, msgSend)
+	var logChannel int64
+	if settingsCast.LogChannel != 0 {
+		logChannel = settingsCast.LogChannel
+	} else {
+		logChannel = ctxData.CS.ID
+	}
+
+	message, err := common.BotSession.ChannelMessageSendComplex(logChannel, msgSend)
 	if err != nil {
 		logger.WithError(err).Error("Failed to send message for AutomodV2")
 		return err
 	}
 	if settingsCast.Duration > 0 && message != nil {
-		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, ctxData.CS.ID, message.ID, settingsCast.Duration)
+		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, logChannel, message.ID, settingsCast.Duration)
 	}
 	return nil
 }

@@ -339,7 +339,7 @@ func (MessageComponentInteractionData) Type() InteractionType {
 // ModalSubmitInteractionData contains the data of modal submit interaction.
 type ModalSubmitInteractionData struct {
 	CustomID   string             `json:"custom_id"`
-	Components []MessageComponent `json:"-"`
+	Components []MessageComponent `json:"components"`
 }
 
 // Type returns the type of interaction data.
