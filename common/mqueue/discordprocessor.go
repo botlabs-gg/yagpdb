@@ -96,15 +96,22 @@ func maybeDisableFeed(source PluginWithSourceDisabler, elem *QueuedElement, err 
 }
 
 func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
-	if elem.MessageStr != "" {
-		_, err = common.BotSession.ChannelMessageSendComplex(elem.ChannelID, &discordgo.MessageSend{
-			Content:         elem.MessageStr,
-			AllowedMentions: elem.AllowedMentions,
-		})
-	} else if elem.MessageEmbed != nil {
-		_, err = common.BotSession.ChannelMessageSendEmbed(elem.ChannelID, elem.MessageEmbed)
-	} else {
+	if elem.MessageStr == "" && elem.MessageEmbed == nil {
 		l.Error("Both MessageEmbed and MessageStr empty")
+		return
+	}
+
+	var msg = &discordgo.MessageSend{}
+	if elem.MessageStr != "" {
+		msg.Content = elem.MessageStr
+		msg.AllowedMentions = elem.AllowedMentions
+	}
+	if elem.MessageEmbed != nil {
+		msg.Embeds = []*discordgo.MessageEmbed{elem.MessageEmbed}
+	}
+	_, err = common.BotSession.ChannelMessageSendComplex(elem.ChannelID, msg)
+	if err != nil {
+		logrus.WithError(err).Error("Failed sending mqueue message")
 	}
 
 	return
