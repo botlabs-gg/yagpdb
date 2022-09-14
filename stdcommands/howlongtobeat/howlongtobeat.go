@@ -2,7 +2,6 @@ package howlongtobeat
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"sort"
 	"strings"
@@ -140,7 +139,6 @@ func embedCreator(games []hltb, i int, paginated bool) *discordgo.MessageEmbed {
 		embed.Description = fmt.Sprintf("Term similarity: %.1f%%", games[i].JaroWinklerSimilarity*100)
 	}
 
-	log.Printf("%v", embed)
 	return embed
 }
 
