@@ -129,7 +129,7 @@ func embedCreator(games []hltb, i int, paginated bool) *discordgo.MessageEmbed {
 	}
 	if games[i].MainExtraTime > 0 {
 		embed.Fields = append(embed.Fields,
-			&discordgo.MessageEmbedField{Name: "Main + Hours", Value: games[i].MainStoryExtraTimeHours})
+			&discordgo.MessageEmbedField{Name: "Main + Extra", Value: games[i].MainStoryExtraTimeHours})
 	}
 	if games[i].CompletionistTime > 0 {
 		embed.Fields = append(embed.Fields,
