@@ -171,6 +171,7 @@ const (
 	ChannelTypeGuildPublicThread  ChannelType = 11 // a temporary sub-channel within a GUILD_TEXT channel
 	ChannelTypeGuildPrivateThread ChannelType = 12 // a temporary sub-channel within a GUILD_TEXT channel that is only viewable by those invited and those with the MANAGE_THREADS permission
 	ChannelTypeGuildStageVoice    ChannelType = 13 // a voice channel for hosting events with an audience
+	ChannelTypeGuildForum         ChannelType = 15 // a channel that can only contain threads
 )
 
 func (t ChannelType) IsThread() bool {

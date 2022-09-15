@@ -96,15 +96,15 @@ func (c *Context) baseChannelArg(v interface{}) *dstate.ChannelState {
 				// Channel id passed in string format
 				cid = parsed
 			} else {
-				// Channel name, look for it
+				// Channel name, look for it in the all the channels that support text
 				for _, v := range c.GS.Channels {
-					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
+					if strings.EqualFold(t, v.Name) && (v.Type == discordgo.ChannelTypeGuildText || v.Type == discordgo.ChannelTypeGuildVoice || v.Type == discordgo.ChannelTypeGuildForum || v.Type == discordgo.ChannelTypeGuildNews) {
 						return &v
 					}
 				}
 				// Do the same for thread names
 				for _, v := range c.GS.Threads {
-					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildPublicThread || v.Type == discordgo.ChannelTypeGuildPrivateThread {
+					if strings.EqualFold(t, v.Name) && (v.Type == discordgo.ChannelTypeGuildPublicThread || v.Type == discordgo.ChannelTypeGuildPrivateThread || v.Type == discordgo.ChannelTypeGuildNewsThread) {
 						return &v
 					}
 				}

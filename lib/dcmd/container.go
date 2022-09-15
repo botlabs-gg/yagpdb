@@ -369,5 +369,5 @@ func ValidateCommand(cmd Cmd, trigger *Trigger) error {
 }
 
 func channelIsThread(cs *dstate.ChannelState) bool {
-	return cs.Type == discordgo.ChannelTypeGuildPrivateThread || cs.Type == discordgo.ChannelTypeGuildPublicThread
+	return cs.Type == discordgo.ChannelTypeGuildPrivateThread || cs.Type == discordgo.ChannelTypeGuildPublicThread || cs.Type == discordgo.ChannelTypeGuildNews
 }
