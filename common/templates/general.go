@@ -1138,6 +1138,10 @@ func tmplSnowflakeToTime(v interface{}) time.Time {
 	return bot.SnowflakeToTime(ToInt64(v)).UTC()
 }
 
+func tmplTimestampToTime(v interface{}) time.Time {
+	return time.Unix(ToInt64(v), 0).UTC()
+}
+
 type variadicFunc func([]reflect.Value) (reflect.Value, error)
 
 // callVariadic allows the given function to be called with either a variadic
