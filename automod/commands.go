@@ -198,7 +198,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			for name, count := range violations {
-				out += fmt.Sprintf("Violation: %-20s Count: %d\n", name, count)
+				out += fmt.Sprintf("%-20s Count: %d\n", name, count)
 			}
 
 			if out == "" {
