@@ -205,7 +205,7 @@ func (p *Plugin) AddCommands() {
 				return "No Violations found with specified conditions", nil
 			}
 
-			out = "```" + out + fmt.Sprintf("\n%-31s Count: %d\n", "*Total*", len(listViolations)) + "```"
+			out = "```" + out + fmt.Sprintf("\n%-31s Count: %d\n", "Total", len(listViolations)) + "```"
 			return &discordgo.MessageEmbed{
 				Title:       "Violations Summary",
 				Description: out,
