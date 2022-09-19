@@ -13,7 +13,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
@@ -123,9 +122,6 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
-	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		return tmpl.AddAlerts(web.ErrorAlert("Full scan is paid premium only")), nil
-	}
 
 	err := botRestPostFullScan(activeGuild.ID)
 	if err != nil {
