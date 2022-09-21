@@ -15,7 +15,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryFun,
 	Cooldown:            5,
-	Name:                "exchange",
+	Name:                "Exchange",
 	Aliases:             []string{"exch", "money"},
 	Description:         "💱Shows Currency Exchange Rates",
 	RunInDM:             true,
@@ -42,7 +42,7 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 		embed := &discordgo.MessageEmbed{
-			Title:       "💱Currency Exhange Rate",
+			Title:       "💱Currency Exchange Rate",
 			Description: fmt.Sprintf("\n%s **%s** (%s) is %0.2f **%s** (%s).", amount, from.Description, output.Query.From, output.Result, to.Description, output.Query.To),
 			Color:       0xAE27FF,
 			Footer: &discordgo.MessageEmbedFooter{
