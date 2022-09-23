@@ -200,7 +200,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 	for _, item := range filteredItems {
 		idStr := strconv.FormatInt(item.ID, 10)
 
-		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
+		webhookUsername := "Reddit • YAGPDB"
 
 		qm := &mqueue.QueuedElement{
 			GuildID:         item.GuildID,
@@ -314,9 +314,12 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 			URL:  "https://reddit.com",
 		},
 		Description: "**" + html.UnescapeString(post.Title) + "**\n",
+		Timestamp:   time.Unix(int64(post.CreatedUtc), 0).Format(time.RFC3339),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: fmt.Sprintf("r/%s • %d ⬆ %d ⬇", post.Subreddit, post.Ups, post.Downs),
+		},
 	}
 	embed.URL = "https://redd.it/" + post.ID
-
 	if post.IsSelf {
 		//  Handle Self posts
 		embed.Title = "New self post"
