@@ -313,6 +313,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 			Name: "Reddit",
 			URL:  "https://reddit.com",
 		},
+		// Title:       "r/" + post.Subreddit,
 		Description: "**" + html.UnescapeString(post.Title) + "**\n",
 		Timestamp:   time.Unix(int64(post.CreatedUtc), 0).Format(time.RFC3339),
 		Footer: &discordgo.MessageEmbedFooter{
