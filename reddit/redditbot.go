@@ -321,7 +321,6 @@ func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discord
 			Name: "Reddit",
 			URL:  "https://reddit.com",
 		},
-		// Title:       "r/" + post.Subreddit,
 		Description: "**" + html.UnescapeString(post.Title) + "**\n",
 		Timestamp:   time.Unix(int64(post.CreatedUtc), 0).Format(time.RFC3339),
 		Footer:      footer,
