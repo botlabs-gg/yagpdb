@@ -198,11 +198,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			for name, count := range violations {
-				if len([]rune(name)) > 31 {
-					out += fmt.Sprintf("%-31s Count: %d\n", common.CutStringShort(name, 30), count)
-				} else {
-					out += fmt.Sprintf("%-31s Count: %d\n", name, count)
-				}
+				out += fmt.Sprintf("%-31s Count: %d\n", common.CutStringShort(name, 30), count)
 			}
 
 			if out == "" {
