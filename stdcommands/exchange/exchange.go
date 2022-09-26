@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -45,9 +46,8 @@ var Command = &commands.YAGCommand{
 			Title:       "💱Currency Exchange Rate",
 			Description: fmt.Sprintf("\n%s **%s** (%s) is %0.2f **%s** (%s).", amount, from.Description, output.Query.From, output.Result, to.Description, output.Query.To),
 			Color:       0xAE27FF,
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: fmt.Sprintf("Based on rate of 1 %s = %0.3f %s as on %s.", output.Query.From, output.Info.Rate, output.Query.To, output.Date),
-			},
+			Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Based on currency rate 1 : %0.3f", output.Result)},
+            Timestamp:   time.Now().UTC().Format(time.RFC3339),
 		}
 		return embed, nil
 	},
