@@ -26,7 +26,7 @@ var Command = &commands.YAGCommand{
 	SlashCommandEnabled: true,
 	Cooldown:            3,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "Mindfulness", Type: &dcmd.IntArg{Min: 1, Max: 100}},
+		{Name: "Mindfulness", Type: &dcmd.IntArg{Min: 1, Max: 25}},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		if data.Args[0].Str() != "" {
