@@ -25,20 +25,24 @@ var Command = &commands.YAGCommand{
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	Cooldown:            3,
-	Arguments: []*dcmd.ArgDef{
-		{Name: "Mindfulness", Type: &dcmd.IntArg{Min: 1, Max: 25}},
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "Mindfulness", Help: "Generates Mindful Quotes!"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		if data.Args[0].Str() != "" {
-			wonkyErr := "InspireAPI wonky... ducks are sad : /"
+		inspireArray := []string{}
+		var paginatedView bool
+		paginatedView = false
+		if data.Switches["Mindfulness"].Value != nil && data.Switches["Mindfulness"].Value.(bool) {
+			paginatedView = true
+		}
+		if paginatedView {
 			result, err := inspireFromAPI(true)
 			if err != nil {
-				return wonkyErr, err
+				return nil, err
 			}
-			inspireArray := []string{}
 			inspireArray = arrayMaker(inspireArray, result)
 			_, err = paginatedmessages.CreatePaginatedMessage(
-				data.GuildData.GS.ID, data.ChannelID, 1, data.Args[0].Int(), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+				data.GuildData.GS.ID, data.ChannelID, 1, 15, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					if page-1 == len(inspireArray) {
 						result, err := inspireFromAPI(true)
 						if err != nil {
@@ -51,9 +55,8 @@ var Command = &commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-			return "", nil
+			return nil, nil
 		}
-		//Normal Image Inspire Output
 		inspData, err := inspireFromAPI(false)
 		if err != nil {
 			return fmt.Sprintf("%s\nInspiroBot wonky... sad times :/", err), err
