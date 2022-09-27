@@ -26,13 +26,13 @@ var Command = &commands.YAGCommand{
 	SlashCommandEnabled: true,
 	Cooldown:            3,
 	ArgSwitches: []*dcmd.ArgDef{
-		{Name: "Mindfulness", Help: "Generates Mindful Quotes!"},
+		{Name: "mindfulness", Help: "Generates Mindful Quotes!"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		inspireArray := []string{}
 		var paginatedView bool
 		paginatedView = false
-		if data.Switches["Mindfulness"].Value != nil && data.Switches["Mindfulness"].Value.(bool) {
+		if data.Switches["mindfulness"].Value != nil && data.Switches["mindfulness"].Value.(bool) {
 			paginatedView = true
 		}
 		if paginatedView {
