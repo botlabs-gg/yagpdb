@@ -17,6 +17,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/botlabs-gg/yagpdb/v2/web"
@@ -65,6 +66,10 @@ func (p *Plugin) InitWeb() {
 
 	web.CPMux.Handle(pat.New("/automod"), muxer)
 	web.CPMux.Handle(pat.New("/automod/*"), muxer)
+
+	// All handlers here require guild channels present
+	muxer.Use(web.RequireBotMemberMW)
+	muxer.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageServer, discordgo.PermissionModerateMembers))
 
 	getIndexHandler := web.ControllerHandler(p.handleGetAutomodIndex, "automod_index")
 
