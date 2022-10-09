@@ -54,7 +54,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 	cmdName := cmdData.Cmd.Trigger.Names[0]
 	oreason = reason
 	if !enabled {
-		return oreason, commands.NewUserErrorf("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName)
+		return oreason, commands.NewUserErrorf("The **%s** command is disabled on this server. It can be enabled at <https://yagpdb.xyz/manage/%d/moderation>", cmdName, cmdData.GuildData.GS.ID)
 	}
 
 	if strings.TrimSpace(reason) == "" {
