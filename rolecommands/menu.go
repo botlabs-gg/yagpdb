@@ -35,7 +35,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
-			const genericHelpMessage = fmt.Sprintf("Did not find the role command group specified. Make sure it's spelled correctly, or set one up at <%s>.", panelURL)
+			genericHelpMessage = fmt.Sprintf("Did not find the role command group specified. Make sure it's spelled correctly, or set one up at <%s>.", panelURL)
 
 			groups, err := models.RoleGroups(models.RoleGroupWhere.GuildID.EQ(parsed.GuildData.GS.ID), qm.Select(models.RoleGroupColumns.Name)).AllG(parsed.Context())
 			if err != nil {
