@@ -35,7 +35,9 @@ func (p *Plugin) BotInit() {
 
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
-var repDisabledError = "**Rep command is disabled on this server. Enable it from the control panel.**"
+func repDisabledError(guild *GuildContextData) string {
+	return fmt.Sprintf("**The reputation system is disabled for this server.** Enable it at: <https://yagpdb.xyz/manage/%d/reputation>.", guild.GS.ID);
+}
 
 func handleMessageCreate(evt *eventsystem.EventData) {
 	msg := evt.MessageCreate()
@@ -156,7 +158,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if !conf.Enabled {
-				return repDisabledError, nil
+				return repDisabledError(parsed.GuildState), nil
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -203,7 +205,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if !conf.Enabled {
-				return repDisabledError, nil
+				return repDisabledError(parsed.GuildState), nil
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -462,7 +464,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 	}
 
 	if !conf.Enabled {
-		return repDisabledError, nil
+		return repDisabledError(parsed.GuildState), nil
 	}
 
 	pointsName := conf.PointsName
