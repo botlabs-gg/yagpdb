@@ -52,7 +52,7 @@ func (p *Plugin) AddCommands() {
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			if !conf.Enabled {
-				return TicketsDisabledError(parsed.GuildData), nil
+				return createTicketsDisabledError(parsed.GuildData), nil
 			}
 
 			_, ticket, err := CreateTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str(), true)
@@ -349,7 +349,7 @@ func (p *Plugin) AddCommands() {
 
 				// no ticket commands have any effect then
 				if activeTicket == nil && !conf.Enabled {
-					return TicketsDisabledError(data.GuildData), nil
+					return createTicketsDisabledError(data.GuildData), nil
 				}
 
 				ctx := context.WithValue(data.Context(), CtxKeyConfig, conf)

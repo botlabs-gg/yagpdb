@@ -158,7 +158,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if !conf.Enabled {
-				return repDisabledError(parsed.GuildData), nil
+				return createRepDisabledError(parsed.GuildData), nil
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -205,7 +205,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if !conf.Enabled {
-				return repDisabledError(parsed.GuildData), nil
+				return createRepDisabledError(parsed.GuildData), nil
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -464,7 +464,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 	}
 
 	if !conf.Enabled {
-		return repDisabledError(parsed.GuildData), nil
+		return createRepDisabledError(parsed.GuildData), nil
 	}
 
 	pointsName := conf.PointsName
