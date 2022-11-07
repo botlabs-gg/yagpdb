@@ -27,7 +27,7 @@ const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.Permiss
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 
-func TicketsDisabledError(guild *dcmd.GuildContextData) string {
+func createTicketsDisabledError(guild *dcmd.GuildContextData) string {
 	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <https://yagpdb.xyz/manage/%d/tickets/settings>.", guild.GS.ID)
 }
 
