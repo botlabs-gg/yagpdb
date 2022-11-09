@@ -36,7 +36,7 @@ func (p *Plugin) BotInit() {
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
 func createRepDisabledError(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The reputation system is disabled for this server.** Enable it at: <https://yagpdb.xyz/manage/%d/reputation>.", guild.GS.ID)
+	return fmt.Sprintf("**The reputation system is disabled for this server.** Enable it at: <%s/manage/%d/reputation>.", web.BaseURL(), guild.GS.ID)
 }
 
 func handleMessageCreate(evt *eventsystem.EventData) {

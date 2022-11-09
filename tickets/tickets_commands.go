@@ -19,6 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -28,7 +29,7 @@ const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.Permiss
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func createTicketsDisabledError(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <https://yagpdb.xyz/manage/%d/tickets/settings>.", guild.GS.ID)
+	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/manage/%d/tickets/settings>.", web.BaseURL(), guild.GS.ID)
 }
 
 func (p *Plugin) AddCommands() {
