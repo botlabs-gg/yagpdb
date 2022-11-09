@@ -22,6 +22,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/jarowinkler"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -31,7 +32,7 @@ var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	name := parsed.Args[0].Str()
-	panelURL := fmt.Sprintf("https://yagpdb.xyz/manage/%d/rolecommands/", parsed.GuildData.GS.ID)
+	panelURL := fmt.Sprintf("%s/manage/%d/rolecommands/", web.BaseURL(), parsed.GuildData.GS.ID)
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {

@@ -18,6 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/jinzhu/gorm"
 )
 
@@ -54,7 +55,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 	cmdName := cmdData.Cmd.Trigger.Names[0]
 	oreason = reason
 	if !enabled {
-		return oreason, commands.NewUserErrorf("The **%s** command is disabled on this server. It can be enabled at <https://yagpdb.xyz/manage/%d/moderation>", cmdName, cmdData.GuildData.GS.ID)
+		return oreason, commands.NewUserErrorf("The **%s** command is disabled on this server. It can be enabled at <%s/manage/%d/moderation>", cmdName, web.BaseURL(), cmdData.GuildData.GS.ID)
 	}
 
 	if strings.TrimSpace(reason) == "" {

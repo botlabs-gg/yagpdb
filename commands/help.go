@@ -8,6 +8,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 )
 
 var cmdHelp = &YAGCommand{
@@ -102,11 +103,11 @@ func createInteractiveHelp(userID int64, helpEmbeds []*discordgo.MessageEmbed) (
 	// prepend a introductionairy first page
 	firstPage := &discordgo.MessageEmbed{
 		Title: "YAGPDB Help!",
-		Description: `YAGPDB is a multipurpose discord bot that is configured through the web interface at https://yagpdb.xyz.
-For more in depth help and information you should visit https://docs.yagpdb.xyz/ as this command only shows information about commands.
+		Description: fmt.Sprintf(`YAGPDB is an open-source multipurpose discord bot that is configured through the web interface at %s.
+For more in depth help and information you should visit https://docs.yagpdb.xyz/ as this command only shows information about commands.)
 		
 		
-**Use the emojis under to change pages**`,
+**Use the emojis under to change pages**`, web.BaseURL()),
 	}
 
 	var pageLayout strings.Builder
