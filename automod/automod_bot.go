@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"sort"
 	"time"
 
@@ -491,7 +490,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 	}
 
 	// Limit AutomodTriggeredRules to 200 rows per guild
-	_, err = models.AutomodTriggeredRules(qm.SQL(fmt.Sprintf("DELETE FROM automod_triggered_rules WHERE id IN (SELECT id FROM automod_triggered_rules WHERE guild_id = %d ORDER BY created_at DESC OFFSET 200 ROWS);", ctxData.GS.ID))).DeleteAll(context.Background(), common.PQ)
+	_, err = models.AutomodTriggeredRules(qm.SQL("DELETE FROM automod_triggered_rules WHERE id IN (SELECT id FROM automod_triggered_rules WHERE guild_id = $1 ORDER BY created_at DESC OFFSET 200 ROWS);", ctxData.GS.ID)).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
 		logger.WithError(err).Error("failed deleting older automod triggered rules")
 		return

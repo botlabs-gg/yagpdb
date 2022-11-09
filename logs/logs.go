@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
@@ -27,7 +28,9 @@ var (
 	logger = common.GetPluginLogger(&Plugin{})
 )
 
-type Plugin struct{}
+type Plugin struct {
+	stopWorkers chan *sync.WaitGroup
+}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
