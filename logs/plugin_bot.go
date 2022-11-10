@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	"time"
 
 	"emperror.dev/errors"
@@ -453,7 +452,7 @@ func HandleQueueEvt(evt *eventsystem.EventData) {
 }
 
 func queueEvt(evt interface{}) {
-	if os.Getenv("YAGPDB_LOGS_DISABLE_USERNAME_TRACKING") != "" {
+	if !confEnableUsernameTracking.GetBool() {
 		return
 	}
 

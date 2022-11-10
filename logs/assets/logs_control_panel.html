@@ -1,9 +1,11 @@
 {{define "cp_logging"}}
 {{template "cp_head" .}}
 
+{{if .GlobalUsernameTrackingEnabled}}
 <header class="page-header">
     <h2>Message and username/nickname logs</h2>
 </header>
+{{end}}
 
 {{template "cp_alerts" .}}
 
@@ -46,7 +48,7 @@
             <div class="card-body">
                 <form role="form" method="post" data-async-form data-async-form-alertsonly>
                     <div class="row">
-                        {{if not .UserNickLoggingGlobalDisabled}}
+                        {{if .GlobalUsernameTrackingEnabled}}
                         <div class="col-lg-4 col-md-6">
                             {{checkbox "UsernameLoggingEnabled" "UsernameLoggingEnabled" "Enable username logging"
                             .Config.UsernameLoggingEnabled.Bool}}

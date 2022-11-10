@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -101,7 +100,7 @@ func (lp *Plugin) InitWeb() {
 func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	g, tmpl := web.GetBaseCPContextData(ctx)
-	tmpl["UserNickLoggingGlobalDisabled"] = os.Getenv("YAGPDB_LOGS_DISABLE_USERNAME_TRACKING") != ""
+	tmpl["GlobalUsernameTrackingEnabled"] = confEnableUsernameTracking.GetBool()
 	beforeID := 0
 	beforeStr := r.URL.Query().Get("before")
 	if beforeStr != "" {
