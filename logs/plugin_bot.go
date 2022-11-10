@@ -200,57 +200,58 @@ var cmdWhois = &commands.YAGCommand{
 			},
 		}
 
-		if config.UsernameLoggingEnabled.Bool {
-			usernames, err := GetUsernames(parsed.Context(), member.User.ID, 5, 0)
-			if err != nil {
-				return err, err
-			}
-
-			usernamesStr := "```\n"
-			for _, v := range usernames {
-				usernamesStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
-			}
-			usernamesStr += "```"
-
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "5 last usernames",
-				Value: usernamesStr,
-			})
-		} else {
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "Usernames",
-				Value: "Username tracking disabled",
-			})
-		}
-
-		if config.NicknameLoggingEnabled.Bool {
-
-			nicknames, err := GetNicknames(parsed.Context(), member.User.ID, parsed.GuildData.GS.ID, 5, 0)
-			if err != nil {
-				return err, err
-			}
-
-			nicknameStr := "```\n"
-			if len(nicknames) < 1 {
-				nicknameStr += "No nicknames tracked"
-			} else {
-				for _, v := range nicknames {
-					nicknameStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
+		if confEnableUsernameTracking.GetBool() {
+			if config.UsernameLoggingEnabled.Bool {
+				usernames, err := GetUsernames(parsed.Context(), member.User.ID, 5, 0)
+				if err != nil {
+					return err, err
 				}
+
+				usernamesStr := "```\n"
+				for _, v := range usernames {
+					usernamesStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
+				}
+				usernamesStr += "```"
+
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "5 last usernames",
+					Value: usernamesStr,
+				})
+			} else {
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "Usernames",
+					Value: "Username tracking disabled",
+				})
 			}
-			nicknameStr += "```"
 
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "5 last nicknames",
-				Value: nicknameStr,
-			})
-		} else {
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "Nicknames",
-				Value: "Nickname tracking disabled",
-			})
+			if config.NicknameLoggingEnabled.Bool {
+
+				nicknames, err := GetNicknames(parsed.Context(), member.User.ID, parsed.GuildData.GS.ID, 5, 0)
+				if err != nil {
+					return err, err
+				}
+
+				nicknameStr := "```\n"
+				if len(nicknames) < 1 {
+					nicknameStr += "No nicknames tracked"
+				} else {
+					for _, v := range nicknames {
+						nicknameStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
+					}
+				}
+				nicknameStr += "```"
+
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "5 last nicknames",
+					Value: nicknameStr,
+				})
+			} else {
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "Nicknames",
+					Value: "Nickname tracking disabled",
+				})
+			}
 		}
-
 		return embed, nil
 	},
 }
@@ -452,7 +453,7 @@ func HandleQueueEvt(evt *eventsystem.EventData) {
 }
 
 func queueEvt(evt interface{}) {
-	if !confEnableUsernameTracking.GetBool() {
+	if confEnableUsernameTracking.GetBool() {
 		return
 	}
 
