@@ -1,11 +1,15 @@
 {{define "cp_logging"}}
 {{template "cp_head" .}}
 
-{{if .GlobalUsernameTrackingEnabled}}
+
 <header class="page-header">
+  {{if .GlobalUsernameTrackingEnabled}}
     <h2>Message and username/nickname logs</h2>
+  {{else}}
+    <h2>Message logs</h2>
+  {{end}}
 </header>
-{{end}}
+
 
 {{template "cp_alerts" .}}
 
