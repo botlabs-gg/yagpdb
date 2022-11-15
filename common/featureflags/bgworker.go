@@ -69,7 +69,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 	}
 
 	if len(newFlags) == 0 {
-		logger.Info("no new featue flags detected...")
+		logger.Info("no new feature flags detected...")
 		return
 	}
 
