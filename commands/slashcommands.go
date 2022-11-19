@@ -170,6 +170,7 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		Description:       common.CutStringShort(cast.Description, 100),
 		DefaultPermission: &t,
 		Options:           opts,
+		NSFW:              cast.NSFW,
 	}
 }
 

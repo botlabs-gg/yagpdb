@@ -220,10 +220,8 @@ func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, h
 	}
 
 	// we may need to send a request with extra headers
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	// Not used on initial login..
@@ -656,7 +654,7 @@ func (s *Session) GuildEdit(guildID int64, g GuildParams) (st *Guild, err error)
 			for _, r := range regions {
 				valid = append(valid, r.ID)
 			}
-			err = fmt.Errorf("Region not a valid region (%q)", valid)
+			err = fmt.Errorf("region not a valid region (%q)", valid)
 			return
 		}
 	}

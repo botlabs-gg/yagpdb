@@ -146,6 +146,7 @@ type YAGCommand struct {
 	slashCommandID int64
 
 	IsResponseEphemeral bool
+	NSFW                bool
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation
@@ -173,6 +174,13 @@ var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	if !yc.RunInDM && data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
+	}
+
+	if yc.NSFW {
+		channel := data.GuildData.GS.GetChannelOrThread(data.ChannelID)
+		if !channel.NSFW {
+			return "This command can be used only in age-restricted channels", nil
+		}
 	}
 
 	// Send typing to indicate the bot's working

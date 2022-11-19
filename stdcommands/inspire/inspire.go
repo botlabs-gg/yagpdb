@@ -20,8 +20,9 @@ var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryFun,
 	Name:                "Inspire",
 	Aliases:             []string{"insp"},
-	Description:         "Shows 'inspirational' quotes from inspirobot.me...",
+	Description:         "Shows 'inspirational' quotes from inspirobot.me",
 	RunInDM:             false,
+	NSFW:                true,
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	Cooldown:            3,
@@ -77,7 +78,7 @@ func inspireFromAPI(mindfulnessMode bool) (string, error) {
 		return "", err
 	}
 
-	req.Header.Set("User-Agent", "curl/7.83.1")
+	req.Header.Set("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
