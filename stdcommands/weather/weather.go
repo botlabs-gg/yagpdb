@@ -39,7 +39,7 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		req.Header.Set("User-Agent", "curl/7.49.1")
+		req.Header.Set("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {

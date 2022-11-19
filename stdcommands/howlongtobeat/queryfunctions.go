@@ -33,7 +33,7 @@ func getGameData(searchTitle string) ([]hltb, error) {
 	r, _ := http.NewRequest("POST", urlStr, strings.NewReader(string(body)))
 	r.Header.Add("Content-Type", "application/json")
 	r.Header.Add("Accept", "*/*")
-	r.Header.Add("User-Agent", "Mozilla-YAGPDBv2")
+	r.Header.Add("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 	r.Header.Add("origin", "https://howlongtobeat.com")
 	r.Header.Add("referer", "https://howlongtobeat.com/")
 

@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	ErrAlreadyOpen = errors.New("Connection already open")
+	ErrAlreadyOpen = errors.New("connection already open")
 )
 
 type GatewayIntent int
@@ -247,10 +247,10 @@ func (s *Session) Open() error {
 }
 
 var (
-	ErrBadAuth        = errors.New("Authentication failed")
-	ErrInvalidIntent  = errors.New("One of the gateway intents passed was invalid")
-	ErrDisabledIntent = errors.New("A intent you specified has not been enabled or not been whitelisted for")
-	ErrInvalidShard   = errors.New("You specified a invalid sharding setup")
+	ErrBadAuth        = errors.New("authentication failed")
+	ErrInvalidIntent  = errors.New("one of the gateway intents passed was invalid")
+	ErrDisabledIntent = errors.New("an intent you specified has not been enabled or not been whitelisted for")
+	ErrInvalidShard   = errors.New("you specified a invalid sharding setup")
 )
 
 func (g *GatewayConnectionManager) Open() error {
@@ -408,7 +408,7 @@ func (g *GatewayConnectionManager) ChannelVoiceJoin(gID, cID int64, mute, deaf b
 	debug.PrintStack()
 
 	g.mu.Lock()
-	voice, _ = g.voiceConnections[gID]
+	voice = g.voiceConnections[gID]
 
 	if voice == nil {
 		voice = &VoiceConnection{

@@ -346,7 +346,7 @@ func (e *MessageEmbed) GetMarshalNil() bool {
 }
 
 func (e *MessageEmbed) MarshalJSON() ([]byte, error) {
-	if e.marshalnil == true {
+	if e.marshalnil {
 		return json.Marshal(nil)
 	}
 	type EmbedAlias MessageEmbed

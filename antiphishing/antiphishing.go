@@ -181,7 +181,7 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "*/*")
 	req.Header.Add("Content-Length", strconv.Itoa(len(queryString)))
-	req.Header.Add("User-Agent", "YAGPDB")
+	req.Header.Add("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 
 	resp, err := client.Do(req)
 	if err != nil {

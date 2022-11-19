@@ -65,7 +65,7 @@ func requestAPI(query string) (*ExchangeAPIResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "curl/7.83.1")
+	req.Header.Set("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err

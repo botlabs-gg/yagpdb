@@ -1014,7 +1014,7 @@ type WebhookParams struct {
 	Username        string             `json:"username,omitempty"`
 	AvatarURL       string             `json:"avatar_url,omitempty"`
 	TTS             bool               `json:"tts,omitempty"`
-	File            *File              `json:"-, omitempty"`
+	File            *File              `json:"-,omitempty"`
 	Components      []MessageComponent `json:"components"`
 	Embeds          []*MessageEmbed    `json:"embeds,omitempty"`
 	Flags           int64              `json:"flags,omitempty"`
@@ -1118,19 +1118,7 @@ type CreateApplicationCommandRequest struct {
 	Description       string                      `json:"description"`                  // 1-100 character description
 	Options           []*ApplicationCommandOption `json:"options"`                      // the parameters for the command
 	DefaultPermission *bool                       `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
-}
-
-type interactionTemp struct {
-	ID            int64           `json:"id,string"`             // id of the interaction
-	ApplicationID int64           `json:"application_id,string"` // id of the application this interaction is for
-	Kind          InteractionType `json:"type"`                  // the type of interaction
-	Data          json.RawMessage `json:"data"`                  // data payload
-	GuildID       int64           `json:"guild_id,string"`       // the guild it was sent from
-	ChannelID     int64           `json:"channel_id,string"`     // the channel it was sent from
-	Member        *Member         `json:"member"`                // member object	guild member data for the invoking user, including permissions
-	User          *User           `json:"user"`                  // object	user object for the invoking user, if invoked in a DM
-	Token         string          `json:"token"`                 // a continuation token for responding to the interaction
-	Version       int             `json:"version"`               // read-only property, always
+	NSFW              bool                        `json:"nsfw,omitempty"`               // marks a command as age-restricted
 }
 
 func (a *ApplicationCommandInteractionDataResolved) UnmarshalJSON(b []byte) error {
