@@ -2,6 +2,7 @@ package roast
 
 import (
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 
@@ -43,7 +44,7 @@ var Command = &commands.YAGCommand{
 
 		embed := &discordgo.MessageEmbed{}
 		embed.Title = fmt.Sprintf(`%s roasted %s`, data.Author.Username, target)
-		embed.Description = string(body)
+		embed.Description = html.UnescapeString(string(body))
 		return embed, nil
 	},
 }
