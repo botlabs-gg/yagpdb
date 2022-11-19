@@ -2,13 +2,12 @@ package roast
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/lunixbochs/vtclean"
 )
 
 var Command = &commands.YAGCommand{
@@ -29,7 +28,7 @@ var Command = &commands.YAGCommand{
 		}
 		req, err := http.NewRequest("GET", "https://evilinsult.com/generate_insult.php?lang=en", nil)
 		if err != nil {
-			return "Not enough fire to roast", err
+			return "Not enough heat for a roast", err
 		}
 
 		resp, err := http.DefaultClient.Do(req)
@@ -37,15 +36,14 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, err
+			return "Not enough heat for roast", err
 		}
 
-		insult := vtclean.Clean(string(body), false)
 		embed := &discordgo.MessageEmbed{}
 		embed.Title = fmt.Sprintf(`%s roasted %s`, data.Author.Username, target)
-		embed.Description = insult
+		embed.Description = string(body)
 		return embed, nil
 	},
 }
