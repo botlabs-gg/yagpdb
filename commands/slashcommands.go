@@ -162,6 +162,12 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		// not enabled for slash commands
 		return nil
 	}
+
+	nsfw := cast.NSFW
+	if !cast.NSFW {
+		nsfw = false // force NSFW to false if not present
+	}
+
 	t := true
 
 	_, opts := cast.slashCommandOptions()
@@ -170,7 +176,7 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		Description:       common.CutStringShort(cast.Description, 100),
 		DefaultPermission: &t,
 		Options:           opts,
-		NSFW:              cast.NSFW,
+		NSFW:              nsfw,
 	}
 }
 
