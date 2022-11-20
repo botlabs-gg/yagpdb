@@ -31,7 +31,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:          commands.CategoryDebug,
 		HideFromCommandsPage: true,
 		Name:                 "testreddit",
-		Description:          "Tests the reddit feeds in this server by checking the specified post",
+		Description:          "Tests the reddit feeds in this server by checking the specified post. Bot Owner Only",
 		HideFromHelp:         true,
 		RequiredArgs:         1,
 		Arguments: []*dcmd.ArgDef{

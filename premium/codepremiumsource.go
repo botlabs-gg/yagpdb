@@ -155,7 +155,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "generatepremiumcode",
 	Aliases:              []string{"gpc"},
-	Description:          "Generates premium codes",
+	Description:          "Generates premium codes. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         3,
 	RunInDM:              true,

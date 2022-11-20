@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "listflags",
-	Description:          ";))",
+	Description:          "Lists feature flags for the current, or optional provided guild. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         0,
 	Arguments: []*dcmd.ArgDef{
