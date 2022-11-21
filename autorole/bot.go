@@ -51,7 +51,7 @@ var roleCommands = []*commands.YAGCommand{
 	{
 		CmdCategory: commands.CategoryDebug,
 		Name:        "Roledbg",
-		Description: "Debug debug debug autorole assignment",
+		Description: "Returns count of autorole assignments currently being processed",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var processing int
 			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GuildData.GS.ID)))

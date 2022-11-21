@@ -15,7 +15,7 @@ import (
 
 func Commands() *dcmd.Container {
 	container, _ := commands.CommandSystem.Root.Sub("state")
-	container.Description = "utilities for debugging state stuff"
+	container.Description = "utilities for debugging state stuff. Bot Admin Only"
 	container.AddMidlewares(util.RequireBotAdmin)
 	container.AddCommand(getGuild, getGuild.GetTrigger())
 	container.AddCommand(getMember, getMember.GetTrigger())
@@ -27,7 +27,7 @@ func Commands() *dcmd.Container {
 var getGuild = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "guild",
-	Description:  "Responds with state debug info",
+	Description:  "Responds with state debug info. Bot Admin Only",
 	HideFromHelp: true,
 	RunFunc:      cmdFuncGetGuild,
 }
@@ -52,7 +52,7 @@ func cmdFuncGetGuild(data *dcmd.Data) (interface{}, error) {
 var getMember = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "member",
-	Description: "Responds with state debug info",
+	Description: "Responds with state debug info. Bot Admin Only",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Target", Type: dcmd.BigInt},
 	},
@@ -93,7 +93,7 @@ func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
 var botMember = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "botmember",
-	Description:  "Responds with state debug info",
+	Description:  "Responds with state debug info. Bot Admin Only",
 	HideFromHelp: true,
 	RunFunc:      cmdFuncBotMember,
 }
