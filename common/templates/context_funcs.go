@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"regexp"
 	"sort"
@@ -1685,177 +1686,185 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 	return "", nil
 }
 
-func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interface{}, error) {
-	if c.IncreaseCheckCallCounterPremium("sortfuncs", 1, 3) {
+func (c *Context) tmplSort(input interface{}, args ...interface{}) (interface{}, error) {
+	if c.IncreaseCheckCallCounterPremium("sort", 1, 3) {
 		return "", ErrTooManyCalls
 	}
 
-	inputSlice, _ := indirect(reflect.ValueOf(input))
-	switch inputSlice.Kind() {
+	v, _ := indirect(reflect.ValueOf(input))
+	switch v.Kind() {
 	case reflect.Slice, reflect.Array:
-		// valid
+		// ok
 	default:
-		return "", fmt.Errorf("Can not use type %s as input to the sort func", inputSlice.Type().String())
+		return "", fmt.Errorf("cannot sort value of type %T", input)
 	}
 
-	var dict SDict
-	var err error
+	opts, err := parseSortOpts(args...)
+	if err != nil {
+		return nil, err
+	}
 
-	// We have optional args to set the output of the func
-	//
-	// Reverse
-	// Reverses the order
-	// From [0 1 2] to [2 1 0]
-	//
-	// Subslices
-	// By default the function returns a single slice with all the values sorted.
-	// Setting subslices to true will make the function return a set of sublices
-	// based on the input type/kind
-	// From [1 2 3 a b c] to [[1 2 3] [a b c]]
-	//
-	// Emptyslices
-	// By default the function only returns the slices that had an input to them.
-	// If you sort only strings, the output would be a slice of strings.
-	// But with this flag the function returns all possible slices, this is helpful for indexing
-	// From [[1 2 3] [a b c] [map[a:1 b:2]]] to [[1 2 3] [] [a b c] [] [] [map[a:1 b:2]] []]
-	//
-	// We can have up to 7 subslices total:
-	// intSlice, floatSlice, stringSlice, timeSlice, sliceSlice, mapSlice and defaultSlice
-	//
-	// Note that the output will always be an `Slice` even if all the items
-	// of the slice are of a single type/kind
-	switch len(sortargs) {
-	case 0:
-		dict = SDict{
-			"reverse":     false,
-			"subslices":   false,
-			"emptyslices": false,
+	type cmpVal struct {
+		Key  reflect.Value // Key is the value to sort by.
+		Orig reflect.Value
+	}
+	vals := make([]cmpVal, v.Len())
+	cmp := invalidComparator
+	for i := 0; i < v.Len(); i++ {
+		el, _ := indirect(v.Index(i))
+		key := el
+		if opts.Key.IsValid() {
+			key, err = indexContainer(el, opts.Key)
+			if err != nil {
+				return nil, err
+			}
+			key, _ = indirect(key)
 		}
-	case 1:
-		dict, err = StringKeyDictionary(sortargs[0])
+
+		curCmp, err := comparatorOf(key)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-	default:
-		dict, err = StringKeyDictionary(sortargs...)
-		if err != nil {
-			return "", err
+
+		if i == 0 {
+			cmp = curCmp
+		} else if curCmp != cmp {
+			return nil, errors.New("input contains incompatible element types")
 		}
+		vals[i] = cmpVal{key, el}
 	}
 
-	var intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice Slice
-
-	for i := 0; i < inputSlice.Len(); i++ {
-		iv, _ := indirect(inputSlice.Index(i))
-		switch t := iv.Interface().(type) {
-		case int, int64:
-			intSlice = append(intSlice, t)
-		case *int:
-			if t != nil {
-				intSlice = append(intSlice, *t)
-			}
-		case *int64:
-			if t != nil {
-				intSlice = append(intSlice, *t)
-			}
-		case float64:
-			floatSlice = append(floatSlice, t)
-		case *float64:
-			if t != nil {
-				floatSlice = append(floatSlice, *t)
-			}
-		case string:
-			stringSlice = append(stringSlice, t)
-		case *string:
-			if t != nil {
-				stringSlice = append(stringSlice, *t)
-			}
-		case time.Time:
-			timeSlice = append(timeSlice, t)
-		case *time.Time:
-			if t != nil {
-				timeSlice = append(timeSlice, *t)
-			}
-		default:
-			v := reflect.ValueOf(t)
-			switch v.Kind() {
-			case reflect.Slice:
-				csliceSlice = append(csliceSlice, t)
-			case reflect.Map:
-				mapSlice = append(mapSlice, t)
-			default:
-				defaultSlice = append(defaultSlice, t)
-			}
+	sort.SliceStable(vals, func(i, j int) bool {
+		if opts.Reverse {
+			i, j = j, i
 		}
+		return cmp.Less(vals[i].Key, vals[j].Key)
+	})
+	out := make(Slice, len(vals))
+	for i, v := range vals {
+		out[i] = v.Orig.Interface()
 	}
-
-	if dict.Get(strings.ToLower("reverse")) == true { // User wants the output in reversed order
-		sort.Slice(intSlice, func(i, j int) bool { return ToInt64(intSlice[i]) > ToInt64(intSlice[j]) })
-		sort.Slice(floatSlice, func(i, j int) bool { return ToFloat64(floatSlice[i]) > ToFloat64(floatSlice[j]) })
-		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) > ToString(stringSlice[j]) })
-		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[i].(time.Time).Before(timeSlice[j].(time.Time)) })
-		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) > getLen(csliceSlice[j]) })
-		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) > getLen(mapSlice[j]) })
-	} else { // User wants the output in standard order
-		sort.Slice(intSlice, func(i, j int) bool { return ToInt64(intSlice[i]) < ToInt64(intSlice[j]) })
-		sort.Slice(floatSlice, func(i, j int) bool { return ToFloat64(floatSlice[i]) < ToFloat64(floatSlice[j]) })
-		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) < ToString(stringSlice[j]) })
-		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[j].(time.Time).Before(timeSlice[i].(time.Time)) })
-		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) < getLen(csliceSlice[j]) })
-		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) < getLen(mapSlice[j]) })
-	}
-
-	if dict.Get(strings.ToLower("subslices")) == true { // User wants the output to be separated by type/kind
-		if dict.Get(strings.ToLower("emptyslices")) == true { // User wants the output to be filled with empty slices
-			outputSlice = append(outputSlice, intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice)
-		} else { // User only wants the subset of slices that contain data
-			if len(intSlice) > 0 {
-				outputSlice = append(outputSlice, intSlice)
-			}
-
-			if len(floatSlice) > 0 {
-				outputSlice = append(outputSlice, floatSlice)
-			}
-
-			if len(stringSlice) > 0 {
-				outputSlice = append(outputSlice, stringSlice)
-			}
-
-			if len(timeSlice) > 0 {
-				outputSlice = append(outputSlice, timeSlice)
-			}
-
-			if len(csliceSlice) > 0 {
-				outputSlice = append(outputSlice, csliceSlice)
-			}
-
-			if len(mapSlice) > 0 {
-				outputSlice = append(outputSlice, mapSlice)
-			}
-
-			if len(defaultSlice) > 0 {
-				outputSlice = append(outputSlice, defaultSlice)
-			}
-		}
-	} else { // User wants a single slice output, without any subset
-		outputSlice = append(outputSlice, intSlice...)
-		outputSlice = append(outputSlice, floatSlice...)
-		outputSlice = append(outputSlice, stringSlice...)
-		outputSlice = append(outputSlice, timeSlice...)
-		outputSlice = append(outputSlice, csliceSlice...)
-		outputSlice = append(outputSlice, mapSlice...)
-		outputSlice = append(outputSlice, defaultSlice...)
-	}
-
-	return outputSlice, nil
+	return out, nil
 }
 
-func getLen(from interface{}) int {
-	v, _ := indirect(reflect.ValueOf(from))
-	switch v.Kind() {
-	case reflect.Slice, reflect.Array, reflect.Map:
-		return v.Len()
+var defaultSortOpts = sortOpts{Reverse: false, Key: reflect.Value{}}
+
+type sortOpts struct {
+	Reverse bool
+	Key     reflect.Value
+}
+
+func parseSortOpts(args ...interface{}) (*sortOpts, error) {
+	opts := defaultSortOpts
+	if len(args) == 0 {
+		return &opts, nil
+	}
+
+	dict, err := StringKeyDictionary(args...)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range dict {
+		switch {
+		case strings.EqualFold(k, "reverse"):
+			b, ok := v.(bool)
+			if !ok {
+				return nil, fmt.Errorf("expected reverse option to be of type bool, but got type %T instead", v)
+			}
+			opts.Reverse = b
+		case strings.EqualFold(k, "key"):
+			opts.Key = reflect.ValueOf(v)
+		default:
+			return nil, fmt.Errorf("invalid option %q", k)
+		}
+	}
+	return &opts, nil
+}
+
+func indexContainer(container, key reflect.Value) (reflect.Value, error) {
+	container, _ = indirect(container)
+	key, _ = indirect(key)
+
+	switch container.Kind() {
+	case reflect.Array, reflect.Slice:
+		switch key.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			i := int(key.Int())
+			if i < 0 || i >= container.Len() {
+				return reflect.Value{}, fmt.Errorf("index %d out of range", i)
+			}
+			return container.Index(i), nil
+
+		case reflect.Uint, reflect.Uintptr, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			u := key.Uint()
+			if u >= uint64(container.Len()) {
+				return reflect.Value{}, fmt.Errorf("index %d out of range", u)
+			}
+			return container.Index(int(u)), nil
+
+		default:
+			return reflect.Value{}, fmt.Errorf("cannot index array/slice by key of type %T", key.Type())
+		}
+
+	case reflect.Map:
+		if key.Type().AssignableTo(container.Type().Key()) {
+			v := container.MapIndex(key)
+			if !v.IsValid() {
+				return reflect.Value{}, fmt.Errorf("key %v not found in map", key)
+			}
+			return v, nil
+		}
+	}
+
+	return reflect.Value{}, fmt.Errorf("cannot index value of type %s", container.Type())
+}
+
+type comparator int
+
+const (
+	invalidComparator comparator = iota
+	intComparator
+	uintComparator
+	floatComparator
+	stringComparator
+	timeComparator
+)
+
+func (c comparator) Less(a, b reflect.Value) bool {
+	switch c {
+	case intComparator:
+		return a.Int() < b.Int()
+	case uintComparator:
+		return a.Uint() < b.Uint()
+	case floatComparator:
+		af, bf := a.Float(), b.Float()
+		return af < bf || (math.IsNaN(af) && !math.IsNaN(bf))
+	case stringComparator:
+		return a.String() < b.String()
+	case timeComparator:
+		return a.Interface().(time.Time).Before(b.Interface().(time.Time))
 	default:
-		return 0
+		panic("invalid comparator")
+	}
+}
+
+var timeType = reflect.TypeOf(time.Time{})
+
+func comparatorOf(v reflect.Value) (comparator, error) {
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return intComparator, nil
+	case reflect.Uint, reflect.Uintptr, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return uintComparator, nil
+	case reflect.Float32, reflect.Float64:
+		return floatComparator, nil
+	case reflect.String:
+		return stringComparator, nil
+	default:
+		if v.Type() == timeType {
+			return timeComparator, nil
+		}
+		return invalidComparator, fmt.Errorf("cannot compare value of type %s", v.Type())
 	}
 }
