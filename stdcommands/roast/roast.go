@@ -13,7 +13,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "Roast",
 	Aliases:     []string{"insult"},
-	Description: "sends roasts from EvilInsult.com",
+	Description: "Sends a random roast",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Target", Type: dcmd.User},
 	},
