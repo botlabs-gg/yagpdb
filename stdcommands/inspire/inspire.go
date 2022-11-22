@@ -17,15 +17,12 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:         commands.CategoryFun,
-	Name:                "Inspire",
-	Aliases:             []string{"insp"},
-	Description:         "Shows 'inspirational' quotes from inspirobot.me",
-	RunInDM:             false,
-	NSFW:                true,
-	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
-	Cooldown:            3,
+	CmdCategory:    commands.CategoryFun,
+	Name:           "Inspire",
+	Aliases:        []string{"insp"},
+	Description:    "Shows 'inspirational' quotes from inspirobot.me",
+	RunInDM:        false,
+	DefaultEnabled: true,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "mindfulness", Help: "Generates Mindful Quotes!"},
 	},
