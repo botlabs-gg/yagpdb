@@ -22,7 +22,6 @@ var Command = &commands.YAGCommand{
 	Aliases:             []string{"insp"},
 	Description:         "Shows 'inspirational' quotes from inspirobot.me",
 	RunInDM:             false,
-	NSFW:                true,
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	Cooldown:            3,

@@ -16,12 +16,11 @@ import (
 
 var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryFun,
-	Name:                "urbandict",
+	Name:                "Define",
 	Aliases:             []string{"df", "define", "urban", "urbandictionary"},
 	Description:         "Look up an urban dictionary definition, default paginated view.",
 	RequiredArgs:        1,
-	SlashCommandEnabled: true,
-	NSFW:                true,
+	SlashCommandEnabled: false,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Topic", Type: dcmd.String},
 	},
