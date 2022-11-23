@@ -21,7 +21,7 @@ var Command = &commands.YAGCommand{
 	Cooldown:            5,
 	Name:                "Forex",
 	Aliases:             []string{"Money"},
-	Description:         "💱 convert value from one currency for another.",
+	Description:         "💱 convert value from one currency to another.",
 	RunInDM:             true,
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
