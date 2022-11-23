@@ -56,6 +56,7 @@ const (
 	ytUrlTypeCustom
 	ytUrlTypeChannel
 	ytUrlTypeUser
+	ytUrlTypeHandle
 	ytUrlTypeInvalid
 )
 
@@ -65,6 +66,7 @@ var (
 	ytChannelUrlRegex = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(channel)\/(UC[\w-]{21}[AQgw])$`)
 	ytCustomUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(c\/)?([\w-]+)$`)
 	ytUserUrlRegex    = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(user\/)([\w-]+)$`)
+	ytHandleUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(@)([\w-]+)$`)
 )
 
 func (p *Plugin) InitWeb() {
