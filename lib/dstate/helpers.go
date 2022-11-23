@@ -201,6 +201,14 @@ func GuildStateFromDgo(guild *discordgo.Guild) *GuildState {
 }
 
 func IsRoleAbove(a, b *discordgo.Role) bool {
+	if a == nil {
+		return false
+	}
+
+	if b == nil {
+		return true
+	}
+
 	if a.Position != b.Position {
 		return a.Position > b.Position
 	}

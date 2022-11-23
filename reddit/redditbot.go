@@ -195,12 +195,12 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		"subreddit":    post.Subreddit,
 	}).Debug("Found matched reddit post")
 
-	message, embed := CreatePostMessage(post)
+	message, embed := p.createPostMessage(post)
 
 	for _, item := range filteredItems {
 		idStr := strconv.FormatInt(item.ID, 10)
 
-		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
+		webhookUsername := "Reddit • YAGPDB"
 
 		qm := &mqueue.QueuedElement{
 			GuildID:         item.GuildID,
@@ -272,7 +272,7 @@ OUTER:
 	return filteredItems
 }
 
-func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
+func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	plainMessage := fmt.Sprintf("**%s**\n*by %s (<%s>)*\n",
 		html.UnescapeString(post.Title), post.Author, "https://redd.it/"+post.ID)
 
@@ -304,6 +304,14 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		plainMessage += plainBody
 	}
 
+	footer := &discordgo.MessageEmbedFooter{
+		Text: fmt.Sprintf("Fast feed from r/%s", post.Subreddit),
+	}
+
+	if p.Slow {
+		footer.Text = fmt.Sprintf("Slow feed from r/%s • %d ⬆ %d ⬇", post.Subreddit, post.Ups, post.Downs)
+	}
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:  "https://reddit.com/u/" + post.Author,
@@ -314,9 +322,10 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 			URL:  "https://reddit.com",
 		},
 		Description: "**" + html.UnescapeString(post.Title) + "**\n",
+		Timestamp:   time.Unix(int64(post.CreatedUtc), 0).Format(time.RFC3339),
+		Footer:      footer,
 	}
 	embed.URL = "https://redd.it/" + post.ID
-
 	if post.IsSelf {
 		//  Handle Self posts
 		embed.Title = "New self post"
@@ -368,7 +377,6 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		embed.Title += " [spoiler]"
 	}
 
-	plainMessage = plainMessage
 	return plainMessage, embed
 }
 

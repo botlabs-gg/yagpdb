@@ -100,7 +100,8 @@ func (lp *Plugin) InitWeb() {
 func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	g, tmpl := web.GetBaseCPContextData(ctx)
-
+	tmpl["GlobalUsernameTrackingEnabled"] = confEnableUsernameTracking.GetBool()
+	tmpl["LogPurgeEnabled"] = confEnableMessageLogPurge.GetBool()
 	beforeID := 0
 	beforeStr := r.URL.Query().Get("before")
 	if beforeStr != "" {

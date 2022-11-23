@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/logs/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
@@ -22,12 +24,15 @@ import (
 )
 
 var (
-	ErrChannelBlacklisted = errors.New("Channel blacklisted from creating message logs")
+	ErrChannelBlacklisted     = errors.New("Channel blacklisted from creating message logs")
+	confEnableMessageLogPurge = config.RegisterOption("yagpdb.enable_message_log_purge", "If enabled message logs older than 30 days will be deleted", false)
 
 	logger = common.GetPluginLogger(&Plugin{})
 )
 
-type Plugin struct{}
+type Plugin struct {
+	stopWorkers chan *sync.WaitGroup
+}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
@@ -40,7 +45,9 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 func RegisterPlugin() {
 	common.InitSchemas("logs", DBSchemas...)
 
-	p := &Plugin{}
+	p := &Plugin{
+		stopWorkers: make(chan *sync.WaitGroup),
+	}
 	common.RegisterPlugin(p)
 }
 

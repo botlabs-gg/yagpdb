@@ -257,7 +257,7 @@ func length(item interface{}) (int, error) {
 
 // execTemplate executes the associated template with the given name and data
 // and returns its return value.
-func execTemplate(name string, data ...reflect.Value) reflect.Value {
+func execTemplate(name string, data ...interface{}) reflect.Value {
 	panic("unreachable") // implemented as a special case in evalCall
 }
 

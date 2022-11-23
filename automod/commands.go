@@ -198,14 +198,14 @@ func (p *Plugin) AddCommands() {
 			}
 
 			for name, count := range violations {
-				out += fmt.Sprintf("Violation: %-20s Count: %d\n", name, count)
+				out += fmt.Sprintf("%-31s Count: %d\n", common.CutStringShort(name, 30), count)
 			}
 
 			if out == "" {
 				return "No Violations found with specified conditions", nil
 			}
 
-			out = "```" + out + fmt.Sprintf("%-31s Count: %d\n", "Total", len(listViolations)) + "```"
+			out = "```" + out + fmt.Sprintf("\n%-31s Count: %d\n", "Total", len(listViolations)) + "```"
 			return &discordgo.MessageEmbed{
 				Title:       "Violations Summary",
 				Description: out,

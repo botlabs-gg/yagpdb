@@ -279,7 +279,9 @@ func (yc *YAGCommand) humanizeError(err error) string {
 		return "Unable to run the command: " + t.Error()
 	case *discordgo.RESTError:
 		if t.Message != nil && t.Message.Message != "" {
-			if t.Response != nil && t.Response.StatusCode == 403 {
+			if t.Message.Message == "Unknown Message" {
+				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same channel as the message."
+			} else if t.Response != nil && t.Response.StatusCode == 403 {
 				return "The bot permissions has been incorrectly set up on this server for it to run this command: " + t.Message.Message
 			}
 
