@@ -307,7 +307,7 @@ func (p *Plugin) updateConfigsLoop() {
 		case <-ticker.C:
 		case wg := <-p.Stop:
 			wg.Done()
-			logger.Info("youtube updateConfigsLoop shut down")
+			logger.Info("Twitter updateConfigsLoop shut down")
 			return
 		}
 	}
