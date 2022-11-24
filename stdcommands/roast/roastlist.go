@@ -111,7 +111,7 @@ var roasts = []string{
 	"If you were a trophy at the end of a race, I'd walk backwards.",
 	"Anybody who told you to just be yourself couldn't have given you worse advice.",
 	"The jerk store called and they're running out of you!",
-	"If I had a doller for every brain you didn't have, I'd have one dollar.",
+	"If I had a dollar for every brain you didn't have, I'd have one dollar.",
 	"You're so pretentious, you'd eat a worm if it had a French name.",
 	"At Cornell University they have an incredible piece of scientific equipment known as the tunnelling electron microscope. Now, this microscop is so powerful that by firing electron you can actually see images of the atom, the infinitsimally minute building blocks of our universe, If I were using that microscope right now, I still wouldn't be able to locate your brain.",
 	"Your garden is overgrown and your cucumbers are soft",
