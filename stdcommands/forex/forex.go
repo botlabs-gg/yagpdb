@@ -28,14 +28,11 @@ var Command = &commands.YAGCommand{
 	SlashCommandEnabled: true,
 	RequiredArgs:        3,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "Amount", Type: dcmd.String}, {Name: "From", Type: dcmd.String}, {Name: "To", Type: dcmd.String},
+		{Name: "Amount", Type: dcmd.Float}, {Name: "From", Type: dcmd.String}, {Name: "To", Type: dcmd.String},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		amount, err := strconv.ParseFloat(data.Args[0].Str(), 64)
-		if err != nil {
-			return "Invalid amount for conversion.", nil
-		}
+		amount := data.Args[0].Float64()
 		check, err := requestAPI("https://api.exchangerate.host/symbols")
 		if err != nil {
 			return nil, err
@@ -55,7 +52,7 @@ var Command = &commands.YAGCommand{
 		p := message.NewPrinter(language.English)
 		embed := &discordgo.MessageEmbed{
 			Title:       "💱Currency Exchange Rate",
-			Description: fmt.Sprintf("\n%s **%s** (%s) is %s **%s** (%s).", p.Sprintf("%0.2f", amount), from.Description, output.Query.From, p.Sprintf("%0.2f", output.Result), to.Description, output.Query.To),
+			Description: fmt.Sprintf("\n%s **%s** (%s) is %s **%s** (%s).", p.Sprintf("%g", amount), from.Description, output.Query.From, p.Sprintf("%0.2f", output.Result), to.Description, output.Query.To),
 			Color:       0xAE27FF,
 			Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Based on currency rate 1 : %f", output.Info.Rate)},
 			Timestamp:   time.Now().UTC().Format(time.RFC3339),
