@@ -150,9 +150,6 @@ func (p *ParsedArg) Float64() float64 {
 		return float64(t)
 	case uint64:
 		return float64(t)
-	case string:
-		parsed, _ := strconv.ParseFloat(t, 64)
-		return parsed
 	default:
 		return 0
 	}
