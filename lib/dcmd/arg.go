@@ -128,6 +128,33 @@ func (p *ParsedArg) Int64() int64 {
 	}
 }
 
+func (p *ParsedArg) Float64() float64 {
+	if p.Value == nil {
+		return 0
+	}
+	
+	switch t := p.Value.(type) {
+	case int:
+		return float64(t)
+	case int32:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case float32:
+		return float64(t)
+	case float64:
+		return float64(t)
+	case uint:
+		return float64(t)
+	case uint32:
+		return float64(t)
+	case uint64:
+		return float64(t)
+	default:
+		return 0
+	}
+}
+
 func (p *ParsedArg) Bool() bool {
 	if p.Value == nil {
 		return false

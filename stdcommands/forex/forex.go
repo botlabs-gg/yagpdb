@@ -27,11 +27,11 @@ var Command = &commands.YAGCommand{
 	SlashCommandEnabled: true,
 	RequiredArgs:        3,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "Amount", Type: dcmd.Int}, {Name: "From", Type: dcmd.String}, {Name: "To", Type: dcmd.String},
+		{Name: "Amount", Type: dcmd.Float}, {Name: "From", Type: dcmd.String}, {Name: "To", Type: dcmd.String},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		amount := data.Args[0]
+		amount := data.Args[0].Float64()
 		check, err := requestAPI("https://api.exchangerate.host/symbols")
 		if err != nil {
 			return nil, err
@@ -41,7 +41,7 @@ var Command = &commands.YAGCommand{
 		if (to == nil) || (from == nil) {
 			return "Invalid currency code.\nCheck out available codes on: <https://api.exchangerate.host/symbols>", nil
 		}
-		output, err := requestAPI("https://api.exchangerate.host/convert?from=" + from.Code + "&to=" + to.Code + "&amount=" + amount.Str())
+		output, err := requestAPI(fmt.Sprintf("https://api.exchangerate.host/convert?from=%s&to=%s&amount=%g", from.Code, to.Code, amount))
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ var Command = &commands.YAGCommand{
 		p := message.NewPrinter(language.English)
 		embed := &discordgo.MessageEmbed{
 			Title:       "💱Currency Exchange Rate",
-			Description: fmt.Sprintf("\n%s **%s** (%s) is %s **%s** (%s).", p.Sprintf("%d", amount.Int64()), from.Description, output.Query.From, p.Sprintf("%0.2f", output.Result), to.Description, output.Query.To),
+			Description: fmt.Sprintf("\n%s **%s** (%s) is %s **%s** (%s).", p.Sprintf("%g", amount), from.Description, output.Query.From, p.Sprintf("%0.2f", output.Result), to.Description, output.Query.To),
 			Color:       0xAE27FF,
 			Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Based on currency rate 1 : %f", output.Info.Rate)},
 			Timestamp:   time.Now().UTC().Format(time.RFC3339),
@@ -98,9 +98,9 @@ type ExchangeAPIResult struct {
 	} `json:"motd"`
 	Success bool `json:"success"`
 	Query   *struct {
-		From   string `json:"from"`
-		To     string `json:"to"`
-		Amount int    `json:"amount"`
+		From   string  `json:"from"`
+		To     string  `json:"to"`
+		Amount float64 `json:"amount"`
 	} `json:"query,omitempty"`
 	Info *struct {
 		Rate float64 `json:"rate"`
