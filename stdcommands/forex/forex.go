@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -42,7 +41,7 @@ var Command = &commands.YAGCommand{
 		if (to == nil) || (from == nil) {
 			return "Invalid currency code.\nCheck out available codes on: <https://api.exchangerate.host/symbols>", nil
 		}
-		output, err := requestAPI("https://api.exchangerate.host/convert?from=" + from.Code + "&to=" + to.Code + "&amount=" + strconv.FormatFloat(amount, 'f', -1, 64))
+		output, err := requestAPI(fmt.Sprintf("https://api.exchangerate.host/convert?from=%s&to=%s&amount=%g", from.Code, to.Code, amount))
 		if err != nil {
 			return nil, err
 		}
