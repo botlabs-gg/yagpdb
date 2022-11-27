@@ -256,8 +256,6 @@ OUTER:
 				Text: footer,
 			}
 			lastMessage.Embeds[len(lastMessage.Embeds)-1].Timestamp = time.Now().Format(time.RFC3339)
-		} else {
-			lastMessage.Content = fmt.Sprintf("%s\n`%s`", lastMessage.Content, footer)
 		}
 
 		_, err := common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
