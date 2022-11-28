@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	emperror.dev/errors v0.4.3
+  golang.org/x/text v0.3.7
 	github.com/AYLIEN/aylien_textapi_go v0.6.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
@@ -161,7 +162,6 @@ require (
 	go.opencensus.io v0.22.5 // indirect
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
-	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d // indirect
 	google.golang.org/grpc v1.34.0 // indirect

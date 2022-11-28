@@ -15,11 +15,12 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:  commands.CategoryFun,
-	Name:         "Define",
-	Aliases:      []string{"df"},
-	Description:  "Look up an urban dictionary definition, default paginated view.",
-	RequiredArgs: 1,
+	CmdCategory:         commands.CategoryFun,
+	Name:                "Define",
+	Aliases:             []string{"df", "define", "urban", "urbandictionary"},
+	Description:         "Look up an urban dictionary definition, default paginated view.",
+	RequiredArgs:        1,
+	SlashCommandEnabled: false,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Topic", Type: dcmd.String},
 	},
@@ -85,9 +86,9 @@ func embedCreator(udResult []urbandictionary.Result, i int) *discordgo.MessageEm
 		Description: fmt.Sprintf("**Definition**: %s", linkReferencedTerms(definition)),
 		Color:       int(rand.Int63n(16777215)),
 		Fields: []*discordgo.MessageEmbedField{
-			&discordgo.MessageEmbedField{Name: "Example:", Value: example},
-			&discordgo.MessageEmbedField{Name: "Author:", Value: udResult[i].Author},
-			&discordgo.MessageEmbedField{Name: "Votes:", Value: fmt.Sprintf("Upvotes: %d\nDownvotes: %d", udResult[i].Upvote, udResult[i].Downvote)},
+			{Name: "Example:", Value: example},
+			{Name: "Author:", Value: udResult[i].Author},
+			{Name: "Votes:", Value: fmt.Sprintf("Upvotes: %d\nDownvotes: %d", udResult[i].Upvote, udResult[i].Downvote)},
 		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/UD_logo-01.svg/512px-UD_logo-01.svg.png",

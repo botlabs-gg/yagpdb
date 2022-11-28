@@ -12,7 +12,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "leaveserver",
-	Description:          ";))",
+	Description:          "Causes YAGPDB to leave the specified server. The bot may still be invited back with full functionality restored. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{

@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "dcallvoice",
-	Description:          "Disconnects from all the voice channels the bot is in",
+	Description:          "Disconnects from all the voice channels the bot is in. Bot Admin Only",
 	HideFromHelp:         true,
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 

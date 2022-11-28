@@ -13,7 +13,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "banserver",
-	Description:          ";))",
+	Description:          "Bans the specified server from using the bot. YAGPDB will leave the server, and leave whenever invited back. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{

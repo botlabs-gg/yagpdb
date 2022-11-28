@@ -43,6 +43,7 @@ type ApplicationCommand struct {
 	Description              string                      `json:"description,omitempty"`
 	DescriptionLocalizations *map[Locale]string          `json:"description_localizations,omitempty"`
 	Options                  []*ApplicationCommandOption `json:"options"`
+	NSFW                     bool                        `json:"nsfw,omitempty"`
 }
 
 // ApplicationCommandOptionType indicates the type of a slash command's option.

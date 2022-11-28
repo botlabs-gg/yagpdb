@@ -12,7 +12,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "setstatus",
-	Description:          "Sets the bot's status and streaming url",
+	Description:          "Sets the bot's status and optional streaming url. Bot Admin Only",
 	HideFromHelp:         true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "status", Type: dcmd.String, Default: ""},
