@@ -103,14 +103,12 @@ func errEmbed(check *ExchangeAPIResult, page int) (*discordgo.MessageEmbed, erro
 		codes = append(codes, k)
 	}
 	sort.Strings(codes)
-	count := 0
 	start := (page * 15) - 15
 	end := page * 15
-	for _, c := range codes {
-		if count < end && count >= start {
+	for i, c := range codes {
+		if i < end && i >= start {
 			desc = fmt.Sprintf("%s\n %s | %s", desc, c, check.Symbols[c].Description)
 		}
-		count++
 	}
 	embed := &discordgo.MessageEmbed{
 		Title:       "Check out available codes",
