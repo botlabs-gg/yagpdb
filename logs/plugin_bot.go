@@ -280,7 +280,7 @@ var cmdUsernames = &commands.YAGCommand{
 			gID = parsed.GuildData.GS.ID
 		}
 
-		_, err := paginatedmessages.CreatePaginatedMessage(gID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err := paginatedmessages.CreatePaginatedMessage(gID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 			target := parsed.Author
 			if parsed.Args[0].Value != nil {
 				target = parsed.Args[0].Value.(*discordgo.User)
@@ -312,7 +312,7 @@ var cmdUsernames = &commands.YAGCommand{
 				Description: out,
 			}
 
-			return embed, nil
+			return &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}, nil
 		})
 
 		return nil, err
@@ -343,7 +343,7 @@ var cmdNicknames = &commands.YAGCommand{
 			return "Nickname logging is disabled on this server", nil
 		}
 
-		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 
 			offset := (page - 1) * 15
 
@@ -372,7 +372,7 @@ var cmdNicknames = &commands.YAGCommand{
 				Description: out,
 			}
 
-			return embed, nil
+			return &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}, nil
 		})
 
 		return nil, err

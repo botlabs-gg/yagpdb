@@ -9,7 +9,7 @@ type CtxKey int
 
 const CtxKeyNoPagination CtxKey = 1
 
-type PaginatedCommandFunc func(data *dcmd.Data, p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error)
+type PaginatedCommandFunc func(data *dcmd.Data, p *PaginatedMessage, page int) (*discordgo.MessageSend, error)
 
 func PaginatedCommand(pageArgIndex int, cb PaginatedCommandFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
@@ -26,7 +26,7 @@ func PaginatedCommand(pageArgIndex int, cb PaginatedCommandFunc) dcmd.RunFunc {
 			return cb(data, nil, page)
 		}
 
-		_, err := CreatePaginatedMessage(data.GuildData.GS.ID, data.GuildData.CS.ID, page, 0, func(p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err := CreatePaginatedMessage(data.GuildData.GS.ID, data.GuildData.CS.ID, page, 0, func(p *PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 			return cb(data, p, page)
 		})
 

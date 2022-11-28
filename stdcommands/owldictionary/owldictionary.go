@@ -73,12 +73,12 @@ var Command = &commands.YAGCommand{
 			return createOwlbotDefinitionEmbed(&res, res.Definitions[0]), nil
 		}
 
-		_, err = paginatedmessages.CreatePaginatedMessage(data.GuildData.GS.ID, data.ChannelID, 1, len(res.Definitions), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err = paginatedmessages.CreatePaginatedMessage(data.GuildData.GS.ID, data.ChannelID, 1, len(res.Definitions), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 			if page > len(res.Definitions) {
 				return nil, paginatedmessages.ErrNoResults
 			}
 
-			return createOwlbotDefinitionEmbed(&res, res.Definitions[page-1]), nil
+			return &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{createOwlbotDefinitionEmbed(&res, res.Definitions[page-1])}}, nil
 		})
 
 		return nil, err

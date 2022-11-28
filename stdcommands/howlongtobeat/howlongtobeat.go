@@ -92,13 +92,13 @@ var Command = &commands.YAGCommand{
 
 		if paginatedView {
 			_, err := paginatedmessages.CreatePaginatedMessage(
-				data.GuildData.GS.ID, data.ChannelID, 1, len(games), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+				data.GuildData.GS.ID, data.ChannelID, 1, len(games), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 					i := page - 1
 					sort.SliceStable(games, func(i, j int) bool {
 						return games[i].JaroWinklerSimilarity > games[j].JaroWinklerSimilarity
 					})
 					paginatedEmbed := embedCreator(games, i, paginatedView)
-					return paginatedEmbed, nil
+					return &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{paginatedEmbed}}, nil
 				})
 			if err != nil {
 				return "Something went wrong", nil

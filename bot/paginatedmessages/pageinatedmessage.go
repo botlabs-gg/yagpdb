@@ -63,8 +63,8 @@ type PaginatedMessage struct {
 	// mutable fields
 	CurrentPage  int
 	MaxPage      int
-	LastResponse *discordgo.MessageEmbed
-	Navigate     func(p *PaginatedMessage, newPage int) (*discordgo.MessageEmbed, error)
+	LastResponse *discordgo.MessageSend
+	Navigate     func(p *PaginatedMessage, newPage int) (*discordgo.MessageSend, error)
 	Broken       bool
 
 	stopped        bool
@@ -73,7 +73,7 @@ type PaginatedMessage struct {
 	mu             sync.Mutex
 }
 
-type PagerFunc func(p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error)
+type PagerFunc func(p *PaginatedMessage, page int) (*discordgo.MessageSend, error)
 
 func (p *PaginatedMessage) Stop() {
 	p.mu.Lock()

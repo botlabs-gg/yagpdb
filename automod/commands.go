@@ -100,7 +100,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "user", Type: dcmd.UserID},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
-		RunFunc: paginatedmessages.PaginatedCommand(0, func(data *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		RunFunc: paginatedmessages.PaginatedCommand(0, func(data *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 			skip := (page - 1) * 15
 			userID := data.Switch("user").Int64()
 
@@ -135,10 +135,11 @@ func (p *Plugin) AddCommands() {
 			}
 			out.WriteString("``` **RS** = ruleset, **R** = rule, **TR** = trigger")
 
-			return &discordgo.MessageEmbed{
+			embed := &discordgo.MessageEmbed{
 				Title:       "Automod logs",
 				Description: out.String(),
-			}, nil
+			}
+			return &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}, nil
 		}),
 	}
 
@@ -228,7 +229,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "old", Help: "Oldest First"},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
-		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 			skip := (page - 1) * 15
 			userID := parsed.Args[0].Int64()
 			limit := 15
@@ -261,10 +262,11 @@ func (p *Plugin) AddCommands() {
 				out = "No violations"
 			}
 
-			return &discordgo.MessageEmbed{
+			embed := &discordgo.MessageEmbed{
 				Title:       "Violation Logs",
 				Description: out,
-			}, nil
+			}
+			return &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}, nil
 		}),
 	}
 

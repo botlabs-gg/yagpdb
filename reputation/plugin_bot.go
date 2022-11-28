@@ -409,7 +409,7 @@ var cmds = []*commands.YAGCommand{
 				return topRepPager(parsed.GuildData.GS.ID, nil, page)
 			}
 
-			_, err := paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, page, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			_, err := paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, page, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 				return topRepPager(parsed.GuildData.GS.ID, p, page)
 			})
 
@@ -418,7 +418,7 @@ var cmds = []*commands.YAGCommand{
 	},
 }
 
-func topRepPager(guildID int64, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+func topRepPager(guildID int64, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageSend, error) {
 	offset := (page - 1) * 15
 	entries, err := TopUsers(guildID, offset, 15)
 	if err != nil {
@@ -451,7 +451,7 @@ func topRepPager(guildID int64, p *paginatedmessages.PaginatedMessage, page int)
 
 	embed.Description = out
 
-	return embed, nil
+	return &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}, nil
 
 }
 

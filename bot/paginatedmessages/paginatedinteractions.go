@@ -1,6 +1,7 @@
 package paginatedmessages
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -108,32 +109,35 @@ func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pa
 		Navigate:       pagerFunc,
 	}
 
-	embed, err := pagerFunc(pm, initPage)
+	m, err := pagerFunc(pm, initPage)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	footer := "Page " + strconv.Itoa(initPage)
 	nextButtonDisabled := false
 	if pm.MaxPage > 0 {
 		footer += "/" + strconv.Itoa(pm.MaxPage)
 		nextButtonDisabled = initPage >= pm.MaxPage
 	}
-	embed.Footer = &discordgo.MessageEmbedFooter{
-		Text: footer,
-	}
-	embed.Timestamp = time.Now().Format(time.RFC3339)
 
-	msg, err := common.BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
-		Embeds:     []*discordgo.MessageEmbed{embed},
-		Components: createNavigationButtons(true, nextButtonDisabled),
-	})
+	m.Components = createNavigationButtons(true, nextButtonDisabled)
+	if len(m.Embeds) > 0 {
+		m.Embeds[len(m.Embeds)-1].Footer = &discordgo.MessageEmbedFooter{
+			Text: footer,
+		}
+		m.Embeds[len(m.Embeds)-1].Timestamp = time.Now().Format(time.RFC3339)
+	} else {
+		m.Content = fmt.Sprintf("%s\n`%s`", m.Content, footer)
+	}
+
+	msg, err := common.BotSession.ChannelMessageSendComplex(channelID, m)
 	if err != nil {
 		return nil, err
 	}
 
 	pm.MessageID = msg.ID
-	pm.LastResponse = embed
+	pm.LastResponse = m
 
 	menusLock.Lock()
 	activePaginatedMessagesMap[pm.MessageID] = pm
@@ -195,16 +199,22 @@ func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate
 		nextButtonDisabled = newPage >= p.MaxPage
 	}
 
-	newMsg.Footer = &discordgo.MessageEmbedFooter{
-		Text: footer,
+	if len(newMsg.Embeds) > 0 {
+		newMsg.Embeds[len(newMsg.Embeds)-1].Footer = &discordgo.MessageEmbedFooter{
+			Text: footer,
+		}
+		newMsg.Embeds[len(newMsg.Embeds)-1].Timestamp = time.Now().Format(time.RFC3339)
+	} else {
+		newMsg.Content = fmt.Sprintf("%s\n`%s`", newMsg.Content, footer)
 	}
-	newMsg.Timestamp = time.Now().Format(time.RFC3339)
 
 	_, err = common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
-		Embeds:     []*discordgo.MessageEmbed{newMsg},
-		Components: createNavigationButtons(newPage <= 1, nextButtonDisabled),
-		Channel:    ic.ChannelID,
-		ID:         ic.Message.ID,
+		Content:         &newMsg.Content,
+		Embeds:          newMsg.Embeds,
+		Components:	     createNavigationButtons(newPage <= 1, nextButtonDisabled),
+		AllowedMentions: newMsg.AllowedMentions,
+		Channel:         ic.ChannelID,
+		ID:              ic.Message.ID,
 	})
 
 	if err != nil {
@@ -241,16 +251,22 @@ OUTER:
 		if p.MaxPage > 0 {
 			footer += "/" + strconv.Itoa(p.MaxPage)
 		}
-		lastMessage.Footer = &discordgo.MessageEmbedFooter{
-			Text: footer,
+		if len(lastMessage.Embeds) > 0 {
+			lastMessage.Embeds[len(lastMessage.Embeds)-1].Footer = &discordgo.MessageEmbedFooter{
+				Text: footer,
+			}
+			lastMessage.Embeds[len(lastMessage.Embeds)-1].Timestamp = time.Now().Format(time.RFC3339)
+		} else {
+			lastMessage.Content = fmt.Sprintf("%s\n`%s`", lastMessage.Content, footer)
 		}
-		lastMessage.Timestamp = time.Now().Format(time.RFC3339)
 
 		_, err := common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
-			Embeds:     []*discordgo.MessageEmbed{lastMessage},
-			Components: []discordgo.MessageComponent{},
-			Channel:    p.ChannelID,
-			ID:         p.MessageID,
+			Content:         &lastMessage.Content,
+			Embeds:          lastMessage.Embeds,
+			Components:	     []discordgo.MessageComponent{},
+			AllowedMentions: lastMessage.AllowedMentions,
+			Channel:         p.ChannelID,
+			ID:              p.MessageID,
 		})
 
 		if err != nil {
