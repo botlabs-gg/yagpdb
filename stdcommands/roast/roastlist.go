@@ -98,7 +98,7 @@ var roasts = []string{
 	"You're the AT&T of people",
 	"You're the opposite of batman, you're the human equivalent of a tennis elbow, you're a pizza burn on the roof of the world's mouth",
 	"If you were spice, you'd be flour",
-	"You're a negative ten a scale of 0 to 5",
+	"You're a negative ten on a scale of 0 to 5",
 	"You look like a pipe cleaner with eyes",
 	"Somewhere out there is a tree, tirelessly producing oxygen so you can breathe, I think you owe it an apology",
 	"It's okay to be a furry, it's not okay to be you",
