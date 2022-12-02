@@ -142,7 +142,6 @@ type CustomCommand struct {
 var _ web.CustomValidator = (*CustomCommand)(nil)
 
 func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
-	logger.Printf("CC %#v", cc)
 	if len(cc.Responses) > MaxUserMessages {
 		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Too many responses, max %d", MaxUserMessages)))
 		return false
