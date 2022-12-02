@@ -12,14 +12,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/jonas747/yagpdb/verification/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/verification/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
@@ -33,10 +34,10 @@ var PageHTMLVerifyPage string
 
 type FormData struct {
 	Enabled             bool
-	VerifiedRole        int64  `valid:"role"`
+	VerifiedRole        int64  `valid:"role,true"`
 	PageContent         string `valid:",10000"`
-	KickUnverifiedAfter int
-	WarnUnverifiedAfter int
+	KickUnverifiedAfter int    `valid:"0,"`
+	WarnUnverifiedAfter int    `valid:"0,"`
 	WarnMessage         string `valid:"template,10000"`
 	DMMessage           string `valid:"template,10000"`
 	LogChannel          int64  `valid:"channel,true"`
@@ -80,12 +81,21 @@ func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.
 		err = nil
 	}
 
+	roleInvalid := true
+	for _, role := range g.Roles {
+		if role.ID == settings.VerifiedRole {
+			roleInvalid = false
+			break
+		}
+	}
+
 	if settings != nil && settings.DMMessage == "" {
 		settings.DMMessage = DefaultDMMessage
 	}
 
 	templateData["DefaultPageContent"] = DefaultPageContent
 	templateData["PluginSettings"] = settings
+	templateData["RoleInvalid"] = roleInvalid
 
 	return templateData, err
 }
@@ -196,6 +206,9 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	valid, err := p.checkCAPTCHAResponse(r.FormValue("g-recaptcha-response"))
+	if err != nil {
+		logrus.WithError(err).Error("Failed recaptcha response")
+	}
 
 	token := pat.Param(r, "token")
 	userID, _ := strconv.ParseInt(pat.Param(r, "user_id"), 10, 64)

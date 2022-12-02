@@ -3,15 +3,15 @@ package automod_legacy
 import (
 	"time"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/karlseguin/ccache"
 )
 
@@ -79,7 +79,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		return false
 	}
 
-	cs := evt.GS.GetChannel(m.ChannelID)
+	cs := evt.GS.GetChannelOrThread(m.ChannelID)
 	if cs == nil {
 		logger.WithField("channel", m.ChannelID).Error("Channel not found in state")
 		return false
@@ -109,7 +109,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	// We gonna need to have this locked while we check
 	for _, r := range rules {
-		if r.ShouldIgnore(m, member) {
+		if r.ShouldIgnore(cs, m, member) {
 			continue
 		}
 		didCheck = true
@@ -156,7 +156,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		case PunishMute:
 			err = moderation.MuteUnmuteUser(nil, true, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
 		case PunishKick:
-			err = moderation.KickUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User)
+			err = moderation.KickUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User, -1)
 		case PunishBan:
 			err = moderation.BanUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User)
 		}

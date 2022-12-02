@@ -2,16 +2,17 @@ package bot
 
 import (
 	"runtime/debug"
+	"sync/atomic"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/bot/joinedguildsupdater"
-	"github.com/jonas747/yagpdb/bot/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/bot/joinedguildsupdater"
+	"github.com/botlabs-gg/yagpdb/v2/bot/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -48,7 +49,16 @@ func addBotHandlers() {
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleRatelimit, eventsystem.EventRateLimit)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, ReadyTracker.handleReadyOrResume, eventsystem.EventReady, eventsystem.EventResumed)
 	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, handleResumed, eventsystem.EventResumed)
+	eventsystem.AddHandlerAsyncLastLegacy(BotPlugin, HandleInteractionCreate, eventsystem.EventInteractionCreate)
 }
+
+var (
+	connectedGuildsCache = common.CacheSet.RegisterSlot("bot_connected_guilds", func(_ interface{}) (interface{}, error) {
+		var listedServers []int64
+		err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
+		return listedServers, err
+	}, 0)
+)
 
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
@@ -67,8 +77,9 @@ func HandleReady(data *eventsystem.EventData) {
 	common.BotSession.State.Unlock()
 
 	var listedServers []int64
-	err := common.RedisPool.Do(radix.Cmd(&listedServers, "SMEMBERS", "connected_guilds"))
-	if err != nil {
+	if listedServersI, err := connectedGuildsCache.Get(0); err == nil {
+		listedServers = listedServersI.([]int64)
+	} else {
 		logger.WithError(err).Error("Failed retrieving connected servers")
 	}
 
@@ -118,14 +129,19 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		"guild":  g.ID,
 	}).Debug("Joined guild")
 
-	var n int
-	err = common.RedisPool.Do(radix.Cmd(&n, "SADD", "connected_guilds", discordgo.StrID(g.ID)))
+	saddRes := 0
+	isBanned := false
+
+	err = common.RedisPool.Do(radix.Pipeline(
+		radix.Cmd(&saddRes, "SADD", "connected_guilds", discordgo.StrID(g.ID)),
+		radix.Cmd(&isBanned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)),
+	))
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
 
 	// check if this server is new
-	if n > 0 {
+	if saddRes > 0 {
 		logger.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
 		go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventNewGuild, g), eventsystem.EventNewGuild)
 
@@ -134,9 +150,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	}
 
 	// check if the server is banned from using the bot
-	var banned bool
-	common.RedisPool.Do(radix.Cmd(&banned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)))
-	if banned {
+	if isBanned {
 		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
 		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
 		err = common.BotSession.GuildLeave(g.ID)
@@ -255,6 +269,35 @@ func ConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy) eventsystem.Han
 	})
 }
 
+func LimitedConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy, limit int64, sleepDur time.Duration) eventsystem.HandlerFuncLegacy {
+	counter := new(int64)
+
+	return eventsystem.HandlerFuncLegacy(func(evt *eventsystem.EventData) {
+		go func() {
+			defer func() {
+				atomic.AddInt64(counter, -1)
+
+				if err := recover(); err != nil {
+					stack := string(debug.Stack())
+					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
+				}
+			}()
+
+			for {
+				// spin lock
+				if atomic.AddInt64(counter, 1) <= limit {
+					break
+				} else {
+					atomic.AddInt64(counter, -1)
+					time.Sleep(sleepDur)
+				}
+			}
+
+			inner(evt)
+		}()
+	})
+}
+
 func HandleReactionAdd(evt *eventsystem.EventData) {
 	ra := evt.MessageReactionAdd()
 	if ra.GuildID != 0 {
@@ -267,6 +310,24 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 	err := pubsub.Publish("dm_reaction", -1, ra)
 	if err != nil {
 		logger.WithError(err).Error("failed publishing dm reaction")
+	}
+}
+
+func HandleInteractionCreate(evt *eventsystem.EventData) {
+	ic := evt.InteractionCreate()
+	if ic.GuildID != 0 {
+		return
+	}
+	if ic.User == nil {
+		return
+	}
+
+	if ic.User.ID == common.BotUser.ID {
+		return
+	}
+	err := pubsub.Publish("dm_interaction", -1, ic)
+	if err != nil {
+		logger.WithError(err).Error("failed publishing dm interaction")
 	}
 }
 

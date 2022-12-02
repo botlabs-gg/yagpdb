@@ -18,8 +18,6 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-lg-6">
-                            {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when someone says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection)}}
-
                             <div class="form-group mt-2">
                                 <label for="point-name">Name for reputation points</label>
                                 <input type="text" class="form-control" id="point-name" name="PointsName"
@@ -27,20 +25,37 @@
                             </div>
                             <div class="form-group">
                                 <label for="cooldown">Rep cooldown in seconds</label>
-                                <input type="number" class="form-control" id="cooldown" name="Cooldown"
+                                <input type="number" min="0" class="form-control" id="cooldown" name="Cooldown"
                                     value="{{.RepSettings.Cooldown}}">
                             </div>
                             <div class="form-group">
                                 <label for="max-rep-amount-give">Maximum amount of rep that can be given in one
                                     command.</label>
-                                <input type="number" class="form-control" id="max-rep-amount-give" name="MaxGiveAmount"
+                                <input type="number" min="1" class="form-control" id="max-rep-amount-give" name="MaxGiveAmount"
                                     value="{{.RepSettings.MaxGiveAmount}}">
                             </div>
                             <div class="form-group">
                                 <label for="max-rep-amount-remove">Maximum amount of rep that can be removed in one
                                     command.</label>
-                                <input type="number" class="form-control" id="max-rep-amount-remove"
+                                <input type="number" min="1" class="form-control" id="max-rep-amount-remove"
                                     name="MaxRemoveAmount" value="{{.RepSettings.MaxRemoveAmount}}">
+                            </div>
+                            {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when someone says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection) `onchange="toggleThanksDetection(this)"`}}
+                            <div id="thanks-channels" {{if eq .RepSettings.DisableThanksDetection true}}hidden{{end}}>
+                                <div class="form-group">
+                                    <label>Whitelisted channels for giving rep using thanks</label><br>
+                                    <select name="WhitelistedThanksChannels" class="multiselect form-control"
+                                        multiple="multiple" id="whitelisted-channels" data-plugin-multiselect>
+                                        {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.WhitelistedThanksChannels}}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Blacklisted channels for giving rep using thanks</label><br>
+                                    <select name="BlacklistedThanksChannels" class="multiselect form-control"
+                                        multiple="multiple" id="blacklisted-channels" data-plugin-multiselect>
+                                        {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.BlacklistedThanksChannels}}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div class="col-lg-6">
@@ -243,6 +258,15 @@
             repNewestID = parsed[0].id
         });
 
+    }
+
+    function toggleThanksDetection(thanksDetectionEnabled) {
+        const rolesSelector = document.getElementById("thanks-channels")
+        if (thanksDetectionEnabled.checked) {
+            rolesSelector.removeAttribute("hidden")
+        } else {
+            rolesSelector.setAttribute("hidden", "")
+        }
     }
 </script>
 

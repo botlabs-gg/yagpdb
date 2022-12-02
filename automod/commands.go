@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -198,14 +198,14 @@ func (p *Plugin) AddCommands() {
 			}
 
 			for name, count := range violations {
-				out += fmt.Sprintf("Violation: %-20s Count: %d\n", name, count)
+				out += fmt.Sprintf("%-31s Count: %d\n", common.CutStringShort(name, 30), count)
 			}
 
 			if out == "" {
 				return "No Violations found with specified conditions", nil
 			}
 
-			out = "```" + out + fmt.Sprintf("%-31s Count: %d\n", "Total", len(listViolations)) + "```"
+			out = "```" + out + fmt.Sprintf("\n%-31s Count: %d\n", "Total", len(listViolations)) + "```"
 			return &discordgo.MessageEmbed{
 				Title:       "Violations Summary",
 				Description: out,

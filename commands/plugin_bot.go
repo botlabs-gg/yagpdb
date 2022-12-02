@@ -10,12 +10,13 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var (
@@ -171,6 +172,20 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			guildID = data.GuildData.GS.ID
 		}
 
+		if data.TriggerType == dcmd.TriggerTypeSlashCommands {
+			// Acknowledge the interaction
+			response := discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+			}
+			if yc.IsResponseEphemeral {
+				response.Data = &discordgo.InteractionResponseData{Flags: 64}
+			}
+			err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &response)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		// Lock the command for execution
 		if !BlockingAddRunningCommand(guildID, data.ChannelID, data.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
@@ -298,10 +313,10 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	prefix := defaultCommandPrefix()
+	prefix := prfx.DefaultCommandPrefix()
 	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
 		var err error
-		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		if err != nil {
 			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed fetching command prefix")
 		}
@@ -312,10 +327,10 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 }
 
 func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
-	prefix := defaultCommandPrefix()
+	prefix := prfx.DefaultCommandPrefix()
 	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
 		var err error
-		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		return prefix, err
 	}
 
@@ -327,7 +342,7 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 		return "-"
 	}
 
-	prefix, err := GetCommandPrefixRedis(data.GuildData.GS.ID)
+	prefix, err := prfx.GetCommandPrefixRedis(data.GuildData.GS.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -348,7 +363,7 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 
 	currentField := firstField
 	for _, v := range lines {
-		if utf8.RuneCountInString(currentField.Value)+utf8.RuneCountInString(v) >= 2000 {
+		if utf8.RuneCountInString(currentField.Value)+utf8.RuneCountInString(v) >= 1024 {
 			currentField = &discordgo.MessageEmbedField{
 				Name:  "...",
 				Value: v + "\n",
@@ -360,15 +375,6 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 	}
 
 	embed.Description = firstField.Value
-}
-
-func defaultCommandPrefix() string {
-	defaultPrefix := "-"
-	if common.Testing {
-		defaultPrefix = "("
-	}
-
-	return defaultPrefix
 }
 
 var cmdPrefix = &YAGCommand{
@@ -385,7 +391,7 @@ var cmdPrefix = &YAGCommand{
 			targetGuildID = data.GuildData.GS.ID
 		}
 
-		prefix, err := GetCommandPrefixRedis(targetGuildID)
+		prefix, err := prfx.GetCommandPrefixRedis(targetGuildID)
 		if err != nil {
 			return nil, err
 		}

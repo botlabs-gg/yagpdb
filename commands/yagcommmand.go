@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands/models"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -111,8 +111,9 @@ type YAGCommand struct {
 	RunInDM      bool // Set to enable this commmand in DM's
 	HideFromHelp bool // Set to hide from help
 
-	RequireDiscordPerms []int64   // Require users to have one of these permission sets to run the command
-	RequireBotPerms     [][]int64 // Discord permissions that the bot needs to run the command, (([0][0] && [0][1] && [0][2]) || ([1][0] && [1][1]...))
+	RequireDiscordPerms      []int64   // Require users to have one of these permission sets to run the command
+	RequiredDiscordPermsHelp string    // Optional message that shows up when users run the help command that documents user permission requirements for the command
+	RequireBotPerms          [][]int64 // Discord permissions that the bot needs to run the command, (([0][0] && [0][1] && [0][2]) || ([1][0] && [1][1]...))
 
 	Middlewares []dcmd.MiddleWareFunc
 
@@ -143,6 +144,9 @@ type YAGCommand struct {
 	RolesRunFunc RolesRunFunc
 
 	slashCommandID int64
+
+	IsResponseEphemeral bool
+	NSFW                bool
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation
@@ -170,6 +174,13 @@ var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	if !yc.RunInDM && data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
+	}
+
+	if yc.NSFW {
+		channel := data.GuildData.GS.GetChannelOrThread(data.ChannelID)
+		if !channel.NSFW {
+			return "This command can be used only in age-restricted channels", nil
+		}
 	}
 
 	// Send typing to indicate the bot's working
@@ -276,7 +287,9 @@ func (yc *YAGCommand) humanizeError(err error) string {
 		return "Unable to run the command: " + t.Error()
 	case *discordgo.RESTError:
 		if t.Message != nil && t.Message.Message != "" {
-			if t.Response != nil && t.Response.StatusCode == 403 {
+			if t.Message.Message == "Unknown Message" {
+				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same channel as the message."
+			} else if t.Response != nil && t.Response.StatusCode == 403 {
 				return "The bot permissions has been incorrectly set up on this server for it to run this command: " + t.Message.Message
 			}
 

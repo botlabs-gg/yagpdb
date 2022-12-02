@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/premium/models"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/premium/models"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/lib/pq"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -155,7 +155,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "generatepremiumcode",
 	Aliases:              []string{"gpc"},
-	Description:          "Generates premium codes",
+	Description:          "Generates premium codes. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         3,
 	RunInDM:              true,

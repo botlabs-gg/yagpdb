@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"regexp"
 	"sort"
@@ -11,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var ErrTooManyCalls = errors.New("too many calls to this function")
@@ -42,13 +43,22 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 			Text:    embedInfo,
 			IconURL: gIcon,
 		}
-		msgSend.Embed = t
-	case *discordgo.MessageSend:
-		msgSend = t
-		if msgSend.Embed != nil {
-			msgSend.Embed.Footer = &discordgo.MessageEmbedFooter{
+		msgSend.Embeds = []*discordgo.MessageEmbed{t}
+	case []*discordgo.MessageEmbed:
+		for _, e := range t {
+			e.Footer = &discordgo.MessageEmbedFooter{
 				Text:    embedInfo,
 				IconURL: gIcon,
+			}
+		}
+	case *discordgo.MessageSend:
+		msgSend = t
+		if len(msgSend.Embeds) > 0 {
+			for _, e := range msgSend.Embeds {
+				e.Footer = &discordgo.MessageEmbedFooter{
+					Text:    embedInfo,
+					IconURL: gIcon,
+				}
 			}
 			break
 		}
@@ -68,16 +78,13 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
-// ChannelArg converts a variety of types of argument into a channel, verifying that it exists
-func (c *Context) ChannelArg(v interface{}) int64 {
-
+func (c *Context) baseChannelArg(v interface{}) *dstate.ChannelState {
 	// Look for the channel
 	if v == nil && c.CurrentFrame.CS != nil {
 		// No channel passed, assume current channel
-		return c.CurrentFrame.CS.ID
+		return c.CurrentFrame.CS
 	}
 
-	verifiedExistence := false
 	var cid int64
 	if v != nil {
 		switch t := v.(type) {
@@ -90,78 +97,52 @@ func (c *Context) ChannelArg(v interface{}) int64 {
 				// Channel id passed in string format
 				cid = parsed
 			} else {
-				// Channel name, look for it
+				// Channel name, look for it in the all the channels that support text
 				for _, v := range c.GS.Channels {
-					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
-						cid = v.ID
-						verifiedExistence = true
-						break
+					if strings.EqualFold(t, v.Name) && (v.Type == discordgo.ChannelTypeGuildText || v.Type == discordgo.ChannelTypeGuildVoice || v.Type == discordgo.ChannelTypeGuildForum || v.Type == discordgo.ChannelTypeGuildNews) {
+						return &v
+					}
+				}
+				// Do the same for thread names
+				for _, v := range c.GS.Threads {
+					if strings.EqualFold(t, v.Name) && (v.Type == discordgo.ChannelTypeGuildPublicThread || v.Type == discordgo.ChannelTypeGuildPrivateThread || v.Type == discordgo.ChannelTypeGuildNewsThread) {
+						return &v
 					}
 				}
 			}
 		}
 	}
 
-	if !verifiedExistence {
-		// Make sure the channel is part of the guild
-		if channel := c.GS.GetChannel(cid); channel != nil {
-			verifiedExistence = true
-		}
-	}
+	return c.GS.GetChannelOrThread(cid)
+}
 
-	if !verifiedExistence {
+// ChannelArg converts a variety of types of argument into a channel, verifying that it exists
+func (c *Context) ChannelArg(v interface{}) int64 {
+	cs := c.baseChannelArg(v)
+	if cs == nil {
 		return 0
 	}
 
-	return cid
+	return cs.ID
 }
 
 // ChannelArgNoDM is the same as ChannelArg but will not accept DM channels
 func (c *Context) ChannelArgNoDM(v interface{}) int64 {
-
-	// Look for the channel
-	if v == nil && c.CurrentFrame.CS != nil {
-		// No channel passed, assume current channel
-		v = c.CurrentFrame.CS.ID
-	}
-
-	verifiedExistence := false
-	var cid int64
-	if v != nil {
-		switch t := v.(type) {
-		case int, int64:
-			// Channel id passed
-			cid = ToInt64(t)
-		case string:
-			parsed, err := strconv.ParseInt(t, 10, 64)
-			if err == nil {
-				// Channel id passed in string format
-				cid = parsed
-			} else {
-				// Channel name, look for it
-				for _, v := range c.GS.Channels {
-					if strings.EqualFold(t, v.Name) && v.Type == discordgo.ChannelTypeGuildText {
-						cid = v.ID
-						verifiedExistence = true
-						break
-					}
-				}
-			}
-		}
-	}
-
-	if !verifiedExistence {
-		// Make sure the channel is part of the guild
-		if channel := c.GS.GetChannel(cid); channel != nil {
-			verifiedExistence = true
-		}
-	}
-
-	if !verifiedExistence {
+	cs := c.baseChannelArg(v)
+	if cs == nil || cs.IsPrivate() {
 		return 0
 	}
 
-	return cid
+	return cs.ID
+}
+
+func (c *Context) ChannelArgNoDMNoThread(v interface{}) int64 {
+	cs := c.baseChannelArg(v)
+	if cs == nil || cs.IsPrivate() || cs.Type.IsThread() {
+		return 0
+	}
+
+	return cs.ID
 }
 
 func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
@@ -203,7 +184,7 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 				return "", errors.New("unknown channel")
 			}
 
-			cs = c.GS.GetChannel(cID)
+			cs = c.GS.GetChannelOrThread(cID)
 			if cs == nil {
 				return "", errors.New("unknown channel")
 			}
@@ -282,8 +263,20 @@ func (c *Context) checkSafeStringDictNoRecursion(d SDict, n int) bool {
 			}
 		}
 
+		if cast, ok := v.(*Dict); ok {
+			if !c.checkSafeDictNoRecursion(*cast, n+1) {
+				return false
+			}
+		}
+
 		if cast, ok := v.(SDict); ok {
 			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(*SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(*cast, n+1) {
 				return false
 			}
 		}
@@ -308,8 +301,20 @@ func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
 			}
 		}
 
+		if cast, ok := v.(*Dict); ok {
+			if !c.checkSafeDictNoRecursion(*cast, n+1) {
+				return false
+			}
+		}
+
 		if cast, ok := v.(SDict); ok {
 			if !c.checkSafeStringDictNoRecursion(cast, n+1) {
+				return false
+			}
+		}
+
+		if cast, ok := v.(*SDict); ok {
+			if !c.checkSafeStringDictNoRecursion(*cast, n+1) {
 				return false
 			}
 		}
@@ -323,9 +328,11 @@ func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
 }
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
+	var repliedUser bool
 	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
 	if !filterSpecialMentions {
 		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+		repliedUser = true
 	}
 
 	return func(channel interface{}, msg interface{}) interface{} {
@@ -347,7 +354,8 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		var m *discordgo.Message
 		msgSend := &discordgo.MessageSend{
 			AllowedMentions: discordgo.AllowedMentions{
-				Parse: parseMentions,
+				Parse:       parseMentions,
+				RepliedUser: repliedUser,
 			},
 		}
 		var err error
@@ -360,20 +368,33 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 					IconURL: icon,
 				}
 			}
-			msgSend.Embed = typedMsg
-		case *discordgo.MessageSend:
-			msgSend = typedMsg
-			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
-
+			msgSend.Embeds = []*discordgo.MessageEmbed{typedMsg}
+		case []*discordgo.MessageEmbed:
 			if isDM {
-				if typedMsg.Embed != nil {
-					typedMsg.Embed.Footer = &discordgo.MessageEmbedFooter{
+				for _, e := range typedMsg {
+					e.Footer = &discordgo.MessageEmbedFooter{
 						Text:    embedInfo,
 						IconURL: icon,
+					}
+				}
+			}
+		case *discordgo.MessageSend:
+			msgSend = typedMsg
+			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
+			if isDM {
+				if len(typedMsg.Embeds) > 0 {
+					for _, e := range msgSend.Embeds {
+						e.Footer = &discordgo.MessageEmbedFooter{
+							Text:    embedInfo,
+							IconURL: icon,
+						}
 					}
 				} else {
 					typedMsg.Content = info + "\n" + typedMsg.Content
 				}
+			}
+			if msgSend.Reference != nil && msgSend.Reference.ChannelID == 0 {
+				msgSend.Reference.ChannelID = cid
 			}
 		default:
 			if isDM {
@@ -394,6 +415,10 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 }
 
 func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
+	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+	if !filterSpecialMentions {
+		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+	}
 	return func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
@@ -406,22 +431,39 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 
 		mID := ToInt64(msgID)
 		msgEdit := &discordgo.MessageEdit{
-			ID:      mID,
-			Channel: cid,
+			ID:              mID,
+			Channel:         cid,
+			AllowedMentions: discordgo.AllowedMentions{Parse: parseMentions},
 		}
 		var err error
 
 		switch typedMsg := msg.(type) {
 
 		case *discordgo.MessageEmbed:
-			msgEdit.Embed = typedMsg
+			msgEdit.Embeds = []*discordgo.MessageEmbed{typedMsg}
+		case []*discordgo.MessageEmbed:
+			msgEdit.Embeds = typedMsg
 		case *discordgo.MessageEdit:
-			//If both Embed and string are explicitly set as null, give an error message.
-			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" && typedMsg.Embed != nil && typedMsg.Embed.GetMarshalNil() {
-				return "", errors.New("both content and embed cannot be null")
+			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
+			//If there are no Embeds and string are explicitly set as null, give an error message.
+			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
+				if len(typedMsg.Embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+
+				//only keep valid embeds
+				for _, e := range typedMsg.Embeds {
+					if e != nil && !e.GetMarshalNil() {
+						embeds = append(typedMsg.Embeds, e)
+					}
+				}
+				if len(embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
 			}
 			msgEdit.Content = typedMsg.Content
-			msgEdit.Embed = typedMsg.Embed
+			msgEdit.Embeds = typedMsg.Embeds
+			msgEdit.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
@@ -437,6 +479,27 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 	}
 }
 
+func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (string, error) {
+	return func(channel, msgID interface{}) (string, error) {
+		if c.IncreaseCheckCallCounter("message_pins", 5) {
+			return "", ErrTooManyCalls
+		}
+
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return "", errors.New("unknown channel")
+		}
+		mID := ToInt64(msgID)
+		var err error
+		if unpin {
+			err = common.BotSession.ChannelMessageUnpin(cID, mID)
+		} else {
+			err = common.BotSession.ChannelMessagePin(cID, mID)
+		}
+		return "", err
+	}
+}
+
 func (c *Context) tmplMentionEveryone() string {
 	c.CurrentFrame.MentionEveryone = true
 	return "@everyone"
@@ -448,10 +511,6 @@ func (c *Context) tmplMentionHere() string {
 }
 
 func (c *Context) tmplMentionRoleID(roleID interface{}) string {
-	if c.IncreaseCheckStateLock() {
-		return ""
-	}
-
 	var role int64
 	switch r := roleID.(type) {
 	case int64:
@@ -478,10 +537,6 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 }
 
 func (c *Context) tmplMentionRoleName(role string) string {
-	if c.IncreaseCheckStateLock() {
-		return ""
-	}
-
 	var found *discordgo.Role
 	for _, r := range c.GS.Roles {
 		if r.Name == role {
@@ -503,6 +558,11 @@ func (c *Context) tmplMentionRoleName(role string) string {
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 	role := ToInt64(roleID)
+
+	if c.MS == nil || c.MS.Member == nil {
+		return false
+	}
+
 	if role == 0 {
 		return false
 	}
@@ -512,8 +572,8 @@ func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 }
 
 func (c *Context) tmplHasRoleName(name string) (bool, error) {
-	if c.IncreaseCheckStateLock() {
-		return false, ErrTooManyCalls
+	if c.MS == nil || c.MS.Member == nil {
+		return false, nil
 	}
 
 	for _, r := range c.GS.Roles {
@@ -551,54 +611,54 @@ func targetUserID(input interface{}) int64 {
 	}
 }
 
-func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) bool {
-	if c.IncreaseCheckStateLock() {
-		return false
+func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) (bool, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
 	}
 
 	targetID := targetUserID(target)
 	if targetID == 0 {
-		return false
+		return false, nil
 	}
 
 	ts, err := bot.GetMember(c.GS.ID, targetID)
 	if err != nil {
-		return false
+		return false, nil
 	}
 
 	role := ToInt64(roleID)
 	if role == 0 {
-		return false
+		return false, nil
 	}
 
 	contains := common.ContainsInt64Slice(ts.Member.Roles, role)
 
-	return contains
+	return contains, nil
 
 }
 
-func (c *Context) tmplTargetHasRoleName(target interface{}, name string) bool {
-	if c.IncreaseCheckStateLock() {
-		return false
+func (c *Context) tmplTargetHasRoleName(target interface{}, name string) (bool, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
 	}
 
 	targetID := targetUserID(target)
 	if targetID == 0 {
-		return false
+		return false, nil
 	}
 
 	ts, err := bot.GetMember(c.GS.ID, targetID)
 	if err != nil {
-		return false
+		return false, nil
 	}
 
 	for _, r := range c.GS.Roles {
 		if strings.EqualFold(r.Name, name) {
-			return common.ContainsInt64Slice(ts.Member.Roles, r.ID)
+			return common.ContainsInt64Slice(ts.Member.Roles, r.ID), nil
 		}
 	}
 
-	return false
+	return false, nil
 
 }
 
@@ -942,6 +1002,92 @@ func (c *Context) findRoleByName(name string) *discordgo.Role {
 	return nil
 }
 
+func (c *Context) tmplHasPermissions(needed int64) (bool, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
+	}
+
+	if c.MS == nil {
+		return false, nil
+	}
+
+	if needed < 0 {
+		return false, nil
+	}
+
+	if needed == 0 {
+		return true, nil
+	}
+
+	return c.hasPerms(c.MS, c.CurrentFrame.CS.ID, needed)
+}
+
+func (c *Context) tmplTargetHasPermissions(target interface{}, needed int64) (bool, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return false, nil
+	}
+
+	if needed < 0 {
+		return false, nil
+	}
+
+	if needed == 0 {
+		return true, nil
+	}
+
+	ms, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return false, err
+	}
+
+	return c.hasPerms(ms, c.CurrentFrame.CS.ID, needed)
+}
+
+func (c *Context) tmplGetTargetPermissionsIn(target interface{}, channel interface{}) (int64, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return 0, ErrTooManyAPICalls
+	}
+
+	targetID := targetUserID(target)
+	if targetID == 0 {
+		return 0, nil
+	}
+
+	channelID := c.ChannelArgNoDM(channel)
+	if channelID == 0 {
+		return 0, nil
+	}
+
+	ms, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return 0, err
+	}
+
+	return c.GS.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
+}
+
+func (c *Context) hasPerms(ms *dstate.MemberState, channelID int64, needed int64) (bool, error) {
+	perms, err := c.GS.GetMemberPermissions(channelID, ms.User.ID, ms.Member.Roles)
+	if err != nil {
+		return false, err
+	}
+
+	if perms&needed == needed {
+		return true, nil
+	}
+
+	if perms&discordgo.PermissionAdministrator != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func (c *Context) tmplDelResponse(args ...interface{}) string {
 	dur := 10
 	if len(args) > 0 {
@@ -986,9 +1132,9 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 	return ""
 }
 
-//Deletes reactions from a message either via reaction trigger or argument-set of emojis,
-//needs channelID, messageID, userID, list of emojis - up to twenty
-//can be run once per CC.
+// Deletes reactions from a message either via reaction trigger or argument-set of emojis,
+// needs channelID, messageID, userID, list of emojis - up to twenty
+// can be run once per CC.
 func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value, error) {
 
 	f := func(args []reflect.Value) (reflect.Value, error) {
@@ -1006,8 +1152,19 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 			return reflect.ValueOf("non-existing channel"), nil
 		}
 
-		mID := ToInt64(args[1].Interface())
-		uID := targetUserID(args[2].Interface())
+		var mID, uID int64
+
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
+		}
+
+		if args[2].IsValid() {
+			uID = targetUserID(args[2].Interface())
+		}
+
+		if uID == 0 {
+			return reflect.ValueOf("non-existing user"), nil
+		}
 
 		for _, reaction := range args[3:] {
 
@@ -1042,7 +1199,10 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 			return reflect.ValueOf("non-existing channel"), nil
 		}
 
-		mID := ToInt64(args[1].Interface())
+		var mID int64
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
+		}
 
 		if len(args) > 2 {
 			for _, emoji := range args[2:] {
@@ -1080,6 +1240,10 @@ func (c *Context) tmplGetMessage(channel, msgID interface{}) (*discordgo.Message
 	mID := ToInt64(msgID)
 
 	message, _ := common.BotSession.ChannelMessage(cID, mID)
+	if message != nil {
+		// get message endpoint doesn't return guild ID, so just patch it in to make message.Link work
+		message.GuildID = c.GS.ID
+	}
 	return message, nil
 }
 
@@ -1152,6 +1316,75 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 	return CtxChannelFromCS(cstate), nil
 }
 
+func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
+
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+	}
+
+	cstate := c.GS.GetThread(cID)
+
+	if cstate == nil {
+		return nil, errors.New("thread not in state")
+	}
+
+	return CtxChannelFromCS(cstate), nil
+}
+
+func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, error) {
+
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+	}
+
+	cstate := c.GS.GetChannelOrThread(cID)
+
+	if cstate == nil {
+		return nil, errors.New("thread/channel not in state")
+	}
+
+	return CtxChannelFromCS(cstate), nil
+}
+
+func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (interface{}, error) {
+	return func(channel interface{}) (interface{}, error) {
+		if c.IncreaseCheckCallCounterPremium("channel_pins", 2, 4) {
+			return 0, ErrTooManyCalls
+		}
+
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return 0, errors.New("unknown channel")
+		}
+
+		msg, err := common.BotSession.ChannelMessagesPinned(cID)
+		if err != nil {
+			return 0, err
+		}
+
+		if pinCount {
+			return len(msg), nil
+		}
+
+		pinnedMessages := make([]discordgo.Message, 0, len(msg))
+		for _, m := range msg {
+			pinnedMessages = append(pinnedMessages, *m)
+		}
+
+		return pinnedMessages, nil
+	}
+}
+
 func (c *Context) tmplAddReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if c.Msg == nil {
@@ -1201,10 +1434,13 @@ func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Valu
 		}
 
 		cID := c.ChannelArg(cArg)
-		mID := ToInt64(args[1].Interface())
-
 		if cID == 0 {
 			return reflect.ValueOf(""), nil
+		}
+
+		var mID int64
+		if args[1].IsValid() {
+			mID = ToInt64(args[1].Interface())
 		}
 
 		for i, reaction := range args {
@@ -1361,7 +1597,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArgNoDM(channel)
+	cID := c.ChannelArgNoDMNoThread(channel)
 	if cID == 0 {
 		return "", errors.New("unknown channel")
 	}
@@ -1379,7 +1615,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArgNoDM(channel)
+	cID := c.ChannelArgNoDMNoThread(channel)
 	if cID == 0 {
 		return "", errors.New("unknown channel")
 	}
@@ -1450,176 +1686,185 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 	return "", nil
 }
 
-func (c *Context) tmplSort(input interface{}, sortargs ...interface{}) (interface{}, error) {
-	if c.IncreaseCheckCallCounterPremium("sortfuncs", 1, 3) {
+func (c *Context) tmplSort(input interface{}, args ...interface{}) (interface{}, error) {
+	if c.IncreaseCheckCallCounterPremium("sort", 1, 3) {
 		return "", ErrTooManyCalls
 	}
 
-	inputSlice := reflect.ValueOf(input)
-	switch inputSlice.Kind() {
+	v, _ := indirect(reflect.ValueOf(input))
+	switch v.Kind() {
 	case reflect.Slice, reflect.Array:
-		// valid
+		// ok
 	default:
-		return "", fmt.Errorf("Can not use type %s as input to the sort func", inputSlice.Type().String())
+		return "", fmt.Errorf("cannot sort value of type %T", input)
 	}
 
-	var dict SDict
-	var err error
+	opts, err := parseSortOpts(args...)
+	if err != nil {
+		return nil, err
+	}
 
-	// We have optional args to set the output of the func
-	//
-	// Reverse
-	// Reverses the order
-	// From [0 1 2] to [2 1 0]
-	//
-	// Subslices
-	// By default the function returns a single slice with all the values sorted.
-	// Setting subslices to true will make the function return a set of sublices
-	// based on the input type/kind
-	// From [1 2 3 a b c] to [[1 2 3] [a b c]]
-	//
-	// Emptyslices
-	// By default the function only returns the slices that had an input to them.
-	// If you sort only strings, the output would be a slice of strings.
-	// But with this flag the function returns all possible slices, this is helpful for indexing
-	// From [[1 2 3] [a b c] [map[a:1 b:2]]] to [[1 2 3] [] [a b c] [] [] [map[a:1 b:2]] []]
-	//
-	// We can have up to 7 subslices total:
-	// intSlice, floatSlice, stringSlice, timeSlice, sliceSlice, mapSlice and defaultSlice
-	//
-	// Note that the output will always be an `Slice` even if all the items
-	// of the slice are of a single type/kind
-	switch len(sortargs) {
-	case 0:
-		dict = SDict{
-			"reverse":     false,
-			"subslices":   false,
-			"emptyslices": false,
+	type cmpVal struct {
+		Key  reflect.Value // Key is the value to sort by.
+		Orig reflect.Value
+	}
+	vals := make([]cmpVal, v.Len())
+	cmp := invalidComparator
+	for i := 0; i < v.Len(); i++ {
+		el, _ := indirect(v.Index(i))
+		key := el
+		if opts.Key.IsValid() {
+			key, err = indexContainer(el, opts.Key)
+			if err != nil {
+				return nil, err
+			}
+			key, _ = indirect(key)
 		}
-	case 1:
-		dict, err = StringKeyDictionary(sortargs[0])
+
+		curCmp, err := comparatorOf(key)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-	default:
-		dict, err = StringKeyDictionary(sortargs...)
-		if err != nil {
-			return "", err
+
+		if i == 0 {
+			cmp = curCmp
+		} else if curCmp != cmp {
+			return nil, errors.New("input contains incompatible element types")
 		}
+		vals[i] = cmpVal{key, el}
 	}
 
-	var intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice, outputSlice Slice
-
-	for i := 0; i < inputSlice.Len(); i++ {
-		switch t := inputSlice.Index(i).Interface().(type) {
-		case int, int64:
-			intSlice = append(intSlice, t)
-		case *int:
-			if t != nil {
-				intSlice = append(intSlice, *t)
-			}
-		case *int64:
-			if t != nil {
-				intSlice = append(intSlice, *t)
-			}
-		case float64:
-			floatSlice = append(floatSlice, t)
-		case *float64:
-			if t != nil {
-				floatSlice = append(floatSlice, *t)
-			}
-		case string:
-			stringSlice = append(stringSlice, t)
-		case *string:
-			if t != nil {
-				stringSlice = append(stringSlice, *t)
-			}
-		case time.Time:
-			timeSlice = append(timeSlice, t)
-		case *time.Time:
-			if t != nil {
-				timeSlice = append(timeSlice, *t)
-			}
-		default:
-			v := reflect.ValueOf(t)
-			switch v.Kind() {
-			case reflect.Slice:
-				csliceSlice = append(csliceSlice, t)
-			case reflect.Map:
-				mapSlice = append(mapSlice, t)
-			default:
-				defaultSlice = append(defaultSlice, t)
-			}
+	sort.SliceStable(vals, func(i, j int) bool {
+		if opts.Reverse {
+			i, j = j, i
 		}
+		return cmp.Less(vals[i].Key, vals[j].Key)
+	})
+	out := make(Slice, len(vals))
+	for i, v := range vals {
+		out[i] = v.Orig.Interface()
 	}
-
-	if dict.Get(strings.ToLower("reverse")) == true { // User wants the output in reversed order
-		sort.Slice(intSlice, func(i, j int) bool { return ToInt64(intSlice[i]) > ToInt64(intSlice[j]) })
-		sort.Slice(floatSlice, func(i, j int) bool { return ToFloat64(floatSlice[i]) > ToFloat64(floatSlice[j]) })
-		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) > ToString(stringSlice[j]) })
-		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[i].(time.Time).Before(timeSlice[j].(time.Time)) })
-		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) > getLen(csliceSlice[j]) })
-		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) > getLen(mapSlice[j]) })
-	} else { // User wants the output in standard order
-		sort.Slice(intSlice, func(i, j int) bool { return ToInt64(intSlice[i]) < ToInt64(intSlice[j]) })
-		sort.Slice(floatSlice, func(i, j int) bool { return ToFloat64(floatSlice[i]) < ToFloat64(floatSlice[j]) })
-		sort.Slice(stringSlice, func(i, j int) bool { return ToString(stringSlice[i]) < ToString(stringSlice[j]) })
-		sort.Slice(timeSlice, func(i, j int) bool { return timeSlice[j].(time.Time).Before(timeSlice[i].(time.Time)) })
-		sort.Slice(csliceSlice, func(i, j int) bool { return getLen(csliceSlice[i]) < getLen(csliceSlice[j]) })
-		sort.Slice(mapSlice, func(i, j int) bool { return getLen(mapSlice[i]) < getLen(mapSlice[j]) })
-	}
-
-	if dict.Get(strings.ToLower("subslices")) == true { // User wants the output to be separated by type/kind
-		if dict.Get(strings.ToLower("emptyslices")) == true { // User wants the output to be filled with empty slices
-			outputSlice = append(outputSlice, intSlice, floatSlice, stringSlice, timeSlice, csliceSlice, mapSlice, defaultSlice)
-		} else { // User only wants the subset of slices that contain data
-			if len(intSlice) > 0 {
-				outputSlice = append(outputSlice, intSlice)
-			}
-
-			if len(floatSlice) > 0 {
-				outputSlice = append(outputSlice, floatSlice)
-			}
-
-			if len(stringSlice) > 0 {
-				outputSlice = append(outputSlice, stringSlice)
-			}
-
-			if len(timeSlice) > 0 {
-				outputSlice = append(outputSlice, timeSlice)
-			}
-
-			if len(csliceSlice) > 0 {
-				outputSlice = append(outputSlice, csliceSlice)
-			}
-
-			if len(mapSlice) > 0 {
-				outputSlice = append(outputSlice, mapSlice)
-			}
-
-			if len(defaultSlice) > 0 {
-				outputSlice = append(outputSlice, defaultSlice)
-			}
-		}
-	} else { // User wants a single slice output, without any subset
-		outputSlice = append(outputSlice, intSlice...)
-		outputSlice = append(outputSlice, floatSlice...)
-		outputSlice = append(outputSlice, stringSlice...)
-		outputSlice = append(outputSlice, timeSlice...)
-		outputSlice = append(outputSlice, csliceSlice...)
-		outputSlice = append(outputSlice, mapSlice...)
-		outputSlice = append(outputSlice, defaultSlice...)
-	}
-
-	return outputSlice, nil
+	return out, nil
 }
 
-func getLen(from interface{}) int {
-	v := reflect.ValueOf(from)
-	switch v.Kind() {
-	case reflect.Slice, reflect.Array, reflect.Map:
-		return v.Len()
+var defaultSortOpts = sortOpts{Reverse: false, Key: reflect.Value{}}
+
+type sortOpts struct {
+	Reverse bool
+	Key     reflect.Value
+}
+
+func parseSortOpts(args ...interface{}) (*sortOpts, error) {
+	opts := defaultSortOpts
+	if len(args) == 0 {
+		return &opts, nil
+	}
+
+	dict, err := StringKeyDictionary(args...)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range dict {
+		switch {
+		case strings.EqualFold(k, "reverse"):
+			b, ok := v.(bool)
+			if !ok {
+				return nil, fmt.Errorf("expected reverse option to be of type bool, but got type %T instead", v)
+			}
+			opts.Reverse = b
+		case strings.EqualFold(k, "key"):
+			opts.Key = reflect.ValueOf(v)
+		default:
+			return nil, fmt.Errorf("invalid option %q", k)
+		}
+	}
+	return &opts, nil
+}
+
+func indexContainer(container, key reflect.Value) (reflect.Value, error) {
+	container, _ = indirect(container)
+	key, _ = indirect(key)
+
+	switch container.Kind() {
+	case reflect.Array, reflect.Slice:
+		switch key.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			i := int(key.Int())
+			if i < 0 || i >= container.Len() {
+				return reflect.Value{}, fmt.Errorf("index %d out of range", i)
+			}
+			return container.Index(i), nil
+
+		case reflect.Uint, reflect.Uintptr, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			u := key.Uint()
+			if u >= uint64(container.Len()) {
+				return reflect.Value{}, fmt.Errorf("index %d out of range", u)
+			}
+			return container.Index(int(u)), nil
+
+		default:
+			return reflect.Value{}, fmt.Errorf("cannot index array/slice by key of type %T", key.Type())
+		}
+
+	case reflect.Map:
+		if key.Type().AssignableTo(container.Type().Key()) {
+			v := container.MapIndex(key)
+			if !v.IsValid() {
+				return reflect.Value{}, fmt.Errorf("key %v not found in map", key)
+			}
+			return v, nil
+		}
+	}
+
+	return reflect.Value{}, fmt.Errorf("cannot index value of type %s", container.Type())
+}
+
+type comparator int
+
+const (
+	invalidComparator comparator = iota
+	intComparator
+	uintComparator
+	floatComparator
+	stringComparator
+	timeComparator
+)
+
+func (c comparator) Less(a, b reflect.Value) bool {
+	switch c {
+	case intComparator:
+		return a.Int() < b.Int()
+	case uintComparator:
+		return a.Uint() < b.Uint()
+	case floatComparator:
+		af, bf := a.Float(), b.Float()
+		return af < bf || (math.IsNaN(af) && !math.IsNaN(bf))
+	case stringComparator:
+		return a.String() < b.String()
+	case timeComparator:
+		return a.Interface().(time.Time).Before(b.Interface().(time.Time))
 	default:
-		return 0
+		panic("invalid comparator")
+	}
+}
+
+var timeType = reflect.TypeOf(time.Time{})
+
+func comparatorOf(v reflect.Value) (comparator, error) {
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return intComparator, nil
+	case reflect.Uint, reflect.Uintptr, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return uintComparator, nil
+	case reflect.Float32, reflect.Float64:
+		return floatComparator, nil
+	case reflect.String:
+		return stringComparator, nil
+	default:
+		if v.Type() == timeType {
+			return timeComparator, nil
+		}
+		return invalidComparator, fmt.Errorf("cannot compare value of type %s", v.Type())
 	}
 }

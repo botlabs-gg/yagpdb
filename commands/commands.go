@@ -6,14 +6,14 @@ package commands
 import (
 	"context"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/mediocregopher/radix/v3"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -88,15 +88,6 @@ func InitCommands() {
 	}
 }
 
-func GetCommandPrefixRedis(guild int64) (string, error) {
-	var prefix string
-	err := common.RedisPool.Do(radix.Cmd(&prefix, "GET", "command_prefix:"+discordgo.StrID(guild)))
-	if err == nil && prefix == "" {
-		prefix = defaultCommandPrefix()
-	}
-	return prefix, err
-}
-
 var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
 
 const (
@@ -106,13 +97,13 @@ const (
 
 func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 
-	prefix, err := GetCommandPrefixRedis(guildID)
+	prefix, err := prfx.GetCommandPrefixRedis(guildID)
 	if err != nil {
 		return nil, err
 	}
 
 	var flags []string
-	if defaultCommandPrefix() != prefix {
+	if prfx.DefaultCommandPrefix() != prefix {
 		flags = append(flags, featureFlagHasCustomPrefix)
 	}
 

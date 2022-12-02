@@ -1,12 +1,6 @@
 {{define "cp_twitter"}}
 {{template "cp_head" .}}
 
-<style>
-    .feed-item-disabled {
-        background-color: #f003;
-    }
-</style>
-
 <header class="page-header">
     <h2>Twitter feeds</h2>
 </header>
@@ -52,17 +46,17 @@
                 <h2 class="card-title">Current twitter feeds</h2>
             </header>
             <div class="card-body">
-                <p>Feeds in red are disabled for some reason (such as expired premium) and will be enabled again once
+                <p>Feeds might get disabled for some reason (such as expired premium) and will be enabled again once
                     you save them</p>
                 {{$Dot := .}}
                 {{range .FeedItems}}
                 <form id="feed-item-{{.ID}}" data-async-form method="post"
-                    action="/manage/{{$Dot.ActiveGuild.ID}}/reddit/{{.ID}}/update">
-                    <div class="row border-bottom border-secondary pb-3 {{if not .Enabled}}feed-item-disabled{{end}}">
+                    action="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/update">
+                    <div class="row border-bottom border-secondary pb-3">
                         <input type="text" class="hidden" name="id" value="{{.ID}}">
                         <div class="form-group col">
                             <label>Twitter username</label>
-                            <p class="form-control-static">{{.TwitterUsername}} (<code>{{.TwitterUserID}}</code>)</p>
+                            <p class="form-control-static"><a class="feedlink" href="https://twitter.com/{{.TwitterUsername}}" target="_blank">{{.TwitterUsername}}</a> (<code>{{.TwitterUserID}}</code>)</p>
                         </div>
                         <div class="form-group col">
                             <label for="channel-feed-{{.ID}}">Server Channel</label>
@@ -79,6 +73,11 @@
                             {{$id_include_rts := (joinStr "" "feed-" .ID "-rts")}}
                             <label for="{{$id_include_rts}}">Include Retweets</label>
                             {{checkbox "IncludeRetweets" $id_include_rts `` .IncludeRT}}
+                        </div>
+                        <div class="form-group col">
+                            {{$id_enabled := (joinStr "" "feed-" .ID "-enabled")}}
+                            <label for="{{$id_enabled}}">Enabled</label>
+                            {{checkbox "Enabled" $id_enabled `` .Enabled}}
                         </div>
                         <div class="form-group col">
                             <div class="btn-group mt-4">

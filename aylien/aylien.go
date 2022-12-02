@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	textapi "github.com/AYLIEN/aylien_textapi_go"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var (
@@ -67,8 +67,8 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "text", Type: dcmd.String},
 		},
-		SlashCommandEnabled: true,
-		DefaultEnabled:      true,
+		SlashCommandEnabled: false,
+		DefaultEnabled:      false,
 		RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 			var responses []*textapi.SentimentResponse
 			if cmd.Args[0].Value != nil {

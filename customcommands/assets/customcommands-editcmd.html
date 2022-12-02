@@ -6,6 +6,12 @@
 
 {{template "cp_alerts" .}}
 
+<style>
+    .cc-editor {
+        font-family: Consolas, monospace;
+    }
+</style>
+
 <!-- Nav -->
 <div class="row">
     <div class="col">
@@ -108,9 +114,6 @@
                                             <b>Command Trigger</b>: Works the same way as normal commands by using the
                                             command
                                             prefix or bot mention followed by the trigger.<br />
-                                            For example: If you set the trigger to <code>hello</code> then you can type
-                                            <code>-hello</code> or <code>@yagpdb hello</code> to trigger it (assuming
-                                            default settings)
                                         </p>
                                         <p id="trigger-desc-prefix">
                                             Any message that starts with the trigger will run the command.
@@ -140,9 +143,14 @@
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div class="form-group">
-                                            <label>Trigger</label>
-                                            <input type="text" class="form-control" name="trigger" placeholder="fun"
-                                                value="{{.CC.TextTrigger}}">
+                                            <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <div class="input-group mb-2">
+                                                <div class="input-group-prepend" id="command-trigger-prepended-prefix">
+                                                    <div class="input-group-text">{{.CommandPrefix}}</div>
+                                                </div>
+                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
+                                                    value="{{.CC.TextTrigger}}">
+                                            </div>
 
                                             {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
 
@@ -190,7 +198,7 @@
                                     <div class="col-sm-4">
                                         <div class="form-group">
                                             <label>Interval</label>
-                                            <input type="number" class="form-control" name="time_trigger_interval"
+                                            <input type="number" min="0" class="form-control" name="time_trigger_interval"
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                                         </div>
                                     </div>
@@ -256,7 +264,7 @@
                                     <!-- Use .btn-add for simplicity and let the page loader adjust. -->
                                     {{range .CC.Responses}}
                                     <div class="entry input-group  input-group-sm">
-                                        <textarea class="form-control response-text-area tab-textbox" name="responses"
+                                        <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
                                             placeholder="Command body here" rows="5"
                                             oninput="onCCChanged(this)">{{.}}</textarea>
                                         <span class="input-group-append">
@@ -267,7 +275,7 @@
                                     </div>
                                     {{else}}
                                     <div class="entry input-group  input-group-sm">
-                                        <textarea class="form-control response-text-area tab-textbox" name="responses"
+                                        <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
                                             placeholder="Command body here" rows="5"
                                             oninput="onCCChanged(this)"></textarea>
                                         <span class="input-group-append">
@@ -300,8 +308,23 @@
                                 <p>{{if .CC.LastError}}<b>{{formatTime .CC.LastErrorTime.Time.UTC}}</b> - <code>
                                     {{.CC.LastError}}</code>{{else}}None{{end}}</p>
 
-                                <h4>Run count</h4>
-                                <p><code>{{.CC.RunCount}}</code></p>
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <h4>Run count</h4>
+                                        <p><code>{{.CC.RunCount}}</code></p>
+                                    </div>
+                                  
+                                    <div class="col-auto">
+                                        <h4>Last run</h4>
+                                        <p>{{if .CC.LastRun.Valid}}{{formatTime .CC.LastRun.Time.UTC}}{{else}}None{{end}}</p>
+                                    </div>
+                                    {{if (eq .CC.TriggerType 5)}}
+                                    <div class="col-auto">
+                                        <h4>Next scheduled run</h4>
+                                        <p>{{if .CC.NextRun.Valid}}{{formatTime .CC.NextRun.Time.UTC}}{{else}}None{{end}}</p>
+                                    </div>
+                                    {{end}}
+                                </div>
 
                                 <h4>Output errors as command response</h4>
                                 {{checkbox "show_errors" "show_errors" "" .CC.ShowErrors}}
@@ -354,7 +377,9 @@
                             <div class="col">
                                 <button type="submit" class="btn btn-success btn-block"
                                     formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update"
-                                    data-async-form-alertsonly>Save</button>
+                                    data-async-form-alertsonly
+                                    id = "save-custom-command"
+                                >Save</button>
                             </div>
                             <div class="col">
                                 <button type="submit" class="btn btn-danger btn-block"
@@ -364,9 +389,10 @@
                         <div class="row mt-4" id="interval-cc-run-now">
                             <div class="col">
                                 <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this custom command immediately"
-                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/run_now">Run now</button>
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update_and_run">Run now</button>
                             </div>
                         </div>
+                        <p class="help-block">Tip: Alt + Shift + S also saves the custom command </p>
                     </form>
                 </div>
             </div>
@@ -421,6 +447,11 @@
 
 <script src="/static/vendorr/tln/tln.min.js"></script>
 <link rel="stylesheet" href="/static/vendorr/tln/tln.min.css">
+<style>
+    html.dark .input-group-prepend > .input-group-text {
+        background: #191c21;
+    }
+</style>
 
 <script type="text/javascript">
     function isTextTrigger(t) {
@@ -433,7 +464,6 @@
 
     function triggerTypeChanged() {
         var dropdown = $("#trigger-type-dropdown")
-        console.log("wewwooewewooo", dropdown.val());
         if (dropdown.val() === "interval_hours" || dropdown.val() === "interval_minutes") {
             // Interval triggers
 
@@ -447,6 +477,8 @@
             $("#trigger-warning").attr("hidden", true);
 
             handleTimeTriggerChannelChange();
+            $("#require-no-channels-warning").addClass("hidden");
+            $("#require-no-roles-warning").addClass("hidden");
             $("#time-trigger-no-channel-warning").removeClass("hidden");
 
         } else if (dropdown.val() === "reaction") {
@@ -461,6 +493,8 @@
             $("#interval-cc-run-now").addClass("hidden")
 
             $("#trigger-warning").attr("hidden", true);
+            $("#require-no-channels-warning").removeClass("hidden");
+            $("#require-no-roles-warning").removeClass("hidden");
             $("#time-trigger-no-channel-warning").addClass("hidden");
 
         } else if (isTextTrigger(dropdown.val())) {
@@ -475,6 +509,8 @@
             $("#interval-cc-run-now").addClass("hidden")
 
             $("#trigger-warning").attr("hidden", true);
+            $("#require-no-channels-warning").removeClass("hidden");
+            $("#require-no-roles-warning").removeClass("hidden");
             // $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
             $("#time-trigger-no-channel-warning").addClass("hidden");
 
@@ -490,9 +526,13 @@
 
             $("#trigger-warning").removeAttr("hidden");
             $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
+            $("#require-no-channels-warning").addClass("hidden");
+            $("#require-no-roles-warning").addClass("hidden");
             $("#time-trigger-no-channel-warning").addClass("hidden");
         };
 
+        if (dropdown.val() === "cmd") $("#command-trigger-prepended-prefix").show();
+        else $("#command-trigger-prepended-prefix").hide();
 
         $("#trigger-help").children().each(function (i, v) {
             $(v).attr("hidden", true);
@@ -502,11 +542,18 @@
     }
 
     $(function () {
-        triggerTypeChanged();
         handleTimeTriggerChannelChange();
         handleRestrictionChange($("#require-role-mode").prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
         handleRestrictionChange($("#require-channel-mode").prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
+        triggerTypeChanged();
     })
+
+    $("#trigger").keyup(function() {
+        const trigger = $(this).val();
+        $("#trigger-length")
+            .text(trigger.length)
+            .toggleClass("text-danger", trigger.length > 1000);
+    });
 
     function onCCChanged(textArea) {
         var textAreas = textArea.parentElement.parentElement.querySelectorAll("textarea")
@@ -514,6 +561,10 @@
         var combinedLength = 0;
         textAreas.forEach(function (elem) {
             combinedLength += elem.value.length;
+            // The data received on the backend contains "\r\n" while it is simply "\n" on the JS side.
+            // Adjust for this discrepancy by double-counting newline characters.
+            const newlines = elem.value.match(/\n/g);
+            if (newlines) combinedLength += newlines.length;
         })
 
         var display = textArea.parentElement.parentElement.querySelector(".cc-length-counter")
@@ -583,6 +634,16 @@
             addAlert("warning", warningText, warningID);
         }
     }
+    $(document).bind('keydown', (e) => {
+      let event = e.originalEvent;
+      if(event.altKey && event.shiftKey && event.code === 'KeyS'){
+        const saveCCbutton = document.querySelector("#save-custom-command");
+        if(saveCCbutton){
+         saveCCbutton.click();
+         return false;
+        }
+      } 
+    });
 </script>
 
 

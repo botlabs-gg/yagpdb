@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/patreon/patreonapi"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
