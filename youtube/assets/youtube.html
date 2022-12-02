@@ -1,5 +1,4 @@
-{{define "cp_youtube"}}
-{{template "cp_head" .}}
+{{define "cp_youtube"}} {{template "cp_head" .}}
 <header class="page-header">
     <h2>Youtube upload feeds</h2>
 </header>
@@ -15,26 +14,21 @@
                 <!-- <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter" -->
                 <form class="" method="post" action="/manage/{{.ActiveGuild.ID}}/youtube">
                     <p>
-                      <b>Provide either link of youtube channel or video or username </b> 
-                      <br>
-                      <b><u>Only youtube.com links are supported</u></b>
-                      <br>
-                      <u>Direct channel and Video links</u> are preffered as they have the highest accuracy
-                      <br>Other links can lead to incorrect channels sometimes, as they rely on youtube search
-                      <br>
-                      <br>
-                       <u>Examples of each type of link:</u>
-                          <br>
-                         Direct channel link:  <b>https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw</b>
-                          <br>
-                         Video link: <b>https://www.youtube.com/watch?v=dQw4w9WgXcQ</b>
-                          <br>
-                         User link: <b>https://www.youtube.com/user/MontyPython</b> 
-                          <br>
-                         Custom link: <b>https://www.youtube.com/c/Taskmaster</b>
-                          <br>
-                         Handle link: <b>https://www.youtube.com/@TomScottGo</b>
-                          <br> 
+                        <b>Provide either link of youtube channel or video or username </b>
+                        <br>
+                        <b><u>Only youtube.com links are supported</u></b>
+                        <br>
+                        <u>Direct channel and Video links</u> are preferred as they have the highest accuracy
+                        <br>Other links can lead to incorrect channels sometimes, as they rely on youtube search
+                        <br>
+                        <br>
+                        <u>Examples of each type of link:</u>
+                        <br> Direct channel link: <b>https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw</b>
+                        <br> Video link: <b>https://www.youtube.com/watch?v=dQw4w9WgXcQ</b>
+                        <br> User link: <b>https://www.youtube.com/user/MontyPython</b>
+                        <br> Custom link: <b>https://www.youtube.com/c/Taskmaster</b>
+                        <br> Handle link: <b>https://www.youtube.com/@TomScottGo</b>
+                        <br>
                         </br>
                         For any questions join the support server of the bot
                     </p>
@@ -53,8 +47,7 @@
                         </select>
                     </div>
 
-                    {{checkbox "MentionEveryone" "new-mention-everyone" `Mention everyone` false}}
-                    {{checkbox "PublishLivestream" "new-publish-livestream" `Publish livestreams` false}}
+                    {{checkbox "MentionEveryone" "new-mention-everyone" `Mention everyone` false}} {{checkbox "PublishLivestream" "new-publish-livestream" `Publish livestreams` false}}
                     <button type="submit" id="yt-add-btn" disabled="true" class="btn btn-success">Add</button>
                 </form>
             </div>
@@ -64,11 +57,8 @@
                 <h2 class="card-title">Current subscribed channels</h2>
             </header>
             <div class="card-body">
-                {{$dot := .}}
-                {{range .Subs}}
-                <form id="sub-item-{{.ID}}" data-async-form method="post"
-                    action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text"
-                        class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
+                {{$dot := .}} {{range .Subs}}
+                <form id="sub-item-{{.ID}}" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text" class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
 
                 <table class="table table-responsive-md table-sm mb-0">
                     <thead>
@@ -88,8 +78,7 @@
                                 <p class="form-control-static"><a class="feedlink" href="https://youtube.com/channel/{{.YoutubeChannelID}}" target="_blank"><b>{{.YoutubeChannelName}}</b></a> - <code>{{.YoutubeChannelID}}</code></p>
                             </td>
                             <td>
-                                <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel"
-                                    data-requireperms-embed>
+                                <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel" data-requireperms-embed>
                                     {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                                 </select>
                             </td>
@@ -103,11 +92,8 @@
                                 {{checkbox "Enabled" (joinStr "" "feed-enabled-" .ID) `Enabled` .Enabled (joinStr "" `form="sub-item-` .ID `"`)}}
                             </td>
                             <td>
-                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success"
-                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"
-                                    data-async-form-alertsonly>Save</button>
-                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger"
-                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
+                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update" data-async-form-alertsonly>Save</button>
+                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
                             </td>
                         </tr>
                         {{end}}
@@ -121,20 +107,19 @@
 </div>
 <!-- /.row -->
 <script>
-    $(function () {
+    $(function() {
         let input = $("#yt-url");
         let addButton = $("#yt-add-btn")
 
-        input.on("input", function (arg) {
-          let ytUrl = input.val()
-          let ytLinkRegex = new RegExp("^(https?:\/\/)?((www|m)\.)?youtube\.com",'g')
+        input.on("input", function(arg) {
+            let ytUrl = input.val()
+            let ytLinkRegex = new RegExp("^(https?:\/\/)?((www|m)\.)?youtube\.com", 'g')
             if (!ytUrl || !ytLinkRegex.test(ytUrl)) {
-              addButton.attr("disabled", true);
-            }else{
-              addButton.attr("disabled", false)
-            } 
+                addButton.attr("disabled", true);
+            } else {
+                addButton.attr("disabled", false)
+            }
         })
     })
 </script>
-{{template "cp_footer" .}}
-{{end}}
+{{template "cp_footer" .}} {{end}}
