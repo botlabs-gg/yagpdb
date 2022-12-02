@@ -7,18 +7,18 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dshardorchestrator/v3"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -32,7 +32,7 @@ const (
 	ContextKeyConfig ContextKey = iota
 )
 
-const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
+const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak | discordgo.PermissionUsePublicThreads | discordgo.PermissionUsePrivateThreads | discordgo.PermissionSendMessagesInThreads
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -54,6 +54,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberTimeoutChange, eventsystem.EventGuildMemberUpdate)
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)
@@ -74,7 +75,13 @@ func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data in
 	if evt == bot.EvtMember {
 		ms := data.(*dstate.MemberState)
 		if ms.User.ID == common.BotUser.ID {
-			go RefreshMuteOverrides(ms.GuildID, false)
+			go func(gID int64) {
+				// relieve startup preasure, sleep for up to 60 minutes
+				sleep := time.Second * time.Duration(100+rand.Intn(60*180))
+				time.Sleep(sleep)
+
+				RefreshMuteOverrides(gID, false)
+			}(ms.GuildID)
 		}
 	}
 }
@@ -97,8 +104,8 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	gc := evt.GuildCreate()
 
 	// relieve startup preasure, sleep for up to 10 minutes
-	if time.Since(started) < time.Minute {
-		sleep := time.Second * time.Duration(100+rand.Intn(600))
+	if time.Since(started) < time.Minute*10 {
+		sleep := time.Second * time.Duration(100+rand.Intn(60*180))
 		time.Sleep(sleep)
 	}
 
@@ -256,6 +263,54 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 	}
 }
 
+func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err error) {
+	data := evt.GuildMemberUpdate()
+	//ignore members who aren't timedout or have been timedout in the past
+	if data.TimeoutExpiresAt == nil || data.TimeoutExpiresAt.Before(time.Now()) {
+		return false, nil
+	}
+
+	config, err := GetConfig(data.GuildID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	// no modlog channel setup
+	if config.IntActionChannel() == 0 {
+		return false, nil
+	}
+	// If we poll the audit log too fast then there sometimes wont be a audit log entry
+	time.Sleep(time.Second * 3)
+
+	author, entry := FindAuditLogEntry(data.GuildID, discordgo.AuditLogActionMemberUpdate, data.User.ID, time.Second*5)
+	if entry == nil || author == nil {
+		return false, nil
+	}
+	logger.Infof("got timeout event %v", entry)
+
+	if entry.Changes[0].Key != "communication_disabled_until" {
+		return false, nil
+	}
+
+	if author.ID == common.BotUser.ID {
+		// Bot performed the timeout, don't make duplicate modlog entries
+		return false, nil
+	}
+
+	if !config.LogTimeouts {
+		// User doesn't want us to log timeouts not made through yag
+		return false, nil
+	}
+
+	err = CreateModlogEmbed(config, author, MATimeoutAdded, data.User, entry.Reason, "")
+	if err != nil {
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending timeout log message")
+		return false, errors.WithStackIf(err)
+	}
+
+	return false, nil
+}
+
 func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 	var user *discordgo.User
 	var guildID = evt.GS.ID
@@ -375,6 +430,11 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 		return
 	}
 
+	if !config.LogKicks {
+		// User doesn't want us to log kicks not made through yag
+		return
+	}
+
 	err := CreateModlogEmbed(config, author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
@@ -445,6 +505,11 @@ func HandleMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	c := evt.GuildMemberUpdate()
+	member := c.Member
+	// ignore timedout users
+	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
+		return false, nil
+	}
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {

@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/dshardorchestrator/v3"
-	"github.com/jonas747/dshardorchestrator/v3/orchestrator"
-	"github.com/jonas747/dshardorchestrator/v3/orchestrator/rest"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/orchestrator"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/orchestrator/rest"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 
-	_ "github.com/jonas747/yagpdb/bot" // register the custom orchestrator events
+	_ "github.com/botlabs-gg/yagpdb/v2/bot" // register the custom orchestrator events
 )
 
 var ()
@@ -38,6 +38,7 @@ func main() {
 	}
 
 	logrus.Info("Running shards (", len(activeShards), "): ", activeShards)
+	logrus.Info("Large bot sharding: ", common.ConfLargeBotShardingEnabled.GetBool())
 
 	orch := orchestrator.NewStandardOrchestrator(common.BotSession)
 	orch.FixedTotalShardCount = totalShards
@@ -70,6 +71,8 @@ func main() {
 	orch.MaxShardsPerNode = orch.ShardBucketSize * orch.BucketsPerNode
 	orch.MaxNodeDowntimeBeforeRestart = time.Second * 10
 	orch.EnsureAllShardsRunning = true
+
+	logrus.Infof("%#v+n", *orch)
 
 	err = orch.Start("127.0.0.1:7447")
 	if err != nil {

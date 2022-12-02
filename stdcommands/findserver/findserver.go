@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot/models"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/v2/bot/models"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -28,7 +28,7 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "findserver",
 	Aliases:              []string{"findservers"},
-	Description:          "Looks for a server by server name or the servers a user owns",
+	Description:          "Looks for a server by server name or the servers a user owns. Bot Admin Only",
 	HideFromHelp:         true,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "name", Type: dcmd.String, Default: ""},

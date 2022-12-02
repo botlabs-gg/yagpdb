@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var Command = &commands.YAGCommand{
@@ -66,7 +66,13 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	})
 
 	// display it
-	out := "```\nTop games being played currently\n#    Count -  Game\n"
+	out := ""
+	if len(fullResult) > 0 {
+		out = "```\nTop games being played currently\n#    Count -  Game\n"
+	} else {
+		out = "```\nNo Games being played currently"
+	}
+
 	for k, result := range fullResult {
 		out += fmt.Sprintf("#%02d: %5d - %s\n", k+1, result.Count, result.Game)
 		if k >= 20 {

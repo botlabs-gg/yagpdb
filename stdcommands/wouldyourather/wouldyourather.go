@@ -7,10 +7,10 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 var Command = &commands.YAGCommand{
@@ -18,6 +18,9 @@ var Command = &commands.YAGCommand{
 	Name:        "WouldYouRather",
 	Aliases:     []string{"wyr"},
 	Description: "Get presented with 2 options.",
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "raw", Help: "Raw output"},
+	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 
 		q1, q2, err := wouldYouRather()
@@ -25,16 +28,20 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
+		wyrDescription := fmt.Sprintf("**EITHER...**\n🇦 %s\n\n **OR...**\n🇧 %s", q1, q2)
+
+		if data.Switches["raw"].Value != nil && data.Switches["raw"].Value.(bool) {
+			return wyrDescription, nil
+		}
+
 		embed := &discordgo.MessageEmbed{
-			Description: fmt.Sprintf("**EITHER...**\n🇦: %s\n\n**OR...**\n🇧 %s", q1, q2),
+			Description: wyrDescription,
 			Author: &discordgo.MessageEmbedAuthor{
-				Name:    "Would you rather...",
-				URL:     "https://either.io/",
-				IconURL: "https://yagpdb.xyz/static/icons/favicon-16x16.png",
+				Name: "Would you rather...",
+				URL:  "https://either.io/",
 			},
 			Footer: &discordgo.MessageEmbedFooter{
-				Text:    fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
-				IconURL: discordgo.EndpointUserAvatar(data.Author.ID, data.Author.Avatar),
+				Text: fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
 			},
 			Color: rand.Intn(16777215),
 		}

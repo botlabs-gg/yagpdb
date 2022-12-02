@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/reddit/models"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
@@ -31,7 +31,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:          commands.CategoryDebug,
 		HideFromCommandsPage: true,
 		Name:                 "testreddit",
-		Description:          "Tests the reddit feeds in this server by checking the specified post",
+		Description:          "Tests the reddit feeds in this server by checking the specified post. Bot Owner Only",
 		HideFromHelp:         true,
 		RequiredArgs:         1,
 		Arguments: []*dcmd.ArgDef{

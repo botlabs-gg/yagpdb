@@ -13,28 +13,28 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jonas747/template"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/premium"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/lib/template"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/keylock"
-	"github.com/jonas747/yagpdb/common/multiratelimit"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/keylock"
+	"github.com/botlabs-gg/yagpdb/v2/common/multiratelimit"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 	"github.com/volatiletech/null"
@@ -44,6 +44,7 @@ import (
 var (
 	CCExecLock        = keylock.NewKeyLock()
 	DelayedCCRunLimit = multiratelimit.NewMultiRatelimiter(0.1, 10)
+	CCMaxDataLimit    = 1000000 // 1 MB max
 )
 
 type DelayedRunLimitKey struct {
@@ -131,6 +132,7 @@ var cmdListCommands = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "file", Help: "Send responses in file"},
 		{Name: "color", Help: "Use syntax highlighting (Go)"},
+		{Name: "raw", Help: "Force raw output"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
@@ -176,7 +178,8 @@ var cmdListCommands = &commands.YAGCommand{
 		var ccFile *discordgo.File
 		var msg *discordgo.MessageSend
 
-		if data.Switches["file"].Value != nil {
+		responses := fmt.Sprintf("```\n%s\n```", strings.Join(cc.Responses, "```\n```"))
+		if data.Switches["file"].Value != nil || len(responses) >= 2000 && data.Switches["raw"].Value == nil {
 			var buf bytes.Buffer
 			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
 
@@ -213,6 +216,7 @@ var cmdListCommands = &commands.YAGCommand{
 			return msg, nil
 
 		}
+
 		return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
 			cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64],
 			highlight, strings.Join(cc.Responses, "```\n```")), nil
@@ -284,7 +288,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		return true, nil
 	}
 
-	cs := gs.GetChannel(dataCast.ChannelID)
+	cs := gs.GetChannelOrThread(dataCast.ChannelID)
 	if cs == nil {
 		// don't reschedule if channel is deleted, make sure its actually not there, and not just a discord downtime
 		if !gs.Available {
@@ -431,7 +435,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 		return
 	}
 
-	cState := evt.CS()
+	cState := evt.CSOrThread()
 	if cState == nil {
 		return
 	}
@@ -493,7 +497,7 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, gs *dstate.Guild
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
-	cs := evt.CS()
+	cs := evt.CSOrThread()
 
 	if !evt.HasFeatureFlag(featureFlagHasCommands) {
 		return
@@ -550,7 +554,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, mc.ChannelID) || !CmdRunsForUser(cmd, ms) {
+		if !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) {
 			continue
 		}
 
@@ -586,7 +590,7 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, reaction.ChannelID) {
+		if !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) {
 			continue
 		}
 
@@ -695,6 +699,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	tmplCtx.Name = "CC #" + strconv.Itoa(int(cmd.LocalID))
 	tmplCtx.Data["CCID"] = cmd.LocalID
 	tmplCtx.Data["CCRunCount"] = cmd.RunCount + 1
+	tmplCtx.Data["CCTrigger"] = cmd.TextTrigger
 
 	csCop := tmplCtx.CurrentFrame.CS
 	f := logger.WithFields(logrus.Fields{
@@ -704,7 +709,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		"channel_name": csCop.Name,
 	})
 
-	// do not allow concurrect executions of the same custom command, to prevent most common kinds of abuse
+	// do not allow concurrent executions of the same custom command, to prevent most common kinds of abuse
 	lockKey := CCExecKey{
 		GuildID: cmd.GuildID,
 		CCID:    cmd.LocalID,
@@ -730,7 +735,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	out, err := tmplCtx.Execute(chanMsg)
 
 	if utf8.RuneCountInString(out) > 2000 {
-		out = "Custom command response was longer than 2k (contact an admin on the server...)"
+		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (contact an admin on the server...)"
 	}
 
 	go updatePostCommandRan(cmd, err)
@@ -904,8 +909,8 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 }
 
 func updatePostCommandRan(cmd *models.CustomCommand, runErr error) {
-	const qNoErr = "UPDATE custom_commands SET run_count = run_count + 1 WHERE guild_id=$1 AND local_id=$2"
-	const qErr = "UPDATE custom_commands SET run_count = run_count + 1, last_error=$3, last_error_time=now() WHERE guild_id=$1 AND local_id=$2"
+	const qNoErr = "UPDATE custom_commands SET run_count = run_count + 1, last_run=now() WHERE guild_id=$1 AND local_id=$2"
+	const qErr = "UPDATE custom_commands SET run_count = run_count + 1, last_run=now(), last_error=$3, last_error_time=now() WHERE guild_id=$1 AND local_id=$2"
 
 	var err error
 	if runErr == nil {
@@ -945,7 +950,7 @@ func CheckMatch(globalPrefix string, cmd *models.CustomCommand, msg string) (mat
 	case CommandTriggerStartsWith:
 		cmdMatch += `\A` + regexp.QuoteMeta(trigger)
 	case CommandTriggerContains:
-		cmdMatch += `\A.*` + regexp.QuoteMeta(trigger)
+		cmdMatch += regexp.QuoteMeta(trigger)
 	case CommandTriggerRegex:
 		cmdMatch += trigger
 	case CommandTriggerExact:
@@ -1032,7 +1037,7 @@ func BotCachedGetCommandsWithMessageTriggers(guildID int64, ctx context.Context)
 var cmdFixCommands = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryTool,
 	Name:                 "fixscheduledccs",
-	Description:          "???",
+	Description:          "Corrects the next run time of interval CCs globally, fixes issues arising from missed executions due to downtime. Bot Admin Only",
 	HideFromCommandsPage: true,
 	HideFromHelp:         true,
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {

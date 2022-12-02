@@ -6,14 +6,16 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/automod_legacy"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/v2/antiphishing"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/automod_legacy"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
@@ -71,7 +73,7 @@ func (mc *MentionsTrigger) Name() string {
 }
 
 func (mc *MentionsTrigger) Description() string {
-	return "Triggers when a message includes more than x unique mentions."
+	return "Triggers when a message includes x unique mentions."
 }
 
 func (mc *MentionsTrigger) UserSettings() []*SettingDef {
@@ -343,7 +345,7 @@ func (vt *ViolationsTrigger) Name() string {
 }
 
 func (vt *ViolationsTrigger) Description() string {
-	return "Triggers when a user has more than x violations within y minutes."
+	return "Triggers when a user has x violations within y minutes."
 }
 
 func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
@@ -427,7 +429,7 @@ func (caps *AllCapsTrigger) Name() string {
 }
 
 func (caps *AllCapsTrigger) Description() string {
-	return "Triggers when a message contains more than x% of just capitalized letters"
+	return "Triggers when a message contains x% of just capitalized letters"
 }
 
 func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
@@ -524,6 +526,46 @@ func (inv *ServerInviteTrigger) MergeDuplicates(data []interface{}) interface{} 
 
 /////////////////////////////////////////////////////////////
 
+var _ MessageTrigger = (*AntiPhishingLinkTrigger)(nil)
+
+type AntiPhishingLinkTrigger struct{}
+
+func (a *AntiPhishingLinkTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (a *AntiPhishingLinkTrigger) Name() string {
+	return "Flagged Scam links"
+}
+
+func (a *AntiPhishingLinkTrigger) DataType() interface{} {
+	return nil
+}
+
+func (a *AntiPhishingLinkTrigger) Description() string {
+	return "Triggers on messages that have scam links flagged by SinkingYachts and BitFlow AntiPhishing APIs"
+}
+
+func (a *AntiPhishingLinkTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (a *AntiPhishingLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	badDomain, err := antiphishing.CheckMessageForPhishingDomains(forwardSlashReplacer.Replace(m.Content))
+	if err != nil {
+		logger.WithError(err).Error("Failed to check url ")
+		return false, nil
+	}
+
+	if badDomain != "" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+/////////////////////////////////////////////////////////////
+
 var _ MessageTrigger = (*GoogleSafeBrowsingTrigger)(nil)
 
 type GoogleSafeBrowsingTrigger struct{}
@@ -569,15 +611,18 @@ func (g *GoogleSafeBrowsingTrigger) MergeDuplicates(data []interface{}) interfac
 /////////////////////////////////////////////////////////////
 
 type SlowmodeTriggerData struct {
-	Treshold int
-	Interval int
+	Treshold                 int
+	Interval                 int
+	SingleMessageAttachments bool
+	SingleMessageLinks       bool
 }
 
 var _ MessageTrigger = (*SlowmodeTrigger)(nil)
 
 type SlowmodeTrigger struct {
 	ChannelBased bool
-	Attachments  bool // whether this trigger checks any messages or just attachments
+	Attachments  bool // whether this trigger checks attachments or not
+	Links        bool // whether this trigger checks links or not
 }
 
 func (s *SlowmodeTrigger) Kind() RulePartType {
@@ -593,12 +638,17 @@ func (s *SlowmodeTrigger) Name() string {
 		if s.Attachments {
 			return "x channel attachments in y seconds"
 		}
-
+		if s.Links {
+			return "x channel links in y seconds"
+		}
 		return "x channel messages in y seconds"
 	}
 
 	if s.Attachments {
 		return "x user attachments in y seconds"
+	}
+	if s.Links {
+		return "x user links in y seconds"
 	}
 	return "x user messages in y seconds"
 }
@@ -606,31 +656,40 @@ func (s *SlowmodeTrigger) Name() string {
 func (s *SlowmodeTrigger) Description() string {
 	if s.ChannelBased {
 		if s.Attachments {
-			return "Triggers when a channel has more than x attachments within y seconds"
+			return "Triggers when a channel has x attachments within y seconds"
 		}
-
-		return "Triggers when a channel has more than x messages in y seconds."
+		if s.Links {
+			return "Triggers when a channel has x links within y seconds"
+		}
+		return "Triggers when a channel has x messages in y seconds."
 	}
 
 	if s.Attachments {
-		return "Triggers when a user has more than x attachments within y seconds in a single channel"
+		return "Triggers when a user has x attachments within y seconds in a single channel"
 	}
-
-	return "Triggers when a user has more than x messages in y seconds in a single channel."
+	if s.Links {
+		return "Triggers when a user has x links within y seconds in a single channel"
+	}
+	return "Triggers when a user has x messages in y seconds in a single channel."
 }
 
 func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 	defaultMessages := 5
 	defaultInterval := 5
+	thresholdName := "Messages"
 
 	if s.Attachments {
 		defaultMessages = 10
 		defaultInterval = 60
+		thresholdName = "Attachments"
+	} else if s.Links {
+		defaultInterval = 60
+		thresholdName = "Links"
 	}
 
-	return []*SettingDef{
+	settings := []*SettingDef{
 		&SettingDef{
-			Name:    "Messages",
+			Name:    thresholdName,
 			Key:     "Treshold",
 			Kind:    SettingTypeInt,
 			Default: defaultMessages,
@@ -642,10 +701,32 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 			Default: defaultInterval,
 		},
 	}
+
+	if s.Attachments {
+		settings = append(settings, &SettingDef{
+			Name:    "Also count multiple attachments in single message",
+			Key:     "SingleMessageAttachments",
+			Kind:    SettingTypeBool,
+			Default: false,
+		})
+	} else if s.Links {
+		settings = append(settings, &SettingDef{
+			Name:    "Also count multiple links in single message",
+			Key:     "SingleMessageLinks",
+			Kind:    SettingTypeBool,
+			Default: false,
+		})
+	}
+
+	return settings
 }
 
 func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	if s.Attachments && len(m.Attachments) < 1 {
+		return false, nil
+	}
+
+	if s.Links && !common.LinkRegex.MatchString(forwardSlashReplacer.Replace(m.Content)) {
 		return false, nil
 	}
 
@@ -654,7 +735,7 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 	within := time.Duration(settings.Interval) * time.Second
 	now := time.Now()
 
-	amount := 1
+	amount := 0
 
 	messages := bot.State.GetMessages(cs.GuildID, cs.ID, &dstate.MessagesQuery{
 		Limit: 1000,
@@ -667,23 +748,38 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 			break
 		}
 
-		if m.ID == v.ID {
-			continue
-		}
-
 		if !s.ChannelBased && v.Author.ID != triggerCtx.MS.User.ID {
 			continue
 		}
 
-		if s.Attachments && len(v.Attachments) < 1 {
-			continue // were only checking messages with attachments
+		if s.Attachments {
+			if len(v.Attachments) < 1 {
+				continue // we're only checking messages with attachments
+			}
+			if settings.SingleMessageAttachments {
+				// Add the count of all attachments of this message to the amount
+				amount += len(v.Attachments)
+			} else {
+				amount++
+			}
+		} else if s.Links {
+			linksLen := len(common.LinkRegex.FindAllString(forwardSlashReplacer.Replace(v.Content), -1))
+			if linksLen < 1 {
+				continue // we're only checking messages with links
+			}
+			if settings.SingleMessageLinks {
+				// Add the count of all links of this message to the amount
+				amount += linksLen
+			} else {
+				amount++
+			}
+		} else {
+			amount++
 		}
 
-		amount++
-	}
-
-	if amount >= settings.Treshold {
-		return true, nil
+		if amount >= settings.Treshold {
+			return true, nil
+		}
 	}
 
 	return false, nil
@@ -725,10 +821,10 @@ func (mt *MultiMsgMentionTrigger) Name() string {
 
 func (mt *MultiMsgMentionTrigger) Description() string {
 	if mt.ChannelBased {
-		return "Triggers when a channel has more than x unique mentions in y seconds"
+		return "Triggers when a channel has x unique mentions in y seconds"
 	}
 
-	return "Triggers when a user has sent more than x unique mentions in y seconds in a single channel"
+	return "Triggers when a user has sent x unique mentions in y seconds in a single channel"
 }
 
 func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
@@ -776,7 +872,7 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 			break
 		}
 
-		if mt.ChannelBased || v.Author.ID == triggerCtx.MS.GuildID {
+		if mt.ChannelBased || v.Author.ID == triggerCtx.MS.User.ID {
 			// we only care about unique mentions, e.g mentioning the same user a ton wont do anythin
 			for _, msgMention := range v.Mentions {
 				if settings.CountDuplicates || !common.ContainsInt64Slice(mentions, msgMention.ID) {
@@ -1331,4 +1427,59 @@ func (mat *MessageAttachmentTrigger) CheckMessage(triggerCtx *TriggerContext, cs
 
 func (mat *MessageAttachmentTrigger) MergeDuplicates(data []interface{}) interface{} {
 	return data[0] // no point in having duplicates of this
+}
+
+/////////////////////////////////////////////////////////////
+
+var _ MessageTrigger = (*MessageLengthTrigger)(nil)
+
+type MessageLengthTrigger struct {
+	Inverted bool
+}
+type MessageLengthTriggerData struct {
+	Length int
+}
+
+func (ml *MessageLengthTrigger) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (ml *MessageLengthTrigger) DataType() interface{} {
+	return &MessageLengthTriggerData{}
+}
+
+func (ml *MessageLengthTrigger) Name() (name string) {
+	if ml.Inverted {
+		return "Message with less than x characters"
+	}
+
+	return "Message with more than x characters"
+}
+
+func (ml *MessageLengthTrigger) Description() (description string) {
+	if ml.Inverted {
+		return "Triggers on messages where the content length is lesser than the specified value"
+	}
+
+	return "Triggers on messages where the content length is greater than the specified value"
+}
+
+func (ml *MessageLengthTrigger) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name: "Length",
+			Key:  "Length",
+			Kind: SettingTypeInt,
+		},
+	}
+}
+
+func (ml *MessageLengthTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
+	dataCast := triggerCtx.Data.(*MessageLengthTriggerData)
+
+	if ml.Inverted {
+		return utf8.RuneCountInString(m.Content) < dataCast.Length, nil
+	}
+
+	return utf8.RuneCountInString(m.Content) > dataCast.Length, nil
 }

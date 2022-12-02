@@ -5,18 +5,25 @@ package rsvp
 import (
 	"sync"
 
-	"github.com/jonas747/when"
-	"github.com/jonas747/when/rules"
-	wcommon "github.com/jonas747/when/rules/common"
-	"github.com/jonas747/when/rules/en"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/timezonecompanion/trules"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/when"
+	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
+	wcommon "github.com/botlabs-gg/yagpdb/v2/lib/when/rules/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules/en"
+	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion/trules"
 )
 
 var (
 	logger = common.GetPluginLogger(&Plugin{})
 
 	dateParser *when.Parser
+)
+
+const (
+	EventAccepted  = "event_accepted"
+	EventRejected  = "event_rejected"
+	EventWaitlist  = "event_waitlist"
+	EventUndecided = "event_undecided"
 )
 
 func init() {

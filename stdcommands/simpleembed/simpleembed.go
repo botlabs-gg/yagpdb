@@ -4,17 +4,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"golang.org/x/image/colornames"
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:         commands.CategoryFun,
+	CmdCategory:         commands.CategoryTool,
 	Name:                "SimpleEmbed",
 	Aliases:             []string{"se"},
 	Description:         "A more simpler version of CustomEmbed, controlled completely using switches.\nYou can edit existing messages by supplying the `-message` flag.",
@@ -163,13 +163,13 @@ var Command = &commands.YAGCommand{
 			send := &discordgo.MessageSend{AllowedMentions: discordgo.AllowedMentions{}}
 
 			if modifiedEmbed {
-				send.Embed = embed
+				send.Embeds = []*discordgo.MessageEmbed{embed}
 			}
 			if content := data.Switch("content").Str(); content != "" {
 				send.Content = content
 			}
 
-			if send.Content == "" && send.Embed == nil {
+			if send.Content == "" && len(send.Embeds) == 0 {
 				return "Cannot send an empty message", nil
 			}
 
@@ -185,10 +185,11 @@ var Command = &commands.YAGCommand{
 
 		edit := &discordgo.MessageEdit{
 			Content:         &msg.Content,
-			AllowedMentions: &discordgo.AllowedMentions{},
+			AllowedMentions: discordgo.AllowedMentions{},
 			ID:              mID,
 			Channel:         cID,
 		}
+
 		if content, set := getSwitch("content"); set {
 			v := content.(string)
 			if v == "" {
@@ -198,10 +199,10 @@ var Command = &commands.YAGCommand{
 			}
 		}
 		if modifiedEmbed || (msg != nil && len(msg.Embeds) > 0) {
-			edit.Embed = embed
+			edit.Embeds = []*discordgo.MessageEmbed{embed}
 		}
 
-		if edit.Content == nil && edit.Embed == nil {
+		if edit.Content == nil && len(edit.Embeds) == 0 {
 			return "Cannot edit a message to have no content and no embed", nil
 		}
 

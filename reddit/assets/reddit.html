@@ -7,12 +7,6 @@
 
 {{template "cp_alerts" .}}
 
-<style>
-    .reddit-item-disabled {
-        background-color: #f003;
-    }
-</style>
-
 <div class="row">
     <div class="col">
         <div class="tabs">
@@ -69,7 +63,7 @@
                 <div class="form-group col">
                     <label for="new-channel-slow-{{.Slow}}">Server Channel</label>
                     <select id="new-channel-slow-{{.Slow}}" class="form-control" name="channel">
-                        {{textChannelOptions .Dot.ActiveGuild.Channels 0 true "None"}}
+                        {{textChannelOptions .Dot.ActiveGuild.Channels nil false ""}}
                     </select>
                 </div>
             </div>
@@ -84,7 +78,7 @@
                 </div>
                 {{if .Slow}}<div class="form-group col">
                     <label>Minimum needed score</label>
-                    <input type="number" name="min_upvotes" value="5" class="form-control">
+                    <input type="number" min="0" name="min_upvotes" value="5" class="form-control">
                 </div>{{end}}
             </div>
 
@@ -101,18 +95,18 @@
 {{$slow := .Slow}}
 {{range .Dot.RedditConfig}}{{if eq .Slow $slow}}
 <form id="feed-item-{{.ID}}" data-async-form method="post" action="/manage/{{$guild}}/reddit/{{.ID}}/update">
-    <div class="row border-bottom border-secondary pb-3 {{if .Disabled}}reddit-item-disabled{{end}}">
+    <div class="row border-bottom border-secondary pb-3">
         <div class="col-lg">
             <div class="form-row">
                 <input type="text" class="hidden" name="id" value="{{.ID}}">
                 <div class="form-group col">
                     <label>Subreddit</label>
-                    <p class="form-control-static">{{.Subreddit}}</p>
+                    <p class="form-control-static"><a class="feedlink" href="https://reddit.com/r/{{.Subreddit}}" target="_blank">r/{{.Subreddit}}</a></p>
                 </div>
                 <div class="form-group col">
                     <label for="channel-feed-{{.ID}}">Server Channel</label>
                     <select id="channel-feed-{{.ID}}" class="form-control" name="channel">
-                        {{textChannelOptions $channels .ChannelID true "None"}}
+                        {{textChannelOptions $channels .ChannelID false ""}}
                     </select>
                 </div>
             </div>
@@ -129,7 +123,7 @@
                 </div>
                 {{if .Slow}}<div class="form-group col">
                     <label>Minimum needed score</label>
-                    <input type="number" name="min_upvotes" value="{{.MinUpvotes}}" class="form-control">
+                    <input type="number" min="0" name="min_upvotes" value="{{.MinUpvotes}}" class="form-control">
                 </div>{{end}}
             </div>
         </div>
@@ -138,6 +132,10 @@
                 <div class="col d-flex flex-column">
                     <Span class="mb-2">Use embed</span>
                     {{checkbox "use_embeds" (joinStr "" "format-" .ID) `` .UseEmbeds}}
+                </div>
+                <div class="col d-flex flex-column">
+                    <Span class="mb-2">Enabled</span>
+                    {{checkbox "feed_enabled" (joinStr "" "feed-enabled-" .ID) `` (not .Disabled)}}
                 </div>
 
                 <div class="form-group col">

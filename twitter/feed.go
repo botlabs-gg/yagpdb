@@ -7,13 +7,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/go-twitter/twitter"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/twitter/models"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/feeds"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/go-twitter/twitter"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -187,7 +187,7 @@ OUTER:
 		return
 	}
 
-	webhookUsername := t.User.ScreenName + " • YAGPDB"
+	webhookUsername := "Twitter • YAGPDB"
 	embed := createTweetEmbed(t)
 	for _, v := range relevantFeeds {
 		go analytics.RecordActiveUnit(v.GuildID, p, "posted_twitter_message")
@@ -307,7 +307,7 @@ func (p *Plugin) updateConfigsLoop() {
 		case <-ticker.C:
 		case wg := <-p.Stop:
 			wg.Done()
-			logger.Info("youtube updateConfigsLoop shut down")
+			logger.Info("Twitter updateConfigsLoop shut down")
 			return
 		}
 	}
