@@ -3,8 +3,8 @@ package premium
 import (
 	"time"
 
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)

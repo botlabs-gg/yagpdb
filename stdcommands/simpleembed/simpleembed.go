@@ -4,17 +4,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"golang.org/x/image/colornames"
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory:         commands.CategoryFun,
+	CmdCategory:         commands.CategoryTool,
 	Name:                "SimpleEmbed",
 	Aliases:             []string{"se"},
 	Description:         "A more simpler version of CustomEmbed, controlled completely using switches.\nYou can edit existing messages by supplying the `-message` flag.",
@@ -189,6 +189,7 @@ var Command = &commands.YAGCommand{
 			ID:              mID,
 			Channel:         cID,
 		}
+    
 		if content, set := getSwitch("content"); set {
 			v := content.(string)
 			if v == "" {
@@ -197,6 +198,7 @@ var Command = &commands.YAGCommand{
 				edit.Content = &v
 			}
 		}
+    
 		if modifiedEmbed || (msg != nil && len(msg.Embeds) > 0) {
 			edit.Embed = embed
 		}

@@ -1,9 +1,9 @@
 package discorddata
 
 import (
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 )
 
 type EvictData struct {

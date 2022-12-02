@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/models"
-	"github.com/jonas747/yagpdb/web/discorddata"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
@@ -52,7 +52,8 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
-	url += "&prompt=none"
+	// disabled prompt to see if the multiple requests are still happening when user expliclity consents to login
+	// url += "&prompt=none"
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -64,7 +65,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed validating CSRF token")
 		} else {
-			CtxLogger(ctx).Info("Invalid oauth state", state)
+			CtxLogger(ctx).Infof("Invalid oauth state %s ", state)
 		}
 		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
 		return
@@ -121,7 +122,7 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 // CreateCSRFToken creates a csrf token and adds it the list
 func CreateCSRFToken() (string, error) {
 	str := RandBase64(32)
-
+	logger.Infof("generated new CSRF Token %s", str)
 	err := common.MultipleCmds(
 		radix.Cmd(nil, "LPUSH", "csrf", str),
 		radix.Cmd(nil, "LTRIM", "csrf", "0", "999"), // Store only 1000 crsf tokens, might need to be increased later
@@ -137,6 +138,7 @@ func CheckCSRFToken(token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	logger.Infof("%s in csrf token list removed with count %d", token, num)
 	return num > 0, nil
 }
 

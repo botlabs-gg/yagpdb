@@ -4,9 +4,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 // maps rule part indentifiers to actual condition types
@@ -45,6 +45,11 @@ var RulePartMap = map[int]RulePart{
 	30: &MemberJoinTrigger{},
 	31: &MessageAttachmentTrigger{},
 	32: &MessageAttachmentTrigger{RequiresAttachment: true},
+	33: &AntiPhishingLinkTrigger{},
+	34: &MessageLengthTrigger{},
+	35: &MessageLengthTrigger{Inverted: true},
+	36: &SlowmodeTrigger{Links: true, ChannelBased: false},
+	37: &SlowmodeTrigger{Links: true, ChannelBased: true},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
@@ -75,6 +80,8 @@ var RulePartMap = map[int]RulePart{
 	309: &GiveRoleEffect{},
 	311: &EnableChannelSlowmodeEffect{},
 	312: &RemoveRoleEffect{},
+	313: &SendChannelMessageEffect{},
+	314: &TimeoutUserEffect{},
 }
 
 var InverseRulePartMap = make(map[RulePart]int)
@@ -116,11 +123,12 @@ const (
 )
 
 type SettingDef struct {
-	Name     string
-	Key      string
-	Kind     SettingType
-	Min, Max int
-	Default  interface{} `json:",omitempty"`
+	Name        string
+	Key         string
+	Kind        SettingType
+	Min, Max    int
+	Default     interface{} `json:",omitempty"`
+	Placeholder string      `json:",omitempty"`
 }
 
 type RulePartType int

@@ -27,7 +27,11 @@
                             <div class="form-group">
                                 <label>Verified Role</label><br>
                                 <select name="VerifiedRole" class="form-control">
+                                    {{if .RoleInvalid}}
+                                    {{roleOptions .ActiveGuild.Roles .HighestRole nil "No role selected"}}
+                                    {{else}}
                                     {{roleOptions .ActiveGuild.Roles .HighestRole .PluginSettings.VerifiedRole}}
+                                    {{end}}
                                 </select>
                             </div>
 
@@ -62,13 +66,13 @@
 
                             <div class="form-group">
                                 <label>Kick users after being unverified for... (minutes, 0 to disable)</label>
-                                <input type="number" name="KickUnverifiedAfter" class="form-control"
+                                <input type="number" min="0" name="KickUnverifiedAfter" class="form-control"
                                     value="{{.PluginSettings.KickUnverifiedAfter}}">
                             </div>
 
                             <div class="form-group">
                                 <label>re-notify users after being unverified for... (minutes, 0 to disable)</label>
-                                <input type="number" name="WarnUnverifiedAfter" class="form-control"
+                                <input type="number" min="0" name="WarnUnverifiedAfter" class="form-control"
                                     value="{{.PluginSettings.WarnUnverifiedAfter}}">
                             </div>
 

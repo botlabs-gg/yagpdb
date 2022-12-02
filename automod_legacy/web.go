@@ -6,11 +6,11 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -37,9 +37,9 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/automod_legacy/*"), autmodMux)
 	web.CPMux.Handle(pat.New("/automod_legacy"), autmodMux)
 
-	// Alll handlers here require guild channels present
+	// All handlers here require guild channels present
 	autmodMux.Use(web.RequireBotMemberMW)
-	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages))
+	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageServer, discordgo.PermissionModerateMembers))
 
 	getHandler := web.RenderHandler(HandleAutomod, "cp_automod_legacy")
 

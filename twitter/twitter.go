@@ -3,13 +3,14 @@ package twitter
 //go:generate sqlboiler --no-hooks psql
 
 import (
-	"github.com/dghubble/oauth1"
-	"github.com/jonas747/go-twitter/twitter"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/twitter/models"
 	"sync"
+
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/lib/go-twitter/twitter"
+	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
+	"github.com/dghubble/oauth1"
 )
 
 var (

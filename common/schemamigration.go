@@ -37,7 +37,7 @@ func initSchema(schema string, name string) {
 
 	skip, err := checkSkipSchemaInit(schema, name)
 	if err != nil {
-		logger.WithError(err).Error("Failed checking we we should skip schema: ", schema)
+		logger.WithError(err).Error("Failed checking if we should skip schema: ", schema)
 	}
 
 	if skip {

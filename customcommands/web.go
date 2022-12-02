@@ -11,14 +11,16 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	yagtemplate "github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	yagtemplate "github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -74,12 +76,13 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Use(func(inner http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
-			_, templateData := web.GetBaseCPContextData(r.Context())
+			g, templateData := web.GetBaseCPContextData(r.Context())
 			strTriggerTypes := map[int]string{}
 			for k, v := range triggerStrings {
 				strTriggerTypes[int(k)] = v
 			}
 			templateData["CCTriggerTypes"] = strTriggerTypes
+			templateData["CommandPrefix"], _ = prfx.GetCommandPrefixRedis(g.ID)
 
 			inner.ServeHTTP(w, r)
 		}
@@ -99,6 +102,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/commands/:cmd/update"), web.ControllerPostHandler(handleUpdateCommand, getCmdHandler, CustomCommand{}))
 	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(handleDeleteCommand, getHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/run_now"), web.ControllerPostHandler(handleRunCommandNow, getCmdHandler, nil))
+	subMux.Handle(pat.Post("/commands/:cmd/update_and_run"), web.ControllerPostHandler(handleUpdateAndRunNow, getCmdHandler, CustomCommand{}))
 
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(handleUpdateGroup, getGroupHandler, GroupForm{}))
@@ -106,7 +110,8 @@ func (p *Plugin) InitWeb() {
 }
 
 func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	groupID := int64(0)
 	if v, ok := templateData["CurrentGroupID"]; ok {
@@ -119,6 +124,13 @@ func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	templateData["HLJSBuiltins"] = langBuiltins.String()
+
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return templateData, err
+	}
+
+	updateTemplateWithCountData(int(count), templateData, ctx)
 
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
@@ -145,8 +157,17 @@ func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 }
 
 func handleGetCommandsGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	groupID, _ := strconv.ParseInt(pat.Param(r, "group"), 10, 64)
+
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return templateData, err
+	}
+
+	updateTemplateWithCountData(int(count), templateData, ctx)
+
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
 
@@ -401,6 +422,14 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	return templateData, nil
 }
 
+func handleUpdateAndRunNow(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	updateData, err := handleUpdateCommand(w, r)
+	if err != nil {
+		return updateData, err
+	}
+	return handleRunCommandNow(w, r)
+}
+
 // allow for max 5 triggers with intervals of less than 10 minutes
 func checkIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templateData web.TemplateData) (ok bool, err error) {
 	num, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id != ? AND trigger_type = 5 AND time_trigger_interval <= 10", guildID, cmdID)).CountG(ctx)
@@ -574,4 +603,16 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	return templateData, err
+}
+
+func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx context.Context) {
+	maxCommands := MaxCommandsForContext(ctx)
+	templateData["CCCount"] = count
+	templateData["CCLimit"] = maxCommands
+
+	additionalMessage := ""
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with YAGPDB premium)", MaxCommandsPremium)
+	}
+	templateData["AdditionalMessage"] = additionalMessage
 }

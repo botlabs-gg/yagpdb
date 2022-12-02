@@ -11,13 +11,13 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/customcommands/models"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/null"
@@ -27,6 +27,14 @@ import (
 var (
 	RegexCache = *ccache.New(ccache.Configure())
 	logger     = common.GetPluginLogger(&Plugin{})
+)
+
+// Setting it to 1 Month approx
+const (
+	MinIntervalTriggerDurationMinutes = 5
+	MinIntervalTriggerDurationHours   = 1
+	MaxIntervalTriggerDurationHours   = 744
+	MaxIntervalTriggerDurationMinutes = 44640
 )
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
@@ -160,8 +168,13 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 		return false
 	}
 
-	if cc.TriggerTypeForm == "interval_minutes" && cc.TimeTriggerInterval < 5 {
-		tmpl.AddAlerts(web.ErrorAlert("Minimum interval is now 5 minutes (was recently from 1)"))
+	if cc.TriggerTypeForm == "interval_minutes" && (cc.TimeTriggerInterval < MinIntervalTriggerDurationMinutes || cc.TimeTriggerInterval > MaxIntervalTriggerDurationMinutes) {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Minute interval can be between %v and %v", MinIntervalTriggerDurationMinutes, MaxIntervalTriggerDurationMinutes)))
+		return false
+	}
+
+	if cc.TriggerTypeForm == "interval_hours" && (cc.TimeTriggerInterval < MinIntervalTriggerDurationHours || cc.TimeTriggerInterval > MaxIntervalTriggerDurationHours) {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Hourly interval can be between %v and %v", MinIntervalTriggerDurationHours, MaxIntervalTriggerDurationHours)))
 		return false
 	}
 

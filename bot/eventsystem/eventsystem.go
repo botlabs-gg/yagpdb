@@ -7,21 +7,20 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
-	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/sirupsen/logrus"
 )
 
 var DiscordState dstate.StateTracker
 
 func init() {
-	for i, _ := range handlers {
+	for i := range handlers {
 		handlers[i] = make([][]*Handler, 3)
 	}
 }
@@ -43,11 +42,8 @@ type EventData struct {
 	GuildFeatureFlags []string
 
 	GS *dstate.GuildSet // Guaranteed to be available for guild events, except creates and deletes
-	cs *dstate.ChannelState
 
 	cancelled *int32
-
-	l sync.Mutex
 }
 
 func (e *EventData) Clone() *EventData {
@@ -58,7 +54,6 @@ func (e *EventData) Clone() *EventData {
 		Session:           e.Session,
 		GuildFeatureFlags: e.GuildFeatureFlags,
 		GS:                e.GS,
-		cs:                e.cs,
 		cancelled:         e.cancelled,
 	}
 }
@@ -117,14 +112,6 @@ func EmitEvent(data *EventData, evt Event) {
 
 			if newGS != nil {
 				data.GS = newGS
-			}
-		}
-
-		// attempt to fill in channel state if applicable
-		if channelEvt, ok := data.EvtInterface.(discordgo.ChannelEvent); ok && data.GS != nil {
-			cs := data.GS.GetChannel(channelEvt.GetChannelID())
-			if cs != nil {
-				data.cs = cs
 			}
 		}
 	}
@@ -347,22 +334,28 @@ func QueueEventNonDiscord(evtData *EventData) {
 	}
 }
 
-// CS will attempt to fetch the channel state from either cached, or state, or return nil if nonexistent (e.g a channel create before the state has been populated by it)
+// CS is the same as calling d.GS.GetChannel
 func (d *EventData) CS() *dstate.ChannelState {
-	d.l.Lock()
-	defer d.l.Unlock()
-
-	if d.cs != nil {
-		return d.cs
-	}
 
 	if channelEvt, ok := d.EvtInterface.(discordgo.ChannelEvent); ok {
 		if d.GS != nil {
-			d.cs = d.GS.GetChannel(channelEvt.GetChannelID())
+			return d.GS.GetChannel(channelEvt.GetChannelID())
 		}
 	}
 
-	return d.cs
+	return nil
+}
+
+// CS is the same as calling d.GS.GetChannelOrThread
+func (d *EventData) CSOrThread() *dstate.ChannelState {
+
+	if channelEvt, ok := d.EvtInterface.(discordgo.ChannelEvent); ok {
+		if d.GS != nil {
+			return d.GS.GetChannelOrThread(channelEvt.GetChannelID())
+		}
+	}
+
+	return nil
 }
 
 // RequireCSMW will only call the inner handler if a channel state is available
@@ -381,7 +374,7 @@ var workers []chan *EventData
 func InitWorkers(totalShards int) {
 
 	workers = make([]chan *EventData, totalShards)
-	for i, _ := range workers {
+	for i := range workers {
 		workers[i] = make(chan *EventData, 1000)
 		go eventWorker(workers[i])
 	}
@@ -410,11 +403,6 @@ func handleEvent(evtData *EventData) {
 			if err == nil {
 				evtData.GuildFeatureFlags = flags
 			}
-		}
-
-		// attempt to fill in channel state if applicable
-		if channelEvt, ok := evtData.EvtInterface.(discordgo.ChannelEvent); ok && evtData.GS != nil {
-			evtData.cs = evtData.GS.GetChannel(channelEvt.GetChannelID())
 		}
 	}
 

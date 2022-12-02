@@ -1,10 +1,11 @@
 package serverstats
 
 import (
-	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/premium"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 )
 
 func StartMigrationToV2Format() error {

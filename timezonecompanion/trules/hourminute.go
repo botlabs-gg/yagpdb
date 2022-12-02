@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/when/rules"
+	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
 )
 
 /*

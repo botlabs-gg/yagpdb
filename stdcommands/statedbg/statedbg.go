@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 func Commands() *dcmd.Container {
 	container, _ := commands.CommandSystem.Root.Sub("state")
-	container.Description = "utilities for debugging state stuff"
+	container.Description = "utilities for debugging state stuff. Bot Admin Only"
 	container.AddMidlewares(util.RequireBotAdmin)
 	container.AddCommand(getGuild, getGuild.GetTrigger())
 	container.AddCommand(getMember, getMember.GetTrigger())
@@ -27,7 +27,7 @@ func Commands() *dcmd.Container {
 var getGuild = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "guild",
-	Description:  "Responds with state debug info",
+	Description:  "Responds with state debug info. Bot Admin Only",
 	HideFromHelp: true,
 	RunFunc:      cmdFuncGetGuild,
 }
@@ -52,7 +52,7 @@ func cmdFuncGetGuild(data *dcmd.Data) (interface{}, error) {
 var getMember = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "member",
-	Description: "Responds with state debug info",
+	Description: "Responds with state debug info. Bot Admin Only",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Target", Type: dcmd.BigInt},
 	},
@@ -93,7 +93,7 @@ func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
 var botMember = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "botmember",
-	Description:  "Responds with state debug info",
+	Description:  "Responds with state debug info. Bot Admin Only",
 	HideFromHelp: true,
 	RunFunc:      cmdFuncBotMember,
 }

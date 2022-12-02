@@ -12,15 +12,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -64,6 +66,10 @@ func (p *Plugin) InitWeb() {
 
 	web.CPMux.Handle(pat.New("/automod"), muxer)
 	web.CPMux.Handle(pat.New("/automod/*"), muxer)
+
+	// All handlers here require guild channels present
+	muxer.Use(web.RequireBotMemberMW)
+	muxer.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageServer, discordgo.PermissionModerateMembers))
 
 	getIndexHandler := web.ControllerHandler(p.handleGetAutomodIndex, "automod_index")
 
@@ -216,6 +222,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 }
 
 type UpdateListData struct {
+	Name    string `valid:",1,50"`
 	Content string `valid:",0,5000"`
 }
 
@@ -229,8 +236,9 @@ func (p *Plugin) handlePostAutomodUpdateList(w http.ResponseWriter, r *http.Requ
 		return nil, err
 	}
 
+	list.Name = data.Name
 	list.Content = strings.Fields(data.Content)
-	_, err = list.UpdateG(r.Context(), boil.Whitelist("content"))
+	_, err = list.UpdateG(r.Context(), boil.Whitelist("name", "content"))
 	if err == nil {
 		pubsub.EvictCacheSet(cachedLists, g.ID)
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedList))
@@ -488,6 +496,22 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	tx, err := common.PQ.BeginTx(r.Context(), nil)
 	if err != nil {
 		return tmpl, err
+	}
+
+	anyMute := false
+	for _, effect := range effects {
+		if effect.TypeID == 304 {
+			anyMute = true
+			break
+		}
+	}
+	if anyMute {
+		conf, err := moderation.GetConfig(g.ID)
+		if err != nil || conf.MuteRole == "" {
+			tx.Rollback()
+			tmpl.AddAlerts(web.ErrorAlert("No mute role set, please configure one."))
+			return tmpl, nil
+		}
 	}
 
 	// First wipe all previous rule data
