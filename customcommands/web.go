@@ -245,7 +245,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		GuildID: activeGuild.ID,
 		LocalID: localID,
 
-		Disabled:   true,
+		Disabled:   false,
 		ShowErrors: true,
 
 		TimeTriggerExcludingDays:  []int64{},

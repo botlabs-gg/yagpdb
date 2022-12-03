@@ -19,6 +19,10 @@
         content: '\f106';
         margin-right: 10px;
     }
+
+    .cc-disabled {
+      background-color: #6c757d !important ;
+    }
 </style>
 
 <header class="page-header">
@@ -132,7 +136,7 @@
     {{$dot := .}}
     {{range .CustomCommands}}
     <div class="card">
-        <div class="card-header clearfix" {{if .Disabled}} style=" background-color: #282d36 !important;"{{end}}>
+        <div class="card-header clearfix {{if .Disabled}} cc-disabled {{end}}">
             <form class="form-horizontal" method="post" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
                 <div class="pull-right">
                     {{if and (eq .TriggerType 5) (not .Disabled) }}
