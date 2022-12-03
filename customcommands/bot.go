@@ -193,7 +193,7 @@ var cmdListCommands = &commands.YAGCommand{
 		if cc.TriggerType < 5 {
 			var header string
 			if cc.TextTrigger == "" {
-				cc.TextTrigger = `""`
+				cc.TextTrigger = `​`
 			}
 			if cc.Name.Valid {
 				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Name: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t`",
@@ -287,7 +287,7 @@ func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 			}
 		default:
 			if cc.TextTrigger == "" {
-				cc.TextTrigger = `""`
+				cc.TextTrigger = `​`
 			}
 			if cc.Name.Valid {
 				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s`  - Name: `%s` - Group: `%s` - Disabled: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled)
