@@ -409,6 +409,7 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	if cmd.Disabled {
 		templateData.AddAlerts(web.ErrorAlert("This command is disabled, cannot run a disabled command"))
+		return templateData, nil
 	}
 
 	ok, err := checkSetCooldown(activeGuild.ID, member.User.ID)
