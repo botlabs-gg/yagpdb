@@ -153,12 +153,6 @@
                                             </div>
 
                                             {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
-
-                                            <!-- <div class="checkbox">
-                                                <label>
-                                                    <input type="checkbox" name="case_sensitive"> Case sensitive?
-                                                </label>
-                                            </div> -->
                                         </div>
                                     </div>
                                 </div>
@@ -253,6 +247,21 @@
                                             </select>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label>Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
+                                    <p>An optional name that can be used to identify the command.</p>
+                                </div>
+                            </div>
+                             <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label> Command Enabled?</label>
+                                    {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled) }}
                                 </div>
                             </div>
                         </div>
@@ -553,6 +562,13 @@
         $("#trigger-length")
             .text(trigger.length)
             .toggleClass("text-danger", trigger.length > 1000);
+    });
+
+    $("#name").keyup(function(){
+      const name = $(this).val();
+        $("#name-length")
+            .text(name.length)
+            .toggleClass("text-danger", name.length > 100);
     });
 
     function onCCChanged(textArea) {

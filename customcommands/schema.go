@@ -80,4 +80,6 @@ CREATE TABLE IF NOT EXISTS templates_user_database (
 CREATE INDEX IF NOT EXISTS templates_user_database_combined_idx ON templates_user_database (guild_id, user_id, key, value_num);
 `, `
 CREATE INDEX IF NOT EXISTS templates_user_database_expires_idx ON templates_user_database (expires_at);
+`, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS name TEXT;
 `}

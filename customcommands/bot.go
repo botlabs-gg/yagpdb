@@ -121,11 +121,11 @@ var cmdListCommands = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CustomCommands",
 	Aliases:        []string{"cc"},
-	Description:    "Shows a custom command specified by id or trigger, or lists them all",
+	Description:    "Shows a custom command specified by id, trigger, or name, or lists them all",
 	ArgumentCombos: [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
-		{Name: "Trigger", Type: dcmd.String},
+		{Name: "Name-Or-Trigger", Type: dcmd.String},
 	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      false,
@@ -158,7 +158,7 @@ var cmdListCommands = &commands.YAGCommand{
 				return "This server has no custom commands, sry.", nil
 			}
 			if provided {
-				return "No command by that name or id found, here is a list of them all:\n" + list, nil
+				return "No command by that id, trigger or name found, here is a list of them all:\n" + list, nil
 			} else {
 				return "No id or trigger provided, here is a list of all server commands:\n" + list, nil
 			}
@@ -188,12 +188,21 @@ var cmdListCommands = &commands.YAGCommand{
 				Reader: &buf,
 			}
 		}
+
 		// Every text-based custom command trigger has a numerical value less than 5, so this is quite safe to do
 		if cc.TriggerType < 5 {
+			var header string
+			if cc.Name.Valid {
+				header = fmt.Sprintf("#%d - %s: `%s` (name: `%s`) - Case sensitive trigger: `%t` - Group: `%s`",
+					cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.Name.String, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64])
+			} else {
+				header = fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` Group: `%s`",
+					cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64])
+			}
+
 			if ccFile != nil {
 				msg = &discordgo.MessageSend{
-					Content: fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` Group: `%s`",
-						cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64]),
+					Content: header,
 					Files: []*discordgo.File{
 						ccFile,
 					},
@@ -201,13 +210,19 @@ var cmdListCommands = &commands.YAGCommand{
 				return msg, nil
 			}
 
-			return fmt.Sprintf("#%d - %s: `%s` - Case sensitive trigger: `%t` - Group: `%s`\n```%s\n%s\n```",
-				cc.LocalID, CommandTriggerType(cc.TriggerType), cc.TextTrigger, cc.TextTriggerCaseSensitive,
-				groupMap[cc.GroupID.Int64], highlight, strings.Join(cc.Responses, "```\n```")), nil
+			return fmt.Sprintf("%s\n```%s\n%s\n```", header, highlight, strings.Join(cc.Responses, "```\n```")), nil
 		}
+
 		if ccFile != nil {
+			var header string
+			if cc.Name.Valid {
+				header = fmt.Sprintf("#%d - %s (name: `%s`) - Group `%s`- Enabled `%v`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], !cc.Disabled)
+			} else {
+				header = fmt.Sprintf("#%d - %s - Group `%s` - IsEnabled `%v`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], !cc.Disabled)
+			}
+
 			msg = &discordgo.MessageSend{
-				Content: fmt.Sprintf("#%d - %s - Group `%s`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64]),
+				Content: header,
 				Files: []*discordgo.File{
 					ccFile,
 				},
@@ -215,6 +230,12 @@ var cmdListCommands = &commands.YAGCommand{
 
 			return msg, nil
 
+		}
+
+		if cc.Name.Valid {
+			return fmt.Sprintf("#%d - %s (name: `%s`) - Group: `%s`\n```%s\n%s\n```",
+				cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64],
+				highlight, strings.Join(cc.Responses, "```\n```")), nil
 		}
 
 		return fmt.Sprintf("#%d - %s - Group: `%s`\n```%s\n%s\n```",
@@ -236,10 +257,10 @@ func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*mod
 			}
 		}
 	} else if data.Args[1].Value != nil {
-		// Find by name
-		name := data.Args[1].Str()
+		// Find by trigger/name
+		nameOrTrigger := data.Args[1].Str()
 		for _, v := range ccs {
-			if strings.EqualFold(name, v.TextTrigger) {
+			if strings.EqualFold(nameOrTrigger, v.TextTrigger) || (v.Name.Valid && strings.EqualFold(nameOrTrigger, v.Name.String)) {
 				foundCCS = append(foundCCS, v)
 			}
 		}
@@ -255,9 +276,17 @@ func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 	for _, cc := range ccs {
 		switch {
 		case cc.TriggerType >= 5:
-			out += fmt.Sprintf("`#%3d:` %s - Group: `%s`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
+			if cc.Name.Valid {
+				out += fmt.Sprintf("`#%3d:` %s (name: `%s`) - Group: `%s`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64])
+			} else {
+				out += fmt.Sprintf("`#%3d:` %s - Group: `%s`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
+			}
 		default:
-			out += fmt.Sprintf("`#%3d:` `%s`: %s - Group: `%s`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
+			if cc.Name.Valid {
+				out += fmt.Sprintf("`#%3d:` `%s` (name: `%s`): %s - Group: `%s`\n", cc.LocalID, cc.TextTrigger, cc.Name.String, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
+			} else {
+				out += fmt.Sprintf("`#%3d:` `%s`: %s - Group: `%s`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64])
+			}
 		}
 	}
 
@@ -269,6 +298,10 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, dataCast.CmdID)).OneG(context.Background())
 	if err != nil {
 		return false, errors.WrapIf(err, "find_command")
+	}
+
+	if cmd.Disabled {
+		return false, errors.New("custom command is disabled")
 	}
 
 	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
@@ -335,6 +368,10 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, (data.(*NextRunScheduledEvent)).CmdID)).OneG(context.Background())
 	if err != nil {
 		return false, errors.WrapIf(err, "find_command")
+	}
+
+	if cmd.Disabled {
+		return false, errors.New("custom command is disabled")
 	}
 
 	if time.Until(cmd.NextRun.Time) > time.Second*5 {
@@ -554,7 +591,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) {
+		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) {
 			continue
 		}
 
@@ -590,7 +627,7 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) {
+		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) {
 			continue
 		}
 
@@ -984,11 +1021,6 @@ func CheckMatch(globalPrefix string, cmd *models.CustomCommand, msg string) (mat
 	args[0] = strings.TrimSpace(msg[:idx[1]])
 	for i, v := range argsRaw {
 		args[i+1] = v.Str
-	}
-
-	// The following simply matches the legacy behavior as I'm not sure if anyone is relying on it.
-	if !cmd.TextTriggerCaseSensitive && cmd.TriggerType != int(CommandTriggerRegex) {
-		stripped = strings.ToLower(msg)
 	}
 
 	stripped = msg[idx[1]:]
