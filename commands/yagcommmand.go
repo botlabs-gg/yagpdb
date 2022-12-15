@@ -420,8 +420,16 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 				return false, nil, nil, nil
 			}
 		}
+		channel_id := data.GuildData.CS.ID
+		parent_id := data.GuildData.CS.ParentID
+		// in case the channel is a thread, get the parent channel from parent id and check for the overrides
+		if data.GuildData.CS.Type.IsThread() {
+			channel := data.GuildData.GS.GetChannel(parent_id)
+			channel_id = channel.ID
+			parent_id = channel.ParentID
+		}
 
-		settings, err = yc.GetSettings(data.ContainerChain, data.GuildData.CS.ID, data.GuildData.CS.ParentID, guild.ID)
+		settings, err = yc.GetSettings(data.ContainerChain, channel_id, parent_id, guild.ID)
 		if err != nil {
 			resp = &CanExecuteError{
 				Type:    ReasonError,
