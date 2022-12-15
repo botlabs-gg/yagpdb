@@ -430,16 +430,22 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		nBlacklistedChannels = len(split)
 	}
 
-	format := `<ul>
-	<li>Username logging: %s</li>
-	<li>Nickname logging: %s</li>
-	<li>Blacklisted channels from creating message logs: <code>%d</code></li>
-</ul>`
-
 	templateData["WidgetEnabled"] = true
-
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(config.UsernameLoggingEnabled.Bool),
-		web.EnabledDisabledSpanStatus(config.NicknameLoggingEnabled.Bool), nBlacklistedChannels))
+	widgetBody := ""
+	if confEnableUsernameTracking.GetBool() {
+		format := `<ul>
+		<li>Username logging: %s</li>
+		<li>Nickname logging: %s</li>
+		<li>Blacklisted channels from creating message logs: <code>%d</code></li>
+	</ul>`
+		widgetBody = fmt.Sprintf(format,
+			web.EnabledDisabledSpanStatus(config.UsernameLoggingEnabled.Bool),
+			web.EnabledDisabledSpanStatus(config.NicknameLoggingEnabled.Bool),
+			nBlacklistedChannels)
+	} else {
+		widgetBody = fmt.Sprintf(`Blacklisted channels from creating message logs: <code>%d</code>`, nBlacklistedChannels)
+	}
+	templateData["WidgetBody"] = template.HTML(widgetBody)
 
 	return templateData, nil
 }

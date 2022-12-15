@@ -26,7 +26,11 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdClearNames)
+	if confEnableUsernameTracking.GetBool() {
+		commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdClearNames)
+	} else {
+		commands.AddRootCommands(p, cmdLogs, cmdWhois)
+	}
 }
 
 func (p *Plugin) BotInit() {
@@ -453,7 +457,7 @@ func HandleQueueEvt(evt *eventsystem.EventData) {
 }
 
 func queueEvt(evt interface{}) {
-	if confEnableUsernameTracking.GetBool() {
+	if !confEnableUsernameTracking.GetBool() {
 		return
 	}
 
