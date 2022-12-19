@@ -80,12 +80,24 @@ func (p *Plugin) checkExpiringWebsubs() {
 		return
 	}
 
-	for _, v := range expiring {
-		err := p.WebSubSubscribe(v)
-		if err != nil {
-			logger.WithError(err).WithField("yt_channel", v).Error("Failed subscribing to channel")
+	totalExpiring := len(expiring)
+	batchSize := confResubBatchSize.GetInt()
+	logger.Infof("Found %d expiring subs", totalExpiring)
+	expiringChunks := make([][]string, 0)
+	for i := 0; i < totalExpiring; i += batchSize {
+		end := i + batchSize
+		if end > totalExpiring {
+			end = totalExpiring
+		}
+		expiringChunks = append(expiringChunks, expiring[i:end])
+	}
+	for index, chunk := range expiringChunks {
+		logger.Infof("Processing chunk %d of %d for %d expiring youtube subs", index, len(expiringChunks), totalExpiring)
+		for _, sub := range chunk {
+			go p.WebSubSubscribe(sub)
 		}
 	}
+
 }
 
 func (p *Plugin) syncWebSubs() {
@@ -97,37 +109,43 @@ func (p *Plugin) syncWebSubs() {
 	}
 
 	common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
-
 		locked := false
-
-		for _, channel := range activeChannels {
-			if !locked {
-				err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
-				if err != nil {
-					logger.WithError(err).Error("Failed locking channels lock")
-					return err
-				}
-				locked = true
+		totalChannels := len(activeChannels)
+		batchSize := confResubBatchSize.GetInt()
+		logger.Infof("Found %d youtube channels", totalChannels)
+		channelChunks := make([][]string, 0)
+		for i := 0; i < totalChannels; i += batchSize {
+			end := i + batchSize
+			if end > totalChannels {
+				end = totalChannels
 			}
+			channelChunks = append(channelChunks, activeChannels[i:end])
+		}
 
-			mn := radix.MaybeNil{}
-			client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
-			if mn.Nil {
-				// Not added
-				err := p.WebSubSubscribe(channel)
-				if err != nil {
-					logger.WithError(err).WithField("yt_channel", channel).Error("Failed subscribing to channel")
+		for index, chunk := range channelChunks {
+			logger.Infof("Processing chunk %d of %d for %d youtube channels", index, len(channelChunks), totalChannels)
+			for _, channel := range chunk {
+				if !locked {
+					err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
+					if err != nil {
+						logger.WithError(err).Error("Failed locking channels lock")
+						return err
+					}
+					locked = true
 				}
-
+				mn := radix.MaybeNil{}
+				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
+				if mn.Nil {
+					// Not added
+					go p.WebSubSubscribe(channel)
+					common.UnlockRedisKey(RedisChannelsLockKey)
+					locked = false
+				}
+			}
+			if locked {
 				common.UnlockRedisKey(RedisChannelsLockKey)
-				locked = false
 			}
 		}
-
-		if locked {
-			common.UnlockRedisKey(RedisChannelsLockKey)
-		}
-
 		return nil
 	}))
 }
