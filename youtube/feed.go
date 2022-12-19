@@ -92,10 +92,12 @@ func (p *Plugin) checkExpiringWebsubs() {
 		expiringChunks = append(expiringChunks, expiring[i:end])
 	}
 	for index, chunk := range expiringChunks {
-		logger.Infof("Processing chunk %d of %d for %d expiring youtube subs", index, len(expiringChunks), totalExpiring)
+		logger.Infof("Processing chunk %d of %d for %d expiring youtube subs", index+1, len(expiringChunks), totalExpiring)
 		for _, sub := range chunk {
 			go p.WebSubSubscribe(sub)
 		}
+		// sleep for a second before processing next chunk
+		time.Sleep(time.Second)
 	}
 
 }
@@ -110,6 +112,15 @@ func (p *Plugin) syncWebSubs() {
 
 	common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
 		locked := false
+		if !locked {
+			err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
+			if err != nil {
+				logger.WithError(err).Error("Failed locking channels lock")
+				return err
+			}
+			locked = true
+		}
+
 		totalChannels := len(activeChannels)
 		batchSize := confResubBatchSize.GetInt()
 		logger.Infof("Found %d youtube channels", totalChannels)
@@ -121,33 +132,25 @@ func (p *Plugin) syncWebSubs() {
 			}
 			channelChunks = append(channelChunks, activeChannels[i:end])
 		}
-
 		for index, chunk := range channelChunks {
-			logger.Infof("Processing chunk %d of %d for %d youtube channels", index, len(channelChunks), totalChannels)
+			logger.Infof("Processing chunk %d of %d for %d youtube channels", index+1, len(channelChunks), totalChannels)
 			for _, channel := range chunk {
-				if !locked {
-					err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
-					if err != nil {
-						logger.WithError(err).Error("Failed locking channels lock")
-						return err
-					}
-					locked = true
-				}
 				mn := radix.MaybeNil{}
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
 				if mn.Nil {
-					// Not added
+					// Channel not added to redis, resubscrube and add to redis
 					go p.WebSubSubscribe(channel)
-					common.UnlockRedisKey(RedisChannelsLockKey)
-					locked = false
 				}
 			}
-			if locked {
-				common.UnlockRedisKey(RedisChannelsLockKey)
-			}
+			// sleep for a second before processing next chunk
+			time.Sleep(time.Second)
+		}
+		if locked {
+			common.UnlockRedisKey(RedisChannelsLockKey)
 		}
 		return nil
 	}))
+
 }
 func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle string, videoID string, mentionEveryone bool, content string) {
 	parsedChannel, _ := strconv.ParseInt(discordChannel, 10, 64)
