@@ -114,7 +114,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 
 	resp, err := http.PostForm(GoogleWebsubHub, values)
 	if err != nil {
-		logger.WithError(err).Error("Failed to subscribe to youtube channel with id %s", ytChannelID)
+		logger.WithError(err).Errorf("Failed to subscribe to youtube channel with id %s", ytChannelID)
 		return err
 	}
 
