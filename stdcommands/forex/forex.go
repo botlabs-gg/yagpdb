@@ -41,7 +41,7 @@ var Command = &commands.YAGCommand{
 		if (to == nil) || (from == nil) {
 			return "Invalid currency code.\nCheck out available codes on: <https://api.exchangerate.host/symbols>", nil
 		}
-		output, err := requestAPI(fmt.Sprintf("https://api.exchangerate.host/convert?from=%s&to=%s&amount=%g", from.Code, to.Code, amount))
+		output, err := requestAPI(fmt.Sprintf("https://api.exchangerate.host/convert?from=%s&to=%s&amount=%d", from.Code, to.Code, 1))
 		if err != nil {
 			return nil, err
 		}
@@ -51,7 +51,7 @@ var Command = &commands.YAGCommand{
 		p := message.NewPrinter(language.English)
 		embed := &discordgo.MessageEmbed{
 			Title:       "💱Currency Exchange Rate",
-			Description: fmt.Sprintf("\n%s **%s** (%s) is %s **%s** (%s).", p.Sprintf("%g", amount), from.Description, output.Query.From, p.Sprintf("%0.2f", output.Result), to.Description, output.Query.To),
+			Description: fmt.Sprintf("\n%s **%s** (%s) is %s **%s** (%s).", p.Sprintf("%g", amount), from.Description, output.Query.From, p.Sprintf("%0.2f", amount*output.Result), to.Description, output.Query.To),
 			Color:       0xAE27FF,
 			Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Based on currency rate 1 : %f", output.Info.Rate)},
 			Timestamp:   time.Now().UTC().Format(time.RFC3339),
