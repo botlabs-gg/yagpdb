@@ -74,10 +74,17 @@ func embedCreator(udResult []urbandictionary.Result, i int) *discordgo.MessageEm
 	if len(definition) > 2000 {
 		definition = common.CutStringShort(definition, 2000) + "\n\n(definition too long)"
 	}
+
 	example := "None given"
 	if len(udResult[i].Example) > 0 {
 		example = linkReferencedTerms(udResult[i].Example)
 	}
+
+	author := "Unknown"
+	if len(udResult[i].Author) > 0 {
+		author = udResult[i].Author
+	}
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name: udResult[i].Word,
@@ -87,7 +94,7 @@ func embedCreator(udResult []urbandictionary.Result, i int) *discordgo.MessageEm
 		Color:       int(rand.Int63n(16777215)),
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "Example:", Value: example},
-			{Name: "Author:", Value: udResult[i].Author},
+			{Name: "Author:", Value: author},
 			{Name: "Votes:", Value: fmt.Sprintf("Upvotes: %d\nDownvotes: %d", udResult[i].Upvote, udResult[i].Downvote)},
 		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{

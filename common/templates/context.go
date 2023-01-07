@@ -104,11 +104,13 @@ var (
 		"randInt":     randInt,
 		"roleAbove":   roleIsAbove,
 		"seq":         sequence,
+
 		"shuffle":     shuffle,
 		"verb":        common.RandomVerb,
 
 		// time functions
 		"currentTime":     tmplCurrentTime,
+    "parseTime":       tmplParseTime,
 		"formatTime":      tmplFormatTime,
 		"loadLocation":    time.LoadLocation,
 		"newDate":         tmplNewDate,

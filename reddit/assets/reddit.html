@@ -82,7 +82,7 @@
                 </div>{{end}}
             </div>
 
-            {{checkbox "use_embeds" (joinStr "" "format-new-slow-" .Slow) `Use embeds<small class="ml-2">(Videos won't be attached, but just linked)</small>` true}}
+            {{checkbox "use_embeds" (printf "format-new-slow-%t" .Slow) `Use embeds<small class="ml-2">(Videos won't be attached, but just linked)</small>` true}}
 
             <button type="submit" class="btn btn-success">Add</button>
         </form>
