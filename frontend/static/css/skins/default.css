@@ -1078,7 +1078,7 @@ html.dark .timeline.timeline-simple .tm-body .tm-items > li:before {
 }
 
 html .accordion.accordion-primary .card-header {
-	background-color: #0088cc !important;
+	background-color: #0088cc;
 }
 
 html .accordion.accordion-primary .card-header a {

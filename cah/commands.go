@@ -107,7 +107,7 @@ func (p *Plugin) AddCommands() {
 
 	container, _ := commands.CommandSystem.Root.Sub("cah")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
-	container.Description = "Playt cards against humanity!"
+	container.Description = "Play cards against humanity!"
 
 	container.AddCommand(cmdCreate, cmdCreate.GetTrigger())
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())

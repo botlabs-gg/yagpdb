@@ -245,7 +245,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		GuildID: activeGuild.ID,
 		LocalID: localID,
 
-		Disabled:   true,
+		Disabled:   false,
 		ShowErrors: true,
 
 		TimeTriggerExcludingDays:  []int64{},
@@ -405,6 +405,11 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ? AND trigger_type = 5", activeGuild.ID, cmdID)).OneG(context.Background())
 	if err != nil {
 		return templateData, err
+	}
+
+	if cmd.Disabled {
+		templateData.AddAlerts(web.ErrorAlert("This command is disabled, cannot run a disabled command"))
+		return templateData, nil
 	}
 
 	ok, err := checkSetCooldown(activeGuild.ID, member.User.ID)

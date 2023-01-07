@@ -70,8 +70,7 @@ const (
 	CommandTriggerRegex      CommandTriggerType = 3
 	CommandTriggerExact      CommandTriggerType = 4
 	CommandTriggerReaction   CommandTriggerType = 6
-
-	CommandTriggerInterval CommandTriggerType = 5
+	CommandTriggerInterval   CommandTriggerType = 5
 )
 
 var (
@@ -83,6 +82,7 @@ var (
 		CommandTriggerExact,
 		CommandTriggerInterval,
 		CommandTriggerReaction,
+		CommandTriggerNone,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
@@ -93,6 +93,7 @@ var (
 		CommandTriggerExact:      "Exact",
 		CommandTriggerInterval:   "Interval",
 		CommandTriggerReaction:   "Reaction",
+		CommandTriggerNone:       "None",
 	}
 )
 
@@ -115,6 +116,8 @@ type CustomCommand struct {
 	Responses     []string `json:"responses" schema:"responses" valid:"template,10000"`
 	CaseSensitive bool     `json:"case_sensitive" schema:"case_sensitive"`
 	ID            int64    `json:"id"`
+	Name          string   `json:"name" schema:"name" valid:",0,100"`
+	IsEnabled     bool     `json:"is_enabled" schema:"is_enabled"`
 
 	ContextChannel int64 `schema:"context_channel" valid:"channel,true"`
 
@@ -202,6 +205,7 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		Responses: cc.Responses,
 
 		ShowErrors: cc.ShowErrors,
+		Disabled:   !cc.IsEnabled,
 	}
 
 	if cc.TimeTriggerExcludingDays == nil {
@@ -214,6 +218,12 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 
 	if cc.GroupID != 0 {
 		pqCommand.GroupID = null.Int64From(cc.GroupID)
+	}
+
+	if cc.Name != "" {
+		pqCommand.Name = null.StringFrom(cc.Name)
+	} else {
+		pqCommand.Name = null.NewString("", false)
 	}
 
 	if cc.TriggerTypeForm == "interval_hours" {

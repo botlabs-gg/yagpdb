@@ -185,6 +185,10 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", errors.New("Couldn't find custom command")
 		}
 
+		if cmd.Disabled {
+			return "", errors.New("custom command is disabled")
+		}
+
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
 			return "", errors.New("Unknown channel")

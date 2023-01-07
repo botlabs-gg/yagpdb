@@ -1234,6 +1234,49 @@ func tmplCurrentTime() time.Time {
 	return time.Now().UTC()
 }
 
+func tmplParseTime(input string, layout interface{}, locations ...string) (time.Time, error) {
+	loc := time.UTC
+
+	var err error
+	if len(locations) > 0 {
+		loc, err = time.LoadLocation(locations[0])
+		if err != nil {
+			return time.Time{}, err
+		}
+	}
+
+	var parsed time.Time
+
+	rv, _ := indirect(reflect.ValueOf(layout))
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array:
+		if rv.Len() > 50 {
+			return time.Time{}, errors.New("max number of layouts is 50")
+		}
+
+		for i := 0; i < rv.Len(); i++ {
+			lv, _ := indirect(rv.Index(i))
+			if lv.Kind() != reflect.String {
+				return time.Time{}, errors.New("layout must be either a slice of strings or a single string")
+			}
+
+			parsed, err = time.ParseInLocation(lv.String(), input, loc)
+			if err == nil {
+				// found a layout that matched
+				break
+			}
+		}
+	case reflect.String:
+		parsed, _ = time.ParseInLocation(rv.String(), input, loc)
+	default:
+		return time.Time{}, errors.New("layout must be either a slice of strings or a single string")
+	}
+
+	// if no layout matched, parsed will be the zero Time.
+	// thus, users can call <time>.IsZero() to determine whether parseTime() was able to parse the time.
+	return parsed, nil
+}
+
 func tmplNewDate(year, monthInt, day, hour, min, sec int, location ...string) (time.Time, error) {
 	loc := time.UTC
 	month := time.Month(monthInt)

@@ -25,8 +25,8 @@ const (
 
 var (
 	confWebsubVerifytoken = config.RegisterOption("yagpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
-
-	logger = common.GetPluginLogger(&Plugin{})
+	confResubBatchSize    = config.RegisterOption("yagpdb.youtube.resub_batch_size", "Number of Websubs to resubscribe to concurrently", 1)
+	logger                = common.GetPluginLogger(&Plugin{})
 )
 
 func KeyLastVidTime(channel string) string { return "youtube_last_video_time:" + channel }
@@ -114,6 +114,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 
 	resp, err := http.PostForm(GoogleWebsubHub, values)
 	if err != nil {
+		logger.WithError(err).Errorf("Failed to subscribe to youtube channel with id %s", ytChannelID)
 		return err
 	}
 
