@@ -226,6 +226,7 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 	}
 
 	if code, msg := common.DiscordError(err); code != 0 {
+		logger.Infof("FAILED assigning role WITH CODE %d", code)
 		if code == discordgo.ErrCodeMissingPermissions {
 			return "The bot is below the role, contact the server admin", err
 		} else if code == discordgo.ErrCodeMissingAccess {
