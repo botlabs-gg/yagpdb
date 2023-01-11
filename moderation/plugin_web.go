@@ -131,7 +131,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 </ul>`
 
 	if config.ReportEnabled || config.CleanEnabled || config.GiveRoleCmdEnabled || config.ActionChannel != "" ||
-		config.MuteEnabled || config.KickEnabled || config.BanEnabled || config.WarnCommandsEnabled {
+		config.MuteEnabled || config.KickEnabled || config.BanEnabled || config.WarnCommandsEnabled || config.TimeoutEnabled {
 		templateData["WidgetEnabled"] = true
 	} else {
 		templateData["WidgetDisabled"] = true
