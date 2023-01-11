@@ -86,11 +86,11 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	// Remove it
-	err = common.GORM.Where("channel_id = ?", elem.ChannelID).Delete(ChannelSubscription{}).Error
+	err = common.GORM.Where("channel_id = ?", elem.ChannelID).Updates(ChannelSubscription{Enabled: false}).Error
 	if err != nil {
 		logger.WithError(err).Error("failed removing nonexistant channel")
 	} else {
-		logger.WithField("channel", elem.ChannelID).Info("Removed youtube feed to nonexistant channel")
+		logger.WithField("channel", elem.ChannelID).Info("Disabled youtube feed to nonexistant channel")
 	}
 }
 

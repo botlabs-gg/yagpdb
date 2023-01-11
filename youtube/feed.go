@@ -138,12 +138,10 @@ func (p *Plugin) syncWebSubs() {
 				mn := radix.MaybeNil{}
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
 				if mn.Nil {
-					// Channel not added to redis, resubscrube and add to redis
+					// Channel not added to redis, resubscribe and add to redis
 					go p.WebSubSubscribe(channel)
 				}
 			}
-			// sleep for a second before processing next chunk
-			time.Sleep(time.Second)
 		}
 		if locked {
 			common.UnlockRedisKey(RedisChannelsLockKey)
