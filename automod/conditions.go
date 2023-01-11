@@ -273,7 +273,7 @@ func (cd *ChannelCategoriesCondition) IsMet(data *TriggeredRuleData, settings in
 			return false, nil
 		}
 
-		parentID = threadParent.ID
+		parentID = threadParent.ParentID
 	}
 
 	if common.ContainsInt64Slice(settingsCast.Categories, parentID) {
