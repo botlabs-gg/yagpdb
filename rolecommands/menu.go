@@ -32,7 +32,7 @@ var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	name := parsed.Args[0].Str()
-	panelURL := fmt.Sprintf("%s/manage/%d/rolecommands/", web.BaseURL(), parsed.GuildData.GS.ID)
+	panelURL := fmt.Sprintf("%s/rolecommands/", web.ManageServerURL(parsed.GuildData))
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
