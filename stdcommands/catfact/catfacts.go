@@ -65,7 +65,6 @@ var Catfacts = []string{
 	`Kittens also have much sharper teeth than adult cats. Their teeth become blunt when they are around 6 months old.`,
 	`Cats which have blue eyes for the duration of their lives are likely to be deaf.`,
 	`They usually hate water, but the Turkish Van cats actually enjoy getting wet!`,
-	`Unlike many other animals, cats cannot produce fat on their own. It's important to give your pet a balanced diet which includes good fats.`,
 	`Just as a human's fingerprints are unique, each cat has a completely different nose.`,
 	`Many people are allergic to cats, but cats can actually be allergic to humans too. Around one in 200 domestic cats suffer from asthma due to smoke, dust and other particles within houses.`,
 	`As long as you introduce your cat to your dog before they are both six months old, they should get along well.`,
