@@ -35,18 +35,27 @@ const (
 var PageHTML string
 
 var (
-	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_added_feed", FormatString: "Added youtube feed from %s"})
-	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_removed_feed", FormatString: "Removed youtube feed from %s"})
-	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_updated_feed", FormatString: "Updated youtube feed from %s"})
+	panelLogKeyAddedFeed    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_added_feed", FormatString: "Added youtube feed from %s"})
+	panelLogKeyAnnouncement = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_announcement", FormatString: "Updated YouTube Announcement"})
+	panelLogKeyRemovedFeed  = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_removed_feed", FormatString: "Removed youtube feed from %s"})
+	panelLogKeyUpdatedFeed  = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_updated_feed", FormatString: "Updated youtube feed from %s"})
 )
 
-type Form struct {
+type YoutubeFeedForm struct {
 	YoutubeUrl        string
 	DiscordChannel    int64 `valid:"channel,false"`
 	ID                uint
 	MentionEveryone   bool
+	MentionRoles      []int64
+	PublishShorts     bool
 	PublishLivestream bool
 	Enabled           bool
+	CustomMessage     string
+}
+
+type YoutubeAnnouncementForm struct {
+	Message string `json:"message" valid:"template,5000"`
+	Enabled bool
 }
 
 type ytUrlType int
@@ -90,11 +99,12 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Get("/"), mainGetHandler)
 	ytMux.Handle(pat.Get(""), mainGetHandler)
 
-	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{})
+	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, YoutubeFeedForm{})
 
 	ytMux.Handle(pat.Post(""), addHandler)
 	ytMux.Handle(pat.Post("/"), addHandler)
-	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, Form{}))
+	ytMux.Handle(pat.Post("/announcement"), web.ControllerPostHandler(p.HandleYoutubeAnnouncement, mainGetHandler, YoutubeAnnouncementForm{}))
+	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, YoutubeFeedForm{}))
 	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 	ytMux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 
@@ -112,8 +122,36 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 		return templateData, err
 	}
 
+	var announcement YoutubeAnnouncements
+	err = common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", ag.ID).First(&announcement).Error
+	if err != nil {
+		announcement.Message = "{{.ChannelName}} published a new video! {{.URL}}"
+		announcement.Enabled = false
+	}
+
+	templateData["Announcement"] = announcement
 	templateData["Subs"] = subs
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(ag.ID) + "/youtube"
+
+	return templateData, nil
+}
+
+func (p *Plugin) HandleYoutubeAnnouncement(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
+	ctx := r.Context()
+	guild, templateData := web.GetBaseCPContextData(ctx)
+	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeAnnouncementForm)
+
+	var announcement YoutubeAnnouncements
+	announcement.Message = data.Message
+	announcement.Enabled = data.Enabled
+	announcement.GuildID = guild.ID
+
+	err = common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", guild.ID).Save(&announcement).Error
+	if err != nil {
+		return templateData, err
+	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAnnouncement, &cplogs.Param{}))
 
 	return templateData, nil
 }
@@ -130,18 +168,20 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
 	}
 
-	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
 	url := data.YoutubeUrl
 	if !ytUrlRegex.MatchString(url) {
 		return templateData.AddAlerts(web.ErrorAlert("That is not a <u>youtube.com</u> link, check the examples for a valid link ")), nil
 	}
+
 	ytChannel, err := p.getYtChannel(url)
 	if err != nil {
 		logger.WithError(err).Errorf("error occurred fetching channel for url %s", url)
 		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
 	}
 
-	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, ytChannel, data.MentionEveryone, data.PublishLivestream)
+	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, ytChannel, data.MentionEveryone, data.PublishLivestream, data.PublishShorts, data.MentionRoles)
+
 	if err != nil {
 		if err == ErrNoChannel {
 			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("channel not found")
@@ -189,10 +229,12 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	_, templateData = web.GetBaseCPContextData(ctx)
 
 	sub := ctx.Value(ContextKeySub).(*ChannelSubscription)
-	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
 
 	sub.MentionEveryone = data.MentionEveryone
+	sub.MentionRoles = data.MentionRoles
 	sub.PublishLivestream = data.PublishLivestream
+	sub.PublishShorts = data.PublishShorts
 	sub.ChannelID = discordgo.StrID(data.DiscordChannel)
 	sub.Enabled = data.Enabled
 
