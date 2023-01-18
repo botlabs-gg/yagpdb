@@ -21,6 +21,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/lib/template"
+	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 )
@@ -105,12 +106,12 @@ var (
 		"roleAbove":   roleIsAbove,
 		"seq":         sequence,
 
-		"shuffle":     shuffle,
-		"verb":        common.RandomVerb,
+		"shuffle": shuffle,
+		"verb":    common.RandomVerb,
 
 		// time functions
 		"currentTime":     tmplCurrentTime,
-    "parseTime":       tmplParseTime,
+		"parseTime":       tmplParseTime,
 		"formatTime":      tmplFormatTime,
 		"loadLocation":    time.LoadLocation,
 		"newDate":         tmplNewDate,
@@ -332,15 +333,20 @@ func (c *Context) Execute(source string) (string, error) {
 		}
 		if c.GS != nil {
 			c.Msg.GuildID = c.GS.ID
-
-			member, err := bot.GetMember(c.GS.ID, c.BotUser.ID)
-			if err != nil {
-				return "", errors.WithMessage(err, "ctx.Execute")
+			if bot.State != nil {
+				member, err := bot.GetMember(c.GS.ID, c.BotUser.ID)
+				if err != nil {
+					return "", errors.WithMessage(err, "ctx.Execute")
+				}
+				c.Msg.Member = member.DgoMember()
+			} else {
+				member, err := discorddata.GetMember(c.GS.ID, c.BotUser.ID)
+				if err != nil {
+					return "", errors.WithMessage(err, "ctx.Execute")
+				}
+				c.Msg.Member = member
 			}
-
-			c.Msg.Member = member.DgoMember()
 		}
-
 	}
 
 	c.setupBaseData()
