@@ -195,7 +195,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		ctx.Data["ChannelName"] = sub.YoutubeChannelName
 		ctx.Data["VideoID"] = video.Id
 		ctx.Data["VideoTitle"] = video.Snippet.Title
-		ctx.Data["VideoThumbnail"] = video.Snippet.Thumbnails.Maxres.Url
+		ctx.Data["VideoThumbnail"] = fmt.Sprintf("https://img.youtube.com/vi/%s/maxresdefault.jpg", video.Id)
 		ctx.Data["VideoDescription"] = video.Snippet.Description
 		ctx.Data["ChannelID"] = sub.ChannelID
 		ctx.Data["IsLiveStream"] = video.Snippet.LiveBroadcastContent == "live"
