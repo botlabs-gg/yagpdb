@@ -94,6 +94,9 @@
                           <code>{{"{{.ChannelName}}"}}</code>,
                           <code>{{"{{.IsLiveStream}}"}}</code>,
                           <code>{{"{{.VideoID}}"}}</code>,
+                          <code>{{"{{.VideoTitle}}"}}</code>,
+                          <code>{{"{{.VideoThumbnail}}"}}</code>,
+                          <code>{{"{{.VideoDescription}}"}}</code>,
                           <code>{{"{{.URL}}"}}</code>
                           See <a href="https://docs.yagpdb.xyz/commands/custom-commands" target="_blank">Custom Commands Documentation </a> to learn more advanced actions.
                         </p>
@@ -142,7 +145,7 @@
                             {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}
                         </td>
                         <td class="yt-tbl-column">
-                              <select form="sub-item-{{.ID}}" name="roles" class="multiselect form-control" multiple="multiple"
+                              <select form="sub-item-{{.ID}}" name="MentionRoles" class="multiselect form-control" multiple="multiple"
                                 id="mention-roles" data-plugin-multiselect>
                                 {{roleOptionsMulti $dot.ActiveGuild.Roles nil .MentionRoles }}
                             </select>
