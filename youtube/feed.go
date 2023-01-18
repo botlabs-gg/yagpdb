@@ -176,7 +176,11 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	}
 	parseMentions := []discordgo.AllowedMentionType{}
 	if announcement.Enabled && len(announcement.Message) > 0 {
+		logger.Printf("parsedGuild %#v", parsedGuild)
+		logger.Printf("State %#v", bot.State)
+		logger.Printf("GetGuild %#v", bot.State.GetGuild)
 		guildState := bot.State.GetGuild(parsedGuild)
+		logger.Printf("guildState %#v", guildState)
 		if guildState == nil {
 			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
 			return
