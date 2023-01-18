@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
-	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/feeds"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/api/option"
@@ -176,11 +176,11 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	}
 	parseMentions := []discordgo.AllowedMentionType{}
 	if announcement.Enabled && len(announcement.Message) > 0 {
-		logger.Printf("parsedGuild %#v", parsedGuild)
-		logger.Printf("State %#v", bot.State)
-		logger.Printf("GetGuild %#v", bot.State.GetGuild)
-		guildState := bot.State.GetGuild(parsedGuild)
-		logger.Printf("guildState %#v", guildState)
+		guildState, err := discorddata.GetFullGuild(parsedGuild)
+		if err != nil {
+			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
+			return
+		}
 		if guildState == nil {
 			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
 			return
