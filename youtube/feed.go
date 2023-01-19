@@ -174,6 +174,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	default:
 		return
 	}
+
 	parseMentions := []discordgo.AllowedMentionType{}
 	if announcement.Enabled && len(announcement.Message) > 0 {
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
@@ -482,6 +483,10 @@ func (p *Plugin) isShortsVideo(video *youtube.Video) bool {
 	if video.Snippet.LiveBroadcastContent == "live" {
 		return false
 	}
+	if video.ContentDetails == nil {
+		logger.Errorf("contentDetails was nil for youtube video id %d, isLiveStream? %s", video.Id, video.Snippet.LiveBroadcastContent)
+		return false
+	}
 	videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
 	videoDuration, err := common.ParseDuration(videoDurationString)
 	if err != nil {
@@ -527,14 +532,27 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 	if err != nil {
 		return err
 	}
+
+	contentType := video.Snippet.LiveBroadcastContent
+	logger.Infof("Got a new video for channel %s with videoid %s, of type %s and publishing to %d subscriptions", channelID, video.Id, contentType, len(subs))
+	if contentType != "live" && contentType != "none" {
+		return nil
+	}
+
+	isLivestream := contentType == "live"
 	isShortsCheckDone := false
 	isShorts := false
+
 	for _, sub := range subs {
 		if sub.Enabled {
-			if !sub.PublishShorts {
-				//extra check to only check if a video is a short when seeing the first shorts disabled subscription
-				//this is just a flag to check if the check was done and the "isShorts" variable actually has a verified value
-				//since "PublishShorts" is enabled by default
+			if isLivestream && !sub.PublishLivestream {
+				continue
+			}
+
+			//no need to check for shorts for a livestream
+			if !isLivestream && !sub.PublishShorts {
+				//check if a video is a short only when seeing the first shorts disabled subscription
+				//and cache in "isShorts" to reduce requests to youtube to check for shorts.
 				if !isShortsCheckDone {
 					isShorts = p.isShortsVideo(video)
 					isShortsCheckDone = true
@@ -543,10 +561,6 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 				if isShorts {
 					continue
 				}
-			}
-
-			if video.Snippet.LiveBroadcastContent == "live" && !sub.PublishLivestream {
-				continue
 			}
 			p.sendNewVidMessage(sub, video)
 		}
