@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"fmt"
-	"strings"
 	"time"
 
 	"emperror.dev/errors"
@@ -30,7 +28,6 @@ func init() {
 	templates.RegisterSetupFunc(func(ctx *templates.Context) {
 		ctx.ContextFuncs["parseArgs"] = tmplExpectArgs(ctx)
 		ctx.ContextFuncs["carg"] = tmplCArg
-		ctx.ContextFuncs["cswitch"] = tmplCSwitch
 		ctx.ContextFuncs["execCC"] = tmplRunCC(ctx)
 		ctx.ContextFuncs["scheduleUniqueCC"] = tmplScheduleUniqueCC(ctx)
 		ctx.ContextFuncs["cancelScheduledUniqueCC"] = tmplCancelUniqueCC(ctx)
@@ -52,42 +49,8 @@ func init() {
 	})
 }
 
-type wrappedArgDef struct {
-	IsSwitch bool
-	*dcmd.ArgDef
-}
-
-func tmplCArg(typ string, name string, opts ...interface{}) (*wrappedArgDef, error) {
-	def := wrappedArgDef{IsSwitch: false, ArgDef: &dcmd.ArgDef{Name: name}}
-	err := addType(&def, typ, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &def, nil
-}
-
-func tmplCSwitch(name string, rest ...interface{}) (*wrappedArgDef, error) {
-	if name == "" {
-		return nil, errors.New("switch arg name must be at least 1 character in length")
-	}
-
-	def := wrappedArgDef{IsSwitch: true, ArgDef: &dcmd.ArgDef{Name: name}}
-	if len(rest) > 0 {
-		typ, ok := rest[0].(string)
-		if !ok {
-			return nil, fmt.Errorf("expected type for switch arg to be a string; got %T instead", rest[0])
-		}
-
-		err := addType(&def, typ, rest[1:]...)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &def, nil
-}
-
-func addType(def *wrappedArgDef, typ string, opts ...interface{}) error {
+func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error) {
+	def := &dcmd.ArgDef{Name: name}
 	switch typ {
 	case "int":
 		if len(opts) >= 2 {
@@ -120,28 +83,20 @@ func addType(def *wrappedArgDef, typ string, opts ...interface{}) error {
 	case "role":
 		def.Type = &commands.RoleArg{}
 	default:
-		return errors.New("Unknown type")
+		return nil, errors.New("Unknown type")
 	}
 
-	return nil
+	return def, nil
 }
 
 func tmplExpectArgs(ctx *templates.Context) interface{} {
-	return func(numRequired int, failedMessage string, defs ...*wrappedArgDef) (*ParsedArgs, error) {
+	return func(numRequired int, failedMessage string, args ...*dcmd.ArgDef) (*ParsedArgs, error) {
 		result := &ParsedArgs{}
-		if len(defs) == 0 || ctx.Msg == nil || ctx.Data["StrippedMsg"] == nil {
+		if len(args) == 0 || ctx.Msg == nil || ctx.Data["StrippedMsg"] == nil {
 			return result, nil
 		}
 
-		// separate arg defs into switches and args
-		var args, switches []*dcmd.ArgDef
-		for _, def := range defs {
-			if !def.IsSwitch {
-				args = append(args, def.ArgDef)
-			} else {
-				switches = append(switches, def.ArgDef)
-			}
-		}
+		result.defs = args
 
 		msg := ctx.Msg
 		stripped := ctx.Data["StrippedMsg"].(string)
@@ -153,112 +108,68 @@ func tmplExpectArgs(ctx *templates.Context) interface{} {
 			return result, errors.WithMessage(err, "tmplExpectArgs")
 		}
 
-		// start by parsing switches
-		if len(switches) > 0 {
-			split, err = dcmd.ParseSwitches(switches, dcmdData, split)
-		}
-
-		// if no error occurred, parse args
-		if err == nil && len(args) > 0 {
-			err = dcmd.ParseArgDefs(args, numRequired, nil, dcmdData, split)
-		}
-
+		// attempt to parse them
+		err = dcmd.ParseArgDefs(args, numRequired, nil, dcmdData, split)
 		if err != nil {
 			if failedMessage != "" {
 				ctx.FixedOutput = err.Error() + "\n" + failedMessage
 			} else {
-				ctx.FixedOutput = err.Error() + "\nUsage: `" + formatUsage(defs, numRequired) + "`"
+				ctx.FixedOutput = err.Error() + "\nUsage: `" + (*dcmd.StdHelpFormatter).ArgDefLine(nil, args, numRequired) + "`"
 			}
 		}
 
-		result.data = dcmdData
+		result.parsed = dcmdData.Args
 		return result, err
 	}
 }
 
-var formatter = &dcmd.StdHelpFormatter{}
-
-// formatUsage is similar to `StdHelpFormatter#ArgDefLine()`, but differs in
-// that it will format switch args as '[-name: type]' instead of '[name:type]'.
-func formatUsage(defs []*wrappedArgDef, required int) string {
-	var builder strings.Builder
-
-	seenArgs := 0 // number of non-switch arg defs seen so far
-	for i, arg := range defs {
-		if i > 0 {
-			builder.WriteByte(' ')
-		}
-
-		sepEnd := '>'
-		if arg.IsSwitch || seenArgs >= required {
-			sepEnd = ']'
-			builder.WriteByte('[')
-		} else {
-			builder.WriteByte('<')
-		}
-
-		if arg.IsSwitch {
-			builder.WriteByte('-')
-			builder.WriteString(arg.Name)
-			builder.WriteString(": ")
-
-			typ := "Switch"
-			if arg.Type != nil {
-				typ = arg.Type.HelpName()
-			}
-			builder.WriteString(typ)
-		} else {
-			builder.WriteString(formatter.ArgDef(arg.ArgDef))
-			seenArgs++
-		}
-
-		builder.WriteRune(sepEnd)
-	}
-
-	return builder.String()
-}
-
 type ParsedArgs struct {
-	data *dcmd.Data
-}
-
-func (pa *ParsedArgs) Switch(id string) interface{} {
-	arg := pa.data.Switch(id)
-	return resolveArgValue(arg)
+	defs   []*dcmd.ArgDef
+	parsed []*dcmd.ParsedArg
 }
 
 func (pa *ParsedArgs) Get(index int) interface{} {
-	if len(pa.data.Args) <= index {
+	if len(pa.parsed) <= index {
 		return nil
 	}
 
-	arg := pa.data.Args[index]
-	return resolveArgValue(arg)
+	switch pa.parsed[index].Def.Type.(type) {
+	case *dcmd.IntArg:
+		i := pa.parsed[index]
+		if i.Value == nil {
+			return nil
+		}
+		return i.Int()
+	case *dcmd.ChannelArg:
+		i := pa.parsed[index].Value
+		if i == nil {
+			return nil
+		}
+
+		c := i.(*dstate.ChannelState)
+		return templates.CtxChannelFromCS(c)
+	case *commands.MemberArg:
+		i := pa.parsed[index].Value
+		if i == nil {
+			return nil
+		}
+
+		m := i.(*dstate.MemberState)
+		return m.DgoMember()
+	case *commands.RoleArg:
+		i := pa.parsed[index].Value
+		if i == nil {
+			return nil
+		}
+
+		return i.(*discordgo.Role)
+	}
+
+	return pa.parsed[index].Value
 }
 
 func (pa *ParsedArgs) IsSet(index int) interface{} {
 	return pa.Get(index) != nil
-}
-
-func resolveArgValue(arg *dcmd.ParsedArg) interface{} {
-	if arg == nil || arg.Value == nil {
-		return nil
-	}
-
-	switch arg.Def.Type.(type) {
-	case *dcmd.IntArg:
-		return arg.Int()
-	case *dcmd.ChannelArg:
-		c := arg.Value.(*dstate.ChannelState)
-		return templates.CtxChannelFromCS(c)
-	case *commands.MemberArg:
-		m := arg.Value.(*dstate.MemberState)
-		return m.DgoMember()
-	case *commands.RoleArg:
-		return arg.Value.(*discordgo.Role)
-	}
-
-	return arg.Value
 }
 
 // tmplRunCC either run another custom command immeditely with a max stack depth of 2
