@@ -484,7 +484,7 @@ func (p *Plugin) isShortsVideo(video *youtube.Video) bool {
 		return false
 	}
 	if video.ContentDetails == nil {
-		logger.Errorf("contentDetails was nil for youtube video id %d, isLiveStream? %s", video.Id, video.Snippet.LiveBroadcastContent)
+		logger.Errorf("contentDetails was nil for youtube video id %s, isLiveStream? %s", video.Id, video.Snippet.LiveBroadcastContent)
 		return false
 	}
 	videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
