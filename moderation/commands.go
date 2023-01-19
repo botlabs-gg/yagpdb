@@ -305,7 +305,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if config.MuteRole == "" {
-				return fmt.Sprintf("No mute role selected. Select one at <%s/manage/%d/moderation>", web.BaseURL(), parsed.GuildData.GS.ID), nil
+				return fmt.Sprintf("No mute role selected. Select one at <%s/moderation>", web.ManageServerURL(parsed.GuildData)), nil
 			}
 
 			reason := parsed.Args[2].Str()
