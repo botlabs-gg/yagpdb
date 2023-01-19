@@ -650,3 +650,7 @@ func FormatList(list []string, conjunction string) string {
 	}
 	return sb.String()
 }
+
+func BoolToPointer(b bool) *bool {
+	return &b
+}

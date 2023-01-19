@@ -174,7 +174,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	err := common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", parsedGuild).First(&announcement).Error
 	if err != nil {
 		logger.WithError(err).Debugf("Failed fetching youtube message from db for guild_id %d", parsedGuild)
-	} else if announcement.Enabled && len(announcement.Message) > 0 {
+	} else if *announcement.Enabled && len(announcement.Message) > 0 {
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
 			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
@@ -199,6 +199,8 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		ctx.Data["ChannelID"] = sub.ChannelID
 		ctx.Data["IsLiveStream"] = video.Snippet.LiveBroadcastContent == "live"
 		content, err = ctx.Execute(announcement.Message)
+		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
+		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone}
 		if err != nil {
 			logger.WithError(err).WithField("guild", parsedGuild).Warn("Announcement parsing failed")
 			return
@@ -206,18 +208,16 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		if content == "" {
 			return
 		}
-	} else {
-		if sub.MentionEveryone {
-			content = "Hey @everyone " + content
-			parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
-		} else if len(sub.MentionRoles) > 0 {
-			mentions := "Hey"
-			for _, roleId := range sub.MentionRoles {
-				mentions += fmt.Sprintf(" <@&%d>", roleId)
-			}
-			content = mentions + " " + content
-			parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles}
+	} else if sub.MentionEveryone {
+		content = "Hey @everyone " + content
+		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
+	} else if len(sub.MentionRoles) > 0 {
+		mentions := "Hey"
+		for _, roleId := range sub.MentionRoles {
+			mentions += fmt.Sprintf(" <@&%d>", roleId)
 		}
+		content = mentions + " " + content
+		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles}
 	}
 
 	go analytics.RecordActiveUnit(parsedGuild, p, "posted_youtube_message")
@@ -339,9 +339,9 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Cha
 		ChannelID:         discordgo.StrID(discordChannelID),
 		MentionEveryone:   mentionEveryone,
 		MentionRoles:      mentionRoles,
-		PublishLivestream: publishLivestream,
-		PublishShorts:     publishShorts,
-		Enabled:           true,
+		PublishLivestream: &publishLivestream,
+		PublishShorts:     &publishShorts,
+		Enabled:           common.BoolToPointer(true),
 	}
 
 	sub.YoutubeChannelName = ytChannel.Snippet.Title
@@ -542,13 +542,13 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 	isShorts := false
 
 	for _, sub := range subs {
-		if sub.Enabled {
-			if isLivestream && !sub.PublishLivestream {
+		if *sub.Enabled {
+			if isLivestream && !*sub.PublishLivestream {
 				continue
 			}
 
 			//no need to check for shorts for a livestream
-			if !isLivestream && !sub.PublishShorts {
+			if !isLivestream && !*sub.PublishShorts {
 				//check if a video is a short only when seeing the first shorts disabled subscription
 				//and cache in "isShorts" to reduce requests to youtube to check for shorts.
 				if !isShortsCheckDone {
