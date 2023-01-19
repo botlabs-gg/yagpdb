@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -126,7 +125,7 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 	err = common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", ag.ID).First(&announcement).Error
 	if err != nil {
 		announcement.Message = "{{.ChannelName}} published a new video! {{.URL}}"
-		announcement.Enabled = false
+		announcement.Enabled = common.BoolToPointer(false)
 	}
 
 	templateData["Announcement"] = announcement
@@ -143,7 +142,7 @@ func (p *Plugin) HandleYoutubeAnnouncement(w http.ResponseWriter, r *http.Reques
 
 	var announcement YoutubeAnnouncements
 	announcement.Message = data.Message
-	announcement.Enabled = data.Enabled
+	announcement.Enabled = &data.Enabled
 	announcement.GuildID = guild.ID
 
 	err = common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", guild.ID).Save(&announcement).Error
@@ -233,10 +232,10 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 
 	sub.MentionEveryone = data.MentionEveryone
 	sub.MentionRoles = data.MentionRoles
-	sub.PublishLivestream = data.PublishLivestream
-	sub.PublishShorts = data.PublishShorts
+	sub.PublishLivestream = &data.PublishLivestream
+	sub.PublishShorts = &data.PublishShorts
 	sub.ChannelID = discordgo.StrID(data.DiscordChannel)
-	sub.Enabled = data.Enabled
+	sub.Enabled = &data.Enabled
 
 	err = common.GORM.Save(sub).Error
 	if err == nil {
@@ -294,7 +293,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	bodyReader := io.LimitReader(r.Body, 0xffff1)
 
-	result, err := ioutil.ReadAll(bodyReader)
+	result, err := io.ReadAll(bodyReader)
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed reading body")
 		w.WriteHeader(http.StatusInternalServerError)

@@ -3,7 +3,7 @@ package youtube
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"sync"
@@ -68,9 +68,9 @@ type ChannelSubscription struct {
 	YoutubeChannelName string
 	MentionEveryone    bool
 	MentionRoles       pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
-	PublishLivestream  bool          `sql:"DEFAULT:true"`
-	PublishShorts      bool          `sql:"DEFAULT:true"`
-	Enabled            bool          `sql:"DEFAULT:true"`
+	PublishLivestream  *bool         `sql:"DEFAULT:true"`
+	PublishShorts      *bool         `sql:"DEFAULT:true"`
+	Enabled            *bool         `sql:"DEFAULT:true"`
 }
 
 func (c *ChannelSubscription) TableName() string {
@@ -80,7 +80,7 @@ func (c *ChannelSubscription) TableName() string {
 type YoutubeAnnouncements struct {
 	GuildID int64 `gorm:"primary_key" sql:"AUTO_INCREMENT:false"`
 	Message string
-	Enabled bool `sql:"DEFAULT:false"`
+	Enabled *bool `sql:"DEFAULT:false"`
 }
 
 var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
@@ -88,7 +88,7 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	// Remove it
-	err = common.GORM.Where("channel_id = ?", elem.ChannelID).Updates(ChannelSubscription{Enabled: false}).Error
+	err = common.GORM.Where("channel_id = ?", elem.ChannelID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
 		logger.WithError(err).Error("failed removing non-existant channel")
 	} else {
@@ -121,7 +121,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
 	}
 
