@@ -159,11 +159,6 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	parsedGuild, _ := strconv.ParseInt(sub.GuildID, 10, 64)
 	videoUrl := "https://www.youtube.com/watch?v=" + video.Id
 	var announcement YoutubeAnnouncements
-	err := common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", parsedGuild).First(&announcement).Error
-	if err != nil {
-		logger.WithError(err).Errorf("Failed fetching youtube message from db for guild_id %d", parsedGuild)
-		return
-	}
 
 	var content string
 	switch video.Snippet.LiveBroadcastContent {
@@ -176,7 +171,10 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	}
 
 	parseMentions := []discordgo.AllowedMentionType{}
-	if announcement.Enabled && len(announcement.Message) > 0 {
+	err := common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", parsedGuild).First(&announcement).Error
+	if err != nil {
+		logger.WithError(err).Debugf("Failed fetching youtube message from db for guild_id %d", parsedGuild)
+	} else if announcement.Enabled && len(announcement.Message) > 0 {
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
 			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
