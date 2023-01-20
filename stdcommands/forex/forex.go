@@ -111,11 +111,11 @@ func errEmbed(check *ExchangeAPIResult, page int) (*discordgo.MessageEmbed, erro
 		}
 	}
 	embed := &discordgo.MessageEmbed{
-		Title:       "Check out available codes",
+		Title:       "Invalid currency code",
 		URL:         "https://api.exchangerate.host/symbols",
 		Color:       0xAE27FF,
 		Timestamp:   time.Now().UTC().Format(time.RFC3339),
-		Description: fmt.Sprintf("```\n%s```", desc),
+		Description: fmt.Sprintf("Check out available codes on: https://api.exchangerate.host/symbols ```\n%s```", desc),
 	}
 	return embed, nil
 }
