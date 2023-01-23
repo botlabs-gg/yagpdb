@@ -3,16 +3,16 @@ package youtube
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"sync"
-	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/lib/pq"
 	"google.golang.org/api/youtube/v3"
 )
 
@@ -48,7 +48,7 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 func RegisterPlugin() {
 	p := &Plugin{}
 
-	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubePlaylistID{})
+	common.GORM.AutoMigrate(ChannelSubscription{}, YoutubeAnnouncements{})
 
 	mqueue.RegisterSource("youtube", p)
 
@@ -67,18 +67,20 @@ type ChannelSubscription struct {
 	YoutubeChannelID   string
 	YoutubeChannelName string
 	MentionEveryone    bool
-	PublishLivestream  bool
-	Enabled            bool `sql:"DEFAULT:true"`
+	MentionRoles       pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	PublishLivestream  *bool         `sql:"DEFAULT:true"`
+	PublishShorts      *bool         `sql:"DEFAULT:true"`
+	Enabled            *bool         `sql:"DEFAULT:true"`
 }
 
 func (c *ChannelSubscription) TableName() string {
 	return "youtube_channel_subscriptions"
 }
 
-type YoutubePlaylistID struct {
-	ChannelID  string `gorm:"primary_key"`
-	CreatedAt  time.Time
-	PlaylistID string
+type YoutubeAnnouncements struct {
+	GuildID int64 `gorm:"primary_key" sql:"AUTO_INCREMENT:false"`
+	Message string
+	Enabled *bool `sql:"DEFAULT:false"`
 }
 
 var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
@@ -86,11 +88,11 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	// Remove it
-	err = common.GORM.Where("channel_id = ?", elem.ChannelID).Delete(ChannelSubscription{}).Error
+	err = common.GORM.Where("channel_id = ?", elem.ChannelID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Error("failed removing nonexistant channel")
+		logger.WithError(err).Error("failed removing non-existant channel")
 	} else {
-		logger.WithField("channel", elem.ChannelID).Info("Removed youtube feed to nonexistant channel")
+		logger.WithField("channel", elem.ChannelID).Info("Disabled youtube feed to nonexistant channel")
 	}
 }
 
@@ -119,7 +121,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
 	}
 

@@ -34,7 +34,7 @@ func (p *Plugin) AddCommands() {
 			rulesetName := data.Args[0].Str()
 			ruleset, err := models.AutomodRulesets(qm.Where("guild_id = ? AND name ILIKE ?", data.GuildData.GS.ID, rulesetName)).OneG(data.Context())
 			if err != nil {
-				return "Unable to fine the ruleset, did you type the name correctly?", err
+				return "Unable to find the ruleset, did you type the name correctly?", err
 			}
 
 			ruleset.Enabled = !ruleset.Enabled
