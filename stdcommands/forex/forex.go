@@ -97,7 +97,7 @@ func requestAPI(query string) (*ExchangeAPIResult, error) {
 }
 
 func errEmbed(check *ExchangeAPIResult, page int) (*discordgo.MessageEmbed, error) {
-	desc := "CODE | Description\n ------------------"
+	desc := "CODE | Description\n------------------"
 	codes := make([]string, 0, len(check.Symbols))
 	for k := range check.Symbols {
 		codes = append(codes, k)
@@ -107,7 +107,7 @@ func errEmbed(check *ExchangeAPIResult, page int) (*discordgo.MessageEmbed, erro
 	end := page * 15
 	for i, c := range codes {
 		if i < end && i >= start {
-			desc = fmt.Sprintf("%s\n %s | %s", desc, c, check.Symbols[c].Description)
+			desc = fmt.Sprintf("%s\n%s | %s", desc, c, check.Symbols[c].Description)
 		}
 	}
 	embed := &discordgo.MessageEmbed{
