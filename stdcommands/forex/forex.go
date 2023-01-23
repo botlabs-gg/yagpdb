@@ -107,7 +107,7 @@ func errEmbed(check *ExchangeAPIResult, page int) (*discordgo.MessageEmbed, erro
 	end := page * 15
 	for i, c := range codes {
 		if i < end && i >= start {
-			desc = fmt.Sprintf("%s\n%s | %s", desc, c, check.Symbols[c].Description)
+			desc = fmt.Sprintf("%s\n%s  | %s", desc, c, check.Symbols[c].Description)
 		}
 	}
 	embed := &discordgo.MessageEmbed{
