@@ -17,6 +17,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/feeds"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
+	"github.com/jinzhu/gorm"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/api/option"
@@ -172,23 +173,34 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 
 	parseMentions := []discordgo.AllowedMentionType{}
 	err := common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", parsedGuild).First(&announcement).Error
+	hasCustomAnnouncement := true
 	if err != nil {
-		logger.WithError(err).Debugf("Failed fetching youtube message from db for guild_id %d", parsedGuild)
-	} else if *announcement.Enabled && len(announcement.Message) > 0 {
+		hasCustomAnnouncement = false
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.WithError(err).Debugf("Custom announcement doesn't exist for guild_id %d", parsedGuild)
+		} else {
+			logger.WithError(err).Errorf("Failed fetching custom announcement for guild_id %d", parsedGuild)
+		}
+	}
+
+	if hasCustomAnnouncement && *announcement.Enabled && len(announcement.Message) > 0 {
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
 			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
 			return
 		}
+
 		if guildState == nil {
 			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
 			return
 		}
+
 		channelState := guildState.GetChannel(parsedChannel)
 		if channelState == nil {
 			logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
 			return
 		}
+
 		ctx := templates.NewContext(guildState, channelState, nil)
 		ctx.Data["URL"] = videoUrl
 		ctx.Data["ChannelName"] = sub.YoutubeChannelName
@@ -499,7 +511,7 @@ func (p *Plugin) isShortsVideo(video *youtube.Video) bool {
 }
 
 func (p *Plugin) isShortsRedirect(videoId string) bool {
-	shortsUrl := fmt.Sprintf("https://www.youtube.com/shorts/%s", videoId)
+	shortsUrl := fmt.Sprintf("https://www.youtube.com/shorts/%s?ucbcb=1", videoId)
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
