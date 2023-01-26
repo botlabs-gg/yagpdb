@@ -232,7 +232,7 @@ type Channel struct {
 	// Excludes "manage_messages" and "manage_channel" permissions
 	RateLimitPerUser int `json:"rate_limit_per_user"`
 
-	// The user ID of the owner of the guild.
+	// The user ID of the owner of the thread. Nil on normal channels
 	OwnerID int64 `json:"owner_id,string"`
 
 	// Thread specific fields
