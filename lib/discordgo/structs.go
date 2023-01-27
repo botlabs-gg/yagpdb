@@ -228,8 +228,14 @@ type Channel struct {
 	// The ID of the parent channel, if the channel is under a category
 	ParentID int64 `json:"parent_id,string"`
 
+	// Period of time in which the user is unable to send another message or create a new thread for.
+	// Excludes "manage_messages" and "manage_channel" permissions
 	RateLimitPerUser int `json:"rate_limit_per_user"`
 
+	// The user ID of the owner of the thread. Nil on normal channels
+	OwnerID int64 `json:"owner_id,string"`
+
+	// Thread specific fields
 	ThreadMetadata *ThreadMetadata `json:"thread_metadata"`
 }
 

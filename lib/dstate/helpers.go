@@ -161,6 +161,7 @@ func ChannelStateFromDgo(c *discordgo.Channel) ChannelState {
 		NSFW:                 c.NSFW,
 		Position:             c.Position,
 		Bitrate:              c.Bitrate,
+		OwnerID:              c.OwnerID,
 	}
 }
 
