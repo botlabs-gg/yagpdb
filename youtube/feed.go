@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -204,6 +205,12 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		}
 
 		ctx := templates.NewContext(guildState, channelState, nil)
+		videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
+		videoDuration, err := common.ParseDuration(videoDurationString)
+		if err != nil {
+			videoDuration = time.Duration(0)
+		}
+
 		ctx.Data["URL"] = videoUrl
 		ctx.Data["ChannelName"] = sub.YoutubeChannelName
 		ctx.Data["VideoID"] = video.Id
@@ -211,6 +218,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		ctx.Data["VideoThumbnail"] = fmt.Sprintf("https://img.youtube.com/vi/%s/maxresdefault.jpg", video.Id)
 		ctx.Data["VideoDescription"] = video.Snippet.Description
 		ctx.Data["ChannelID"] = sub.ChannelID
+		ctx.Data["VideoDurationSeconds"] = math.Round(videoDuration.Seconds())
 		ctx.Data["IsLiveStream"] = video.Snippet.LiveBroadcastContent == "live"
 		ctx.Data["IsUpcoming"] = video.Snippet.LiveBroadcastContent == "upcoming"
 		ctx.Data["VideoSnippet"] = video.Snippet
