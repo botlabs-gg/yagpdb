@@ -165,6 +165,8 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	switch video.Snippet.LiveBroadcastContent {
 	case "live":
 		content = fmt.Sprintf("**%s** started a livestream now!\n%s", video.Snippet.ChannelTitle, videoUrl)
+	case "upcoming":
+		content = fmt.Sprintf("**%s** is going to be live soon!\n%s", video.Snippet.ChannelTitle, videoUrl)
 	case "none":
 		content = fmt.Sprintf("**%s** uploaded a new youtube video!\n%s", video.Snippet.ChannelTitle, videoUrl)
 	default:
@@ -210,6 +212,10 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		ctx.Data["VideoDescription"] = video.Snippet.Description
 		ctx.Data["ChannelID"] = sub.ChannelID
 		ctx.Data["IsLiveStream"] = video.Snippet.LiveBroadcastContent == "live"
+		ctx.Data["IsUpcoming"] = video.Snippet.LiveBroadcastContent == "upcoming"
+		ctx.Data["VideoSnippet"] = video.Snippet
+		ctx.Data["VideoContentDetails"] = video.ContentDetails
+
 		content, err = ctx.Execute(announcement.Message)
 		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone}
@@ -550,17 +556,18 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 	}
 
 	isLivestream := contentType == "live"
+	isUpcoming := contentType == "upcoming"
 	isShortsCheckDone := false
 	isShorts := false
 
 	for _, sub := range subs {
 		if *sub.Enabled {
-			if isLivestream && !*sub.PublishLivestream {
+			if (isLivestream || isUpcoming) && !*sub.PublishLivestream {
 				continue
 			}
 
 			//no need to check for shorts for a livestream
-			if !isLivestream && !*sub.PublishShorts {
+			if !(isLivestream || isUpcoming) && !*sub.PublishShorts {
 				//check if a video is a short only when seeing the first shorts disabled subscription
 				//and cache in "isShorts" to reduce requests to youtube to check for shorts.
 				if !isShortsCheckDone {
