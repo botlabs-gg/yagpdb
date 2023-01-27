@@ -119,4 +119,5 @@ var throwThings = []string{
 	"lily from at&t",
 	"couples therapy",
 	"beans",
+	"a discord channel",
 }
