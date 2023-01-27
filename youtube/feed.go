@@ -221,7 +221,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		ctx.Data["VideoTitle"] = video.Snippet.Title
 		ctx.Data["VideoThumbnail"] = fmt.Sprintf("https://img.youtube.com/vi/%s/maxresdefault.jpg", video.Id)
 		ctx.Data["VideoDescription"] = video.Snippet.Description
-		ctx.Data["VideoDurationSeconds"] = math.Round(videoDuration.Seconds())
+		ctx.Data["VideoDurationSeconds"] = int(math.Round(videoDuration.Seconds()))
 		//full video object in case people want to do more advanced stuff
 		ctx.Data["Video"] = video
 
