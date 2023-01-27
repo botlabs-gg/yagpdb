@@ -98,6 +98,7 @@ func requestAPI(query string) (*ExchangeAPIResult, error) {
 
 func errEmbed(check *ExchangeAPIResult, page int) (*discordgo.MessageEmbed, error) {
 	desc := "CODE | Description\n------------------"
+	var exchangeSymbols string = "https://api.exchangerate.host/symbols"
 	codes := make([]string, 0, len(check.Symbols))
 	for k := range check.Symbols {
 		codes = append(codes, k)
@@ -112,10 +113,10 @@ func errEmbed(check *ExchangeAPIResult, page int) (*discordgo.MessageEmbed, erro
 	}
 	embed := &discordgo.MessageEmbed{
 		Title:       "Invalid currency code",
-		URL:         "https://api.exchangerate.host/symbols",
+		URL:         exchangeSymbols,
 		Color:       0xAE27FF,
 		Timestamp:   time.Now().UTC().Format(time.RFC3339),
-		Description: fmt.Sprintf("Check out available codes on: https://api.exchangerate.host/symbols ```\n%s```", desc),
+		Description: fmt.Sprintf("Check out available codes on: %s ```\n%s```", exchangeSymbols, desc),
 	}
 	return embed, nil
 }
