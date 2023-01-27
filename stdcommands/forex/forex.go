@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
+
 	"net/http"
 	"sort"
 	"strings"
 	"time"
+	"math"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
@@ -41,9 +42,11 @@ var Command = &commands.YAGCommand{
 		}
 		from := check.Symbols[strings.ToUpper(data.Args[1].Str())]
 		to := check.Symbols[strings.ToUpper(data.Args[2].Str())]
+		// Checks the max amount of pages by the number of symbols on each page (15)
+		maxPages := int(math.Ceil(float64(len(check.Symbols))/float64(15)))
 		if (to == nil) || (from == nil) {
 			_, err = paginatedmessages.CreatePaginatedMessage(
-				data.GuildData.GS.ID, data.ChannelID, 1, int(math.Ceil(float64(len(check.Symbols))/float64(15))), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+				data.GuildData.GS.ID, data.ChannelID, 1, maxPages, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					return errEmbed(check, page)
 				})
 			if err != nil {
