@@ -213,16 +213,17 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 
 		ctx.Data["URL"] = videoUrl
 		ctx.Data["ChannelName"] = sub.YoutubeChannelName
+		ctx.Data["ChannelID"] = sub.ChannelID
+		//should be true for upcoming too as upcoming is also technically a livestream
+		ctx.Data["IsLiveStream"] = (video.Snippet.LiveBroadcastContent == "live" || video.Snippet.LiveBroadcastContent == "upcoming")
+		ctx.Data["IsUpcoming"] = video.Snippet.LiveBroadcastContent == "upcoming"
 		ctx.Data["VideoID"] = video.Id
 		ctx.Data["VideoTitle"] = video.Snippet.Title
 		ctx.Data["VideoThumbnail"] = fmt.Sprintf("https://img.youtube.com/vi/%s/maxresdefault.jpg", video.Id)
 		ctx.Data["VideoDescription"] = video.Snippet.Description
-		ctx.Data["ChannelID"] = sub.ChannelID
-		ctx.Data["VideoDurationSeconds"] = math.Round(videoDuration.Seconds())
-		ctx.Data["IsLiveStream"] = video.Snippet.LiveBroadcastContent == "live"
-		ctx.Data["IsUpcoming"] = video.Snippet.LiveBroadcastContent == "upcoming"
-		ctx.Data["VideoSnippet"] = video.Snippet
-		ctx.Data["VideoContentDetails"] = video.ContentDetails
+		ctx.Data["VideoDurationSeconds"] = int(math.Round(videoDuration.Seconds()))
+		//full video object in case people want to do more advanced stuff
+		ctx.Data["Video"] = video
 
 		content, err = ctx.Execute(announcement.Message)
 		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
