@@ -277,7 +277,12 @@ var (
 )
 
 func (p *Plugin) parseYtUrl(url string) (t ytUrlType, id string, err error) {
-	if ytVideoUrlRegex.MatchString(url) {
+	if ytUrlShortRegex.MatchString(url) {
+		capturingGroups := ytUrlShortRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][2]) > 0 {
+			return ytUrlTypeVideo, capturingGroups[0][2], nil
+		}
+	} else if ytVideoUrlRegex.MatchString(url) {
 		capturingGroups := ytVideoUrlRegex.FindAllStringSubmatch(url, -1)
 		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][4]) > 0 {
 			return ytUrlTypeVideo, capturingGroups[0][4], nil
@@ -319,8 +324,7 @@ func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) 
 		channelListCall = channelListCall.Id(id)
 	case ytUrlTypeUser:
 		channelListCall = channelListCall.ForUsername(id)
-	case ytUrlTypeCustom:
-	case ytUrlTypeHandle:
+	case ytUrlTypeCustom, ytUrlTypeHandle:
 		searchListCall := p.YTService.Search.List([]string{"snippet"})
 		searchListCall = searchListCall.Q(id).Type("channel")
 		sResp, err := searchListCall.Do()

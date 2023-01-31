@@ -70,6 +70,7 @@ const (
 
 var (
 	ytUrlRegex        = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com`)
+	ytUrlShortRegex   = regexp.MustCompile(`^(https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+).*`)
 	ytVideoUrlRegex   = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]+).*`)
 	ytChannelUrlRegex = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(channel)\/(UC[\w-]{21}[AQgw])$`)
 	ytCustomUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(c\/)?([\w-]+)$`)
@@ -169,8 +170,8 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
 	url := data.YoutubeUrl
-	if !ytUrlRegex.MatchString(url) {
-		return templateData.AddAlerts(web.ErrorAlert("That is not a <u>youtube.com</u> link, check the examples for a valid link ")), nil
+	if !(ytUrlRegex.MatchString(url) || ytUrlShortRegex.MatchString(url)) {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", url))), nil
 	}
 
 	ytChannel, err := p.getYtChannel(url)
