@@ -29,8 +29,6 @@
                     <p>
                         <b>Provide either link of youtube channel or video or username </b>
                         <br>
-                        <b><u>Only youtube.com links are supported</u></b>
-                        <br>
                         <u>Direct channel and Video links</u> are preferred as they have the highest accuracy
                         <br>Other links can lead to incorrect channels sometimes, as they rely on youtube search
                         <br>
@@ -38,6 +36,7 @@
                         <u>Examples of each type of link:</u>
                         <br> Direct channel link: <b>https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw</b>
                         <br> Video link: <b>https://www.youtube.com/watch?v=dQw4w9WgXcQ</b>
+                        <br> Short Video link: <b>https://youtu.be/pBZ_2pX_8mg</b>
                         <br> User link: <b>https://www.youtube.com/user/MontyPython</b>
                         <br> Custom link: <b>https://www.youtube.com/c/Taskmaster</b>
                         <br> Handle link: <b>https://www.youtube.com/@TomScottGo</b>
@@ -184,10 +183,11 @@
         ytUrlInput.on("input", function(arg) {
             let ytUrl = ytUrlInput.val()
             let ytLinkRegex = new RegExp("^(https?:\/\/)?((www|m)\.)?youtube\.com", 'g')
-            if (!ytUrl || !ytLinkRegex.test(ytUrl)) {
-                addButton.attr("disabled", true);
+            let ytShortLinkRegex = new RegExp("^(https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+).*", 'g')
+            if (ytUrl && (ytLinkRegex.test(ytUrl) || ytShortLinkRegex.test(ytUrl))) {
+                addButton.attr("disabled", false);
             } else {
-                addButton.attr("disabled", false)
+                addButton.attr("disabled", true)
             }
         })
     })
