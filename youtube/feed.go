@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"regexp"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -277,37 +278,45 @@ var (
 )
 
 func (p *Plugin) parseYtUrl(url string) (t ytUrlType, id string, err error) {
+	validateCaptures := func(expr *regexp.Regexp, i int) (id string, valid bool) {
+		capturingGroups := expr.FindAllStringSubmatch(url, -1)
+		valid = len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][i]) > 0
+
+		return capturingGroups[0][i], valid
+	}
+
 	if ytUrlShortRegex.MatchString(url) {
-		capturingGroups := ytUrlShortRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][2]) > 0 {
-			return ytUrlTypeVideo, capturingGroups[0][2], nil
+		id, valid := validateCaptures(ytUrlShortRegex, 2)
+		if valid {
+			return ytUrlTypeVideo, id, nil
 		}
 	} else if ytVideoUrlRegex.MatchString(url) {
-		capturingGroups := ytVideoUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][4]) > 0 {
-			return ytUrlTypeVideo, capturingGroups[0][4], nil
+		id, valid := validateCaptures(ytVideoUrlRegex, 4)
+		if valid {
+			return ytUrlTypeVideo, id, nil
 		}
 	} else if ytChannelUrlRegex.MatchString(url) {
-		capturingGroups := ytChannelUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeChannel, capturingGroups[0][5], nil
+		id, valid := validateCaptures(ytChannelUrlRegex, 5)
+		if valid {
+			return ytUrlTypeChannel, id, nil
 		}
 	} else if ytCustomUrlRegex.MatchString(url) {
-		capturingGroups := ytCustomUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeCustom, capturingGroups[0][5], nil
+		id, valid := validateCaptures(ytCustomUrlRegex, 5)
+		if valid {
+			return ytUrlTypeCustom, id, nil
 		}
 	} else if ytUserUrlRegex.MatchString(url) {
-		capturingGroups := ytUserUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeUser, capturingGroups[0][5], nil
+		id, valid := validateCaptures(ytUserUrlRegex, 5)
+		if valid {
+			return ytUrlTypeUser, id, nil
 		}
 	} else if ytHandleUrlRegex.MatchString(url) {
-		capturingGroups := ytHandleUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeHandle, capturingGroups[0][5], nil
+		id, valid := validateCaptures(ytHandleUrlRegex, 5)
+		if valid {
+			return ytUrlTypeHandle, id, nil
 		}
 	}
+
 	return ytUrlTypeInvalid, "", errors.New("invalid or incomplete url")
 }
 
