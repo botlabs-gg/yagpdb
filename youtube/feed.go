@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -318,6 +319,15 @@ func (p *Plugin) parseYtUrl(url string) (t ytUrlType, id string, err error) {
 	}
 
 	return ytUrlTypeInvalid, "", errors.New("invalid or incomplete url")
+}
+
+func (p *Plugin) getIDFromRegexUrl(expr *regexp.Regexp, url string, index int) string {
+	capturingGroups := expr.FindAllStringSubmatch(url, -1)
+	if len(capturingGroups) > 0 && len(capturingGroups[0]) > index {
+		return capturingGroups[0][index]
+	} else {
+		return ""
+	}
 }
 
 func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) {
