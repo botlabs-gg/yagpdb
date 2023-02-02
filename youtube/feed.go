@@ -278,47 +278,25 @@ var (
 	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")
 )
 
-func (p *Plugin) parseYtUrl(url string) (t ytUrlType, id string, err error) {
-	validateCaptures := func(expr *regexp.Regexp, i int) (id string, valid bool) {
-		capturingGroups := expr.FindAllStringSubmatch(url, -1)
-		valid = len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][i]) > 0
-
-		return capturingGroups[0][i], valid
+func (p *Plugin) parseYtUrl(url string) (idType ytUrlType, id string, err error) {
+	if id = p.getIDFromRegexUrl(ytUrlShortRegex, url, 2); id != "" {
+		idType = ytUrlTypeVideo
+	} else if id = p.getIDFromRegexUrl(ytVideoUrlRegex, url, 4); id != "" {
+		idType = ytUrlTypeVideo
+	} else if id = p.getIDFromRegexUrl(ytChannelUrlRegex, url, 5); id != "" {
+		idType = ytUrlTypeChannel
+	} else if id = p.getIDFromRegexUrl(ytCustomUrlRegex, url, 5); id != "" {
+		idType = ytUrlTypeCustom
+	} else if id = p.getIDFromRegexUrl(ytUserUrlRegex, url, 5); id != "" {
+		idType = ytUrlTypeUser
+	} else if id = p.getIDFromRegexUrl(ytHandleUrlRegex, url, 5); id != "" {
+		idType = ytUrlTypeHandle
+	} else {
+		idType = ytUrlTypeInvalid
+		err = errors.New("invalid or incomplete url")
 	}
 
-	if ytUrlShortRegex.MatchString(url) {
-		id, valid := validateCaptures(ytUrlShortRegex, 2)
-		if valid {
-			return ytUrlTypeVideo, id, nil
-		}
-	} else if ytVideoUrlRegex.MatchString(url) {
-		id, valid := validateCaptures(ytVideoUrlRegex, 4)
-		if valid {
-			return ytUrlTypeVideo, id, nil
-		}
-	} else if ytChannelUrlRegex.MatchString(url) {
-		id, valid := validateCaptures(ytChannelUrlRegex, 5)
-		if valid {
-			return ytUrlTypeChannel, id, nil
-		}
-	} else if ytCustomUrlRegex.MatchString(url) {
-		id, valid := validateCaptures(ytCustomUrlRegex, 5)
-		if valid {
-			return ytUrlTypeCustom, id, nil
-		}
-	} else if ytUserUrlRegex.MatchString(url) {
-		id, valid := validateCaptures(ytUserUrlRegex, 5)
-		if valid {
-			return ytUrlTypeUser, id, nil
-		}
-	} else if ytHandleUrlRegex.MatchString(url) {
-		id, valid := validateCaptures(ytHandleUrlRegex, 5)
-		if valid {
-			return ytUrlTypeHandle, id, nil
-		}
-	}
-
-	return ytUrlTypeInvalid, "", errors.New("invalid or incomplete url")
+	return idType, id, err
 }
 
 func (p *Plugin) getIDFromRegexUrl(expr *regexp.Regexp, url string, index int) string {
