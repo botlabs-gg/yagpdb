@@ -295,7 +295,7 @@ func (p *Plugin) parseYtUrl(url string) (idType ytUrlType, id string, err error)
 		err = errors.New("invalid or incomplete url")
 	}
 
-	return idType, id, err
+	return
 }
 
 func (p *Plugin) getIDFromRegexUrl(expr *regexp.Regexp, url string, index int) string {
