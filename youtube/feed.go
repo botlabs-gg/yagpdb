@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"regexp"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/common"
