@@ -87,13 +87,29 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
-	// Remove it
-	err = common.GORM.Where("channel_id = ?", elem.ChannelID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
+	p.DisableChannelFeed(elem.ChannelID)
+}
+
+func (p *Plugin) DisableChannelFeed(channel_id int64) error {
+	err := common.GORM.Model(&ChannelSubscription{}).Where("channel_id = ?", channel_id).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Error("failed removing non-existant channel")
+		logger.WithError(err).Errorf("failed removing non-existant channel for channel_id %d", channel_id)
+		return err
 	} else {
-		logger.WithField("channel", elem.ChannelID).Info("Disabled youtube feed to nonexistant channel")
+		logger.WithField("channel", channel_id).Info("Disabled youtube feed to non-existant channel")
 	}
+	return nil
+}
+
+func (p *Plugin) DisableGuildFeed(guild_id int64) error {
+	err := common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", guild_id).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
+	if err != nil {
+		logger.WithError(err).Errorf("failed removing non-existant guild for guild_id %d", guild_id)
+		return err
+	} else {
+		logger.WithField("guild", guild_id).Info("Disabled youtube feed to non-existant guild")
+	}
+	return nil
 }
 
 func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
