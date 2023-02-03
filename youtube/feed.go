@@ -278,17 +278,18 @@ var (
 )
 
 func (p *Plugin) parseYtUrl(url string) (idType ytUrlType, id string, err error) {
-	if id = p.getIDFromRegexUrl(ytUrlShortRegex, url, 2); id != "" {
+	var valid bool
+	if id, valid = p.getIDFromRegexUrl(ytUrlShortRegex, url, 2); valid {
 		idType = ytUrlTypeVideo
-	} else if id = p.getIDFromRegexUrl(ytVideoUrlRegex, url, 4); id != "" {
+	} else if id, valid = p.getIDFromRegexUrl(ytVideoUrlRegex, url, 4); valid {
 		idType = ytUrlTypeVideo
-	} else if id = p.getIDFromRegexUrl(ytChannelUrlRegex, url, 5); id != "" {
+	} else if id, valid = p.getIDFromRegexUrl(ytChannelUrlRegex, url, 5); valid {
 		idType = ytUrlTypeChannel
-	} else if id = p.getIDFromRegexUrl(ytCustomUrlRegex, url, 5); id != "" {
+	} else if id, valid = p.getIDFromRegexUrl(ytCustomUrlRegex, url, 5); valid {
 		idType = ytUrlTypeCustom
-	} else if id = p.getIDFromRegexUrl(ytUserUrlRegex, url, 5); id != "" {
+	} else if id, valid = p.getIDFromRegexUrl(ytUserUrlRegex, url, 5); valid {
 		idType = ytUrlTypeUser
-	} else if id = p.getIDFromRegexUrl(ytHandleUrlRegex, url, 5); id != "" {
+	} else if id, valid = p.getIDFromRegexUrl(ytHandleUrlRegex, url, 5); valid {
 		idType = ytUrlTypeHandle
 	} else {
 		idType = ytUrlTypeInvalid
@@ -298,13 +299,14 @@ func (p *Plugin) parseYtUrl(url string) (idType ytUrlType, id string, err error)
 	return
 }
 
-func (p *Plugin) getIDFromRegexUrl(expr *regexp.Regexp, url string, index int) string {
+func (p *Plugin) getIDFromRegexUrl(expr *regexp.Regexp, url string, index int) (id string, valid bool) {
 	capturingGroups := expr.FindAllStringSubmatch(url, -1)
 	if len(capturingGroups) > 0 && len(capturingGroups[0]) > index {
-		return capturingGroups[0][index]
-	} else {
-		return ""
+		id = capturingGroups[0][index]
+		valid = id != ""
 	}
+
+	return
 }
 
 func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) {
