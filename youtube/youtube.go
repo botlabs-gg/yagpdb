@@ -87,27 +87,27 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
-	p.DisableChannelFeed(elem.ChannelID)
+	p.DisableChannelFeeds(elem.ChannelID)
 }
 
-func (p *Plugin) DisableChannelFeed(channel_id int64) error {
-	err := common.GORM.Model(&ChannelSubscription{}).Where("channel_id = ?", channel_id).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
+func (p *Plugin) DisableChannelFeeds(channelID int64) error {
+	err := common.GORM.Model(&ChannelSubscription{}).Where("channel_id = ?", channelID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Errorf("failed removing non-existant channel for channel_id %d", channel_id)
+		logger.WithError(err).Errorf("failed removing non-existant channel for channel_id %d", channelID)
 		return err
 	} else {
-		logger.WithField("channel", channel_id).Info("Disabled youtube feed to non-existant channel")
+		logger.WithField("channel", channelID).Info("Disabled youtube feed to non-existant channel")
 	}
 	return nil
 }
 
-func (p *Plugin) DisableGuildFeed(guild_id int64) error {
-	err := common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", guild_id).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
+func (p *Plugin) DisableGuildFeeds(guildID int64) error {
+	err := common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", guildID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Errorf("failed removing non-existant guild for guild_id %d", guild_id)
+		logger.WithError(err).Errorf("failed removing non-existant guild for guild_id %d", guildID)
 		return err
 	} else {
-		logger.WithField("guild", guild_id).Info("Disabled youtube feed to non-existant guild")
+		logger.WithField("guild", guildID).Info("Disabled youtube feed to non-existant guild")
 	}
 	return nil
 }

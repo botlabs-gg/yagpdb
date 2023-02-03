@@ -192,14 +192,14 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 
 		if guildState == nil {
 			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
-			p.DisableGuildFeed(parsedGuild)
+			p.DisableGuildFeeds(parsedGuild)
 			return
 		}
 
 		channelState := guildState.GetChannel(parsedChannel)
 		if channelState == nil {
 			logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
-			p.DisableChannelFeed(parsedChannel)
+			p.DisableChannelFeeds(parsedChannel)
 			return
 		}
 
