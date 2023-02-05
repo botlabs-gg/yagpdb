@@ -15,6 +15,7 @@ type CtxChannel struct {
 	GuildID   int64
 	IsPrivate bool
 	IsThread  bool
+	IsForum   bool
 
 	Name                 string                           `json:"name"`
 	Type                 discordgo.ChannelType            `json:"type"`
@@ -25,6 +26,8 @@ type CtxChannel struct {
 	PermissionOverwrites []*discordgo.PermissionOverwrite `json:"permission_overwrites"`
 	ParentID             int64                            `json:"parent_id"`
 	OwnerID              int64                            `json:"owner_id"`
+	AppliedTags          []string                         `json:"applied_tags"`
+	AvailableTags        []discordgo.ForumTag             `json:"available_tags"`
 }
 
 func (c *CtxChannel) Mention() (string, error) {
@@ -45,6 +48,7 @@ func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 		ID:                   cs.ID,
 		IsPrivate:            cs.IsPrivate(),
 		IsThread:             cs.Type.IsThread(),
+		IsForum:              cs.Type.IsForum(),
 		GuildID:              cs.GuildID,
 		Name:                 cs.Name,
 		Type:                 cs.Type,
@@ -55,6 +59,8 @@ func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 		PermissionOverwrites: cop,
 		ParentID:             cs.ParentID,
 		OwnerID:              cs.OwnerID,
+		AppliedTags:          cs.AppliedTags,
+		AvailableTags:        cs.AvailableTags,
 	}
 
 	return ctxChannel

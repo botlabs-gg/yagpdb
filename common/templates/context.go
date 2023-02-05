@@ -638,6 +638,7 @@ func baseContextFuncs(c *Context) {
 
 	c.addContextFunc("editChannelName", c.tmplEditChannelName)
 	c.addContextFunc("editChannelTopic", c.tmplEditChannelTopic)
+	c.addContextFunc("setForumTags", c.tmplSetForumTags)
 	c.addContextFunc("editNickname", c.tmplEditNickname)
 	c.addContextFunc("onlineCount", c.tmplOnlineCount)
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)

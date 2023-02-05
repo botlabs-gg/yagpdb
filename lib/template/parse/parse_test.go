@@ -766,6 +766,7 @@ var funcs = map[string]interface{}{
 	"sendTemplateDM":            func() interface{} { return nil },
 	"seq":                       func() interface{} { return nil },
 	"setRoles":                  func() interface{} { return nil },
+	"setForumTags":              func() interface{} { return nil },
 	"shuffle":                   func() interface{} { return nil },
 	"sleep":                     func() interface{} { return nil },
 	"slice":                     func() interface{} { return nil },

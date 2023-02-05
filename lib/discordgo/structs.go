@@ -178,6 +178,10 @@ func (t ChannelType) IsThread() bool {
 	return t == ChannelTypeGuildPrivateThread || t == ChannelTypeGuildPublicThread
 }
 
+func (t ChannelType) IsForum() bool {
+	return t == ChannelTypeGuildForum
+}
+
 // A Channel holds all data related to an individual Discord channel.
 type Channel struct {
 	// The ID of the channel.
@@ -237,6 +241,12 @@ type Channel struct {
 
 	// Thread specific fields
 	ThreadMetadata *ThreadMetadata `json:"thread_metadata"`
+
+	// Access to the current tags in a forum thread
+	AppliedTags []string `json:"applied_tags"`
+
+	// Lists available tags in a forum channel
+	AvailableTags []ForumTag `json:"available_tags"`
 }
 
 func (c *Channel) GetChannelID() int64 {
@@ -263,6 +273,15 @@ type ChannelEdit struct {
 	PermissionOverwrites []*PermissionOverwrite `json:"permission_overwrites,omitempty"`
 	ParentID             *null.String           `json:"parent_id,omitempty"`
 	RateLimitPerUser     *int                   `json:"rate_limit_per_user,omitempty"`
+	AppliedTags          interface{}                `json:"applied_tags"`
+}
+
+type ForumTag struct {
+	ID        int64 `json:"id,string"`
+	Name      string `json:"name"`
+	Moderated bool   `json:"moderated"`
+	EmojiID   string `json:"emoji_id,omitempty"`
+	EmojiName string `json:"emoji_name,omitempty"`
 }
 
 type RoleCreate struct {

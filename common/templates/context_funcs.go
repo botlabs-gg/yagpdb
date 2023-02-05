@@ -1632,6 +1632,73 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 	return "", err
 }
 
+const ChannelTagLimit = 250
+
+func (c *Context) tmplSetForumTags(channel interface{}, input interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArgNoDM(channel)
+	if cID == 0 {
+		return "", errors.New("unknown channel")
+	}
+
+	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+		return "", ErrTooManyCalls
+	}
+
+	rv, _ := indirect(reflect.ValueOf(input))
+	switch rv.Kind() {
+	case reflect.Slice, reflect.Array:
+		// ok
+	default:
+		return "", errors.New("value passed was not an array or slice")
+	}
+
+	// use a map to easily handle duplicate tags
+	tags := make(map[int64]struct{})
+
+	for i := 0; i < rv.Len(); i++ {
+		v, _ := indirect(rv.Index(i))
+		switch v.Kind() {
+		case reflect.Int, reflect.Int64:
+			tags[v.Int()] = struct{}{}
+		case reflect.String:
+			id, err := strconv.ParseInt(v.String(), 10, 64)
+			if err != nil {
+				return "", errors.New("could not parse string value into tag ID")
+			}
+			tags[id] = struct{}{}
+		case reflect.Struct:
+			if r, ok := v.Interface().(discordgo.ForumTag); ok {
+				tags[r.ID] = struct{}{}
+				break
+			}
+			fallthrough
+		default:
+			return "", errors.New("could not parse value into tag ID")
+		}
+
+		if len(tags) > ChannelTagLimit {
+			return "", fmt.Errorf("more than %d unique roles passed; %[1]d is the thread tag limit", ChannelTagLimit)
+		}
+	}
+
+	// convert map to slice of keys (tag IDs)
+	rs := make([]string, 0, len(tags))
+	for id := range tags {
+		rs = append(rs, discordgo.StrID(id))
+	}
+
+	edit := &discordgo.ChannelEdit{
+		AppliedTags: rs,
+	}
+
+	_, err := common.BotSession.ChannelEditComplex(cID, edit)
+	return "", err
+}
+
 func (c *Context) tmplOnlineCount() (int, error) {
 	if c.IncreaseCheckCallCounter("online_users", 1) {
 		return 0, ErrTooManyCalls
