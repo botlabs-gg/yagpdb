@@ -46,6 +46,7 @@ func init() {
 		ctx.ContextFuncs["dbBottomEntries"] = tmplDBTopEntries(ctx, true)
 		ctx.ContextFuncs["dbCount"] = tmplDBCount(ctx)
 		ctx.ContextFuncs["dbRank"] = tmplDBRank(ctx)
+		ctx.ContextFuncs["createInvite"] = tmplCreateInvite(ctx)
 	})
 }
 
@@ -522,6 +523,18 @@ func tmplDBDel(ctx *templates.Context) interface{} {
 		_, err := models.TemplatesUserDatabases(qm.Where("guild_id = ? AND user_id = ? AND key = ?", ctx.GS.ID, userID, keyStr)).DeleteAll(context.Background(), common.PQ)
 
 		return "", err
+	}
+}
+
+func tmplCreateInvite(ctx *templates.Context) interface{} {
+	return func(maxUsage int, maxDurationSeconds int) (interface{}, error) {
+		invite, err := common.BotSession.ChannelInviteCreate(ctx.Msg.ChannelID, discordgo.Invite{
+			MaxAge:    maxDurationSeconds,
+			MaxUses:   maxUsage,
+			Temporary: true,
+			Unique:    true,
+		})
+		return "https://discord.gg/" + invite.Code, err
 	}
 }
 
