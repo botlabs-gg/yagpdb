@@ -189,6 +189,10 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", errors.New("custom command is disabled")
 		}
 
+		if cmd.TriggerType == int(CommandTriggerInterval) {
+			return "", errors.New("interval custom command cannot be used with execCC")
+		}
+
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
 			return "", errors.New("Unknown channel")
@@ -270,6 +274,14 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
+		}
+
+		if cmd.Disabled {
+			return "", errors.New("custom command is disabled")
+		}
+
+		if cmd.TriggerType == int(CommandTriggerInterval) {
+			return "", errors.New("interval custom command cannot be used with scheduleUniqueCC")
 		}
 
 		channelID := ctx.ChannelArg(channel)
