@@ -189,6 +189,10 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", errors.New("custom command is disabled")
 		}
 
+		if cmd.TriggerType == int(CommandTriggerInterval) {
+			return "", errors.New("interval custom command cannot be used with execCC")
+		}
+
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
 			return "", errors.New("Unknown channel")
