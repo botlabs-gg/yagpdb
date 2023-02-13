@@ -41,7 +41,7 @@ type CmdTimeOfDay struct {
 	Format string
 }
 
-// Descriptions should return a short description (used in the overall help overiview) and one long descriptions for targetted help
+// Descriptions should return a short description (used in the overall help overview) and one long descriptions for targetted help
 func (t *CmdTimeOfDay) Descriptions(d *dcmd.Data) (string, string) {
 	return "Responds with the current time in utc", ""
 }
@@ -51,6 +51,6 @@ func (t *CmdTimeOfDay) Run(data *dcmd.Data) (interface{}, error) {
 	return time.Now().UTC().Format(t.Format), nil
 }
 
-// Compilie time assertions, will not compiled unless StaticCmd implements these interfaces
+// Compile time assertions, will not compiled unless StaticCmd implements these interfaces
 var _ dcmd.Cmd = (*CmdTimeOfDay)(nil)
 var _ dcmd.CmdWithDescriptions = (*CmdTimeOfDay)(nil)

@@ -12,7 +12,7 @@ func init() {
 			`A hot air balloon that never comes down`,
 			`A killer’s diet of bush, cucumbers, and feathers`,
 			`A man cave filled with scalding hot garbage`,
-			`A man who has porn on his hard drive and who masterbates to it`,
+			`A man who has porn on his hard drive and who masturbates to it`,
 			`A radical rethinking of public education`,
 			`A redneck arguing with a snow cone`,
 			`A sexy hacker named Faith who can read minds`,

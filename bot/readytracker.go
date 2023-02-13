@@ -6,7 +6,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 )
 
-// ReadyTracker tracks process shards and initial readies/resumes, aswell as sending out events
+// ReadyTracker tracks process shards and initial readies/resumes, as well as sending out events
 var ReadyTracker = &readyTracker{}
 
 type readyTracker struct {
@@ -112,7 +112,7 @@ func (r *readyTracker) IsGuildOnProcess(guildID int64) bool {
 
 // IsGuildShardReady returns true if the shard for the specified guild is ready
 // note: it does not make sure that the guild create has been received for this guild
-// it may still be unavailable in the state, but the shard has received a ready or resum
+// it may still be unavailable in the state, but the shard has received a ready or resume
 func (r *readyTracker) IsGuildShardReady(guildID int64) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

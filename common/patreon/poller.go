@@ -208,7 +208,7 @@ func (p *Poller) Poll() {
 		time.Sleep(time.Second)
 	}
 
-	// Swap the stored ones, this dosent mutate the existing returned slices so we dont have to do any copying on each request woo
+	// Swap the stored ones, this doesn't mutate the existing returned slices so we don't have to do any copying on each request woo
 	p.mu.Lock()
 	p.activePatrons = patrons
 	p.mu.Unlock()

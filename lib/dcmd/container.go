@@ -266,7 +266,7 @@ func (c *Container) AddCommand(cmd Cmd, trigger *Trigger) *RegisteredCommand {
 	return wrapped
 }
 
-func (c *Container) AddMidlewares(mw ...MiddleWareFunc) {
+func (c *Container) AddMiddlewares(mw ...MiddleWareFunc) {
 	c.middlewares = append(c.middlewares, mw...)
 }
 
@@ -306,8 +306,8 @@ func (c *Container) FullName(aliases bool) string {
 	return name
 }
 
-// BuildMiddlewareChains builds all the middleware chains and chaches them.
-// It is reccomended to call this after adding all commands and middleware to avoid building the chains everytime
+// BuildMiddlewareChains builds all the middleware chains and caches them.
+// It is recommended to call this after adding all commands and middleware to avoid building the chains every time
 // a command is invoked
 func (c *Container) BuildMiddlewareChains(containerChain []*Container) {
 	containerChain = append(containerChain, c)
@@ -341,7 +341,7 @@ func ValidateCommandPanic(cmd Cmd, trigger *Trigger) {
 
 func ValidateCommand(cmd Cmd, trigger *Trigger) error {
 	if !CmdNameRegex.MatchString(trigger.Names[0]) {
-		return errors.New("Name dosen't match legal regex")
+		return errors.New("Name doesn't match legal regex")
 	}
 
 	argDefsCommand, argDefsOk := cmd.(CmdWithArgDefs)
@@ -349,7 +349,7 @@ func ValidateCommand(cmd Cmd, trigger *Trigger) error {
 		defs, _, _ := argDefsCommand.ArgDefs(nil)
 		for _, v := range defs {
 			if !CmdNameRegex.MatchString(v.Name) {
-				return errors.New(v.Name + ": arg dosn't match legal regex")
+				return errors.New(v.Name + ": arg doesn't match legal regex")
 			}
 		}
 	}
@@ -360,7 +360,7 @@ func ValidateCommand(cmd Cmd, trigger *Trigger) error {
 
 		for _, v := range defs {
 			if !CmdNameRegex.MatchString(v.Name) {
-				return errors.New(v.Name + ": switch dosn't match legal regex")
+				return errors.New(v.Name + ": switch doesn't match legal regex")
 			}
 		}
 	}

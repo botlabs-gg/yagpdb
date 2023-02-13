@@ -93,9 +93,9 @@ type YAGCommand struct {
 	LongDescription string   // Longer description when this command was targetted
 
 	Arguments      []*dcmd.ArgDef // Slice of argument definitions, ctx.Args will always be the same size as this slice (although the data may be nil)
-	RequiredArgs   int            // Number of reuquired arguments, ignored if combos is specified
+	RequiredArgs   int            // Number of required arguments, ignored if combos is specified
 	ArgumentCombos [][]int        // Slice of argument pairs, will override RequiredArgs if specified
-	ArgSwitches    []*dcmd.ArgDef // Switches for the commadn to use
+	ArgSwitches    []*dcmd.ArgDef // Switches for the command to use
 
 	AllowEveryoneMention bool
 
@@ -108,7 +108,7 @@ type YAGCommand struct {
 	CmdCategory        *dcmd.Category
 	GuildScopeCooldown int
 
-	RunInDM      bool // Set to enable this commmand in DM's
+	RunInDM      bool // Set to enable this command in DM's
 	HideFromHelp bool // Set to hide from help
 
 	RequireDiscordPerms      []int64   // Require users to have one of these permission sets to run the command
@@ -117,7 +117,7 @@ type YAGCommand struct {
 
 	Middlewares []dcmd.MiddleWareFunc
 
-	// Run is ran the the command has sucessfully been parsed
+	// Run is ran the the command has successfully been parsed
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
 	RunFunc dcmd.RunFunc
@@ -131,7 +131,7 @@ type YAGCommand struct {
 	// e.g if the command does not require a role in one channel, but it requires one in another channel, then the required permission for the slash command will be none set,
 	// note that these settings are still checked when the command is run, but they just show the command in the client even if you can't use it in this case, so its just a visual limitation of slash commands.
 	//
-	// If it's disabled in all chanels, then for default_enabled = true commands, it adds the everyone role to the blacklist, otherwise it adds no role to the whitelist (does this even work? can i use the everyone role in this context?)
+	// If it's disabled in all channels, then for default_enabled = true commands, it adds the everyone role to the blacklist, otherwise it adds no role to the whitelist (does this even work? can i use the everyone role in this context?)
 	SlashCommandEnabled bool
 
 	// Wether the command is enabled in all guilds by default or not
@@ -166,7 +166,7 @@ func (yc *YAGCommand) Switches() []*dcmd.ArgDef {
 	return yc.ArgSwitches
 }
 
-var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
+var metricsExecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "bot_commands_total",
 	Help: "Commands the bot executed",
 }, []string{"name", "trigger_type"})
@@ -232,7 +232,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 
 	}
 
-	metricsExcecutedCommands.With(prometheus.Labels{"name": "(other)", "trigger_type": triggerType}).Inc()
+	metricsExecutedCommands.With(prometheus.Labels{"name": "(other)", "trigger_type": triggerType}).Inc()
 
 	logger.Info("Handling command: " + rawCommand)
 
@@ -322,7 +322,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 				common.BotSession.ChannelMessageDelete(cmdData.ChannelID, cmdData.TraditionalTriggerData.Message.ID)
 			}()
 		}
-		return // Don't bother sending the reponse if it has no delete delay
+		return // Don't bother sending the response if it has no delete delay
 	}
 
 	// Use the error as the response if no response was provided
@@ -376,7 +376,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		}()
 	}
 
-	// If were deleting the trigger in a seperate call from the response deletion
+	// If were deleting the trigger in a separate call from the response deletion
 	if settings.DelTrigger && (!settings.DelResponse || settings.DelTriggerDelay != settings.DelResponseDelay) && cmdData.TraditionalTriggerData != nil {
 		go func() {
 			time.Sleep(time.Duration(settings.DelTriggerDelay) * time.Second)
@@ -388,15 +388,15 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 type CanExecuteType int
 
 const (
-	// ReasonError                    = "An error occured"
-	// ReasonCommandDisabaledSettings = "Command is disabled in the settings"
+	// ReasonError                    = "An error occurred"
+	// ReasonCommandDisabledSettings = "Command is disabled in the settings"
 	// ReasonMissingRole              = "Missing a required role for this command"
 	// ReasonIgnoredRole              = "Has a ignored role for this command"
 	// ReasonUserMissingPerms         = "User is missing one or more permissions to run this command"
 	// ReasonCooldown                 = "This command is on cooldown"
 
 	ReasonError CanExecuteType = iota
-	ReasonCommandDisabaledSettings
+	ReasonCommandDisabledSettings
 	ReasonMissingRole
 	ReasonIgnoredRole
 	ReasonUserMissingPerms
@@ -441,7 +441,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 
 		if !settings.Enabled {
 			resp = &CanExecuteError{
-				Type:    ReasonCommandDisabaledSettings,
+				Type:    ReasonCommandDisabledSettings,
 				Message: "Command is disabled in this channel by server admins",
 			}
 
@@ -622,7 +622,7 @@ func (yc *YAGCommand) checkRequiredBotPerms(gs *dstate.GuildSet, channelID int64
 		}
 	}
 
-	// need all the perms within atleast one group
+	// need all the perms within at least one group
 OUTER:
 	for _, permGroup := range yc.RequireBotPerms {
 
@@ -863,7 +863,7 @@ func (cs *YAGCommand) GuildScopeCooldownLeft(cc []*dcmd.Container, guildID int64
 	return ttl, nil
 }
 
-// SetCooldowns is a helper that serts both User and Guild cooldown
+// SetCooldowns is a helper that sets both User and Guild cooldown
 func (cs *YAGCommand) SetCooldowns(cc []*dcmd.Container, userID int64, guildID int64) error {
 	err := cs.SetCooldownUser(cc, userID)
 	if err != nil {
@@ -929,7 +929,7 @@ func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
 	return trigger
 }
 
-// Keys and other sensitive information shouldnt be sent in error messages, but just in case it is
+// Keys and other sensitive information shouldn't be sent in error messages, but just in case it is
 func CensorError(err error) string {
 	toCensor := []string{
 		common.BotSession.Token,
@@ -1025,7 +1025,7 @@ func (yc *YAGCommand) FindNameFromContainerChain(cc []*dcmd.Container) string {
 	return name + yc.Name
 }
 
-// GetAllOverrides returns all channel overrides and ensures the global override with atleast a default is present
+// GetAllOverrides returns all channel overrides and ensures the global override with at least a default is present
 func GetAllOverrides(ctx context.Context, guildID int64) ([]*models.CommandsChannelsOverride, error) {
 	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", guildID), qm.Load("CommandsCommandOverrides")).AllG(ctx)
 	if err != nil {

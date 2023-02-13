@@ -100,7 +100,7 @@ func (c *Compressor) runLoopLegacy(p *Plugin) {
 			logger.Info("Cleaning up server stats")
 			started := time.Now()
 			p.cleanupOldStats(time.Now().Add(time.Hour * -30))
-			logger.Infof("Took %s to ckean up stats", time.Since(started))
+			logger.Infof("Took %s to clean up stats", time.Since(started))
 		}
 	}
 }
@@ -241,7 +241,7 @@ func compressGuildLegacy(t time.Time, guildID int64, activeMsgs bool, misc bool)
 		}
 	}
 
-	// and finally  delete the uncrompressed stats
+	// and finally  delete the uncompressed stats
 	if activeMsgs {
 		_, err = tx.Exec("UPDATE server_stats_hourly_periods_messages SET compressed=true WHERE t < $1 AND guild_id = $2;", t, guildID)
 		if err != nil {
@@ -598,8 +598,8 @@ func (c *Compressor) saveCollectedStats(year, day int, stats map[int64]*GuildSta
 		// try to rollback marking this guild as compressed
 		err2 := common.RedisPool.Do(radix.Cmd(nil, "SREM", keyCompressionCompressionRanDays, fmt.Sprintf("%d:%d", year, day)))
 		if err2 != nil {
-			// this requires manual internvention to repair, broken connection to db or something in the middle of commit?
-			// but atleast this wont produce duplicate stats
+			// this requires manual intervention to repair, broken connection to db or something in the middle of commit?
+			// but at least this wont produce duplicate stats
 			logger.WithError(err2).Error("FAILED UN-MARKING GUILD AS COMPRESSED")
 		}
 

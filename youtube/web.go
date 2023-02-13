@@ -90,7 +90,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/youtube/*"), ytMux)
 	web.CPMux.Handle(pat.New("/youtube"), ytMux)
 
-	// Alll handlers here require guild channels present
+	// All handlers here require guild channels present
 	ytMux.Use(web.RequireBotMemberMW)
 	ytMux.Use(web.RequirePermMW(discordgo.PermissionMentionEveryone))
 
@@ -290,7 +290,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle new/udpated video
+	// Handle new/updated video
 	defer r.Body.Close()
 	bodyReader := io.LimitReader(r.Body, 0xffff1)
 

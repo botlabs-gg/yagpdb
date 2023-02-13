@@ -215,7 +215,7 @@ func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {
 		return errors.WithMessage(err, "Detach")
 	}
 
-	// Attempt migrating the guild attached to the epxired slot to the next available slot the owner of the slot has
+	// Attempt migrating the guild attached to the expired slot to the next available slot the owner of the slot has
 	tx, err := common.PQ.BeginTx(ctx, nil)
 	if err != nil {
 		return errors.WithMessage(err, "BeginTX")
@@ -251,7 +251,7 @@ func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {
 	return errors.WithMessage(err, "HSET")
 }
 
-// RemovePremiumSlots removes the specifues premium slots and attempts to migrate to other permanent available ones
+// RemovePremiumSlots removes the specifies premium slots and attempts to migrate to other permanent available ones
 // THIS SHOULD BE USED INSIDE A TRANSACTION ONLY, AS OTHERWISE RACE CONDITIONS BE UPON THEE
 func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID int64, slotsToRemove []int64) error {
 	userSlots, err := models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc"), qm.For("UPDATE")).All(ctx, exec)
@@ -259,7 +259,7 @@ func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID i
 		return errors.WithMessage(err, "models.PremiumSlots")
 	}
 
-	// Find the remainign free slots after the removal of the specified slots
+	// Find the remaining free slots after the removal of the specified slots
 	remainingFreeSlots := make([]*models.PremiumSlot, 0)
 	for _, slot := range userSlots {
 		if slot.GuildID.Valid || !slot.Permanent || SlotDurationLeft(slot) <= 0 {

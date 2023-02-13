@@ -14,13 +14,13 @@ type Interface interface {
 	// StopShard should disconnect the specific shard, and return the session info for resumes
 	StopShard(shard int) (sessionID string, sequence int64, resumeGatewayUrl string)
 
-	// ResumeShard should resume the speficic shard
+	// ResumeShard should resume the specific shard
 	ResumeShard(shard int, sessionID string, sequence int64, resumeGatewayUrl string)
 
 	// AddNewShards should add the following new shards to this node, doing the complete identify flow
 	AddNewShards(shards ...int)
 
-	// Caled when the bot should shut down, make sure to send EvtShutdown when completed
+	// Called when the bot should shut down, make sure to send EvtShutdown when completed
 	Shutdown()
 
 	// InitializeShardTransferFrom should prepare the shard for a outgoing transfer to another node, disconnecting it and returning the session info

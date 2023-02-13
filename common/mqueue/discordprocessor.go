@@ -50,7 +50,7 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 	} else {
 		if onGuild, err := common.BotIsOnGuild(wi.Elem.GuildID); !onGuild && err == nil {
 			if source, ok := sources[wi.Elem.Source]; ok {
-				logger.WithError(err).Warnf("disabling feed item %s from %s to nonexistant guild", wi.Elem.SourceItemID, wi.Elem.Source)
+				logger.WithError(err).Warnf("disabling feed item %s from %s to nonexistent guild", wi.Elem.SourceItemID, wi.Elem.Source)
 				source.DisableFeed(wi.Elem, err)
 			}
 
@@ -163,7 +163,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 
 	err = webhookSession.WebhookExecute(wh.ID, wh.Token, true, webhookParams)
 	if code, _ := common.DiscordError(err); code == discordgo.ErrCodeUnknownWebhook {
-		// if the webhook was deleted, then delete the bad boi from the databse and retry
+		// if the webhook was deleted, then delete the bad boi from the database and retry
 		const query = `DELETE FROM mqueue_webhooks WHERE id=$1`
 		_, err := common.PQ.Exec(query, wh.ID)
 		if err != nil {

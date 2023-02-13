@@ -47,8 +47,8 @@ func (p *Plugin) BotInit() {
 	// scheduledevents.RegisterEventHandler("mod_unban", handleUnbanLegacy)
 	scheduledevents2.RegisterHandler("moderation_unmute", ScheduledUnmuteData{}, handleScheduledUnmute)
 	scheduledevents2.RegisterHandler("moderation_unban", ScheduledUnbanData{}, handleScheduledUnban)
-	scheduledevents2.RegisterLegacyMigrater("unmute", handleMigrateScheduledUnmute)
-	scheduledevents2.RegisterLegacyMigrater("mod_unban", handleMigrateScheduledUnban)
+	scheduledevents2.RegisterLegacyMigrator("unmute", handleMigrateScheduledUnmute)
+	scheduledevents2.RegisterLegacyMigrator("mod_unban", handleMigrateScheduledUnban)
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildBanAddRemove), eventsystem.EventGuildBanAdd, eventsystem.EventGuildBanRemove)
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
@@ -76,7 +76,7 @@ func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data in
 		ms := data.(*dstate.MemberState)
 		if ms.User.ID == common.BotUser.ID {
 			go func(gID int64) {
-				// relieve startup preasure, sleep for up to 60 minutes
+				// relieve startup pressure, sleep for up to 60 minutes
 				sleep := time.Second * time.Duration(100+rand.Intn(60*180))
 				time.Sleep(sleep)
 
@@ -103,7 +103,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	gc := evt.GuildCreate()
 
-	// relieve startup preasure, sleep for up to 10 minutes
+	// relieve startup pressure, sleep for up to 10 minutes
 	if time.Since(started) < time.Minute*10 {
 		sleep := time.Second * time.Duration(100+rand.Intn(60*180))
 		time.Sleep(sleep)
@@ -135,7 +135,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 			}
 		}
 
-		// this will trigger a new pubsub event to refresh mute override if it was successfull in creating the role
+		// this will trigger a new pubsub event to refresh mute override if it was successful in creating the role
 		// so theres no need to continue here
 		return
 	}
@@ -265,7 +265,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 
 func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err error) {
 	data := evt.GuildMemberUpdate()
-	//ignore members who aren't timedout or have been timedout in the past
+	//ignore members who aren't timed out or have been timed out in the past
 	if data.TimeoutExpiresAt == nil || data.TimeoutExpiresAt.Before(time.Now()) {
 		return false, nil
 	}
@@ -456,7 +456,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 		} else if evt.Type == eventsystem.EventGuildMemberUpdate {
 			userID = evt.GuildMemberUpdate().User.ID
 		} else {
-			panic("Unknown event in lock memebr mute middleware")
+			panic("Unknown event in lock member mute middleware")
 		}
 
 		LockMute(userID)
@@ -474,7 +474,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 			return false, errors.WithStackIf(err)
 		}
 
-		// Don't bother doing anythign if this mute is almost up
+		// Don't bother doing anything if this mute is almost up
 		if !currentMute.ExpiresAt.IsZero() && currentMute.ExpiresAt.Sub(time.Now()) < 5*time.Second {
 			return false, nil
 		}
@@ -506,7 +506,7 @@ func HandleMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	c := evt.GuildMemberUpdate()
 	member := c.Member
-	// ignore timedout users
+	// ignore timed out users
 	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
 		return false, nil
 	}

@@ -37,7 +37,7 @@ func TestRatelimitReset(t *testing.T) {
 	sendReq("/guilds/66/channels")
 
 	// We hit the same endpoint 2 times, so we should only be ratelimited 2 second
-	// And always less than 4 seconds (unless you're on a stoneage computer or using swap or something...)
+	// And always less than 4 seconds (unless you're on a stone age computer or using swap or something...)
 	if time.Since(sent) >= time.Second && time.Since(sent) < time.Second*4 {
 		t.Log("OK", time.Since(sent))
 	} else {

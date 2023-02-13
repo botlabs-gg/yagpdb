@@ -28,7 +28,7 @@ var (
 	confClientID     = config.RegisterOption("yagpdb.reddit.clientid", "Client ID for the reddit api application", "")
 	confClientSecret = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
 	confRedirectURI  = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
-	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
+	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to acquire this manually, should be set to permanent", "")
 
 	confMaxPostsHourFast = config.RegisterOption("yagpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
 	confMaxPostsHourSlow = config.RegisterOption("yagpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)
@@ -343,7 +343,7 @@ func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discord
 		parent := post.CrosspostParentList[0]
 		embed.Description += "**" + html.UnescapeString(parent.Title) + "**\n"
 		if parent.IsSelf {
-			// Cropsspost was a self post
+			// Crosspost was a self post
 			embed.Color = 0xc3fc7e
 			if parent.Spoiler {
 				embed.Description += "|| " + common.CutStringShort(html.UnescapeString(parent.Selftext), 250) + " ||"

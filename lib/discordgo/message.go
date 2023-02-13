@@ -88,7 +88,7 @@ type Message struct {
 	// The content of the message.
 	Content string `json:"content"`
 
-	// The time at which the messsage was sent.
+	// The time at which the message was sent.
 	// CAUTION: this field may be removed in a
 	// future API version; it is safer to calculate
 	// the creation time via the ID.
@@ -180,7 +180,7 @@ const (
 	// MessageFlagsSuppressEmbeds do not include any embeds when serializing this message.
 	MessageFlagsSuppressEmbeds MessageFlags = 1 << 2
 	// TODO: deprecated, remove when compatibility is not needed
-	MessageFlagsSupressEmbeds MessageFlags = 1 << 2
+	MessageFlagsSuppressEmbeds MessageFlags = 1 << 2
 	// MessageFlagsSourceMessageDeleted the source message for this crosspost has been deleted (via Channel Following).
 	MessageFlagsSourceMessageDeleted MessageFlags = 1 << 3
 	// MessageFlagsUrgent this message came from the urgent message system.

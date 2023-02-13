@@ -96,7 +96,7 @@ var DefaultConfig = &Config{
 	AnnounceMessage: "OH WOWIE! **{{.User.Username}}** is currently streaming! Check it out: {{.URL}}",
 }
 
-// Returns he guild's conifg, or the defaul one if not set
+// Returns he guild's config, or the default one if not set
 func GetConfig(guildID int64) (*Config, error) {
 	var config *Config
 	err := common.GetRedisJson("streaming_config:"+discordgo.StrID(guildID), &config)

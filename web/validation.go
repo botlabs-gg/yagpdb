@@ -7,7 +7,7 @@ package web
 // struct: `valid:"traverse"`
 //	  - Validates the struct or slice
 // float/int: `valid:"{min],{max}"` or (for int64's) `valid:"role/channel,{allowEmpty}}"
-//    - Makes sure the float/int is whitin min and max
+//    - Makes sure the float/int is within min and max
 // normal string: `valid:",{minLen},{maxLen},opts..."` or `valid:",{maxLen},opts..."`
 //    - Makes sure the string is shorter than maxLen and bigger than minLen
 // regex string: `valid:"regex,{maxLen}"`
@@ -266,7 +266,7 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forc
 		}
 	}
 
-	// Check what kind of string field it is, and perform the needed vliadation depending on type
+	// Check what kind of string field it is, and perform the needed validation depending on type
 	switch kind {
 	case "role":
 		err = ValidateRoleField(i, guild.Roles, allowEmpty)
@@ -349,7 +349,7 @@ func ValidateStringField(s string, tags *ValidationTag, guild *dstate.GuildSet) 
 		}
 	}
 
-	// Check what kind of string field it is, and perform the needed vliadation depending on type
+	// Check what kind of string field it is, and perform the needed validation depending on type
 	switch kind {
 	case "template":
 		err = ValidateTemplateField(s, maxLen)

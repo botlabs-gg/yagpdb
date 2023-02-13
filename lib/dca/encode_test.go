@@ -19,7 +19,7 @@ func TestEncode(t *testing.T) {
 		numFrames++
 	}
 
-	// Predermined, probably gonna change the testing method somehow
+	// Predetermined, probably gonna change the testing method somehow
 	if numFrames != 756 {
 		t.Errorf("Incorrect number of frames (got %d expected %d)", numFrames, 756)
 		t.Fail()

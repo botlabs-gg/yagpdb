@@ -65,7 +65,7 @@ func init() {
 		Responses: []ResponseCard{
 			`10 football players with erections barrelling towards you at full speed`,
 			`10,000 shrieking teenage girls`,
-			`A big ol’ plate of fettuccini alfredo`,
+			`A big ol’ plate of fettuccine alfredo`,
 			`A big, beautiful mouth packed to the brim with sparkling white teeth`,
 			`A black friend`,
 			`A burrito that’s just sour cream`,

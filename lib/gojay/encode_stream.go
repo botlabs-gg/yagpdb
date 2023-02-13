@@ -14,7 +14,7 @@ type MarshalerStream interface {
 
 // A StreamEncoder reads and encodes values to JSON from an input stream.
 //
-// It implements conext.Context and provide a channel to notify interruption.
+// It implements context.Context and provide a channel to notify interruption.
 type StreamEncoder struct {
 	mux *sync.RWMutex
 	*Encoder

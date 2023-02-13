@@ -72,7 +72,7 @@ var (
 	logger             = common.GetPluginLogger(&ScheduledEvents{})
 )
 
-// RegisterHandler registers a handler for the scpecified event name
+// RegisterHandler registers a handler for the specified event name
 // dataFormat is optional and should not be a pointer, it should match the type you're passing into ScheduleEvent
 func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFunc) {
 	if running {
@@ -433,6 +433,6 @@ func CheckDiscordErrRetry(err error) bool {
 		return false
 	}
 
-	// an unknown error unrelated to the discord api occured (503's for example) attempt a retry
+	// an unknown error unrelated to the discord api occurred (503's for example) attempt a retry
 	return true
 }

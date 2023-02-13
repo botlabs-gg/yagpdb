@@ -726,7 +726,7 @@ func (s *Session) GuildBanCreate(guildID, userID int64, days int) (err error) {
 	return s.GuildBanCreateWithReason(guildID, userID, "", days)
 }
 
-// GuildBanCreateWithReason bans the given user from the given guild also providing a reaso.
+// GuildBanCreateWithReason bans the given user from the given guild also providing a reason.
 // guildID   : The ID of a Guild.
 // userID    : The ID of a User
 // reason    : The reason for this ban
@@ -1132,7 +1132,7 @@ func (s *Session) GuildRoleEdit(guildID, roleID int64, name string, color int, h
 	return
 }
 
-// GuildRoleReorder reoders guild roles
+// GuildRoleReorder reorders guild roles
 // guildID   : The ID of a Guild.
 // roles     : A list of ordered roles.
 func (s *Session) GuildRoleReorder(guildID int64, roles []*Role) (st []*Role, err error) {
@@ -1545,7 +1545,7 @@ func (s *Session) ChannelMessages(channelID int64, limit int, beforeID, afterID,
 }
 
 // ChannelMessage gets a single message by ID from a given channel.
-// channeld  : The ID of a Channel
+// channelID  : The ID of a Channel
 // messageID : the ID of a Message
 func (s *Session) ChannelMessage(channelID, messageID int64) (st *Message, err error) {
 
@@ -1559,7 +1559,7 @@ func (s *Session) ChannelMessage(channelID, messageID int64) (st *Message, err e
 }
 
 // ChannelMessageAck acknowledges and marks the given message as read
-// channeld  : The ID of a Channel
+// channelID  : The ID of a Channel
 // messageID : the ID of a Message
 // lastToken : token returned by last ack
 func (s *Session) ChannelMessageAck(channelID, messageID int64, lastToken string) (st *Ack, err error) {
@@ -2636,7 +2636,7 @@ func (s *Session) GetGuildApplicationCommandPermissions(applicationID int64, gui
 
 // EditGuildApplicationCommandPermissions Edits command permissions for a specific command for your application in a guild.
 // PUT /applications/{application.id}/guilds/{guild.id}/commands/{command.id}/permissions
-// TODO: what does this return? docs dosn't say
+// TODO: what does this return? docs doesn't say
 func (s *Session) EditGuildApplicationCommandPermissions(applicationID int64, guildID int64, cmdID int64, permissions []*ApplicationCommandPermissions) (err error) {
 	data := struct {
 		Permissions []*ApplicationCommandPermissions `json:"permissions"`

@@ -33,7 +33,7 @@ type slashCommandsContainer struct {
 	slashCommandID     int64
 }
 
-// register containers seperately as they need special handling
+// register containers separately as they need special handling
 //
 // note: we could infer all the info from the members of the container
 // but i felt that this explicit method was better and less quirky
@@ -154,7 +154,7 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 
 	cast, ok := cmd.Command.(*YAGCommand)
 	if !ok {
-		// probably a container, which is handled seperately, see RegisterSlashCommandsContainer
+		// probably a container, which is handled separately, see RegisterSlashCommandsContainer
 		return nil
 	}
 
@@ -439,14 +439,14 @@ func sumContainerSlashCommandsChildren(container *slashCommandsContainer, overri
 	return
 }
 
-func toApplicationCommandPermissions(gs *dstate.GuildSet, defaultEnabeld bool, allowRoles, denyRoles []int64, allowAll, denyAll bool) []*discordgo.ApplicationCommandPermissions {
+func toApplicationCommandPermissions(gs *dstate.GuildSet, defaultEnabled bool, allowRoles, denyRoles []int64, allowAll, denyAll bool) []*discordgo.ApplicationCommandPermissions {
 	result := make([]*discordgo.ApplicationCommandPermissions, 0, 10)
 
 	// allGuildroles := guildRoles(gs)
 
 	// Add allow roles
 	// if allowAll {
-	// 	if !defaultEnabeld {
+	// 	if !defaultEnabled {
 	// 		result = append(result, &discordgo.ApplicationCommandPermissions{
 	// 			ID:         gs.ID,
 	// 			Kind:       discordgo.CommandPermissionTypeRole,
@@ -465,7 +465,7 @@ func toApplicationCommandPermissions(gs *dstate.GuildSet, defaultEnabeld bool, a
 
 	// for now were keeping the permissions simple because of limitations with interactions currently
 	if allowAll || len(allowRoles) > 0 {
-		if !defaultEnabeld {
+		if !defaultEnabled {
 			result = append(result, &discordgo.ApplicationCommandPermissions{
 				ID:         gs.ID,
 				Type:       discordgo.ApplicationCommandPermissionTypeRole,
@@ -473,7 +473,7 @@ func toApplicationCommandPermissions(gs *dstate.GuildSet, defaultEnabeld bool, a
 			})
 		}
 	} else if denyAll {
-		if defaultEnabeld {
+		if defaultEnabled {
 			// for _, v := range allGuildroles {
 			// 	if v == gs.ID {
 			// 		continue
@@ -518,15 +518,15 @@ func (yc *YAGCommand) TopLevelSlashCommandPermissions(overrides []*models.Comman
 	return result, nil
 }
 
-func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChannelsOverride, defaultEnabeld bool, containerChain []*dcmd.Container, gs *dstate.GuildSet) (allowRoles []int64, denyRoles []int64, allowAll bool, denyAll bool, err error) {
+func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChannelsOverride, defaultEnabled bool, containerChain []*dcmd.Container, gs *dstate.GuildSet) (allowRoles []int64, denyRoles []int64, allowAll bool, denyAll bool, err error) {
 	allowRoles = make([]int64, 0)
 	denyRoles = make([]int64, 0)
 	allowAll = true
 	// denyAll = true
 
-	// generate from custom roles funct first
+	// generate from custom roles func first
 	if yc.RolesRunFunc != nil {
-		allowRoles, denyRoles, allowAll, denyAll, err = slashCommandPermissionsFromRolesFunc(yc.RolesRunFunc, gs, defaultEnabeld)
+		allowRoles, denyRoles, allowAll, denyAll, err = slashCommandPermissionsFromRolesFunc(yc.RolesRunFunc, gs, defaultEnabled)
 		if err != nil {
 			return
 		}
@@ -534,8 +534,8 @@ func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChanne
 
 	// check fixed required perms on the command
 	if len(yc.RequireDiscordPerms) > 0 {
-		roles := findRolesWithDiscordPerms(gs, yc.RequireDiscordPerms, defaultEnabeld)
-		if defaultEnabeld {
+		roles := findRolesWithDiscordPerms(gs, yc.RequireDiscordPerms, defaultEnabled)
+		if defaultEnabled {
 			denyRoles = mergeInt64Slice(denyRoles, roles)
 		} else {
 			if allowAll {
@@ -560,7 +560,7 @@ func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChanne
 	commonRequiredRoles, commonBlacklistedRoles := channelOverridesCommonSet(fullName, overrides)
 	if len(commonRequiredRoles) > 0 {
 
-		if defaultEnabeld {
+		if defaultEnabled {
 			// Apply the inverse of the required roles to the deny roles, this effectively means were only blacklisting roles.
 			// which means the permissions need to be updated after any roles are added.
 		OUTER:
@@ -624,7 +624,7 @@ OUTER:
 }
 
 // Since permissions in discord permissions is not per channel we can't apply this losslessly, which means i had to make a compromise
-// and that compromise was to allow the slash command to be used in cases where it can't (altough during actual execution these will be checked again and you wont be able to run it in the end)
+// and that compromise was to allow the slash command to be used in cases where it can't (although during actual execution these will be checked again and you wont be able to run it in the end)
 // blacklistRoles is a common set of all the overrides, meaning unless a blacklist role is present in all relevant overrides for the command it wont be applied
 // allowRoles is a sum of all the relevant overrides
 // this means that if a command is enabled in only a single channel, it will still show up as usable in all channels (but again, execution will be blocked if you try to use it)
@@ -703,11 +703,11 @@ OUTER:
 }
 
 // IsSlashCommandPermissionCommandEnabled following up on the no per channel permissions for slash commands
-// This might seem like a mouthfull but essentially for us to be able to disable a command in a guild
-// it has to be disabled in all channels. If its enabled it atleast 1 channel override of command override we need to be able to pick it
+// This might seem like a mouthful but essentially for us to be able to disable a command in a guild
+// it has to be disabled in all channels. If its enabled it at least 1 channel override of command override we need to be able to pick it
 // from the slash command list
 func IsSlashCommandPermissionCommandEnabled(fullName string, overrides []*models.CommandsChannelsOverride) bool {
-	// check if atleast one command override has it explicitly enabled, this takes precedence
+	// check if at least one command override has it explicitly enabled, this takes precedence
 	for _, override := range overrides {
 		if isSlashCommandEnabledChannelOverride(fullName, override) {
 			return true

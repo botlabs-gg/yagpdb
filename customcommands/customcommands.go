@@ -247,7 +247,7 @@ func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
 		}
 	}
 
-	// check command specifc restrictions
+	// check command specific restrictions
 	for _, v := range cc.Channels {
 		if v == channel {
 			if cc.ChannelsWhitelistMode {

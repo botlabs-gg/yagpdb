@@ -231,7 +231,7 @@ func (tracker *ShardTracker) HandleEvent(s *discordgo.Session, i interface{}) {
 		// fmt.Println("Got thread list sync: ", evt.Channels)
 		tracker.handleThreadListSync(evt)
 	case *discordgo.ThreadMemberUpdate:
-		// fmt.Println("Got thread memer update: ", evt.Flags, evt.ID)
+		// fmt.Println("Got thread member update: ", evt.Flags, evt.ID)
 	case *discordgo.ThreadMembersUpdate:
 		// fmt.Println("Got thread members update: ", evt.RemovedMembers)
 
@@ -555,7 +555,7 @@ func (shard *ShardTracker) innerHandleMemberUpdate(ms *dstate.MemberState, doThr
 
 	members, ok := shard.members[ms.GuildID]
 	if !ok {
-		// intialize map
+		// initialize map
 		shard.members[ms.GuildID] = make(map[int64]*WrappedMember)
 		shard.members[ms.GuildID][ms.User.ID] = wrapped
 		return
@@ -597,7 +597,7 @@ func (shard *ShardTracker) handleMemberDelete(mr *discordgo.GuildMemberRemove) {
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
 
-	// Update the memebr count
+	// Update the member count
 	gs, ok := shard.guilds[mr.GuildID]
 	if !ok {
 		return
@@ -760,7 +760,7 @@ func (shard *ShardTracker) innerHandlePresenceUpdate(ms *dstate.MemberState, ski
 
 	members, ok := shard.members[ms.GuildID]
 	if !ok {
-		// intialize slice
+		// initialize slice
 		if skipFullUserCheck || ms.User.Username != "" {
 			// only add to state if we have the user object
 			shard.members[ms.GuildID] = make(map[int64]*WrappedMember)

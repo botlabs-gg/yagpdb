@@ -24,7 +24,7 @@ var Command = &commands.YAGCommand{
 	RunFunc:     cmdFuncYagStatus,
 }
 
-var logger = common.GetFixedPrefixLogger("yagstatuc_cmd")
+var logger = common.GetFixedPrefixLogger("yagstatus_cmd")
 
 func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 	var memStats runtime.MemStats
@@ -90,7 +90,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 	}
 
 	return embed, nil
-	// return &commandsystem.FallbackEmebd{embed}, nil
+	// return &commandsystem.FallbackEmbed{embed}, nil
 }
 
 type PluginStatus interface {

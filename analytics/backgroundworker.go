@@ -52,7 +52,7 @@ func (p *Plugin) saveTempStats() error {
 	err := common.RedisPool.Do(radix.WithConn("", func(c radix.Conn) error {
 		s := radix.NewScanner(c, radix.ScanOpts{
 			Command: "SCAN",
-			Pattern: "anaylytics_active_units.*",
+			Pattern: "analytics_active_units.*",
 		})
 
 		var key string

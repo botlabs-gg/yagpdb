@@ -157,7 +157,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 			d1 := activatedTriggers[i].ParsedSettings.(*ViolationsTriggerData)
 			d2 := activatedTriggers[j].ParsedSettings.(*ViolationsTriggerData)
 
-			return d1.Treshold > d2.Treshold
+			return d1.Threshold > d2.Threshold
 		})
 
 		// do a second pass with the triggers sorted, incase only the highest should be triggered
@@ -280,7 +280,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 		}
 	}
 
-	activatededRules := false
+	activatedRules := false
 
 	for _, rs := range rulesets {
 		if !rs.RSModel.Enabled {
@@ -347,12 +347,12 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 		}
 
 		go p.RulesetRulesTriggered(ctxData, true)
-		activatededRules = true
+		activatedRules = true
 
 		logger.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(triggeredRules), " rules")
 	}
 
-	return activatededRules
+	return activatedRules
 }
 
 func (p *Plugin) RulesetRulesTriggered(ctxData *TriggeredRuleData, checkedConditions bool) {
@@ -370,7 +370,7 @@ func (p *Plugin) RulesetRulesTriggered(ctxData *TriggeredRuleData, checkedCondit
 
 	filteredRules := make([]*ParsedRule, 0, len(ctxData.TriggeredRules))
 
-	// Check the rule specific conditins
+	// Check the rule specific conditions
 	for _, rule := range ctxData.TriggeredRules {
 		ctxData.CurrentRule = rule
 

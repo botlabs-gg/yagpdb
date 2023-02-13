@@ -58,7 +58,7 @@ func init() {
 			&PromptCard{Prompt: `Now in bookstores: "The Audacity of %s" by Barack Obama.`},
 			&PromptCard{Prompt: `Oprah's book of the month is "%s For %s: A Story of Hope."`},
 			&PromptCard{Prompt: `Patient presents with %s. Likely a result of %s.`},
-			&PromptCard{Prompt: `Puberty is a time of change. You might notice hair growing in new places. You might develop an intrest in %s. This is normal.`},
+			&PromptCard{Prompt: `Puberty is a time of change. You might notice hair growing in new places. You might develop an interest in %s. This is normal.`},
 			&PromptCard{Prompt: `She's up all night for good fun. I'm up all night for %s.`},
 			&PromptCard{Prompt: `The Japanese have developed a smaller, more efficient version of %s.`},
 			&PromptCard{Prompt: `The six things I could never do without: oxygen, Facebook, chocolate, Netflix, friends, and %s LOL!`},

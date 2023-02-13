@@ -35,7 +35,7 @@ const (
 	GameStatePreGame          GameState = 0 // Before the game starts
 	GameStatePreRoundDelay    GameState = 1 // Countdown before a round starts
 	GameStatePickingResponses GameState = 2 // Players are picking responses for the prompt card
-	GameStatePickingWinner    GameState = 3 // Cardzar is picking the winning response
+	GameStatePickingWinner    GameState = 3 // Cardczar is picking the winning response
 	GameStateEnded            GameState = 4 // Game is over, someone won
 )
 
@@ -79,7 +79,7 @@ var (
 
 type Game struct {
 	sync.RWMutex `json:"-" msgpack:"-"`
-	// Never chaged
+	// Never changed
 	Manager *GameManager       `json:"-" msgpack:"-"`
 	Session *discordgo.Session `json:"-" msgpack:"-"`
 
@@ -91,7 +91,7 @@ type Game struct {
 	// The user that created this game
 	GameMaster int64
 
-	// The current cardzar
+	// The current cardczar
 	CurrentCardCzar int64
 
 	PlayerLimit        int
@@ -109,18 +109,18 @@ type Game struct {
 	// The time the most recent action was taken, if we go too long without a user action we expire the game
 	LastAction time.Time
 
-	CurrentPropmpt *PromptCard
+	CurrentPrompt *PromptCard
 
 	LastMenuMessage int64
 
-	Responses []*PickedResonse
+	Responses []*PickedResponse
 
 	stopped       bool
 	tickerRunning bool
 	stopch        chan bool
 }
 
-type PickedResonse struct {
+type PickedResponse struct {
 	Player     *Player
 	Selections []ResponseCard
 }
@@ -248,7 +248,7 @@ func (g *Game) addPlayer(id int64, username string) bool {
 		msg = "Joined the game!"
 	}
 
-	go g.sendAnnouncment(fmt.Sprintf("<@%d> %s! (%d/%d)", id, msg, numPlaying+1, g.PlayerLimit), false)
+	go g.sendAnnouncement(fmt.Sprintf("<@%d> %s! (%d/%d)", id, msg, numPlaying+1, g.PlayerLimit), false)
 	return true
 }
 
@@ -298,7 +298,7 @@ func (g *Game) removePlayer(id int64) bool {
 		return false
 	}
 
-	go g.sendAnnouncment(fmt.Sprintf("<@%d> Left the game (%d/%d)", id, numPlaying, g.PlayerLimit), false)
+	go g.sendAnnouncement(fmt.Sprintf("<@%d> Left the game (%d/%d)", id, numPlaying, g.PlayerLimit), false)
 
 	if g.CurrentCardCzar == id && g.State != GameStatePreGame && g.State != GameStatePreRoundDelay {
 		g.nextRound()
@@ -308,7 +308,7 @@ func (g *Game) removePlayer(id int64) bool {
 		for _, v := range g.Players {
 			if v.InGame {
 				g.GameMaster = v.ID
-				go g.sendAnnouncment(fmt.Sprintf("GameMaster left, assigned <@%d> as new game master.", v.ID), false)
+				go g.sendAnnouncement(fmt.Sprintf("GameMaster left, assigned <@%d> as new game master.", v.ID), false)
 				break
 			}
 		}
@@ -358,7 +358,7 @@ func (g *Game) getRandomPlayerCards(num int) []ResponseCard {
 	return result
 }
 
-func (g *Game) sendAnnouncment(msg string, allPlayers bool) {
+func (g *Game) sendAnnouncement(msg string, allPlayers bool) {
 	embed := &discordgo.MessageEmbed{
 		Description: msg,
 	}
@@ -374,7 +374,7 @@ func (g *Game) sendAnnouncment(msg string, allPlayers bool) {
 	g.Session.ChannelMessageSendEmbed(g.MasterChannel, embed)
 }
 
-func (g *Game) sendAnnouncmentMenu(msg string) {
+func (g *Game) sendAnnouncementMenu(msg string) {
 	embed := &discordgo.MessageEmbed{
 		Description: msg,
 	}
@@ -455,7 +455,7 @@ func (g *Game) Tick() {
 				continue
 			}
 
-			if !v.MadeSelections(g.CurrentPropmpt) {
+			if !v.MadeSelections(g.CurrentPrompt) {
 				allPlayersDone = false
 				if !v.sent15sWarning && time.Since(g.StateEntered) > (PickResponseDuration-(time.Second*15)) {
 					v.sent15sWarning = true
@@ -471,7 +471,7 @@ func (g *Game) Tick() {
 				g.donePickingResponses()
 			} else {
 				// No one picked any cards...?
-				g.sendAnnouncment("No one picked any cards, going to next round", false)
+				g.sendAnnouncement("No one picked any cards, going to next round", false)
 				g.nextRound()
 			}
 		}
@@ -520,7 +520,7 @@ func (g *Game) numUsersInGame() int {
 func (g *Game) startRound() {
 	if g.numUsersInGame() < 2 {
 		g.setState(GameStatePreGame)
-		g.sendAnnouncment("Not enough players...", false)
+		g.sendAnnouncement("Not enough players...", false)
 		return
 	}
 
@@ -550,18 +550,18 @@ func (g *Game) startRound() {
 	}
 
 	lastPick := 1
-	if g.CurrentPropmpt != nil {
-		lastPick = g.CurrentPropmpt.NumPick
+	if g.CurrentPrompt != nil {
+		lastPick = g.CurrentPrompt.NumPick
 	}
 
-	// Pick random propmpt
-	g.CurrentPropmpt = g.randomPrompt()
+	// Pick random prompt
+	g.CurrentPrompt = g.randomPrompt()
 
 	// Give each player a random card (if they're below 10 cards)
 	g.giveEveryoneCards(lastPick)
 
 	if !g.VoteMode {
-		// Pick next cardzar
+		// Pick next cardczar
 		g.CurrentCardCzar = NextCardCzar(g.Players, g.CurrentCardCzar)
 	}
 
@@ -598,7 +598,7 @@ func NextCardCzar(players []*Player, current int64) int64 {
 
 func (g *Game) randomPrompt() *PromptCard {
 	if len(g.availablePrompts) < 1 {
-		g.loadPackPrompts() // ran out of cards, just relaod the packs
+		g.loadPackPrompts() // ran out of cards, just reload the packs
 	}
 
 	i := rand.Intn(len(g.availablePrompts))
@@ -636,7 +636,7 @@ func (g *Game) presentStartRound() {
 				return
 			}
 
-			p.PresentBoard(g.Session, g.CurrentPropmpt, g.CurrentCardCzar)
+			p.PresentBoard(g.Session, g.CurrentPrompt, g.CurrentCardCzar)
 		}(player)
 	}
 
@@ -650,7 +650,7 @@ func (g *Game) presentStartRound() {
 	fields := []*discordgo.MessageEmbedField{
 		&discordgo.MessageEmbedField{
 			Name:  "Prompt",
-			Value: g.CurrentPropmpt.PlaceHolder(),
+			Value: g.CurrentPrompt.PlaceHolder(),
 		},
 	}
 
@@ -690,7 +690,7 @@ func (g *Game) donePickingResponses() {
 			continue
 		}
 
-		if len(v.SelectedCards) < g.CurrentPropmpt.NumPick {
+		if len(v.SelectedCards) < g.CurrentPrompt.NumPick {
 			go g.Session.ChannelMessageSend(v.Channel, fmt.Sprintf("You didn't respond in time... winner is being picked in <#%d>", g.MasterChannel))
 			v.SelectedCards = nil
 			continue
@@ -701,7 +701,7 @@ func (g *Game) donePickingResponses() {
 			selections = append(selections, v.Cards[sel])
 		}
 
-		g.Responses = append(g.Responses, &PickedResonse{
+		g.Responses = append(g.Responses, &PickedResponse{
 			Player:     v,
 			Selections: selections,
 		})
@@ -709,7 +709,7 @@ func (g *Game) donePickingResponses() {
 
 	// Shuffle them
 	perm := rand.Perm(len(g.Responses))
-	newResponses := make([]*PickedResonse, len(g.Responses))
+	newResponses := make([]*PickedResponse, len(g.Responses))
 	for i, v := range perm {
 		newResponses[i] = g.Responses[v]
 	}
@@ -739,7 +739,7 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 		Fields: []*discordgo.MessageEmbedField{
 			&discordgo.MessageEmbedField{
 				Name:  "Prompt",
-				Value: g.CurrentPropmpt.PlaceHolder(),
+				Value: g.CurrentPrompt.PlaceHolder(),
 			},
 			&discordgo.MessageEmbedField{
 				Name: "Candidates",
@@ -752,7 +752,7 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 	for i, v := range g.Responses {
 		text := ""
 
-		filledPrompt := g.CurrentPropmpt.WithCards(v.Selections)
+		filledPrompt := g.CurrentPrompt.WithCards(v.Selections)
 
 		if g.VoteMode {
 			text = fmt.Sprintf("%s: %s (`%d`) \n\n", CardSelectionEmojis[i], filledPrompt, v.Player.ReceivedVotes)
@@ -957,7 +957,7 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 			g.LastAction = time.Now()
 			if g.State == GameStatePreGame && g.GameMaster == user.ID {
 				g.setState(GameStatePreRoundDelay)
-				go g.sendAnnouncment(fmt.Sprintf("Starting in %d seconds", int(PreRoundDelayDuration.Seconds())), false)
+				go g.sendAnnouncement(fmt.Sprintf("Starting in %d seconds", int(PreRoundDelayDuration.Seconds())), false)
 			} else if g.GameMaster == user.ID {
 				for _, v := range g.Players {
 					v.SelectedCards = nil
@@ -966,7 +966,7 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 				g.Responses = nil
 				g.setState(GameStatePreGame)
 
-				go g.sendAnnouncmentMenu(fmt.Sprintf("Paused, react with %s to continue, the game can be paused for max 30 minutes before it expires.", PlayPauseEmoji))
+				go g.sendAnnouncementMenu(fmt.Sprintf("Paused, react with %s to continue, the game can be paused for max 30 minutes before it expires.", PlayPauseEmoji))
 			}
 
 			return
@@ -1028,7 +1028,7 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 		} else {
 			winner := g.Responses[emojiIndex]
 			winner.Player.Wins++
-			g.presentWinners([]*PickedResonse{winner})
+			g.presentWinners([]*PickedResponse{winner})
 
 			if g.Players[0].Wins >= g.WinLimit {
 				go g.Manager.RemoveGame(g.MasterChannel)
@@ -1070,8 +1070,8 @@ func (g *Game) HandleMessageCreate(ic *discordgo.InteractionCreate) {
 			player.Cards[v] = ResponseCard(FilterEveryoneMentions(cardResponse))
 
 			msg := "Selected **" + cardResponse + "**, "
-			if len(player.SelectedCards) < g.CurrentPropmpt.NumPick {
-				msg += fmt.Sprintf("select %d more card(s)", g.CurrentPropmpt.NumPick-len(player.SelectedCards))
+			if len(player.SelectedCards) < g.CurrentPrompt.NumPick {
+				msg += fmt.Sprintf("select %d more card(s)", g.CurrentPrompt.NumPick-len(player.SelectedCards))
 			} else {
 				msg += fmt.Sprintf("go to <#%d> and wait for the other players to finish their selections, the winner will be picked there", g.MasterChannel)
 			}
@@ -1105,7 +1105,7 @@ func FilterEveryoneMentions(s string) string {
 
 func (g *Game) allVoted() {
 
-	winners := make([]*PickedResonse, 0)
+	winners := make([]*PickedResponse, 0)
 
 	// Find the top votes
 	winningVotes := 0
@@ -1132,10 +1132,10 @@ func (g *Game) allVoted() {
 	}
 }
 
-func (g *Game) presentWinners(winningPicks []*PickedResonse) {
+func (g *Game) presentWinners(winningPicks []*PickedResponse) {
 
 	// Sort the players by the number of wins
-	// note: this wont change the cardzar order as thats done as lowest -> highest user ids
+	// note: this wont change the cardczar order as thats done as lowest -> highest user ids
 	sort.Slice(g.Players, func(i int, j int) bool {
 		return g.Players[i].Wins > g.Players[j].Wins
 	})
@@ -1169,7 +1169,7 @@ func (g *Game) presentWinners(winningPicks []*PickedResonse) {
 		if i != 0 {
 			winnerCards += "\n"
 		}
-		winnerCards += g.CurrentPropmpt.WithCards(v.Selections)
+		winnerCards += g.CurrentPrompt.WithCards(v.Selections)
 	}
 
 	title := ""
@@ -1217,7 +1217,7 @@ func (g *Game) presentWinners(winningPicks []*PickedResonse) {
 }
 
 func (g *Game) playerPickedResponseReaction(player *Player, response string, ic *discordgo.InteractionCreate) {
-	if len(player.SelectedCards) >= g.CurrentPropmpt.NumPick {
+	if len(player.SelectedCards) >= g.CurrentPrompt.NumPick {
 		return
 	}
 
@@ -1235,7 +1235,7 @@ func (g *Game) playerPickedResponseReaction(player *Player, response string, ic 
 	}
 
 	if emojiIndex >= len(player.Cards) {
-		// Somehow picked a reaction that they cant (probably added the reaction themselv to mess with the bot)
+		// Somehow picked a reaction that they cant (probably added the reaction themself to mess with the bot)
 		return
 	}
 
@@ -1272,7 +1272,7 @@ func (g *Game) playerPickedResponseReaction(player *Player, response string, ic 
 			showTextModal = true
 		} else {
 			respMsg = fmt.Sprintf("Selected **%s**", card)
-			if len(player.SelectedCards) >= g.CurrentPropmpt.NumPick {
+			if len(player.SelectedCards) >= g.CurrentPrompt.NumPick {
 				respMsg += fmt.Sprintf(", go to <#%d> and wait for the other players to finish their selections, the winner will be picked there", g.MasterChannel)
 			} else {
 				respMsg += fmt.Sprintf(", select %d more cards", g.CurrentPropmpt.NumPick-len(player.SelectedCards))
@@ -1323,7 +1323,7 @@ func (g *Game) loadFromSerializedState() {
 	g.tickerRunning = true
 	g.Unlock()
 
-	go g.sendAnnouncment("Game has been fully loaded, it will still take another seconds before the game has resumed.", false)
+	go g.sendAnnouncement("Game has been fully loaded, it will still take another seconds before the game has resumed.", false)
 }
 
 type Player struct {

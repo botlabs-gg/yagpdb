@@ -159,7 +159,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	})
 
 	templateData["RedditConfig"] = currentConfig
-	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Subreddit))
+	templateData.AddAlerts(web.SuccessAlert("Successfully added subreddit feed for /r/" + watchItem.Subreddit))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: watchItem.Subreddit}))
 	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
@@ -201,7 +201,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 		return templateData
 	}
 
-	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
+	templateData.AddAlerts(web.SuccessAlert("Successfully updated reddit feed! :D"))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
 	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
@@ -236,7 +236,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 		return templateData
 	}
 
-	templateData.AddAlerts(web.SucessAlert("Sucessfully removed subreddit feed for /r/" + item.Subreddit))
+	templateData.AddAlerts(web.SuccessAlert("Successfully removed subreddit feed for /r/" + item.Subreddit))
 
 	// Remove it form the displayed list
 	for k, c := range currentConfig {

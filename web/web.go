@@ -62,15 +62,15 @@ var (
 	confAdLinkurl    = config.RegisterOption("yagpdb.ad.link", "Link to follow when clicking on the ad", "")
 	confAdWidth      = config.RegisterOption("yagpdb.ad.w", "Ad width", 0)
 	confAdHeight     = config.RegisterOption("yagpdb.ad.h", "Ad Height", 0)
-	ConfAdVideos     = config.RegisterOption("yagpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
+	ConfAdVideos     = config.RegisterOption("yagpdb.ad.video_paths", "Comma separated list of video paths in different formats", "")
 	confDemoServerID = config.RegisterOption("yagpdb.web.demo_server_id", "Server ID for live demo links", 0)
 
 	ConfAdsTxt = config.RegisterOption("yagpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
 
 	confDisableRequestLogging = config.RegisterOption("yagpdb.disable_request_logging", "Disable logging of http requests to web server", false)
 
-	// can be overriden by plugins
-	// main prurpose is to plug in a onboarding process through a properietary plugin
+	// can be overridden by plugins
+	// main purpose is to plug in a onboarding process through a proprietary plugin
 	SelectServerHomePageHandler http.Handler = RenderHandler(HandleSelectServer, "cp_selectserver")
 )
 
@@ -293,7 +293,7 @@ func setupRoutes() *goji.Mux {
 	RootMux.Handle(pat.Get("/api/:server"), ServerPublicAPIMux)
 	RootMux.Handle(pat.Get("/api/:server/*"), ServerPublicAPIMux)
 
-	ServerPublicAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChanenlPermissions)))
+	ServerPublicAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChannelPermissions)))
 
 	// Server selection has its own handler
 	RootMux.Handle(pat.Get("/manage"), SelectServerHomePageHandler)

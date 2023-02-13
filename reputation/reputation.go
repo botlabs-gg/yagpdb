@@ -403,6 +403,6 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 func (p *Plugin) AllFeatureFlags() []string {
 	return []string{
 		featureFlagReputationEnabled, // set if reputation is enabled on this server
-		featureFlagThanksEnabled,     // set if reputation thanks detection is anabled
+		featureFlagThanksEnabled,     // set if reputation thanks detection is enabled
 	}
 }

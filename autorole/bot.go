@@ -471,7 +471,7 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	update := evt.GuildMemberUpdate()
 	member := update.Member
-	// ignore timedout users
+	// ignore timed out users
 	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
 		return false, nil
 	}

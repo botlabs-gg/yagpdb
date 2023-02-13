@@ -156,7 +156,7 @@ func HandleLandingPage(w http.ResponseWriter, r *http.Request) (TemplateData, er
 
 // BotStatus represents the bot's full status
 type BotStatus struct {
-	// Invidual statuses
+	// Individual statuses
 	HostStatuses []*HostStatus `json:"host_statuses"`
 	NumNodes     int           `json:"num_nodes"`
 	TotalShards  int           `json:"total_shards"`
@@ -168,7 +168,7 @@ type BotStatus struct {
 	EventsPerSecondMin     float64 `json:"events_per_second_min"`
 	EventsPerSecondMax     float64 `json:"events_per_second_max"`
 
-	UptimeMax time.Duration `json:"uptim_emax"`
+	UptimeMax time.Duration `json:"uptime_max"`
 	UptimeMin time.Duration `json:"uptime_min"`
 }
 
@@ -370,7 +370,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 	return HandleStatusHTML(w, r)
 }
 
-func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) interface{} {
 	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)

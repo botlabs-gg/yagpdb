@@ -15,7 +15,7 @@ Encoding
 
 // Encoding a file and saving it to disk
 encodeSession := dca.EncodeFile("path/to/file.mp3", dca.StdEncodeOptions)
-// Make sure everything is cleaned up, that for example the encoding process if any issues happened isnt lingering around
+// Make sure everything is cleaned up, that for example the encoding process if any issues happened isn't lingering around
 defer encodeSession.Cleanup()
 
 output, err := os.Create("output.dca")
@@ -26,7 +26,7 @@ if err != nil {
 io.Copy(output, encodeSession)
 ```
 
-Decoding, the decoder automatically detects  dca version aswell as if metadata was available
+Decoding, the decoder automatically detects  dca version as well as if metadata was available
 ```go
 // inputReader is an io.Reader, like a file for example
 decoder := dca.NewDecoder(inputReader)

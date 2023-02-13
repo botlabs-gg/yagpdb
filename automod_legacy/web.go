@@ -33,22 +33,22 @@ func (p *Plugin) InitWeb() {
 		Icon: "fas fa-robot",
 	})
 
-	autmodMux := goji.SubMux()
-	web.CPMux.Handle(pat.New("/automod_legacy/*"), autmodMux)
-	web.CPMux.Handle(pat.New("/automod_legacy"), autmodMux)
+	automodMux := goji.SubMux()
+	web.CPMux.Handle(pat.New("/automod_legacy/*"), automodMux)
+	web.CPMux.Handle(pat.New("/automod_legacy"), automodMux)
 
 	// All handlers here require guild channels present
-	autmodMux.Use(web.RequireBotMemberMW)
-	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageServer, discordgo.PermissionModerateMembers))
+	automodMux.Use(web.RequireBotMemberMW)
+	automodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageServer, discordgo.PermissionModerateMembers))
 
 	getHandler := web.RenderHandler(HandleAutomod, "cp_automod_legacy")
 
-	autmodMux.Handle(pat.Get("/"), getHandler)
-	autmodMux.Handle(pat.Get(""), getHandler)
+	automodMux.Handle(pat.Get("/"), getHandler)
+	automodMux.Handle(pat.Get(""), getHandler)
 
 	// Post handlers
-	autmodMux.Handle(pat.Post("/"), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
-	autmodMux.Handle(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
+	automodMux.Handle(pat.Post("/"), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
+	automodMux.Handle(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
 }
 
 func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {

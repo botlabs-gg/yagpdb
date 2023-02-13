@@ -31,7 +31,7 @@ func (def *ArgDef) StandardSlashCommandOption(typ discordgo.ApplicationCommandOp
 	}
 }
 
-// CutStringShort stops a strinng at "l"-3 if it's longer than "l" and adds "..."
+// CutStringShort stops a string at "l"-3 if it's longer than "l" and adds "..."
 func cutStringShort(s string, l int) string {
 	var mainBuf bytes.Buffer
 	var latestBuf bytes.Buffer
@@ -423,7 +423,7 @@ type ArgType interface {
 	// CheckCompatibility reports the degree to which the input matches the type.
 	CheckCompatibility(def *ArgDef, part string) CompatibilityResult
 
-	// Attempt to parse it, returning any error if one occured.
+	// Attempt to parse it, returning any error if one occurred.
 	ParseFromMessage(def *ArgDef, part string, data *Data) (val interface{}, err error)
 	ParseFromInteraction(def *ArgDef, data *Data, options *SlashCommandsParseOptions) (val interface{}, err error)
 

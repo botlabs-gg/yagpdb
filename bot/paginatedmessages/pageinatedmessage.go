@@ -55,7 +55,7 @@ func (p *Plugin) BotInit() {
 }
 
 type PaginatedMessage struct {
-	// immutable fields, safe to access without a lock, don't write to these, i dont see why you would need to either...
+	// immutable fields, safe to access without a lock, don't write to these, i don't see why you would need to either...
 	MessageID int64
 	ChannelID int64
 	GuildID   int64

@@ -61,18 +61,18 @@ func (tracker *InMemoryTracker) GetMemberPermissions(guildID int64, channelID in
 		return 0, false
 	}
 
-	return tracker.getRolePermisisonsLocked(shard, guildID, channelID, memberID, member.Member.Roles)
+	return tracker.getRolePermissionsLocked(shard, guildID, channelID, memberID, member.Member.Roles)
 }
 
-func (tracker *InMemoryTracker) GetRolePermisisons(guildID int64, channelID int64, memberID int64, roles []int64) (perms int64, ok bool) {
+func (tracker *InMemoryTracker) GetRolePermissions(guildID int64, channelID int64, memberID int64, roles []int64) (perms int64, ok bool) {
 	shard := tracker.getGuildShard(guildID)
 	shard.mu.RLock()
 	defer shard.mu.RUnlock()
 
-	return tracker.getRolePermisisonsLocked(shard, guildID, channelID, memberID, roles)
+	return tracker.getRolePermissionsLocked(shard, guildID, channelID, memberID, roles)
 }
 
-func (tracker *InMemoryTracker) getRolePermisisonsLocked(shard *ShardTracker, guildID int64, channelID int64, memberID int64, roles []int64) (perms int64, ok bool) {
+func (tracker *InMemoryTracker) getRolePermissionsLocked(shard *ShardTracker, guildID int64, channelID int64, memberID int64, roles []int64) (perms int64, ok bool) {
 	ok = true
 
 	guild, ok := shard.guilds[guildID]

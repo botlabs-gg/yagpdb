@@ -67,7 +67,7 @@ type Session struct {
 	// The http client used for REST requests
 	Client *http.Client
 
-	// Stores the last HeartbeatAck that was recieved (in UTC)
+	// Stores the last HeartbeatAck that was received (in UTC)
 	LastHeartbeatAck time.Time
 
 	// used to deal with rate limits
@@ -252,7 +252,7 @@ func (c *Channel) Mention() string {
 	return fmt.Sprintf("<#%d>", c.ID)
 }
 
-// A ChannelEdit holds Channel Feild data for a channel edit.
+// A ChannelEdit holds Channel Field data for a channel edit.
 type ChannelEdit struct {
 	Name                 string                 `json:"name,omitempty"`
 	Topic                string                 `json:"topic,omitempty"`
@@ -980,7 +980,7 @@ type UserGuildSettingsChannelOverride struct {
 
 // A UserGuildSettings stores data for a users guild settings.
 type UserGuildSettings struct {
-	SupressEveryone      bool                                `json:"suppress_everyone"`
+	SuppressEveryone      bool                                `json:"suppress_everyone"`
 	Muted                bool                                `json:"muted"`
 	MobilePush           bool                                `json:"mobile_push"`
 	MessageNotifications int                                 `json:"message_notifications"`
@@ -990,7 +990,7 @@ type UserGuildSettings struct {
 
 // A UserGuildSettingsEdit stores data for editing UserGuildSettings
 type UserGuildSettingsEdit struct {
-	SupressEveryone      bool                                         `json:"suppress_everyone"`
+	SuppressEveryone      bool                                         `json:"suppress_everyone"`
 	Muted                bool                                         `json:"muted"`
 	MobilePush           bool                                         `json:"mobile_push"`
 	MessageNotifications int                                          `json:"message_notifications"`
@@ -1089,7 +1089,7 @@ const (
 	ErrCodeMissingAccess                             = 50001
 	ErrCodeInvalidAccountType                        = 50002
 	ErrCodeCannotExecuteActionOnDMChannel            = 50003
-	ErrCodeEmbedCisabled                             = 50004
+	ErrCodeEmbedDisabled                             = 50004
 	ErrCodeCannotEditFromAnotherUser                 = 50005
 	ErrCodeCannotSendEmptyMessage                    = 50006
 	ErrCodeCannotSendMessagesToThisUser              = 50007
@@ -1111,7 +1111,7 @@ const (
 	ErrCodeReactionBlocked = 90001
 )
 
-// InviteUser is a partial user obejct from the invite event(s)
+// InviteUser is a partial user object from the invite event(s)
 type InviteUser struct {
 	ID            int64  `json:"id,string"`
 	Avatar        string `json:"avatar"`

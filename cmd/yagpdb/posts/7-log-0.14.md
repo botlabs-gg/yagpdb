@@ -13,6 +13,6 @@
  - Reddit feed should be more reliable (Still needs some work before i would consider it 100% but it is getting there)
  - Added Catfacts command
  - Added advice command
- - Add workaround for panics occuring when doing stuff related with message timestamps after the bot has been running for a while (Added a workaround but need to add a proper fix...)
+ - Add workaround for panics occurring when doing stuff related with message timestamps after the bot has been running for a while (Added a workaround but need to add a proper fix...)
  - Send a panic message when a command triggers a panic (Something went terribly wrong)
  - Added option for the kick command to delete up to the 100 last messages of a user when kicked

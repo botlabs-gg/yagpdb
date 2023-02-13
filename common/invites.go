@@ -22,7 +22,7 @@ var ThirdpartyDiscordSites = []*InviteSource{
 	&InviteSource{Name: "disboard.org", Regex: regexp.MustCompile(`(?i)disboard\.org\/server\/join\/.+`)},
 	&InviteSource{Name: "discordy.com", Regex: regexp.MustCompile(`(?i)discordy\.com\/server\.php`)},
 
-	// regexp.MustCompile(`disco\.gg\/.+`), Youc can't actually link to specific servers here can you, so not needed for now?
+	// regexp.MustCompile(`disco\.gg\/.+`), You can't actually link to specific servers here can you, so not needed for now?
 }
 
 var AllInviteSources = append([]*InviteSource{DiscordInviteSource}, ThirdpartyDiscordSites...)

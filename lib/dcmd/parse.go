@@ -67,7 +67,7 @@ func ParseCmdArgsFromInteraction(data *Data) error {
 			if def.required {
 				return ErrNotEnoughArguments
 			}
-			// not a reuired arg, just skip parsing it
+			// not a required arg, just skip parsing it
 		} else {
 
 			if def.def.Type == nil {
@@ -193,7 +193,7 @@ func findSmallestCombo(defs []*ArgDef, requiredArgs int, combos [][]int) []int {
 	var smallest []int
 	if len(combos) > 0 {
 		first := true
-		// combos takes presedence as to not break backwards compatibility
+		// combos takes precedence as to not break backwards compatibility
 		for _, v := range combos {
 			if first || len(v) < len(smallest) {
 				smallest = v
@@ -222,7 +222,7 @@ func ParseCmdArgsFromMessage(data *Data) error {
 	switchesCmd, switchesOk := data.Cmd.Command.(CmdWithSwitches)
 
 	if !argDefsOk && !switchesOk {
-		// Command dosen't use the standard arg parsing
+		// Command doesn't use the standard arg parsing
 		return nil
 	}
 
@@ -349,7 +349,7 @@ func ParseSwitches(switches []*ArgDef, data *Data, split []*RawArg) ([]*RawArg, 
 		}
 
 		if i >= len(split)-1 {
-			// A switch with extra stuff requird, but no extra data provided
+			// A switch with extra stuff required, but no extra data provided
 			// Can't handle this case...
 			continue
 		}
@@ -360,7 +360,7 @@ func ParseSwitches(switches []*ArgDef, data *Data, split []*RawArg) ([]*RawArg, 
 
 		val, err := matchedArg.Type.ParseFromMessage(matchedArg, split[i].Str, data)
 		if err != nil {
-			// TODO: Use custom error type for helpfull errror
+			// TODO: Use custom error type for helpful error
 			return nil, err
 		}
 

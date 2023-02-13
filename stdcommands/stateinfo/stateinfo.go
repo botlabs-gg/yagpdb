@@ -52,7 +52,7 @@ func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 			// {Name: "Total Channels", Value: fmt.Sprintf("%d", totalChannels), Inline: true},
 			// {Name: "Cache Hits/Misses", Value: fmt.Sprintf("%d - %d", stats.CacheHits, stats.CacheMisses), Inline: true},
 			// {Name: "Members evicted total", Value: fmt.Sprintf("%d", stats.MembersRemovedTotal), Inline: true},
-			// {Name: "Cache evicted total", Value: fmt.Sprintf("%d", stats.UserCachceEvictedTotal), Inline: true},
+			// {Name: "Cache evicted total", Value: fmt.Sprintf("%d", stats.UserCacheEvictedTotal), Inline: true},
 			// {Name: "Messages removed total", Value: fmt.Sprintf("%d", stats.MessagesRemovedTotal), Inline: true},
 		},
 	}

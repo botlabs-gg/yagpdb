@@ -55,7 +55,7 @@ func runMonitor() {
 	}
 }
 
-// Updates ALL premiun slots from ALL sources
+// Updates ALL premium slots from ALL sources
 func checkExpiredSlots(ctx context.Context) error {
 	timedSlots, err := models.PremiumSlots(qm.Where("permanent = false"), qm.Where("guild_id IS NOT NULL")).AllG(ctx)
 	if err != nil {

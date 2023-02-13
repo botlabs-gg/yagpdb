@@ -26,7 +26,7 @@
 
         {{if .Posts}}
         {{range .Posts}}
-        <secton class="card">
+        <section class="card">
             <header class="card-header">
                 <h2 class="card-title float-left"><img class="avatar mr-2" src="{{.Message.Author.AvatarURL "256"}}"></img>{{.Message.Author.Username}}</h2>
                 <span class="float-right">{{humanizeTimeSinceDays .ParsedTimestamp}} ago ({{.ParsedTimestamp.Format "02 Jan 06 15:04"}})</span>
@@ -34,7 +34,7 @@
             <div class="card-body">
                 {{.RenderedBody}}
             </div>
-        </secton>
+        </section>
         {{end}}
 
         <p>

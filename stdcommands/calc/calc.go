@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	// calc/compute isnt threadsafe :'(
+	// calc/compute isn't threadsafe :'(
 	computeLock sync.Mutex
 )
 

@@ -1,6 +1,6 @@
 package catfact
 
-// Cat facts collected from vaious sources since the api i used shut down
+// Cat facts collected from various sources since the api i used shut down
 
 var Catfacts = []string{
 	`Americans really love their pet cats. There are approximately 14 million more house cats than dogs in the US.`,
@@ -114,7 +114,7 @@ var Catfacts = []string{
 	`Approximately 24 cat skins can make a coat.`,
 	`While it is commonly thought that the ancient Egyptians were the first to domesticate cats, the oldest known pet cat was recently found in a 9,500-year-old grave on the Mediterranean island of Cyprus. This grave predates early Egyptian art depicting cats by 4,000 years or more.`,
 	`Content warning // animal cruelty/death ||During the time of the Spanish Inquisition, Pope Innocent VIII condemned cats as evil and thousands of cats were burned. Unfortunately, the widespread killing of cats led to an explosion of the rat population, which exacerbated the effects of the Black Death.||`,
-	`Content warning // animal cruelty/death ||During the Middle Ages, cats were associated with withcraft, and on St. John’s Day, people all over Europe would stuff them into sacks and toss the cats into bonfires. On holy days, people celebrated by tossing cats from church towers.||`,
+	`Content warning // animal cruelty/death ||During the Middle Ages, cats were associated with witchcraft, and on St. John’s Day, people all over Europe would stuff them into sacks and toss the cats into bonfires. On holy days, people celebrated by tossing cats from church towers.||`,
 	`The first cat in space was a French cat named Felicette (a.k.a. “Astrocat”) In 1963, France blasted the cat into outer space. Electrodes implanted in her brains sent neurological signals back to Earth. She survived the trip.`,
 	`The group of words associated with cat (catt, cath, chat, katze) stem from the Latin catus, meaning domestic cat, as opposed to feles, or wild cat.`,
 	`The term “puss” is the root of the principal word for “cat” in the Romanian term pisica and the root of secondary words in Lithuanian (puz) and Low German puus. Some scholars suggest that “puss” could be imitative of the hissing sound used to get a cat’s attention. As a slang word for the female pudenda, it could be associated with the connotation of a cat being soft, warm, and fuzzy.`,

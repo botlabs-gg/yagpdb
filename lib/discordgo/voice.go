@@ -5,7 +5,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// This file contains code related to Discord voice suppport
+// This file contains code related to Discord voice support
 
 package discordgo
 
@@ -364,7 +364,7 @@ func (v *VoiceConnection) wsListen(wsConn *websocket.Conn, close <-chan struct{}
 			v.RUnlock()
 			if sameConnection {
 
-				v.log(LogError, "voice endpoint %s websocket closed unexpectantly, %s", v.endpoint, err)
+				v.log(LogError, "voice endpoint %s websocket closed unexpectedly, %s", v.endpoint, err)
 
 				// Start reconnect goroutine then exit.
 				go v.reconnect(nil)

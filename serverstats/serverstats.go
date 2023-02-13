@@ -42,7 +42,7 @@ func RegisterPlugin() {
 }
 
 // ServerStatsConfig represents a configuration for a server
-// reason we dont reference the model directly is because i need to figure out a way to
+// reason we don't reference the model directly is because i need to figure out a way to
 // migrate them over to the new schema, painlessly.
 type ServerStatsConfig struct {
 	Public         bool

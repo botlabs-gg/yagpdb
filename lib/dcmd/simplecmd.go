@@ -1,6 +1,6 @@
 package dcmd
 
-// SimpleCmd is a Cmd implementation where everythign is a structField
+// SimpleCmd is a Cmd implementation where everything is a structField
 // This can be used if you prefer this way of organising stuff
 
 type SimpleCmd struct {

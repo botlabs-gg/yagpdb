@@ -157,7 +157,7 @@ func BotHasPermission(guildID int64, channelID int64, permission int64) (bool, e
 func BotHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission int64) (bool, error) {
 	ms, err := GetMember(gs.ID, common.BotUser.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Error("bot isnt a member of a guild?")
+		logger.WithError(err).WithField("guild", gs.ID).Error("bot isn't a member of a guild?")
 		return false, err
 	}
 
@@ -270,10 +270,10 @@ func RefreshStatus(session *discordgo.Session) {
 	err1 := common.RedisPool.Do(radix.Cmd(&streamingURL, "GET", "status_streaming"))
 	err2 := common.RedisPool.Do(radix.Cmd(&status, "GET", "status_name"))
 	if err1 != nil {
-		logger.WithError(err1).Error("failed retrieiving bot streaming status")
+		logger.WithError(err1).Error("failed retrieving bot streaming status")
 	}
 	if err2 != nil {
-		logger.WithError(err2).Error("failed retrieiving bot status")
+		logger.WithError(err2).Error("failed retrieving bot status")
 	}
 
 	if streamingURL != "" {
@@ -392,7 +392,7 @@ func CheckDiscordErrRetry(err error) bool {
 		return false
 	}
 
-	// an unknown error unrelated to the discord api occured (503's for example) attempt a retry
+	// an unknown error unrelated to the discord api occurred (503's for example) attempt a retry
 	return true
 }
 
@@ -400,7 +400,7 @@ func IsNormalUserMessage(msg *discordgo.Message) bool {
 	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 || msg.Author.Discriminator == "0000" || (msg.Member == nil && msg.GuildID != 0) {
 		// message edits can have a nil author, those are embed edits
 		// check against a discrim of 0000 to avoid some cases on webhook messages where webhook_id is 0, even tough its a webhook
-		// discrim is in those 0000 which is a invalid user discrim. (atleast when i was testing)
+		// discrim is in those 0000 which is a invalid user discrim. (at least when i was testing)
 		return false
 	}
 

@@ -9,7 +9,7 @@ func TestEncodeMessage(t *testing.T) {
 	data := "hello"
 	encoded, err := EncodeMessage(EvtStartShards, data)
 	if err != nil {
-		t.Fatal("an error occured encoding the mssage: ", err)
+		t.Fatal("an error occurred encoding the message: ", err)
 	}
 
 	expectedOutput := []byte{

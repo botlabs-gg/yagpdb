@@ -125,7 +125,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		tmpl["FirstPage"] = false
 	}
 
-	serverLogs, err := GetGuilLogs(ctx, g.ID, beforeID, afterID, 20)
+	serverLogs, err := GetGuildLogs(ctx, g.ID, beforeID, afterID, 20)
 	web.CheckErr(tmpl, err, "Failed retrieving logs", web.CtxLogger(ctx).Error)
 	if err == nil {
 		tmpl["Logs"] = serverLogs
@@ -142,7 +142,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	tmpl["Config"] = general
 
 	// dealing with legacy code is a pain, gah
-	// so way back i didn't know about arrays in postgres, so i made the blacklisted channels field a single TEXT field, with a comma seperator
+	// so way back i didn't know about arrays in postgres, so i made the blacklisted channels field a single TEXT field, with a comma separator
 	blacklistedChannels := make([]int64, 0, 10)
 	split := strings.Split(general.BlacklistedChannels.String, ",")
 	for _, v := range split {
@@ -216,7 +216,7 @@ func HandleLogsCPDeleteAll(w http.ResponseWriter, r *http.Request) (web.Template
 		return tmpl, err
 	}
 
-	tmpl.AddAlerts(web.SucessAlert("Deleted ", count, " logs!"))
+	tmpl.AddAlerts(web.SuccessAlert("Deleted ", count, " logs!"))
 	if count > 0 {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDeletedAll, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: count}))
 	}
@@ -291,7 +291,7 @@ func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc 
 		}
 
 		if msgLogs.GuildID != g.ID {
-			return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
+			return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please don't hurt me i have a family D:"))
 		}
 
 		ctx := r.Context()

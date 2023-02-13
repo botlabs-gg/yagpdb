@@ -25,7 +25,7 @@ func RegisterPlugin() {
 }
 
 var (
-	confBotrestListenAddr = config.RegisterOption("yagpdb.botrest.listen_address", "botrest listening address, it will use any available port and make which port used avialable using service discovery (see service.go)", "127.0.0.1")
+	confBotrestListenAddr = config.RegisterOption("yagpdb.botrest.listen_address", "botrest listening address, it will use any available port and make which port used available using service discovery (see service.go)", "127.0.0.1")
 	ConfListenPortRange   = config.RegisterOption("yagpdb.botrest.port_range", "botrest listen port range", "5100-5999")
 	serverLogger          = common.GetFixedPrefixLogger("internalapi_server")
 )
@@ -151,7 +151,7 @@ func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {
 	}
 }
 
-// Returns true if an error occured
+// Returns true if an error occurred
 func ServerError(w http.ResponseWriter, r *http.Request, err error) bool {
 	if err == nil {
 		return false

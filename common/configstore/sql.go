@@ -14,7 +14,7 @@ const MaxRetries = 1000
 
 type Postgres struct{}
 
-// conf is requried to be a pointer value
+// conf is required to be a pointer value
 func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf GuildConfig) error {
 
 	currentRetries := 0
@@ -22,7 +22,7 @@ func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf Guild
 		err := common.GORM.Where("guild_id = ?", guildID).First(conf).Error
 		if err == nil {
 			if currentRetries > 1 {
-				logger.Info("Suceeded after ", currentRetries, " retries")
+				logger.Info("Succeeded after ", currentRetries, " retries")
 			}
 			return nil
 		}
@@ -46,7 +46,7 @@ func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf Guild
 	return nil
 }
 
-// conf is requried to be a pointer value
+// conf is required to be a pointer value
 func (p *Postgres) SetGuildConfig(ctx context.Context, conf GuildConfig) error {
 	err := common.GORM.Save(conf).Error
 	if err != nil {

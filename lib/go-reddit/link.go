@@ -32,7 +32,7 @@ type Link struct {
 	Distinguished       string  `json:"distinguished"`
 	Domain              string  `json:"domain"`
 	Downs               int     `json:"downs"`
-	// This can be a bool or a timestamp apperentely, what the fuck
+	// This can be a bool or a timestamp apparently, what the fuck
 	Edited            interface{}   `json:"edited"`
 	Gilded            int           `json:"gilded"`
 	Hidden            bool          `json:"hidden"`

@@ -68,7 +68,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			// Annn done setting up the ticket
+			// Annnd done setting up the ticket
 			return fmt.Sprintf("Ticket #%d opened in <#%d>", ticket.LocalID, ticket.ChannelID), nil
 		},
 	}
@@ -198,7 +198,7 @@ func (p *Plugin) AddCommands() {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
 
-			// protect again'st calling close multiple times at the sime time
+			// protect again'st calling close multiple times at the same time
 			closingTicketsLock.Lock()
 			if _, ok := closingTickets[currentTicket.Ticket.ChannelID]; ok {
 				closingTicketsLock.Unlock()
@@ -326,7 +326,7 @@ func (p *Plugin) AddCommands() {
 	container, _ := commands.CommandSystem.Root.Sub("tickets", "ticket")
 	container.Description = "Command to manage the ticket system"
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
-	container.AddMidlewares(
+	container.AddMiddlewares(
 		func(inner dcmd.RunFunc) dcmd.RunFunc {
 			return func(data *dcmd.Data) (interface{}, error) {
 
@@ -441,7 +441,7 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 			// download attachments
 		OUTER:
 			for _, att := range msg.Attachments {
-				msg.Content += fmt.Sprintf("(attatchment: %s)", att.Filename)
+				msg.Content += fmt.Sprintf("(attachment: %s)", att.Filename)
 
 				totalAttachmentSize += att.Size
 				if totalAttachmentSize > 500000000 {
@@ -524,7 +524,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 			continue
 		}
 
-		// zip multiple files togheter
+		// zip multiple files together
 		zw := zip.NewWriter(&buf)
 		for _, v := range ag {
 
@@ -573,7 +573,7 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 	for i := len(msgs) - 1; i >= 0; i-- {
 		m := msgs[i]
 
-		// serialize mesasge content
+		// serialize message content
 		ts, _ := m.Timestamp.Parse()
 		buf.WriteString(fmt.Sprintf("[%s] %s#%s (%d): ", ts.UTC().Format(TicketTXTDateFormat), m.Author.Username, m.Author.Discriminator, m.Author.ID))
 		if m.Content != "" {

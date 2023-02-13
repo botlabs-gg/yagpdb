@@ -50,7 +50,7 @@ func main() {
 	log.Println("Starting the shard manager")
 	err = manager.Start()
 	if err != nil {
-		log.Fatal("Faled to start: ", err)
+		log.Fatal("Failed to start: ", err)
 	}
 
 	log.Println("Started!")

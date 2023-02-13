@@ -152,7 +152,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	}
 
 	if ms.Presence == nil {
-		return // no presence tracked, no poing in continuing
+		return // no presence tracked, no point in continuing
 	}
 
 	err = CheckPresence(common.RedisPool, config, ms, evt.GS)
@@ -342,7 +342,7 @@ func (config *Config) MeetsRequirements(roles []int64, activityState, activityDe
 	// Check if they have the required role
 	if config.RequireRole != 0 {
 		if !common.ContainsInt64Slice(roles, config.RequireRole) {
-			// Dosen't have required role
+			// Doesn't have required role
 			return false
 		}
 	}
@@ -402,17 +402,17 @@ func RemoveStreaming(client radix.Client, config *Config, guildID int64, memberI
 }
 
 func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstate.MemberState, url string, gameName string, streamTitle string, streamPlatform string) {
-	// Only send one announcment every 1 hour
+	// Only send one announcement every 1 hour
 	var resp string
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.User.ID)
 	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
 	if err != nil {
-		logger.WithError(err).Error("failed setting streaming announcment cooldown")
+		logger.WithError(err).Error("failed setting streaming announcement cooldown")
 		return
 	}
 
 	if resp != "OK" {
-		logger.Info("streaming announcment cooldown: ", ms.User.ID)
+		logger.Info("streaming announcement cooldown: ", ms.User.ID)
 		return
 	}
 
@@ -504,7 +504,7 @@ func RemoveStreamingRole(guildID, memberID int64, streamingRole int64, currentRo
 }
 
 func DisableStreamingRole(guildID int64) {
-	logger.WithField("guild", guildID).Warn("Disabling streaming role for server because of misssing permissions or unknown role")
+	logger.WithField("guild", guildID).Warn("Disabling streaming role for server because of missing permissions or unknown role")
 
 	conf, err := GetConfig(guildID)
 	if err != nil {

@@ -183,7 +183,7 @@ func (emoji EmojiName) String() string {
 }
 
 // Discord is super inconsistent with with types in some places (especially presence updates,
-// might aswell change them to map[string]interface{} soon because there is 0 validation)
+// might as well change them to map[string]interface{} soon because there is 0 validation)
 type DiscordFloat float64
 
 func (df *DiscordFloat) UnmarshalJSON(data []byte) error {

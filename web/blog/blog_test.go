@@ -9,12 +9,12 @@ func TestParsePost(t *testing.T) {
 		"title": "TestPost",
 		"Date": "5 Aug. 2017"
 }
-Post body herer
+Post body here
  
  - yaboi
  - hohoho`
 
-	const rendered = `<p>Post body herer</p>
+	const rendered = `<p>Post body here</p>
 
 <ul>
 <li>yaboi</li>
@@ -28,6 +28,6 @@ Post body herer
 	}
 
 	if string(p.RenderedBody) != rendered {
-		t.Error("Incorred output, got: ", string(p.RenderedBody), "\nextected: ", rendered)
+		t.Error("Incorrect output, got: ", string(p.RenderedBody), "\nexpected: ", rendered)
 	}
 }

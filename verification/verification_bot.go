@@ -91,7 +91,7 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 		if err != sql.ErrNoRows {
 			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("unable to retrieve config")
 		}
-		// either no config or an error occured
+		// either no config or an error occurred
 		return
 	}
 	if !conf.Enabled {
@@ -183,7 +183,7 @@ func (p *Plugin) createVerificationSession(userID, guildID int64) (string, error
 			continue
 		}
 
-		// otherwise an unknown error occured
+		// otherwise an unknown error occurred
 		return token, err
 	}
 }
@@ -223,7 +223,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	cs := dstate.ChannelStateFromDgo(channel)
 
 	tmplCTX := templates.NewContext(gs, &cs, ms)
-	tmplCTX.Name = "dm_veification_message"
+	tmplCTX.Name = "dm_verification_message"
 	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), guildID, target.ID, token)
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)

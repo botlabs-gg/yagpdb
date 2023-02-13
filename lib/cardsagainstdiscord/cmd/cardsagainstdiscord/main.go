@@ -63,7 +63,7 @@ func main() {
 var CreateGameCommand = &dcmd.SimpleCmd{
 	ShortDesc: "Creates a cards against humanity game in this channel",
 	CmdArgDefs: []*dcmd.ArgDef{
-		{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs seperated by space, or * to include all of them"},
+		{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs separated by space, or * to include all of them"},
 	},
 	CmdSwitches: []*dcmd.ArgDef{
 		{Name: "v", Help: "Vote mode, no cardczar"},

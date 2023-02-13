@@ -30,7 +30,7 @@ func main() {
 	activeShards := ReadActiveShards()
 	totalShards := common.ConfTotalShards.GetInt()
 	if totalShards < 1 {
-		panic("YAGPDB_SHARDING_TOTAL_SHARDS needs to be set to a resonable number of total shards")
+		panic("YAGPDB_SHARDING_TOTAL_SHARDS needs to be set to a reasonable number of total shards")
 	}
 
 	if len(activeShards) < 1 {
@@ -88,7 +88,7 @@ func main() {
 
 	api := rest.NewRESTAPI(orch, restAPIAddr+":7448")
 	common.ServiceTracker.SetAPIAddress(restAPIAddr + ":7448")
-	common.ServiceTracker.RegisterService(common.ServiceTypeOrchestator, "Shard orchestrator", "", nil)
+	common.ServiceTracker.RegisterService(common.ServiceTypeOrchestrator, "Shard orchestrator", "", nil)
 
 	err = api.Run()
 	if err != nil {
@@ -170,7 +170,7 @@ func (u *Updater) PullNewVersion() (string, error) {
 		return "", err
 	}
 
-	logrus.Println("Updatig version")
+	logrus.Println("Updating version")
 	cmd := exec.Command("/bin/bash", u.ScriptLocation)
 	cmd.Dir = "updating/"
 

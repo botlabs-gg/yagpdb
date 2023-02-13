@@ -119,7 +119,7 @@ func TestValidationChannel(t *testing.T) {
 	for i, v := range channelTestCases {
 		ok := ValidateForm(g, TemplateData(make(map[string]interface{})), v.Struct)
 		if ok && !v.Valid {
-			t.Errorf("Channel case [%d] is valid, but shoulnd't be", i)
+			t.Errorf("Channel case [%d] is valid, but shouldn't be", i)
 		} else if !ok && v.Valid {
 			t.Errorf("Channel case [%d] is not valid, but should be", i)
 		}

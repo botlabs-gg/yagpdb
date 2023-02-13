@@ -37,7 +37,7 @@ const (
 	optionKeyPkg         = "pkg"
 )
 
-//NewOptionsWithFlagSet creates a new options for the supplide flagset
+//NewOptionsWithFlagSet creates a new options for the supplied flagset
 func NewOptionsWithFlagSet(set *flag.FlagSet) *Options {
 	toolbox.Dump(set)
 

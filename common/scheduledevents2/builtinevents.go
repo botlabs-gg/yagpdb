@@ -18,7 +18,7 @@ type DeleteMessagesEvent struct {
 
 func registerBuiltinEvents() {
 	RegisterHandler("delete_messages", DeleteMessagesEvent{}, handleDeleteMessagesEvent)
-	RegisterHandler("std_remove_member_role", RmoveRoleData{}, handleRemoveMemberRole)
+	RegisterHandler("std_remove_member_role", RemoveRoleData{}, handleRemoveMemberRole)
 	RegisterHandler("std_add_member_role", AddRoleData{}, handleAddMemberRole)
 }
 
@@ -53,7 +53,7 @@ func handleDeleteMessagesEvent(evt *models.ScheduledEvent, data interface{}) (re
 	return false, nil
 }
 
-type RmoveRoleData struct {
+type RemoveRoleData struct {
 	GuildID int64 `json:"guild_id"`
 	UserID  int64 `json:"user_id"`
 	RoleID  int64 `json:"role_id"`
@@ -67,7 +67,7 @@ func ScheduleRemoveRole(ctx context.Context, guildID, userID, roleID int64, when
 	}
 
 	// add the scheduled event for it
-	err = ScheduleEvent("std_remove_member_role", guildID, when, &RmoveRoleData{
+	err = ScheduleEvent("std_remove_member_role", guildID, when, &RemoveRoleData{
 		GuildID: guildID,
 		UserID:  userID,
 		RoleID:  roleID,
@@ -88,7 +88,7 @@ func CancelRemoveRole(ctx context.Context, guildID, userID, roleID int64) error 
 }
 
 func handleRemoveMemberRole(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
-	dataCast := data.(*RmoveRoleData)
+	dataCast := data.(*RemoveRoleData)
 	err = common.BotSession.GuildMemberRoleRemove(dataCast.GuildID, dataCast.UserID, dataCast.RoleID)
 	if err != nil {
 		return CheckDiscordErrRetry(err), err

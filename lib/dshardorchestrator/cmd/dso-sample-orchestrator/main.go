@@ -14,7 +14,7 @@ import (
 func main() {
 	discordSession, err := discordgo.New(os.Getenv("DG_TOKEN"))
 	if err != nil {
-		log.Fatal("failed initilazing discord session: ", err)
+		log.Fatal("failed initializing discord session: ", err)
 	}
 
 	orch := orchestrator.NewStandardOrchestrator(discordSession)

@@ -8,7 +8,7 @@ import (
 	"github.com/mediocregopher/radix/v3"
 )
 
-// GenLocalIncrID creates a new or incremements a existing local id incrememter
+// GenLocalIncrID creates a new or increments a existing local id incrementor
 // used to have per guild id's
 //
 // GenLocalIncrID is deprecated and GenLocalIncrIDPQ should be used instead
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS local_incr_ids (
 )
 `
 
-// GenLocalIncrIDPQ creates a new or incremements a existing local id incrememter
+// GenLocalIncrIDPQ creates a new or increments a existing local id incrementor
 // used to have per guild id's
 //
 // GenLocalIncrIDPQ differs from GenLocalIncrID in that it uses postgres instead of redis

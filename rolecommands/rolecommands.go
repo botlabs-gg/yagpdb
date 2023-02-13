@@ -148,19 +148,19 @@ func (r *RoleError) PrettyError(roles []discordgo.Role) string {
 	return r.Message + ": " + roleStr
 }
 
-type LmitError struct {
+type LimitError struct {
 	Limit   int
 	Message string
 }
 
-func NewLmitError(msg string, limit int) error {
-	return &LmitError{
+func NewLimitError(msg string, limit int) error {
+	return &LimitError{
 		Limit:   limit,
 		Message: msg,
 	}
 }
 
-func (r *LmitError) Error() string {
+func (r *LimitError) Error() string {
 	return fmt.Sprintf(r.Message, r.Limit)
 }
 
@@ -205,7 +205,7 @@ func (r *CommonRoleError) Error() string {
 
 func IsRoleCommandError(err error) bool {
 	switch err.(type) {
-	case *LmitError, *RoleError, *GroupError, SimpleError, *SimpleError:
+	case *LimitError, *RoleError, *GroupError, SimpleError, *SimpleError:
 		return true
 	default:
 		return false

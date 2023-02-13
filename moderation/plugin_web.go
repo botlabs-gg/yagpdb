@@ -90,14 +90,14 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	return templateData, err
 }
 
-// Clear all server warnigns
+// Clear all server warnings
 func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/moderation/"
 
 	rows := common.GORM.Where("guild_id = ?", activeGuild.ID).Delete(WarningModel{}).RowsAffected
-	templateData.AddAlerts(web.SucessAlert("Deleted ", rows, " warnings!"))
+	templateData.AddAlerts(web.SuccessAlert("Deleted ", rows, " warnings!"))
 	templateData["DefaultDMMessage"] = DefaultDMMessage
 
 	if rows > 0 {

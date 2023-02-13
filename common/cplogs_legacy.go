@@ -57,7 +57,7 @@ func GetCPLogEntriesLegacy(guild int64) ([]*CPLogEntryLegacy, error) {
 		err = json.Unmarshal(entryRaw, &decoded)
 		if err != nil {
 			result[k] = &CPLogEntryLegacy{Action: "Failed decoding"}
-			logger.WithError(err).WithField("guild", guild).WithField("cp_log_enry", k).Error("Failed decoding cp log entry")
+			logger.WithError(err).WithField("guild", guild).WithField("cp_log_entry", k).Error("Failed decoding cp log entry")
 		} else {
 			decoded.TimestampString = time.Unix(decoded.Timestamp, 0).Format(time.Stamp)
 			result[k] = decoded

@@ -40,7 +40,7 @@ type BaseRule struct {
 
 	ViolationsExpire int `valid:"0,44640"`
 
-	// Execute these punishments after certain number of repeated violaions
+	// Execute these punishments after certain number of repeated violations
 	MuteAfter    int `valid:"0,1000"`
 	MuteDuration int `valid:"0,44640"`
 	KickAfter    int `valid:"0,1000"`
@@ -312,11 +312,11 @@ OUTER:
 type MentionRule struct {
 	BaseRule `valid:"traverse"`
 
-	Treshold int `valid:"0,500"`
+	Threshold int `valid:"0,500"`
 }
 
 func (m *MentionRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
-	if len(evt.Mentions) < m.Treshold {
+	if len(evt.Mentions) < m.Threshold {
 		return
 	}
 
@@ -379,7 +379,7 @@ func (w *WordsRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 		return
 	}
 
-	// Fonud a bad word!
+	// Found a bad word!
 	del = true
 	punishment, err = w.PushViolation(KeyViolations(cs.GuildID, evt.Author.ID, "badword"))
 

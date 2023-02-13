@@ -200,7 +200,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Check if the user can execute the command
 		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
 		if err != nil {
-			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+			yc.Logger(data).WithError(err).Error("An error occurred while checking if we could run command")
 		}
 
 		if resp != nil {
@@ -322,7 +322,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		}
 	}
 
-	CommandSystem.CheckMessageWtihPrefetchedPrefix(common.BotSession, evt.MessageCreate(), prefix)
+	CommandSystem.CheckMessageWithPrefetchedPrefix(common.BotSession, evt.MessageCreate(), prefix)
 	// CommandSystem.HandleMessageCreate(common.BotSession, evt.MessageCreate())
 }
 
@@ -406,7 +406,7 @@ func clearGlobalCommands() error {
 		return err
 	}
 
-	logger.Info("COMMANDS LENGHT: ", len(commands))
+	logger.Info("COMMANDS LENGTH: ", len(commands))
 
 	for _, v := range commands {
 		err = common.BotSession.DeleteGlobalApplicationCommand(common.BotApplication.ID, v.ID)

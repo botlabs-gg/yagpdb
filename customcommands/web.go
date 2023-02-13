@@ -578,7 +578,7 @@ func tmplGetCCIntervalTriggerType(cc *models.CustomCommand) int {
 	return 0
 }
 
-// returns the proper interval number dispalyed, depending on if it can be rounded to hours or not
+// returns the proper interval number displayed, depending on if it can be rounded to hours or not
 func tmplGetCCInterval(cc *models.CustomCommand) int {
 	if tmplGetCCIntervalTriggerType(cc) == 1 {
 		return cc.TimeTriggerInterval / 60
@@ -617,7 +617,7 @@ func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx c
 
 	additionalMessage := ""
 	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with YAGPDB premium)", MaxCommandsPremium)
+		additionalMessage = fmt.Sprintf("(You may increase the limit up to %d with YAGPDB premium)", MaxCommandsPremium)
 	}
 	templateData["AdditionalMessage"] = additionalMessage
 }

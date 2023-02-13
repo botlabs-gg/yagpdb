@@ -28,7 +28,7 @@ type eventLogger struct {
 	// lastPeriod is a snapshot of totalstats at the last logging period
 	lastPeriod [][]int64
 
-	// perPeriod is the number of events proccessed the last period alone (the rate of events)
+	// perPeriod is the number of events processed the last period alone (the rate of events)
 	perPeriod [][]int64
 }
 

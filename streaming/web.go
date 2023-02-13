@@ -21,10 +21,10 @@ import (
 //go:embed assets/streaming.html
 var PageHTML string
 
-type ConextKey int
+type ContextKey int
 
 const (
-	ConextKeyConfig ConextKey = iota
+	ContextKeyConfig ContextKey = iota
 )
 
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "streaming_settings_updated", FormatString: "Updated streaming settings"})
@@ -41,7 +41,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/streaming/*"), streamingMux)
 	web.CPMux.Handle(pat.New("/streaming"), streamingMux)
 
-	// Alll handlers here require guild channels present
+	// All handlers here require guild channels present
 	streamingMux.Use(web.RequireBotMemberMW)
 	streamingMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 	streamingMux.Use(baseData)
@@ -64,7 +64,7 @@ func baseData(inner http.Handler) http.Handler {
 			return
 		}
 		tmpl["StreamingConfig"] = config
-		inner.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ConextKeyConfig, config)))
+		inner.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ContextKeyConfig, config)))
 	}
 
 	return http.HandlerFunc(mw)
@@ -101,7 +101,7 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
-	return tmpl.AddAlerts(web.SucessAlert("Saved settings"))
+	return tmpl.AddAlerts(web.SuccessAlert("Saved settings"))
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)

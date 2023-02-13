@@ -42,7 +42,7 @@ func (o *Orchestrator) NewNodeConn(netConn net.Conn) *NodeConn {
 	}
 
 	sc.Conn.MessageHandler = sc.handleMessage
-	sc.Conn.ConnClosedHanlder = func() {
+	sc.Conn.ConnClosedHandler = func() {
 		// TODO
 		sc.mu.Lock()
 		sc.connected = false
@@ -104,7 +104,7 @@ func (nc *NodeConn) handleMessage(msg *dshardorchestrator.Message) {
 
 		otherNode := nc.Orchestrator.FindNodeByID(otherNodeID)
 		if otherNode == nil {
-			nc.Conn.Log(dshardorchestrator.LogError, nil, "node dissapeared in the middle of shard migration")
+			nc.Conn.Log(dshardorchestrator.LogError, nil, "node disappeared in the middle of shard migration")
 			return
 		}
 
@@ -130,7 +130,7 @@ func (nc *NodeConn) handleMessage(msg *dshardorchestrator.Message) {
 
 		otherNode := nc.Orchestrator.FindNodeByID(otherNodeID)
 		if otherNode == nil {
-			nc.Conn.Log(dshardorchestrator.LogError, nil, "node dissapeared in the middle of shard migration")
+			nc.Conn.Log(dshardorchestrator.LogError, nil, "node disappeared in the middle of shard migration")
 			return
 		}
 
@@ -147,7 +147,7 @@ func (nc *NodeConn) handleMessage(msg *dshardorchestrator.Message) {
 
 		otherNode := nc.Orchestrator.FindNodeByID(otherNodeID)
 		if otherNode == nil {
-			nc.Conn.Log(dshardorchestrator.LogError, nil, "node dissapeared in the middle of shard migration")
+			nc.Conn.Log(dshardorchestrator.LogError, nil, "node disappeared in the middle of shard migration")
 			return
 		}
 
@@ -215,7 +215,7 @@ func (nc *NodeConn) validateTotalShards(data *dshardorchestrator.IdentifyData) (
 
 func (nc *NodeConn) handleIdentify(data *dshardorchestrator.IdentifyData) {
 	if data.OrchestratorLogicVersion != 2 {
-		// TODO: maybe disconnect instead? altough this is the best way of handling it imo
+		// TODO: maybe disconnect instead? although this is the best way of handling it imo
 		// instead of accidentally launching multiple of already connected shards, just stop everything if this happens
 		panic("Incompatible node behaviour/protocol version")
 	}
@@ -238,7 +238,7 @@ func (nc *NodeConn) handleIdentify(data *dshardorchestrator.IdentifyData) {
 	}
 	nc.Orchestrator.mu.Unlock()
 
-	// after this we have sucessfully established a session
+	// after this we have successfully established a session
 	resp := &dshardorchestrator.IdentifiedData{
 		NodeID:      nc.Conn.GetID(),
 		TotalShards: totalShards,
@@ -295,7 +295,7 @@ func (nc *NodeConn) StopShard(shard int) {
 	})
 }
 
-// Shutdown tells the node to shut down compleely
+// Shutdown tells the node to shut down completely
 func (nc *NodeConn) Shutdown() {
 	nc.mu.Lock()
 	nc.shuttingDown = true

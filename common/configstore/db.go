@@ -134,8 +134,8 @@ func HandleInvalidateCacheEvt(event *pubsub.Event) {
 	Cached.InvalidateCache(tg, *conf)
 }
 
-// InvalidateGuildCache is a helper that both instantly invalides the local application cache
-// As well as sending the pusub event
+// InvalidateGuildCache is a helper that both instantly invalidates the local application cache
+// As well as sending the pubsub event
 func InvalidateGuildCache(guildID interface{}, conf GuildConfig) {
 	var gID int64
 	switch t := guildID.(type) {

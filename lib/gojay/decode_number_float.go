@@ -334,7 +334,7 @@ func (dec *Decoder) getFloat32() (float32, error) {
 				if isDigit(c) {
 					end = i
 					// multiply the before decimal point portion by 10 using bitwise
-					// make sure it desn't overflow
+					// make sure it doesn't overflow
 					if end-start < 9 {
 						beforeDecimal = (beforeDecimal << 3) + (beforeDecimal << 1)
 					}

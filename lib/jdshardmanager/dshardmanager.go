@@ -38,7 +38,7 @@ type Manager struct {
 	// If set logs connection status events to this channel
 	LogChannel int64
 
-	// If set keeps an updated satus message in this channel
+	// If set keeps an updated status message in this channel
 	StatusMessageChannel int64
 
 	// The function that provides the guild counts per shard, used fro the updated status message
@@ -129,8 +129,8 @@ func (m *Manager) AddHandler(handler interface{}) {
 	}
 }
 
-// Init initializesthe manager, retreiving the recommended shard count if needed
-// and initalizes all the shards
+// Initializes the manager, retrieving the recommended shard count if needed
+// and initializes all the shards
 func (m *Manager) Init() error {
 	m.Lock()
 	if m.numShards < 1 {
@@ -178,7 +178,7 @@ func (m *Manager) Start() error {
 
 	for i := 0; i < m.numShards; i++ {
 		if i != 0 {
-			// One indentify every 5 seconds
+			// One identify every 5 seconds
 			time.Sleep(time.Second * 5)
 		}
 
@@ -193,7 +193,7 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-// StopAll stops all the shard sessions and returns the last error that occured
+// StopAll stops all the shard sessions and returns the last error that occurred
 func (m *Manager) StopAll() (err error) {
 	m.Lock()
 	for _, v := range m.Sessions {
@@ -360,7 +360,7 @@ func (m *Manager) statusRoutine() {
 
 			embed := msg.Embeds[0]
 			if embed.Title == "Sharding status"+nameStr {
-				// Found it sucessfully
+				// Found it successfully
 				mID = msg.ID
 				break
 			}
@@ -513,7 +513,7 @@ type Event struct {
 
 	Msg string
 
-	// When this event occured
+	// When this event occurred
 	Time time.Time
 }
 
@@ -540,7 +540,7 @@ const (
 	// Sent when the connection is lose
 	EventDisconnected
 
-	// Sent when the connection was sucessfully resumed
+	// Sent when the connection was successfully resumed
 	EventResumed
 
 	// Sent on ready

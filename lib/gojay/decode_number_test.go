@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDecodeNumberExra(t *testing.T) {
+func TestDecodeNumberExtra(t *testing.T) {
 	t.Run("skip-number-err", func(t *testing.T) {
 		dec := NewDecoder(strings.NewReader("123456afzfz343"))
 		_, err := dec.skipNumber()

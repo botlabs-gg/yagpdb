@@ -105,7 +105,7 @@ func (s *Struct) generateFieldDecoding(fields []*toolbox.FieldInfo) (string, []s
 	fieldCases := []string{}
 	var initCode = ""
 	for i := range fields {
-		if isSkipable(s.options, fields[i]) {
+		if isSkippable(s.options, fields[i]) {
 			continue
 		}
 		var templateKey = -1
@@ -233,7 +233,7 @@ func (s *Struct) generateEmbeddedFieldEncoding(field *Field, fieldTypeInfo *tool
 func (s *Struct) generateFieldEncoding(fields []*toolbox.FieldInfo) ([]string, error) {
 	fieldCases := []string{}
 	for i := range fields {
-		if isSkipable(s.options, fields[i]) {
+		if isSkippable(s.options, fields[i]) {
 			continue
 		}
 		var templateKey = -1

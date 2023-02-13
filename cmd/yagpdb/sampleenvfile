@@ -37,7 +37,7 @@ YAGPDB_TESTING=""
 #######################################
 # Clustering / Shard orchestrator mode
 #######################################
-# Uncomment to enable cluster/shard orchestrator mode, dont do this unless you know what that is
+# Uncomment to enable cluster/shard orchestrator mode, don't do this unless you know what that is
 # YAGPDB_ORCHESTRATOR_ADDRESS="127.0.0.1:7447"
 # YAGPDB_SHARDING_TOTAL_SHARDS="required for clustered mode"
 #
@@ -49,7 +49,7 @@ YAGPDB_TESTING=""
 ###################################################################
 
 # Administration
-# Used for YAGPDB_ADMINROLE and readonlyaccesrole
+# Used for YAGPDB_ADMINROLE and readonlyaccessrole
 YAGPDB_MAIN_SERVER=""
 # Admins have full access to admin only commands
 YAGPDB_ADMIN_ROLE=""
@@ -95,7 +95,7 @@ YAGPDB_YOUTUBE_VERIFY_TOKEN="token_goes_here"
 # Leave empty for nothing
 # Path to ad image (it's automatically prefixed with / because msys64 kept messing with my path in my dev env)
 YAGPDB_AD_IMG_PATH=
-# Alternative, comma seperated list of paths
+# Alternative, comma separated list of paths
 YAGPDB_AD_VIDEO_PATHS=
 
 # Where clicking on the image sends you

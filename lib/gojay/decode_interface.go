@@ -6,7 +6,7 @@ import "encoding/json"
 
 // DecodeInterface reads the next JSON-encoded value from the decoder's input (io.Reader) and stores it in the value pointed to by i.
 //
-// i must be an interface poiter
+// i must be an interface pointer
 func (dec *Decoder) DecodeInterface(i *interface{}) error {
 	if dec.isPooled == 1 {
 		panic(InvalidUsagePooledDecoderError("Invalid usage of pooled decoder"))

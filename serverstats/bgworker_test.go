@@ -35,7 +35,7 @@ func TestCompressStats(t *testing.T) {
 
 	InsertMiscHourlyRow(1, tim.Add(time.Hour*-25), 70, 10, 5, 20) // also included
 
-	// run compression, and maake sure it ran
+	// run compression, and make sure it ran
 	compressor := &Compressor{}
 	ran, next, err := compressor.updateCompress(tim, true)
 	if err != nil {

@@ -164,7 +164,7 @@ func (u *updater) flush() {
 
 	err = tx.Commit()
 	if err != nil {
-		logger.WithError(err).Error("failed comitting updating joined guild results")
+		logger.WithError(err).Error("failed committing updating joined guild results")
 		leftOver = u.processing
 		tx.Rollback()
 		return

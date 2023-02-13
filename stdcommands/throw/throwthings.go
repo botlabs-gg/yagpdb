@@ -8,7 +8,7 @@ func randomThing() string {
 	return throwThings[rand.Intn(len(throwThings))]
 }
 
-// If you want somthing added submit a pr
+// If you want something added submit a pr
 var throwThings = []string{
 	"anime girls",
 	"b1nzy",

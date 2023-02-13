@@ -48,6 +48,6 @@ const (
 	PermissionUseEmbeddedActivities   int64 = 0x08000000000                      // (1 << 39)   Allows for using Activities (applications with the EMBEDDED flag) in a voice channel	V
 	PermissionModerateMembers         int64 = 0x10000000000                      // (1 << 40)   Allows for timing out users to prevent them from sending or reacting to messages in chat and threads, and from speaking in voice and stage channels
 
-	// all bits set except the leftmost to avoid using negative numbers in case discord dosen't handle it
+	// all bits set except the leftmost to avoid using negative numbers in case discord doesn't handle it
 	PermissionAll int64 = int64(^uint64(0) >> 1)
 )

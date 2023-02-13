@@ -37,7 +37,7 @@ func (s *FriendshipService) Create(params *FriendshipCreateParams) (*User, *http
 	return user, resp, relevantError(err, *apiError)
 }
 
-// FriendshipShowParams are paramenters for FriendshipService.Show
+// FriendshipShowParams are parameters for FriendshipService.Show
 type FriendshipShowParams struct {
 	SourceID         int64  `url:"source_id,omitempty"`
 	SourceScreenName string `url:"source_screen_name,omitempty"`
@@ -91,7 +91,7 @@ type RelationshipTarget struct {
 	FollowedBy bool   `json:"followed_by"`
 }
 
-// FriendshipDestroyParams are paramenters for FriendshipService.Destroy
+// FriendshipDestroyParams are parameters for FriendshipService.Destroy
 type FriendshipDestroyParams struct {
 	ScreenName string `url:"screen_name,omitempty"`
 	UserID     int64  `url:"user_id,omitempty"`
@@ -108,7 +108,7 @@ func (s *FriendshipService) Destroy(params *FriendshipDestroyParams) (*User, *ht
 	return user, resp, relevantError(err, *apiError)
 }
 
-// FriendshipPendingParams are paramenters for FriendshipService.Outgoing
+// FriendshipPendingParams are parameters for FriendshipService.Outgoing
 type FriendshipPendingParams struct {
 	Cursor int64 `url:"cursor,omitempty"`
 }

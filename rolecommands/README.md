@@ -1,4 +1,4 @@
-Plugin that allows users to assign roles to themsleves
+Plugin that allows users to assign roles to themselves
 
 - role options
     + names

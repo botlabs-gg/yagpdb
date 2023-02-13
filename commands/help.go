@@ -100,7 +100,7 @@ func createInteractiveHelp(userID int64, helpEmbeds []*discordgo.MessageEmbed) (
 		return "Something went wrong, maybe you have DMs disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
 	}
 
-	// prepend a introductionairy first page
+	// prepend a introductory first page
 	firstPage := &discordgo.MessageEmbed{
 		Title: "YAGPDB Help!",
 		Description: fmt.Sprintf(`YAGPDB is an open-source multipurpose discord bot that is configured through the web interface at %s.

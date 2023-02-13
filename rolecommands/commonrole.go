@@ -25,7 +25,7 @@ type CommonRoleSettings struct {
 	RoleCmd    *models.RoleCommand
 	MenuOption *models.RoleMenuOption
 
-	// convience fields taken from above for ease of use
+	// convenience fields taken from above for ease of use
 	RoleId int64
 
 	ParentWhitelistRoles []int64
@@ -236,12 +236,12 @@ func (c *CommonRoleSettings) ParentCanRole(ctx context.Context, ms *dstate.Membe
 
 	if hasTargetRole {
 		if hasRoles-1 < int(modeSettings.MultipleMin) {
-			err = NewLmitError("Minimum of `%d` roles required in this group", int(modeSettings.MultipleMin))
+			err = NewLimitError("Minimum of `%d` roles required in this group", int(modeSettings.MultipleMin))
 			return false, err
 		}
 	} else {
 		if hasRoles+1 > int(modeSettings.MultipleMax) {
-			err = NewLmitError("Maximum of `%d` roles allowed in this group", int(modeSettings.MultipleMax))
+			err = NewLimitError("Maximum of `%d` roles allowed in this group", int(modeSettings.MultipleMax))
 			return false, err
 		}
 	}
@@ -251,7 +251,7 @@ func (c *CommonRoleSettings) ParentCanRole(ctx context.Context, ms *dstate.Membe
 }
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
-// or is unable to receie said role
+// or is unable to receive said role
 /// It also calls c.CanRole to check if we can assign it beforehand
 func (c *CommonRoleSettings) CheckToggleRole(ctx context.Context, ms *dstate.MemberState) (gaveRole bool, err error) {
 	if can, err := c.CanRole(ctx, ms); !can {
@@ -279,7 +279,7 @@ func (c *CommonRoleSettings) ToggleRole(ms *dstate.MemberState) (gaveRole bool, 
 }
 
 func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.MemberState) (gaveRole bool, err error) {
-	// Default behaviour of groups is no more restrictions than reuiqred and ignore roles
+	// Default behaviour of groups is no more restrictions than required and ignore roles
 	if c.ParentGroupMode != GroupModeSingle {
 		// We already passed all checks
 		gaveRole, err = c.ToggleRole(ms)

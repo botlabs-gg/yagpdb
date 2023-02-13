@@ -41,10 +41,10 @@ func TestGetSet(t *testing.T) {
 	}
 
 	if v != value {
-		t.Errorf("Extected %q, got %q", value, v)
+		t.Errorf("Expected %q, got %q", value, v)
 	}
 
-	// make sure this value was only set on guilid 0
+	// make sure this value was only set on guildid 0
 	_, err = db.Get(1, key).Str()
 	if err != ErrKeyNotFound {
 		t.Error("Expected ErrKeyNotFound")

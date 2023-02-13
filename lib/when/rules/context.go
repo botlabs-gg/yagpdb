@@ -8,7 +8,7 @@ type Context struct {
 	// accumulator of relative values
 	Duration time.Duration
 
-	// Aboslute values
+	// Absolute values
 	Year, Month, Weekday, Day, Hour, Minute, Second *int
 
 	Location *time.Location

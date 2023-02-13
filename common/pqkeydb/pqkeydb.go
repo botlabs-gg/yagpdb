@@ -66,7 +66,7 @@ func (db *DB) Get(guildID int64, key string) (r *Result) {
 type Result struct {
 	Entry Entry
 
-	// Set if an error occured
+	// Set if an error occurred
 	Error error
 }
 
@@ -79,12 +79,12 @@ type Entry struct {
 	UpdatedAt time.Time
 }
 
-// Str returns the string value of the entry, or an error if an error occured
+// Str returns the string value of the entry, or an error if an error occurred
 func (r *Result) Str() (string, error) {
 	return r.Entry.Value, r.Error
 }
 
-// Int64 returns the value parsed as a int64, or an error if an error occured
+// Int64 returns the value parsed as a int64, or an error if an error occurred
 func (r *Result) Int64() (int64, error) {
 	if r.Error != nil {
 		return 0, r.Error

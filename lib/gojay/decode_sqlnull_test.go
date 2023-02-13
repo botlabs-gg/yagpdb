@@ -48,7 +48,7 @@ func TestDecodeSQLNullString(t *testing.T) {
 			dec.Release()
 			defer func() {
 				err := recover()
-				assert.NotNil(t, err, "err shouldnt be nil")
+				assert.NotNil(t, err, "err shouldn't be nil")
 				assert.IsType(t, InvalidUsagePooledDecoderError(""), err, "err should be of type InvalidUsagePooledDecoderError")
 			}()
 			_ = dec.DecodeSQLNullString(&sql.NullString{})
@@ -96,7 +96,7 @@ func TestDecodeSQLNullInt64(t *testing.T) {
 			dec.Release()
 			defer func() {
 				err := recover()
-				assert.NotNil(t, err, "err shouldnt be nil")
+				assert.NotNil(t, err, "err shouldn't be nil")
 				assert.IsType(t, InvalidUsagePooledDecoderError(""), err, "err should be of type InvalidUsagePooledDecoderError")
 			}()
 			_ = dec.DecodeSQLNullInt64(&sql.NullInt64{})
@@ -144,7 +144,7 @@ func TestDecodeSQLNullFloat64(t *testing.T) {
 			dec.Release()
 			defer func() {
 				err := recover()
-				assert.NotNil(t, err, "err shouldnt be nil")
+				assert.NotNil(t, err, "err shouldn't be nil")
 				assert.IsType(t, InvalidUsagePooledDecoderError(""), err, "err should be of type InvalidUsagePooledDecoderError")
 			}()
 			_ = dec.DecodeSQLNullFloat64(&sql.NullFloat64{})
@@ -192,7 +192,7 @@ func TestDecodeSQLNullBool(t *testing.T) {
 			dec.Release()
 			defer func() {
 				err := recover()
-				assert.NotNil(t, err, "err shouldnt be nil")
+				assert.NotNil(t, err, "err shouldn't be nil")
 				assert.IsType(t, InvalidUsagePooledDecoderError(""), err, "err should be of type InvalidUsagePooledDecoderError")
 			}()
 			_ = dec.DecodeSQLNullBool(&sql.NullBool{})

@@ -686,7 +686,7 @@ func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 			return nil // discord responded with a proper error, we know that it didn't break
 		}
 
-		// discord was not the cause of the error, in some cases even if the gateway times out the action is performed so just in case, scehdule the role removal
+		// discord was not the cause of the error, in some cases even if the gateway times out the action is performed so just in case, schedule the role removal
 	}
 
 	if settingsCast.Duration > 0 {
@@ -755,7 +755,7 @@ func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface
 			return nil // discord responded with a proper error, we know that it didn't break
 		}
 
-		// discord was not the cause of the error, in some cases even if the gateway times out the action is performed so just in case, scehdule the role add
+		// discord was not the cause of the error, in some cases even if the gateway times out the action is performed so just in case, schedule the role add
 	}
 
 	if settingsCast.Duration > 0 {
@@ -835,7 +835,7 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 
 	settingsCast := settings.(*SendChannelMessageEffectData)
 
-	// If we dont have any channel data, we can't send a message
+	// If we don't have any channel data, we can't send a message
 	if ctxData.CS == nil && settingsCast.LogChannel == 0 {
 		return nil
 	}

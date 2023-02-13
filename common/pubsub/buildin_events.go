@@ -29,7 +29,7 @@ type globalRatelimitTriggeredEventData struct {
 	Bucket string    `json:"bucket"`
 }
 
-func handleGlobalRatelimtPusub(evt *Event) {
+func handleGlobalRatelimitPubsub(evt *Event) {
 	data := evt.Data.(*globalRatelimitTriggeredEventData)
 	common.BotSession.Ratelimiter.SetGlobalTriggered(data.Reset)
 }

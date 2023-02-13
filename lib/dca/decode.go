@@ -104,7 +104,7 @@ func (d *Decoder) OpusFrame() (frame []byte, err error) {
 	return
 }
 
-// FrameDuration implements OpusReader, returnining the specified duration per frame
+// FrameDuration implements OpusReader, returning the specified duration per frame
 func (d *Decoder) FrameDuration() time.Duration {
 	if d.Metadata == nil {
 		return 20

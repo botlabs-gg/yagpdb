@@ -7,7 +7,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
-// CtxChannel is almost a 1:1 copy of dstate.ChannelState, its needed because we cant axpose all those state methods
+// CtxChannel is almost a 1:1 copy of dstate.ChannelState, its needed because we cant expose all those state methods
 // we also cant use discordgo.Channel because that would likely break a lot of custom commands at this point.
 type CtxChannel struct {
 	// These fields never change

@@ -45,11 +45,11 @@ type StaticCmd struct {
 	Description string
 }
 
-// Compilie time assertions, will not compiled unless StaticCmd implements these interfaces
+// Compile time assertions, will not compiled unless StaticCmd implements these interfaces
 var _ dcmd.Cmd = (*StaticCmd)(nil)
 var _ dcmd.CmdWithDescriptions = (*StaticCmd)(nil)
 
-// Descriptions should return a short description (used in the overall help overiview) and one long descriptions for targetted help
+// Descriptions should return a short description (used in the overall help overview) and one long descriptions for targetted help
 func (s *StaticCmd) Descriptions(d *dcmd.Data) (string, string) { return s.Description, "" }
 
 func (e *StaticCmd) Run(data *dcmd.Data) (interface{}, error) {

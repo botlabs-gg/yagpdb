@@ -31,7 +31,7 @@ type MqueueServer struct {
 	doneWork    chan *workResult
 
 	// Optimisation, we cache the total work even not relevant to the current shards to speed up things like
-	// cold starts, otherwise we would have to refetsh the list during each shard start, which for 64
+	// cold starts, otherwise we would have to refresh the list during each shard start, which for 64
 	// shards would be 64 times
 	// This is exponential by how big the list currently is
 	// (e.g if there's say 100k elements, it would have to transfer around 3GB data for 64 shards)
@@ -232,7 +232,7 @@ OUTER:
 			}
 		}
 
-		// Send in a channel we havne't sent a message in a while in
+		// Send in a channel we haven't sent a message in a while in
 		if lastT, exists := m.recentSentTimes[v.Elem.ChannelID]; exists {
 			since := now.Sub(lastT)
 			if since > highestSince {

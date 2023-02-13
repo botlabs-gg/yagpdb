@@ -227,7 +227,7 @@ func init() {
 			&PromptCard{Prompt: `What's there a ton of in heaven?`},
 			&PromptCard{Prompt: `What's there a tonne of in heaven?`},
 			&PromptCard{Prompt: `When all else fails, I can always masturbate to %s.`},
-			&PromptCard{Prompt: `When I am a billionare, I shall erect a 20-meter (65 foot) statue to commemorate %s.`},
+			&PromptCard{Prompt: `When I am a billionaire, I shall erect a 20-meter (65 foot) statue to commemorate %s.`},
 			&PromptCard{Prompt: `When I am President, I will create the Department of %s.`},
 			&PromptCard{Prompt: `When I pooped, what came out of my butt?`},
 			&PromptCard{Prompt: `When I was tripping on acid, %s turned into %s.`},

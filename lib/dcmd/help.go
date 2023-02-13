@@ -13,12 +13,12 @@ type HelpFormatter interface {
 	ShortCmdHelp(cmd *RegisteredCommand, container *Container, data *Data) string
 
 	// Called when help is only generated for 1 command
-	// You are supposed to dump all command detilas such as arguments
+	// You are supposed to dump all command details such as arguments
 	// the long description if it has one, switches and whatever else you have in mind.
 	FullCmdHelp(cmd *RegisteredCommand, container *Container, data *Data) *discordgo.MessageEmbed
 }
 
-// SortedCommandEntry represents an entry in the SortdCommandSet
+// SortedCommandEntry represents an entry in the SortedCommandSet
 type SortedCommandEntry struct {
 	Cmd       *RegisteredCommand
 	Container *Container

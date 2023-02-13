@@ -20,7 +20,7 @@ type NodeIDProvider interface {
 //
 // if new nodes without shards connect during this period, they will be put on hold while waiting for nodes with
 // running shards to re-identify with the orchestrator, thereby keeping the total shard count across restarts of the orchestrator
-// in a fairly realiable manner
+// in a fairly reliable manner
 //
 // but using this interface you can implement completely fine grained control (say storing the shard count in persistent store and updating it manually)
 type RecommendTotalShardCountProvider interface {
@@ -33,11 +33,11 @@ type NodeLauncher interface {
 	LaunchNewNode() (nodeID string, err error)
 
 	// Retrieves the version of nodes we would launch if we were to call LaunchNewNode()
-	// for example, the vesion of the binary deployed on the server.
+	// for example, the version of the binary deployed on the server.
 	LaunchVersion() (version string, err error)
 }
 
-// VersionUpdater is reponsible for updating the deployment, for example pulling a new version from a CI server
+// VersionUpdater is responsible for updating the deployment, for example pulling a new version from a CI server
 type VersionUpdater interface {
 	PullNewVersion() (newVersion string, err error)
 }
@@ -52,7 +52,7 @@ type Orchestrator struct {
 	VersionUpdater     VersionUpdater
 
 	// this is for running in a multi-host mode
-	// this allows you to have 1 shard orchestrator per host, then only have that orchestator care about the specified shards
+	// this allows you to have 1 shard orchestrator per host, then only have that orchestrator care about the specified shards
 	// this also requires that the total shard count is fixed.
 	// FixedTotalShardCount will be ignored if <1
 	// ResponsibleForShards will be ignored if len < 1
@@ -76,7 +76,7 @@ type Orchestrator struct {
 	// and you can still go over it if you manually start shards on a node
 	MaxShardsPerNode int
 
-	// in case we are intiailizing max shards from nodes, we wait 10 seconds when we start before we decide we need to fetch a fresh shard count
+	// in case we are initializing max shards from nodes, we wait 10 seconds when we start before we decide we need to fetch a fresh shard count
 	SkipSafeStartupDelayMaxShards bool
 
 	monitor *monitor
@@ -152,7 +152,7 @@ func (o *Orchestrator) listenForNodes(listener net.Listener) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			o.Log(dshardorchestrator.LogError, err, "failed accepting incmoing connection")
+			o.Log(dshardorchestrator.LogError, err, "failed accepting incoming connection")
 			break
 		}
 
@@ -453,14 +453,14 @@ func (o *Orchestrator) ShutdownNode(nodeID string) error {
 
 // WaitForShardMigration blocks until a shard migration is complete
 func (o *Orchestrator) WaitForShardMigration(fromNode *NodeConn, toNode *NodeConn, shardID int) {
-	// wait for the shard to dissapear on the origin node
+	// wait for the shard to disappear on the origin node
 	for {
 		time.Sleep(time.Second)
 
 		status := fromNode.GetFullStatus()
 
 		if !dshardorchestrator.ContainsInt(status.Shards, shardID) || !status.Connected {
-			// also if we disconnected then just go through all this immeditely
+			// also if we disconnected then just go through all this immediately
 			break
 		}
 	}
@@ -473,7 +473,7 @@ func (o *Orchestrator) WaitForShardMigration(fromNode *NodeConn, toNode *NodeCon
 		statusFrom := fromNode.GetFullStatus()
 
 		if dshardorchestrator.ContainsInt(statusTo.Shards, shardID) || !statusFrom.Connected {
-			// also if we disconnected then just go through all this immeditely
+			// also if we disconnected then just go through all this immediately
 			break
 		}
 	}
@@ -519,7 +519,7 @@ func (o *Orchestrator) findAvailableNode(ignore []*NodeStatus) (string, error) {
 		}
 
 		// need to start a new node
-		// we wait inbetween 10 seconds each launch
+		// we wait in between 10 seconds each launch
 		// nodes may have been "stolen" by someone in between so we can retry if we fail after 10 seconds
 		// TODO: reserve nodes
 		if time.Since(lastTimeStartedNode) < time.Second*60 {
@@ -611,7 +611,7 @@ func (o *Orchestrator) isResponsibleForShard(shard int) bool {
 	return false
 }
 
-// BlacklistNode blacklists a node from beign designated new shards
+// BlacklistNode blacklists a node from being designated new shards
 func (o *Orchestrator) BlacklistNode(node string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()

@@ -217,7 +217,7 @@ func (b *Bucket) Release(headers http.Header, lockCounter int64) error {
 	// does not provide millisecond precision, it's somewhat inaccurate for fast ratelimits (such as the react ones with 250ms/1)
 	// The reset-after was found to be more reliable, even my dev case from europe over wifi, so that's why i switched to that.
 	//
-	// You could argue that syncronizing the system time and using the fixed time "reset" header instead is more reliable
+	// You could argue that synchronizing the system time and using the fixed time "reset" header instead is more reliable
 	// but if your time becomes out of sync by just 1 second you will be hit with a wave of 429's and with discords new strict limits on those,
 	// you could very well get temp banned easily for a hour if you're a big bot, making thousands of requests every minute.
 	//
@@ -254,7 +254,7 @@ func (b *Bucket) Release(headers http.Header, lockCounter int64) error {
 		b.reset = time.Now().Add(dur)
 	}
 
-	// Udpate remaining if header is present
+	// Update remaining if header is present
 	remaining := headers.Get("X-RateLimit-Remaining")
 	if remaining != "" {
 		parsedRemaining, err := strconv.ParseInt(remaining, 10, 32)

@@ -45,7 +45,7 @@ type EncodeOptions struct {
 	RawOutput        bool             // Raw opus output (no metadata or magic bytes)
 	Application      AudioApplication // Audio application
 	CoverFormat      string           // Format the cover art will be encoded with (ex "jpeg)
-	CompressionLevel int              // Compression level, higher is better qualiy but slower encoding (0 - 10)
+	CompressionLevel int              // Compression level, higher is better quality but slower encoding (0 - 10)
 	BufferedFrames   int              // How big the frame buffer should be
 	VBR              bool             // Wether vbr is used or not (variable bitrate)
 	Threads          int              // Number of threads to use, 0 for auto
@@ -199,7 +199,7 @@ func (e *EncodeSession) run() {
 		vbrStr = "off"
 	}
 
-	// Launch ffmpeg with a variety of different fruits and goodies mixed togheter
+	// Launch ffmpeg with a variety of different fruits and goodies mixed together
 	args := []string{
 		"-stats",
 		"-i", inFile,
@@ -333,7 +333,7 @@ func (e *EncodeSession) writeMetadataFrame() {
 		var ffprobeData *FFprobeMetadata
 		err = json.Unmarshal(cmdBuf.Bytes(), &ffprobeData)
 		if err != nil {
-			logln("Erorr unmarshaling the FFprobe JSON:", err)
+			logln("Error unmarshaling the FFprobe JSON:", err)
 			return
 		}
 
@@ -597,7 +597,7 @@ func (e *EncodeSession) Running() (running bool) {
 
 // Stats returns ffmpeg stats, NOTE: this is not playback stats but transcode stats.
 // To get how far into playback you are
-// you have to track the number of frames sent to discord youself
+// you have to track the number of frames sent to discord yourself
 func (e *EncodeSession) Stats() *EncodeStats {
 	s := &EncodeStats{}
 	e.Lock()
@@ -620,7 +620,7 @@ func (e *EncodeSession) Truncate() {
 	e.Cleanup()
 }
 
-// Cleanup cleans up the encoding session, throwring away all unread frames and stopping ffmpeg
+// Cleanup cleans up the encoding session, throwing away all unread frames and stopping ffmpeg
 // ensuring that no ffmpeg processes starts piling up on your system
 // You should always call this after it's done
 func (e *EncodeSession) Cleanup() {
@@ -633,7 +633,7 @@ func (e *EncodeSession) Cleanup() {
 }
 
 // Read implements io.Reader,
-// n == len(p) if err == nil, otherwise n contains the number bytes read before an error occured
+// n == len(p) if err == nil, otherwise n contains the number bytes read before an error occurred
 func (e *EncodeSession) Read(p []byte) (n int, err error) {
 	if e.buf.Len() >= len(p) {
 		return e.buf.Read(p)
@@ -650,12 +650,12 @@ func (e *EncodeSession) Read(p []byte) (n int, err error) {
 	return e.buf.Read(p)
 }
 
-// FrameDuration implements OpusReader, retruning the duratio of each frame
+// FrameDuration implements OpusReader, returning the duration of each frame
 func (e *EncodeSession) FrameDuration() time.Duration {
 	return time.Duration(e.options.FrameDuration) * time.Millisecond
 }
 
-// Error returns any error that occured during the encoding process
+// Error returns any error that occurred during the encoding process
 func (e *EncodeSession) Error() error {
 	e.Lock()
 	defer e.Unlock()

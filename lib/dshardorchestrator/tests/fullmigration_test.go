@@ -73,7 +73,7 @@ func TestFullMigration(t *testing.T) {
 			dataReceived = make([]bool, len(dataToMigrate))
 			dataReceivedMU.Unlock()
 			go func() {
-				// take anohter path than the TestMigrateShard test
+				// take another path than the TestMigrateShard test
 				time.Sleep(time.Second)
 				for _, v := range dataToMigrate {
 					if shard < 5 {
@@ -145,7 +145,7 @@ func TestFullMigration(t *testing.T) {
 	addWaitForShards(t, []int{0, 1, 2, 3, 4}, shardsAddedChan, on1)
 	addWaitForShards(t, []int{5, 6, 7, 8, 9}, shardsAddedChan, on2)
 
-	// make sure that the orcehstrator has gotten feedback that the shards have started
+	// make sure that the orchestrator has gotten feedback that the shards have started
 	time.Sleep(time.Millisecond * 250)
 
 	orchestrator.NodeLauncher = &MockLauncher{

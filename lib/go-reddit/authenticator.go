@@ -112,7 +112,7 @@ func (a *Authenticator) httpClient(token *oauth2.Token) *http.Client {
 // }
 
 // // RoundTrip sets a predefined agent in the request and then forwards it to the
-// // default RountTrip implementation.
+// // default RoundTrip implementation.
 // func (a *agentForwarder) RoundTrip(r *http.Request) (*http.Response, error) {
 // 	r.Header.Add("User-Agent", a.agent)
 // 	return a.Transport.RoundTrip(r)

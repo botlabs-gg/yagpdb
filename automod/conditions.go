@@ -179,7 +179,7 @@ func (cd *ChannelsCondition) IsMet(data *TriggeredRuleData, settings interface{}
 			// Blacklisted channel
 			return false, nil
 		} else {
-			// Whilelisted channel
+			// Whitelisted channel
 			return true, nil
 		}
 	}
@@ -281,7 +281,7 @@ func (cd *ChannelCategoriesCondition) IsMet(data *TriggeredRuleData, settings in
 			// blacklisted channel category
 			return false, nil
 		} else {
-			// whilelisted channel category
+			// whitelisted channel category
 			return true, nil
 		}
 	}
@@ -318,7 +318,7 @@ func (cd *ChannelCategoriesCondition) MergeDuplicates(data []interface{}) interf
 /////////////////////////////////////////////////////////////////
 
 type AccountAgeConditionData struct {
-	Treshold int
+	Threshold int
 }
 
 var _ Condition = (*AccountAgeCondition)(nil)
@@ -355,7 +355,7 @@ func (ac *AccountAgeCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
 			Name: "Age in minutes",
-			Key:  "Treshold",
+			Key:  "Threshold",
 			Kind: SettingTypeInt,
 		},
 	}
@@ -366,7 +366,7 @@ func (ac *AccountAgeCondition) IsMet(data *TriggeredRuleData, settings interface
 
 	created := bot.SnowflakeToTime(data.MS.User.ID)
 	minutes := int(time.Since(created).Minutes())
-	if minutes <= settingsCast.Treshold {
+	if minutes <= settingsCast.Threshold {
 		// account were made within threshold
 		if ac.Below {
 			return true, nil
@@ -390,7 +390,7 @@ func (ac *AccountAgeCondition) MergeDuplicates(data []interface{}) interface{} {
 /////////////////////////////////////////////////////////////////
 
 type MemberAgeConditionData struct {
-	Treshold int
+	Threshold int
 }
 
 var _ Condition = (*MemberAgecondition)(nil)
@@ -427,7 +427,7 @@ func (mc *MemberAgecondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
 			Name: "Age in minutes",
-			Key:  "Treshold",
+			Key:  "Threshold",
 			Kind: SettingTypeInt,
 		},
 	}
@@ -454,7 +454,7 @@ func (mc *MemberAgecondition) IsMet(data *TriggeredRuleData, settings interface{
 
 	minutes := int(time.Since(joinedAt).Minutes())
 
-	if minutes <= settingsCast.Treshold {
+	if minutes <= settingsCast.Threshold {
 		// joined within threshold
 		if mc.Below {
 			return true, nil

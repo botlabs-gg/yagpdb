@@ -10,7 +10,7 @@ some example requests.
 	// Home Timeline
 	tweets, resp, err := client.Timelines.HomeTimeline(&HomeTimelineParams{})
 	// Send a Tweet
-	tweet, resp, err := client.Statuses.Update("just setting up my twttr", nil)
+	tweet, resp, err := client.Statuses.Update("just setting up my twitter", nil)
 	// Status Show
 	tweet, resp, err := client.Statuses.Show(585613041028431872, nil)
 	// User Show

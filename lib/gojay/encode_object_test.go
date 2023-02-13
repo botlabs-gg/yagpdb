@@ -301,22 +301,22 @@ func TestEncoderObjectMarshalAPI(t *testing.T) {
 	})
 }
 
-type TestObectOmitEmpty struct {
+type TestObjectOmitEmpty struct {
 	nonNiler           int
 	testInt            int
 	testFloat          float64
 	testFloat32        float32
 	testString         string
 	testBool           bool
-	testObectOmitEmpty *TestObectOmitEmpty
-	testObect          *TestObectOmitEmpty
+	testObjectOmitEmpty *TestObjectOmitEmpty
+	testObject          *TestObjectOmitEmpty
 }
 
-func (t *TestObectOmitEmpty) IsNil() bool {
+func (t *TestObjectOmitEmpty) IsNil() bool {
 	return t == nil
 }
 
-func (t *TestObectOmitEmpty) MarshalJSONObject(enc *Encoder) {
+func (t *TestObjectOmitEmpty) MarshalJSONObject(enc *Encoder) {
 	enc.AddIntKeyOmitEmpty("testInt", t.testInt)
 	enc.AddIntKeyOmitEmpty("testIntNotEmpty", 1)
 	enc.AddFloatKeyOmitEmpty("testFloat", t.testFloat)
@@ -327,19 +327,19 @@ func (t *TestObectOmitEmpty) MarshalJSONObject(enc *Encoder) {
 	enc.AddStringKeyOmitEmpty("testStringNotEmpty", "foo")
 	enc.AddBoolKeyOmitEmpty("testBool", t.testBool)
 	enc.AddBoolKeyOmitEmpty("testBoolNotEmpty", true)
-	enc.AddObjectKeyOmitEmpty("testObect", t.testObect)
-	enc.AddObjectKeyOmitEmpty("testObectOmitEmpty", t.testObectOmitEmpty)
+	enc.AddObjectKeyOmitEmpty("testObject", t.testObject)
+	enc.AddObjectKeyOmitEmpty("testObjectOmitEmpty", t.testObjectOmitEmpty)
 	enc.AddArrayKeyOmitEmpty("testArrayOmitEmpty", TestEncodingArrStrings{})
 	enc.AddArrayKeyOmitEmpty("testArray", TestEncodingArrStrings{"foo"})
 }
 
-type TestObectOmitEmptyInterface struct{}
+type TestObjectOmitEmptyInterface struct{}
 
-func (t *TestObectOmitEmptyInterface) IsNil() bool {
+func (t *TestObjectOmitEmptyInterface) IsNil() bool {
 	return t == nil
 }
 
-func (t *TestObectOmitEmptyInterface) MarshalJSONObject(enc *Encoder) {
+func (t *TestObjectOmitEmptyInterface) MarshalJSONObject(enc *Encoder) {
 	enc.AddInterfaceKeyOmitEmpty("testInt", 0)
 	enc.AddInterfaceKeyOmitEmpty("testInt64", int64(0))
 	enc.AddInterfaceKeyOmitEmpty("testInt32", int32(0))
@@ -358,7 +358,7 @@ func (t *TestObectOmitEmptyInterface) MarshalJSONObject(enc *Encoder) {
 	enc.AddInterfaceKeyOmitEmpty("testStringNotEmpty", "foo")
 	enc.AddInterfaceKeyOmitEmpty("testBool", false)
 	enc.AddInterfaceKeyOmitEmpty("testBoolNotEmpty", true)
-	enc.AddInterfaceKeyOmitEmpty("testObectOmitEmpty", nil)
+	enc.AddInterfaceKeyOmitEmpty("testObjectOmitEmpty", nil)
 	enc.AddInterfaceKeyOmitEmpty("testObect", &TestEncoding{})
 	enc.AddInterfaceKeyOmitEmpty("testArr", &TestEncodingArrStrings{})
 }
@@ -420,7 +420,7 @@ func TestEncoderObjectEncodeAPIError(t *testing.T) {
 		enc.isPooled = 1
 		defer func() {
 			err := recover()
-			assert.NotNil(t, err, "err shouldnt be nil")
+			assert.NotNil(t, err, "err shouldn't be nil")
 			assert.IsType(t, InvalidUsagePooledEncoderError(""), err, "err should be of type InvalidUsagePooledEncoderError")
 			assert.Equal(t, "Invalid usage of pooled encoder", err.(InvalidUsagePooledEncoderError).Error(), "err should be of type InvalidUsagePooledDecoderError")
 		}()
@@ -611,7 +611,7 @@ func TestEncodeObjectWithKeys(t *testing.T) {
 		enc.isPooled = 1
 		defer func() {
 			err := recover()
-			assert.NotNil(t, err, "err shouldnt be nil")
+			assert.NotNil(t, err, "err shouldn't be nil")
 			assert.IsType(t, InvalidUsagePooledEncoderError(""), err, "err should be of type InvalidUsagePooledEncoderError")
 			assert.Equal(t, "Invalid usage of pooled encoder", err.(InvalidUsagePooledEncoderError).Error(), "err should be of type InvalidUsagePooledDecoderError")
 		}()

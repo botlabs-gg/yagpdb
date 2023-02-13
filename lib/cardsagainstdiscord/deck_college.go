@@ -13,7 +13,7 @@ func init() {
 			&PromptCard{Prompt: `The Department of Psychology is looking for paid research volunteers. Are you 18-25 and suffering from %s.`},
 		},
 		Responses: []ResponseCard{
-			`A bachelor's degeree in communications`,
+			`A bachelor's degree in communications`,
 			`A girl who is so interesting that she has blue hair`,
 			`A Yale man`,
 			`An emergency all-floor meeting on inclusion`,

@@ -116,7 +116,7 @@ const (
 	GatewayIntentGuildScheduledEvents GatewayIntent = 1 << 16
 )
 
-// max size of buffers before they're discarded (e.g after a big incmoing event)
+// max size of buffers before they're discarded (e.g after a big incoming event)
 const MaxIntermediaryBuffersSize = 10000
 
 // GatewayIdentifyRatelimiter is if you need some custom identify ratelimit logic (if you're running shards across processes for example)
@@ -125,12 +125,12 @@ type GatewayIdentifyRatelimiter interface {
 }
 
 // Standard implementation of the GatewayIdentifyRatelimiter
-type StdGatewayIdentifyRatleimiter struct {
+type StdGatewayIdentifyRatelimiter struct {
 	ch   chan bool
 	once sync.Once
 }
 
-func (rl *StdGatewayIdentifyRatleimiter) RatelimitIdentify(shardID int) {
+func (rl *StdGatewayIdentifyRatelimiter) RatelimitIdentify(shardID int) {
 	rl.once.Do(func() {
 		rl.ch = make(chan bool)
 		go func() {
@@ -147,7 +147,7 @@ func (rl *StdGatewayIdentifyRatleimiter) RatelimitIdentify(shardID int) {
 
 // This is used at the package level because it can be used by multiple sessions
 // !! Changing this after starting 1 or more gateway sessions will lead to undefined behaviour
-var IdentifyRatelimiter GatewayIdentifyRatelimiter = &StdGatewayIdentifyRatleimiter{}
+var IdentifyRatelimiter GatewayIdentifyRatelimiter = &StdGatewayIdentifyRatelimiter{}
 
 // GatewayOP represents a gateway operation
 // see https://discordapp.com/developers/docs/topics/gateway#gateway-opcodespayloads-gateway-opcodes
@@ -198,7 +198,7 @@ func (gs GatewayStatus) String() string {
 // GatewayConnectionManager is responsible for managing the gateway connections for a single shard
 // We create a new GatewayConnection every time we reconnect to avoid a lot of synchronization needs
 // and also to avoid having to manually reset the connection state, all the workers related to the old connection
-// should eventually stop, and if they're late they will be working on a closed connection anyways so it dosen't matter
+// should eventually stop, and if they're late they will be working on a closed connection anyways so it doesn't matter
 type GatewayConnectionManager struct {
 	mu     sync.RWMutex
 	openmu sync.Mutex
@@ -639,7 +639,7 @@ type GatewayConnection struct {
 
 	decodedBuffer bytes.Buffer
 
-	// so we dont need to re-allocate a event on each event
+	// so we don't need to re-allocate a event on each event
 	event *Event
 }
 
@@ -755,7 +755,7 @@ func (g *GatewayConnection) Close() error {
 
 		started := time.Now()
 
-		// Wait for discord to close connnection
+		// Wait for discord to close connection
 		for {
 			time.Sleep(time.Millisecond * 100)
 			g.mu.Lock()
@@ -930,7 +930,7 @@ func (g *GatewayConnection) startWorkers() error {
 			if g.conn == nil {
 				return
 			}
-			g.log(LogError, "No heartbeat ack received since sending last heartbeast, reconnecting... ip: %s", g.conn.RemoteAddr().String())
+			g.log(LogError, "No heartbeat ack received since sending last heartbeat, reconnecting... ip: %s", g.conn.RemoteAddr().String())
 			err := g.ReconnectUnlessClosed(false)
 			if err != nil {
 				g.log(LogError, "Failed reconnecting to the gateway: %v", err)
@@ -946,12 +946,12 @@ func (g *GatewayConnection) startWorkers() error {
 	return nil
 }
 
-// reader reads incmoing messages from the gateway
+// reader reads incoming messages from the gateway
 func (g *GatewayConnection) reader() {
 
 	// The buffer that is used to read into the bytes buffer
 	// We need to control the amount read so we can't use buffer.ReadFrom directly
-	// TODO: write it directly into the bytes buffer somehow to avoid a uneeded copy?
+	// TODO: write it directly into the bytes buffer somehow to avoid a unneeded copy?
 	intermediateBuffer := make([]byte, 0xffff)
 
 	for {
@@ -1007,7 +1007,7 @@ var (
 	endOfPacketSuffix = []byte{0x0, 0x0, 0xff, 0xff}
 )
 
-// handleReadFrame handles a copmletely read frame
+// handleReadFrame handles a completely read frame
 func (g *GatewayConnection) handleReadFrame(header ws.Header) {
 	if header.OpCode == ws.OpClose {
 		g.handleCloseFrame(g.readMessageBuffer.Bytes())
@@ -1090,8 +1090,8 @@ func (g *GatewayConnection) handleReadMessage() {
 	readLen := g.readMessageBuffer.Len()
 
 	if g.zlibReader == nil {
-		// We initialize the zlib reader here as opposed to in NewGatewayConntection because
-		// zlib.NewReader apperently needs the header straight away, or it will block forever
+		// We initialize the zlib reader here as opposed to in NewGatewayConnection because
+		// zlib.NewReader apparently needs the header straight away, or it will block forever
 		zr, err := zlib.NewReader(g.readMessageBuffer)
 		if err != nil {
 			go g.onError(err, "failed creating zlib reader")
@@ -1147,7 +1147,7 @@ func (g *GatewayConnection) handleEvent(event *Event) {
 
 		if len(event.RawData) == 4 {
 			// d == true, we can resume
-			g.log(LogWarning, "got OP9 invalid session, re-indetifying. (resume) d: %v", string(event.RawData))
+			g.log(LogWarning, "got OP9 invalid session, re-identifying. (resume) d: %v", string(event.RawData))
 			g.concurrentReconnect(false)
 		} else {
 			g.log(LogWarning, "got OP9 invalid session, re-connecting. (no resume) d: %v", string(event.RawData))
@@ -1174,7 +1174,7 @@ func (g *GatewayConnection) handleHello(event *Event) error {
 		return err
 	}
 
-	g.log(LogInformational, "receivied hello, heartbeat_interval: %d, _trace: %v", h.HeartbeatInterval, h.Trace)
+	g.log(LogInformational, "received hello, heartbeat_interval: %d, _trace: %v", h.HeartbeatInterval, h.Trace)
 
 	go g.heartbeater.Run(time.Duration(h.HeartbeatInterval) * time.Millisecond)
 
@@ -1234,7 +1234,7 @@ func (g *GatewayConnection) handleDispatch(e *Event) error {
 	}
 
 	// For legacy reasons, we send the raw event also, this could be useful for handling unknown events.
-	// Jonas: I've disabled this because i've dubbed it useless, events should be added in the library, handling unknown events elsewhere is added uneeded complexity
+	// Jonas: I've disabled this because i've dubbed it useless, events should be added in the library, handling unknown events elsewhere is added unneeded complexity
 	// also we reuse the event object now so we can't
 	// g.manager.session.handleEvent(eventEventType, e)
 
@@ -1242,7 +1242,7 @@ func (g *GatewayConnection) handleDispatch(e *Event) error {
 }
 
 // maybeThrowawayBytesBuf will recreate b if the capacity is above maxSize
-// usefull because sometimes buffers only need to be big for a single event, then its kinda pointless to keep them around forever
+// useful because sometimes buffers only need to be big for a single event, then its kinda pointless to keep them around forever
 func maybeThrowawayBytesBuf(b *bytes.Buffer, maxSize int) {
 	if b.Cap() > maxSize {
 		*b = bytes.Buffer{}

@@ -11,13 +11,13 @@ import (
 )
 
 var (
-	registeredMigraters = make(map[string]func(t time.Time, data string) error)
+	registeredMigrators = make(map[string]func(t time.Time, data string) error)
 )
 
-// RegisterHandler registers a handler for the scpecified event name
+// RegisterHandler registers a handler for the specified event name
 // dataFormat is optional and should not be a pointer, it should match the type you're passing into ScheduleEvent
-func RegisterLegacyMigrater(eventName string, migrationHandler func(t time.Time, data string) error) {
-	registeredMigraters[eventName] = migrationHandler
+func RegisterLegacyMigrator(eventName string, migrationHandler func(t time.Time, data string) error) {
+	registeredMigrators[eventName] = migrationHandler
 
 	logrus.Debug("[scheduledEvents2] Registered migration handler for ", eventName)
 }
@@ -50,9 +50,9 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 			dataPart = split[1]
 		}
 
-		handler, ok := registeredMigraters[split[0]]
+		handler, ok := registeredMigrators[split[0]]
 		if !ok {
-			logrus.Error("[scheduledevents2] no migrater found for event: ", split[0])
+			logrus.Error("[scheduledevents2] no migrator found for event: ", split[0])
 			skipScore++
 			numError++
 			continue
@@ -73,6 +73,6 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 	}
 
 	if numSuccess > 0 || numError > 0 {
-		logrus.Infof("[scheduledevents2] Suscessfully migrated %d scheduled events, failed %d", numSuccess, numError)
+		logrus.Infof("[scheduledevents2] Successfully migrated %d scheduled events, failed %d", numSuccess, numError)
 	}
 }

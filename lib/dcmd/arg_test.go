@@ -27,7 +27,7 @@ func TestFloatArg(t *testing.T) {
 	assert.Equal(t, CompatibilityGood, Float.CheckCompatibility(nil, part), "Should have excellent compatibility")
 
 	v, err := Float.ParseFromMessage(nil, part, nil)
-	assert.NoError(t, err, "Should parse sucessfully")
+	assert.NoError(t, err, "Should parse successfully")
 	assert.Equal(t, v, expected, "Should be equal")
 
 	assert.Equal(t, Incompatible, Float.CheckCompatibility(nil, "1.2hello21"), "Should be incompatible")

@@ -52,7 +52,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
-	// disabled prompt to see if the multiple requests are still happening when user expliclity consents to login
+	// disabled prompt to see if the multiple requests are still happening when user explicitly consents to login
 	// url += "&prompt=none"
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -144,7 +144,7 @@ func CheckCSRFToken(token string) (bool, error) {
 
 var ErrNotLoggedIn = errors.New("not logged in")
 
-// AuthTokenFromB64 Retrives an oauth2 token from the base64 string
+// AuthTokenFromB64 Retrieves an oauth2 token from the base64 string
 // Returns an error if expired
 func discordAuthTokenFromYag(yagToken string) (t *oauth2.Token, err error) {
 	if yagToken == "none" {
@@ -258,7 +258,7 @@ func GetUserAccessLevel(userID int64, g *common.GuildWithConnected, config *mode
 	return
 }
 
-// HasAccesstoGuildSettings retrusn true if the specified user (or 0 if not logged in or not on the server) has access
+// HasAccesstoGuildSettings returns true if the specified user (or 0 if not logged in or not on the server) has access
 func HasAccesstoGuildSettings(userID int64, g *common.GuildWithConnected, config *models.CoreConfig, roleProvider func(guildID, userID int64) []int64, write bool) bool {
 	hasRead, hasWrite := GetUserAccessLevel(userID, g, config, roleProvider)
 	if hasWrite {

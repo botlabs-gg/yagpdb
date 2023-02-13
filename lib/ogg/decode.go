@@ -45,7 +45,7 @@ type Page struct {
 }
 
 // ReadPacket reads the next packet or returns io.EOF if no more.
-// Complete is false when the the packet was uncomplete (it was the last one and will continue next page)
+// Complete is false when the the packet was incomplete (it was the last one and will continue next page)
 func (p *Page) ReadPacket() (packet []byte, complete bool, err error) {
 	packet = make([]byte, 0)
 	complete = false
@@ -54,7 +54,7 @@ func (p *Page) ReadPacket() (packet []byte, complete bool, err error) {
 		return nil, true, io.EOF
 	}
 
-	// Read each segment from the segment table until we either ran out or hit the packet boundry
+	// Read each segment from the segment table until we either ran out or hit the packet boundary
 	for p.currentIndex < len(p.SegTbl) {
 
 		segment := p.SegTbl[p.currentIndex]

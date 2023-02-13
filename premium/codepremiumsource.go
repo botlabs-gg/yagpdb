@@ -93,7 +93,7 @@ var (
 	ErrCodeCollision = errors.New("Code collision")
 )
 
-// TryRetryGenerateCode attempts to generate codes, if it enocunters a key collision it retries, returns on all other cases
+// TryRetryGenerateCode attempts to generate codes, if it encounters a key collision it retries, returns on all other cases
 func TryRetryGenerateCode(ctx context.Context, message string, duration time.Duration) (*models.PremiumCode, error) {
 	for {
 		code, err := GenerateCode(ctx, message, duration)

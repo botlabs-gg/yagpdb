@@ -66,7 +66,7 @@ type Preferences struct {
 	UseGlobalDefaults      bool        `json:"use_global_defaults"`
 }
 
-// GetMyPreferences retrieves the accouunt preferences for the currently authenticated user. Requires the 'identity' OAuth scope.
+// GetMyPreferences retrieves the account preferences for the currently authenticated user. Requires the 'identity' OAuth scope.
 func (c *Client) GetMyPreferences() (*Preferences, error) {
 	url := fmt.Sprintf("%s/api/v1/me/preferences", baseAuthURL)
 	req, err := http.NewRequest("GET", url, nil)
@@ -93,7 +93,7 @@ func (c *Client) GetMyPreferences() (*Preferences, error) {
 	return &preferences, nil
 }
 
-// UpdateMyPreferences updates the accouunt preferences for the currently authenticated user. Requires the 'account' OAuth scope.
+// UpdateMyPreferences updates the account preferences for the currently authenticated user. Requires the 'account' OAuth scope.
 func (c *Client) UpdateMyPreferences(preferences *Preferences) (*Preferences, error) {
 	url := fmt.Sprintf("%s/api/v1/me/preferences", baseAuthURL)
 	buffer := new(bytes.Buffer)

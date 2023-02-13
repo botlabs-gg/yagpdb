@@ -149,7 +149,7 @@ func PrepareMessageForWordCheck(input string) string {
 			out.WriteRune(' ')
 		}
 
-		// make 2 variants, 1 with all occurences replaced with space and 1 with all the occurences just removed
+		// make 2 variants, 1 with all occurrences replaced with space and 1 with all the occurrences just removed
 		// this i imagine will solve a low of cases
 		w1 := ""
 		w2 := ""
@@ -199,7 +199,7 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 		}
 
 		if len(v.R.RulesetAutomodRules) > 0 {
-			// If theres a ruleset with atleast 1 rule, consider the plugin enabled
+			// If theres a ruleset with at least 1 rule, consider the plugin enabled
 			flags = append(flags, featureFlagEnabled)
 			break
 		}
@@ -210,6 +210,6 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 
 func (p *Plugin) AllFeatureFlags() []string {
 	return []string{
-		featureFlagEnabled, // set if there is atleast one ruleset enabled with a rule in it
+		featureFlagEnabled, // set if there is at least one ruleset enabled with a rule in it
 	}
 }

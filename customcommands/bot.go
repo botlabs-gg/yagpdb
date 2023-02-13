@@ -525,7 +525,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, gs *dstate.GuildSet, ms *dstate.MemberState, cs *dstate.ChannelState, reaction *discordgo.MessageReaction, added bool, message *discordgo.Message) error {
 	tmplCtx := templates.NewContext(gs, cs, ms)
 
-	// to make sure the message is in the proper context of the user reacting we set the mssage context to a fake message
+	// to make sure the message is in the proper context of the user reacting we set the message context to a fake message
 	fakeMsg := *message
 	fakeMsg.Member = ms.DgoMember()
 	fakeMsg.Author = fakeMsg.Member.User
@@ -560,7 +560,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
 	})
 	if err != nil {
-		logger.WithError(err).Error("Error mathching custom commands")
+		logger.WithError(err).Error("Error matching custom commands")
 		return
 	}
 
@@ -705,7 +705,7 @@ func ExecuteCustomCommandFromMessage(gs *dstate.GuildSet, cmd *models.CustomComm
 	tmplCtx := templates.NewContext(gs, cs, member)
 	tmplCtx.Msg = m
 
-	// preapre message specific data
+	// prepare message specific data
 	args := dcmd.SplitArgs(m.Content)
 	argsStr := make([]string, len(args))
 	for k, v := range args {

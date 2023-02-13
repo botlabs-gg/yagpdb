@@ -14,22 +14,22 @@ package cardsagainstdiscord
 
 // 	current := NextCardCzar(players, 0)
 // 	if current != 1 {
-// 		t.Error("Got ", current, " exected 1")
+// 		t.Error("Got ", current, " expected 1")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 2 {
-// 		t.Error("Got ", current, " exected 2")
+// 		t.Error("Got ", current, " expected 2")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 5 {
-// 		t.Error("Got ", current, " exected 5")
+// 		t.Error("Got ", current, " expected 5")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 1 {
-// 		t.Error("Got ", current, " exected 1")
+// 		t.Error("Got ", current, " expected 1")
 // 	}
 // }
 
@@ -42,22 +42,22 @@ package cardsagainstdiscord
 
 // 	current := NextCardCzar(players, 0)
 // 	if current != 1 {
-// 		t.Error("Got ", current, " exected 1")
+// 		t.Error("Got ", current, " expected 1")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 2 {
-// 		t.Error("Got ", current, " exected 2")
+// 		t.Error("Got ", current, " expected 2")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 5 {
-// 		t.Error("Got ", current, " exected 5")
+// 		t.Error("Got ", current, " expected 5")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 1 {
-// 		t.Error("Got ", current, " exected 1")
+// 		t.Error("Got ", current, " expected 1")
 // 	}
 // }
 
@@ -72,27 +72,27 @@ package cardsagainstdiscord
 
 // 	current := NextCardCzar(players, 0)
 // 	if current != 1 {
-// 		t.Error("Got ", current, " exected 1")
+// 		t.Error("Got ", current, " expected 1")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 2 {
-// 		t.Error("Got ", current, " exected 2")
+// 		t.Error("Got ", current, " expected 2")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 3 {
-// 		t.Error("Got ", current, " exected 3")
+// 		t.Error("Got ", current, " expected 3")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 5 {
-// 		t.Error("Got ", current, " exected 5")
+// 		t.Error("Got ", current, " expected 5")
 // 	}
 
 // 	current = NextCardCzar(players, current)
 // 	if current != 1 {
-// 		t.Error("Got ", current, " exected 1")
+// 		t.Error("Got ", current, " expected 1")
 // 	}
 // }
 

@@ -75,7 +75,7 @@ func resetPlayerServer(guildID int64) string {
 	return "No active Player, nothing to reset."
 }
 
-// Player represends a voice connection playing a soundbaord file (or waiting for one)
+// Player represents a voice connection playing a soundboard file (or waiting for one)
 type Player struct {
 	GuildID int64
 
@@ -231,7 +231,7 @@ func playSound(p *Player, vc *discordgo.VoiceConnection, session *discordgo.Sess
 		}
 	}
 
-	// And finally stop with another small number of silcece frame
+	// And finally stop with another small number of silence frame
 	err = sendSilence(vc, 5)
 	if err != nil {
 		return vc, common.ErrWithCaller(err)

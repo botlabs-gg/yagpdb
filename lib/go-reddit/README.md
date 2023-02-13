@@ -59,9 +59,9 @@ func main() {
 // Returns a new unauthenticated client for invoking the API
 client := reddit.NoAuthClient
 
-// Retrives a listing of default subreddits
+// Retrieves a listing of default subreddits
 client.GetDefaultSubreddits()
 
-// Retrives a listing of hot links for the "news" subreddit
+// Retrieves a listing of hot links for the "news" subreddit
 client.GetHotLinks("news")
 ````

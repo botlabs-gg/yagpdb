@@ -52,7 +52,7 @@ const (
 	TranscodingStatusTranscoding
 	// Failed transcoding, too long
 	TranscodingStatusFailedLong
-	// Failed transcofing, contact support
+	// Failed transcoding, contact support
 	TranscodingStatusFailedOther
 )
 

@@ -710,7 +710,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				limitFetch = 1000
 			}
 
-			// Wait a second so the client dosen't gltich out
+			// Wait a second so the client doesn't glitch out
 			time.Sleep(time.Second)
 
 			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, triggerID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
@@ -1078,7 +1078,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			dur := parsed.Args[2].Value.(time.Duration)
 
-			// no point if the user has the role and is not updating the expiracy
+			// no point if the user has the role and is not updating the expiry
 			if common.ContainsInt64Slice(member.Member.Roles, role.ID) && dur <= 0 {
 				return "That user already has that role", nil
 			}
@@ -1317,14 +1317,14 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 			return nil, err
 		}
 
-		if len(result) < 1 && p != nil && p.LastResponse != nil { //Dont send No Results error on first execution
+		if len(result) < 1 && p != nil && p.LastResponse != nil { //Don't send No Results error on first execution
 			return nil, paginatedmessages.ErrNoResults
 		}
 
 		desc := fmt.Sprintf("**Total :** `%d`", count)
 		var fields []*discordgo.MessageEmbedField
 		currentField := &discordgo.MessageEmbedField{
-			Name:  "⠀", //Use braille blank character for seamless transition between feilds
+			Name:  "⠀", //Use braille blank character for seamless transition between fields
 			Value: "",
 		}
 		fields = append(fields, currentField)

@@ -35,8 +35,8 @@ type StateTracker interface {
 	// Calls f on all members, return true to continue or false to stop
 	//
 	// This is a blocking, non-concurrent operation that returns when f has either returned false or f has been called on all members
-	// it should be safe to modify local caller variables within f without needing any syncronization on the caller side
-	// as syncronization is done by the implmentation to ensure f is never called concurrently
+	// it should be safe to modify local caller variables within f without needing any synchronization on the caller side
+	// as synchronization is done by the implementation to ensure f is never called concurrently
 	//
 	// It's up to the implementation to decide how to chunk the results, it may even just be 1 chunk
 	// The reason it can be chunked is in the cases where state is remote
@@ -265,7 +265,7 @@ const (
 )
 
 type PresenceFields struct {
-	// Acitvity here
+	// Activity here
 	Game   *LightGame
 	Status PresenceStatus
 }

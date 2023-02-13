@@ -29,7 +29,7 @@ type RemoveGuildHandler interface {
 	RemoveGuild(guildID int64) error
 }
 
-// Used for intializing stuff for new servers
+// Used for initializing stuff for new servers
 type NewGuildHandler interface {
 	NewGuild(guild *discordgo.Guild) error
 }
@@ -44,7 +44,7 @@ type LateBotInitHandler interface {
 	LateBotInit()
 }
 
-// BotStopperHandler runs when the bot is shuttdown down
+// BotStopperHandler runs when the bot is shut down
 // you need to call wg.Done when you have completed your plugin shutdown (stopped background workers)
 type BotStopperHandler interface {
 	StopBot(wg *sync.WaitGroup)

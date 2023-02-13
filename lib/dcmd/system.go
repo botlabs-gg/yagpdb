@@ -27,12 +27,12 @@ func NewStandardSystem(staticPrefix string) (system *System) {
 		sys.Prefix = NewSimplePrefixProvider(staticPrefix)
 	}
 
-	sys.Root.AddMidlewares(ArgParserMW)
+	sys.Root.AddMiddlewares(ArgParserMW)
 
 	return sys
 }
 
-// You can add this as a handler directly to discordgo, it will recover from any panics that occured in commands
+// You can add this as a handler directly to discordgo, it will recover from any panics that occurred in commands
 // and log errors using the standard logger
 func (sys *System) HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Set up handler to recover from panics
@@ -78,8 +78,8 @@ func (sys *System) CheckInteraction(s *discordgo.Session, interaction *discordgo
 	return sys.ResponseSender.SendResponse(data, response, err)
 }
 
-// CheckMessageWtihPrefetchedPrefix is the same as CheckMessage but you pass in a prefetched command prefix
-func (sys *System) CheckMessageWtihPrefetchedPrefix(s *discordgo.Session, m *discordgo.MessageCreate, prefetchedPrefix string) error {
+// CheckMessageWithPrefetchedPrefix is the same as CheckMessage but you pass in a prefetched command prefix
+func (sys *System) CheckMessageWithPrefetchedPrefix(s *discordgo.Session, m *discordgo.MessageCreate, prefetchedPrefix string) error {
 
 	data, err := sys.FillDataLegacyMessage(s, m.Message)
 	if err != nil {

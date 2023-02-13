@@ -30,7 +30,7 @@ func (p *Plugin) AddCommands() {
 func (p *Plugin) BotInit() {
 	// scheduledevents.RegisterEventHandler("reminders_check_user", checkUserEvtHandlerLegacy)
 	scheduledevents2.RegisterHandler("reminders_check_user", int64(0), checkUserScheduledEvent)
-	scheduledevents2.RegisterLegacyMigrater("reminders_check_user", migrateLegacyScheduledEvents)
+	scheduledevents2.RegisterLegacyMigrator("reminders_check_user", migrateLegacyScheduledEvents)
 }
 
 // Reminder management commands

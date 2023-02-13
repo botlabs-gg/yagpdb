@@ -52,7 +52,7 @@ func getSliceHelperTypeName(typeName string, isPointer bool) string {
 	return strings.Replace(pluralName, ".", "", -1)
 }
 
-func isSkipable(options *Options, field *toolbox.FieldInfo) bool {
+func isSkippable(options *Options, field *toolbox.FieldInfo) bool {
 	if options := getTagOptions(field.Tag, options.TagName); len(options) > 0 {
 		for _, candidate := range options {
 			if candidate == "-" {

@@ -169,7 +169,7 @@ func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 		return "Doneso!\n" + StrFlags(menu), nil
 	}
 
-	// Add all mising options
+	// Add all missing options
 	resp, err := NextRoleMenuSetupStep(parsed.Context(), menu, false)
 	if resp != "" {
 		createSetupMessage(parsed.Context(), menu, resp, true)
@@ -318,7 +318,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 	if rm.NextRoleCommandID.Valid {
 		currentOpts := rm.R.RoleMenuOptions
 
-		// Make sure this emoji isnt used to another option
+		// Make sure this emoji isn't used to another option
 		for _, option := range currentOpts {
 			if emoji.ID != 0 {
 				if emoji.ID == option.EmojiID && option.EmojiID != 0 {
@@ -485,7 +485,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 
 	if mID != menu.MessageID {
-		return // reacted on the seutp message id, only allow setup actions there
+		return // reacted on the setup message id, only allow setup actions there
 	}
 
 	// Find the option model from the reaction
@@ -579,7 +579,7 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 }
 
 // track reaction removal loop so that we can cancel them
-type reactionRemovalOccurence struct {
+type reactionRemovalOccurrence struct {
 	MessageID int64
 	UserID    int64
 
@@ -588,7 +588,7 @@ type reactionRemovalOccurence struct {
 }
 
 var (
-	activeReactionRemovals   = make([]*reactionRemovalOccurence, 0)
+	activeReactionRemovals   = make([]*reactionRemovalOccurrence, 0)
 	activeReactionRemovalsmu sync.Mutex
 
 	confDisableReactionRemovalSingleMode = config.RegisterOption("yagpdb.rolecommands.disable_reaction_removal_single_mode", "Disable reaction removal in single mode, could be heavy on number of requests", false)
@@ -621,7 +621,7 @@ func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, us
 	}
 
 	// add the new one
-	cur := &reactionRemovalOccurence{
+	cur := &reactionRemovalOccurrence{
 		MessageID: rm.MessageID,
 		UserID:    userID,
 	}
@@ -895,7 +895,7 @@ func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.Rol
 			UpdateRoleMenuMessage(ctx, rm)
 		}
 
-		return fmt.Sprintf("Sucessfully edited menu, tip: run `rolemenu resetreactions %d` to clear all reactions so that the order is fixed.", rm.MessageID), nil
+		return fmt.Sprintf("Successfully edited menu, tip: run `rolemenu resetreactions %d` to clear all reactions so that the order is fixed.", rm.MessageID), nil
 	}
 
 	return "", nil
@@ -938,7 +938,7 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 		rm.SetupMSGID = msg.ID
 		_, err = rm.UpdateG(ctx, boil.Whitelist("setup_msg_id"))
 		if err != nil {
-			logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed upating menu model")
+			logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed updating menu model")
 		}
 	}
 }

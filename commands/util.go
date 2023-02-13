@@ -148,11 +148,11 @@ func FilterBadInvites(msg string, guildID int64, replacement string) string {
 }
 
 // CommonContainerNotFoundHandler is a common "NotFound" handler that should be used with dcmd containers
-// it ensures that no messages is sent if none of the commands in te container is enabeld
+// it ensures that no messages is sent if none of the commands in te container is enabled
 // if "fixedMessage" is empty, then it shows default generated container help
 func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage string) func(data *dcmd.Data) (interface{}, error) {
 	return func(data *dcmd.Data) (interface{}, error) {
-		// Only show stuff if atleast 1 of the commands in the container is enabled
+		// Only show stuff if at least 1 of the commands in the container is enabled
 		if data.GuildData != nil {
 			cParentID := data.GuildData.CS.ParentID
 			ms := data.GuildData.MS

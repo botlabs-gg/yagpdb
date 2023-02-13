@@ -15,7 +15,7 @@ const (
 	initialTestRoleID    = 100
 	initialTestMemberID  = 1000
 
-	intialTestThreadID = 10000
+	initialTestThreadID = 10000
 	testThreadID       = 10001
 )
 
@@ -71,7 +71,7 @@ func createTestState(conf TrackerConfig) *InMemoryTracker {
 			},
 			Threads: []*discordgo.Channel{
 				{
-					ID:             intialTestThreadID,
+					ID:             initialTestThreadID,
 					Name:           "test",
 					Type:           discordgo.ChannelTypeGuildPublicThread,
 					ParentID:       initialTestChannelID,
@@ -116,7 +116,7 @@ func TestGuildCreate(t *testing.T) {
 		t.Fatal("gc channel is nil")
 	}
 
-	if gs.GetThread(intialTestThreadID) == nil {
+	if gs.GetThread(initialTestThreadID) == nil {
 		t.Fatal("thread not found")
 	}
 }
@@ -294,7 +294,7 @@ func TestThreadParentPerms(t *testing.T) {
 		Member: &memberAdd,
 	})
 
-	thread := tracker.GetGuild(initialTestGuildID).GetThread(intialTestThreadID)
+	thread := tracker.GetGuild(initialTestGuildID).GetThread(initialTestThreadID)
 	if thread == nil {
 		t.Fatal("thread not found")
 	}

@@ -18,7 +18,7 @@ type stream struct{}
 
 // A StreamDecoder reads and decodes JSON values from an input stream.
 //
-// It implements conext.Context and provide a channel to notify interruption.
+// It implements context.Context and provide a channel to notify interruption.
 type StreamDecoder struct {
 	mux sync.RWMutex
 	*Decoder

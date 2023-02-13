@@ -129,8 +129,8 @@ func (d DurationFormatPrecision) FromSeconds(in int64) int64 {
 	case DurationPrecisionDays:
 		return (((in / 60) / 60) / 24) % 7
 	case DurationPrecisionWeeks:
-		// There's 52 weeks + 1 day per year (techically +1.25... but were doing +1)
-		// Make sure 364 days isnt 0 weeks and 0 years
+		// There's 52 weeks + 1 day per year (technically +1.25... but were doing +1)
+		// Make sure 364 days isn't 0 weeks and 0 years
 		days := (((in / 60) / 60) / 24) % 365
 		return days / 7
 	case DurationPrecisionYears:
@@ -210,7 +210,7 @@ func FallbackEmbed(embed *discordgo.MessageEmbed) string {
 	return body + "**I have no 'embed links' permissions here, this is a fallback. it looks prettier if i have that perm :)**"
 }
 
-// CutStringShort stops a strinng at "l"-3 if it's longer than "l" and adds "..."
+// CutStringShort stops a string at "l"-3 if it's longer than "l" and adds "..."
 func CutStringShort(s string, l int) string {
 	var mainBuf bytes.Buffer
 	var latestBuf bytes.Buffer
@@ -595,12 +595,12 @@ var AllowedMentionsParseUsers = discordgo.AllowedMentions{
 	Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
 }
 
-func LogLongCallTime(treshold time.Duration, isErr bool, logMsg string, extraData logrus.Fields, f func()) {
+func LogLongCallTime(threshold time.Duration, isErr bool, logMsg string, extraData logrus.Fields, f func()) {
 	started := time.Now()
 	f()
 	elapsed := time.Since(started)
 
-	if elapsed > treshold {
+	if elapsed > threshold {
 		l := logrus.WithFields(extraData).WithField("elapsed", elapsed.String())
 		if isErr {
 			l.Error(logMsg)

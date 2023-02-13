@@ -33,7 +33,7 @@ This file will be updated with breaking changes, before you update you should ch
 
 **17th january 2019**
 
- - Custom commands are now stored in postgres, a migration from the old system is automtically started on the web server and can be disabled by setting YAGPDB_CC_DISABLE_REDIS_PQ_MIGRATION to anything but empty, this auto-migration will likely be removed in 2 or 3 versions (changing from opt-out to opt-in or complete removal)
+ - Custom commands are now stored in postgres, a migration from the old system is automatically started on the web server and can be disabled by setting YAGPDB_CC_DISABLE_REDIS_PQ_MIGRATION to anything but empty, this auto-migration will likely be removed in 2 or 3 versions (changing from opt-out to opt-in or complete removal)
 
 **25th november 2018 (1.11.3)**
 
@@ -56,4 +56,4 @@ This file will be updated with breaking changes, before you update you should ch
 **3rd aug 2018 (1.4-dev)**
  - dutil now only has one maintained branch, the master which was merged with dgofork.
  - my discordgo fork's default branch is now `yagpdb` instead of `master`
- - Updated build scripts (docker and circle) as a result, if your docker script isnt working in the future this is most likely the reason if you have a old version of the docker build script
+ - Updated build scripts (docker and circle) as a result, if your docker script isn't working in the future this is most likely the reason if you have a old version of the docker build script

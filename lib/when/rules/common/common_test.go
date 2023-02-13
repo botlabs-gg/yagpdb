@@ -11,7 +11,7 @@ import (
 
 var null = time.Date(2016, time.July, 15, 0, 0, 0, 0, time.UTC)
 
-// July 15 days offset from the begining of the year
+// July 15 days offset from the beginning of the year
 const OFFSET = 197
 
 type Fixture struct {

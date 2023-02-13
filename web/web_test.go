@@ -38,7 +38,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 		IsMember bool
 		ReadOnly bool
 
-		ShouldHaveAcces bool
+		ShouldHaveAccess bool
 	}
 
 	testCases := []*TestCase{
@@ -56,7 +56,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: true,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		{
 			Name:     "default settings non member access",
@@ -66,7 +66,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// default settings normal member access
@@ -78,7 +78,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		{
 			Name:     "default settings normal user access",
@@ -88,7 +88,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// default settings admin user access
@@ -100,7 +100,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name:     "default settings admin user access",
@@ -110,7 +110,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 
 		// default settings owner user access
@@ -122,7 +122,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name:     "default settings owner user access",
@@ -132,7 +132,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 
 		////////////////////////////////////
@@ -150,7 +150,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "all users ro-normal user access",
@@ -162,7 +162,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		// all users ro - member access
 		{
@@ -175,7 +175,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "all users ro-member access",
@@ -187,7 +187,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		// all users ro - admin access
 		{
@@ -200,7 +200,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "all users ro-admin access",
@@ -212,7 +212,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 
 		////////////////////////////////////

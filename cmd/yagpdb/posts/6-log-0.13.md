@@ -4,7 +4,7 @@
         "title": "Version 0.13"
     }
 
-Small update with mosly bugfixes
+Small update with mostly bugfixes
 
  - Kick and ban commands now do hastebin upload
  - Fixed not being able to update subreddit in reddit feeds

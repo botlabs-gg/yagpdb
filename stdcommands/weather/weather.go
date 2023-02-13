@@ -56,7 +56,7 @@ var Command = &commands.YAGCommand{
 
 		split := strings.Split(string(unescaped), "\n")
 
-		// Show both celcius and fahernheit
+		// Show both celsius and fahrenheit
 		for i, v := range split {
 			if !strings.Contains(v, "°C") {
 				continue
@@ -91,12 +91,12 @@ func convTempFormat(regex *regexp.Regexp, input string) (string, bool) {
 	rest := strings.TrimSpace(input[pos[0]:])
 
 	doneso := NumberRegex.ReplaceAllStringFunc(rest, func(s string) string {
-		celcius, err := strconv.Atoi(s)
+		celsius, err := strconv.Atoi(s)
 		if err != nil {
 			return s
 		}
 
-		converted := int(float64(celcius)*1.8 + 32)
+		converted := int(float64(celsius)*1.8 + 32)
 		return strconv.Itoa(converted)
 	})
 

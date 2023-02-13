@@ -157,7 +157,7 @@ func (s *MigrateNodeCmd) Run(args []string) int {
 	origin := args[0]
 	target := args[1]
 
-	fmt.Printf("migrating all shards on %s to %s, this migght take a while....\n", origin, target)
+	fmt.Printf("migrating all shards on %s to %s, this might take a while....\n", origin, target)
 
 	msg, err := restClient.MigrateNode(origin, target, false)
 	if err != nil {

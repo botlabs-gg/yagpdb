@@ -301,8 +301,8 @@ func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 	return nil
 }
 
-// in some scenarios manual flag management is usefull and since updating flags
-// dosen't trample over unknown flags its completely reliable aswelll
+// in some scenarios manual flag management is useful and since updating flags
+// doesn't trample over unknown flags its completely reliable as well
 func AddManualGuildFlags(guildID int64, flags ...string) error {
 	err := common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{keyGuildFlags(guildID)}, flags...)...))
 	if err == nil {
@@ -313,8 +313,8 @@ func AddManualGuildFlags(guildID int64, flags ...string) error {
 	return err
 }
 
-// in some scenarios manual flag management is usefull and since updating flags
-// dosen't trample over unknown flags its completely reliable aswelll
+// in some scenarios manual flag management is useful and since updating flags
+// doesn't trample over unknown flags its completely reliable as well
 func RemoveManualGuildFlags(guildID int64, flags ...string) error {
 	err := common.RedisPool.Do(radix.Cmd(nil, "SREM", append([]string{keyGuildFlags(guildID)}, flags...)...))
 	if err == nil {

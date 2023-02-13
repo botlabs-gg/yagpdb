@@ -49,7 +49,7 @@ func (kl *KeyLock) tryLock(key interface{}, ttl time.Duration) int64 {
 
 	// if there is no lock, or were past the expiry of it
 	if b, ok := kl.locks[key]; !ok || (b == nil || now.After(b.expires)) {
-		// then we can sucessfully lock it
+		// then we can successfully lock it
 		kl.c++
 		handle := kl.c
 		kl.locks[key] = &bucket{

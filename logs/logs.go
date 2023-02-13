@@ -80,7 +80,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		}
 	}
 
-	// note: since the blacklisted channels column is just a TEXT type with a comma seperator...
+	// note: since the blacklisted channels column is just a TEXT type with a comma separator...
 	// i was not a smart person back then
 	strCID := strconv.FormatInt(channelID, 10)
 	split := strings.Split(config.BlacklistedChannels.String, ",")
@@ -131,7 +131,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			body += fmt.Sprintf("\nEmbed %d: %s", count, marshalled)
 		}
 
-		// Strip out nul characters since postgres dont like them and discord dont filter them out (like they do in a lot of other places)
+		// Strip out nul characters since postgres don't like them and discord don't filter them out (like they do in a lot of other places)
 		body = strings.Replace(body, string(rune(0)), "", -1)
 
 		messageModel := &models.Messages2{
@@ -255,7 +255,7 @@ func GetChannelLogs(ctx context.Context, id, guildID int64, sm SearchMode) (*mod
 	return logs, messages, err
 }
 
-func GetGuilLogs(ctx context.Context, guildID int64, before, after, limit int) ([]*models.MessageLogs2, error) {
+func GetGuildLogs(ctx context.Context, guildID int64, before, after, limit int) ([]*models.MessageLogs2, error) {
 
 	qms := []qm.QueryMod{
 		qm.OrderBy("id desc"),

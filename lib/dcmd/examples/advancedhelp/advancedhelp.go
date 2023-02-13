@@ -85,7 +85,7 @@ func main() {
 
 	session.AddHandler(system.HandleMessageCreate)
 	session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		log.Println("Ready recevied")
+		log.Println("Ready received")
 	})
 	err = session.Open()
 	if err != nil {
@@ -101,12 +101,12 @@ type StaticCmd struct {
 	Cat            *dcmd.Category
 }
 
-// Compilie time assertions, will not compiled unless StaticCmd implements these interfaces
+// Compile time assertions, will not compiled unless StaticCmd implements these interfaces
 var _ dcmd.Cmd = (*StaticCmd)(nil)
 var _ dcmd.CmdWithDescriptions = (*StaticCmd)(nil)
 var _ dcmd.CmdWithCategory = (*StaticCmd)(nil)
 
-// Descriptions should return a short Desc (used in the overall help overiview) and one long descriptions for targetted help
+// Descriptions should return a short Desc (used in the overall help overview) and one long descriptions for targetted help
 func (s *StaticCmd) Descriptions(d *dcmd.Data) (string, string) { return s.Desc, "" }
 
 func (e *StaticCmd) Run(data *dcmd.Data) (interface{}, error) {

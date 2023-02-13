@@ -64,7 +64,7 @@ func TestBadCrc(t *testing.T) {
 		t.Fatal("unexpected lack of Decode error")
 	}
 	if bs, ok := err.(ErrBadCrc); !ok {
-		t.Fatal("exected ErrBadCrc, got:", err)
+		t.Fatal("expected ErrBadCrc, got:", err)
 	} else if !strings.HasPrefix(bs.Error(), "invalid crc in packet") {
 		t.Fatalf("the error message looks wrong: %q", err.Error())
 	}

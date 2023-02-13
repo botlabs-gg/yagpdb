@@ -24,10 +24,10 @@ type Conn struct {
 	MessageHandler func(*Message)
 
 	// called when the connection is closed
-	ConnClosedHanlder func()
+	ConnClosedHandler func()
 }
 
-// ConnFromNetCon wraos a Conn around a net.Conn
+// ConnFromNetCon wraps a Conn around a net.Conn
 func ConnFromNetCon(conn net.Conn, logger Logger) *Conn {
 	c := &Conn{
 		netConn: conn,
@@ -49,14 +49,14 @@ func (c *Conn) Listen() {
 	var err error
 	defer func() {
 		if err != nil {
-			c.Log(LogError, err, "an error occured while handling a connection")
+			c.Log(LogError, err, "an error occurred while handling a connection")
 		}
 
 		c.netConn.Close()
 		c.Log(LogInfo, nil, "connection closed")
 
-		if c.ConnClosedHanlder != nil {
-			c.ConnClosedHanlder()
+		if c.ConnClosedHandler != nil {
+			c.ConnClosedHandler()
 		}
 	}()
 
@@ -81,7 +81,7 @@ func (c *Conn) Listen() {
 		id := EventType(binary.LittleEndian.Uint32(idBuf))
 		l := binary.LittleEndian.Uint32(lenBuf)
 
-		c.Log(LogDebug, err, fmt.Sprintf("inc message evt: %s, payload lenght: %d", id.String(), l))
+		c.Log(LogDebug, err, fmt.Sprintf("inc message evt: %s, payload length: %d", id.String(), l))
 
 		body := make([]byte, int(l))
 		if l > 0 {
@@ -127,7 +127,7 @@ func (c *Conn) Send(evtID EventType, data interface{}) error {
 	return c.SendNoLock(encoded)
 }
 
-// Same as Send but logs the error (usefull for launching send in new goroutines)
+// Same as Send but logs the error (useful for launching send in new goroutines)
 func (c *Conn) SendLogErr(evtID EventType, data interface{}) {
 	err := c.Send(evtID, data)
 	if err != nil {

@@ -30,7 +30,7 @@ const (
 	ServiceTypeBGWorker      ServiceType = "bgworker"
 	ServiceTypeConfigService ServiceType = "configservice"
 	ServiceTypeFeed          ServiceType = "feed"
-	ServiceTypeOrchestator   ServiceType = "orchestrator"
+	ServiceTypeOrchestrator   ServiceType = "orchestrator"
 )
 
 // Service represents a service or component of yagpdb
@@ -150,7 +150,7 @@ func (s *serviceTracker) update() {
 
 	err = RedisPool.Do(radix.FlatCmd(nil, "ZREMRANGEBYSCORE", ServicesRedisKey, 0, time.Now().Unix()-30))
 	if err != nil {
-		logger.WithError(err).Error("feailed clearing old service hosts")
+		logger.WithError(err).Error("failed clearing old service hosts")
 		return
 	}
 }
@@ -241,8 +241,8 @@ func (sp *servicePoller) GetShardNode(shardID int) (BotServiceDetails, error) {
 	return BotServiceDetails{}, ErrNotFound
 }
 
-// GetGuildAddress returns the internal api addrress of the specified shard
-// This is preferred over GetShardAddress as it also handles cases of different total shard couns (mid upscaling for example)
+// GetGuildAddress returns the internal api address of the specified shard
+// This is preferred over GetShardAddress as it also handles cases of different total shard counts (mid upscaling for example)
 func (sp *servicePoller) GetGuildAddress(guildID int64) (string, error) {
 	sp.mu.Lock()
 	defer sp.mu.Unlock()

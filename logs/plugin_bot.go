@@ -40,8 +40,8 @@ func (p *Plugin) BotInit() {
 
 	eventsystem.AddHandlerFirstLegacy(p, HandlePresenceUpdate, eventsystem.EventPresenceUpdate)
 
-	go EvtProcesser()
-	go EvtProcesserGCs()
+	go EvtProcessor()
+	go EvtProcessorGCs()
 }
 
 var cmdLogs = &commands.YAGCommand{
@@ -690,7 +690,7 @@ type UserGuildPair struct {
 var confEnableUsernameTracking = config.RegisterOption("yagpdb.enable_username_tracking", "Enable username tracking", true)
 
 // Queue up all the events and process them one by one, because of limited connections
-func EvtProcesser() {
+func EvtProcessor() {
 
 	queuedMembers := make([]*discordgo.Member, 0)
 	queuedUsers := make([]*UserGuildPair, 0)
@@ -846,7 +846,7 @@ type LightGC struct {
 	Members []*discordgo.Member
 }
 
-func EvtProcesserGCs() {
+func EvtProcessorGCs() {
 	for {
 		<-evtChanGC
 
@@ -881,7 +881,7 @@ func EvtProcesserGCs() {
 
 		// if len(gc.Members) > 100 {
 		// 	logger.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
-		// 	// Make sure this dosen't use all our resources
+		// 	// Make sure this doesn't use all our resources
 		// 	time.Sleep(time.Second * 25)
 		// } else {
 		// 	time.Sleep(time.Second * 15)

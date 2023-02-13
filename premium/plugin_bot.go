@@ -20,7 +20,7 @@ func init() {
 		}
 
 		if premium {
-			return PremiumStateMaxMessags, PremiumStateMaxMessageAge
+			return PremiumStateMaxMessages, PremiumStateMaxMessageAge
 		}
 
 		return oldF(guildID)
@@ -36,6 +36,6 @@ func (p *Plugin) AddCommands() {
 }
 
 const (
-	PremiumStateMaxMessags    = 10000
+	PremiumStateMaxMessages    = 10000
 	PremiumStateMaxMessageAge = time.Hour * 12
 )

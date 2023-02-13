@@ -26,13 +26,13 @@ var (
 	_                   bot.BotInitHandler       = (*Plugin)(nil)
 	_                   commands.CommandProvider = (*Plugin)(nil)
 	msgStatsCollector   *messagestatscollector.Collector
-	memberSatatsUpdater *serverMemberStatsUpdater
+	memberStatsUpdater *serverMemberStatsUpdater
 )
 
 func (p *Plugin) BotInit() {
 	msgStatsCollector = messagestatscollector.NewCollector(logger, time.Minute*5)
-	memberSatatsUpdater = newServerMemberStatsUpdater()
-	go memberSatatsUpdater.run()
+	memberStatsUpdater = newServerMemberStatsUpdater()
+	go memberStatsUpdater.run()
 
 	if !confDeprecated.GetBool() {
 		eventsystem.AddHandlerAsyncLastLegacy(p, handleUpdateMemberStats, eventsystem.EventGuildMemberAdd, eventsystem.EventGuildMemberRemove, eventsystem.EventGuildCreate)
@@ -89,10 +89,10 @@ func (p *Plugin) AddCommands() {
 
 func handleUpdateMemberStats(evt *eventsystem.EventData) {
 	select {
-	case memberSatatsUpdater.incoming <- evt:
+	case memberStatsUpdater.incoming <- evt:
 	default:
 		go func() {
-			memberSatatsUpdater.incoming <- evt
+			memberStatsUpdater.incoming <- evt
 		}()
 	}
 }
@@ -138,7 +138,7 @@ func keyOnlineMembers(year, day int) string {
 }
 
 func (p *Plugin) runOnlineUpdater() {
-	time.Sleep(time.Minute * 1) // relieve startup preasure
+	time.Sleep(time.Minute * 1) // relieve startup pressure
 
 	ticker := time.NewTicker(time.Second * 10)
 
@@ -150,7 +150,7 @@ func (p *Plugin) runOnlineUpdater() {
 		<-ticker.C
 
 		if len(guildsToCheck) < 0 || i >= len(guildsToCheck) {
-			// Copy the list of guilds so that we dont need to keep the entire state locked
+			// Copy the list of guilds so that we don't need to keep the entire state locked
 
 			i = 0
 			guildsToCheck = guildSlice()

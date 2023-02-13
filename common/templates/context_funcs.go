@@ -1304,7 +1304,7 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil //don't send an error , a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetChannel(cID)
@@ -1324,7 +1324,7 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil //don't send an error , a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetThread(cID)
@@ -1344,7 +1344,7 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil //don't send an error , a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetChannelOrThread(cID)

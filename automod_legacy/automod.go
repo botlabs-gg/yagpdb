@@ -99,7 +99,7 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 			config.Sites.Enabled ||
 			config.Words.Enabled {
 
-			// check if atleast one rule is enabled
+			// check if at least one rule is enabled
 
 			flags = append(flags, featureFlagEnabled)
 		}
@@ -110,6 +110,6 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 
 func (p *Plugin) AllFeatureFlags() []string {
 	return []string{
-		featureFlagEnabled, // set if automod is enabled and atleast one rule is enabled as well
+		featureFlagEnabled, // set if automod is enabled and at least one rule is enabled as well
 	}
 }

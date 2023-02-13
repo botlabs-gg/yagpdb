@@ -3,7 +3,7 @@
 
 // Generates the wrapper event handlers for discordgo events
 // The wrappers adds an extra parameter to the handlers which is a redis connection
-// And will also recover from panic that occured inside them
+// And will also recover from panic that occurred inside them
 package main
 
 import (
@@ -90,7 +90,7 @@ var NonStandardEvents = []Event{
 	Event{"YagShardReady", false},
 	// Sent one or more shards is either migrated to this node or added freshly
 	Event{"YagShardsAdded", false},
-	// Sent once a shard has been either migrated away or removeotherwise
+	// Sent once a shard has been either migrated away or remove otherwise
 	Event{"YagShardRemoved", false},
 }
 

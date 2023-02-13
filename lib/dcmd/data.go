@@ -199,7 +199,7 @@ const (
 	// triggered through a mention trigger
 	TriggerTypeMention
 
-	// triggered thourgh a prefix trigger
+	// triggered through a prefix trigger
 	TriggerTypePrefix
 
 	// triggered through slash commands

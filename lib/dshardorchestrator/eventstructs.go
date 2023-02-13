@@ -6,7 +6,7 @@ type IdentifyData struct {
 	Version       string
 	NodeID        string
 
-	// when the logic of the orhcestrator changes in a backwards incompatible way, we reject nodes with mistmatched logic versions
+	// when the logic of the orchestrator changes in a backwards incompatible way, we reject nodes with mismatched logic versions
 	OrchestratorLogicVersion int
 }
 

@@ -17,7 +17,7 @@ func TestStream_MessageJSONError(t *testing.T) {
 }
 
 func TestStream_GetMessageTweet(t *testing.T) {
-	msgJSON := []byte(`{"id": 20, "text": "just setting up my twttr", "retweet_count": "68535"}`)
+	msgJSON := []byte(`{"id": 20, "text": "just setting up my twitter", "retweet_count": "68535"}`)
 	msg := getMessage(msgJSON)
 	assert.IsType(t, &Tweet{}, msg)
 }

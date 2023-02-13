@@ -316,7 +316,7 @@ func GetMigrationV2Progress() (*MigrationProgress, error) {
 		msgsProgress = &MigrationSubProgress{
 			LastID: -1,
 		}
-		logger.Infof("starting migration to v2 format for messages from sctatch")
+		logger.Infof("starting migration to v2 format for messages from scratch")
 	}
 
 	var memberProgress *MigrationSubProgress
@@ -329,7 +329,7 @@ func GetMigrationV2Progress() (*MigrationProgress, error) {
 		memberProgress = &MigrationSubProgress{
 			LastID: -1,
 		}
-		logger.Infof("starting migration to v2 format for members from sctatch")
+		logger.Infof("starting migration to v2 format for members from scratch")
 	}
 
 	return &MigrationProgress{

@@ -15,7 +15,7 @@ type MockBot struct {
 	ResumeShardFunc func(shard int, sessionID string, sequence int64, resumeGatewayUrl string)
 	AddNewShardFunc func(shards ...int)
 
-	// Caled when the bot should shut down, make sure to send EvtShutdown when completed
+	// Called when the bot should shut down, make sure to send EvtShutdown when completed
 	ShutdownFunc func()
 
 	InitializeShardTransferFromFunc func(shard int) (sessionID string, sequence int64, resumeGatewayUrl string)
@@ -54,7 +54,7 @@ func (mn *MockBot) ResumeShard(shard int, sessionID string, sequence int64, resu
 	}
 }
 
-// Caled when the bot should shut down, make sure to send EvtShutdown when completed
+// Called when the bot should shut down, make sure to send EvtShutdown when completed
 func (mn *MockBot) Shutdown() {
 	if mn.ShutdownFunc != nil {
 		mn.ShutdownFunc()

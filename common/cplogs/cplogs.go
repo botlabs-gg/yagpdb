@@ -42,7 +42,7 @@ func AddEntry(entry *LogEntry) error {
 	return err
 }
 
-// RetryAddEntry will etry AddEntry until it suceeds or 60 seconds has elapsed
+// RetryAddEntry will retry AddEntry until it succeeds or 60 seconds has elapsed
 func RetryAddEntry(entry *LogEntry) {
 	started := time.Now()
 	for {

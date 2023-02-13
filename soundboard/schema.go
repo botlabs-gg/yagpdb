@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS soundboard_sounds(
 CREATE INDEX IF NOT EXISTS soundboard_sounds_guild_idx ON soundboard_sounds(guild_id);
 `, `
 
--- i was using gorm way back, and that apperently didn't add not null constraints
+-- i was using gorm way back, and that apparently didn't add not null constraints
 -- so for existing tables make sure they're present
 
 -- this SHOULD be impossible, but just to sure... (was 0 rows on prod db)
@@ -38,7 +38,7 @@ ALTER TABLE soundboard_sounds ALTER COLUMN created_at SET NOT NULL;
 ALTER TABLE soundboard_sounds ALTER COLUMN updated_at SET NOT NULL;
 
 `, `
--- we migrate the data from the old system so that peoples settings dont dissapear
+-- we migrate the data from the old system so that peoples settings don't disappear
 DO $$
 BEGIN
 	IF (SELECT COUNT(*) FROM information_schema.columns WHERE table_name='soundboard_sounds' and column_name='required_roles') < 1 THEN

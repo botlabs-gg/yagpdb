@@ -1,6 +1,6 @@
-// The event system is used to propegate events from different yagpdb instances
+// The event system is used to propagate events from different yagpdb instances
 // For example when you change the streamer settings, and event gets fired
-// Telling the streamer plugin to recheck everyones streaming status
+// Telling the streamer plugin to recheck everyone's streaming status
 
 package pubsub
 
@@ -88,7 +88,7 @@ func PublishLogErr(evt string, target int64, data interface{}) {
 }
 
 func PollEvents() {
-	AddHandler("global_ratelimit", handleGlobalRatelimtPusub, globalRatelimitTriggeredEventData{})
+	AddHandler("global_ratelimit", handleGlobalRatelimitPubsub, globalRatelimitTriggeredEventData{})
 	AddHandler("evict_core_config_cache", handleEvictCoreConfigCache, nil)
 	AddHandler("evict_cache_set", handleEvictCacheSet, evictCacheSetData{})
 

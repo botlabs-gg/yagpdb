@@ -131,7 +131,7 @@ func WarningAlert(args ...interface{}) *Alert {
 	}
 }
 
-func SucessAlert(args ...interface{}) *Alert {
+func SuccessAlert(args ...interface{}) *Alert {
 	return &Alert{
 		Style:   AlertSuccess,
 		Message: fmt.Sprint(args...),
@@ -163,8 +163,8 @@ func GetBaseCPContextData(ctx context.Context) (*dstate.GuildSet, TemplateData) 
 	return guild, templateData
 }
 
-// Checks and error and logs it aswell as adding it to the alerts
-// returns true if an error occured
+// Checks and error and logs it as well as adding it to the alerts
+// returns true if an error occurred
 func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface{})) bool {
 	if err == nil {
 		return false
@@ -177,7 +177,7 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 	t.AddAlerts(ErrorAlert("An error occurred: ", errMsg))
 
 	if logger != nil {
-		logger("An error occured:", err)
+		logger("An error occurred:", err)
 	}
 
 	return true
@@ -232,8 +232,8 @@ func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool
 		}
 
 		if isReadOnlyReq {
-			// allow special read only acces for GET and OPTIONS requests, simple and works well
-			if hasAcces, err := bot.HasReadOnlyAccess(cast.ID); hasAcces && err == nil {
+			// allow special read only access for GET and OPTIONS requests, simple and works well
+			if hasAccess, err := bot.HasReadOnlyAccess(cast.ID); hasAccess && err == nil {
 				return true, false
 			}
 		}

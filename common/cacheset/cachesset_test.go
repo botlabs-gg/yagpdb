@@ -55,7 +55,7 @@ func TestGuildCacheBasic(t *testing.T) {
 	slot.gc(time.Now().Add(time.Hour))
 
 	if len(slot.values) != 0 {
-		t.Fatal("value was not remvoed from cache")
+		t.Fatal("value was not removed from cache")
 	}
 
 	v3, err := slot.Get(1)

@@ -31,7 +31,7 @@ func main() {
 	system.Root.AddCommand(byeCmd, dcmd.NewTrigger("Bye", "Bai"))
 
 	container, _ := system.Root.Sub("container", "c")
-	container.Description = "Some extra seperated commands"
+	container.Description = "Some extra separated commands"
 
 	container.AddCommand(heyCmd, dcmd.NewTrigger("Hello", "Hey"))
 	container.AddCommand(byeCmd, dcmd.NewTrigger("Bye", "Bai"))
@@ -40,7 +40,7 @@ func main() {
 		CommandUsages: make(map[string]int),
 	}
 
-	system.Root.AddMidlewares(tracker.MiddleWare)
+	system.Root.AddMiddlewares(tracker.MiddleWare)
 	system.Root.AddCommand(tracker, dcmd.NewTrigger("stats"))
 	system.Root.AddCommand(dcmd.NewStdHelpCommand(), dcmd.NewTrigger("help", "h"))
 	system.Root.BuildMiddlewareChains(nil)
@@ -66,11 +66,11 @@ type StaticCmd struct {
 	Description string
 }
 
-// Compilie time assertions, will not compiled unless StaticCmd implements these interfaces
+// Compile time assertions, will not compiled unless StaticCmd implements these interfaces
 var _ dcmd.Cmd = (*StaticCmd)(nil)
 var _ dcmd.CmdWithDescriptions = (*StaticCmd)(nil)
 
-// Descriptions should return a short description (used in the overall help overiview) and one long descriptions for targetted help
+// Descriptions should return a short description (used in the overall help overview) and one long descriptions for targetted help
 func (s *StaticCmd) Descriptions(d *dcmd.Data) (string, string) { return s.Description, "" }
 
 func (e *StaticCmd) Run(data *dcmd.Data) (interface{}, error) {

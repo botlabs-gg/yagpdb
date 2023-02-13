@@ -61,7 +61,7 @@ func verifyMessages(t *testing.T, state *InMemoryTracker, channelID int64, expec
 
 	messages, ok := shard.messages[channelID]
 	if !ok {
-		t.Fatal("emessages slice not present")
+		t.Fatal("messages slice not present")
 	}
 
 	if messages.Len() != len(expectedResult) {
@@ -110,7 +110,7 @@ func TestGCMembers(t *testing.T) {
 	// verify the contents now
 	verifyMembers(t, state, initialTestGuildID, []int64{1000, 1001, 1002})
 
-	// trigger a gc with no efffect
+	// trigger a gc with no effect
 	shard.gcTick(time.Date(2021, 5, 20, 10, 0, 0, 0, time.UTC), nil)
 	verifyMembers(t, state, initialTestGuildID, []int64{1000, 1001, 1002})
 

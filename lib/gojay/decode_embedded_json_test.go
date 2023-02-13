@@ -163,7 +163,7 @@ func TestDecodeEmbeddedJSONDecodeAPI(t *testing.T) {
 	}
 }
 
-func TestDecodeEmbeededJSONNil(t *testing.T) {
+func TestDecodeEmbeddedJSONNil(t *testing.T) {
 	dec := BorrowDecoder(strings.NewReader(`"bar"`))
 	var ej *EmbeddedJSON
 	err := dec.decodeEmbeddedJSON(ej)
@@ -171,7 +171,7 @@ func TestDecodeEmbeededJSONNil(t *testing.T) {
 	assert.IsType(t, InvalidUnmarshalError(""), err, `err should not be of type InvalidUnmarshalError`)
 }
 
-func TestDecodeEmbeededJSONNil2(t *testing.T) {
+func TestDecodeEmbeddedJSONNil2(t *testing.T) {
 	dec := BorrowDecoder(strings.NewReader(`"bar"`))
 	var ej *EmbeddedJSON
 	err := dec.AddEmbeddedJSON(ej)

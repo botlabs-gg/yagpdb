@@ -172,7 +172,7 @@ func (pa *ParsedArgs) IsSet(index int) interface{} {
 	return pa.Get(index) != nil
 }
 
-// tmplRunCC either run another custom command immeditely with a max stack depth of 2
+// tmplRunCC either run another custom command immediately with a max stack depth of 2
 // or schedules a custom command to be run in the future sometime with the provided data placed in .ExecData
 func tmplRunCC(ctx *templates.Context) interface{} {
 	return func(ccID int, channel interface{}, delaySeconds interface{}, data interface{}) (string, error) {
@@ -756,12 +756,12 @@ func serializeValue(v interface{}) ([]byte, error) {
 
 // returns true if were above db limit for the specified guild
 func CheckGuildDBLimit(gs *dstate.GuildSet) (bool, error) {
-	limitMuliplier := 1
+	limitMultiplier := 1
 	if isPremium, _ := premium.IsGuildPremium(gs.ID); isPremium {
-		limitMuliplier = 10
+		limitMultiplier = 10
 	}
 
-	limit := gs.MemberCount * 50 * int64(limitMuliplier)
+	limit := gs.MemberCount * 50 * int64(limitMultiplier)
 
 	curValues, err := cacheCheckDBLimit(gs)
 	if err != nil {

@@ -47,13 +47,13 @@ func TestStatusService_Lookup(t *testing.T) {
 		assertMethod(t, "GET", r)
 		assertQuery(t, map[string]string{"id": "20,573893817000140800", "trim_user": "true"}, r)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `[{"id": 20, "text": "just setting up my twttr"}, {"id": 573893817000140800, "text": "Don't get lost #PaxEast2015"}]`)
+		fmt.Fprintf(w, `[{"id": 20, "text": "just setting up my twitter"}, {"id": 573893817000140800, "text": "Don't get lost #PaxEast2015"}]`)
 	})
 
 	client := NewClient(httpClient)
 	params := &StatusLookupParams{ID: []int64{20}, TrimUser: Bool(true)}
 	tweets, _, err := client.Statuses.Lookup([]int64{573893817000140800}, params)
-	expected := []Tweet{Tweet{ID: 20, Text: "just setting up my twttr"}, Tweet{ID: 573893817000140800, Text: "Don't get lost #PaxEast2015"}}
+	expected := []Tweet{Tweet{ID: 20, Text: "just setting up my twitter"}, Tweet{ID: 573893817000140800, Text: "Don't get lost #PaxEast2015"}}
 	assert.Nil(t, err)
 	assert.Equal(t, expected, tweets)
 }
@@ -139,13 +139,13 @@ func TestStatusService_Retweet(t *testing.T) {
 		assertQuery(t, map[string]string{}, r)
 		assertPostForm(t, map[string]string{"id": "20", "trim_user": "true"}, r)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"id": 581980947630202020, "text": "RT @jack: just setting up my twttr", "retweeted_status": {"id": 20, "text": "just setting up my twttr"}}`)
+		fmt.Fprintf(w, `{"id": 581980947630202020, "text": "RT @jack: just setting up my twitter", "retweeted_status": {"id": 20, "text": "just setting up my twitter"}}`)
 	})
 
 	client := NewClient(httpClient)
 	params := &StatusRetweetParams{TrimUser: Bool(true)}
 	tweet, _, err := client.Statuses.Retweet(20, params)
-	expected := &Tweet{ID: 581980947630202020, Text: "RT @jack: just setting up my twttr", RetweetedStatus: &Tweet{ID: 20, Text: "just setting up my twttr"}}
+	expected := &Tweet{ID: 581980947630202020, Text: "RT @jack: just setting up my twitter", RetweetedStatus: &Tweet{ID: 20, Text: "just setting up my twitter"}}
 	assert.Nil(t, err)
 	assert.Equal(t, expected, tweet)
 }
@@ -171,13 +171,13 @@ func TestStatusService_Unretweet(t *testing.T) {
 		assertQuery(t, map[string]string{}, r)
 		assertPostForm(t, map[string]string{"id": "20", "trim_user": "true"}, r)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"id": 581980947630202020, "text":"RT @jack: just setting up my twttr", "retweeted_status": {"id": 20, "text": "just setting up my twttr"}}`)
+		fmt.Fprintf(w, `{"id": 581980947630202020, "text":"RT @jack: just setting up my twitter", "retweeted_status": {"id": 20, "text": "just setting up my twitter"}}`)
 	})
 
 	client := NewClient(httpClient)
 	params := &StatusUnretweetParams{TrimUser: Bool(true)}
 	tweet, _, err := client.Statuses.Unretweet(20, params)
-	expected := &Tweet{ID: 581980947630202020, Text: "RT @jack: just setting up my twttr", RetweetedStatus: &Tweet{ID: 20, Text: "just setting up my twttr"}}
+	expected := &Tweet{ID: 581980947630202020, Text: "RT @jack: just setting up my twitter", RetweetedStatus: &Tweet{ID: 20, Text: "just setting up my twitter"}}
 	assert.Nil(t, err)
 	assert.Equal(t, expected, tweet)
 }
@@ -190,13 +190,13 @@ func TestStatusService_Retweets(t *testing.T) {
 		assertMethod(t, "GET", r)
 		assertQuery(t, map[string]string{"id": "20", "count": "2"}, r)
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `[{"text": "RT @jack: just setting up my twttr"}, {"text": "RT @jack: just setting up my twttr"}]`)
+		fmt.Fprintf(w, `[{"text": "RT @jack: just setting up my twitter"}, {"text": "RT @jack: just setting up my twitter"}]`)
 	})
 
 	client := NewClient(httpClient)
 	params := &StatusRetweetsParams{Count: 2}
 	retweets, _, err := client.Statuses.Retweets(20, params)
-	expected := []Tweet{Tweet{Text: "RT @jack: just setting up my twttr"}, Tweet{Text: "RT @jack: just setting up my twttr"}}
+	expected := []Tweet{Tweet{Text: "RT @jack: just setting up my twitter"}, Tweet{Text: "RT @jack: just setting up my twitter"}}
 	assert.Nil(t, err)
 	assert.Equal(t, expected, retweets)
 }

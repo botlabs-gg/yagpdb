@@ -1,6 +1,6 @@
 package automod_legacy
 
-// These words are listed in in alphabethical order.
+// These words are listed in in alphabetical order.
 var BuiltinSwearWords = map[string]bool{
 	"anal":        true,
 	"anus":        true,

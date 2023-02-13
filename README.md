@@ -82,7 +82,7 @@ Configure Redis and Postgres with your desired settings.
 
 In postgres, create a new user `yagpdb` and database `yagpdb` and grant that user access to that database.
 
-Set up the environment variables with the credentials from the [general setup](#General-Bot-Setup). See the [sample env file](cmd/yagpdb/sampleenvfile) for a list of all enviroment variables.
+Set up the environment variables with the credentials from the [general setup](#General-Bot-Setup). See the [sample env file](cmd/yagpdb/sampleenvfile) for a list of all environment variables.
 
 Afterwards, run the build script located at `/cmd/yagpdb/build.sh` and  start the bot using `./yagpdb`:
 

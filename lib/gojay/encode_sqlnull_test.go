@@ -9,7 +9,7 @@ import (
 )
 
 // Null String
-func TestEncoceSQLNullString(t *testing.T) {
+func TestEncodeSQLNullString(t *testing.T) {
 	testCases := []struct {
 		name           string
 		sqlNullString  sql.NullString
@@ -288,7 +288,7 @@ func TestAddSQLNullString(t *testing.T) {
 }
 
 // NullInt64
-func TestEncoceSQLNullInt64(t *testing.T) {
+func TestEncodeSQLNullInt64(t *testing.T) {
 	testCases := []struct {
 		name           string
 		sqlNullInt64   sql.NullInt64
@@ -565,7 +565,7 @@ func TestAddSQLNullInt64(t *testing.T) {
 }
 
 // NullFloat64
-func TestEncoceSQLNullFloat64(t *testing.T) {
+func TestEncodeSQLNullFloat64(t *testing.T) {
 	testCases := []struct {
 		name           string
 		sqlNullFloat64 sql.NullFloat64
@@ -843,7 +843,7 @@ func TestAddSQLNullFloat64(t *testing.T) {
 }
 
 // NullBool
-func TestEncoceSQLNullBool(t *testing.T) {
+func TestEncodeSQLNullBool(t *testing.T) {
 	testCases := []struct {
 		name           string
 		sqlNullBool    sql.NullBool

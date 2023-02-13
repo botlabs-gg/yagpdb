@@ -27,7 +27,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 	}
 
 	tNext := cc.LastRun.Time.Add(time.Minute * time.Duration(cc.TimeTriggerInterval))
-	// run it immedietely if this is the case
+	// run it immediately if this is the case
 	if tNext.Before(now) {
 		tNext = now
 	}
@@ -35,7 +35,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 	// ensure were dealing with utc
 	tNext = tNext.UTC()
 
-	// Check for blaclisted days and if we encountered a blacklisted day we reset the clock
+	// Check for blacklisted days and if we encountered a blacklisted day we reset the clock
 	tNext = intervalCheckDays(cc, tNext, true)
 
 	// check for blacklisted hours

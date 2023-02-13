@@ -49,7 +49,7 @@ func testStopPlugin(p *ScheduledEvents) {
 
 func TestScheduleHandle(t *testing.T) {
 	if !SchemaInit {
-		t.Skip("schema was not initilized, skipping.")
+		t.Skip("schema was not initialized, skipping.")
 		return
 	}
 
@@ -81,7 +81,7 @@ func TestScheduleHandle(t *testing.T) {
 
 func TestScheduleHandleSlow(t *testing.T) {
 	if !SchemaInit {
-		t.Skip("schema was not initilized, skipping.")
+		t.Skip("schema was not initialized, skipping.")
 		return
 	}
 
@@ -126,7 +126,7 @@ type TestData struct {
 
 func TestScheduleHandleWithData(t *testing.T) {
 	if !SchemaInit {
-		t.Skip("schema was not initilized, skipping.")
+		t.Skip("schema was not initialized, skipping.")
 		return
 	}
 

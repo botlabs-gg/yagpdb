@@ -53,7 +53,7 @@ func (r BaseRegexTrigger) UserSettings() []*SettingDef {
 //////////////
 
 type MentionsTriggerData struct {
-	Treshold int
+	Threshold int
 }
 
 var _ MessageTrigger = (*MentionsTrigger)(nil)
@@ -80,7 +80,7 @@ func (mc *MentionsTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
 			Name:    "Threshold",
-			Key:     "Treshold",
+			Key:     "Threshold",
 			Kind:    SettingTypeInt,
 			Default: 4,
 		},
@@ -89,7 +89,7 @@ func (mc *MentionsTrigger) UserSettings() []*SettingDef {
 
 func (mc *MentionsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	dataCast := triggerCtx.Data.(*MentionsTriggerData)
-	if len(m.Mentions) >= dataCast.Treshold {
+	if len(m.Mentions) >= dataCast.Threshold {
 		return true, nil
 	}
 
@@ -323,7 +323,7 @@ func (dt *DomainTrigger) containsDomain(link string, list []string) (bool, strin
 
 type ViolationsTriggerData struct {
 	Name           string `valid:",1,100,trimspace"`
-	Treshold       int
+	Threshold       int
 	Interval       int
 	IgnoreIfLesser bool
 }
@@ -360,7 +360,7 @@ func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
 		},
 		&SettingDef{
 			Name:    "Number of violations",
-			Key:     "Treshold",
+			Key:     "Threshold",
 			Kind:    SettingTypeInt,
 			Default: 4,
 		},
@@ -398,7 +398,7 @@ func (vt *ViolationsTrigger) CheckUser(ctxData *TriggeredRuleData, violations []
 		numRecent++
 	}
 
-	if numRecent >= settingsCast.Treshold {
+	if numRecent >= settingsCast.Threshold {
 		return true, nil
 	}
 
@@ -461,7 +461,7 @@ func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.
 	totalCapitalisableChars := 0
 	numCaps := 0
 
-	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
+	// count the number of upper case characters, note that this doesn't include other characters such as punctuation
 	for _, r := range m.Content {
 		if unicode.IsUpper(r) {
 			numCaps++
@@ -611,7 +611,7 @@ func (g *GoogleSafeBrowsingTrigger) MergeDuplicates(data []interface{}) interfac
 /////////////////////////////////////////////////////////////
 
 type SlowmodeTriggerData struct {
-	Treshold                 int
+	Threshold                 int
 	Interval                 int
 	SingleMessageAttachments bool
 	SingleMessageLinks       bool
@@ -690,7 +690,7 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 	settings := []*SettingDef{
 		&SettingDef{
 			Name:    thresholdName,
-			Key:     "Treshold",
+			Key:     "Threshold",
 			Kind:    SettingTypeInt,
 			Default: defaultMessages,
 		},
@@ -777,7 +777,7 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 			amount++
 		}
 
-		if amount >= settings.Treshold {
+		if amount >= settings.Threshold {
 			return true, nil
 		}
 	}
@@ -792,7 +792,7 @@ func (s *SlowmodeTrigger) MergeDuplicates(data []interface{}) interface{} {
 /////////////////////////////////////////////////////////////
 
 type MultiMsgMentionTriggerData struct {
-	Treshold        int
+	Threshold        int
 	Interval        int
 	CountDuplicates bool
 }
@@ -831,7 +831,7 @@ func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
 			Name:    "Mentions",
-			Key:     "Treshold",
+			Key:     "Threshold",
 			Kind:    SettingTypeInt,
 			Default: 20,
 		},
@@ -873,7 +873,7 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 		}
 
 		if mt.ChannelBased || v.Author.ID == triggerCtx.MS.User.ID {
-			// we only care about unique mentions, e.g mentioning the same user a ton wont do anythin
+			// we only care about unique mentions, e.g mentioning the same user a ton wont do anything
 			for _, msgMention := range v.Mentions {
 				if settings.CountDuplicates || !common.ContainsInt64Slice(mentions, msgMention.ID) {
 					mentions = append(mentions, msgMention.ID)
@@ -881,12 +881,12 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 			}
 		}
 
-		if len(mentions) >= settings.Treshold {
+		if len(mentions) >= settings.Threshold {
 			return true, nil
 		}
 	}
 
-	if len(mentions) >= settings.Treshold {
+	if len(mentions) >= settings.Threshold {
 		return true, nil
 	}
 
@@ -955,7 +955,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 /////////////////////////////////////////////////////////////
 
 type SpamTriggerData struct {
-	Treshold  int
+	Threshold  int
 	TimeLimit int
 }
 
@@ -976,14 +976,14 @@ func (spam *SpamTrigger) Name() string {
 }
 
 func (spam *SpamTrigger) Description() string {
-	return "Triggers when a user sends x identical messages after eachother"
+	return "Triggers when a user sends x identical messages after each other"
 }
 
 func (spam *SpamTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		&SettingDef{
 			Name:    "Threshold",
-			Key:     "Treshold",
+			Key:     "Threshold",
 			Kind:    SettingTypeInt,
 			Min:     1,
 			Max:     250,

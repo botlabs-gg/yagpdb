@@ -147,7 +147,7 @@ func (m *Manager) findCreateFetcher(guildID int64) *shardMemberFetcher {
 	m.fetchersMu.Lock()
 	defer m.fetchersMu.Unlock()
 
-	// check again as it could have changed inbetween upgrading the lock
+	// check again as it could have changed in between upgrading the lock
 	for _, v := range m.fetchers {
 		if v.shardID == shardID {
 			return v
@@ -341,7 +341,7 @@ OUTER_SEND:
 			}
 		}
 
-		// not found, sendn il
+		// not found, send nil
 		go s.sendGWResult(req, nil)
 	}
 

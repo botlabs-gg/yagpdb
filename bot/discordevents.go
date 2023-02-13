@@ -193,7 +193,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 }
 
 // StateHandler updates the world state
-// use AddHandlerBefore to add handler before this one, otherwise they will alwyas be after
+// use AddHandlerBefore to add handler before this one, otherwise they will always be after
 func StateHandler(evt *eventsystem.EventData) {
 	stateTracker.HandleEvent(evt.Session, evt.EvtInterface)
 	// State.HandleEvent(ContextSession(evt.Context()), evt.EvtInterface)

@@ -303,12 +303,12 @@ func expandTemplate(namespace string, dictionary map[int]string, key int, data i
 	if !ok {
 		return "", fmt.Errorf("failed to lookup template for %v.%v", namespace, key)
 	}
-	temlate, err := template.New(id).Parse(textTemplate)
+	template, err := template.New(id).Parse(textTemplate)
 	if err != nil {
-		return "", fmt.Errorf("fiailed to parse template %v %v, due to %v", namespace, key, err)
+		return "", fmt.Errorf("failed to parse template %v %v, due to %v", namespace, key, err)
 	}
 	writer := new(bytes.Buffer)
-	err = temlate.Execute(writer, data)
+	err = template.Execute(writer, data)
 	return writer.String(), err
 }
 

@@ -54,7 +54,7 @@ func (p *Plugin) InitWeb() {
 	// Control routes
 	mux.Handle(pat.Post("/host/:host/pid/:pid/shutdown"), web.ControllerPostHandler(p.handleShutdown, panelHandler, nil))
 
-	// Orhcestrator controls
+	// Orchestrator controls
 	mux.Handle(pat.Post("/host/:host/pid/:pid/updateversion"), web.ControllerPostHandler(p.handleUpgrade, panelHandler, nil))
 	mux.Handle(pat.Post("/host/:host/pid/:pid/migratenodes"), web.ControllerPostHandler(p.handleMigrateNodes, panelHandler, nil))
 	mux.Handle(pat.Get("/host/:host/pid/:pid/deployedversion"), http.HandlerFunc(p.handleLaunchNodeVersion))
@@ -87,7 +87,7 @@ func (p *Plugin) handleGetPanel(w http.ResponseWriter, r *http.Request) (web.Tem
 		for _, v := range servicehosts[i].Services {
 			if v.Type == common.ServiceTypeBot {
 				return false
-			} else if v.Type == common.ServiceTypeOrchestator {
+			} else if v.Type == common.ServiceTypeOrchestrator {
 				return true
 			}
 		}
@@ -159,14 +159,14 @@ func (p *Plugin) handleShutdown(w http.ResponseWriter, r *http.Request) (web.Tem
 		return tmpl, err
 	}
 
-	tmpl = tmpl.AddAlerts(web.SucessAlert(resp))
+	tmpl = tmpl.AddAlerts(web.SuccessAlert(resp))
 	return tmpl, nil
 }
 
 func (p *Plugin) handleUpgrade(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	_, tmpl := web.GetBaseCPContextData(r.Context())
 
-	client, err := createOrhcestatorRESTClient(r)
+	client, err := createOrchestratorRESTClient(r)
 	if err != nil {
 		return tmpl, err
 	}
@@ -179,14 +179,14 @@ func (p *Plugin) handleUpgrade(w http.ResponseWriter, r *http.Request) (web.Temp
 		return tmpl, err
 	}
 
-	tmpl = tmpl.AddAlerts(web.SucessAlert("Upgraded to ", newVer))
+	tmpl = tmpl.AddAlerts(web.SuccessAlert("Upgraded to ", newVer))
 	return tmpl, nil
 }
 
 func (p *Plugin) handleMigrateNodes(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	_, tmpl := web.GetBaseCPContextData(r.Context())
 
-	client, err := createOrhcestatorRESTClient(r)
+	client, err := createOrchestratorRESTClient(r)
 	if err != nil {
 		return tmpl, err
 	}
@@ -199,14 +199,14 @@ func (p *Plugin) handleMigrateNodes(w http.ResponseWriter, r *http.Request) (web
 		return tmpl, err
 	}
 
-	tmpl = tmpl.AddAlerts(web.SucessAlert(response))
+	tmpl = tmpl.AddAlerts(web.SuccessAlert(response))
 	return tmpl, nil
 }
 
 func (p *Plugin) handleLaunchNodeVersion(w http.ResponseWriter, r *http.Request) {
 	logger.Println("ahahha")
 
-	client, err := createOrhcestatorRESTClient(r)
+	client, err := createOrchestratorRESTClient(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error querying service hosts: " + err.Error()))
@@ -223,14 +223,14 @@ func (p *Plugin) handleLaunchNodeVersion(w http.ResponseWriter, r *http.Request)
 	w.Write([]byte(ver))
 }
 
-func createOrhcestatorRESTClient(r *http.Request) (*rest.Client, error) {
+func createOrchestratorRESTClient(r *http.Request) (*rest.Client, error) {
 	sh, err := findServicehost(r)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, v := range sh.Services {
-		if v.Type == common.ServiceTypeOrchestator {
+		if v.Type == common.ServiceTypeOrchestrator {
 			return rest.NewClient("http://" + sh.InternalAPIAddress), nil
 		}
 	}
@@ -313,7 +313,7 @@ func (p *Plugin) handleEditConfig(w http.ResponseWriter, r *http.Request) (web.T
 }
 
 func (p *Plugin) handleGetShardSessions(w http.ResponseWriter, r *http.Request) {
-	client, err := createOrhcestatorRESTClient(r)
+	client, err := createOrchestratorRESTClient(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error querying service hosts: " + err.Error()))

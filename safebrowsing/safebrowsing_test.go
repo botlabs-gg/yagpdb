@@ -32,7 +32,7 @@ func TestLocalLookup(t *testing.T) {
 	if err != nil {
 		t.Error("error looking up test site: ", err)
 	} else if threat == nil {
-		t.Error("https://testsafebrowsing.appspot.com/s/malware.html shouldve been a threat")
+		t.Error("https://testsafebrowsing.appspot.com/s/malware.html should've been a threat")
 	}
 
 	threat, err = performLocalLookup("https://google.com")
@@ -61,7 +61,7 @@ func TestLocalLookup(t *testing.T) {
 // 	if err != nil {
 // 		t.Error("error looking up test site: ", err)
 // 	} else if threat == nil {
-// 		t.Error("https://testsafebrowsing.appspot.com/s/malware.html shouldve been a threat")
+// 		t.Error("https://testsafebrowsing.appspot.com/s/malware.html should've been a threat")
 // 	}
 
 // 	threat, err = performRemoteLookup("https://google.com")

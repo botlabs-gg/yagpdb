@@ -54,7 +54,7 @@ func hasPerm(botPerms int64, checkPerm string) (bool, error) {
 // tmplRoleDropdown is a template function for generating role dropdown options
 // roles: slice of roles to display options for
 // highestBotRole: the bot's highest role, if not nil will disable roles above this one.
-// args are optinal and in this order:
+// args are optional and in this order:
 // 1. current selected roleid
 // 2. default empty display name
 // 3. default unknown display name

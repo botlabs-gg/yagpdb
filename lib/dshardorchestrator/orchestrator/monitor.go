@@ -158,7 +158,7 @@ OUTER:
 			for _, vs := range v.Shards {
 				vb := mon.nodeSlotForShard(vs)
 				if bucket != vb {
-					// mistmatched buckets, can't start this shard here
+					// mismatched buckets, can't start this shard here
 					continue FINDAVAILBUCKET
 				}
 			}

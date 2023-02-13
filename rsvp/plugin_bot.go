@@ -723,11 +723,11 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
 		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed updating rsvp participant")
 	}
 
-	updatingSessiosMU.Lock()
+	updatingSessionsMU.Lock()
 	for _, v := range updatingSessionEmbeds {
 		if v.ID == m.MessageID {
 			v.lastModelUpdate = time.Now()
-			updatingSessiosMU.Unlock()
+			updatingSessionsMU.Unlock()
 			return
 		}
 	}
@@ -739,13 +739,13 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
 	}
 	updatingSessionEmbeds = append(updatingSessionEmbeds, s)
 	go s.run()
-	updatingSessiosMU.Unlock()
+	updatingSessionsMU.Unlock()
 
 }
 
 var (
 	updatingSessionEmbeds []*UpdatingSession
-	updatingSessiosMU     sync.Mutex
+	updatingSessionsMU     sync.Mutex
 )
 
 // Spam update protection, forces 5 seconds between each update
@@ -762,7 +762,7 @@ func (u *UpdatingSession) run() {
 		u.update()
 		time.Sleep(time.Second * 5)
 
-		updatingSessiosMU.Lock()
+		updatingSessionsMU.Lock()
 		if u.lastEmbedUpdate.After(u.lastModelUpdate) || u.lastEmbedUpdate.Equal(u.lastModelUpdate) {
 			// remove, no need for further updates
 
@@ -773,27 +773,27 @@ func (u *UpdatingSession) run() {
 				}
 			}
 
-			updatingSessiosMU.Unlock()
+			updatingSessionsMU.Unlock()
 			return
 		}
 
-		updatingSessiosMU.Unlock()
+		updatingSessionsMU.Unlock()
 	}
 }
 
 func (u *UpdatingSession) update() {
-	updatingSessiosMU.Lock()
+	updatingSessionsMU.Lock()
 	u.lastEmbedUpdate = time.Now()
-	updatingSessiosMU.Unlock()
+	updatingSessionsMU.Unlock()
 
 	m, err := models.RSVPSessions(models.RSVPSessionWhere.MessageID.EQ(u.ID), qm.Load("RSVPSessionsMessageRSVPParticipants", qm.OrderBy("marked_as_participating_at asc"))).OneG(context.Background())
 	if err != nil {
-		logger.WithError(err).WithField("guild", u.GuildID).Error("failed retreiving rsvp")
+		logger.WithError(err).WithField("guild", u.GuildID).Error("failed retrieving rsvp")
 		return
 	}
 
 	err = UpdateEventEmbed(m)
 	if err != nil {
-		logger.WithError(err).WithField("guild", u.GuildID).Error("failed retreiving rsvp")
+		logger.WithError(err).WithField("guild", u.GuildID).Error("failed retrieving rsvp")
 	}
 }

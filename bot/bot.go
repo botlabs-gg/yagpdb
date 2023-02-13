@@ -39,14 +39,14 @@ var (
 var (
 	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
 	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
-	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
+	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchestration mode", "")
 
 	confFixedShardingConfig = config.RegisterOption("yagpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")
 
 	usingFixedSharding bool
 	fixedShardingID    int
 
-	// Note yags is using priviledged intents
+	// Note yags is using privileged intents
 	gatewayIntentsUsed = []discordgo.GatewayIntent{
 		discordgo.GatewayIntentGuilds,
 		discordgo.GatewayIntentGuildMembers,
@@ -67,7 +67,7 @@ var (
 	totalShardCount int
 )
 
-// Run intializes and starts the discord bot component of yagpdb
+// Run initializes and starts the discord bot component of yagpdb
 func Run(nodeID string) {
 	setup()
 
@@ -277,7 +277,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 		}
 
 		if resp == "OK" {
-			// We ackquired the lock, our turn to identify now
+			// We acquired the lock, our turn to identify now
 			rl.mu.Lock()
 			rl.lastShardRatelimited = shardID
 			rl.lastRatelimitAt = time.Now()
@@ -382,10 +382,10 @@ var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_o
 // 			metricsCacheHits.Add(float64(deltaHits))
 // 			metricsCacheMisses.Add(float64(deltaMisses))
 
-// 			metricsCacheEvictions.Add(float64(stats.UserCachceEvictedTotal - lastEvictionsCache))
+// 			metricsCacheEvictions.Add(float64(stats.UserCacheEvictedTotal - lastEvictionsCache))
 // 			metricsCacheMemberEvictions.Add(float64(stats.MembersRemovedTotal - lastEvictionsMembers))
 
-// 			lastEvictionsCache = stats.UserCachceEvictedTotal
+// 			lastEvictionsCache = stats.UserCacheEvictedTotal
 // 			lastEvictionsMembers = stats.MembersRemovedTotal
 
 // 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)

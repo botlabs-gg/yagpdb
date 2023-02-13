@@ -26,11 +26,11 @@ type RecentMenusTracker struct {
 	mu sync.RWMutex
 }
 
-func NewRecentMenusTracker(evictionTreshold time.Duration) *RecentMenusTracker {
+func NewRecentMenusTracker(evictionThreshold time.Duration) *RecentMenusTracker {
 	tracker := &RecentMenusTracker{
 		RecentMenus:     make([]*RecentTrackedMenu, 0),
 		Started:         time.Now(),
-		EvictionAge:     evictionTreshold,
+		EvictionAge:     evictionThreshold,
 		GuildStartTimes: make(map[int64]time.Time),
 	}
 
@@ -103,13 +103,13 @@ func (r *RecentMenusTracker) RunLoop() {
 	}
 }
 
-func (r *RecentMenusTracker) loopCheck(treshold time.Time) {
+func (r *RecentMenusTracker) loopCheck(threshold time.Time) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	newList := make([]*RecentTrackedMenu, 0, len(r.RecentMenus))
 	for _, v := range r.RecentMenus {
-		if v.t.After(treshold) {
+		if v.t.After(threshold) {
 			newList = append(newList, v)
 		}
 	}

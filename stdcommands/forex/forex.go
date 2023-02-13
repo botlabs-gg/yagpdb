@@ -59,7 +59,7 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 		if output.Info.Rate == 0 {
-			return "Something went wrong :c", err //VEF is bugged but i dont see any way to fix it yet. other than API fixing it themself :/
+			return "Something went wrong :c", err //VEF is bugged but i don't see any way to fix it yet. other than API fixing it themself :/
 		}
 		p := message.NewPrinter(language.English)
 		embed := &discordgo.MessageEmbed{

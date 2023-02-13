@@ -187,7 +187,7 @@ func TestMigrateShard(t *testing.T) {
 	// start 5 shards on node 1
 	addWaitForShards(t, []int{0, 1, 2, 3, 4}, shardsAddedChan, on1)
 
-	// make sure that the orcehstrator has gotten feedback that the shards have started
+	// make sure that the orchestrator has gotten feedback that the shards have started
 	time.Sleep(time.Millisecond * 250)
 
 	// perform the migration
@@ -221,7 +221,7 @@ func TestMigrateShard(t *testing.T) {
 				t.Fatal("node 2 holds incorrect number of shards: ", len(v.Shards))
 			}
 			if v.Shards[0] != 3 {
-				t.Fatal("node 2 does not hold shard 3 after mirgation", v.Shards[0])
+				t.Fatal("node 2 does not hold shard 3 after migration", v.Shards[0])
 			}
 		} else {
 			if len(v.Shards) != 4 {
@@ -280,7 +280,7 @@ func TestMigrateNode(t *testing.T) {
 			dataReceived = make([]bool, len(dataToMigrate))
 			dataReceivedMU.Unlock()
 			go func() {
-				// take anohter path than the TestMigrateShard test
+				// take another path than the TestMigrateShard test
 				time.Sleep(time.Second)
 				for _, v := range dataToMigrate {
 					n1.SendLogErr(101, v, false)
@@ -343,7 +343,7 @@ func TestMigrateNode(t *testing.T) {
 	on1 := orchestrator.FindNodeByID(n1.GetIDLock())
 	addWaitForShards(t, []int{0, 1, 2, 3, 4}, shardsAddedChan, on1)
 
-	// make sure that the orcehstrator has gotten feedback that the shards have started
+	// make sure that the orchestrator has gotten feedback that the shards have started
 	time.Sleep(time.Millisecond * 250)
 
 	err = orchestrator.MigrateFullNode(n1.GetIDLock(), n2.GetIDLock(), true)

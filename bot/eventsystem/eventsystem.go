@@ -172,7 +172,7 @@ func runEvents(h []*Handler, data *EventData) {
 					guildID = guildIDProvider.GetGuildID()
 				}
 				if err != nil {
-					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An error occured in a discord event handler: %+v", v.Plugin.PluginInfo().SysName, err)
+					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An error occurred in a discord event handler: %+v", v.Plugin.PluginInfo().SysName, err)
 				}
 
 				if retry {
@@ -191,11 +191,11 @@ func runEvents(h []*Handler, data *EventData) {
 type Order int
 
 const (
-	// Ran first, syncrounously, before changes from the event is applied to state
+	// Ran first, synchronously, before changes from the event is applied to state
 	OrderSyncPreState Order = 0
-	// Ran second, syncrounsly, after state changes have been applied
+	// Ran second, synchronously, after state changes have been applied
 	OrderSyncPostState Order = 1
-	// Ran last, asyncrounously, most handlers should use this unless you need something else in special circumstances
+	// Ran last, asynchronously, most handlers should use this unless you need something else in special circumstances
 	OrderAsyncPostState Order = 2
 )
 

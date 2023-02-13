@@ -50,7 +50,7 @@ func getMemberWithFallback(gs *dstate.GuildSet, user *discordgo.User) (ms *dstat
 	return ms, false
 }
 
-// Kick or bans someone, uploading a hasebin log, and sending the report message in the action channel
+// Kick or bans someone, uploading a hastebin log, and sending the report message in the action channel
 func punish(config *Config, p Punishment, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, variadicBanDeleteDays ...int) error {
 
 	config, err := getConfigIfNotSet(guildID, config)
@@ -388,7 +388,7 @@ const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
 
-// Unmut or mute a user, ignore duration if unmuting
+// Unmute or mute a user, ignore duration if unmuting
 // TODO: i don't think we need to track mutes in its own database anymore now with the new scheduled event system
 func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, member *dstate.MemberState, duration int) error {
 	config, err := getConfigIfNotSet(guildID, config)
@@ -434,7 +434,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		currentMute.ExpiresAt = time.Now().Add(time.Minute * time.Duration(duration))
 	}
 
-	// no matter what, if were unmuting or muting, we wanna make sure we dont have duplicated unmute events
+	// no matter what, if were unmuting or muting, we wanna make sure we don't have duplicated unmute events
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unmute' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, member.User.ID)).DeleteAll(context.Background(), common.PQ)
 	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
 

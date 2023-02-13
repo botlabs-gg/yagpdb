@@ -8,8 +8,8 @@ import (
 	"github.com/mediocregopher/radix/v3"
 )
 
-// Locks the lock and if succeded sets it to expire after maxdur
-// So that if someting went wrong its not locked forever
+// Locks the lock and if succeeded sets it to expire after maxdur
+// So that if something went wrong its not locked forever
 func TryLockRedisKey(key string, maxDur int) (bool, error) {
 	resp := ""
 	err := RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "NX", "EX", strconv.Itoa(maxDur)))
@@ -28,7 +28,7 @@ var (
 	ErrMaxLockAttemptsExceeded = errors.New("Max lock attempts exceeded")
 )
 
-// BlockingLockRedisKey blocks until it suceeded to lock the key
+// BlockingLockRedisKey blocks until it succeeded to lock the key
 func BlockingLockRedisKey(key string, maxTryDuration time.Duration, maxLockDur int) error {
 	started := time.Now()
 	sleepDur := time.Millisecond * 100

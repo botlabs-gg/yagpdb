@@ -1,6 +1,6 @@
 dshardorchestrator provides a sharding orchestrator for discord bots.
 
-It's purpose is to manage nodes and assign shards to them, aswell as migrating shards between the nodes, which is one method of scaling large discord bots, spreading shards across processes and servers.
+It's purpose is to manage nodes and assign shards to them, as well as migrating shards between the nodes, which is one method of scaling large discord bots, spreading shards across processes and servers.
 
 A here is a "process", which can be spread over hosts if you want.
 

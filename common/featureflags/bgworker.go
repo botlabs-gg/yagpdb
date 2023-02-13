@@ -43,7 +43,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 	var currentInitFlags []string
 	err := common.RedisPool.Do(radix.Cmd(&currentInitFlags, "SMEMBERS", "feature_flags_initialized"))
 	if err != nil {
-		panic(fmt.Sprintf("Failed intializing feature flags, failed retreiving old intiailized feature-flags: %v", err))
+		panic(fmt.Sprintf("Failed initializing feature flags, failed retrieving old initialized feature-flags: %v", err))
 	}
 
 	var newFlags []string
@@ -86,10 +86,10 @@ func (p *Plugin) checkInitFeatureFlags() {
 				panic("Failed to batch update feature flags, falling back to legacy full update")
 			}
 
-			// mark all the new plugins as intialized
+			// mark all the new plugins as initialized
 			err = common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{"feature_flags_initialized"}, newFlags...)...))
 			if err != nil {
-				panic(fmt.Sprintf("Failed intializing feature flags, failed setting new intialized feature flags: %v", err))
+				panic(fmt.Sprintf("Failed initializing feature flags, failed setting new initialized feature flags: %v", err))
 			}
 
 			return
@@ -99,19 +99,19 @@ func (p *Plugin) checkInitFeatureFlags() {
 	// mark all guilds are dirty, but low priority as to not interrupt normal operation
 	err = common.RedisPool.Do(radix.Cmd(nil, "SUNIONSTORE", "feature_flags_dirty_low_priority", "feature_flags_dirty_low_priority", "connected_guilds"))
 	if err != nil {
-		panic(fmt.Sprintf("Failed intializing feature flags, failed marking all guilds as dirty: %v", err))
+		panic(fmt.Sprintf("Failed initializing feature flags, failed marking all guilds as dirty: %v", err))
 	}
 
-	// mark all the new plugins as intialized
+	// mark all the new plugins as initialized
 	err = common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{"feature_flags_initialized"}, newFlags...)...))
 	if err != nil {
-		panic(fmt.Sprintf("Failed intializing feature flags, failed setting new intialized feature flags: %v", err))
+		panic(fmt.Sprintf("Failed initializing feature flags, failed setting new initialized feature flags: %v", err))
 	}
 }
 
 // Does a sparse initial update for new feature flags
 // This is only used in cases where the feature flags can be calculated in a batch to save time
-// This does NOT remove any flags so its purely to intiially populate the flags
+// This does NOT remove any flags so its purely to initially populate the flags
 // It should also run fairly fast since its blocking normal operation
 func (p *Plugin) BatchInitialPluginUpdater(pbf PluginWithBatchFeatureFlags) error {
 	started := time.Now()

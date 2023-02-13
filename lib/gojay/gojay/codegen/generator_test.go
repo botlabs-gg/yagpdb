@@ -45,7 +45,7 @@ func TestGenerator_Generate(t *testing.T) {
 			},
 		},
 		{
-			description: "struct with json annotation and time/foarmat|layouat generation",
+			description: "struct with json annotation and time/format|layout generation",
 			options: &Options{
 				Source:      path.Join(parent, "annotated_struct"),
 				Types:       []string{"Message"},

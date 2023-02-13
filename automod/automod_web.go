@@ -347,7 +347,7 @@ func (p *Plugin) handlePostAutomodUpdateRuleset(w http.ResponseWriter, r *http.R
 
 	data := r.Context().Value(common.ContextKeyParsedForm).(*UpdateRulesetData)
 
-	// The form parsing utility dosen't take care of maps, so manually do that parsing for now
+	// The form parsing utility doesn't take care of maps, so manually do that parsing for now
 	conditions, validatedOK, err := ReadRuleRowData(g, tmpl, data.Conditions, r.Form, "Conditions")
 	if err != nil || !validatedOK {
 		return tmpl, err
@@ -451,7 +451,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	data := r.Context().Value(common.ContextKeyParsedForm).(*UpdateRuleData)
 
 	combinedParts := make([]*models.AutomodRuleDatum, 0, 10)
-	// The form parsing utility dosen't take care of maps, so manually do that parsing for now
+	// The form parsing utility doesn't take care of maps, so manually do that parsing for now
 	triggers, validatedOK, err := ReadRuleRowData(g, tmpl, data.Triggers, r.Form, "Triggers")
 	if err != nil || !validatedOK {
 		return tmpl, err

@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Collector is a message stats collector which will preiodically update the serberstats messages table with stats
+// Collector is a message stats collector which will periodically update the serverstats messages table with stats
 type Collector struct {
 	MsgEvtChan chan *discordgo.Message
 

@@ -18,11 +18,11 @@ const (
 	// <10: misc control codes
 
 	// EvtIdentify identify new node connection
-	// orchestrator <- node: Identify the new connection, orchestrator responds with a EvtIdentified if successfulll
+	// orchestrator <- node: Identify the new connection, orchestrator responds with a EvtIdentified if successful
 	EvtIdentify EventType = 1
 
 	// EvtIdentified is a response to EvtIdentify
-	// orchestrator -> node: The connection was sucessfully established, now ready for whatever else
+	// orchestrator -> node: The connection was successfully established, now ready for whatever else
 	EvtIdentified EventType = 2
 
 	// EvtShutdown is sent to shut down a node completely, exiting
@@ -37,8 +37,8 @@ const (
 	EvtStartShards EventType = 10
 
 	// EvtStopShard is sent to stop the following shard
-	// orhcestrator -> node: stop the shard, respond with the same event when done
-	// orhcestrator <- node: sent when shard has been stopped
+	// orchestrator -> node: stop the shard, respond with the same event when done
+	// orchestrator <- node: sent when shard has been stopped
 	EvtStopShard EventType = 11
 
 	// 2x: migration codes
@@ -46,12 +46,12 @@ const (
 	// EvtPrepareShardmigration is sent from the orchestrator when we should prepare for a shard migration, and also used as a response
 	// orchestrator -> origin node: close the gateway connection and respond with a EvtPrepareShardmigration with session ID and sequence number
 	// orchestrator <- origin node: send when the origin node has closed the gateway connection, includes sessionID and sequence number for resuming on destination node, the event is forwarded to the destination node
-	// orchestrator -> destination node: save the session id and sequence number and prepare for a incoming shard transfe, respond with EvtPrepareShardmigration when ready
+	// orchestrator -> destination node: save the session id and sequence number and prepare for a incoming shard transfer, respond with EvtPrepareShardmigration when ready
 	// orchestrator <- destination node: sent as a response when ready for the shard data transfer, followed by EvtStartShardMigration
 	EvtPrepareShardmigration EventType = 20
 
 	// EvtStartShardMigration is used when we should start transferring shard data, the flow goes like this:
-	// orchestrator -> oirign node: start sending all user data events, should respond with a EvtAllUserdataSent with the total number of user data events sent
+	// orchestrator -> origin node: start sending all user data events, should respond with a EvtAllUserdataSent with the total number of user data events sent
 	EvtStartShardMigration EventType = 21
 
 	// EvtAllUserdataSent is sent with the total number of user data events sent.
@@ -108,9 +108,9 @@ var EvtDataMap = map[EventType]interface{}{
 
 // RegisterUserEvent registers a new user event to be used in shard migration for example
 // calling this after opening a connection or otherwise concurrently will cause race conditions
-// the reccomended way would be to call this in init()
+// the recommended way would be to call this in init()
 //
-// panics if id is less than 100, as that's reserved id's for inernal use
+// panics if id is less than 100, as that's reserved id's for internal use
 func RegisterUserEvent(name string, id EventType, dataType interface{}) {
 	if id < EvtShardMigrationDataStartID {
 		panic(errors.New("tried registering user event with event type less than 100"))
@@ -167,7 +167,7 @@ func EncodeMessageRaw(evtID EventType, data []byte) []byte {
 	return buf.Bytes()
 }
 
-// UnknownEventError represents an error for unknown events, this is techincally impossible with protocol versions being enforced, but who knows if you write your own node
+// UnknownEventError represents an error for unknown events, this is technically impossible with protocol versions being enforced, but who knows if you write your own node
 type UnknownEventError struct {
 	Evt EventType
 }

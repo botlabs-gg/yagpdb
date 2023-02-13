@@ -45,14 +45,14 @@ func (t TicketUserError) Error() string {
 }
 
 const (
-	ErrNoTicketCateogry TicketUserError = "No category for ticket channels set"
+	ErrNoTicketCategory TicketUserError = "No category for ticket channels set"
 	ErrTitleTooLong     TicketUserError = "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created"
 	ErrMaxOpenTickets   TicketUserError = "You're currently in over 10 open tickets on this server, please close some of the ones you're in."
 )
 
 func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState, conf *models.TicketConfig, topic string, checkMaxTickets bool) (*dstate.GuildSet, *models.Ticket, error) {
 	if gs.GetChannel(conf.TicketsChannelCategory) == nil {
-		return gs, nil, ErrNoTicketCateogry
+		return gs, nil, ErrNoTicketCategory
 	}
 
 	if hasPerms, _ := bot.BotHasPermissionGS(gs, 0, InTicketPerms); !hasPerms {
@@ -138,7 +138,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 		Color:       0x5df948,
 	})
 
-	// Annn done setting up the ticket
+	// Annnd done setting up the ticket
 	// return fmt.Sprintf("Ticket #%d opened in <#%d>", id, channel.ID), nil
 	return gs, dbModel, nil
 }

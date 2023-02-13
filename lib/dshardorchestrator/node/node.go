@@ -78,7 +78,7 @@ func (c *Conn) connect() error {
 
 	c.baseConn = dshardorchestrator.ConnFromNetCon(netConn, c.logger)
 	c.baseConn.MessageHandler = c.handleMessage
-	c.baseConn.ConnClosedHanlder = c.onClosedConn
+	c.baseConn.ConnClosedHandler = c.onClosedConn
 	c.reconnecting = false
 	c.baseConn.ID.Store(c.NodeID)
 
@@ -184,7 +184,7 @@ func (c *Conn) handleStartShard(data *dshardorchestrator.StartShardsData) {
 			c.nodeShards = append(c.nodeShards, v)
 		}
 
-		c.baseConn.Log(dshardorchestrator.LogInfo, nil, fmt.Sprintf("Addedd shard #%d", v))
+		c.baseConn.Log(dshardorchestrator.LogInfo, nil, fmt.Sprintf("Added shard #%d", v))
 	}
 	c.mu.Unlock()
 

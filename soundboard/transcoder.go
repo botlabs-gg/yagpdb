@@ -62,7 +62,7 @@ func transcoderLoop() {
 				if err != nil {
 					logger.WithError(err).WithField("soundid", v).Error("Failed processing transcode queue item")
 				}
-				logger.WithField("sounf", v).Info("Took ", time.Since(started).String(), " to transcode sound ")
+				logger.WithField("sound", v).Info("Took ", time.Since(started).String(), " to transcode sound ")
 			}
 		}
 	}

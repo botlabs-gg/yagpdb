@@ -1,5 +1,5 @@
-// Merged message sender sends all the messages in a queue, meged togheter at a interval
-// To save on messages send in cases where there can potantially be many
+// Merged message sender sends all the messages in a queue, merged together at a interval
+// To save on messages send in cases where there can potentially be many
 // messages sent in a short interval (such as leave/join announcements with purges)
 
 package bot

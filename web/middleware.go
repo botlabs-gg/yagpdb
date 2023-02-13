@@ -106,7 +106,7 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 }
 
 // SessionMiddleware retrieves a session from the request using the session cookie
-// which is actually just a B64 encoded version of the oatuh2 token from discord for the user
+// which is actually just a B64 encoded version of the oauth2 token from discord for the user
 func SessionMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -117,7 +117,7 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 		// we actually store the discord oauth2 token for the user in their own browser instead of on the server
 		// this way we avoid storing that sensitive information on the server, and it's tamper proof since its just a token.
 		// we get all other information from discord itself (using said token)
-		// (e.g you wont be able to say you're admin of any server you're not admin on... if you're a hackerboye reading this and trying to get ideas)
+		// (e.g you wont be able to say you're admin of any server you're not admin on... if you're a hackerboy reading this and trying to get ideas)
 		cookie, err := r.Cookie(SessionCookieName)
 		if err != nil {
 			// Cookie not present, skip retrieving session
@@ -263,7 +263,7 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		guildID, err := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Warn("GuilID is not a number")
+			CtxLogger(ctx).WithError(err).Warn("GuildID is not a number")
 			return
 		}
 
@@ -337,7 +337,7 @@ func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
-// RequireBotMemberMW ensures that the bot member for the curreng guild is available, mostly used for checking the bot's roles
+// RequireBotMemberMW ensures that the bot member for the current guild is available, mostly used for checking the bot's roles
 func RequireBotMemberMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		parsedGuildID, _ := strconv.ParseInt(pat.Param(r, "server"), 10, 64)
@@ -596,7 +596,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler, ke
 
 		err := form.Save(g.ID)
 		if !CheckErr(templateData, err, "Failed saving config", CtxLogger(ctx).Error) {
-			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
+			templateData.AddAlerts(SuccessAlert("Successfully saved! :')"))
 			go cplogs.RetryAddEntry(NewLogEntryFromContext(ctx, key))
 		}
 	}), t)
@@ -617,7 +617,7 @@ func NewPublicError(a ...interface{}) error {
 type ControllerHandlerFunc func(w http.ResponseWriter, r *http.Request) (TemplateData, error)
 type ControllerHandlerFuncJson func(w http.ResponseWriter, r *http.Request) (interface{}, error)
 
-// Handlers can return templatedata and an erro.
+// Handlers can return templatedata and an error.
 // If error is not nil and publicerror it will be added as an alert,
 // if error is not a publicerror it will render a error page
 func ControllerHandler(f ControllerHandlerFunc, templateName string) http.Handler {
@@ -673,7 +673,7 @@ func ControllerPostHandler(mainHandler ControllerHandlerFunc, extraHandler http.
 		}
 
 		if err == nil && !hasErrorAlert {
-			data.AddAlerts(SucessAlert("Success!"))
+			data.AddAlerts(SuccessAlert("Success!"))
 		}
 	})
 

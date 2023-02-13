@@ -192,7 +192,7 @@ func (l *lexer) emitItem(i item) stateFn {
 }
 
 // ignore skips over the pending input before this point.
-// It trackes newlines in the ignored text, so use it only
+// It tracks newlines in the ignored text, so use it only
 // for text that is skipped without calling l.next.
 func (l *lexer) ignore() {
 	l.line += strings.Count(l.input[l.start:l.pos], "\n")

@@ -55,7 +55,7 @@ func (b *Bot) StartShard(shard int, sessionID string, sequence int64, resumeGate
 
 	newSession, err := discordgo.New(b.token)
 	if err != nil {
-		log.Println("an error occured when creating shard session: ", err)
+		log.Println("an error occurred when creating shard session: ", err)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (b *Bot) StartShard(shard int, sessionID string, sequence int64, resumeGate
 
 	err = newSession.Open()
 	if err != nil {
-		log.Println("an error occured when starting shard session: ", err)
+		log.Println("an error occurred when starting shard session: ", err)
 		return
 	}
 

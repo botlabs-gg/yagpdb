@@ -15,7 +15,7 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-const flushTresholdMinutes = 5
+const flushThresholdMinutes = 5
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*ScheduledEvents)(nil)
 
@@ -42,7 +42,7 @@ func (p *ScheduledEvents) RunBackgroundWorker() {
 }
 
 func (p *ScheduledEvents) SecondaryCleaner() {
-	// dont want our cleanup jobs interfering with our other jobs
+	// don't want our cleanup jobs interfering with our other jobs
 	cleanupTicker := time.NewTicker(time.Hour)
 	cleanupRecentTicker := time.NewTicker(time.Minute)
 	for {
@@ -75,7 +75,7 @@ func runCleanup() {
 }
 
 func runFlushNewEvents() error {
-	where := qm.Where(fmt.Sprintf("triggers_at < now() + INTERVAL '%d minutes' AND processed=false", flushTresholdMinutes))
+	where := qm.Where(fmt.Sprintf("triggers_at < now() + INTERVAL '%d minutes' AND processed=false", flushThresholdMinutes))
 	eventsTriggeringSoon, err := models.ScheduledEvents(where).AllG(context.Background())
 	if err != nil {
 		return errors.WithStackIf(err)
@@ -112,10 +112,10 @@ func flushEventToRedis(c radix.Client, evt *models.ScheduledEvent) error {
 	return nil
 }
 
-// UpdateFlushedEvent updates a already flushed event by either removing it if its above the treshold, or updating the score
+// UpdateFlushedEvent updates a already flushed event by either removing it if its above the threshold, or updating the score
 func UpdateFlushedEvent(t time.Time, c radix.Client, evt *models.ScheduledEvent) error {
 	delta := evt.TriggersAt.Sub(t)
-	if delta < flushTresholdMinutes*time.Minute {
+	if delta < flushThresholdMinutes*time.Minute {
 		return flushEventToRedis(c, evt)
 	}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
-// maps rule part indentifiers to actual condition types
+// maps rule part identifiers to actual condition types
 // since these are stored in the database, changing the id's would require an update of all the relevant rows
 // so don't do that.
 var RulePartMap = map[int]RulePart{
@@ -147,7 +147,7 @@ type RulePart interface {
 	// Returns the available user settings that can be changed (such as roles)
 	UserSettings() []*SettingDef
 
-	// Returns a human readble name for this rule data entry and a description
+	// Returns a human readable name for this rule data entry and a description
 	Name() string
 	Description() string
 

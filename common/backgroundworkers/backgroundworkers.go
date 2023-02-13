@@ -10,7 +10,7 @@ import (
 	"goji.io"
 )
 
-var HTTPAddr = config.RegisterOption("yagpdb.bgworker.http_server_addr", "Backgroundn worker http server address", "localhost:5004")
+var HTTPAddr = config.RegisterOption("yagpdb.bgworker.http_server_addr", "Background worker http server address", "localhost:5004")
 var RESTServerMuxer *goji.Mux
 
 var restServer *http.Server

@@ -54,12 +54,12 @@ var confSentryDSN = config.RegisterOption("yagpdb.sentry_dsn", "Sentry credentia
 func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
-	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (currently reddit, youtube and twitter)")
+	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma separated list (currently reddit, youtube and twitter)")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver, backgroundworkers and all feeds)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
 	flag.StringVar(&flagLogAppName, "logappname", "yagpdb", "When using syslog, the application name will be set to this")
-	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, atleast one process needs this")
+	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, at least one process needs this")
 	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
 	flag.BoolVar(&flagGenConfigDocs, "genconfigdocs", false, "Generate config docs and exit")
 
@@ -94,7 +94,7 @@ func Init() {
 	}
 
 	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC && !flagGenConfigDocs {
-		log.Error("Didnt specify what to run, see -h for more info")
+		log.Error("Didn't specify what to run, see -h for more info")
 		os.Exit(1)
 	}
 
@@ -111,10 +111,10 @@ func Init() {
 
 	err = common.Init()
 	if err != nil {
-		log.WithError(err).Fatal("Failed intializing")
+		log.WithError(err).Fatal("Failed initializing")
 	}
 
-	log.Info("Initiliazing generic config store")
+	log.Info("Initializing generic config store")
 	configstore.InitDatabases()
 
 	log.Info("Starting plugins")
@@ -182,9 +182,9 @@ func Run() {
 	listenSignal()
 }
 
-// Gracefull shutdown
+// Graceful shutdown
 // Why we sleep before we stop? just to be on the safe side in case there's some stuff that's not fully done yet
-// running in seperate untracked goroutines
+// running in separate untracked goroutines
 func listenSignal() {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -215,7 +215,7 @@ func shutdown() {
 
 	if flagRunWeb {
 		web.Stop()
-		// Slep for a extra second
+		// Sleep for a extra second
 		time.Sleep(time.Second)
 	}
 

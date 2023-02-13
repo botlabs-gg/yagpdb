@@ -10,7 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// ConnectPQ connectes to a postgres database for testing purposes
+// ConnectPQ connects to a postgres database for testing purposes
 func ConnectPQ() (*sql.DB, error) {
 	host := os.Getenv("YAGPDB_TEST_PQ_HOST")
 	if host == "" {
@@ -75,7 +75,7 @@ func InitPQ(dropTables []string, initQueries []string) (*sql.DB, error) {
 }
 
 // ClearTables deletes all rows from a table, and panics if an error occurs
-// usefull for defers for test cleanup
+// useful for defers for test cleanup
 func ClearTables(db *sql.DB, tables ...string) {
 	for _, v := range tables {
 		_, err := db.Exec("DELETE FROM " + v + ";")
