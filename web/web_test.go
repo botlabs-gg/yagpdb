@@ -230,7 +230,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: true,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		{
 			Name: "all members ro-normal user access",
@@ -242,7 +242,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		// all members ro - member access
 		{
@@ -255,7 +255,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "all members ro-member access",
@@ -267,7 +267,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		// all members ro - admin access
 		{
@@ -280,7 +280,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "all members ro-admin access",
@@ -292,7 +292,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 
 		////////////////////////////////////
@@ -310,7 +310,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: true,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		{
 			Name: "ro roles-normal user access",
@@ -322,7 +322,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// ro roles - member no roles
@@ -336,7 +336,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		{
 			Name: "ro roles-member no roles",
@@ -348,7 +348,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// ro roles - member access one role
@@ -362,7 +362,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "ro roles-member access one role",
@@ -374,7 +374,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// ro roles - member access other role
@@ -388,7 +388,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "ro roles-member access other role",
@@ -400,7 +400,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// ro roles - member access both roles
@@ -414,7 +414,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "ro roles - member access both roles",
@@ -426,7 +426,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// ro roles - admin access
@@ -440,7 +440,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "ro roles-admin access",
@@ -452,7 +452,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 
 		////////////////////////////////////
@@ -470,7 +470,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: true,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		{
 			Name: "write roles-normal user access",
@@ -482,7 +482,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: false,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// write roles - member no roles
@@ -496,7 +496,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 		{
 			Name: "write roles-member no roles",
@@ -508,7 +508,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: false,
+			ShouldHaveAccess: false,
 		},
 
 		// write roles - member access one role
@@ -522,7 +522,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "write roles-member access one role",
@@ -534,7 +534,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 
 		// write roles - member access other role
@@ -548,7 +548,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "write roles-member access other role",
@@ -560,7 +560,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 
 		// write roles - member access both roles
@@ -574,7 +574,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "write roles - member access both roles",
@@ -586,7 +586,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 
 		// write roles - admin access
@@ -600,7 +600,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: true,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 		{
 			Name: "write roles-admin access",
@@ -612,7 +612,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			IsMember: true,
 			ReadOnly: false,
 
-			ShouldHaveAcces: true,
+			ShouldHaveAccess: true,
 		},
 	}
 
@@ -624,8 +624,8 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 			}
 
 			result := HasAccesstoGuildSettings(userID, v.GWC, v.Conf, StaticRoleProvider(v.Roles), !v.ReadOnly)
-			if result != v.ShouldHaveAcces {
-				it.Errorf("incorrect result, got %t, wanted: %t", result, v.ShouldHaveAcces)
+			if result != v.ShouldHaveAccess {
+				it.Errorf("incorrect result, got %t, wanted: %t", result, v.ShouldHaveAccess)
 			}
 		})
 	}
