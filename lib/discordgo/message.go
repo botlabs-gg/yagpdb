@@ -180,7 +180,7 @@ const (
 	// MessageFlagsSuppressEmbeds do not include any embeds when serializing this message.
 	MessageFlagsSuppressEmbeds MessageFlags = 1 << 2
 	// TODO: deprecated, remove when compatibility is not needed
-	MessageFlagsSuppressEmbeds MessageFlags = 1 << 2
+	MessageFlagsSupressEmbeds MessageFlags = 1 << 2
 	// MessageFlagsSourceMessageDeleted the source message for this crosspost has been deleted (via Channel Following).
 	MessageFlagsSourceMessageDeleted MessageFlags = 1 << 3
 	// MessageFlagsUrgent this message came from the urgent message system.
