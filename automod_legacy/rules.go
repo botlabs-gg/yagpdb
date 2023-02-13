@@ -255,8 +255,39 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 		return false
 	}
 
-	// Only check each invite id once, in case it repeats in the message multiple times.
-	checked := make(map[string]bool, 0)
+	guildInvites, ok := invitesCache.get(guildID)
+	if !ok { // we do not have a cache for this guild yet, create it
+		invites, err := common.BotSession.GuildInvites(guildID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
+			return true // assume bad since discord...
+		}
+
+		// if there are no invites for this guild
+		// assume it is a bad invite.
+		if len(invites) == 0 {
+			return true
+		}
+
+		// add invites to the cache
+		inviteMap := make(map[string]bool)
+		for _, invite := range invites {
+			inviteMap[invite.Code] = true
+		}
+
+		invitesCache.set(guildID, inviteMap)
+
+		// overwrite the empty invite map
+		// with the one just returned by discord
+		guildInvites = GuildInvites{
+			invites: inviteMap,
+		}
+	}
+
+	// Only check each invite id once,
+	// in case it repeats in the message multiple times.
+	checked := make(map[string]bool, len(matches))
+
 	for _, v := range matches {
 		if len(v) < 3 {
 			continue
@@ -271,39 +302,31 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 			checked[id] = true
 		}
 
-		guildInvites, ok := invitesCache.get(guildID)
-		if ok {
-			if guildInvites.invites[id] {
-				// Ignore invites to this server
-				continue
-			}
+		// Safe guard the map look up using the invite mutex.
+		// This is a extremely rare, but possible race condition.
+		invitesCache.RLock()
+		isInviteOk := guildInvites.invites[id]
+		invitesCache.RUnlock()
 
-			//invite doesn't belong to the same server, return as bad invite
-			return true
-		}
-
-		// if guild cache doesn't exist, create it
-		invites, err := common.BotSession.GuildInvites(guildID)
-		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
-			return true // assume bad since discord...
+		if isInviteOk {
+			// ignore invites to this guild
+			continue
 		}
 
-		//if invites don't exist for the server
-		//assume bad invite
-		if invites == nil {
-			return true
-		}
-
-		inviteMap := make(map[string]bool)
-		for _, invite := range invites {
-			inviteMap[invite.Code] = true
-		}
-		isValidInvite := inviteMap[id]
-		invitesCache.set(guildID, inviteMap)
-		if !isValidInvite {
-			return true
-		}
+		// invite to another guild found
+		//
+		// PS: we were getting a lot of rate
+		// limits issues from discord by
+		// validating each individual invite.
+		//
+		// Thus, we now return true for
+		// all possible invites, even if
+		// the invite is not valid.
+		//
+		// Reason being it is much easier
+		// to get an actual invite than
+		// just a fake one.
+		return true
 	}
 
 	// If we got here then there are no bad invites
