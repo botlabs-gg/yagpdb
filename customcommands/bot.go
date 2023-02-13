@@ -656,6 +656,10 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 		return nil, nil, errors.WithStackIf(err)
 	}
 
+	if ms.User.Bot {
+		return nil, nil, nil
+	}
+
 	// filter by roles
 	filtered := make([]*TriggeredCC, 0, len(matched))
 	for _, v := range matched {

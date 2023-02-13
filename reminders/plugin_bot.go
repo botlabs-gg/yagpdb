@@ -56,6 +56,10 @@ var cmds = []*commands.YAGCommand{
 				return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
 			}
 
+			if parsed.Author.Bot {
+				return "Cannot create reminder for Bots, you're most likely trying to use execAdmin to create a reminder, use exec", nil
+			}
+
 			fromNow := parsed.Args[0].Value.(time.Duration)
 
 			durString := common.HumanizeDuration(common.DurationPrecisionSeconds, fromNow)
