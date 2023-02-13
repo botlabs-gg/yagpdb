@@ -1,6 +1,7 @@
 package reminders
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -57,7 +58,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if parsed.Author.Bot {
-				return "Cannot create reminder for Bots, you're most likely trying to use execAdmin to create a reminder, use exec", nil
+				return nil, errors.New("cannot create reminder for Bots, you're most likely trying to use `execAdmin` to create a reminder, use `exec` instead")
 			}
 
 			fromNow := parsed.Args[0].Value.(time.Duration)
