@@ -359,34 +359,34 @@ func (t *TestObjectOmitEmptyInterface) MarshalJSONObject(enc *Encoder) {
 	enc.AddInterfaceKeyOmitEmpty("testBool", false)
 	enc.AddInterfaceKeyOmitEmpty("testBoolNotEmpty", true)
 	enc.AddInterfaceKeyOmitEmpty("testObjectOmitEmpty", nil)
-	enc.AddInterfaceKeyOmitEmpty("testObect", &TestEncoding{})
+	enc.AddInterfaceKeyOmitEmpty("testObject", &TestEncoding{})
 	enc.AddInterfaceKeyOmitEmpty("testArr", &TestEncodingArrStrings{})
 }
 
 func TestEncoderObjectOmitEmpty(t *testing.T) {
 	t.Run("encoder-omit-empty-all-types", func(t *testing.T) {
-		v := &TestObectOmitEmpty{
+		v := &TestObjectOmitEmpty{
 			nonNiler:  1,
 			testInt:   0,
-			testObect: &TestObectOmitEmpty{testInt: 1},
+			testObject: &TestObjectOmitEmpty{testInt: 1},
 		}
 		r, err := MarshalJSONObject(v)
 		assert.Nil(t, err, "Error should be nil")
 		assert.Equal(
 			t,
-			`{"testIntNotEmpty":1,"testFloatNotEmpty":1.1,"testFloat32NotEmpty":1.1,"testStringNotEmpty":"foo","testBoolNotEmpty":true,"testObect":{"testInt":1,"testIntNotEmpty":1,"testFloatNotEmpty":1.1,"testFloat32NotEmpty":1.1,"testStringNotEmpty":"foo","testBoolNotEmpty":true,"testArray":["foo"]},"testArray":["foo"]}`,
+			`{"testIntNotEmpty":1,"testFloatNotEmpty":1.1,"testFloat32NotEmpty":1.1,"testStringNotEmpty":"foo","testBoolNotEmpty":true,"testObject":{"testInt":1,"testIntNotEmpty":1,"testFloatNotEmpty":1.1,"testFloat32NotEmpty":1.1,"testStringNotEmpty":"foo","testBoolNotEmpty":true,"testArray":["foo"]},"testArray":["foo"]}`,
 			string(r),
 			"Result of marshalling is different as the one expected",
 		)
 	})
 
 	t.Run("encoder-omit-empty-interface", func(t *testing.T) {
-		v := &TestObectOmitEmptyInterface{}
+		v := &TestObjectOmitEmptyInterface{}
 		r, err := MarshalJSONObject(v)
 		assert.Nil(t, err, "Error should be nil")
 		assert.Equal(
 			t,
-			`{"testIntNotEmpty":1,"testFloatNotEmpty":1.1,"testFloat32NotEmpty":1.1,"testStringNotEmpty":"foo","testBoolNotEmpty":true,"testObect":{"test":"","test2":"","testInt":0,"testBool":false,"testArr":[],"testF64":0,"testF32":0,"sub":{}}}`,
+			`{"testIntNotEmpty":1,"testFloatNotEmpty":1.1,"testFloat32NotEmpty":1.1,"testStringNotEmpty":"foo","testBoolNotEmpty":true,"testObject":{"test":"","test2":"","testInt":0,"testBool":false,"testArr":[],"testF64":0,"testF32":0,"sub":{}}}`,
 			string(r),
 			"Result of marshalling is different as the one expected",
 		)
