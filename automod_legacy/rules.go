@@ -301,7 +301,9 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 		}
 		isValidInvite := inviteMap[id]
 		invitesCache.set(guildID, inviteMap)
-		return !isValidInvite
+		if !isValidInvite {
+			return true
+		}
 	}
 
 	// If we got here then there are no bad invites
