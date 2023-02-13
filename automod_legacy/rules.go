@@ -242,7 +242,7 @@ func init() {
 }
 
 // invitesCacheDuration is the period between ticks for the invitesCache gc in minutes
-const invitesCacheDuration = 600
+const invitesCacheDuration = 60
 
 func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bool) {
 	// check third party sites
@@ -255,10 +255,8 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 		return false
 	}
 
-	// Only check each invite id once
-	checked := make([]string, 0, len(matches))
-
-OUTER:
+	// Only check each invite id once, in case it repeats in the message multiple times.
+	checked := make(map[string]bool, 0)
 	for _, v := range matches {
 		if len(v) < 3 {
 			continue
@@ -267,42 +265,43 @@ OUTER:
 		id := v[2]
 
 		// only check each link once
-		for _, c := range checked {
-			if id == c {
-				continue OUTER
-			}
+		if checked[id] {
+			continue
+		} else {
+			checked[id] = true
 		}
 
-		checked = append(checked, id)
 		guildInvites, ok := invitesCache.get(guildID)
 		if ok {
 			if guildInvites.invites[id] {
 				// Ignore invites to this server
-				continue OUTER
+				continue
 			}
 
-			// If the invite is present in the cache, we return true even if it is not valid anymore.
-			// This is to prevent making API calls about invites which have a restrict rate limit.
+			//invite doesn't belong to the same server, return as bad invite
 			return true
 		}
 
-		// Check to see if its a valid id, and if so check if its to the same server were on
+		// if guild cache doesn't exist, create it
 		invites, err := common.BotSession.GuildInvites(guildID)
 		if err != nil {
 			logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
 			return true // assume bad since discord...
 		}
 
+		//if invites don't exist for the server
+		//assume bad invite
 		if invites == nil {
-			continue
+			return true
 		}
 
 		inviteMap := make(map[string]bool)
 		for _, invite := range invites {
 			inviteMap[invite.Code] = true
 		}
+		isValidInvite := inviteMap[id]
 		invitesCache.set(guildID, inviteMap)
-		return !inviteMap[id]
+		return !isValidInvite
 	}
 
 	// If we got here then there are no bad invites
