@@ -1275,7 +1275,7 @@ func (g *Game) playerPickedResponseReaction(player *Player, response string, ic 
 			if len(player.SelectedCards) >= g.CurrentPrompt.NumPick {
 				respMsg += fmt.Sprintf(", go to <#%d> and wait for the other players to finish their selections, the winner will be picked there", g.MasterChannel)
 			} else {
-				respMsg += fmt.Sprintf(", select %d more cards", g.CurrentPropmpt.NumPick-len(player.SelectedCards))
+				respMsg += fmt.Sprintf(", select %d more cards", g.CurrentPrompt.NumPick-len(player.SelectedCards))
 			}
 		}
 	}
