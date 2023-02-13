@@ -138,9 +138,9 @@
     {{mTemplate "automod_legacy_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Mention "Name" "Mention"}}
 
     <div class="form-group">
-        <label for="Treshold">Mention Threshold</label>
-        <input type="number" min="0" class="form-control" name="Mention.Treshold"
-            value="{{.AutomodConfig.Mention.Treshold}}"></input>
+        <label for="Threshold">Mention Threshold</label>
+        <input type="number" min="0" class="form-control" name="Mention.Threshold"
+            value="{{.AutomodConfig.Mention.Threshold}}"></input>
         <p class="help-block">The number of mentions in a message for it to trigger.<br>
             If it's set to 5, then someone mentioning five people or more would trigger this.</p>
     </div>

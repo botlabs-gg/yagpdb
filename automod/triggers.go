@@ -1039,7 +1039,7 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 		}
 	}
 
-	if count >= settingsCast.Treshold {
+	if count >= settingsCast.Threshold {
 		return true, nil
 	}
 
