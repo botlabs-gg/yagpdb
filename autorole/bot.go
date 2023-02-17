@@ -472,7 +472,7 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	update := evt.GuildMemberUpdate()
 	member := update.Member
 	// ignore timedout users
-	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
+	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
 		return false, nil
 	}
 

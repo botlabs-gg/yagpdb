@@ -196,7 +196,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 	evtData := evt.GuildMemberUpdate()
 	member := evtData.Member
-	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
+	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
 		return
 	}
 

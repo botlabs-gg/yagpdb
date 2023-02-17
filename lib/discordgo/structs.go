@@ -777,7 +777,7 @@ type Member struct {
 
 	// The time at which the member's timeout will expire.
 	// Time in the past or nil if the user is not timed out.
-	TimeoutExpiresAt *time.Time `json:"communication_disabled_until"`
+	CommunicationDisabledUntil *time.Time `json:"communication_disabled_until"`
 }
 
 func (m *Member) GetGuildID() int64 {
@@ -1251,4 +1251,98 @@ type ThreadMember struct {
 	UserID        int64     `json:"user_id,string"` // the id of the user (NOT INCLUDED IN GUILDCREATE)
 	JoinTimestamp Timestamp `json:"join_timestamp"` // the time the current user last joined the thread
 	Flags         int       `json:"flags"`          // any user-thread settings, currently only used for notifications
+}
+
+// AutoModerationRule stores data for an auto moderation rule.
+type AutoModerationRule struct {
+	ID              int64                          `json:"id,omitempty"`
+	GuildID         int64                          `json:"guild_id,omitempty"`
+	Name            string                         `json:"name,omitempty"`
+	CreatorID       int64                          `json:"creator_id,omitempty"`
+	EventType       AutoModerationRuleEventType    `json:"event_type,omitempty"`
+	TriggerType     AutoModerationRuleTriggerType  `json:"trigger_type,omitempty"`
+	TriggerMetadata *AutoModerationTriggerMetadata `json:"trigger_metadata,omitempty"`
+	Actions         []AutoModerationAction         `json:"actions,omitempty"`
+	Enabled         *bool                          `json:"enabled,omitempty"`
+	ExemptRoles     IDSlice                        `json:"exempt_roles,omitempty"`
+	ExemptChannels  IDSlice                        `json:"exempt_channels,omitempty"`
+}
+
+// AutoModerationRuleEventType indicates in what event context a rule should be checked.
+type AutoModerationRuleEventType int
+
+// Auto moderation rule event types.
+const (
+	// AutoModerationEventMessageSend is checked when a member sends or edits a message in the guild
+	AutoModerationEventMessageSend AutoModerationRuleEventType = 1
+)
+
+// AutoModerationRuleTriggerType represents the type of content which can trigger the rule.
+type AutoModerationRuleTriggerType int
+
+// Auto moderation rule trigger types.
+const (
+	AutoModerationEventTriggerKeyword       AutoModerationRuleTriggerType = 1
+	AutoModerationEventTriggerHarmfulLink   AutoModerationRuleTriggerType = 2
+	AutoModerationEventTriggerSpam          AutoModerationRuleTriggerType = 3
+	AutoModerationEventTriggerKeywordPreset AutoModerationRuleTriggerType = 4
+)
+
+// AutoModerationKeywordPreset represents an internally pre-defined wordset.
+type AutoModerationKeywordPreset uint
+
+// Auto moderation keyword presets.
+const (
+	AutoModerationKeywordPresetProfanity     AutoModerationKeywordPreset = 1
+	AutoModerationKeywordPresetSexualContent AutoModerationKeywordPreset = 2
+	AutoModerationKeywordPresetSlurs         AutoModerationKeywordPreset = 3
+)
+
+// AutoModerationTriggerMetadata represents additional metadata used to determine whether rule should be triggered.
+type AutoModerationTriggerMetadata struct {
+	// Substrings which will be searched for in content.
+	// NOTE: should be only used with keyword trigger type.
+	KeywordFilter []string `json:"keyword_filter,omitempty"`
+	// Regular expression patterns which will be matched against content (maximum of 10).
+	// NOTE: should be only used with keyword trigger type.
+	RegexPatterns []string `json:"regex_patterns,omitempty"`
+
+	// Internally pre-defined wordsets which will be searched for in content.
+	// NOTE: should be only used with keyword preset trigger type.
+	Presets []AutoModerationKeywordPreset `json:"presets,omitempty"`
+
+	// Substrings which should not trigger the rule.
+	// NOTE: should be only used with keyword or keyword preset trigger type.
+	AllowList *[]string `json:"allow_list,omitempty"`
+
+	// Total number of unique role and user mentions allowed per message.
+	// NOTE: should be only used with mention spam trigger type.
+	MentionTotalLimit int `json:"mention_total_limit,omitempty"`
+}
+
+// AutoModerationActionType represents an action which will execute whenever a rule is triggered.
+type AutoModerationActionType int
+
+// Auto moderation actions types.
+const (
+	AutoModerationRuleActionBlockMessage     AutoModerationActionType = 1
+	AutoModerationRuleActionSendAlertMessage AutoModerationActionType = 2
+	AutoModerationRuleActionTimeout          AutoModerationActionType = 3
+)
+
+// AutoModerationActionMetadata represents additional metadata needed during execution for a specific action type.
+type AutoModerationActionMetadata struct {
+	// Channel to which user content should be logged.
+	// NOTE: should be only used with send alert message action type.
+	ChannelID int64 `json:"channel_id,omitempty"`
+
+	// Timeout duration in seconds (maximum of 2419200 - 4 weeks).
+	// NOTE: should be only used with timeout action type.
+	Duration int `json:"duration_seconds,omitempty"`
+}
+
+// AutoModerationAction stores data for an auto moderation action.
+type AutoModerationAction struct {
+	Type     AutoModerationActionType      `json:"type"`
+	Metadata *AutoModerationActionMetadata `json:"metadata,omitempty"`
 }
