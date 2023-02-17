@@ -299,14 +299,12 @@ func (p *Plugin) parseYtUrl(url string) (idType ytUrlType, id string, err error)
 	return idType, id, err
 }
 
-func (p *Plugin) getIDFromRegexUrl(expr *regexp.Regexp, url string, index int) (id string, valid bool) {
+func (p *Plugin) getIDFromRegexUrl(expr *regexp.Regexp, url string, index int) (id string, ok bool) {
 	capturingGroups := expr.FindAllStringSubmatch(url, -1)
 	if len(capturingGroups) > 0 && len(capturingGroups[0]) > index {
-		id = capturingGroups[0][index]
-		valid = id != ""
+		return capturingGroups[0][index], true
 	}
-
-	return
+	return "", false
 }
 
 func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) {
