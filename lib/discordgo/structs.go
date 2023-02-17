@@ -1169,10 +1169,10 @@ const (
 // AuditLogEntry for a GuildAuditLog
 // https://discord.com/developers/docs/resources/audit-log#audit-log-entry-object-audit-log-entry-structure
 type AuditLogEntry struct {
-	TargetID   int64             `json:"target_id"`
+	TargetID   int64             `json:"target_id,string"`
 	Changes    []*AuditLogChange `json:"changes"`
-	UserID     int64             `json:"user_id"`
-	ID         int64             `json:"id"`
+	UserID     int64             `json:"user_id,string"`
+	ID         int64             `json:"id,string"`
 	ActionType *AuditLogAction   `json:"action_type"`
 	Options    *AuditLogOptions  `json:"options"`
 	Reason     string            `json:"reason"`

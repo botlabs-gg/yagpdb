@@ -553,3 +553,6 @@ type AutoModerationActionExecution struct {
 type GuildAuditLogEntryCreate struct {
 	*AuditLogEntry
 }
+
+type GuildJoinRequestUpdate struct{}
+type GuildJoinRequestDelete struct{}
