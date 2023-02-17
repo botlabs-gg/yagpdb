@@ -33,7 +33,7 @@ require (
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/json-iterator/go v1.1.9
+	github.com/json-iterator/go v1.1.11
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/rcache v1.0.1
 	github.com/lib/pq v1.2.1-0.20191011153232-f91d3411e481
@@ -49,11 +49,11 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.5.1
+	github.com/prometheus/client_golang v1.11.1
 	github.com/russross/blackfriday v1.5.2
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.7.1
 	github.com/tidwall/buntdb v1.2.8
 	github.com/tkuchiki/go-timezone v0.1.5-0.20200504234801-f58f9e3b062f
@@ -123,7 +123,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/karlseguin/expect v1.0.1 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
@@ -137,8 +137,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/posener/complete v1.1.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.9.1 // indirect
-	github.com/prometheus/procfs v0.0.8 // indirect
+	github.com/prometheus/common v0.26.0 // indirect
+	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20170515013008-09bb4053de1b // indirect
@@ -165,6 +165,6 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d // indirect
 	google.golang.org/grpc v1.34.0 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/protobuf v1.26.0-rc.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
