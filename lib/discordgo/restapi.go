@@ -1374,7 +1374,7 @@ func (s *Session) GuildEmbedEdit(guildID int64, enabled bool, channelID int64) (
 // beforeID    : If provided all log entries returned will be before the given ID.
 // actionType  : If provided the log will be filtered for the given Action Type.
 // limit       : The number messages that can be returned. (default 50, min 1, max 100)
-func (s *Session) GuildAuditLog(guildID, userID, beforeID int64, actionType, limit int) (st *GuildAuditLog, err error) {
+func (s *Session) GuildAuditLog(guildID, userID, beforeID int64, actionType AuditLogAction, limit int) (st *GuildAuditLog, err error) {
 
 	uri := EndpointGuildAuditLogs(guildID)
 
@@ -1386,7 +1386,7 @@ func (s *Session) GuildAuditLog(guildID, userID, beforeID int64, actionType, lim
 		v.Set("before", StrID(beforeID))
 	}
 	if actionType > 0 {
-		v.Set("action_type", strconv.Itoa(actionType))
+		v.Set("action_type", strconv.Itoa(int(actionType)))
 	}
 	if limit > 0 {
 		v.Set("limit", strconv.Itoa(limit))
