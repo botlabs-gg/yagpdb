@@ -24,12 +24,6 @@ import (
 	"goji.io/pat"
 )
 
-type CtxKey int
-
-const (
-	CurrentConfig CtxKey = iota
-)
-
 //go:embed assets/youtube.html
 var PageHTML string
 
@@ -163,7 +157,6 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	// limit it to max 25 feeds
 	var count int
 	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", activeGuild.ID).Count(&count)
-
 	if count >= MaxFeedsForContext(ctx) {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
 	}
@@ -237,6 +230,18 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	sub.PublishShorts = &data.PublishShorts
 	sub.ChannelID = discordgo.StrID(data.DiscordChannel)
 	sub.Enabled = &data.Enabled
+	count := 0
+	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ? and enabled = ?", sub.GuildID, common.BoolToPointer(true)).Count(&count)
+	if count >= MaxFeedsForContext(ctx) {
+		var currFeed ChannelSubscription
+		err := common.GORM.Model(&ChannelSubscription{}).Where("id = ?", sub.ID).First(&currFeed)
+		if err != nil {
+			logger.WithError(err.Error).Errorf("Failed getting feed %d", sub.ID)
+		}
+		if !*currFeed.Enabled && *sub.Enabled {
+			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d enabled youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
+		}
+	}
 
 	err = common.GORM.Save(sub).Error
 	if err == nil {

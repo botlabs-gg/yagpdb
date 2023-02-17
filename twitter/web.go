@@ -24,12 +24,6 @@ import (
 //go:embed assets/twitter.html
 var PageHTML string
 
-type CtxKey int
-
-const (
-	CurrentConfig CtxKey = iota
-)
-
 type Form struct {
 	TwitterUser    string `valid:",1,256"`
 	DiscordChannel int64  `valid:"channel,false"`
