@@ -458,7 +458,7 @@ func (timeout *TimeoutUserEffect) Description() (description string) {
 func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	// if a user is timed out, do not apply the effect again.
 	member := ctxData.MS.Member
-	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
+	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
 		return nil
 	}
 

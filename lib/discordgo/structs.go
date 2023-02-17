@@ -777,7 +777,7 @@ type Member struct {
 
 	// The time at which the member's timeout will expire.
 	// Time in the past or nil if the user is not timed out.
-	TimeoutExpiresAt *time.Time `json:"communication_disabled_until"`
+	CommunicationDisabledUntil *time.Time `json:"communication_disabled_until"`
 }
 
 func (m *Member) GetGuildID() int64 {
@@ -1264,8 +1264,8 @@ type AutoModerationRule struct {
 	TriggerMetadata *AutoModerationTriggerMetadata `json:"trigger_metadata,omitempty"`
 	Actions         []AutoModerationAction         `json:"actions,omitempty"`
 	Enabled         *bool                          `json:"enabled,omitempty"`
-	ExemptRoles     *[]int64                       `json:"exempt_roles,omitempty"`
-	ExemptChannels  *[]int64                       `json:"exempt_channels,omitempty"`
+	ExemptRoles     IDSlice                        `json:"exempt_roles,omitempty"`
+	ExemptChannels  IDSlice                        `json:"exempt_channels,omitempty"`
 }
 
 // AutoModerationRuleEventType indicates in what event context a rule should be checked.
