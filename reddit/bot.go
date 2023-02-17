@@ -11,6 +11,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
@@ -21,6 +22,24 @@ func (p *Plugin) RemoveGuild(g int64) error {
 	})
 	if err != nil {
 		return errors.WrapIf(err, "failed removing reddit feeds")
+	}
+
+	return nil
+}
+
+func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
+	logger.WithField("guild_id", guildID).Infof("Removed Excess Reddit Feeds")
+	feeds, err := models.RedditFeeds(qm.Where("guild_id = ? and disabled = ?", guildID, false), qm.Offset(GuildMaxFeedsNormal)).AllG(context.Background())
+
+	if err != nil {
+		return errors.WrapIf(err, "failed getting reddit feeds")
+	}
+
+	if len(feeds) > 0 {
+		_, err = feeds.UpdateAllG(context.Background(), models.M{"disabled": true})
+		if err != nil {
+			return errors.WrapIf(err, "failed disabling reddit feeds on premium removal")
+		}
 	}
 
 	return nil
