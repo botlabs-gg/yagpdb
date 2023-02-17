@@ -288,7 +288,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 	}
 	logger.Infof("got timeout event %v", entry)
 
-	if entry.Changes[0].Key != "communication_disabled_until" {
+	if *entry.Changes[0].Key != discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
 		return false, nil
 	}
 
@@ -558,7 +558,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	return false, nil
 }
 
-func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
+func FindAuditLogEntry(guildID int64, typ discordgo.AuditLogAction, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
 	auditlog, err := common.BotSession.GuildAuditLog(guildID, 0, 0, typ, 10)
 	if err != nil {
 		return nil, nil
