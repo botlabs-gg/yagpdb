@@ -280,7 +280,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	cmdEdit := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 	cmdSaved, err := models.FindCustomCommandG(context.Background(), activeGuild.ID, int64(cmdEdit.ID))
 	if cmdSaved.Disabled == true && cmdEdit.ToDBModel().Disabled == false {
-		c, err := models.CustomCommands(qm.Where("guild_id = ? and disabled = ?", activeGuild.ID, false)).CountG(ctx)
+		c, err := models.CustomCommands(qm.Where("guild_id = ? and disabled = false", activeGuild.ID)).CountG(ctx)
 		if err != nil {
 			return templateData, err
 		}
