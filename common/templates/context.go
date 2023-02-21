@@ -21,6 +21,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/lib/template"
+	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
 )
@@ -95,22 +96,27 @@ var (
 		"complexMessageEdit": CreateMessageEdit,
 		"kindOf":             KindOf,
 
-		"formatTime":      tmplFormatTime,
-		"snowflakeToTime": tmplSnowflakeToTime,
-		"loadLocation":    time.LoadLocation,
-		"json":            tmplJson,
-		"jsonToSdict":     tmplJSONToSDict,
-		"in":              in,
-		"inFold":          inFold,
-		"roleAbove":       roleIsAbove,
-		"adjective":       common.RandomAdjective,
-		"noun":            common.RandomNoun,
-		"verb":            common.RandomVerb,
-		"randInt":         randInt,
-		"shuffle":         shuffle,
-		"seq":             sequence,
+		"adjective":   common.RandomAdjective,
+		"in":          in,
+		"inFold":      inFold,
+		"json":        tmplJson,
+		"jsonToSdict": tmplJSONToSDict,
+		"noun":        common.RandomNoun,
+		"randInt":     randInt,
+		"roleAbove":   roleIsAbove,
+		"seq":         sequence,
+
+		"shuffle": shuffle,
+		"verb":    common.RandomVerb,
+
+		// time functions
 		"currentTime":     tmplCurrentTime,
+		"parseTime":       tmplParseTime,
+		"formatTime":      tmplFormatTime,
+		"loadLocation":    time.LoadLocation,
 		"newDate":         tmplNewDate,
+		"snowflakeToTime": tmplSnowflakeToTime,
+		"timestampToTime": tmplTimestampToTime,
 		"weekNumber":      tmplWeekNumber,
 
 		"humanizeDurationHours":   tmplHumanizeDurationHours,
@@ -327,15 +333,20 @@ func (c *Context) Execute(source string) (string, error) {
 		}
 		if c.GS != nil {
 			c.Msg.GuildID = c.GS.ID
-
-			member, err := bot.GetMember(c.GS.ID, c.BotUser.ID)
-			if err != nil {
-				return "", errors.WithMessage(err, "ctx.Execute")
+			if bot.State != nil {
+				member, err := bot.GetMember(c.GS.ID, c.BotUser.ID)
+				if err != nil {
+					return "", errors.WithMessage(err, "ctx.Execute")
+				}
+				c.Msg.Member = member.DgoMember()
+			} else {
+				member, err := discorddata.GetMember(c.GS.ID, c.BotUser.ID)
+				if err != nil {
+					return "", errors.WithMessage(err, "ctx.Execute")
+				}
+				c.Msg.Member = member
 			}
-
-			c.Msg.Member = member.DgoMember()
 		}
-
 	}
 
 	c.setupBaseData()

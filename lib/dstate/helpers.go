@@ -161,6 +161,7 @@ func ChannelStateFromDgo(c *discordgo.Channel) ChannelState {
 		NSFW:                 c.NSFW,
 		Position:             c.Position,
 		Bitrate:              c.Bitrate,
+		OwnerID:              c.OwnerID,
 	}
 }
 
@@ -201,6 +202,14 @@ func GuildStateFromDgo(guild *discordgo.Guild) *GuildState {
 }
 
 func IsRoleAbove(a, b *discordgo.Role) bool {
+	if a == nil {
+		return false
+	}
+
+	if b == nil {
+		return true
+	}
+
 	if a.Position != b.Position {
 		return a.Position > b.Position
 	}

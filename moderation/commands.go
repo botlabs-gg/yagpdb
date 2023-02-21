@@ -18,6 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/jinzhu/gorm"
 )
 
@@ -54,7 +55,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 	cmdName := cmdData.Cmd.Trigger.Names[0]
 	oreason = reason
 	if !enabled {
-		return oreason, commands.NewUserErrorf("The **%s** command is disabled on this server. Enable it in the control panel on the moderation page.", cmdName)
+		return oreason, commands.NewUserErrorf("The **%s** command is disabled on this server. It can be enabled at <%s/moderation>", cmdName, web.ManageServerURL(cmdData.GuildData))
 	}
 
 	if strings.TrimSpace(reason) == "" {
@@ -304,7 +305,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if config.MuteRole == "" {
-				return "No mute role set up, assign a mute role in the control panel", nil
+				return fmt.Sprintf("No mute role selected. Select one at <%s/moderation>", web.ManageServerURL(parsed.GuildData)), nil
 			}
 
 			reason := parsed.Args[2].Str()
@@ -477,7 +478,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
-			memberTimeout := member.Member.TimeoutExpiresAt
+			memberTimeout := member.Member.CommunicationDisabledUntil
 			if memberTimeout == nil || memberTimeout.Before(time.Now()) {
 				return "Member is not timed out", nil
 			}

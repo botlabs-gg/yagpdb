@@ -60,19 +60,22 @@ func (r *Reminder) Trigger() error {
 	}
 
 	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
+	embed := &discordgo.MessageEmbed{
+		Title:       "Reminder from YAGPDB",
+		Description: common.ReplaceServerInvites(r.Message, r.GuildID, "(removed-invite)"),
+	}
 
 	mqueue.QueueMessage(&mqueue.QueuedElement{
 		Source:       "reminder",
 		SourceItemID: "",
 
-		GuildID:   r.GuildID,
-		ChannelID: r.ChannelIDInt(),
-
-		MessageStr: "**Reminder** <@" + r.UserID + ">: " + common.ReplaceServerInvites(r.Message, r.GuildID, "(removed-invite)"),
+		GuildID:      r.GuildID,
+		ChannelID:    r.ChannelIDInt(),
+		MessageEmbed: embed,
+		MessageStr:   "**Reminder** for <@" + r.UserID + ">",
 		AllowedMentions: discordgo.AllowedMentions{
 			Users: []int64{r.UserIDInt()},
 		},
-
 		Priority: 10, // above all feeds
 	})
 	return nil

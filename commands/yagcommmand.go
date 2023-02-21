@@ -146,6 +146,7 @@ type YAGCommand struct {
 	slashCommandID int64
 
 	IsResponseEphemeral bool
+	NSFW                bool
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation
@@ -173,6 +174,13 @@ var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	if !yc.RunInDM && data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
+	}
+
+	if yc.NSFW {
+		channel := data.GuildData.GS.GetChannelOrThread(data.ChannelID)
+		if !channel.NSFW {
+			return "This command can be used only in age-restricted channels", nil
+		}
 	}
 
 	// Send typing to indicate the bot's working
@@ -279,7 +287,9 @@ func (yc *YAGCommand) humanizeError(err error) string {
 		return "Unable to run the command: " + t.Error()
 	case *discordgo.RESTError:
 		if t.Message != nil && t.Message.Message != "" {
-			if t.Response != nil && t.Response.StatusCode == 403 {
+			if t.Message.Message == "Unknown Message" {
+				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same channel as the message."
+			} else if t.Response != nil && t.Response.StatusCode == 403 {
 				return "The bot permissions has been incorrectly set up on this server for it to run this command: " + t.Message.Message
 			}
 
@@ -410,8 +420,16 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 				return false, nil, nil, nil
 			}
 		}
+		channel_id := data.GuildData.CS.ID
+		parent_id := data.GuildData.CS.ParentID
+		// in case the channel is a thread, get the parent channel from parent id and check for the overrides
+		if data.GuildData.CS.Type.IsThread() {
+			channel := data.GuildData.GS.GetChannel(parent_id)
+			channel_id = channel.ID
+			parent_id = channel.ParentID
+		}
 
-		settings, err = yc.GetSettings(data.ContainerChain, data.GuildData.CS.ID, data.GuildData.CS.ParentID, guild.ID)
+		settings, err = yc.GetSettings(data.ContainerChain, channel_id, parent_id, guild.ID)
 		if err != nil {
 			resp = &CanExecuteError{
 				Type:    ReasonError,

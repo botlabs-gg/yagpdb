@@ -266,7 +266,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err error) {
 	data := evt.GuildMemberUpdate()
 	//ignore members who aren't timedout or have been timedout in the past
-	if data.TimeoutExpiresAt == nil || data.TimeoutExpiresAt.Before(time.Now()) {
+	if data.CommunicationDisabledUntil == nil || data.CommunicationDisabledUntil.Before(time.Now()) {
 		return false, nil
 	}
 
@@ -288,7 +288,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 	}
 	logger.Infof("got timeout event %v", entry)
 
-	if entry.Changes[0].Key != "communication_disabled_until" {
+	if *entry.Changes[0].Key != discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
 		return false, nil
 	}
 
@@ -507,7 +507,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	c := evt.GuildMemberUpdate()
 	member := c.Member
 	// ignore timedout users
-	if member.TimeoutExpiresAt != nil && member.TimeoutExpiresAt.After(time.Now()) {
+	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
 		return false, nil
 	}
 
@@ -558,7 +558,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	return false, nil
 }
 
-func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
+func FindAuditLogEntry(guildID int64, typ discordgo.AuditLogAction, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
 	auditlog, err := common.BotSession.GuildAuditLog(guildID, 0, 0, typ, 10)
 	if err != nil {
 		return nil, nil

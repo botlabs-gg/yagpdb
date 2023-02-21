@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -25,28 +24,31 @@ import (
 	"goji.io/pat"
 )
 
-type CtxKey int
-
-const (
-	CurrentConfig CtxKey = iota
-)
-
 //go:embed assets/youtube.html
 var PageHTML string
 
 var (
-	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_added_feed", FormatString: "Added youtube feed from %s"})
-	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_removed_feed", FormatString: "Removed youtube feed from %s"})
-	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_updated_feed", FormatString: "Updated youtube feed from %s"})
+	panelLogKeyAddedFeed    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_added_feed", FormatString: "Added youtube feed from %s"})
+	panelLogKeyAnnouncement = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_announcement", FormatString: "Updated YouTube Announcement"})
+	panelLogKeyRemovedFeed  = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_removed_feed", FormatString: "Removed youtube feed from %s"})
+	panelLogKeyUpdatedFeed  = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "youtube_updated_feed", FormatString: "Updated youtube feed from %s"})
 )
 
-type Form struct {
+type YoutubeFeedForm struct {
 	YoutubeUrl        string
 	DiscordChannel    int64 `valid:"channel,false"`
 	ID                uint
 	MentionEveryone   bool
+	MentionRoles      []int64
+	PublishShorts     bool
 	PublishLivestream bool
 	Enabled           bool
+	CustomMessage     string
+}
+
+type YoutubeAnnouncementForm struct {
+	Message string `json:"message" valid:"template,5000"`
+	Enabled bool
 }
 
 type ytUrlType int
@@ -56,15 +58,18 @@ const (
 	ytUrlTypeCustom
 	ytUrlTypeChannel
 	ytUrlTypeUser
+	ytUrlTypeHandle
 	ytUrlTypeInvalid
 )
 
 var (
 	ytUrlRegex        = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com`)
+	ytUrlShortRegex   = regexp.MustCompile(`^(https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+).*`)
 	ytVideoUrlRegex   = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]+).*`)
 	ytChannelUrlRegex = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(channel)\/(UC[\w-]{21}[AQgw])$`)
 	ytCustomUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(c\/)?([\w-]+)$`)
 	ytUserUrlRegex    = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(user\/)([\w-]+)$`)
+	ytHandleUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(@)([\w-]+)$`)
 )
 
 func (p *Plugin) InitWeb() {
@@ -88,11 +93,12 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Get("/"), mainGetHandler)
 	ytMux.Handle(pat.Get(""), mainGetHandler)
 
-	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{})
+	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, YoutubeFeedForm{})
 
 	ytMux.Handle(pat.Post(""), addHandler)
 	ytMux.Handle(pat.Post("/"), addHandler)
-	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, Form{}))
+	ytMux.Handle(pat.Post("/announcement"), web.ControllerPostHandler(p.HandleYoutubeAnnouncement, mainGetHandler, YoutubeAnnouncementForm{}))
+	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, YoutubeFeedForm{}))
 	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 	ytMux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 
@@ -110,8 +116,36 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 		return templateData, err
 	}
 
+	var announcement YoutubeAnnouncements
+	err = common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", ag.ID).First(&announcement).Error
+	if err != nil {
+		announcement.Message = "{{.ChannelName}} published a new video! {{.URL}}"
+		announcement.Enabled = common.BoolToPointer(false)
+	}
+
+	templateData["Announcement"] = announcement
 	templateData["Subs"] = subs
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(ag.ID) + "/youtube"
+
+	return templateData, nil
+}
+
+func (p *Plugin) HandleYoutubeAnnouncement(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
+	ctx := r.Context()
+	guild, templateData := web.GetBaseCPContextData(ctx)
+	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeAnnouncementForm)
+
+	var announcement YoutubeAnnouncements
+	announcement.Message = data.Message
+	announcement.Enabled = &data.Enabled
+	announcement.GuildID = guild.ID
+
+	err = common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", guild.ID).Save(&announcement).Error
+	if err != nil {
+		return templateData, err
+	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAnnouncement, &cplogs.Param{}))
 
 	return templateData, nil
 }
@@ -123,23 +157,24 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	// limit it to max 25 feeds
 	var count int
 	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", activeGuild.ID).Count(&count)
-
 	if count >= MaxFeedsForContext(ctx) {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
 	}
 
-	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
 	url := data.YoutubeUrl
-	if !ytUrlRegex.MatchString(url) {
-		return templateData.AddAlerts(web.ErrorAlert("That is not a <u>youtube.com</u> link, check the examples for a valid link ")), nil
+	if !(ytUrlRegex.MatchString(url) || ytUrlShortRegex.MatchString(url)) {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", url))), nil
 	}
+
 	ytChannel, err := p.getYtChannel(url)
 	if err != nil {
 		logger.WithError(err).Errorf("error occurred fetching channel for url %s", url)
 		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
 	}
 
-	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, ytChannel, data.MentionEveryone, data.PublishLivestream)
+	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, ytChannel, data.MentionEveryone, data.PublishLivestream, data.PublishShorts, data.MentionRoles)
+
 	if err != nil {
 		if err == ErrNoChannel {
 			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("channel not found")
@@ -187,12 +222,26 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	_, templateData = web.GetBaseCPContextData(ctx)
 
 	sub := ctx.Value(ContextKeySub).(*ChannelSubscription)
-	data := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
 
 	sub.MentionEveryone = data.MentionEveryone
-	sub.PublishLivestream = data.PublishLivestream
+	sub.MentionRoles = data.MentionRoles
+	sub.PublishLivestream = &data.PublishLivestream
+	sub.PublishShorts = &data.PublishShorts
 	sub.ChannelID = discordgo.StrID(data.DiscordChannel)
-	sub.Enabled = data.Enabled
+	sub.Enabled = &data.Enabled
+	count := 0
+	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ? and enabled = ?", sub.GuildID, common.BoolToPointer(true)).Count(&count)
+	if count >= MaxFeedsForContext(ctx) {
+		var currFeed ChannelSubscription
+		err := common.GORM.Model(&ChannelSubscription{}).Where("id = ?", sub.ID).First(&currFeed)
+		if err != nil {
+			logger.WithError(err.Error).Errorf("Failed getting feed %d", sub.ID)
+		}
+		if !*currFeed.Enabled && *sub.Enabled {
+			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d enabled youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
+		}
+	}
 
 	err = common.GORM.Save(sub).Error
 	if err == nil {
@@ -250,7 +299,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	bodyReader := io.LimitReader(r.Body, 0xffff1)
 
-	result, err := ioutil.ReadAll(bodyReader)
+	result, err := io.ReadAll(bodyReader)
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed reading body")
 		w.WriteHeader(http.StatusInternalServerError)

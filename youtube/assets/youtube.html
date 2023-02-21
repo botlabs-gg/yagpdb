@@ -1,38 +1,46 @@
-{{define "cp_youtube"}}
-{{template "cp_head" .}}
+{{define "cp_youtube"}} {{template "cp_head" .}}
+<style>
+  .yt-tbl-actions-column {
+      display: flex;
+      flex-direction: column;
+  }
+  .yt-tbl-actions-column > button { 
+    margin: 5px
+  }
+
+  .card-deck {
+    margin: 0 !important;
+  }
+
+</style>
 <header class="page-header">
     <h2>Youtube upload feeds</h2>
 </header>
 {{template "cp_alerts" .}}
 <!-- /.row -->
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card">
+    <div class="card-deck col-lg-12">
+        <div class="card col-md-6 col-sm-12">
             <header class="card-header">
-                <h2 class="card-title">New feed</h2>
+                <h2 class="card-title">Add New Feed</h2>
             </header>
             <div class="card-body">
-                <!-- <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games", "multicopter" -->
-                <form class="" method="post" action="/manage/{{.ActiveGuild.ID}}/youtube">
+                <form method="post" action="/manage/{{.ActiveGuild.ID}}/youtube">
                     <p>
-                      <b>Provide either link of youtube channel or video or username </b> 
-                      <br>
-                      <b><u>Only youtube.com links are supported</u></b>
-                      <br>
-                      <u>Direct channel and Video links</u> are preffered as they have the highest accuracy
-                      <br>Custom url links can lead to incorrect channels sometimes
-                      <br>
-                      <br>
-                       <u>Examples of each type of link:</u>
-                          <br>
-                         Direct channel link:  <b>https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw</b>
-                          <br>
-                         Video link: <b>https://www.youtube.com/watch?v=dQw4w9WgXcQ</b>
-                          <br>
-                         User link: <b>https://www.youtube.com/user/MontyPython</b> 
-                          <br>
-                         Custom link: <b>https://www.youtube.com/c/Taskmaster</b>
-                          <br> 
+                        <b>Provide either link of youtube channel or video or username </b>
+                        <br>
+                        <u>Direct channel and Video links</u> are preferred as they have the highest accuracy
+                        <br>Other links can lead to incorrect channels sometimes, as they rely on youtube search
+                        <br>
+                        <br>
+                        <u>Examples of each type of link:</u>
+                        <br> Direct channel link: <b>https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw</b>
+                        <br> Video link: <b>https://www.youtube.com/watch?v=dQw4w9WgXcQ</b>
+                        <br> Short Video link: <b>https://youtu.be/pBZ_2pX_8mg</b>
+                        <br> User link: <b>https://www.youtube.com/user/MontyPython</b>
+                        <br> Custom link: <b>https://www.youtube.com/c/Taskmaster</b>
+                        <br> Handle link: <b>https://www.youtube.com/@TomScottGo</b>
+                        <br>
                         </br>
                         For any questions join the support server of the bot
                     </p>
@@ -50,89 +58,162 @@
                             {{textChannelOptions .ActiveGuild.Channels nil false ""}}
                         </select>
                     </div>
+                    {{checkbox "MentionEveryone" "new-mention-everyone" `Mention Everyone` false}}
+                    <div class="form-group">
+                       <div>
+                        <select id="roles" class="multiselect form-control" multiple="multiple" name="MentionRoles" data-plugin-multiselect>
+                            {{roleOptionsMulti .ActiveGuild.Roles nil nil}}
+                        </select>
+                        <label for="roles">Mention Roles</label>
+                        </div>
+                    </div>
+                    {{checkbox "PublishLivestream" "new-publish-livestream" `Publish Livestreams` true}}
+                    {{checkbox "PublishShorts" "new-publish-shorts" `Publish Shorts` true}}
 
-                    {{checkbox "MentionEveryone" "new-mention-everyone" `Mention everyone` false}}
-                    {{checkbox "PublishLivestream" "new-publish-livestream" `Publish livestreams` false}}
                     <button type="submit" id="yt-add-btn" disabled="true" class="btn btn-success">Add</button>
                 </form>
             </div>
-        </section>
-        <section class="card">
+        </div>
+        <div class="card col-md-6 col-sm-12">
             <header class="card-header">
-                <h2 class="card-title">Current subscribed channels</h2>
+                <h2 class="card-title">Custom Announcement</h2>
             </header>
             <div class="card-body">
-                {{$dot := .}}
-                {{range .Subs}}
-                <form id="sub-item-{{.ID}}" data-async-form method="post"
-                    action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text"
-                        class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
+                <form  method="post" action="/manage/{{.ActiveGuild.ID}}/youtube/announcement">
+                  <div class="form-group col mb-0">
+                        {{checkbox "Enabled" "yt-announcement-enabled" `<h2 class="card-title">Enable</h2>` .Announcement.Enabled}}
+                        
+                        <label>YouTube Announcement Message (<span class="yt-announcement-length-counter"> {{toRune .Announcement.Message|len}}</span>/5000)</label>
 
-                <table class="table table-responsive-md table-sm mb-0">
-                    <thead>
-                        <tr>
-                            <th>Youtube</th>
-                            <th>Discord channel</th>
-                            <th>Mention everyone</th>
-                            <th>Publish livestreams</th>
-                            <th>Enabled</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{range .Subs}}
-                        <tr>
-                            <td>
-                                <p class="form-control-static"><a class="feedlink" href="https://youtube.com/channel/{{.YoutubeChannelID}}" target="_blank"><b>{{.YoutubeChannelName}}</b></a> - <code>{{.YoutubeChannelID}}</code></p>
-                            </td>
-                            <td>
-                                <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel"
-                                    data-requireperms-embed>
-                                    {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
-                                </select>
-                            </td>
-                            <td>
-                                {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}
-                            </td>
-                            <td>
-                                {{checkbox "PublishLivestream" (joinStr "" "publish-livestream-" .ID) `Publish livestreams` .PublishLivestream (joinStr "" `form="sub-item-` .ID `"`)}}
-                            </td>
-                            <td>
-                                {{checkbox "Enabled" (joinStr "" "feed-enabled-" .ID) `Enabled` .Enabled (joinStr "" `form="sub-item-` .ID `"`)}}
-                            </td>
-                            <td>
-                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success"
-                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"
-                                    data-async-form-alertsonly>Save</button>
-                                <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger"
-                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
-                            </td>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
+                        <textarea class="form-control" rows="10" id="yt-announcement-msg" name="Message" oninput="OnAnnouncementChange(this)">{{.Announcement.Message}}</textarea>
+                      
+                        <p class="help-block">
+                          Additional template data is
+                          <code>{{"{{.ChannelID}}"}}</code>,
+                          <code>{{"{{.ChannelName}}"}}</code>,
+                          <code>{{"{{.IsLiveStream}}"}}</code>,
+                          <code>{{"{{.IsUpcoming}}"}}</code>,
+                          <code>{{"{{.VideoID}}"}}</code>,
+                          <code>{{"{{.VideoTitle}}"}}</code>,
+                          <code>{{"{{.VideoThumbnail}}"}}</code>,
+                          <code>{{"{{.VideoDescription}}"}}</code>,
+                          <code>{{"{{.VideoDurationSeconds}}"}}</code>,
+                          <code>{{"{{.Video}}"}}</code>,
+                          <code>{{"{{.URL}}"}}</code>
+                          See <a href="https://docs.yagpdb.xyz/commands/custom-commands" target="_blank">Custom Commands Documentation </a> to learn more advanced actions.
+                        </p>
+                        <span style="display: inline-block;vertical-align: middle;">
+                          <button type="submit" id="yt-save-announcement-btn" class="btn btn-sm btn-success btn-block" data-async-form-alertsonly>Save</button>
+                        </span>
+                    </div>
+                </form>
             </div>
-        </section>
+        </div>
         <!-- /.card -->
+    </div>
+    <div class="card-deck col-lg-12">
+      <section class="card">
+        <header class="card-header">
+            <h2 class="card-title">Current subscribed channels</h2>
+        </header>
+        <div class="card-body">
+            {{$dot := .}} {{range .Subs}}
+            <form id="sub-item-{{.ID}}" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update"><input type="text" class="hidden form-control" name="id" value="{{.ID}}"></form>{{end}}
+            <table class="table table-responsive-md table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Youtube</th>
+                        <th>Discord Channel</th>
+                        <th>Mention Everyone</th>
+                        <th>Mention Roles</th>
+                        <th>Publish Livestreams</th>
+                        <th>Publish Shorts</th>
+                        <th>Enabled</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="yt-tbl-body">
+                    {{range .Subs}}
+                    <tr class="yt-tbl-row">
+                        <td class="yt-tbl-column">
+                            <p class="form-control-static"><a class="feedlink" href="https://youtube.com/channel/{{.YoutubeChannelID}}" target="_blank"><b>{{.YoutubeChannelName}}</b></a> - <code>{{.YoutubeChannelID}}</code></p>
+                        </td>
+                        <td class="yt-tbl-column">
+                            <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel" data-requireperms-embed>
+                                {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
+                            </select>
+                        </td>
+                        <td class="yt-tbl-column">
+                            {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}
+                        </td>
+                        <td class="yt-tbl-column">
+                              <select form="sub-item-{{.ID}}" name="MentionRoles" class="multiselect form-control" multiple="multiple"
+                                id="mention-roles" data-plugin-multiselect>
+                                {{roleOptionsMulti $dot.ActiveGuild.Roles nil .MentionRoles }}
+                            </select>
+                        </td>
+                        <td class="yt-tbl-column">
+                            {{checkbox "PublishLivestream" (joinStr "" "publish-livestream-" .ID) `Publish Livestreams` .PublishLivestream (joinStr "" `form="sub-item-` .ID `"`)}}
+                        </td>
+                        <td class="yt-tbl-column">
+                            {{checkbox "PublishShorts" (joinStr "" "publish-shorts-" .ID) `Publish Shorts` .PublishShorts (joinStr "" `form="sub-item-` .ID `"`)}}
+                        </td>
+                        <td class="yt-tbl-column">
+                            {{checkbox "Enabled" (joinStr "" "feed-enabled-" .ID) `` .Enabled (joinStr "" `form="sub-item-` .ID `"`)}}
+                        </td>
+                        <td class="yt-tbl-column yt-tbl-actions-column">
+                            <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update" data-async-form-alertsonly>Save</button>
+                            <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+      </section>
     </div>
     <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
 <script>
-    $(function () {
-        let input = $("#yt-url");
+    $(function() {
+        let ytUrlInput = $("#yt-url");
         let addButton = $("#yt-add-btn")
 
-        input.on("input", function (arg) {
-          let ytUrl = input.val()
-          let ytLinkRegex = new RegExp("^(https?:\/\/)?((www|m)\.)?youtube\.com",'g')
-            if (!ytUrl || !ytLinkRegex.test(ytUrl)) {
-              addButton.attr("disabled", true);
-            }else{
-              addButton.attr("disabled", false)
-            } 
+        ytUrlInput.on("input", function(arg) {
+            let ytUrl = ytUrlInput.val()
+            let ytLinkRegex = new RegExp("^(https?:\/\/)?((www|m)\.)?youtube\.com", 'g')
+            let ytShortLinkRegex = new RegExp("^(https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+).*", 'g')
+            if (ytUrl && (ytLinkRegex.test(ytUrl) || ytShortLinkRegex.test(ytUrl))) {
+                addButton.attr("disabled", false);
+            } else {
+                addButton.attr("disabled", true)
+            }
         })
     })
+
+    function OnAnnouncementChange(textArea) {
+        let counter = document.querySelector(".yt-announcement-length-counter")
+        let saveButton = document.querySelector("#yt-save-announcement-btn")
+        let totalLength = textArea.value.length
+        let newLines = textArea.value.match(/\n/g);
+        if(newLines){
+          totalLength += newLines.length
+        }
+
+        counter.textContent = totalLength
+        if (totalLength > 5000) {
+            counter.classList.add("text-danger");
+            saveButton.classList.remove("btn-success")
+            saveButton.classList.add("btn-disabled")
+            saveButton.classList.add("disabled")
+            saveButton.disabled = true
+        } else {
+            counter.classList.remove("text-danger");
+            saveButton.disabled = false
+            saveButton.classList.add("btn-success")
+            saveButton.classList.remove("btn-disabled")
+        }
+    }
 </script>
-{{template "cp_footer" .}}
-{{end}}
+{{template "cp_footer" .}} {{end}}

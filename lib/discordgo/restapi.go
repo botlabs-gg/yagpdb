@@ -220,10 +220,8 @@ func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, h
 	}
 
 	// we may need to send a request with extra headers
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	// Not used on initial login..
@@ -656,7 +654,7 @@ func (s *Session) GuildEdit(guildID int64, g GuildParams) (st *Guild, err error)
 			for _, r := range regions {
 				valid = append(valid, r.ID)
 			}
-			err = fmt.Errorf("Region not a valid region (%q)", valid)
+			err = fmt.Errorf("region not a valid region (%q)", valid)
 			return
 		}
 	}
@@ -761,9 +759,10 @@ func (s *Session) GuildBanDelete(guildID, userID int64) (err error) {
 }
 
 // GuildMembers returns a list of members for a guild.
-//  guildID  : The ID of a Guild.
-//  after    : The id of the member to return members after
-//  limit    : max number of members to return (max 1000)
+//
+//	guildID  : The ID of a Guild.
+//	after    : The id of the member to return members after
+//	limit    : max number of members to return (max 1000)
 func (s *Session) GuildMembers(guildID int64, after int64, limit int) (st []*Member, err error) {
 
 	uri := EndpointGuildMembers(guildID)
@@ -792,8 +791,9 @@ func (s *Session) GuildMembers(guildID int64, after int64, limit int) (st []*Mem
 }
 
 // GuildMember returns a member of a guild.
-//  guildID   : The ID of a Guild.
-//  userID    : The ID of a User
+//
+//	guildID   : The ID of a Guild.
+//	userID    : The ID of a User
 func (s *Session) GuildMember(guildID, userID int64) (st *Member, err error) {
 
 	body, err := s.RequestWithBucketID("GET", EndpointGuildMember(guildID, userID), nil, nil, EndpointGuildMember(guildID, 0))
@@ -806,13 +806,14 @@ func (s *Session) GuildMember(guildID, userID int64) (st *Member, err error) {
 }
 
 // GuildMemberAdd force joins a user to the guild.
-//  accessToken   : Valid access_token for the user.
-//  guildID       : The ID of a Guild.
-//  userID        : The ID of a User.
-//  nick          : Value to set users nickname to
-//  roles         : A list of role ID's to set on the member.
-//  mute          : If the user is muted.
-//  deaf          : If the user is deafened.
+//
+//	accessToken   : Valid access_token for the user.
+//	guildID       : The ID of a Guild.
+//	userID        : The ID of a User.
+//	nick          : Value to set users nickname to
+//	roles         : A list of role ID's to set on the member.
+//	mute          : If the user is muted.
+//	deaf          : If the user is deafened.
 func (s *Session) GuildMemberAdd(accessToken string, guildID, userID int64, nick string, roles []int64, mute, deaf bool) (err error) {
 
 	data := struct {
@@ -873,9 +874,11 @@ func (s *Session) GuildMemberEdit(guildID, userID int64, roles []string) (err er
 }
 
 // GuildMemberMove moves a guild member from one voice channel to another/none
-//  guildID   : The ID of a Guild.
-//  userID    : The ID of a User.
-//  channelID : The ID of a channel to move user to. Use 0 to disconnect the member.
+//
+//	guildID   : The ID of a Guild.
+//	userID    : The ID of a User.
+//	channelID : The ID of a channel to move user to. Use 0 to disconnect the member.
+//
 // NOTE : I am not entirely set on the name of this function and it may change
 // prior to the final 1.0.0 release of Discordgo
 func (s *Session) GuildMemberMove(guildID, userID, channelID int64) (err error) {
@@ -907,14 +910,16 @@ func (s *Session) GuildMemberNickname(guildID, userID int64, nickname string) (e
 }
 
 // GuildMemberTimeoutWithReason times out a guild member with a mandatory reason
-//  guildID   : The ID of a Guild.
-//  userID    : The ID of a User.
-//  until     : The timestamp for how long a member should be timed out.
-//              Set to nil to remove timeout.
+//
+//	guildID   : The ID of a Guild.
+//	userID    : The ID of a User.
+//	until     : The timestamp for how long a member should be timed out.
+//	            Set to nil to remove timeout.
+//
 // reason    : The reason for the timeout
 func (s *Session) GuildMemberTimeoutWithReason(guildID int64, userID int64, until *time.Time, reason string) (err error) {
 	data := struct {
-		TimeoutExpiresAt *time.Time `json:"communication_disabled_until"`
+		CommunicationDisabledUntil *time.Time `json:"communication_disabled_until"`
 	}{until}
 
 	headers := make(map[string]string)
@@ -926,10 +931,11 @@ func (s *Session) GuildMemberTimeoutWithReason(guildID int64, userID int64, unti
 }
 
 // GuildMemberTimeout times out a guild member
-//  guildID   : The ID of a Guild.
-//  userID    : The ID of a User.
-//  until     : The timestamp for how long a member should be timed out.
-//              Set to nil to remove timeout.
+//
+//	guildID   : The ID of a Guild.
+//	userID    : The ID of a User.
+//	until     : The timestamp for how long a member should be timed out.
+//	            Set to nil to remove timeout.
 func (s *Session) GuildMemberTimeout(guildID int64, userID int64, until *time.Time, reason string) (err error) {
 	return s.GuildMemberTimeoutWithReason(guildID, userID, until, reason)
 }
@@ -948,9 +954,10 @@ func (s *Session) GuildMemberNicknameMe(guildID int64, nickname string) (err err
 }
 
 // GuildMemberRoleAdd adds the specified role to a given member
-//  guildID   : The ID of a Guild.
-//  userID    : The ID of a User.
-//  roleID 	  : The ID of a Role to be assigned to the user.
+//
+//	guildID   : The ID of a Guild.
+//	userID    : The ID of a User.
+//	roleID 	  : The ID of a Role to be assigned to the user.
 func (s *Session) GuildMemberRoleAdd(guildID, userID, roleID int64) (err error) {
 
 	_, err = s.RequestWithBucketID("PUT", EndpointGuildMemberRole(guildID, userID, roleID), nil, nil, EndpointGuildMemberRole(guildID, 0, 0))
@@ -959,9 +966,10 @@ func (s *Session) GuildMemberRoleAdd(guildID, userID, roleID int64) (err error) 
 }
 
 // GuildMemberRoleRemove removes the specified role to a given member
-//  guildID   : The ID of a Guild.
-//  userID    : The ID of a User.
-//  roleID 	  : The ID of a Role to be removed from the user.
+//
+//	guildID   : The ID of a Guild.
+//	userID    : The ID of a User.
+//	roleID 	  : The ID of a Role to be removed from the user.
 func (s *Session) GuildMemberRoleRemove(guildID, userID, roleID int64) (err error) {
 
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuildMemberRole(guildID, userID, roleID), nil, nil, EndpointGuildMemberRole(guildID, 0, 0))
@@ -1366,7 +1374,7 @@ func (s *Session) GuildEmbedEdit(guildID int64, enabled bool, channelID int64) (
 // beforeID    : If provided all log entries returned will be before the given ID.
 // actionType  : If provided the log will be filtered for the given Action Type.
 // limit       : The number messages that can be returned. (default 50, min 1, max 100)
-func (s *Session) GuildAuditLog(guildID, userID, beforeID int64, actionType, limit int) (st *GuildAuditLog, err error) {
+func (s *Session) GuildAuditLog(guildID, userID, beforeID int64, actionType AuditLogAction, limit int) (st *GuildAuditLog, err error) {
 
 	uri := EndpointGuildAuditLogs(guildID)
 
@@ -1378,7 +1386,7 @@ func (s *Session) GuildAuditLog(guildID, userID, beforeID int64, actionType, lim
 		v.Set("before", StrID(beforeID))
 	}
 	if actionType > 0 {
-		v.Set("action_type", strconv.Itoa(actionType))
+		v.Set("action_type", strconv.Itoa(int(actionType)))
 	}
 	if limit > 0 {
 		v.Set("limit", strconv.Itoa(limit))

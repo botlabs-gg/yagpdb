@@ -187,7 +187,7 @@ OUTER:
 		return
 	}
 
-	webhookUsername := t.User.ScreenName + " • YAGPDB"
+	webhookUsername := "Twitter • YAGPDB"
 	embed := createTweetEmbed(t)
 	for _, v := range relevantFeeds {
 		go analytics.RecordActiveUnit(v.GuildID, p, "posted_twitter_message")
@@ -307,7 +307,7 @@ func (p *Plugin) updateConfigsLoop() {
 		case <-ticker.C:
 		case wg := <-p.Stop:
 			wg.Done()
-			logger.Info("youtube updateConfigsLoop shut down")
+			logger.Info("Twitter updateConfigsLoop shut down")
 			return
 		}
 	}
