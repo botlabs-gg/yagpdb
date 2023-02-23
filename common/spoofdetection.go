@@ -60,7 +60,5 @@ var DeSpoofReplacer = strings.NewReplacer(
 )
 
 func DeSpoof(input string) (ouput string, err error) {
-	output := DeSpoofReplacer.Replace(input)
-
-	return output, nil
+	return DeSpoofReplacer.Replace(input)
 }
