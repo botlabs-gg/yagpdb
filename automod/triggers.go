@@ -1510,7 +1510,5 @@ func (st *SpoofedTextTrigger) UserSettings() []*SettingDef {
 }
 
 func (st *SpoofedTextTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
-	str, _ := common.DeSpoof(m.Content)
-
-	return (m.Content != str), nil
+	return m.Content != common.DeSpoof(m.Content), nil
 }
