@@ -50,6 +50,7 @@ var RulePartMap = map[int]RulePart{
 	35: &MessageLengthTrigger{Inverted: true},
 	36: &SlowmodeTrigger{Links: true, ChannelBased: false},
 	37: &SlowmodeTrigger{Links: true, ChannelBased: true},
+	38: &SpoofedTextTrigger{},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
