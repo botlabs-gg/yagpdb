@@ -1483,32 +1483,3 @@ func (ml *MessageLengthTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dst
 
 	return utf8.RuneCountInString(m.Content) > dataCast.Length, nil
 }
-
-// /////////////////////////////////////////
-var _ MessageTrigger = (*SpoofedTextTrigger)(nil)
-
-type SpoofedTextTrigger struct{}
-
-func (st *SpoofedTextTrigger) Kind() RulePartType {
-	return RulePartTrigger
-}
-
-func (st *SpoofedTextTrigger) DataType() interface{} {
-	return nil
-}
-
-func (st *SpoofedTextTrigger) Name() (name string) {
-	return "Message includes spoofed unicode characters"
-}
-
-func (st *SpoofedTextTrigger) Description() (description string) {
-	return "Triggers on messages with invisible or easily confusable characters."
-}
-
-func (st *SpoofedTextTrigger) UserSettings() []*SettingDef {
-	return []*SettingDef{}
-}
-
-func (st *SpoofedTextTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
-	return m.Content != common.DeSpoof(m.Content), nil
-}
