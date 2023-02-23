@@ -1502,7 +1502,7 @@ func (st *SpoofedTextTrigger) Name() (name string) {
 }
 
 func (st *SpoofedTextTrigger) Description() (description string) {
-	return "Triggers on messages where common forms of automod bypassing is detected (i.e. a-zero width-joiner)"
+	return "Triggers on messages where characters very similar to latin characters are detected, or invisible characters are detected."
 }
 
 func (st *SpoofedTextTrigger) UserSettings() []*SettingDef {
