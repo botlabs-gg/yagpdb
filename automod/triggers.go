@@ -1502,7 +1502,7 @@ func (st *SpoofedTextTrigger) Name() (name string) {
 }
 
 func (st *SpoofedTextTrigger) Description() (description string) {
-	return "Triggers on messages where characters very similar to latin characters are detected, or invisible characters are detected."
+	return "Triggers on messages with invisible or easily confusable characters."
 }
 
 func (st *SpoofedTextTrigger) UserSettings() []*SettingDef {
