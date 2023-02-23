@@ -59,8 +59,8 @@ var DeSpoofReplacer = strings.NewReplacer(
 	"\uFEFF", "",
 )
 
-func DeSpoof(input string) (ouput string, flagged bool) {
+func DeSpoof(input string) (ouput string, err error) {
 	output := DeSpoofReplacer.Replace(input)
 
-	return output, input != output
+	return output, nil
 }
