@@ -53,7 +53,7 @@ var (
 		"print":       withOutputLimit(fmt.Sprint, MaxStringLength),
 		"println":     withOutputLimit(fmt.Sprintln, MaxStringLength),
 		"printf":      withOutputLimitF(fmt.Sprintf, MaxStringLength),
-		"deSpoof":     common.DeSpoof,
+		"sanitize":    common.Santize,
 
 		// regexp
 		"reQuoteMeta": regexp.QuoteMeta,
