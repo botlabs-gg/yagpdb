@@ -251,7 +251,7 @@ type MessageReactionRemoveAll struct {
 	*MessageReaction
 }
 
-// 	all reactions for a given emoji were explicitly removed from a message
+// all reactions for a given emoji were explicitly removed from a message
 type MessageReactionRemoveEmoji struct {
 	ChannelID int64 `json:"channel_id,string"`
 	GuildID   int64 `json:"guild_id,string"`
@@ -486,7 +486,8 @@ type ThreadListSync struct {
 
 // thread member for the current user was updated
 type ThreadMemberUpdate struct {
-	ThreadMember
+	*ThreadMember
+	GuildID int64 `json:"guild_id,string"` // snowflake	the id of the guild
 }
 
 // some user(s) were added to or removed from a thread
@@ -513,3 +514,45 @@ type StageInstanceDelete struct {
 // stage instance was updated
 type StageInstanceUpdate struct {
 }
+
+// ApplicationCommandPermissionsUpdate is the data for an ApplicationCommandPermissionsUpdate event
+type ApplicationCommandPermissionsUpdate struct {
+	*GuildApplicationCommandPermissions
+}
+
+// AutoModerationRuleCreate is the data for an AutoModerationRuleCreate event.
+type AutoModerationRuleCreate struct {
+	*AutoModerationRule
+}
+
+// AutoModerationRuleUpdate is the data for an AutoModerationRuleUpdate event.
+type AutoModerationRuleUpdate struct {
+	*AutoModerationRule
+}
+
+// AutoModerationRuleDelete is the data for an AutoModerationRuleDelete event.
+type AutoModerationRuleDelete struct {
+	*AutoModerationRule
+}
+
+// AutoModerationActionExecution is the data for an AutoModerationActionExecution event.
+type AutoModerationActionExecution struct {
+	GuildID              int64                         `json:"guild_id"`
+	Action               AutoModerationAction          `json:"action"`
+	RuleID               int64                         `json:"rule_id"`
+	RuleTriggerType      AutoModerationRuleTriggerType `json:"rule_trigger_type"`
+	UserID               int64                         `json:"user_id"`
+	ChannelID            int64                         `json:"channel_id"`
+	MessageID            int64                         `json:"message_id"`
+	AlertSystemMessageID int64                         `json:"alert_system_message_id"`
+	Content              string                        `json:"content"`
+	MatchedKeyword       string                        `json:"matched_keyword"`
+	MatchedContent       string                        `json:"matched_content"`
+}
+
+type GuildAuditLogEntryCreate struct {
+	*AuditLogEntry
+}
+
+type GuildJoinRequestUpdate struct{}
+type GuildJoinRequestDelete struct{}

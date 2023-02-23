@@ -453,6 +453,22 @@ const (
 	CCMessageExecLimitPremium = 5
 )
 
+func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
+	commands, err := models.CustomCommands(qm.Where("guild_id = ?", GuildID), qm.Offset(MaxCommands)).AllG(context.Background())
+	if err != nil {
+		return errors.WrapIf(err, "failed getting custom commands")
+	}
+
+	if len(commands) > 0 {
+		_, err = commands.UpdateAllG(context.Background(), models.M{"disabled": true})
+		if err != nil {
+			return errors.WrapIf(err, "failed disabling custom commands on premium removal")
+		}
+	}
+
+	return nil
+}
+
 var metricsExecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "yagpdb_cc_triggered_total",
 	Help: "Number custom commands triggered",
@@ -654,6 +670,10 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 	ms, err = bot.GetMember(cs.GuildID, userID)
 	if err != nil {
 		return nil, nil, errors.WithStackIf(err)
+	}
+
+	if ms.User.Bot {
+		return nil, nil, nil
 	}
 
 	// filter by roles

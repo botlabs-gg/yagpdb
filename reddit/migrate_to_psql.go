@@ -109,7 +109,6 @@ func FindLegacyWatchItem(source []*LegacySubredditWatchItem, id int) *LegacySubr
 	for _, c := range source {
 		if c.ID == id {
 			return c
-			break
 		}
 	}
 	return nil

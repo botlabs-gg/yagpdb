@@ -1,6 +1,7 @@
 package reminders
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -54,6 +55,10 @@ var cmds = []*commands.YAGCommand{
 			currentReminders, _ := GetUserReminders(parsed.Author.ID)
 			if len(currentReminders) >= 25 {
 				return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
+			}
+
+			if parsed.Author.Bot {
+				return nil, errors.New("cannot create reminder for Bots, you're most likely trying to use `execAdmin` to create a reminder, use `exec` instead")
 			}
 
 			fromNow := parsed.Args[0].Value.(time.Duration)

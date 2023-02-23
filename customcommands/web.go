@@ -277,11 +277,21 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
+	cmdEdit := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
+	cmdSaved, err := models.FindCustomCommandG(context.Background(), activeGuild.ID, int64(cmdEdit.ID))
+	if cmdSaved.Disabled == true && cmdEdit.ToDBModel().Disabled == false {
+		c, err := models.CustomCommands(qm.Where("guild_id = ? and disabled = false", activeGuild.ID)).CountG(ctx)
+		if err != nil {
+			return templateData, err
+		}
+		if int(c) >= MaxCommandsForContext(ctx) {
+			return templateData, web.NewPublicError(fmt.Sprintf("Max %d enabled custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
+		}
+	}
 
 	// ensure that the group specified is owned by this guild
-	if cmd.GroupID != 0 {
-		c, err := models.CustomCommandGroups(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, cmd.GroupID)).CountG(ctx)
+	if cmdEdit.GroupID != 0 {
+		c, err := models.CustomCommandGroups(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, cmdEdit.GroupID)).CountG(ctx)
 		if err != nil {
 			return templateData, err
 		}
@@ -291,13 +301,13 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}
 	}
 
-	dbModel := cmd.ToDBModel()
+	dbModel := cmdEdit.ToDBModel()
 
 	templateData["CurrentGroupID"] = dbModel.GroupID.Int64
 
 	dbModel.GuildID = activeGuild.ID
-	dbModel.LocalID = cmd.ID
-	dbModel.TriggerType = int(triggerTypeFromForm(cmd.TriggerTypeForm))
+	dbModel.LocalID = cmdEdit.ID
+	dbModel.TriggerType = int(triggerTypeFromForm(cmdEdit.TriggerTypeForm))
 
 	// check low interval limits
 	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval <= 10 {
@@ -311,7 +321,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}
 	}
 
-	_, err := dbModel.UpdateG(ctx, boil.Blacklist("last_run", "next_run", "local_id", "guild_id", "last_error", "last_error_time", "run_count"))
+	_, err = dbModel.UpdateG(ctx, boil.Blacklist("last_run", "next_run", "local_id", "guild_id", "last_error", "last_error_time", "run_count"))
 	if err != nil {
 		return templateData, nil
 	}

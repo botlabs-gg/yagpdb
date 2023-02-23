@@ -242,7 +242,7 @@ func init() {
 }
 
 // invitesCacheDuration is the period between ticks for the invitesCache gc in minutes
-const invitesCacheDuration = 600
+const invitesCacheDuration = 60
 
 func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bool) {
 	// check third party sites
@@ -255,10 +255,39 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 		return false
 	}
 
-	// Only check each invite id once
-	checked := make([]string, 0, len(matches))
+	guildInvites, ok := invitesCache.get(guildID)
+	if !ok { // we do not have a cache for this guild yet, create it
+		invites, err := common.BotSession.GuildInvites(guildID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
+			return true // assume bad since discord...
+		}
 
-OUTER:
+		// if there are no invites for this guild
+		// assume it is a bad invite.
+		if len(invites) == 0 {
+			return true
+		}
+
+		// add invites to the cache
+		inviteMap := make(map[string]bool)
+		for _, invite := range invites {
+			inviteMap[invite.Code] = true
+		}
+
+		invitesCache.set(guildID, inviteMap)
+
+		// overwrite the empty invite map
+		// with the one just returned by discord
+		guildInvites = GuildInvites{
+			invites: inviteMap,
+		}
+	}
+
+	// Only check each invite id once,
+	// in case it repeats in the message multiple times.
+	checked := make(map[string]bool, len(matches))
+
 	for _, v := range matches {
 		if len(v) < 3 {
 			continue
@@ -267,42 +296,37 @@ OUTER:
 		id := v[2]
 
 		// only check each link once
-		for _, c := range checked {
-			if id == c {
-				continue OUTER
-			}
+		if checked[id] {
+			continue
+		} else {
+			checked[id] = true
 		}
 
-		checked = append(checked, id)
-		guildInvites, ok := invitesCache.get(guildID)
-		if ok {
-			if guildInvites.invites[id] {
-				// Ignore invites to this server
-				continue OUTER
-			}
+		// Safe guard the map look up using the invite mutex.
+		// This is a extremely rare, but possible race condition.
+		invitesCache.RLock()
+		isInviteOk := guildInvites.invites[id]
+		invitesCache.RUnlock()
 
-			// If the invite is present in the cache, we return true even if it is not valid anymore.
-			// This is to prevent making API calls about invites which have a restrict rate limit.
-			return true
-		}
-
-		// Check to see if its a valid id, and if so check if its to the same server were on
-		invites, err := common.BotSession.GuildInvites(guildID)
-		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
-			return true // assume bad since discord...
-		}
-
-		if invites == nil {
+		if isInviteOk {
+			// ignore invites to this guild
 			continue
 		}
 
-		inviteMap := make(map[string]bool)
-		for _, invite := range invites {
-			inviteMap[invite.Code] = true
-		}
-		invitesCache.set(guildID, inviteMap)
-		return !inviteMap[id]
+		// invite to another guild found
+		//
+		// PS: we were getting a lot of rate
+		// limits issues from discord by
+		// validating each individual invite.
+		//
+		// Thus, we now return true for
+		// all possible invites, even if
+		// the invite is not valid.
+		//
+		// Reason being it is much easier
+		// to get an actual invite than
+		// just a fake one.
+		return true
 	}
 
 	// If we got here then there are no bad invites
