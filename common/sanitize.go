@@ -5,7 +5,7 @@ import (
 )
 
 // Oh boy.
-var DeSpoofReplacer = strings.NewReplacer(
+var Santizier = strings.NewReplacer(
 	// Latin
 	"\u0430", "a",
 	"\u0441", "c",
@@ -79,6 +79,4 @@ var DeSpoofReplacer = strings.NewReplacer(
 	"\uFEFF", "",
 )
 
-func DeSpoof(input string) string {
-	return DeSpoofReplacer.Replace(input)
-}
+var Santize = Santizier.Replace
