@@ -6,8 +6,10 @@ import (
 
 // Oh boy.
 var Santizier = strings.NewReplacer(
+	"\u200B", "",
 	"\u200C", "",
 	"\u200D", "",
+	"\uFEFF", "",
 	" ", " ",
 	" ", " ",
 	" ", " ",
