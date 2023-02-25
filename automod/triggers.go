@@ -23,7 +23,8 @@ var forwardSlashReplacer = strings.NewReplacer("\\", "")
 /////////////////////////////////////////////////////////////
 
 type BaseRegexTriggerData struct {
-	Regex string `valid:",1,250"`
+	Regex           string `valid:",1,250"`
+	SanitizeContent bool
 }
 
 type BaseRegexTrigger struct {
@@ -46,6 +47,12 @@ func (r BaseRegexTrigger) UserSettings() []*SettingDef {
 			Kind: SettingTypeString,
 			Min:  1,
 			Max:  250,
+		},
+		{
+			Name:    "Sanitize the message content and check the result aswell",
+			Key:     "SanitizeContent",
+			Kind:    SettingTypeBool,
+			Default: false,
 		},
 	}
 }
@@ -146,7 +153,8 @@ type WordListTrigger struct {
 	Blacklist bool
 }
 type WorldListTriggerData struct {
-	ListID int64
+	ListID          int64
+	SanitizeContent bool
 }
 
 func (wl *WordListTrigger) Kind() RulePartType {
@@ -180,6 +188,12 @@ func (wl *WordListTrigger) UserSettings() []*SettingDef {
 			Key:  "ListID",
 			Kind: SettingTypeList,
 		},
+		{
+			Name:    "Sanitize the message content and check the result aswell",
+			Key:     "SanitizeContent",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -192,6 +206,11 @@ func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 	}
 
 	messageFields := strings.Fields(mdStripped)
+
+	if dataCast.SanitizeContent {
+		messageFieldsSanitized := strings.Fields(common.Santize(mdStripped))
+		messageFields = append(messageFields, messageFieldsSanitized...) // Could be turned into a 1-liner, lmk if I should or not
+	}
 
 	for _, mf := range messageFields {
 		contained := false
@@ -408,8 +427,9 @@ func (vt *ViolationsTrigger) CheckUser(ctxData *TriggeredRuleData, violations []
 /////////////////////////////////////////////////////////////
 
 type AllCapsTriggerData struct {
-	MinLength  int
-	Percentage int
+	MinLength       int
+	Percentage      int
+	SanitizeContent bool
 }
 
 var _ MessageTrigger = (*AllCapsTrigger)(nil)
@@ -448,6 +468,12 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 			Min:     1,
 			Max:     100,
 		},
+		{
+			Name:    "Sanitize the message content and check the result aswell",
+			Key:     "SanitizeContent",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -461,8 +487,14 @@ func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.
 	totalCapitalisableChars := 0
 	numCaps := 0
 
+	messageContent := m.Content
+
+	if dataCast.SanitizeContent {
+		messageContent = common.Santize(messageContent)
+	}
+
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
-	for _, r := range m.Content {
+	for _, r := range messageContent {
 		if unicode.IsUpper(r) {
 			numCaps++
 			totalCapitalisableChars++
@@ -938,7 +970,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(m.Content) {
+	if re.MatchString(m.Content) || dataCast.SanitizeContent && re.MatchString(common.Santize(m.Content)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -955,8 +987,9 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 /////////////////////////////////////////////////////////////
 
 type SpamTriggerData struct {
-	Treshold  int
-	TimeLimit int
+	Treshold        int
+	TimeLimit       int
+	SanitizeContent bool
 }
 
 var _ MessageTrigger = (*SpamTrigger)(nil)
@@ -997,6 +1030,12 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 			Max:     10000,
 			Default: 30,
 		},
+		{
+			Name:    "Sanitize the message content and check the result aswell",
+			Key:     "SanitizeContent",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -1034,9 +1073,16 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 
 		if strings.ToLower(strings.TrimSpace(v.Content)) == mToCheckAgainst {
 			count++
-		} else {
-			break
+			continue
 		}
+
+		// this if statement makes me want to cry
+		if settingsCast.SanitizeContent && strings.ToLower(strings.TrimSpace(common.Santize(v.Content))) == mToCheckAgainst {
+			count++
+			continue
+		}
+
+		break
 	}
 
 	if count >= settingsCast.Treshold {
@@ -1087,7 +1133,7 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.Member.Nick) {
+	if re.MatchString(t.MS.Member.Nick) || dataCast.SanitizeContent && re.MatchString(common.Santize(t.MS.Member.Nick)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1109,7 +1155,8 @@ type NicknameWordlistTrigger struct {
 	Blacklist bool
 }
 type NicknameWordlistTriggerData struct {
-	ListID int64
+	ListID          int64
+	SanitizeContent bool
 }
 
 func (nwl *NicknameWordlistTrigger) Kind() RulePartType {
@@ -1143,6 +1190,12 @@ func (nwl *NicknameWordlistTrigger) UserSettings() []*SettingDef {
 			Key:  "ListID",
 			Kind: SettingTypeList,
 		},
+		{
+			Name:    "Sanitize the message content and check the result aswell",
+			Key:     "SanitizeContent",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -1155,6 +1208,10 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 	}
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
+	if dataCast.SanitizeContent {
+		messageFieldsSanitized := strings.Fields(common.Santize(PrepareMessageForWordCheck(t.MS.Member.Nick)))
+		fields = append(fields, messageFieldsSanitized...) // Could be turned into a 1-liner, lmk if I should or not
+	}
 
 	for _, mf := range fields {
 		contained := false
@@ -1220,7 +1277,7 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.User.Username) {
+	if re.MatchString(t.MS.User.Username) || dataCast.SanitizeContent && re.MatchString(common.Santize(t.MS.User.Username)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1242,7 +1299,8 @@ type UsernameWordlistTrigger struct {
 	Blacklist bool
 }
 type UsernameWorldlistData struct {
-	ListID int64
+	ListID          int64
+	SanitizeContent bool
 }
 
 func (uwl *UsernameWordlistTrigger) Kind() RulePartType {
@@ -1276,6 +1334,12 @@ func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
 			Key:  "ListID",
 			Kind: SettingTypeList,
 		},
+		{
+			Name:    "Sanitize the message content and check the result aswell",
+			Key:     "SanitizeContent",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -1288,6 +1352,10 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 	}
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
+	if dataCast.SanitizeContent {
+		messageFieldsSanitized := strings.Fields(common.Santize(PrepareMessageForWordCheck(t.MS.User.Username)))
+		fields = append(fields, messageFieldsSanitized...) // Could be turned into a 1-liner, lmk if I should or not
+	}
 
 	for _, mf := range fields {
 		contained := false
