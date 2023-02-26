@@ -762,12 +762,12 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 }
 
 func tmplNormalizeText(ctx *templates.Context) interface{} {
-	return func(content string) (string, error) {
+	return func(content string, diacritics, confusables bool) (string, error) {
 		if ctx.IncreaseCheckCallCounter("normalize_string", 5) {
 			return "", templates.ErrTooManyCalls
 		}
 
-		return common.Normalize(content), nil
+		return common.FixText(content, diacritics, confusables), nil
 	}
 }
 
