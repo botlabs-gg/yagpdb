@@ -23,7 +23,7 @@ var forwardSlashReplacer = strings.NewReplacer("\\", "")
 /////////////////////////////////////////////////////////////
 
 type BaseRegexTriggerData struct {
-	Regex          string `valid:",1,250"`
+	Regex        string `valid:",1,250"`
 	SanitizeText bool
 }
 
@@ -153,7 +153,7 @@ type WordListTrigger struct {
 	Blacklist bool
 }
 type WorldListTriggerData struct {
-	ListID         int64
+	ListID       int64
 	SanitizeText bool
 }
 
@@ -208,7 +208,7 @@ func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 	messageFields := strings.Fields(mdStripped)
 
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.FixText(mdStripped, true, true))
+		messageFieldsFixTextd := strings.Fields(common.FixText(mdStripped))
 		messageFields = append(messageFields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
@@ -427,8 +427,8 @@ func (vt *ViolationsTrigger) CheckUser(ctxData *TriggeredRuleData, violations []
 /////////////////////////////////////////////////////////////
 
 type AllCapsTriggerData struct {
-	MinLength      int
-	Percentage     int
+	MinLength    int
+	Percentage   int
 	SanitizeText bool
 }
 
@@ -490,7 +490,7 @@ func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.
 	messageContent := m.Content
 
 	if dataCast.SanitizeText {
-		messageContent = common.FixText(messageContent, true, true)
+		messageContent = common.FixText(messageContent)
 	}
 
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
@@ -970,7 +970,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(m.Content) || dataCast.SanitizeText && re.MatchString(common.FixText(m.Content, true, true)) {
+	if re.MatchString(m.Content) || dataCast.SanitizeText && re.MatchString(common.FixText(m.Content)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -987,8 +987,8 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 /////////////////////////////////////////////////////////////
 
 type SpamTriggerData struct {
-	Treshold       int
-	TimeLimit      int
+	Treshold     int
+	TimeLimit    int
 	SanitizeText bool
 }
 
@@ -1077,7 +1077,7 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 		}
 
 		// this if statement makes me want to cry
-		if settingsCast.SanitizeText && strings.ToLower(strings.TrimSpace(common.FixText(v.Content, true, true))) == mToCheckAgainst {
+		if settingsCast.SanitizeText && strings.ToLower(strings.TrimSpace(common.FixText(v.Content))) == mToCheckAgainst {
 			count++
 			continue
 		}
@@ -1133,7 +1133,7 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.Member.Nick) || dataCast.SanitizeText && re.MatchString(common.FixText(t.MS.Member.Nick, true, true)) {
+	if re.MatchString(t.MS.Member.Nick) || dataCast.SanitizeText && re.MatchString(common.FixText(t.MS.Member.Nick)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1155,7 +1155,7 @@ type NicknameWordlistTrigger struct {
 	Blacklist bool
 }
 type NicknameWordlistTriggerData struct {
-	ListID         int64
+	ListID       int64
 	SanitizeText bool
 }
 
@@ -1209,7 +1209,7 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.FixText(PrepareMessageForWordCheck(t.MS.Member.Nick), true, true))
+		messageFieldsFixTextd := strings.Fields(common.FixText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
 		fields = append(fields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
@@ -1277,7 +1277,7 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.User.Username) || dataCast.SanitizeText && re.MatchString(common.FixText(t.MS.User.Username, true, true)) {
+	if re.MatchString(t.MS.User.Username) || dataCast.SanitizeText && re.MatchString(common.FixText(t.MS.User.Username)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1299,7 +1299,7 @@ type UsernameWordlistTrigger struct {
 	Blacklist bool
 }
 type UsernameWorldlistData struct {
-	ListID         int64
+	ListID       int64
 	SanitizeText bool
 }
 
@@ -1353,7 +1353,7 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.FixText(PrepareMessageForWordCheck(t.MS.User.Username), true, true))
+		messageFieldsFixTextd := strings.Fields(common.FixText(PrepareMessageForWordCheck(t.MS.User.Username)))
 		fields = append(fields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 

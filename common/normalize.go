@@ -15,19 +15,12 @@ func isMn(r rune) bool {
 }
 
 // stupid name, cant think of a better one atm
-func FixText(content string, removeDiacritics, matchConfusables bool) string {
-	if !removeDiacritics && !matchConfusables {
-		return content
-	}
+func FixText(content string) string {
+	// Normalize string
+	output, _, _ := transform.String(transformer, content)
 
-	output := content
-	if removeDiacritics {
-		output, _, _ = transform.String(transformer, output)
-	}
-
-	if matchConfusables {
-		output = confusables.Skeleton(output)
-	}
+	// Match confusables
+	output = confusables.Skeleton(output)
 
 	return output
 }
