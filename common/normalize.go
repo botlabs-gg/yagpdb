@@ -8,6 +8,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+var transformer = transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
+
 func isMn(r rune) bool {
 	return unicode.Is(unicode.Mn, r)
 }
@@ -20,8 +22,7 @@ func FixText(content string, removeDiacritics, matchConfusables bool) string {
 
 	output := content
 	if removeDiacritics {
-		t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
-		output, _, _ = transform.String(t, output)
+		output, _, _ = transform.String(transformer, output)
 	}
 
 	if matchConfusables {
