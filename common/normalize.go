@@ -5,7 +5,7 @@ import (
 )
 
 // Oh boy.
-var Santizier = strings.NewReplacer(
+var Normalizer = strings.NewReplacer(
 	"\u200B", "",
 	"\u200C", "",
 	"\u200D", "",
@@ -3132,4 +3132,4 @@ var Santizier = strings.NewReplacer(
 	"ꓜ", "Z",
 )
 
-var Santize = Santizier.Replace
+var Normalize = Normalizer.Replace
