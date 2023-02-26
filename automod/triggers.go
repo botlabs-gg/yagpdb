@@ -23,8 +23,8 @@ var forwardSlashReplacer = strings.NewReplacer("\\", "")
 /////////////////////////////////////////////////////////////
 
 type BaseRegexTriggerData struct {
-	Regex            string `valid:",1,250"`
-	NormalizeContent bool
+	Regex          string `valid:",1,250"`
+	FixTextContent bool
 }
 
 type BaseRegexTrigger struct {
@@ -49,8 +49,8 @@ func (r BaseRegexTrigger) UserSettings() []*SettingDef {
 			Max:  250,
 		},
 		{
-			Name:    "Normalize the message content and check the result aswell",
-			Key:     "NormalizeContent",
+			Name:    "FixText the message content and check the result aswell",
+			Key:     "FixTextContent",
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
@@ -153,8 +153,8 @@ type WordListTrigger struct {
 	Blacklist bool
 }
 type WorldListTriggerData struct {
-	ListID           int64
-	NormalizeContent bool
+	ListID         int64
+	FixTextContent bool
 }
 
 func (wl *WordListTrigger) Kind() RulePartType {
@@ -189,8 +189,8 @@ func (wl *WordListTrigger) UserSettings() []*SettingDef {
 			Kind: SettingTypeList,
 		},
 		{
-			Name:    "Normalize the message content and check the result aswell",
-			Key:     "NormalizeContent",
+			Name:    "FixText the message content and check the result aswell",
+			Key:     "FixTextContent",
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
@@ -207,9 +207,9 @@ func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 
 	messageFields := strings.Fields(mdStripped)
 
-	if dataCast.NormalizeContent {
-		messageFieldsNormalized := strings.Fields(common.Normalize(mdStripped))
-		messageFields = append(messageFields, messageFieldsNormalized...) // Could be turned into a 1-liner, lmk if I should or not
+	if dataCast.FixTextContent {
+		messageFieldsFixTextd := strings.Fields(common.FixText(mdStripped, true, true))
+		messageFields = append(messageFields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
 	for _, mf := range messageFields {
@@ -427,9 +427,9 @@ func (vt *ViolationsTrigger) CheckUser(ctxData *TriggeredRuleData, violations []
 /////////////////////////////////////////////////////////////
 
 type AllCapsTriggerData struct {
-	MinLength        int
-	Percentage       int
-	NormalizeContent bool
+	MinLength      int
+	Percentage     int
+	FixTextContent bool
 }
 
 var _ MessageTrigger = (*AllCapsTrigger)(nil)
@@ -469,8 +469,8 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 			Max:     100,
 		},
 		{
-			Name:    "Normalize the message content and check the result aswell",
-			Key:     "NormalizeContent",
+			Name:    "FixText the message content and check the result aswell",
+			Key:     "FixTextContent",
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
@@ -489,8 +489,8 @@ func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.
 
 	messageContent := m.Content
 
-	if dataCast.NormalizeContent {
-		messageContent = common.Normalize(messageContent)
+	if dataCast.FixTextContent {
+		messageContent = common.FixText(messageContent, true, true)
 	}
 
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
@@ -970,7 +970,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(m.Content) || dataCast.NormalizeContent && re.MatchString(common.Normalize(m.Content)) {
+	if re.MatchString(m.Content) || dataCast.FixTextContent && re.MatchString(common.FixText(m.Content, true, true)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -987,9 +987,9 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 /////////////////////////////////////////////////////////////
 
 type SpamTriggerData struct {
-	Treshold         int
-	TimeLimit        int
-	NormalizeContent bool
+	Treshold       int
+	TimeLimit      int
+	FixTextContent bool
 }
 
 var _ MessageTrigger = (*SpamTrigger)(nil)
@@ -1031,8 +1031,8 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 			Default: 30,
 		},
 		{
-			Name:    "Normalize the message content and check the result aswell",
-			Key:     "NormalizeContent",
+			Name:    "FixText the message content and check the result aswell",
+			Key:     "FixTextContent",
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
@@ -1077,7 +1077,7 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 		}
 
 		// this if statement makes me want to cry
-		if settingsCast.NormalizeContent && strings.ToLower(strings.TrimSpace(common.Normalize(v.Content))) == mToCheckAgainst {
+		if settingsCast.FixTextContent && strings.ToLower(strings.TrimSpace(common.FixText(v.Content, true, true))) == mToCheckAgainst {
 			count++
 			continue
 		}
@@ -1133,7 +1133,7 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.Member.Nick) || dataCast.NormalizeContent && re.MatchString(common.Normalize(t.MS.Member.Nick)) {
+	if re.MatchString(t.MS.Member.Nick) || dataCast.FixTextContent && re.MatchString(common.FixText(t.MS.Member.Nick, true, true)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1155,8 +1155,8 @@ type NicknameWordlistTrigger struct {
 	Blacklist bool
 }
 type NicknameWordlistTriggerData struct {
-	ListID           int64
-	NormalizeContent bool
+	ListID         int64
+	FixTextContent bool
 }
 
 func (nwl *NicknameWordlistTrigger) Kind() RulePartType {
@@ -1191,8 +1191,8 @@ func (nwl *NicknameWordlistTrigger) UserSettings() []*SettingDef {
 			Kind: SettingTypeList,
 		},
 		{
-			Name:    "Normalize the message content and check the result aswell",
-			Key:     "NormalizeContent",
+			Name:    "FixText the message content and check the result aswell",
+			Key:     "FixTextContent",
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
@@ -1208,9 +1208,9 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 	}
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
-	if dataCast.NormalizeContent {
-		messageFieldsNormalized := strings.Fields(common.Normalize(PrepareMessageForWordCheck(t.MS.Member.Nick)))
-		fields = append(fields, messageFieldsNormalized...) // Could be turned into a 1-liner, lmk if I should or not
+	if dataCast.FixTextContent {
+		messageFieldsFixTextd := strings.Fields(common.FixText(PrepareMessageForWordCheck(t.MS.Member.Nick), true, true))
+		fields = append(fields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
 	for _, mf := range fields {
@@ -1277,7 +1277,7 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.User.Username) || dataCast.NormalizeContent && re.MatchString(common.Normalize(t.MS.User.Username)) {
+	if re.MatchString(t.MS.User.Username) || dataCast.FixTextContent && re.MatchString(common.FixText(t.MS.User.Username, true, true)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1299,8 +1299,8 @@ type UsernameWordlistTrigger struct {
 	Blacklist bool
 }
 type UsernameWorldlistData struct {
-	ListID           int64
-	NormalizeContent bool
+	ListID         int64
+	FixTextContent bool
 }
 
 func (uwl *UsernameWordlistTrigger) Kind() RulePartType {
@@ -1335,8 +1335,8 @@ func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
 			Kind: SettingTypeList,
 		},
 		{
-			Name:    "Normalize the message content and check the result aswell",
-			Key:     "NormalizeContent",
+			Name:    "FixText the message content and check the result aswell",
+			Key:     "FixTextContent",
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
@@ -1352,9 +1352,9 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 	}
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
-	if dataCast.NormalizeContent {
-		messageFieldsNormalized := strings.Fields(common.Normalize(PrepareMessageForWordCheck(t.MS.User.Username)))
-		fields = append(fields, messageFieldsNormalized...) // Could be turned into a 1-liner, lmk if I should or not
+	if dataCast.FixTextContent {
+		messageFieldsFixTextd := strings.Fields(common.FixText(PrepareMessageForWordCheck(t.MS.User.Username), true, true))
+		fields = append(fields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
 	for _, mf := range fields {
