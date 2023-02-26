@@ -13,7 +13,7 @@ func isMn(r rune) bool {
 }
 
 // stupid name, cant think of a better one atm
-func FixText(content string, diacritics, matchConfusables bool) string {
+func FixText(content string, removeDiacritics, matchConfusables bool) string {
 	if !diacritics && !matchConfusables {
 		return content
 	}
