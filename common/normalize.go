@@ -15,7 +15,7 @@ func isMn(r rune) bool {
 }
 
 // stupid name, cant think of a better one atm
-func FixText(content string) string {
+func SanitizeText(content string) string {
 	// Normalize string
 	output, _, _ := transform.String(transformer, content)
 

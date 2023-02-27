@@ -208,7 +208,7 @@ func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 	messageFields := strings.Fields(mdStripped)
 
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.FixText(mdStripped))
+		messageFieldsFixTextd := strings.Fields(common.SanitizeText(mdStripped))
 		messageFields = append(messageFields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
@@ -490,7 +490,7 @@ func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.
 	messageContent := m.Content
 
 	if dataCast.SanitizeText {
-		messageContent = common.FixText(messageContent)
+		messageContent = common.SanitizeText(messageContent)
 	}
 
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
@@ -970,7 +970,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(m.Content) || dataCast.SanitizeText && re.MatchString(common.FixText(m.Content)) {
+	if re.MatchString(m.Content) || dataCast.SanitizeText && re.MatchString(common.SanitizeText(m.Content)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1077,7 +1077,7 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 		}
 
 		// this if statement makes me want to cry
-		if settingsCast.SanitizeText && strings.ToLower(strings.TrimSpace(common.FixText(v.Content))) == mToCheckAgainst {
+		if settingsCast.SanitizeText && strings.ToLower(strings.TrimSpace(common.SanitizeText(v.Content))) == mToCheckAgainst {
 			count++
 			continue
 		}
@@ -1133,7 +1133,7 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.Member.Nick) || dataCast.SanitizeText && re.MatchString(common.FixText(t.MS.Member.Nick)) {
+	if re.MatchString(t.MS.Member.Nick) || dataCast.SanitizeText && re.MatchString(common.SanitizeText(t.MS.Member.Nick)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1209,7 +1209,7 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.FixText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
+		messageFieldsFixTextd := strings.Fields(common.SanitizeText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
 		fields = append(fields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
@@ -1277,7 +1277,7 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.User.Username) || dataCast.SanitizeText && re.MatchString(common.FixText(t.MS.User.Username)) {
+	if re.MatchString(t.MS.User.Username) || dataCast.SanitizeText && re.MatchString(common.SanitizeText(t.MS.User.Username)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1353,7 +1353,7 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.FixText(PrepareMessageForWordCheck(t.MS.User.Username)))
+		messageFieldsFixTextd := strings.Fields(common.SanitizeText(PrepareMessageForWordCheck(t.MS.User.Username)))
 		fields = append(fields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
