@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -18,7 +19,10 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/mtibben/confusables"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
@@ -653,4 +657,21 @@ func FormatList(list []string, conjunction string) string {
 
 func BoolToPointer(b bool) *bool {
 	return &b
+}
+
+// Sanitize text to match confusables and remove diacritics
+var transformer = transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
+
+func isMn(r rune) bool {
+	return unicode.Is(unicode.Mn, r)
+}
+
+func SanitizeText(content string) string {
+	// Normalize string
+	output, _, _ := transform.String(transformer, content)
+
+	// Match confusables
+	output = confusables.Skeleton(output)
+
+	return output
 }
