@@ -32,8 +32,6 @@ func init() {
 		ctx.ContextFuncs["scheduleUniqueCC"] = tmplScheduleUniqueCC(ctx)
 		ctx.ContextFuncs["cancelScheduledUniqueCC"] = tmplCancelUniqueCC(ctx)
 
-		ctx.ContextFuncs["normalize"] = tmplNormalizeText(ctx)
-
 		ctx.ContextFuncs["dbSet"] = tmplDBSet(ctx)
 		ctx.ContextFuncs["dbSetExpire"] = tmplDBSetExpire(ctx)
 		ctx.ContextFuncs["dbIncr"] = tmplDBIncr(ctx)
@@ -758,16 +756,6 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 		}
 
 		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
-	}
-}
-
-func tmplNormalizeText(ctx *templates.Context) interface{} {
-	return func(content string) (string, error) {
-		if ctx.IncreaseCheckCallCounter("sanitize_confusables", 5) {
-			return "", templates.ErrTooManyCalls
-		}
-
-		return common.FixText(content), nil
 	}
 }
 
