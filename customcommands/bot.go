@@ -197,6 +197,8 @@ func parseCodeblock(input string) string {
 		return input
 	}
 
+	logger.Debugf("Found matches: %#v", parts)
+	logger.Debugf("Returning %s", parts[1])
 	return parts[1]
 }
 
