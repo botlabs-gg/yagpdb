@@ -19,7 +19,7 @@ import (
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
-var SanitizeTextName = "Also match Diacritics such as é, and confusable characters such as ⍺ (APL Functional Symbol Alpha)"
+var SanitizeTextName = "Also match visually similar characters such as \"Ĥéĺĺó\""
 
 /////////////////////////////////////////////////////////////
 
