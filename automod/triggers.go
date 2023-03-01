@@ -19,6 +19,7 @@ import (
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
+var SanitizeTextName = "Also match Diacritics such as é, and confusable characters such as ⍺ (APL Functional Symbol Alpha)"
 
 /////////////////////////////////////////////////////////////
 
@@ -49,7 +50,7 @@ func (r BaseRegexTrigger) UserSettings() []*SettingDef {
 			Max:  250,
 		},
 		{
-			Name:    "Also match Zalgo and confusable characters",
+			Name:    SanitizeTextName,
 			Key:     "SanitizeText",
 			Kind:    SettingTypeBool,
 			Default: false,
@@ -189,7 +190,7 @@ func (wl *WordListTrigger) UserSettings() []*SettingDef {
 			Kind: SettingTypeList,
 		},
 		{
-			Name:    "Also match Zalgo and confusable characters",
+			Name:    SanitizeTextName,
 			Key:     "SanitizeText",
 			Kind:    SettingTypeBool,
 			Default: false,
@@ -469,7 +470,7 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 			Max:     100,
 		},
 		{
-			Name:    "Also match Zalgo and confusable characters",
+			Name:    SanitizeTextName,
 			Key:     "SanitizeText",
 			Kind:    SettingTypeBool,
 			Default: false,
@@ -1031,7 +1032,7 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 			Default: 30,
 		},
 		{
-			Name:    "Also match Zalgo and confusable characters",
+			Name:    SanitizeTextName,
 			Key:     "SanitizeText",
 			Kind:    SettingTypeBool,
 			Default: false,
@@ -1197,7 +1198,7 @@ func (nwl *NicknameWordlistTrigger) UserSettings() []*SettingDef {
 			Kind: SettingTypeList,
 		},
 		{
-			Name:    "Also match Zalgo and confusable characters",
+			Name:    SanitizeTextName,
 			Key:     "SanitizeText",
 			Kind:    SettingTypeBool,
 			Default: false,
@@ -1341,7 +1342,7 @@ func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
 			Kind: SettingTypeList,
 		},
 		{
-			Name:    "Also match Zalgo and confusable characters",
+			Name:    SanitizeTextName,
 			Key:     "SanitizeText",
 			Kind:    SettingTypeBool,
 			Default: false,
