@@ -1071,13 +1071,19 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
 		}
 
-		if strings.ToLower(strings.TrimSpace(v.Content)) == mToCheckAgainst {
+		contentStripped := strings.TrimSpace(v.Content)
+		contentLowered := strings.ToLower(contentStripped)
+
+		if contentLowered == mToCheckAgainst {
 			count++
 			continue
 		}
 
-		// this if statement makes me want to cry
-		if settingsCast.SanitizeText && strings.ToLower(strings.TrimSpace(common.SanitizeText(v.Content))) == mToCheckAgainst {
+		if !settingsCast.SanitizeText {
+			continue
+		}
+
+		if common.SanitizeText(contentLowered) == mToCheckAgainst {
 			count++
 			continue
 		}
