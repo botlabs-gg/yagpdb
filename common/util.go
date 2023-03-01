@@ -663,7 +663,8 @@ func BoolToPointer(b bool) *bool {
 // Replaces characters in the Unicode Table "Marks Nonspaced" and removes / replaces them
 var transformer = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 
-// Sanitize text to match confusables and remove diacritics
+// SanitizeText normalizes text and matches confusables.
+// i.e. "Ĥéĺĺó" -> "Hello"
 func SanitizeText(content string) string {
 	// Normalize string
 	output, _, _ := transform.String(transformer, content)
