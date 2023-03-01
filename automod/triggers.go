@@ -209,8 +209,8 @@ func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 	messageFields := strings.Fields(mdStripped)
 
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.SanitizeText(mdStripped))
-		messageFields = append(messageFields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
+		messageFieldsFixText := strings.Fields(common.SanitizeText(mdStripped))
+		messageFields = append(messageFields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
 	for _, mf := range messageFields {
@@ -1216,8 +1216,8 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.SanitizeText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
-		fields = append(fields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
+		messageFieldsFixText := strings.Fields(common.SanitizeText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
+		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
 	for _, mf := range fields {
@@ -1360,8 +1360,8 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
 	if dataCast.SanitizeText {
-		messageFieldsFixTextd := strings.Fields(common.SanitizeText(PrepareMessageForWordCheck(t.MS.User.Username)))
-		fields = append(fields, messageFieldsFixTextd...) // Could be turned into a 1-liner, lmk if I should or not
+		messageFieldsFixText := strings.Fields(common.SanitizeText(PrepareMessageForWordCheck(t.MS.User.Username)))
+		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
 	for _, mf := range fields {
