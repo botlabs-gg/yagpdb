@@ -971,7 +971,13 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(m.Content) || dataCast.SanitizeText && re.MatchString(common.SanitizeText(m.Content)) {
+
+	var sanitizedContent string
+	if dataCast.SanitizeText {
+		sanitizedContent = common.SanitizeText(m.Content)
+	}
+
+	if re.MatchString(m.Content) || re.MatchString(sanitizedContent) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1140,7 +1146,13 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.Member.Nick) || dataCast.SanitizeText && re.MatchString(common.SanitizeText(t.MS.Member.Nick)) {
+
+	var sanitizedNick string
+	if dataCast.SanitizeText {
+		sanitizedNick = common.SanitizeText(t.MS.Member.Nick)
+	}
+
+	if re.MatchString(t.MS.Member.Nick) || re.MatchString(sanitizedNick) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1284,7 +1296,13 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.User.Username) || dataCast.SanitizeText && re.MatchString(common.SanitizeText(t.MS.User.Username)) {
+
+	var sanitizedUsername string
+	if dataCast.SanitizeText {
+		sanitizedUsername = common.SanitizeText(t.MS.User.Username)
+	}
+
+	if re.MatchString(t.MS.User.Username) || re.MatchString(sanitizedUsername) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
