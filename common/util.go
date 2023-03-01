@@ -21,6 +21,7 @@ import (
 	"github.com/mediocregopher/radix/v3"
 	"github.com/mtibben/confusables"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
@@ -659,13 +660,10 @@ func BoolToPointer(b bool) *bool {
 	return &b
 }
 
+// Replaces characters in the Unicode Table "Marks Nonspaced" and removes / replaces them
+var transformer = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+
 // Sanitize text to match confusables and remove diacritics
-var transformer = transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
-
-func isMn(r rune) bool {
-	return unicode.Is(unicode.Mn, r)
-}
-
 func SanitizeText(content string) string {
 	// Normalize string
 	output, _, _ := transform.String(transformer, content)
