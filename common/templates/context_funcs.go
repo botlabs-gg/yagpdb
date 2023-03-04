@@ -1632,7 +1632,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 	return "", err
 }
 
-const ChannelTagLimit = 250
+const ChannelTagLimit = 5
 
 func (c *Context) tmplSetForumTags(channel interface{}, input interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
