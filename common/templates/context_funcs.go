@@ -1632,8 +1632,6 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 	return "", err
 }
 
-const ChannelTagLimit = 5
-
 func (c *Context) tmplSetForumTags(channel interface{}, input interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
@@ -1678,10 +1676,6 @@ func (c *Context) tmplSetForumTags(channel interface{}, input interface{}) (stri
 			fallthrough
 		default:
 			return "", errors.New("could not parse value into tag ID")
-		}
-
-		if len(tags) > ChannelTagLimit {
-			return "", fmt.Errorf("more than %d unique roles passed; %[1]d is the thread tag limit", ChannelTagLimit)
 		}
 	}
 
