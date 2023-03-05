@@ -201,22 +201,9 @@ html.sidebar-left-collapsed #nav-footer {
 	display: none;
 }
 
-/*Jonas Doesn't like HTML standards*/
-.multiselect-popout-hack .dropdown-menu {
-	position: fixed !important;
-	left: 10% !important;
-	right: 10% !important;
-	top: 0px !important;
-	bottom: 0px !important;
-
-	transform: translate3d(0px, 0px, 0px) !important;
+#rolecommands-container .dropdown-menu {
+	max-height: var(--rolecommands-dropdown-height) !important;
 }
-
-.multiselect-container {
-	top: 125px !important;
-}
-
-/*Proper Design, Jonas is angry at bootstrap*/
 
 .card {
 	margin: 4px 0 !important;
@@ -553,4 +540,23 @@ html.dark select optgroup {
   border-radius: 1em;
   padding: 1em;
   pointer-events: auto;
+}
+
+.question-tooltip {
+  margin-left: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+html.dark .question-tooltip {
+  color: #ed9c28;
+}
+
+.feedlink {
+  color: #777;
+}
+
+html.dark .feedlink {
+  color: #abb4be;
+
 }

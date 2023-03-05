@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var Command = &commands.YAGCommand{
@@ -28,8 +28,10 @@ var Command = &commands.YAGCommand{
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
 		targetUser := data.Switch("u").Int64()
 
+		channel := data.GuildData.CS
+
 		if data.Switch("channel").Value != nil {
-			channel := data.Switch("channel").Value.(*dstate.ChannelState)
+			channel = data.Switch("channel").Value.(*dstate.ChannelState)
 
 			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, channel.ID, data.GuildData.MS, discordgo.PermissionReadMessages)
 			if err != nil {
@@ -40,7 +42,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		if allUsers || targetUser != 0 {
-			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.ChannelID, data.GuildData.MS, discordgo.PermissionManageMessages)
+			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, channel.ID, data.GuildData.MS, discordgo.PermissionManageMessages)
 			if err != nil {
 				return nil, err
 			} else if !ok && targetUser == 0 {
@@ -53,7 +55,7 @@ var Command = &commands.YAGCommand{
 		resp := "Up to 10 last deleted messages (last hour or 12 hours for premium): \n\n"
 		numFound := 0
 
-		messages := bot.State.GetMessages(data.GuildData.GS.ID, data.GuildData.CS.ID, &dstate.MessagesQuery{Limit: 100, IncludeDeleted: true})
+		messages := bot.State.GetMessages(data.GuildData.GS.ID, channel.ID, &dstate.MessagesQuery{Limit: 100, IncludeDeleted: true})
 		for _, msg := range messages {
 			if !msg.Deleted {
 				continue

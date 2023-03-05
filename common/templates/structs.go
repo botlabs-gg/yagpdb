@@ -3,8 +3,8 @@ package templates
 import (
 	"errors"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 // CtxChannel is almost a 1:1 copy of dstate.ChannelState, its needed because we cant axpose all those state methods
@@ -14,6 +14,7 @@ type CtxChannel struct {
 	ID        int64
 	GuildID   int64
 	IsPrivate bool
+	IsThread  bool
 
 	Name                 string                           `json:"name"`
 	Type                 discordgo.ChannelType            `json:"type"`
@@ -23,6 +24,7 @@ type CtxChannel struct {
 	Bitrate              int                              `json:"bitrate"`
 	PermissionOverwrites []*discordgo.PermissionOverwrite `json:"permission_overwrites"`
 	ParentID             int64                            `json:"parent_id"`
+	OwnerID              int64                            `json:"owner_id"`
 }
 
 func (c *CtxChannel) Mention() (string, error) {
@@ -42,6 +44,7 @@ func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 	ctxChannel := &CtxChannel{
 		ID:                   cs.ID,
 		IsPrivate:            cs.IsPrivate(),
+		IsThread:             cs.Type.IsThread(),
 		GuildID:              cs.GuildID,
 		Name:                 cs.Name,
 		Type:                 cs.Type,
@@ -51,6 +54,7 @@ func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 		Bitrate:              cs.Bitrate,
 		PermissionOverwrites: cop,
 		ParentID:             cs.ParentID,
+		OwnerID:              cs.OwnerID,
 	}
 
 	return ctxChannel

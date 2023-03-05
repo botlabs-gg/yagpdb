@@ -4,24 +4,28 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/feeds"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/feeds"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
+	"github.com/jinzhu/gorm"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
 
 const (
-	MaxChannelsPerPoll  = 30
-	PollInterval        = time.Second * 10
 	WebSubCheckInterval = time.Second * 10
 	// PollInterval = time.Second * 5 // <- used for debug purposes
 )
@@ -41,24 +45,17 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 }
 
 func (p *Plugin) SetupClient() error {
-	httpClient, err := google.DefaultClient(context.Background(), youtube.YoutubeScope)
+	yt, err := youtube.NewService(context.Background(), option.WithScopes(youtube.YoutubeScope))
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
-
-	yt, err := youtube.New(httpClient)
-	if err != nil {
-		return common.ErrWithCaller(err)
-	}
-
 	p.YTService = yt
-
 	return nil
 }
 
 // keeps the subscriptions up to date by updating the ones soon to be expiring
 func (p *Plugin) runWebsubChecker() {
-	p.syncWebSubs()
+	go p.syncWebSubs()
 
 	websubTicker := time.NewTicker(WebSubCheckInterval)
 	for {
@@ -89,13 +86,26 @@ func (p *Plugin) checkExpiringWebsubs() {
 		return
 	}
 
-	for _, v := range expiring {
-		err := p.WebSubSubscribe(v)
-		if err != nil {
-			logger.WithError(err).WithField("yt_channel", v).Error("Failed subscribing to channel")
+	totalExpiring := len(expiring)
+	batchSize := confResubBatchSize.GetInt()
+	logger.Infof("Found %d expiring subs", totalExpiring)
+	expiringChunks := make([][]string, 0)
+	for i := 0; i < totalExpiring; i += batchSize {
+		end := i + batchSize
+		if end > totalExpiring {
+			end = totalExpiring
 		}
+		expiringChunks = append(expiringChunks, expiring[i:end])
+	}
+	for index, chunk := range expiringChunks {
+		logger.Infof("Processing chunk %d of %d for %d expiring youtube subs", index+1, len(expiringChunks), totalExpiring)
+		for _, sub := range chunk {
+			go p.WebSubSubscribe(sub)
+		}
+		// sleep for a second before processing next chunk
 		time.Sleep(time.Second)
 	}
+
 }
 
 func (p *Plugin) syncWebSubs() {
@@ -107,68 +117,140 @@ func (p *Plugin) syncWebSubs() {
 	}
 
 	common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
-
 		locked := false
-
-		for _, channel := range activeChannels {
-			if !locked {
-				err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
-				if err != nil {
-					logger.WithError(err).Error("Failed locking channels lock")
-					return err
-				}
-				locked = true
+		if !locked {
+			err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
+			if err != nil {
+				logger.WithError(err).Error("Failed locking channels lock")
+				return err
 			}
-
-			mn := radix.MaybeNil{}
-			client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
-			if mn.Nil {
-				// Not added
-				err := p.WebSubSubscribe(channel)
-				if err != nil {
-					logger.WithError(err).WithField("yt_channel", channel).Error("Failed subscribing to channel")
-				}
-
-				common.UnlockRedisKey(RedisChannelsLockKey)
-				locked = false
-
-				time.Sleep(time.Second)
-			}
+			locked = true
 		}
 
+		totalChannels := len(activeChannels)
+		batchSize := confResubBatchSize.GetInt()
+		logger.Infof("Found %d youtube channels", totalChannels)
+		channelChunks := make([][]string, 0)
+		for i := 0; i < totalChannels; i += batchSize {
+			end := i + batchSize
+			if end > totalChannels {
+				end = totalChannels
+			}
+			channelChunks = append(channelChunks, activeChannels[i:end])
+		}
+		for index, chunk := range channelChunks {
+			logger.Infof("Processing chunk %d of %d for %d youtube channels", index+1, len(channelChunks), totalChannels)
+			for _, channel := range chunk {
+				mn := radix.MaybeNil{}
+				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
+				if mn.Nil {
+					// Channel not added to redis, resubscribe and add to redis
+					go p.WebSubSubscribe(channel)
+				}
+			}
+		}
 		if locked {
 			common.UnlockRedisKey(RedisChannelsLockKey)
 		}
-
 		return nil
 	}))
 }
 
-func (p *Plugin) removeAllSubsForChannel(channel string) {
-	err := common.GORM.Where("youtube_channel_id = ?", channel).Delete(ChannelSubscription{}).Error
-	if err != nil {
-		logger.WithError(err).WithField("yt_channel", channel).Error("failed removing channel")
-	}
-	go p.MaybeRemoveChannelWatch(channel)
-}
+func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Video) {
+	parsedChannel, _ := strconv.ParseInt(sub.ChannelID, 10, 64)
+	parsedGuild, _ := strconv.ParseInt(sub.GuildID, 10, 64)
+	videoUrl := "https://www.youtube.com/watch?v=" + video.Id
+	var announcement YoutubeAnnouncements
 
-func (p *Plugin) sendNewVidMessage(guild, discordChannel string, channelTitle string, videoID string, mentionEveryone bool) {
-	content := fmt.Sprintf("**%s** uploaded a new youtube video!\n%s", channelTitle, "https://www.youtube.com/watch?v="+videoID)
-	if mentionEveryone {
-		content += " @everyone"
+	var content string
+	switch video.Snippet.LiveBroadcastContent {
+	case "live":
+		content = fmt.Sprintf("**%s** started a livestream now!\n%s", video.Snippet.ChannelTitle, videoUrl)
+	case "upcoming":
+		content = fmt.Sprintf("**%s** is going to be live soon!\n%s", video.Snippet.ChannelTitle, videoUrl)
+	case "none":
+		content = fmt.Sprintf("**%s** uploaded a new youtube video!\n%s", video.Snippet.ChannelTitle, videoUrl)
+	default:
+		return
 	}
-
-	parsedChannel, _ := strconv.ParseInt(discordChannel, 10, 64)
-	parsedGuild, _ := strconv.ParseInt(guild, 10, 64)
 
 	parseMentions := []discordgo.AllowedMentionType{}
-	if mentionEveryone {
+	err := common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", parsedGuild).First(&announcement).Error
+	hasCustomAnnouncement := true
+	if err != nil {
+		hasCustomAnnouncement = false
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.WithError(err).Debugf("Custom announcement doesn't exist for guild_id %d", parsedGuild)
+		} else {
+			logger.WithError(err).Errorf("Failed fetching custom announcement for guild_id %d", parsedGuild)
+		}
+	}
+
+	if hasCustomAnnouncement && *announcement.Enabled && len(announcement.Message) > 0 {
+		guildState, err := discorddata.GetFullGuild(parsedGuild)
+		if err != nil {
+			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
+			return
+		}
+
+		if guildState == nil {
+			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
+			p.DisableGuildFeeds(parsedGuild)
+			return
+		}
+
+		channelState := guildState.GetChannel(parsedChannel)
+		if channelState == nil {
+			logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
+			p.DisableChannelFeeds(parsedChannel)
+			return
+		}
+
+		ctx := templates.NewContext(guildState, channelState, nil)
+		videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
+		videoDuration, err := common.ParseDuration(videoDurationString)
+		if err != nil {
+			videoDuration = time.Duration(0)
+		}
+
+		ctx.Data["URL"] = videoUrl
+		ctx.Data["ChannelName"] = sub.YoutubeChannelName
+		ctx.Data["ChannelID"] = sub.ChannelID
+		//should be true for upcoming too as upcoming is also technically a livestream
+		ctx.Data["IsLiveStream"] = (video.Snippet.LiveBroadcastContent == "live" || video.Snippet.LiveBroadcastContent == "upcoming")
+		ctx.Data["IsUpcoming"] = video.Snippet.LiveBroadcastContent == "upcoming"
+		ctx.Data["VideoID"] = video.Id
+		ctx.Data["VideoTitle"] = video.Snippet.Title
+		ctx.Data["VideoThumbnail"] = fmt.Sprintf("https://img.youtube.com/vi/%s/maxresdefault.jpg", video.Id)
+		ctx.Data["VideoDescription"] = video.Snippet.Description
+		ctx.Data["VideoDurationSeconds"] = int(math.Round(videoDuration.Seconds()))
+		//full video object in case people want to do more advanced stuff
+		ctx.Data["Video"] = video
+
+		content, err = ctx.Execute(announcement.Message)
+		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
+		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone}
+		if err != nil {
+			logger.WithError(err).WithField("guild", parsedGuild).Warn("Announcement parsing failed")
+			return
+		}
+		if content == "" {
+			return
+		}
+	} else if sub.MentionEveryone {
+		content = "Hey @everyone " + content
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
+	} else if len(sub.MentionRoles) > 0 {
+		mentions := "Hey"
+		for _, roleId := range sub.MentionRoles {
+			mentions += fmt.Sprintf(" <@&%d>", roleId)
+		}
+		content = mentions + " " + content
+		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles}
 	}
 
 	go analytics.RecordActiveUnit(parsedGuild, p, "posted_youtube_message")
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Inc()
-
 	mqueue.QueueMessage(&mqueue.QueuedElement{
 		GuildID:      parsedGuild,
 		ChannelID:    parsedChannel,
@@ -192,36 +274,113 @@ func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
 }
 
 var (
-	ErrNoChannel = errors.New("No channel with that id found")
+	ErrNoChannel              = errors.New("no channel with that id found")
+	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")
 )
 
-func (p *Plugin) AddFeed(guildID, discordChannelID int64, youtubeChannelID, youtubeUsername string, mentionEveryone bool) (*ChannelSubscription, error) {
-	sub := &ChannelSubscription{
-		GuildID:         discordgo.StrID(guildID),
-		ChannelID:       discordgo.StrID(discordChannelID),
-		MentionEveryone: mentionEveryone,
+func (p *Plugin) parseYtUrl(url string) (t ytUrlType, id string, err error) {
+	if ytUrlShortRegex.MatchString(url) {
+		capturingGroups := ytUrlShortRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][2]) > 0 {
+			return ytUrlTypeVideo, capturingGroups[0][2], nil
+		}
+	} else if ytVideoUrlRegex.MatchString(url) {
+		capturingGroups := ytVideoUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][4]) > 0 {
+			return ytUrlTypeVideo, capturingGroups[0][4], nil
+		}
+	} else if ytChannelUrlRegex.MatchString(url) {
+		capturingGroups := ytChannelUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
+			return ytUrlTypeChannel, capturingGroups[0][5], nil
+		}
+	} else if ytCustomUrlRegex.MatchString(url) {
+		capturingGroups := ytCustomUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
+			return ytUrlTypeCustom, capturingGroups[0][5], nil
+		}
+	} else if ytUserUrlRegex.MatchString(url) {
+		capturingGroups := ytUserUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
+			return ytUrlTypeUser, capturingGroups[0][5], nil
+		}
+	} else if ytHandleUrlRegex.MatchString(url) {
+		capturingGroups := ytHandleUrlRegex.FindAllStringSubmatch(url, -1)
+		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
+			return ytUrlTypeHandle, capturingGroups[0][5], nil
+		}
 	}
+	return ytUrlTypeInvalid, "", errors.New("invalid or incomplete url")
+}
 
-	call := p.YTService.Channels.List([]string{"snippet"})
-	if youtubeChannelID != "" {
-		call = call.Id(youtubeChannelID)
-	} else {
-		call = call.ForUsername(youtubeUsername)
+func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) {
+	urlType, id, err := p.parseYtUrl(url)
+	if err != nil {
+		return nil, err
 	}
+	var cResp *youtube.ChannelListResponse
+	channelListCall := p.YTService.Channels.List([]string{"snippet"})
 
-	cResp, err := call.Do()
+	switch urlType {
+	case ytUrlTypeChannel:
+		channelListCall = channelListCall.Id(id)
+	case ytUrlTypeUser:
+		channelListCall = channelListCall.ForUsername(id)
+	case ytUrlTypeCustom, ytUrlTypeHandle:
+		searchListCall := p.YTService.Search.List([]string{"snippet"})
+		searchListCall = searchListCall.Q(id).Type("channel")
+		sResp, err := searchListCall.Do()
+		if err != nil {
+			return nil, common.ErrWithCaller(err)
+		}
+		if len(sResp.Items) < 1 {
+			return nil, ErrNoChannel
+		}
+		channelListCall = channelListCall.Id(sResp.Items[0].Id.ChannelId)
+	case ytUrlTypeVideo:
+		searchListCall := p.YTService.Search.List([]string{"snippet"})
+		searchListCall = searchListCall.Q(id).Type("video")
+		sResp, err := searchListCall.Do()
+		if err != nil {
+			return nil, common.ErrWithCaller(err)
+		}
+		if len(sResp.Items) < 1 {
+			return nil, ErrNoChannel
+		}
+		channelListCall = channelListCall.Id(sResp.Items[0].Snippet.ChannelId)
+	default:
+		return nil, common.ErrWithCaller(errors.New("invalid youtube Url"))
+	}
+	cResp, err = channelListCall.Do()
+
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	}
-
 	if len(cResp.Items) < 1 {
 		return nil, ErrNoChannel
 	}
+	return cResp.Items[0], nil
+}
 
-	sub.YoutubeChannelName = cResp.Items[0].Snippet.Title
-	sub.YoutubeChannelID = cResp.Items[0].Id
+func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {
+	if mentionEveryone && len(mentionRoles) > 0 {
+		mentionRoles = make([]int64, 0)
+	}
 
-	err = common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
+	sub := &ChannelSubscription{
+		GuildID:           discordgo.StrID(guildID),
+		ChannelID:         discordgo.StrID(discordChannelID),
+		MentionEveryone:   mentionEveryone,
+		MentionRoles:      mentionRoles,
+		PublishLivestream: &publishLivestream,
+		PublishShorts:     &publishShorts,
+		Enabled:           common.BoolToPointer(true),
+	}
+
+	sub.YoutubeChannelName = ytChannel.Snippet.Title
+	sub.YoutubeChannelID = ytChannel.Id
+
+	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
 	if err != nil {
 		return nil, err
 	}
@@ -300,6 +459,7 @@ func (p *Plugin) MaybeAddChannelWatch(lock bool, channel string) error {
 	}
 
 	// Also add websub subscription
+	logger.Info("Added websub")
 	err = p.WebSubSubscribe(channel)
 	if err != nil {
 		logger.WithError(err).Error("Failed subscribing to channel ", channel)
@@ -325,18 +485,12 @@ func (p *Plugin) CheckVideo(videoID string, channelID string) error {
 		return nil
 	}
 
-	resp, err := p.YTService.Videos.List([]string{"snippet"}).Id(videoID).Do()
+	resp, err := p.YTService.Videos.List([]string{"snippet", "contentDetails"}).Id(videoID).Do()
 	if err != nil || len(resp.Items) < 1 {
 		return err
 	}
 
 	item := resp.Items[0]
-
-	if item.Snippet.LiveBroadcastContent != "none" {
-		// ignore livestreams for now, might enable them at some point
-		return nil
-	}
-
 	parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
 	if err != nil {
 		return errors.New("Failed parsing youtube timestamp: " + err.Error() + ": " + item.Snippet.PublishedAt)
@@ -356,6 +510,51 @@ func (p *Plugin) CheckVideo(videoID string, channelID string) error {
 	return p.postVideo(subs, parsedPublishedAt, item, channelID)
 }
 
+func (p *Plugin) isShortsVideo(video *youtube.Video) bool {
+	if video.Snippet.LiveBroadcastContent == "live" {
+		return false
+	}
+	if video.ContentDetails == nil {
+		logger.Errorf("contentDetails was nil for youtube video id %s, isLiveStream? %s", video.Id, video.Snippet.LiveBroadcastContent)
+		return false
+	}
+	videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
+	videoDuration, err := common.ParseDuration(videoDurationString)
+	if err != nil {
+		logger.WithError(err).Errorf("Failed to parse video duration with value %s, assuming it is not a short video", videoDurationString)
+		return false
+	}
+	if videoDuration > time.Minute {
+		return false
+	}
+
+	return p.isShortsRedirect(video.Id)
+}
+
+func (p *Plugin) isShortsRedirect(videoId string) bool {
+	shortsUrl := fmt.Sprintf("https://www.youtube.com/shorts/%s?ucbcb=1", videoId)
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	req, err := http.NewRequest("HEAD", shortsUrl, nil)
+	if err != nil {
+		logger.WithError(err).Error("Failed to make youtube shorts request")
+		return false
+	}
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36")
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.WithError(err).Error("Failed to make youtube shorts request")
+		return false
+	}
+
+	defer resp.Body.Close()
+	return resp.StatusCode == 200
+}
+
 func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, video *youtube.Video, channelID string) error {
 	err := common.MultipleCmds(
 		radix.FlatCmd(nil, "SET", KeyLastVidTime(channelID), publishedAt.Unix()),
@@ -365,8 +564,38 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 		return err
 	}
 
+	contentType := video.Snippet.LiveBroadcastContent
+	logger.Infof("Got a new video for channel %s with videoid %s, of type %s and publishing to %d subscriptions", channelID, video.Id, contentType, len(subs))
+	if contentType != "live" && contentType != "none" {
+		return nil
+	}
+
+	isLivestream := contentType == "live"
+	isUpcoming := contentType == "upcoming"
+	isShortsCheckDone := false
+	isShorts := false
+
 	for _, sub := range subs {
-		p.sendNewVidMessage(sub.GuildID, sub.ChannelID, video.Snippet.ChannelTitle, video.Id, sub.MentionEveryone)
+		if *sub.Enabled {
+			if (isLivestream || isUpcoming) && !*sub.PublishLivestream {
+				continue
+			}
+
+			//no need to check for shorts for a livestream
+			if !(isLivestream || isUpcoming) && !*sub.PublishShorts {
+				//check if a video is a short only when seeing the first shorts disabled subscription
+				//and cache in "isShorts" to reduce requests to youtube to check for shorts.
+				if !isShortsCheckDone {
+					isShorts = p.isShortsVideo(video)
+					isShortsCheckDone = true
+				}
+
+				if isShorts {
+					continue
+				}
+			}
+			p.sendNewVidMessage(sub, video)
+		}
 	}
 
 	return nil

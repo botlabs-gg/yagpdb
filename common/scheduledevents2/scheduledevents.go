@@ -20,10 +20,10 @@ import (
 	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -160,7 +160,7 @@ func (se *ScheduledEvents) check() {
 	defer se.currentlyProcessingMU.Unlock()
 
 	var pairs []string
-	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", "-inf", time.Now().UTC().Unix()))
+	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", "-inf", time.Now().UTC().UnixMicro()))
 	if err != nil {
 		logger.WithError(err).Error("failed checking for scheduled events to process")
 		return

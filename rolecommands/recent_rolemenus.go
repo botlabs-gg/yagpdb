@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/yagpdb/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
 )
 
 type RecentTrackedMenu struct {

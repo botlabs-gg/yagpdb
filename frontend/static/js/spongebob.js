@@ -150,6 +150,7 @@ function showAlerts(alertsJson) {
 		if (alert.Style === "success") {
 			notice = new PNotify({
 				title: alert.Message,
+				text: "(Click to dismiss)",
 				type: 'success',
 				addclass: 'stack-bar-top click-2-close',
 				stack: stack_bar_top,
@@ -163,7 +164,7 @@ function showAlerts(alertsJson) {
 		} else if (alert.Style === "danger") {
 			notice = new PNotify({
 				title: alert.Message,
-				text: "Read the docs and contact support if you don't know what went wrong.",
+				text: "Read the docs and contact support if you don't know what went wrong.\n(Click to dismiss)",
 				type: 'error',
 				addclass: 'stack-bar-top click-2-close',
 				stack: stack_bar_top,
@@ -343,15 +344,15 @@ function initPlugins(partial) {
 var discordPermissions = {
 	read: {
 		name: "Read Messages",
-		perm: 0x400
+		perm: BigInt(0x400),
 	},
 	send: {
 		name: "Send Messages",
-		perm: 0x800
+		perm: BigInt(0x800),
 	},
 	embed: {
 		name: "Embed Links",
-		perm: 0x4000
+		perm: BigInt(0x4000),
 	},
 }
 var cachedChannelPerms = {};
@@ -422,7 +423,7 @@ function validateChannelDropdown(dropdown, currentElem, channel, perms) {
 				return;
 			}
 
-			var channelPerms = parseInt(this.responseText);
+			var channelPerms = BigInt(this.responseText);
 			cachedChannelPerms[channel].perms = channelPerms;
 			cachedChannelPerms[channel].lastChecked = Date.now();
 
@@ -585,6 +586,7 @@ function submitForm(form, url, alertsOnly) {
 	}
 
 	navigate(url, "POST", serialized, false, true, alertsOnly, function () {
+		hideUnsavedChangesPopup($(form)[0])
 		if (currentTab) {
 			$(".tabs a[href='" + currentTab + "']").tab("show");
 		}

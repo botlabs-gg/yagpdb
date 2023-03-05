@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/reddit/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
 )
@@ -109,7 +109,6 @@ func FindLegacyWatchItem(source []*LegacySubredditWatchItem, id int) *LegacySubr
 	for _, c := range source {
 		if c.ID == id {
 			return c
-			break
 		}
 	}
 	return nil

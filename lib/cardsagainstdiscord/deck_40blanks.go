@@ -1,0 +1,53 @@
+package cardsagainstdiscord
+
+func init() {
+	pack := &CardPack{
+		Name:        "40-blanks",
+		Description: "Deck of 40 blank response cards",
+		Prompts: []*PromptCard{},
+		Responses: []ResponseCard{
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+			`%blank`,
+		},
+	}
+
+	AddPack(pack)
+}

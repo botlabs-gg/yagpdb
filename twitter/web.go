@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/jonas747/go-twitter/twitter"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/twitter/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/go-twitter/twitter"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -22,12 +23,6 @@ import (
 
 //go:embed assets/twitter.html
 var PageHTML string
-
-type CtxKey int
-
-const (
-	CurrentConfig CtxKey = iota
-)
 
 type Form struct {
 	TwitterUser    string `valid:",1,256"`
@@ -39,6 +34,7 @@ type EditForm struct {
 	DiscordChannel  int64 `valid:"channel,false"`
 	IncludeReplies  bool
 	IncludeRetweets bool
+	Enabled         bool
 }
 
 var (
@@ -57,6 +53,8 @@ func (p *Plugin) InitWeb() {
 	})
 
 	mux := goji.SubMux()
+	mux.Use(web.RequireBotMemberMW)
+	mux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	web.CPMux.Handle(pat.New("/twitter/*"), mux)
 	web.CPMux.Handle(pat.New("/twitter"), mux)
 
@@ -192,7 +190,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	data := ctx.Value(common.ContextKeyParsedForm).(*EditForm)
 
 	sub.ChannelID = data.DiscordChannel
-	sub.Enabled = true
+	sub.Enabled = data.Enabled
 	sub.IncludeRT = data.IncludeRetweets
 	sub.IncludeReplies = data.IncludeReplies
 

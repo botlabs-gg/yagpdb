@@ -4,17 +4,17 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEvtsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -136,6 +136,15 @@ func (p *Plugin) AddCommands() {
 		RunFunc: cmdFuncRoleMenuComplete,
 	}
 
+	cmdListGroups := &commands.YAGCommand{
+		Name:                "Listgroups",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"list", "groups"},
+		Description:         "Lists all role groups",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
+		RunFunc:             cmdFuncRoleMenuListGroups,
+	}
+
 	menuContainer, t := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
 	t.SetEnabledInThreads(false)
 	menuContainer.Description = "Command for managing role menus"
@@ -149,6 +158,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdResetReactions, cmdResetReactions.GetTrigger())
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
+	menuContainer.AddCommand(cmdListGroups, cmdListGroups.GetTrigger())
 	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
@@ -216,6 +226,7 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 	}
 
 	if code, msg := common.DiscordError(err); code != 0 {
+		logger.Infof("FAILED assigning role WITH CODE %d", code)
 		if code == discordgo.ErrCodeMissingPermissions {
 			return "The bot is below the role, contact the server admin", err
 		} else if code == discordgo.ErrCodeMissingAccess {

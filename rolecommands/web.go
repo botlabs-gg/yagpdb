@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"database/sql"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -10,13 +11,13 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	schEvtsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/rolecommands/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	schEvtsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
 	v3_qm "github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -56,8 +57,8 @@ type FormGroup struct {
 
 	Mode int
 
-	MultipleMax int
-	MultipleMin int
+	MultipleMax int `valid:"0,250"`
+	MultipleMin int `valid:"0,250"`
 
 	SingleAutoToggleOff   bool
 	SingleRequireOne      bool
@@ -189,8 +190,13 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return tmpl, nil
 	}
 
-	if c, _ := models.RoleCommands(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID), qm.Where(models.RoleCommandColumns.Name+" ILIKE ?", form.Name)).CountG(r.Context()); c > 0 {
-		tmpl.AddAlerts(web.ErrorAlert("Already a role command with that name"))
+	if existing, err := models.RoleCommands(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID), qm.Where(models.RoleCommandColumns.Name+" ILIKE ?", form.Name),
+		qm.Load(models.RoleCommandRels.RoleGroup)).OneG(r.Context()); err == nil {
+		if existing.R.RoleGroup == nil {
+			tmpl.AddAlerts(web.ErrorAlert("Already a role command with that name in the ungrouped section; delete it or use a different name"))
+		} else {
+			tmpl.AddAlerts(web.ErrorAlert(`Already a role command with that name in the "` + existing.R.RoleGroup.Name + `" group; delete it or use a different name`))
+		}
 		return tmpl, nil
 	}
 
@@ -210,6 +216,19 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		}
 
 		model.RoleGroupID = null.Int64From(group.ID)
+	}
+
+	const q = `
+		SELECT max(position)
+		FROM role_commands
+		WHERE $1::bigint IS NULL AND role_group_id IS NULL
+			OR role_group_ID = $1::bigint
+	`
+	var maxExistingPos sql.NullInt64
+	if err := common.PQ.QueryRow(q, model.RoleGroupID).Scan(&maxExistingPos); err != nil {
+		return tmpl, err
+	} else if maxExistingPos.Valid {
+		model.Position = maxExistingPos.Int64 + 1 // place new role command last
 	}
 
 	err := model.InsertG(r.Context(), boil.Infer())

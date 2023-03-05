@@ -3,6 +3,7 @@ package web
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -11,13 +12,14 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/patreon"
-	yagtmpl "github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/frontend"
-	"github.com/jonas747/yagpdb/web/discordblog"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/patreon"
+	yagtmpl "github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/frontend"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web/discordblog"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
@@ -33,10 +35,10 @@ var (
 	ListenAddressHTTPS = ":5001"
 
 	// Muxers
-	RootMux           *goji.Mux
-	CPMux             *goji.Mux
-	ServerPublicMux   *goji.Mux
-	ServerPubliAPIMux *goji.Mux
+	RootMux            *goji.Mux
+	CPMux              *goji.Mux
+	ServerPublicMux    *goji.Mux
+	ServerPublicAPIMux *goji.Mux
 
 	properAddresses bool
 
@@ -94,14 +96,14 @@ func init() {
 		"roleOptions":      tmplRoleDropdown,
 		"roleOptionsMulti": tmplRoleDropdownMutli,
 
-		"textChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews}, "#"),
-		"textChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews}, "#"),
+		"textChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews, discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildForum}),
+		"textChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews, discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildForum}),
 
-		"voiceChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildVoice}, ""),
-		"voiceChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildVoice}, ""),
+		"voiceChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildVoice}),
+		"voiceChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildVoice}),
 
-		"catChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildCategory}, ""),
-		"catChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildCategory}, ""),
+		"catChannelOptions":      tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildCategory}),
+		"catChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildCategory}),
 	})
 
 	Templates = Templates.Funcs(yagtmpl.StandardFuncMap)
@@ -130,6 +132,11 @@ func BaseURL() string {
 	}
 
 	return "http://" + common.ConfHost.GetString()
+}
+
+
+func ManageServerURL(guild *dcmd.GuildContextData) string {
+	return fmt.Sprintf("%s/manage/%d", BaseURL(), guild.GS.ID)
 }
 
 func Run() {
@@ -277,16 +284,16 @@ func setupRoutes() *goji.Mux {
 	ServerPublicMux = serverPublicMux
 
 	// same as above but for API stuff
-	ServerPubliAPIMux = goji.SubMux()
-	ServerPubliAPIMux.Use(ActiveServerMW)
-	ServerPubliAPIMux.Use(RequireActiveServer)
-	ServerPubliAPIMux.Use(LoadCoreConfigMiddleware)
-	ServerPubliAPIMux.Use(SetGuildMemberMiddleware)
+	ServerPublicAPIMux = goji.SubMux()
+	ServerPublicAPIMux.Use(ActiveServerMW)
+	ServerPublicAPIMux.Use(RequireActiveServer)
+	ServerPublicAPIMux.Use(LoadCoreConfigMiddleware)
+	ServerPublicAPIMux.Use(SetGuildMemberMiddleware)
 
-	RootMux.Handle(pat.Get("/api/:server"), ServerPubliAPIMux)
-	RootMux.Handle(pat.Get("/api/:server/*"), ServerPubliAPIMux)
+	RootMux.Handle(pat.Get("/api/:server"), ServerPublicAPIMux)
+	RootMux.Handle(pat.Get("/api/:server/*"), ServerPublicAPIMux)
 
-	ServerPubliAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChanenlPermissions)))
+	ServerPublicAPIMux.Handle(pat.Get("/channelperms/:channel"), RequireActiveServer(APIHandler(HandleChanenlPermissions)))
 
 	// Server selection has its own handler
 	RootMux.Handle(pat.Get("/manage"), SelectServerHomePageHandler)

@@ -7,9 +7,9 @@ import (
 	"math/rand"
 	"net/http"
 
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 type Xkcd struct {
@@ -100,7 +100,7 @@ func getComic(number ...int64) (*Xkcd, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "curl/7.65.1")
+	req.Header.Set("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

@@ -133,12 +133,12 @@
                                 <div class="form-row hidden" id="new-group-multi-opts">
                                     <div class="form-group col">
                                         <label for="new-group-min-roles">Minimum number of roles</label><br>
-                                        <input type="number" class="form-control" id="new-group-min-roles"
+                                        <input type="number" min="0" max="250" class="form-control" id="new-group-min-roles"
                                             name="MultipleMin">
                                     </div>
                                     <div class="form-group col">
                                         <label for="new-group-max-roles">Maximum number of roles</label><br>
-                                        <input type="number" class="form-control" id="new-group-max-roles"
+                                        <input type="number" min="0" max="250" class="form-control" id="new-group-max-roles"
                                             name="MultipleMax">
                                     </div>
                                 </div>
@@ -287,12 +287,12 @@
                             <p class="help-block">Mode specific settings</p>
                             <div class="form-group">
                                 <label for="{{.Group.ID}}-group-min-roles">Minimum number of roles</label><br>
-                                <input type="number" class="form-control" id="{{.Group.ID}}-group-min-roles"
+                                <input type="number" min="0" max="250" class="form-control" id="{{.Group.ID}}-group-min-roles"
                                     name="MultipleMin" value="{{.Group.MultipleMin}}">
                             </div>
                             <div class="form-group">
                                 <label for="{{.Group.ID}}-group-max-roles">Maximum number of roles</label><br>
-                                <input type="number" class="form-control" id="{{.Group.ID}}-group-max-roles"
+                                <input type="number" min="0" max="250" class="form-control" id="{{.Group.ID}}-group-max-roles"
                                     name="MultipleMax" value="{{.Group.MultipleMax}}">
                             </div>
                         </div>
@@ -307,7 +307,7 @@
 {{if gt (len .Commands) 0}}
 <div class="row">
     <div class="col" style="overflow-x: auto">
-        <div class="card card-featured card-featured-primary multiselect-popout-hack" style="min-width: 800px">
+        <div class="card card-featured card-featured-primary" id="rolecommands-container" style="min-width: 800px">
             <div class="card-body pt-2" style="padding-top: 0px;">
                 {{$groups := .Groups}}
                 {{$group := .Group}}
@@ -388,7 +388,15 @@
         </section>
     </div>
 </div>
-{{end}}{{end}}
+{{end}}
+<script>
+    $(setTimeout(function () {
+        const rolecommandsContainerHeight = document.getElementById("rolecommands-container").clientHeight;
+        const root = document.querySelector(":root");
+        root.style.setProperty("--rolecommands-dropdown-height", `${rolecommandsContainerHeight}px`);
+    }, 500));
+</script>
+{{end}}
 
 {{define "rolecommands_groupopts"}}
 {{$selected := or .Selected -1}}

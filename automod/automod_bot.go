@@ -5,17 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"time"
 
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -50,7 +51,7 @@ func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message
 		return true
 	}
 
-	cs := evt.GS.GetChannel(msg.ChannelID)
+	cs := evt.GS.GetChannelOrThread(msg.ChannelID)
 	if cs == nil {
 		return true
 	}
@@ -194,6 +195,10 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 	evtData := evt.GuildMemberUpdate()
+	member := evtData.Member
+	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
+		return
+	}
 
 	ms := dstate.MemberStateFromMember(evtData.Member)
 	if ms.Member.Nick == "" {
@@ -482,6 +487,13 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 	err = tx.Commit()
 	if err != nil {
 		logger.WithError(err).Error("failed committing logging transaction")
+	}
+
+	// Limit AutomodTriggeredRules to 200 rows per guild
+	_, err = models.AutomodTriggeredRules(qm.SQL("DELETE FROM automod_triggered_rules WHERE id IN (SELECT id FROM automod_triggered_rules WHERE guild_id = $1 ORDER BY created_at DESC OFFSET 200 ROWS);", ctxData.GS.ID)).DeleteAll(context.Background(), common.PQ)
+	if err != nil {
+		logger.WithError(err).Error("failed deleting older automod triggered rules")
+		return
 	}
 }
 

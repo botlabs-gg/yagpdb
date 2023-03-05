@@ -7,11 +7,11 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/cplogs"
-	"github.com/jonas747/yagpdb/tickets/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
 )
@@ -113,10 +113,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		return templateData, err
 	}
 
-	enabled := false
-	if settings != nil {
-		enabled = true
-	}
+	enabled := settings != nil && settings.Enabled
 
 	templateData["WidgetTitle"] = "Tickets"
 	templateData["SettingsPath"] = "/tickets/settings"

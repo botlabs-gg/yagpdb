@@ -11,11 +11,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/dca/v2"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/jonas747/yagpdb/soundboard/models"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dca"
+	"github.com/botlabs-gg/yagpdb/v2/soundboard/models"
 	"goji.io/pat"
 )
 
