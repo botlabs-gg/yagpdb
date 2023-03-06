@@ -67,7 +67,7 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.5.0
 	github.com/volatiletech/strmangle v0.0.1
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/crypto v0.1.0
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39
 	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
@@ -84,13 +84,11 @@ require (
 	github.com/francoispqt/gojay v1.2.13
 	github.com/jarcoal/httpmock v1.0.4
 	github.com/justinian/dice v1.0.1
+	github.com/mtibben/confusables v0.0.0-20210201002637-9d1b0723b659
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 )
 
-require (
-	cloud.google.com/go v0.74.0 // indirect
-	github.com/mtibben/confusables v0.0.0-20210201002637-9d1b0723b659 // indirect
-)
+require cloud.google.com/go v0.74.0 // indirect
 
 require (
 	github.com/AlekSi/pointer v1.1.0
