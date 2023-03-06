@@ -215,7 +215,7 @@ type ChannelState struct {
 	OwnerID          int64                     `json:"owner_id,string"`
 	ThreadMetadata   *discordgo.ThreadMetadata `json:"thread_metadata"`
 	AppliedTags      []string                  `json:"applied_tags"`
-	AvailableTags    []discordgo.ForumTag     `json:"available_tags"`
+	AvailableTags    []discordgo.ForumTag      `json:"available_tags"`
 
 	PermissionOverwrites []discordgo.PermissionOverwrite `json:"permission_overwrites"`
 }

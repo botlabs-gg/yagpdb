@@ -273,7 +273,7 @@ type ChannelEdit struct {
 	PermissionOverwrites []*PermissionOverwrite `json:"permission_overwrites,omitempty"`
 	ParentID             *null.String           `json:"parent_id,omitempty"`
 	RateLimitPerUser     *int                   `json:"rate_limit_per_user,omitempty"`
-	AppliedTags          interface{}                `json:"applied_tags"`
+	AppliedTags          interface{}            `json:"applied_tags,omitempty"`
 }
 
 type ForumTag struct {
