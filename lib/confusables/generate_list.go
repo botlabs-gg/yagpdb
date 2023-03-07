@@ -40,7 +40,7 @@ func isAllowed(from, to string) bool {
 func main() {
 	var confusables []string
 
-	r := regexp.MustCompile(`(?i)[a-zA-Z0-9]* ;	(?:[a-zA-Z0-9]* )+;	[a-z]{2,}	#\*? \( (?P<sus>.+) →(?: .+ →)* (?P<unsus>.+) \) (?P<susname>.+)+ → (?P<unsusname>.+)	#`)
+	r := regexp.MustCompile(`(?i)(?P<sus>[a-zA-Z0-9]*) ;	(?P<unsus>[a-zA-Z0-9]* )+;	[a-z]{2,}	#\*? \( (?P<suschar>.+) →(?: .+ →)* (?P<unsuschar>.+) \) (?:.+)+ → (?:.+)`)
 
 	// Add extra confusables as defined in extraConfusables.json.
 	extraConfusables, err := os.OpenFile(ExtraConfusablesFile, os.O_RDWR|os.O_CREATE, 0755)
@@ -75,11 +75,16 @@ func main() {
 			continue
 		}
 
-		if allowed := isAllowed(matches[1], matches[2]); !allowed {
+		// Checks if character is latin.
+		if allowed := isAllowed(matches[3], matches[4]); !allowed {
 			continue
 		}
 
-		confusables = append(confusables, matches[1], matches[2])
+		// Converts unicode IDs into format \u<ID>.
+		confusable := fmt.Sprintf("\\u%s", matches[1])
+		targettedCharacter := fmt.Sprintf("\\u%s", matches[2])
+
+		confusables = append(confusables, confusable, targettedCharacter)
 	}
 
 	if err := scanner.Err(); err != nil {
