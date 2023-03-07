@@ -75,7 +75,7 @@ func main() {
 			continue
 		}
 
-		if allowed := isAllowed(matches[2], matches[1]); !allowed {
+		if allowed := isAllowed(matches[1], matches[2]); !allowed {
 			continue
 		}
 
