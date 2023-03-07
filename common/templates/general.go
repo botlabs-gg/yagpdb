@@ -1106,10 +1106,33 @@ func ToByte(from interface{}) []byte {
 	}
 }
 
-func tmplJson(v interface{}) (string, error) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return "", err
+func tmplJson(v interface{}, flags ...bool) (string, error) {
+	var b []byte
+	var err error
+
+	switch len(flags) {
+
+	case 0:
+		b, err = json.Marshal(v)
+		if err != nil {
+			return "", err
+		}
+
+	case 1:
+		if flags[0] {
+			b, err = json.MarshalIndent(v, "", "\t")
+			if err != nil {
+				return "", err
+			}
+		} else {
+			b, err = json.Marshal(v)
+			if err != nil {
+				return "", err
+			}
+		}
+
+	default:
+		return "", errors.New("Too many flags")
 	}
 
 	return string(b), nil
