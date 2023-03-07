@@ -977,7 +977,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 		sanitizedContent = common.SanitizeText(m.Content)
 	}
 
-	if re.MatchString(m.Content) || re.MatchString(sanitizedContent) {
+	if re.MatchString(m.Content) || (dataCast.SanitizeText && re.MatchString(sanitizedContent)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
