@@ -20,7 +20,6 @@ var replacer strings.Replacer
 func Init() {
 	fmt.Printf("Loading confusables..")
 	replacer = *strings.NewReplacer(confusables...)
-	fmt.Println(confusables)
 	fmt.Printf("Loaded %d confusables\n", len(confusables)/2)
 }
 
