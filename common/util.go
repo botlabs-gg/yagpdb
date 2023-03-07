@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -18,7 +19,11 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/mtibben/confusables"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
@@ -653,4 +658,19 @@ func FormatList(list []string, conjunction string) string {
 
 func BoolToPointer(b bool) *bool {
 	return &b
+}
+
+// Replaces characters in the Unicode Table "Marks Nonspaced" and removes / replaces them
+var transformer = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+
+// SanitizeText normalizes text and matches confusables.
+// i.e. "Ĥéĺĺó" -> "Hello"
+func SanitizeText(content string) string {
+	// Normalize string
+	output, _, _ := transform.String(transformer, content)
+
+	// Match confusables
+	output = confusables.Skeleton(output)
+
+	return output
 }

@@ -145,8 +145,7 @@ func (p *Plugin) AddCommands() {
 		RunFunc:             cmdFuncRoleMenuListGroups,
 	}
 
-	menuContainer, t := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
-	t.SetEnabledInThreads(false)
+	menuContainer, _ := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
 	menuContainer.Description = "Command for managing role menus"
 
 	const notFoundMessage = "Unknown rolemenu command, if you've used this before it was recently revamped.\nTry almost the same command but `rolemenu create ...` and `rolemenu update ...` instead (replace '...' with the rest of the command).\nSee `help rolemenu` for all rolemenu commands."
