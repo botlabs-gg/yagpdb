@@ -16,14 +16,14 @@ services:
     #
     # Note that we do not take responsibility for anything that happens as a result of using
     # the image above.
-    image: teyker/yagpdb
+    image: PUT_YOUR_OWN_IMAGE_HERE
     restart: unless-stopped
     command:
-      - "/app/yagpdb"
+      # - "/app/yagpdb"
       - "-all"
       - "-pa"
       - "-exthttps=false"
-      - "-https=false"
+      - "-https=true"
     depends_on:
       - redis
       - db
