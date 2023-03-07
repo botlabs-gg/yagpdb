@@ -1230,7 +1230,7 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
 	if dataCast.SanitizeText {
 		messageFieldsFixText := strings.Fields(confusables.SanitizeText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
-		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
+		fields = append(fields, messageFieldsFixText...)
 	}
 
 	for _, mf := range fields {
