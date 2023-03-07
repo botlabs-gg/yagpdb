@@ -193,6 +193,8 @@ const (
 	MessageFlagsLoading MessageFlags = 1 << 7
 	// MessageFlagsFailedToMentionSomeRolesInThread this message failed to mention some roles and add their members to the thread.
 	MessageFlagsFailedToMentionSomeRolesInThread MessageFlags = 1 << 8
+	// MessageFlagsSuppressNotifications this message will not trigger push and desktop notifications
+	MessageFlagsSuppressNotifications MessageFlags = 1 << 12
 )
 
 // File stores info about files you e.g. send in messages.
@@ -211,6 +213,7 @@ type MessageSend struct {
 	Files           []*File            `json:"-"`
 	AllowedMentions AllowedMentions    `json:"allowed_mentions,omitempty"`
 	Reference       *MessageReference  `json:"message_reference,omitempty"`
+	Flags           MessageFlags       `json:"flags,omitempty"`
 
 	// TODO: Remove this when compatibility is not required.
 	File *File `json:"-"`

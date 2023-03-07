@@ -266,6 +266,11 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			msg.Reference = &discordgo.MessageReference{
 				MessageID: msgID,
 			}
+		case "silent":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
@@ -319,6 +324,11 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				}
 				msg.Embeds = []*discordgo.MessageEmbed{embed}
 			}
+		case "silent":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
