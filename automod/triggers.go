@@ -978,7 +978,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 		sanitizedContent = confusables.SanitizeText(m.Content)
 	}
 
-	if re.MatchString(m.Content) || re.MatchString(sanitizedContent) {
+	if re.MatchString(m.Content) || dataCast.SanitizeText && re.MatchString(sanitizedContent) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1153,7 +1153,7 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 		sanitizedNick = confusables.SanitizeText(t.MS.Member.Nick)
 	}
 
-	if re.MatchString(t.MS.Member.Nick) || re.MatchString(sanitizedNick) {
+	if re.MatchString(t.MS.Member.Nick) || dataCast.SanitizeText && re.MatchString(sanitizedNick) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1303,7 +1303,7 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 		sanitizedUsername = confusables.SanitizeText(t.MS.User.Username)
 	}
 
-	if re.MatchString(t.MS.User.Username) || re.MatchString(sanitizedUsername) {
+	if re.MatchString(t.MS.User.Username) || dataCast.SanitizeText && re.MatchString(sanitizedUsername) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
