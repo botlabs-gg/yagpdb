@@ -16,7 +16,7 @@ import (
 var transformer = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 var replacer strings.Replacer
 
-// Create strings replacer accordingly to "confusables.json".
+// Create strings replacer accordingly to unicode and "extraConfusables.json".
 func Init() {
 	fmt.Printf("Loading confusables..")
 	replacer = *strings.NewReplacer(confusables...)
