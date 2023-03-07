@@ -87,10 +87,7 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 )
 
-require (
-	cloud.google.com/go v0.74.0 // indirect
-	github.com/mtibben/confusables v0.0.0-20210201002637-9d1b0723b659 // indirect
-)
+require cloud.google.com/go v0.74.0 // indirect
 
 require (
 	github.com/AlekSi/pointer v1.1.0

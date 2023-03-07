@@ -13,6 +13,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/automod_legacy"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
@@ -209,7 +210,7 @@ func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 	messageFields := strings.Fields(mdStripped)
 
 	if dataCast.SanitizeText {
-		messageFieldsFixText := strings.Fields(common.SanitizeText(mdStripped))
+		messageFieldsFixText := strings.Fields(confusables.SanitizeText(mdStripped))
 		messageFields = append(messageFields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
@@ -491,7 +492,7 @@ func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.
 	messageContent := m.Content
 
 	if dataCast.SanitizeText {
-		messageContent = common.SanitizeText(messageContent)
+		messageContent = confusables.SanitizeText(messageContent)
 	}
 
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
@@ -974,7 +975,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 
 	var sanitizedContent string
 	if dataCast.SanitizeText {
-		sanitizedContent = common.SanitizeText(m.Content)
+		sanitizedContent = confusables.SanitizeText(m.Content)
 	}
 
 	if re.MatchString(m.Content) || re.MatchString(sanitizedContent) {
@@ -1090,7 +1091,7 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 			continue
 		}
 
-		if common.SanitizeText(contentLowered) == mToCheckAgainst {
+		if confusables.SanitizeText(contentLowered) == mToCheckAgainst {
 			count++
 			continue
 		}
@@ -1149,7 +1150,7 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 
 	var sanitizedNick string
 	if dataCast.SanitizeText {
-		sanitizedNick = common.SanitizeText(t.MS.Member.Nick)
+		sanitizedNick = confusables.SanitizeText(t.MS.Member.Nick)
 	}
 
 	if re.MatchString(t.MS.Member.Nick) || re.MatchString(sanitizedNick) {
@@ -1228,7 +1229,7 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
 	if dataCast.SanitizeText {
-		messageFieldsFixText := strings.Fields(common.SanitizeText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
+		messageFieldsFixText := strings.Fields(confusables.SanitizeText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
 		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
@@ -1299,7 +1300,7 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 
 	var sanitizedUsername string
 	if dataCast.SanitizeText {
-		sanitizedUsername = common.SanitizeText(t.MS.User.Username)
+		sanitizedUsername = confusables.SanitizeText(t.MS.User.Username)
 	}
 
 	if re.MatchString(t.MS.User.Username) || re.MatchString(sanitizedUsername) {
@@ -1378,7 +1379,7 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
 	if dataCast.SanitizeText {
-		messageFieldsFixText := strings.Fields(common.SanitizeText(PrepareMessageForWordCheck(t.MS.User.Username)))
+		messageFieldsFixText := strings.Fields(confusables.SanitizeText(PrepareMessageForWordCheck(t.MS.User.Username)))
 		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
