@@ -16,7 +16,6 @@ import (
 
 var (
 	ConfusablesURI       = "https://www.unicode.org/Public/security/revision-06/confusables.txt"
-	OutputFile           = "./confusables.json"
 	ExtraConfusablesFile = "./extraConfusables.json"
 
 	SmallLetters = make(map[string]string)
@@ -81,17 +80,6 @@ func main() {
 
 	r := regexp.MustCompile(`(?i)[a-zA-Z0-9]* ;	(?:[a-zA-Z0-9]* )+;	[a-z]{2,}	#\*? \( (?P<sus>.+) →(?: .+ →)* (?P<unsus>.+) \) (?P<susname>.+)+ → (?P<unsusname>.+)	#`)
 
-	file, err := os.OpenFile(OutputFile, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	defer file.Close()
-
-	// Reset file content
-	file.WriteAt([]byte(""), 0)
-
 	// Add extra confusables as defined in extraConfusables.json.
 	extraConfusables, err := os.OpenFile(ExtraConfusablesFile, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
@@ -140,10 +128,6 @@ func main() {
 	fileContent := fmt.Sprintf("var confusables = []string{\"%s\"}", strings.Join(confusables, "\",\""))
 
 	WriteGoFile("confusables_table.go", "confusables", []byte(fileContent))
-
-	if err := json.NewEncoder(file).Encode(confusables); err != nil {
-		fmt.Println(err)
-	}
 }
 
 func WriteGoFile(filename, pkg string, b []byte) {
