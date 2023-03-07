@@ -63,7 +63,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 
 	cmdsLen := len(group.R.RoleCommands)
 	if cmdsLen < 1 {
-		return fmt.Sprintf("No commands in this group. Set them up at <%s/group/%d>.", panelURL, group.ID), nil
+		return fmt.Sprintf("No commands in this group. Set them up at <%sgroup/%d>.", panelURL, group.ID), nil
 	}
 
 	model := &models.RoleMenu{
