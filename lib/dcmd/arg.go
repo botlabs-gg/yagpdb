@@ -132,7 +132,7 @@ func (p *ParsedArg) Float64() float64 {
 	if p.Value == nil {
 		return 0
 	}
-	
+
 	switch t := p.Value.(type) {
 	case int:
 		return float64(t)
@@ -533,6 +533,10 @@ func (i *IntArg) ParseFromMessage(def *ArgDef, part string, data *Data) (interfa
 		if i.Max < v || i.Min > v {
 			return nil, &OutOfRangeError{ArgName: def.Name, Got: v, Min: i.Min, Max: i.Max}
 		}
+	} else if (i.Min != 0 || i.Max != 0) && i.Max == i.Min {
+		if v != i.Max {
+			return nil, &OutOfRangeError{ArgName: def.Name, Got: v, Min: i.Min, Max: i.Max}
+		}
 	}
 
 	return v, nil
@@ -607,6 +611,10 @@ func (f *FloatArg) ParseFromMessage(def *ArgDef, part string, data *Data) (inter
 	if f.Max != f.Min {
 		if f.Max < v || f.Min > v {
 			return nil, &OutOfRangeError{ArgName: def.Name, Got: v, Min: f.Min, Max: f.Max, Float: true}
+		}
+	} else if (f.Min != 0 || f.Max != 0) && f.Max == f.Min {
+		if v != f.Max {
+			return nil, &OutOfRangeError{ArgName: def.Name, Got: v, Min: f.Min, Max: f.Max}
 		}
 	}
 
