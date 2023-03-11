@@ -24,23 +24,51 @@ package %s
 `
 )
 
+var BasicLatin = &unicode.RangeTable{
+	R16: []unicode.Range16{
+		{0x0021, 0x007E, 1},
+	},
+	R32:         []unicode.Range32{},
+	LatinOffset: 5,
+}
+
 // Takes a character name as input and then verifies if it's in the list of allowed characters.
 func isAllowed(from, to string) bool {
-	if unicode.In([]rune(from)[0], unicode.Latin) {
+	fromRune := []rune(from)
+	toRune := []rune(to)
+
+	if len(fromRune) > 1 {
 		return false
 	}
 
-	if unicode.In([]rune(to)[0], unicode.Latin) {
-		return true
+	for _, rn := range fromRune {
+		if unicode.In(rn, BasicLatin) {
+			return false
+		}
+	}
+	for _, rn := range toRune {
+		if unicode.In(rn, BasicLatin) || unicode.IsSpace(rn) {
+			return true
+		}
 	}
 
 	return false
 }
 
-func main() {
-	var confusables []string
+func formatUnicodeIDs(ids string) string {
+	var formattedIDs string
+	for _, charID := range strings.Split(ids, " ") {
+		newID := fmt.Sprintf("\\U%s%s", strings.Repeat("0", 8-len(charID)), charID)
+		formattedIDs += newID
+	}
 
-	r := regexp.MustCompile(`(?i)(?P<sus>[a-zA-Z0-9]*) ;	(?P<unsus>[a-zA-Z0-9]* )+;	[a-z]{2,}	#\*? \( (?P<suschar>.+) →(?: .+ →)* (?P<unsuschar>.+) \) (?:.+)+ → (?:.+)`)
+	return formattedIDs
+}
+
+func main() {
+	var confusables = make(map[string]string)
+
+	r := regexp.MustCompile(`(?i)(?P<sus>[a-zA-Z0-9 ]*) ;	(?P<unsus>[a-zA-Z0-9 ]*)+ ;	[a-z]{2,}	#\*? \( (?P<suschar>.+) →(?: .+ →)* (?P<unsuschar>.+) \) (?:.+)+ → (?:.+)`)
 
 	// Add extra confusables as defined in extraConfusables.json.
 	extraConfusables, err := os.OpenFile(ExtraConfusablesFile, os.O_RDWR|os.O_CREATE, 0755)
@@ -80,11 +108,11 @@ func main() {
 			continue
 		}
 
-		// Converts unicode IDs into format \u<ID>.
-		confusable := fmt.Sprintf("\\u%s", matches[1])
-		targettedCharacter := fmt.Sprintf("\\u%s", matches[2])
+		// Converts unicode IDs into format \U<ID>.
+		confusable := formatUnicodeIDs(matches[1])
+		targettedCharacter := formatUnicodeIDs(matches[2])
 
-		confusables = append(confusables, confusable, targettedCharacter)
+		confusables[confusable] = targettedCharacter
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -92,7 +120,13 @@ func main() {
 		return
 	}
 
-	fileContent := fmt.Sprintf("var confusables = []string{\"%s\"}", strings.Join(confusables, "\",\""))
+	fileContent := "var confusables = []string{\n"
+
+	for confusable, confused := range confusables {
+		fileContent += fmt.Sprintf("	\"%s\",\"%s\",\n", confusable, confused)
+	}
+
+	fileContent += "}"
 
 	WriteGoFile("confusables_table.go", "confusables", []byte(fileContent))
 }
