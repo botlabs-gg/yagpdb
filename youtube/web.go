@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
@@ -158,14 +159,15 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
-	url := data.YoutubeUrl
-	if !(ytUrlRegex.MatchString(url) || ytUrlShortRegex.MatchString(url)) {
-		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", url))), nil
+	channelUrl := data.YoutubeUrl
+	parsedUrl, err := url.Parse(channelUrl)
+	if err != nil || !strings.HasSuffix(parsedUrl.Host, "youtube.com") || !strings.HasSuffix(parsedUrl.Host, "youtu.be") {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
 	}
 
-	ytChannel, err := p.getYtChannel(url)
+	ytChannel, err := p.getYtChannel(parsedUrl)
 	if err != nil {
-		logger.WithError(err).Errorf("error occurred fetching channel for url %s", url)
+		logger.WithError(err).Errorf("error occurred fetching channel for url %s", channelUrl)
 		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
 	}
 
