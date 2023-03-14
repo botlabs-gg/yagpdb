@@ -214,10 +214,10 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 	}
 
 	msg := &discordgo.MessageSend{
-			AllowedMentions: discordgo.AllowedMentions {
-						Parse : []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
-				         },
-	       }
+		AllowedMentions: discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+		},
+	}
 
 	// Default filename
 	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
@@ -342,18 +342,17 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			if val == nil || val == false {
 				continue
 			}
-			msg.Embeds = []*discordgo.MessageEmbed{embed}
 		case "allowed_mentions":
 			if val == nil {
-				msg.AllowedMentions = &discordgo.AllowedMentions{}
+				msg.AllowedMentions = discordgo.AllowedMentions{}
 				continue
 			}
 			parsed, err := parseAllowedMentions(val)
 			if err != nil {
 				return nil, err
 			}
-			msg.AllowedMentions = parsed
-			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
+			msg.AllowedMentions = *parsed
+
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
@@ -364,8 +363,8 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 
 }
 
-func parseAllowedMentions (Data interface{}) (*discordgo.AllowedMentions, error) {
-	
+func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) {
+
 	if m, ok := Data.(discordgo.AllowedMentions); ok {
 		return &m, nil
 	}
@@ -379,57 +378,57 @@ func parseAllowedMentions (Data interface{}) (*discordgo.AllowedMentions, error)
 	for k, v := range converted {
 
 		switch strings.ToLower(k) {
-			case "parse":
-				var parseMentions []discordgo.AllowedMentionType
-				var parseSlice Slice
-				conv, err := parseSlice.AppendSlice(v)
-				if err != nil {
-					return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Parse"`)
+		case "parse":
+			var parseMentions []discordgo.AllowedMentionType
+			var parseSlice Slice
+			conv, err := parseSlice.AppendSlice(v)
+			if err != nil {
+				return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Parse"`)
+			}
+			for _, elem := range conv.(Slice) {
+				elem_conv, _ := elem.(string)
+				if elem_conv != "users" && elem_conv != "roles" && elem_conv != "everyone" {
+					return nil, errors.New(`Allowed Mentions Parsing: invalid slice element in "Parse"`)
 				}
-				for _, elem := range conv.(Slice) {
-					elem_conv, _ := elem.(string)
-					if elem_conv != "users" && elem_conv != "roles" && elem_conv != "everyone" {
-						return nil, errors.New(`Allowed Mentions Parsing: invalid slice element in "Parse"`)
-					}
-					parseMentions = append(parseMentions, discordgo.AllowedMentionType(elem_conv))
-				} 
-				allowedMentions.Parse = parseMentions
-			case "users":
-				var newslice discordgo.IDSlice
-				var parseSlice Slice
-				conv, err := parseSlice.AppendSlice(v)
-				if err != nil {
-					return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Users"`)
+				parseMentions = append(parseMentions, discordgo.AllowedMentionType(elem_conv))
+			}
+			allowedMentions.Parse = parseMentions
+		case "users":
+			var newslice discordgo.IDSlice
+			var parseSlice Slice
+			conv, err := parseSlice.AppendSlice(v)
+			if err != nil {
+				return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Users"`)
+			}
+			for _, elem := range conv.(Slice) {
+				if (ToInt64(elem)) == 0 {
+					return nil, errors.New(`Allowed Mentions Parsing: "Users" IDSlice: invalid ID passed -` + fmt.Sprint(elem))
 				}
-				for _, elem := range conv.(Slice) {
-					if (ToInt64(elem)) == 0 {
-							return nil, errors.New(`Allowed Mentions Parsing: "Users" IDSlice: invalid ID passed -` + fmt.Sprint(elem))
-					}
-					newslice = append(newslice, ToInt64(elem)) 
-				}
-				if len(newslice) > 100 {
-					newslice = newslice[:100]
-				}
-				allowedMentions.Users = newslice
-			case "roles":
-				var newslice discordgo.IDSlice
-				var parseSlice Slice
-				conv, err := parseSlice.AppendSlice(v)
-				if err != nil {
-					return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Roles"`)
-				}
-				for _, elem := range conv.(Slice) {
+				newslice = append(newslice, ToInt64(elem))
+			}
+			if len(newslice) > 100 {
+				newslice = newslice[:100]
+			}
+			allowedMentions.Users = newslice
+		case "roles":
+			var newslice discordgo.IDSlice
+			var parseSlice Slice
+			conv, err := parseSlice.AppendSlice(v)
+			if err != nil {
+				return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Roles"`)
+			}
+			for _, elem := range conv.(Slice) {
 				if (ToInt64(elem)) == 0 {
 					return nil, errors.New(`Allowed Mentions Parsing: "Roles" IDSlice: invalid ID passed -` + fmt.Sprint(elem))
 				}
-				newslice = append(newslice, ToInt64(elem)) 
-				}
-				if len(newslice) > 100 {
-					newslice = newslice[:100]
-				}
-				allowedMentions.Roles = newslice
-			default :
-				return nil, errors.New(`Allowed Mentios Parsing : invalid key "` + k + `" for Allowed Mentions`)
+				newslice = append(newslice, ToInt64(elem))
+			}
+			if len(newslice) > 100 {
+				newslice = newslice[:100]
+			}
+			allowedMentions.Roles = newslice
+		default:
+			return nil, errors.New(`Allowed Mentios Parsing : invalid key "` + k + `" for Allowed Mentions`)
 		}
 	}
 
