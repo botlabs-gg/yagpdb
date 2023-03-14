@@ -63,13 +63,9 @@ const (
 )
 
 var (
-	ytUrlRegex        = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com`)
-	ytUrlShortRegex   = regexp.MustCompile(`^(https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+).*`)
-	ytVideoUrlRegex   = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]+).*`)
-	ytChannelUrlRegex = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(channel)\/(UC[\w-]{21}[AQgw])$`)
-	ytCustomUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(c\/)?([\w-]+)$`)
-	ytUserUrlRegex    = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(user\/)([\w-]+)$`)
-	ytHandleUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(@)([\w-]+)$`)
+	ytVideoIDRegex = regexp.MustCompile(`\A[\w-]+\z`)
+	ytChannelIDRegex = regexp.MustCompile(`\AUC[\w-]{21}[AQgw]\z`)
+	ytHandleRegex = regexp.MustCompile(`\A@([\w\-.]{3,30})\z`)
 )
 
 func (p *Plugin) InitWeb() {
