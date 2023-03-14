@@ -342,6 +342,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			if val == nil || val == false {
 				continue
 			}
+			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
 		case "allowed_mentions":
 			if val == nil {
 				msg.AllowedMentions = discordgo.AllowedMentions{}
@@ -352,7 +353,6 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				return nil, err
 			}
 			msg.AllowedMentions = *parsed
-
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
