@@ -1,8 +1,10 @@
 package templates
 
 import (
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"errors"
+
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 // CtxChannel is almost a 1:1 copy of dstate.ChannelState, its needed because we cant axpose all those state methods
@@ -12,60 +14,47 @@ type CtxChannel struct {
 	ID        int64
 	GuildID   int64
 	IsPrivate bool
+	IsThread  bool
 
 	Name                 string                           `json:"name"`
 	Type                 discordgo.ChannelType            `json:"type"`
 	Topic                string                           `json:"topic"`
-	LastMessageID        int64                            `json:"last_message_id"`
 	NSFW                 bool                             `json:"nsfw"`
 	Position             int                              `json:"position"`
 	Bitrate              int                              `json:"bitrate"`
 	PermissionOverwrites []*discordgo.PermissionOverwrite `json:"permission_overwrites"`
 	ParentID             int64                            `json:"parent_id"`
+	OwnerID              int64                            `json:"owner_id"`
+}
+
+func (c *CtxChannel) Mention() (string, error) {
+	if c == nil {
+		return "", errors.New("channel not found")
+	}
+	return "<#" + discordgo.StrID(c.ID) + ">", nil
 }
 
 func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
-	ctxChannel := &CtxChannel{
-		ID:                   cs.ID,
-		IsPrivate:            cs.IsPrivate,
-		Name:                 cs.Name,
-		Type:                 cs.Type,
-		Topic:                cs.Topic,
-		LastMessageID:        cs.LastMessageID,
-		NSFW:                 cs.NSFW,
-		Position:             cs.Position,
-		Bitrate:              cs.Bitrate,
-		PermissionOverwrites: cs.PermissionOverwrites,
-		ParentID:             cs.ParentID,
+
+	cop := make([]*discordgo.PermissionOverwrite, len(cs.PermissionOverwrites))
+	for i := 0; i < len(cs.PermissionOverwrites); i++ {
+		cop[i] = &cs.PermissionOverwrites[i]
 	}
-
-	if !cs.IsPrivate {
-		ctxChannel.GuildID = cs.Guild.ID
-	}
-
-	return ctxChannel
-}
-
-func CtxChannelFromCSLocked(cs *dstate.ChannelState) *CtxChannel {
-	cs.Owner.RLock()
-	defer cs.Owner.RUnlock()
 
 	ctxChannel := &CtxChannel{
 		ID:                   cs.ID,
-		IsPrivate:            cs.IsPrivate,
+		IsPrivate:            cs.IsPrivate(),
+		IsThread:             cs.Type.IsThread(),
+		GuildID:              cs.GuildID,
 		Name:                 cs.Name,
 		Type:                 cs.Type,
 		Topic:                cs.Topic,
-		LastMessageID:        cs.LastMessageID,
 		NSFW:                 cs.NSFW,
 		Position:             cs.Position,
 		Bitrate:              cs.Bitrate,
-		PermissionOverwrites: cs.PermissionOverwrites,
+		PermissionOverwrites: cop,
 		ParentID:             cs.ParentID,
-	}
-
-	if !cs.IsPrivate {
-		ctxChannel.GuildID = cs.Guild.ID
+		OwnerID:              cs.OwnerID,
 	}
 
 	return ctxChannel

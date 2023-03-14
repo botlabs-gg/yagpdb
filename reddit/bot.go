@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/reddit/models"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
@@ -26,12 +27,30 @@ func (p *Plugin) RemoveGuild(g int64) error {
 	return nil
 }
 
+func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
+	logger.WithField("guild_id", guildID).Infof("Removed Excess Reddit Feeds")
+	feeds, err := models.RedditFeeds(qm.Where("guild_id = ? and disabled = ?", guildID, false), qm.Offset(GuildMaxFeedsNormal)).AllG(context.Background())
+
+	if err != nil {
+		return errors.WrapIf(err, "failed getting reddit feeds")
+	}
+
+	if len(feeds) > 0 {
+		_, err = feeds.UpdateAllG(context.Background(), models.M{"disabled": true})
+		if err != nil {
+			return errors.WrapIf(err, "failed disabling reddit feeds on premium removal")
+		}
+	}
+
+	return nil
+}
+
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(p, &commands.YAGCommand{
 		CmdCategory:          commands.CategoryDebug,
 		HideFromCommandsPage: true,
 		Name:                 "testreddit",
-		Description:          "Tests the reddit feeds in this server by checking the specified post",
+		Description:          "Tests the reddit feeds in this server by checking the specified post. Bot Owner Only",
 		HideFromHelp:         true,
 		RequiredArgs:         1,
 		Arguments: []*dcmd.ArgDef{
@@ -62,8 +81,8 @@ func (p *Plugin) AddCommands() {
 				ratelimiter: NewRatelimiter(),
 			}
 
-			err1 := handlerSlow.handlePost(resp[0], data.GS.ID)
-			err2 := handlerFast.handlePost(resp[0], data.GS.ID)
+			err1 := handlerSlow.handlePost(resp[0], data.GuildData.GS.ID)
+			err2 := handlerFast.handlePost(resp[0], data.GuildData.GS.ID)
 
 			return fmt.Sprintf("SlowErr: `%v`, fastErr: `%v`", err1, err2), nil
 		}),

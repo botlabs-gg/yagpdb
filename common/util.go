@@ -9,20 +9,28 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
+	"unicode"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/lib/pq"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/mtibben/confusables"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-var LinkRegex = regexp.MustCompile(`(http(s)?:\/\/)?(www\.)?[-a-zA-Z0-9@:%_\+~#=]{1,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
+var LinkRegex = regexp.MustCompile(`(?i)([a-z\d]+://)([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])`)
+var DomainFinderRegex = regexp.MustCompile(`(?i)(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,61}[a-z\d]`)
 
 type GuildWithConnected struct {
 	*discordgo.UserGuild
@@ -74,40 +82,16 @@ func SendTempMessage(session *discordgo.Session, duration time.Duration, cID int
 	DelayedMessageDelete(session, duration, cID, m.ID)
 }
 
-// GetGuildChannels returns the guilds channels either from cache or api
-func GetGuildChannels(guildID int64) (channels []*discordgo.Channel, err error) {
-	// Check cache first
-	err = GetCacheDataJson(KeyGuildChannels(guildID), &channels)
-	if err != nil {
-		channels, err = BotSession.GuildChannels(guildID)
-		if err == nil {
-			SetCacheDataJsonSimple(KeyGuildChannels(guildID), channels)
-		}
-	}
-
-	return
-}
-
-// GetGuild returns the guild from guildid either from cache or api
-func GetGuild(guildID int64) (guild *discordgo.Guild, err error) {
-	// Check cache first
-	err = GetCacheDataJson(KeyGuild(guildID), &guild)
-	if err != nil {
-		guild, err = BotSession.Guild(guildID)
-		if err == nil {
-			SetCacheDataJsonSimple(KeyGuild(guildID), guild)
-		}
-	}
-
-	return
-}
-
 func RandomAdjective() string {
 	return Adjectives[rand.Intn(len(Adjectives))]
 }
 
 func RandomNoun() string {
 	return Nouns[rand.Intn(len(Nouns))]
+}
+
+func RandomVerb() string {
+	return Verbs[rand.Intn(len(Verbs))]
 }
 
 type DurationFormatPrecision int
@@ -159,8 +143,6 @@ func (d DurationFormatPrecision) FromSeconds(in int64) int64 {
 	}
 
 	panic("We shouldn't be here")
-
-	return 0
 }
 
 func pluralize(val int64) string {
@@ -282,14 +264,14 @@ func AddRole(member *discordgo.Member, role int64, guildID int64) error {
 }
 
 func AddRoleDS(ms *dstate.MemberState, role int64) error {
-	for _, v := range ms.Roles {
+	for _, v := range ms.Member.Roles {
 		if v == role {
 			// Already has the role
 			return nil
 		}
 	}
 
-	return BotSession.GuildMemberRoleAdd(ms.Guild.ID, ms.ID, role)
+	return BotSession.GuildMemberRoleAdd(ms.GuildID, ms.User.ID, role)
 }
 
 func RemoveRole(member *discordgo.Member, role int64, guildID int64) error {
@@ -304,9 +286,9 @@ func RemoveRole(member *discordgo.Member, role int64, guildID int64) error {
 }
 
 func RemoveRoleDS(ms *dstate.MemberState, role int64) error {
-	for _, r := range ms.Roles {
+	for _, r := range ms.Member.Roles {
 		if r == role {
-			return BotSession.GuildMemberRoleRemove(ms.Guild.ID, ms.ID, r)
+			return BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, r)
 		}
 	}
 
@@ -314,7 +296,7 @@ func RemoveRoleDS(ms *dstate.MemberState, role int64) error {
 	return nil
 }
 
-var StringPerms = map[int]string{
+var StringPerms = map[int64]string{
 	discordgo.PermissionReadMessages:       "Read Messages",
 	discordgo.PermissionSendMessages:       "Send Messages",
 	discordgo.PermissionSendTTSMessages:    "Send TTS Messages",
@@ -337,6 +319,7 @@ var StringPerms = map[int]string{
 	discordgo.PermissionManageChannels:      "Manage Channels",
 	discordgo.PermissionManageServer:        "Manage Server",
 	discordgo.PermissionManageWebhooks:      "Manage Webhooks",
+	discordgo.PermissionModerateMembers:     "Moderate Members / Timeout Members",
 }
 
 func ErrWithCaller(err error) error {
@@ -402,6 +385,9 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
 		res = append(res, "ManageServer")
 	}
+	if perms&discordgo.PermissionViewGuildInsights == discordgo.PermissionViewGuildInsights {
+		res = append(res, "ViewGuildInsights")
+	}
 
 	if perms&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
 		res = append(res, "ReadMessages")
@@ -430,7 +416,15 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionUseExternalEmojis == discordgo.PermissionUseExternalEmojis {
 		res = append(res, "UseExternalEmojis")
 	}
-
+	if perms&discordgo.PermissionUseExternalStickers == discordgo.PermissionUseExternalStickers {
+		res = append(res, "UseExternalStickers")
+	}
+	if perms&discordgo.PermissionUseApplicationCommands == discordgo.PermissionUseApplicationCommands {
+		res = append(res, "UseApplicationCommands")
+	}
+	if perms&discordgo.PermissionUseEmbeddedActivities == discordgo.PermissionUseEmbeddedActivities {
+		res = append(res, "UseEmbeddedActivities")
+	}
 	// Constants for the different bit offsets of voice permissions
 	if perms&discordgo.PermissionVoiceConnect == discordgo.PermissionVoiceConnect {
 		res = append(res, "VoiceConnect")
@@ -450,7 +444,15 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionVoiceUseVAD == discordgo.PermissionVoiceUseVAD {
 		res = append(res, "VoiceUseVAD")
 	}
-
+	if perms&discordgo.PermissionPrioritySpeaker == discordgo.PermissionPrioritySpeaker {
+		res = append(res, "PrioritySpeaker")
+	}
+	if perms&discordgo.PermissionRequestToSpeak == discordgo.PermissionRequestToSpeak {
+		res = append(res, "RequestToSpeak")
+	}
+	if perms&discordgo.PermissionStream == discordgo.PermissionStream {
+		res = append(res, "Stream")
+	}
 	// Constants for general management.
 	if perms&discordgo.PermissionChangeNickname == discordgo.PermissionChangeNickname {
 		res = append(res, "ChangeNickname")
@@ -464,12 +466,15 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionManageWebhooks == discordgo.PermissionManageWebhooks {
 		res = append(res, "ManageWebhooks")
 	}
-	if perms&discordgo.PermissionManageEmojis == discordgo.PermissionManageEmojis {
-		res = append(res, "ManageEmojis")
+	if perms&discordgo.PermissionManageEmojisAndStickers == discordgo.PermissionManageEmojisAndStickers {
+		res = append(res, "ManageEmojisAndStickers")
 	}
 
 	if perms&discordgo.PermissionCreateInstantInvite == discordgo.PermissionCreateInstantInvite {
 		res = append(res, "CreateInstantInvite")
+	}
+	if perms&discordgo.PermissionModerateMembers == discordgo.PermissionModerateMembers {
+		res = append(res, "ModerateMembers")
 	}
 	if perms&discordgo.PermissionKickMembers == discordgo.PermissionKickMembers {
 		res = append(res, "KickMembers")
@@ -480,13 +485,29 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionManageChannels == discordgo.PermissionManageChannels {
 		res = append(res, "ManageChannels")
 	}
+	if perms&discordgo.PermissionManageEvents == discordgo.PermissionManageEvents {
+		res = append(res, "ManageEvents")
+	}
+
+	if perms&discordgo.PermissionManageThreads == discordgo.PermissionManageThreads {
+		res = append(res, "ManageThreads")
+	}
+	if perms&discordgo.PermissionUsePublicThreads == discordgo.PermissionUsePublicThreads {
+		res = append(res, "UsePublicThreads")
+	}
+	if perms&discordgo.PermissionUsePrivateThreads == discordgo.PermissionUsePrivateThreads {
+		res = append(res, "UsePrivateThreads")
+	}
+	if perms&discordgo.PermissionSendMessagesInThreads == discordgo.PermissionSendMessagesInThreads {
+		res = append(res, "SendMessagesInThreads")
+	}
+
 	if perms&discordgo.PermissionAddReactions == discordgo.PermissionAddReactions {
 		res = append(res, "AddReactions")
 	}
 	if perms&discordgo.PermissionViewAuditLogs == discordgo.PermissionViewAuditLogs {
 		res = append(res, "ViewAuditLogs")
 	}
-
 	return
 }
 
@@ -577,4 +598,79 @@ func IsOwner(userID int64) bool {
 
 var AllowedMentionsParseUsers = discordgo.AllowedMentions{
 	Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+}
+
+func LogLongCallTime(treshold time.Duration, isErr bool, logMsg string, extraData logrus.Fields, f func()) {
+	started := time.Now()
+	f()
+	elapsed := time.Since(started)
+
+	if elapsed > treshold {
+		l := logrus.WithFields(extraData).WithField("elapsed", elapsed.String())
+		if isErr {
+			l.Error(logMsg)
+		} else {
+			l.Warn(logMsg)
+		}
+	}
+}
+
+func SplitSendMessage(channelID int64, contents string, allowedMentions discordgo.AllowedMentions) ([]*discordgo.Message, error) {
+	result := make([]*discordgo.Message, 0, 1)
+
+	split := dcmd.SplitString(contents, 2000)
+	for _, v := range split {
+		var err error
+		var m *discordgo.Message
+		m, err = BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+			Content:         v,
+			AllowedMentions: allowedMentions,
+		})
+
+		if err != nil {
+			return result, err
+		}
+
+		result = append(result, m)
+	}
+
+	return result, nil
+}
+
+func FormatList(list []string, conjunction string) string {
+	var sb strings.Builder
+	for i, item := range list {
+		if i > 0 {
+			sb.WriteString(", ")
+			if i == len(list)-1 {
+				sb.WriteString(conjunction)
+				if conjunction != "" {
+					sb.WriteByte(' ')
+				}
+			}
+		}
+		sb.WriteByte('`')
+		sb.WriteString(item)
+		sb.WriteByte('`')
+	}
+	return sb.String()
+}
+
+func BoolToPointer(b bool) *bool {
+	return &b
+}
+
+// Replaces characters in the Unicode Table "Marks Nonspaced" and removes / replaces them
+var transformer = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+
+// SanitizeText normalizes text and matches confusables.
+// i.e. "Ĥéĺĺó" -> "Hello"
+func SanitizeText(content string) string {
+	// Normalize string
+	output, _, _ := transform.String(transformer, content)
+
+	// Match confusables
+	output = confusables.Skeleton(output)
+
+	return output
 }

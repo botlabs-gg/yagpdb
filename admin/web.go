@@ -1,27 +1,36 @@
 package admin
 
 import (
+	_ "embed"
 	"fmt"
 	"io"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/dshardorchestrator/v2/orchestrator/rest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/internalapi"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/internalapi"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/orchestrator/rest"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io"
 	"goji.io/pat"
-) 
-  
+)
+
+//go:embed assets/bot_admin_panel.html
+var PageHTMLPanel string
+
+//go:embed assets/bot_admin_config.html
+var PageHTMLConfig string
+
 // InitWeb implements web.Plugin
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../admin/assets/bot_admin_panel.html", "templates/plugins/bot_admin_panel.html")
-	web.LoadHTMLTemplate("../../admin/assets/bot_admin_config.html", "templates/plugins/bot_admin_config.html")
+	web.AddHTMLTemplate("admin/assets/bot_admin_panel.html", PageHTMLPanel)
+	web.AddHTMLTemplate("admin/assets/bot_admin_config.html", PageHTMLConfig)
 
 	mux := goji.SubMux()
 	web.RootMux.Handle(pat.New("/admin/*"), mux)
@@ -43,20 +52,22 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Get("/host/:host/pid/:pid/allocs"), p.ProxyGetInternalAPI("/debug/pprof/allocs"))
 
 	// Control routes
-	mux.Handle(pat.Post("/host/:host/pid/:pid/shutdown"), web.ControllerPostHandler(p.handleShutdown, panelHandler, nil, ""))
+	mux.Handle(pat.Post("/host/:host/pid/:pid/shutdown"), web.ControllerPostHandler(p.handleShutdown, panelHandler, nil))
 
 	// Orhcestrator controls
-	mux.Handle(pat.Post("/host/:host/pid/:pid/updateversion"), web.ControllerPostHandler(p.handleUpgrade, panelHandler, nil, ""))
-	mux.Handle(pat.Post("/host/:host/pid/:pid/migratenodes"), web.ControllerPostHandler(p.handleMigrateNodes, panelHandler, nil, ""))
+	mux.Handle(pat.Post("/host/:host/pid/:pid/updateversion"), web.ControllerPostHandler(p.handleUpgrade, panelHandler, nil))
+	mux.Handle(pat.Post("/host/:host/pid/:pid/migratenodes"), web.ControllerPostHandler(p.handleMigrateNodes, panelHandler, nil))
 	mux.Handle(pat.Get("/host/:host/pid/:pid/deployedversion"), http.HandlerFunc(p.handleLaunchNodeVersion))
 
 	// Node routes
 	mux.Handle(pat.Get("/host/:host/pid/:pid/shard_sessions"), p.ProxyGetInternalAPI("/shard_sessions"))
 	mux.Handle(pat.Post("/host/:host/pid/:pid/shard/:shardid/reconnect"), http.HandlerFunc(p.handleReconnectShard))
 
+	mux.Handle(pat.Post("/reconnect_all"), http.HandlerFunc(p.handleReconnectAll))
+
 	getConfigHandler := web.ControllerHandler(p.handleGetConfig, "bot_admin_config")
 	mux.Handle(pat.Get("/config"), getConfigHandler)
-	mux.Handle(pat.Post("/config/edit/:key"), web.ControllerPostHandler(p.handleEditConfig, getConfigHandler, nil, ""))
+	mux.Handle(pat.Post("/config/edit/:key"), web.ControllerPostHandler(p.handleEditConfig, getConfigHandler, nil))
 }
 
 type Host struct {
@@ -344,4 +355,27 @@ func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	io.Copy(w, resp.Body)
+}
+
+func (p *Plugin) handleReconnectAll(w http.ResponseWriter, r *http.Request) {
+
+	totalShards, err := common.ServicePoller.GetShardCount()
+	if err != nil {
+		logger.WithError(err).Error("failed getting total shard count")
+		w.Write([]byte("failed"))
+		return
+	}
+
+	for i := 0; i < totalShards; i++ {
+		err = botrest.SendReconnectShard(i, true)
+		if err != nil {
+			fmt.Fprintf(w, "Failed restarting %d\n", i)
+			logger.WithError(err).Error("failed restarting shard")
+		} else {
+			fmt.Fprintf(w, "Restarted %d", i)
+			logger.Infof("restarted shard %d", i)
+		}
+
+		time.Sleep(time.Second * 5)
+	}
 }

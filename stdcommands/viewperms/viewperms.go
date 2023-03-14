@@ -4,29 +4,29 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "ViewPerms",
-	Description: "Shows you or the targets permissions in this channel",
+	Description: "Shows you or the target's permissions in this channel",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "target", Type: dcmd.UserID, Default: int64(0)},
+		{Name: "target", Type: dcmd.UserID, Default: int64(0)},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		var target *dstate.MemberState
 
 		if targetID := data.Args[0].Int64(); targetID == 0 {
-			target = data.MS
+			target = data.GuildData.MS
 		} else {
 			var err error
-			target, err = bot.GetMember(data.GS.ID, targetID)
+			target, err = bot.GetMember(data.GuildData.GS.ID, targetID)
 			if err != nil {
 				if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
 					return "Unknown member", nil
@@ -36,12 +36,12 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		perms, err := data.GS.MemberPermissionsMS(true, data.CS.ID, target)
+		perms, err := data.GuildData.GS.GetMemberPermissions(data.GuildData.CS.ID, target.User.ID, target.Member.Roles)
 		if err != nil {
 			return "Unable to calculate perms", err
 		}
 
 		humanized := common.HumanizePermissions(int64(perms))
-		return fmt.Sprintf("Perms of %s in this channel\n`%d`\n%s", target.Username, perms, strings.Join(humanized, ", ")), nil
+		return fmt.Sprintf("Perms of %s in this channel\n`%d`\n%s", target.User.Username, perms, strings.Join(humanized, ", ")), nil
 	},
 }

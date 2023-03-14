@@ -1,22 +1,22 @@
 package web
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
 
 var (
-	SessionCookieName = "yagpdb-session"
+	SessionCookieName = "yagpdb-session-3"
 	OauthConf         *oauth2.Config
 )
 
@@ -52,7 +52,8 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
-	url += "&prompt=none"
+	// disabled prompt to see if the multiple requests are still happening when user expliclity consents to login
+	// url += "&prompt=none"
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -64,7 +65,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed validating CSRF token")
 		} else {
-			CtxLogger(ctx).Info("Invalid oauth state", state)
+			CtxLogger(ctx).Infof("Invalid oauth state %s ", state)
 		}
 		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
 		return
@@ -101,6 +102,11 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
+	rawToken := r.Context().Value(common.ContextKeyYagToken)
+	if rawToken != nil {
+		discorddata.EvictSession(rawToken.(string))
+	}
+
 	defer http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 
 	sessionCookie, err := r.Cookie(SessionCookieName)
@@ -116,7 +122,7 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 // CreateCSRFToken creates a csrf token and adds it the list
 func CreateCSRFToken() (string, error) {
 	str := RandBase64(32)
-
+	logger.Infof("generated new CSRF Token %s", str)
 	err := common.MultipleCmds(
 		radix.Cmd(nil, "LPUSH", "csrf", str),
 		radix.Cmd(nil, "LTRIM", "csrf", "0", "999"), // Store only 1000 crsf tokens, might need to be increased later
@@ -132,24 +138,31 @@ func CheckCSRFToken(token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	logger.Infof("%s in csrf token list removed with count %d", token, num)
 	return num > 0, nil
 }
 
-var ErrNotLoggedIn = errors.New("Not logged in")
+var ErrNotLoggedIn = errors.New("not logged in")
 
 // AuthTokenFromB64 Retrives an oauth2 token from the base64 string
 // Returns an error if expired
-func AuthTokenFromB64(b64 string) (t *oauth2.Token, err error) {
-	if b64 == "none" {
+func discordAuthTokenFromYag(yagToken string) (t *oauth2.Token, err error) {
+	if yagToken == "none" {
 		return nil, ErrNotLoggedIn
 	}
 
-	decodedB64, err := base64.URLEncoding.DecodeString(b64)
+	// decodedB64, err := base64.URLEncoding.DecodeString(b64)
+	// if err != nil {
+	// 	return nil, common.ErrWithCaller(err)
+	// }
+
+	var b64 string
+	err = common.RedisPool.Do(radix.Cmd(&b64, "HGET", "web_sessions", yagToken))
 	if err != nil {
-		return nil, common.ErrWithCaller(err)
+		return nil, err
 	}
 
-	err = json.Unmarshal(decodedB64, &t)
+	err = json.Unmarshal([]byte(b64), &t)
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	}
@@ -161,9 +174,14 @@ func AuthTokenFromB64(b64 string) (t *oauth2.Token, err error) {
 	return
 }
 
+var (
+	ErrDuplicateToken = errors.New("somehow a duplicate token was found")
+)
+
 // CreateCookieSession creates a session cookie where the value is the access token itself,
 // this way we don't have to store it on our end anywhere.
 func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
+	yagToken := RandBase64(64)
 
 	token.RefreshToken = ""
 
@@ -171,8 +189,6 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	}
-
-	b64 := base64.URLEncoding.EncodeToString(dataRaw)
 
 	// Either the cookie expires in 30 days, or however long the validity of the token is if that is smaller than 7 days
 	cookieExpirey := time.Hour * 24 * 30
@@ -185,9 +201,16 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 		// The old cookie name can safely be used after the old format has been phased out (after a day in use)
 		// Name:   "yagpdb-session",
 		Name:   SessionCookieName,
-		Value:  b64,
+		Value:  yagToken,
 		MaxAge: int(cookieExpirey.Seconds()),
 		Path:   "/",
+	}
+
+	// store token in redis
+	didSet := false
+	common.RedisPool.Do(radix.Cmd(&didSet, "HSETNX", "web_sessions", yagToken, string(dataRaw)))
+	if !didSet {
+		return nil, ErrDuplicateToken
 	}
 
 	return cookie, nil

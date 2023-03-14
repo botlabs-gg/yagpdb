@@ -7,9 +7,9 @@ import (
 	"math/rand"
 	"net/http"
 
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 type Xkcd struct {
@@ -34,11 +34,13 @@ var Command = &commands.YAGCommand{
 	Name:        "Xkcd",
 	Description: "An xkcd comic, by default returns random comic strip",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "Comic number", Type: dcmd.Int},
+		{Name: "Comic-number", Type: dcmd.Int},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "l", Name: "Latest comic"},
+		{Name: "l", Help: "Latest comic"},
 	},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 
 		//first query to get latest number
@@ -98,7 +100,7 @@ func getComic(number ...int64) (*Xkcd, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "curl/7.65.1")
+	req.Header.Set("User-Agent", "YAGPDB.xyz (https://github.com/botlabs-gg/yagpdb)")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

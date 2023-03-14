@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
 )
 
 var (
@@ -22,7 +22,6 @@ var (
 	ConfPQUsername = config.RegisterOption("yagpdb.pqusername", "Postgres user", "postgres")
 	ConfPQPassword = config.RegisterOption("yagpdb.pqpassword", "Postgres passoword", "")
 	ConfPQDB       = config.RegisterOption("yagpdb.pqdb", "Postgres database", "yagpdb")
-	ConfRedis      = config.RegisterOption("yagpdb.redis", "Redis address", "localhost:6379")
 
 	ConfMaxCCR            = config.RegisterOption("yagpdb.max_ccr", "Maximum number of concurrent outgoing requests to discord", 25)
 	ConfDisableKeepalives = config.RegisterOption("yagpdb.disable_keepalives", "Disables keepalive connections for outgoing requests to discord, this shouldn't be needed but i had networking issues once so i had to", false)
@@ -30,6 +29,12 @@ var (
 	confNoSchemaInit = config.RegisterOption("yagpdb.no_schema_init", "Disable schema intiialization", false)
 
 	confMaxSQLConns = config.RegisterOption("yagdb.pq_max_conns", "Max connections to postgres", 3)
+
+	ConfTotalShards             = config.RegisterOption("yagpdb.sharding.total_shards", "Total number shards", 0)
+	ConfActiveShards            = config.RegisterOption("yagpdb.sharding.active_shards", "Shards active on this hoste, ex: '1-10,25'", "")
+	ConfLargeBotShardingEnabled = config.RegisterOption("yagpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
+	ConfBucketsPerNode          = config.RegisterOption("yagpdb.shard.buckets_per_node", "Number of buckets per node", 8)
+	ConfShardBucketSize         = config.RegisterOption("yagpdb.shard.shard_bucket_size", "Shards per bucket", 2)
 
 	BotOwners []int64
 )

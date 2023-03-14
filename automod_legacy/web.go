@@ -1,30 +1,31 @@
 package automod_legacy
 
 import (
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io"
 	"goji.io/pat"
 )
 
-type CtxKey int
-
-const (
-	CurrentConfig CtxKey = iota
-)
+//go:embed assets/automod_legacy.html
+var PageHTML string
 
 type GeneralForm struct {
 	Enabled bool
 }
 
+var panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automod_legacy_settings_updated", FormatString: "Updated legacy automod settings"})
+
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../automod_legacy/assets/automod_legacy.html", "templates/plugins/automod_legacy.html")
+	web.AddHTMLTemplate("automod_legacy/assets/automod_legacy.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Basic Automoderator",
@@ -36,10 +37,9 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/automod_legacy/*"), autmodMux)
 	web.CPMux.Handle(pat.New("/automod_legacy"), autmodMux)
 
-	// Alll handlers here require guild channels present
-	autmodMux.Use(web.RequireGuildChannelsMiddleware)
+	// All handlers here require guild channels present
 	autmodMux.Use(web.RequireBotMemberMW)
-	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages))
+	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageServer, discordgo.PermissionModerateMembers))
 
 	getHandler := web.RenderHandler(HandleAutomod, "cp_automod_legacy")
 
@@ -47,8 +47,8 @@ func (p *Plugin) InitWeb() {
 	autmodMux.Handle(pat.Get(""), getHandler)
 
 	// Post handlers
-	autmodMux.Handle(pat.Post("/"), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler)))
-	autmodMux.Handle(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler)))
+	autmodMux.Handle(pat.Post("/"), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
+	autmodMux.Handle(pat.Post(""), ExtraPostMW(web.SimpleConfigSaverHandler(Config{}, getHandler, panelLogKeyUpdatedSettings)))
 }
 
 func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
@@ -95,9 +95,9 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	const format = `<ul>
 	<li>Slowmode: %s</li>
-	<li>Mass Mention: %s</li>
-	<li>Server Invites: %s</li>
-	<li>Any Links: %s</li>
+	<li>Mass mention: %s</li>
+	<li>Server invites: %s</li>
+	<li>Any links: %s</li>
 	<li>Banned words: %s</li>
 	<li>Banned websites: %s</li>
 </ul>`

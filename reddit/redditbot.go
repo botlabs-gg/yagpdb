@@ -10,23 +10,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/go-reddit"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/reddit/models"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/feeds"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/go-reddit"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/oauth2"
-)
-
-const (
-	MaxPostsHourFast = 200
-	MaxPostsHourSlow = 200
 )
 
 var (
@@ -34,6 +29,9 @@ var (
 	confClientSecret = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
 	confRedirectURI  = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
 	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
+
+	confMaxPostsHourFast = config.RegisterOption("yagpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
+	confMaxPostsHourSlow = config.RegisterOption("yagpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)
 
 	feedLock sync.Mutex
 	fastFeed *PostFetcher
@@ -97,6 +95,11 @@ func (p *Plugin) runBot() {
 	feedLock.Unlock()
 }
 
+type KeySlowFeeds string
+type KeyFastFeeds string
+
+var configCache sync.Map
+
 type PostHandlerImpl struct {
 	Slow        bool
 	ratelimiter *Ratelimiter
@@ -122,10 +125,39 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 			continue
 		}
 
-		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-		// logger.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
-		p.handlePost(v, 0)
+		since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
+		logger.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+		go p.handlePost(v, 0)
 	}
+}
+
+func (p *PostHandlerImpl) getConfigs(subreddit string) ([]*models.RedditFeed, error) {
+	var key interface{}
+	key = KeySlowFeeds(subreddit)
+	if !p.Slow {
+		key = KeyFastFeeds(subreddit)
+	}
+
+	v, ok := configCache.Load(key)
+	if ok {
+		return v.(models.RedditFeedSlice), nil
+	}
+
+	qms := []qm.QueryMod{
+		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(subreddit)),
+		models.RedditFeedWhere.Slow.EQ(p.Slow),
+		models.RedditFeedWhere.Disabled.EQ(false),
+	}
+
+	config, err := models.RedditFeeds(qms...).AllG(context.Background())
+	if err != nil {
+		logger.WithError(err).Error("failed retrieving reddit feeds for subreddit")
+		return nil, err
+	}
+
+	configCache.Store(key, config)
+
+	return config, nil
 }
 
 func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error {
@@ -133,20 +165,21 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
 	// logger.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
-	qms := []qm.QueryMod{
-		models.RedditFeedWhere.Subreddit.EQ(strings.ToLower(post.Subreddit)),
-		models.RedditFeedWhere.Slow.EQ(p.Slow),
-		models.RedditFeedWhere.Disabled.EQ(false),
-	}
-
-	if filterGuild > 0 {
-		qms = append(qms, models.RedditFeedWhere.GuildID.EQ(filterGuild))
-	}
-
-	config, err := models.RedditFeeds(qms...).AllG(context.Background())
+	config, err := p.getConfigs(strings.ToLower(post.Subreddit))
 	if err != nil {
 		logger.WithError(err).Error("failed retrieving reddit feeds for subreddit")
 		return err
+	}
+
+	if filterGuild > 0 {
+		filtered := make([]*models.RedditFeed, 0)
+		for _, v := range config {
+			if v.GuildID == filterGuild {
+				filtered = append(filtered, v)
+			}
+		}
+
+		config = filtered
 	}
 
 	// Get the configs that listens to this subreddit, if any
@@ -162,20 +195,23 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		"subreddit":    post.Subreddit,
 	}).Debug("Found matched reddit post")
 
-	message, embed := CreatePostMessage(post)
+	message, embed := p.createPostMessage(post)
 
 	for _, item := range filteredItems {
 		idStr := strconv.FormatInt(item.ID, 10)
 
-		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
+		webhookUsername := "Reddit • YAGPDB"
 
 		qm := &mqueue.QueuedElement{
-			Guild:           item.GuildID,
-			Channel:         item.ChannelID,
+			GuildID:         item.GuildID,
+			ChannelID:       item.ChannelID,
 			Source:          "reddit",
-			SourceID:        idStr,
+			SourceItemID:    idStr,
 			UseWebhook:      true,
 			WebhookUsername: webhookUsername,
+			AllowedMentions: discordgo.AllowedMentions{
+				Parse: []discordgo.AllowedMentionType{},
+			},
 		}
 
 		if item.UseEmbeds {
@@ -205,9 +241,9 @@ OUTER:
 			}
 		}
 
-		limit := MaxPostsHourFast
+		limit := confMaxPostsHourFast.GetInt()
 		if p.Slow {
-			limit = MaxPostsHourSlow
+			limit = confMaxPostsHourSlow.GetInt()
 		}
 
 		// apply ratelimiting
@@ -236,7 +272,7 @@ OUTER:
 	return filteredItems
 }
 
-func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
+func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 	plainMessage := fmt.Sprintf("**%s**\n*by %s (<%s>)*\n",
 		html.UnescapeString(post.Title), post.Author, "https://redd.it/"+post.ID)
 
@@ -268,6 +304,14 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		plainMessage += plainBody
 	}
 
+	footer := &discordgo.MessageEmbedFooter{
+		Text: fmt.Sprintf("Fast feed from r/%s", post.Subreddit),
+	}
+
+	if p.Slow {
+		footer.Text = fmt.Sprintf("Slow feed from r/%s • %d ⬆ %d ⬇", post.Subreddit, post.Ups, post.Downs)
+	}
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:  "https://reddit.com/u/" + post.Author,
@@ -278,9 +322,10 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 			URL:  "https://reddit.com",
 		},
 		Description: "**" + html.UnescapeString(post.Title) + "**\n",
+		Timestamp:   time.Unix(int64(post.CreatedUtc), 0).Format(time.RFC3339),
+		Footer:      footer,
 	}
 	embed.URL = "https://redd.it/" + post.ID
-
 	if post.IsSelf {
 		//  Handle Self posts
 		embed.Title = "New self post"
@@ -332,7 +377,6 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		embed.Title += " [spoiler]"
 	}
 
-	plainMessage = plainMessage
 	return plainMessage, embed
 }
 

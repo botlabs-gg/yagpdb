@@ -1,14 +1,16 @@
 package serverstats
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/lib/pq"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/serverstats/messagestatscollector"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -16,12 +18,19 @@ const (
 	RedisKeyLastHourlyRan = "serverstats_last_hourly_worker_ran"
 )
 
+var (
+	confDisableCompression    = config.RegisterOption("yagpdb.serverstats.disable_compression", "Disables compression of serverstats", false)
+	confDisableNewCompression = config.RegisterOption("yagpdb.serverstats.disable_new_compression", "Disables compression of serverstats", false)
+)
+
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 
 func (p *Plugin) RunBackgroundWorker() {
-	go p.updateStatsLoop()
-	compressor := &Compressor{}
-	go compressor.runLoop(p)
+	compressorLegacy := &Compressor{}
+	go compressorLegacy.runLoopLegacy(p)
+
+	compressorNew := &Compressor{}
+	go compressorNew.runLoop(p)
 
 	err := StartMigrationToV2Format()
 	if err != nil {
@@ -30,28 +39,9 @@ func (p *Plugin) RunBackgroundWorker() {
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
-	wg.Add(1) // one extra since this is 2 workers
-
+	wg.Add(1)
 	p.stopStatsLoop <- wg
 	p.stopStatsLoop <- wg
-}
-
-func (p *Plugin) updateStatsLoop() {
-
-	cleanupTicker := time.NewTicker(time.Hour)
-
-	for {
-		select {
-		case <-cleanupTicker.C:
-			logger.Info("Cleaning up server stats")
-			started := time.Now()
-			p.cleanupOldStats(time.Now().Add(time.Hour * -30))
-			logger.Infof("Took %s to ckean up stats", time.Since(started))
-		case wg := <-p.stopStatsLoop:
-			wg.Done()
-			return
-		}
-	}
 }
 
 type Compressor struct {
@@ -59,12 +49,16 @@ type Compressor struct {
 }
 
 func (c *Compressor) runLoop(p *Plugin) {
+	time.Sleep(time.Second)
+
 	for {
-		_, wait, err := c.updateCompress(time.Now())
+		// find the next time we should run a compression
+		_, wait, err := c.updateCompress(time.Now(), false)
 		if err != nil {
-			wait = 0
-			logger.WithError(err).Error("failed compressing stats")
+			wait = time.Second
+			logger.WithError(err).Errorf("failed compressing stats: %+v", err)
 		}
+
 		logger.Info("wait is ", wait)
 		after := time.After(wait)
 
@@ -79,8 +73,40 @@ func (c *Compressor) runLoop(p *Plugin) {
 	}
 }
 
+func (c *Compressor) runLoopLegacy(p *Plugin) {
+	cleanupTicker := time.NewTicker(time.Hour * 6)
+	time.Sleep(time.Second)
+
+	for {
+		// find the next time we should run a compression
+		_, wait, err := c.updateCompress(time.Now(), true)
+		if err != nil {
+			wait = time.Second
+			logger.WithError(err).Errorf("failed compressing stats: %+v", err)
+		}
+
+		logger.Info("wait is ", wait)
+		after := time.After(wait)
+
+		select {
+		case wg := <-p.stopStatsLoop:
+			wg.Done()
+			logger.Infof("stopped compressor")
+			return
+		case <-after:
+			continue
+		case <-cleanupTicker.C:
+			// run cleanup of temporary stats
+			logger.Info("Cleaning up server stats")
+			started := time.Now()
+			p.cleanupOldStats(time.Now().Add(time.Hour * -30))
+			logger.Infof("Took %s to ckean up stats", time.Since(started))
+		}
+	}
+}
+
 // returns true if a compression was ran
-func (c *Compressor) updateCompress(t time.Time) (ran bool, next time.Duration, err error) {
+func (c *Compressor) updateCompress(t time.Time, legacy bool) (ran bool, next time.Duration, err error) {
 	truncatedDay := t.Truncate(time.Hour * 24)
 	if truncatedDay == c.lastCompressed {
 		// should not compress
@@ -90,12 +116,25 @@ func (c *Compressor) updateCompress(t time.Time) (ran bool, next time.Duration, 
 
 	started := time.Now()
 
-	err = c.RunCompression(truncatedDay)
+	if legacy {
+		if !confDisableCompression.GetBool() {
+			err = c.RunCompressionLegacy(truncatedDay)
+		}
+	} else {
+		if !confDisableNewCompression.GetBool() {
+			err = c.runCompression(t.AddDate(0, 0, -1))
+		}
+	}
+
 	if err != nil {
 		return true, 0, errors.WithStackIf(err)
 	}
 
-	logger.Infof("took %s to compress stats", time.Since(started))
+	if legacy {
+		logger.Infof("took %s to compress LEGACY stats", time.Since(started))
+	} else {
+		logger.Infof("took %s to compress NEW stats", time.Since(started))
+	}
 
 	c.lastCompressed = t
 
@@ -112,7 +151,7 @@ func (p *Plugin) getLastTimeRanHourly() time.Time {
 	return time.Unix(last, 0)
 }
 
-func (c *Compressor) RunCompression(t time.Time) error {
+func (c *Compressor) RunCompressionLegacy(t time.Time) error {
 	logger.Info("Compressing server stats...")
 
 	// first get a list of active guilds to clean
@@ -123,10 +162,12 @@ func (c *Compressor) RunCompression(t time.Time) error {
 
 	// process misc stats and message stats combined
 	for _, v := range activeGuildsMisc {
-		err := compressGuild(t, v, common.ContainsInt64Slice(activeGuildsMsgs, v), true)
+		err := compressGuildLegacy(t, v, common.ContainsInt64Slice(activeGuildsMsgs, v), true)
 		if err != nil {
 			return errors.WithStackIf(err)
 		}
+
+		time.Sleep(time.Millisecond * 10)
 	}
 
 	// process the message stats only
@@ -135,16 +176,18 @@ func (c *Compressor) RunCompression(t time.Time) error {
 			continue
 		}
 
-		err := compressGuild(t, v, true, false)
+		err := compressGuildLegacy(t, v, true, false)
 		if err != nil {
 			return errors.WithStackIf(err)
 		}
+
+		time.Sleep(time.Millisecond * 10)
 	}
 
 	return nil
 }
 
-func compressGuild(t time.Time, guildID int64, activeMsgs bool, misc bool) error {
+func compressGuildLegacy(t time.Time, guildID int64, activeMsgs bool, misc bool) error {
 	var result []*CompressedStats
 	var err error
 
@@ -397,104 +440,312 @@ func (p *Plugin) cleanupOldStats(t time.Time) error {
 	return nil
 }
 
-func (p *Plugin) RunCompressionLegacy() {
-	premiumServers, err := premium.AllGuildsOncePremium()
+func (c *Compressor) runCompression(t time.Time) error {
+	// check up to 5 days back
+	logger.Infof("Running compression, t is %d:%d: %s", t.Year(), t.YearDay(), t)
+	for i := 0; i < 5; i++ {
+		newT := t.AddDate(0, 0, -i)
+		year := newT.Year()
+		day := newT.YearDay()
+
+		err := c.runCompressionDay(year, day)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type GuildStatsFrame struct {
+	Messages      int
+	TotalMembers  int
+	OnlineMembers int
+	Joins         int
+	Leaves        int
+}
+
+const keyCompressionCompressionRanDays = "serverstats_compression_days_ran"
+
+func (c *Compressor) hasCompressionRan(year, day int) (bool, error) {
+	var ran bool
+	err := common.RedisPool.Do(radix.Cmd(&ran, "SISMEMBER", keyCompressionCompressionRanDays, fmt.Sprintf("%d:%d", year, day)))
+	return ran, err
+}
+
+func (c *Compressor) runCompressionDay(year, day int) error {
+	logger.Infof("Running compression for %d:%d", year, day)
+
+	alreadyRan, err := c.hasCompressionRan(year, day)
 	if err != nil {
-		logger.WithError(err).Error("[serverstats] failed retrieving premium guilds")
-		return
+		return err
 	}
 
-	// convert it to a slice
-	premiumSlice := make([]int64, 0, len(premiumServers))
-	for k, _ := range premiumServers {
-		premiumSlice = append(premiumSlice, k)
+	if alreadyRan {
+		logger.Infof("Stats compression already ran for %d: %d", year, day)
+		return c.cleanTempRedisStats(year, day)
 	}
 
-	numDelete := int64(0)
-
-	started := time.Now()
-	del, err := common.PQ.Exec("DELETE FROM server_stats_periods WHERE started < NOW() - INTERVAL '7 days' AND not (guild_id = ANY ($1))", pq.Int64Array(premiumSlice))
+	stats, err := c.collectStats(year, day)
 	if err != nil {
-		logger.WithError(err).Error("[serverstats] failed deleting old message stats")
-	} else if del != nil {
-		affected, _ := del.RowsAffected()
-		numDelete += affected
+		return errors.WithStackIf(err)
 	}
 
-	del, err = common.PQ.Exec("DELETE FROM server_stats_member_periods WHERE created_at < NOW() - INTERVAL '7 days' AND not (guild_id = ANY ($1))", pq.Int64Array(premiumSlice))
+	if len(stats) > 0 {
+		err = c.saveCollectedStats(year, day, stats)
+		if err != nil {
+			return err
+		}
+	} else {
+		logger.Infof("No stats for %d:%d", year, day)
+	}
+
+	return c.cleanTempRedisStats(year, day)
+}
+
+func (c *Compressor) cleanTempRedisStats(year, day int) error {
+	// clean message stats
+	var activeGuilds []int64
+	err := common.RedisPool.Do(radix.Cmd(&activeGuilds, "SMEMBERS", messagestatscollector.KeyActiveGuilds(year, day)))
 	if err != nil {
-		logger.WithError(err).Error("[serverstats] failed deleting old member stats")
-	} else if del != nil {
-		affected, _ := del.RowsAffected()
-		numDelete += affected
+		return errors.WithStackIf(err)
 	}
 
-	logger.Infof("[serverstats] Deleted %d records in %s", numDelete, time.Since(started))
+	for _, g := range activeGuilds {
+		err = common.RedisPool.Do(radix.Cmd(nil, "DEL", messagestatscollector.KeyMessageStats(g, year, day)))
+		if err != nil {
+			return errors.WithStackIf(err)
+		}
+	}
 
-	secondRunStarted := time.Now()
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", messagestatscollector.KeyActiveGuilds(year, day)))
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	// clean other stats
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", keyTotalMembers(year, day)))
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", keyOnlineMembers(year, day)))
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", keyJoinedMembers(year, day)))
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", keyLeftMembers(year, day)))
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	// finally, clean up this state of this day
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", keyCompressionCompressionRanDays, fmt.Sprintf("%d:%d", year, day)))
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	return err
+}
+
+func (c *Compressor) saveCollectedStats(year, day int, stats map[int64]*GuildStatsFrame) error {
+	t := time.Date(year, 1, day, 0, 0, 0, 0, time.UTC)
+
+	allPremiumGuilds, err := premium.AllGuildsOncePremium()
+	if err != nil {
+		return err
+	}
+
 	tx, err := common.PQ.Begin()
 	if err != nil {
-		logger.WithError(err).Error("failed starting transaction")
-		return
+		return err
 	}
 
-	totalDeleted := int64(0)
-	for g, v := range premiumServers {
-		if time.Since(v) < time.Hour*48 {
-			continue
-		}
-		result, err := tx.Exec("DELETE FROM server_stats_periods WHERE guild_id = $1 AND started > $2  AND NOW() - INTERVAL '7 days'  > started", g, v)
+	const updateQ = `INSERT INTO server_stats_periods_compressed 
+	(guild_id, t, premium, num_messages, num_members, max_online, joins, leaves, max_voice)
+	VALUES ($1, $2, $3,      $4,            $5,            $6,       $7,     $8,   $9)
+	ON CONFLICT (guild_id, t) DO UPDATE SET
+	num_messages = server_stats_periods_compressed.num_messages + $4,
+	num_members = GREATEST (server_stats_periods_compressed.num_members, $5),
+	max_online = GREATEST (server_stats_periods_compressed.max_online, $6),
+	max_voice = GREATEST (server_stats_periods_compressed.max_voice, $9),
+	joins = server_stats_periods_compressed.joins + $7,
+	leaves = server_stats_periods_compressed.leaves + $8;`
+
+	for g, s := range stats {
+		_, isPremium := allPremiumGuilds[g]
+
+		_, err = tx.Exec(updateQ, g, t, isPremium, s.Messages, s.TotalMembers, s.OnlineMembers, s.Joins, s.Leaves, 0)
 		if err != nil {
-			logger.WithError(err).WithField("guild", g).Error("[serverstats] failed running cleanup query on premium guild message stats")
 			tx.Rollback()
-			return
+			return errors.WithStackIf(err)
 		}
+	}
 
-		affected, _ := result.RowsAffected()
-		totalDeleted += affected
-
-		result, err = tx.Exec("DELETE FROM server_stats_member_periods WHERE guild_id = $1 AND created_at > $2  AND NOW() - INTERVAL '7 days'  > created_at", g, v)
-		if err != nil {
-			logger.WithError(err).WithField("guild", g).Error("[serverstats] failed running cleanup query on premium guild member stats")
-			tx.Rollback()
-			return
-		}
-
-		affected, _ = result.RowsAffected()
-		totalDeleted += affected
+	// mark this day as compressed
+	err = common.RedisPool.Do(radix.Cmd(nil, "SADD", keyCompressionCompressionRanDays, fmt.Sprintf("%d:%d", year, day)))
+	if err != nil {
+		tx.Rollback()
+		return errors.WithStackIf(err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		logger.WithError(err).Error("[serverstats] cleanup failed comitting transaction")
-		return
+		tx.Rollback()
+
+		// try to rollback marking this guild as compressed
+		err2 := common.RedisPool.Do(radix.Cmd(nil, "SREM", keyCompressionCompressionRanDays, fmt.Sprintf("%d:%d", year, day)))
+		if err2 != nil {
+			// this requires manual internvention to repair, broken connection to db or something in the middle of commit?
+			// but atleast this wont produce duplicate stats
+			logger.WithError(err2).Error("FAILED UN-MARKING GUILD AS COMPRESSED")
+		}
+
+		return errors.WithStackIf(err)
 	}
 
-	logger.Infof("[serverstats] slow premium specific cleanup took %s, deleted %d records (num premium %d)", time.Since(secondRunStarted), totalDeleted, len(premiumServers))
+	return nil
 }
 
-func getActiveServersList(key string, full bool) ([]int64, error) {
-	var guilds []int64
-	if full {
-		err := common.RedisPool.Do(radix.Cmd(&guilds, "SMEMBERS", "connected_guilds"))
-		return guilds, errors.WrapIf(err, "smembers conn_guilds")
-	}
-
-	var exists bool
-	if common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(&exists, "EXISTS", key)), "[serverstats] "+key, nil); !exists {
-		return guilds, nil // no guilds to process
-	}
-
-	err := common.RedisPool.Do(radix.Cmd(nil, "RENAME", key, key+"_processing"))
+func (c *Compressor) collectStats(year, day int) (map[int64]*GuildStatsFrame, error) {
+	stats, err := c.collectMessageStats(year, day)
 	if err != nil {
-		return guilds, errors.WrapIf(err, "rename")
+		return stats, errors.WithStackIf(err)
 	}
 
-	err = common.RedisPool.Do(radix.Cmd(&guilds, "SMEMBERS", key+"_processing"))
+	err = c.collectTotalMembers(year, day, stats)
 	if err != nil {
-		return guilds, errors.WrapIf(err, "smembers")
+		return stats, errors.WithStackIf(err)
 	}
 
-	common.LogIgnoreError(common.RedisPool.Do(radix.Cmd(nil, "DEL", "serverstats_active_guilds_processing")), "[serverstats] del "+key, nil)
-	return guilds, err
+	err = c.collectOnlineMembers(year, day, stats)
+	if err != nil {
+		return stats, errors.WithStackIf(err)
+	}
+
+	err = c.collectJoins(year, day, stats)
+	if err != nil {
+		return stats, errors.WithStackIf(err)
+	}
+
+	err = c.collectLeaves(year, day, stats)
+	if err != nil {
+		return stats, errors.WithStackIf(err)
+	}
+
+	return stats, nil
+}
+
+func (c *Compressor) collectMessageStats(year, day int) (map[int64]*GuildStatsFrame, error) {
+	var activeGuilds []int64
+	err := common.RedisPool.Do(radix.Cmd(&activeGuilds, "SMEMBERS", messagestatscollector.KeyActiveGuilds(year, day)))
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[int64]*GuildStatsFrame)
+	if len(activeGuilds) < 1 {
+		return result, nil
+	}
+
+	for _, g := range activeGuilds {
+		raw := make(map[int64]int64)
+		err = common.RedisPool.Do(radix.Cmd(&raw, "ZRANGE", messagestatscollector.KeyMessageStats(g, year, day), "0", "-1", "WITHSCORES"))
+		if err != nil {
+			return nil, err
+		}
+
+		combined := 0
+		for _, v := range raw {
+			combined += int(v)
+		}
+
+		result[g] = &GuildStatsFrame{
+			Messages: combined,
+		}
+	}
+
+	return result, nil
+}
+
+func (c *Compressor) collectTotalMembers(year, day int, stats map[int64]*GuildStatsFrame) error {
+	raw := make(map[int64]int64)
+	err := common.RedisPool.Do(radix.Cmd(&raw, "ZRANGE", keyTotalMembers(year, day), "0", "-1", "WITHSCORES"))
+	if err != nil {
+		return err
+	}
+
+	for g, v := range raw {
+		if current, ok := stats[g]; ok {
+			current.TotalMembers += int(v)
+		} else {
+			stats[g] = &GuildStatsFrame{
+				TotalMembers: int(v),
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Compressor) collectJoins(year, day int, stats map[int64]*GuildStatsFrame) error {
+	raw := make(map[int64]int64)
+	err := common.RedisPool.Do(radix.Cmd(&raw, "ZRANGE", keyJoinedMembers(year, day), "0", "-1", "WITHSCORES"))
+	if err != nil {
+		return err
+	}
+
+	for g, v := range raw {
+		if current, ok := stats[g]; ok {
+			current.Joins += int(v)
+		} else {
+			stats[g] = &GuildStatsFrame{
+				Joins: int(v),
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Compressor) collectLeaves(year, day int, stats map[int64]*GuildStatsFrame) error {
+	raw := make(map[int64]int64)
+	err := common.RedisPool.Do(radix.Cmd(&raw, "ZRANGE", keyLeftMembers(year, day), "0", "-1", "WITHSCORES"))
+	if err != nil {
+		return err
+	}
+
+	for g, v := range raw {
+		if current, ok := stats[g]; ok {
+			current.Leaves += int(v)
+		} else {
+			stats[g] = &GuildStatsFrame{
+				Leaves: int(v),
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Compressor) collectOnlineMembers(year, day int, stats map[int64]*GuildStatsFrame) error {
+	raw := make(map[int64]int64)
+	err := common.RedisPool.Do(radix.Cmd(&raw, "ZRANGE", keyOnlineMembers(year, day), "0", "-1", "WITHSCORES"))
+	if err != nil {
+		return err
+	}
+
+	for g, v := range raw {
+		if current, ok := stats[g]; ok {
+			current.OnlineMembers += int(v)
+		} else {
+			stats[g] = &GuildStatsFrame{
+				OnlineMembers: int(v),
+			}
+		}
+	}
+
+	return nil
 }

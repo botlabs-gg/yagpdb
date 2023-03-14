@@ -3,19 +3,27 @@ package rsvp
 //go:generate sqlboiler --no-hooks psql
 
 import (
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/timezonecompanion/trules"
-	"github.com/olebedev/when"
-	"github.com/olebedev/when/rules"
-	wcommon "github.com/olebedev/when/rules/common"
-	"github.com/olebedev/when/rules/en"
 	"sync"
+
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/when"
+	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
+	wcommon "github.com/botlabs-gg/yagpdb/v2/lib/when/rules/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules/en"
+	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion/trules"
 )
 
 var (
 	logger = common.GetPluginLogger(&Plugin{})
 
 	dateParser *when.Parser
+)
+
+const (
+	EventAccepted  = "event_accepted"
+	EventRejected  = "event_rejected"
+	EventWaitlist  = "event_waitlist"
+	EventUndecided = "event_undecided"
 )
 
 func init() {
@@ -30,7 +38,6 @@ func init() {
 		trules.Hour(rules.Override),
 		trules.HourMinute(rules.Override),
 		en.Deadline(rules.Override),
-		en.PastTime(rules.Override),
 		en.ExactMonthDate(rules.Override),
 	)
 	dateParser.Add(wcommon.All...)

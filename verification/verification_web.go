@@ -2,6 +2,7 @@ package verification
 
 import (
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -11,32 +12,42 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/jonas747/yagpdb/verification/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/verification/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"goji.io/pat"
 )
 
+//go:embed assets/verification_control_panel.html
+var PageHTMLControlPanel string
+
+//go:embed assets/verification_verify_page.html
+var PageHTMLVerifyPage string
+
 type FormData struct {
 	Enabled             bool
-	VerifiedRole        int64  `valid:"role"`
+	VerifiedRole        int64  `valid:"role,true"`
 	PageContent         string `valid:",10000"`
-	KickUnverifiedAfter int
-	WarnUnverifiedAfter int
+	KickUnverifiedAfter int    `valid:"0,"`
+	WarnUnverifiedAfter int    `valid:"0,"`
 	WarnMessage         string `valid:"template,10000"`
 	DMMessage           string `valid:"template,10000"`
 	LogChannel          int64  `valid:"channel,true"`
 }
 
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "verification_updated_settings", FormatString: "Updated verification settings"})
+
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../verification/assets/verification_control_panel.html", "templates/plugins/verification_control_panel.html")
-	web.LoadHTMLTemplate("../../verification/assets/verification_verify_page.html", "templates/plugins/verification_verify_page.html")
+	web.AddHTMLTemplate("verification/assets/verification_control_panel.html", PageHTMLControlPanel)
+	web.AddHTMLTemplate("verification/assets/verification_verify_page.html", PageHTMLVerifyPage)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Verification",
@@ -45,15 +56,15 @@ func (p *Plugin) InitWeb() {
 	})
 
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_verification_settings")
-	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated verification settings")
+	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{})
 
-	web.CPMux.Handle(pat.Get("/verification"), web.RequireBotMemberMW(web.RequireGuildChannelsMiddleware(getHandler)))
-	web.CPMux.Handle(pat.Get("/verification/"), web.RequireBotMemberMW(web.RequireGuildChannelsMiddleware(getHandler)))
+	web.CPMux.Handle(pat.Get("/verification"), web.RequireBotMemberMW(getHandler))
+	web.CPMux.Handle(pat.Get("/verification/"), web.RequireBotMemberMW(getHandler))
 
-	web.CPMux.Handle(pat.Post("/verification"), web.RequireGuildChannelsMiddleware(postHandler))
+	web.CPMux.Handle(pat.Post("/verification"), postHandler)
 
 	getVerifyPageHandler := web.ControllerHandler(p.handleGetVerifyPage, "verification_verify_page")
-	postVerifyPageHandler := web.ControllerPostHandler(p.handlePostVerifyPage, getVerifyPageHandler, nil, "")
+	postVerifyPageHandler := web.ControllerPostHandler(p.handlePostVerifyPage, getVerifyPageHandler, nil)
 	web.ServerPublicMux.Handle(pat.Get("/verify/:user_id/:token"), getVerifyPageHandler)
 	web.ServerPublicMux.Handle(pat.Post("/verify/:user_id/:token"), postVerifyPageHandler)
 }
@@ -70,12 +81,21 @@ func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.
 		err = nil
 	}
 
+	roleInvalid := true
+	for _, role := range g.Roles {
+		if role.ID == settings.VerifiedRole {
+			roleInvalid = false
+			break
+		}
+	}
+
 	if settings != nil && settings.DMMessage == "" {
 		settings.DMMessage = DefaultDMMessage
 	}
 
 	templateData["DefaultPageContent"] = DefaultPageContent
 	templateData["PluginSettings"] = settings
+	templateData["RoleInvalid"] = roleInvalid
 
 	return templateData, err
 }
@@ -101,6 +121,9 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 	columns := boil.Whitelist("enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel", "dm_message")
 	columnsCreate := boil.Whitelist("guild_id", "enabled", "verified_role", "page_content", "kick_unverified_after", "warn_unverified_after", "warn_message", "log_channel", "dm_message")
 	err := model.UpsertG(ctx, true, []string{"guild_id"}, columns, columnsCreate)
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
+	}
 	return templateData, err
 }
 
@@ -183,6 +206,9 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	valid, err := p.checkCAPTCHAResponse(r.FormValue("g-recaptcha-response"))
+	if err != nil {
+		logrus.WithError(err).Error("Failed recaptcha response")
+	}
 
 	token := pat.Param(r, "token")
 	userID, _ := strconv.ParseInt(pat.Param(r, "user_id"), 10, 64)
@@ -297,7 +323,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	format := `<ul>
-	<li>Enabled: %s</li>
+	<li>Status: %s</li>
 	<li>Role: <code>%s</code> %s</li>
 </ul>`
 
@@ -311,7 +337,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	roleStr := "none / unknown"
 	indicatorRole := ""
-	if role := ag.Role(settings.VerifiedRole); role != nil {
+	if role := ag.GetRole(settings.VerifiedRole); role != nil {
 		roleStr = html.EscapeString(role.Name)
 		indicatorRole = web.Indicator(true)
 	} else {

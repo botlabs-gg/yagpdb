@@ -13,6 +13,23 @@ var (
 	addIndexRegex            = regexp.MustCompile(`(?i)create (unique )?index if not exists ([0-9a-z_]*) on ([0-9a-z_]*)`)
 )
 
+type DBSchema struct {
+	Name    string
+	Schemas []string
+}
+
+var schemasToInit = make([]*DBSchema, 0)
+
+func RegisterDBSchemas(name string, schemas ...string) {
+	schemasToInit = append(schemasToInit, &DBSchema{Name: name, Schemas: schemas})
+}
+
+func initQueuedSchemas() {
+	for _, v := range schemasToInit {
+		InitSchemas(v.Name, v.Schemas...)
+	}
+}
+
 func initSchema(schema string, name string) {
 	if confNoSchemaInit.GetBool() {
 		return
@@ -20,7 +37,7 @@ func initSchema(schema string, name string) {
 
 	skip, err := checkSkipSchemaInit(schema, name)
 	if err != nil {
-		logger.WithError(err).Error("Failed checking we we should skip schema: ", schema)
+		logger.WithError(err).Error("Failed checking if we should skip schema: ", schema)
 	}
 
 	if skip {

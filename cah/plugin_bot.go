@@ -3,14 +3,14 @@ package cah
 import (
 	"fmt"
 
-	"github.com/jonas747/cardsagainstdiscord"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/cardsagainstdiscord"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
 )
 
 const ShardMigrationEvtGame = 110
@@ -51,31 +51,20 @@ var (
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, func(evt *eventsystem.EventData) {
-		switch t := evt.EvtInterface.(type) {
-		case *discordgo.MessageCreate:
-			if t.GuildID == 0 {
-				return
-			}
-
-			go p.Manager.HandleMessageCreate(t)
-		case *discordgo.MessageReactionAdd:
-			if t.GuildID == 0 {
-				return
-			}
-
-			go p.Manager.HandleReactionAdd(t)
+		ic := evt.EvtInterface.(*discordgo.InteractionCreate)
+		if ic.GuildID == 0 {
+			return
 		}
-	}, eventsystem.EventMessageReactionAdd, eventsystem.EventMessageCreate)
+		go p.Manager.HandleInteractionCreate(ic)
+	}, eventsystem.EventInteractionCreate)
 
-	pubsub.AddHandler("dm_reaction", func(evt *pubsub.Event) {
-		dataCast := evt.Data.(*discordgo.MessageReactionAdd)
-		go p.Manager.HandleReactionAdd(dataCast)
-	}, discordgo.MessageReactionAdd{})
-
-	pubsub.AddHandler("dm_message", func(evt *pubsub.Event) {
-		dataCast := evt.Data.(*discordgo.MessageCreate)
-		go p.Manager.HandleMessageCreate(dataCast)
-	}, discordgo.MessageCreate{})
+	pubsub.AddHandler("dm_interaction", func(evt *pubsub.Event) {
+		dataCast := evt.Data.(*discordgo.InteractionCreate)
+		if dataCast.Type != discordgo.InteractionMessageComponent && dataCast.Type != discordgo.InteractionModalSubmit {
+			return
+		}
+		go p.Manager.HandleCahInteraction(dataCast)
+	}, discordgo.InteractionCreate{})
 }
 
 func (p *Plugin) Status() (string, string) {

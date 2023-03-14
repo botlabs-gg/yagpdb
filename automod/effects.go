@@ -5,14 +5,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/automod/models"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -91,7 +92,7 @@ func (del *DeleteMessagesEffect) Description() (description string) {
 
 func (del *DeleteMessagesEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name:    "Number of messages",
 			Key:     "NumMessages",
 			Kind:    SettingTypeInt,
@@ -99,7 +100,7 @@ func (del *DeleteMessagesEffect) UserSettings() []*SettingDef {
 			Max:     100,
 			Default: 3,
 		},
-		&SettingDef{
+		{
 			Name:    "Max age (seconds)",
 			Key:     "TimeLimit",
 			Kind:    SettingTypeInt,
@@ -115,70 +116,44 @@ func (del *DeleteMessagesEffect) Apply(ctxData *TriggeredRuleData, settings inte
 	settingsCast := settings.(*DeleteMessagesEffectData)
 	timeLimit := time.Now().Add(-time.Second * time.Duration(settingsCast.TimeLimit))
 
-	ctxData.GS.RLock()
-	defer ctxData.GS.RUnlock()
-
 	var channel *dstate.ChannelState
 	if ctxData.CS != nil {
 		channel = ctxData.CS
 	} else {
-
-		// no channel in context, attempt to find the last channel the user spoke in
-		var lastMessage *dstate.MessageState
-
-		for _, c := range ctxData.GS.Channels {
-			for i := len(c.Messages) - 1; i >= 0; i-- {
-				cMsg := c.Messages[i]
-
-				if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreated) {
-					break
-				}
-
-				if lastMessage != nil && lastMessage.ParsedCreated.After(cMsg.ParsedCreated) {
-					break
-				}
-
-				if cMsg.Author.ID == ctxData.MS.ID {
-					channel = c
-					lastMessage = cMsg
-					break
-				}
-			}
-		}
+		// do nothing for now
+		return nil
 	}
 
 	if channel == nil {
 		return nil
 	}
 
-	messages := make([]int64, 0, 100)
+	messages := bot.State.GetMessages(ctxData.GS.ID, ctxData.CS.ID, &dstate.MessagesQuery{
+		Limit: 1000,
+	})
 
-	for i := len(channel.Messages) - 1; i >= 0; i-- {
-		cMsg := channel.Messages[i]
+	deleteMessages := make([]int64, 0)
 
-		if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreated) {
+	for _, cMsg := range messages {
+		if settingsCast.TimeLimit > 0 && timeLimit.After(cMsg.ParsedCreatedAt) {
 			break
 		}
 
-		if cMsg.Author.ID != ctxData.MS.ID {
+		if cMsg.Author.ID != ctxData.MS.User.ID {
 			continue
 		}
 
-		messages = append(messages, cMsg.ID)
-		if len(messages) >= 100 || len(messages) >= settingsCast.NumMessages {
+		deleteMessages = append(deleteMessages, cMsg.ID)
+		if len(deleteMessages) >= 100 || len(deleteMessages) >= settingsCast.NumMessages {
 			break
 		}
-	}
-
-	if len(messages) < 0 {
-		return nil
 	}
 
 	go func(cs *dstate.ChannelState, messages []int64) {
 		// deleting messages too fast can sometimes make them still show in the discord client even after deleted
 		time.Sleep(500 * time.Millisecond)
-		bot.MessageDeleteQueue.DeleteMessages(cs.Guild.ID, cs.ID, messages...)
-	}(channel, messages)
+		bot.MessageDeleteQueue.DeleteMessages(cs.GuildID, cs.ID, messages...)
+	}(channel, deleteMessages)
 
 	return nil
 }
@@ -213,13 +188,13 @@ func (vio *AddViolationEffect) Description() (description string) {
 
 func (vio *AddViolationEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
-			Name:    "Name",
-			Key:     "Name",
-			Kind:    SettingTypeString,
-			Min:     1,
-			Max:     50,
-			Default: "violation name",
+		{
+			Name:        "Name",
+			Key:         "Name",
+			Kind:        SettingTypeString,
+			Min:         1,
+			Max:         50,
+			Placeholder: "Enter name for the violation",
 		},
 	}
 }
@@ -228,7 +203,7 @@ func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interf
 	settingsCast := settings.(*AddViolationEffectData)
 	violation := &models.AutomodViolation{
 		GuildID: ctxData.GS.ID,
-		UserID:  ctxData.MS.ID,
+		UserID:  ctxData.MS.User.ID,
 		RuleID:  null.Int64From(ctxData.CurrentRule.Model.ID),
 		Name:    settingsCast.Name,
 	}
@@ -274,7 +249,7 @@ func (kick *KickUserEffect) Description() (description string) {
 
 func (kick *KickUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Custom message (empty for default)",
 			Key:  "CustomReason",
 			Min:  0,
@@ -294,7 +269,7 @@ func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		reason += ctxData.ConstructReason(true)
 	}
 
-	err := moderation.KickUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS.DGoUser())
+	err := moderation.KickUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, &ctxData.MS.User, -1)
 	return err
 }
 
@@ -307,7 +282,7 @@ func (kick *KickUserEffect) MergeDuplicates(data []interface{}) interface{} {
 type BanUserEffect struct{}
 
 type BanUserEffectData struct {
-	Duration     	  int
+	Duration          int
 	CustomReason      string `valid:",0,150,trimspace"`
 	MessageDeleteDays int
 }
@@ -330,20 +305,20 @@ func (ban *BanUserEffect) Description() (description string) {
 
 func (ban *BanUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name:    "Duration (minutes, 0 for permanent)",
 			Key:     "Duration",
 			Kind:    SettingTypeInt,
 			Default: 0,
 		},
-		&SettingDef{
+		{
 			Name: "Custom message (empty for default)",
 			Key:  "CustomReason",
 			Min:  0,
 			Max:  150,
 			Kind: SettingTypeString,
 		},
-		&SettingDef{
+		{
 			Name:    "Number of days of messages to delete (0 to 7)",
 			Key:     "MessageDeleteDays",
 			Kind:    SettingTypeInt,
@@ -365,7 +340,7 @@ func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	}
 
 	duration := time.Duration(settingsCast.Duration) * time.Minute
-	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, ctxData.MS.DGoUser(), duration, settingsCast.MessageDeleteDays)
+	err := moderation.BanUserWithDuration(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, &ctxData.MS.User, duration, settingsCast.MessageDeleteDays)
 	return err
 }
 
@@ -392,14 +367,14 @@ func (mute *MuteUserEffect) DataType() interface{} {
 
 func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name:    "Duration (minutes, 0 for permanent)",
 			Key:     "Duration",
-			Min:  	 0,
+			Min:     0,
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
-		&SettingDef{
+		{
 			Name: "Custom message (empty for default)",
 			Key:  "CustomReason",
 			Min:  0,
@@ -437,6 +412,76 @@ func (mute *MuteUserEffect) MergeDuplicates(data []interface{}) interface{} {
 
 ///////////////////////////////////////////////////////
 
+type TimeoutUserEffect struct{}
+
+type TimeoutUserEffectData struct {
+	Duration     int    `valid:",0,40320,trimspace"`
+	CustomReason string `valid:",0,150,trimspace"`
+}
+
+func (timeout *TimeoutUserEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (timeout *TimeoutUserEffect) DataType() interface{} {
+	return &TimeoutUserEffectData{}
+}
+
+func (timeout *TimeoutUserEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name:    "Duration (minutes)",
+			Key:     "Duration",
+			Min:     int(moderation.MinTimeOutDuration.Minutes()),
+			Max:     int(moderation.MaxTimeOutDuration.Minutes()),
+			Kind:    SettingTypeInt,
+			Default: int(moderation.DefaultTimeoutDuration.Minutes()),
+		},
+		{
+			Name: "Custom message (empty for default)",
+			Key:  "CustomReason",
+			Min:  0,
+			Max:  150,
+			Kind: SettingTypeString,
+		},
+	}
+}
+
+func (timeout *TimeoutUserEffect) Name() (name string) {
+	return "Timeout user"
+}
+
+func (timeout *TimeoutUserEffect) Description() (description string) {
+	return "Timeout the user"
+}
+
+func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	// if a user is timed out, do not apply the effect again.
+	member := ctxData.MS.Member
+	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
+		return nil
+	}
+
+	settingsCast := settings.(*TimeoutUserEffectData)
+
+	reason := "Automoderator:\n"
+	if settingsCast.CustomReason != "" {
+		reason += settingsCast.CustomReason
+	} else {
+		reason += ctxData.ConstructReason(true)
+	}
+
+	duration := time.Duration(settingsCast.Duration) * time.Minute
+	err := moderation.TimeoutUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, reason, &ctxData.MS.User, duration)
+	return err
+}
+
+func (timeout *TimeoutUserEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
+}
+
+///////////////////////////////////////////////////////
+
 type WarnUserEffect struct{}
 
 type WarnUserEffectData struct {
@@ -453,7 +498,7 @@ func (warn *WarnUserEffect) DataType() interface{} {
 
 func (warn *WarnUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Custom message (empty for default)",
 			Key:  "CustomReason",
 			Min:  0,
@@ -481,7 +526,7 @@ func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface
 		reason += ctxData.ConstructReason(true)
 	}
 
-	err := moderation.WarnUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, ctxData.MS.DGoUser(), reason)
+	err := moderation.WarnUser(nil, ctxData.GS.ID, ctxData.CS, ctxData.Message, common.BotUser, &ctxData.MS.User, reason)
 	return err
 }
 
@@ -507,7 +552,7 @@ func (sn *SetNicknameEffect) DataType() interface{} {
 
 func (sn *SetNicknameEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "New Nickname (empty for removal)",
 			Key:  "NewName",
 			Min:  0,
@@ -528,18 +573,13 @@ func (sn *SetNicknameEffect) Description() (description string) {
 func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*SetNicknameEffectData)
 
-	curNick := ""
-	ctxData.GS.RLock()
-	curNick = ctxData.MS.Nick
-	ctxData.GS.RUnlock()
-
-	if curNick == settingsCast.NewName {
+	if ctxData.MS.Member.Nick == settingsCast.NewName {
 		// Avoid infinite recursion
 		return nil
 	}
 
 	logger.WithField("guild", ctxData.GS.ID).Info("set nickname: ", settingsCast.NewName)
-	err := common.BotSession.GuildMemberNickname(ctxData.GS.ID, ctxData.MS.ID, settingsCast.NewName)
+	err := common.BotSession.GuildMemberNickname(ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.NewName)
 	return err
 }
 
@@ -565,7 +605,7 @@ func (rv *ResetViolationsEffect) DataType() interface{} {
 
 func (rv *ResetViolationsEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name:    "Name",
 			Key:     "Name",
 			Default: "name",
@@ -586,7 +626,7 @@ func (rv *ResetViolationsEffect) Description() (description string) {
 
 func (rv *ResetViolationsEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*ResetViolationsEffectData)
-	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.ID, settingsCast.Name)).DeleteAll(context.Background(), common.PQ)
+	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.Name)).DeleteAll(context.Background(), common.PQ)
 	return err
 }
 
@@ -609,7 +649,7 @@ func (gf *GiveRoleEffect) DataType() interface{} {
 
 func (gf *GiveRoleEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name:    "Duration in seconds, 0 for permanent",
 			Key:     "Duration",
 			Default: 0,
@@ -617,7 +657,7 @@ func (gf *GiveRoleEffect) UserSettings() []*SettingDef {
 			Max:     604800,
 			Kind:    SettingTypeInt,
 		},
-		&SettingDef{
+		{
 			Name: "Role",
 			Key:  "Role",
 			Kind: SettingTypeRole,
@@ -646,7 +686,7 @@ func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}
 	}
 
 	if settingsCast.Duration > 0 {
-		err := scheduledevents2.ScheduleRemoveRole(context.Background(), ctxData.GS.ID, ctxData.MS.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
+		err := scheduledevents2.ScheduleRemoveRole(context.Background(), ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
 		if err != nil {
 			return err
 		}
@@ -674,7 +714,7 @@ func (rf *RemoveRoleEffect) DataType() interface{} {
 
 func (rf *RemoveRoleEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name:    "Duration in seconds, 0 for permanent",
 			Key:     "Duration",
 			Default: 0,
@@ -682,7 +722,7 @@ func (rf *RemoveRoleEffect) UserSettings() []*SettingDef {
 			Max:     604800,
 			Kind:    SettingTypeInt,
 		},
-		&SettingDef{
+		{
 			Name: "Role",
 			Key:  "Role",
 			Kind: SettingTypeRole,
@@ -701,6 +741,10 @@ func (rf *RemoveRoleEffect) Description() (description string) {
 func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*RemoveRoleEffectData)
 
+	if !common.ContainsInt64Slice(ctxData.MS.Member.Roles, settingsCast.Role) {
+		return nil
+	}
+
 	err := common.RemoveRoleDS(ctxData.MS, settingsCast.Role)
 	if err != nil {
 		if code, _ := common.DiscordError(err); code != 0 {
@@ -711,13 +755,123 @@ func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface
 	}
 
 	if settingsCast.Duration > 0 {
-		err := scheduledevents2.ScheduleAddRole(context.Background(), ctxData.GS.ID, ctxData.MS.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
+		err := scheduledevents2.ScheduleAddRole(context.Background(), ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.Role, time.Now().Add(time.Second*time.Duration(settingsCast.Duration)))
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+/////////////////////////////////////////////////////////////
+
+type SendChannelMessageEffectData struct {
+	CustomReason string `valid:",0,280,trimspace"`
+	Duration     int    `valid:",0,3600,trimspace"`
+	PingUser     bool
+	LogChannel   int64
+}
+
+type SendChannelMessageEffect struct{}
+
+func (send *SendChannelMessageEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (send *SendChannelMessageEffect) DataType() interface{} {
+	return &SendChannelMessageEffectData{}
+}
+
+func (send *SendChannelMessageEffect) Name() (name string) {
+	return "Send Message"
+}
+
+func (send *SendChannelMessageEffect) Description() (description string) {
+	return "Sends the message on the channel the rule was triggered"
+}
+
+func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name: "Custom message",
+			Key:  "CustomReason",
+			Min:  0,
+			Max:  280,
+			Kind: SettingTypeString,
+		},
+		{
+			Name:    "Delete sent message after x seconds (0 for non-deletion)",
+			Key:     "Duration",
+			Kind:    SettingTypeInt,
+			Default: 0,
+			Min:     0,
+			Max:     3600,
+		},
+		{
+			Name:    "Ping user committing the infraction",
+			Key:     "PingUser",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
+		{
+			Name:    "Channel to send message in (Leave None to send message in same channel)",
+			Key:     "LogChannel",
+			Kind:    SettingTypeChannel,
+			Default: nil,
+		},
+	}
+}
+
+func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	// Ignore bots
+	if ctxData.MS.User.Bot {
+		return nil
+	}
+
+	settingsCast := settings.(*SendChannelMessageEffectData)
+
+	// If we dont have any channel data, we can't send a message
+	if ctxData.CS == nil && settingsCast.LogChannel == 0 {
+		return nil
+	}
+
+	msgSend := &discordgo.MessageSend{}
+
+	if settingsCast.PingUser {
+		msgSend.Content = "<@" + discordgo.StrID(ctxData.MS.User.ID) + ">\n"
+		msgSend.AllowedMentions = discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+		}
+	}
+
+	msgSend.Content += "Automoderator:\n"
+	if settingsCast.CustomReason != "" {
+		msgSend.Content += settingsCast.CustomReason
+	} else {
+		msgSend.Content += ctxData.ConstructReason(true)
+	}
+
+	var logChannel int64
+	if settingsCast.LogChannel != 0 {
+		logChannel = settingsCast.LogChannel
+	} else {
+		logChannel = ctxData.CS.ID
+	}
+
+	message, err := common.BotSession.ChannelMessageSendComplex(logChannel, msgSend)
+	if err != nil {
+		logger.WithError(err).Error("Failed to send message for AutomodV2")
+		return err
+	}
+	if settingsCast.Duration > 0 && message != nil {
+		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, logChannel, message.ID, settingsCast.Duration)
+	}
+	return nil
+}
+
+func (send *SendChannelMessageEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0] // no user data
 }
 
 /////////////////////////////////////////////////////////////
@@ -742,7 +896,7 @@ func (slow *EnableChannelSlowmodeEffect) DataType() interface{} {
 
 func (slow *EnableChannelSlowmodeEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name:    "Duration in seconds, 0 for permanent",
 			Key:     "Duration",
 			Default: 0,
@@ -750,7 +904,7 @@ func (slow *EnableChannelSlowmodeEffect) UserSettings() []*SettingDef {
 			Max:     604800,
 			Kind:    SettingTypeInt,
 		},
-		&SettingDef{
+		{
 			Name:    "Ratelimit in seconds between messages per user",
 			Key:     "Ratelimit",
 			Default: 0,

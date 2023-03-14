@@ -3,13 +3,14 @@ package run
 import (
 	"bytes"
 	"fmt"
-	"github.com/jonas747/yagpdb/common/config"
 	"os"
 	"sort"
 	"strings"
 
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 )
 
 func GenCommandsDocs() {

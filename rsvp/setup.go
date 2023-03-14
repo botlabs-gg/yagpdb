@@ -10,13 +10,14 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	"github.com/jonas747/yagpdb/rsvp/models"
-	"github.com/jonas747/yagpdb/timezonecompanion"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/rsvp/models"
+	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -51,6 +52,13 @@ type SetupSession struct {
 	LastAction time.Time
 	stopCH     chan bool
 	stopped    bool
+
+	// the following fields are only set if 1) sendInitialMessage was called
+	// with interaction data and 2) the interaction response was sent
+	// successfully
+
+	followupMessageID int64
+	interactionToken  string
 }
 
 func (s *SetupSession) handleMessage(m *discordgo.Message) {
@@ -88,7 +96,7 @@ func (s *SetupSession) handleMessage(m *discordgo.Message) {
 func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 	targetChannel := int64(0)
 
-	gs := bot.State.Guild(true, m.GuildID)
+	gs := bot.State.GetGuild(m.GuildID)
 	if gs == nil {
 		logger.WithField("guild", m.GuildID).Error("Guild not found")
 		return
@@ -101,27 +109,25 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 		// channel mention
 		idStr := m.Content[2 : len(m.Content)-1]
 		if parsed, err := strconv.ParseInt(idStr, 10, 64); err == nil {
-			if gs.Channel(true, parsed) != nil {
+			if gs.GetChannel(parsed) != nil {
 				targetChannel = parsed
 			}
 		}
 	} else {
 		// search by name
 		nameSearch := strings.ReplaceAll(m.Content, " ", "-")
-		gs.RLock()
 		for _, v := range gs.Channels {
 			if strings.EqualFold(v.Name, nameSearch) {
 				targetChannel = v.ID
 				break
 			}
 		}
-		gs.RUnlock()
 	}
 
 	if targetChannel == 0 {
 		// search by ID
 		if parsed, err := strconv.ParseInt(m.Content, 10, 64); err == nil {
-			if gs.Channel(true, parsed) != nil {
+			if gs.GetChannel(parsed) != nil {
 				targetChannel = parsed
 			}
 		}
@@ -132,7 +138,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 		return
 	}
 
-	hasPerms, err := bot.AdminOrPermMS(targetChannel, dstate.MSFromDGoMember(gs, m.Member), discordgo.PermissionSendMessages)
+	hasPerms, err := bot.AdminOrPermMS(m.GuildID, targetChannel, dstate.MemberStateFromMember(m.Member), discordgo.PermissionSendMessages)
 	if err != nil {
 		s.sendMessage("Failed retrieving your pems, check with bot owner")
 		logger.WithError(err).WithField("guild", gs.ID).Error("failed calculating permissions")
@@ -195,7 +201,7 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 
 	in := common.HumanizeDuration(common.DurationPrecisionMinutes, t.Time.Sub(now))
 
-	s.sendMessage("Set the starting time of the event to **%s** (in **%s**), is this correct? (`yes/no`)", t.Time.Format("02 Jan 2006 15:04 MST"), in)
+	s.sendMessage("Set the starting time of the event to **<t:%d>** (%s) (in **%s**), is this correct? (`yes/no`)", t.Time.Unix(), t.Time.UTC().Format("02 Jan 2006 15:04 MST"), in)
 }
 
 func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) {
@@ -215,7 +221,11 @@ func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) 
 func (s *SetupSession) Finish() {
 
 	// reserve the message
-	reservedMessage, err := common.BotSession.ChannelMessageSendEmbed(s.Channel, &discordgo.MessageEmbed{Description: "Setting up RSVP Event..."})
+	reservedMessage, err := common.BotSession.ChannelMessageSendComplex(s.Channel, &discordgo.MessageSend{
+		Embeds:     []*discordgo.MessageEmbed{{Description: "Setting up RSVP Event..."}},
+		Components: createInteractionButtons(),
+	})
+
 	if err != nil {
 		if code, _ := common.DiscordError(err); code != 0 {
 			if code == discordgo.ErrCodeMissingPermissions || code == discordgo.ErrCodeMissingAccess {
@@ -266,13 +276,6 @@ func (s *SetupSession) Finish() {
 		return
 	}
 
-	err = AddReactions(m.ChannelID, m.MessageID)
-	if err != nil {
-		m.DeleteG(context.Background())
-		s.abortError("failed adding reactions", err)
-		return
-	}
-
 	err = scheduledevents2.ScheduleEvent("rsvp_update_session", m.GuildID, NextUpdateTime(m), m.MessageID)
 	if err != nil {
 		m.DeleteG(context.Background())
@@ -289,6 +292,10 @@ func (s *SetupSession) Finish() {
 	}
 
 	common.BotSession.ChannelMessagesBulkDelete(s.SetupChannel, toDelete)
+	if s.followupMessageID != 0 {
+		common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, s.interactionToken)
+		common.BotSession.DeleteFollowupMessage(common.BotApplication.ID, s.interactionToken, s.followupMessageID)
+	}
 }
 
 func (s *SetupSession) abortError(msg string, err error) {
@@ -355,22 +362,26 @@ func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
 	}
 }
 
-const (
-	EmojiJoining    = "✅"
-	EmojiMaybe      = "❔"
-	EmojiNotJoining = "❌"
-	EmojiWaitlist   = "🕐"
-)
-
-var EventReactions = []string{EmojiJoining, EmojiNotJoining, EmojiWaitlist, EmojiMaybe}
-
-func AddReactions(channelID, messageID int64) error {
-	for _, r := range EventReactions {
-		err := common.BotSession.MessageReactionAdd(channelID, messageID, r)
-		if err != nil {
-			return err
-		}
+func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...interface{}) {
+	send := &discordgo.MessageSend{Content: "[RSVP Event Setup]: " + fmt.Sprintf(msgf, args...)}
+	msgs, err := data.SendFollowupMessage(send, discordgo.AllowedMentions{})
+	if err != nil {
+		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
+		return
 	}
 
-	return nil
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		s.followupMessageID = msgs[0].ID
+		s.interactionToken = data.SlashCommandTriggerData.Interaction.Token
+	default:
+		s.setupMessages = append(s.setupMessages, msgs[0].ID)
+	}
 }
+
+const (
+	EmojiJoining    = "✓"
+	EmojiMaybe      = "❔"
+	EmojiNotJoining = "X"
+	EmojiWaitlist   = "🕐"
+)

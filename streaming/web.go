@@ -2,19 +2,24 @@ package streaming
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
 	"net/http"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/streaming.html
+var PageHTML string
 
 type ConextKey int
 
@@ -22,8 +27,10 @@ const (
 	ConextKeyConfig ConextKey = iota
 )
 
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "streaming_settings_updated", FormatString: "Updated streaming settings"})
+
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../streaming/assets/streaming.html", "templates/plugins/streaming.html")
+	web.AddHTMLTemplate("streaming/assets/streaming.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Streaming",
 		URL:  "streaming",
@@ -35,7 +42,6 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/streaming"), streamingMux)
 
 	// Alll handlers here require guild channels present
-	streamingMux.Use(web.RequireGuildChannelsMiddleware)
 	streamingMux.Use(web.RequireBotMemberMW)
 	streamingMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
 	streamingMux.Use(baseData)
@@ -93,14 +99,12 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 		web.CtxLogger(ctx).WithError(err).Error("Failed sending update streaming event")
 	}
 
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, guild.ID, "Updated streaming config.")
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
 	return tmpl.AddAlerts(web.SucessAlert("Saved settings"))
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
-var _ web.PluginWithServerHomeWidgetMiddlewares = (*Plugin)(nil)
 
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ag, templateData := web.GetBaseCPContextData(r.Context())
@@ -129,7 +133,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	roleStr := "none / unknown"
 	indicatorRole := ""
-	if role := ag.Role(config.GiveRole); role != nil {
+	if role := ag.GetRole(config.GiveRole); role != nil {
 		roleStr = html.EscapeString(role.Name)
 		indicatorRole = web.Indicator(true)
 	} else {
@@ -139,7 +143,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	indicatorMessage := ""
 	channelStr := "none / unknown"
 
-	if channel := ag.Channel(config.AnnounceChannel); channel != nil {
+	if channel := ag.GetChannel(config.AnnounceChannel); channel != nil {
 		indicatorMessage = web.Indicator(true)
 		channelStr = html.EscapeString(channel.Name)
 	} else {
@@ -149,8 +153,4 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, status, roleStr, indicatorRole, channelStr, indicatorMessage))
 
 	return templateData, nil
-}
-
-func (p *Plugin) ServerHomeWidgetApplyMiddlewares(inner http.Handler) http.Handler {
-	return web.RequireGuildChannelsMiddleware(inner)
 }

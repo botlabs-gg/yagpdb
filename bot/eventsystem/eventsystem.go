@@ -4,22 +4,23 @@ package eventsystem
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"runtime/debug"
-	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/sirupsen/logrus"
 )
 
-var DiscordState *dstate.State
+var DiscordState dstate.StateTracker
 
 func init() {
-	for i, _ := range handlers {
+	for i := range handlers {
 		handlers[i] = make([][]*Handler, 3)
 	}
 }
@@ -40,12 +41,21 @@ type EventData struct {
 	Session           *discordgo.Session
 	GuildFeatureFlags []string
 
-	GS *dstate.GuildState // Guaranteed to be available for guild events, except creates and deletes
-	cs *dstate.ChannelState
+	GS *dstate.GuildSet // Guaranteed to be available for guild events, except creates and deletes
 
 	cancelled *int32
+}
 
-	l sync.Mutex
+func (e *EventData) Clone() *EventData {
+	return &EventData{
+		EvtInterface:      e.EvtInterface,
+		Type:              e.Type,
+		ctx:               e.ctx,
+		Session:           e.Session,
+		GuildFeatureFlags: e.GuildFeatureFlags,
+		GS:                e.GS,
+		cancelled:         e.cancelled,
+	}
 }
 
 func NewEventData(session *discordgo.Session, t Event, evtInterface interface{}) *EventData {
@@ -69,8 +79,7 @@ func (e *EventData) Context() context.Context {
 }
 
 func (e *EventData) WithContext(ctx context.Context) *EventData {
-	cop := new(EventData)
-	*cop = *e
+	cop := e.Clone()
 	cop.ctx = ctx
 	return cop
 }
@@ -87,16 +96,48 @@ func EmitEvent(data *EventData, evt Event) {
 	runEvents(h[0], data)
 	runEvents(h[1], data)
 
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				stack := string(debug.Stack())
-				logrus.WithField(logrus.ErrorKey, err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
-			}
-		}()
+	data = data.Clone()
 
-		runEvents(h[2], data)
-	}()
+	// re-fetch state info after state had been updated
+	if guildEvt, ok := data.EvtInterface.(discordgo.GuildEvent); ok {
+		id := guildEvt.GetGuildID()
+		if id != 0 {
+			newGS := DiscordState.GetGuild(id)
+
+			// If guild state is not available for any guild related events, except creates and deletes, do not run the handlers
+			if newGS == nil && data.Type != EventGuildDelete {
+				logrus.Debugf("Skipped event as guild state info is not available: %v, %d", data.Type, guildEvt.GetGuildID())
+				return
+			}
+
+			if newGS != nil {
+				data.GS = newGS
+			}
+		}
+	}
+
+	if len(h[2]) > 0 {
+		go func() {
+			defer func() {
+				if errI := recover(); errI != nil {
+					stack := string(debug.Stack())
+
+					var err error
+					switch t := errI.(type) {
+					case error:
+						err = t
+					case string:
+						err = errors.New(t)
+					default:
+						err = fmt.Errorf("unknown error: %v", t)
+					}
+					logrus.WithError(err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
+				}
+			}()
+
+			runEvents(h[2], data)
+		}()
+	}
 }
 
 func runEvents(h []*Handler, data *EventData) {
@@ -293,20 +334,28 @@ func QueueEventNonDiscord(evtData *EventData) {
 	}
 }
 
-// CS will attempt to fetch the channel state from either cached, or state, or return nil if nonexistent (e.g a channel create before the state has been populated by it)
+// CS is the same as calling d.GS.GetChannel
 func (d *EventData) CS() *dstate.ChannelState {
-	d.l.Lock()
-	defer d.l.Unlock()
-
-	if d.cs != nil {
-		return d.cs
-	}
 
 	if channelEvt, ok := d.EvtInterface.(discordgo.ChannelEvent); ok {
-		d.cs = DiscordState.Channel(true, channelEvt.GetChannelID())
+		if d.GS != nil {
+			return d.GS.GetChannel(channelEvt.GetChannelID())
+		}
 	}
 
-	return d.cs
+	return nil
+}
+
+// CS is the same as calling d.GS.GetChannelOrThread
+func (d *EventData) CSOrThread() *dstate.ChannelState {
+
+	if channelEvt, ok := d.EvtInterface.(discordgo.ChannelEvent); ok {
+		if d.GS != nil {
+			return d.GS.GetChannelOrThread(channelEvt.GetChannelID())
+		}
+	}
+
+	return nil
 }
 
 // RequireCSMW will only call the inner handler if a channel state is available
@@ -325,8 +374,8 @@ var workers []chan *EventData
 func InitWorkers(totalShards int) {
 
 	workers = make([]chan *EventData, totalShards)
-	for i, _ := range workers {
-		workers[i] = make(chan *EventData, 5000)
+	for i := range workers {
+		workers[i] = make(chan *EventData, 1000)
 		go eventWorker(workers[i])
 	}
 }
@@ -342,7 +391,7 @@ func handleEvent(evtData *EventData) {
 	if guildEvt, ok := evtData.EvtInterface.(discordgo.GuildEvent); ok {
 		id := guildEvt.GetGuildID()
 		if id != 0 {
-			evtData.GS = DiscordState.Guild(true, id)
+			evtData.GS = DiscordState.GetGuild(id)
 
 			// If guild state is not available for any guild related events, except creates and deletes, do not run the handlers
 			if evtData.GS == nil && evtData.Type != EventGuildCreate && evtData.Type != EventGuildDelete {
@@ -355,11 +404,6 @@ func handleEvent(evtData *EventData) {
 				evtData.GuildFeatureFlags = flags
 			}
 		}
-	}
-
-	// attempt to fill in channel state if applicable
-	if channelEvt, ok := evtData.EvtInterface.(discordgo.ChannelEvent); ok {
-		evtData.cs = DiscordState.Channel(true, channelEvt.GetChannelID())
 	}
 
 	defer func() {

@@ -4,90 +4,55 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"golang.org/x/image/colornames"
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory: commands.CategoryFun,
-	Name:        "SimpleEmbed",
-	Aliases:     []string{"se"},
-	Description: "A more simpler version of CustomEmbed, controlled completely using switches.",
+	CmdCategory:         commands.CategoryTool,
+	Name:                "SimpleEmbed",
+	Aliases:             []string{"se"},
+	Description:         "A more simpler version of CustomEmbed, controlled completely using switches.\nYou can edit existing messages by supplying the `-message` flag.",
+	RequireDiscordPerms: []int64{discordgo.PermissionManageMessages},
 	ArgSwitches: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Switch: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
-		&dcmd.ArgDef{Switch: "content", Help: "Text content for the message", Type: dcmd.String, Default: ""},
+		{Name: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
+		{Name: "message", Help: "Optional message ID to edit", Type: dcmd.BigInt},
+		{Name: "content", Help: "Text content for the message", Type: dcmd.String},
 
-		&dcmd.ArgDef{Switch: "title", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "desc", Type: dcmd.String, Help: "Text in the 'description' field", Default: ""},
-		&dcmd.ArgDef{Switch: "color", Help: "Either hex code or name", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "url", Help: "Url of this embed", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "thumbnail", Help: "Url to a thumbnail", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "image", Help: "Url to an image", Type: dcmd.String, Default: ""},
+		{Name: "title", Type: dcmd.String, Default: ""},
+		{Name: "desc", Type: dcmd.String, Help: "Text in the 'description' field"},
+		{Name: "color", Help: "Either hex code or name", Type: dcmd.String},
+		{Name: "url", Help: "Url of this embed", Type: dcmd.String},
+		{Name: "thumbnail", Help: "Url to a thumbnail", Type: dcmd.String},
+		{Name: "image", Help: "Url to an image", Type: dcmd.String},
 
-		&dcmd.ArgDef{Switch: "author", Help: "The text in the 'author' field", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "authoricon", Help: "Url to a icon for the 'author' field", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "authorurl", Help: "Url of the 'author' field", Type: dcmd.String, Default: ""},
+		{Name: "author", Help: "The text in the 'author' field", Type: dcmd.String},
+		{Name: "authoricon", Help: "Url to a icon for the 'author' field", Type: dcmd.String},
+		{Name: "authorurl", Help: "Url of the 'author' field", Type: dcmd.String},
 
-		&dcmd.ArgDef{Switch: "footer", Help: "Text content for the footer", Type: dcmd.String, Default: ""},
-		&dcmd.ArgDef{Switch: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String, Default: ""},
+		{Name: "footer", Help: "Text content for the footer", Type: dcmd.String},
+		{Name: "footericon", Help: "Url to a icon for the 'footer' field", Type: dcmd.String},
 	},
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		content :=  data.Switch("content").Str()
-		embed := &discordgo.MessageEmbed{
-			Title:       data.Switch("title").Str(),
-			Description: data.Switch("desc").Str(),
-			URL:         data.Switch("url").Str(),
+		// Helper function to return value of a switch + whether it was set.
+		getSwitch := func(key string) (value interface{}, set bool) {
+			value = data.Switch(key).Value
+			set = value != nil
+			return
 		}
 
-		if color := data.Switch("color").Str(); color != "" {
-			parsedColor, ok := ParseColor(color)
-			if !ok {
-				return "Unknown color: " + color + ", can be either hex color code or name for a known color", nil
-			}
-
-			embed.Color = parsedColor
-		}
-
-		if author := data.Switch("author").Str(); author != "" {
-			embed.Author = &discordgo.MessageEmbedAuthor{
-				Name:    author,
-				IconURL: data.Switch("authoricon").Str(),
-				URL:	 data.Switch("authorurl").Str(),
-			}
-		}
-
-		if thumbnail := data.Switch("thumbnail").Str(); thumbnail != "" {
-			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-				URL: thumbnail,
-			}
-		}
-
-		if image := data.Switch("image").Str(); image != "" {
-			embed.Image = &discordgo.MessageEmbedImage{
-				URL: image,
-			}
-		}
-
-		footer := data.Switch("footer").Str()
-		footerIcon := data.Switch("footericon").Str()
-		if footer != "" || footerIcon != "" {
-			embed.Footer = &discordgo.MessageEmbedFooter{
-				Text:    footer,
-				IconURL: footerIcon,
-			}
-		}
-
-		cID := data.Msg.ChannelID
+		cID := data.ChannelID
 		c := data.Switch("channel")
 		if c.Value != nil {
 			cID = c.Value.(*dstate.ChannelState).ID
 
-			hasPerms, err := bot.AdminOrPermMS(cID, data.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+			hasPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, cID, data.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
 				return "Failed checking permissions, please try again or join the support server.", err
 			}
@@ -97,21 +62,155 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		messageSend := &discordgo.MessageSend {
-				Content: 	 content,
-				Embed:	 	 embed,
-				AllowedMentions: discordgo.AllowedMentions{},
+		mID := data.Switch("message").Int64()
+		var msg *discordgo.Message
+		if mID != 0 {
+			hasPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, cID, data.GuildData.MS, discordgo.PermissionManageMessages)
+			if err != nil {
+				return "Failed checking permissions, please try again or join the support server", err
 			}
-		_, err := common.BotSession.ChannelMessageSendComplex(cID, messageSend)
+
+			if !hasPerms {
+				return "You need the `Manage Messages` permission to be able to edit messages", nil
+			}
+
+			msg, err = common.BotSession.ChannelMessage(cID, mID)
+			if err != nil || msg == nil {
+				return "Failed fetching message to edit, check your channel and message IDs", nil
+			}
+
+			if msg.Author.ID != common.BotUser.ID {
+				return "I can only edit messages sent by me", nil
+			}
+		}
+
+		var embed *discordgo.MessageEmbed
+		if msg != nil && len(msg.Embeds) > 0 {
+			embed = msg.Embeds[0]
+		} else {
+			embed = &discordgo.MessageEmbed{}
+		}
+
+		modifiedEmbed := false
+
+		if title, set := getSwitch("title"); set {
+			embed.Title = title.(string)
+			modifiedEmbed = true
+		}
+		if url, set := getSwitch("url"); set {
+			embed.URL = url.(string)
+			modifiedEmbed = true
+		}
+		if desc, set := getSwitch("desc"); set {
+			embed.Description = desc.(string)
+			modifiedEmbed = true
+		}
+
+		if color, set := getSwitch("color"); set {
+			color := color.(string)
+			if color == "" {
+				// empty string resets the color
+				embed.Color = 0
+			} else {
+				parsedColor, ok := ParseColor(color)
+				if !ok {
+					return "Unknown color: " + color + ", can be either hex color code or name for a known color", nil
+				}
+				embed.Color = parsedColor
+			}
+
+			modifiedEmbed = true
+		}
+
+		if embed.Author == nil {
+			embed.Author = &discordgo.MessageEmbedAuthor{}
+		}
+		if name, set := getSwitch("author"); set {
+			embed.Author.Name = name.(string)
+			modifiedEmbed = true
+		}
+		if icon, set := getSwitch("authoricon"); set {
+			embed.Author.IconURL = icon.(string)
+			modifiedEmbed = true
+		}
+		if url, set := getSwitch("authorurl"); set {
+			embed.Author.URL = url.(string)
+			modifiedEmbed = true
+		}
+
+		if thumbnail, set := getSwitch("thumbnail"); set {
+			embed.Thumbnail = &discordgo.MessageEmbedThumbnail{URL: thumbnail.(string)}
+			modifiedEmbed = true
+		}
+		if image, set := getSwitch("image"); set {
+			embed.Image = &discordgo.MessageEmbedImage{URL: image.(string)}
+			modifiedEmbed = true
+		}
+
+		if embed.Footer == nil {
+			embed.Footer = &discordgo.MessageEmbedFooter{}
+		}
+		if text, set := getSwitch("footer"); set {
+			embed.Footer.Text = text.(string)
+			modifiedEmbed = true
+		}
+		if icon, set := getSwitch("footericon"); set {
+			embed.Footer.IconURL = icon.(string)
+			modifiedEmbed = true
+		}
+
+		if msg == nil {
+			send := &discordgo.MessageSend{AllowedMentions: discordgo.AllowedMentions{}}
+
+			if modifiedEmbed {
+				send.Embeds = []*discordgo.MessageEmbed{embed}
+			}
+			if content := data.Switch("content").Str(); content != "" {
+				send.Content = content
+			}
+
+			if send.Content == "" && len(send.Embeds) == 0 {
+				return "Cannot send an empty message", nil
+			}
+
+			_, err := common.BotSession.ChannelMessageSendComplex(cID, send)
+			if err != nil {
+				return err, err
+			}
+			if cID != data.ChannelID {
+				return "Done", nil
+			}
+			return nil, nil
+		}
+
+		edit := &discordgo.MessageEdit{
+			Content:         &msg.Content,
+			AllowedMentions: discordgo.AllowedMentions{},
+			ID:              mID,
+			Channel:         cID,
+		}
+
+		if content, set := getSwitch("content"); set {
+			v := content.(string)
+			if v == "" {
+				edit.Content = nil
+			} else {
+				edit.Content = &v
+			}
+		}
+		if modifiedEmbed || (msg != nil && len(msg.Embeds) > 0) {
+			edit.Embeds = []*discordgo.MessageEmbed{embed}
+		}
+
+		if edit.Content == nil && len(edit.Embeds) == 0 {
+			return "Cannot edit a message to have no content and no embed", nil
+		}
+
+		_, err := common.BotSession.ChannelMessageEditComplex(edit)
 		if err != nil {
 			return err, err
 		}
-
-		if cID != data.Msg.ChannelID {
-			return "Done", nil
-		}
-
-		return nil, nil
+		return "Done", nil
 	},
 }
 

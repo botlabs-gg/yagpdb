@@ -1,0 +1,53 @@
+{{define "cp_action_logs"}}
+
+{{template "cp_head" .}}
+<header class="page-header">
+    <h2>Control panel logs</h2>
+</header>
+
+
+
+{{template "cp_alerts" .}}
+
+<!-- /.row -->
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card">
+            <div class="card-body">
+                <p>Control panel logs</p>
+                <div class="bs-callout bs-callout-info">
+                    <p>Note: If you see someone with the name DesTroy and the id <code>598900258579283976</code>, then
+                        don't be scared because that is me (the bot owner). The bot is very large and if something is
+                        causing me issues I might have to change update something to fix those issues, join the <a
+                            href="https://discord.gg/4udtcA5">support server</a> if you have more questions.</p>
+                </div>
+                <table class="table table-responsive-lg table-bordered table-striped table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .entries}}
+                        <tr>
+                            <td>{{formatTime .CreatedAt.UTC}}</td>
+                            <td>{{.AuthorUsername}} (<code>{{.AuthorID}}</code>)</td>
+                            <td>{{.Action.String}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                <!-- /.table-responsive -->
+            </div>
+            <!-- /.panel-body -->
+        </section>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
+<!-- /.row -->
+{{template "cp_footer" .}}
+
+{{end}}

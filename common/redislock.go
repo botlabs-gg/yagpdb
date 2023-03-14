@@ -56,5 +56,13 @@ func BlockingLockRedisKey(key string, maxTryDuration time.Duration, maxLockDur i
 }
 
 func UnlockRedisKey(key string) {
-	RedisPool.Do(radix.Cmd(nil, "DEL", key))
+	for {
+		err := RedisPool.Do(radix.Cmd(nil, "DEL", key))
+		if err != nil {
+			time.Sleep(time.Second)
+			continue
+		}
+
+		break
+	}
 }

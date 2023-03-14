@@ -19,6 +19,10 @@
         content: '\f106';
         margin-right: 10px;
     }
+
+    .cc-disabled {
+      background-color: #6c757d !important ;
+    }
 </style>
 
 <header class="page-header">
@@ -62,7 +66,7 @@
                     <form class="form-horizontal" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
                         data-async-form>
-                        <div class="row">
+                        <div class="row" style="margin-bottom: 20px;">
                             <div class="col-6">
                                 <div class="form-group">
                                     <label>Name </label>
@@ -113,10 +117,11 @@
                         </div>
                     </form>
                     {{end}}
+                    <p>You have created <code>{{.CCCount}}</code> custom commands against the total limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/commands/new">
                         <input type="text" name="GroupID" hidden
                             value="{{if .CurrentCommandGroup}}{{.CurrentCommandGroup.ID}}{{end}}">
-                        <button type="submit" class="btn btn-success">Create
+                        <button type="submit" class="btn btn-success" {{if ge .CCCount .CCLimit}}disabled{{end}}>Create
                             a new Custom Command</button>
                     </form>
                 </div>
@@ -131,16 +136,28 @@
     {{$dot := .}}
     {{range .CustomCommands}}
     <div class="card">
-        <div class="card-header clearfix">
+        <div class="card-header clearfix {{if .Disabled}} cc-disabled {{end}}">
             <form class="form-horizontal" method="post" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
                 <div class="pull-right">
+                    {{if and (eq .TriggerType 5) (not .Disabled) }}
+                        <button type="submit" class="btn btn-secondary" title="This will trigger this custom command immediately"
+                        formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/run_now" style="margin: 5px 5px 5px 0px!important">Run now</button>
+                    {{end}}
                     <button type="button" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-success" onclick="window.location.href = '/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/';" style="margin: 5px 5px 5px 0px!important">Edit</button>
                     <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/delete" style="margin: 5px 5px 5px 0px!important">Delete</button>
                 </div>
             </form>
             <h2 class="card-title">
                 <a style="padding:15px 20px 10px 20px!important" data-toggle="collapse" data-parent="#accordion" href="#collapse_cmd{{.LocalID}}" aria-expanded="false" aria-controls="collapse_cmd{{.LocalID}}" class="cc-collapsibleDown">
-                    #{{.LocalID}} - {{index $dot.CCTriggerTypes .TriggerType}}{{if and (ne .TriggerType 10) (ne .TriggerType 5) (ne .TriggerType 6)}}: <span class="cc-text-trigger-span">{{.TextTrigger}}</span>{{else if and (ne .TriggerType 10) (ne .TriggerType 6)}}: <span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s)</span>{{else}}minute(s)</span>{{end}} next run: <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
+                    #{{.LocalID}} -
+                    {{index $dot.CCTriggerTypes .TriggerType}}
+                    {{if and (ne .TriggerType 10) (ne .TriggerType 5) (ne .TriggerType 6)}}
+                    : <span class="cc-text-trigger-span">{{.TextTrigger}}</span>
+                    {{else if and (ne .TriggerType 10) (ne .TriggerType 6)}}
+                    : <span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s)</span>{{else}}minute(s)</span>{{end}} next run: <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
+                    {{if .Name.Valid}} 
+                      <span style="padding:5px 20px 10px 20px!important" >Name: {{.Name.String}}</span>
+                    {{end}}
                 </a>
             </h2>
         </div>
@@ -158,9 +175,9 @@
     {{end}}
 </div>
 
-<script src="/static/vendor/highlightjs/highlight.pack.js"></script>
-<script src="/static/vendor/highlightjs/line-numbers.js"></script>
-<link rel="stylesheet" href="/static/vendor/highlightjs/atom-one-dark.css">
+<script src="/static/vendorr/highlightjs/highlight.pack.js"></script>
+<script src="/static/vendorr/highlightjs/line-numbers.js"></script>
+<link rel="stylesheet" href="/static/vendorr/highlightjs/atom-one-dark.css">
 
 <script>
 
@@ -220,7 +237,6 @@
     $('.collapse').on('shown.bs.collapse', function(){
     $(this).parent().find('.cc-collapsibleDown').removeClass('cc-collapsibleDown').addClass('cc-collapsibleUp');}).on('hidden.bs.collapse',function(){
         $(this).parent().find('.cc-collapsibleUp').removeClass('cc-collapsibleUp').addClass('cc-collapsibleDown');});
-    
 </script>
 {{template "cp_footer" .}}
 

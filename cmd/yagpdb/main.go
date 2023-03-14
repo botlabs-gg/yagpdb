@@ -1,47 +1,50 @@
 package main
 
 import (
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/prom"
-	"github.com/jonas747/yagpdb/common/run"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/antiphishing"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/prom"
+	"github.com/botlabs-gg/yagpdb/v2/common/run"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
+	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 
 	// Core yagpdb packages
 
-	"github.com/jonas747/yagpdb/admin"
-	"github.com/jonas747/yagpdb/bot/paginatedmessages"
-	"github.com/jonas747/yagpdb/common/internalapi"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/admin"
+	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/v2/common/internalapi"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
 
 	// Plugin imports
-	"github.com/jonas747/yagpdb/automod"
-	"github.com/jonas747/yagpdb/automod_legacy"
-	"github.com/jonas747/yagpdb/autorole"
-	"github.com/jonas747/yagpdb/aylien"
-	"github.com/jonas747/yagpdb/cah"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/customcommands"
-	"github.com/jonas747/yagpdb/discordlogger"
-	"github.com/jonas747/yagpdb/logs"
-	"github.com/jonas747/yagpdb/moderation"
-	"github.com/jonas747/yagpdb/notifications"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/premium/patreonpremiumsource"
-	"github.com/jonas747/yagpdb/reddit"
-	"github.com/jonas747/yagpdb/reminders"
-	"github.com/jonas747/yagpdb/reputation"
-	"github.com/jonas747/yagpdb/rolecommands"
-	"github.com/jonas747/yagpdb/rsvp"
-	"github.com/jonas747/yagpdb/safebrowsing"
-	"github.com/jonas747/yagpdb/serverstats"
-	"github.com/jonas747/yagpdb/soundboard"
-	"github.com/jonas747/yagpdb/stdcommands"
-	"github.com/jonas747/yagpdb/streaming"
-	"github.com/jonas747/yagpdb/tickets"
-	"github.com/jonas747/yagpdb/timezonecompanion"
-	"github.com/jonas747/yagpdb/twitter"
-	"github.com/jonas747/yagpdb/verification"
-	"github.com/jonas747/yagpdb/youtube"
+	"github.com/botlabs-gg/yagpdb/v2/automod"
+	"github.com/botlabs-gg/yagpdb/v2/automod_legacy"
+	"github.com/botlabs-gg/yagpdb/v2/autorole"
+	"github.com/botlabs-gg/yagpdb/v2/aylien"
+	"github.com/botlabs-gg/yagpdb/v2/cah"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands"
+	"github.com/botlabs-gg/yagpdb/v2/discordlogger"
+	"github.com/botlabs-gg/yagpdb/v2/logs"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/notifications"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/premium/patreonpremiumsource"
+	"github.com/botlabs-gg/yagpdb/v2/reddit"
+	"github.com/botlabs-gg/yagpdb/v2/reminders"
+	"github.com/botlabs-gg/yagpdb/v2/reputation"
+	"github.com/botlabs-gg/yagpdb/v2/rolecommands"
+	"github.com/botlabs-gg/yagpdb/v2/rsvp"
+	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
+	"github.com/botlabs-gg/yagpdb/v2/serverstats"
+	"github.com/botlabs-gg/yagpdb/v2/soundboard"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands"
+	"github.com/botlabs-gg/yagpdb/v2/streaming"
+	"github.com/botlabs-gg/yagpdb/v2/tickets"
+	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
+	"github.com/botlabs-gg/yagpdb/v2/twitter"
+	"github.com/botlabs-gg/yagpdb/v2/verification"
+	"github.com/botlabs-gg/yagpdb/v2/youtube"
 	// External plugins
 )
 
@@ -51,10 +54,12 @@ func main() {
 
 	//BotSession.LogLevel = discordgo.LogInformational
 	paginatedmessages.RegisterPlugin()
+	discorddata.RegisterPlugin()
 
 	// Setup plugins
 	analytics.RegisterPlugin()
 	safebrowsing.RegisterPlugin()
+	antiphishing.RegisterPlugin()
 	discordlogger.Register()
 	commands.RegisterPlugin()
 	stdcommands.RegisterPlugin()
@@ -87,6 +92,9 @@ func main() {
 	internalapi.RegisterPlugin()
 	prom.RegisterPlugin()
 	featureflags.RegisterPlugin()
+
+	// Register confusables replacer
+	confusables.Init()
 
 	run.Run()
 }

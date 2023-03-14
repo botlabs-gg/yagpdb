@@ -3,10 +3,11 @@ package moderation
 import (
 	"database/sql"
 	"fmt"
-	//"github.com/jonas747/discordgo"
-	//"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
+
+	// "github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	// "github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
 )
 
 type WarnRankEntry struct {
@@ -63,7 +64,7 @@ func TopWarns(guildID int64, offset, limit int) ([]*WarnRankEntry, error) {
 			username = fmt.Sprintf("%s", u)
 			break
 		}
-		
+
 		result = append(result, &WarnRankEntry{
 			Rank:      rank,
 			UserID:    userID,

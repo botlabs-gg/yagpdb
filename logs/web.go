@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"html/template"
@@ -9,17 +10,24 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/logs/models"
-	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/logs/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/logs_control_panel.html
+var PageHTMLControlPanel string
+
+//go:embed assets/logs_view.html
+var PageHTMLView string
 
 var AuthorColors = []string{
 	"7c7cff", // blue-ish
@@ -40,13 +48,21 @@ type ConfigFormData struct {
 	NicknameLoggingEnabled       bool
 	ManageMessagesCanViewDeleted bool
 	EveryoneCanViewDeleted       bool
+	AccessMode                   int
 	BlacklistedChannels          []string
 	MessageLogsAllowedRoles      []int64
 }
 
+var (
+	panelLogKeyUpdatedSettings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_settings_updated", FormatString: "Updated logging settings"})
+	panelLogKeyDeletedMessageLog = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message_log", FormatString: "Deleted a message log: %d"})
+	panelLogKeyDeletedMessage    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message", FormatString: "Deleted a message from a message log: %d"})
+	panelLogKeyDeletedAll        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_all", FormatString: "Deleted %d message logs"})
+)
+
 func (lp *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../logs/assets/logs_control_panel.html", "templates/plugins/logs_control_panel.html")
-	web.LoadHTMLTemplate("../../logs/assets/logs_view.html", "templates/plugins/logs_view.html")
+	web.AddHTMLTemplate("logs/assets/logs_control_panel.html", PageHTMLControlPanel)
+	web.AddHTMLTemplate("logs/assets/logs_view.html", PageHTMLView)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Logging",
@@ -64,27 +80,28 @@ func (lp *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/logging"), logCPMux)
 	web.CPMux.Handle(pat.New("/logging/*"), logCPMux)
 
-	logCPMux.Use(web.RequireGuildChannelsMiddleware)
-
 	cpGetHandler := web.ControllerHandler(HandleLogsCP, "cp_logging")
 	logCPMux.Handle(pat.Get("/"), cpGetHandler)
 	logCPMux.Handle(pat.Get(""), cpGetHandler)
 
-	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, ConfigFormData{}, "Updated logging config")
-	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{}, "Deleted a channel log")
+	saveHandler := web.ControllerPostHandler(HandleLogsCPSaveGeneral, cpGetHandler, ConfigFormData{})
+	fullDeleteHandler := web.ControllerPostHandler(HandleLogsCPDelete, cpGetHandler, DeleteData{})
 	msgDeleteHandler := web.APIHandler(HandleDeleteMessageJson)
+	clearMessageLogs := web.ControllerPostHandler(HandleLogsCPDeleteAll, cpGetHandler, nil)
 
 	logCPMux.Handle(pat.Post("/"), saveHandler)
 	logCPMux.Handle(pat.Post(""), saveHandler)
 
 	logCPMux.Handle(pat.Post("/fulldelete2"), fullDeleteHandler)
 	logCPMux.Handle(pat.Post("/msgdelete2"), msgDeleteHandler)
+	logCPMux.Handle(pat.Post("/delete_all"), clearMessageLogs)
 }
 
 func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	g, tmpl := web.GetBaseCPContextData(ctx)
-
+	tmpl["GlobalUsernameTrackingEnabled"] = confEnableUsernameTracking.GetBool()
+	tmpl["LogPurgeEnabled"] = confEnableMessageLogPurge.GetBool()
 	beforeID := 0
 	beforeStr := r.URL.Query().Get("before")
 	if beforeStr != "" {
@@ -154,12 +171,13 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 		EveryoneCanViewDeleted:       null.BoolFrom(form.EveryoneCanViewDeleted),
 		ManageMessagesCanViewDeleted: null.BoolFrom(form.ManageMessagesCanViewDeleted),
 		MessageLogsAllowedRoles:      form.MessageLogsAllowedRoles,
+		AccessMode:                   int16(form.AccessMode),
 	}
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
 	if err == nil {
-		logger.Println("evicting")
-		bot.EvictGSCache(g.ID, CacheKeyConfig)
+		pubsub.EvictCacheSet(configCache, g.ID)
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedSettings))
 	}
 	return tmpl, err
 }
@@ -170,7 +188,7 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*DeleteData)
 	if data.ID == 0 {
-		return tmpl, errors.New("ID is blank!")
+		return tmpl, errors.New("id is blank")
 	}
 
 	_, err := models.MessageLogs2s(
@@ -182,33 +200,55 @@ func HandleLogsCPDelete(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 		return tmpl, err
 	}
 
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDeletedMessageLog, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: data.ID}))
+
 	// for legacy setups
 	// _, err = models.Messages(models.MessageWhere.MessageLogID.EQ(null.IntFrom(int(data.ID)))).DeleteAll(ctx, common.PQ)
 	return tmpl, err
 }
 
+func HandleLogsCPDeleteAll(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
+	g, tmpl := web.GetBaseCPContextData(ctx)
+
+	count, err := models.MessageLogs2s(models.MessageLogs2Where.GuildID.EQ(g.ID)).DeleteAll(r.Context(), common.PQ)
+	if err != nil {
+		return tmpl, err
+	}
+
+	tmpl.AddAlerts(web.SucessAlert("Deleted ", count, " logs!"))
+	if count > 0 {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDeletedAll, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: count}))
+	}
+
+	return tmpl, nil
+}
+
 func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.GuildLoggingConfig) bool {
-	_, tmpl := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	_, tmpl := web.GetBaseCPContextData(ctx)
 
-	isAdmin, _ := web.IsAdminRequest(r.Context(), r)
+	member := web.ContextMember(ctx)
+	if member == nil {
+		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to members only."))
+		return false
+	}
 
-	// check if were allowed access to logs on this server
-	if isAdmin || len(config.MessageLogsAllowedRoles) < 1 {
+	memberPermissions := web.ContextMemberPerms(ctx)
+	guild := web.ContextGuild(ctx)
+
+	// if access mode is everyone or the user is the owner or they have administrator/manage server perms, then they can access the logs
+	if (config.AccessMode == 1) || (member.User.ID == guild.OwnerID) || (memberPermissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator) || (memberPermissions&discordgo.PermissionManageServer == discordgo.PermissionManageServer) {
 		return true
 	}
 
-	member := web.ContextMember(r.Context())
-	if member == nil {
-		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, either you're not logged in or not on this server."))
-		return false
+	// If the user has one of the allowed roles
+	if len(config.MessageLogsAllowedRoles) > 0 && common.ContainsInt64SliceOneOf(member.Roles, config.MessageLogsAllowedRoles) {
+		return true
 	}
 
-	if !common.ContainsInt64SliceOneOf(member.Roles, config.MessageLogsAllowedRoles) {
-		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, you don't have any of them."))
-		return false
-	}
-
-	return true
+	tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, you don't have any of them."))
+	return false
 }
 
 type ctxKey int
@@ -278,8 +318,12 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	config := r.Context().Value(ctxKeyConfig).(*models.GuildLoggingConfig)
 
 	// check if were allowed to view deleted messages
-	canViewDeleted, _ := web.IsAdminRequest(r.Context(), r)
-	if config.EveryoneCanViewDeleted.Bool {
+	isAdmin, _ := web.IsAdminRequest(r.Context(), r)
+
+	var canViewDeleted = false
+	if isAdmin && !web.GetIsReadOnly(r.Context()) {
+		canViewDeleted = true
+	} else if config.EveryoneCanViewDeleted.Bool {
 		canViewDeleted = true
 	} else if config.ManageMessagesCanViewDeleted.Bool && !canViewDeleted {
 		canViewDeleted = web.HasPermissionCTX(r.Context(), discordgo.PermissionManageMessages)
@@ -288,9 +332,9 @@ func HandleLogsHTML(w http.ResponseWriter, r *http.Request) interface{} {
 	tmpl["CanViewDeleted"] = canViewDeleted
 
 	// Convert into views with formatted dates and colors
-	const TimeFormat = "2006 Jan 02 15:04"
+	const TimeFormat = "2006 Jan 02 15:04:05"
 	messageViews := make([]*MessageView, len(messages))
-	for i, _ := range messageViews {
+	for i := range messageViews {
 		m := messages[i]
 		v := &MessageView{
 			Model:     m,
@@ -361,8 +405,8 @@ func HandleDeleteMessageJson(w http.ResponseWriter, r *http.Request) interface{}
 		return err
 	}
 
-	user := r.Context().Value(common.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, g.ID, "Deleted a message from log #"+logsId)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDeletedMessage, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: parsedMsgID}))
+
 	return err
 }
 
@@ -386,16 +430,22 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		nBlacklistedChannels = len(split)
 	}
 
-	format := `<ul>
-	<li>Username logging: %s</li>
-	<li>Nickname logging: %s</li>
-	<li>Blacklisted channels from creating message logs: <code>%d</code></li>
-</ul>`
-
 	templateData["WidgetEnabled"] = true
-
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(config.UsernameLoggingEnabled.Bool),
-		web.EnabledDisabledSpanStatus(config.NicknameLoggingEnabled.Bool), nBlacklistedChannels))
+	widgetBody := ""
+	if confEnableUsernameTracking.GetBool() {
+		format := `<ul>
+		<li>Username logging: %s</li>
+		<li>Nickname logging: %s</li>
+		<li>Blacklisted channels from creating message logs: <code>%d</code></li>
+	</ul>`
+		widgetBody = fmt.Sprintf(format,
+			web.EnabledDisabledSpanStatus(config.UsernameLoggingEnabled.Bool),
+			web.EnabledDisabledSpanStatus(config.NicknameLoggingEnabled.Bool),
+			nBlacklistedChannels)
+	} else {
+		widgetBody = fmt.Sprintf(`Blacklisted channels from creating message logs: <code>%d</code>`, nBlacklistedChannels)
+	}
+	templateData["WidgetBody"] = template.HTML(widgetBody)
 
 	return templateData, nil
 }

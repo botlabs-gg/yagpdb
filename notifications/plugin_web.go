@@ -1,18 +1,26 @@
 package notifications
 
 import (
+	_ "embed"
 	"fmt"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/web"
-	"goji.io/pat"
 	"html/template"
 	"net/http"
+
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web"
+	"goji.io/pat"
 )
 
+//go:embed assets/notifications_general.html
+var PageHTML string
+
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "notifications_settings", FormatString: "Updated server notification settings"})
+
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../notifications/assets/notifications_general.html", "templates/plugins/notifications_general.html")
+	web.AddHTMLTemplate("notifications/assets/notifications_general.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "General",
 		URL:  "notifications/general",
@@ -20,13 +28,13 @@ func (p *Plugin) InitWeb() {
 	})
 
 	getHandler := web.RenderHandler(HandleNotificationsGet, "cp_notifications_general")
-	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{}, "Updated general notifications config.")
+	postHandler := web.ControllerPostHandler(HandleNotificationsPost, getHandler, Config{})
 
-	web.CPMux.Handle(pat.Get("/notifications/general"), web.RequireGuildChannelsMiddleware(getHandler))
-	web.CPMux.Handle(pat.Get("/notifications/general/"), web.RequireGuildChannelsMiddleware(getHandler))
+	web.CPMux.Handle(pat.Get("/notifications/general"), getHandler)
+	web.CPMux.Handle(pat.Get("/notifications/general/"), getHandler)
 
-	web.CPMux.Handle(pat.Post("/notifications/general"), web.RequireGuildChannelsMiddleware(postHandler))
-	web.CPMux.Handle(pat.Post("/notifications/general/"), web.RequireGuildChannelsMiddleware(postHandler))
+	web.CPMux.Handle(pat.Post("/notifications/general"), postHandler)
+	web.CPMux.Handle(pat.Post("/notifications/general/"), postHandler)
 }
 
 func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} {
@@ -61,6 +69,8 @@ func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.Templa
 	if err != nil {
 		return templateData, nil
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
 	return templateData, nil
 }

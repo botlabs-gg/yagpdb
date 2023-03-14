@@ -7,18 +7,18 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/jinzhu/gorm"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dshardorchestrator/v2"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/featureflags"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -32,7 +32,7 @@ const (
 	ContextKeyConfig ContextKey = iota
 )
 
-const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak
+const MuteDeniedChannelPerms = discordgo.PermissionSendMessages | discordgo.PermissionVoiceSpeak | discordgo.PermissionUsePublicThreads | discordgo.PermissionUsePrivateThreads | discordgo.PermissionSendMessagesInThreads
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -54,11 +54,13 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleMemberJoin), eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberTimeoutChange, eventsystem.EventGuildMemberUpdate)
 
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)
 
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
+	pubsub.AddHandler("mod_refresh_mute_override_create_role", HandleRefreshMuteOverridesCreateRole, nil)
 }
 
 type ScheduledUnmuteData struct {
@@ -70,14 +72,26 @@ type ScheduledUnbanData struct {
 }
 
 func (p *Plugin) ShardMigrationReceive(evt dshardorchestrator.EventType, data interface{}) {
-	if evt == bot.EvtGuildState {
-		gs := data.(*dstate.GuildState)
-		go RefreshMuteOverrides(gs.ID)
+	if evt == bot.EvtMember {
+		ms := data.(*dstate.MemberState)
+		if ms.User.ID == common.BotUser.ID {
+			go func(gID int64) {
+				// relieve startup preasure, sleep for up to 60 minutes
+				sleep := time.Second * time.Duration(100+rand.Intn(60*180))
+				time.Sleep(sleep)
+
+				RefreshMuteOverrides(gID, false)
+			}(ms.GuildID)
+		}
 	}
 }
 
 func HandleRefreshMuteOverrides(evt *pubsub.Event) {
-	RefreshMuteOverrides(evt.TargetGuildInt)
+	RefreshMuteOverrides(evt.TargetGuildInt, false)
+}
+
+func HandleRefreshMuteOverridesCreateRole(evt *pubsub.Event) {
+	RefreshMuteOverrides(evt.TargetGuildInt, true)
 }
 
 var started = time.Now()
@@ -90,17 +104,17 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	gc := evt.GuildCreate()
 
 	// relieve startup preasure, sleep for up to 10 minutes
-	if time.Since(started) < time.Minute {
-		sleep := time.Second * time.Duration(100+rand.Intn(600))
+	if time.Since(started) < time.Minute*10 {
+		sleep := time.Second * time.Duration(100+rand.Intn(60*180))
 		time.Sleep(sleep)
 	}
 
-	RefreshMuteOverrides(gc.ID)
+	RefreshMuteOverrides(gc.ID, false)
 }
 
 // Refreshes the mute override on the channel, currently it only adds it.
-func RefreshMuteOverrides(guildID int64) {
-	if !featureflags.GuildHasFlagOrLogError(guildID, featureFlagMuteRoleManaged) {
+func RefreshMuteOverrides(guildID int64, createRole bool) {
+	if !createRole && !featureflags.GuildHasFlagOrLogError(guildID, featureFlagMuteRoleManaged) {
 		return // nothing to do
 	}
 
@@ -109,32 +123,70 @@ func RefreshMuteOverrides(guildID int64) {
 		return
 	}
 
-	if config.MuteRole == "" || !config.MuteManageRole {
+	if !config.MuteManageRole {
 		return
 	}
 
-	guild := bot.State.Guild(true, guildID)
+	if config.MuteRole == "" || config.MuteRole == "0" {
+		if createRole {
+			_, err := createMuteRole(config, guildID)
+			if err != nil {
+				logger.WithError(err).Error("failed creating mute role")
+			}
+		}
+
+		// this will trigger a new pubsub event to refresh mute override if it was successfull in creating the role
+		// so theres no need to continue here
+		return
+	}
+
+	guild := bot.State.GetGuild(guildID)
 	if guild == nil {
 		return // Still starting up and haven't received the guild yet
 	}
 
-	if guild.RoleCopy(true, config.IntMuteRole()) == nil {
+	if guild.GetRole(config.IntMuteRole()) == nil {
 		return
 	}
 
-	guild.RLock()
-	channelsCopy := make([]*discordgo.Channel, 0, len(guild.Channels))
 	for _, v := range guild.Channels {
-		channelsCopy = append(channelsCopy, v.DGoCopy())
-	}
-	guild.RUnlock()
-
-	for _, v := range channelsCopy {
 		RefreshMuteOverrideForChannel(config, v)
 	}
 }
 
+func createMuteRole(config *Config, guildID int64) (int64, error) {
+	guild := bot.State.GetGuild(guildID)
+	if guild == nil {
+		return 0, errors.New("failed finding guild")
+	}
+
+	r, err := common.BotSession.GuildRoleCreateComplex(guildID, discordgo.RoleCreate{
+		Name:        "Muted - (by yagpdb)",
+		Permissions: 0,
+		Mentionable: false,
+		Color:       0,
+		Hoist:       false,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	config.MuteRole = strconv.FormatInt(r.ID, 10)
+	err = config.Save(guildID)
+	if err != nil {
+		// failed saving config, attempt to delete the role
+		common.BotSession.GuildRoleDelete(guildID, r.ID)
+		return 0, err
+	}
+
+	return r.ID, nil
+}
+
 func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err error) {
+	if !evt.HasFeatureFlag(featureFlagMuteRoleManaged) {
+		return false, nil
+	}
+
 	var channel *discordgo.Channel
 	if evt.Type == eventsystem.EventChannelCreate {
 		channel = evt.ChannelCreate().Channel
@@ -155,18 +207,18 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err erro
 		return false, nil
 	}
 
-	RefreshMuteOverrideForChannel(config, channel)
+	RefreshMuteOverrideForChannel(config, dstate.ChannelStateFromDgo(channel))
 
 	return false, nil
 }
 
-func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
+func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) {
 	// Ignore the channel
 	if common.ContainsInt64Slice(config.MuteIgnoreChannels, channel.ID) {
 		return
 	}
 
-	if !bot.BotProbablyHasPermission(channel.GuildID, channel.ID, discordgo.PermissionManageRoles) {
+	if hasPerms, _ := bot.BotHasPermission(channel.GuildID, channel.ID, discordgo.PermissionManageRoles); !hasPerms {
 		return
 	}
 
@@ -174,8 +226,8 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 
 	// Check for existing override
 	for _, v := range channel.PermissionOverwrites {
-		if v.Type == "role" && v.ID == config.IntMuteRole() {
-			override = v
+		if v.Type == discordgo.PermissionOverwriteTypeRole && v.ID == config.IntMuteRole() {
+			override = &v
 			break
 		}
 	}
@@ -184,7 +236,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 	if config.MuteDisallowReactionAdd {
 		MuteDeniedChannelPermsFinal = MuteDeniedChannelPermsFinal | discordgo.PermissionAddReactions
 	}
-	allows := 0
+	allows := int64(0)
 	denies := MuteDeniedChannelPermsFinal
 	changed := true
 
@@ -207,8 +259,56 @@ func RefreshMuteOverrideForChannel(config *Config, channel *discordgo.Channel) {
 	}
 
 	if changed {
-		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), "role", allows, denies)
+		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), discordgo.PermissionOverwriteTypeRole, allows, denies)
 	}
+}
+
+func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err error) {
+	data := evt.GuildMemberUpdate()
+	//ignore members who aren't timedout or have been timedout in the past
+	if data.CommunicationDisabledUntil == nil || data.CommunicationDisabledUntil.Before(time.Now()) {
+		return false, nil
+	}
+
+	config, err := GetConfig(data.GuildID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	// no modlog channel setup
+	if config.IntActionChannel() == 0 {
+		return false, nil
+	}
+	// If we poll the audit log too fast then there sometimes wont be a audit log entry
+	time.Sleep(time.Second * 3)
+
+	author, entry := FindAuditLogEntry(data.GuildID, discordgo.AuditLogActionMemberUpdate, data.User.ID, time.Second*5)
+	if entry == nil || author == nil {
+		return false, nil
+	}
+	logger.Infof("got timeout event %v", entry)
+
+	if *entry.Changes[0].Key != discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
+		return false, nil
+	}
+
+	if author.ID == common.BotUser.ID {
+		// Bot performed the timeout, don't make duplicate modlog entries
+		return false, nil
+	}
+
+	if !config.LogTimeouts {
+		// User doesn't want us to log timeouts not made through yag
+		return false, nil
+	}
+
+	err = CreateModlogEmbed(config, author, MATimeoutAdded, data.User, entry.Reason, "")
+	if err != nil {
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending timeout log message")
+		return false, errors.WithStackIf(err)
+	}
+
+	return false, nil
 }
 
 func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
@@ -242,6 +342,11 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		if i > 0 {
 			// The bot was the one that performed the unban
 			common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyUnbannedUser(guildID, user.ID)))
+			if i == 2 {
+				//Bot performed non-scheduled unban, don't make duplicate entries in the modlog
+				return
+			}
+			// Bot performed scheduled unban, modlog entry must be handled
 			botPerformed = true
 		}
 
@@ -325,6 +430,11 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 		return
 	}
 
+	if !config.LogKicks {
+		// User doesn't want us to log kicks not made through yag
+		return
+	}
+
 	err := CreateModlogEmbed(config, author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
@@ -335,6 +445,10 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 // to avoid weird bugs from happening we lock it so it can only be updated one place per user
 func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 	return func(evt *eventsystem.EventData) (retry bool, err error) {
+		if !evt.HasFeatureFlag(featureFlagMuteEnabled) {
+			return false, nil
+		}
+
 		var userID int64
 		// TODO: add utility functions to the eventdata struct for fetching things like these?
 		if evt.Type == eventsystem.EventGuildMemberAdd {
@@ -391,6 +505,11 @@ func HandleMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 
 func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	c := evt.GuildMemberUpdate()
+	member := c.Member
+	// ignore timedout users
+	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
+		return false, nil
+	}
 
 	config, err := GetConfig(c.GuildID)
 	if err != nil {
@@ -402,7 +521,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 
 	guild := evt.GS
 
-	role := guild.RoleCopy(true, config.IntMuteRole())
+	role := guild.GetRole(config.IntMuteRole())
 	if role == nil {
 		return false, nil // Probably deleted the mute role, do nothing then
 	}
@@ -439,7 +558,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	return false, nil
 }
 
-func FindAuditLogEntry(guildID int64, typ int, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
+func FindAuditLogEntry(guildID int64, typ discordgo.AuditLogAction, targetUser int64, within time.Duration) (author *discordgo.User, entry *discordgo.AuditLogEntry) {
 	auditlog, err := common.BotSession.GuildAuditLog(guildID, 0, 0, typ, 10)
 	if err != nil {
 		return nil, nil
@@ -521,7 +640,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 	guildID := evt.GuildID
 	userID := unbanData.UserID
 
-	g := bot.State.Guild(true, guildID)
+	g := bot.State.GetGuild(guildID)
 	if g == nil {
 		logger.WithField("guild", guildID).Error("Unban scheduled for guild not in state")
 		return false, nil

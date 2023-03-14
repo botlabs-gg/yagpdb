@@ -6,15 +6,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/internalapi"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/internalapi"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/mediocregopher/radix/v3"
 )
 
 var clientLogger = common.GetFixedPrefixLogger("botrest_client")
 
-func GetGuild(guildID int64) (g *discordgo.Guild, err error) {
+func GetGuild(guildID int64) (g *dstate.GuildSet, err error) {
 	err = internalapi.GetWithGuild(guildID, discordgo.StrID(guildID)+"/guild", &g)
 	return
 }
@@ -135,7 +136,7 @@ func getNodeStatusesClustered() (st *NodeStatusesResponse, err error) {
 	// send requests
 	resultCh := make(chan interface{}, len(nodeIDs))
 	for _, n := range nodeIDs {
-		go getNodeStatus(n, resultCh)
+		go getNodeStatusCh(n, resultCh)
 	}
 
 	timeout := time.After(time.Second * 3)
@@ -174,24 +175,31 @@ OUTER:
 	return
 }
 
-func getNodeStatus(nodeID string, retCh chan interface{}) {
+func getNodeStatusCh(nodeID string, retCh chan interface{}) {
+	status, err := GetNodeStatus(nodeID)
+	if err != nil {
+		retCh <- err
+	} else {
+		retCh <- status
+	}
+}
+
+func GetNodeStatus(nodeID string) (*NodeStatus, error) {
 	// retrieve the REST address for this node
 	addr, err := common.ServicePoller.GetNodeAddress(nodeID)
 	if err != nil {
 		clientLogger.WithError(err).Error("failed retrieving rest address for bot for node id: ", nodeID)
-		retCh <- err
-		return
+		return nil, err
 	}
 
 	var status *NodeStatus
 	err = internalapi.GetWithAddress(addr, "node_status", &status)
 	if err != nil {
 		clientLogger.WithError(err).Error("failed retrieving shard status for node ", nodeID)
-		retCh <- err
-		return
+		return nil, err
 	}
 
-	retCh <- status
+	return status, nil
 }
 
 func SendReconnectShard(shardID int, reidentify bool) (err error) {

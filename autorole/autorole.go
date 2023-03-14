@@ -1,12 +1,14 @@
 package autorole
 
 import (
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-var confDisableNonPremiumRetroActiveAssignment = config.RegisterOption("yagpdb.autorole.non_premium_retroactive_assignment", "Wether to enable retroactive assignemnt on non premium guilds", true)
+var configCache = common.CacheSet.RegisterSlot("autorole_config", func(key interface{}) (interface{}, error) {
+	config, err := GetGeneralConfig(key.(int64))
+	return config, err
+}, int64(0))
 
 var logger = common.GetPluginLogger(&Plugin{})
 
@@ -32,12 +34,21 @@ func RegisterPlugin() {
 
 type GeneralConfig struct {
 	Role             int64 `json:",string" valid:"role,true"`
-	RequiredDuration int
+	RequiredDuration int   `valid:"0,"`
 
-	RequiredRoles []int64 `valid:"role,true"`
-	IgnoreRoles   []int64 `valid:"role,true"`
-	OnlyOnJoin    bool
+	RequiredRoles            []int64 `valid:"role,true"`
+	IgnoreRoles              []int64 `valid:"role,true"`
+	OnlyOnJoin               bool
+	AssignRoleAfterScreening bool
 }
+
+const (
+	FullScanStarted int = iota + 1
+	FullScanIterating
+	FullScanIterationDone
+	FullScanAssigningRole
+	FullScanCancelled
+)
 
 func GetGeneralConfig(guildID int64) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}

@@ -2,11 +2,12 @@ package advice
 
 import (
 	"encoding/json"
+	"math/rand"
 	"net/http"
 	"net/url"
 
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/yagpdb/commands"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 )
 
 var Command = &commands.YAGCommand{
@@ -15,9 +16,10 @@ var Command = &commands.YAGCommand{
 	Name:        "Advice",
 	Description: "Don't be afraid to ask for advice!",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "What", Type: dcmd.String},
+		{Name: "What", Type: dcmd.String},
 	},
-
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		//return "The API this command used has been shut down :(", nil
 		random := true
@@ -55,7 +57,7 @@ var Command = &commands.YAGCommand{
 		} else {
 			cast := decoded.(*SearchAdviceResp)
 			if len(cast.Slips) > 0 {
-				advice = cast.Slips[0].Advice
+				advice = cast.Slips[rand.Intn(len(cast.Slips))].Advice
 			}
 		}
 

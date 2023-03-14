@@ -1,12 +1,12 @@
 package createinvite
 
 import (
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/stdcommands/util"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 var Command = &commands.YAGCommand{
@@ -14,11 +14,11 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "createinvite",
-	Description:          "Maintenance command, creates a invite for the specified server",
+	Description:          "Maintenance command, creates an invite for the specified server. Bot Admin Only",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "server", Type: dcmd.Int},
+		{Name: "server", Type: dcmd.BigInt},
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		channels, err := common.BotSession.GuildChannels(data.Args[0].Int64())
@@ -28,11 +28,9 @@ var Command = &commands.YAGCommand{
 
 		channelID := int64(0)
 		for _, v := range channels {
-			if channelID == 0 || v.Type != discordgo.ChannelTypeGuildVoice {
+			if v.Type == discordgo.ChannelTypeGuildText {
 				channelID = v.ID
-				if v.Type != discordgo.ChannelTypeGuildVoice {
-					break
-				}
+				break
 			}
 		}
 
@@ -41,15 +39,17 @@ var Command = &commands.YAGCommand{
 		}
 
 		invite, err := common.BotSession.ChannelInviteCreate(channelID, discordgo.Invite{
-			MaxAge:  120,
-			MaxUses: 1,
+			MaxAge:    120,
+			MaxUses:   1,
+			Temporary: true,
+			Unique:    true,
 		})
 
 		if err != nil {
 			return nil, err
 		}
 
-		bot.SendDM(data.Msg.Author.ID, "discord.gg/"+invite.Code)
+		bot.SendDM(data.Author.ID, "discord.gg/"+invite.Code)
 		return "Sent invite expiring in 120 seconds and with 1 use in DM", nil
 	}),
 }

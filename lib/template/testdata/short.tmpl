@@ -1,0 +1,15 @@
+{{/*
+	Displays a random color.
+	See <https://yagpdb-cc.github.io/utilities/random-color> for more information.
+
+	Author: jo3-l <https://github.com/jo3-l>
+*/}}
+
+{{ $dec := randInt 0 16777216 }}
+{{ $hex := printf "%06x" $dec }}
+{{ sendMessage nil (cembed
+	"title" "Random Color"
+	"color" $dec
+	"description" (printf "**Decimal:** %d\n**Hex:** #%s" $dec $hex)
+	"thumbnail" (sdict "url" (printf "https://dummyimage.com/400x400/%s/%s" $hex $hex))
+) }}

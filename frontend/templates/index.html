@@ -1,0 +1,310 @@
+{{define "index"}}
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="cache-control" content="max-age=2592000000">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png?v=6">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png?v=6">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png?v=6">
+<link rel="manifest" href="/static/icons/site.webmanifest?v=6">
+<link rel="mask-icon" href="/static/icons/safari-pinned-tab.svg?v=6" color="#5bbad5">
+<link rel="shortcut icon" href="/static/icons/favicon.ico?v=6">
+<meta name="msapplication-TileColor" content="#2b5797">
+<meta name="msapplication-config" content="/static/icons/browserconfig.xml?v=6">
+<meta name="theme-color" content="#ffffff">
+
+  <meta property="og:title" content="YAGPDB" />
+  <meta property="og:description" content="Yet Another General Purpose Discord Bot" />
+  <!-- For Social Media -->
+  <meta property="description" content="Yet Another General Purpose Discord Bot" />
+  <!-- For search engines -->
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4"
+    crossorigin="anonymous">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/landing-page-min.css">
+  <!-- Custom Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Lato:300,400,500,700|Poppins:500,700" rel="stylesheet">
+  <title>YAGPDB</title>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark bg-dark navbar-expand-sm fixed-top">
+    <a class="navbar-brand" href="#">
+      <img src="/static/img/logo_y_small.png" width="50" height="50" class="d-inline-block align-top" alt="">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+      aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse poppins" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a id="link_to_about" class="nav-link js-anchor-link" href="#about">About</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link js-anchor-link" href="#features">Features</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="/status">Status</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=applications.commands%20bot&permissions=1516122532343&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" .Host "/manage")}}">Add to server</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="/premium">Premium</a>
+        </li>
+         <li class="nav-item active">
+          <a class="nav-link" target="_blank" href="https://discord.gg/4udtcA5">Support</a>
+        </li>
+      </ul>
+      <form class="form-inline my-2 my-lg-0 mr-2">
+        <a class="btn btn-outline-danger my-2 my-sm-0" href="/manage">Control Panel</a>
+      </form>
+      {{if .User}}
+      <form class="form-inline my-2 my-lg-0">
+        <a class="btn btn-outline-danger my-2 my-sm-0" href="/logout">Logout</a>
+      </form>
+      {{end}}
+    </div>
+  </nav>
+  <!-- Intro -->
+  <div id="tscene" class="intro centered">
+    <header class="centered">
+      <div id="introo">
+        <div class="container centered">
+          <div class="row justify-content-md-center">
+            <div class="col col-md-10">
+              <h1 class="brand-heading bold intro_head">
+                <br/>YAGPDB</h1>
+              <p class="intro_headline">Yet Another General Purpose Discord Bot</p>
+            </div>
+          </div>
+          {{if ne .DemoServerID "0"}}<div class="row justify-content-md-center">
+            <div class="col col-md-10">
+              <p class="intro-text poppins"><a href="/manage/{{.DemoServerID}}/home">Click here for a live demo of the control panel</a></p>
+            </div>
+          </div>{{end}}
+          <div class="row justify-content-md-center">
+            <div class="col col-md-5">
+              <div class="numberbutton">
+                <img src="/static/img/button.png" alt="" class="btn_img">
+                <p class="intro-text poppins bold numbercentered">Joined Servers
+                  <br> {{.JoinedServers}}</p>
+              </div>
+            </div>
+            <div class="col col-md-5">
+              <div class="numberbutton">
+                <img src="/static/img/button.png" alt="" class="btn_img">
+                <p class="intro-text poppins bold numbercentered">Commands ran today
+                  <br> {{.Commands}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <!-- Parallax Moving Background -->
+    <div id="m_background" data-depth="0.2"></div>
+  </div>
+  <!-- About -->
+  <div class="about">
+    <section class="container content-section text-center">
+      <a id="about"></a>
+      <img class="img-responsive about aboutlogo" src="/static/img/logo_y.png" alt="logo of yagpdb">
+      <div class="row justify-content-md-center">
+        <div class="col col-lg-8 abouttext" style="padding-bottom: 3%;">
+          <h2 class="about poppins semibold">About YAGPDB</h2>
+          <p class="about">YAGPDB is a multi-purpose Discord bot that I've worked on for quite some time now. What does it do? Well, it does
+            a bunch of stuff right now, the best way to figure out what it does is to try it out by adding it onto a testing
+            server and see what it provides for yourself.</p>
+          <p class="about">
+            <b>Who am I?</b> I go by the name Jonas747 online and (unsurprisingly) my real name is also Jonas, although not 747,
+            I'm not a plane. YAGPDB is a project that I have been developing in my spare time for roughly 3 years now, it
+            started out because MEE6 (which I was currently using for my server) was lacking a lot of stuff that I wanted,
+            so I decided to make my own bot, and here I am.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+  <!-- Features -->
+  <div class="blank">
+    <a id="features"></a>
+    <section id="features_desktop" class="o_container content-section features">
+      <div class="row justify-content-md-center">
+        <div class="col col-lg-12">
+          <h2 class="feature_title semibold">
+            <b>FEATURES</b>
+          </h2>
+        </div>
+      </div>
+      <div id="reddit_feed" class="feature_element_l">
+        <div class="text-left redbox first">
+          <h3>Feeds</h3>
+          <ul>
+            <li>Fast Reddit feeds (within one minute)</li>
+            <li>Fast YouTube feeds (within a few minutes)</li>
+            <li>Join / Leave messages in a specific channel (configurable)</li>
+            <li>Direct messages on join (configurable)</li>
+          </ul>
+        </div>
+        <img src="/static/img/reddit feed1.png" class="img-fluid f_image_r second" alt="Example of Reddit Feed from r/discordapp">
+        <img src="/static/img/line1.png" class="img-fluid line_image line1" alt="line">
+      </div>
+      <div id="rolemenu" class="feature_element_r">
+        <img src="/static/img/rolemenu1.png" class="img-fluid f_image_l second" alt="Role Menu with reactions">
+        <div class="redbox text_right first">
+          <h3>Self-assignable Roles</h3>
+          <p>This feature is very advanced. You can either give yourself a role with a command or with a role menu:</p>
+          <ul>
+            <li>Group in several groups for multiple menus</li>
+            <li>Assign the roles via reactions on a message (role menu)</li>
+            <li>Different modes like single or multiple roles at once</li>
+            <li>Advanced options like require role or ignore role per group or role</li>
+          </ul>
+        </div>
+        <img src="/static/img/line4.png" class="img-fluid line_image line2" alt="line">
+      </div>
+      <div id="automod" class="feature_element_l">
+        <div class="text-left redbox first">
+          <h3>Automatic Moderator</h3>
+          <p>YAGPDB has a very configurable automoderator, for each rule you can set automoderator to mute, kick or ban after
+            a certain number of violations within a certain timeframe.</p>
+          <p>
+            <b>
+              <a href="https://docs.yagpdb.xyz/tools-and-utilities/automoderator-v2" target="_blank" rel="noopener" class="link">Click here for a list of rules, conditions, and effects</a>
+            </b>
+          </p>
+        </div>
+        <img src="/static/img/automod1.png" class="img-fluid f_image_r second" alt="Auto Moderator in action">
+        <img src="/static/img/line1.png" class="img-fluid line_image line3" alt="line">
+      </div>
+      <div id="customcommands" class="feature_element_r">
+        <img src="/static/img/custom commands1.png" class="img-fluid f_image_l second" alt="Custom Command example with invite">
+        <div class="redbox text_right first">
+          <h3>Custom Commands</h3>
+          <ul>
+            <li>Triggers: Starts with, Contains, Exact match or Regex</li>
+            <li>Dynamic response</li>
+            <li>Useful for automatic responses to questions, command aliases or other fun stuff</li>
+          </ul>
+          <p>
+            <b>
+              <a href="https://docs.yagpdb.xyz/other-1/custom-command-examples" target="_blank" rel="noopener" class="link">Click here for custom command examples</a>
+            </b>
+          </p>
+        </div>
+        <img src="/static/img/line4.png" class="img-fluid line_image line4" alt="line">
+      </div>
+      <div id="serverstats" class="feature_element_l">
+        <div class="text-left redbox first">
+          <h3>Server Stats (
+            <a href="http://yagpdb.xyz/public/140847179043569664/stats" target="_blank" rel="noopener" class="link">Example</a>)</h3>
+          <ul>
+            <li>Stats: Members joined / left, messages in the last 24h per channel, members online</li>
+            <li>Optionally make stats public</li>
+            <li>Graphs with message overview on the control panel</li>
+          </ul>
+        </div>
+        <img src="/static/img/stats1.png" class="img-fluid f_image_r second" alt="Example of the status command">
+        <img src="/static/img/line5.png" class="img-fluid line_image line5" alt="line">
+      </div>
+      <div id="general_moderation" class="feature_element_r">
+        <img src="/static/img/moderation1.png" class="img-fluid f_image_l second" alt="Example of Moderation with YAGPDB">
+        <div class="redbox text_right first">
+          <h3>General Moderation</h3>
+          <ul>
+            <li>Kick, Ban and Clean</li>
+            <li>Advanced cleaning parameters</li>
+            <li>Timed mutes and bans</li>
+            <li>Modlog with kicks, bans, mutes and warnings</li>
+            <li>Message to the person being warned / kicked / muted / banned</li>
+            <li>Message logs</li>
+            <li>Warnings</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row feature_item">
+        <div class="col-lg-12">
+          <h2 class="centered big_margin">And finally, the feature I'm most proud of:</h2>
+        </div>
+      </div>
+      <div id="catfacts" class="feature_element_r">
+        <img src="/static/img/cat fact1.png" class="img-fluid f_image_l second" alt="A random cat fact">
+        <div class="redbox text_right first">
+          <h3>Cat Facts</h3>
+          <p>This feature made me spend days and nights sitting in a horrible chair in a basement staring at an old monitor
+            fetching new facts. It includes
+            <b>over 250</b> different cat facts!</p>
+        </div>
+      </div>
+    </section>
+    <!-- Questions and short FAQ -->
+    <div class="questions">
+      <section id="other" class="container content-section ">
+        <div class="row justify-content-md-center">
+          <div class="col col-lg-12 ">
+            <h2>Have questions? Check out these links!</h2>
+            <ul>
+              <li>The documentation can be found at
+                <a class="link" href="https://docs.yagpdb.xyz/">docs.yagpdb.xyz</a>
+              </li>
+              <li>The YAGPDB Community Server for support, suggestions, feedback and general talk can be joined
+                <a class="link" href="https://discord.gg/4udtcA5">here</a>
+              </li>
+              <li>If you want to donate via Patreon, check out
+                <a class="link" href="https://docs.yagpdb.xyz/donating">this page</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+    <!-- Footer -->
+    <section id="footer" class="container container-section blank_no_bg">
+      <div class="row justify-content-md-center footer">
+        <div class="col col-lg-12">
+          <p>
+            <b>YAGPDB</b> created by
+            <a class="link" href="https://github.com/jonas747" rel="noopener" target="_blank">Jonas747</a> | Landing Page by
+            <a class="link" href="https://github.com/michelhn/" rel="noopener" target="_blank">Michdi</a>
+          </p>
+        </div>
+      </div>
+    </section>
+    <!-- jQuery, Popper.Js, Bootstrap and Parallax -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+      crossorigin="anonymous"></script>
+    <script src="/static/vendorr/bootstrap/js/bootstrap.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/parallax/3.1.0/parallax.min.js"></script>
+    <!-- Javascript for moving background (parallax) -->
+    <script>
+      var scene = document.getElementById('tscene');
+      var parallaxInstance = new Parallax(tscene, {
+        relativeInput: true,
+        hoverOnly: true,
+        pointerEvents: true
+      });
+    </script>
+    {{template "googleAnalytics" .}}
+</body>
+</html>
+
+
+{{end}} {{define "googleAnalytics"}}{{if and (not .Testing) .GAID}}
+<script>
+  (function (i, s, o, g, r, a, m) {
+    i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+      (i[r].q = i[r].q || []).push(arguments)
+    }, i[r].l = 1 * new Date(); a = s.createElement(o),
+      m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+  })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+  ga('create', '{{.GAID}}', 'auto');
+  ga('send', 'pageview');
+</script>{{end}}{{end}}

@@ -1,20 +1,27 @@
 package autorole
 
 import (
+	_ "embed"
 	"fmt"
 	"html"
 	"html/template"
 	"net/http"
+	"strconv"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/autorole.html
+var PageHTML string
 
 type Form struct {
 	GeneralConfig `valid:"traverse"`
@@ -22,14 +29,18 @@ type Form struct {
 
 var _ web.SimpleConfigSaver = (*Form)(nil)
 
-func (f Form) Save(guildID int64) error {
-	pubsub.Publish("autorole_stop_processing", guildID, nil)
+var (
+	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "autorole_settings_updated", FormatString: "Updated autorole settings"})
+	panelLogKeyStartedFullScan = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "autorole_full_scan", FormatString: "Started full retroactive autorole scan"})
+)
 
+func (f Form) Save(guildID int64) error {
 	err := common.SetRedisJson(KeyGeneral(guildID), f.GeneralConfig)
 	if err != nil {
 		return err
 	}
 
+	pubsub.EvictCacheSet(configCache, guildID)
 	return nil
 }
 
@@ -38,7 +49,7 @@ func (f Form) Name() string {
 }
 
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../autorole/assets/autorole.html", "templates/plugins/autorole.html")
+	web.AddHTMLTemplate("autorole/assets/autorole.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Autorole",
@@ -59,10 +70,11 @@ func (p *Plugin) InitWeb() {
 	muxer.Handle(pat.Get(""), getHandler)
 	muxer.Handle(pat.Get("/"), getHandler)
 
-	muxer.Handle(pat.Post("/fullscan"), web.ControllerPostHandler(handlePostFullScan, getHandler, nil, "Triggered a full autorole scan"))
+	muxer.Handle(pat.Post("/fullscan"), web.ControllerPostHandler(handlePostFullScan, getHandler, nil))
+	muxer.Handle(pat.Post("/fullscan/cancel"), web.ControllerPostHandler(handleCancelFullScan, getHandler, nil))
 
-	muxer.Handle(pat.Post(""), web.SimpleConfigSaverHandler(Form{}, getHandler))
-	muxer.Handle(pat.Post("/"), web.SimpleConfigSaverHandler(Form{}, getHandler))
+	muxer.Handle(pat.Post(""), web.SimpleConfigSaverHandler(Form{}, getHandler, panelLogKeyUpdatedSettings))
+	muxer.Handle(pat.Post("/"), web.SimpleConfigSaverHandler(Form{}, getHandler, panelLogKeyUpdatedSettings))
 }
 
 func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface{} {
@@ -73,13 +85,35 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general
 
+	var status int
+	fullScanActive := false
+	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(activeGuild.ID)))
+	if status > 0 {
+		fullScanActive = true
+		var fullScanStatus string
+		switch status {
+		case FullScanStarted:
+			fullScanStatus = "Started"
+		case FullScanIterating:
+			fullScanStatus = "Iterating through the members"
+		case FullScanIterationDone:
+			fullScanStatus = "Iteration completed"
+		case FullScanAssigningRole:
+			fullScanStatus = "Assigning roles"
+			var assignedRoles string
+			common.RedisPool.Do(radix.Cmd(&assignedRoles, "GET", RedisKeyFullScanAssignedRoles(activeGuild.ID)))
+			tmpl["AssignedRoles"] = assignedRoles
+		case FullScanCancelled:
+			fullScanStatus = "Cancelled"
+		}
+		tmpl["FullScanStatus"] = fullScanStatus
+	}
+	tmpl["FullScanActive"] = fullScanActive
+
 	var proc int
 	common.RedisPool.Do(radix.Cmd(&proc, "GET", KeyProcessing(activeGuild.ID)))
 	tmpl["Processing"] = proc
 	tmpl["ProcessingETA"] = int(proc / 60)
-
-	fullScanActive := WorkingOnFullScan(activeGuild.ID)
-	tmpl["FullScanActive"] = fullScanActive
 
 	return tmpl
 
@@ -89,6 +123,10 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		return tmpl.AddAlerts(web.ErrorAlert("Full scan is paid premium only")), nil
+	}
+
 	err := botRestPostFullScan(activeGuild.ID)
 	if err != nil {
 		if err == ErrAlreadyProcessingFullGuild {
@@ -96,6 +134,26 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 		}
 
 		return tmpl, errors.WithMessage(err, "botrest")
+	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyStartedFullScan))
+
+	return tmpl, nil
+}
+
+func handleCancelFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
+	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
+
+	var status int64
+	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(activeGuild.ID)))
+	if status == 0 {
+		return tmpl.AddAlerts(web.ErrorAlert("Full scan is not active. Please refresh the page.")), nil
+	}
+
+	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(activeGuild.ID), "10", strconv.Itoa(FullScanCancelled)))
+	if err != nil {
+		logger.WithError(err).Error("Failed marking Full scan as cancelled")
 	}
 
 	return tmpl, nil
@@ -117,7 +175,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	enabledDisabled := ""
 	autoroleRole := "none"
 
-	if role := ag.Role(general.Role); role != nil {
+	if role := ag.GetRole(general.Role); role != nil {
 		templateData["WidgetEnabled"] = true
 		enabledDisabled = web.EnabledDisabledSpanStatus(true)
 		autoroleRole = html.EscapeString(role.Name)

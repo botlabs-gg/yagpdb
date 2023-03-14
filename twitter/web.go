@@ -2,26 +2,27 @@ package twitter
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/twitter/models"
-	"github.com/jonas747/yagpdb/web"
+	"html/template"
+	"net/http"
+	"strconv"
+
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/go-twitter/twitter"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
-	"html/template"
-	"net/http"
-	"strconv"
 )
 
-type CtxKey int
-
-const (
-	CurrentConfig CtxKey = iota
-)
+//go:embed assets/twitter.html
+var PageHTML string
 
 type Form struct {
 	TwitterUser    string `valid:",1,256"`
@@ -30,12 +31,21 @@ type Form struct {
 }
 
 type EditForm struct {
-	DiscordChannel int64 `valid:"channel,false"`
+	DiscordChannel  int64 `valid:"channel,false"`
+	IncludeReplies  bool
+	IncludeRetweets bool
+	Enabled         bool
 }
+
+var (
+	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "twitter_added_feed", FormatString: "Added twitter feed from %s"})
+	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "twitter_removed_feed", FormatString: "Removed twitter feed from %s"})
+	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "twitter_updated_feed", FormatString: "Updated twitter feed from %s"})
+)
 
 func (p *Plugin) InitWeb() {
 
-	web.LoadHTMLTemplate("../../twitter/assets/twitter.html", "templates/plugins/twitter.html")
+	web.AddHTMLTemplate("twitter/assets/twitter.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Twitter Feeds",
 		URL:  "twitter",
@@ -43,24 +53,23 @@ func (p *Plugin) InitWeb() {
 	})
 
 	mux := goji.SubMux()
+	mux.Use(web.RequireBotMemberMW)
+	mux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	web.CPMux.Handle(pat.New("/twitter/*"), mux)
 	web.CPMux.Handle(pat.New("/twitter"), mux)
-
-	// Alll handlers here require guild channels present
-	mux.Use(web.RequireGuildChannelsMiddleware)
 
 	mainGetHandler := web.ControllerHandler(p.HandleTwitter, "cp_twitter")
 
 	mux.Handle(pat.Get("/"), mainGetHandler)
 	mux.Handle(pat.Get(""), mainGetHandler)
 
-	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{}, "Added a new twitter feed")
+	addHandler := web.ControllerPostHandler(p.HandleNew, mainGetHandler, Form{})
 
 	mux.Handle(pat.Post(""), addHandler)
 	mux.Handle(pat.Post("/"), addHandler)
-	mux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, EditForm{}, "Updated a twitter feed"))
-	mux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a twitter feed"))
-	mux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil, "Removed a twitter feed"))
+	mux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, EditForm{}))
+	mux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
+	mux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 }
 
 func (p *Plugin) HandleTwitter(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -81,8 +90,8 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	if !premium.ContextPremium(ctx) {
-		return templateData.AddAlerts(web.ErrorAlert("Twitter feeds are premium only")), nil
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		return templateData.AddAlerts(web.ErrorAlert("Twitter feeds are paid premium only")), nil
 	}
 
 	// limit it to max 25 feeds
@@ -134,6 +143,9 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	err = m.InsertG(ctx, boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.ScreenName}))
+	}
 	return templateData, err
 }
 
@@ -178,8 +190,14 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	data := ctx.Value(common.ContextKeyParsedForm).(*EditForm)
 
 	sub.ChannelID = data.DiscordChannel
-	sub.Enabled = true
-	_, err = sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled"))
+	sub.Enabled = data.Enabled
+	sub.IncludeRT = data.IncludeRetweets
+	sub.IncludeReplies = data.IncludeReplies
+
+	_, err = sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled", "include_replies", "include_rt"))
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.TwitterUsername}))
+	}
 	return
 }
 
@@ -189,6 +207,9 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (templateD
 
 	sub := ctx.Value(ContextKeySub).(*models.TwitterFeed)
 	_, err = sub.DeleteG(ctx)
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.TwitterUsername}))
+	}
 	return templateData, err
 }
 

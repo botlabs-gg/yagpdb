@@ -15,12 +15,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/models"
-	"github.com/jonas747/yagpdb/common/patreon"
-	"github.com/jonas747/yagpdb/web/discordblog"
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/patreon"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/web/discordblog"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
 	"goji.io/pat"
@@ -100,7 +103,7 @@ func HandleServerHome(w http.ResponseWriter, r *http.Request) (TemplateData, err
 func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
 	activeGuild, templateData := GetBaseCPContextData(r.Context())
 
-	logs, err := common.GetCPLogEntries(activeGuild.ID)
+	logs, err := cplogs.GetEntries(activeGuild.ID, 100, 0)
 	if err != nil {
 		templateData.AddAlerts(ErrorAlert("Failed retrieving logs", err))
 	} else {
@@ -368,7 +371,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 }
 
 func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
-	g := r.Context().Value(common.ContextKeyCurrentGuild).(*discordgo.Guild)
+	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)
 	if err != nil {
@@ -446,10 +449,10 @@ func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http
 	config := r.Context().Value(common.ContextKeyCoreConfig).(*models.CoreConfig)
 
 	const format = `<ul>
-	<li>Read Only roles: <code>%d</code></li>
-	<li>Write Roles: <code>%d</code></li>
-	<li>All members read only: %s</li>
-	<li>Allow absolutely everyone read only access: %s</li>
+	<li>Read-only roles: <code>%d</code></li>
+	<li>Write roles: <code>%d</code></li>
+	<li>All members read-only: %s</li>
+	<li>Allow absolutely everyone read-only access: %s</li>
 </ul>`
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles), EnabledDisabledSpanStatus(config.AllowAllMembersReadOnly), EnabledDisabledSpanStatus(config.AllowNonMembersReadOnly)))
 
@@ -486,7 +489,11 @@ func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateDat
 		return templateData, err
 	}
 
+	pubsub.Publish("evict_core_config_cache", g.ID, nil)
+
 	templateData["CoreConfig"] = m
+
+	go cplogs.RetryAddEntry(NewLogEntryFromContext(r.Context(), panelLogKeyCore))
 
 	return templateData, nil
 }
@@ -559,7 +566,7 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 	var guilds []*discordgo.UserGuild
 	err := common.GetCacheDataJson(discordgo.StrID(user.ID)+":guilds", &guilds)
 	if err != nil {
-		guilds, err = session.UserGuilds(100, 0, 0)
+		guilds, err = session.UserGuilds(0, 0, 0)
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed getting user guilds")
 			return nil, err

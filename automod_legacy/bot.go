@@ -3,15 +3,15 @@ package automod_legacy
 import (
 	"time"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/karlseguin/ccache"
 )
 
@@ -79,13 +79,13 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		return false
 	}
 
-	cs := bot.State.Channel(true, m.ChannelID)
+	cs := evt.GS.GetChannelOrThread(m.ChannelID)
 	if cs == nil {
 		logger.WithField("channel", m.ChannelID).Error("Channel not found in state")
 		return false
 	}
 
-	config, err := CachedGetConfig(cs.Guild.ID)
+	config, err := CachedGetConfig(cs.GuildID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving config")
 		return false
@@ -95,15 +95,8 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		return false
 	}
 
-	member := dstate.MSFromDGoMember(cs.Guild, m.Member)
-
-	locked := true
-	cs.Owner.RLock()
-	defer func() {
-		if locked {
-			cs.Owner.RUnlock()
-		}
-	}()
+	member := dstate.MemberStateFromMember(m.Member)
+	member.GuildID = m.GuildID
 
 	del := false // Set if a rule triggered a message delete
 	punishMsg := ""
@@ -116,7 +109,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	// We gonna need to have this locked while we check
 	for _, r := range rules {
-		if r.ShouldIgnore(m, member) {
+		if r.ShouldIgnore(cs, m, member) {
 			continue
 		}
 		didCheck = true
@@ -125,7 +118,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 			del = true
 		}
 		if err != nil {
-			logger.WithError(err).WithField("guild", cs.Guild.ID).Error("Failed checking aumod rule:", err)
+			logger.WithError(err).WithField("guild", cs.GuildID).Error("Failed checking aumod rule:", err)
 			continue
 		}
 
@@ -144,31 +137,28 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	if !del {
 		if didCheck {
-			go analytics.RecordActiveUnit(cs.Guild.ID, &Plugin{}, "checked")
+			go analytics.RecordActiveUnit(cs.GuildID, &Plugin{}, "checked")
 		}
 		return false
 	}
 
-	go analytics.RecordActiveUnit(cs.Guild.ID, &Plugin{}, "rule_triggered")
+	go analytics.RecordActiveUnit(cs.GuildID, &Plugin{}, "rule_triggered")
 
 	if punishMsg != "" {
 		// Strip last newline
 		punishMsg = punishMsg[:len(punishMsg)-1]
 	}
 
-	cs.Owner.RUnlock()
-	locked = false
-
 	go func() {
 		switch highestPunish {
 		case PunishNone:
-			err = moderation.WarnUser(nil, cs.Guild.ID, cs, m, common.BotUser, member.DGoUser(), "Automoderator: "+punishMsg)
+			err = moderation.WarnUser(nil, cs.GuildID, cs, m, common.BotUser, &member.User, "Automoderator: "+punishMsg)
 		case PunishMute:
-			err = moderation.MuteUnmuteUser(nil, true, cs.Guild.ID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
+			err = moderation.MuteUnmuteUser(nil, true, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member, muteDuration)
 		case PunishKick:
-			err = moderation.KickUser(nil, cs.Guild.ID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
+			err = moderation.KickUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User, -1)
 		case PunishBan:
-			err = moderation.BanUser(nil, cs.Guild.ID, cs, m, common.BotUser, "Automoderator: "+punishMsg, member.DGoUser())
+			err = moderation.BanUser(nil, cs.GuildID, cs, m, common.BotUser, "Automoderator: "+punishMsg, &member.User)
 		}
 
 		// Execute the punishment before removing the message to make sure it's included in logs

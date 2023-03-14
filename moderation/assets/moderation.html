@@ -1,5 +1,5 @@
-{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author.(Username/ID/Discriminator){{"}}"}}</code> - The author of
-the punishment{{end}}
+{{define "template_helper_mod_author"}}<code>{{"{{"}}.Author{{"}}"}}</code> - The author of
+the punishment, is an <a href="https://docs.yagpdb.xyz/reference/templates#user"><code>.User</code> object. </a>{{end}}
 
 {{define "cp_moderation"}}
 {{template "cp_head" .}}
@@ -18,6 +18,11 @@ the punishment{{end}}
                     <li class="nav-item active"><a class="nav-link show active" href="#general" aria-controls="general"
                             role="tab" data-toggle="tab">
                             General
+                        </a></li>
+                    <li class="nav-item"><a class="nav-link" href="#timeout" aria-controls="timeout" role="tab"
+                            data-toggle="tab">
+                            Timeout <span
+                                class="indicator indicator-{{if .ModConfig.TimeoutEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#mute" aria-controls="mute/unmute" role="tab"
                             data-toggle="tab">
@@ -43,6 +48,7 @@ the punishment{{end}}
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane active" id="general">{{template "moderation_general" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="mute">{{template "moderation_mute" .}}</div>
+                    <div role="tabpanel" class="tab-pane" id="timeout">{{template "moderation_timeout" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="kick">{{template "moderation_kick" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="ban">{{template "moderation_ban" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="warn">{{template "moderation_warn" .}}</div>
@@ -123,6 +129,14 @@ the punishment{{end}}
         </div>
         <hr />
 
+        <div class="form-group">
+            <label>Channel to send error messages of the moderation DMs</label>
+            <select class="form-control" name="ErrorChannel" data-requireperms-embed>
+                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ErrorChannel true "None"}}
+            </select>
+        </div>
+        <hr />
+
         {{checkbox "ReportEnabled" "report-enabled" "Enable report command?" .ModConfig.ReportEnabled}}
         <p><code>(mention or prefix) report @user some reason</code><br />
             Everyone can use this.<br />
@@ -167,6 +181,64 @@ the punishment{{end}}
         <hr />
         {{checkbox "LogBans" "log-bans" "Log ban events not made through the bot" .ModConfig.LogBans}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+
+        <hr />
+        {{checkbox "LogKicks" "log-kicks" "Log kick events not made through the bot" .ModConfig.LogKicks}}
+        <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+
+         <hr />
+        {{checkbox "LogTimeouts" "log-timeouts" "Log timeout events not made through the bot" .ModConfig.LogTimeouts}}
+        <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+    </div>
+</div>
+{{end}}
+
+{{define "moderation_timeout"}}
+<p>Timing out users allows you to punish users by removing their ability to talk or react using discords native Timeout feature </p>
+<p>Unlike a mute, timeouts have a mandatory duration, and the user cannot communicate in the server at all in anyway, including not being able to add reaction</p>
+<p>Timeouts also don't need a role to be managed by the bot</p>
+<div class="row">
+    <div class="col-sm">
+        {{checkbox "TimeoutEnabled" "timeout-enabled" "Enable Timeout" .ModConfig.TimeoutEnabled}}
+        <p><code>(mention or prefix) timeout @user 10 some reason</code><br />
+            Only users with Timeout permissions or (Moderate Member permissions) can use this (or with roles specified below).<br /></p>
+        <hr />
+
+        <hr />
+        <div class="form-group">
+            <label>Users with the following roles will have permission to use timeout related commands</label><br>
+            <select class="multiselect" name="TimeoutCmdRoles" data-plugin-multiselect multiple="multiple">
+                {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.TimeoutCmdRoles}}
+            </select>
+        </div>
+        <hr />
+
+        {{checkbox "TimeoutReasonOptional" "timeout-reason-optional" "Timeout Reason optional" .ModConfig.TimeoutReasonOptional}}
+        <hr />
+
+        <div class="form-group">
+            <label>Default timeout duration in minutes</label>
+            <input type="number" min="1" max="40320" name="DefaultTimeoutDuration.Int64" class="form-control"
+                value="{{or .ModConfig.DefaultTimeoutDuration.Int64 .DefaultTimeoutDuration}}">
+        </div>
+        <hr />
+    </div>
+    <div class="col-sm">
+        <div class="form-group">
+            <label>Timeout DM (Leave empty for default)</label>
+            <textarea rows="5" class="form-control" name="TimeoutMessage"
+                placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.TimeoutMessage .DefaultDMMessage}}</textarea>
+            <p class="help-block">
+                Available template data:<br />
+                {{template "template_helper_user"}} - The user being timedout<br />
+                <code>{{"{{.Reason}}"}}</code> - The reason specified in the timeout<br />
+                {{template "template_helper_mod_author"}}<br>
+                <code>{{"{{.Duration}}"}}</code> - The duration<br>
+                <code>{{"{{.HumanDuration}}"}}</code> - The duration in a human friendly format
+                (<code>1 hour and 3 minutes</code> for example)<br>
+            </p>
+        </div>
+        <hr />
     </div>
 </div>
 {{end}}
@@ -228,7 +300,7 @@ the punishment{{end}}
 
         <div class="form-group">
             <label>Default mute duration in minutes. Set to 0 for infinite</label>
-            <input type="number" name="DefaultMuteDuration.Int64" class="form-control"
+            <input type="number" min="0" name="DefaultMuteDuration.Int64" class="form-control"
                 value="{{.ModConfig.DefaultMuteDuration.Int64}}">
         </div>
         <hr />
@@ -323,16 +395,18 @@ the punishment{{end}}
     <li>You can ban using user ids (even if they left the server)</li>
     <li>You can put a duration on the bans</li>
 </ul>
-<p>Note that the bans themselves are on discord, to unban someone you need to go into your banlist on discord
-    and unban them.</p>
+<p>Note that the bans themselves are on discord. To unban someone you can run the unban command 
+    <code>unban @user somereason</code> or <code> unban 1034924032 somereason</code> or go into 
+    your banlist on discord and unban them.</p>
 <div class="row">
     <div class="col-sm">
-        {{checkbox "BanEnabled" "BanEnabled" "Enable the Ban command" .ModConfig.BanEnabled}}
+        {{checkbox "BanEnabled" "BanEnabled" "Enable the Ban/Unban commands" .ModConfig.BanEnabled}}
         <p>
-            <code>ban @user some reason</code><br />
+            <code>ban/unban @user some reason</code><br />
             Only users with ban permission can use this. (or with roles specified below)<br />
             The ban command will ban a user as well as sending a message that the user was banned in the
-            action channel.
+            action channel. The unban command unbans a banned user and optionally sends a message to the
+	    action channel.
         </p>
         <hr />
 
@@ -346,10 +420,10 @@ the punishment{{end}}
 
         {{checkbox "BanReasonOptional" "BanReasonOptional" "Make the <code>reason</code> optional" .ModConfig.BanReasonOptional}}
         <hr />
-        
+
         <div class="form-group">
             <label>Default number of days of messages to delete while banning. Range 0 to 7.</label>
-            <input type="number" name="DefaultBanDeleteDays.Int64" class="form-control"
+            <input type="number" min="0" max="7" name="DefaultBanDeleteDays.Int64" class="form-control"
                 value="{{.ModConfig.DefaultBanDeleteDays.Int64}}">
         </div>
         <hr />
@@ -408,6 +482,7 @@ the punishment{{end}}
             <p class="help-block">Available template data:<br />
                 {{template "template_helper_user"}} - The user being warned<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specified in the warning<br />
+                <code>{{"{{.WarningID}}"}}</code> - The warning ID<br />
                 {{template "template_helper_mod_author"}}<br>
             </p>
         </div>

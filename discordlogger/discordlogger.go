@@ -4,15 +4,15 @@ import (
 	"fmt"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/bot/models"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/bot/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
 )
 
 var (
-	// Send bot leaves joins to this disocrd channel
+	// Send bot leaves joins to this discord channel
 	confBotLeavesJoins = config.RegisterOption("yagpdb.botleavesjoins", "Channel to log added/left servers to", 0)
 
 	logger = common.GetPluginLogger(&Plugin{})
@@ -65,9 +65,9 @@ func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 			logger.WithError(err).Error("failed fetching guild data")
 		}
 
-		msg = fmt.Sprintf(":x: Left guild **%s** :(", guildData.Name)
+		msg = fmt.Sprintf(":x: Left guild **%s** :(", common.ReplaceServerInvites(guildData.Name, 0, "[removed-server-invite]"))
 	case eventsystem.EventNewGuild:
-		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", evt.GuildCreate().Guild.Name)
+		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", common.ReplaceServerInvites(evt.GuildCreate().Guild.Name, 0, "[removed-server-invite]"))
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servers)", count)

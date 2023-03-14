@@ -2,6 +2,7 @@ package reddit
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,15 +10,20 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/reddit/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
+
+//go:embed assets/reddit.html
+var PageHTML string
 
 type CtxKey int
 
@@ -28,23 +34,30 @@ const (
 type CreateForm struct {
 	Subreddit  string `schema:"subreddit" valid:",1,100"`
 	Slow       bool   `schema:"slow"`
-	Channel    int64  `schema:"channel" valid:"channel,false`
+	Channel    int64  `schema:"channel" valid:"channel,true"`
 	ID         int64  `schema:"id"`
 	UseEmbeds  bool   `schema:"use_embeds"`
 	NSFWMode   int    `schema:"nsfw_filter"`
-	MinUpvotes int    `schema:"min_upvotes"`
+	MinUpvotes int    `schema:"min_upvotes" valid:"0,"`
 }
 
 type UpdateForm struct {
-	Channel    int64 `schema:"channel" valid:"channel,false`
-	ID         int64 `schema:"id"`
-	UseEmbeds  bool  `schema:"use_embeds"`
-	NSFWMode   int   `schema:"nsfw_filter"`
-	MinUpvotes int   `schema:"min_upvotes"`
+	Channel     int64 `schema:"channel" valid:"channel,true"`
+	ID          int64 `schema:"id"`
+	UseEmbeds   bool  `schema:"use_embeds"`
+	NSFWMode    int   `schema:"nsfw_filter"`
+	MinUpvotes  int   `schema:"min_upvotes" valid:"0,"`
+	FeedEnabled bool  `schema:"feed_enabled"`
 }
 
+var (
+	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reddit_added_feed", FormatString: "Added reddit feed from %s"})
+	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reddit_updated_feed", FormatString: "Updated reddit feed from %s"})
+	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reddit_removed_feed", FormatString: "Removed reddit feed from %s"})
+)
+
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../reddit/assets/reddit.html", "templates/plugins/reddit.html")
+	web.AddHTMLTemplate("reddit/assets/reddit.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
 		Name: "Reddit",
 		URL:  "reddit",
@@ -55,8 +68,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/reddit/*"), redditMux)
 	web.CPMux.Handle(pat.New("/reddit"), redditMux)
 
-	// Alll handlers here require guild channels present
-	redditMux.Use(web.RequireGuildChannelsMiddleware)
+	// All handlers here require guild channels present
 	redditMux.Use(web.RequireBotMemberMW)
 	redditMux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	redditMux.Use(baseData)
@@ -128,6 +140,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		Subreddit:  strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
 		UseEmbeds:  newElem.UseEmbeds,
 		FilterNSFW: newElem.NSFWMode,
+		Disabled:   false,
 	}
 
 	if newElem.Slow {
@@ -148,15 +161,18 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	templateData["RedditConfig"] = currentConfig
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Subreddit))
 
-	// Log
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Added reddit feed from /r/"+newElem.Subreddit)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: watchItem.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+		Slow:      newElem.Slow,
+	})
+
 	return templateData
 }
 
 func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	_, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
@@ -175,7 +191,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	item.ChannelID = updated.Channel
 	item.UseEmbeds = updated.UseEmbeds
 	item.FilterNSFW = updated.NSFWMode
-	item.Disabled = false
+	item.Disabled = !updated.FeedEnabled
 	if item.Slow {
 		item.MinUpvotes = updated.MinUpvotes
 	}
@@ -187,14 +203,18 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 	templateData.AddAlerts(web.SucessAlert("Sucessfully updated reddit feed! :D"))
 
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	common.AddCPLogEntry(user, activeGuild.ID, "Modified a feed to /r/"+item.Subreddit)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+		Slow:      item.Slow,
+	})
+
 	return templateData
 }
 
 func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
-	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+	_, templateData := web.GetBaseCPContextData(ctx)
 
 	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
@@ -227,8 +247,12 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 
 	templateData["RedditConfig"] = currentConfig
 
-	user := ctx.Value(common.ContextKeyUser).(*discordgo.User)
-	go common.AddCPLogEntry(user, activeGuild.ID, "Removed feed from /r/"+item.Subreddit)
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
+	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
+		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+		Slow:      item.Slow,
+	})
+
 	return templateData
 }
 

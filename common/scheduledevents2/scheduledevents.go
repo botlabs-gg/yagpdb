@@ -20,10 +20,10 @@ import (
 	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -32,7 +32,8 @@ type ScheduledEvents struct {
 
 	currentlyProcessingMU sync.Mutex
 	currentlyProcessing   map[int64]bool
-	stopBGWorker          chan *sync.WaitGroup
+
+	stopBGWorker chan *sync.WaitGroup
 }
 
 func newScheduledEventsPlugin() *ScheduledEvents {
@@ -159,7 +160,7 @@ func (se *ScheduledEvents) check() {
 	defer se.currentlyProcessingMU.Unlock()
 
 	var pairs []string
-	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", 0, time.Now().UTC().Unix()))
+	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", "-inf", time.Now().UTC().UnixMicro()))
 	if err != nil {
 		logger.WithError(err).Error("failed checking for scheduled events to process")
 		return
@@ -187,6 +188,18 @@ func (se *ScheduledEvents) check() {
 			continue
 		}
 
+		isProcessed := false
+		err = common.RedisPool.Do(radix.FlatCmd(&isProcessed, "SISMEMBER", "recently_done_scheduled_events", id))
+		if err != nil {
+			logger.WithError(err).Error("failed checking if item was processed")
+			continue
+		}
+
+		if isProcessed {
+			markDoneRedis(guildID, id)
+			continue
+		}
+
 		numHandling++
 		se.currentlyProcessing[id] = true
 		go se.processItem(id, guildID)
@@ -206,7 +219,7 @@ func (se *ScheduledEvents) checkShouldSkipRemove(id int64, guildID int64) (skip 
 	}
 
 	// make sure the guild is available
-	gs := bot.State.Guild(true, guildID)
+	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
 		onGuild, err := common.BotIsOnGuild(guildID)
 		if err != nil {
@@ -219,11 +232,7 @@ func (se *ScheduledEvents) checkShouldSkipRemove(id int64, guildID int64) (skip 
 		return true, false
 	}
 
-	gs.RLock()
-	unavailable := gs.Guild.Unavailable
-	gs.RUnlock()
-
-	if unavailable {
+	if !gs.Available {
 		// wait until the guild is available before handling this event
 		return true, false
 	}
@@ -266,7 +275,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 	item, err := models.FindScheduledEventG(context.Background(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			se.markDoneID(id, guildID, nil)
+			se.markDoneFast(id, guildID)
 		} else {
 			l.WithError(err).Error("failed finding scheduled event")
 		}
@@ -274,13 +283,13 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 	}
 
 	if item.Processed {
-		se.markDoneID(id, guildID, nil)
+		se.markDoneFast(id, guildID)
 		return
 	}
 
 	// check if this event was changed after it was flushed
-	delta := item.TriggersAt.Sub(time.Now())
-	if delta > 5 {
+	untilExec := item.TriggersAt.Sub(time.Now())
+	if untilExec > 5*time.Second {
 		// it was changed, re-flush it, or remove it
 		err = UpdateFlushedEvent(time.Now(), common.RedisPool, item)
 		if err != nil {
@@ -292,7 +301,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 	handler, ok := registeredHandlers[item.EventName]
 	if !ok {
 		l.Error("unknown event: ", item.EventName)
-		se.markDone(item, errors.NewPlain("No registered handler"))
+		se.markDoneFast(item.ID, item.GuildID)
 		return
 	}
 
@@ -305,7 +314,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 		err := json.Unmarshal(item.Data, decodedData)
 		if err != nil {
 			l.WithError(err).Error("failed decoding event data")
-			se.markDone(item, errors.WithMessage(err, "json"))
+			se.markDoneFast(item.ID, item.GuildID)
 			return
 		}
 	}
@@ -338,7 +347,14 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 		break
 	}
 
-	se.markDone(item, err)
+	se.markDoneFast(item.ID, item.GuildID)
+}
+
+func (se *ScheduledEvents) markDoneFast(id, guildID int64) {
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "recently_done_scheduled_events", id))
+	if err != nil {
+		logger.WithError(err).Error("failed marking item as quickdone")
+	}
 }
 
 func (se *ScheduledEvents) markDone(item *models.ScheduledEvent, runErr error) {
@@ -389,12 +405,14 @@ func (se *ScheduledEvents) markDoneID(id int64, guildID int64, runErr error) {
 		return
 	}
 
-	err = common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events_soon", fmt.Sprintf("%d:%d", id, guildID)))
+	markDoneRedis(guildID, id)
+}
+
+func markDoneRedis(guildID int64, id int64) {
+	err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events_soon", fmt.Sprintf("%d:%d", id, guildID)))
 	if err != nil {
 		logger.WithError(err).Error("failed marking item as done")
-		return
 	}
-
 }
 
 func CheckDiscordErrRetry(err error) bool {

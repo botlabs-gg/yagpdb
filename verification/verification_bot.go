@@ -5,24 +5,26 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/dstate"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/common/templates"
-	"github.com/jonas747/yagpdb/moderation"
-	"github.com/jonas747/yagpdb/verification/models"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/verification/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -38,6 +40,7 @@ type VerificationEventData struct {
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleBanAdd, eventsystem.EventGuildBanAdd)
 	scheduledevents2.RegisterHandler("verification_user_verified", int64(0), ScheduledEventMW(p.handleUserVerifiedScheduledEvent))
 	scheduledevents2.RegisterHandler("verification_user_warn", VerificationEventData{}, ScheduledEventMW(p.handleWarnUserVerification))
@@ -48,6 +51,32 @@ func (p *Plugin) BotInit() {
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+func VerificationPendingMembersKey(gID int64) string {
+	return "verification_pending_members:" + strconv.FormatInt(gID, 10)
+}
+
+func memberPresentInVerificationPendingSet(guildID int64, userID int64) bool {
+	var memberScore int
+	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", VerificationPendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
+	if err != nil {
+		logger.WithError(err).Error("Failed fetching member from the verification pending set")
+	}
+	return memberScore != 0
+}
+
+// Function to check if member is present in verification pending set, and add if not present
+func addMemberToVerificationPendingSet(guildID int64, userID int64) {
+	if memberPresentInVerificationPendingSet(guildID, userID) {
+		// Member is already in the set
+		return
+	}
+
+	err := common.RedisPool.Do(radix.Cmd(nil, "ZADD", VerificationPendingMembersKey(guildID), "1", strconv.FormatInt(userID, 10)))
+	if err != nil {
+		logger.WithError(err).Error("Failed adding member to the verification pending set")
+	}
+}
+
 func RandStringRunes(n int) string {
 	b := make([]rune, n)
 	for i := range b {
@@ -56,30 +85,82 @@ func RandStringRunes(n int) string {
 	return string(b)
 }
 
-func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
-	m := evt.GuildMemberAdd()
-
-	if m.User.Bot {
-		return
-	}
-
-	conf, err := models.FindVerificationConfigG(context.Background(), m.GuildID)
+func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
+	conf, err := models.FindVerificationConfigG(context.Background(), member.GuildID)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logger.WithError(err).WithField("guild", m.GuildID).WithField("user", m.User.ID).Error("unable to retrieve config")
+			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("unable to retrieve config")
 		}
-
 		// either no config or an error occured
 		return
 	}
-
 	if !conf.Enabled {
 		return
 	}
+	gs := bot.State.GetGuild(member.GuildID)
+	roleInvalid := true
+	for _, role := range gs.Roles {
+		if role.ID == conf.VerifiedRole {
+			roleInvalid = false
+			break
+		}
+	}
+	if roleInvalid {
+		cop := *conf
+		cop.Enabled = false
+		cop.UpdateG(context.Background(), boil.Whitelist("enabled"))
+		return
+	}
 
-	go analytics.RecordActiveUnit(m.GuildID, p, "process_started")
+	// Check if member is already verified, if yes then remove any scheduled events
+	if common.ContainsInt64Slice(member.Roles, conf.VerifiedRole) {
+		err = p.clearScheduledEvents(context.Background(), member.GuildID, member.User.ID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("failed clearing past scheduled warn/kick events")
+		}
+		return
+	}
 
-	go p.startVerificationProcess(conf, m.GuildID, m.User)
+	go analytics.RecordActiveUnit(member.GuildID, p, "process_started")
+
+	go p.startVerificationProcess(conf, member.GuildID, member.User)
+}
+
+func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
+	addEvt := evt.GuildMemberAdd()
+
+	if addEvt.User.Bot {
+		return
+	}
+	if addEvt.Pending {
+		// Membership screening is pending for this member, add to pending set and return
+		addMemberToVerificationPendingSet(addEvt.GuildID, addEvt.User.ID)
+		return
+	}
+
+	p.handleVerificationAfterScreening(addEvt.Member)
+}
+
+func (p *Plugin) handleMemberUpdate(evt *eventsystem.EventData) {
+	updateEvt := evt.GuildMemberUpdate()
+
+	if updateEvt.User.Bot {
+		return
+	}
+	if updateEvt.Pending {
+		// Membership screening is pending for this member, add to pending set and return
+		addMemberToVerificationPendingSet(updateEvt.GuildID, updateEvt.User.ID)
+		return
+	}
+
+	if memberPresentInVerificationPendingSet(updateEvt.GuildID, updateEvt.User.ID) {
+		// Member was found in the verification pending set, remove from the set and assign role to the member
+		err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", VerificationPendingMembersKey(updateEvt.GuildID), strconv.FormatInt(updateEvt.User.ID, 10)))
+		if err != nil {
+			logger.WithError(err).Error("Failed removing member from the verification pending set")
+		}
+		p.handleVerificationAfterScreening(updateEvt.Member)
+	}
 }
 
 func (p *Plugin) createVerificationSession(userID, guildID int64) (string, error) {
@@ -115,7 +196,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 		return
 	}
 
-	gs := bot.State.Guild(true, guildID)
+	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
 		logger.Error("guild not available")
 		return
@@ -125,6 +206,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	if strings.TrimSpace(msg) == "" {
 		msg = DefaultDMMessage
 	}
+	msg = "DM sent from server **" + gs.Name + "**(ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
 
 	ms, err := bot.GetMember(guildID, target.ID)
 	if err != nil {
@@ -132,19 +214,21 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 		return
 	}
 
-	channel, err := common.BotSession.UserChannelCreate(ms.ID)
+	channel, err := common.BotSession.UserChannelCreate(ms.User.ID)
 	if err != nil {
 		logger.WithError(err).Error("failed creating user channel")
 		return
 	}
 
-	tmplCTX := templates.NewContext(gs, dstate.NewChannelState(gs, gs, channel), ms)
+	cs := dstate.ChannelStateFromDgo(channel)
+
+	tmplCTX := templates.NewContext(gs, &cs, ms)
 	tmplCTX.Name = "dm_veification_message"
 	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), guildID, target.ID, token)
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.ID).Error("failed sending verification dm message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed sending verification dm message")
 	}
 
 	evt := &VerificationEventData{
@@ -153,6 +237,10 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	}
 
 	// schedule the kick and warnings
+	err = p.clearScheduledEvents(context.Background(), gs.ID, ms.User.ID) //clear old scheduled events
+	if err != nil {
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed clearing past scheduled warn/kick events.")
+	}
 	if conf.WarnUnverifiedAfter > 0 && conf.WarnMessage != "" {
 		scheduledevents2.ScheduleEvent("verification_user_warn", guildID, time.Now().Add(time.Minute*time.Duration(conf.WarnUnverifiedAfter)), evt)
 	}
@@ -197,12 +285,12 @@ func ScheduledEventMW(innerHandler func(ms *dstate.MemberState, guildID int64, c
 }
 
 func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
-	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.ID, conf.VerifiedRole)
+	err = common.BotSession.GuildMemberRoleAdd(guildID, ms.User.ID, conf.VerifiedRole)
 	if err != nil {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	model, err := models.FindVerifiedUserG(context.Background(), guildID, ms.ID)
+	model, err := models.FindVerifiedUserG(context.Background(), guildID, ms.User.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, err
@@ -210,24 +298,24 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	err = p.clearScheduledEvents(context.Background(), guildID, ms.ID)
+	err = p.clearScheduledEvents(context.Background(), guildID, ms.User.ID)
 	if err != nil {
 		return true, err
 	}
 
 	if !confVerificationTrackIPs.GetBool() || model.IP == "" {
-		p.logAction(guildID, conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
+		p.logAction(guildID, conf.LogChannel, &ms.User, "User successfully verified", 0x49ed47)
 		return false, nil
 	}
 
 	// Check for IP conflicts
-	conflicts, err := p.findIPConflicts(guildID, ms.ID, model.IP)
+	conflicts, err := p.findIPConflicts(guildID, ms.User.ID, model.IP)
 	if err != nil {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
 	if len(conflicts) < 1 {
-		p.logAction(guildID, conf.LogChannel, ms.DGoUser(), "User successfully verified", 0x49ed47)
+		p.logAction(guildID, conf.LogChannel, &ms.User, "User successfully verified", 0x49ed47)
 		return false, nil
 	}
 
@@ -247,12 +335,12 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 			banReason = string(r) + "..."
 		}
 
-		err := moderation.BanUser(nil, guildID, nil, nil, common.BotUser, banReason, ms.DGoUser())
+		err := moderation.BanUser(nil, guildID, nil, nil, common.BotUser, banReason, &ms.User)
 		if err != nil {
 			return scheduledevents2.CheckDiscordErrRetry(err), err
 		}
 
-		p.logAction(guildID, conf.LogChannel, ms.DGoUser(), fmt.Sprintf("User banned for sharing IP with banned user %s#%s (%d)\nReason: %s",
+		p.logAction(guildID, conf.LogChannel, &ms.User, fmt.Sprintf("User banned for sharing IP with banned user %s#%s (%d)\nReason: %s",
 			ban.User.Username, ban.User.Discriminator, ban.User.ID, ban.Reason), 0xef4640)
 
 		return false, nil
@@ -270,8 +358,20 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 		}
 	}
 
-	p.logAction(guildID, conf.LogChannel, ms.DGoUser(), builder.String(), 0xff8228)
+	p.logAction(guildID, conf.LogChannel, &ms.User, builder.String(), 0xff8228)
 	return false, nil
+}
+
+func (p *Plugin) checkMemberAlreadyVerified(ms *dstate.MemberState, conf *models.VerificationConfig) bool {
+	if !common.ContainsInt64Slice(ms.Member.Roles, conf.VerifiedRole) {
+		return false
+	}
+
+	err := p.clearScheduledEvents(context.Background(), ms.GuildID, ms.User.ID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", ms.GuildID).WithField("user", ms.User.ID).Error("failed clearing past scheduled warn/kick events")
+	}
+	return true
 }
 
 func (p *Plugin) clearScheduledEvents(ctx context.Context, guildID, userID int64) error {
@@ -333,7 +433,11 @@ func (p *Plugin) CheckBanned(guildID int64, users []*discordgo.User) (*discordgo
 }
 
 func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
-	gs := bot.State.Guild(true, guildID)
+	if p.checkMemberAlreadyVerified(ms, conf) {
+		return false, nil
+	}
+
+	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
 		return false, nil
 	}
@@ -357,31 +461,35 @@ func (p *Plugin) handleWarnUserVerification(ms *dstate.MemberState, guildID int6
 	return scheduledevents2.CheckDiscordErrRetry(err), err
 }
 
-func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildState, token string, conf *models.VerificationConfig) error {
+func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token string, conf *models.VerificationConfig) error {
 
 	msg := conf.WarnMessage
 	if strings.TrimSpace(msg) == "" {
 		return nil // no message to send
 	}
 
-	channel, err := common.BotSession.UserChannelCreate(ms.ID)
+	channel, err := common.BotSession.UserChannelCreate(ms.User.ID)
 	if err != nil {
 		return err
 	}
+	cs := dstate.ChannelStateFromDgo(channel)
 
-	tmplCTX := templates.NewContext(gs, dstate.NewChannelState(gs, gs, channel), ms)
+	tmplCTX := templates.NewContext(gs, &cs, ms)
 	tmplCTX.Name = "warn message"
-	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.ID, token)
+	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.User.ID, token)
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.ID).Error("failed sending warning message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed sending warning message")
 	}
 
 	return nil
 }
 
 func (p *Plugin) handleKickUser(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (retry bool, err error) {
+	if p.checkMemberAlreadyVerified(ms, conf) {
+		return false, nil
+	}
 
 	dataCast := rawData.(*VerificationEventData)
 
@@ -398,9 +506,9 @@ func (p *Plugin) handleKickUser(ms *dstate.MemberState, guildID int64, conf *mod
 		return false, nil
 	}
 
-	err = common.BotSession.GuildMemberDelete(guildID, ms.ID)
+	err = common.BotSession.GuildMemberDelete(guildID, ms.User.ID)
 	if err == nil {
-		p.logAction(guildID, conf.LogChannel, ms.DGoUser(), "Kicked for not verifying within deadline", 0xef4640)
+		p.logAction(guildID, conf.LogChannel, &ms.User, "Kicked for not verifying within deadline", 0xef4640)
 	}
 
 	return scheduledevents2.CheckDiscordErrRetry(err), err

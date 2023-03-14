@@ -2,12 +2,13 @@ package serverstats
 
 import (
 	"database/sql"
+	"strconv"
 	"sync/atomic"
 	"time"
 
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/eventsystem"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/mediocregopher/radix/v3"
 )
 
 type serverMemberStatsUpdater struct {
@@ -22,21 +23,22 @@ type serverMemberStatsUpdater struct {
 
 func newServerMemberStatsUpdater() *serverMemberStatsUpdater {
 	return &serverMemberStatsUpdater{
-		flushInterval:   time.Minute,
+		flushInterval:   time.Minute * 10,
 		incoming:        make(chan *eventsystem.EventData),
 		flushInProgress: new(int32),
 	}
 }
 
 type QueuedAction struct {
-	GuildID        int64
-	MemberCountMod int
-	TotalCount     int
+	GuildID    int64
+	TotalCount int
+	Joins      int
+	Leaves     int
 }
 
 func (mu *serverMemberStatsUpdater) run() {
 
-	t := time.NewTicker(time.Minute * 5)
+	t := time.NewTicker(mu.flushInterval)
 	for {
 		select {
 		case <-t.C:
@@ -56,7 +58,8 @@ func (mu *serverMemberStatsUpdater) run() {
 			for _, pv := range mu.processing {
 				for _, wv := range mu.waiting {
 					if wv.GuildID == pv.GuildID {
-						wv.MemberCountMod += wv.MemberCountMod
+						pv.Joins += wv.Joins
+						pv.Leaves += wv.Leaves
 						continue OUTER
 					}
 				}
@@ -85,19 +88,21 @@ func (mu *serverMemberStatsUpdater) handleIncEvent(evt *eventsystem.EventData) {
 		q.TotalCount = e.MemberCount
 	case eventsystem.EventGuildMemberAdd:
 		q.GuildID = evt.GS.ID
-		q.MemberCountMod = 1
+		q.Joins = 1
 	case eventsystem.EventGuildMemberRemove:
 		q.GuildID = evt.GS.ID
-		q.MemberCountMod = -1
+		q.Leaves = 1
 	}
 
 	for _, v := range mu.waiting {
 		if v.GuildID == q.GuildID {
-			v.MemberCountMod += q.MemberCountMod
+			v.Joins += q.Joins
+			v.Leaves += q.Leaves
 			if q.TotalCount != 0 {
 				v.TotalCount = q.TotalCount
 			} else if v.TotalCount != 0 {
-				v.TotalCount += q.MemberCountMod
+				v.TotalCount += q.Joins
+				v.TotalCount -= q.Leaves
 			}
 
 			return
@@ -107,6 +112,16 @@ func (mu *serverMemberStatsUpdater) handleIncEvent(evt *eventsystem.EventData) {
 	mu.waiting = append(mu.waiting, &q)
 }
 
+func keyTotalMembers(year, day int) string {
+	return "serverstats_total_members:" + strconv.Itoa(year) + ":" + strconv.Itoa(day)
+}
+func keyJoinedMembers(year, day int) string {
+	return "serverstats_joined_members:" + strconv.Itoa(year) + ":" + strconv.Itoa(day)
+}
+func keyLeftMembers(year, day int) string {
+	return "serverstats_left_members:" + strconv.Itoa(year) + ":" + strconv.Itoa(day)
+}
+
 func (mu *serverMemberStatsUpdater) flush() {
 	leftOver := make([]*QueuedAction, 0)
 	defer func() {
@@ -114,44 +129,63 @@ func (mu *serverMemberStatsUpdater) flush() {
 		atomic.StoreInt32(mu.flushInProgress, 0)
 	}()
 
-	// fill in total counts, do this before creating tx to avoid deadlocks
-	for _, q := range mu.processing {
-		if q.TotalCount == 0 {
-			gs := bot.State.Guild(true, q.GuildID)
-			if gs == nil {
-				continue
+	sleepBetweenCalls := time.Second
+	if len(mu.processing) > 0 {
+		sleepBetweenCalls = mu.flushInterval / time.Duration(len(mu.processing))
+		sleepBetweenCalls /= 2
+	}
+
+	ticker := time.NewTicker(sleepBetweenCalls)
+	defer ticker.Stop()
+
+	t := time.Now()
+	year := t.Year()
+	day := t.YearDay()
+	for _, v := range mu.processing {
+		if v.TotalCount > 0 {
+			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", keyTotalMembers(year, day), v.TotalCount, v.GuildID))
+			if err != nil {
+				leftOver = append(leftOver, v)
+				logger.WithError(err).Error("failed flushing serverstats total members")
+				return
+			}
+		} else if v.Joins > 0 || v.Leaves > 0 {
+			// apply a total members change if present
+			memberMod := v.Joins - v.Leaves
+			if memberMod > 0 {
+				err := common.RedisPool.Do(radix.FlatCmd(nil, "ZINCRBY", keyTotalMembers(year, day), memberMod, v.GuildID))
+				if err != nil {
+					leftOver = append(leftOver, v)
+					logger.WithError(err).Error("failed flushing serverstats total changemod")
+					return
+				}
+			}
+		}
+
+		if v.Joins > 0 {
+			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZINCRBY", keyJoinedMembers(year, day), v.Joins, v.GuildID))
+			if err != nil {
+				leftOver = append(leftOver, v)
+				logger.WithError(err).Error("failed flushing serverstats joins")
+				return
 			}
 
-			gs.RLock()
-			q.TotalCount = gs.Guild.MemberCount
-			gs.RUnlock()
+			v.Joins = 0
 		}
-	}
 
-	tx, err := common.PQ.Begin()
-	if err != nil {
-		leftOver = mu.processing
-		logger.WithError(err).Error("failed creating tx")
-		return
-	}
+		if v.Leaves > 0 {
+			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZINCRBY", keyLeftMembers(year, day), v.Leaves, v.GuildID))
+			if err != nil {
+				leftOver = append(leftOver, v)
+				logger.WithError(err).Error("failed flushing serverstats leaves")
+				return
+			}
 
-	// update all the stats
-	for _, q := range mu.processing {
-		err := mu.setUpdateMemberStatsPeriod(tx, q.GuildID, q.MemberCountMod, q.TotalCount)
-		if err != nil {
-			leftOver = mu.processing
-			tx.Rollback()
-			logger.WithError(err).Error("failed updating member stats, rollbacking...")
-			return
+			v.Leaves = 0
 		}
-	}
 
-	err = tx.Commit()
-	if err != nil {
-		logger.WithError(err).Error("failed comitting updating member results")
-		leftOver = mu.processing
-		tx.Rollback()
-		return
+		<-ticker.C
+
 	}
 }
 

@@ -1,4 +1,4 @@
-// this package provides core functinality to yagpdb, important security stuff here
+// this package provides core functionality to yagpdb, important security stuff here
 package common
 
 var Adjectives = []string{
@@ -52,6 +52,7 @@ var Adjectives = []string{
 	"angry",
 	"anguished",
 	"animated",
+	"annoying",
 	"annual",
 	"another",
 	"antique",
@@ -173,6 +174,7 @@ var Adjectives = []string{
 	"clumsy",
 	"cluttered",
 	"coarse",
+	"cocky",
 	"cold",
 	"colorful",
 	"colorless",
@@ -208,6 +210,7 @@ var Adjectives = []string{
 	"creative",
 	"creepy",
 	"criminal",
+	"cringe",
 	"crisp",
 	"critical",
 	"crooked",
@@ -381,6 +384,7 @@ var Adjectives = []string{
 	"feline",
 	"female",
 	"feminine",
+	"festive",
 	"few",
 	"fickle",
 	"filthy",
@@ -417,6 +421,7 @@ var Adjectives = []string{
 	"fragrant",
 	"frail",
 	"frank",
+	"frantic",
 	"frayed",
 	"free",
 	"French",
@@ -438,6 +443,7 @@ var Adjectives = []string{
 	"fumbling",
 	"functional",
 	"funny",
+	"furry",
 	"fussy",
 	"fuzzy",
 	"gargantuan",
@@ -501,9 +507,9 @@ var Adjectives = []string{
 	"handsome",
 	"handy",
 	"happy",
-	"happy-g-lucky",
+	"happy-go-lucky",
 	"hard",
-	"hard-t-find",
+	"hard-to-find",
 	"harmful",
 	"harmless",
 	"harmonious",

@@ -2,13 +2,15 @@ package wouldyourather
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 
 	"emperror.dev/errors"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 var Command = &commands.YAGCommand{
@@ -16,6 +18,9 @@ var Command = &commands.YAGCommand{
 	Name:        "WouldYouRather",
 	Aliases:     []string{"wyr"},
 	Description: "Get presented with 2 options.",
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "raw", Help: "Raw output"},
+	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 
 		q1, q2, err := wouldYouRather()
@@ -23,14 +28,31 @@ var Command = &commands.YAGCommand{
 			return nil, err
 		}
 
-		content := fmt.Sprintf("**Would you rather** (*<http://either.io>*)\n🇦 %s\n **OR**\n🇧 %s", q1, q2)
-		msg, err := common.BotSession.ChannelMessageSend(data.Msg.ChannelID, content)
+		wyrDescription := fmt.Sprintf("**EITHER...**\n🇦 %s\n\n **OR...**\n🇧 %s", q1, q2)
+
+		if data.Switches["raw"].Value != nil && data.Switches["raw"].Value.(bool) {
+			return wyrDescription, nil
+		}
+
+		embed := &discordgo.MessageEmbed{
+			Description: wyrDescription,
+			Author: &discordgo.MessageEmbedAuthor{
+				Name: "Would you rather...",
+				URL:  "https://either.io/",
+			},
+			Footer: &discordgo.MessageEmbedFooter{
+				Text: fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
+			},
+			Color: rand.Intn(16777215),
+		}
+
+		msg, err := common.BotSession.ChannelMessageSendEmbed(data.ChannelID, embed)
 		if err != nil {
 			return nil, err
 		}
 
-		common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "🇦")
-		err = common.BotSession.MessageReactionAdd(data.Msg.ChannelID, msg.ID, "🇧")
+		common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇦")
+		err = common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇧")
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +72,7 @@ func wouldYouRather() (q1 string, q2 string, err error) {
 		return
 	}
 
-	doc, err := goquery.NewDocumentFromResponse(resp)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		return
 	}

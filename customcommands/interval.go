@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/jonas747/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/yagpdb/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -18,6 +18,11 @@ import (
 func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 	if len(cc.TimeTriggerExcludingDays) >= 7 || len(cc.TimeTriggerExcludingHours) >= 24 {
 		// this can never be ran...
+		return time.Time{}
+	}
+
+	if cc.TimeTriggerInterval < MinIntervalTriggerDurationMinutes || cc.TimeTriggerInterval > MaxIntervalTriggerDurationMinutes {
+		// the interval is out of bounds and should never run
 		return time.Time{}
 	}
 
@@ -104,11 +109,13 @@ func DelNextRunEvent(guildID int64, cmdID int64) error {
 }
 
 // TODO: Run this all in a transaction?
-func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool) error {
-	// remove the old events
-	err := DelNextRunEvent(cc.GuildID, cc.LocalID)
-	if err != nil {
-		return errors.WrapIf(err, "del_old_events")
+func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool, clearOld bool) error {
+	if clearOld {
+		// remove the old events
+		err := DelNextRunEvent(cc.GuildID, cc.LocalID)
+		if err != nil {
+			return errors.WrapIf(err, "del_old_events")
+		}
 	}
 
 	if cc.TriggerType != int(CommandTriggerInterval) || cc.TimeTriggerInterval < 1 {
@@ -127,7 +134,7 @@ func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool) erro
 	if updateLastRun {
 		toUpdate = append(toUpdate, "last_run")
 	}
-	_, err = cc.UpdateG(context.Background(), boil.Whitelist(toUpdate...))
+	_, err := cc.UpdateG(context.Background(), boil.Whitelist(toUpdate...))
 	if err != nil {
 		return errors.WrapIf(err, "update_cc")
 	}

@@ -2,35 +2,36 @@ package poll
 
 import (
 	"emperror.dev/errors"
-	"github.com/jonas747/dcmd"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 var (
 	pollReactions = [...]string{"1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"}
 	Command       = &commands.YAGCommand{
-		CmdCategory:  commands.CategoryTool,
-		Name:         "Poll",
-		Description:  "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink`",
-		RequiredArgs: 3,
+		CmdCategory:         commands.CategoryTool,
+		Name:                "Poll",
+		Description:         "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink`",
+		RequiredArgs:        3,
+		SlashCommandEnabled: true,
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{
+			{
 				Name: "Topic",
 				Type: dcmd.String,
 				Help: "Description of the poll",
 			},
-			&dcmd.ArgDef{Name: "Option1", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option2", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option3", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option4", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option5", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option6", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option7", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option8", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option9", Type: dcmd.String},
-			&dcmd.ArgDef{Name: "Option10", Type: dcmd.String},
+			{Name: "Option1", Type: dcmd.String},
+			{Name: "Option2", Type: dcmd.String},
+			{Name: "Option3", Type: dcmd.String},
+			{Name: "Option4", Type: dcmd.String},
+			{Name: "Option5", Type: dcmd.String},
+			{Name: "Option6", Type: dcmd.String},
+			{Name: "Option7", Type: dcmd.String},
+			{Name: "Option8", Type: dcmd.String},
+			{Name: "Option9", Type: dcmd.String},
+			{Name: "Option10", Type: dcmd.String},
 		},
 		RunFunc: createPoll,
 	}
@@ -54,9 +55,9 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		description += pollReactions[i] + " " + option.Str()
 	}
 
-	authorName := data.MS.Nick
+	authorName := data.GuildData.MS.Member.Nick
 	if authorName == "" {
-		authorName = data.MS.Username
+		authorName = data.GuildData.MS.User.Username
 	}
 
 	response := discordgo.MessageEmbed{
@@ -65,16 +66,19 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		Color:       0x65f442,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    authorName,
-			IconURL: discordgo.EndpointUserAvatar(data.MS.ID, data.Msg.Author.Avatar),
+			IconURL: discordgo.EndpointUserAvatar(data.GuildData.MS.User.ID, data.Author.Avatar),
 		},
 	}
 
-	common.BotSession.ChannelMessageDelete(data.Msg.ChannelID, data.Msg.ID)
-	pollMsg, err := common.BotSession.ChannelMessageSendEmbed(data.Msg.ChannelID, &response)
+	if data.TraditionalTriggerData != nil {
+		common.BotSession.ChannelMessageDelete(data.ChannelID, data.TraditionalTriggerData.Message.ID)
+	}
+
+	pollMsg, err := common.BotSession.ChannelMessageSendEmbed(data.ChannelID, &response)
 	if err != nil {
 		return nil, errors.WrapIf(err, "failed to add poll description")
 	}
-	for i, _ := range options {
+	for i := range options {
 		common.BotSession.MessageReactionAdd(pollMsg.ChannelID, pollMsg.ID, pollReactions[i])
 	}
 	return nil, nil

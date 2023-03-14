@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/patreon/patreonapi"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/patreon/patreonapi"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
@@ -134,7 +134,7 @@ func (p *Poller) Poll() {
 	patrons := make([]*Patron, 0, 30)
 
 	for {
-		membersResponse, err := p.client.FetchMembers(campaignId, 0, cursor)
+		membersResponse, err := p.client.FetchMembers(campaignId, 200, cursor)
 		// pledgesResponse, err := p.client.FetchPledges(campaignId,
 		// patreon.WithPageSize(30),
 		// patreon.WithCursor(cursor))
@@ -186,13 +186,13 @@ func (p *Poller) Poll() {
 				patron.Name = user.FirstName
 			}
 
-			if user.SocialConnections.Discord != nil && user.SocialConnections.Discord.UserID != "" {
+			if user.SocialConnections != nil && user.SocialConnections.Discord != nil && user.SocialConnections.Discord.UserID != "" {
 				discordID, _ := strconv.ParseInt(user.SocialConnections.Discord.UserID, 10, 64)
 				patron.DiscordID = discordID
 			}
 
 			patrons = append(patrons, patron)
-			// logger.Printf("%s is pledging %d cents, Discord: %d\r\n", patron.Name, patron.AmountCents, patron.DiscordID)
+			// logger.Printf("%s is pledging %d cents, Discord: %d\n", patron.Name, patron.AmountCents, patron.DiscordID)
 		}
 
 		// Get the link to the next page of pledges
@@ -203,8 +203,9 @@ func (p *Poller) Poll() {
 		}
 
 		cursor = nextCursor
-		// logger.Println("nextlink: ", page, ": ", cursor)
+		// logger.Println("nextlink: ", page, ": ", cursor, ", current len: ", len(patrons))
 		page++
+		time.Sleep(time.Second)
 	}
 
 	// Swap the stored ones, this dosent mutate the existing returned slices so we dont have to do any copying on each request woo

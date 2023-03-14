@@ -11,18 +11,19 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/evalphobia/logrus_sentry"
-	"github.com/jonas747/yagpdb/bot"
-	"github.com/jonas747/yagpdb/bot/botrest"
-	"github.com/jonas747/yagpdb/commands"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/backgroundworkers"
-	"github.com/jonas747/yagpdb/common/config"
-	"github.com/jonas747/yagpdb/common/configstore"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/common/pubsub"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/common/sentryhook"
+	"github.com/botlabs-gg/yagpdb/v2/feeds"
+	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -99,7 +100,7 @@ func Init() {
 
 	log.Info("Starting YAGPDB version " + common.VERSION)
 
-	err := common.CoreInit()
+	err := common.CoreInit(true)
 	if err != nil {
 		log.WithError(err).Fatal("Failed running core init ")
 	}
@@ -125,6 +126,13 @@ func Run() {
 		return
 	}
 
+	if flagRunWeb {
+		// web should handle all events
+		pubsub.FilterFunc = func(guildID int64) bool {
+			return true
+		}
+	}
+
 	if flagRunBot || flagRunEverything {
 		bot.Enabled = true
 	}
@@ -145,14 +153,21 @@ func Run() {
 		go web.Run()
 	}
 
-	if flagRunBot || flagRunEverything {
+	if flagRunBot || flagRunEverything || flagRunBWC {
 		mqueue.RegisterPlugin()
+	}
+
+	if flagRunBot || flagRunEverything {
 		botrest.RegisterPlugin()
 		bot.Run(flagNodeID)
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
-		go feeds.Run(strings.Split(flagRunFeeds, ","))
+		var runFeeds []string
+		if !flagRunEverything {
+			runFeeds = strings.Split(flagRunFeeds, ",")
+		}
+		go feeds.Run(runFeeds)
 	}
 
 	if flagRunBWC || flagRunEverything {
@@ -221,13 +236,22 @@ func shutdown() {
 }
 
 func addSentryHook() {
-	hook, err := logrus_sentry.NewSentryHook(confSentryDSN.GetString(), []log.Level{
-		log.PanicLevel,
-		log.FatalLevel,
-		log.ErrorLevel,
+	err := sentry.Init(sentry.ClientOptions{
+		// Either set your DSN here or set the SENTRY_DSN environment variable.
+		Dsn: confSentryDSN.GetString(),
+		// Enable printing of SDK debug messages.
+		// Useful when getting started or trying to figure something out.
+		Debug: false,
 	})
 
 	if err == nil {
+		sentry.ConfigureScope(func(s *sentry.Scope) {
+			if flagNodeID != "" {
+				s.SetTag("node_id", flagNodeID)
+			}
+		})
+
+		hook := &sentryhook.Hook{}
 		common.AddLogHook(hook)
 		log.Info("Added Sentry Hook")
 	} else {

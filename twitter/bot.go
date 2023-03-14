@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/twitter/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
 )
 
 func (p *Plugin) Status() (string, string) {
@@ -23,9 +23,9 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 
-	feedID, err := strconv.ParseInt(elem.SourceID, 10, 64)
+	feedID, err := strconv.ParseInt(elem.SourceItemID, 10, 64)
 	if err != nil {
-		logger.WithError(err).WithField("source_id", elem.SourceID).Error("failed parsing sourceID!??!")
+		logger.WithError(err).WithField("source_id", elem.SourceItemID).Error("failed parsing sourceID!??!")
 		return
 	}
 
@@ -33,4 +33,14 @@ func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	if err != nil {
 		logger.WithError(err).WithField("feed_id", feedID).Error("failed removing feed")
 	}
+}
+
+func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
+	logger.WithField("guild_id", guildID).Infof("Removed Excess Twitter Feeds")
+	_, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(int64(guildID))).UpdateAllG(context.Background(), models.M{"enabled": false})
+	if err != nil {
+		logger.WithError(err).WithField("guild_id", guildID).Error("failed disabling feed for missing premium")
+		return err
+	}
+	return nil
 }

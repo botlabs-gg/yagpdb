@@ -2,15 +2,22 @@ package tickets
 
 import (
 	"database/sql"
+	_ "embed"
 	"fmt"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/tickets/models"
-	"github.com/jonas747/yagpdb/web"
-	"github.com/volatiletech/sqlboiler/boil"
-	"goji.io/pat"
 	"html/template"
 	"net/http"
+
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/volatiletech/sqlboiler/boil"
+	"goji.io/pat"
 )
+
+//go:embed assets/tickets_control_panel.html
+var PageHTML string
 
 type FormData struct {
 	GuildID                            int64
@@ -26,8 +33,10 @@ type FormData struct {
 	TicketOpenMSG                      string  `valid:"template,10000"`
 }
 
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "tickets_updated_settings", FormatString: "Updated ticket settings"})
+
 func (p *Plugin) InitWeb() {
-	web.LoadHTMLTemplate("../../tickets/assets/tickets_control_panel.html", "templates/plugins/tickets_control_panel.html")
+	web.AddHTMLTemplate("tickets_control_panel.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Ticket System",
@@ -36,12 +45,12 @@ func (p *Plugin) InitWeb() {
 	})
 
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_tickets_settings")
-	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{}, "Updated ticket settings")
+	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{})
 
-	web.CPMux.Handle(pat.Get("/tickets/settings"), web.RequireGuildChannelsMiddleware(getHandler))
-	web.CPMux.Handle(pat.Get("/tickets/settings/"), web.RequireGuildChannelsMiddleware(getHandler))
+	web.CPMux.Handle(pat.Get("/tickets/settings"), getHandler)
+	web.CPMux.Handle(pat.Get("/tickets/settings/"), getHandler)
 
-	web.CPMux.Handle(pat.Post("/tickets/settings"), web.RequireGuildChannelsMiddleware(postHandler))
+	web.CPMux.Handle(pat.Post("/tickets/settings"), postHandler)
 }
 
 func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -85,6 +94,12 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 	}
 
 	err := model.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
+	}
+
+	commands.PubsubSendUpdateSlashCommandsPermissions(activeGuild.ID)
+
 	return templateData, err
 }
 
@@ -98,10 +113,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		return templateData, err
 	}
 
-	enabled := false
-	if settings != nil {
-		enabled = true
-	}
+	enabled := settings != nil && settings.Enabled
 
 	templateData["WidgetTitle"] = "Tickets"
 	templateData["SettingsPath"] = "/tickets/settings"

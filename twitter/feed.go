@@ -2,21 +2,21 @@ package twitter
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/jonas747/discordgo"
-	"github.com/jonas747/yagpdb/analytics"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/feeds"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/twitter/models"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/feeds"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/go-twitter/twitter"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 var _ feeds.Plugin = (*Plugin)(nil)
@@ -65,7 +65,7 @@ func (p *Plugin) runFeedLoop() {
 		newFeeds := p.feeds
 		p.feedsLock.Unlock()
 
-		if !feedsChanged(currentFeeds, newFeeds) && stream != nil && atomic.LoadInt32(stoppedCheck) == 0 || time.Since(lastStart) < time.Minute*10 {
+		if (!feedsChanged(currentFeeds, newFeeds) && stream != nil && atomic.LoadInt32(stoppedCheck) == 0) || time.Since(lastStart) < time.Minute*10 {
 			continue
 		}
 
@@ -111,6 +111,8 @@ OUTER:
 
 		follow = append(follow, strID)
 	}
+
+	logger.Info("NUMBER OF follows: ", len(follow))
 
 	params := &twitter.StreamFilterParams{
 		StallWarnings: twitter.Bool(true),
@@ -168,6 +170,16 @@ OUTER:
 			}
 		}
 
+		isRetweet := t.RetweetedStatus != nil
+		if isRetweet && !f.IncludeRT {
+			continue
+		}
+
+		isReply := t.InReplyToScreenName != "" || t.InReplyToStatusID != 0 || t.InReplyToUserID != 0
+		if isReply && !f.IncludeReplies {
+			continue
+		}
+
 		relevantFeeds = append(relevantFeeds, f)
 	}
 
@@ -175,17 +187,17 @@ OUTER:
 		return
 	}
 
-	webhookUsername := t.User.ScreenName + " • YAGPDB"
+	webhookUsername := "Twitter • YAGPDB"
 	embed := createTweetEmbed(t)
 	for _, v := range relevantFeeds {
 		go analytics.RecordActiveUnit(v.GuildID, p, "posted_twitter_message")
 
 		mqueue.QueueMessage(&mqueue.QueuedElement{
-			Source:   "twitter",
-			SourceID: strconv.FormatInt(v.ID, 10),
+			Source:       "twitter",
+			SourceItemID: strconv.FormatInt(v.ID, 10),
 
-			Guild:   v.GuildID,
-			Channel: v.ChannelID,
+			GuildID:   v.GuildID,
+			ChannelID: v.ChannelID,
 
 			MessageEmbed:    embed,
 			UseWebhook:      true,
@@ -206,13 +218,21 @@ func createTweetEmbed(tweet *twitter.Tweet) *discordgo.MessageEmbed {
 		timeStr = parsed.Format(time.RFC3339)
 	}
 
+	text := tweet.Text
+	if tweet.FullText != "" {
+		text = tweet.FullText
+	}
+	if tweet.ExtendedTweet != nil && tweet.ExtendedTweet.FullText != "" {
+		text = tweet.ExtendedTweet.FullText
+	}
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    "@" + tweet.User.ScreenName,
 			IconURL: tweet.User.ProfileImageURLHttps,
 			URL:     "https://twitter.com/" + tweet.User.ScreenName + "/status/" + tweet.IDStr,
 		},
-		Description: tweet.Text,
+		Description: text,
 		Timestamp:   timeStr,
 		Color:       0x38A1F3,
 	}
@@ -224,10 +244,21 @@ func createTweetEmbed(tweet *twitter.Tweet) *discordgo.MessageEmbed {
 				URL: m.MediaURLHttps,
 			}
 		}
+	} else if tweet.ExtendedTweet != nil && tweet.ExtendedTweet.Entities != nil && len(tweet.ExtendedTweet.Entities.Media) > 0 {
+		m := tweet.ExtendedTweet.Entities.Media[0]
+		if m.Type == "photo" || m.Type == "animated_gif" {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: m.MediaURLHttps,
+			}
+		}
+	} else if embed.Image == nil && tweet.ExtendedEntities != nil && len(tweet.ExtendedEntities.Media) > 0 {
+		m := tweet.ExtendedEntities.Media[0]
+		if m.Type == "photo" || m.Type == "animated_gif" {
+			embed.Image = &discordgo.MessageEmbedImage{
+				URL: m.MediaURLHttps,
+			}
+		}
 	}
-
-	serialised, _ := json.Marshal(embed)
-	logger.Info(string(serialised))
 
 	return embed
 }
@@ -276,14 +307,14 @@ func (p *Plugin) updateConfigsLoop() {
 		case <-ticker.C:
 		case wg := <-p.Stop:
 			wg.Done()
-			logger.Info("youtube updateConfigsLoop shut down")
+			logger.Info("Twitter updateConfigsLoop shut down")
 			return
 		}
 	}
 }
 
 func (p *Plugin) updateConfigs() {
-	configs, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true)).AllG(context.Background())
+	configs, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true), qm.OrderBy("id asc")).AllG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("failed updating configs")
 		return

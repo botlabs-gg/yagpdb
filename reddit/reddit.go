@@ -8,11 +8,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jonas747/go-reddit"
-	"github.com/jonas747/yagpdb/common"
-	"github.com/jonas747/yagpdb/common/mqueue"
-	"github.com/jonas747/yagpdb/premium"
-	"github.com/jonas747/yagpdb/reddit/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/go-reddit"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 )
 
 const (
@@ -40,14 +41,14 @@ var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
 
 // Remove feeds if they don't point to a proper channel
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
-	if strings.Contains(elem.SourceID, ":") {
+	if strings.Contains(elem.SourceItemID, ":") {
 		// legacy format leftover, ignore...
 		return
 	}
 
-	feedID, err := strconv.ParseInt(elem.SourceID, 10, 64)
+	feedID, err := strconv.ParseInt(elem.SourceItemID, 10, 64)
 	if err != nil {
-		logger.WithError(err).WithField("source_id", elem.SourceID).Error("failed parsing sourceID!??!")
+		logger.WithError(err).WithField("source_id", elem.SourceItemID).Error("failed parsing sourceID!??!")
 		return
 	}
 
@@ -79,6 +80,20 @@ func RegisterPlugin() {
 
 	common.RegisterPlugin(plugin)
 	mqueue.RegisterSource("reddit", plugin)
+
+	pubsub.AddHandler("reddit_clear_subreddit_cache", func(evt *pubsub.Event) {
+		dataCast := evt.Data.(*PubSubSubredditEventData)
+		if dataCast.Slow {
+			configCache.Delete(KeySlowFeeds(strings.ToLower(dataCast.Subreddit)))
+		} else {
+			configCache.Delete(KeyFastFeeds(strings.ToLower(dataCast.Subreddit)))
+		}
+	}, PubSubSubredditEventData{})
+}
+
+type PubSubSubredditEventData struct {
+	Subreddit string `json:"subreddit"`
+	Slow      bool   `json:"slow"`
 }
 
 const (
