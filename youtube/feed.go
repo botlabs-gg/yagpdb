@@ -342,7 +342,7 @@ func (p *Plugin) parseYtVideoID(parse string) (idType ytUrlType, id string, err 
 	return
 }
 
-func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) {
+func (p *Plugin) getYtChannel(url *url.URL) (channel *youtube.Channel, err error) {
 	urlType, id, err := p.parseYtUrl(url)
 	if err != nil {
 		return nil, err
