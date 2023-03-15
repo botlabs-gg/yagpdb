@@ -12,8 +12,8 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
@@ -64,9 +64,9 @@ const (
 )
 
 var (
-	ytVideoIDRegex = regexp.MustCompile(`\A[\w-]+\z`)
+	ytVideoIDRegex   = regexp.MustCompile(`\A[\w-]+\z`)
 	ytChannelIDRegex = regexp.MustCompile(`\AUC[\w-]{21}[AQgw]\z`)
-	ytHandleRegex = regexp.MustCompile(`\A@([\w\-.]{3,30})\z`)
+	ytHandleRegex    = regexp.MustCompile(`\A@([\w\-.]{3,30})\z`)
 )
 
 func (p *Plugin) InitWeb() {
@@ -161,7 +161,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
 	channelUrl := data.YoutubeUrl
 	parsedUrl, err := url.Parse(channelUrl)
-	if err != nil || !strings.HasSuffix(parsedUrl.Host, "youtube.com") || !strings.HasSuffix(parsedUrl.Host, "youtu.be") {
+	if err != nil || !(strings.HasSuffix(parsedUrl.Host, "youtube.com") || strings.HasSuffix(parsedUrl.Host, "youtu.be")) {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
 	}
 
