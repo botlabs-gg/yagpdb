@@ -302,13 +302,13 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, e
 		if handle != nil {
 			return ytUrlTypeHandle, handle[1], nil
 		} else {
-			return ytUrlTypeInvalid, id, errors.New("invalid handle format")
+			return ytUrlTypeInvalid, id, fmt.Errorf("%#v is not a valid youtube handle", path)
 		}
 	}
 
 	pathSegments := strings.SplitAfter(channelUrl.Path, "/")
 	if len(pathSegments) != 2 {
-		return ytUrlTypeInvalid, id, errors.New("invalid number of path segments in url")
+		return ytUrlTypeInvalid, id, fmt.Errorf("%#v is not a valid path", path)
 	}
 
 	first := pathSegments[0]
@@ -322,14 +322,14 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, e
 		if id != "" {
 			return ytUrlTypeChannel, id, nil
 		} else {
-			return ytUrlTypeInvalid, id, errors.New("invalid channel id")
+			return ytUrlTypeInvalid, id, fmt.Errorf("%#v is not a valid youtube channel id", id)
 		}
 	case "c":
 		return ytUrlTypeCustom, second, nil
 	case "user":
 		return ytUrlTypeUser, second, nil
 	default:
-		return ytUrlTypeInvalid, id, errors.New("invalid or incomplete url") 
+		return ytUrlTypeInvalid, id, fmt.Errorf("%#v is not a valid path", path) 
 	}
 }
 
@@ -337,7 +337,7 @@ func (p *Plugin) parseYtVideoID(parse string) (idType ytUrlType, id string, err 
 	id = ytVideoIDRegex.FindString(parse)
 	if id == "" {
 		idType = ytUrlTypeInvalid
-		err = errors.New("invalid video id format")
+		err = fmt.Errorf("%#v is not a valid youtube video id", parse)
 	}
 	return
 }
