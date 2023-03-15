@@ -107,6 +107,9 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(handleUpdateGroup, getGroupHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/delete"), web.ControllerPostHandler(handleDeleteGroup, getHandler, nil))
+
+	// Initialise API as well.
+	p.initAPI()
 }
 
 func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {

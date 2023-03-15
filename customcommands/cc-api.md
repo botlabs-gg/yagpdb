@@ -91,6 +91,8 @@ request payload.
 
 ### Custom Command Object
 
+The API will use the `CustomCommand` struct defined in [customcommands.go](customcommands.go).
+
 The server will answer with a `400 Bad Request` if changes are made that are also not possible via the control panel,
 such as changing the custom command ID, or providing an invalid interval range.
 
