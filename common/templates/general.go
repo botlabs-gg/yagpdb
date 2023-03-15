@@ -383,52 +383,45 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 			var parseSlice Slice
 			conv, err := parseSlice.AppendSlice(v)
 			if err != nil {
-				return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Parse"`)
+				return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Parse", accepts a slice only`)
 			}
 			for _, elem := range conv.(Slice) {
 				elem_conv, _ := elem.(string)
 				if elem_conv != "users" && elem_conv != "roles" && elem_conv != "everyone" {
-					return nil, errors.New(`Allowed Mentions Parsing: invalid slice element in "Parse"`)
+					return nil, errors.New(`Allowed Mentions Parsing: invalid slice element in "Parse", accepts "roles", "users", and "everyone"`)
 				}
 				parseMentions = append(parseMentions, discordgo.AllowedMentionType(elem_conv))
 			}
 			allowedMentions.Parse = parseMentions
-		case "users":
+		case "users", "roles":
 			var newslice discordgo.IDSlice
 			var parseSlice Slice
 			conv, err := parseSlice.AppendSlice(v)
 			if err != nil {
-				return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Users"`)
+				return nil, fmt.Errorf(` Allowed Mentions parsing : invalid datatype passed to "%s", accepts a slice of snowflakes only`, k)
 			}
 			for _, elem := range conv.(Slice) {
 				if (ToInt64(elem)) == 0 {
-					return nil, errors.New(`Allowed Mentions Parsing: "Users" IDSlice: invalid ID passed -` + fmt.Sprint(elem))
+					return nil, fmt.Errorf(`Allowed Mentions Parsing: "%s" IDSlice: invalid ID passed -`+fmt.Sprint(elem), k)
 				}
 				newslice = append(newslice, ToInt64(elem))
 			}
 			if len(newslice) > 100 {
 				newslice = newslice[:100]
 			}
-			allowedMentions.Users = newslice
-		case "roles":
-			var newslice discordgo.IDSlice
-			var parseSlice Slice
-			conv, err := parseSlice.AppendSlice(v)
-			if err != nil {
-				return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "Roles"`)
+			if strings.ToLower(k) == "users" {
+				allowedMentions.Users = newslice
+			} else {
+				allowedMentions.Roles = newslice
 			}
-			for _, elem := range conv.(Slice) {
-				if (ToInt64(elem)) == 0 {
-					return nil, errors.New(`Allowed Mentions Parsing: "Roles" IDSlice: invalid ID passed -` + fmt.Sprint(elem))
-				}
-				newslice = append(newslice, ToInt64(elem))
+		case "replied_user":
+			isRepliedUserMention, ok := v.(bool)
+			if !ok {
+				return nil, errors.New(`Allowed Mentions Parsing : invalid datatype passed to "replied_user", accepts a bool only`)
 			}
-			if len(newslice) > 100 {
-				newslice = newslice[:100]
-			}
-			allowedMentions.Roles = newslice
+			allowedMentions.RepliedUser = isRepliedUserMention
 		default:
-			return nil, errors.New(`Allowed Mentios Parsing : invalid key "` + k + `" for Allowed Mentions`)
+			return nil, errors.New(`Allowed Mentions Parsing : invalid key "` + k + `" for Allowed Mentions`)
 		}
 	}
 
