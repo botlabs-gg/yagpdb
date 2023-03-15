@@ -147,7 +147,7 @@ func (c *Context) ChannelArgNoDMNoThread(v interface{}) int64 {
 
 func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
 	if c.IsExecedByLeaveMessage {
-		return "", errors.New("Can't use sendTemplateDM on leave msg")
+		return "", errors.New("can't use sendTemplateDM on leave msg")
 	}
 
 	return c.sendNestedTemplate(nil, true, name, data...)
@@ -380,7 +380,9 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			}
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
-			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
+			if !filterSpecialMentions {
+				msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
+			}
 			if isDM {
 				if len(typedMsg.Embeds) > 0 {
 					for _, e := range msgSend.Embeds {
@@ -463,10 +465,16 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			}
 			msgEdit.Content = typedMsg.Content
 			msgEdit.Embeds = typedMsg.Embeds
-			msgEdit.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
+			msgEdit.AllowedMentions = typedMsg.AllowedMentions
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
+		}
+
+		if !filterSpecialMentions {
+			msgEdit.AllowedMentions = discordgo.AllowedMentions{
+				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
+			}
 		}
 
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
