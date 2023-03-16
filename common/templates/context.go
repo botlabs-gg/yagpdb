@@ -18,6 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/prefix"
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/lib/template"
@@ -53,7 +54,7 @@ var (
 		"print":        withOutputLimit(fmt.Sprint, MaxStringLength),
 		"println":      withOutputLimit(fmt.Sprintln, MaxStringLength),
 		"printf":       withOutputLimitF(fmt.Sprintf, MaxStringLength),
-		"sanitizeText": common.SanitizeText,
+		"sanitizeText": confusables.SanitizeText,
 
 		// regexp
 		"reQuoteMeta": regexp.QuoteMeta,

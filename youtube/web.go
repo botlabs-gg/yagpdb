@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -63,13 +64,9 @@ const (
 )
 
 var (
-	ytUrlRegex        = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com`)
-	ytUrlShortRegex   = regexp.MustCompile(`^(https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+).*`)
-	ytVideoUrlRegex   = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]+).*`)
-	ytChannelUrlRegex = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(channel)\/(UC[\w-]{21}[AQgw])$`)
-	ytCustomUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(c\/)?([\w-]+)$`)
-	ytUserUrlRegex    = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(user\/)([\w-]+)$`)
-	ytHandleUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(@)([\w-]+)$`)
+	ytVideoIDRegex   = regexp.MustCompile(`\A[\w-]+\z`)
+	ytChannelIDRegex = regexp.MustCompile(`\AUC[\w-]{21}[AQgw]\z`)
+	ytHandleRegex    = regexp.MustCompile(`\A@([\w\-.]{3,30})\z`)
 )
 
 func (p *Plugin) InitWeb() {
@@ -162,14 +159,15 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
-	url := data.YoutubeUrl
-	if !(ytUrlRegex.MatchString(url) || ytUrlShortRegex.MatchString(url)) {
-		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", url))), nil
+	channelUrl := data.YoutubeUrl
+	parsedUrl, err := url.Parse(channelUrl)
+	if err != nil || !(strings.HasSuffix(parsedUrl.Host, "youtube.com") || strings.HasSuffix(parsedUrl.Host, "youtu.be")) {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
 	}
 
-	ytChannel, err := p.getYtChannel(url)
+	ytChannel, err := p.getYtChannel(parsedUrl)
 	if err != nil {
-		logger.WithError(err).Errorf("error occurred fetching channel for url %s", url)
+		logger.WithError(err).Errorf("error occurred fetching channel for url %s", channelUrl)
 		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
 	}
 

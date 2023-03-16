@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -278,42 +279,70 @@ var (
 	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")
 )
 
-func (p *Plugin) parseYtUrl(url string) (t ytUrlType, id string, err error) {
-	if ytUrlShortRegex.MatchString(url) {
-		capturingGroups := ytUrlShortRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][2]) > 0 {
-			return ytUrlTypeVideo, capturingGroups[0][2], nil
-		}
-	} else if ytVideoUrlRegex.MatchString(url) {
-		capturingGroups := ytVideoUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][4]) > 0 {
-			return ytUrlTypeVideo, capturingGroups[0][4], nil
-		}
-	} else if ytChannelUrlRegex.MatchString(url) {
-		capturingGroups := ytChannelUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeChannel, capturingGroups[0][5], nil
-		}
-	} else if ytCustomUrlRegex.MatchString(url) {
-		capturingGroups := ytCustomUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeCustom, capturingGroups[0][5], nil
-		}
-	} else if ytUserUrlRegex.MatchString(url) {
-		capturingGroups := ytUserUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeUser, capturingGroups[0][5], nil
-		}
-	} else if ytHandleUrlRegex.MatchString(url) {
-		capturingGroups := ytHandleUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeHandle, capturingGroups[0][5], nil
+func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, err error) {
+	// First set of URL types should only have one segment,
+	// so trimming leading forward slash simplifies following operations
+	path := strings.TrimPrefix(channelUrl.Path, "/")
+
+	if strings.HasSuffix(channelUrl.Host, "youtu.be") {
+		return p.parseYtVideoID(path)
+	}
+
+	if strings.HasPrefix(path, "watch") {
+		// `v` key-value pair should identify the video ID
+		// in URLs with a `watch` segment.
+		val := channelUrl.Query().Get("v")
+		return p.parseYtVideoID(val)
+	}
+
+	// Prefix check allows method to provide a more helpful error message,
+	// when attempting to parse an invalid handle URL.
+	if strings.HasPrefix(path, "@") {
+		handle := ytHandleRegex.FindStringSubmatch(path)
+		if handle != nil {
+			return ytUrlTypeHandle, handle[1], nil
+		} else {
+			return ytUrlTypeInvalid, id, fmt.Errorf("%#v is not a valid youtube handle", path)
 		}
 	}
-	return ytUrlTypeInvalid, "", errors.New("invalid or incomplete url")
+
+	pathSegments := strings.Split(channelUrl.Path, "/")
+	if len(pathSegments) != 3 {
+		return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid path", path)
+	}
+
+	first := pathSegments[1]
+	second := pathSegments[2]
+
+	switch first {
+	case "shorts":
+		return p.parseYtVideoID(second)
+	case "channel":
+		id = ytChannelIDRegex.FindString(second)
+		if id != "" {
+			return ytUrlTypeChannel, id, nil
+		} else {
+			return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid youtube channel id", id)
+		}
+	case "c":
+		return ytUrlTypeCustom, second, nil
+	case "user":
+		return ytUrlTypeUser, second, nil
+	default:
+		return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid path", path)
+	}
 }
 
-func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) {
+func (p *Plugin) parseYtVideoID(parse string) (idType ytUrlType, id string, err error) {
+	id = ytVideoIDRegex.FindString(parse)
+	if id == "" {
+		idType = ytUrlTypeInvalid
+		err = fmt.Errorf("%s is not a valid youtube video id", parse)
+	}
+	return
+}
+
+func (p *Plugin) getYtChannel(url *url.URL) (channel *youtube.Channel, err error) {
 	urlType, id, err := p.parseYtUrl(url)
 	if err != nil {
 		return nil, err
