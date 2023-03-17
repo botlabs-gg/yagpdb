@@ -157,7 +157,7 @@ var roasts = []string{
 	"The last time I saw something like you… I flushed.",
 	"You're like a plunger. You like to bring up old shit.", 
 	"I treasure the time I don't spend with you.",
-	"You're are useless as the \"ueue\" in \"queue\"",
+	"You're as useless as the \"ueue\" in \"queue\"",
 	"You're the reason the gene pool needs a lifeguard.",
 	"I don't know what your problem is, but I'm guessing it's hard to pronounce.",
 	"Talking to you is like stepping on a leaf in autumn and hearing no crunch- disappointment.",
