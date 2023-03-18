@@ -1,29 +1,38 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
 <title>CodeMirror: Pig Latin mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="pig.js"></script>
-<style>.CodeMirror {border: 2px inset #dee;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    border: 2px inset #dee;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Pig Latin</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Pig Latin</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Pig Latin mode</h2>
-<form><textarea id="code" name="code">
+  <h2>Pig Latin mode</h2>
+  <form>
+    <textarea id="code" name="code">
 -- Apache Pig (Pig Latin Language) Demo
 /* 
 This is a multiline comment.
@@ -34,20 +43,22 @@ c = FOREACH b GENERATE flatten(group) as (x,y), SUM(group.$2) as z;
 STORE c INTO "\path\to\output";
 
 --
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        indentUnit: 4,
-        mode: "text/x-pig"
-      });
-    </script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      indentUnit: 4,
+      mode: "text/x-pig",
+    });
+  </script>
 
-    <p>
-        Simple mode that handles Pig Latin language.
-    </p>
+  <p>Simple mode that handles Pig Latin language.</p>
 
-    <p><strong>MIME type defined:</strong> <code>text/x-pig</code>
+  <p>
+    <strong>MIME type defined:</strong> <code>text/x-pig</code>
     (PIG code)
+  </p>
 </article>

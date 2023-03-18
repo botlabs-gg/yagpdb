@@ -48,7 +48,7 @@ div.DTFC_Blocker {
 }
 
 table.dataTable.table-striped.DTFC_Cloned tbody tr:nth-of-type(odd) {
-  background-color: #F3F3F3;
+  background-color: #f3f3f3;
 }
 
 table.dataTable.table-striped.DTFC_Cloned tbody tr:nth-of-type(even) {

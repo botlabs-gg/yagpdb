@@ -1,31 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Dockerfile mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/mode/simple.js"></script>
 <script src="dockerfile.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Dockerfile</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Dockerfile</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Dockerfile mode</h2>
-<form><textarea id="code" name="code"># Install Ghost blogging platform and run development environment
+  <h2>Dockerfile mode</h2>
+  <form>
+    <textarea id="code" name="code">
+# Install Ghost blogging platform and run development environment
 #
 # VERSION 1.0.0
 
@@ -57,17 +68,21 @@ RUN cd /data/ghost/ && npm install --production
 EXPOSE 2368
 # Run Ghost
 CMD ["npm","start"]
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        mode: "dockerfile"
-      });
-    </script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      mode: "dockerfile",
+    });
+  </script>
 
-    <p>Dockerfile syntax highlighting for CodeMirror. Depends on
-    the <a href="../../demo/simplemode.html">simplemode</a> addon.</p>
+  <p>
+    Dockerfile syntax highlighting for CodeMirror. Depends on the
+    <a href="../../demo/simplemode.html">simplemode</a> addon.
+  </p>
 
-    <p><strong>MIME types defined:</strong> <code>text/x-dockerfile</code></p>
-  </article>
+  <p><strong>MIME types defined:</strong> <code>text/x-dockerfile</code></p>
+</article>

@@ -1,4 +1,5 @@
-.CodeMirror-simplescroll-horizontal div, .CodeMirror-simplescroll-vertical div {
+.CodeMirror-simplescroll-horizontal div,
+.CodeMirror-simplescroll-vertical div {
   position: absolute;
   background: #ccc;
   -moz-box-sizing: border-box;
@@ -7,14 +8,16 @@
   border-radius: 2px;
 }
 
-.CodeMirror-simplescroll-horizontal, .CodeMirror-simplescroll-vertical {
+.CodeMirror-simplescroll-horizontal,
+.CodeMirror-simplescroll-vertical {
   position: absolute;
   z-index: 6;
   background: #eee;
 }
 
 .CodeMirror-simplescroll-horizontal {
-  bottom: 0; left: 0;
+  bottom: 0;
+  left: 0;
   height: 8px;
 }
 .CodeMirror-simplescroll-horizontal div {
@@ -23,7 +26,8 @@
 }
 
 .CodeMirror-simplescroll-vertical {
-  right: 0; top: 0;
+  right: 0;
+  top: 0;
   width: 8px;
 }
 .CodeMirror-simplescroll-vertical div {
@@ -31,24 +35,27 @@
   width: 100%;
 }
 
-
-.CodeMirror-overlayscroll .CodeMirror-scrollbar-filler, .CodeMirror-overlayscroll .CodeMirror-gutter-filler {
+.CodeMirror-overlayscroll .CodeMirror-scrollbar-filler,
+.CodeMirror-overlayscroll .CodeMirror-gutter-filler {
   display: none;
 }
 
-.CodeMirror-overlayscroll-horizontal div, .CodeMirror-overlayscroll-vertical div {
+.CodeMirror-overlayscroll-horizontal div,
+.CodeMirror-overlayscroll-vertical div {
   position: absolute;
   background: #bcd;
   border-radius: 3px;
 }
 
-.CodeMirror-overlayscroll-horizontal, .CodeMirror-overlayscroll-vertical {
+.CodeMirror-overlayscroll-horizontal,
+.CodeMirror-overlayscroll-vertical {
   position: absolute;
   z-index: 6;
 }
 
 .CodeMirror-overlayscroll-horizontal {
-  bottom: 0; left: 0;
+  bottom: 0;
+  left: 0;
   height: 6px;
 }
 .CodeMirror-overlayscroll-horizontal div {
@@ -57,7 +64,8 @@
 }
 
 .CodeMirror-overlayscroll-vertical {
-  right: 0; top: 0;
+  right: 0;
+  top: 0;
   width: 6px;
 }
 .CodeMirror-overlayscroll-vertical div {

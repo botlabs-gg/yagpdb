@@ -1,126 +1,162 @@
-{{define "public_server_logs"}}
-
-{{template "cp_head" .}}
+{{define "public_server_logs"}} {{template "cp_head" .}}
 <style>
-.deleted-message{
+  .deleted-message {
     color: red;
-}
+  }
 </style>
 <header class="page-header">
-    <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete2" method="post">
-        <h2>Message logs for {{.ActiveGuild.Name}} #{{.Logs.ChannelName}} <small>(ID: {{.Logs.ChannelID}})</small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h2>
-        <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}">
-    </form>
+  <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete2" method="post">
+    <h2>
+      Message logs for {{.ActiveGuild.Name}} #{{.Logs.ChannelName}}
+      <small>(ID: {{.Logs.ChannelID}})</small>{{if .IsAdmin}}
+      <input
+        type="submit"
+        class="btn btn-lg btn-danger"
+        value="Delete"
+      />{{end}}
+    </h2>
+    <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}" />
+  </form>
 </header>
 
 {{template "cp_alerts" .}}
 <div class="row">
-    <div class="col-lg-12">
-        <table class="table table-hover table-striped table-responsive-md" id="log-table">
-            <thead>
-                <tr>
-                    <th id="time-col">Time (UTC) <i class="fa fa-caret-up"></i></th>
-                    <th>Author</th>
-                    <th>Message</th>{{if .IsAdmin}}
-                    <th>Actions</th>{{end}}
-                </tr>
-            </thead>
+  <div class="col-lg-12">
+    <table
+      class="table table-hover table-striped table-responsive-md"
+      id="log-table"
+    >
+      <thead>
+        <tr>
+          <th id="time-col">Time (UTC) <i class="fa fa-caret-up"></i></th>
+          <th>Author</th>
+          <th>Message</th>
+          {{if .IsAdmin}}
+          <th>Actions</th>
+          {{end}}
+        </tr>
+      </thead>
 
-            <tbody id="logs-list">
-                {{$IsAdmin := .IsAdmin}}
-                {{$CanViewDeleted := .CanViewDeleted}}
-                {{range $i, $v := .Messages}}
-                <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.Model.AuthorID}} Message ID: {{.Model.ID}}">
-                    <td class="text-nowrap">{{.Timestamp}}</td>
-                    <td style="{{if .Color}}color: #{{.Color}};{{end}}font-weight: 600;">{{.Model.AuthorUsername}}</td>
-                    <td id="msg-cell-{{.Model.ID}}" {{if .Model.Deleted}} class="deleted-message" {{end}}>
-                        {{if .Model.Deleted}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or (not .Model.Deleted) $CanViewDeleted}}{{.Model.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}
-                    </td>{{if $IsAdmin}}
-                    <td>{{if not .Model.Deleted}}<button id="msg-button-{{.Model.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.Model.ID}}')">Delete</button>{{end}}</td>{{end}}
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
-    </div>
+      <tbody id="logs-list">
+        {{$IsAdmin := .IsAdmin}} {{$CanViewDeleted := .CanViewDeleted}} {{range
+        $i, $v := .Messages}}
+        <tr
+          id="log-row-{{$i}}"
+          class="popover-trigger log-row"
+          data-toggle="popover"
+          data-trigger="click"
+          title="Message info"
+          data-placement="top"
+          data-content="Author ID: {{.Model.AuthorID}} Message ID: {{.Model.ID}}"
+        >
+          <td class="text-nowrap">{{.Timestamp}}</td>
+          <td style="{{if .Color}}color: #{{.Color}};{{end}}font-weight: 600;">
+            {{.Model.AuthorUsername}}
+          </td>
+          <td
+            id="msg-cell-{{.Model.ID}}"
+            {{if
+            .Model.Deleted}}
+            class="deleted-message"
+            {{end}}
+          >
+            {{if .Model.Deleted}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or
+            (not .Model.Deleted) $CanViewDeleted}}{{.Model.Content}}{{else}}This
+            message has been removed from logs. only admins can see it.{{end}}
+          </td>
+          {{if $IsAdmin}}
+          <td>
+            {{if not .Model.Deleted}}<button
+              id="msg-button-{{.Model.ID}}"
+              class="btn btn-sm btn-danger"
+              noconfirm
+              onclick="deleteMessage('{{.Model.ID}}')"
+            >
+              Delete</button
+            >{{end}}
+          </td>
+          {{end}}
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
 </div>
 <!-- /.row -->
 <script>
-var logsID = {{.Logs.ID}};
-function deleteMessage(msg){
-    if(!confirm("Are you sure you want to delete this message?\nYou should delete it in Discord itself to make sure it's gone from all logs.")){
-        return;
-    }
+  var logsID = {{.Logs.ID}};
+  function deleteMessage(msg){
+      if(!confirm("Are you sure you want to delete this message?\nYou should delete it in Discord itself to make sure it's gone from all logs.")){
+          return;
+      }
 
-    req = new XMLHttpRequest();
-    req.addEventListener("load", function(evt, aaa){
-        if (req.status != 200) {
-            alert("Something went wrong: "+req.response);
-        }else{
-            $("#msg-cell-"+msg).addClass("deleted-message");
-            $("#msg-button-"+msg).remove();
-        }
-    });
-    req.addEventListener("error", function(){
-        alert("An error occurred");
-    });
-    req.open("POST", "https://{{.Host}}/manage/{{.ActiveGuild.ID}}/logging/msgdelete2");
+      req = new XMLHttpRequest();
+      req.addEventListener("load", function(evt, aaa){
+          if (req.status != 200) {
+              alert("Something went wrong: "+req.response);
+          }else{
+              $("#msg-cell-"+msg).addClass("deleted-message");
+              $("#msg-button-"+msg).remove();
+          }
+      });
+      req.addEventListener("error", function(){
+          alert("An error occurred");
+      });
+      req.open("POST", "https://{{.Host}}/manage/{{.ActiveGuild.ID}}/logging/msgdelete2");
 
-    var data = new FormData();
-    data.set("LogID", logsID);
-    data.set("MessageID", msg);
-    req.send(data);
-}
+      var data = new FormData();
+      data.set("LogID", logsID);
+      data.set("MessageID", msg);
+      req.send(data);
+  }
 
-var caretUp = '<i class="fa fa-caret-up"></i>' 
-var caretDown = '<i class="fa fa-caret-down"></i>' 
-var timeBase = 'Time (UTC) '
-var sortedUpwards = true;
-$(function(){
-    $("#time-col").click(function(){
-        console.log("clicked");
-        
-        sortedUpwards = !sortedUpwards;
+  var caretUp = '<i class="fa fa-caret-up"></i>'
+  var caretDown = '<i class="fa fa-caret-down"></i>'
+  var timeBase = 'Time (UTC) '
+  var sortedUpwards = true;
+  $(function(){
+      $("#time-col").click(function(){
+          console.log("clicked");
 
-        if (sortedUpwards) {
-            $("#time-col").html(timeBase + caretUp);
-            sortTable($("#log-table")[0], true)
-        }else{
-            $("#time-col").html(timeBase + caretDown);
-            sortTable($("#log-table")[0], false)
-        }
-    })
-})
+          sortedUpwards = !sortedUpwards;
 
-function sortTable(table, reverse) {
-    var tb = table.tBodies[0], // use `<tbody>` to ignore `<thead>` and `<tfoot>` rows
-        tr = Array.prototype.slice.call(tb.rows, 0), // put rows into array
-        i;
+          if (sortedUpwards) {
+              $("#time-col").html(timeBase + caretUp);
+              sortTable($("#log-table")[0], true)
+          }else{
+              $("#time-col").html(timeBase + caretDown);
+              sortTable($("#log-table")[0], false)
+          }
+      })
+  })
 
-    tr = tr.sort(function (a, b) { // sort rows
-        var indexA = a.id.replace("log-row-", "");
-        var indexB = b.id.replace("log-row-", "");
-        var parsedA = parseInt(indexA);
-        var parsedB = parseInt(indexB);
-        
-        return reverse ? parsedA - parsedB : parsedB - parsedA;
-    });
-    for(i = 0; i < tr.length; ++i) tb.appendChild(tr[i]); // append each row in order
-}
+  function sortTable(table, reverse) {
+      var tb = table.tBodies[0], // use `<tbody>` to ignore `<thead>` and `<tfoot>` rows
+          tr = Array.prototype.slice.call(tb.rows, 0), // put rows into array
+          i;
 
-const logsList = document.querySelector("#logs-list");
+      tr = tr.sort(function (a, b) { // sort rows
+          var indexA = a.id.replace("log-row-", "");
+          var indexB = b.id.replace("log-row-", "");
+          var parsedA = parseInt(indexA);
+          var parsedB = parseInt(indexB);
 
-// Close any open popovers, when clicked outside
-document.body.addEventListener('click', function (event) {
-    const popoverDiv = document.querySelector(".popover")
-    if (!popoverDiv) {
-        return
-    }
-    if (!(logsList.contains(event.target) || popoverDiv.contains(event.target))) {
-        $('[data-toggle="popover"]').popover('hide');
-    }
-});
+          return reverse ? parsedA - parsedB : parsedB - parsedA;
+      });
+      for(i = 0; i < tr.length; ++i) tb.appendChild(tr[i]); // append each row in order
+  }
 
+  const logsList = document.querySelector("#logs-list");
+
+  // Close any open popovers, when clicked outside
+  document.body.addEventListener('click', function (event) {
+      const popoverDiv = document.querySelector(".popover")
+      if (!popoverDiv) {
+          return
+      }
+      if (!(logsList.contains(event.target) || popoverDiv.contains(event.target))) {
+          $('[data-toggle="popover"]').popover('hide');
+      }
+  });
 </script>
-{{template "cp_footer"}}
-
-{{end}}
+{{template "cp_footer"}} {{end}}

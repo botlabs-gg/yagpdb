@@ -5,17 +5,19 @@
  * Smarty 2 and 3 mode.
  */
 
-(function(mod) {
-  if (typeof exports == "object" && typeof module == "object") // CommonJS
+(function (mod) {
+  if (typeof exports == "object" && typeof module == "object")
+    // CommonJS
     mod(require("../../lib/codemirror"));
-  else if (typeof define == "function" && define.amd) // AMD
+  else if (typeof define == "function" && define.amd)
+    // AMD
     define(["../../lib/codemirror"], mod);
-  else // Plain browser env
-    mod(CodeMirror);
-})(function(CodeMirror) {
+  // Plain browser env
+  else mod(CodeMirror);
+})(function (CodeMirror) {
   "use strict";
 
-  CodeMirror.defineMode("smarty", function(config, parserConf) {
+  CodeMirror.defineMode("smarty", function (config, parserConf) {
     var rightDelimiter = parserConf.rightDelimiter || "}";
     var leftDelimiter = parserConf.leftDelimiter || "{";
     var version = parserConf.version || 2;
@@ -25,7 +27,7 @@
     var regs = {
       operatorChars: /[+\-*&%=<>!?]/,
       validIdentifier: /[a-zA-Z0-9_]/,
-      stringChar: /['"]/
+      stringChar: /['"]/,
     };
 
     var last;
@@ -42,21 +44,32 @@
     // Smarty 3 allows { and } surrounded by whitespace to NOT slip into Smarty mode
     function doesNotCount(stream, pos) {
       if (pos == null) pos = stream.pos;
-      return version === 3 && leftDelimiter == "{" &&
-        (pos == stream.string.length || /\s/.test(stream.string.charAt(pos)));
+      return (
+        version === 3 &&
+        leftDelimiter == "{" &&
+        (pos == stream.string.length || /\s/.test(stream.string.charAt(pos)))
+      );
     }
 
     function tokenTop(stream, state) {
       var string = stream.string;
-      for (var scan = stream.pos;;) {
+      for (var scan = stream.pos; ; ) {
         var nextMatch = string.indexOf(leftDelimiter, scan);
         scan = nextMatch + leftDelimiter.length;
-        if (nextMatch == -1 || !doesNotCount(stream, nextMatch + leftDelimiter.length)) break;
+        if (
+          nextMatch == -1 ||
+          !doesNotCount(stream, nextMatch + leftDelimiter.length)
+        )
+          break;
       }
       if (nextMatch == stream.pos) {
         stream.match(leftDelimiter);
         if (stream.eat("*")) {
-          return chain(stream, state, tokenBlock("comment", "*" + rightDelimiter));
+          return chain(
+            stream,
+            state,
+            tokenBlock("comment", "*" + rightDelimiter)
+          );
         } else {
           state.depth++;
           state.tokenize = tokenSmarty;
@@ -112,7 +125,6 @@
         stream.eatWhile(/\d/);
         return cont("number", "number");
       } else {
-
         if (state.last == "variable") {
           if (ch == "@") {
             stream.eatWhile(regs.validIdentifier);
@@ -127,7 +139,8 @@
         } else if (state.last == "whitespace") {
           stream.eatWhile(regs.validIdentifier);
           return cont("attribute", "modifier");
-        } if (state.last == "property") {
+        }
+        if (state.last == "property") {
           stream.eatWhile(regs.validIdentifier);
           return cont("property", null);
         } else if (/\s/.test(ch)) {
@@ -140,10 +153,10 @@
           str += ch;
         }
         var c = null;
-        while (c = stream.eat(regs.validIdentifier)) {
+        while ((c = stream.eat(regs.validIdentifier))) {
           str += c;
         }
-        for (var i=0, j=keyFunctions.length; i<j; i++) {
+        for (var i = 0, j = keyFunctions.length; i < j; i++) {
           if (keyFunctions[i] == str) {
             return cont("keyword", "keyword");
           }
@@ -156,12 +169,12 @@
     }
 
     function tokenAttribute(quote) {
-      return function(stream, state) {
+      return function (stream, state) {
         var prevChar = null;
         var currChar = null;
         while (!stream.eol()) {
           currChar = stream.peek();
-          if (stream.next() == quote && prevChar !== '\\') {
+          if (stream.next() == quote && prevChar !== "\\") {
             state.tokenize = tokenSmarty;
             break;
           }
@@ -172,7 +185,7 @@
     }
 
     function tokenBlock(style, terminator) {
-      return function(stream, state) {
+      return function (stream, state) {
         while (!stream.eol()) {
           if (stream.match(terminator)) {
             state.tokenize = tokenTop;
@@ -185,39 +198,38 @@
     }
 
     return {
-      startState: function() {
+      startState: function () {
         return {
           base: CodeMirror.startState(baseMode),
           tokenize: tokenTop,
           last: null,
-          depth: 0
+          depth: 0,
         };
       },
-      copyState: function(state) {
+      copyState: function (state) {
         return {
           base: CodeMirror.copyState(baseMode, state.base),
           tokenize: state.tokenize,
           last: state.last,
-          depth: state.depth
+          depth: state.depth,
         };
       },
-      innerMode: function(state) {
+      innerMode: function (state) {
         if (state.tokenize == tokenTop)
-          return {mode: baseMode, state: state.base};
+          return { mode: baseMode, state: state.base };
       },
-      token: function(stream, state) {
+      token: function (stream, state) {
         var style = state.tokenize(stream, state);
         state.last = last;
         return style;
       },
-      indent: function(state, text) {
+      indent: function (state, text) {
         if (state.tokenize == tokenTop && baseMode.indent)
           return baseMode.indent(state.base, text);
-        else
-          return CodeMirror.Pass;
+        else return CodeMirror.Pass;
       },
       blockCommentStart: leftDelimiter + "*",
-      blockCommentEnd: "*" + rightDelimiter
+      blockCommentEnd: "*" + rightDelimiter,
     };
   });
 

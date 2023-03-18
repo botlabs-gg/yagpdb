@@ -1,31 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: LESS mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/edit/matchbrackets.js"></script>
 <script src="css.js"></script>
-<style>.CodeMirror {border: 1px solid #ddd; line-height: 1.2;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    border: 1px solid #ddd;
+    line-height: 1.2;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">LESS</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">LESS</a></li>
   </ul>
 </div>
 
 <article>
-<h2>LESS mode</h2>
-<form><textarea id="code" name="code">@media screen and (device-aspect-ratio: 16/9) { … }
+  <h2>LESS mode</h2>
+  <form>
+    <textarea id="code" name="code">
+@media screen and (device-aspect-ratio: 16/9) { … }
 @media screen and (device-aspect-ratio: 1280/720) { … }
 @media screen and (device-aspect-ratio: 2560/1440) { … }
 
@@ -137,16 +148,25 @@ fieldset span button, fieldset span input[type="file"] {
     .box-shadow(0, 6px, 8px, 0.5);
   }
 }
-</textarea></form>
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers : true,
-        matchBrackets : true,
-        mode: "text/x-less"
-      });
-    </script>
+</textarea
+    >
+  </form>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      matchBrackets: true,
+      mode: "text/x-less",
+    });
+  </script>
 
-    <p>The LESS mode is a sub-mode of the <a href="index.html">CSS mode</a> (defined in <code>css.js</code>).</p>
+  <p>
+    The LESS mode is a sub-mode of the
+    <a href="index.html">CSS mode</a> (defined in <code>css.js</code>).
+  </p>
 
-    <p><strong>Parsing/Highlighting Tests:</strong> <a href="../../test/index.html#less_*">normal</a>,  <a href="../../test/index.html#verbose,less_*">verbose</a>.</p>
-  </article>
+  <p>
+    <strong>Parsing/Highlighting Tests:</strong>
+    <a href="../../test/index.html#less_*">normal</a>,
+    <a href="../../test/index.html#verbose,less_*">verbose</a>.
+  </p>
+</article>

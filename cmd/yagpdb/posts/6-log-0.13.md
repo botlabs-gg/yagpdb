@@ -6,7 +6,7 @@
 
 Small update with mosly bugfixes
 
- - Kick and ban commands now do hastebin upload
- - Fixed not being able to update subreddit in reddit feeds
- - Fixed commands not running in dm
- - Set default command prefix to `-`
+- Kick and ban commands now do hastebin upload
+- Fixed not being able to update subreddit in reddit feeds
+- Fixed commands not running in dm
+- Set default command prefix to `-`

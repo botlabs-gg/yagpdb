@@ -1,180 +1,250 @@
-{{define "premium_user_setup"}}
-{{template "cp_head" .}}
+{{define "premium_user_setup"}} {{template "cp_head" .}}
 
 <div class="page-header">
-    <h2>Premium setup</h2>
+  <h2>Premium setup</h2>
 </div>
 
 {{template "cp_alerts" .}}
 
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Info</h2>
-            </header>
+  <div class="col-lg-12">
+    <section class="card">
+      <header class="card-header">
+        <h2 class="card-title">Info</h2>
+      </header>
 
+      <div class="card-body">
+        <p>
+          Here you can redeem codes from giveaways and assign premium slots to
+          servers.
+        </p>
+        <p>You can find the features behind the paywall in the list below.</p>
+        <p>
+          <b>If you come across any issues with premium, please let us know!</b>
+        </p>
+        <p>
+          <b>Note:</b> The premium functionality is just a bonus for supporting
+          the bot and not a "product".
+        </p>
+
+        <button
+          class="btn btn-primary mb-2"
+          type="button"
+          data-toggle="collapse"
+          data-target="#premium-how-to-get"
+          aria-expanded="false"
+          aria-controls="premium-how-to-get"
+        >
+          How to get premium?
+        </button>
+        <div class="collapse" id="premium-how-to-get">
+          <section class="card">
             <div class="card-body">
-                <p>Here you can redeem codes from giveaways and assign premium slots to servers.</p>
-                <p>You can find the features behind the paywall in the list below.</p>
-                <p><b>If you come across any issues with premium, please let us know!</b></p>
-                <p><b>Note:</b> The premium functionality is just a bonus for supporting the bot and not a "product".</p>
-
-                <button class="btn btn-primary mb-2" type="button" data-toggle="collapse"
-                    data-target="#premium-how-to-get" aria-expanded="false" aria-controls="premium-how-to-get">
-                    How to get premium?
-                </button>
-                <div class="collapse" id="premium-how-to-get">
-                    <section class="card">
-                        <div class="card-body">
-                            <ul>
-                                <li>Make a pledge on our <a href="https://patreon.com/yagpdb">Patreon</a>. Tiers above $3
-                                    will grant you premium slots. It can take up to 10 minutes from you making a pledge to it
-                                    being processed on our side. (If you do not see your premium slots after that time, please contact us through the support server.)</li>
-                            </ul>
-                        </div>
-                    </section>
-                </div><br>
-                <button class="btn btn-primary" type="button" data-toggle="collapse"
-                    data-target="#premium-full-benefits" aria-expanded="false" aria-controls="premium-full-benefits">
-                    Full list of premium benefits
-                </button>
-                <div class="collapse" id="premium-full-benefits">
-                    <section class="card">
-                        <div class="card-body">
-                            <b>General goodies</b>
-                            <ul>
-                                <li>Retroactive AutoRole Scan and Assignment </li>
-                                <li>Access to priority support channels on our support server</li>
-                            </ul>
-
-                            <b>Extended limits:</b>
-                            <ul>
-                                <li>Message cache duration increased from 1 hour to 12 hours, which means you will be
-                                    able to see the removed messages in the logs if the message was sent in the previous
-                                    12 hours</li>
-                                <li>Max custom commands increased from 100 to 250</li>
-                                <li>Max Reddit feeds increased from 100 to 1000</li>
-                                <li>Max Youtube feeds increased from 50 to 250 (Possibly higher if needed)</li>
-                                <li>Max Soundboard sounds increased from 50 to 250 (Possibly higher if needed)</li>
-                                <li>Increased database storage and interaction limits.</li>
-                                <li>Various custom command function limits increased</li>
-                            </ul>
-                        </div>
-                    </section>
-                </div>
+              <ul>
+                <li>
+                  Make a pledge on our
+                  <a href="https://patreon.com/yagpdb">Patreon</a>. Tiers above
+                  $3 will grant you premium slots. It can take up to 10 minutes
+                  from you making a pledge to it being processed on our side.
+                  (If you do not see your premium slots after that time, please
+                  contact us through the support server.)
+                </li>
+              </ul>
             </div>
-        </section>
-        <!-- /.panel -->
-    </div>
-    <!-- /.col-lg-12 -->
+          </section>
+        </div>
+        <br />
+        <button
+          class="btn btn-primary"
+          type="button"
+          data-toggle="collapse"
+          data-target="#premium-full-benefits"
+          aria-expanded="false"
+          aria-controls="premium-full-benefits"
+        >
+          Full list of premium benefits
+        </button>
+        <div class="collapse" id="premium-full-benefits">
+          <section class="card">
+            <div class="card-body">
+              <b>General goodies</b>
+              <ul>
+                <li>Retroactive AutoRole Scan and Assignment</li>
+                <li>
+                  Access to priority support channels on our support server
+                </li>
+              </ul>
+
+              <b>Extended limits:</b>
+              <ul>
+                <li>
+                  Message cache duration increased from 1 hour to 12 hours,
+                  which means you will be able to see the removed messages in
+                  the logs if the message was sent in the previous 12 hours
+                </li>
+                <li>Max custom commands increased from 100 to 250</li>
+                <li>Max Reddit feeds increased from 100 to 1000</li>
+                <li>
+                  Max Youtube feeds increased from 50 to 250 (Possibly higher if
+                  needed)
+                </li>
+                <li>
+                  Max Soundboard sounds increased from 50 to 250 (Possibly
+                  higher if needed)
+                </li>
+                <li>Increased database storage and interaction limits.</li>
+                <li>Various custom command function limits increased</li>
+              </ul>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+    <!-- /.panel -->
+  </div>
+  <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Redeem code</h2>
-            </header>
+  <div class="col-lg-12">
+    <section class="card">
+      <header class="card-header">
+        <h2 class="card-title">Redeem code</h2>
+      </header>
 
-            <div class="card-body">
-                <form method="post" data-async-form>
-                    <input type="text" class="form-control" name="code">
-                    <button type="submit" value="Redeem code" class="btn btn-success"
-                        formaction="/premium/redeemcode">Redeem code</button>
-                    <button type="submit" value="Check code" class="btn btn-primary"
-                        formaction="/premium/lookupcode">Check code</button>
-                </form>
+      <div class="card-body">
+        <form method="post" data-async-form>
+          <input type="text" class="form-control" name="code" />
+          <button
+            type="submit"
+            value="Redeem code"
+            class="btn btn-success"
+            formaction="/premium/redeemcode"
+          >
+            Redeem code
+          </button>
+          <button
+            type="submit"
+            value="Check code"
+            class="btn btn-primary"
+            formaction="/premium/lookupcode"
+          >
+            Check code
+          </button>
+        </form>
 
-                {{if .QueriedCode}}
-                <ul>
-                    <li>Code: <code>{{.QueriedCode.Code}}</code></li>
-                    <li>Permanent: <code>{{.QueriedCode.Permanent}}</code></li>
-                    <li>Duration: <code>{{.QueriedCode.Duration}}</code></li>
-                </ul>
+        {{if .QueriedCode}}
+        <ul>
+          <li>Code: <code>{{.QueriedCode.Code}}</code></li>
+          <li>Permanent: <code>{{.QueriedCode.Permanent}}</code></li>
+          <li>Duration: <code>{{.QueriedCode.Duration}}</code></li>
+        </ul>
+        {{end}}
+      </div>
+    </section>
+    <!-- /.panel -->
+  </div>
+  <!-- /.col-lg-12 -->
+</div>
+<div class="row">
+  {{$dot := .}} {{range .PremiumSlots}}
+  <div class="col-md-6 mb-2">
+    <section
+      class="card {{if .GuildID.Valid}}card-featured card-featured-success{{end}}"
+    >
+      <header class="card-header">
+        <h2 class="card-title">Slot: {{.Title}}</h2>
+      </header>
+
+      <div class="card-body">
+        <ul>
+          <li>
+            {{if not .Permanent}}Expires in:
+            <code
+              >{{humanizeDurationHours (call $dot.PremiumSlotDurationRemaining
+              .)}}</code
+            >{{else}}Expires never{{end}}.
+          </li>
+          {{if .Message}}
+          <li>{{.Message}}</li>
+          {{end}}
+        </ul>
+
+        <form
+          action="/premium/updateslot/{{.ID}}"
+          method="post"
+          data-async-form
+        >
+          <div class="form-group">
+            <label for="slot-{{.ID}}"
+              >Assign this premium slot to a server</label
+            >
+            <select name="GuildID" class="form-control" id="slot-{{.ID}}">
+              {{$found := false}}
+              <option
+                value="0"
+                {{if
+                not
+                .GuildID.Valid}}{{$found="true}}"
+                selected{{end}}
+              >
+                None
+              </option>
+
+              {{$selected := .GuildID.Int64}} {{range $dot.UserGuilds}}{{if
+              .Connected}}
+              <option
+                value="{{.ID}}"
+                {{if
+                eq
+                .ID
+                $selected}}{{$found="true}}"
+                selected
                 {{end}}
-            </div>
-        </section>
-        <!-- /.panel -->
-    </div>
-    <!-- /.col-lg-12 -->
+              >
+                {{.Name}}
+              </option>
+              {{end}}{{end}} {{if not $found}}
+              <option value="{{.GuildID.Int64}}" selected>
+                Unknown server ({{.GuildID.Int64}})
+              </option>
+              {{end}}
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-success mt-2">
+            Update premium slot
+          </button>
+        </form>
+      </div>
+    </section>
+    <!-- /.panel -->
+  </div>
+  {{end}}
+  <!-- /.col-lg-12 -->
 </div>
-<div class="row">
-    {{$dot := .}}
-    {{range .PremiumSlots}}
-    <div class="col-md-6 mb-2">
-        <section class="card {{if .GuildID.Valid}}card-featured card-featured-success{{end}}">
-            <header class="card-header">
-                <h2 class="card-title">Slot: {{.Title}}</h2>
-            </header>
-
-            <div class="card-body">
-                <ul>
-                    <li>{{if not .Permanent}}Expires in:
-                        <code>{{humanizeDurationHours (call $dot.PremiumSlotDurationRemaining .)}}</code>{{else}}Expires
-                        never{{end}}.
-                    </li>
-                    {{if .Message}}<li>{{.Message}}</li>{{end}}
-                </ul>
-
-                <form action="/premium/updateslot/{{.ID}}" method="post" data-async-form>
-                    <div class="form-group">
-                        <label for="slot-{{.ID}}">Assign this premium slot to a server</label>
-                        <select name="GuildID" class="form-control" id="slot-{{.ID}}">
-                            {{$found := false}}
-                            <option value="0" {{if not .GuildID.Valid}}{{$found = true}} selected{{end}}>None</option>
-
-
-                            {{$selected := .GuildID.Int64}}
-                            {{range $dot.UserGuilds}}{{if .Connected}}
-                            <option value="{{.ID}}" {{if eq .ID $selected}}{{$found = true}} selected {{end}}>{{.Name}}
-                            </option>
-                            {{end}}{{end}}
-
-                            {{if not $found}}
-                            <option value="{{.GuildID.Int64}}" selected>Unknown server ({{.GuildID.Int64}})</option>
-                            {{end}}
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn btn-success mt-2">Update premium slot</button>
-                </form>
-            </div>
-        </section>
-        <!-- /.panel -->
-    </div>
-    {{end}}
-    <!-- /.col-lg-12 -->
-</div>
-{{template "cp_footer" .}}
-
-{{end}}
-
-
-{{define "cp_premium_detach"}}
-{{template "cp_head" .}}
+{{template "cp_footer" .}} {{end}} {{define "cp_premium_detach"}} {{template
+"cp_head" .}}
 
 <div class="page-header">
-    <h2>Detach premium slot</h2>
+  <h2>Detach premium slot</h2>
 </div>
 
 {{template "cp_alerts" .}}
 
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card card-featured card-featured-success">
-            <div class="card-body">
-                <div class="row">
-                    <h2><a href="/manage/{{.ActiveGuild.ID}}/home">Back to home</a></h2>
-                </div>
-            </div>
-        </section>
-        <!-- /.panel -->
-    </div>
-    <!-- /.col-lg-12 -->
+  <div class="col-lg-12">
+    <section class="card card-featured card-featured-success">
+      <div class="card-body">
+        <div class="row">
+          <h2><a href="/manage/{{.ActiveGuild.ID}}/home">Back to home</a></h2>
+        </div>
+      </div>
+    </section>
+    <!-- /.panel -->
+  </div>
+  <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
 
-{{template "cp_footer" .}}
-
-{{end}}
+{{template "cp_footer" .}} {{end}}

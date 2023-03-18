@@ -15,11 +15,13 @@
   left: auto;
   right: 0;
 }
-.bootstrap-timepicker.pull-right .bootstrap-timepicker-widget.dropdown-menu:before {
+.bootstrap-timepicker.pull-right
+  .bootstrap-timepicker-widget.dropdown-menu:before {
   left: auto;
   right: 12px;
 }
-.bootstrap-timepicker.pull-right .bootstrap-timepicker-widget.dropdown-menu:after {
+.bootstrap-timepicker.pull-right
+  .bootstrap-timepicker-widget.dropdown-menu:after {
   left: auto;
   right: 13px;
 }
@@ -46,7 +48,7 @@
   position: absolute;
 }
 .bootstrap-timepicker-widget.dropdown-menu:after {
-  border-bottom: 6px solid #FFFFFF;
+  border-bottom: 6px solid #ffffff;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
   content: "";

@@ -1,40 +1,67 @@
 @font-face {
-  font-family: 'Source Sans Pro';
+  font-family: "Source Sans Pro";
   font-style: normal;
   font-weight: 400;
-  src: local('Source Sans Pro'), local('SourceSansPro-Regular'), url(//themes.googleusercontent.com/static/fonts/sourcesanspro/v5/ODelI1aHBYDBqgeIAH2zlBM0YzuT7MdOe03otPbuUS0.woff) format('woff');
+  src: local("Source Sans Pro"), local("SourceSansPro-Regular"),
+    url(//themes.googleusercontent.com/static/fonts/sourcesanspro/v5/ODelI1aHBYDBqgeIAH2zlBM0YzuT7MdOe03otPbuUS0.woff)
+      format("woff");
 }
 
-body, html { margin: 0; padding: 0; height: 100%; }
-section, article { display: block; padding: 0; }
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+section,
+article {
+  display: block;
+  padding: 0;
+}
 
 body {
   background: #f8f8f8;
-  font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;
+  font-family: "Source Sans Pro", Helvetica, Arial, sans-serif;
   line-height: 1.5;
 }
 
-p { margin-top: 0; }
-
-h2, h3, h1 {
-  font-weight: normal;
-  margin-bottom: .7em;
+p {
+  margin-top: 0;
 }
-h1 { font-size: 140%; }
-h2 { font-size: 120%; }
-h3 { font-size: 110%; }
-article > h2:first-child, section:first-child > h2 { margin-top: 0; }
+
+h2,
+h3,
+h1 {
+  font-weight: normal;
+  margin-bottom: 0.7em;
+}
+h1 {
+  font-size: 140%;
+}
+h2 {
+  font-size: 120%;
+}
+h3 {
+  font-size: 110%;
+}
+article > h2:first-child,
+section:first-child > h2 {
+  margin-top: 0;
+}
 
 #nav h1 {
   margin-right: 12px;
   margin-top: 0;
   margin-bottom: 2px;
   color: #d30707;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
 }
 
-a, a:visited, a:link, .quasilink {
-  color: #A21313;
+a,
+a:visited,
+a:link,
+.quasilink {
+  color: #a21313;
   text-decoration: none;
 }
 
@@ -49,7 +76,7 @@ em {
 article {
   max-width: 700px;
   margin: 0 0 0 160px;
-  border-left: 2px solid #E30808;
+  border-left: 2px solid #e30808;
   border-right: 1px solid #ddd;
   padding: 30px 50px 100px 50px;
   background: white;
@@ -67,7 +94,8 @@ article {
   box-sizing: -moz-border-box;
   box-sizing: border-box;
   overflow-y: auto;
-  left: 0; right: none;
+  left: 0;
+  right: none;
   width: 160px;
   text-align: right;
   z-index: 1;
@@ -86,7 +114,8 @@ article {
 
 #nav ul {
   display: block;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   margin-bottom: 32px;
 }
 
@@ -115,10 +144,11 @@ article {
   padding: 0 7px 1px 11px;
 }
 
-#nav ul a.active, #nav ul a:hover {
-  border-bottom: 1px solid #E30808;
+#nav ul a.active,
+#nav ul a:hover {
+  border-bottom: 1px solid #e30808;
   margin-bottom: -1px;
-  color: #E30808;
+  color: #e30808;
 }
 
 #logo {
@@ -128,7 +158,7 @@ article {
 }
 
 section {
-  border-top: 1px solid #E30808;
+  border-top: 1px solid #e30808;
   margin: 1.5em 0;
 }
 
@@ -151,7 +181,8 @@ section.first {
 .yinyang {
   position: absolute;
   top: -10px;
-  left: 0; right: 0;
+  left: 0;
+  right: 0;
   margin: auto;
   display: block;
   height: 120px;
@@ -167,7 +198,9 @@ section.first {
   pointer-events: none;
   position: absolute;
   height: 100px;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .actionlink {
@@ -176,7 +209,8 @@ section.first {
   font-size: 80%;
   font-weight: bold;
   position: absolute;
-  top: 0; bottom: 0;
+  top: 0;
+  bottom: 0;
   line-height: 1;
   height: 1em;
   margin: auto;
@@ -216,7 +250,8 @@ section.first {
   .actions {
     padding-top: 120px;
   }
-  .actionsleft, .actionsright {
+  .actionsleft,
+  .actionsright {
     float: none;
     text-align: left;
     margin-bottom: 1em;
@@ -267,5 +302,5 @@ strong {
 }
 
 .field {
-  border: 1px solid #A21313;
+  border: 1px solid #a21313;
 }

@@ -1,32 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Fortran mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="fortran.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Fortran</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Fortran</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Fortran mode</h2>
+  <h2>Fortran mode</h2>
 
-
-<div><textarea id="code" name="code">
+  <div>
+    <textarea id="code" name="code">
 ! Example Fortran code
   program average
 
@@ -68,14 +77,16 @@
   write (*,'(a,g12.4)') 'Average of negative points = ', negative_average
 
   end program average
-</textarea></div>
+</textarea
+    >
+  </div>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        mode: "text/x-fortran"
-      });
-    </script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      mode: "text/x-fortran",
+    });
+  </script>
 
-    <p><strong>MIME types defined:</strong> <code>text/x-fortran</code>.</p>
-  </article>
+  <p><strong>MIME types defined:</strong> <code>text/x-fortran</code>.</p>
+</article>

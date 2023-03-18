@@ -1,34 +1,41 @@
 # HTTP BENCHMARKS
 
-This package has two different implementation of a basic HTTP server in Go. It just takes a JSON body, unmarshals it and marshals it back to the response. 
+This package has two different implementation of a basic HTTP server in Go. It just takes a JSON body, unmarshals it and marshals it back to the response.
 
 It required `wrk` benchmarking tool, which you can find here: https://github.com/wg/wrk
 
-## How to run 
+## How to run
 
 ### gojay
+
 ```bash
 cd /path/to/package && go run gojay/main.go
 ```
-Then run: 
+
+Then run:
+
 ```bash
 cd /path/to/package && make bench
 ```
 
 ### standard package (encoding/json)
+
 ```bash
 cd /path/to/package && go run standard/main.go
 ```
-Then run: 
+
+Then run:
+
 ```bash
 cd /path/to/package && make bench
 ```
 
-## Results 
+## Results
 
 Results presented here are ran on a MacBook Pro Mid 2015 2,2 GHz Intel Core i7 with 16G of RAM
 
 **gojay results:**
+
 ```
 Running 20s test @ http://localhost:3000
   2 threads and 10 connections
@@ -39,7 +46,9 @@ Running 20s test @ http://localhost:3000
 Requests/sec:  37573.84
 Transfer/sec:     84.85MB
 ```
+
 **standard results:**
+
 ```
 Running 20s test @ http://localhost:3000
   2 threads and 10 connections

@@ -1,51 +1,61 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Autoresize Demo</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../doc/docs.css" />
 
-<link rel="stylesheet" href="../lib/codemirror.css">
+<link rel="stylesheet" href="../lib/codemirror.css" />
 <script src="../lib/codemirror.js"></script>
 <script src="../mode/css/css.js"></script>
 <style type="text/css">
-      .CodeMirror {
-        border: 1px solid #eee;
-        height: auto;
-      }
-    </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../doc/logo.png"></a>
+  .CodeMirror {
+    border: 1px solid #eee;
+    height: auto;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../index.html">Home</a>
-    <li><a href="../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a class=active href="#">Autoresize</a>
+    <li><a class="active" href="#">Autoresize</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Autoresize Demo</h2>
-<form><textarea id="code" name="code">
+  <h2>Autoresize Demo</h2>
+  <form>
+    <textarea id="code" name="code">
 .CodeMirror {
   border: 1px solid #eee;
   height: auto;
 }
-</textarea></form>
+</textarea
+    >
+  </form>
 
-<p>By setting an editor's <code>height</code> style
-to <code>auto</code> and giving
-the <a href="../doc/manual.html#option_viewportMargin"><code>viewportMargin</code></a>
-a value of <code>Infinity</code>, CodeMirror can be made to
-automatically resize to fit its content.</p>
+  <p>
+    By setting an editor's <code>height</code> style to <code>auto</code> and
+    giving the
+    <a href="../doc/manual.html#option_viewportMargin"
+      ><code>viewportMargin</code></a
+    >
+    a value of <code>Infinity</code>, CodeMirror can be made to automatically
+    resize to fit its content.
+  </p>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        viewportMargin: Infinity
-      });
-    </script>
-
-  </article>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      viewportMargin: Infinity,
+    });
+  </script>
+</article>

@@ -1,4 +1,4 @@
-import buble from 'rollup-plugin-buble';
+import buble from "rollup-plugin-buble";
 
 export default {
   banner: `// CodeMirror, copyright (c) by Marijn Haverbeke and others
@@ -14,5 +14,5 @@ export default {
   format: "umd",
   dest: "lib/codemirror.js",
   moduleName: "CodeMirror",
-  plugins: [ buble({namedFunctionExpressions: false}) ]
+  plugins: [buble({ namedFunctionExpressions: false })],
 };

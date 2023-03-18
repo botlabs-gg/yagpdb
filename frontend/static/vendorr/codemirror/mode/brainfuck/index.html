@@ -1,33 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Brainfuck mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/edit/matchbrackets.js"></script>
 <script src="./brainfuck.js"></script>
 <style>
-	.CodeMirror { border: 2px inset #dee; }
-    </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+  .CodeMirror {
+    border: 2px inset #dee;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#"></a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#"></a></li>
   </ul>
 </div>
 
 <article>
-<h2>Brainfuck mode</h2>
-<form><textarea id="code" name="code">
+  <h2>Brainfuck mode</h2>
+  <form>
+    <textarea id="code" name="code">
 [ This program prints "Hello World!" and a newline to the screen, its
   length is 106 active command characters [it is not the shortest.]
 
@@ -69,17 +76,19 @@ Pointer :   ^
 +++.------.--------.    Cell #3 for 'rl' and 'd'
 &gt;&gt;+.                    Add 1 to Cell #5 gives us an exclamation point
 &gt;++.                    And finally a newline from Cell #6
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        matchBrackets: true,
-        mode: "text/x-brainfuck"
-      });
-    </script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      matchBrackets: true,
+      mode: "text/x-brainfuck",
+    });
+  </script>
 
-    <p>A mode for Brainfuck</p>
+  <p>A mode for Brainfuck</p>
 
-    <p><strong>MIME types defined:</strong> <code>text/x-brainfuck</code></p>
-  </article>
+  <p><strong>MIME types defined:</strong> <code>text/x-brainfuck</code></p>
+</article>

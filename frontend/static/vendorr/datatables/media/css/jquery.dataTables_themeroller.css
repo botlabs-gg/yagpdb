@@ -54,7 +54,7 @@ table.dataTable tbody tr {
   background-color: #ffffff;
 }
 table.dataTable tbody tr.selected {
-  background-color: #B0BED9;
+  background-color: #b0bed9;
 }
 table.dataTable tbody th,
 table.dataTable tbody td {
@@ -69,15 +69,20 @@ table.dataTable th.right,
 table.dataTable td.right {
   text-align: right;
 }
-table.dataTable.row-border tbody th, table.dataTable.row-border tbody td, table.dataTable.display tbody th, table.dataTable.display tbody td {
+table.dataTable.row-border tbody th,
+table.dataTable.row-border tbody td,
+table.dataTable.display tbody th,
+table.dataTable.display tbody td {
   border-top: 1px solid #ddd;
 }
 table.dataTable.row-border tbody tr:first-child th,
-table.dataTable.row-border tbody tr:first-child td, table.dataTable.display tbody tr:first-child th,
+table.dataTable.row-border tbody tr:first-child td,
+table.dataTable.display tbody tr:first-child th,
 table.dataTable.display tbody tr:first-child td {
   border-top: none;
 }
-table.dataTable.cell-border tbody th, table.dataTable.cell-border tbody td {
+table.dataTable.cell-border tbody th,
+table.dataTable.cell-border tbody td {
   border-top: 1px solid #ddd;
   border-right: 1px solid #ddd;
 }
@@ -89,119 +94,144 @@ table.dataTable.cell-border tbody tr:first-child th,
 table.dataTable.cell-border tbody tr:first-child td {
   border-top: none;
 }
-table.dataTable.stripe tbody tr.odd, table.dataTable.display tbody tr.odd {
+table.dataTable.stripe tbody tr.odd,
+table.dataTable.display tbody tr.odd {
   background-color: #f9f9f9;
 }
-table.dataTable.stripe tbody tr.odd.selected, table.dataTable.display tbody tr.odd.selected {
+table.dataTable.stripe tbody tr.odd.selected,
+table.dataTable.display tbody tr.odd.selected {
   background-color: #abb9d3;
 }
 table.dataTable.hover tbody tr:hover,
 table.dataTable.hover tbody tr.odd:hover,
-table.dataTable.hover tbody tr.even:hover, table.dataTable.display tbody tr:hover,
+table.dataTable.hover tbody tr.even:hover,
+table.dataTable.display tbody tr:hover,
 table.dataTable.display tbody tr.odd:hover,
 table.dataTable.display tbody tr.even:hover {
   background-color: whitesmoke;
 }
 table.dataTable.hover tbody tr:hover.selected,
 table.dataTable.hover tbody tr.odd:hover.selected,
-table.dataTable.hover tbody tr.even:hover.selected, table.dataTable.display tbody tr:hover.selected,
+table.dataTable.hover tbody tr.even:hover.selected,
+table.dataTable.display tbody tr:hover.selected,
 table.dataTable.display tbody tr.odd:hover.selected,
 table.dataTable.display tbody tr.even:hover.selected {
   background-color: #a9b7d1;
 }
 table.dataTable.order-column tbody tr > .sorting_1,
 table.dataTable.order-column tbody tr > .sorting_2,
-table.dataTable.order-column tbody tr > .sorting_3, table.dataTable.display tbody tr > .sorting_1,
+table.dataTable.order-column tbody tr > .sorting_3,
+table.dataTable.display tbody tr > .sorting_1,
 table.dataTable.display tbody tr > .sorting_2,
 table.dataTable.display tbody tr > .sorting_3 {
   background-color: #f9f9f9;
 }
 table.dataTable.order-column tbody tr.selected > .sorting_1,
 table.dataTable.order-column tbody tr.selected > .sorting_2,
-table.dataTable.order-column tbody tr.selected > .sorting_3, table.dataTable.display tbody tr.selected > .sorting_1,
+table.dataTable.order-column tbody tr.selected > .sorting_3,
+table.dataTable.display tbody tr.selected > .sorting_1,
 table.dataTable.display tbody tr.selected > .sorting_2,
 table.dataTable.display tbody tr.selected > .sorting_3 {
   background-color: #acbad4;
 }
-table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {
+table.dataTable.display tbody tr.odd > .sorting_1,
+table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {
   background-color: #f1f1f1;
 }
-table.dataTable.display tbody tr.odd > .sorting_2, table.dataTable.order-column.stripe tbody tr.odd > .sorting_2 {
+table.dataTable.display tbody tr.odd > .sorting_2,
+table.dataTable.order-column.stripe tbody tr.odd > .sorting_2 {
   background-color: #f3f3f3;
 }
-table.dataTable.display tbody tr.odd > .sorting_3, table.dataTable.order-column.stripe tbody tr.odd > .sorting_3 {
+table.dataTable.display tbody tr.odd > .sorting_3,
+table.dataTable.order-column.stripe tbody tr.odd > .sorting_3 {
   background-color: whitesmoke;
 }
-table.dataTable.display tbody tr.odd.selected > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd.selected > .sorting_1 {
+table.dataTable.display tbody tr.odd.selected > .sorting_1,
+table.dataTable.order-column.stripe tbody tr.odd.selected > .sorting_1 {
   background-color: #a6b3cd;
 }
-table.dataTable.display tbody tr.odd.selected > .sorting_2, table.dataTable.order-column.stripe tbody tr.odd.selected > .sorting_2 {
+table.dataTable.display tbody tr.odd.selected > .sorting_2,
+table.dataTable.order-column.stripe tbody tr.odd.selected > .sorting_2 {
   background-color: #a7b5ce;
 }
-table.dataTable.display tbody tr.odd.selected > .sorting_3, table.dataTable.order-column.stripe tbody tr.odd.selected > .sorting_3 {
+table.dataTable.display tbody tr.odd.selected > .sorting_3,
+table.dataTable.order-column.stripe tbody tr.odd.selected > .sorting_3 {
   background-color: #a9b6d0;
 }
-table.dataTable.display tbody tr.even > .sorting_1, table.dataTable.order-column.stripe tbody tr.even > .sorting_1 {
+table.dataTable.display tbody tr.even > .sorting_1,
+table.dataTable.order-column.stripe tbody tr.even > .sorting_1 {
   background-color: #f9f9f9;
 }
-table.dataTable.display tbody tr.even > .sorting_2, table.dataTable.order-column.stripe tbody tr.even > .sorting_2 {
+table.dataTable.display tbody tr.even > .sorting_2,
+table.dataTable.order-column.stripe tbody tr.even > .sorting_2 {
   background-color: #fbfbfb;
 }
-table.dataTable.display tbody tr.even > .sorting_3, table.dataTable.order-column.stripe tbody tr.even > .sorting_3 {
+table.dataTable.display tbody tr.even > .sorting_3,
+table.dataTable.order-column.stripe tbody tr.even > .sorting_3 {
   background-color: #fdfdfd;
 }
-table.dataTable.display tbody tr.even.selected > .sorting_1, table.dataTable.order-column.stripe tbody tr.even.selected > .sorting_1 {
+table.dataTable.display tbody tr.even.selected > .sorting_1,
+table.dataTable.order-column.stripe tbody tr.even.selected > .sorting_1 {
   background-color: #acbad4;
 }
-table.dataTable.display tbody tr.even.selected > .sorting_2, table.dataTable.order-column.stripe tbody tr.even.selected > .sorting_2 {
+table.dataTable.display tbody tr.even.selected > .sorting_2,
+table.dataTable.order-column.stripe tbody tr.even.selected > .sorting_2 {
   background-color: #adbbd6;
 }
-table.dataTable.display tbody tr.even.selected > .sorting_3, table.dataTable.order-column.stripe tbody tr.even.selected > .sorting_3 {
+table.dataTable.display tbody tr.even.selected > .sorting_3,
+table.dataTable.order-column.stripe tbody tr.even.selected > .sorting_3 {
   background-color: #afbdd8;
 }
 table.dataTable.display tbody tr:hover > .sorting_1,
 table.dataTable.display tbody tr.odd:hover > .sorting_1,
-table.dataTable.display tbody tr.even:hover > .sorting_1, table.dataTable.order-column.hover tbody tr:hover > .sorting_1,
+table.dataTable.display tbody tr.even:hover > .sorting_1,
+table.dataTable.order-column.hover tbody tr:hover > .sorting_1,
 table.dataTable.order-column.hover tbody tr.odd:hover > .sorting_1,
 table.dataTable.order-column.hover tbody tr.even:hover > .sorting_1 {
   background-color: #eaeaea;
 }
 table.dataTable.display tbody tr:hover > .sorting_2,
 table.dataTable.display tbody tr.odd:hover > .sorting_2,
-table.dataTable.display tbody tr.even:hover > .sorting_2, table.dataTable.order-column.hover tbody tr:hover > .sorting_2,
+table.dataTable.display tbody tr.even:hover > .sorting_2,
+table.dataTable.order-column.hover tbody tr:hover > .sorting_2,
 table.dataTable.order-column.hover tbody tr.odd:hover > .sorting_2,
 table.dataTable.order-column.hover tbody tr.even:hover > .sorting_2 {
   background-color: #ebebeb;
 }
 table.dataTable.display tbody tr:hover > .sorting_3,
 table.dataTable.display tbody tr.odd:hover > .sorting_3,
-table.dataTable.display tbody tr.even:hover > .sorting_3, table.dataTable.order-column.hover tbody tr:hover > .sorting_3,
+table.dataTable.display tbody tr.even:hover > .sorting_3,
+table.dataTable.order-column.hover tbody tr:hover > .sorting_3,
 table.dataTable.order-column.hover tbody tr.odd:hover > .sorting_3,
 table.dataTable.order-column.hover tbody tr.even:hover > .sorting_3 {
   background-color: #eeeeee;
 }
 table.dataTable.display tbody tr:hover.selected > .sorting_1,
 table.dataTable.display tbody tr.odd:hover.selected > .sorting_1,
-table.dataTable.display tbody tr.even:hover.selected > .sorting_1, table.dataTable.order-column.hover tbody tr:hover.selected > .sorting_1,
+table.dataTable.display tbody tr.even:hover.selected > .sorting_1,
+table.dataTable.order-column.hover tbody tr:hover.selected > .sorting_1,
 table.dataTable.order-column.hover tbody tr.odd:hover.selected > .sorting_1,
 table.dataTable.order-column.hover tbody tr.even:hover.selected > .sorting_1 {
   background-color: #a1aec7;
 }
 table.dataTable.display tbody tr:hover.selected > .sorting_2,
 table.dataTable.display tbody tr.odd:hover.selected > .sorting_2,
-table.dataTable.display tbody tr.even:hover.selected > .sorting_2, table.dataTable.order-column.hover tbody tr:hover.selected > .sorting_2,
+table.dataTable.display tbody tr.even:hover.selected > .sorting_2,
+table.dataTable.order-column.hover tbody tr:hover.selected > .sorting_2,
 table.dataTable.order-column.hover tbody tr.odd:hover.selected > .sorting_2,
 table.dataTable.order-column.hover tbody tr.even:hover.selected > .sorting_2 {
   background-color: #a2afc8;
 }
 table.dataTable.display tbody tr:hover.selected > .sorting_3,
 table.dataTable.display tbody tr.odd:hover.selected > .sorting_3,
-table.dataTable.display tbody tr.even:hover.selected > .sorting_3, table.dataTable.order-column.hover tbody tr:hover.selected > .sorting_3,
+table.dataTable.display tbody tr.even:hover.selected > .sorting_3,
+table.dataTable.order-column.hover tbody tr:hover.selected > .sorting_3,
 table.dataTable.order-column.hover tbody tr.odd:hover.selected > .sorting_3,
 table.dataTable.order-column.hover tbody tr.even:hover.selected > .sorting_3 {
   background-color: #a4b2cb;
 }
-table.dataTable.nowrap th, table.dataTable.nowrap td {
+table.dataTable.nowrap th,
+table.dataTable.nowrap td {
   white-space: nowrap;
 }
 table.dataTable.compact thead th,
@@ -360,17 +390,55 @@ table.dataTable td {
   text-align: center;
   font-size: 1.2em;
   background-color: white;
-  background: -webkit-gradient(linear, left top, right top, color-stop(0%, rgba(255, 255, 255, 0)), color-stop(25%, rgba(255, 255, 255, 0.9)), color-stop(75%, rgba(255, 255, 255, 0.9)), color-stop(100%, rgba(255, 255, 255, 0)));
+  background: -webkit-gradient(
+    linear,
+    left top,
+    right top,
+    color-stop(0%, rgba(255, 255, 255, 0)),
+    color-stop(25%, rgba(255, 255, 255, 0.9)),
+    color-stop(75%, rgba(255, 255, 255, 0.9)),
+    color-stop(100%, rgba(255, 255, 255, 0))
+  );
   /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 25%, rgba(255, 255, 255, 0.9) 75%, rgba(255, 255, 255, 0) 100%);
+  background: -webkit-linear-gradient(
+    left,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.9) 25%,
+    rgba(255, 255, 255, 0.9) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
   /* Chrome10+,Safari5.1+ */
-  background: -moz-linear-gradient(left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 25%, rgba(255, 255, 255, 0.9) 75%, rgba(255, 255, 255, 0) 100%);
+  background: -moz-linear-gradient(
+    left,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.9) 25%,
+    rgba(255, 255, 255, 0.9) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
   /* FF3.6+ */
-  background: -ms-linear-gradient(left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 25%, rgba(255, 255, 255, 0.9) 75%, rgba(255, 255, 255, 0) 100%);
+  background: -ms-linear-gradient(
+    left,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.9) 25%,
+    rgba(255, 255, 255, 0.9) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
   /* IE10+ */
-  background: -o-linear-gradient(left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 25%, rgba(255, 255, 255, 0.9) 75%, rgba(255, 255, 255, 0) 100%);
+  background: -o-linear-gradient(
+    left,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.9) 25%,
+    rgba(255, 255, 255, 0.9) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
   /* Opera 11.10+ */
-  background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 25%, rgba(255, 255, 255, 0.9) 75%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.9) 25%,
+    rgba(255, 255, 255, 0.9) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
   /* W3C */
 }
 .dataTables_wrapper .dataTables_length,

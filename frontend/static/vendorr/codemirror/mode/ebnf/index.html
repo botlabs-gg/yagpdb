@@ -1,34 +1,44 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <title>CodeMirror: EBNF Mode</title>
-    <meta charset="utf-8"/>
-    <link rel=stylesheet href="../../doc/docs.css">
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../doc/docs.css" />
 
-    <link rel="stylesheet" href="../../lib/codemirror.css">
+    <link rel="stylesheet" href="../../lib/codemirror.css" />
     <script src="../../lib/codemirror.js"></script>
     <script src="../javascript/javascript.js"></script>
     <script src="ebnf.js"></script>
-    <style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
+    <style type="text/css">
+      .CodeMirror {
+        border-top: 1px solid black;
+        border-bottom: 1px solid black;
+      }
+    </style>
   </head>
   <body>
-    <div id=nav>
-      <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+    <div id="nav">
+      <a href="http://codemirror.net"
+        ><h1>CodeMirror</h1>
+        <img id="logo" src="../../doc/logo.png"
+      /></a>
 
       <ul>
-        <li><a href="../../index.html">Home</a>
-        <li><a href="../../doc/manual.html">Manual</a>
-        <li><a href="https://github.com/codemirror/codemirror">Code</a>
+        <li><a href="../../index.html">Home</a></li>
+        <li><a href="../../doc/manual.html">Manual</a></li>
+        <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
       </ul>
+
       <ul>
-        <li><a href="../index.html">Language modes</a>
-        <li><a class=active href="#">EBNF Mode</a>
+        <li><a href="../index.html">Language modes</a></li>
+        <li><a class="active" href="#">EBNF Mode</a></li>
       </ul>
     </div>
 
     <article>
       <h2>EBNF Mode (bracesMode setting = "javascript")</h2>
-      <form><textarea id="code" name="code">
+      <form>
+        <textarea id="code" name="code">
 /* description: Parses end executes mathematical expressions. */
 
 /* lexical grammar */
@@ -87,16 +97,21 @@ e
 {$$ = Math.E;}
 | PI
 {$$ = Math.PI;}
-;</textarea></form>
+;</textarea
+        >
+      </form>
       <script>
         var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-          mode: {name: "ebnf"},
+          mode: { name: "ebnf" },
           lineNumbers: true,
-          bracesMode: 'javascript'
+          bracesMode: "javascript",
         });
       </script>
       <h3>The EBNF Mode</h3>
-      <p> Created by <a href="https://github.com/robertleeplummerjr">Robert Plummer</a></p>
+      <p>
+        Created by
+        <a href="https://github.com/robertleeplummerjr">Robert Plummer</a>
+      </p>
     </article>
   </body>
 </html>

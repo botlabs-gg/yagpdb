@@ -1,37 +1,45 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
 
 <title>CodeMirror: ASN.1 mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="asn.1.js"></script>
 <style type="text/css">
-    .CodeMirror {
-        border-top: 1px solid black;
-        border-bottom: 1px solid black;
-    }
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
 </style>
-<div id=nav>
-    <a href="http://codemirror.net"><h1>CodeMirror</h1>
-        <img id=logo src="../../doc/logo.png">
-    </a>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png" />
+  </a>
 
-    <ul>
-        <li><a href="../../index.html">Home</a>
-        <li><a href="../../doc/manual.html">Manual</a>
-        <li><a href="https://github.com/codemirror/codemirror">Code</a>
-    </ul>
-    <ul>
-        <li><a href="../index.html">Language modes</a>
-        <li><a class=active href="http://en.wikipedia.org/wiki/Abstract_Syntax_Notation_One">ASN.1</a>
-    </ul>
+  <ul>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="../index.html">Language modes</a></li>
+    <li>
+      <a
+        class="active"
+        href="http://en.wikipedia.org/wiki/Abstract_Syntax_Notation_One"
+        >ASN.1</a
+      >
+    </li>
+  </ul>
 </div>
 <article>
-    <h2>ASN.1 example</h2>
-    <div>
-        <textarea id="ttcn-asn-code">
+  <h2>ASN.1 example</h2>
+  <div>
+    <textarea id="ttcn-asn-code">
  --
  -- Sample ASN.1 Code
  --
@@ -50,28 +58,37 @@
  MyInt ::= INTEGER (0..65535)
 
  END
-        </textarea>
-    </div>
+        </textarea
+    >
+  </div>
 
-    <script>
-        var ttcnEditor = CodeMirror.fromTextArea(document.getElementById("ttcn-asn-code"), {
-            lineNumbers: true,
-            matchBrackets: true,
-            mode: "text/x-ttcn-asn"
-        });
-        ttcnEditor.setSize(400, 400);
-        var mac = CodeMirror.keyMap.default == CodeMirror.keyMap.macDefault;
-        CodeMirror.keyMap.default[(mac ? "Cmd" : "Ctrl") + "-Space"] = "autocomplete";
-    </script>
-    <br/>
-    <p><strong>Language:</strong> Abstract Syntax Notation One
-        (<a href="http://www.itu.int/en/ITU-T/asn1/Pages/introduction.aspx">ASN.1</a>)
-    </p>
-    <p><strong>MIME types defined:</strong> <code>text/x-ttcn-asn</code></p>
+  <script>
+    var ttcnEditor = CodeMirror.fromTextArea(
+      document.getElementById("ttcn-asn-code"),
+      {
+        lineNumbers: true,
+        matchBrackets: true,
+        mode: "text/x-ttcn-asn",
+      }
+    );
+    ttcnEditor.setSize(400, 400);
+    var mac = CodeMirror.keyMap.default == CodeMirror.keyMap.macDefault;
+    CodeMirror.keyMap.default[(mac ? "Cmd" : "Ctrl") + "-Space"] =
+      "autocomplete";
+  </script>
+  <br />
+  <p>
+    <strong>Language:</strong> Abstract Syntax Notation One (<a
+      href="http://www.itu.int/en/ITU-T/asn1/Pages/introduction.aspx"
+      >ASN.1</a
+    >)
+  </p>
+  <p><strong>MIME types defined:</strong> <code>text/x-ttcn-asn</code></p>
 
-    <br/>
-    <p>The development of this mode has been sponsored by <a href="http://www.ericsson.com/">Ericsson
-    </a>.</p>
-    <p>Coded by Asmelash Tsegay Gebretsadkan </p>
+  <br />
+  <p>
+    The development of this mode has been sponsored by
+    <a href="http://www.ericsson.com/">Ericsson </a>.
+  </p>
+  <p>Coded by Asmelash Tsegay Gebretsadkan</p>
 </article>
-

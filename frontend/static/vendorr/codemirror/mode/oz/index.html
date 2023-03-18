@@ -1,32 +1,38 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Oz mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="oz.js"></script>
 <script type="text/javascript" src="../../addon/runmode/runmode.js"></script>
 <style>
-  .CodeMirror {border: 1px solid #aaa;}
+  .CodeMirror {
+    border: 1px solid #aaa;
+  }
 </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Oz</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Oz</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Oz mode</h2>
-<textarea id="code" name="code">
+  <h2>Oz mode</h2>
+  <textarea id="code" name="code">
 declare
 fun {Ints N Max}
   if N == Max then nil
@@ -46,14 +52,15 @@ local X Y in
   thread Y = {Sum 0 X} end
   {Browse Y}
 end
-</textarea>
-<p>MIME type defined: <code>text/x-oz</code>.</p>
+</textarea
+  >
+  <p>MIME type defined: <code>text/x-oz</code>.</p>
 
-<script type="text/javascript">
-var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-    lineNumbers: true,
-    mode: "text/x-oz",
-    readOnly: false
-});
-</script>
+  <script type="text/javascript">
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      mode: "text/x-oz",
+      readOnly: false,
+    });
+  </script>
 </article>

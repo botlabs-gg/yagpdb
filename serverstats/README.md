@@ -6,20 +6,19 @@ Records and shows stats for individual servers.
 
 **Simple temporary stats**:
 
- - Messages last hour
- - Users joined/left today
- - Messages today, per channel with bar graphs
- - Current online users
- - Total amount of users
+- Messages last hour
+- Users joined/left today
+- Messages today, per channel with bar graphs
+- Current online users
+- Total amount of users
 
 ### Planned soon
 
 **More peristent graphable stats**:
 
- - Users joined/left day to day chart
- - Avg. users online day to day
- - Messages day to day per channel
-
+- Users joined/left day to day chart
+- Avg. users online day to day
+- Messages day to day per channel
 
 ### Redis layout
 

@@ -9,7 +9,8 @@
   display: block;
   border: 1px solid @table-border-color;
 
-  > .md-header, .md-footer {
+  > .md-header,
+  .md-footer {
     display: block;
     padding: 6px 4px;
     background: @panel-default-heading-bg;
@@ -31,7 +32,7 @@
     font-family: @font-family-monospace;
     font-size: @font-size-base;
     outline: 0;
-    outline: thin dotted  \9; /* IE6-9 */
+    outline: thin dotted \9; /* IE6-9 */
     margin: 0;
     display: block;
     padding: 0;
@@ -50,7 +51,7 @@
 
   // Hover state
   @color: @input-border-focus;
-  @color-rgba: rgba(red(@color), green(@color), blue(@color), .6);
+  @color-rgba: rgba(red(@color), green(@color), blue(@color), 0.6);
   &.active {
     border-color: @color;
     outline: 0;
@@ -176,5 +177,5 @@
 .md-nooverflow {
   overflow: hidden;
   position: fixed;
-  width: 100%;    
+  width: 100%;
 }

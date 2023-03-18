@@ -1,37 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: TTCN mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="ttcn.js"></script>
 <style type="text/css">
-    .CodeMirror {
-        border-top: 1px solid black;
-        border-bottom: 1px solid black;
-    }
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
 </style>
-<div id=nav>
-    <a href="http://codemirror.net"><h1>CodeMirror</h1>
-        <img id=logo src="../../doc/logo.png">
-    </a>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png" />
+  </a>
 
-    <ul>
-        <li><a href="../../index.html">Home</a>
-        <li><a href="../../doc/manual.html">Manual</a>
-        <li><a href="https://github.com/codemirror/codemirror">Code</a>
-    </ul>
-    <ul>
-        <li><a href="../index.html">Language modes</a>
-        <li><a class=active href="http://en.wikipedia.org/wiki/TTCN">TTCN</a>
-    </ul>
+  <ul>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="http://en.wikipedia.org/wiki/TTCN">TTCN</a></li>
+  </ul>
 </div>
 <article>
-    <h2>TTCN example</h2>
-    <div>
-        <textarea id="ttcn-code">
+  <h2>TTCN example</h2>
+  <div>
+    <textarea id="ttcn-code">
 module Templates {
   /* import types from ASN.1 */
   import from Types language "ASN.1:1997" all;
@@ -91,28 +93,39 @@ module Templates {
     };
 
 } with { encode "BER:1997" }
-        </textarea>
-    </div>
+        </textarea
+    >
+  </div>
 
-    <script> 
-      var ttcnEditor = CodeMirror.fromTextArea(document.getElementById("ttcn-code"), {
+  <script>
+    var ttcnEditor = CodeMirror.fromTextArea(
+      document.getElementById("ttcn-code"),
+      {
         lineNumbers: true,
         matchBrackets: true,
-        mode: "text/x-ttcn"
-      });
-      ttcnEditor.setSize(600, 860);
-      var mac = CodeMirror.keyMap.default == CodeMirror.keyMap.macDefault;
-      CodeMirror.keyMap.default[(mac ? "Cmd" : "Ctrl") + "-Space"] = "autocomplete";
-    </script>
-    <br/>
-    <p><strong>Language:</strong> Testing and Test Control Notation
-        (<a href="http://en.wikipedia.org/wiki/TTCN">TTCN</a>)
-    </p>
-    <p><strong>MIME types defined:</strong> <code>text/x-ttcn,
-        text/x-ttcn3, text/x-ttcnpp</code>.</p>
-    <br/>
-    <p>The development of this mode has been sponsored by <a href="http://www.ericsson.com/">Ericsson
-    </a>.</p>
-    <p>Coded by Asmelash Tsegay Gebretsadkan </p>
+        mode: "text/x-ttcn",
+      }
+    );
+    ttcnEditor.setSize(600, 860);
+    var mac = CodeMirror.keyMap.default == CodeMirror.keyMap.macDefault;
+    CodeMirror.keyMap.default[(mac ? "Cmd" : "Ctrl") + "-Space"] =
+      "autocomplete";
+  </script>
+  <br />
+  <p>
+    <strong>Language:</strong> Testing and Test Control Notation (<a
+      href="http://en.wikipedia.org/wiki/TTCN"
+      >TTCN</a
+    >)
+  </p>
+  <p>
+    <strong>MIME types defined:</strong>
+    <code>text/x-ttcn, text/x-ttcn3, text/x-ttcnpp</code>.
+  </p>
+  <br />
+  <p>
+    The development of this mode has been sponsored by
+    <a href="http://www.ericsson.com/">Ericsson </a>.
+  </p>
+  <p>Coded by Asmelash Tsegay Gebretsadkan</p>
 </article>
-

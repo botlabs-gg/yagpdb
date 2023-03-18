@@ -1,99 +1,149 @@
-{{define "cp_twitter"}}
-{{template "cp_head" .}}
+{{define "cp_twitter"}} {{template "cp_head" .}}
 
 <header class="page-header">
-    <h2>Twitter feeds</h2>
+  <h2>Twitter feeds</h2>
 </header>
 
 {{template "cp_alerts" .}}
 
 <!-- /.row -->
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">New feed</h2>
-            </header>
-            <div class="card-body">
-                <form class="" method="post" action="/manage/{{.ActiveGuild.ID}}/twitter">
-                    <p><b>Note:</b> Added feeds may take up to 10 minutes before they start being used</p>
-                    <p>Twitter feeds are premium only atm, this is because of twitter API limitations for non-enterprise
-                        users</p>
-                    <div class="form-group">
-                        <label for="yt-channel-user">Twitter Username</label>
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-prepend"><span class="input-group-text">@</span></span>
-                            <input type="text" class="form-control" id="yt-channel-user" name="TwitterUser">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="channel">Discord Channel</label>
-                        <select id="channel" class="form-control" name="DiscordChannel" data-requireperms-send>
-                            {{textChannelOptions .ActiveGuild.Channels nil false ""}}
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-success">Add</button>
-                </form>
+  <div class="col-lg-12">
+    <section class="card">
+      <header class="card-header">
+        <h2 class="card-title">New feed</h2>
+      </header>
+      <div class="card-body">
+        <form
+          class=""
+          method="post"
+          action="/manage/{{.ActiveGuild.ID}}/twitter"
+        >
+          <p>
+            <b>Note:</b> Added feeds may take up to 10 minutes before they start
+            being used
+          </p>
+          <p>
+            Twitter feeds are premium only atm, this is because of twitter API
+            limitations for non-enterprise users
+          </p>
+          <div class="form-group">
+            <label for="yt-channel-user">Twitter Username</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-prepend"
+                ><span class="input-group-text">@</span></span
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="yt-channel-user"
+                name="TwitterUser"
+              />
             </div>
-        </section>
-    </div>
+          </div>
+          <div class="form-group">
+            <label for="channel">Discord Channel</label>
+            <select
+              id="channel"
+              class="form-control"
+              name="DiscordChannel"
+              data-requireperms-send
+            >
+              {{textChannelOptions .ActiveGuild.Channels nil false ""}}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-success">Add</button>
+        </form>
+      </div>
+    </section>
+  </div>
 </div>
 
 <div class="row">
-    <div class="col">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Current twitter feeds</h2>
-            </header>
-            <div class="card-body">
-                <p>Feeds might get disabled for some reason (such as expired premium) and will be enabled again once
-                    you save them</p>
-                {{$Dot := .}}
-                {{range .FeedItems}}
-                <form id="feed-item-{{.ID}}" data-async-form method="post"
-                    action="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/update">
-                    <div class="row border-bottom border-secondary pb-3">
-                        <input type="text" class="hidden" name="id" value="{{.ID}}">
-                        <div class="form-group col">
-                            <label>Twitter username</label>
-                            <p class="form-control-static"><a class="feedlink" href="https://twitter.com/{{.TwitterUsername}}" target="_blank">{{.TwitterUsername}}</a> (<code>{{.TwitterUserID}}</code>)</p>
-                        </div>
-                        <div class="form-group col">
-                            <label for="channel-feed-{{.ID}}">Server Channel</label>
-                            <select id="channel-feed-{{.ID}}" class="form-control" name="DiscordChannel">
-                                {{textChannelOptions $Dot.ActiveGuild.Channels .ChannelID false ""}}
-                            </select>
-                        </div>
-                        <div class="form-group col">
-                            {{$id_include_replies := (joinStr "" "feed-" .ID "-replies")}}
-                            <label for="{{$id_include_replies}}">Include Replies</label>
-                            {{checkbox "IncludeReplies" $id_include_replies `` .IncludeReplies}}
-                        </div>
-                        <div class="form-group col">
-                            {{$id_include_rts := (joinStr "" "feed-" .ID "-rts")}}
-                            <label for="{{$id_include_rts}}">Include Retweets</label>
-                            {{checkbox "IncludeRetweets" $id_include_rts `` .IncludeRT}}
-                        </div>
-                        <div class="form-group col">
-                            {{$id_enabled := (joinStr "" "feed-" .ID "-enabled")}}
-                            <label for="{{$id_enabled}}">Enabled</label>
-                            {{checkbox "Enabled" $id_enabled `` .Enabled}}
-                        </div>
-                        <div class="form-group col">
-                            <div class="btn-group mt-4">
-                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success ml-sm-3"
-                                    formaction="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/update">Save</button>
-                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger"
-                                    formaction="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/delete">Delete</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-                {{end}}
+  <div class="col">
+    <section class="card">
+      <header class="card-header">
+        <h2 class="card-title">Current twitter feeds</h2>
+      </header>
+      <div class="card-body">
+        <p>
+          Feeds might get disabled for some reason (such as expired premium) and
+          will be enabled again once you save them
+        </p>
+        {{$Dot := .}} {{range .FeedItems}}
+        <form
+          id="feed-item-{{.ID}}"
+          data-async-form
+          method="post"
+          action="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/update"
+        >
+          <div class="row border-bottom border-secondary pb-3">
+            <input type="text" class="hidden" name="id" value="{{.ID}}" />
+            <div class="form-group col">
+              <label>Twitter username</label>
+              <p class="form-control-static">
+                <a
+                  class="feedlink"
+                  href="https://twitter.com/{{.TwitterUsername}}"
+                  target="_blank"
+                  >{{.TwitterUsername}}</a
+                >
+                (<code>{{.TwitterUserID}}</code>)
+              </p>
             </div>
-        </section>
-    </div>
+            <div class="form-group col">
+              <label for="channel-feed-{{.ID}}">Server Channel</label>
+              <select
+                id="channel-feed-{{.ID}}"
+                class="form-control"
+                name="DiscordChannel"
+              >
+                {{textChannelOptions $Dot.ActiveGuild.Channels .ChannelID false
+                ""}}
+              </select>
+            </div>
+            <div class="form-group col">
+              {{$id_include_replies := (joinStr "" "feed-" .ID "-replies")}}
+              <label for="{{$id_include_replies}}">Include Replies</label>
+              {{checkbox "IncludeReplies" $id_include_replies ``
+              .IncludeReplies}}
+            </div>
+            <div class="form-group col">
+              {{$id_include_rts := (joinStr "" "feed-" .ID "-rts")}}
+              <label for="{{$id_include_rts}}">Include Retweets</label>
+              {{checkbox "IncludeRetweets" $id_include_rts `` .IncludeRT}}
+            </div>
+            <div class="form-group col">
+              {{$id_enabled := (joinStr "" "feed-" .ID "-enabled")}}
+              <label for="{{$id_enabled}}">Enabled</label>
+              {{checkbox "Enabled" $id_enabled `` .Enabled}}
+            </div>
+            <div class="form-group col">
+              <div class="btn-group mt-4">
+                <button
+                  form="feed-item-{{.ID}}"
+                  type="submit"
+                  class="btn btn-success ml-sm-3"
+                  formaction="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/update"
+                >
+                  Save
+                </button>
+                <button
+                  form="feed-item-{{.ID}}"
+                  type="submit"
+                  class="btn btn-danger"
+                  formaction="/manage/{{$Dot.ActiveGuild.ID}}/twitter/{{.ID}}/delete"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+        {{end}}
+      </div>
+    </section>
+  </div>
 </div>
 
-{{template "cp_footer" .}}
-{{end}}
+{{template "cp_footer" .}} {{end}}

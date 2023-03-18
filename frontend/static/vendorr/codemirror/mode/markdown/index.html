@@ -1,37 +1,53 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Markdown mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/edit/continuelist.js"></script>
 <script src="../xml/xml.js"></script>
 <script src="markdown.js"></script>
 <style type="text/css">
-      .CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}
-      .cm-s-default .cm-trailing-space-a:before,
-      .cm-s-default .cm-trailing-space-b:before {position: absolute; content: "\00B7"; color: #777;}
-      .cm-s-default .cm-trailing-space-new-line:before {position: absolute; content: "\21B5"; color: #777;}
-    </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+  .cm-s-default .cm-trailing-space-a:before,
+  .cm-s-default .cm-trailing-space-b:before {
+    position: absolute;
+    content: "\00B7";
+    color: #777;
+  }
+  .cm-s-default .cm-trailing-space-new-line:before {
+    position: absolute;
+    content: "\21B5";
+    color: #777;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Markdown</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Markdown</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Markdown mode</h2>
-<form><textarea id="code" name="code">
+  <h2>Markdown mode</h2>
+  <form>
+    <textarea id="code" name="code">
 Markdown: Basics
 ================
 
@@ -339,23 +355,35 @@ Output:
         &amp;lt;p&amp;gt;For example.&amp;lt;/p&amp;gt;
     &amp;lt;/blockquote&amp;gt;
     &lt;/code&gt;&lt;/pre&gt;
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        mode: 'markdown',
-        lineNumbers: true,
-        theme: "default",
-        extraKeys: {"Enter": "newlineAndIndentContinueMarkdownList"}
-      });
-    </script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: "markdown",
+      lineNumbers: true,
+      theme: "default",
+      extraKeys: { Enter: "newlineAndIndentContinueMarkdownList" },
+    });
+  </script>
 
-    <p>You might want to use the <a href="../gfm/index.html">Github-Flavored Markdown mode</a> instead, which adds support for fenced code blocks and a few other things.</p>
+  <p>
+    You might want to use the
+    <a href="../gfm/index.html">Github-Flavored Markdown mode</a> instead, which
+    adds support for fenced code blocks and a few other things.
+  </p>
 
-    <p>Optionally depends on the XML mode for properly highlighted inline XML blocks.</p>
-    
-    <p><strong>MIME types defined:</strong> <code>text/x-markdown</code>.</p>
+  <p>
+    Optionally depends on the XML mode for properly highlighted inline XML
+    blocks.
+  </p>
 
-    <p><strong>Parsing/Highlighting Tests:</strong> <a href="../../test/index.html#markdown_*">normal</a>,  <a href="../../test/index.html#verbose,markdown_*">verbose</a>.</p>
+  <p><strong>MIME types defined:</strong> <code>text/x-markdown</code>.</p>
 
-  </article>
+  <p>
+    <strong>Parsing/Highlighting Tests:</strong>
+    <a href="../../test/index.html#markdown_*">normal</a>,
+    <a href="../../test/index.html#verbose,markdown_*">verbose</a>.
+  </p>
+</article>

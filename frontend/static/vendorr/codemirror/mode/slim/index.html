@@ -1,14 +1,17 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: SLIM mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
-<link rel="stylesheet" href="../../theme/ambiance.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
+<link rel="stylesheet" href="../../theme/ambiance.css" />
 <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
 <script src="https://code.jquery.com/ui/1.11.0/jquery-ui.min.js"></script>
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
+<link
+  rel="stylesheet"
+  href="https://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css"
+/>
 <script src="../../lib/codemirror.js"></script>
 <script src="../xml/xml.js"></script>
 <script src="../htmlembedded/htmlembedded.js"></script>
@@ -18,24 +21,33 @@
 <script src="../ruby/ruby.js"></script>
 <script src="../markdown/markdown.js"></script>
 <script src="slim.js"></script>
-<style>.CodeMirror {background: #f8f8f8;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    background: #f8f8f8;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">SLIM</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">SLIM</a></li>
   </ul>
 </div>
 
 <article>
   <h2>SLIM mode</h2>
-  <form><textarea id="code" name="code">
+  <form>
+    <textarea id="code" name="code">
 body
   table
     - for user in users
@@ -71,18 +83,20 @@ a.slim href="work" disabled=false running==:atom Text <b>bold</b>
 .second class=["text","more"]
 .third class=:text,:symbol
 
-  </textarea></form>
+  </textarea
+    >
+  </form>
   <script>
     var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
       lineNumbers: true,
       theme: "ambiance",
-      mode: "application/x-slim"
+      mode: "application/x-slim",
     });
-    $('.CodeMirror').resizable({
-      resize: function() {
+    $(".CodeMirror").resizable({
+      resize: function () {
         editor.setSize($(this).width(), $(this).height());
         //editor.refresh();
-      }
+      },
     });
   </script>
 

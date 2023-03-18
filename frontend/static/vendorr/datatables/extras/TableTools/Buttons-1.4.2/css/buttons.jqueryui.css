@@ -168,17 +168,49 @@ div.dt-button-background {
   height: 100%;
   background: rgba(0, 0, 0, 0.7);
   /* Fallback */
-  background: -ms-radial-gradient(center, ellipse farthest-corner, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 100%);
+  background: -ms-radial-gradient(
+    center,
+    ellipse farthest-corner,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
   /* IE10 Consumer Preview */
-  background: -moz-radial-gradient(center, ellipse farthest-corner, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 100%);
+  background: -moz-radial-gradient(
+    center,
+    ellipse farthest-corner,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
   /* Firefox */
-  background: -o-radial-gradient(center, ellipse farthest-corner, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 100%);
+  background: -o-radial-gradient(
+    center,
+    ellipse farthest-corner,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
   /* Opera */
-  background: -webkit-gradient(radial, center center, 0, center center, 497, color-stop(0, rgba(0, 0, 0, 0.3)), color-stop(1, rgba(0, 0, 0, 0.7)));
+  background: -webkit-gradient(
+    radial,
+    center center,
+    0,
+    center center,
+    497,
+    color-stop(0, rgba(0, 0, 0, 0.3)),
+    color-stop(1, rgba(0, 0, 0, 0.7))
+  );
   /* Webkit (Safari/Chrome 10) */
-  background: -webkit-radial-gradient(center, ellipse farthest-corner, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 100%);
+  background: -webkit-radial-gradient(
+    center,
+    ellipse farthest-corner,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
   /* Webkit (Chrome 11+) */
-  background: radial-gradient(ellipse farthest-corner at center, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 100%);
+  background: radial-gradient(
+    ellipse farthest-corner at center,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
   /* W3C Markup, IE10 Release Preview */
   z-index: 2001;
 }
@@ -205,7 +237,7 @@ a.dt-button.processing:after {
   margin: -8px 0 0 -8px;
   box-sizing: border-box;
   display: block;
-  content: ' ';
+  content: " ";
   border: 2px solid #282828;
   border-radius: 50%;
   border-left-color: transparent;

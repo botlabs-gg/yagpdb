@@ -1,31 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: reStructuredText mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/mode/overlay.js"></script>
 <script src="rst.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">reStructuredText</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">reStructuredText</a></li>
   </ul>
 </div>
 
 <article>
-<h2>reStructuredText mode</h2>
-<form><textarea id="code" name="code">
+  <h2>reStructuredText mode</h2>
+  <form>
+    <textarea id="code" name="code">
 .. This is an excerpt from Sphinx documentation: http://sphinx.pocoo.org/_sources/rest.txt
 
 .. highlightlang:: rest
@@ -514,22 +524,22 @@ There are some problems one commonly runs into while authoring reST documents:
 
 .. [1] When the default domain contains a :rst:dir:`class` directive, this directive
        will be shadowed.  Therefore, Sphinx re-exports it as :rst:dir:`rst-class`.
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-      });
-    </script>
-    <p>
-        The <code>python</code> mode will be used for highlighting blocks
-        containing Python/IPython terminal sessions: blocks starting with
-        <code>&gt;&gt;&gt;</code> (for Python) or <code>In [num]:</code> (for
-        IPython).
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+    });
+  </script>
+  <p>
+    The <code>python</code> mode will be used for highlighting blocks containing
+    Python/IPython terminal sessions: blocks starting with
+    <code>&gt;&gt;&gt;</code> (for Python) or <code>In [num]:</code> (for
+    IPython). Further, the <code>stex</code> mode will be used for highlighting
+    blocks containing LaTex code.
+  </p>
 
-        Further, the <code>stex</code> mode will be used for highlighting
-        blocks containing LaTex code.
-    </p>
-
-    <p><strong>MIME types defined:</strong> <code>text/x-rst</code>.</p>
-  </article>
+  <p><strong>MIME types defined:</strong> <code>text/x-rst</code>.</p>
+</article>

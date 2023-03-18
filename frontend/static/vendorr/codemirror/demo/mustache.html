@@ -1,33 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Overlay Parser Demo</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../doc/docs.css" />
 
-<link rel="stylesheet" href="../lib/codemirror.css">
+<link rel="stylesheet" href="../lib/codemirror.css" />
 <script src="../lib/codemirror.js"></script>
 <script src="../addon/mode/overlay.js"></script>
 <script src="../mode/xml/xml.js"></script>
 <style type="text/css">
-      .CodeMirror {border: 1px solid black;}
-      .cm-mustache {color: #0ca;}
+  .CodeMirror {
+    border: 1px solid black;
+  }
+  .cm-mustache {
+    color: #0ca;
+  }
 </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../doc/logo.png"></a>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../index.html">Home</a>
-    <li><a href="../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a class=active href="#">Overlay Parser</a>
+    <li><a class="active" href="#">Overlay Parser</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Overlay Parser Demo</h2>
-<form><textarea id="code" name="code">
+  <h2>Overlay Parser Demo</h2>
+  <form>
+    <textarea id="code" name="code">
 <html>
   <body>
     <h1>{{title}}</h1>
@@ -37,33 +46,41 @@
     {{/links}}</ul>
   </body>
 </html>
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-CodeMirror.defineMode("mustache", function(config, parserConfig) {
-  var mustacheOverlay = {
-    token: function(stream, state) {
-      var ch;
-      if (stream.match("{{")) {
-        while ((ch = stream.next()) != null)
-          if (ch == "}" && stream.next() == "}") {
-            stream.eat("}");
-            return "mustache";
+  <script>
+    CodeMirror.defineMode("mustache", function (config, parserConfig) {
+      var mustacheOverlay = {
+        token: function (stream, state) {
+          var ch;
+          if (stream.match("{{")) {
+            while ((ch = stream.next()) != null)
+              if (ch == "}" && stream.next() == "}") {
+                stream.eat("}");
+                return "mustache";
+              }
           }
-      }
-      while (stream.next() != null && !stream.match("{{", false)) {}
-      return null;
-    }
-  };
-  return CodeMirror.overlayMode(CodeMirror.getMode(config, parserConfig.backdrop || "text/html"), mustacheOverlay);
-});
-var editor = CodeMirror.fromTextArea(document.getElementById("code"), {mode: "mustache"});
-</script>
+          while (stream.next() != null && !stream.match("{{", false)) {}
+          return null;
+        },
+      };
+      return CodeMirror.overlayMode(
+        CodeMirror.getMode(config, parserConfig.backdrop || "text/html"),
+        mustacheOverlay
+      );
+    });
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: "mustache",
+    });
+  </script>
 
-    <p>Demonstration of a mode that parses HTML, highlighting
-    the <a href="http://mustache.github.com/">Mustache</a> templating
-    directives inside of it by using the code
-    in <a href="../addon/mode/overlay.js"><code>overlay.js</code></a>. View
-    source to see the 15 lines of code needed to accomplish this.</p>
-
-  </article>
+  <p>
+    Demonstration of a mode that parses HTML, highlighting the
+    <a href="http://mustache.github.com/">Mustache</a> templating directives
+    inside of it by using the code in
+    <a href="../addon/mode/overlay.js"><code>overlay.js</code></a
+    >. View source to see the 15 lines of code needed to accomplish this.
+  </p>
+</article>

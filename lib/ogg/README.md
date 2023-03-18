@@ -1,4 +1,3 @@
-
 Package ogg implements encoding and decoding of OGG streams as defined in
 http://xiph.org/ogg/doc/rfc3533.txt
 and

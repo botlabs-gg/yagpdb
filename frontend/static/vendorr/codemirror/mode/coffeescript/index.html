@@ -1,30 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: CoffeeScript mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="coffeescript.js"></script>
-<style>.CodeMirror {border-top: 1px solid silver; border-bottom: 1px solid silver;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    border-top: 1px solid silver;
+    border-bottom: 1px solid silver;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">CoffeeScript</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">CoffeeScript</a></li>
   </ul>
 </div>
 
 <article>
-<h2>CoffeeScript mode</h2>
-<form><textarea id="code" name="code">
+  <h2>CoffeeScript mode</h2>
+  <form>
+    <textarea id="code" name="code">
 # CoffeeScript mode for CodeMirror
 # Copyright (c) 2011 Jeff Pickhardt, released under
 # the MIT License.
@@ -728,13 +738,14 @@ wrapper::chain = ->
 
 # Extracts the result from a wrapped and chained object.
 wrapper::value = -> this._wrapped
-</textarea></form>
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {});
-    </script>
+</textarea
+    >
+  </form>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {});
+  </script>
 
-    <p><strong>MIME types defined:</strong> <code>text/x-coffeescript</code>.</p>
+  <p><strong>MIME types defined:</strong> <code>text/x-coffeescript</code>.</p>
 
-    <p>The CoffeeScript mode was written by Jeff Pickhardt.</p>
-
-  </article>
+  <p>The CoffeeScript mode was written by Jeff Pickhardt.</p>
+</article>

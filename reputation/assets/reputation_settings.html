@@ -1,275 +1,403 @@
-{{define "cp_reputation_settings"}}
-{{template "cp_head" .}}
+{{define "cp_reputation_settings"}} {{template "cp_head" .}}
 
 <div class="page-header">
-    <h2>Reputation settings - <a href="/public/{{.ActiveGuild.ID}}/reputation/leaderboard">Leaderboard</a></h2>
+  <h2>
+    Reputation settings -
+    <a href="/public/{{.ActiveGuild.ID}}/reputation/leaderboard">Leaderboard</a>
+  </h2>
 </div>
 
 {{template "cp_alerts" .}}
 
 <div class="row">
-    <div class="col-lg-12">
-        <form role="form" method="post" data-async-form>
-            <section class="card {{if .RepSettings.Enabled}}card-featured card-featured-success{{end}}">
-                <header class="card-header">
-                    {{checkbox "Enabled" "rep-enabled-check" `<h2 class="card-title">Reputation enabled</h2>` .RepSettings.Enabled}}
-                </header>
+  <div class="col-lg-12">
+    <form role="form" method="post" data-async-form>
+      <section
+        class="card {{if .RepSettings.Enabled}}card-featured card-featured-success{{end}}"
+      >
+        <header class="card-header">
+          {{checkbox "Enabled" "rep-enabled-check" `
+          <h2 class="card-title">Reputation enabled</h2>
+          ` .RepSettings.Enabled}}
+        </header>
 
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="form-group mt-2">
-                                <label for="point-name">Name for reputation points</label>
-                                <input type="text" class="form-control" id="point-name" name="PointsName"
-                                    value="{{.RepSettings.PointsName}}">
-                            </div>
-                            <div class="form-group">
-                                <label for="cooldown">Rep cooldown in seconds</label>
-                                <input type="number" min="0" class="form-control" id="cooldown" name="Cooldown"
-                                    value="{{.RepSettings.Cooldown}}">
-                            </div>
-                            <div class="form-group">
-                                <label for="max-rep-amount-give">Maximum amount of rep that can be given in one
-                                    command.</label>
-                                <input type="number" min="1" class="form-control" id="max-rep-amount-give" name="MaxGiveAmount"
-                                    value="{{.RepSettings.MaxGiveAmount}}">
-                            </div>
-                            <div class="form-group">
-                                <label for="max-rep-amount-remove">Maximum amount of rep that can be removed in one
-                                    command.</label>
-                                <input type="number" min="1" class="form-control" id="max-rep-amount-remove"
-                                    name="MaxRemoveAmount" value="{{.RepSettings.MaxRemoveAmount}}">
-                            </div>
-                            {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when someone says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection) `onchange="toggleThanksDetection(this)"`}}
-                            <div id="thanks-channels" {{if eq .RepSettings.DisableThanksDetection true}}hidden{{end}}>
-                                <div class="form-group">
-                                    <label>Whitelisted channels for giving rep using thanks</label><br>
-                                    <select name="WhitelistedThanksChannels" class="multiselect form-control"
-                                        multiple="multiple" id="whitelisted-channels" data-plugin-multiselect>
-                                        {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.WhitelistedThanksChannels}}
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Blacklisted channels for giving rep using thanks</label><br>
-                                    <select name="BlacklistedThanksChannels" class="multiselect form-control"
-                                        multiple="multiple" id="blacklisted-channels" data-plugin-multiselect>
-                                        {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.BlacklistedThanksChannels}}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="form-group">
-                                <label>Admin roles</label><br>
-                                <select name="AdminRoles" class="multiselect form-control" multiple="multiple"
-                                    id="admin-roles" data-plugin-multiselect>
-                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.AdminRoles}}
-                                </select>
-                                <p class="help-block">Admins can freely change anyone's points to any number</p>
-                            </div>
-                            <div class="form-group">
-                                <label>Allowed roles to give/remove points (empty for all)</label><br>
-                                <select name="RequiredGiveRoles" class="multiselect form-control" multiple="multiple"
-                                    id="require-roles-give" data-plugin-multiselect>
-                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.RequiredGiveRoles}}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Allowed roles to receive/being taken away points from (empty for all)</label><br>
-                                <select name="RequiredReceiveRoles" class="multiselect form-control" multiple="multiple"
-                                    id="require-roles-receive" data-plugin-multiselect>
-                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.RequiredReceiveRoles}}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Blacklisted roles for giving/taking away points</label><br>
-                                <select name="BlacklistedGiveRoles" class="multiselect form-control" multiple="multiple"
-                                    id="blacklisted-roles-give" data-plugin-multiselect>
-                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.BlacklistedGiveRoles}}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Blacklisted roles for receiving/being taken away points from</label><br>
-                                <select name="BlacklistedReceiveRoles" class="multiselect form-control"
-                                    multiple="multiple" id="blacklisted-roles-receive" data-plugin-multiselect>
-                                    {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.BlacklistedReceiveRoles}}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-lg-12">
-                            <button type="submit" class="btn btn-success btn-lg btn-block">Save</button>
-                        </div>
-                    </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group mt-2">
+                <label for="point-name">Name for reputation points</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="point-name"
+                  name="PointsName"
+                  value="{{.RepSettings.PointsName}}"
+                />
+              </div>
+              <div class="form-group">
+                <label for="cooldown">Rep cooldown in seconds</label>
+                <input
+                  type="number"
+                  min="0"
+                  class="form-control"
+                  id="cooldown"
+                  name="Cooldown"
+                  value="{{.RepSettings.Cooldown}}"
+                />
+              </div>
+              <div class="form-group">
+                <label for="max-rep-amount-give"
+                  >Maximum amount of rep that can be given in one
+                  command.</label
+                >
+                <input
+                  type="number"
+                  min="1"
+                  class="form-control"
+                  id="max-rep-amount-give"
+                  name="MaxGiveAmount"
+                  value="{{.RepSettings.MaxGiveAmount}}"
+                />
+              </div>
+              <div class="form-group">
+                <label for="max-rep-amount-remove"
+                  >Maximum amount of rep that can be removed in one
+                  command.</label
+                >
+                <input
+                  type="number"
+                  min="1"
+                  class="form-control"
+                  id="max-rep-amount-remove"
+                  name="MaxRemoveAmount"
+                  value="{{.RepSettings.MaxRemoveAmount}}"
+                />
+              </div>
+              {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable
+              automatically giving rep when someone says "thanks @user" or
+              variations of it?` (not .RepSettings.DisableThanksDetection)
+              `onchange="toggleThanksDetection(this)"`}}
+              <div
+                id="thanks-channels"
+                {{if
+                eq
+                .RepSettings.DisableThanksDetection
+                true}}hidden{{end}}
+              >
+                <div class="form-group">
+                  <label>Whitelisted channels for giving rep using thanks</label
+                  ><br />
+                  <select
+                    name="WhitelistedThanksChannels"
+                    class="multiselect form-control"
+                    multiple="multiple"
+                    id="whitelisted-channels"
+                    data-plugin-multiselect
+                  >
+                    {{textChannelOptionsMulti .ActiveGuild.Channels
+                    .RepSettings.WhitelistedThanksChannels}}
+                  </select>
                 </div>
-            </section>
-            <!-- /.panel -->
-        </form>
-        <!-- /form -->
-    </div>
-    <!-- /.col-lg-12 -->
+                <div class="form-group">
+                  <label>Blacklisted channels for giving rep using thanks</label
+                  ><br />
+                  <select
+                    name="BlacklistedThanksChannels"
+                    class="multiselect form-control"
+                    multiple="multiple"
+                    id="blacklisted-channels"
+                    data-plugin-multiselect
+                  >
+                    {{textChannelOptionsMulti .ActiveGuild.Channels
+                    .RepSettings.BlacklistedThanksChannels}}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Admin roles</label><br />
+                <select
+                  name="AdminRoles"
+                  class="multiselect form-control"
+                  multiple="multiple"
+                  id="admin-roles"
+                  data-plugin-multiselect
+                >
+                  {{roleOptionsMulti .ActiveGuild.Roles nil
+                  .RepSettings.AdminRoles}}
+                </select>
+                <p class="help-block">
+                  Admins can freely change anyone's points to any number
+                </p>
+              </div>
+              <div class="form-group">
+                <label
+                  >Allowed roles to give/remove points (empty for all)</label
+                ><br />
+                <select
+                  name="RequiredGiveRoles"
+                  class="multiselect form-control"
+                  multiple="multiple"
+                  id="require-roles-give"
+                  data-plugin-multiselect
+                >
+                  {{roleOptionsMulti .ActiveGuild.Roles nil
+                  .RepSettings.RequiredGiveRoles}}
+                </select>
+              </div>
+              <div class="form-group">
+                <label
+                  >Allowed roles to receive/being taken away points from (empty
+                  for all)</label
+                ><br />
+                <select
+                  name="RequiredReceiveRoles"
+                  class="multiselect form-control"
+                  multiple="multiple"
+                  id="require-roles-receive"
+                  data-plugin-multiselect
+                >
+                  {{roleOptionsMulti .ActiveGuild.Roles nil
+                  .RepSettings.RequiredReceiveRoles}}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Blacklisted roles for giving/taking away points</label
+                ><br />
+                <select
+                  name="BlacklistedGiveRoles"
+                  class="multiselect form-control"
+                  multiple="multiple"
+                  id="blacklisted-roles-give"
+                  data-plugin-multiselect
+                >
+                  {{roleOptionsMulti .ActiveGuild.Roles nil
+                  .RepSettings.BlacklistedGiveRoles}}
+                </select>
+              </div>
+              <div class="form-group">
+                <label
+                  >Blacklisted roles for receiving/being taken away points
+                  from</label
+                ><br />
+                <select
+                  name="BlacklistedReceiveRoles"
+                  class="multiselect form-control"
+                  multiple="multiple"
+                  id="blacklisted-roles-receive"
+                  data-plugin-multiselect
+                >
+                  {{roleOptionsMulti .ActiveGuild.Roles nil
+                  .RepSettings.BlacklistedReceiveRoles}}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-lg-12">
+              <button type="submit" class="btn btn-success btn-lg btn-block">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- /.panel -->
+    </form>
+    <!-- /form -->
+  </div>
+  <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
 
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Reputation logs</h2>
-            </header>
+  <div class="col-lg-12">
+    <section class="card">
+      <header class="card-header">
+        <h2 class="card-title">Reputation logs</h2>
+      </header>
 
-            <div class="card-body">
-                <div class="row">
-                    <!-- <div class="col">
+      <div class="card-body">
+        <div class="row">
+          <!-- <div class="col">
                         <input type="text" class="form-control" placeholder="Search by Username">
                     </div> -->
-                    <div class="col">
-                        <input type="number" id="rep-search-id" class="form-control" placeholder="User ID">
-                    </div>
-                    <div class="col">
-                        <button type="button" id="rep-search-button" class="rep-button btn btn-primary"
-                            onclick="yagRepSearch(false, false)">Search</button>
-                        <button type="button" id="rep-newer-button" class="rep-button btn btn-primary hidden"
-                            onclick="yagRepSearch(false, true)">Newer</button>
-                        <button type="button" id="rep-older-button" class="rep-button btn btn-primary hidden"
-                            onclick="yagRepSearch(true, false)">Older</button>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <div class="table-responsive">
-                            <table class="table table-sm mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Date (your local time)</th>
-                                        <th>Sender (id)</th>
-                                        <th>Action</th>
-                                        <th>Receiver (id)</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="rep-search-results-body">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+          <div class="col">
+            <input
+              type="number"
+              id="rep-search-id"
+              class="form-control"
+              placeholder="User ID"
+            />
+          </div>
+          <div class="col">
+            <button
+              type="button"
+              id="rep-search-button"
+              class="rep-button btn btn-primary"
+              onclick="yagRepSearch(false, false)"
+            >
+              Search
+            </button>
+            <button
+              type="button"
+              id="rep-newer-button"
+              class="rep-button btn btn-primary hidden"
+              onclick="yagRepSearch(false, true)"
+            >
+              Newer
+            </button>
+            <button
+              type="button"
+              id="rep-older-button"
+              class="rep-button btn btn-primary hidden"
+              onclick="yagRepSearch(true, false)"
+            >
+              Older
+            </button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th>Date (your local time)</th>
+                    <th>Sender (id)</th>
+                    <th>Action</th>
+                    <th>Receiver (id)</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-search-results-body"></tbody>
+              </table>
             </div>
-        </section>
-        <!-- /.panel -->
-    </div>
-    <!-- /.col-lg-12 -->
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- /.panel -->
+  </div>
+  <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
 
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card card-featured card-featured-danger">
-            <header class="card-header">
-                <h2 class="card-title">Reset all user reputation</h2>
-            </header>
+  <div class="col-lg-12">
+    <section class="card card-featured card-featured-danger">
+      <header class="card-header">
+        <h2 class="card-title">Reset all user reputation</h2>
+      </header>
 
-            <div class="card-body">
-                <p>Completely wipe all reputation from the server, <b>CANNOT BE UNDONE</b></p>
-                <form action="/manage/{{.ActiveGuild.ID}}/reputation/reset_users" data-async-form method="post">
-                    <button type="submit" class="btn btn-danger">Completely reset all users rep!</button>
-                </form>
-            </div>
-        </section>
-        <!-- /.panel -->
-    </div>
-    <!-- /.col-lg-12 -->
+      <div class="card-body">
+        <p>
+          Completely wipe all reputation from the server,
+          <b>CANNOT BE UNDONE</b>
+        </p>
+        <form
+          action="/manage/{{.ActiveGuild.ID}}/reputation/reset_users"
+          data-async-form
+          method="post"
+        >
+          <button type="submit" class="btn btn-danger">
+            Completely reset all users rep!
+          </button>
+        </form>
+      </div>
+    </section>
+    <!-- /.panel -->
+  </div>
+  <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
 
 <script type="text/javascript">
-    var repOldestID = 0;
-    var repNewestID = 0;
-    var repIsFirstPage = true;
+  var repOldestID = 0;
+  var repNewestID = 0;
+  var repIsFirstPage = true;
 
-    function yagRepSearch(older, newer) {
-        function userCell(username, id) {
-            var cell = $("<td>")
-            cell.text(username + " ")
-            cell.append($("<small><code>" + id + "</code></small>"))
-            return cell
-        }
-
-        userIDReq = $("#rep-search-id").val();
-        $("#rep-search-results-body").empty();
-
-        if (!older && !newer) {
-            repIsFirstPage = true
-            repOldestID = 0
-            repNewestID = 0
-        } else {
-            repIsFirstPage = false
-        }
-
-        var url = "/manage/{{.ActiveGuild.ID}}/reputation/logs?user_id=" + userIDReq
-        if (older) {
-            url += "&before=" + repOldestID
-        } else if (newer) {
-            url += "&after=" + repNewestID
-        }
-
-        $(".rep-button").attr("disabled", true)
-
-        $("#rep-newer-button").addClass("hidden")
-        $("#rep-older-button").addClass("hidden")
-
-        createRequest("GET", url, null, function () {
-            $(".rep-button").attr("disabled", false)
-
-            var parsed = JSON.parse(this.responseText);
-            if (!parsed) {
-                $("#rep-search-results-body").append($("<tr><td>no results</td></tr>"));
-                return
-            }
-
-            for (var i = 0; i < parsed.length; i++) {
-                var elem = parsed[i]
-                var row = $("<tr>")
-
-                var createdAt = new Date(elem.created_at)
-
-                row.append($('<td>').text(createdAt.toLocaleString()))
-                row.append(userCell(elem.sender_username, elem.sender_id))
-
-                if (elem.set_fixed_amount) {
-                    row.append($("<td>").text("fixed set"))
-                } else {
-                    row.append($("<td>").text("gave"))
-                }
-
-                row.append(userCell(elem.receiver_username, elem.receiver_id))
-                row.append($("<td>").text(elem.amount))
-
-                $("#rep-search-results-body").append(row);
-            }
-
-            if (!repIsFirstPage) {
-                $("#rep-newer-button").removeClass("hidden")
-            }
-            $("#rep-older-button").removeClass("hidden")
-
-            repOldestID = parsed[parsed.length - 1].id
-            repNewestID = parsed[0].id
-        });
-
+  function yagRepSearch(older, newer) {
+    function userCell(username, id) {
+      var cell = $("<td>");
+      cell.text(username + " ");
+      cell.append($("<small><code>" + id + "</code></small>"));
+      return cell;
     }
 
-    function toggleThanksDetection(thanksDetectionEnabled) {
-        const rolesSelector = document.getElementById("thanks-channels")
-        if (thanksDetectionEnabled.checked) {
-            rolesSelector.removeAttribute("hidden")
-        } else {
-            rolesSelector.setAttribute("hidden", "")
-        }
+    userIDReq = $("#rep-search-id").val();
+    $("#rep-search-results-body").empty();
+
+    if (!older && !newer) {
+      repIsFirstPage = true;
+      repOldestID = 0;
+      repNewestID = 0;
+    } else {
+      repIsFirstPage = false;
     }
+
+    var url =
+      "/manage/{{.ActiveGuild.ID}}/reputation/logs?user_id=" + userIDReq;
+    if (older) {
+      url += "&before=" + repOldestID;
+    } else if (newer) {
+      url += "&after=" + repNewestID;
+    }
+
+    $(".rep-button").attr("disabled", true);
+
+    $("#rep-newer-button").addClass("hidden");
+    $("#rep-older-button").addClass("hidden");
+
+    createRequest("GET", url, null, function () {
+      $(".rep-button").attr("disabled", false);
+
+      var parsed = JSON.parse(this.responseText);
+      if (!parsed) {
+        $("#rep-search-results-body").append($("<tr><td>no results</td></tr>"));
+        return;
+      }
+
+      for (var i = 0; i < parsed.length; i++) {
+        var elem = parsed[i];
+        var row = $("<tr>");
+
+        var createdAt = new Date(elem.created_at);
+
+        row.append($("<td>").text(createdAt.toLocaleString()));
+        row.append(userCell(elem.sender_username, elem.sender_id));
+
+        if (elem.set_fixed_amount) {
+          row.append($("<td>").text("fixed set"));
+        } else {
+          row.append($("<td>").text("gave"));
+        }
+
+        row.append(userCell(elem.receiver_username, elem.receiver_id));
+        row.append($("<td>").text(elem.amount));
+
+        $("#rep-search-results-body").append(row);
+      }
+
+      if (!repIsFirstPage) {
+        $("#rep-newer-button").removeClass("hidden");
+      }
+      $("#rep-older-button").removeClass("hidden");
+
+      repOldestID = parsed[parsed.length - 1].id;
+      repNewestID = parsed[0].id;
+    });
+  }
+
+  function toggleThanksDetection(thanksDetectionEnabled) {
+    const rolesSelector = document.getElementById("thanks-channels");
+    if (thanksDetectionEnabled.checked) {
+      rolesSelector.removeAttribute("hidden");
+    } else {
+      rolesSelector.setAttribute("hidden", "");
+    }
+  }
 </script>
 
-{{template "cp_footer" .}}
-
-{{end}}
+{{template "cp_footer" .}} {{end}}

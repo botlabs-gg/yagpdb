@@ -4,5 +4,5 @@
         "title": "Version 0.11"
     }
 
- - Per channel command settings
- - Reputation plugin now listens for `thanks @someone`
+- Per channel command settings
+- Reputation plugin now listens for `thanks @someone`

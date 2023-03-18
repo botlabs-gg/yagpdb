@@ -14,8 +14,14 @@ table.dataTable.dtr-inline.collapsed > tbody > tr[role="row"] > th:first-child {
   padding-left: 30px;
   cursor: pointer;
 }
-table.dataTable.dtr-inline.collapsed > tbody > tr[role="row"] > td:first-child:before,
-table.dataTable.dtr-inline.collapsed > tbody > tr[role="row"] > th:first-child:before {
+table.dataTable.dtr-inline.collapsed
+  > tbody
+  > tr[role="row"]
+  > td:first-child:before,
+table.dataTable.dtr-inline.collapsed
+  > tbody
+  > tr[role="row"]
+  > th:first-child:before {
   top: 9px;
   left: 4px;
   height: 14px;
@@ -29,22 +35,34 @@ table.dataTable.dtr-inline.collapsed > tbody > tr[role="row"] > th:first-child:b
   box-sizing: content-box;
   text-align: center;
   text-indent: 0 !important;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   line-height: 14px;
-  content: '+';
+  content: "+";
   background-color: #21ba45;
 }
-table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td:first-child:before,
-table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th:first-child:before {
-  content: '-';
+table.dataTable.dtr-inline.collapsed
+  > tbody
+  > tr.parent
+  > td:first-child:before,
+table.dataTable.dtr-inline.collapsed
+  > tbody
+  > tr.parent
+  > th:first-child:before {
+  content: "-";
   background-color: #d33333;
 }
 table.dataTable.dtr-inline.collapsed.compact > tbody > tr > td:first-child,
 table.dataTable.dtr-inline.collapsed.compact > tbody > tr > th:first-child {
   padding-left: 27px;
 }
-table.dataTable.dtr-inline.collapsed.compact > tbody > tr > td:first-child:before,
-table.dataTable.dtr-inline.collapsed.compact > tbody > tr > th:first-child:before {
+table.dataTable.dtr-inline.collapsed.compact
+  > tbody
+  > tr
+  > td:first-child:before,
+table.dataTable.dtr-inline.collapsed.compact
+  > tbody
+  > tr
+  > th:first-child:before {
   top: 5px;
   left: 4px;
   height: 14px;
@@ -75,14 +93,14 @@ table.dataTable.dtr-column > tbody > tr > th.control:before {
   box-sizing: content-box;
   text-align: center;
   text-indent: 0 !important;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   line-height: 14px;
-  content: '+';
+  content: "+";
   background-color: #21ba45;
 }
 table.dataTable.dtr-column > tbody > tr.parent td.control:before,
 table.dataTable.dtr-column > tbody > tr.parent th.control:before {
-  content: '-';
+  content: "-";
   background-color: #d33333;
 }
 table.dataTable > tbody > tr.child {

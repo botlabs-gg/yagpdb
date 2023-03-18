@@ -1,34 +1,44 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Pug Templating Mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../javascript/javascript.js"></script>
 <script src="../css/css.js"></script>
 <script src="../xml/xml.js"></script>
 <script src="../htmlmixed/htmlmixed.js"></script>
 <script src="pug.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Pug Templating Mode</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Pug Templating Mode</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Pug Templating Mode</h2>
-<form><textarea id="code" name="code">
+  <h2>Pug Templating Mode</h2>
+  <form>
+    <textarea id="code" name="code">
 doctype html
   html
     head
@@ -57,14 +67,24 @@ doctype html
              div #{spot.desc}
         else
           h3 There are no spots currently available.
-</textarea></form>
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        mode: {name: "pug", alignCDATA: true},
-        lineNumbers: true
-      });
-    </script>
-    <h3>The Pug Templating Mode</h3>
-      <p> Created by Forbes Lindesay. Managed as part of a Brackets extension at <a href="https://github.com/ForbesLindesay/jade-brackets">https://github.com/ForbesLindesay/jade-brackets</a>.</p>
-    <p><strong>MIME type defined:</strong> <code>text/x-pug</code>, <code>text/x-jade</code>.</p>
-  </article>
+</textarea
+    >
+  </form>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: { name: "pug", alignCDATA: true },
+      lineNumbers: true,
+    });
+  </script>
+  <h3>The Pug Templating Mode</h3>
+  <p>
+    Created by Forbes Lindesay. Managed as part of a Brackets extension at
+    <a href="https://github.com/ForbesLindesay/jade-brackets"
+      >https://github.com/ForbesLindesay/jade-brackets</a
+    >.
+  </p>
+  <p>
+    <strong>MIME type defined:</strong> <code>text/x-pug</code>,
+    <code>text/x-jade</code>.
+  </p>
+</article>

@@ -1,5 +1,4 @@
-dca  
-====
+# dca
 
 This is a command line tool for creating DCA files
 
@@ -8,19 +7,19 @@ as a way to generate the opus audio data from any standard audio file.
 
 You can also pipe the output of this program to create a .dca file for later use.
 
-* See [Discordgo](https://github.com/bwmarrin/discordgo) for Discord API bindings in Go.
-* See the [wiki](https://github.com/bwmarrin/dca/wiki/DCA1-specification-draft) for more information on the DCA1 standard.
+- See [Discordgo](https://github.com/bwmarrin/discordgo) for Discord API bindings in Go.
+- See the [wiki](https://github.com/bwmarrin/dca/wiki/DCA1-specification-draft) for more information on the DCA1 standard.
 
-Join [#go_discordgo](https://discord.gg/0SBTUU1wZTWT6sqd) Discord chat channel 
+Join [#go_discordgo](https://discord.gg/0SBTUU1wZTWT6sqd) Discord chat channel
 for support.
 
 ## Features
-* Stereo Audio
-* 48khz Sampling Rate
-* 20ms / 1920 byte audio frame size
-* Bit-rates from 8 kb/s to 128 kb/s
-* Optimization setting for VoIP, Audio, and Low Delay audio
 
+- Stereo Audio
+- 48khz Sampling Rate
+- 20ms / 1920 byte audio frame size
+- Bit-rates from 8 kb/s to 128 kb/s
+- Optimization setting for VoIP, Audio, and Low Delay audio
 
 ## Getting Started
 
@@ -72,7 +71,6 @@ $ brew install golang
 $ go get github.com/jonas747/dca/cmd/dca
 ```
 
-
 ### Usage
 
 ```
@@ -97,20 +95,17 @@ Usage of ./dca:
 
 You may also pipe audio audio into dca instead of providing an input file.
 
-
 ## Examples
 
 See the example folder.
 
-
 ## Contributing
 
-While contributions are always welcome - this code is in a very early and 
+While contributions are always welcome - this code is in a very early and
 incomplete stage and massive changes, including entire re-writes, could still
-happen.  In other words, probably not worth your time right now :)
+happen. In other words, probably not worth your time right now :)
 
 ## List of Discord APIs
 
-See [this chart](https://abal.moe/Discord/Libraries.html) for a feature 
+See [this chart](https://abal.moe/Discord/Libraries.html) for a feature
 comparison and list of other Discord API libraries.
-

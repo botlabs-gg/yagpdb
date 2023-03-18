@@ -15,7 +15,7 @@ The preferred way to report bugs is to use the
 [GitHub issue tracker](http://github.com/codemirror/CodeMirror/issues). Before
 reporting a bug, read these pointers.
 
-**Note:** The issue tracker is for *bugs*, not requests for help. Questions
+**Note:** The issue tracker is for _bugs_, not requests for help. Questions
 should be asked on the
 [discuss.CodeMirror forum](http://discuss.codemirror.net) instead.
 
@@ -61,19 +61,19 @@ should be asked on the
 - Make sure all tests pass. Visit `test/index.html` in your browser to
   run them.
 - Submit a pull request
-([how to create a pull request](https://help.github.com/articles/fork-a-repo)).
+  ([how to create a pull request](https://help.github.com/articles/fork-a-repo)).
   Don't put more than one feature/fix in a single pull request.
 
 By contributing code to CodeMirror you
 
- - agree to license the contributed code under CodeMirror's [MIT
-   license](http://codemirror.net/LICENSE).
+- agree to license the contributed code under CodeMirror's [MIT
+  license](http://codemirror.net/LICENSE).
 
- - confirm that you have the right to contribute and license the code
-   in question. (Either you hold all rights on the code, or the rights
-   holder has explicitly granted the right to use it like this,
-   through a compatible open source license or through a direct
-   agreement with you.)
+- confirm that you have the right to contribute and license the code
+  in question. (Either you hold all rights on the code, or the rights
+  holder has explicitly granted the right to use it like this,
+  through a compatible open source license or through a direct
+  agreement with you.)
 
 ### Coding standards
 
@@ -83,6 +83,6 @@ By contributing code to CodeMirror you
   complains about unused variables and functions. Prefix their names
   with an underscore to muffle it.
 
-- CodeMirror does *not* follow JSHint or JSLint prescribed style.
+- CodeMirror does _not_ follow JSHint or JSLint prescribed style.
   Patches that try to 'fix' code to pass one of these linters will be
   unceremoniously discarded.

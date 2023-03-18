@@ -1,31 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Julia mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="julia.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Julia</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Julia</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Julia mode</h2>
+  <h2>Julia mode</h2>
 
-    <div><textarea id="code" name="code">
+  <div>
+    <textarea id="code" name="code">
 #numbers
 1234
 1234im
@@ -180,16 +190,16 @@ type immutable quote
 true false enumerate
 
 
-    </textarea></div>
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        mode: {name: "julia",
-               },
-        lineNumbers: true,
-        indentUnit: 4,
-        matchBrackets: true
-      });
-    </script>
+    </textarea>
+  </div>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: { name: "julia" },
+      lineNumbers: true,
+      indentUnit: 4,
+      matchBrackets: true,
+    });
+  </script>
 
-    <p><strong>MIME types defined:</strong> <code>text/x-julia</code>.</p>
+  <p><strong>MIME types defined:</strong> <code>text/x-julia</code>.</p>
 </article>

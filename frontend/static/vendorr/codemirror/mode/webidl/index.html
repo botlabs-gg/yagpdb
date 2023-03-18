@@ -1,25 +1,34 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Web IDL mode</title>
-<meta charset="utf-8">
-<link rel="stylesheet" href="../../doc/docs.css">
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/edit/matchbrackets.js"></script>
 <script src="webidl.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
 
 <div id="nav">
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id="logo" src="../../doc/logo.png"></a>
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class="active" href="#">Web IDL</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Web IDL</a></li>
   </ul>
 </div>
 
@@ -27,7 +36,7 @@
   <h2>Web IDL mode</h2>
 
   <div>
-<textarea id="code" name="code">
+    <textarea id="code" name="code">
 [NamedConstructor=Image(optional unsigned long width, optional unsigned long height)]
 interface HTMLImageElement : HTMLElement {
            attribute DOMString alt;
@@ -57,13 +66,14 @@ partial interface HTMLImageElement {
 
   [TreatNullAs=EmptyString] attribute DOMString border;
 };
-</textarea>
+</textarea
+    >
   </div>
 
   <script>
     var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
       lineNumbers: true,
-      matchBrackets: true
+      matchBrackets: true,
     });
   </script>
 

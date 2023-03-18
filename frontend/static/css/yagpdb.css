@@ -1,60 +1,59 @@
-#page-wrapper{
-	padding-bottom: 400px;
-	padding-top: 60px;
+#page-wrapper {
+  padding-bottom: 400px;
+  padding-top: 60px;
 }
 
-
-.page-header{
-    margin-top: 10px !important;
+.page-header {
+  margin-top: 10px !important;
 }
-
 
 textarea {
-	resize: vertical;
+  resize: vertical;
 }
 
-#public-wrapper{
+#public-wrapper {
   padding-bottom: 400px;
   padding-top: 40px;
 
-/*	margin: 0 20px 0 20px;
+  /*	margin: 0 20px 0 20px;
 	padding-top: 40px;
 */
 }
 
-form table td input{
-	display: block !important; 
-	padding: 2px !important; 
+form table td input {
+  display: block !important;
+  padding: 2px !important;
 }
 
-form table td{
-	margin: 0 !important; 
-	padding: 2 !important;
-	vertical-align: middle !important;
+form table td {
+  margin: 0 !important;
+  padding: 2 !important;
+  vertical-align: middle !important;
 }
 
-.form-inline .form-group, .form-inline .checkbox {
-	margin-right: 5px;
+.form-inline .form-group,
+.form-inline .checkbox {
+  margin-right: 5px;
 }
 
-@media(max-width: 767px) {
-
+@media (max-width: 767px) {
   .nav > li.dropdown.open .dropdown-menu {
-      width: 100%;
-      left: 0;
-      right: 0; 
+    width: 100%;
+    left: 0;
+    right: 0;
   }
 
   /*.dropdown-menu>li { display: table-cell; }*/
-  .nav > li.dropdown.open { position: static; }
-
-  .nav .dropdown-menu {
-  	position: fixed;
-  	bottom: 0;
-  	top: 0;
-  	overflow-y: scroll;
+  .nav > li.dropdown.open {
+    position: static;
   }
 
+  .nav .dropdown-menu {
+    position: fixed;
+    bottom: 0;
+    top: 0;
+    overflow-y: scroll;
+  }
 
   .nav-button-desc {
     display: none;
@@ -65,31 +64,30 @@ form table td{
   }
 }
 
-@media(min-width: 768px) {
-	.dropdown-close{
-		display: none !important;
-	}
-
-	.maybe-nav-fixed-top {
-	    top: 0;
-	    border-width: 0 0 1px;
-	    position: fixed;
-	    right: 0;
-	    left: 0;
-	    z-index: 1030;
-	}
-
-	#sidebar-wrapper {
-		position: fixed;
-		overflow-y: auto;
-		top: 51px;
-		bottom: 0%;
+@media (min-width: 768px) {
+  .dropdown-close {
+    display: none !important;
   }
 
+  .maybe-nav-fixed-top {
+    top: 0;
+    border-width: 0 0 1px;
+    position: fixed;
+    right: 0;
+    left: 0;
+    z-index: 1030;
+  }
+
+  #sidebar-wrapper {
+    position: fixed;
+    overflow-y: auto;
+    top: 51px;
+    bottom: 0%;
+  }
 }
 
-@media(max-width: 1000px) and (min-width: 768px){
-  #main-content{
+@media (max-width: 1000px) and (min-width: 768px) {
+  #main-content {
     margin-top: 25px;
   }
 }
@@ -106,32 +104,32 @@ form table td{
   margin-bottom: 1px;
 }
 
-#nav-footer-img{
+#nav-footer-img {
   max-width: 100%;
   max-height: 100%;
 }
 
-#nav-footer-overlay{
+#nav-footer-overlay {
   position: fixed;
   bottom: 200px;
   left: 5px;
 }
 
 .markdown-body .anchor {
-    /*position: absolute;*/
-    /*top: 10px;*/
-    bottom: 0;
-    left: 0;
-    display: block;
-    padding-right: 6px !important;
-    padding-left: 30px !important;
-    margin-left: -30px !important;
-    float: left;
-    background-color: #d3d3ff;
+  /*position: absolute;*/
+  /*top: 10px;*/
+  bottom: 0;
+  left: 0;
+  display: block;
+  padding-right: 6px !important;
+  padding-left: 30px !important;
+  margin-left: -30px !important;
+  float: left;
+  background-color: #d3d3ff;
 }
 
 .markdown-body .anchor:focus {
-    outline: none
+  outline: none;
 }
 
 .markdown-body h1 .octicon-link,
@@ -140,9 +138,9 @@ form table td{
 .markdown-body h4 .octicon-link,
 .markdown-body h5 .octicon-link,
 .markdown-body h6 .octicon-link {
-    display: none;
-    color: #000;
-    vertical-align: middle
+  display: none;
+  color: #000;
+  vertical-align: middle;
 }
 .markdown-body h1:hover .anchor,
 .markdown-body h2:hover .anchor,
@@ -150,11 +148,11 @@ form table td{
 .markdown-body h4:hover .anchor,
 .markdown-body h5:hover .anchor,
 .markdown-body h6:hover .anchor {
-    height: 1em;
-    padding-left: 8px;
-    margin-left: -30px;
-    line-height: 1;
-    text-decoration: none
+  height: 1em;
+  padding-left: 8px;
+  margin-left: -30px;
+  line-height: 1;
+  text-decoration: none;
 }
 .markdown-body h1:hover .anchor .octicon-link,
 .markdown-body h2:hover .anchor .octicon-link,
@@ -162,10 +160,8 @@ form table td{
 .markdown-body h4:hover .anchor .octicon-link,
 .markdown-body h5:hover .anchor .octicon-link,
 .markdown-body h6:hover .anchor .octicon-link {
-    display: inline-block
+  display: inline-block;
 }
-
-
 
 .bs-callout {
   padding: 20px;
@@ -176,69 +172,75 @@ form table td{
 }
 
 *.bs-callout:empty {
-   padding: 20px;
-   margin: 0px;
-   border: none;   
+  padding: 20px;
+  margin: 0px;
+  border: none;
 }
 
 .bs-callout h4 {
-    margin-top: 0;
-    margin-bottom: 5px;
+  margin-top: 0;
+  margin-bottom: 5px;
 }
 .bs-callout p:last-child {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 .bs-callout code {
-    border-radius: 3px;
+  border-radius: 3px;
 }
-.bs-callout+.bs-callout {
-    margin-top: -5px;
+.bs-callout + .bs-callout {
+  margin-top: -5px;
 }
 
-.bs-callout-danger{
+.bs-callout-danger {
   border-left-color: #d9534f;
   background-color: rgba(217, 83, 79, 0.1);
   animation: danger 4s infinite;
 }
 .bs-callout-danger h4 {
-    color: #d9534f;
+  color: #d9534f;
 }
 
 .bs-callout-info {
-    border-left-color: #5bc0de;
+  border-left-color: #5bc0de;
 }
 .bs-callout-info h4 {
-    color: #5bc0de;
+  color: #5bc0de;
 }
 
 .bs-callout-success {
-    border-left-color: #5cb85c;
-    background-color: rgba(92,184,92, 0.1)
+  border-left-color: #5cb85c;
+  background-color: rgba(92, 184, 92, 0.1);
 }
 .bs-callout-success h4 {
-    color: #5cb85c;
+  color: #5cb85c;
 }
 
 .bs-callout-primary {
-    border-left-color: #428bca;
-    background-color: rgba(66,139,202, 0.1)
+  border-left-color: #428bca;
+  background-color: rgba(66, 139, 202, 0.1);
 }
 .bs-callout-primary h4 {
-    color: #428bca;
+  color: #428bca;
 }
 
 .bs-callout-warning {
-    border-left-color: #f0ad4e;
-    background-color: rgba(240,173,78, 0.1)
+  border-left-color: #f0ad4e;
+  background-color: rgba(240, 173, 78, 0.1);
 }
 .bs-callout-warning h4 {
-    color: #f0ad4e;
+  color: #f0ad4e;
 }
 
-@keyframes danger{
-  0% {border-left-color: rgba(217,83,79, 0)}
-  50% {border-left-color: rgba(217,83,79, 1)}
-  100% {border-left-color: rgba(217,83,79, 0)}
+@keyframes danger {
+  0% {
+    border-left-color: rgba(217, 83, 79, 0);
+  }
+  50% {
+    border-left-color: rgba(217, 83, 79, 1);
+  }
+  100% {
+    border-left-color: rgba(217, 83, 79, 0);
+  }
 }
 
 .avatar {
@@ -258,5 +260,5 @@ form table td{
 }
 
 html.dark select optgroup {
-  background:#000;
+  background: #000;
 }

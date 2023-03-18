@@ -12,30 +12,30 @@ For now look in the example folder. Still planning things out.
 
 ## TODO:
 
- - [ ] Full test coverage (See below for info on progress)
- - [ ] Only build middleware chains once?
-      + [x] Added ability to prebuild middleware chains
-      + [ ] Automatically do so   
- - [x] Standard Help generator
+- [ ] Full test coverage (See below for info on progress)
+- [ ] Only build middleware chains once?
+  - [x] Added ability to prebuild middleware chains
+  - [ ] Automatically do so
+- [x] Standard Help generator
 
 ## Test Coverage:
 
- - Argument parsers
-      + [x] int
-      + [x] float
-      + [ ] string
-      + [ ] user
-      + [x] Full line argdef parsing
-      + [ ] Full line switch parsing
- - System
-      + [x] FindPrefix
-      + [ ] HandleResponse
- - Container
-      + [ ] Middleware chaining
-      + [ ] Add/Remove middleware
-      + [ ] Command searching
- - Other
-      + [ ] Help
+- Argument parsers
+  - [x] int
+  - [x] float
+  - [ ] string
+  - [ ] user
+  - [x] Full line argdef parsing
+  - [ ] Full line switch parsing
+- System
+  - [x] FindPrefix
+  - [ ] HandleResponse
+- Container
+  - [ ] Middleware chaining
+  - [ ] Add/Remove middleware
+  - [ ] Command searching
+- Other
+  - [ ] Help
 
 ### Time of day example
 

@@ -1,1 +1,4 @@
-table.dataTable tr.group td{font-weight:bold;background-color:#F9FAFB}
+table.dataTable tr.group td {
+  font-weight: bold;
+  background-color: #f9fafb;
+}

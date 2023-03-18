@@ -1,132 +1,205 @@
-{{define "bot_admin_panel"}}
-
-{{template "cp_head" .}}
+{{define "bot_admin_panel"}} {{template "cp_head" .}}
 <header class="page-header">
-    <h2>YAGPDB internal admin panel</h2>
+  <h2>YAGPDB internal admin panel</h2>
 </header>
 
 {{template "cp_alerts" .}}
 
 <a href="/admin/config" class="btn btn-sm btn-primary">Internal bot config</a>
 <form method="POST" action="/admin/reconnect_all">
-    <button type="submit" class="btn btn-danger" value="Reconnect all shards">Reconnect all shards</button>
+  <button type="submit" class="btn btn-danger" value="Reconnect all shards">
+    Reconnect all shards
+  </button>
 </form>
 
 {{range .Hosts}}
 <h3>{{.Name}}</h3>
 <div class="row">
-    {{range .ServiceHosts}}
-    <div class="col-lg-4">
-        <section class="card card-featured card-featured-success mb-4">
-            <header class="card-header">
-                <h2 class="card-title">{{.Host}} - {{.PID}}</h2>
-            </header>
-            <div class="card-body host-status">
-                <div class="row">
-                    <div class="col-lg-12">
-                        {{$sh := .}}
-                        <p>V:<code>{{.Version}}</code> - <code>{{.InternalAPIAddress}}</code></p>
-                        {{range .Services}}
-                        <h4>{{.Type}}</h4>
-                        <ul>
-                            <li>{{.Type}} - {{.Name}}</li>
-                            {{if .Details}}<li>{{.Details}}</li>{{end}}
-                            {{if .BotDetails}}{{if .BotDetails.OrchestratorMode}}
-                            <li>NodeID: {{.BotDetails.NodeID}}</li>
-                            <li>Shards: {{.BotDetails.RunningShards}}</li>
-                            <li>Total Shards: {{.BotDetails.TotalShards}}</li>
-                            {{end}}{{end}}
-                        </ul>
-                        {{if eq .Type "orchestrator"}}
-                        <form method="POST" action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/updateversion">
-                            <button type="submit" class="btn btn-primary" value="Update version">Update version</button>
-                        </form>
-                        <form method="POST" action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/migratenodes">
-                            <button type="submit" class="btn btn-primary" value="Update version">Migrate nodes</button>
-                        </form>
-                        <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/deployedversion" class="btn btn-primary"
-                            target="_blank">New node version</a>
-                        <br>
-                        {{else if eq .Type "bot"}}
-                        <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard_sessions" class="btn btn-primary"
-                            target="_blank">Shard session ID's (SENSITIVE INFO)</a>
-                        <br>
+  {{range .ServiceHosts}}
+  <div class="col-lg-4">
+    <section class="card card-featured card-featured-success mb-4">
+      <header class="card-header">
+        <h2 class="card-title">{{.Host}} - {{.PID}}</h2>
+      </header>
+      <div class="card-body host-status">
+        <div class="row">
+          <div class="col-lg-12">
+            {{$sh := .}}
+            <p>
+              V:<code>{{.Version}}</code> - <code>{{.InternalAPIAddress}}</code>
+            </p>
+            {{range .Services}}
+            <h4>{{.Type}}</h4>
+            <ul>
+              <li>{{.Type}} - {{.Name}}</li>
+              {{if .Details}}
+              <li>{{.Details}}</li>
+              {{end}} {{if .BotDetails}}{{if .BotDetails.OrchestratorMode}}
+              <li>NodeID: {{.BotDetails.NodeID}}</li>
+              <li>Shards: {{.BotDetails.RunningShards}}</li>
+              <li>Total Shards: {{.BotDetails.TotalShards}}</li>
+              {{end}}{{end}}
+            </ul>
+            {{if eq .Type "orchestrator"}}
+            <form
+              method="POST"
+              action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/updateversion"
+            >
+              <button
+                type="submit"
+                class="btn btn-primary"
+                value="Update version"
+              >
+                Update version
+              </button>
+            </form>
+            <form
+              method="POST"
+              action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/migratenodes"
+            >
+              <button
+                type="submit"
+                class="btn btn-primary"
+                value="Update version"
+              >
+                Migrate nodes
+              </button>
+            </form>
+            <a
+              href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/deployedversion"
+              class="btn btn-primary"
+              target="_blank"
+              >New node version</a
+            >
+            <br />
+            {{else if eq .Type "bot"}}
+            <a
+              href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard_sessions"
+              class="btn btn-primary"
+              target="_blank"
+              >Shard session ID's (SENSITIVE INFO)</a
+            >
+            <br />
 
-                        <!-- Reconnect dropdown -->
-                        <form method="POST" action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/updateversion">
-                            <div class="dropdown">
-                                <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown"
-                                    aria-haspopup="true" aria-expanded="false">
-                                    Re-identify shards
-                                </button>
-                                <div class="dropdown-menu">
-                                    {{range .BotDetails.RunningShards}}
-                                    <input class="dropdown-item" type="submit"
-                                        formaction="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard/{{.}}/reconnect?identify=1"
-                                        value="Shard
-                                        {{.}}">
-                                    {{end}}
-                                </div>
-                            </div>
-                        </form>
-                        {{end}}
-                        {{end}}
-
-                        <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/goroutines?debug=1" class="btn btn-primary"
-                            target="_blank">Goroutines</a>
-                        <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/goroutines?debug=2" class="btn btn-primary"
-                            target="_blank">Goroutines Full</a>
-                        <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/heap?debug=1" class="btn btn-primary"
-                            target="_blank">Heap</a>
-                        <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/allocs?debug=1" class="btn btn-primary" tar
-                            get="_blank">Allocs</a>
-                        <form method="POST" action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shutdown">
-                            <button type="submit" class="btn btn-danger" value="Update version">Shutdown</button>
-                        </form>
-                    </div>
+            <!-- Reconnect dropdown -->
+            <form
+              method="POST"
+              action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/updateversion"
+            >
+              <div class="dropdown">
+                <button
+                  class="btn btn-secondary dropdown-toggle"
+                  type="button"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  Re-identify shards
+                </button>
+                <div class="dropdown-menu">
+                  {{range .BotDetails.RunningShards}}
+                  <input
+                    class="dropdown-item"
+                    type="submit"
+                    formaction="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard/{{.}}/reconnect?identify=1"
+                    value="Shard
+                                        {{.}}"
+                  />
+                  {{end}}
                 </div>
-            </div>
-        </section>
-    </div>
-    {{end}}
+              </div>
+            </form>
+            {{end}} {{end}}
+
+            <a
+              href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/goroutines?debug=1"
+              class="btn btn-primary"
+              target="_blank"
+              >Goroutines</a
+            >
+            <a
+              href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/goroutines?debug=2"
+              class="btn btn-primary"
+              target="_blank"
+              >Goroutines Full</a
+            >
+            <a
+              href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/heap?debug=1"
+              class="btn btn-primary"
+              target="_blank"
+              >Heap</a
+            >
+            <a
+              href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/allocs?debug=1"
+              class="btn btn-primary"
+              tar
+              get="_blank"
+              >Allocs</a
+            >
+            <form
+              method="POST"
+              action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shutdown"
+            >
+              <button
+                type="submit"
+                class="btn btn-danger"
+                value="Update version"
+              >
+                Shutdown
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  {{end}}
 </div>
-<hr>
+<hr />
 {{end}}
 
 <!-- Modal -->
-<div class="modal fade" id="remote-modal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="remote-modal-title">Modal title</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="remote-modal-body">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-        </div>
+<div
+  class="modal fade"
+  id="remote-modal"
+  tabindex="-1"
+  role="dialog"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="remote-modal-title">Modal title</h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="remote-modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Close
+        </button>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
+  function openRemoteModal(url) {
+    $("#remote-modal").modal("show");
 
-    function openRemoteModal(url) {
-        $("#remote-modal").modal('show')
+    $("#remote-modal-title").text(url);
+    $("#remote-modal-body").text("Loading...");
 
-        $("#remote-modal-title").text(url)
-        $("#remote-modal-body").text("Loading...")
-
-        createRequest("GET", url + "?partial=1", null, function () {
-            $("#remote-modal-body").html(this.responseText);
-        })
-    }
-
+    createRequest("GET", url + "?partial=1", null, function () {
+      $("#remote-modal-body").html(this.responseText);
+    });
+  }
 </script>
 
-{{template "cp_footer" .}}
-
-{{end}}
+{{template "cp_footer" .}} {{end}}

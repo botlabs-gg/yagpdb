@@ -1,41 +1,54 @@
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
-(function() {
+(function () {
   var Pos = CodeMirror.Pos;
 
   var simpleTables = {
-    "users": ["name", "score", "birthDate"],
-    "xcountries": ["name", "population", "size"]
+    users: ["name", "score", "birthDate"],
+    xcountries: ["name", "population", "size"],
   };
 
   var schemaTables = {
     "schema.users": ["name", "score", "birthDate"],
-    "schema.countries": ["name", "population", "size"]
+    "schema.countries": ["name", "population", "size"],
   };
 
-  var displayTextTables = [{
-    text: "mytable",
-    displayText: "mytable | The main table",
-    columns: [{text: "id", displayText: "id | Unique ID"},
-              {text: "name", displayText: "name | The name"}]
-  }];
+  var displayTextTables = [
+    {
+      text: "mytable",
+      displayText: "mytable | The main table",
+      columns: [
+        { text: "id", displayText: "id | Unique ID" },
+        { text: "name", displayText: "name | The name" },
+      ],
+    },
+  ];
 
   namespace = "sql-hint_";
 
   function test(name, spec) {
-    testCM(name, function(cm) {
-      cm.setValue(spec.value);
-      cm.setCursor(spec.cursor);
-      var completion = CodeMirror.hint.sql(cm, {tables: spec.tables});
-      if (!deepCompare(completion.list, spec.list))
-        throw new Failure("Wrong completion results " + JSON.stringify(completion.list) + " vs " + JSON.stringify(spec.list));
-      eqCharPos(completion.from, spec.from);
-      eqCharPos(completion.to, spec.to);
-    }, {
-      value: spec.value,
-      mode: "text/x-mysql"
-    });
+    testCM(
+      name,
+      function (cm) {
+        cm.setValue(spec.value);
+        cm.setCursor(spec.cursor);
+        var completion = CodeMirror.hint.sql(cm, { tables: spec.tables });
+        if (!deepCompare(completion.list, spec.list))
+          throw new Failure(
+            "Wrong completion results " +
+              JSON.stringify(completion.list) +
+              " vs " +
+              JSON.stringify(spec.list)
+          );
+        eqCharPos(completion.from, spec.from);
+        eqCharPos(completion.to, spec.to);
+      },
+      {
+        value: spec.value,
+        mode: "text/x-mysql",
+      }
+    );
   }
 
   test("keywords", {
@@ -43,7 +56,7 @@
     cursor: Pos(0, 3),
     list: ["SELECT"],
     from: Pos(0, 0),
-    to: Pos(0, 3)
+    to: Pos(0, 3),
   });
 
   test("from", {
@@ -51,7 +64,7 @@
     cursor: Pos(0, 11),
     list: ["FROM"],
     from: Pos(0, 9),
-    to: Pos(0, 11)
+    to: Pos(0, 11),
   });
 
   test("table", {
@@ -60,7 +73,7 @@
     tables: simpleTables,
     list: ["xcountries"],
     from: Pos(0, 7),
-    to: Pos(0, 9)
+    to: Pos(0, 9),
   });
 
   test("columns", {
@@ -69,7 +82,7 @@
     tables: simpleTables,
     list: ["users.name", "users.score", "users.birthDate"],
     from: Pos(0, 7),
-    to: Pos(0, 13)
+    to: Pos(0, 13),
   });
 
   test("singlecolumn", {
@@ -78,7 +91,7 @@
     tables: simpleTables,
     list: ["users.name"],
     from: Pos(0, 7),
-    to: Pos(0, 15)
+    to: Pos(0, 15),
   });
 
   test("quoted", {
@@ -87,7 +100,7 @@
     tables: simpleTables,
     list: ["`users`.`name`"],
     from: Pos(0, 7),
-    to: Pos(0, 18)
+    to: Pos(0, 18),
   });
 
   test("quotedcolumn", {
@@ -96,17 +109,22 @@
     tables: simpleTables,
     list: ["`users`.`name`"],
     from: Pos(0, 7),
-    to: Pos(0, 16)
+    to: Pos(0, 16),
   });
 
   test("schema", {
     value: "SELECT schem",
     cursor: Pos(0, 12),
     tables: schemaTables,
-    list: ["schema.users", "schema.countries",
-           "SCHEMA", "SCHEMA_NAME", "SCHEMAS"],
+    list: [
+      "schema.users",
+      "schema.countries",
+      "SCHEMA",
+      "SCHEMA_NAME",
+      "SCHEMAS",
+    ],
     from: Pos(0, 7),
-    to: Pos(0, 12)
+    to: Pos(0, 12),
   });
 
   test("schemaquoted", {
@@ -115,29 +133,29 @@
     tables: schemaTables,
     list: ["`schema`.`users`", "`schema`.`countries`"],
     from: Pos(0, 7),
-    to: Pos(0, 11)
+    to: Pos(0, 11),
   });
 
   test("schemacolumn", {
     value: "SELECT schema.users.",
     cursor: Pos(0, 20),
     tables: schemaTables,
-    list: ["schema.users.name",
-           "schema.users.score",
-           "schema.users.birthDate"],
+    list: ["schema.users.name", "schema.users.score", "schema.users.birthDate"],
     from: Pos(0, 7),
-    to: Pos(0, 20)
+    to: Pos(0, 20),
   });
 
   test("schemacolumnquoted", {
     value: "SELECT `schema`.`users`.",
     cursor: Pos(0, 24),
     tables: schemaTables,
-    list: ["`schema`.`users`.`name`",
-           "`schema`.`users`.`score`",
-           "`schema`.`users`.`birthDate`"],
+    list: [
+      "`schema`.`users`.`name`",
+      "`schema`.`users`.`score`",
+      "`schema`.`users`.`birthDate`",
+    ],
     from: Pos(0, 7),
-    to: Pos(0, 24)
+    to: Pos(0, 24),
   });
 
   test("displayText_table", {
@@ -146,17 +164,19 @@
     tables: displayTextTables,
     list: displayTextTables,
     from: Pos(0, 7),
-    to: Pos(0, 10)
+    to: Pos(0, 10),
   });
 
   test("displayText_column", {
     value: "SELECT mytable.",
     cursor: Pos(0, 15),
     tables: displayTextTables,
-    list: [{text: "mytable.id", displayText: "id | Unique ID"},
-           {text: "mytable.name", displayText: "name | The name"}],
+    list: [
+      { text: "mytable.id", displayText: "id | Unique ID" },
+      { text: "mytable.name", displayText: "name | The name" },
+    ],
     from: Pos(0, 7),
-    to: Pos(0, 15)
+    to: Pos(0, 15),
   });
 
   test("alias_complete", {
@@ -165,24 +185,24 @@
     tables: simpleTables,
     list: ["t.name", "t.score", "t.birthDate"],
     from: Pos(0, 7),
-    to: Pos(0, 9)
+    to: Pos(0, 9),
   });
 
   test("alias_complete_with_displayText", {
     value: "SELECT t. FROM mytable t",
     cursor: Pos(0, 9),
     tables: displayTextTables,
-    list: [{text: "t.id", displayText: "id | Unique ID"},
-           {text: "t.name", displayText: "name | The name"}],
+    list: [
+      { text: "t.id", displayText: "id | Unique ID" },
+      { text: "t.name", displayText: "name | The name" },
+    ],
     from: Pos(0, 7),
-    to: Pos(0, 9)
-  })
+    to: Pos(0, 9),
+  });
 
   function deepCompare(a, b) {
-    if (!a || typeof a != "object")
-      return a === b;
-    if (!b || typeof b != "object")
-      return false;
+    if (!a || typeof a != "object") return a === b;
+    if (!b || typeof b != "object") return false;
     for (var prop in a) if (!deepCompare(a[prop], b[prop])) return false;
     return true;
   }

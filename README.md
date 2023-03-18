@@ -4,24 +4,24 @@ YAGPDB is a multifunctional, modular Discord bot. It is modular in the sense tha
 
 ## Plugins
 
-* YouTube Feed
-* Stream Announcements
-* Server Stats
-* Soundboard
-* Reputation
-* Reminders
-* Reddit Feed
-* Notifications
-* Moderation
-* Logs
-* Custom Commands
-* And More!
+- YouTube Feed
+- Stream Announcements
+- Server Stats
+- Soundboard
+- Reputation
+- Reminders
+- Reddit Feed
+- Notifications
+- Moderation
+- Logs
+- Custom Commands
+- And More!
 
 ## Useful Links
 
-* [Homepage](https://yagpdb.xyz)
-* [Support Server](https://discord.gg/4udtcA5)
-* [Documentation](https://docs.yagpdb.xyz)
+- [Homepage](https://yagpdb.xyz)
+- [Support Server](https://discord.gg/4udtcA5)
+- [Documentation](https://docs.yagpdb.xyz)
 
 ## Selfhosting
 
@@ -31,12 +31,12 @@ There are two ways of selfhosting this bot: [standalone](#Hosting-Standalone), o
 
 Directions on creating an app and getting credentials may be found
 [here](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
-	@@ -37,129 +36,82 @@ via the Control Panel.
+@@ -37,129 +36,82 @@ via the Control Panel.
 
 In addition, you will need to add the following urls to the bot's "REDIRECT URI(S)" configuration:
 
-* <https://YourHostNameHere/confirm_login>
-* <https://YourHostNameHere/manage>
+- <https://YourHostNameHere/confirm_login>
+- <https://YourHostNameHere/manage>
 
 ### Hosting Dockerized
 
@@ -72,9 +72,9 @@ docker-compose -f yagpdb/yagpdb_docker/docker-compose.dev.yml up
 
 #### Requirements
 
-* Golang 1.16 or above
-* PostgreSQL 9.6 or later
-* Redis version 5.x or later
+- Golang 1.16 or above
+- PostgreSQL 9.6 or later
+- Redis version 5.x or later
 
 #### Setting Up
 
@@ -84,7 +84,7 @@ In postgres, create a new user `yagpdb` and database `yagpdb` and grant that use
 
 Set up the environment variables with the credentials from the [general setup](#General-Bot-Setup). See the [sample env file](cmd/yagpdb/sampleenvfile) for a list of all enviroment variables.
 
-Afterwards, run the build script located at `/cmd/yagpdb/build.sh` and  start the bot using `./yagpdb`:
+Afterwards, run the build script located at `/cmd/yagpdb/build.sh` and start the bot using `./yagpdb`:
 
 ```shell
 git clone https://github.com/botlabs-gg/yagpdb

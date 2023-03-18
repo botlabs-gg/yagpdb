@@ -1,33 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Q mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/edit/matchbrackets.js"></script>
 <script src="q.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Q</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Q</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Q mode</h2>
+  <h2>Q mode</h2>
 
-
-<div><textarea id="code" name="code">
+  <div>
+    <textarea id="code" name="code">
 / utilities to quickly load a csv file - for more exhaustive analysis of the csv contents see csvguess.q
 / 2009.09.20 - updated to match latest csvguess.q 
 
@@ -131,14 +140,16 @@ bulkload:{[file;info]
 	.csv.fs2[{[file;loadhdrs;loadfmts] `DATA insert $[count DATA;flip loadhdrs!(loadfmts;.csv.DELIM)0:file;loadhdrs xcol(loadfmts;enlist .csv.DELIM)0:file]}[file;loadhdrs;loadfmts]];
 	count DATA}
 @[.:;"\\l csvutil.custom.q";::]; / save your custom settings in csvutil.custom.q to override those set at the beginning of the file 
-</textarea></div>
+</textarea
+    >
+  </div>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        matchBrackets: true
-      });
-    </script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      matchBrackets: true,
+    });
+  </script>
 
-    <p><strong>MIME type defined:</strong> <code>text/x-q</code>.</p>
-  </article>
+  <p><strong>MIME type defined:</strong> <code>text/x-q</code>.</p>
+</article>

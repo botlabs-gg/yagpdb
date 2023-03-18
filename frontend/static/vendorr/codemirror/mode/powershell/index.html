@@ -1,32 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>CodeMirror: Powershell mode</title>
-    <link rel="stylesheet" href="../../doc/docs.css">
-    <link rel="stylesheet" href="../../lib/codemirror.css">
+    <link rel="stylesheet" href="../../doc/docs.css" />
+    <link rel="stylesheet" href="../../lib/codemirror.css" />
     <script src="../../lib/codemirror.js"></script>
     <script src="powershell.js"></script>
-    <style>.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
+    <style>
+      .CodeMirror {
+        border-top: 1px solid black;
+        border-bottom: 1px solid black;
+      }
+    </style>
   </head>
   <body>
-    <div id=nav>
-      <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+    <div id="nav">
+      <a href="http://codemirror.net"
+        ><h1>CodeMirror</h1>
+        <img id="logo" src="../../doc/logo.png"
+      /></a>
 
       <ul>
-        <li><a href="../../index.html">Home</a>
-        <li><a href="../../doc/manual.html">Manual</a>
-        <li><a href="https://github.com/codemirror/codemirror">Code</a>
+        <li><a href="../../index.html">Home</a></li>
+        <li><a href="../../doc/manual.html">Manual</a></li>
+        <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
       </ul>
+
       <ul>
-        <li><a href="../index.html">Language modes</a>
-        <li><a class=active href="#">JavaScript</a>
+        <li><a href="../index.html">Language modes</a></li>
+        <li><a class="active" href="#">JavaScript</a></li>
       </ul>
     </div>
     <article>
       <h2>PowerShell mode</h2>
 
-      <div><textarea id="code" name="code">
+      <div>
+        <textarea id="code" name="code">
 # Number Literals
 0 12345
 12kb 12mb 12gB 12Tb 12PB 12L 12D 12lkb 12dtb
@@ -187,18 +197,23 @@ Wait-Event Wait-Job Wait-Process Where-Object Write-Debug Write-Error Write-Even
 Write-Host Write-Output Write-Progress Write-Verbose Write-Warning
 X:
 Y:
-Z:</textarea></div>
+Z:</textarea
+        >
+      </div>
       <script>
         var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
           mode: "powershell",
           lineNumbers: true,
           indentUnit: 4,
           tabMode: "shift",
-          matchBrackets: true
+          matchBrackets: true,
         });
       </script>
 
-      <p><strong>MIME types defined:</strong> <code>application/x-powershell</code>.</p>
+      <p>
+        <strong>MIME types defined:</strong>
+        <code>application/x-powershell</code>.
+      </p>
     </article>
   </body>
 </html>

@@ -1,33 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Tiki wiki mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
-<link rel="stylesheet" href="tiki.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
+<link rel="stylesheet" href="tiki.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="tiki.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Tiki wiki</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Tiki wiki</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Tiki wiki mode</h2>
+  <h2>Tiki wiki mode</h2>
 
-
-<div><textarea id="code" name="code">
+  <div>
+    <textarea id="code" name="code">
 Headings
 !Header 1
 !!Header 2
@@ -83,13 +92,14 @@ Plugin Body
 
 Plugin (inline):
 {plugin attr="my attr"}
-</textarea></div>
+</textarea
+    >
+  </div>
 
-<script type="text/javascript">
-	var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        mode: 'tiki',      
-        lineNumbers: true
+  <script type="text/javascript">
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: "tiki",
+      lineNumbers: true,
     });
-</script>
-
+  </script>
 </article>

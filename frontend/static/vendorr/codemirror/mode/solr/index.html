@@ -1,10 +1,10 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Solr mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="solr.js"></script>
 <style type="text/css">
@@ -17,17 +17,21 @@
     color: orange;
   }
 </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Solr</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Solr</a></li>
   </ul>
 </div>
 
@@ -35,7 +39,8 @@
   <h2>Solr mode</h2>
 
   <div>
-    <textarea id="code" name="code">author:Camus
+    <textarea id="code" name="code">
+author:Camus
 
 title:"The Rebel" and author:Camus
 
@@ -43,13 +48,14 @@ philosophy:Existentialism -author:Kierkegaard
 
 hardToSpell:Dostoevsky~
 
-published:[194* TO 1960] and author:(Sartre or "Simone de Beauvoir")</textarea>
+published:[194* TO 1960] and author:(Sartre or "Simone de Beauvoir")</textarea
+    >
   </div>
 
   <script>
     var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-      mode: 'solr',
-      lineNumbers: true
+      mode: "solr",
+      lineNumbers: true,
     });
   </script>
 

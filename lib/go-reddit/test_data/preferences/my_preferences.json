@@ -34,9 +34,7 @@
   "min_link_score": -4,
   "media_preview": "subreddit",
   "enable_default_themes": false,
-  "content_langs": [
-    "en"
-  ],
+  "content_langs": ["en"],
   "show_promote": null,
   "min_comment_score": -4,
   "public_votes": false,

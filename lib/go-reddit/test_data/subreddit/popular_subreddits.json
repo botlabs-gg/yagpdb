@@ -21,10 +21,7 @@
           "collapse_deleted_comments": true,
           "over18": false,
           "public_description_html": "&lt;!-- SC_OFF --&gt;&lt;div class=\"md\"&gt;&lt;p&gt;&lt;a href=\"/r/AskReddit\"&gt;/r/AskReddit&lt;/a&gt; is the place to ask and answer thought-provoking questions.&lt;/p&gt;\n&lt;/div&gt;&lt;!-- SC_ON --&gt;",
-          "icon_size": [
-            256,
-            256
-          ],
+          "icon_size": [256, 256],
           "suggested_comment_sort": null,
           "icon_img": "http://b.thumbs.redditmedia.com/EndDxMGB-FTZ2MGtjepQ06cQEkZw_YQAsOUudpb9nSQ.png",
           "header_title": "Ass Creddit",
@@ -33,10 +30,7 @@
           "submit_link_label": null,
           "accounts_active": null,
           "public_traffic": true,
-          "header_size": [
-            125,
-            73
-          ],
+          "header_size": [125, 73],
           "subscribers": 13679238,
           "submit_text_label": "Ask A New Question",
           "lang": "en",
@@ -48,10 +42,7 @@
           "quarantine": false,
           "hide_ads": false,
           "created_utc": 1201233135,
-          "banner_size": [
-            1280,
-            384
-          ],
+          "banner_size": [1280, 384],
           "user_is_contributor": null,
           "public_description": "/r/AskReddit is the place to ask and answer thought-provoking questions.",
           "show_media_preview": true,
@@ -88,10 +79,7 @@
           "submit_link_label": null,
           "accounts_active": null,
           "public_traffic": true,
-          "header_size": [
-            147,
-            95
-          ],
+          "header_size": [147, 95],
           "subscribers": 229585,
           "submit_text_label": null,
           "lang": "en",
@@ -140,10 +128,7 @@
           "submit_link_label": null,
           "accounts_active": null,
           "public_traffic": true,
-          "header_size": [
-            21,
-            16
-          ],
+          "header_size": [21, 16],
           "subscribers": 3153747,
           "submit_text_label": null,
           "lang": "en",

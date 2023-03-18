@@ -1,31 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: D mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/edit/matchbrackets.js"></script>
 <script src="d.js"></script>
-<style>.CodeMirror {border: 2px inset #dee;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    border: 2px inset #dee;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">D</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">D</a></li>
   </ul>
 </div>
 
 <article>
-<h2>D mode</h2>
-<form><textarea id="code" name="code">
+  <h2>D mode</h2>
+  <form>
+    <textarea id="code" name="code">
 /* D demo code // copied from phobos/sd/metastrings.d */
 // Written in the D programming language.
 
@@ -255,19 +264,24 @@ deprecated alias parseUinteger ParseUinteger;
 /// Ditto
 deprecated alias parseUinteger ParseInteger;
 
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        matchBrackets: true,
-        indentUnit: 4,
-        mode: "text/x-d"
-      });
-    </script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      matchBrackets: true,
+      indentUnit: 4,
+      mode: "text/x-d",
+    });
+  </script>
 
-    <p>Simple mode that handle D-Syntax (<a href="http://www.dlang.org">DLang Homepage</a>).</p>
+  <p>
+    Simple mode that handle D-Syntax (<a href="http://www.dlang.org"
+      >DLang Homepage</a
+    >).
+  </p>
 
-    <p><strong>MIME types defined:</strong> <code>text/x-d</code>
-    .</p>
-  </article>
+  <p><strong>MIME types defined:</strong> <code>text/x-d</code> .</p>
+</article>

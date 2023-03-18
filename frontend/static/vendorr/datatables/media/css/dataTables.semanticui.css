@@ -8,13 +8,17 @@ table.dataTable.table thead th,
 table.dataTable.table thead td {
   position: relative;
 }
-table.dataTable.table thead th.sorting, table.dataTable.table thead th.sorting_asc, table.dataTable.table thead th.sorting_desc,
+table.dataTable.table thead th.sorting,
+table.dataTable.table thead th.sorting_asc,
+table.dataTable.table thead th.sorting_desc,
 table.dataTable.table thead td.sorting,
 table.dataTable.table thead td.sorting_asc,
 table.dataTable.table thead td.sorting_desc {
   padding-right: 20px;
 }
-table.dataTable.table thead th.sorting:after, table.dataTable.table thead th.sorting_asc:after, table.dataTable.table thead th.sorting_desc:after,
+table.dataTable.table thead th.sorting:after,
+table.dataTable.table thead th.sorting_asc:after,
+table.dataTable.table thead th.sorting_desc:after,
 table.dataTable.table thead td.sorting:after,
 table.dataTable.table thead td.sorting_asc:after,
 table.dataTable.table thead td.sorting_desc:after {

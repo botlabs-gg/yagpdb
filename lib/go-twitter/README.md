@@ -1,29 +1,30 @@
 # go-twitter [![Build Status](https://travis-ci.org/dghubble/go-twitter.svg?branch=master)](https://travis-ci.org/dghubble/go-twitter) [![GoDoc](https://godoc.org/github.com/dghubble/go-twitter?status.svg)](https://godoc.org/github.com/dghubble/go-twitter)
+
 <img align="right" src="https://storage.googleapis.com/dghubble/gopher-on-bird.png">
 
 go-twitter is a Go client library for the [Twitter API](https://dev.twitter.com/rest/public). Check the [usage](#usage) section or try the [examples](/examples) to see how to access the Twitter API.
 
 ### Features
 
-* Twitter REST API:
-    * Accounts
-    * DirectMessageEvents
-    * Favorites
-    * Friends
-    * Friendships
-    * Followers
-    * Lists
-    * PremiumSearch
-    * RateLimits
-    * Search
-    * Statuses
-    * Timelines
-    * Users
-* Twitter Streaming API
-    * Public Streams
-    * User Streams
-    * Site Streams
-    * Firehose Streams
+- Twitter REST API:
+  - Accounts
+  - DirectMessageEvents
+  - Favorites
+  - Friends
+  - Friendships
+  - Followers
+  - Lists
+  - PremiumSearch
+  - RateLimits
+  - Search
+  - Statuses
+  - Timelines
+  - Users
+- Twitter Streaming API
+  - Public Streams
+  - User Streams
+  - Site Streams
+  - Firehose Streams
 
 ## Install
 
@@ -110,7 +111,7 @@ params := &twitter.StreamUserParams{
 stream, err := client.Streams.User(params)
 ```
 
-*Note* To see Direct Message events, your consumer application must ask Users for read/write/DM access to their account.
+_Note_ To see Direct Message events, your consumer application must ask Users for read/write/DM access to their account.
 
 #### Sample
 
@@ -143,7 +144,7 @@ If you run this in your main goroutine, it will receive messages forever unless 
 
 ### Demux
 
-Receiving messages of type `interface{}` isn't very nice, it means you'll have to type switch and probably filter out message types you don't care about. 
+Receiving messages of type `interface{}` isn't very nice, it means you'll have to type switch and probably filter out message types you don't care about.
 
 For this, try a `Demux`, like `SwitchDemux`, which receives messages and type switches them to call functions with typed messages.
 
@@ -171,7 +172,7 @@ demux.HandleChan(stream.Messages)
 
 ### Stopping
 
-The `Stream` will stop itself if the stream disconnects and retrying produces unrecoverable errors. When this occurs, `Stream` will close the `stream.Messages` channel, so execution will break out of any message *for range* loops.
+The `Stream` will stop itself if the stream disconnects and retrying produces unrecoverable errors. When this occurs, `Stream` will close the `stream.Messages` channel, so execution will break out of any message _for range_ loops.
 
 When you are finished receiving from a `Stream`, call `Stop()` which closes the connection, channels, and stops the goroutine **before** returning. This ensures resources are properly cleaned up.
 
@@ -244,7 +245,7 @@ If no user auth context is needed, make requests as your application with applic
 import (
     "github.com/dghubble/go-twitter/twitter"
     "golang.org/x/oauth2"
-    "golang.org/x/oauth2/clientcredentials"    
+    "golang.org/x/oauth2/clientcredentials"
 )
 
 // oauth2 configures a client that uses app credentials to keep a fresh token
@@ -257,15 +258,15 @@ config := &clientcredentials.Config{
 httpClient := config.Client(oauth2.NoContext)
 
 // Twitter client
-client := twitter.NewClient(httpClient)    
+client := twitter.NewClient(httpClient)
 ```
 
 To implement Login with Twitter for web or mobile, see the gologin [package](https://github.com/dghubble/gologin) and [examples](https://github.com/dghubble/gologin/tree/master/examples/twitter).
 
 ## Roadmap
 
-* Support gzipped streams
-* Auto-stop streams in the event of long stalls
+- Support gzipped streams
+- Auto-stop streams in the event of long stalls
 
 ## Contributing
 

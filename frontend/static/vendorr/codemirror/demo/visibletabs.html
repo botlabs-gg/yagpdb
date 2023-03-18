@@ -1,36 +1,44 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Visible tabs demo</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../doc/docs.css" />
 
-<link rel="stylesheet" href="../lib/codemirror.css">
+<link rel="stylesheet" href="../lib/codemirror.css" />
 <script src="../lib/codemirror.js"></script>
 <script src="../mode/clike/clike.js"></script>
 <style type="text/css">
-      .CodeMirror {border-top: 1px solid #eee; border-bottom: 1px solid #eee;}
-      .cm-tab {
-         background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAMCAYAAAAkuj5RAAAAAXNSR0IArs4c6QAAAGFJREFUSMft1LsRQFAQheHPowAKoACx3IgEKtaEHujDjORSgWTH/ZOdnZOcM/sgk/kFFWY0qV8foQwS4MKBCS3qR6ixBJvElOobYAtivseIE120FaowJPN75GMu8j/LfMwNjh4HUpwg4LUAAAAASUVORK5CYII=);
-         background-position: right;
-         background-repeat: no-repeat;
-      }
-    </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../doc/logo.png"></a>
+  .CodeMirror {
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+  }
+  .cm-tab {
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAMCAYAAAAkuj5RAAAAAXNSR0IArs4c6QAAAGFJREFUSMft1LsRQFAQheHPowAKoACx3IgEKtaEHujDjORSgWTH/ZOdnZOcM/sgk/kFFWY0qV8foQwS4MKBCS3qR6ixBJvElOobYAtivseIE120FaowJPN75GMu8j/LfMwNjh4HUpwg4LUAAAAASUVORK5CYII=);
+    background-position: right;
+    background-repeat: no-repeat;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../index.html">Home</a>
-    <li><a href="../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a class=active href="#">Visible tabs</a>
+    <li><a class="active" href="#">Visible tabs</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Visible tabs demo</h2>
-<form><textarea id="code" name="code">
+  <h2>Visible tabs demo</h2>
+  <form>
+    <textarea id="code" name="code">
 #include "syscalls.h"
 /* getchar:  simple buffered version */
 int getchar(void)
@@ -44,19 +52,22 @@ int getchar(void)
 	}
 	return (--n >= 0) ? (unsigned char) *bufp++ : EOF;
 }
-</textarea></form>
+</textarea
+    >
+  </form>
 
-<p>Tabs inside the editor are spans with the
-class <code>cm-tab</code>, and can be styled.</p>
+  <p>
+    Tabs inside the editor are spans with the class <code>cm-tab</code>, and can
+    be styled.
+  </p>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        tabSize: 4,
-        indentUnit: 4,
-        indentWithTabs: true,
-        mode: "text/x-csrc"
-      });
-    </script>
-
-  </article>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      tabSize: 4,
+      indentUnit: 4,
+      indentWithTabs: true,
+      mode: "text/x-csrc",
+    });
+  </script>
+</article>

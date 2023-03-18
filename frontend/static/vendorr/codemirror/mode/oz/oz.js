@@ -1,252 +1,306 @@
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
-(function(mod) {
-  if (typeof exports == "object" && typeof module == "object") // CommonJS
+(function (mod) {
+  if (typeof exports == "object" && typeof module == "object")
+    // CommonJS
     mod(require("../../lib/codemirror"));
-  else if (typeof define == "function" && define.amd) // AMD
+  else if (typeof define == "function" && define.amd)
+    // AMD
     define(["../../lib/codemirror"], mod);
-  else // Plain browser env
-    mod(CodeMirror);
-})(function(CodeMirror) {
-"use strict";
+  // Plain browser env
+  else mod(CodeMirror);
+})(function (CodeMirror) {
+  "use strict";
 
-CodeMirror.defineMode("oz", function (conf) {
-
-  function wordRegexp(words) {
-    return new RegExp("^((" + words.join(")|(") + "))\\b");
-  }
-
-  var singleOperators = /[\^@!\|<>#~\.\*\-\+\\/,=]/;
-  var doubleOperators = /(<-)|(:=)|(=<)|(>=)|(<=)|(<:)|(>:)|(=:)|(\\=)|(\\=:)|(!!)|(==)|(::)/;
-  var tripleOperators = /(:::)|(\.\.\.)|(=<:)|(>=:)/;
-
-  var middle = ["in", "then", "else", "of", "elseof", "elsecase", "elseif", "catch",
-    "finally", "with", "require", "prepare", "import", "export", "define", "do"];
-  var end = ["end"];
-
-  var atoms = wordRegexp(["true", "false", "nil", "unit"]);
-  var commonKeywords = wordRegexp(["andthen", "at", "attr", "declare", "feat", "from", "lex",
-    "mod", "mode", "orelse", "parser", "prod", "prop", "scanner", "self", "syn", "token"]);
-  var openingKeywords = wordRegexp(["local", "proc", "fun", "case", "class", "if", "cond", "or", "dis",
-    "choice", "not", "thread", "try", "raise", "lock", "for", "suchthat", "meth", "functor"]);
-  var middleKeywords = wordRegexp(middle);
-  var endKeywords = wordRegexp(end);
-
-  // Tokenizers
-  function tokenBase(stream, state) {
-    if (stream.eatSpace()) {
-      return null;
+  CodeMirror.defineMode("oz", function (conf) {
+    function wordRegexp(words) {
+      return new RegExp("^((" + words.join(")|(") + "))\\b");
     }
 
-    // Brackets
-    if(stream.match(/[{}]/)) {
-      return "bracket";
-    }
+    var singleOperators = /[\^@!\|<>#~\.\*\-\+\\/,=]/;
+    var doubleOperators =
+      /(<-)|(:=)|(=<)|(>=)|(<=)|(<:)|(>:)|(=:)|(\\=)|(\\=:)|(!!)|(==)|(::)/;
+    var tripleOperators = /(:::)|(\.\.\.)|(=<:)|(>=:)/;
 
-    // Special [] keyword
-    if (stream.match(/(\[])/)) {
-        return "keyword"
-    }
+    var middle = [
+      "in",
+      "then",
+      "else",
+      "of",
+      "elseof",
+      "elsecase",
+      "elseif",
+      "catch",
+      "finally",
+      "with",
+      "require",
+      "prepare",
+      "import",
+      "export",
+      "define",
+      "do",
+    ];
+    var end = ["end"];
 
-    // Operators
-    if (stream.match(tripleOperators) || stream.match(doubleOperators)) {
-      return "operator";
-    }
+    var atoms = wordRegexp(["true", "false", "nil", "unit"]);
+    var commonKeywords = wordRegexp([
+      "andthen",
+      "at",
+      "attr",
+      "declare",
+      "feat",
+      "from",
+      "lex",
+      "mod",
+      "mode",
+      "orelse",
+      "parser",
+      "prod",
+      "prop",
+      "scanner",
+      "self",
+      "syn",
+      "token",
+    ]);
+    var openingKeywords = wordRegexp([
+      "local",
+      "proc",
+      "fun",
+      "case",
+      "class",
+      "if",
+      "cond",
+      "or",
+      "dis",
+      "choice",
+      "not",
+      "thread",
+      "try",
+      "raise",
+      "lock",
+      "for",
+      "suchthat",
+      "meth",
+      "functor",
+    ]);
+    var middleKeywords = wordRegexp(middle);
+    var endKeywords = wordRegexp(end);
 
-    // Atoms
-    if(stream.match(atoms)) {
-      return 'atom';
-    }
+    // Tokenizers
+    function tokenBase(stream, state) {
+      if (stream.eatSpace()) {
+        return null;
+      }
 
-    // Opening keywords
-    var matched = stream.match(openingKeywords);
-    if (matched) {
-      if (!state.doInCurrentLine)
-        state.currentIndent++;
-      else
-        state.doInCurrentLine = false;
+      // Brackets
+      if (stream.match(/[{}]/)) {
+        return "bracket";
+      }
 
-      // Special matching for signatures
-      if(matched[0] == "proc" || matched[0] == "fun")
-        state.tokenize = tokenFunProc;
-      else if(matched[0] == "class")
-        state.tokenize = tokenClass;
-      else if(matched[0] == "meth")
-        state.tokenize = tokenMeth;
+      // Special [] keyword
+      if (stream.match(/(\[])/)) {
+        return "keyword";
+      }
 
-      return 'keyword';
-    }
+      // Operators
+      if (stream.match(tripleOperators) || stream.match(doubleOperators)) {
+        return "operator";
+      }
 
-    // Middle and other keywords
-    if (stream.match(middleKeywords) || stream.match(commonKeywords)) {
-      return "keyword"
-    }
+      // Atoms
+      if (stream.match(atoms)) {
+        return "atom";
+      }
 
-    // End keywords
-    if (stream.match(endKeywords)) {
-      state.currentIndent--;
-      return 'keyword';
-    }
+      // Opening keywords
+      var matched = stream.match(openingKeywords);
+      if (matched) {
+        if (!state.doInCurrentLine) state.currentIndent++;
+        else state.doInCurrentLine = false;
 
-    // Eat the next char for next comparisons
-    var ch = stream.next();
+        // Special matching for signatures
+        if (matched[0] == "proc" || matched[0] == "fun")
+          state.tokenize = tokenFunProc;
+        else if (matched[0] == "class") state.tokenize = tokenClass;
+        else if (matched[0] == "meth") state.tokenize = tokenMeth;
 
-    // Strings
-    if (ch == '"' || ch == "'") {
-      state.tokenize = tokenString(ch);
-      return state.tokenize(stream, state);
-    }
+        return "keyword";
+      }
 
-    // Numbers
-    if (/[~\d]/.test(ch)) {
-      if (ch == "~") {
-        if(! /^[0-9]/.test(stream.peek()))
-          return null;
-        else if (( stream.next() == "0" && stream.match(/^[xX][0-9a-fA-F]+/)) || stream.match(/^[0-9]*(\.[0-9]+)?([eE][~+]?[0-9]+)?/))
+      // Middle and other keywords
+      if (stream.match(middleKeywords) || stream.match(commonKeywords)) {
+        return "keyword";
+      }
+
+      // End keywords
+      if (stream.match(endKeywords)) {
+        state.currentIndent--;
+        return "keyword";
+      }
+
+      // Eat the next char for next comparisons
+      var ch = stream.next();
+
+      // Strings
+      if (ch == '"' || ch == "'") {
+        state.tokenize = tokenString(ch);
+        return state.tokenize(stream, state);
+      }
+
+      // Numbers
+      if (/[~\d]/.test(ch)) {
+        if (ch == "~") {
+          if (!/^[0-9]/.test(stream.peek())) return null;
+          else if (
+            (stream.next() == "0" && stream.match(/^[xX][0-9a-fA-F]+/)) ||
+            stream.match(/^[0-9]*(\.[0-9]+)?([eE][~+]?[0-9]+)?/)
+          )
+            return "number";
+        }
+
+        if (
+          (ch == "0" && stream.match(/^[xX][0-9a-fA-F]+/)) ||
+          stream.match(/^[0-9]*(\.[0-9]+)?([eE][~+]?[0-9]+)?/)
+        )
           return "number";
+
+        return null;
       }
 
-      if ((ch == "0" && stream.match(/^[xX][0-9a-fA-F]+/)) || stream.match(/^[0-9]*(\.[0-9]+)?([eE][~+]?[0-9]+)?/))
-        return "number";
-
-      return null;
-    }
-
-    // Comments
-    if (ch == "%") {
-      stream.skipToEnd();
-      return 'comment';
-    }
-    else if (ch == "/") {
-      if (stream.eat("*")) {
-        state.tokenize = tokenComment;
-        return tokenComment(stream, state);
+      // Comments
+      if (ch == "%") {
+        stream.skipToEnd();
+        return "comment";
+      } else if (ch == "/") {
+        if (stream.eat("*")) {
+          state.tokenize = tokenComment;
+          return tokenComment(stream, state);
+        }
       }
+
+      // Single operators
+      if (singleOperators.test(ch)) {
+        return "operator";
+      }
+
+      // If nothing match, we skip the entire alphanumerical block
+      stream.eatWhile(/\w/);
+
+      return "variable";
     }
 
-    // Single operators
-    if(singleOperators.test(ch)) {
-      return "operator";
-    }
-
-    // If nothing match, we skip the entire alphanumerical block
-    stream.eatWhile(/\w/);
-
-    return "variable";
-  }
-
-  function tokenClass(stream, state) {
-    if (stream.eatSpace()) {
-      return null;
-    }
-    stream.match(/([A-Z][A-Za-z0-9_]*)|(`.+`)/);
-    state.tokenize = tokenBase;
-    return "variable-3"
-  }
-
-  function tokenMeth(stream, state) {
-    if (stream.eatSpace()) {
-      return null;
-    }
-    stream.match(/([a-zA-Z][A-Za-z0-9_]*)|(`.+`)/);
-    state.tokenize = tokenBase;
-    return "def"
-  }
-
-  function tokenFunProc(stream, state) {
-    if (stream.eatSpace()) {
-      return null;
-    }
-
-    if(!state.hasPassedFirstStage && stream.eat("{")) {
-      state.hasPassedFirstStage = true;
-      return "bracket";
-    }
-    else if(state.hasPassedFirstStage) {
-      stream.match(/([A-Z][A-Za-z0-9_]*)|(`.+`)|\$/);
-      state.hasPassedFirstStage = false;
+    function tokenClass(stream, state) {
+      if (stream.eatSpace()) {
+        return null;
+      }
+      stream.match(/([A-Z][A-Za-z0-9_]*)|(`.+`)/);
       state.tokenize = tokenBase;
-      return "def"
+      return "variable-3";
     }
-    else {
-      state.tokenize = tokenBase;
-      return null;
-    }
-  }
 
-  function tokenComment(stream, state) {
-    var maybeEnd = false, ch;
-    while (ch = stream.next()) {
-      if (ch == "/" && maybeEnd) {
+    function tokenMeth(stream, state) {
+      if (stream.eatSpace()) {
+        return null;
+      }
+      stream.match(/([a-zA-Z][A-Za-z0-9_]*)|(`.+`)/);
+      state.tokenize = tokenBase;
+      return "def";
+    }
+
+    function tokenFunProc(stream, state) {
+      if (stream.eatSpace()) {
+        return null;
+      }
+
+      if (!state.hasPassedFirstStage && stream.eat("{")) {
+        state.hasPassedFirstStage = true;
+        return "bracket";
+      } else if (state.hasPassedFirstStage) {
+        stream.match(/([A-Z][A-Za-z0-9_]*)|(`.+`)|\$/);
+        state.hasPassedFirstStage = false;
         state.tokenize = tokenBase;
-        break;
+        return "def";
+      } else {
+        state.tokenize = tokenBase;
+        return null;
       }
-      maybeEnd = (ch == "*");
     }
-    return "comment";
-  }
 
-  function tokenString(quote) {
-    return function (stream, state) {
-      var escaped = false, next, end = false;
-      while ((next = stream.next()) != null) {
-        if (next == quote && !escaped) {
-          end = true;
+    function tokenComment(stream, state) {
+      var maybeEnd = false,
+        ch;
+      while ((ch = stream.next())) {
+        if (ch == "/" && maybeEnd) {
+          state.tokenize = tokenBase;
           break;
         }
-        escaped = !escaped && next == "\\";
+        maybeEnd = ch == "*";
       }
-      if (end || !escaped)
-        state.tokenize = tokenBase;
-      return "string";
-    };
-  }
+      return "comment";
+    }
 
-  function buildElectricInputRegEx() {
-    // Reindentation should occur on [] or on a match of any of
-    // the block closing keywords, at the end of a line.
-    var allClosings = middle.concat(end);
-    return new RegExp("[\\[\\]]|(" + allClosings.join("|") + ")$");
-  }
-
-  return {
-
-    startState: function () {
-      return {
-        tokenize: tokenBase,
-        currentIndent: 0,
-        doInCurrentLine: false,
-        hasPassedFirstStage: false
+    function tokenString(quote) {
+      return function (stream, state) {
+        var escaped = false,
+          next,
+          end = false;
+        while ((next = stream.next()) != null) {
+          if (next == quote && !escaped) {
+            end = true;
+            break;
+          }
+          escaped = !escaped && next == "\\";
+        }
+        if (end || !escaped) state.tokenize = tokenBase;
+        return "string";
       };
-    },
+    }
 
-    token: function (stream, state) {
-      if (stream.sol())
-        state.doInCurrentLine = 0;
+    function buildElectricInputRegEx() {
+      // Reindentation should occur on [] or on a match of any of
+      // the block closing keywords, at the end of a line.
+      var allClosings = middle.concat(end);
+      return new RegExp("[\\[\\]]|(" + allClosings.join("|") + ")$");
+    }
 
-      return state.tokenize(stream, state);
-    },
+    return {
+      startState: function () {
+        return {
+          tokenize: tokenBase,
+          currentIndent: 0,
+          doInCurrentLine: false,
+          hasPassedFirstStage: false,
+        };
+      },
 
-    indent: function (state, textAfter) {
-      var trueText = textAfter.replace(/^\s+|\s+$/g, '');
+      token: function (stream, state) {
+        if (stream.sol()) state.doInCurrentLine = 0;
 
-      if (trueText.match(endKeywords) || trueText.match(middleKeywords) || trueText.match(/(\[])/))
-        return conf.indentUnit * (state.currentIndent - 1);
+        return state.tokenize(stream, state);
+      },
 
-      if (state.currentIndent < 0)
-        return 0;
+      indent: function (state, textAfter) {
+        var trueText = textAfter.replace(/^\s+|\s+$/g, "");
 
-      return state.currentIndent * conf.indentUnit;
-    },
-    fold: "indent",
-    electricInput: buildElectricInputRegEx(),
-    lineComment: "%",
-    blockCommentStart: "/*",
-    blockCommentEnd: "*/"
-  };
-});
+        if (
+          trueText.match(endKeywords) ||
+          trueText.match(middleKeywords) ||
+          trueText.match(/(\[])/)
+        )
+          return conf.indentUnit * (state.currentIndent - 1);
 
-CodeMirror.defineMIME("text/x-oz", "oz");
+        if (state.currentIndent < 0) return 0;
 
+        return state.currentIndent * conf.indentUnit;
+      },
+      fold: "indent",
+      electricInput: buildElectricInputRegEx(),
+      lineComment: "%",
+      blockCommentStart: "/*",
+      blockCommentEnd: "*/",
+    };
+  });
+
+  CodeMirror.defineMIME("text/x-oz", "oz");
 });

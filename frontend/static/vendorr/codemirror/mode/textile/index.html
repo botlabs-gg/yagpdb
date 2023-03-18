@@ -1,30 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Textile mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="textile.js"></script>
-<style>.CodeMirror {background: #f8f8f8;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    background: #f8f8f8;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/marijnh/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/marijnh/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class="active" href="#">Textile</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Textile</a></li>
   </ul>
 </div>
 
 <article>
-    <h2>Textile mode</h2>
-    <form><textarea id="code" name="code">
+  <h2>Textile mode</h2>
+  <form>
+    <textarea id="code" name="code">
 h1. Textile Mode
 
 A paragraph without formatting.
@@ -176,16 +185,21 @@ Some block layouts are simply textile versions of HTML tags with the same name, 
   <p>Hello!</p>
 </section>
 
-</textarea></form>
-    <script>
-        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-            lineNumbers: true,
-            mode: "text/x-textile"
-        });
-    </script>
+</textarea
+    >
+  </form>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      mode: "text/x-textile",
+    });
+  </script>
 
-    <p><strong>MIME types defined:</strong> <code>text/x-textile</code>.</p>
+  <p><strong>MIME types defined:</strong> <code>text/x-textile</code>.</p>
 
-    <p><strong>Parsing/Highlighting Tests:</strong> <a href="../../test/index.html#textile_*">normal</a>,  <a href="../../test/index.html#verbose,textile_*">verbose</a>.</p>
-
+  <p>
+    <strong>Parsing/Highlighting Tests:</strong>
+    <a href="../../test/index.html#textile_*">normal</a>,
+    <a href="../../test/index.html#verbose,textile_*">verbose</a>.
+  </p>
 </article>

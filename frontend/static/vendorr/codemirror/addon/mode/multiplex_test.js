@@ -1,17 +1,17 @@
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
-(function() {
-  CodeMirror.defineMode("markdown_with_stex", function(){
+(function () {
+  CodeMirror.defineMode("markdown_with_stex", function () {
     var inner = CodeMirror.getMode({}, "stex");
     var outer = CodeMirror.getMode({}, "markdown");
 
     var innerOptions = {
-      open: '$',
-      close: '$',
+      open: "$",
+      close: "$",
       mode: inner,
-      delimStyle: 'delim',
-      innerStyle: 'inner'
+      delimStyle: "delim",
+      innerStyle: "inner",
     };
 
     return CodeMirror.multiplexingMode(outer, innerOptions);
@@ -24,10 +24,12 @@
       name,
       mode,
       Array.prototype.slice.call(arguments, 1),
-      'multiplexing');
+      "multiplexing"
+    );
   }
 
   MT(
     "stexInsideMarkdown",
-    "[strong **Equation:**] [delim&delim-open $][inner&tag \\pi][delim&delim-close $]");
+    "[strong **Equation:**] [delim&delim-open $][inner&tag \\pi][delim&delim-close $]"
+  );
 })();

@@ -1,29 +1,34 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Haskell-literate mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="haskell-literate.js"></script>
 <script src="../haskell/haskell.js"></script>
-<style>.CodeMirror {
-  border-top    : 1px solid #DDDDDD;
-  border-bottom : 1px solid #DDDDDD;
-}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo
-                                                          src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    border-top: 1px solid #dddddd;
+    border-bottom: 1px solid #dddddd;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">Haskell-literate</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">Haskell-literate</a></li>
   </ul>
 </div>
 
@@ -269,14 +274,18 @@ Utilities
     </textarea>
   </form>
 
-  <p><strong>MIME types
-  defined:</strong> <code>text/x-literate-haskell</code>.</p>
+  <p>
+    <strong>MIME types defined:</strong> <code>text/x-literate-haskell</code>.
+  </p>
 
-  <p>Parser configuration parameters recognized: <code>base</code> to
-  set the base mode (defaults to <code>"haskell"</code>).</p>
+  <p>
+    Parser configuration parameters recognized: <code>base</code> to set the
+    base mode (defaults to <code>"haskell"</code>).
+  </p>
 
   <script>
-    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {mode: "haskell-literate"});
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: "haskell-literate",
+    });
   </script>
-
 </article>

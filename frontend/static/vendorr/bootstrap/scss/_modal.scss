@@ -3,7 +3,6 @@
 // .modal-dialog    - positioning shell for the actual modal
 // .modal-content   - actual modal w/ bg and corners and stuff
 
-
 // Kill the scroll on the body
 .modal-open {
   overflow: hidden;
@@ -84,8 +83,12 @@
   background-color: $modal-backdrop-bg;
 
   // Fade for backdrop
-  &.fade { opacity: 0; }
-  &.show { opacity: $modal-backdrop-opacity; }
+  &.fade {
+    opacity: 0;
+  }
+  &.show {
+    opacity: $modal-backdrop-opacity;
+  }
 }
 
 // Modal header
@@ -101,7 +104,8 @@
   .close {
     padding: $modal-header-padding;
     // auto on the left force icon to the right even when there is no .modal-title
-    margin: (-$modal-header-padding) (-$modal-header-padding) (-$modal-header-padding) auto;
+    margin: (-$modal-header-padding) (-$modal-header-padding)
+      (-$modal-header-padding) auto;
   }
 }
 
@@ -130,8 +134,12 @@
   border-top: $modal-footer-border-width solid $modal-footer-border-color;
 
   // Easily place margin between footer elements
-  > :not(:first-child) { margin-left: .25rem; }
-  > :not(:last-child) { margin-right: .25rem; }
+  > :not(:first-child) {
+    margin-left: 0.25rem;
+  }
+  > :not(:last-child) {
+    margin-right: 0.25rem;
+  }
 }
 
 // Measure scrollbar width for padding body during modal show/hide
@@ -159,10 +167,13 @@
     @include box-shadow($modal-content-box-shadow-sm-up);
   }
 
-  .modal-sm { max-width: $modal-sm; }
-
+  .modal-sm {
+    max-width: $modal-sm;
+  }
 }
 
 @include media-breakpoint-up(lg) {
-  .modal-lg { max-width: $modal-lg; }
+  .modal-lg {
+    max-width: $modal-lg;
+  }
 }

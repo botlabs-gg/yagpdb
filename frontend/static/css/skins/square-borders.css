@@ -88,7 +88,7 @@ html .card .card-header-transparent + .card-body,
 .progress .progress-bar,
 .input-group-icon input.form-control:first-child,
 .input-group-icon input.form-control:last-child {
-	border-radius: 0;
+  border-radius: 0;
 }
 
 .body-sign .card-sign .card-title-sign .title,
@@ -159,30 +159,36 @@ p.drop-caps.secondary:first-child::first-letter,
 .btn-group > .btn-group:nth-child(2) > .multiselect.btn,
 .bootstrap-tagsinput,
 .colorpicker,
-.note-editor .note-toolbar .btn-group > .btn-group:last-child > .btn:first-child,
-.note-editor .btn-group > .btn:first-child:not(:last-child):not(.dropdown-toggle),
+.note-editor
+  .note-toolbar
+  .btn-group
+  > .btn-group:last-child
+  > .btn:first-child,
+.note-editor
+  .btn-group
+  > .btn:first-child:not(:last-child):not(.dropdown-toggle),
 .note-editor .btn-group > .btn:last-child:not(:first-child),
 .note-editor .btn-group > .dropdown-toggle:not(:first-child),
 .note-editor .btn,
 html.boxed .inner-wrapper,
 html.boxed .header,
 html.boxed .content-body {
-	border-radius: 0;
+  border-radius: 0;
 }
 
 @media (min-width: 768px) {
-	.nav-tabs.nav-justified > li > a,
-	.nav-tabs-justified > li > a,
-	.navbar {
-		border-radius: 0;
-	}
+  .nav-tabs.nav-justified > li > a,
+  .nav-tabs-justified > li > a,
+  .navbar {
+    border-radius: 0;
+  }
 }
 
 @media (max-width: 479px) {
-	.tabs .nav.nav-tabs.nav-justified li:first-child a,
-	.tabs .nav.nav-tabs.nav-justified li:first-child a:hover,
-	.tabs.tabs-bottom .nav.nav-tabs.nav-justified li:last-child a,
-	.tabs.tabs-bottom .nav.nav-tabs.nav-justified li:last-child a:hover {
-		border-radius: 0;
-	}
+  .tabs .nav.nav-tabs.nav-justified li:first-child a,
+  .tabs .nav.nav-tabs.nav-justified li:first-child a:hover,
+  .tabs.tabs-bottom .nav.nav-tabs.nav-justified li:last-child a,
+  .tabs.tabs-bottom .nav.nav-tabs.nav-justified li:last-child a:hover {
+    border-radius: 0;
+  }
 }

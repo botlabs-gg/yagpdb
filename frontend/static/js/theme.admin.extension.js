@@ -7,1709 +7,1556 @@ Theme Version: 	2.1.1
 window.admin = {};
 
 // Cards
-(function($) {
+(function ($) {
+  $(function () {
+    $(".card")
+      .on("card:toggle", function () {
+        var $this, direction;
 
-	$(function() {
-		$('.card')
-			.on( 'card:toggle', function() {
-				var $this,
-					direction;
+        $this = $(this);
+        direction = $this.hasClass("card-collapsed") ? "Down" : "Up";
 
-				$this = $(this);
-				direction = $this.hasClass( 'card-collapsed' ) ? 'Down' : 'Up';
+        $this
+          .find(".card-body, .card-footer")
+          ["slide" + direction](200, function () {
+            $this[(direction === "Up" ? "add" : "remove") + "Class"](
+              "card-collapsed"
+            );
+          });
+      })
+      .on("card:dismiss", function () {
+        var $this = $(this);
 
-				$this.find('.card-body, .card-footer')[ 'slide' + direction ]( 200, function() {
-					$this[ (direction === 'Up' ? 'add' : 'remove') + 'Class' ]( 'card-collapsed' )
-				});
-			})
-			.on( 'card:dismiss', function() {
-				var $this = $(this);
+        if (
+          !!($this.parent("div").attr("class") || "").match(
+            /col-(xs|sm|md|lg)/g
+          ) &&
+          $this.siblings().length === 0
+        ) {
+          $row = $this.closest(".row");
+          $this.parent("div").remove();
+          if ($row.children().length === 0) {
+            $row.remove();
+          }
+        } else {
+          $this.remove();
+        }
+      })
+      .on("click", "[data-card-toggle]", function (e) {
+        e.preventDefault();
+        $(this).closest(".card").trigger("card:toggle");
+      })
+      .on("click", "[data-card-dismiss]", function (e) {
+        e.preventDefault();
+        $(this).closest(".card").trigger("card:dismiss");
+      })
+      /* Deprecated */
+      .on("click", ".card-actions a.fa-caret-up", function (e) {
+        e.preventDefault();
+        var $this = $(this);
 
-				if ( !!( $this.parent('div').attr('class') || '' ).match( /col-(xs|sm|md|lg)/g ) && $this.siblings().length === 0 ) {
-					$row = $this.closest('.row');
-					$this.parent('div').remove();
-					if ( $row.children().length === 0 ) {
-						$row.remove();
-					}
-				} else {
-					$this.remove();
-				}
-			})
-			.on( 'click', '[data-card-toggle]', function( e ) {
-				e.preventDefault();
-				$(this).closest('.card').trigger( 'card:toggle' );
-			})
-			.on( 'click', '[data-card-dismiss]', function( e ) {
-				e.preventDefault();
-				$(this).closest('.card').trigger( 'card:dismiss' );
-			})
-			/* Deprecated */
-			.on( 'click', '.card-actions a.fa-caret-up', function( e ) {
-				e.preventDefault();
-				var $this = $( this );
+        $this.removeClass("fa-caret-up").addClass("fa-caret-down");
 
-				$this
-					.removeClass( 'fa-caret-up' )
-					.addClass( 'fa-caret-down' );
+        $this.closest(".card").trigger("card:toggle");
+      })
+      .on("click", ".card-actions a.fa-caret-down", function (e) {
+        e.preventDefault();
+        var $this = $(this);
 
-				$this.closest('.card').trigger( 'card:toggle' );
-			})
-			.on( 'click', '.card-actions a.fa-caret-down', function( e ) {
-				e.preventDefault();
-				var $this = $( this );
+        $this.removeClass("fa-caret-down").addClass("fa-caret-up");
 
-				$this
-					.removeClass( 'fa-caret-down' )
-					.addClass( 'fa-caret-up' );
+        $this.closest(".card").trigger("card:toggle");
+      })
+      .on("click", ".card-actions a.fa-times", function (e) {
+        e.preventDefault();
+        var $this = $(this);
 
-				$this.closest('.card').trigger( 'card:toggle' );
-			})
-			.on( 'click', '.card-actions a.fa-times', function( e ) {
-				e.preventDefault();
-				var $this = $( this );
-
-				$this.closest('.card').trigger( 'card:dismiss' );
-			});
-	});
-
+        $this.closest(".card").trigger("card:dismiss");
+      });
+  });
 })(jQuery);
 
 // Chart Circular
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__chartCircular";
 
-	var instanceName = '__chartCircular';
+  var PluginChartCircular = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginChartCircular = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginChartCircular.defaults = {
+    accX: 0,
+    accY: -150,
+    delay: 1,
+    barColor: "#0088CC",
+    trackColor: "#f2f2f2",
+    scaleColor: false,
+    scaleLength: 5,
+    lineCap: "round",
+    lineWidth: 13,
+    size: 175,
+    rotate: 0,
+    animate: {
+      duration: 2500,
+      enabled: true,
+    },
+  };
 
-	PluginChartCircular.defaults = {
-		accX: 0,
-		accY: -150,
-		delay: 1,
-		barColor: '#0088CC',
-		trackColor: '#f2f2f2',
-		scaleColor: false,
-		scaleLength: 5,
-		lineCap: 'round',
-		lineWidth: 13,
-		size: 175,
-		rotate: 0,
-		animate: ({
-			duration: 2500,
-			enabled: true
-		})
-	};
+  PluginChartCircular.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginChartCircular.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginChartCircular.defaults, opts, {
+        wrapper: this.$el,
+      });
 
-		setOptions: function(opts) {
-			this.options = $.extend(true, {}, PluginChartCircular.defaults, opts, {
-				wrapper: this.$el
-			});
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      var self = this,
+        $el = this.options.wrapper,
+        value = $el.attr("data-percent") ? $el.attr("data-percent") : 0,
+        percentEl = $el.find(".percent"),
+        shouldAnimate,
+        data;
 
-		build: function() {
-			var self = this,
-				$el = this.options.wrapper,
-				value = ($el.attr('data-percent') ? $el.attr('data-percent') : 0),
-				percentEl = $el.find('.percent'),
-				shouldAnimate,
-				data;
+      shouldAnimate =
+        $.isFunction($.fn["appear"]) &&
+        typeof $.browser !== "undefined" &&
+        !$.browser.mobile;
+      data = { accX: self.options.accX, accY: self.options.accY };
 
-			shouldAnimate = $.isFunction($.fn[ 'appear' ]) && ( typeof $.browser !== 'undefined' && !$.browser.mobile );
-			data = { accX: self.options.accX, accY: self.options.accY };
+      $.extend(true, self.options, {
+        onStep: function (from, to, currentValue) {
+          percentEl.html(parseInt(currentValue));
+        },
+      });
 
-			$.extend(true, self.options, {
-				onStep: function(from, to, currentValue) {
-					percentEl.html(parseInt(currentValue));
-				}
-			});
+      $el.attr("data-percent", shouldAnimate ? 0 : value);
 
-			$el.attr('data-percent', (shouldAnimate ? 0 : value) );
+      $el.easyPieChart(this.options);
 
-			$el.easyPieChart( this.options );
+      if (shouldAnimate) {
+        $el.appear(function () {
+          setTimeout(function () {
+            $el.data("easyPieChart").update(value);
+            $el.attr("data-percent", value);
+          }, self.options.delay);
+        }, data);
+      } else {
+        $el.data("easyPieChart").update(value);
+        $el.attr("data-percent", value);
+      }
 
-			if ( shouldAnimate ) {
-				$el.appear(function() {
-					setTimeout(function() {
-						$el.data('easyPieChart').update(value);
-						$el.attr('data-percent', value);
+      return this;
+    },
+  };
 
-					}, self.options.delay);
-				}, data);
-			} else {
-				$el.data('easyPieChart').update(value);
-				$el.attr('data-percent', value);
-			}
+  // expose to scope
+  $.extend(true, admin, {
+    Chart: {
+      PluginChartCircular: PluginChartCircular,
+    },
+  });
 
-			return this;
-		}
-	};
+  // jquery plugin
+  $.fn.adminPluginChartCircular = function (opts) {
+    return this.map(function () {
+      var $this = $(this);
 
-	// expose to scope
-	$.extend(true, admin, {
-		Chart: {
-			PluginChartCircular: PluginChartCircular
-		}
-	});
-
-	// jquery plugin
-	$.fn.adminPluginChartCircular = function(opts) {
-		return this.map(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginChartCircular($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginChartCircular($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Chart Circular
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["easyPieChart"])) {
+    $(function () {
+      $("[data-plugin-chart-circular], .circular-bar-chart:not(.manual)").each(
+        function () {
+          var $this = $(this),
+            opts = {};
 
-	if ( $.isFunction($.fn[ 'easyPieChart' ]) ) {
+          var pluginOptions = $this.data("plugin-options");
+          if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-chart-circular], .circular-bar-chart:not(.manual)').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginChartCircular(opts);
-			});
-		});
-
-	}
-
+          $this.adminPluginChartCircular(opts);
+        }
+      );
+    });
+  }
 }).apply(this, [jQuery]);
 
 // Slider
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__slider";
 
-	var instanceName = '__slider';
+  var PluginSlider = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginSlider = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginSlider.defaults = {};
 
-	PluginSlider.defaults = {
+  PluginSlider.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	};
+      this.$el = $el;
 
-	PluginSlider.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.setVars().setData().setOptions(opts).build();
 
-			this.$el = $el;
+      return this;
+    },
 
-			this
-				.setVars()
-				.setData()
-				.setOptions(opts)
-				.build();
+    setVars: function () {
+      var $output = $(this.$el.data("plugin-slider-output"));
+      this.$output = $output.get(0) ? $output : null;
 
-			return this;
-		},
+      return this;
+    },
 
-		setVars: function() {
-			var $output = $( this.$el.data('plugin-slider-output') );
-			this.$output = $output.get(0) ? $output : null;
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-			return this;
-		},
+      return this;
+    },
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+    setOptions: function (opts) {
+      var _self = this;
+      this.options = $.extend(true, {}, PluginSlider.defaults, opts);
 
-			return this;
-		},
+      if (this.$output) {
+        $.extend(this.options, {
+          slide: function (event, ui) {
+            _self.onSlide(event, ui);
+          },
+        });
+      }
 
-		setOptions: function(opts) {
-			var _self = this;
-			this.options = $.extend( true, {}, PluginSlider.defaults, opts );
+      return this;
+    },
 
-			if ( this.$output ) {
-				$.extend( this.options, {
-					slide: function( event, ui ) {
-						_self.onSlide( event, ui );
-					}
-				});
-			}
+    build: function () {
+      this.$el.slider(this.options);
 
-			return this;
-		},
+      return this;
+    },
 
-		build: function() {
-			this.$el.slider( this.options );
+    onSlide: function (event, ui) {
+      if (!ui.values) {
+        this.$output.val(ui.value);
+      } else {
+        this.$output.val(ui.values[0] + "/" + ui.values[1]);
+      }
 
-			return this;
-		},
+      this.$output.trigger("change");
+    },
+  };
 
-		onSlide: function( event, ui ) {
-			if ( !ui.values ) {
-				this.$output.val( ui.value );
-			} else {
-				this.$output.val( ui.values[ 0 ] + '/' + ui.values[ 1 ] );
-			}
+  // expose to scope
+  $.extend(admin, {
+    PluginSlider: PluginSlider,
+  });
 
-			this.$output.trigger('change');
-		}
-	};
+  // jquery plugin
+  $.fn.adminPluginSlider = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// expose to scope
-	$.extend(admin, {
-		PluginSlider: PluginSlider
-	});
-
-	// jquery plugin
-	$.fn.adminPluginSlider = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginSlider($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginSlider($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Slider
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["slider"])) {
+    $(function () {
+      $("[data-plugin-slider]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'slider' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) {
+          opts = pluginOptions;
+        }
 
-		$(function() {
-			$('[data-plugin-slider]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions) {
-					opts = pluginOptions;
-				}
-
-				$this.adminPluginSlider(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginSlider(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // Data Tables - Config
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  // we overwrite initialize of all datatables here
+  // because we want to use select2, give search input a bootstrap look
+  // keep in mind if you overwrite this fnInitComplete somewhere,
+  // you should run the code inside this function to keep functionality.
+  //
+  // there's no better way to do this at this time :(
+  if ($.isFunction($.fn["dataTable"])) {
+    $.extend(true, $.fn.dataTable.defaults, {
+      oLanguage: {
+        sLengthMenu: "_MENU_ records per page",
+        sProcessing: '<i class="fas fa-spinner fa-spin"></i> Loading',
+        sSearch: "",
+      },
+      fnInitComplete: function (settings, json) {
+        // select 2
+        if ($.isFunction($.fn["select2"])) {
+          $(".dataTables_length select", settings.nTableWrapper).select2({
+            theme: "bootstrap",
+            minimumResultsForSearch: -1,
+          });
+        }
 
-	// we overwrite initialize of all datatables here
-	// because we want to use select2, give search input a bootstrap look
-	// keep in mind if you overwrite this fnInitComplete somewhere,
-	// you should run the code inside this function to keep functionality.
-	//
-	// there's no better way to do this at this time :(
-	if ( $.isFunction( $.fn[ 'dataTable' ] ) ) {
+        var options =
+          $("table", settings.nTableWrapper).data("plugin-options") || {};
 
-		$.extend(true, $.fn.dataTable.defaults, {
-			oLanguage: {
-				sLengthMenu: '_MENU_ records per page',
-				sProcessing: '<i class="fas fa-spinner fa-spin"></i> Loading',
-				sSearch: ''
-			},
-			fnInitComplete: function( settings, json ) {
-				// select 2
-				if ( $.isFunction( $.fn[ 'select2' ] ) ) {
-					$('.dataTables_length select', settings.nTableWrapper).select2({
-						theme: 'bootstrap',
-						minimumResultsForSearch: -1
-					});
-				}
+        // search
+        var $search = $(".dataTables_filter input", settings.nTableWrapper);
 
-				var options = $( 'table', settings.nTableWrapper ).data( 'plugin-options' ) || {};
+        $search
+          .attr({
+            placeholder:
+              typeof options.searchPlaceholder !== "undefined"
+                ? options.searchPlaceholder
+                : "Search...",
+          })
+          .removeClass("form-control-sm")
+          .addClass("form-control pull-right");
 
-				// search
-				var $search = $('.dataTables_filter input', settings.nTableWrapper);
-
-				$search
-					.attr({
-						placeholder: typeof options.searchPlaceholder !== 'undefined' ? options.searchPlaceholder : 'Search...'
-					})
-					.removeClass('form-control-sm').addClass('form-control pull-right');
-
-				if ( $.isFunction( $.fn.placeholder ) ) {
-					$search.placeholder();
-				}
-			}
-		});
-
-	}
-
+        if ($.isFunction($.fn.placeholder)) {
+          $search.placeholder();
+        }
+      },
+    });
+  }
 }).apply(this, [jQuery]);
 
 // Codemirror
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__codemirror";
 
-	var instanceName = '__codemirror';
+  var PluginCodeMirror = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginCodeMirror = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginCodeMirror.defaults = {
+    lineNumbers: true,
+    styleActiveLine: true,
+    matchBrackets: true,
+    theme: "monokai",
+  };
 
-	PluginCodeMirror.defaults = {
-		lineNumbers: true,
-		styleActiveLine: true,
-		matchBrackets: true,
-		theme: 'monokai'
-	};
+  PluginCodeMirror.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginCodeMirror.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginCodeMirror.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginCodeMirror.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      CodeMirror.fromTextArea(this.$el.get(0), this.options);
 
-		build: function() {
-			CodeMirror.fromTextArea( this.$el.get(0), this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginCodeMirror: PluginCodeMirror,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginCodeMirror: PluginCodeMirror
-	});
+  // jquery plugin
+  $.fn.adminPluginCodeMirror = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginCodeMirror = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginCodeMirror($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginCodeMirror($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Codemirror
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if (typeof CodeMirror !== "undefined") {
+    $(function () {
+      $("[data-plugin-codemirror]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( typeof CodeMirror !== 'undefined' ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-codemirror]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginCodeMirror(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginCodeMirror(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // Colorpicker
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__colorpicker";
 
-	var instanceName = '__colorpicker';
+  var PluginColorPicker = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginColorPicker = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginColorPicker.defaults = {};
 
-	PluginColorPicker.defaults = {
-	};
+  PluginColorPicker.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginColorPicker.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginColorPicker.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginColorPicker.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.colorpicker(this.options);
 
-		build: function() {
-			this.$el.colorpicker( this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginColorPicker: PluginColorPicker,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginColorPicker: PluginColorPicker
-	});
+  // jquery plugin
+  $.fn.adminPluginColorPicker = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginColorPicker = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginColorPicker($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginColorPicker($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Colorpicker
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["colorpicker"])) {
+    $(function () {
+      $("[data-plugin-colorpicker]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'colorpicker' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-colorpicker]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginColorPicker(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginColorPicker(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // Datepicker
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__datepicker";
 
-	var instanceName = '__datepicker';
+  var PluginDatePicker = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginDatePicker = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginDatePicker.defaults = {};
 
-	PluginDatePicker.defaults = {
-	};
+  PluginDatePicker.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginDatePicker.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setVars().setData().setOptions(opts).build();
 
-			this
-				.setVars()
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setVars: function () {
+      this.skin = this.$el.data("plugin-skin");
 
-		setVars: function() {
-			this.skin = this.$el.data( 'plugin-skin' );
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginDatePicker.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginDatePicker.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.bootstrapDP(this.options);
 
-		build: function() {
-			this.$el.bootstrapDP( this.options );
+      if (
+        !!this.skin &&
+        typeof this.$el.data("datepicker").picker != "undefined"
+      ) {
+        this.$el.data("datepicker").picker.addClass("datepicker-" + this.skin);
+      }
 
-			if ( !!this.skin && typeof(this.$el.data('datepicker').picker) != 'undefined') {
-				this.$el.data('datepicker').picker.addClass( 'datepicker-' + this.skin );
-			}
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginDatePicker: PluginDatePicker,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginDatePicker: PluginDatePicker
-	});
+  // jquery plugin
+  $.fn.adminPluginDatePicker = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginDatePicker = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginDatePicker($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginDatePicker($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Datepicker
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["bootstrapDP"])) {
+    $(function () {
+      $("[data-plugin-datepicker]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'bootstrapDP' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-datepicker]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginDatePicker(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginDatePicker(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // iosSwitcher
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__IOS7Switch";
 
-	var instanceName = '__IOS7Switch';
+  var PluginIOS7Switch = function ($el) {
+    return this.initialize($el);
+  };
 
-	var PluginIOS7Switch = function($el) {
-		return this.initialize($el);
-	};
+  PluginIOS7Switch.prototype = {
+    initialize: function ($el) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginIOS7Switch.prototype = {
-		initialize: function($el) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().build();
 
-			this
-				.setData()
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      var switcher = new Switch(this.$el.get(0));
 
-		build: function() {
-			var switcher = new Switch( this.$el.get(0) );
+      $(switcher.el).on("click", function (e) {
+        e.preventDefault();
+        switcher.toggle();
+      });
 
-			$( switcher.el ).on( 'click', function( e ) {
-				e.preventDefault();
-				switcher.toggle();
-			});
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginIOS7Switch: PluginIOS7Switch,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginIOS7Switch: PluginIOS7Switch
-	});
+  // jquery plugin
+  $.fn.adminPluginIOS7Switch = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginIOS7Switch = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginIOS7Switch($this);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginIOS7Switch($this);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // iosSwitcher
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if (typeof Switch !== "undefined" && $.isFunction(Switch)) {
+    $(function () {
+      $("[data-plugin-ios-switch]").each(function () {
+        var $this = $(this);
 
-	if ( typeof Switch !== 'undefined' && $.isFunction( Switch ) ) {
-
-		$(function() {
-			$('[data-plugin-ios-switch]').each(function() {
-				var $this = $( this );
-
-				$this.adminPluginIOS7Switch();
-			});
-		});
-
-	}
-
+        $this.adminPluginIOS7Switch();
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // Markdown
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__markdownEditor";
 
-	var instanceName = '__markdownEditor';
+  var PluginMarkdownEditor = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginMarkdownEditor = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginMarkdownEditor.defaults = {
+    iconlibrary: "fa",
+    buttons: [
+      [
+        {
+          data: [
+            {
+              icon: {
+                fa: "fa fa-bold",
+              },
+            },
+            {
+              icon: {
+                fa: "fa fa-italic",
+              },
+            },
+            {
+              icon: {
+                fa: "fa fa-heading",
+              },
+            },
+          ],
+        },
+        {
+          data: [
+            {
+              icon: {
+                fa: "fa fa-link",
+              },
+            },
+            {
+              icon: {
+                fa: "fa fa-image",
+              },
+            },
+          ],
+        },
+        {
+          data: [
+            {
+              icon: {
+                fa: "fa fa-list",
+              },
+            },
+            {
+              icon: {
+                fa: "fa fa-list-ol",
+              },
+            },
+            {
+              icon: {
+                fa: "fa fa-code",
+              },
+            },
+            {
+              icon: {
+                fa: "fa fa-quote-left",
+              },
+            },
+          ],
+        },
+        {
+          data: [
+            {
+              icon: {
+                fa: "fa fa-search",
+              },
+            },
+          ],
+        },
+      ],
+    ],
+  };
 
-	PluginMarkdownEditor.defaults = {
-		iconlibrary: 'fa',
-		buttons: [
-			[{
-				data: [{
-					icon: {
-						fa: 'fa fa-bold'
-					}
-				}, {
-					icon: {
-						fa: 'fa fa-italic'
-					}
-				}, {
-					icon: {
-						fa: 'fa fa-heading'
-					}
-				}]
-			}, {
-				data: [{
-					icon: {
-						fa: 'fa fa-link'
-					}
-				}, {
-					icon: {
-						fa: 'fa fa-image'
-					}
-				}]
-			}, {
-				data: [{
-						icon: {
-							fa: 'fa fa-list'
-						}
-					},
-					{
-						icon: {
-							fa: 'fa fa-list-ol'
-						}
-					},
-					{
-						icon: {
-							fa: 'fa fa-code'
-						}
-					},
-					{
-						icon: {
-							fa: 'fa fa-quote-left'
-						}
-					}
-				]
-			}, {
-				data: [{
-					icon: {
-						fa: 'fa fa-search'
-					}
-				}]
-			}]
-		]
-	};
+  PluginMarkdownEditor.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginMarkdownEditor.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginMarkdownEditor.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginMarkdownEditor.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.markdown(this.options);
 
-		build: function() {
-			this.$el.markdown( this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginMarkdownEditor: PluginMarkdownEditor,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginMarkdownEditor: PluginMarkdownEditor
-	});
+  // jquery plugin
+  $.fn.adminPluginMarkdownEditor = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginMarkdownEditor = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginMarkdownEditor($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginMarkdownEditor($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Markdown
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["markdown"])) {
+    $(function () {
+      $("[data-plugin-markdown-editor]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'markdown' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-markdown-editor]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginMarkdownEditor(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginMarkdownEditor(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // Masked Input
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__maskedInput";
 
-	var instanceName = '__maskedInput';
+  var PluginMaskedInput = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginMaskedInput = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginMaskedInput.defaults = {};
 
-	PluginMaskedInput.defaults = {
-	};
+  PluginMaskedInput.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginMaskedInput.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginMaskedInput.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginMaskedInput.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.mask(this.$el.data("input-mask"), this.options);
 
-		build: function() {
-			this.$el.mask( this.$el.data('input-mask'), this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginMaskedInput: PluginMaskedInput,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginMaskedInput: PluginMaskedInput
-	});
+  // jquery plugin
+  $.fn.adminPluginMaskedInput = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginMaskedInput = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginMaskedInput($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginMaskedInput($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Masked Input
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["mask"])) {
+    $(function () {
+      $("[data-plugin-masked-input]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'mask' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-masked-input]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginMaskedInput(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginMaskedInput(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // MaxLength
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__maxlength";
 
-	var instanceName = '__maxlength';
+  var PluginMaxLength = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginMaxLength = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginMaxLength.defaults = {
+    alwaysShow: true,
+    placement: "bottom-left",
+    warningClass: "badge badge-success bottom-left",
+    limitReachedClass: "badge badge-danger bottom-left",
+  };
 
-	PluginMaxLength.defaults = {
-		alwaysShow: true,
-		placement: 'bottom-left',
-		warningClass: 'badge badge-success bottom-left',
-		limitReachedClass: 'badge badge-danger bottom-left'
-	};
+  PluginMaxLength.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginMaxLength.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginMaxLength.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginMaxLength.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.maxlength(this.options);
 
-		build: function() {
-			this.$el.maxlength( this.options );
+      this.$el.on("blur", function () {
+        $(".bootstrap-maxlength").remove();
+      });
 
-			this.$el.on('blur', function() {
-				$('.bootstrap-maxlength').remove();
-			});
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginMaxLength: PluginMaxLength,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginMaxLength: PluginMaxLength
-	});
+  // jquery plugin
+  $.fn.adminPluginMaxLength = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginMaxLength = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginMaxLength($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginMaxLength($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // MaxLength
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["maxlength"])) {
+    $(function () {
+      $("[data-plugin-maxlength]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction( $.fn[ 'maxlength' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-maxlength]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginMaxLength(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginMaxLength(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // MultiSelect
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__multiselect";
 
-	var instanceName = '__multiselect';
+  var PluginMultiSelect = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginMultiSelect = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginMultiSelect.defaults = {
+    templates: {
+      li: '<li><a class="dropdown-item" tabindex="0"><label style="display: block;"></label></a></li>',
+      filter:
+        '<div class="input-group"><span class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></span><input class="form-control multiselect-search" type="text"></div>',
+    },
+  };
 
-	PluginMultiSelect.defaults = {
-		templates: {
-			li: '<li><a class="dropdown-item" tabindex="0"><label style="display: block;"></label></a></li>',
-			filter: '<div class="input-group"><span class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></span><input class="form-control multiselect-search" type="text"></div>'
-		}
-	};
+  PluginMultiSelect.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginMultiSelect.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginMultiSelect.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginMultiSelect.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.multiselect(this.options);
 
-		build: function() {
-			this.$el.multiselect( this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginMultiSelect: PluginMultiSelect,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginMultiSelect: PluginMultiSelect
-	});
+  // jquery plugin
+  $.fn.adminPluginMultiSelect = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginMultiSelect = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginMultiSelect($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginMultiSelect($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // MultiSelect
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["multiselect"])) {
+    $(function () {
+      $("[data-plugin-multiselect]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction( $.fn[ 'multiselect' ] ) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$( '[data-plugin-multiselect]' ).each(function() {
-
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginMultiSelect(opts);
-
-			});
-		});
-
-	}
-
+        $this.adminPluginMultiSelect(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
-
-	if ( $.isFunction( $.fn[ 'placeholder' ]) ) {
-
-		$('input[placeholder]').placeholder();
-
-	}
-
+  if ($.isFunction($.fn["placeholder"])) {
+    $("input[placeholder]").placeholder();
+  }
 }).apply(this, [jQuery]);
-
 
 // Select2
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__select2";
 
-	var instanceName = '__select2';
+  var PluginSelect2 = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginSelect2 = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginSelect2.defaults = {
+    theme: "bootstrap",
+  };
 
-	PluginSelect2.defaults = {
-		theme: 'bootstrap'
-	};
+  PluginSelect2.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginSelect2.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginSelect2.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginSelect2.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.select2(this.options);
 
-		build: function() {
-			this.$el.select2( this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginSelect2: PluginSelect2,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginSelect2: PluginSelect2
-	});
+  // jquery plugin
+  $.fn.adminPluginSelect2 = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginSelect2 = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginSelect2($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginSelect2($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Select2
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["select2"])) {
+    $(function () {
+      $("[data-plugin-selectTwo]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'select2' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-selectTwo]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginSelect2(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginSelect2(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // Spinner
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__spinner";
 
-	var instanceName = '__spinner';
+  var PluginSpinner = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginSpinner = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginSpinner.defaults = {};
 
-	PluginSpinner.defaults = {
-	};
+  PluginSpinner.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginSpinner.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginSpinner.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginSpinner.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.spinner(this.options);
 
-		build: function() {
-			this.$el.spinner( this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginSpinner: PluginSpinner,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginSpinner: PluginSpinner
-	});
+  // jquery plugin
+  $.fn.adminPluginSpinner = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginSpinner = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginSpinner($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginSpinner($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // Spinner
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["spinner"])) {
+    $(function () {
+      $("[data-plugin-spinner]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'spinner' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-spinner]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginSpinner(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginSpinner(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // SummerNote
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__summernote";
 
-	var instanceName = '__summernote';
+  var PluginSummerNote = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginSummerNote = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginSummerNote.defaults = {
+    onfocus: function () {
+      $(this).closest(".note-editor").addClass("active");
+    },
+    onblur: function () {
+      $(this).closest(".note-editor").removeClass("active");
+    },
+  };
 
-	PluginSummerNote.defaults = {
-		onfocus: function() {
-			$( this ).closest( '.note-editor' ).addClass( 'active' );
-		},
-		onblur: function() {
-			$( this ).closest( '.note-editor' ).removeClass( 'active' );
-		}
-	};
+  PluginSummerNote.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginSummerNote.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginSummerNote.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginSummerNote.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.summernote(this.options);
 
-		build: function() {
-			this.$el.summernote( this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginSummerNote: PluginSummerNote,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginSummerNote: PluginSummerNote
-	});
+  // jquery plugin
+  $.fn.adminPluginSummerNote = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginSummerNote = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginSummerNote($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginSummerNote($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // SummerNote
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["summernote"])) {
+    $(function () {
+      $("[data-plugin-summernote]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'summernote' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-summernote]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginSummerNote(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginSummerNote(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // TextArea AutoSize
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var initialized = false;
+  var instanceName = "__textareaAutosize";
 
-	var initialized = false;
-	var instanceName = '__textareaAutosize';
+  var PluginTextAreaAutoSize = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginTextAreaAutoSize = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginTextAreaAutoSize.defaults = {};
 
-	PluginTextAreaAutoSize.defaults = {
-	};
+  PluginTextAreaAutoSize.prototype = {
+    initialize: function ($el, opts) {
+      if (initialized) {
+        return this;
+      }
 
-	PluginTextAreaAutoSize.prototype = {
-		initialize: function($el, opts) {
-			if (initialized) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginTextAreaAutoSize.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginTextAreaAutoSize.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      autosize($(this.$el));
 
-		build: function() {
+      return this;
+    },
+  };
 
-			autosize($(this.$el));
+  // expose to scope
+  $.extend(admin, {
+    PluginTextAreaAutoSize: PluginTextAreaAutoSize,
+  });
 
-			return this;
-		}
-	};
+  // jquery plugin
+  $.fn.adminPluginTextAreaAutoSize = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// expose to scope
-	$.extend(admin, {
-		PluginTextAreaAutoSize: PluginTextAreaAutoSize
-	});
-
-	// jquery plugin
-	$.fn.adminPluginTextAreaAutoSize = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginTextAreaAutoSize($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginTextAreaAutoSize($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // TextArea AutoSize
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if (typeof autosize === "function") {
+    $(function () {
+      $("[data-plugin-textarea-autosize]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( typeof autosize === 'function' ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-textarea-autosize]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginTextAreaAutoSize(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginTextAreaAutoSize(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);
 
 // TimePicker
-(function(admin, $) {
+(function (admin, $) {
+  admin = admin || {};
 
-	admin = admin || {};
+  var instanceName = "__timepicker";
 
-	var instanceName = '__timepicker';
+  var PluginTimePicker = function ($el, opts) {
+    return this.initialize($el, opts);
+  };
 
-	var PluginTimePicker = function($el, opts) {
-		return this.initialize($el, opts);
-	};
+  PluginTimePicker.defaults = {
+    disableMousewheel: true,
+    icons: {
+      up: "fas fa-chevron-up",
+      down: "fas fa-chevron-down",
+    },
+  };
 
-	PluginTimePicker.defaults = {
-		disableMousewheel: true,
-		icons: {
-			up: 'fas fa-chevron-up',
-			down: 'fas fa-chevron-down'
-		}
-	};
+  PluginTimePicker.prototype = {
+    initialize: function ($el, opts) {
+      if ($el.data(instanceName)) {
+        return this;
+      }
 
-	PluginTimePicker.prototype = {
-		initialize: function($el, opts) {
-			if ( $el.data( instanceName ) ) {
-				return this;
-			}
+      this.$el = $el;
 
-			this.$el = $el;
+      this.setData().setOptions(opts).build();
 
-			this
-				.setData()
-				.setOptions(opts)
-				.build();
+      return this;
+    },
 
-			return this;
-		},
+    setData: function () {
+      this.$el.data(instanceName, this);
 
-		setData: function() {
-			this.$el.data(instanceName, this);
+      return this;
+    },
 
-			return this;
-		},
+    setOptions: function (opts) {
+      this.options = $.extend(true, {}, PluginTimePicker.defaults, opts);
 
-		setOptions: function(opts) {
-			this.options = $.extend( true, {}, PluginTimePicker.defaults, opts );
+      return this;
+    },
 
-			return this;
-		},
+    build: function () {
+      this.$el.timepicker(this.options);
 
-		build: function() {
-			this.$el.timepicker( this.options );
+      return this;
+    },
+  };
 
-			return this;
-		}
-	};
+  // expose to scope
+  $.extend(admin, {
+    PluginTimePicker: PluginTimePicker,
+  });
 
-	// expose to scope
-	$.extend(admin, {
-		PluginTimePicker: PluginTimePicker
-	});
+  // jquery plugin
+  $.fn.adminPluginTimePicker = function (opts) {
+    return this.each(function () {
+      var $this = $(this);
 
-	// jquery plugin
-	$.fn.adminPluginTimePicker = function(opts) {
-		return this.each(function() {
-			var $this = $(this);
-
-			if ($this.data(instanceName)) {
-				return $this.data(instanceName);
-			} else {
-				return new PluginTimePicker($this, opts);
-			}
-
-		});
-	}
-
+      if ($this.data(instanceName)) {
+        return $this.data(instanceName);
+      } else {
+        return new PluginTimePicker($this, opts);
+      }
+    });
+  };
 }).apply(this, [window.admin, jQuery]);
 
 // TimePicker
-(function($) {
+(function ($) {
+  "use strict";
 
-	'use strict';
+  if ($.isFunction($.fn["timepicker"])) {
+    $(function () {
+      $("[data-plugin-timepicker]").each(function () {
+        var $this = $(this),
+          opts = {};
 
-	if ( $.isFunction($.fn[ 'timepicker' ]) ) {
+        var pluginOptions = $this.data("plugin-options");
+        if (pluginOptions) opts = pluginOptions;
 
-		$(function() {
-			$('[data-plugin-timepicker]').each(function() {
-				var $this = $( this ),
-					opts = {};
-
-				var pluginOptions = $this.data('plugin-options');
-				if (pluginOptions)
-					opts = pluginOptions;
-
-				$this.adminPluginTimePicker(opts);
-			});
-		});
-
-	}
-
+        $this.adminPluginTimePicker(opts);
+      });
+    });
+  }
 }).apply(this, [jQuery]);

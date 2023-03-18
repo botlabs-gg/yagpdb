@@ -1,30 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: ASCII Armor (PGP) mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="asciiarmor.js"></script>
-<style>.CodeMirror {background: #f8f8f8;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    background: #f8f8f8;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">ASCII Armor</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">ASCII Armor</a></li>
   </ul>
 </div>
 
 <article>
-<h2>ASCII Armor (PGP) mode</h2>
-<form><textarea id="code" name="code">
+  <h2>ASCII Armor (PGP) mode</h2>
+  <form>
+    <textarea id="code" name="code">
 -----BEGIN PGP MESSAGE-----
 Version: OpenPrivacy 0.99
 
@@ -32,15 +41,18 @@ yDgBO22WxBHv7O8X7O/jygAEzol56iUKiXmV+XmpCtmpqQUKiQrFqclFqUDBovzS
 vBSFjNSiVHsuAA==
 =njUN
 -----END PGP MESSAGE-----
-</textarea></form>
+</textarea
+    >
+  </form>
 
-<script>
-var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-  lineNumbers: true
-});
-</script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+    });
+  </script>
 
-<p><strong>MIME types
-defined:</strong> <code>application/pgp</code>, <code>application/pgp-keys</code>, <code>application/pgp-signature</code></p>
-
+  <p>
+    <strong>MIME types defined:</strong> <code>application/pgp</code>,
+    <code>application/pgp-keys</code>, <code>application/pgp-signature</code>
+  </p>
 </article>

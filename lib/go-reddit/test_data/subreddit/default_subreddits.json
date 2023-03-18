@@ -21,10 +21,7 @@
           "collapse_deleted_comments": true,
           "over18": false,
           "public_description_html": "&lt;!-- SC_OFF --&gt;&lt;div class=\"md\"&gt;&lt;p&gt;Discussion and news regarding everything from vintage gadgetry to the latest and greatest in gadgets.&lt;/p&gt;\n\n&lt;p&gt;Keywords: technology, gadgets, tech, news, products&lt;/p&gt;\n&lt;/div&gt;&lt;!-- SC_ON --&gt;",
-          "icon_size": [
-            256,
-            256
-          ],
+          "icon_size": [256, 256],
           "suggested_comment_sort": null,
           "icon_img": "http://b.thumbs.redditmedia.com/ht_CCiUxSIIWKgeb8CERzESKm4GOETQB9JslGV1in0s.png",
           "header_title": null,
@@ -33,10 +30,7 @@
           "submit_link_label": null,
           "accounts_active": null,
           "public_traffic": false,
-          "header_size": [
-            241,
-            108
-          ],
+          "header_size": [241, 108],
           "subscribers": 8408583,
           "submit_text_label": null,
           "lang": "en",
@@ -76,10 +70,7 @@
           "collapse_deleted_comments": true,
           "over18": false,
           "public_description_html": "&lt;!-- SC_OFF --&gt;&lt;div class=\"md\"&gt;&lt;p&gt;The central hub for all things sports on reddit.&lt;/p&gt;\n&lt;/div&gt;&lt;!-- SC_ON --&gt;",
-          "icon_size": [
-            256,
-            256
-          ],
+          "icon_size": [256, 256],
           "suggested_comment_sort": null,
           "icon_img": "http://a.thumbs.redditmedia.com/LOGcHho3SytZ8S-j14V4BF2HwFpZYwF9iRjIsoPYkm4.png",
           "header_title": null,
@@ -88,10 +79,7 @@
           "submit_link_label": null,
           "accounts_active": null,
           "public_traffic": false,
-          "header_size": [
-            134,
-            60
-          ],
+          "header_size": [134, 60],
           "subscribers": 8628583,
           "submit_text_label": null,
           "lang": "en",
@@ -131,10 +119,7 @@
           "collapse_deleted_comments": true,
           "over18": false,
           "public_description_html": "&lt;!-- SC_OFF --&gt;&lt;div class=\"md\"&gt;&lt;p&gt;A subreddit for (almost) anything related to games - video games, board games, card games, etc. (but not sports).&lt;/p&gt;\n&lt;/div&gt;&lt;!-- SC_ON --&gt;",
-          "icon_size": [
-            256,
-            256
-          ],
+          "icon_size": [256, 256],
           "suggested_comment_sort": null,
           "icon_img": "http://b.thumbs.redditmedia.com/0PgZl68jAxA6T1BH6uvUQ5Bz1F1GrrJLCL8oi2Gz0Ak.png",
           "header_title": "Games! Board, tabletop, mobile, cards, consoles, arcades &amp; computer. We all play together!",
@@ -143,10 +128,7 @@
           "submit_link_label": null,
           "accounts_active": null,
           "public_traffic": false,
-          "header_size": [
-            163,
-            112
-          ],
+          "header_size": [163, 112],
           "subscribers": 12676677,
           "submit_text_label": null,
           "lang": "en",

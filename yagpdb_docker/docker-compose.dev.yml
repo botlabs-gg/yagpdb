@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 volumes:
   db:
@@ -32,8 +32,8 @@ services:
       - cert_cache:/app/cert
       - soundboard:/app/soundboard
     ports:
-      - '80:80'
-      - '443:443'
+      - "80:80"
+      - "443:443"
     env_file:
       - app.env
 

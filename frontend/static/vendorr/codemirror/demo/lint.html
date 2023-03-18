@@ -1,11 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Linter Demo</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../doc/docs.css" />
 
-<link rel="stylesheet" href="../lib/codemirror.css">
-<link rel="stylesheet" href="../addon/lint/lint.css">
+<link rel="stylesheet" href="../lib/codemirror.css" />
+<link rel="stylesheet" href="../addon/lint/lint.css" />
 <script src="../lib/codemirror.js"></script>
 <script src="../mode/javascript/javascript.js"></script>
 <script src="../mode/css/css.js"></script>
@@ -17,26 +17,33 @@
 <script src="../addon/lint/json-lint.js"></script>
 <script src="../addon/lint/css-lint.js"></script>
 <style type="text/css">
-      .CodeMirror {border: 1px solid black;}
-    </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../doc/logo.png"></a>
+  .CodeMirror {
+    border: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../index.html">Home</a>
-    <li><a href="../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a class=active href="#">Linter</a>
+    <li><a class="active" href="#">Linter</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Linter Demo</h2>
+  <h2>Linter Demo</h2>
 
-
-    <p><textarea id="code-js">var widgets = []
+  <p>
+    <textarea id="code-js">
+var widgets = []
 function updateHints() {
   editor.operation(function(){
     for (var i = 0; i < widgets.length; ++i)
@@ -61,9 +68,13 @@ function updateHints() {
   if (info.top + info.clientHeight < after)
     editor.scrollTo(null, after - info.clientHeight + 3);
 }
-</textarea></p>
+</textarea
+    >
+  </p>
 
-    <p><textarea id="code-json">[
+  <p>
+    <textarea id="code-json">
+[
  {
   _id: "post 1",
   "author": "Bob",
@@ -83,9 +94,13 @@ function updateHints() {
   "page_views": 8
  }
 ]
-</textarea></p>
+</textarea
+    >
+  </p>
 
-    <p><textarea id="code-css">@charset "UTF-8";
+  <p>
+    <textarea id="code-css">
+@charset "UTF-8";
 
 @import url("booya.css") print, screen;
 @import "whatup.css" screen;
@@ -144,28 +159,35 @@ li.last {
     content: counter(page);
   }
 }
-</textarea></p>
-<script>
-  var editor = CodeMirror.fromTextArea(document.getElementById("code-js"), {
-    lineNumbers: true,
-    mode: "javascript",
-    gutters: ["CodeMirror-lint-markers"],
-    lint: true
-  });
+</textarea
+    >
+  </p>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code-js"), {
+      lineNumbers: true,
+      mode: "javascript",
+      gutters: ["CodeMirror-lint-markers"],
+      lint: true,
+    });
 
-  var editor_json = CodeMirror.fromTextArea(document.getElementById("code-json"), {
-    lineNumbers: true,
-    mode: "application/json",
-    gutters: ["CodeMirror-lint-markers"],
-    lint: true
-  });
-  
-  var editor_css = CodeMirror.fromTextArea(document.getElementById("code-css"), {
-    lineNumbers: true,
-    mode: "css",
-    gutters: ["CodeMirror-lint-markers"],
-    lint: true
-  });
-</script>
+    var editor_json = CodeMirror.fromTextArea(
+      document.getElementById("code-json"),
+      {
+        lineNumbers: true,
+        mode: "application/json",
+        gutters: ["CodeMirror-lint-markers"],
+        lint: true,
+      }
+    );
 
-  </article>
+    var editor_css = CodeMirror.fromTextArea(
+      document.getElementById("code-css"),
+      {
+        lineNumbers: true,
+        mode: "css",
+        gutters: ["CodeMirror-lint-markers"],
+        lint: true,
+      }
+    );
+  </script>
+</article>

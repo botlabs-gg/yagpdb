@@ -2,11 +2,11 @@
 
 This is a simple library for rolling RPG-style dice. The following formats are supported:
 
-* Standard: `xdy[[k|d][h|l]z][+/-c]` - rolls and sums x y-sided dice, keeping or dropping the lowest or highest z dice and optionally adding or subtracting c. Example: 4d6kh3+4
-* Versus: `xdy[e|r]vt` - rolls x y-sided dice, counting the number that roll t or greater.
-* EotE: `xc [xc ...]` - rolls x dice of color c (b, blk, g, p, r, w, y) and returns the aggregate result.
+- Standard: `xdy[[k|d][h|l]z][+/-c]` - rolls and sums x y-sided dice, keeping or dropping the lowest or highest z dice and optionally adding or subtracting c. Example: 4d6kh3+4
+- Versus: `xdy[e|r]vt` - rolls x y-sided dice, counting the number that roll t or greater.
+- EotE: `xc [xc ...]` - rolls x dice of color c (b, blk, g, p, r, w, y) and returns the aggregate result.
 
-Adding an `e` to the Versus rolls above makes dice 'explode' - Dice are rerolled and have the 
+Adding an `e` to the Versus rolls above makes dice 'explode' - Dice are rerolled and have the
 rolled value added to their total when they roll a y. Adding an `r` makes dice rolling a y add another die
 to the pool instead.
 

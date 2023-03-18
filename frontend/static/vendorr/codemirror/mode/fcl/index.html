@@ -1,32 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: FCL mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
-<link rel="stylesheet" href="../../theme/elegant.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
+<link rel="stylesheet" href="../../theme/elegant.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="../../addon/edit/matchbrackets.js"></script>
 <script src="fcl.js"></script>
-<style>.CodeMirror {border:1px solid #999; background:#ffc}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style>
+  .CodeMirror {
+    border: 1px solid #999;
+    background: #ffc;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">FCL</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">FCL</a></li>
   </ul>
 </div>
 
 <article>
-<h2>FCL mode</h2>
-<form><textarea id="code" name="code">
+  <h2>FCL mode</h2>
+  <form>
+    <textarea id="code" name="code">
   FUNCTION_BLOCK Fuzzy_FB
       VAR_INPUT
           TimeDay : REAL; (* RANGE(0 .. 23) *)
@@ -91,18 +101,20 @@
       END_RULEBLOCK
 
   END_FUNCTION_BLOCK
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        theme: "elegant",
-        matchBrackets: true,
-        indentUnit: 8,
-        tabSize: 8,
-        indentWithTabs: true,
-        mode: "text/x-fcl"
-      });
-    </script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      theme: "elegant",
+      matchBrackets: true,
+      indentUnit: 8,
+      tabSize: 8,
+      indentWithTabs: true,
+      mode: "text/x-fcl",
+    });
+  </script>
 
-    <p><strong>MIME type:</strong> <code>text/x-fcl</code></p>
-  </article>
+  <p><strong>MIME type:</strong> <code>text/x-fcl</code></p>
+</article>

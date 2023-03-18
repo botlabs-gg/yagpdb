@@ -1,110 +1,162 @@
-{{define "cp_verification_settings"}}
-
-{{template "cp_head" .}}
+{{define "cp_verification_settings"}} {{template "cp_head" .}}
 
 <div class="page-header">
-    <h2>Verification</h2>
+  <h2>Verification</h2>
 </div>
 
 {{template "cp_alerts" .}}
 
 <div class="row">
-    <div class="col-lg-12">
-        <form role="form" method="post" data-async-form action="/manage/{{.ActiveGuild.ID}}/verification">
-            <section class="card {{if .PluginSettings.Enabled}}card-featured card-featured-success{{end}}">
-                <header class="card-header">
-                    {{checkbox "Enabled" "plugin-enabled-box" `<h2 class="card-title">Verification System enabled</h2>` .PluginSettings.Enabled}}
-                </header>
+  <div class="col-lg-12">
+    <form
+      role="form"
+      method="post"
+      data-async-form
+      action="/manage/{{.ActiveGuild.ID}}/verification"
+    >
+      <section
+        class="card {{if .PluginSettings.Enabled}}card-featured card-featured-success{{end}}"
+      >
+        <header class="card-header">
+          {{checkbox "Enabled" "plugin-enabled-box" `
+          <h2 class="card-title">Verification System enabled</h2>
+          ` .PluginSettings.Enabled}}
+        </header>
 
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-lg-12">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-lg-12">
+              <p>
+                The verification system allows you to verify that the people
+                joining are humans using google's reCAPTCHA
+              </p>
+              <p>
+                The users will gain the verified role once they pass the
+                verification process
+              </p>
 
-                            <p>The verification system allows you to verify that the people joining are humans using
-                                google's reCAPTCHA</p>
-                            <p>The users will gain the verified role once they pass the verification process</p>
+              <div class="form-group">
+                <label>Verified Role</label><br />
+                <select name="VerifiedRole" class="form-control">
+                  {{if .RoleInvalid}} {{roleOptions .ActiveGuild.Roles
+                  .HighestRole nil "No role selected"}} {{else}} {{roleOptions
+                  .ActiveGuild.Roles .HighestRole .PluginSettings.VerifiedRole}}
+                  {{end}}
+                </select>
+              </div>
 
-                            <div class="form-group">
-                                <label>Verified Role</label><br>
-                                <select name="VerifiedRole" class="form-control">
-                                    {{if .RoleInvalid}}
-                                    {{roleOptions .ActiveGuild.Roles .HighestRole nil "No role selected"}}
-                                    {{else}}
-                                    {{roleOptions .ActiveGuild.Roles .HighestRole .PluginSettings.VerifiedRole}}
-                                    {{end}}
-                                </select>
-                            </div>
+              <div class="form-group">
+                <label>Verify Page content</label>
+                <textarea
+                  rows="5"
+                  class="form-control"
+                  name="PageContent"
+                  placeholder="{{.DefaultPageContent}}"
+                >
+{{or .PluginSettings.PageContent .DefaultPageContent}}</textarea
+                >
+                <p class="help-block">
+                  The verify page content in markdown format (similar to discord
+                  formatting)
+                </p>
+              </div>
 
-                            <div class="form-group">
-                                <label>Verify Page content</label>
-                                <textarea rows="5" class="form-control" name="PageContent"
-                                    placeholder="{{.DefaultPageContent}}">{{or .PluginSettings.PageContent .DefaultPageContent}}</textarea>
-                                <p class="help-block">
-                                    The verify page content in markdown format (similar to discord formatting)
-                                </p>
-                            </div>
+              <div class="form-group">
+                <label>Verification DM message (empty for default)</label>
+                <textarea
+                  rows="5"
+                  class="form-control"
+                  name="DMMessage"
+                  placeholder=""
+                >
+{{or .PluginSettings.DMMessage ""}}</textarea
+                >
+                <p class="help-block">
+                  Available template data:<br />
+                  {{template "template_helper_user"}} - The user being
+                  notified<br />
+                  <code
+                    >{{"{{.Link}}"}} - The link they have to visit to
+                    verify</code
+                  >
+                </p>
+              </div>
 
-                            <div class="form-group">
-                                <label>Verification DM message (empty for default)</label>
-                                <textarea rows="5" class="form-control" name="DMMessage"
-                                    placeholder="">{{or .PluginSettings.DMMessage ""}}</textarea>
-                                <p class="help-block">
-                                    Available template data:<br />
-                                    {{template "template_helper_user"}} - The user being notified<br />
-                                    <code>{{"{{.Link}}"}} - The link they have to visit to verify</code>
-                                </p>
-                            </div>
+              <div class="form-group">
+                <label>Log verification events to a channel</label><br />
+                <select name="LogChannel" class="form-control">
+                  {{textChannelOptions .ActiveGuild.Channels
+                  .PluginSettings.LogChannel true ""}}
+                </select>
+              </div>
 
-                            <div class="form-group">
-                                <label>Log verification events to a channel</label><br>
-                                <select name="LogChannel" class="form-control">
-                                    {{textChannelOptions .ActiveGuild.Channels .PluginSettings.LogChannel true ""}}
-                                </select>
-                            </div>
+              <hr />
 
-                            <hr />
+              <div class="form-group">
+                <label
+                  >Kick users after being unverified for... (minutes, 0 to
+                  disable)</label
+                >
+                <input
+                  type="number"
+                  min="0"
+                  name="KickUnverifiedAfter"
+                  class="form-control"
+                  value="{{.PluginSettings.KickUnverifiedAfter}}"
+                />
+              </div>
 
-                            <div class="form-group">
-                                <label>Kick users after being unverified for... (minutes, 0 to disable)</label>
-                                <input type="number" min="0" name="KickUnverifiedAfter" class="form-control"
-                                    value="{{.PluginSettings.KickUnverifiedAfter}}">
-                            </div>
+              <div class="form-group">
+                <label
+                  >re-notify users after being unverified for... (minutes, 0 to
+                  disable)</label
+                >
+                <input
+                  type="number"
+                  min="0"
+                  name="WarnUnverifiedAfter"
+                  class="form-control"
+                  value="{{.PluginSettings.WarnUnverifiedAfter}}"
+                />
+              </div>
 
-                            <div class="form-group">
-                                <label>re-notify users after being unverified for... (minutes, 0 to disable)</label>
-                                <input type="number" min="0" name="WarnUnverifiedAfter" class="form-control"
-                                    value="{{.PluginSettings.WarnUnverifiedAfter}}">
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Notification/Warning message</label>
-                                <textarea rows="5" class="form-control" name="WarnMessage"
-                                    placeholder="">{{or .PluginSettings.WarnMessage ""}}</textarea>
-                                <p class="help-block">
-                                    Available template data:<br />
-                                    {{template "template_helper_user"}} - The user being notified<br />
-                                    <code>{{"{{.Link}}"}} - The link they have to visit to verify</code>
-                                </p>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <button type="submit" class="btn btn-primary btn-lg btn-block">Save</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <!-- /.panel -->
-        </form>
-        <!-- /form -->
-    </div>
-    <!-- /.col-lg-12 -->
+              <div class="form-group">
+                <label>Notification/Warning message</label>
+                <textarea
+                  rows="5"
+                  class="form-control"
+                  name="WarnMessage"
+                  placeholder=""
+                >
+{{or .PluginSettings.WarnMessage ""}}</textarea
+                >
+                <p class="help-block">
+                  Available template data:<br />
+                  {{template "template_helper_user"}} - The user being
+                  notified<br />
+                  <code
+                    >{{"{{.Link}}"}} - The link they have to visit to
+                    verify</code
+                  >
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-12">
+              <button type="submit" class="btn btn-primary btn-lg btn-block">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- /.panel -->
+    </form>
+    <!-- /form -->
+  </div>
+  <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
 
-{{template "cp_footer" .}}
-
-{{end}}
+{{template "cp_footer" .}} {{end}}

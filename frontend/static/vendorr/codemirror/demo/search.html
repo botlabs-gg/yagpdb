@@ -1,12 +1,12 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Search/Replace Demo</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../doc/docs.css" />
 
-<link rel="stylesheet" href="../lib/codemirror.css">
-<link rel="stylesheet" href="../addon/dialog/dialog.css">
-<link rel="stylesheet" href="../addon/search/matchesonscrollbar.css">
+<link rel="stylesheet" href="../lib/codemirror.css" />
+<link rel="stylesheet" href="../addon/dialog/dialog.css" />
+<link rel="stylesheet" href="../addon/search/matchesonscrollbar.css" />
 <script src="../lib/codemirror.js"></script>
 <script src="../mode/xml/xml.js"></script>
 <script src="../addon/dialog/dialog.js"></script>
@@ -16,25 +16,36 @@
 <script src="../addon/search/matchesonscrollbar.js"></script>
 <script src="../addon/search/jump-to-line.js"></script>
 <style type="text/css">
-      .CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}
-      dt {font-family: monospace; color: #666;}
-    </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../doc/logo.png"></a>
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+  dt {
+    font-family: monospace;
+    color: #666;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../index.html">Home</a>
-    <li><a href="../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a class=active href="#">Search/Replace</a>
+    <li><a class="active" href="#">Search/Replace</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Search/Replace Demo</h2>
-<form><textarea id="code" name="code">
+  <h2>Search/Replace Demo</h2>
+  <form>
+    <textarea id="code" name="code">
 <dl>
   <dt id="option_indentWithTabs"><code><strong>indentWithTabs</strong>: boolean</code></dt>
   <dd>Whether, when indenting, the first N*<code>tabSize</code>
@@ -67,33 +78,51 @@
   right in right-to-left text). The default is <code>false</code>
   on Windows, and <code>true</code> on other platforms.</dd>
 </dl>
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-  mode: "text/html",
-  lineNumbers: true,
-  extraKeys: {"Alt-F": "findPersistent"}
-});
-</script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: "text/html",
+      lineNumbers: true,
+      extraKeys: { "Alt-F": "findPersistent" },
+    });
+  </script>
 
-    <p>Demonstration of primitive search/replace functionality. The
-    keybindings (which can be configured with custom keymaps) are:</p>
-    <dl>
-      <dt>Ctrl-F / Cmd-F</dt><dd>Start searching</dd>
-      <dt>Ctrl-G / Cmd-G</dt><dd>Find next</dd>
-      <dt>Shift-Ctrl-G / Shift-Cmd-G</dt><dd>Find previous</dd>
-      <dt>Shift-Ctrl-F / Cmd-Option-F</dt><dd>Replace</dd>
-      <dt>Shift-Ctrl-R / Shift-Cmd-Option-F</dt><dd>Replace all</dd>
-      <dt>Alt-F</dt><dd>Persistent search (dialog doesn't autoclose,
-      enter to find next, Shift-Enter to find previous)</dd>
-      <dt>Alt-G</dt><dd>Jump to line</dd>
-    </dl>
-    <p>Searching is enabled by
-    including <a href="../addon/search/search.js">addon/search/search.js</a>
-    and <a href="../addon/search/searchcursor.js">addon/search/searchcursor.js</a>.
-    Jump to line - including <a href="../addon/search/jump-to-line.js">addon/search/jump-to-line.js</a>.</p>
-    <p>For good-looking input dialogs, you also want to include
+  <p>
+    Demonstration of primitive search/replace functionality. The keybindings
+    (which can be configured with custom keymaps) are:
+  </p>
+  <dl>
+    <dt>Ctrl-F / Cmd-F</dt>
+    <dd>Start searching</dd>
+    <dt>Ctrl-G / Cmd-G</dt>
+    <dd>Find next</dd>
+    <dt>Shift-Ctrl-G / Shift-Cmd-G</dt>
+    <dd>Find previous</dd>
+    <dt>Shift-Ctrl-F / Cmd-Option-F</dt>
+    <dd>Replace</dd>
+    <dt>Shift-Ctrl-R / Shift-Cmd-Option-F</dt>
+    <dd>Replace all</dd>
+    <dt>Alt-F</dt>
+    <dd>
+      Persistent search (dialog doesn't autoclose, enter to find next,
+      Shift-Enter to find previous)
+    </dd>
+    <dt>Alt-G</dt>
+    <dd>Jump to line</dd>
+  </dl>
+  <p>
+    Searching is enabled by including
+    <a href="../addon/search/search.js">addon/search/search.js</a> and
+    <a href="../addon/search/searchcursor.js">addon/search/searchcursor.js</a>.
+    Jump to line - including
+    <a href="../addon/search/jump-to-line.js">addon/search/jump-to-line.js</a>.
+  </p>
+  <p>
+    For good-looking input dialogs, you also want to include
     <a href="../addon/dialog/dialog.js">addon/dialog/dialog.js</a>
-    and <a href="../addon/dialog/dialog.css">addon/dialog/dialog.css</a>.</p>
-  </article>
+    and <a href="../addon/dialog/dialog.css">addon/dialog/dialog.css</a>.
+  </p>
+</article>

@@ -43,9 +43,10 @@
 .bootstrap-tagsinput .badge {
   margin-right: 2px;
   color: white;
-  background-color:#0275d8;
-  padding:5px 8px;border-radius:3px;
-  border:1px solid #01649e
+  background-color: #0275d8;
+  padding: 5px 8px;
+  border-radius: 3px;
+  border: 1px solid #01649e;
 }
 .bootstrap-tagsinput .badge [data-role="remove"] {
   margin-left: 8px;
@@ -54,13 +55,13 @@
 .bootstrap-tagsinput .badge [data-role="remove"]:after {
   content: "×";
   padding: 0px 4px;
-  background-color:rgba(0, 0, 0, 0.1);
-  border-radius:50%;
-  font-size:13px
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  font-size: 13px;
 }
 .bootstrap-tagsinput .badge [data-role="remove"]:hover:after {
-
-  background-color:rgba(0, 0, 0, 0.62);}
+  background-color: rgba(0, 0, 0, 0.62);
+}
 .bootstrap-tagsinput .badge [data-role="remove"]:hover:active {
   box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
 }

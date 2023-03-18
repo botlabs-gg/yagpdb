@@ -1,8 +1,6 @@
-{{define "bot_admin_config"}}
-
-{{template "cp_head" .}}
+{{define "bot_admin_config"}} {{template "cp_head" .}}
 <header class="page-header">
-    <h2>YAGPDB internal admin panel</h2>
+  <h2>YAGPDB internal admin panel</h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -12,37 +10,43 @@
 </div> -->
 <p>Note: changes requires a restart</p>
 <div class="row">
-    <div class="col">
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <tr>
-                    <th>Key</th>
-                    <th>Description</th>
-                    <th>Default</th>
-                    <th>Loaded</th>
-                    <th>Loaded source</th>
-                    <th style="min-width: 200px;">Change</th>
-                </tr>
-                {{range .ConfigOptions}}
-                <tr>
-                    <td>{{.Name}}</td>
-                    <td>{{.Description}}</td>
-                    <td>{{.DefaultValue}}</td>
-                    <td>{{.LoadedValue}}</td>
-                    <td>{{if .ConfigSource}}{{.ConfigSource.Name}}{{else}}Default{{end}}</td>
-                    <td>
-                        <form action="/admin/config/edit/{{.Name}}" method="POST"><input class="form-control"
-                                name="value" type="text" value="{{.LoadedValue}}"><button type="submit"
-                                class="btn btn-sm btn-primary">save</button>
-                        </form>
-                    </td>
-                </tr>
-                {{end}}
-            </table>
-        </div>
+  <div class="col">
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover">
+        <tr>
+          <th>Key</th>
+          <th>Description</th>
+          <th>Default</th>
+          <th>Loaded</th>
+          <th>Loaded source</th>
+          <th style="min-width: 200px">Change</th>
+        </tr>
+        {{range .ConfigOptions}}
+        <tr>
+          <td>{{.Name}}</td>
+          <td>{{.Description}}</td>
+          <td>{{.DefaultValue}}</td>
+          <td>{{.LoadedValue}}</td>
+          <td>
+            {{if .ConfigSource}}{{.ConfigSource.Name}}{{else}}Default{{end}}
+          </td>
+          <td>
+            <form action="/admin/config/edit/{{.Name}}" method="POST">
+              <input
+                class="form-control"
+                name="value"
+                type="text"
+                value="{{.LoadedValue}}"
+              /><button type="submit" class="btn btn-sm btn-primary">
+                save
+              </button>
+            </form>
+          </td>
+        </tr>
+        {{end}}
+      </table>
     </div>
+  </div>
 </div>
 
-{{template "cp_footer" .}}
-
-{{end}}
+{{template "cp_footer" .}} {{end}}

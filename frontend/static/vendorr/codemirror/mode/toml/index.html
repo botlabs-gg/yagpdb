@@ -1,30 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: TOML Mode</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../doc/docs.css" />
 
-<link rel="stylesheet" href="../../lib/codemirror.css">
+<link rel="stylesheet" href="../../lib/codemirror.css" />
 <script src="../../lib/codemirror.js"></script>
 <script src="toml.js"></script>
-<style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../../doc/logo.png"></a>
+<style type="text/css">
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../../index.html">Home</a>
-    <li><a href="../../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../../index.html">Home</a></li>
+    <li><a href="../../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a href="../index.html">Language modes</a>
-    <li><a class=active href="#">TOML Mode</a>
+    <li><a href="../index.html">Language modes</a></li>
+    <li><a class="active" href="#">TOML Mode</a></li>
   </ul>
 </div>
 
 <article>
-<h2>TOML Mode</h2>
-<form><textarea id="code" name="code">
+  <h2>TOML Mode</h2>
+  <form>
+    <textarea id="code" name="code">
 # This is a TOML document. Boom.
 
 title = "TOML Example"
@@ -60,14 +70,16 @@ hosts = [
   "alpha",
   "omega"
 ]
-</textarea></form>
-    <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        mode: {name: "toml"},
-        lineNumbers: true
-      });
-    </script>
-    <h3>The TOML Mode</h3>
-      <p> Created by Forbes Lindesay.</p>
-    <p><strong>MIME type defined:</strong> <code>text/x-toml</code>.</p>
-  </article>
+</textarea
+    >
+  </form>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      mode: { name: "toml" },
+      lineNumbers: true,
+    });
+  </script>
+  <h3>The TOML Mode</h3>
+  <p>Created by Forbes Lindesay.</p>
+  <p><strong>MIME type defined:</strong> <code>text/x-toml</code>.</p>
+</article>

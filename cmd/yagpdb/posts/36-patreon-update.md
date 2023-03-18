@@ -20,7 +20,6 @@ For **$25/month:** Suggest and have me prioritize 1 relatively simple feature.
 
 For **$50/month:** Suggest and have me prioritize 1 medium-sized feature.
 
-
 For the 2 highest tiers you should contact me first if the only reason you're donating is if you want something added, as opposed to a bonus, because i may be working on something important.
 
 The volunteer support has access to the monthly patron-only giveaways as well.

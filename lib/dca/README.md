@@ -1,5 +1,5 @@
-dca [![Go report](http://goreportcard.com/badge/jonas747/dca)](http://goreportcard.com/report/jonas747/dca) [![Build Status](https://travis-ci.org/jonas747/dca.svg?branch=master)](https://travis-ci.org/jonas747/dca)
-====
+# dca [![Go report](http://goreportcard.com/badge/jonas747/dca)](http://goreportcard.com/report/jonas747/dca) [![Build Status](https://travis-ci.org/jonas747/dca.svg?branch=master)](https://travis-ci.org/jonas747/dca)
+
 `dca` is a audio file format that uses opus packets and json metadata.
 
 This package implements a decoder, encoder and a helper streamer for dca v0 and v1.
@@ -8,9 +8,10 @@ This package implements a decoder, encoder and a helper streamer for dca v0 and 
 
 There's also a standalone command you can use [here](https://github.com/jonas747/dca/tree/master/cmd/dca)
 
-Usage
-===
+# Usage
+
 Encoding
+
 ```go
 
 // Encoding a file and saving it to disk
@@ -26,7 +27,8 @@ if err != nil {
 io.Copy(output, encodeSession)
 ```
 
-Decoding, the decoder automatically detects  dca version aswell as if metadata was available
+Decoding, the decoder automatically detects dca version aswell as if metadata was available
+
 ```go
 // inputReader is an io.Reader, like a file for example
 decoder := dca.NewDecoder(inputReader)
@@ -37,10 +39,10 @@ for {
         if err != io.EOF {
             // Handle the error
         }
-        
+
         break
     }
-    
+
     // Do something with the frame, in this example were sending it to discord
     select{
         case voiceConnection.OpusSend <- frame:
@@ -53,6 +55,7 @@ for {
 ```
 
 Using the helper streamer, the streamer creates a pausable stream to Discord.
+
 ```go
 
 // Source is an OpusReader, both EncodeSession and decoder implements opusreader
@@ -66,6 +69,7 @@ if err != nil && err != io.EOF {
 ```
 
 Using this [youtube-dl](https://www.github.com/rylio/ytdl) Go package, one can stream music to Discord from Youtube
+
 ```go
 // Change these accordingly
 options := dca.StdEncodeOptions
@@ -89,8 +93,8 @@ if err != nil {
     // Handle the error
 }
 defer encodingSession.Cleanup()
-    
-done := make(chan error)    
+
+done := make(chan error)
 dca.NewStream(encodingSession, voiceConnection, done)
 err := <- done
 if err != nil && err != io.EOF {
@@ -99,5 +103,6 @@ if err != nil && err != io.EOF {
 ```
 
 ### Official Specifications
-* [DCA Repo](https://github.com/bwmarrin/dca)
-* [DCA1 specification draft](https://github.com/bwmarrin/dca/wiki/DCA1-specification-draft)
+
+- [DCA Repo](https://github.com/bwmarrin/dca)
+- [DCA1 specification draft](https://github.com/bwmarrin/dca/wiki/DCA1-specification-draft)

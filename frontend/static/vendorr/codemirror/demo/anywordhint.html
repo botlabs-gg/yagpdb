@@ -1,31 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Any Word Completion Demo</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../doc/docs.css" />
 
-<link rel="stylesheet" href="../lib/codemirror.css">
-<link rel="stylesheet" href="../addon/hint/show-hint.css">
+<link rel="stylesheet" href="../lib/codemirror.css" />
+<link rel="stylesheet" href="../addon/hint/show-hint.css" />
 <script src="../lib/codemirror.js"></script>
 <script src="../addon/hint/show-hint.js"></script>
 <script src="../addon/hint/anyword-hint.js"></script>
 <script src="../mode/javascript/javascript.js"></script>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../doc/logo.png"></a>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../index.html">Home</a>
-    <li><a href="../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a class=active href="#">Any Word Completion</a>
+    <li><a class="active" href="#">Any Word Completion</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Any Word Completion Demo</h2>
-<form><textarea id="code" name="code">
+  <h2>Any Word Completion Demo</h2>
+  <form>
+    <textarea id="code" name="code">
 (function() {
   "use strict";
 
@@ -59,21 +64,24 @@
     return {list: list, from: CodeMirror.Pos(cur.line, start), to: CodeMirror.Pos(cur.line, end)};
   });
 })();
-</textarea></form>
+</textarea
+    >
+  </form>
 
-<p>Press <strong>ctrl-space</strong> to activate autocompletion. The
-completion uses
-the <a href="../doc/manual.html#addon_anyword-hint">anyword-hint.js</a>
-module, which simply looks at nearby words in the buffer and completes
-to those.</p>
+  <p>
+    Press <strong>ctrl-space</strong> to activate autocompletion. The completion
+    uses the
+    <a href="../doc/manual.html#addon_anyword-hint">anyword-hint.js</a> module,
+    which simply looks at nearby words in the buffer and completes to those.
+  </p>
 
-    <script>
-      CodeMirror.commands.autocomplete = function(cm) {
-        cm.showHint({hint: CodeMirror.hint.anyword});
-      }
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-        lineNumbers: true,
-        extraKeys: {"Ctrl-Space": "autocomplete"}
-      });
-    </script>
-  </article>
+  <script>
+    CodeMirror.commands.autocomplete = function (cm) {
+      cm.showHint({ hint: CodeMirror.hint.anyword });
+    };
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      extraKeys: { "Ctrl-Space": "autocomplete" },
+    });
+  </script>
+</article>

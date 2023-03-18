@@ -8,18 +8,16 @@ I would not recommend using this, as 1. it currently only works against my disco
 
 It's currently used in YAGPDB.
 
-
-
 # Pitfalls
 
 Currently its somewhat easy to break, if you try to break it that is, im working towards that but yeah, in it's current state i would just not recommend using it, unless you know what you're doing.
 
 Essentials TODO:
 
- - Full upgrade (simple function to migrate all nodes)
- - Add in safeguards for doing things like, stopping nodes in the middle of migration.
-
+- Full upgrade (simple function to migrate all nodes)
+- Add in safeguards for doing things like, stopping nodes in the middle of migration.
 
 Later:
- - Extended status polling form nodes
- - 
+
+- Extended status polling form nodes
+-

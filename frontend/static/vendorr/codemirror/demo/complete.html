@@ -1,33 +1,38 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Autocomplete Demo</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../doc/docs.css" />
 
-<link rel="stylesheet" href="../lib/codemirror.css">
-<link rel="stylesheet" href="../addon/hint/show-hint.css">
+<link rel="stylesheet" href="../lib/codemirror.css" />
+<link rel="stylesheet" href="../addon/hint/show-hint.css" />
 <script src="../lib/codemirror.js"></script>
 <script src="../addon/hint/show-hint.js"></script>
 <script src="../addon/hint/javascript-hint.js"></script>
 <script src="../mode/javascript/javascript.js"></script>
 <script src="../mode/markdown/markdown.js"></script>
 
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../doc/logo.png"></a>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../index.html">Home</a>
-    <li><a href="../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a class=active href="#">Autocomplete</a>
+    <li><a class="active" href="#">Autocomplete</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Autocomplete Demo</h2>
-<form><textarea id="code" name="code">
+  <h2>Autocomplete Demo</h2>
+  <form>
+    <textarea id="code" name="code">
 function getCompletions(token, context) {
   var found = [], start = token.string;
   function maybeAdd(str) {
@@ -63,64 +68,87 @@ function getCompletions(token, context) {
   }
   return found;
 }
-</textarea></form>
+</textarea
+    >
+  </form>
 
-<p>Press <strong>ctrl-space</strong> to activate autocompletion. Built
-on top of the <a href="../doc/manual.html#addon_show-hint"><code>show-hint</code></a>
-and <a href="../doc/manual.html#addon_javascript-hint"><code>javascript-hint</code></a>
-addons.</p>
+  <p>
+    Press <strong>ctrl-space</strong> to activate autocompletion. Built on top
+    of the
+    <a href="../doc/manual.html#addon_show-hint"><code>show-hint</code></a> and
+    <a href="../doc/manual.html#addon_javascript-hint"
+      ><code>javascript-hint</code></a
+    >
+    addons.
+  </p>
 
-<form><textarea style="display: none" id="synonyms" name="synonyms">
+  <form>
+    <textarea style="display: none" id="synonyms" name="synonyms">
 Here, the completion use an asynchronous hinting functions to provide
 synonyms for each words. If your browser support `Promises`, the
 hinting function can also return one.
-</textarea></form>
+</textarea
+    >
+  </form>
 
-<script>
-var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-  lineNumbers: true,
-  extraKeys: {"Ctrl-Space": "autocomplete"},
-  mode: {name: "javascript", globalVars: true}
-});
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      extraKeys: { "Ctrl-Space": "autocomplete" },
+      mode: { name: "javascript", globalVars: true },
+    });
 
-if (typeof Promise !== undefined) {
-  var comp = [
-    ["here", "hither"],
-    ["asynchronous", "nonsynchronous"],
-    ["completion", "achievement", "conclusion", "culmination", "expirations"],
-    ["hinting", "advive", "broach", "imply"],
-    ["function","action"],
-    ["provide", "add", "bring", "give"],
-    ["synonyms", "equivalents"],
-    ["words", "token"],
-    ["each", "every"],
-  ]
+    if (typeof Promise !== undefined) {
+      var comp = [
+        ["here", "hither"],
+        ["asynchronous", "nonsynchronous"],
+        [
+          "completion",
+          "achievement",
+          "conclusion",
+          "culmination",
+          "expirations",
+        ],
+        ["hinting", "advive", "broach", "imply"],
+        ["function", "action"],
+        ["provide", "add", "bring", "give"],
+        ["synonyms", "equivalents"],
+        ["words", "token"],
+        ["each", "every"],
+      ];
 
-  function synonyms(cm, option) {
-    return new Promise(function(accept) {
-      setTimeout(function() {
-        var cursor = cm.getCursor(), line = cm.getLine(cursor.line)
-        var start = cursor.ch, end = cursor.ch
-        while (start && /\w/.test(line.charAt(start - 1))) --start
-        while (end < line.length && /\w/.test(line.charAt(end))) ++end
-        var word = line.slice(start, end).toLowerCase()
-        for (var i = 0; i < comp.length; i++) if (comp[i].indexOf(word) != -1)
-          return accept({list: comp[i],
-                         from: CodeMirror.Pos(cursor.line, start),
-                         to: CodeMirror.Pos(cursor.line, end)})
-        return accept(null)
-      }, 100)
-    })
-  }
+      function synonyms(cm, option) {
+        return new Promise(function (accept) {
+          setTimeout(function () {
+            var cursor = cm.getCursor(),
+              line = cm.getLine(cursor.line);
+            var start = cursor.ch,
+              end = cursor.ch;
+            while (start && /\w/.test(line.charAt(start - 1))) --start;
+            while (end < line.length && /\w/.test(line.charAt(end))) ++end;
+            var word = line.slice(start, end).toLowerCase();
+            for (var i = 0; i < comp.length; i++)
+              if (comp[i].indexOf(word) != -1)
+                return accept({
+                  list: comp[i],
+                  from: CodeMirror.Pos(cursor.line, start),
+                  to: CodeMirror.Pos(cursor.line, end),
+                });
+            return accept(null);
+          }, 100);
+        });
+      }
 
-  var editor2 = CodeMirror.fromTextArea(document.getElementById("synonyms"), {
-    extraKeys: {"Ctrl-Space": "autocomplete"},
-    lineNumbers: true,
-    lineWrapping: true,
-    mode: "text/x-markdown",
-    hintOptions: {hint: synonyms}
-  })
-}
-</script>
-
+      var editor2 = CodeMirror.fromTextArea(
+        document.getElementById("synonyms"),
+        {
+          extraKeys: { "Ctrl-Space": "autocomplete" },
+          lineNumbers: true,
+          lineWrapping: true,
+          mode: "text/x-markdown",
+          hintOptions: { hint: synonyms },
+        }
+      );
+    }
+  </script>
 </article>

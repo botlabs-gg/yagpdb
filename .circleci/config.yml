@@ -12,14 +12,13 @@ jobs: # basic units of work in a run
       - checkout # check out source code to working directory
       # - run: mkdir -p $TEST_RESULTS # create the test results directory
 
-
       - restore_cache: # restores saved cache if no changes are detected since last run
-      # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           keys:
             - v1-pkg-cache
       - run: sudo apt-get update
       - run: sudo apt-get install ffmpeg
-      - run: 
+      - run:
           name: main yagpdb binary build
           command: |
             VERSION=$(git describe --tags)

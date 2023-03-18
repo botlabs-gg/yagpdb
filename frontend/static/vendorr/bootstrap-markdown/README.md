@@ -2,8 +2,8 @@
 
 Markdown editing meet Bootstrap.
 
-| Version | Compatibility with Bootstrap |
-| :---: | :---: |
+|         Version         |      Compatibility with Bootstrap      |
+| :---------------------: | :------------------------------------: |
 | Bootstrap Markdown v2.x | **only** compatible with Bootstrap 3.x |
 | Bootstrap Markdown v1.x | **only** compatible with Bootstrap 2.x |
 

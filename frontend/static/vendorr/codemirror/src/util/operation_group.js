@@ -1,46 +1,50 @@
-import { getHandlers } from "./event"
+import { getHandlers } from "./event";
 
-let operationGroup = null
+let operationGroup = null;
 
 export function pushOperation(op) {
   if (operationGroup) {
-    operationGroup.ops.push(op)
+    operationGroup.ops.push(op);
   } else {
     op.ownsGroup = operationGroup = {
       ops: [op],
-      delayedCallbacks: []
-    }
+      delayedCallbacks: [],
+    };
   }
 }
 
 function fireCallbacksForOps(group) {
   // Calls delayed callbacks and cursorActivity handlers until no
   // new ones appear
-  let callbacks = group.delayedCallbacks, i = 0
+  let callbacks = group.delayedCallbacks,
+    i = 0;
   do {
-    for (; i < callbacks.length; i++)
-      callbacks[i].call(null)
+    for (; i < callbacks.length; i++) callbacks[i].call(null);
     for (let j = 0; j < group.ops.length; j++) {
-      let op = group.ops[j]
+      let op = group.ops[j];
       if (op.cursorActivityHandlers)
         while (op.cursorActivityCalled < op.cursorActivityHandlers.length)
-          op.cursorActivityHandlers[op.cursorActivityCalled++].call(null, op.cm)
+          op.cursorActivityHandlers[op.cursorActivityCalled++].call(
+            null,
+            op.cm
+          );
     }
-  } while (i < callbacks.length)
+  } while (i < callbacks.length);
 }
 
 export function finishOperation(op, endCb) {
-  let group = op.ownsGroup
-  if (!group) return
+  let group = op.ownsGroup;
+  if (!group) return;
 
-  try { fireCallbacksForOps(group) }
-  finally {
-    operationGroup = null
-    endCb(group)
+  try {
+    fireCallbacksForOps(group);
+  } finally {
+    operationGroup = null;
+    endCb(group);
   }
 }
 
-let orphanDelayedCallbacks = null
+let orphanDelayedCallbacks = null;
 
 // Often, we want to signal events at a point where we are in the
 // middle of some work, but don't want the handler to start calling
@@ -50,23 +54,24 @@ let orphanDelayedCallbacks = null
 // them to be executed when the last operation ends, or, if no
 // operation is active, when a timeout fires.
 export function signalLater(emitter, type /*, values...*/) {
-  let arr = getHandlers(emitter, type)
-  if (!arr.length) return
-  let args = Array.prototype.slice.call(arguments, 2), list
+  let arr = getHandlers(emitter, type);
+  if (!arr.length) return;
+  let args = Array.prototype.slice.call(arguments, 2),
+    list;
   if (operationGroup) {
-    list = operationGroup.delayedCallbacks
+    list = operationGroup.delayedCallbacks;
   } else if (orphanDelayedCallbacks) {
-    list = orphanDelayedCallbacks
+    list = orphanDelayedCallbacks;
   } else {
-    list = orphanDelayedCallbacks = []
-    setTimeout(fireOrphanDelayed, 0)
+    list = orphanDelayedCallbacks = [];
+    setTimeout(fireOrphanDelayed, 0);
   }
   for (let i = 0; i < arr.length; ++i)
-    list.push(() => arr[i].apply(null, args))
+    list.push(() => arr[i].apply(null, args));
 }
 
 function fireOrphanDelayed() {
-  let delayed = orphanDelayedCallbacks
-  orphanDelayedCallbacks = null
-  for (let i = 0; i < delayed.length; ++i) delayed[i]()
+  let delayed = orphanDelayedCallbacks;
+  orphanDelayedCallbacks = null;
+  for (let i = 0; i < delayed.length; ++i) delayed[i]();
 }

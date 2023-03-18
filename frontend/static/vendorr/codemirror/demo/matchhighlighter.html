@@ -1,41 +1,54 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <title>CodeMirror: Match Highlighter Demo</title>
-<meta charset="utf-8"/>
-<link rel=stylesheet href="../doc/docs.css">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../doc/docs.css" />
 
-<link rel="stylesheet" href="../lib/codemirror.css">
+<link rel="stylesheet" href="../lib/codemirror.css" />
 <script src="../lib/codemirror.js"></script>
 <script src="../addon/scroll/annotatescrollbar.js"></script>
 <script src="../addon/search/matchesonscrollbar.js"></script>
 <script src="../addon/search/searchcursor.js"></script>
 <script src="../addon/search/match-highlighter.js"></script>
 <style type="text/css">
-      .CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}
-      .CodeMirror-focused .cm-matchhighlight {
-        background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQI12NgYGBgkKzc8x9CMDAwAAAmhwSbidEoSQAAAABJRU5ErkJggg==);
-        background-position: bottom;
-        background-repeat: repeat-x;
-      }
-      .cm-matchhighlight {background-color: lightgreen}
-      .CodeMirror-selection-highlight-scrollbar {background-color: green}
-    </style>
-<div id=nav>
-  <a href="http://codemirror.net"><h1>CodeMirror</h1><img id=logo src="../doc/logo.png"></a>
+  .CodeMirror {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+  }
+  .CodeMirror-focused .cm-matchhighlight {
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVQI12NgYGBgkKzc8x9CMDAwAAAmhwSbidEoSQAAAABJRU5ErkJggg==);
+    background-position: bottom;
+    background-repeat: repeat-x;
+  }
+  .cm-matchhighlight {
+    background-color: lightgreen;
+  }
+  .CodeMirror-selection-highlight-scrollbar {
+    background-color: green;
+  }
+</style>
+<div id="nav">
+  <a href="http://codemirror.net"
+    ><h1>CodeMirror</h1>
+    <img id="logo" src="../doc/logo.png"
+  /></a>
 
   <ul>
-    <li><a href="../index.html">Home</a>
-    <li><a href="../doc/manual.html">Manual</a>
-    <li><a href="https://github.com/codemirror/codemirror">Code</a>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="../doc/manual.html">Manual</a></li>
+    <li><a href="https://github.com/codemirror/codemirror">Code</a></li>
   </ul>
+
   <ul>
-    <li><a class=active href="#">Match Highlighter</a>
+    <li><a class="active" href="#">Match Highlighter</a></li>
   </ul>
 </div>
 
 <article>
-<h2>Match Highlighter Demo</h2>
-<form><textarea id="code" name="code">Select this text: hardtospot
+  <h2>Match Highlighter Demo</h2>
+  <form>
+    <textarea id="code" name="code">
+Select this text: hardtospot
   And everywhere else in your code where hardtospot appears will
 automatically illuminate.  Give it a try!  No more hard to spot
 variables - stay in context of your code all the time.
@@ -87,17 +100,18 @@ sollicitudin metus. Pellentesque congue nec sapien ut rhoncus. Sed
 eget ornare diam, ut consectetur ante. Aenean eleifend mauris quis
 ornare accumsan. In hac habitasse hardtospot platea dictumst.
 
-</textarea></form>
+</textarea
+    >
+  </form>
 
-    <script>
-var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-  lineNumbers: true,
-  // To highlight on scrollbars as well, pass annotateScrollbar in options
-  // as below.
-  highlightSelectionMatches: {showToken: /\w/, annotateScrollbar: true}
-});
-</script>
+  <script>
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      // To highlight on scrollbars as well, pass annotateScrollbar in options
+      // as below.
+      highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
+    });
+  </script>
 
-    <p>Search and highlight occurences of the selected text.</p>
-
-  </article>
+  <p>Search and highlight occurences of the selected text.</p>
+</article>

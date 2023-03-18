@@ -6,17 +6,19 @@
  * Licence: MIT
  */
 
-(function(mod) {
-  if (typeof exports == "object" && typeof module == "object") // CommonJS
+(function (mod) {
+  if (typeof exports == "object" && typeof module == "object")
+    // CommonJS
     mod(require("../../lib/codemirror"));
-  else if (typeof define == "function" && define.amd) // AMD
+  else if (typeof define == "function" && define.amd)
+    // AMD
     define(["../../lib/codemirror"], mod);
-  else // Plain browser env
-    mod(CodeMirror);
-})(function(CodeMirror) {
+  // Plain browser env
+  else mod(CodeMirror);
+})(function (CodeMirror) {
   "use strict";
 
-  CodeMirror.defineMode("stex", function() {
+  CodeMirror.defineMode("stex", function () {
     "use strict";
 
     function pushCommand(state, command) {
@@ -48,7 +50,11 @@
         }
         return plug;
       }
-      return { styleIdentifier: function() { return null; } };
+      return {
+        styleIdentifier: function () {
+          return null;
+        },
+      };
     }
 
     function addPluginPattern(pluginName, cmdStyle, styles) {
@@ -57,23 +63,29 @@
         this.bracketNo = 0;
         this.style = cmdStyle;
         this.styles = styles;
-        this.argument = null;   // \begin and \end have arguments that follow. These are stored in the plugin
+        this.argument = null; // \begin and \end have arguments that follow. These are stored in the plugin
 
-        this.styleIdentifier = function() {
+        this.styleIdentifier = function () {
           return this.styles[this.bracketNo - 1] || null;
         };
-        this.openBracket = function() {
+        this.openBracket = function () {
           this.bracketNo++;
           return "bracket";
         };
-        this.closeBracket = function() {};
+        this.closeBracket = function () {};
       };
     }
 
     var plugins = {};
 
-    plugins["importmodule"] = addPluginPattern("importmodule", "tag", ["string", "builtin"]);
-    plugins["documentclass"] = addPluginPattern("documentclass", "tag", ["", "atom"]);
+    plugins["importmodule"] = addPluginPattern("importmodule", "tag", [
+      "string",
+      "builtin",
+    ]);
+    plugins["documentclass"] = addPluginPattern("documentclass", "tag", [
+      "",
+      "atom",
+    ]);
     plugins["usepackage"] = addPluginPattern("usepackage", "tag", ["atom"]);
     plugins["begin"] = addPluginPattern("begin", "tag", ["atom"]);
     plugins["end"] = addPluginPattern("end", "tag", ["atom"]);
@@ -82,7 +94,10 @@
       this.name = "DEFAULT";
       this.style = "tag";
 
-      this.styleIdentifier = this.openBracket = this.closeBracket = function() {};
+      this.styleIdentifier =
+        this.openBracket =
+        this.closeBracket =
+          function () {};
     };
 
     function setState(state, f) {
@@ -114,15 +129,21 @@
 
       // find if we're starting various math modes
       if (source.match("\\[")) {
-        setState(state, function(source, state){ return inMathMode(source, state, "\\]"); });
+        setState(state, function (source, state) {
+          return inMathMode(source, state, "\\]");
+        });
         return "keyword";
       }
       if (source.match("$$")) {
-        setState(state, function(source, state){ return inMathMode(source, state, "$$"); });
+        setState(state, function (source, state) {
+          return inMathMode(source, state, "$$");
+        });
         return "keyword";
       }
       if (source.match("$")) {
-        setState(state, function(source, state){ return inMathMode(source, state, "$"); });
+        setState(state, function (source, state) {
+          return inMathMode(source, state, "$");
+        });
         return "keyword";
       }
 
@@ -130,7 +151,7 @@
       if (ch == "%") {
         source.skipToEnd();
         return "comment";
-      } else if (ch == '}' || ch == ']') {
+      } else if (ch == "}" || ch == "]") {
         plug = peekCommand(state);
         if (plug) {
           plug.closeBracket(ch);
@@ -139,7 +160,7 @@
           return "error";
         }
         return "bracket";
-      } else if (ch == '{' || ch == '[') {
+      } else if (ch == "{" || ch == "[") {
         plug = plugins["DEFAULT"];
         plug = new plug();
         pushCommand(state, plug);
@@ -150,7 +171,7 @@
       } else {
         source.eatWhile(/[\w\-_]/);
         plug = getMostPowerful(state);
-        if (plug.name == 'begin') {
+        if (plug.name == "begin") {
           plug.argument = source.current();
         }
         return plug.styleIdentifier();
@@ -191,7 +212,14 @@
         return "number";
       }
       var ch = source.next();
-      if (ch == "{" || ch == "}" || ch == "[" || ch == "]" || ch == "(" || ch == ")") {
+      if (
+        ch == "{" ||
+        ch == "}" ||
+        ch == "[" ||
+        ch == "]" ||
+        ch == "(" ||
+        ch == ")"
+      ) {
         return "bracket";
       }
 
@@ -203,8 +231,9 @@
     }
 
     function beginParams(source, state) {
-      var ch = source.peek(), lastPlug;
-      if (ch == '{' || ch == '[') {
+      var ch = source.peek(),
+        lastPlug;
+      if (ch == "{" || ch == "[") {
         lastPlug = peekCommand(state);
         lastPlug.openBracket(ch);
         source.eat(ch);
@@ -222,30 +251,29 @@
     }
 
     return {
-      startState: function() {
+      startState: function () {
         return {
           cmdState: [],
-          f: normal
+          f: normal,
         };
       },
-      copyState: function(s) {
+      copyState: function (s) {
         return {
           cmdState: s.cmdState.slice(),
-          f: s.f
+          f: s.f,
         };
       },
-      token: function(stream, state) {
+      token: function (stream, state) {
         return state.f(stream, state);
       },
-      blankLine: function(state) {
+      blankLine: function (state) {
         state.f = normal;
         state.cmdState.length = 0;
       },
-      lineComment: "%"
+      lineComment: "%",
     };
   });
 
   CodeMirror.defineMIME("text/x-stex", "stex");
   CodeMirror.defineMIME("text/x-latex", "stex");
-
 });
