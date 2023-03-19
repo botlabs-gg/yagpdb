@@ -25,6 +25,11 @@ package %s
 `
 )
 
+var mishapsReplacer = strings.NewReplacer(
+	"vv", "w",
+	"rn", "m",
+)
+
 var BasicLatin = &unicode.RangeTable{
 	R16: []unicode.Range16{
 		{0x0021, 0x007E, 1},
@@ -59,7 +64,6 @@ func isAllowed(from, to string) bool {
 func formatUnicodeIDs(ids string) string {
 	var formattedIDs string
 	for _, charID := range strings.Split(ids, " ") {
-		// newID := fmt.Sprintf("\\U%s%s", strings.Repeat("0", 8-len(charID)), charID)
 		i, err := strconv.ParseInt(charID, 16, 32)
 		if err != nil {
 			fmt.Println(err)
@@ -74,36 +78,20 @@ func formatUnicodeIDs(ids string) string {
 	return formattedIDs
 }
 
-func regexReplace(regex, replace, replaced string) string {
-	newRegex := regexp.MustCompile(regex)
-	reReplaced := newRegex.ReplaceAllString(replace, replaced)
-
-	if reReplaced != replace {
-		return reReplaced
-	}
-
-	return replace
-}
-
 // Fixes a lot of issues with the unicode specification, i.e. m -> rn.
 func fixIssuesWithStr(str string) string {
-	formatted := str
-
 	// Changes characters such as (16) into 16.
 	parensRegex := regexp.MustCompile(`\((.+)\)`)
-	parensMatches := parensRegex.FindStringSubmatch(formatted)
+	parensMatches := parensRegex.FindStringSubmatch(str)
 
 	if len(parensMatches) >= 2 {
-		formatted = parensMatches[1]
+		str = parensMatches[1]
 	}
 
-	// Replaces "vv" into "w", unsure why unicode turns w into vv.
-	formatted = regexReplace(`vv`, formatted, "w")
+	// Replaces vv and rn with w and m
+	str = mishapsReplacer.Replace(str)
 
-	// Replaces "rn" into "m", unsure why unicode does this. Very weird.
-	formatted = regexReplace(`rn`, formatted, "m")
-
-	return formatted
+	return str
 }
 
 func main() {
