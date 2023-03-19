@@ -97,7 +97,7 @@ func fixIssuesWithStr(str string) string {
 func main() {
 	var confusables = make(map[string]string)
 
-	r := regexp.MustCompile(`(?i)(?P<sus>[a-zA-Z0-9 ]*) ;	(?P<unsus>[a-zA-Z0-9 ]*)+ ;	[a-z]{2,}	#\*? \( (?P<suschar>.+) →(?: .+ →)* (?P<unsuschar>.+) \) (?:.+)+ → (?:.+)`)
+	r := regexp.MustCompile(`(?i)([a-zA-Z0-9 ]*) ;	([a-zA-Z0-9 ]*)+ ;	[a-z]{2,}	#\*? \( (.+) →(?: .+ →)* (.+) \) (?:.+)+ → (?:.+)`)
 
 	// Add extra confusables as defined in extraConfusables.json.
 	extraConfusables, err := os.OpenFile(ExtraConfusablesFile, os.O_RDWR|os.O_CREATE, 0755)
