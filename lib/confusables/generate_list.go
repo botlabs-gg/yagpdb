@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -47,22 +48,62 @@ func isAllowed(from, to string) bool {
 		}
 	}
 	for _, rn := range toRune {
-		if unicode.In(rn, BasicLatin) || unicode.IsSpace(rn) {
-			return true
+		if !unicode.In(rn, BasicLatin) {
+			return false
 		}
 	}
 
-	return false
+	return true
 }
 
 func formatUnicodeIDs(ids string) string {
 	var formattedIDs string
 	for _, charID := range strings.Split(ids, " ") {
-		newID := fmt.Sprintf("\\U%s%s", strings.Repeat("0", 8-len(charID)), charID)
-		formattedIDs += newID
+		// newID := fmt.Sprintf("\\U%s%s", strings.Repeat("0", 8-len(charID)), charID)
+		i, err := strconv.ParseInt(charID, 16, 32)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		c := rune(int32(i))
+
+		formattedIDs += string(c)
 	}
 
 	return formattedIDs
+}
+
+func regexReplace(regex, replace, replaced string) string {
+	newRegex := regexp.MustCompile(regex)
+	reReplaced := newRegex.ReplaceAllString(replace, replaced)
+
+	if reReplaced != replace {
+		return reReplaced
+	}
+
+	return replace
+}
+
+// Fixes a lot of issues with the unicode specification, i.e. m -> rn.
+func fixIssuesWithStr(str string) string {
+	formatted := str
+
+	// Changes characters such as (16) into 16.
+	parensRegex := regexp.MustCompile(`\((.+)\)`)
+	parensMatches := parensRegex.FindStringSubmatch(formatted)
+
+	if len(parensMatches) >= 2 {
+		formatted = parensMatches[1]
+	}
+
+	// Replaces "vv" into "w", unsure why unicode turns w into vv.
+	formatted = regexReplace(`vv`, formatted, "w")
+
+	// Replaces "rn" into "m", unsure why unicode does this. Very weird.
+	formatted = regexReplace(`rn`, formatted, "m")
+
+	return formatted
 }
 
 func main() {
@@ -111,6 +152,11 @@ func main() {
 		// Converts unicode IDs into format \U<ID>.
 		confusable := formatUnicodeIDs(matches[1])
 		targettedCharacter := formatUnicodeIDs(matches[2])
+		targettedCharacter = fixIssuesWithStr(targettedCharacter)
+
+		if _, in := confusables[confusable]; in {
+			continue
+		}
 
 		confusables[confusable] = targettedCharacter
 	}
@@ -123,7 +169,7 @@ func main() {
 	fileContent := "var confusables = []string{\n"
 
 	for confusable, confused := range confusables {
-		fileContent += fmt.Sprintf("	\"%s\",\"%s\",\n", confusable, confused)
+		fileContent += fmt.Sprintf("	%s,%s,\n", strconv.Quote(confusable), strconv.Quote(confused))
 	}
 
 	fileContent += "}"
