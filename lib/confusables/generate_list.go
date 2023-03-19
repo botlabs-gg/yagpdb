@@ -25,11 +25,6 @@ package %s
 `
 )
 
-var mishapsReplacer = strings.NewReplacer(
-	"vv", "w",
-	"rn", "m",
-)
-
 var BasicLatin = &unicode.RangeTable{
 	R16: []unicode.Range16{
 		{0x0021, 0x007E, 1},
@@ -78,6 +73,12 @@ func formatUnicodeIDs(ids string) string {
 	return formattedIDs
 }
 
+// Replacer used by fixIssuesWithStr
+var mishapsReplacer = strings.NewReplacer(
+	"vv", "w",
+	"rn", "m",
+)
+
 // Fixes a lot of issues with the unicode specification, i.e. m -> rn.
 func fixIssuesWithStr(str string) string {
 	// Changes characters such as (16) into 16.
@@ -88,7 +89,7 @@ func fixIssuesWithStr(str string) string {
 		str = parensMatches[1]
 	}
 
-	// Replaces vv and rn with w and m
+	// Replace text according to mishapsReplacer.
 	str = mishapsReplacer.Replace(str)
 
 	return str
@@ -137,7 +138,7 @@ func main() {
 			continue
 		}
 
-		// Converts unicode IDs into format \U<ID>.
+		// Converts unicode IDs into actual character.
 		confusable := formatUnicodeIDs(matches[1])
 		targettedCharacter := formatUnicodeIDs(matches[2])
 		targettedCharacter = fixIssuesWithStr(targettedCharacter)
