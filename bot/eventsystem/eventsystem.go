@@ -303,8 +303,8 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 	case workers[s.ShardID] <- evtData:
 		return
 	default:
-		// go common.SendOwnerAlert("Max events in queue!")
 		logrus.Errorf("Max events in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
+		logrus.Warningf("excess Discord event in queue for %d, %d with data %#v", len(workers[s.ShardID]), s.ShardID, evtData)
 		workers[s.ShardID] <- evtData // attempt to send it anyways for now
 	}
 }
@@ -328,8 +328,8 @@ func QueueEventNonDiscord(evtData *EventData) {
 	case workers[s.ShardID] <- evtData:
 		return
 	default:
-		// go common.SendOwnerAlert("Max events in queue!")
 		logrus.Errorf("Max events in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
+		logrus.Warningf("excess Discord event in queue for %d, %d with data %#v", len(workers[s.ShardID]), s.ShardID, evtData)
 		workers[s.ShardID] <- evtData // attempt to send it anyways for now
 	}
 }
