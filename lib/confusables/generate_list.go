@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -47,28 +48,57 @@ func isAllowed(from, to string) bool {
 		}
 	}
 	for _, rn := range toRune {
-		if unicode.In(rn, BasicLatin) || unicode.IsSpace(rn) {
-			return true
+		if !unicode.In(rn, BasicLatin) {
+			return false
 		}
 	}
 
-	return false
+	return true
 }
 
 func formatUnicodeIDs(ids string) string {
 	var formattedIDs string
 	for _, charID := range strings.Split(ids, " ") {
-		newID := fmt.Sprintf("\\U%s%s", strings.Repeat("0", 8-len(charID)), charID)
-		formattedIDs += newID
+		i, err := strconv.ParseInt(charID, 16, 32)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		c := rune(int32(i))
+
+		formattedIDs += string(c)
 	}
 
 	return formattedIDs
 }
 
+// Replacer used by fixIssuesWithStr
+var mishapsReplacer = strings.NewReplacer(
+	"vv", "w",
+	"rn", "m",
+)
+
+// Fixes a lot of issues with the unicode specification, i.e. m -> rn.
+func fixIssuesWithStr(str string) string {
+	// Changes characters such as (16) into 16.
+	parensRegex := regexp.MustCompile(`\((.+)\)`)
+	parensMatches := parensRegex.FindStringSubmatch(str)
+
+	if len(parensMatches) >= 2 {
+		str = parensMatches[1]
+	}
+
+	// Replace text according to mishapsReplacer.
+	str = mishapsReplacer.Replace(str)
+
+	return str
+}
+
 func main() {
 	var confusables = make(map[string]string)
 
-	r := regexp.MustCompile(`(?i)(?P<sus>[a-zA-Z0-9 ]*) ;	(?P<unsus>[a-zA-Z0-9 ]*)+ ;	[a-z]{2,}	#\*? \( (?P<suschar>.+) →(?: .+ →)* (?P<unsuschar>.+) \) (?:.+)+ → (?:.+)`)
+	r := regexp.MustCompile(`(?i)([a-zA-Z0-9 ]*) ;	([a-zA-Z0-9 ]*)+ ;	[a-z]{2,}	#\*? \( (.+) →(?: .+ →)* (.+) \) (?:.+)+ → (?:.+)`)
 
 	// Add extra confusables as defined in extraConfusables.json.
 	extraConfusables, err := os.OpenFile(ExtraConfusablesFile, os.O_RDWR|os.O_CREATE, 0755)
@@ -108,9 +138,14 @@ func main() {
 			continue
 		}
 
-		// Converts unicode IDs into format \U<ID>.
+		// Converts unicode IDs into actual character.
 		confusable := formatUnicodeIDs(matches[1])
 		targettedCharacter := formatUnicodeIDs(matches[2])
+		targettedCharacter = fixIssuesWithStr(targettedCharacter)
+
+		if _, in := confusables[confusable]; in {
+			continue
+		}
 
 		confusables[confusable] = targettedCharacter
 	}
@@ -123,7 +158,7 @@ func main() {
 	fileContent := "var confusables = []string{\n"
 
 	for confusable, confused := range confusables {
-		fileContent += fmt.Sprintf("	\"%s\",\"%s\",\n", confusable, confused)
+		fileContent += fmt.Sprintf("	%s,%s,\n", strconv.Quote(confusable), strconv.Quote(confused))
 	}
 
 	fileContent += "}"
