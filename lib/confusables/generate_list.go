@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -73,7 +74,27 @@ func formatUnicodeIDs(ids string) string {
 	return formattedIDs
 }
 
-// Replacer used by fixIssuesWithStr
+// Used to sort the map to prevent massive diffs every generate.
+type Pair struct {
+	Key   string
+	Value string
+}
+
+type PList []Pair
+
+func (p PList) Len() int {
+	return len(p)
+}
+
+func (p PList) Less(i, j int) bool {
+	return p[i].Value < p[j].Value
+}
+
+func (p PList) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
+}
+
+// Replacer used by fixIssuesWithStr.
 var mishapsReplacer = strings.NewReplacer(
 	"vv", "w",
 	"rn", "m",
@@ -155,10 +176,20 @@ func main() {
 		return
 	}
 
+	c := make(PList, len(confusables))
+
+	i := 0
+	for k, v := range confusables {
+		c[i] = Pair{k, v}
+		i++
+	}
+
+	sort.Sort(c)
+
 	fileContent := "var confusables = []string{\n"
 
-	for confusable, confused := range confusables {
-		fileContent += fmt.Sprintf("	%s,%s,\n", strconv.Quote(confusable), strconv.Quote(confused))
+	for _, confusable := range c {
+		fileContent += fmt.Sprintf("	%s,%s,\n", strconv.Quote(confusable.Key), strconv.Quote(confusable.Value))
 	}
 
 	fileContent += "}"
