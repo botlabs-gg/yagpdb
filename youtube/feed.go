@@ -412,55 +412,6 @@ func (p *Plugin) parseYtVideoID(parse string) (id *videoID, err error) {
 	}
 }
 
-func (p *Plugin) getYtChannel(url *url.URL) (channel *youtube.Channel, err error) {
-	urlType, id, err := p.parseYtUrl(url)
-	if err != nil {
-		return nil, err
-	}
-	var cResp *youtube.ChannelListResponse
-	channelListCall := p.YTService.Channels.List([]string{"snippet"})
-
-	switch urlType {
-	case ytUrlTypeChannel:
-		channelListCall = channelListCall.Id(id)
-	case ytUrlTypeUser:
-		channelListCall = channelListCall.ForUsername(id)
-	case ytUrlTypeCustom, ytUrlTypeHandle:
-		searchListCall := p.YTService.Search.List([]string{"snippet"})
-		searchListCall = searchListCall.Q(id).Type("channel")
-		sResp, err := searchListCall.Do()
-		if err != nil {
-			return nil, common.ErrWithCaller(err)
-		}
-		if len(sResp.Items) < 1 {
-			return nil, ErrNoChannel
-		}
-		channelListCall = channelListCall.Id(sResp.Items[0].Id.ChannelId)
-	case ytUrlTypeVideo:
-		searchListCall := p.YTService.Search.List([]string{"snippet"})
-		searchListCall = searchListCall.Q(id).Type("video")
-		sResp, err := searchListCall.Do()
-		if err != nil {
-			return nil, common.ErrWithCaller(err)
-		}
-		if len(sResp.Items) < 1 {
-			return nil, ErrNoChannel
-		}
-		channelListCall = channelListCall.Id(sResp.Items[0].Snippet.ChannelId)
-	default:
-		return nil, common.ErrWithCaller(errors.New("invalid youtube Url"))
-	}
-	cResp, err = channelListCall.Do()
-
-	if err != nil {
-		return nil, common.ErrWithCaller(err)
-	}
-	if len(cResp.Items) < 1 {
-		return nil, ErrNoChannel
-	}
-	return cResp.Items[0], nil
-}
-
 func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {
 	if mentionEveryone && len(mentionRoles) > 0 {
 		mentionRoles = make([]int64, 0)
