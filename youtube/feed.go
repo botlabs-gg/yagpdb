@@ -379,13 +379,13 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		}
 	}
 
-	pathSegments := strings.Split(channelUrl.Path, "/")
-	if len(pathSegments) != 3 {
-		return nil, fmt.Errorf("%s is not a valid path", path)
+	pathSegments := strings.Split(path, "/")
+	if len(pathSegments) != 2 {
+		return nil, fmt.Errorf("\"%s\" is not a valid path", path)
 	}
 
-	first := pathSegments[1]
-	second := pathSegments[2]
+	first := pathSegments[0]
+	second := pathSegments[1]
 
 	switch first {
 	case "shorts":
