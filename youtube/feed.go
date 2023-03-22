@@ -279,6 +279,76 @@ var (
 	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")
 )
 
+var listParts = []string{"snippet"}
+
+type ytChannelID interface {
+	getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error)
+}
+
+type videoID struct {
+	id string
+}
+
+func (id *videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	videoListCall := p.YTService.Videos.List(listParts)
+	vResp, err := videoListCall.Id(id.id).MaxResults(1).Do()
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	} else if len(vResp.Items) < 1 {
+		return nil, errors.New("video not found")
+	}
+	cResp, err = list.Id(vResp.Items[0].Snippet.ChannelId).Do()
+	if err != nil {
+		err = common.ErrWithCaller(err)
+	}
+	return 
+
+}
+
+type channelID struct {
+	id string
+}
+
+func (id *channelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.Id(id.id).Do()
+	if err != nil {
+		err = common.ErrWithCaller(err)
+	}
+	return
+}
+
+type userID struct {
+	id string
+}
+
+func (id *userID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.ForUsername(id.id).Do()
+	if err != nil {
+		err = common.ErrWithCaller(err)
+	}
+	return
+}
+
+type searchChannelID struct {
+	id string
+}
+
+func (id *searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	q := url.QueryEscape(id.id)
+	searchListCall := p.YTService.Search.List(listParts)
+	sResp, err := searchListCall.Q(q).Type("channel").MaxResults(1).Do()
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	} else if len(sResp.Items) < 1 {
+		return nil, ErrNoChannel
+	}
+	cResp, err = list.Id(sResp.Items[0].Id.ChannelId).Do()
+	if err != nil {
+		err = common.ErrWithCaller(err)
+	}
+	return
+}
+
 func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, err error) {
 	// First set of URL types should only have one segment,
 	// so trimming leading forward slash simplifies following operations
