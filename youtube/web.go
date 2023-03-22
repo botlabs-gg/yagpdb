@@ -52,17 +52,6 @@ type YoutubeAnnouncementForm struct {
 	Enabled bool
 }
 
-type ytUrlType int
-
-const (
-	ytUrlTypeVideo ytUrlType = iota
-	ytUrlTypeCustom
-	ytUrlTypeChannel
-	ytUrlTypeUser
-	ytUrlTypeHandle
-	ytUrlTypeInvalid
-)
-
 var (
 	ytVideoIDRegex   = regexp.MustCompile(`\A[\w-]+\z`)
 	ytChannelIDRegex = regexp.MustCompile(`\AUC[\w-]{21}[AQgw]\z`)
