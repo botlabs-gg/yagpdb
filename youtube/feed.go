@@ -353,9 +353,12 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	// First set of URL types should only have one segment,
 	// so trimming leading forward slash simplifies following operations
 	path := strings.TrimPrefix(channelUrl.Path, "/")
+	host := channelUrl.Host
 
-	if strings.HasSuffix(channelUrl.Host, "youtu.be") {
+	if strings.HasSuffix(host, "youtu.be") {
 		return p.parseYtVideoID(path)
+	} else if !strings.HasSuffix(host, "youtube.com") {
+		return nil, fmt.Errorf("\"%s\" is not a valid youtube domain", host)
 	}
 
 	if strings.HasPrefix(path, "watch") {

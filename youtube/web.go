@@ -150,7 +150,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
 	channelUrl := data.YoutubeUrl
 	parsedUrl, err := url.Parse(channelUrl)
-	if err != nil || !(strings.HasSuffix(parsedUrl.Host, "youtube.com") || strings.HasSuffix(parsedUrl.Host, "youtu.be")) {
+	if err != nil {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
 	}
 
