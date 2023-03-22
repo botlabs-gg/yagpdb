@@ -403,13 +403,13 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	}
 }
 
-func (p *Plugin) parseYtVideoID(parse string) (idType ytUrlType, id string, err error) {
-	id = ytVideoIDRegex.FindString(parse)
-	if id == "" {
-		idType = ytUrlTypeInvalid
-		err = fmt.Errorf("%s is not a valid youtube video id", parse)
+func (p *Plugin) parseYtVideoID(parse string) (id *videoID, err error) {
+	parsed := ytVideoIDRegex.FindString(parse)
+	if parsed != "" {
+		return &videoID{ id: parsed }, nil
+	} else {
+		return nil, fmt.Errorf("%s is not a valid youtube video id", parse)
 	}
-	return
 }
 
 func (p *Plugin) getYtChannel(url *url.URL) (channel *youtube.Channel, err error) {
