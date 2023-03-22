@@ -375,7 +375,7 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		if handle != nil {
 			return &searchChannelID{ id: handle[1] }, nil
 		} else {
-			return nil, fmt.Errorf("%#v is not a valid youtube handle", path)
+			return nil, fmt.Errorf("\"%s\" is not a valid youtube handle", path)
 		}
 	}
 
@@ -395,14 +395,14 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		if parse != "" {
 			return &channelID{ id: parse }, nil
 		} else {
-			return nil, fmt.Errorf("%s is not a valid youtube channel id", id)
+			return nil, fmt.Errorf("\"%s\" is not a valid youtube channel id", id)
 		}
 	case "c":
 		return &searchChannelID{ id: second }, nil
 	case "user":
 		return &userID{ id: second }, nil
 	default:
-		return nil, fmt.Errorf("%s is not a valid path", path)
+		return nil, fmt.Errorf("\"%s\" is not a valid path", path)
 	}
 }
 
@@ -411,7 +411,7 @@ func (p *Plugin) parseYtVideoID(parse string) (id *videoID, err error) {
 	if parsed != "" {
 		return &videoID{ id: parsed }, nil
 	} else {
-		return nil, fmt.Errorf("%s is not a valid youtube video id", parse)
+		return nil, fmt.Errorf("\"%s\" is not a valid youtube video id", parse)
 	}
 }
 
