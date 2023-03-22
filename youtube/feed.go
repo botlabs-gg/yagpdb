@@ -349,7 +349,7 @@ func (id *searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListC
 	return
 }
 
-func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, err error) {
+func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	// First set of URL types should only have one segment,
 	// so trimming leading forward slash simplifies following operations
 	path := strings.TrimPrefix(channelUrl.Path, "/")
@@ -370,15 +370,15 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, e
 	if strings.HasPrefix(path, "@") {
 		handle := ytHandleRegex.FindStringSubmatch(path)
 		if handle != nil {
-			return ytUrlTypeHandle, handle[1], nil
+			return &searchChannelID{ id: handle[1] }, nil
 		} else {
-			return ytUrlTypeInvalid, id, fmt.Errorf("%#v is not a valid youtube handle", path)
+			return nil, fmt.Errorf("%#v is not a valid youtube handle", path)
 		}
 	}
 
 	pathSegments := strings.Split(channelUrl.Path, "/")
 	if len(pathSegments) != 3 {
-		return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid path", path)
+		return nil, fmt.Errorf("%s is not a valid path", path)
 	}
 
 	first := pathSegments[1]
@@ -388,77 +388,28 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, e
 	case "shorts":
 		return p.parseYtVideoID(second)
 	case "channel":
-		id = ytChannelIDRegex.FindString(second)
-		if id != "" {
-			return ytUrlTypeChannel, id, nil
+		parse := ytChannelIDRegex.FindString(second)
+		if parse != "" {
+			return &channelID{ id: parse }, nil
 		} else {
-			return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid youtube channel id", id)
+			return nil, fmt.Errorf("%s is not a valid youtube channel id", id)
 		}
 	case "c":
-		return ytUrlTypeCustom, second, nil
+		return &searchChannelID{ id: second }, nil
 	case "user":
-		return ytUrlTypeUser, second, nil
+		return &userID{ id: second }, nil
 	default:
-		return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid path", path)
+		return nil, fmt.Errorf("%s is not a valid path", path)
 	}
 }
 
-func (p *Plugin) parseYtVideoID(parse string) (idType ytUrlType, id string, err error) {
-	id = ytVideoIDRegex.FindString(parse)
-	if id == "" {
-		idType = ytUrlTypeInvalid
-		err = fmt.Errorf("%s is not a valid youtube video id", parse)
+func (p *Plugin) parseYtVideoID(parse string) (id *videoID, err error) {
+	parsed := ytVideoIDRegex.FindString(parse)
+	if parsed != "" {
+		return &videoID{ id: parsed }, nil
+	} else {
+		return nil, fmt.Errorf("%s is not a valid youtube video id", parse)
 	}
-	return
-}
-
-func (p *Plugin) getYtChannel(url *url.URL) (channel *youtube.Channel, err error) {
-	urlType, id, err := p.parseYtUrl(url)
-	if err != nil {
-		return nil, err
-	}
-	var cResp *youtube.ChannelListResponse
-	channelListCall := p.YTService.Channels.List([]string{"snippet"})
-
-	switch urlType {
-	case ytUrlTypeChannel:
-		channelListCall = channelListCall.Id(id)
-	case ytUrlTypeUser:
-		channelListCall = channelListCall.ForUsername(id)
-	case ytUrlTypeCustom, ytUrlTypeHandle:
-		searchListCall := p.YTService.Search.List([]string{"snippet"})
-		searchListCall = searchListCall.Q(id).Type("channel")
-		sResp, err := searchListCall.Do()
-		if err != nil {
-			return nil, common.ErrWithCaller(err)
-		}
-		if len(sResp.Items) < 1 {
-			return nil, ErrNoChannel
-		}
-		channelListCall = channelListCall.Id(sResp.Items[0].Id.ChannelId)
-	case ytUrlTypeVideo:
-		searchListCall := p.YTService.Search.List([]string{"snippet"})
-		searchListCall = searchListCall.Q(id).Type("video")
-		sResp, err := searchListCall.Do()
-		if err != nil {
-			return nil, common.ErrWithCaller(err)
-		}
-		if len(sResp.Items) < 1 {
-			return nil, ErrNoChannel
-		}
-		channelListCall = channelListCall.Id(sResp.Items[0].Snippet.ChannelId)
-	default:
-		return nil, common.ErrWithCaller(errors.New("invalid youtube Url"))
-	}
-	cResp, err = channelListCall.Do()
-
-	if err != nil {
-		return nil, common.ErrWithCaller(err)
-	}
-	if len(cResp.Items) < 1 {
-		return nil, ErrNoChannel
-	}
-	return cResp.Items[0], nil
 }
 
 func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {
