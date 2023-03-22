@@ -349,7 +349,7 @@ func (id *searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListC
 	return
 }
 
-func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, err error) {
+func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	// First set of URL types should only have one segment,
 	// so trimming leading forward slash simplifies following operations
 	path := strings.TrimPrefix(channelUrl.Path, "/")
@@ -370,15 +370,15 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, e
 	if strings.HasPrefix(path, "@") {
 		handle := ytHandleRegex.FindStringSubmatch(path)
 		if handle != nil {
-			return ytUrlTypeHandle, handle[1], nil
+			return &searchChannelID{ id: handle[1] }, nil
 		} else {
-			return ytUrlTypeInvalid, id, fmt.Errorf("%#v is not a valid youtube handle", path)
+			return nil, fmt.Errorf("%#v is not a valid youtube handle", path)
 		}
 	}
 
 	pathSegments := strings.Split(channelUrl.Path, "/")
 	if len(pathSegments) != 3 {
-		return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid path", path)
+		return nil, fmt.Errorf("%s is not a valid path", path)
 	}
 
 	first := pathSegments[1]
@@ -388,18 +388,18 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, e
 	case "shorts":
 		return p.parseYtVideoID(second)
 	case "channel":
-		id = ytChannelIDRegex.FindString(second)
-		if id != "" {
-			return ytUrlTypeChannel, id, nil
+		parse := ytChannelIDRegex.FindString(second)
+		if parse != "" {
+			return &channelID{ id: parse }, nil
 		} else {
-			return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid youtube channel id", id)
+			return nil, fmt.Errorf("%s is not a valid youtube channel id", id)
 		}
 	case "c":
-		return ytUrlTypeCustom, second, nil
+		return &searchChannelID{ id: second }, nil
 	case "user":
-		return ytUrlTypeUser, second, nil
+		return &userID{ id: second }, nil
 	default:
-		return ytUrlTypeInvalid, id, fmt.Errorf("%s is not a valid path", path)
+		return nil, fmt.Errorf("%s is not a valid path", path)
 	}
 }
 
