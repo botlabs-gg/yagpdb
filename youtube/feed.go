@@ -279,6 +279,10 @@ var (
 	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")
 )
 
+type ytChannelID interface {
+	getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error)
+}
+
 func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, err error) {
 	// First set of URL types should only have one segment,
 	// so trimming leading forward slash simplifies following operations
