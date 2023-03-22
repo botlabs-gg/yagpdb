@@ -305,6 +305,18 @@ func (id *videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cR
 
 }
 
+type channelID struct {
+	id string
+}
+
+func (id *channelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.Id(id.id).Do()
+	if err != nil {
+		err = common.ErrWithCaller(err)
+	}
+	return
+}
+
 func (p *Plugin) parseYtUrl(channelUrl *url.URL) (idType ytUrlType, id string, err error) {
 	// First set of URL types should only have one segment,
 	// so trimming leading forward slash simplifies following operations
