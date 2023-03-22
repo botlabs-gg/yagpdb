@@ -55,7 +55,7 @@ type YoutubeAnnouncementForm struct {
 var (
 	ytVideoIDRegex   = regexp.MustCompile(`\A[\w\-]+\z`)
 	ytChannelIDRegex = regexp.MustCompile(`\AUC[\w\-]{21}[AQgw]\z`)
-	ytHandleRegex    = regexp.MustCompile(`\A@([\w\-.]{3,30})\z`)
+	ytHandleRegex    = regexp.MustCompile(`\A@[\w\-.]{3,30}\z`)
 )
 
 func (p *Plugin) InitWeb() {

@@ -371,9 +371,8 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	// Prefix check allows method to provide a more helpful error message,
 	// when attempting to parse an invalid handle URL.
 	if strings.HasPrefix(path, "@") {
-		handle := ytHandleRegex.FindStringSubmatch(path)
-		if handle != nil {
-			return &searchChannelID{ id: handle[1] }, nil
+		if ytHandleRegex.MatchString(path) {
+			return &searchChannelID{ id: path }, nil
 		} else {
 			return nil, fmt.Errorf("\"%s\" is not a valid youtube handle", path)
 		}
