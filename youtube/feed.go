@@ -390,9 +390,8 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	case "shorts":
 		return p.parseYtVideoID(second)
 	case "channel":
-		parse := ytChannelIDRegex.FindString(second)
-		if parse != "" {
-			return &channelID{ id: parse }, nil
+		if ytChannelIDRegex.MatchString(second) {
+			return &channelID{ id: second }, nil
 		} else {
 			return nil, fmt.Errorf("\"%s\" is not a valid youtube channel id", id)
 		}
@@ -406,9 +405,8 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 }
 
 func (p *Plugin) parseYtVideoID(parse string) (id *videoID, err error) {
-	parsed := ytVideoIDRegex.FindString(parse)
-	if parsed != "" {
-		return &videoID{ id: parsed }, nil
+	if ytVideoIDRegex.MatchString(parse) {
+		return &videoID{ id: parse }, nil
 	} else {
 		return nil, fmt.Errorf("\"%s\" is not a valid youtube video id", parse)
 	}
