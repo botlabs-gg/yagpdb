@@ -285,13 +285,11 @@ type ytChannelID interface {
 	getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error)
 }
 
-type videoID struct {
-	id string
-}
+type videoID string
 
-func (v *videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+func (v videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
 	videoListCall := p.YTService.Videos.List(listParts)
-	vResp, err := videoListCall.Id(v.id).MaxResults(1).Do()
+	vResp, err := videoListCall.Id(string(v)).MaxResults(1).Do()
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	} else if len(vResp.Items) < 1 {
@@ -302,30 +300,24 @@ func (v *videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cRe
 
 }
 
-type channelID struct {
-	id string
-}
+type channelID string
 
-func (c *channelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
-	cResp, err = list.Id(c.id).Do()
+func (c channelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.Id(string(c)).Do()
 	return cResp, common.ErrWithCaller(err)
 }
 
-type userID struct {
-	id string
-}
+type userID string
 
-func (u *userID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
-	cResp, err = list.ForUsername(u.id).Do()
+func (u userID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.ForUsername(string(u)).Do()
 	return cResp, common.ErrWithCaller(err)
 }
 
-type searchChannelID struct {
-	id string
-}
+type searchChannelID string
 
-func (s *searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
-	q := url.QueryEscape(s.id)
+func (s searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	q := url.QueryEscape(string(s))
 	searchListCall := p.YTService.Search.List(listParts)
 	sResp, err := searchListCall.Q(q).Type("channel").MaxResults(1).Do()
 	if err != nil {
@@ -360,7 +352,7 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	// when attempting to parse an invalid handle URL.
 	if strings.HasPrefix(path, "@") {
 		if ytHandleRegex.MatchString(path) {
-			return &searchChannelID{ id: path }, nil
+			return searchChannelID(path), nil
 		} else {
 			return nil, fmt.Errorf("\"%s\" is not a valid youtube handle", path)
 		}
@@ -379,22 +371,22 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		return p.parseYtVideoID(second)
 	case "channel":
 		if ytChannelIDRegex.MatchString(second) {
-			return &channelID{ id: second }, nil
+			return channelID(second), nil
 		} else {
 			return nil, fmt.Errorf("\"%s\" is not a valid youtube channel id", id)
 		}
 	case "c":
-		return &searchChannelID{ id: second }, nil
+		return searchChannelID(second), nil
 	case "user":
-		return &userID{ id: second }, nil
+		return userID(second), nil
 	default:
 		return nil, fmt.Errorf("\"%s\" is not a valid path", path)
 	}
 }
 
-func (p *Plugin) parseYtVideoID(parse string) (id *videoID, err error) {
+func (p *Plugin) parseYtVideoID(parse string) (id ytChannelID, err error) {
 	if ytVideoIDRegex.MatchString(parse) {
-		return &videoID{ id: parse }, nil
+		return videoID(parse), nil
 	} else {
 		return nil, fmt.Errorf("\"%s\" is not a valid youtube video id", parse)
 	}
