@@ -36,7 +36,9 @@ type ApplicationCommand struct {
 	Type              ApplicationCommandType `json:"type,omitempty"`
 	Name              string                 `json:"name"`
 	NameLocalizations *map[Locale]string     `json:"name_localizations,omitempty"`
-	DefaultPermission *bool                  `json:"default_permission,omitempty"`
+
+	DefaultMemberPermissions *int64 `json:"default_member_permissions,string,omitempty"`
+	DMPermission             *bool  `json:"dm_permission,omitempty"`
 
 	// NOTE: Chat commands only. Otherwise it mustn't be set.
 

@@ -376,7 +376,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdListVLC, cmdListVLC.GetTrigger())
 	container.AddCommand(cmdDelV, cmdDelV.GetTrigger())
 	container.AddCommand(cmdClearV, cmdClearV.GetTrigger())
-	commands.RegisterSlashCommandsContainer(container, false, func(gs *dstate.GuildSet) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(container, discordgo.PermissionManageServer, false, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }
