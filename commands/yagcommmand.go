@@ -1015,8 +1015,6 @@ func removeRunningCommand(guildID, channelID, authorID int64, cmd *YAGCommand) {
 	}
 
 	runningcommandsLock.Unlock()
-
-	return
 }
 
 func (yc *YAGCommand) FindNameFromContainerChain(cc []*dcmd.Container) string {

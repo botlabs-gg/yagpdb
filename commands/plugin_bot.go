@@ -14,6 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
@@ -31,18 +32,17 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleInteractionCreate, eventsystem.EventInteractionCreate)
 
 	// Slash command permissions are currently pretty fucked so can't use them
-	//
-	// eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildCreate, eventsystem.EventGuildCreate)
-	// eventsystem.AddHandlerAsyncLastLegacy(p, p.handleDiscordEventUpdateSlashCommandPermissions, eventsystem.EventGuildRoleCreate, eventsystem.EventGuildRoleUpdate, eventsystem.EventChannelCreate)
-	// pubsub.AddHandler("update_slash_command_permissions", p.handleUpdateSlashCommandsPermissions, nil)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildCreate, eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleDiscordEventUpdateSlashCommandPermissions, eventsystem.EventGuildRoleCreate, eventsystem.EventGuildRoleUpdate, eventsystem.EventChannelCreate)
+	pubsub.AddHandler("update_slash_command_permissions", p.handleUpdateSlashCommandsPermissions, nil)
 
 	CommandSystem.State = bot.State
 	dcmd.CustomUsernameSearchFunc = p.customUsernameSearchFunc
 
-	// err := clearGlobalCommands()
-	// if err != nil {
-	// 	logger.WithError(err).Errorf("failed clearing all commands")
-	// }
+	err := clearGlobalCommands()
+	if err != nil {
+		logger.WithError(err).Errorf("failed clearing all commands")
+	}
 	p.startSlashCommandsUpdater()
 
 }
@@ -416,7 +416,7 @@ func clearGlobalCommands() error {
 		return err
 	}
 
-	logger.Info("COMMANDS LENGHT: ", len(commands))
+	logger.Info("COMMANDS LENGTH: ", len(commands))
 
 	for _, v := range commands {
 		err = common.BotSession.DeleteGlobalApplicationCommand(common.BotApplication.ID, v.ID)

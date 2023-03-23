@@ -374,7 +374,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdCloseTicket, cmdCloseTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 
-	commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
+	commands.RegisterSlashCommandsContainer(container, discordgo.PermissionUseApplicationCommands, false, TicketCommandsRolesRunFuncfunc)
 }
 
 func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildSet) ([]int64, error) {

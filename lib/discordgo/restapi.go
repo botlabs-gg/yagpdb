@@ -2884,10 +2884,11 @@ func (s *Session) GetGlobalApplicationCommand(applicationID int64, cmdID int64) 
 }
 
 type EditApplicationCommandRequest struct {
-	Name              *string                      `json:"name,omitempty"`               //	1-32 character name matching ^[\w-]{1,32}$
-	Description       *string                      `json:"description,omitempty"`        //	1-100 character description
-	Options           *[]*ApplicationCommandOption `json:"options,omitempty"`            // the parameters for the command
-	DefaultPermission *bool                        `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
+	Name                     *string                      `json:"name,omitempty"`        //	1-32 character name matching ^[\w-]{1,32}$
+	Description              *string                      `json:"description,omitempty"` //	1-100 character description
+	Options                  *[]*ApplicationCommandOption `json:"options,omitempty"`     // the parameters for the command
+	DefaultMemberPermissions *int64                       `json:"default_member_permissions,string,omitempty"`
+	DMPermission             *bool                        `json:"dm_permission,omitempty"`
 }
 
 // EditGlobalApplicationCommand edits a global command. Updates will be available in all guilds after 1 hour.

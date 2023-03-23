@@ -7,6 +7,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/cardsagainstdiscord"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/sirupsen/logrus"
 )
@@ -113,7 +114,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())
 	container.AddCommand(cmdKick, cmdKick.GetTrigger())
 	container.AddCommand(cmdPacks, cmdPacks.GetTrigger())
-	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(container, discordgo.PermissionUseApplicationCommands, false, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }

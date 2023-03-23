@@ -158,7 +158,7 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
 	menuContainer.AddCommand(cmdListGroups, cmdListGroups.GetTrigger())
-	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildSet) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(menuContainer, discordgo.PermissionManageServer, false, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }
