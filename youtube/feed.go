@@ -298,10 +298,7 @@ func (id *videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cR
 		return nil, errors.New("video not found")
 	}
 	cResp, err = list.Id(vResp.Items[0].Snippet.ChannelId).Do()
-	if err != nil {
-		err = common.ErrWithCaller(err)
-	}
-	return 
+	return cResp, common.ErrWithCaller(err)
 
 }
 
@@ -311,10 +308,7 @@ type channelID struct {
 
 func (id *channelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
 	cResp, err = list.Id(id.id).Do()
-	if err != nil {
-		err = common.ErrWithCaller(err)
-	}
-	return
+	return cResp, common.ErrWithCaller(err)
 }
 
 type userID struct {
@@ -323,10 +317,7 @@ type userID struct {
 
 func (id *userID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
 	cResp, err = list.ForUsername(id.id).Do()
-	if err != nil {
-		err = common.ErrWithCaller(err)
-	}
-	return
+	return cResp, common.ErrWithCaller(err)
 }
 
 type searchChannelID struct {
@@ -343,10 +334,7 @@ func (id *searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListC
 		return nil, ErrNoChannel
 	}
 	cResp, err = list.Id(sResp.Items[0].Id.ChannelId).Do()
-	if err != nil {
-		err = common.ErrWithCaller(err)
-	}
-	return
+	return cResp, common.ErrWithCaller(err)
 }
 
 func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
