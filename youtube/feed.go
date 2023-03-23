@@ -289,9 +289,9 @@ type videoID struct {
 	id string
 }
 
-func (id *videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+func (v *videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
 	videoListCall := p.YTService.Videos.List(listParts)
-	vResp, err := videoListCall.Id(id.id).MaxResults(1).Do()
+	vResp, err := videoListCall.Id(v.id).MaxResults(1).Do()
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	} else if len(vResp.Items) < 1 {
@@ -306,8 +306,8 @@ type channelID struct {
 	id string
 }
 
-func (id *channelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
-	cResp, err = list.Id(id.id).Do()
+func (c *channelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.Id(c.id).Do()
 	return cResp, common.ErrWithCaller(err)
 }
 
@@ -315,8 +315,8 @@ type userID struct {
 	id string
 }
 
-func (id *userID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
-	cResp, err = list.ForUsername(id.id).Do()
+func (u *userID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.ForUsername(u.id).Do()
 	return cResp, common.ErrWithCaller(err)
 }
 
@@ -324,8 +324,8 @@ type searchChannelID struct {
 	id string
 }
 
-func (id *searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
-	q := url.QueryEscape(id.id)
+func (s *searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	q := url.QueryEscape(s.id)
 	searchListCall := p.YTService.Search.List(listParts)
 	sResp, err := searchListCall.Q(q).Type("channel").MaxResults(1).Do()
 	if err != nil {
