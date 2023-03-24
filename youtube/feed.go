@@ -338,7 +338,7 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	if strings.HasSuffix(host, "youtu.be") {
 		return p.parseYtVideoID(path)
 	} else if !strings.HasSuffix(host, "youtube.com") {
-		return nil, fmt.Errorf("\"%s\" is not a valid youtube domain", host)
+		return nil, fmt.Errorf("%q is not a valid youtube domain", host)
 	}
 
 	if strings.HasPrefix(path, "watch") {
@@ -354,13 +354,13 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		if ytHandleRegex.MatchString(path) {
 			return searchChannelID(path), nil
 		} else {
-			return nil, fmt.Errorf("\"%s\" is not a valid youtube handle", path)
+			return nil, fmt.Errorf("%q is not a valid youtube handle", path)
 		}
 	}
 
 	pathSegments := strings.Split(path, "/")
 	if len(pathSegments) != 2 {
-		return nil, fmt.Errorf("\"%s\" is not a valid path", path)
+		return nil, fmt.Errorf("%q is not a valid path", path)
 	}
 
 	first := pathSegments[0]
@@ -373,14 +373,14 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		if ytChannelIDRegex.MatchString(second) {
 			return channelID(second), nil
 		} else {
-			return nil, fmt.Errorf("\"%s\" is not a valid youtube channel id", id)
+			return nil, fmt.Errorf("%q is not a valid youtube channel id", id)
 		}
 	case "c":
 		return searchChannelID(second), nil
 	case "user":
 		return userID(second), nil
 	default:
-		return nil, fmt.Errorf("\"%s\" is not a valid path", path)
+		return nil, fmt.Errorf("%q is not a valid path", path)
 	}
 }
 
@@ -388,7 +388,7 @@ func (p *Plugin) parseYtVideoID(parse string) (id ytChannelID, err error) {
 	if ytVideoIDRegex.MatchString(parse) {
 		return videoID(parse), nil
 	} else {
-		return nil, fmt.Errorf("\"%s\" is not a valid youtube video id", parse)
+		return nil, fmt.Errorf("%q is not a valid youtube video id", parse)
 	}
 }
 
