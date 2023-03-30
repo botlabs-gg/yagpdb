@@ -61,7 +61,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands)
+	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands, cmdEvalCommand)
 }
 
 func (p *Plugin) BotInit() {
@@ -115,6 +115,86 @@ type DelayedRunCCData struct {
 	UserKey interface{} `json:"user_key"`
 
 	IsExecedByLeaveMessage bool `json:"is_execed_by_leave_message"`
+}
+
+var cmdEvalCommand = &commands.YAGCommand{
+	CmdCategory:  commands.CategoryTool,
+	Name:         "Evalcc",
+	Description:  "executes custom command code (up to 1k characters)",
+	RequiredArgs: 1,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "code", Type: dcmd.String},
+	},
+	SlashCommandEnabled: false,
+	DefaultEnabled:      true,
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		hasCoreWriteRole := false
+
+		writeRoles := common.GetCoreServerConfCached(data.GuildData.GS.ID).AllowedWriteRoles
+		for _, r := range data.GuildData.MS.Member.Roles {
+			if common.ContainsInt64Slice(writeRoles, r) {
+				hasCoreWriteRole = true
+				break
+			}
+		}
+
+		adminOrPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.GuildData.CS.ID, data.GuildData.MS, discordgo.PermissionManageServer)
+		if err != nil {
+			return nil, err
+		}
+
+		if !(adminOrPerms || hasCoreWriteRole) {
+			return "You need `Manage Server` permissions or control panel write access for this command", nil
+		}
+
+		// Disallow calling via exec / execAdmin
+		if data.Context().Value(commands.CtxKeyExecutedByCC) == true {
+			return "", nil
+		}
+
+		channel := data.GuildData.CS
+		ctx := templates.NewContext(data.GuildData.GS, channel, data.GuildData.MS)
+		ctx.IsExecedByEvalCC = true
+
+		code := parseCodeblock(data.Args[0].Str())
+
+		// Encourage only small code snippets being tested with this command
+		maxRunes := 1000
+		if utf8.RuneCountInString(code) > maxRunes {
+			return "Code is too long for in-place evaluation. Please use the control panel.", nil
+		}
+
+		if channel == nil {
+			return "Something weird happened... Contact the support server.", nil
+		}
+
+		out, err := ctx.Execute(code)
+
+		if err != nil {
+			return formatCustomCommandRunErr(code, err), err
+		}
+
+		return out, nil
+	},
+}
+
+// Also accepts spaces due to how dcmd reconstructs arguments wrapped in triple backticks.
+var codeblockRegexp = regexp.MustCompile(`(?m)\A(?:\x60{2} ?\x60)(?:go(?:lang)?\n)?([\S\s]+)(?:\x60 ?\x60{2})\z`)
+
+// parseCodeblock returns the content wrapped in a Discord markdown block.
+// If no (valid) codeblock was found, the given input is returned back.
+func parseCodeblock(input string) string {
+	parts := codeblockRegexp.FindStringSubmatch(input)
+
+	// No match found, input was not wrapped in (valid) codeblock markdown
+	// just dump it, don't bother fixing things for the user.
+	if parts == nil {
+		return input
+	}
+
+	logger.Debugf("Found matches: %#v", parts)
+	logger.Debugf("Returning %s", parts[1])
+	return parts[1]
 }
 
 var cmdListCommands = &commands.YAGCommand{
