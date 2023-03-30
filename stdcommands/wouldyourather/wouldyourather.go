@@ -38,7 +38,7 @@ var Command = &commands.YAGCommand{
 			Description: wyrDescription,
 			Author: &discordgo.MessageEmbedAuthor{
 				Name: "Would you rather...",
-				URL:  "https://either.io/",
+				URL:  "https://wouldurather.io/",
 			},
 			Footer: &discordgo.MessageEmbedFooter{
 				Text: fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
@@ -62,7 +62,7 @@ var Command = &commands.YAGCommand{
 }
 
 func wouldYouRather() (q1 string, q2 string, err error) {
-	req, err := http.NewRequest("GET", "http://either.io/", nil)
+	req, err := http.NewRequest("GET", "https://wouldurather.io/", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -77,8 +77,8 @@ func wouldYouRather() (q1 string, q2 string, err error) {
 		return
 	}
 
-	r1 := doc.Find("div.result.result-1 > .option-text")
-	r2 := doc.Find("div.result.result-2 > .option-text")
+	r1 := doc.Find("#box1 > .option1")
+	r2 := doc.Find("#box2 > .option2")
 
 	if len(r1.Nodes) < 1 || len(r2.Nodes) < 1 {
 		return "", "", errors.New("Failed finding questions, format may have changed.")
