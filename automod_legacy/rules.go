@@ -274,6 +274,10 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 		for _, invite := range invites {
 			inviteMap[invite.Code] = true
 		}
+		guild := bot.State.GetGuild(guildID)
+		if guild != nil && len(guild.VanityURLCode) > 0 {
+			inviteMap[guild.VanityURLCode] = true
+		}
 
 		invitesCache.set(guildID, inviteMap)
 
@@ -294,7 +298,6 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 		}
 
 		id := v[2]
-
 		// only check each link once
 		if checked[id] {
 			continue

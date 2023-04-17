@@ -460,8 +460,9 @@ type Guild struct {
 	// The Channel ID to which system messages are sent (eg join and leave messages)
 	SystemChannelID string `json:"system_channel_id"`
 
-	ApproximateMemberCount   int `json:"approximate_member_count"`
-	ApproximatePresenceCount int `json:"approximate_presence_count"`
+	ApproximateMemberCount   int    `json:"approximate_member_count"`
+	ApproximatePresenceCount int    `json:"approximate_presence_count"`
+	VanityURLCode            string `json:"vanity_url_code"`
 }
 
 func (g *Guild) GetGuildID() int64 {
