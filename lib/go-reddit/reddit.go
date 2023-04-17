@@ -3,7 +3,6 @@ package reddit
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -46,7 +45,7 @@ func (c *Client) commentOnThing(fullname string, text string) error {
 	if err != nil {
 		return err
 	} else if resp.StatusCode >= 400 {
-		return errors.New(fmt.Sprintf("HTTP Status Code: %d", resp.StatusCode))
+		return fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
@@ -71,7 +70,7 @@ func (c *Client) deleteThing(fullname string) error {
 	if err != nil {
 		return err
 	} else if resp.StatusCode >= 400 {
-		return errors.New(fmt.Sprintf("HTTP Status Code: %d", resp.StatusCode))
+		return fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
@@ -98,7 +97,7 @@ func (c *Client) editThingText(fullname string, text string) error {
 	if err != nil {
 		return err
 	} else if resp.StatusCode >= 400 {
-		return errors.New(fmt.Sprintf("HTTP Status Code: %d", resp.StatusCode))
+		return fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
