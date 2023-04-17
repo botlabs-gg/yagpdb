@@ -15,7 +15,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/sirupsen/logrus"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
@@ -299,7 +298,6 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 		}
 
 		id := v[2]
-		logrus.Infof("got invite %s", id)
 		// only check each link once
 		if checked[id] {
 			continue
