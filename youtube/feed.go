@@ -317,7 +317,7 @@ func (u userID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp
 type searchChannelID string
 
 func (s searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
-	q := url.QueryEscape(string(s))
+	q := string(s)
 	searchListCall := p.YTService.Search.List(listParts)
 	sResp, err := searchListCall.Q(q).Type("channel").MaxResults(1).Do()
 	if err != nil {
