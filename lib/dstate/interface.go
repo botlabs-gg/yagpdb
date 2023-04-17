@@ -197,6 +197,9 @@ type GuildState struct {
 
 	// The Channel ID to which system messages are sent (eg join and leave messages)
 	SystemChannelID string `json:"system_channel_id"`
+
+	// Contains the vanity url of a guild
+	VanityURLCode string `json:"vanity_url_code"`
 }
 
 type ChannelState struct {

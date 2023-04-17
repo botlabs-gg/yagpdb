@@ -176,9 +176,9 @@ func GuildStateFromDgo(guild *discordgo.Guild) *GuildState {
 	return &GuildState{
 		ID:                          guild.ID,
 		Available:                   true,
-		Region:                      guild.Region,
 		MemberCount:                 int64(guild.MemberCount),
 		OwnerID:                     guild.OwnerID,
+		Region:                      guild.Region,
 		Name:                        guild.Name,
 		Icon:                        guild.Icon,
 		Description:                 guild.Description,
@@ -198,9 +198,9 @@ func GuildStateFromDgo(guild *discordgo.Guild) *GuildState {
 		WidgetEnabled:               guild.WidgetEnabled,
 		WidgetChannelID:             guild.WidgetChannelID,
 		SystemChannelID:             guild.SystemChannelID,
+		VanityURLCode:               guild.VanityURLCode,
 	}
 }
-
 func IsRoleAbove(a, b *discordgo.Role) bool {
 	if a == nil {
 		return false
