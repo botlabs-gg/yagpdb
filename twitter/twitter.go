@@ -67,7 +67,7 @@ func (p *Plugin) CheckCredentials() {
 		IncludeEmail: twitter.Bool(true),
 	})
 	if err != nil {
-		logger.WithError(err).Fatal("Failed verifying credentials")
+		logger.WithError(err).Error("Failed verifying credentials")
 	} else {
 		logger.Infof("Logged in as %s", user.ScreenName)
 	}
