@@ -361,6 +361,13 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		// in URLs with a `watch` segment.
 		val := channelUrl.Query().Get("v")
 		return p.parseYtVideoID(val)
+	} else if strings.HasPrefix(path, "playlist") {
+		val := channelUrl.Query().Get("list")
+		if ytPlaylistIDRegex.MatchString(val) {
+			return playlistID(val), nil
+		} else {
+			return nil, fmt.Errorf("%q is not a valid playlist ID", val)
+		}
 	}
 
 	// Prefix check allows method to provide a more helpful error message,
