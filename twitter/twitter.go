@@ -6,14 +6,15 @@ import (
 	"sync"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
 	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
 	twitterscraper "github.com/n0madic/twitter-scraper"
 )
 
 var (
-	logger         = common.GetPluginLogger(&Plugin{})
-	TwitterScraper = twitterscraper.New()
+	logger           = common.GetPluginLogger(&Plugin{})
+	confTwitterProxy = config.RegisterOption("yagpdb.twitter.proxy", "Proxy URL to scrape feeds from twitter", "")
 )
 
 type Plugin struct {
@@ -34,6 +35,10 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func RegisterPlugin() {
 	twitterScraper := twitterscraper.New()
+	twitterProxy := confTwitterProxy.GetString()
+	if len(twitterProxy) > 0 {
+		twitterScraper.SetProxy(twitterProxy)
+	}
 
 	p := &Plugin{
 		twitterScraper: twitterScraper,
