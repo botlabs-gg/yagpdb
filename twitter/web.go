@@ -11,7 +11,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/go-twitter/twitter"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
@@ -104,47 +103,29 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData.AddAlerts(web.ErrorAlert("Max 25 feeds per server")), nil
 	}
 
-	globalCount, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(activeGuild.ID)).CountG(ctx)
-	if err != nil {
-		return templateData, err
-	}
-
-	if globalCount >= 4000 {
-		return templateData.AddAlerts(web.ErrorAlert("Bot hit max feeds, contact bot owner")), nil
-	}
-
 	form := ctx.Value(common.ContextKeyParsedForm).(*Form)
 
 	// search up the ID
-	users, _, err := p.twitterAPI.Users.Lookup(&twitter.UserLookupParams{
-		ScreenName: []string{form.TwitterUser},
-	})
+	user, err := p.twitterScraper.GetProfile(form.TwitterUser)
 	if err != nil {
-		if cast, ok := err.(twitter.APIError); ok {
-			if cast.Errors[0].Code == 17 {
-				return templateData.AddAlerts(web.ErrorAlert("User not found")), nil
-			}
-		}
-		return templateData, err
-	}
-
-	if len(users) < 1 {
 		return templateData.AddAlerts(web.ErrorAlert("User not found")), nil
 	}
 
-	user := users[0]
-
+	userId, err := strconv.ParseInt(user.UserID, 10, 64)
+	if err != nil {
+		return templateData.AddAlerts(web.ErrorAlert("Failed getting user id")), nil
+	}
 	m := &models.TwitterFeed{
 		GuildID:         activeGuild.ID,
-		TwitterUsername: user.ScreenName,
-		TwitterUserID:   user.ID,
+		TwitterUsername: user.Username,
+		TwitterUserID:   userId,
 		ChannelID:       form.DiscordChannel,
 		Enabled:         true,
 	}
 
 	err = m.InsertG(ctx, boil.Infer())
 	if err == nil {
-		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.ScreenName}))
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.Username}))
 	}
 	return templateData, err
 }
