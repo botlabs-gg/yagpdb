@@ -51,20 +51,15 @@ func (p *Plugin) runFeedLoop() {
 	for {
 		select {
 		case <-ticker.C:
-			logrus.Info("TWITTER LOOP TICKER")
 			p.feedsLock.Lock()
 			newFeeds := p.feeds
 			p.feedsLock.Unlock()
 			p.runFeed(newFeeds)
 		case <-startDelay:
-			logrus.Info("TWITTER LOOP DELAY")
 		case wg := <-p.Stop:
-			logrus.Info("TWITTER LOOP STOP")
 			wg.Done()
 			return
 		}
-		logrus.Info("TWITTER LOOP RUNNING")
-		// check if we need to restart it cause of new or removed feeds
 	}
 }
 
@@ -112,8 +107,8 @@ func (p *Plugin) checkTweet(tweet *twitterscraper.Tweet) {
 }
 
 func (p *Plugin) getTweetsForUser(username string) {
-	logrus.Infof("Getting TWEET for user %s", username)
-	for tweet := range p.twitterScraper.GetTweets(context.Background(), username, 50) {
+	logrus.Infof("Getting tweets for user %s", username)
+	for tweet := range p.twitterScraper.GetTweets(context.Background(), username, 10) {
 		if tweet.Error != nil {
 			logrus.WithError(tweet.Error).Errorf("Failed Getting Tweet for user %s", username)
 			continue
@@ -124,7 +119,6 @@ func (p *Plugin) getTweetsForUser(username string) {
 
 func (p *Plugin) runFeed(feeds []*models.TwitterFeed) {
 	uniqueFeeds := make(map[string]int)
-	logrus.Info("RUNNING TWITTER FEED")
 	for _, v := range feeds {
 		if uniqueFeeds[v.TwitterUsername] == 0 {
 			uniqueFeeds[v.TwitterUsername] = 1
@@ -132,14 +126,13 @@ func (p *Plugin) runFeed(feeds []*models.TwitterFeed) {
 		uniqueFeeds[v.TwitterUsername]++
 	}
 
-	logger.Info("NUMBER OF Unique Feeds: ", len(uniqueFeeds))
+	logger.Info("NUMBER OF Unique Twitter Feeds: ", len(uniqueFeeds))
 	for user := range uniqueFeeds {
 		go p.getTweetsForUser(user)
 	}
 }
 
 func (p *Plugin) handleTweet(t *twitterscraper.Tweet) {
-	logrus.Infof("Handling Tweet %s", t.Text)
 	if t.UserID == "" {
 		logger.Errorf("Twitter user is nil?: %#v", t)
 		return
@@ -192,8 +185,12 @@ OUTER:
 		return
 	}
 
+	user, err := p.twitterScraper.GetProfile(t.Username)
+	if err != nil {
+		logrus.WithError(err).Errorf("Failed getting user info for username %s", t.Username)
+	}
 	webhookUsername := "Twitter • YAGPDB"
-	embed := createTweetEmbed(t)
+	embed := p.createTweetEmbed(t, &user)
 	for _, v := range relevantFeeds {
 		go analytics.RecordActiveUnit(v.GuildID, p, "posted_twitter_message")
 
@@ -217,13 +214,15 @@ OUTER:
 	logger.Infof("Handled tweet %q on %d channels", t.Text, len(relevantFeeds))
 }
 
-func createTweetEmbed(tweet *twitterscraper.Tweet) *discordgo.MessageEmbed {
+func (p *Plugin) createTweetEmbed(tweet *twitterscraper.Tweet, user *twitterscraper.Profile) *discordgo.MessageEmbed {
 	timeStr := time.Unix(tweet.Timestamp, 0).Format(time.RFC3339)
 	text := tweet.Text
+
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name: "@" + tweet.Username,
-			URL:  tweet.PermanentURL,
+			Name:    "@" + tweet.Username,
+			IconURL: user.Avatar,
+			URL:     tweet.PermanentURL,
 		},
 		Description: text,
 		Timestamp:   timeStr,
