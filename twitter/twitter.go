@@ -14,7 +14,7 @@ import (
 
 var (
 	logger           = common.GetPluginLogger(&Plugin{})
-	confTwitterProxy = config.RegisterOption("yagpdb.twitter.proxy", "Proxy URL for to scrape feeds from twitter", "")
+	confTwitterProxy = config.RegisterOption("yagpdb.twitter.proxy", "Proxy URL to scrape feeds from twitter", "")
 )
 
 type Plugin struct {
