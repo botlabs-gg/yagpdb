@@ -108,7 +108,7 @@ func (p *Plugin) checkTweet(tweet *twitterscraper.Tweet) {
 
 func (p *Plugin) getTweetsForUser(userID string) {
 	logrus.Infof("Getting tweets for user %s", userID)
-	for tweet := range p.twitterScraper.GetTweets(context.Background(), userID, 10) {
+	for tweet := range p.twitterScraper.GetTweets(context.Background(), userID, 50) {
 		if tweet.Error != nil {
 			logrus.WithError(tweet.Error).Errorf("Failed Getting Tweet for user %s", userID)
 			continue
