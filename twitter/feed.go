@@ -3,6 +3,7 @@ package twitter
 import (
 	"context"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -106,11 +107,23 @@ func (p *Plugin) checkTweet(tweet *twitterscraper.Tweet) {
 	p.handleTweet(tweet)
 }
 
-func (p *Plugin) getTweetsForUser(userID string) {
-	logrus.Infof("Getting tweets for user %s", userID)
-	for tweet := range p.twitterScraper.GetTweets(context.Background(), userID, 50) {
+func (p *Plugin) getTweetsForUser(username string) {
+	logrus.Infof("Getting tweets for user %s", username)
+	for tweet := range p.twitterScraper.GetTweets(context.Background(), username, 50) {
 		if tweet.Error != nil {
-			logrus.WithError(tweet.Error).Errorf("Failed Getting Tweet for user %s", userID)
+			errString := tweet.Error.Error()
+			isNotFound := strings.Contains(errString, "not found")
+			isSuspended := strings.Contains(errString, "User has been suspended")
+			if isNotFound || isSuspended {
+				_, err := models.TwitterFeeds(models.TwitterFeedWhere.TwitterUsername.EQ(username)).UpdateAllG(context.Background(), models.M{"enabled": false})
+				if err != nil {
+					logrus.WithError(err).Errorf("Failed suspending feed for user %s", username)
+				} else {
+					logrus.WithError(tweet.Error).Errorf("Disabled feed for %s", username)
+				}
+			} else {
+				logrus.WithError(tweet.Error).Errorf("Failed getting tweets for user %s", username)
+			}
 			continue
 		}
 		go p.checkTweet(&tweet.Tweet)
@@ -141,7 +154,8 @@ func (p *Plugin) runFeed(feeds []*models.TwitterFeed) {
 		batches = append(batches, currentChunk)
 	}
 
-	for _, batch := range batches {
+	for idx, batch := range batches {
+		logrus.Infof("Running batch %d of %d for twitter feeds", idx, len(batches))
 		for _, user := range batch {
 			go p.getTweetsForUser(user)
 		}
