@@ -106,11 +106,11 @@ func (p *Plugin) checkTweet(tweet *twitterscraper.Tweet) {
 	p.handleTweet(tweet)
 }
 
-func (p *Plugin) getTweetsForUser(username string) {
-	logrus.Infof("Getting tweets for user %s", username)
-	for tweet := range p.twitterScraper.GetTweets(context.Background(), username, 10) {
+func (p *Plugin) getTweetsForUser(userID string) {
+	logrus.Infof("Getting tweets for user %s", userID)
+	for tweet := range p.twitterScraper.GetTweets(context.Background(), userID, 50) {
 		if tweet.Error != nil {
-			logrus.WithError(tweet.Error).Errorf("Failed Getting Tweet for user %s", username)
+			logrus.WithError(tweet.Error).Errorf("Failed Getting Tweet for user %s", userID)
 			continue
 		}
 		go p.checkTweet(&tweet.Tweet)
@@ -127,9 +127,27 @@ func (p *Plugin) runFeed(feeds []*models.TwitterFeed) {
 	}
 
 	logger.Info("NUMBER OF Unique Twitter Feeds: ", len(uniqueFeeds))
+	batchSize := confTwitterBatchSize.GetInt()
+	batches := make([][]string, 0)
+	currentChunk := make([]string, 0, batchSize)
 	for user := range uniqueFeeds {
-		go p.getTweetsForUser(user)
+		currentChunk = append(currentChunk, user)
+		if len(currentChunk) == batchSize {
+			batches = append(batches, currentChunk)
+			currentChunk = make([]string, 0, batchSize)
+		}
 	}
+	if len(currentChunk) > 0 {
+		batches = append(batches, currentChunk)
+	}
+
+	for _, batch := range batches {
+		for _, user := range batch {
+			go p.getTweetsForUser(user)
+		}
+		time.Sleep(10 * time.Second)
+	}
+
 }
 
 func (p *Plugin) handleTweet(t *twitterscraper.Tweet) {
@@ -175,11 +193,11 @@ OUTER:
 	}
 	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyLastTweetTime(t.Username), time.Now().Unix()))
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed Saving tweet time for %s ", t.Username)
+		logrus.WithError(err).Errorf("Failed Saving tweet time for %s ", t.UserID)
 		return
 	}
 
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyLastTweetID(t.ID), time.Now().Unix()))
+	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyLastTweetID(t.Username), t.ID))
 	if err != nil {
 		logrus.WithError(err).Errorf("Failed Saving tweet id for %s ", t.Username)
 		return
@@ -187,7 +205,7 @@ OUTER:
 
 	user, err := p.twitterScraper.GetProfile(t.Username)
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed getting user info for username %s", t.Username)
+		logrus.WithError(err).Errorf("Failed getting user info for userID %s", t.Username)
 	}
 	webhookUsername := "Twitter • YAGPDB"
 	embed := p.createTweetEmbed(t, &user)
@@ -217,13 +235,15 @@ OUTER:
 func (p *Plugin) createTweetEmbed(tweet *twitterscraper.Tweet, user *twitterscraper.Profile) *discordgo.MessageEmbed {
 	timeStr := time.Unix(tweet.Timestamp, 0).Format(time.RFC3339)
 	text := tweet.Text
-
+	author := &discordgo.MessageEmbedAuthor{
+		Name: "@" + tweet.Username,
+		URL:  tweet.PermanentURL,
+	}
+	if user != nil {
+		author.IconURL = user.Avatar
+	}
 	embed := &discordgo.MessageEmbed{
-		Author: &discordgo.MessageEmbedAuthor{
-			Name:    "@" + tweet.Username,
-			IconURL: user.Avatar,
-			URL:     tweet.PermanentURL,
-		},
+		Author:      author,
 		Description: text,
 		Timestamp:   timeStr,
 		Color:       0x38A1F3,

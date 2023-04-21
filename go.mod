@@ -9,9 +9,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/buger/jsonparser v1.1.1
 	github.com/bwmarrin/snowflake v0.3.0
-	github.com/cenkalti/backoff v2.1.1+incompatible
-	github.com/dghubble/oauth1 v0.6.0
-	github.com/dghubble/sling v1.4.0
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/dpatrie/urbandictionary v0.0.0-20151214192647-3b38cbf4cb81
 	github.com/ei14/calc v0.0.0-20220307072502-adbe43bdf801
@@ -84,14 +81,11 @@ require (
 	github.com/francoispqt/gojay v1.2.13
 	github.com/jarcoal/httpmock v1.0.4
 	github.com/justinian/dice v1.0.1
-	github.com/mtibben/confusables v0.0.0-20210201002637-9d1b0723b659
+	github.com/n0madic/twitter-scraper v0.0.0-20230323164130-5ff4cd0d1ba9
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 )
 
-require (
-	cloud.google.com/go v0.74.0 // indirect
-	github.com/n0madic/twitter-scraper v0.0.0-20230323164130-5ff4cd0d1ba9 // indirect
-)
+require cloud.google.com/go v0.74.0 // indirect
 
 require (
 	github.com/AlekSi/pointer v1.1.0
@@ -117,7 +111,6 @@ require (
 	github.com/go-playground/validator/v10 v10.4.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
