@@ -47,7 +47,7 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 
 func (p *Plugin) runFeedLoop() {
 	logrus.Info("STARTING TWITTER FEED LOOP")
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Minute * 5)
 	startDelay := time.After(time.Second * 2)
 	for {
 		select {
@@ -159,7 +159,7 @@ func (p *Plugin) runFeed(feeds []*models.TwitterFeed) {
 		for _, user := range batch {
 			go p.getTweetsForUser(user)
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(30 * time.Second)
 	}
 
 }
@@ -243,7 +243,7 @@ OUTER:
 
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "twitter"}).Add(float64(len(relevantFeeds)))
 
-	logger.Infof("Handled tweet %q on %d channels", t.Text, len(relevantFeeds))
+	logger.Infof("Handled tweet %q from %s on %d channels", t.Text, t.Username, len(relevantFeeds))
 }
 
 func (p *Plugin) createTweetEmbed(tweet *twitterscraper.Tweet, user *twitterscraper.Profile) *discordgo.MessageEmbed {
