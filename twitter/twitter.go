@@ -13,9 +13,11 @@ import (
 )
 
 var (
-	logger               = common.GetPluginLogger(&Plugin{})
-	confTwitterProxy     = config.RegisterOption("yagpdb.twitter.proxy", "Proxy URL to scrape feeds from twitter", "")
-	confTwitterBatchSize = config.RegisterOption("yagpdb.twitter.batch_size", "Batch Size for scraping feeds", 50)
+	logger                   = common.GetPluginLogger(&Plugin{})
+	confTwitterProxy         = config.RegisterOption("yagpdb.twitter.proxy", "Proxy URL to scrape feeds from twitter", "")
+	confTwitterBatchSize     = config.RegisterOption("yagpdb.twitter.batch_size", "Batch Size for scraping feeds", 50)
+	confTwitterPollFrequency = config.RegisterOption("yagpdb.twitter.poll_frequency", "Minimum Delay in each feed poll for all feeds in minutes", 1)
+	confTwitterBatchDelay    = config.RegisterOption("yagpdb.twitter.batch_delay", "Delay in seconds between each batch", 10)
 )
 
 type Plugin struct {

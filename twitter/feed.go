@@ -47,7 +47,7 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 
 func (p *Plugin) runFeedLoop() {
 	logrus.Info("STARTING TWITTER FEED LOOP")
-	ticker := time.NewTicker(time.Minute * 5)
+	ticker := time.NewTicker(time.Minute * time.Duration(confTwitterPollFrequency.GetInt()))
 	startDelay := time.After(time.Second * 2)
 	for {
 		select {
@@ -107,7 +107,7 @@ func (p *Plugin) checkTweet(tweet *twitterscraper.Tweet) {
 	p.handleTweet(tweet)
 }
 
-func (p *Plugin) getTweetsForUser(username string) {
+func (p *Plugin) getTweetsForUser(username string, attempt int, delay time.Duration) {
 	logrus.Infof("Getting tweets for user %s", username)
 	for tweet := range p.twitterScraper.GetTweets(context.Background(), username, 50) {
 		if tweet.Error != nil {
@@ -122,9 +122,16 @@ func (p *Plugin) getTweetsForUser(username string) {
 					logrus.WithError(tweet.Error).Errorf("Disabled feed for %s", username)
 				}
 			} else {
-				logrus.WithError(tweet.Error).Errorf("Failed getting tweets for user %s", username)
+				logrus.WithError(tweet.Error).Errorf("Failed getting tweets for user %s, ", username)
+				if attempt < 3 {
+					logrus.Infof("Retrying to get tweets for user %s with attempt %d and delay of %d seconds", username, attempt+1, delay)
+					time.Sleep(delay * time.Second)
+					//retry if ratelimited after delay
+					go p.getTweetsForUser(username, attempt+1, 2*delay)
+				}
 			}
-			continue
+
+			break
 		}
 		go p.checkTweet(&tweet.Tweet)
 	}
@@ -155,13 +162,12 @@ func (p *Plugin) runFeed(feeds []*models.TwitterFeed) {
 	}
 
 	for idx, batch := range batches {
-		logrus.Infof("Running batch %d of %d for twitter feeds", idx, len(batches))
+		logrus.Infof("Running batch %d of %d for twitter feeds", idx+1, len(batches))
 		for _, user := range batch {
-			go p.getTweetsForUser(user)
+			go p.getTweetsForUser(user, 0, 10)
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(time.Duration(confTwitterBatchDelay.GetInt()) * time.Second)
 	}
-
 }
 
 func (p *Plugin) handleTweet(t *twitterscraper.Tweet) {
