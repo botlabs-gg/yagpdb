@@ -122,8 +122,9 @@ func (p *Plugin) getTweetsForUser(username string, attempt int, delay time.Durat
 					logrus.WithError(tweet.Error).Errorf("Disabled feed for %s", username)
 				}
 			} else {
-				logrus.WithError(tweet.Error).Errorf("Failed getting tweets for user %s, retrying with attempt %d and delay of %d seconds", username, attempt+1, delay)
+				logrus.WithError(tweet.Error).Errorf("Failed getting tweets for user %s, ", username)
 				if attempt < 3 {
+					logrus.Infof("Retrying to get tweets for user %s with attempt %d and delay of %d seconds", username, attempt+1, delay)
 					time.Sleep(delay * time.Second)
 					//retry if ratelimited after delay
 					go p.getTweetsForUser(username, attempt+1, 2*delay)
