@@ -7,6 +7,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -21,7 +22,7 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "id", Type: dcmd.BigInt},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		skip := data.Args[0].Int()
 
 		if data.Switches["id"].Value != nil {
@@ -48,5 +49,5 @@ var Command = &commands.YAGCommand{
 			out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+skip+1, v.Name, v.MemberCount)
 		}
 		return "Top servers the bot is on:\n" + out + "\n```", nil
-	},
+	}),
 }
