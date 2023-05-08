@@ -367,7 +367,7 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	second := pathSegments[1]
 
 	switch first {
-	case "shorts":
+	case "shorts", "live":
 		return p.parseYtVideoID(second)
 	case "channel":
 		if ytChannelIDRegex.MatchString(second) {
