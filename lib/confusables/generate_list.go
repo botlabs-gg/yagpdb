@@ -28,7 +28,7 @@ package %s
 
 	ParenRegex       = `\((.+)\)`
 	ConfusablesRegex = `(?i)([a-zA-Z0-9 ]*) ;	([a-zA-Z0-9 ]*)+ ;	[a-z]{2,}	#\*? \( (.+) →(?: .+ →)* (.+) \) (?:.+)+ → (?:.+)`
-	UnicodeDataRegex = `(?i)([a-z0-9]+);(.+);([a-z]+);[0-9]+;`
+	UnicodeDataRegex = `(?i)([a-z0-9]+);([^;]+);([a-z]+);[0-9]+;`
 	LatinNameRegex   = `(?i)latin (small|capital) letter (.) (with .+)?`
 )
 
