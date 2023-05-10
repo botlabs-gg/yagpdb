@@ -329,6 +329,21 @@ func (s searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListCal
 	return cResp, common.ErrWithCaller(err)
 }
 
+type playlistID string
+
+func (pl playlistID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	id := string(pl)
+	playlistListCall := p.YTService.Playlists.List(listParts)
+	pResp, err := playlistListCall.Id(id).MaxResults(1).Do()
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	} else if len(pResp.Items) < 1 {
+		return nil, ErrNoChannel
+	}
+	cResp, err = list.Id(pResp.Items[0].Snippet.ChannelId).Do()
+	return cResp, common.ErrWithCaller(err)
+}
+
 func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	// First set of URL types should only have one segment,
 	// so trimming leading forward slash simplifies following operations
@@ -346,6 +361,13 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		// in URLs with a `watch` segment.
 		val := channelUrl.Query().Get("v")
 		return p.parseYtVideoID(val)
+	} else if strings.HasPrefix(path, "playlist") {
+		val := channelUrl.Query().Get("list")
+		if ytPlaylistIDRegex.MatchString(val) {
+			return playlistID(val), nil
+		} else {
+			return nil, fmt.Errorf("%q is not a valid playlist ID", val)
+		}
 	}
 
 	// Prefix check allows method to provide a more helpful error message,
