@@ -1176,10 +1176,10 @@ func BotCachedGetCommandsWithMessageTriggers(guildID int64, ctx context.Context)
 var cmdFixCommands = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryTool,
 	Name:                 "fixscheduledccs",
-	Description:          "Corrects the next run time of interval CCs globally, fixes issues arising from missed executions due to downtime. Bot Admin Only",
+	Description:          "Corrects the next run time of interval CCs globally, fixes issues arising from missed executions due to downtime. Bot Owner Only",
 	HideFromCommandsPage: true,
 	HideFromHelp:         true,
-	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("trigger_type = 5"), qm.Where("now() - INTERVAL '1 hour' > next_run"), qm.Where("disabled = false")).AllG(context.Background())
 		if err != nil {
 			return nil, err

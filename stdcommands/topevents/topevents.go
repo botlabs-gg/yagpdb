@@ -8,18 +8,19 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 var Command = &commands.YAGCommand{
 	Cooldown:     2,
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "topevents",
-	Description:  "Shows gateway event processing stats for all or one shard",
+	Description:  "Shows gateway event processing stats for all or one shard, bot owner only",
 	HideFromHelp: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "shard", Type: dcmd.Int},
 	},
-	RunFunc: cmdFuncTopEvents,
+	RunFunc: util.RequireOwner(cmdFuncTopEvents),
 }
 
 func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
@@ -27,13 +28,13 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 	shardsTotal, lastPeriod := bot.EventLogger.GetStats()
 
 	sortable := make([]*DiscordEvtEntry, len(eventsystem.AllDiscordEvents))
-	for i, _ := range sortable {
+	for i := range sortable {
 		sortable[i] = &DiscordEvtEntry{
 			Name: eventsystem.AllDiscordEvents[i].String(),
 		}
 	}
 
-	for i, _ := range shardsTotal {
+	for i := range shardsTotal {
 		if data.Args[0].Value != nil && data.Args[0].Int() != i {
 			continue
 		}

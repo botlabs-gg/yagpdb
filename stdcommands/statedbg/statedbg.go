@@ -27,9 +27,9 @@ func Commands() *dcmd.Container {
 var getGuild = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "guild",
-	Description:  "Responds with state debug info. Bot Admin Only",
+	Description:  "Responds with state debug info. Bot Owner Only",
 	HideFromHelp: true,
-	RunFunc:      cmdFuncGetGuild,
+	RunFunc:      util.RequireOwner(cmdFuncGetGuild),
 }
 
 func cmdFuncGetGuild(data *dcmd.Data) (interface{}, error) {
@@ -52,7 +52,7 @@ func cmdFuncGetGuild(data *dcmd.Data) (interface{}, error) {
 var getMember = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "member",
-	Description: "Responds with state debug info. Bot Admin Only",
+	Description: "Responds with state debug info. Bot Owner Only",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Target", Type: dcmd.BigInt},
 	},
@@ -61,7 +61,7 @@ var getMember = &commands.YAGCommand{
 	},
 	RequiredArgs: 1,
 	HideFromHelp: true,
-	RunFunc:      cmdFuncGetMember,
+	RunFunc:     util.RequireOwner(cmdFuncGetMember),
 }
 
 func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
@@ -93,9 +93,9 @@ func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
 var botMember = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "botmember",
-	Description:  "Responds with state debug info. Bot Admin Only",
+	Description:  "Responds with state debug info. Bot Owner Only",
 	HideFromHelp: true,
-	RunFunc:      cmdFuncBotMember,
+	RunFunc:      util.RequireOwner(cmdFuncBotMember),
 }
 
 func cmdFuncBotMember(data *dcmd.Data) (interface{}, error) {
