@@ -323,7 +323,7 @@ func (s *state) walk(dot reflect.Value, node parse.Node) controlFlowSignal {
 			s.printValue(node, val)
 		}
 	case *parse.TryNode:
-		s.walkTry(dot, node.List, node.CatchList)
+		return s.walkTry(dot, node.List, node.CatchList)
 	case *parse.IfNode:
 		return s.walkIfOrWith(parse.NodeIf, dot, node.Pipe, node.List, node.ElseList)
 	case *parse.ListNode:
@@ -358,14 +358,14 @@ func (s *state) walk(dot reflect.Value, node parse.Node) controlFlowSignal {
 	return controlFlowNone
 }
 
-func (s *state) walkTry(dot reflect.Value, list, catchList *parse.ListNode) {
+func (s *state) walkTry(dot reflect.Value, list, catchList *parse.ListNode) (sig controlFlowSignal) {
 	defer func() {
 		s.pop(s.mark())
 		s.tryDepth--
 		if r := recover(); r != nil {
 			switch err := r.(type) {
 			case funcCallError:
-				s.walk(reflect.ValueOf(err.Strip()), catchList)
+				sig = s.walk(reflect.ValueOf(err.Strip()), catchList)
 			default:
 				panic(err)
 			}
@@ -373,7 +373,7 @@ func (s *state) walkTry(dot reflect.Value, list, catchList *parse.ListNode) {
 	}()
 
 	s.tryDepth++
-	s.walk(dot, list)
+	return s.walk(dot, list)
 }
 
 // walkIfOrWith walks an 'if' or 'with' node. The two control structures
