@@ -1,0 +1,4 @@
+ {
+  "schemaVersion" : 2,
+  "dockerfilePath" : "./yagpdb_docker/Dockerfile.exthttps"
+ }
