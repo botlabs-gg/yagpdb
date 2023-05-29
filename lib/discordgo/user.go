@@ -15,6 +15,9 @@ type User struct {
 	// The user's username.
 	Username string `json:"username"`
 
+	// The user's display name on discord
+	Globalname string `json:"global_name"`
+
 	// The hash of the user's avatar. Use Session.UserAvatar
 	// to retrieve the avatar itself.
 	Avatar string `json:"avatar"`
@@ -46,6 +49,8 @@ func (u *User) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
 		return DecodeSnowflake(&u.ID, dec)
 	case "username":
 		return dec.String(&u.Username)
+	case "global_name":
+		return dec.String(&u.Globalname)
 	case "avatar":
 		return dec.String(&u.Avatar)
 	case "locale":
