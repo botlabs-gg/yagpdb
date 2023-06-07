@@ -24,7 +24,7 @@ func (p *Plugin) RunBackgroundWorker() {
 		case <-ticker.C:
 			go p.DeleteOldMessages()
 			go p.DeleteOldMessageLogs()
-			go p.DeleteOldWarningsLinks()
+			//go p.DeleteOldWarningsLinks()
 		case wg := <-p.stopWorkers:
 			wg.Done()
 			return
