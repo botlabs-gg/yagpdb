@@ -142,7 +142,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			CreatedAt: v.ParsedCreatedAt,
 			UpdatedAt: v.ParsedCreatedAt,
 
-			AuthorUsername: v.Author.Username + "#" + v.Author.Discriminator,
+			AuthorUsername: v.Author.String(),
 			AuthorID:       v.Author.ID,
 			Deleted:        v.Deleted,
 		}

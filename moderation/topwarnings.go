@@ -47,17 +47,6 @@ func TopWarns(guildID int64, offset, limit int) ([]*WarnRankEntry, error) {
 			return nil, err
 		}
 
-		/*tmp, err = bot.GetMembers(guildID, userID)
-		if tmp != nil {
-			for _, v := range tmp {
-				member = append(member, v.DGoCopy())
-			}
-		}
-		var username string
-		for _, m := range member {
-			username = m.User.Username + "#" + m.User.Discriminator
-			break
-		}*/
 		userSlice := bot.GetUsers(guildID, userID)
 		var username string
 		for _, u := range userSlice {

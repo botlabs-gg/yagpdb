@@ -464,7 +464,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			RuleName:      rule.Model.Name,
 			RulesetName:   rule.Model.R.Ruleset.Name,
 			UserID:        ctxData.MS.User.ID,
-			UserName:      ctxData.MS.User.Username + "#" + ctxData.MS.User.Discriminator,
+			UserName:      ctxData.MS.User.String(),
 			Extradata:     serializedExtraData,
 		}
 	}

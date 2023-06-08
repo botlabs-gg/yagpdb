@@ -407,7 +407,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 			if !waitingListHitMax {
 
 				// we hit the max limit so add them to the waiting list instead
-				toAdd := user.Username + "#" + user.Discriminator + "\n"
+				toAdd := user.String() + "\n"
 				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(waitingListField.Value) >= 990 {
 					waitingListHitMax = true
 				} else {
@@ -421,7 +421,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		}
 
 		if !participantsHitMax {
-			toAdd := user.Username + "#" + user.Discriminator + "\n"
+			toAdd := user.String() + "\n"
 			if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(participantsEmbed.Value) > 990 {
 				participantsHitMax = true
 			} else {
@@ -512,7 +512,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 
 		if v.JoinState == int16(state) {
 			if !reachedMax {
-				toAdd := user.Username + "#" + user.Discriminator + "\n"
+				toAdd := user.String() + "\n"
 				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(field.Value) >= 100 {
 					reachedMax = true
 				} else {

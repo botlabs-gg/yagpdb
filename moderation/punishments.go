@@ -98,7 +98,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 
 	fullReason := reason
 	if author.ID != common.BotUser.ID {
-		fullReason = author.Username + "#" + author.Discriminator + ": " + reason
+		fullReason = author.String() + ": " + reason
 	}
 
 	switch p {
@@ -596,7 +596,7 @@ func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *
 		GuildID:               guildID,
 		UserID:                discordgo.StrID(target.ID),
 		AuthorID:              discordgo.StrID(author.ID),
-		AuthorUsernameDiscrim: author.Username + "#" + author.Discriminator,
+		AuthorUsernameDiscrim: author.String(),
 
 		Message: message,
 	}

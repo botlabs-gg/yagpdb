@@ -40,7 +40,7 @@ func TicketLog(conf *models.TicketConfig, guildID int64, author *discordgo.User,
 	}
 
 	embed.Author = &discordgo.MessageEmbedAuthor{
-		Name:    fmt.Sprintf("%s#%s (%d)", author.Username, author.Discriminator, author.ID),
+		Name:    fmt.Sprintf("%s (%d)", author.String(), author.ID),
 		IconURL: author.AvatarURL("128"),
 	}
 
