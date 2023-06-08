@@ -297,10 +297,10 @@ var cmds = []*commands.YAGCommand{
 
 				for _, v := range members {
 					if v.User.ID == entry.ReceiverID {
-						receiver = v.User.Username + "#" + v.User.Discriminator
+						receiver = v.User.String()
 					}
 					if v.User.ID == entry.SenderID {
-						sender = v.User.Username + "#" + v.User.Discriminator
+						sender = v.User.String()
 					}
 				}
 

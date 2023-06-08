@@ -41,7 +41,7 @@ var Command = &commands.YAGCommand{
 				URL:  "https://wouldurather.io/",
 			},
 			Footer: &discordgo.MessageEmbedFooter{
-				Text: fmt.Sprintf("Requested by: %s#%s", data.Author.Username, data.Author.Discriminator),
+				Text: fmt.Sprintf("Requested by: %s", data.Author.String()),
 			},
 			Color: rand.Intn(16777215),
 		}

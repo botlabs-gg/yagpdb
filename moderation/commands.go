@@ -135,7 +135,7 @@ func GenericCmdResp(action ModlogAction, target *discordgo.User, duration time.D
 		durStr = ""
 	}
 
-	userStr := target.Username + "#" + target.Discriminator
+	userStr := target.String()
 	if target.Discriminator == "????" {
 		userStr = strconv.FormatInt(target.ID, 10)
 	}
@@ -567,14 +567,14 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No report channel set up", nil
 			}
 
-			topContent := fmt.Sprintf("%s reported **%s#%s (ID %d)**", parsed.Author.Mention(), target.Username, target.Discriminator, target.ID)
+			topContent := fmt.Sprintf("%s reported **%s (ID %d)**", parsed.Author.Mention(), target.String(), target.ID)
 
 			embed := &discordgo.MessageEmbed{
 				Author: &discordgo.MessageEmbedAuthor{
-					Name:    fmt.Sprintf("%s#%s (ID %d)", parsed.Author.Username, parsed.Author.Discriminator, parsed.Author.ID),
+					Name:    fmt.Sprintf("%s (ID %d)", parsed.Author.String(), parsed.Author.ID),
 					IconURL: discordgo.EndpointUserAvatar(parsed.Author.ID, parsed.Author.Avatar),
 				},
-				Description: fmt.Sprintf("🔍**Reported** %s#%s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))\n**Channel:** <#%d>", target.Username, target.Discriminator, target.ID, parsed.Args[1].Value, logLink, parsed.ChannelID),
+				Description: fmt.Sprintf("🔍**Reported** %s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))\n**Channel:** <#%d>", target.String(), target.ID, parsed.Args[1].Value, logLink, parsed.ChannelID),
 				Color:       0xee82ee,
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
@@ -917,7 +917,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Update(
-				"message", fmt.Sprintf("%s (updated by %s#%s (%d))", parsed.Args[1].Str(), parsed.Author.Username, parsed.Author.Discriminator, parsed.Author.ID)).RowsAffected
+				"message", fmt.Sprintf("%s (updated by %s (%d))", parsed.Args[1].Str(), parsed.Author.String(), parsed.Author.ID)).RowsAffected
 
 			if rows < 1 {
 				return "Failed updating, most likely couldn't find the warning", nil
