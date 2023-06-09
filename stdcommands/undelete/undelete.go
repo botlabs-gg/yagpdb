@@ -80,7 +80,7 @@ var Command = &commands.YAGCommand{
 			// Match found!
 			timeSince := common.HumanizeDuration(precision, time.Since(msg.ParsedCreatedAt))
 
-			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s (ID %d): %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.Author.ID, msg.ContentWithMentionsReplaced())
+			resp += fmt.Sprintf("`%s ago (%s)` **%s** (ID %d): %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.String(), msg.Author.ID, msg.ContentWithMentionsReplaced())
 			numFound++
 		}
 
