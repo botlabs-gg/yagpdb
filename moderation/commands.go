@@ -1368,7 +1368,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 				}
 				entry_formatted += "\n"
 				purgedWarnLogs := logs.ConfEnableMessageLogPurge.GetBool() && entry.CreatedAt.Before(time.Now().AddDate(0,0,-30))
-				if entry.LogsLink != "" || !purgedWarnLogs {
+				if entry.LogsLink != "" && !purgedWarnLogs {
 					entry_formatted += fmt.Sprintf("> logs: [`link`](%s)\n", entry.LogsLink)
 				}
 				if len([]rune(currentField.Value+entry_formatted)) > 1023 {
