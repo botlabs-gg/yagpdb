@@ -17,6 +17,7 @@ func (p *Plugin) RunBackgroundWorker() {
 	ticker := time.NewTicker(time.Minute)
 	if !ConfEnableMessageLogPurge.GetBool() {
 		logger.Infof("[logs] Disabling background worker for message log purge, set yagpdb.enable_message_log_purge to true for this ")
+		(<-p.stopWorkers).Done()
 		return
 	}
 	for {
