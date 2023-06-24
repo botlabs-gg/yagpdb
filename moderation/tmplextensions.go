@@ -1,31 +1,47 @@
 package moderation
 
 import (
+	"fmt"
+	"time"
+
+	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/logs"
 	"github.com/jinzhu/gorm"
 )
 
 func init() {
 	templates.RegisterSetupFunc(func(ctx *templates.Context) {
-		ctx.ContextFuncs["getWarns"] = tmplGetWarns(ctx)
+		ctx.ContextFuncs["getWarnings"] = tmplGetWarnings(ctx)
 	})
 }
 
-// getWarns returns a slice of all warnings the target user has.
-func tmplGetWarns(ctx *templates.Context) interface{} {
+// getWarnings returns a slice of all warnings the target user has.
+func tmplGetWarnings(ctx *templates.Context) interface{} {
 	return func(target interface{}) ([]*WarningModel, error) {
-		if ctx.IncreaseCheckGenericAPICall() {
-			return nil, nil
+		if ctx.IncreaseCheckCallCounterPremium("cc_moderation", 5, 10) {
+			return nil, templates.ErrTooManyCalls
 		}
 
 		gID := ctx.GS.ID
 		var warns []*WarningModel
 		targetID := templates.TargetUserID(target)
+		if targetID == 0 {
+			return nil, errors.New(fmt.Sprintf("wrong type for user; expected int64, string, or discordgo.User, got %T", target))
+		}
 
 		err := common.GORM.Where("user_id = ? AND guild_id = ?", targetID, gID).Order("id desc").Find(&warns).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return nil, err
+		}
+
+		// Avoid listing expired logs.
+		for _, entry := range warns {
+			purgedWarnLogs := logs.ConfEnableMessageLogPurge.GetBool() && entry.CreatedAt.Before(time.Now().AddDate(0, 0, -30))
+			if entry.LogsLink != "" && purgedWarnLogs {
+				entry.LogsLink = ""
+			}
 		}
 
 		return warns, nil
