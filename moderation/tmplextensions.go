@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/logs"
@@ -28,7 +27,7 @@ func tmplGetWarnings(ctx *templates.Context) interface{} {
 		var warns []*WarningModel
 		targetID := templates.TargetUserID(target)
 		if targetID == 0 {
-			return nil, errors.New(fmt.Sprintf("wrong type for user; expected int64, string, or discordgo.User, got %T", target))
+			return nil, fmt.Errorf("Could not convert %T to a user ID", target)
 		}
 
 		err := common.GORM.Where("user_id = ? AND guild_id = ?", targetID, gID).Order("id desc").Find(&warns).Error
