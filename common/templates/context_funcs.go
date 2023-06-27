@@ -1605,7 +1605,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArgNoDMNoThread(channel)
+	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
 		return "", errors.New("unknown channel")
 	}
