@@ -50,6 +50,7 @@ var RulePartMap = map[int]RulePart{
 	35: &MessageLengthTrigger{Inverted: true},
 	36: &SlowmodeTrigger{Links: true, ChannelBased: false},
 	37: &SlowmodeTrigger{Links: true, ChannelBased: true},
+	38: &AutomodExecution{},
 
 	// Conditions 2xx
 	200: &MemberRolesCondition{Blacklist: true},
@@ -255,4 +256,11 @@ type JoinListener interface {
 	RulePart
 
 	CheckJoin(triggerCtx *TriggerContext) (isAffected bool, err error)
+}
+
+// AutomodListener is a trigger for when Discord's built in automod kicks in
+type AutomodListener interface {
+	RulePart
+
+	CheckRuleID(triggerCtx *TriggerContext, ruleID int64) (isAffected bool, err error)
 }

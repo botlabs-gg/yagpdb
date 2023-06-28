@@ -1,6 +1,7 @@
 package automod
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -1576,4 +1577,52 @@ func (ml *MessageLengthTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dst
 	}
 
 	return utf8.RuneCountInString(m.Content) > dataCast.Length, nil
+}
+
+/////////////////////////////////////////////////////////////
+
+var _ AutomodListener = (*AutomodExecution)(nil)
+
+type AutomodExecution struct {
+}
+type AutomodExecutionData struct {
+	RuleID string
+}
+
+func (am *AutomodExecution) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (am *AutomodExecution) DataType() interface{} {
+	return &AutomodExecutionData{}
+}
+func (am *AutomodExecution) Name() (name string) {
+	return "Message triggers Discord Automod"
+}
+
+func (am *AutomodExecution) Description() (description string) {
+	return "Triggers when a message is detected by Discord Automod"
+}
+func (am *AutomodExecution) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name: "Rule ID (leave blank for all)",
+			Key:  "RuleID",
+			Kind: SettingTypeString,
+		},
+	}
+}
+
+func (am *AutomodExecution) CheckRuleID(triggerCtx *TriggerContext, ruleID int64) (bool, error) {
+	dataCast := triggerCtx.Data.(*AutomodExecutionData)
+
+	if dataCast.RuleID == fmt.Sprint(ruleID) {
+		return true, nil
+	}
+
+	if dataCast.RuleID == "" {
+		return true, nil
+	}
+
+	return false, nil
 }
