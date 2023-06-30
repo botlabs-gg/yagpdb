@@ -144,11 +144,17 @@ func (gs *GuildSet) GetChannelOrThread(id int64) *ChannelState {
 //	      if size is an emptry string, no size parameter will
 //	      be added to the URL.
 func (gs *GuildSet) IconURL(size string) string {
+	var url string
 	if gs.Icon == "" {
 		return ""
 	}
 
-	url := discordgo.EndpointGuildIcon(gs.ID, gs.Icon)
+	if strings.HasPrefix(gs.Icon, "a_") {
+		url = discordgo.EndpointGuildIconAnimated(gs.ID, gs.Icon)
+	} else {
+		url = discordgo.EndpointGuildIcon(gs.ID, gs.Icon)
+	}
+
 	if size != "" {
 		url += "?size=" + size
 	}
