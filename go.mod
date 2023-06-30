@@ -22,7 +22,7 @@ require (
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.1.0
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
-	github.com/golang/protobuf v1.5.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/safebrowsing v0.0.0-20190624211811-bbf0d20d26b3
 	github.com/gorilla/schema v1.1.0
 	github.com/gorilla/websocket v1.4.2
@@ -66,9 +66,9 @@ require (
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.5.0
 	golang.org/x/image v0.5.0
-	golang.org/x/net v0.9.0
-	golang.org/x/oauth2 v0.0.0-20201208152858-08078c50e5b5
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/net v0.10.0
+	golang.org/x/oauth2 v0.8.0
+	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
@@ -81,7 +81,7 @@ require (
 	github.com/francoispqt/gojay v1.2.13
 	github.com/jarcoal/httpmock v1.0.4
 	github.com/justinian/dice v1.0.1
-	github.com/n0madic/twitter-scraper v0.0.0-20230323164130-5ff4cd0d1ba9
+	github.com/n0madic/twitter-scraper v0.0.0-20230625205053-302c2d461a6a
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 )
 
