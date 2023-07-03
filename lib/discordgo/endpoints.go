@@ -90,17 +90,18 @@ var (
 	EndpointGuildIntegrationSync = func(gID, iID int64) string {
 		return ""
 	}
-	EndpointGuildRoles     = func(gID int64) string { return "" }
-	EndpointGuildRole      = func(gID, rID int64) string { return "" }
-	EndpointGuildInvites   = func(gID int64) string { return "" }
-	EndpointGuildEmbed     = func(gID int64) string { return "" }
-	EndpointGuildPrune     = func(gID int64) string { return "" }
-	EndpointGuildIcon      = func(gID int64, hash string) string { return "" }
-	EndpointGuildSplash    = func(gID int64, hash string) string { return "" }
-	EndpointGuildWebhooks  = func(gID int64) string { return "" }
-	EndpointGuildAuditLogs = func(gID int64) string { return "" }
-	EndpointGuildEmojis    = func(gID int64) string { return "" }
-	EndpointGuildEmoji     = func(gID, eID int64) string { return "" }
+	EndpointGuildRoles        = func(gID int64) string { return "" }
+	EndpointGuildRole         = func(gID, rID int64) string { return "" }
+	EndpointGuildInvites      = func(gID int64) string { return "" }
+	EndpointGuildEmbed        = func(gID int64) string { return "" }
+	EndpointGuildPrune        = func(gID int64) string { return "" }
+	EndpointGuildIcon         = func(gID int64, hash string) string { return "" }
+	EndpointGuildIconAnimated = func(gID int64, hash string) string { return "" }
+	EndpointGuildSplash       = func(gID int64, hash string) string { return "" }
+	EndpointGuildWebhooks     = func(gID int64) string { return "" }
+	EndpointGuildAuditLogs    = func(gID int64) string { return "" }
+	EndpointGuildEmojis       = func(gID int64) string { return "" }
+	EndpointGuildEmoji        = func(gID, eID int64) string { return "" }
 
 	EndpointChannel                   = func(cID int64) string { return "" }
 	EndpointChannelPermissions        = func(cID int64) string { return "" }
@@ -269,6 +270,7 @@ func CreateEndpoints(base string) {
 	EndpointGuildEmbed = func(gID int64) string { return EndpointGuilds + StrID(gID) + "/embed" }
 	EndpointGuildPrune = func(gID int64) string { return EndpointGuilds + StrID(gID) + "/prune" }
 	EndpointGuildIcon = func(gID int64, hash string) string { return EndpointCDNIcons + StrID(gID) + "/" + hash + ".png" }
+	EndpointGuildIconAnimated = func(gID int64, hash string) string { return EndpointCDNIcons + StrID(gID) + "/" + hash + ".gif" }
 	EndpointGuildSplash = func(gID int64, hash string) string { return EndpointCDNSplashes + StrID(gID) + "/" + hash + ".png" }
 	EndpointGuildWebhooks = func(gID int64) string { return EndpointGuilds + StrID(gID) + "/webhooks" }
 	EndpointGuildAuditLogs = func(gID int64) string { return EndpointGuilds + StrID(gID) + "/audit-logs" }
