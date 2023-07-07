@@ -20,7 +20,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/automod"
 	"github.com/botlabs-gg/yagpdb/v2/automod_legacy"
 	"github.com/botlabs-gg/yagpdb/v2/autorole"
-	"github.com/botlabs-gg/yagpdb/v2/aylien"
 	"github.com/botlabs-gg/yagpdb/v2/cah"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands"
@@ -69,7 +68,6 @@ func main() {
 	reddit.RegisterPlugin()
 	moderation.RegisterPlugin()
 	reputation.RegisterPlugin()
-	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
 	automod_legacy.RegisterPlugin()
 	automod.RegisterPlugin()

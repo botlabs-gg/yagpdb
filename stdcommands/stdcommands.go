@@ -19,6 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dcallvoice"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/define"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dogfact"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/eightball"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/findserver"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/forex"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/globalrl"
@@ -105,6 +106,7 @@ func (p *Plugin) AddCommands() {
 		inspire.Command,
 		forex.Command,
 		roast.Command,
+		eightball.Command,
 
 		// Maintenance
 		stateinfo.Command,
