@@ -156,7 +156,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 		ctx := templates.NewContext(data.GuildData.GS, channel, data.GuildData.MS)
 		ctx.IsExecedByEvalCC = true
 
-		code := parseCodeblock(data.Args[0].Str())
+		code := common.ParseCodeblock(data.Args[0].Str())
 
 		// Encourage only small code snippets being tested with this command
 		maxRunes := 1000
@@ -176,25 +176,6 @@ var cmdEvalCommand = &commands.YAGCommand{
 
 		return out, nil
 	},
-}
-
-// Also accepts spaces due to how dcmd reconstructs arguments wrapped in triple backticks.
-var codeblockRegexp = regexp.MustCompile(`(?m)\A(?:\x60{2} ?\x60)(?:go(?:lang)?\n)?([\S\s]+)(?:\x60 ?\x60{2})\z`)
-
-// parseCodeblock returns the content wrapped in a Discord markdown block.
-// If no (valid) codeblock was found, the given input is returned back.
-func parseCodeblock(input string) string {
-	parts := codeblockRegexp.FindStringSubmatch(input)
-
-	// No match found, input was not wrapped in (valid) codeblock markdown
-	// just dump it, don't bother fixing things for the user.
-	if parts == nil {
-		return input
-	}
-
-	logger.Debugf("Found matches: %#v", parts)
-	logger.Debugf("Returning %s", parts[1])
-	return parts[1]
 }
 
 var cmdListCommands = &commands.YAGCommand{

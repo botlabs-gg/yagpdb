@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"gopkg.in/yaml.v3"
 )
 
 var Command = &commands.YAGCommand{
@@ -20,11 +22,20 @@ var Command = &commands.YAGCommand{
 		{Name: "Json", Type: dcmd.String},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		j := common.ParseCodeblock(data.Args[0].Str())
 		var parsed *discordgo.MessageEmbed
-		err := json.Unmarshal([]byte(data.Args[0].Str()), &parsed)
+
+		// attempt to parse as YAML first.
+		// We don't care about the error here, as we're going to try parsing it as JSON anyway.
+		err := yaml.Unmarshal([]byte(j), &parsed)
 		if err != nil {
-			return "Failed parsing json: " + err.Error(), err
+			// Maybe it is JSON instead?
+			err = json.Unmarshal([]byte(j), &parsed)
+			if err != nil {
+				return "Failed parsing as YAML or JSON", err
+			}
 		}
+
 		if discordgo.IsEmbedEmpty(parsed) {
 			return "Cannot send an empty embed", nil
 		}
