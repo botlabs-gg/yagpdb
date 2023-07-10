@@ -29,6 +29,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMsgUpdate, eventsystem.EventMessageUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleAutomodExecution, eventsystem.EventAutoModerationActionExecution)
 
 	scheduledevents2.RegisterHandler("amod2_reset_channel_ratelimit", ResetChannelRatelimitData{}, handleResetChannelRatelimit)
 }
@@ -262,6 +263,40 @@ func (p *Plugin) checkJoin(ms *dstate.MemberState) {
 		}
 
 		return cast.CheckJoin(&TriggerContext{GS: gs, MS: ms, Data: trig.ParsedSettings})
+	})
+}
+
+func (p *Plugin) handleAutomodExecution(evt *eventsystem.EventData) {
+	eventData := evt.AutoModerationActionExecution()
+
+	if !evt.HasFeatureFlag(featureFlagEnabled) || evt.GS.ID == 0 {
+		return
+	}
+
+	cs := evt.GS.GetChannelOrThread(eventData.ChannelID)
+	if cs == nil {
+		return
+	}
+
+	ms, err := bot.GetMember(evt.GS.ID, eventData.UserID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", eventData.GuildID).Error("failed getting guild member")
+		return
+	}
+
+	message, _ := common.BotSession.ChannelMessage(eventData.ChannelID, eventData.MessageID)
+
+	p.CheckTriggers(nil, evt.GS, ms, message, cs, func(trig *ParsedPart) (activated bool, err error) {
+		cast, ok := trig.Part.(AutomodListener)
+		if !ok {
+			return false, nil
+		}
+
+		return cast.CheckRuleID(&TriggerContext{
+			GS:   evt.GS,
+			MS:   ms,
+			Data: trig.ParsedSettings,
+		}, eventData.RuleID)
 	})
 }
 

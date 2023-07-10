@@ -1542,7 +1542,7 @@ const (
 type AutoModerationActionMetadata struct {
 	// Channel to which user content should be logged.
 	// NOTE: should be only used with send alert message action type.
-	ChannelID int64 `json:"channel_id,omitempty"`
+	ChannelID int64 `json:"channel_id,string,omitempty"`
 
 	// Timeout duration in seconds (maximum of 2419200 - 4 weeks).
 	// NOTE: should be only used with timeout action type.

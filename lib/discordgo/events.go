@@ -537,17 +537,21 @@ type AutoModerationRuleDelete struct {
 
 // AutoModerationActionExecution is the data for an AutoModerationActionExecution event.
 type AutoModerationActionExecution struct {
-	GuildID              int64                         `json:"guild_id"`
+	GuildID              int64                         `json:"guild_id,string"`
 	Action               AutoModerationAction          `json:"action"`
-	RuleID               int64                         `json:"rule_id"`
+	RuleID               int64                         `json:"rule_id,string"`
 	RuleTriggerType      AutoModerationRuleTriggerType `json:"rule_trigger_type"`
-	UserID               int64                         `json:"user_id"`
-	ChannelID            int64                         `json:"channel_id"`
-	MessageID            int64                         `json:"message_id"`
-	AlertSystemMessageID int64                         `json:"alert_system_message_id"`
+	UserID               int64                         `json:"user_id,string"`
+	ChannelID            int64                         `json:"channel_id,string"`
+	MessageID            int64                         `json:"message_id,string"`
+	AlertSystemMessageID int64                         `json:"alert_system_message_id,string"`
 	Content              string                        `json:"content"`
 	MatchedKeyword       string                        `json:"matched_keyword"`
 	MatchedContent       string                        `json:"matched_content"`
+}
+
+func (e *AutoModerationActionExecution) GetGuildID() int64 {
+	return e.GuildID
 }
 
 type GuildAuditLogEntryCreate struct {

@@ -114,6 +114,15 @@ const (
 	GatewayIntentMessageContent GatewayIntent = 1 << 15
 
 	GatewayIntentGuildScheduledEvents GatewayIntent = 1 << 16
+
+	GatewayIntentAutomoderationExecution GatewayIntent = 1 << 21
+	// - AUTO_MODERATION_ACTION_EXECUTION
+
+	GatewayIntentAutomoderationConfiguration GatewayIntent = 1 << 20
+	// - AUTO_MODERATION_RULE_CREATE
+	// - AUTO_MODERATION_RULE_UPDATE
+	// - AUTO_MODERATION_RULE_DELETE
+
 )
 
 // max size of buffers before they're discarded (e.g after a big incmoing event)
@@ -398,10 +407,10 @@ type voiceChannelJoinData struct {
 
 // ChannelVoiceJoin joins the session user to a voice channel.
 //
-//    gID     : Guild ID of the channel to join.
-//    cID     : Channel ID of the channel to join.
-//    mute    : If true, you will be set to muted upon joining.
-//    deaf    : If true, you will be set to deafened upon joining.
+//	gID     : Guild ID of the channel to join.
+//	cID     : Channel ID of the channel to join.
+//	mute    : If true, you will be set to muted upon joining.
+//	deaf    : If true, you will be set to deafened upon joining.
 func (g *GatewayConnectionManager) ChannelVoiceJoin(gID, cID int64, mute, deaf bool) (voice *VoiceConnection, err error) {
 
 	g.session.log(LogInformational, "called")
