@@ -13,10 +13,10 @@ func (p *Plugin) Status() (string, string) {
 	numFeeds, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true)).CountG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("failed fetching status")
-		return "Twitter feeds", "error"
+		return "Total Feeds", "error"
 	}
 
-	return "Twitter feeds", fmt.Sprintf("%d", numFeeds)
+	return "Total Feeds", fmt.Sprintf("%d", numFeeds)
 }
 
 var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)
