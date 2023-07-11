@@ -43,6 +43,7 @@ func RegisterPlugin() {
 		twitterScraper.SetProxy(twitterProxy)
 	}
 
+	twitterScraper.LoginOpenAccount()
 	p := &Plugin{
 		twitterScraper: twitterScraper,
 	}
