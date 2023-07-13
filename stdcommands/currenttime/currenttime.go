@@ -29,7 +29,7 @@ func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
 	now := time.Now()
 	if data.Args[0].Value != nil {
 		tzName := data.Args[0].Str()
-		names, err := timezone.GetTimezones(strings.ToUpper(data.Args[0].Str()))
+		names, err := timezone.New().GetTimezones(strings.ToUpper(data.Args[0].Str()))
 		if err == nil && len(names) > 0 {
 			tzName = names[0]
 		}
