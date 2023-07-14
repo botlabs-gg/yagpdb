@@ -474,7 +474,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 			return false, errors.WithStackIf(err)
 		}
 
-		// Don't bother doing anythign if this mute is almost up
+		// Don't bother doing anything if this mute is almost up
 		if !currentMute.ExpiresAt.IsZero() && currentMute.ExpiresAt.Sub(time.Now()) < 5*time.Second {
 			return false, nil
 		}
