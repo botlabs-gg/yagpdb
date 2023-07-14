@@ -623,6 +623,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "nopin", Help: "Ignore pinned messages"},
 			{Name: "a", Help: "Only remove messages with attachments"},
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
+			{Name: "from", Help: "Start at this msg ID", Type: dcmd.BigInt},
 		},
 		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageMessages}},
@@ -707,6 +708,18 @@ var ModerationCommands = []*commands.YAGCommand{
 				toID = parsed.Switches["to"].Int64()
 			}
 
+
+			// Check if set to break at a certain ID
+			fromID := int64(0)
+			if parsed.Switches["from"].Value != nil {
+				filtered = true
+				fromID = parsed.Switches["from"].Int64()
+			}
+
+			if(fromID < toID){
+				return errors.New("from messageID cannot be less than to messageID"), nil
+			}
+
 			// Check if we should ignore pinned messages
 			pe := false
 			if parsed.Switches["nopin"].Value != nil && parsed.Switches["nopin"].Value.(bool) {
@@ -736,7 +749,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			// Wait a second so the client dosen't gltich out
 			time.Sleep(time.Second)
 
-			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, triggerID, userFilter, re, invertRegexMatch, toID, ma, minAge, pe, attachments, num, limitFetch)
+			numDeleted, err := AdvancedDeleteMessages(parsed.GuildData.GS.ID, parsed.ChannelID, triggerID, userFilter, re, invertRegexMatch, toID, fromID, ma, minAge, pe, attachments, num, limitFetch)
 			deleteMessageWord := "messages"
 			if numDeleted == 1 {
 				deleteMessageWord = "message"
@@ -1201,7 +1214,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 }
 
-func AdvancedDeleteMessages(guildID, channelID int64, triggerID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
+func AdvancedDeleteMessages(guildID, channelID int64, triggerID int64, filterUser int64, regex string, invertRegexMatch bool, toID int64, fromID int64, maxAge time.Duration, minAge time.Duration, pinFilterEnable bool, attachmentFilterEnable bool, deleteNum, fetchNum int) (int, error) {
 	var compiledRegex *regexp.Regexp
 	if regex != "" {
 		// Start by compiling the regex
@@ -1272,6 +1285,11 @@ func AdvancedDeleteMessages(guildID, channelID int64, triggerID int64, filterUse
 			if _, found := pinnedMessages[msgs[i].ID]; found {
 				continue
 			}
+		}
+
+		// Continue only if current msg ID is > fromID
+		if fromID < msgs[i].ID {
+			continue;
 		}
 
 		// Continue only if current msg ID is < toID
