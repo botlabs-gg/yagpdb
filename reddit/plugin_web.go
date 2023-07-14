@@ -289,7 +289,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		var val int
 		err = rows.Scan(&val, &isSlow)
 		if(err != nil){
-			return templateData, nil
+			return templateData, err
 		}
 		if(isSlow){
 			slow = val;
