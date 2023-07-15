@@ -3,8 +3,7 @@ module github.com/botlabs-gg/yagpdb/v2
 go 1.17
 
 require (
-	emperror.dev/errors v0.4.3
-	github.com/AYLIEN/aylien_textapi_go v0.6.0
+	emperror.dev/errors v0.8.1
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/buger/jsonparser v1.1.1

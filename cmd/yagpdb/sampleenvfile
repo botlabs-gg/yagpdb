@@ -67,10 +67,6 @@ YAGPDB_BOTLEAVESJOINS=""
 # Set to anything to disable the request logging of the webserver
 YAGPDB_DISABLE_REQUEST_LOGGING=""
 
-# Aylien
-YAGPDB_AYLIENAPPID="aylien app id here"
-YAGPDB_AYLIENAPPKEY="aylien app key here"
-
 # Owlbot
 YAGPDB_OWLBOT_TOKEN=
 
