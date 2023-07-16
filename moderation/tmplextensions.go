@@ -54,74 +54,51 @@ func tmplGetWarnings(ctx *templates.Context) interface{} {
 // muteUser mutes the target user for the specified duration.
 func tmplMuteUser(ctx *templates.Context) interface{} {
 	return func(target interface{}, duration string, reason string) (string, error) {
-		if ctx.IncreaseCheckCallCounterPremium("cc_moderation", 5, 10) {
-			return "", templates.ErrTooManyCalls
-		}
-
-		config, err := GetConfig(ctx.GS.ID)
-		if err != nil {
-			return "", err
-		}
-
-		if config.MuteRole == "" {
-			return "", errors.New("No mute role set up")
-		}
-
-		targetID := templates.TargetUserID(target)
-		if targetID == 0 {
-			return "", fmt.Errorf("Could not convert %T to a user ID", target)
-		}
-
-		member, err := bot.GetMember(ctx.GS.ID, targetID)
-		if err != nil || member == nil {
-			return "", errors.New("Could not find member")
-		}
-
-		dur, err := common.ParseDuration(duration)
-		if err != nil {
-			return "", err
-		}
-
-		err = MuteUnmuteUser(config, true, ctx.GS.ID, ctx.CurrentFrame.CS, ctx.Msg, ctx.Msg.Author, reason, member, int(dur.Minutes()))
-		if err != nil {
-			return "", err
-		}
-
-		return "", nil
+		return muteUnmuteHelper(ctx, target, reason, duration, true)
 	}
 }
 
 // unmuteUser unmutes the target user.
 func tmplUnmuteUser(ctx *templates.Context) interface{} {
 	return func(target interface{}, reason string) (string, error) {
-		if ctx.IncreaseCheckCallCounterPremium("cc_moderation", 5, 10) {
-			return "", templates.ErrTooManyCalls
-		}
-
-		config, err := GetConfig(ctx.GS.ID)
-		if err != nil {
-			return "", err
-		}
-
-		if config.MuteRole == "" {
-			return "", errors.New("No mute role set up")
-		}
-
-		targetID := templates.TargetUserID(target)
-		if targetID == 0 {
-			return "", fmt.Errorf("Could not convert %T to a user ID", target)
-		}
-
-		member, err := bot.GetMember(ctx.GS.ID, targetID)
-		if err != nil || member == nil {
-			return "", errors.New("Could not find member")
-		}
-
-		err = MuteUnmuteUser(config, false, ctx.GS.ID, ctx.CurrentFrame.CS, ctx.Msg, ctx.Msg.Author, reason, member, 0)
-		if err != nil {
-			return "", err
-		}
-
-		return "", nil
+		return muteUnmuteHelper(ctx, target, reason, "", false)
 	}
+}
+
+// muteUnmuteHelper contains common code from tmplMuteUser and tmplUnmuteUser.
+func muteUnmuteHelper(ctx *templates.Context, target interface{}, reason string, duration string, mute bool) (string, error) {
+	if ctx.IncreaseCheckCallCounterPremium("cc_moderation", 5, 10) {
+		return "", templates.ErrTooManyCalls
+	}
+
+	config, err := GetConfig(ctx.GS.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if config.MuteRole == "" {
+		return "", errors.New("No mute role set up")
+	}
+
+	targetID := templates.TargetUserID(target)
+	if targetID == 0 {
+		return "", fmt.Errorf("Could not convert %T to a user ID", target)
+	}
+
+	member, err := bot.GetMember(ctx.GS.ID, targetID)
+	if err != nil || member == nil {
+		return "", errors.New("Could not find member")
+	}
+
+	dur, err := common.ParseDuration(duration)
+	if err != nil {
+		return "", err
+	}
+
+	err = MuteUnmuteUser(config, mute, ctx.GS.ID, ctx.CurrentFrame.CS, ctx.Msg, ctx.Msg.Author, reason, member, int(dur.Minutes()))
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
 }
