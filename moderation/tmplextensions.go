@@ -1,6 +1,7 @@
 package moderation
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -63,7 +64,7 @@ func tmplMuteUser(ctx *templates.Context) interface{} {
 		}
 
 		if config.MuteRole == "" {
-			return "", fmt.Errorf("No mute role set up")
+			return "", errors.New("No mute role set up")
 		}
 
 		targetID := templates.TargetUserID(target)
@@ -73,7 +74,7 @@ func tmplMuteUser(ctx *templates.Context) interface{} {
 
 		member, err := bot.GetMember(ctx.GS.ID, targetID)
 		if err != nil || member == nil {
-			return "", fmt.Errorf("Could not find member")
+			return "", errors.New("Could not find member")
 		}
 
 		dur, err := common.ParseDuration(duration)
@@ -103,7 +104,7 @@ func tmplUnmuteUser(ctx *templates.Context) interface{} {
 		}
 
 		if config.MuteRole == "" {
-			return "", fmt.Errorf("No mute role set up")
+			return "", errors.New("No mute role set up")
 		}
 
 		targetID := templates.TargetUserID(target)
@@ -113,7 +114,7 @@ func tmplUnmuteUser(ctx *templates.Context) interface{} {
 
 		member, err := bot.GetMember(ctx.GS.ID, targetID)
 		if err != nil || member == nil {
-			return "", fmt.Errorf("Could not find member")
+			return "", errors.New("Could not find member")
 		}
 
 		err = MuteUnmuteUser(config, false, ctx.GS.ID, ctx.CurrentFrame.CS, ctx.Msg, ctx.Msg.Author, reason, member, 0)
