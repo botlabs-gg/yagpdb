@@ -28,7 +28,7 @@ type Plugin struct {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Advanced Automod",
+		Name:     "Advanced Automoderator",
 		SysName:  "automod_v2",
 		Category: common.PluginCategoryModeration,
 	}
