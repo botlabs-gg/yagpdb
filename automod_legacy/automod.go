@@ -29,13 +29,13 @@ func RegisterPlugin() {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Basic Automod",
+		Name:     "Basic Automoderator",
 		SysName:  "legacy_automod",
 		Category: common.PluginCategoryModeration,
 	}
 }
 
-func (p *Plugin) Name() string    { return "Basic Automod" }
+func (p *Plugin) Name() string    { return "Basic Automoderator" }
 func (p *Plugin) SysName() string { return "legacy_automod" }
 
 type Config struct {
