@@ -36,7 +36,6 @@ var Command = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		query := strings.ToLower(data.Args[0].Str())
 		url :=  "https://api.dictionaryapi.dev/api/v2/entries/en/"+url.QueryEscape(query)
-		logrus.Printf("DICTIONARY url %s", url)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return nil, err
