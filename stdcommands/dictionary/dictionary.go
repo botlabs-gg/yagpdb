@@ -36,6 +36,10 @@ var Command = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		query := strings.ToLower(data.Args[0].Str())
 		url :=  "https://api.dictionaryapi.dev/api/v2/entries/en/"+url.QueryEscape(query)
+<<<<<<< HEAD
+=======
+		logrus.Printf("DICTIONARY url %s", url)
+>>>>>>> 1b1b2024 (owlbot is discontinuing service from July 24th, so moving on to dictionaryapi.dev)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return nil, err
