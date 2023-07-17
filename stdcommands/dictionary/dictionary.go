@@ -90,19 +90,23 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, def *Meaning) *dis
 		Timestamp:   time.Now().Format(time.RFC3339),
 	}
 
+	if(len(res.SourceUrls) > 0) {
+		embed.URL = res.SourceUrls[0];
+	}
+	
 	var description = "";
 	for _, d := range def.Definitions {
 		if(len(description) + len(d.Definition) + len(d.Example) > 2000) {
 			// if all definitions along with examples cannot be fit into the description, skip remaining definitions.
 			break;
 		}
-		description = fmt.Sprintf("%s \n \n \n %s", description, capitalizeSentences(normalizeOutput(d.Definition)));
+		description = fmt.Sprintf("%s\n\n- %s", description, capitalizeSentences(normalizeOutput(d.Definition)));
 		if d.Example != ""{
 			var example = capitalizeSentences(normalizeOutput(d.Example))
 			if !hasEndOfSentenceSymbol(example) {
 				example = example + "." // add period if no other symbol that ends the sentence is present
 			}
-			description = fmt.Sprintf("%s \n **Example:** *%s*", description, example)
+			description = fmt.Sprintf("%s\n**Example:** *%s*", description, example)
 		}
 	}
 
@@ -125,10 +129,9 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, def *Meaning) *dis
 		for  _, v := range res.Phonetics {
 			if(v.Audio != ""){
 				if(v.Text == ""){
-					//skip phonetics with audio link but no text.
-					continue;
+					v.Text = res.Word;
 				}
-				pronunciation.Value = fmt.Sprintf("%s \n [%s](%s)", pronunciation.Value, normalizeOutput(v.Text), v.Audio)
+				pronunciation.Value = fmt.Sprintf("%s \n [🔊 %s](%s)", pronunciation.Value, normalizeOutput(v.Text), v.Audio)
 			}else {
 				pronunciation.Value = fmt.Sprintf("%s \n %s", pronunciation.Value, normalizeOutput(v.Text))
 			}
@@ -228,4 +231,5 @@ type DictionaryResponse struct {
 	Word       string     `json:"word"`
 	Phonetics  []Phonetic `json:"phonetics"`
 	Meanings   []Meaning  `json:"meanings"`
+	SourceUrls []string `json:"sourceUrls"`
 }
