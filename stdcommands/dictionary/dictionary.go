@@ -100,7 +100,7 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, def *Meaning) *dis
 			// if all definitions along with examples cannot be fit into the description, skip remaining definitions.
 			break;
 		}
-		description = fmt.Sprintf("%s\n\n- %s", description, capitalizeSentences(normalizeOutput(d.Definition)));
+		description = fmt.Sprintf("%s\n- %s", description, capitalizeSentences(normalizeOutput(d.Definition)));
 		if d.Example != ""{
 			var example = capitalizeSentences(normalizeOutput(d.Example))
 			if !hasEndOfSentenceSymbol(example) {
@@ -131,9 +131,9 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, def *Meaning) *dis
 				if(v.Text == ""){
 					v.Text = res.Word;
 				}
-				pronunciation.Value = fmt.Sprintf("%s \n [🔊 %s](%s)", pronunciation.Value, normalizeOutput(v.Text), v.Audio)
+				pronunciation.Value = fmt.Sprintf("%s\n🔊[%s](%s)", pronunciation.Value, normalizeOutput(v.Text), v.Audio)
 			}else {
-				pronunciation.Value = fmt.Sprintf("%s \n %s", pronunciation.Value, normalizeOutput(v.Text))
+				pronunciation.Value = fmt.Sprintf("%s\n%s", pronunciation.Value, normalizeOutput(v.Text))
 			}
 		}
 		embed.Fields = append(embed.Fields, pronunciation )
