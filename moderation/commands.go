@@ -716,7 +716,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				fromID = parsed.Switches["from"].Int64()
 			}
 
-			if(fromID < toID){
+			if(toID > 0 && fromID > 0 && fromID < toID){
 				return errors.New("from messageID cannot be less than to messageID"), nil
 			}
 
@@ -1288,12 +1288,12 @@ func AdvancedDeleteMessages(guildID, channelID int64, triggerID int64, filterUse
 		}
 
 		// Continue only if current msg ID is > fromID
-		if fromID < msgs[i].ID {
+		if fromID > 0 && fromID < msgs[i].ID {
 			continue;
 		}
 
 		// Continue only if current msg ID is < toID
-		if toID > msgs[i].ID {
+		if toID > 0 && toID > msgs[i].ID {
 			continue
 		}
 
