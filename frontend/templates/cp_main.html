@@ -162,7 +162,7 @@ $(function(){
         if (data.incidents) {
             data.incidents.forEach(function(incident) {
                 const incidentLink = `<a href="${incident.shortlink}" target="_blank">${incident.name}</a>`
-                addAlert("warning", `Discord's ${incident.status} an incident: ${incidentLink}. Functionality may be limited.`);
+                addAlertHTML("warning", `Discord's ${incident.status} an incident: ${incidentLink}. Functionality may be limited.`);
             })
         }
     });
