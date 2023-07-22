@@ -242,7 +242,7 @@ function addAlert(kind, msg, id) {
 	).appendTo("#alerts");
 }
 
-    function addAlertHTML(kind, msg, id) {
+function addAlertHTML(kind, msg, id) {
 	const alert = $(`<div/>`);
 	if (id !== undefined) alert.prop("id", id)
 	alert.addClass("row").append(
