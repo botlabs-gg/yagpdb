@@ -99,6 +99,7 @@ var cmds = []*commands.YAGCommand{
 		Description:         "Lists your active reminders",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
+		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentReminders, err := GetUserReminders(parsed.Author.ID)
 			if err != nil {
@@ -118,6 +119,7 @@ var cmds = []*commands.YAGCommand{
 		Description:         "Lists reminders in channel, only users with 'manage channel' permissions can use this.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
+		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			ok, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, parsed.ChannelID, parsed.GuildData.MS, discordgo.PermissionManageChannels)
 			if err != nil {
@@ -152,6 +154,7 @@ var cmds = []*commands.YAGCommand{
 		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
+		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var reminder Reminder
 
