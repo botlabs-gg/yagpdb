@@ -137,7 +137,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 			out := "There are no reminders in this channel."
-			if currentReminders != nil {
+			if len(currentReminders) > 0 {
 				out = "Reminders in this channel:\n"
 				out += stringReminders(currentReminders, true)
 				out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
