@@ -106,12 +106,13 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			out := "You have no reminders. Create reminders with the `remindme` command."
-			if len(currentReminders) > 0 {
-				out = "Your reminders:\n"
-				out += stringReminders(currentReminders, false)
-				out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above.\nTo clear all reminders, use `delreminder` with the `-a` switch."
+			if len(currentReminders) == 0 {
+				return "You have no reminders. Create reminders with the `remindme` command.", nil
 			}
+
+			out := "Your reminders:\n"
+			out += stringReminders(currentReminders, false)
+			out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above.\nTo clear all reminders, use `delreminder` with the `-a` switch."
 			return out, nil
 		},
 	},
@@ -136,12 +137,14 @@ var cmds = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-			out := "There are no reminders in this channel."
-			if len(currentReminders) > 0 {
-				out = "Reminders in this channel:\n"
-				out += stringReminders(currentReminders, true)
-				out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
+
+			if len(currentReminders) == 0 {
+				return "There are no reminders in this channel.", nil
 			}
+
+			out := "Reminders in this channel:\n"
+			out += stringReminders(currentReminders, true)
+			out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
 			return out, nil
 		},
 	},
