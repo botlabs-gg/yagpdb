@@ -107,7 +107,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			out := "You have no reminders. Create reminders with the `Remindme` command."
-			if currentReminders != nil {
+			if len(currentReminders) > 0 {
 				out = "Your reminders:\n"
 				out += stringReminders(currentReminders, false)
 				out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above.\nTo clear all reminders, use `delreminder` with the `-a` switch."
