@@ -90,7 +90,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "Set a reminder in " + durString + " from now (<t:" + tUnix + ":f>)\nView reminders with the `Reminders` command", nil
+			return "Set a reminder in " + durString + " from now (<t:" + tUnix + ":f>)\nView reminders with the `reminders` command", nil
 		},
 	},
 	{
@@ -106,7 +106,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			out := "You have no reminders. Create reminders with the `Remindme` command."
+			out := "You have no reminders. Create reminders with the `remindme` command."
 			if len(currentReminders) > 0 {
 				out = "Your reminders:\n"
 				out += stringReminders(currentReminders, false)
