@@ -242,6 +242,16 @@ function addAlert(kind, msg, id) {
 	).appendTo("#alerts");
 }
 
+function addAlertHTML(kind, msg, id) {
+	const alert = $(`<div/>`);
+	if (id !== undefined) alert.prop("id", id)
+	alert.addClass("row").append(
+		$("<div/>").addClass("col-lg-12").append(
+			$("<div/>").addClass("alert alert-" + kind).html(msg)
+		)
+	).appendTo("#alerts");
+}
+
 function clearAlerts() {
 	$("#alerts").empty();
 }
