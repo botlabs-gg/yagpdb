@@ -126,6 +126,10 @@ func assignRoleAfterScreening(config *GeneralConfig, evt *eventsystem.EventData,
 	memberDuration := time.Since(memberJoinedAt)
 	configDuration := time.Duration(config.RequiredDuration) * time.Minute
 
+	if config.IgnoreBots && member.User.Bot {
+		return
+	}
+
 	if (config.RequiredDuration < 1 || config.OnlyOnJoin || configDuration <= memberDuration) && config.CanAssignTo(member.Roles, memberJoinedAt) {
 		_, retry, err = assignRole(config, member.GuildID, member.User.ID)
 		return retry, err
@@ -146,6 +150,10 @@ func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	config, err := GuildCacheGetGeneralConfig(addEvt.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
+	}
+
+	if config.IgnoreBots && addEvt.User.Bot {
+		return
 	}
 
 	if config.AssignRoleAfterScreening && addEvt.Pending {
@@ -271,6 +279,9 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 	}
 
 	for _, m := range chunk.Members {
+		if m.User.Bot && config.IgnoreBots {
+			continue
+		}
 
 		if config.AssignRoleAfterScreening && m.Pending {
 			// Skip this member if Membership Screening is pending for it
@@ -350,6 +361,9 @@ func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigne
 
 	memberStates, _ := bot.GetMembers(guildID, uIDsParsed...)
 	for _, ms := range memberStates {
+		if ms.User.Bot && config.IgnoreBots {
+			continue
+		}
 		disabled, _, err := assignRole(config, guildID, ms.User.ID)
 		if err != nil {
 			logger.WithError(err).WithField("user", ms.User.ID).WithField("guild", guildID).Error("failed adding autorole role")
@@ -441,6 +455,10 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 		return bot.CheckDiscordErrRetry(err), err
 	}
 
+	if config.IgnoreBots && member.User.Bot {
+		return false, nil
+	}
+
 	if config.AssignRoleAfterScreening && member.Member.Pending {
 		// If Membership Screening is pending, add it to autorole pending set and return
 		addMemberToAutorolePendingSet(evt.GuildID, member.User.ID)
@@ -503,6 +521,10 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 			}
 			return assignRoleAfterScreening(config, evt, update.Member)
 		}
+	}
+
+	if config.IgnoreBots && member.User.Bot {
+		return false, nil
 	}
 
 	if config.Role == 0 || config.OnlyOnJoin || evt.GS.GetRole(config.Role) == nil {
