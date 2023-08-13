@@ -292,7 +292,7 @@ func (p *Plugin) handleAutomodExecution(evt *eventsystem.EventData) {
 	}
 
 	// Expires a temporary value after 5 seconds
-	if err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", redisKey, "5", "1")); err != nil {
+	if err := common.RedisPool.Do(radix.Cmd(nil, "SET", redisKey, "1", "EX", "5")); err != nil {
 		return
 	}
 
