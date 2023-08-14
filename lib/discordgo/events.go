@@ -560,3 +560,5 @@ type GuildAuditLogEntryCreate struct {
 
 type GuildJoinRequestUpdate struct{}
 type GuildJoinRequestDelete struct{}
+type VoiceChannelStatusUpdate struct{}
+type ChannelTopicUpdate struct{}
