@@ -18,6 +18,7 @@ const (
 	channelCreateEventType                       = "CHANNEL_CREATE"
 	channelDeleteEventType                       = "CHANNEL_DELETE"
 	channelPinsUpdateEventType                   = "CHANNEL_PINS_UPDATE"
+	channelTopicUpdateEventType                  = "CHANNEL_TOPIC_UPDATE"
 	channelUpdateEventType                       = "CHANNEL_UPDATE"
 	connectEventType                             = "__CONNECT__"
 	disconnectEventType                          = "__DISCONNECT__"
@@ -73,6 +74,7 @@ const (
 	userNoteUpdateEventType                      = "USER_NOTE_UPDATE"
 	userSettingsUpdateEventType                  = "USER_SETTINGS_UPDATE"
 	userUpdateEventType                          = "USER_UPDATE"
+	voiceChannelStatusUpdateEventType            = "VOICE_CHANNEL_STATUS_UPDATE"
 	voiceServerUpdateEventType                   = "VOICE_SERVER_UPDATE"
 	voiceStateUpdateEventType                    = "VOICE_STATE_UPDATE"
 	webhooksUpdateEventType                      = "WEBHOOKS_UPDATE"
@@ -294,6 +296,26 @@ func (eh channelPinsUpdateEventHandler) New() interface{} {
 // Handle is the handler for ChannelPinsUpdate events.
 func (eh channelPinsUpdateEventHandler) Handle(s *Session, i interface{}) {
 	if t, ok := i.(*ChannelPinsUpdate); ok {
+		eh(s, t)
+	}
+}
+
+// channelTopicUpdateEventHandler is an event handler for ChannelTopicUpdate events.
+type channelTopicUpdateEventHandler func(*Session, *ChannelTopicUpdate)
+
+// Type returns the event type for ChannelTopicUpdate events.
+func (eh channelTopicUpdateEventHandler) Type() string {
+	return channelTopicUpdateEventType
+}
+
+// New returns a new instance of ChannelTopicUpdate.
+func (eh channelTopicUpdateEventHandler) New() interface{} {
+	return &ChannelTopicUpdate{}
+}
+
+// Handle is the handler for ChannelTopicUpdate events.
+func (eh channelTopicUpdateEventHandler) Handle(s *Session, i interface{}) {
+	if t, ok := i.(*ChannelTopicUpdate); ok {
 		eh(s, t)
 	}
 }
@@ -1378,6 +1400,26 @@ func (eh userUpdateEventHandler) Handle(s *Session, i interface{}) {
 	}
 }
 
+// voiceChannelStatusUpdateEventHandler is an event handler for VoiceChannelStatusUpdate events.
+type voiceChannelStatusUpdateEventHandler func(*Session, *VoiceChannelStatusUpdate)
+
+// Type returns the event type for VoiceChannelStatusUpdate events.
+func (eh voiceChannelStatusUpdateEventHandler) Type() string {
+	return voiceChannelStatusUpdateEventType
+}
+
+// New returns a new instance of VoiceChannelStatusUpdate.
+func (eh voiceChannelStatusUpdateEventHandler) New() interface{} {
+	return &VoiceChannelStatusUpdate{}
+}
+
+// Handle is the handler for VoiceChannelStatusUpdate events.
+func (eh voiceChannelStatusUpdateEventHandler) Handle(s *Session, i interface{}) {
+	if t, ok := i.(*VoiceChannelStatusUpdate); ok {
+		eh(s, t)
+	}
+}
+
 // voiceServerUpdateEventHandler is an event handler for VoiceServerUpdate events.
 type voiceServerUpdateEventHandler func(*Session, *VoiceServerUpdate)
 
@@ -1464,6 +1506,8 @@ func handlerForInterface(handler interface{}) EventHandler {
 		return channelDeleteEventHandler(v)
 	case func(*Session, *ChannelPinsUpdate):
 		return channelPinsUpdateEventHandler(v)
+	case func(*Session, *ChannelTopicUpdate):
+		return channelTopicUpdateEventHandler(v)
 	case func(*Session, *ChannelUpdate):
 		return channelUpdateEventHandler(v)
 	case func(*Session, *Connect):
@@ -1574,6 +1618,8 @@ func handlerForInterface(handler interface{}) EventHandler {
 		return userSettingsUpdateEventHandler(v)
 	case func(*Session, *UserUpdate):
 		return userUpdateEventHandler(v)
+	case func(*Session, *VoiceChannelStatusUpdate):
+		return voiceChannelStatusUpdateEventHandler(v)
 	case func(*Session, *VoiceServerUpdate):
 		return voiceServerUpdateEventHandler(v)
 	case func(*Session, *VoiceStateUpdate):
@@ -1597,6 +1643,7 @@ func init() {
 	registerInterfaceProvider(channelCreateEventHandler(nil))
 	registerInterfaceProvider(channelDeleteEventHandler(nil))
 	registerInterfaceProvider(channelPinsUpdateEventHandler(nil))
+	registerInterfaceProvider(channelTopicUpdateEventHandler(nil))
 	registerInterfaceProvider(channelUpdateEventHandler(nil))
 	registerInterfaceProvider(guildAuditLogEntryCreateEventHandler(nil))
 	registerInterfaceProvider(guildBanAddEventHandler(nil))
@@ -1648,6 +1695,7 @@ func init() {
 	registerInterfaceProvider(userNoteUpdateEventHandler(nil))
 	registerInterfaceProvider(userSettingsUpdateEventHandler(nil))
 	registerInterfaceProvider(userUpdateEventHandler(nil))
+	registerInterfaceProvider(voiceChannelStatusUpdateEventHandler(nil))
 	registerInterfaceProvider(voiceServerUpdateEventHandler(nil))
 	registerInterfaceProvider(voiceStateUpdateEventHandler(nil))
 	registerInterfaceProvider(webhooksUpdateEventHandler(nil))

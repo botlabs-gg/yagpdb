@@ -1469,10 +1469,10 @@ type ThreadMember struct {
 
 // AutoModerationRule stores data for an auto moderation rule.
 type AutoModerationRule struct {
-	ID              int64                          `json:"id,omitempty"`
-	GuildID         int64                          `json:"guild_id,omitempty"`
+	ID              int64                          `json:"id,string,omitempty"`
+	GuildID         int64                          `json:"guild_id,string,omitempty"`
 	Name            string                         `json:"name,omitempty"`
-	CreatorID       int64                          `json:"creator_id,omitempty"`
+	CreatorID       int64                          `json:"creator_id,string,omitempty"`
 	EventType       AutoModerationRuleEventType    `json:"event_type,omitempty"`
 	TriggerType     AutoModerationRuleTriggerType  `json:"trigger_type,omitempty"`
 	TriggerMetadata *AutoModerationTriggerMetadata `json:"trigger_metadata,omitempty"`
