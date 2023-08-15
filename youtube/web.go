@@ -35,15 +35,16 @@ var (
 )
 
 type YoutubeFeedForm struct {
-	YoutubeUrl        string
-	DiscordChannel    int64 `valid:"channel,false"`
-	ID                uint
-	MentionEveryone   bool
-	MentionRoles      []int64
-	PublishShorts     bool
-	PublishLivestream bool
-	Enabled           bool
-	CustomMessage     string
+	YoutubeUrl         string
+	DiscordChannel     int64 `valid:"channel,false"`
+	ID                 uint
+	MentionEveryone    bool
+	MentionRoles       []int64
+	PublishToFollowers bool
+	PublishShorts      bool
+	PublishLivestream  bool
+	Enabled            bool
+	CustomMessage      string
 }
 
 type YoutubeAnnouncementForm struct {
@@ -171,7 +172,22 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	ytChannel := cResp.Items[0]
-	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, ytChannel, data.MentionEveryone, data.PublishLivestream, data.PublishShorts, data.MentionRoles)
+
+	// Disallow users from toggling on "Publish to Channel Followers" if
+	// selected Discord channel is not an announcement feed.
+	if data.PublishToFollowers {
+		cs := activeGuild.GetChannel(data.DiscordChannel)
+		if cs == nil {
+			return templateData.AddAlerts(web.ErrorAlert("Discord channel not found")), errors.New("discord channel not in state")
+		}
+
+		if cs.Type != discordgo.ChannelTypeGuildNews {
+			templateData.AddAlerts(web.WarningAlert(fmt.Sprintf("The selected Discord channel, #%s, is not an announcement channel. Publish to Channel Followers requires an announcement channel.", cs.Name)))
+			data.PublishToFollowers = false
+		}
+	}
+
+	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, ytChannel, data.MentionEveryone, data.PublishToFollowers, data.PublishLivestream, data.PublishShorts, data.MentionRoles)
 
 	if err != nil {
 		if err == ErrNoChannel {
@@ -217,13 +233,28 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 
 func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
 	ctx := r.Context()
-	_, templateData = web.GetBaseCPContextData(ctx)
+	guild, templateData := web.GetBaseCPContextData(ctx)
 
 	sub := ctx.Value(ContextKeySub).(*ChannelSubscription)
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
 
+	// Disallow users from toggling on "Publish to Channel Followers" if
+	// selected Discord channel is not an announcement feed.
+	if data.PublishToFollowers {
+		cs := guild.GetChannel(data.DiscordChannel)
+		if cs == nil {
+			return templateData.AddAlerts(web.ErrorAlert("Discord channel not found")), errors.New("discord channel not in state")
+		}
+
+		if cs.Type != discordgo.ChannelTypeGuildNews {
+			templateData.AddAlerts(web.WarningAlert(fmt.Sprintf("The selected Discord channel, %s, is not an announcement channel. Publish to Channel Followers requires an announcement channel.", cs.Name)))
+			data.PublishToFollowers = false
+		}
+	}
+
 	sub.MentionEveryone = data.MentionEveryone
 	sub.MentionRoles = data.MentionRoles
+	sub.PublishToFollowers = &data.PublishToFollowers
 	sub.PublishLivestream = &data.PublishLivestream
 	sub.PublishShorts = &data.PublishShorts
 	sub.ChannelID = discordgo.StrID(data.DiscordChannel)

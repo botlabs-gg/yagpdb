@@ -187,26 +187,31 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		}
 	}
 
+	guildState, err := discorddata.GetFullGuild(parsedGuild)
+	if err != nil {
+		logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
+		return
+	}
+
+	if guildState == nil {
+		logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
+		p.DisableGuildFeeds(parsedGuild)
+		return
+	}
+
+	channelState := guildState.GetChannel(parsedChannel)
+	if channelState == nil {
+		logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
+		p.DisableChannelFeeds(parsedChannel)
+		return
+	}
+
+	publishAnnouncement := *sub.PublishToFollowers
+	if publishAnnouncement && channelState.Type != discordgo.ChannelTypeGuildNews {
+		publishAnnouncement = false
+	}
+
 	if hasCustomAnnouncement && *announcement.Enabled && len(announcement.Message) > 0 {
-		guildState, err := discorddata.GetFullGuild(parsedGuild)
-		if err != nil {
-			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
-			return
-		}
-
-		if guildState == nil {
-			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
-			p.DisableGuildFeeds(parsedGuild)
-			return
-		}
-
-		channelState := guildState.GetChannel(parsedChannel)
-		if channelState == nil {
-			logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
-			p.DisableChannelFeeds(parsedChannel)
-			return
-		}
-
 		ctx := templates.NewContext(guildState, channelState, nil)
 		videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
 		videoDuration, err := common.ParseDuration(videoDurationString)
@@ -227,6 +232,10 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		ctx.Data["VideoDurationSeconds"] = int(math.Round(videoDuration.Seconds()))
 		//full video object in case people want to do more advanced stuff
 		ctx.Data["Video"] = video
+
+		if publishAnnouncement {
+			ctx.CurrentFrame.PublishResponse = true
+		}
 
 		content, err = ctx.Execute(announcement.Message)
 		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
@@ -253,12 +262,13 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	go analytics.RecordActiveUnit(parsedGuild, p, "posted_youtube_message")
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Inc()
 	mqueue.QueueMessage(&mqueue.QueuedElement{
-		GuildID:      parsedGuild,
-		ChannelID:    parsedChannel,
-		Source:       "youtube",
-		SourceItemID: "",
-		MessageStr:   content,
-		Priority:     2,
+		GuildID:             parsedGuild,
+		ChannelID:           parsedChannel,
+		Source:              "youtube",
+		SourceItemID:        "",
+		MessageStr:          content,
+		PublishAnnouncement: publishAnnouncement,
+		Priority:            2,
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: parseMentions,
 		},
@@ -414,19 +424,20 @@ func (p *Plugin) parseYtVideoID(parse string) (id ytChannelID, err error) {
 	}
 }
 
-func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {
+func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishToFollowers bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {
 	if mentionEveryone && len(mentionRoles) > 0 {
 		mentionRoles = make([]int64, 0)
 	}
 
 	sub := &ChannelSubscription{
-		GuildID:           discordgo.StrID(guildID),
-		ChannelID:         discordgo.StrID(discordChannelID),
-		MentionEveryone:   mentionEveryone,
-		MentionRoles:      mentionRoles,
-		PublishLivestream: &publishLivestream,
-		PublishShorts:     &publishShorts,
-		Enabled:           common.BoolToPointer(true),
+		GuildID:            discordgo.StrID(guildID),
+		ChannelID:          discordgo.StrID(discordChannelID),
+		MentionEveryone:    mentionEveryone,
+		MentionRoles:       mentionRoles,
+		PublishToFollowers: &publishToFollowers,
+		PublishLivestream:  &publishLivestream,
+		PublishShorts:      &publishShorts,
+		Enabled:            common.BoolToPointer(true),
 	}
 
 	sub.YoutubeChannelName = ytChannel.Snippet.Title

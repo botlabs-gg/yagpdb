@@ -69,6 +69,10 @@
                             {{textChannelOptions .ActiveGuild.Channels nil false ""}}
                         </select>
                     </div>
+                    <div class="form-group">
+                        {{checkbox "PublishToFollowers" "new-publish-to-followers" `Publish to Channel Followers` false}}
+                        <p>Only works in Announcement channels.</p>
+                    </div>
                     {{checkbox "MentionEveryone" "new-mention-everyone" `Mention Everyone` false}}
                     <div class="form-group">
                        <div>
@@ -135,6 +139,7 @@
                     <tr>
                         <th>Youtube</th>
                         <th>Discord Channel</th>
+                        <th>Publish to Followers</th>
                         <th>Mention Everyone</th>
                         <th>Mention Roles</th>
                         <th>Publish Livestreams</th>
@@ -153,6 +158,9 @@
                             <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel" data-requireperms-embed>
                                 {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                             </select>
+                        </td>
+                        <td class="yt-tbl-column">
+                            {{checkbox "PublishToFollowers" (joinStr "" "publish-to-followers-" .ID) `` .PublishToFollowers (joinStr "" `form="sub-item-` .ID `"`)}}
                         </td>
                         <td class="yt-tbl-column">
                             {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}

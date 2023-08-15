@@ -32,6 +32,9 @@ type QueuedElement struct {
 
 	AllowedMentions discordgo.AllowedMentions `json:"allowed_mentions"`
 
+	// Publish the message if the channel is an announcement channel
+	PublishAnnouncement bool
+
 	// When the queue grows, the feeds with the highest priority gets sent first
 	Priority int
 

@@ -84,6 +84,20 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 		return tmpl
 	}
 
+	// Disallow users from toggling on "Publish to Channel Followers" if
+	// selected Discord channel is not an announcement feed.
+	if newConf.PublishToFollowers {
+		cs := guild.GetChannel(newConf.AnnounceChannel)
+		if cs == nil {
+			return tmpl.AddAlerts(web.ErrorAlert("Discord channel not found"))
+		}
+
+		if cs.Type != discordgo.ChannelTypeGuildNews {
+			tmpl.AddAlerts(web.WarningAlert(fmt.Sprintf("The selected Discord channel, #%s, is not an announcement channel. Publish to Channel Followers requires an announcement channel.", cs.Name)))
+			newConf.PublishToFollowers = false
+		}
+	}
+
 	err := newConf.Save(guild.ID)
 	if web.CheckErr(tmpl, err, "Failed saving config :'(", web.CtxLogger(ctx).Error) {
 		return tmpl

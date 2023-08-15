@@ -68,6 +68,7 @@ type ChannelSubscription struct {
 	YoutubeChannelName string
 	MentionEveryone    bool
 	MentionRoles       pq.Int64Array `gorm:"type:bigint[]" valid:"role,true"`
+	PublishToFollowers *bool         `sql:"DEFAULT:false"`
 	PublishLivestream  *bool         `sql:"DEFAULT:true"`
 	PublishShorts      *bool         `sql:"DEFAULT:true"`
 	Enabled            *bool         `sql:"DEFAULT:true"`
