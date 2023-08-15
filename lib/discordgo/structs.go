@@ -746,6 +746,12 @@ type Assets struct {
 	SmallText    string `json:"small_text,omitempty"`
 }
 
+// A MessageActivity represents the activity sent with a message, such as a game invite.
+type MessageActivity struct {
+	Type    int    `json:"type"`
+	PartyID string `json:"party_id"`
+}
+
 // A Member stores user information for Guild members. A guild
 // member represents a certain user's presence in a guild.
 type Member struct {

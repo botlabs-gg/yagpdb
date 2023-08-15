@@ -153,6 +153,8 @@ type Message struct {
 	// This means responses to message component interactions do not include this property,
 	// instead including a MessageReference, as components exist on preexisting messages.
 	Interaction *MessageInteraction `json:"interaction"`
+
+	Activity *MessageActivity `json:"activity"`
 }
 
 func (m *Message) GetGuildID() int64 {
