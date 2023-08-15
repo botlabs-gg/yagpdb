@@ -115,6 +115,7 @@ type DelayedRunCCData struct {
 	UserKey interface{} `json:"user_key"`
 
 	IsExecedByLeaveMessage bool `json:"is_execed_by_leave_message"`
+	IsExecedByJoinMessage  bool `json:"is_execed_by_join_message"`
 }
 
 var cmdEvalCommand = &commands.YAGCommand{
@@ -414,6 +415,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	}
 
 	tmplCtx.IsExecedByLeaveMessage = dataCast.IsExecedByLeaveMessage
+	tmplCtx.IsExecedByJoinMessage = dataCast.IsExecedByJoinMessage
 
 	// decode userdata
 	if len(dataCast.UserData) > 0 {

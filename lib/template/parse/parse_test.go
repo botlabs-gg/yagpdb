@@ -741,6 +741,8 @@ var funcs = map[string]interface{}{
 	"print":                     func() interface{} { return nil },
 	"printf":                    func() interface{} { return nil },
 	"println":                   func() interface{} { return nil },
+	"publishMessage":            func() interface{} { return nil },
+	"publishResponse":           func() interface{} { return nil },
 	"randInt":                   func() interface{} { return nil },
 	"reFind":                    func() interface{} { return nil },
 	"reFindAll":                 func() interface{} { return nil },

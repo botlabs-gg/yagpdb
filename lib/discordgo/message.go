@@ -153,6 +153,11 @@ type Message struct {
 	// This means responses to message component interactions do not include this property,
 	// instead including a MessageReference, as components exist on preexisting messages.
 	Interaction *MessageInteraction `json:"interaction"`
+
+	// The flags of the message, which describe extra features of a message.
+	// This is a combination of bit masks; the presence of a certain permission can
+	// be checked by performing a bitwise AND between this int and the flag.
+	Flags MessageFlags `json:"flags"`
 }
 
 func (m *Message) GetGuildID() int64 {
