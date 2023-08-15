@@ -156,7 +156,10 @@ var cmdEvalCommand = &commands.YAGCommand{
 		ctx := templates.NewContext(data.GuildData.GS, channel, data.GuildData.MS)
 		ctx.IsExecedByEvalCC = true
 
-		code := common.ParseCodeblock(data.Args[0].Str())
+		// use stripped message content instead of parsed arg data to avoid dcmd
+		// from misinterpreting backslashes and losing spaces in input; see
+		// https://github.com/botlabs-gg/yagpdb/pull/1547
+		code := common.ParseCodeblock(data.TraditionalTriggerData.MessageStrippedPrefix)
 
 		// Encourage only small code snippets being tested with this command
 		maxRunes := 1000
