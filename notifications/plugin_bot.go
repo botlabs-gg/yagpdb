@@ -145,10 +145,6 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	if !enableSendDM {
 		disableFuncs = []string{"sendDM"}
 	}
-	// Publishing functions are too heavily ratelimited by Discord to allow
-	// rapid feeds to publish
-	disableFuncs = append(disableFuncs, "publishMessage")
-	disableFuncs = append(disableFuncs, "publishResponse")
 	ctx.DisabledContextFuncs = disableFuncs
 
 	msg, err := ctx.Execute(tmpl)
