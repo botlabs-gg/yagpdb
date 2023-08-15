@@ -147,7 +147,8 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	}
 	// Publishing functions are too heavily ratelimited by Discord to allow
 	// rapid feeds to publish
-	disableFuncs = []string{"publishMessage", "publishResponse"}
+	disableFuncs = append(disableFuncs, "publishMessage")
+	disableFuncs = append(disableFuncs, "publishResponse")
 	ctx.DisabledContextFuncs = disableFuncs
 
 	msg, err := ctx.Execute(tmpl)
