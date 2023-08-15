@@ -859,6 +859,9 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)
 
+	// trim whitespace for accurate character count
+	out = strings.TrimSpace(out)
+
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (contact an admin on the server...)"
 	}
