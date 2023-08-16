@@ -511,7 +511,7 @@ func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (s
 func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error) {
 	// Too heavily ratelimited by Discord to allow rapid feeds to publish
 	if c.IsExecedByLeaveMessage || c.IsExecedByJoinMessage {
-		return "", errors.New("you cannot publish messages with a feed")
+		return "", errors.New("cannot publish messages from a join/leave feed")
 	}
 
 	if c.IncreaseCheckGenericAPICall() {
