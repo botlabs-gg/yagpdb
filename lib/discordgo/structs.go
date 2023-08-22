@@ -363,6 +363,8 @@ type Guild struct {
 
 	Description string `json:"description"`
 
+	Banner string `json:"banner"`
+
 	PreferredLocale string `json:"preferred_locale"`
 
 	// The hash of the guild's icon. Use Session.GuildIcon
