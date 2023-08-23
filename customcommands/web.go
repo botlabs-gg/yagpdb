@@ -301,6 +301,10 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}
 	}
 
+	if !premium.ContextPremium(ctx) && cmdEdit.TriggerOnEdit {
+		return templateData.AddAlerts(web.ErrorAlert("`Trigger on edits` is a premium feature, your command wasn't saved, please save again after disabling `Trigger on edits`")), nil
+	}
+
 	dbModel := cmdEdit.ToDBModel()
 
 	templateData["CurrentGroupID"] = dbModel.GroupID.Int64
@@ -308,7 +312,6 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	dbModel.GuildID = activeGuild.ID
 	dbModel.LocalID = cmdEdit.ID
 	dbModel.TriggerType = int(triggerTypeFromForm(cmdEdit.TriggerTypeForm))
-
 	// check low interval limits
 	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval <= 10 {
 		if dbModel.TimeTriggerInterval < 5 {
