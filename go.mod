@@ -5,7 +5,6 @@ go 1.20
 require (
 	emperror.dev/errors v0.8.1
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/buger/jsonparser v1.1.1
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/didip/tollbooth v4.0.2+incompatible
@@ -104,15 +103,12 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/arch v0.4.0 // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/tools v0.12.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
 )
 
 require (
 	github.com/AlekSi/pointer v1.2.0
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
