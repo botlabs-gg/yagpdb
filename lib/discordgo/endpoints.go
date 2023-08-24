@@ -124,7 +124,7 @@ var (
 	EndpointWebhook         = func(wID int64) string { return "" }
 	EndpointWebhookToken    = func(wID int64, token string) string { return "" }
 
-	EndpointDefaultUserAvatar = func(uDiscriminator string) string { return "" }
+	EndpointDefaultUserAvatar = func(index int) string { return "" }
 
 	EndpointMessageReactionsAll = func(cID, mID int64) string { return "" }
 	EndpointMessageReactions    = func(cID, mID int64, emoji EmojiName) string {
@@ -301,9 +301,8 @@ func CreateEndpoints(base string) {
 	EndpointWebhook = func(wID int64) string { return EndpointWebhooks + StrID(wID) }
 	EndpointWebhookToken = func(wID int64, token string) string { return EndpointWebhooks + StrID(wID) + "/" + token }
 
-	EndpointDefaultUserAvatar = func(uDiscriminator string) string {
-		uDiscriminatorInt, _ := strconv.Atoi(uDiscriminator)
-		return EndpointCDN + "embed/avatars/" + strconv.Itoa(uDiscriminatorInt%5) + ".png"
+	EndpointDefaultUserAvatar = func(index int) string {
+		return EndpointCDN + "embed/avatars/" + strconv.Itoa(index) + ".png"
 	}
 
 	EndpointMessageReactionsAll = func(cID, mID int64) string {
