@@ -305,7 +305,7 @@ func tmplCheckbox(name, id, description string, checked bool, extraInputAttrs ..
 	}
 	builder.WriteString(`><label for="` + id + `" class="tgl-btn mb-2"></label>`)
 	// builder.WriteString(`><div class="switch"></div>`)
-	builder.WriteString(`<span class="ml-2 mb-2">` + description + `</span></div>`)
+	builder.WriteString(`<span class="tgl-desc ml-2 mb-2">` + description + `</span></div>`)
 	// builder.WriteString(`</div>`)
 
 	return template.HTML(builder.String())
