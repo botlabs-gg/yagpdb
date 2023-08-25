@@ -152,6 +152,7 @@ func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	templateData["CC"] = cc
 	templateData["Commands"] = true
+	templateData["IsGuildPremium"] = premium.ContextPremium(r.Context())
 
 	return serveGroupSelected(r, templateData, cc.GroupID.Int64, activeGuild.ID)
 }

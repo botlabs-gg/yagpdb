@@ -152,7 +152,9 @@
                                                     value="{{.CC.TextTrigger}}">
                                             </div>
                                             {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
-                                            {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on edits? (Premium Only!)" .CC.TriggerOnEdit}}
+                                            {{$disabledClass := ""}}
+                                            {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
+                                            {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on edits? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
                                         </div>
                                     </div>
                                 </div>
