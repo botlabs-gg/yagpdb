@@ -618,6 +618,11 @@ func (bc *ThreadCondition) UserSettings() []*SettingDef {
 }
 
 func (bc *ThreadCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+	//Channel won't be present in case the trigger is on member update event like nick update
+	if data.CS == nil {
+		return true, nil
+	}
+
 	if !bc.Threads {
 		return !data.CS.Type.IsThread(), nil
 	}
