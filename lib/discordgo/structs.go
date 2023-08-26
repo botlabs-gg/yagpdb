@@ -574,6 +574,8 @@ type VoiceState struct {
 	SelfDeaf  bool   `json:"self_deaf"`
 	Mute      bool   `json:"mute"`
 	Deaf      bool   `json:"deaf"`
+	Live      bool   `json:"self_stream"`
+	Video     bool   `json:"self_video"`
 }
 
 // A Presence stores the online, offline, or idle and game status of Guild members.
