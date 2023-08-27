@@ -215,72 +215,99 @@ func tmplChannelOpts(channelTypes []discordgo.ChannelType) interface{} {
 	}
 }
 
-func tmplChannelOptsMulti(channelTypes []discordgo.ChannelType) func(channels []dstate.ChannelState, selections []int64) template.HTML {
+func tmplChannelOptsMulti(allowedChannelTypes []discordgo.ChannelType) func(channels []dstate.ChannelState, selections []int64) template.HTML {
 	return func(channels []dstate.ChannelState, selections []int64) template.HTML {
-
-		var builder strings.Builder
-
-		channelOpt := func(id int64, name string, channelType discordgo.ChannelType) {
-			builder.WriteString(`<option value="` + discordgo.StrID(id) + "\"")
-			for _, selected := range selections {
-				if selected == id {
-					builder.WriteString(" selected")
-				}
-			}
-			var prefix string
-			switch channelType {
-			case discordgo.ChannelTypeGuildText:
-				prefix = "#"
-			case discordgo.ChannelTypeGuildVoice:
-				prefix = "🔊"
-			case discordgo.ChannelTypeGuildForum:
-				prefix = "📃"
-			default:
-				prefix = ""
-			}
-			builder.WriteString(">" + template.HTMLEscapeString(prefix+name) + "</option>")
-		}
-
-		// Channels without a category
-		for _, c := range channels {
-			if c.ParentID != 0 || !containsChannelType(channelTypes, c.Type) {
-				continue
-			}
-
-			channelOpt(c.ID, c.Name, c.Type)
-		}
-
-		// Group channels by category
-		if len(channelTypes) > 1 || channelTypes[0] != discordgo.ChannelTypeGuildCategory {
-			for _, cat := range channels {
-				if cat.Type != discordgo.ChannelTypeGuildCategory {
-					continue
-				}
-
-				builder.WriteString("<optgroup label=\"" + template.HTMLEscapeString(cat.Name) + "\">")
-				for _, c := range channels {
-					if !containsChannelType(channelTypes, c.Type) || c.ParentID != cat.ID {
-						continue
-					}
-
-					channelOpt(c.ID, c.Name, c.Type)
-				}
-				builder.WriteString("</optgroup>")
-			}
-		}
-
-		return template.HTML(builder.String())
+		gen := &channelOptsHTMLGenState{allowedChannelTypes: allowedChannelTypes, channels: channels, selections: selections}
+		return gen.HTML()
 	}
 }
 
-func containsChannelType(s []discordgo.ChannelType, t discordgo.ChannelType) bool {
-	for _, v := range s {
-		if v == t {
+type channelOptsHTMLGenState struct {
+	allowedChannelTypes []discordgo.ChannelType
+	channels            []dstate.ChannelState
+	selections          []int64
+
+	buf strings.Builder
+}
+
+func (g *channelOptsHTMLGenState) HTML() template.HTML {
+	g.outputDeletedChannels()
+	g.outputUncategorizedChannels()
+	if len(g.allowedChannelTypes) > 1 || g.allowedChannelTypes[0] != discordgo.ChannelTypeGuildCategory {
+		g.outputCategorizedChannels()
+	}
+	return template.HTML(g.buf.String())
+}
+
+func (g *channelOptsHTMLGenState) outputDeletedChannels() {
+	exists := make(map[int64]bool)
+	for _, c := range g.channels {
+		exists[c.ID] = true
+	}
+	for _, sel := range g.selections {
+		if !exists[sel] {
+			g.output(fmt.Sprintf(`<option value="%[1]d" selected>Deleted channel: %[1]d</option>\n`, sel))
+		}
+	}
+}
+
+func (g *channelOptsHTMLGenState) outputUncategorizedChannels() {
+	for _, c := range g.channels {
+		if c.ParentID == 0 && g.include(c.Type) {
+			g.outputChannel(c.ID, c.Name, c.Type)
+		}
+	}
+}
+
+func (g *channelOptsHTMLGenState) outputCategorizedChannels() {
+	for _, cat := range g.channels {
+		if cat.Type != discordgo.ChannelTypeGuildCategory {
+			continue
+		}
+
+		g.output(`<optgroup label="` + template.HTMLEscapeString(cat.Name) + `">`)
+		for _, c := range g.channels {
+			if c.ParentID == cat.ID && g.include(c.Type) {
+				g.outputChannel(c.ID, c.Name, c.Type)
+			}
+		}
+		g.output("</optgroup>")
+	}
+}
+
+func (g *channelOptsHTMLGenState) include(channelType discordgo.ChannelType) bool {
+	for _, t := range g.allowedChannelTypes {
+		if t == channelType {
 			return true
 		}
 	}
-
 	return false
+}
+
+func (g *channelOptsHTMLGenState) outputChannel(id int64, name string, channelType discordgo.ChannelType) {
+	g.output(`<option value="` + discordgo.StrID(id) + `"`)
+	for _, selected := range g.selections {
+		if selected == id {
+			g.output(" selected")
+		}
+	}
+
+	var prefix string
+	switch channelType {
+	case discordgo.ChannelTypeGuildText:
+		prefix = "#"
+	case discordgo.ChannelTypeGuildVoice:
+		prefix = "🔊"
+	case discordgo.ChannelTypeGuildForum:
+		prefix = "📃"
+	default:
+		prefix = ""
+	}
+	g.output(">" + template.HTMLEscapeString(prefix+name) + "</option>")
+}
+
+func (g *channelOptsHTMLGenState) output(s string) {
+	g.buf.WriteString(s)
 }
 
 func tmplCheckbox(name, id, description string, checked bool, extraInputAttrs ...string) template.HTML {
