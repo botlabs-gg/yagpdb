@@ -31,7 +31,9 @@ There are two ways of selfhosting this bot: [standalone](#Hosting-Standalone), o
 
 Directions on creating an app and getting credentials may be found
 [here](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
-	@@ -37,129 +36,82 @@ via the Control Panel.
+
+YAGPDB does not require you to authorize the bot: all of that will be handled
+via the Control Panel.
 
 In addition, you will need to add the following urls to the bot's "REDIRECT URI(S)" configuration:
 
