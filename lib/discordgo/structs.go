@@ -565,15 +565,17 @@ func (r Roles) Swap(i, j int) {
 
 // A VoiceState stores the voice states of Guilds
 type VoiceState struct {
-	UserID    int64  `json:"user_id,string"`
-	SessionID string `json:"session_id"`
-	ChannelID int64  `json:"channel_id,string"`
-	GuildID   int64  `json:"guild_id,string"`
-	Suppress  bool   `json:"suppress"`
-	SelfMute  bool   `json:"self_mute"`
-	SelfDeaf  bool   `json:"self_deaf"`
-	Mute      bool   `json:"mute"`
-	Deaf      bool   `json:"deaf"`
+	UserID     int64  `json:"user_id,string"`
+	SessionID  string `json:"session_id"`
+	ChannelID  int64  `json:"channel_id,string"`
+	GuildID    int64  `json:"guild_id,string"`
+	Suppress   bool   `json:"suppress"`
+	SelfMute   bool   `json:"self_mute"`
+	SelfDeaf   bool   `json:"self_deaf"`
+	Mute       bool   `json:"mute"`
+	Deaf       bool   `json:"deaf"`
+	SelfStream bool   `json:"self_stream"`
+	SelfVideo  bool   `json:"self_video"`
 }
 
 // A Presence stores the online, offline, or idle and game status of Guild members.
