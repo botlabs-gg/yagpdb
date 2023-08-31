@@ -363,6 +363,8 @@ type Guild struct {
 
 	Description string `json:"description"`
 
+	Banner string `json:"banner"`
+
 	PreferredLocale string `json:"preferred_locale"`
 
 	// The hash of the guild's icon. Use Session.GuildIcon
@@ -563,15 +565,17 @@ func (r Roles) Swap(i, j int) {
 
 // A VoiceState stores the voice states of Guilds
 type VoiceState struct {
-	UserID    int64  `json:"user_id,string"`
-	SessionID string `json:"session_id"`
-	ChannelID int64  `json:"channel_id,string"`
-	GuildID   int64  `json:"guild_id,string"`
-	Suppress  bool   `json:"suppress"`
-	SelfMute  bool   `json:"self_mute"`
-	SelfDeaf  bool   `json:"self_deaf"`
-	Mute      bool   `json:"mute"`
-	Deaf      bool   `json:"deaf"`
+	UserID     int64  `json:"user_id,string"`
+	SessionID  string `json:"session_id"`
+	ChannelID  int64  `json:"channel_id,string"`
+	GuildID    int64  `json:"guild_id,string"`
+	Suppress   bool   `json:"suppress"`
+	SelfMute   bool   `json:"self_mute"`
+	SelfDeaf   bool   `json:"self_deaf"`
+	Mute       bool   `json:"mute"`
+	Deaf       bool   `json:"deaf"`
+	SelfStream bool   `json:"self_stream"`
+	SelfVideo  bool   `json:"self_video"`
 }
 
 // A Presence stores the online, offline, or idle and game status of Guild members.
@@ -744,6 +748,12 @@ type Assets struct {
 	SmallImageID string `json:"small_image,omitempty"`
 	LargeText    string `json:"large_text,omitempty"`
 	SmallText    string `json:"small_text,omitempty"`
+}
+
+// A MessageActivity represents the activity sent with a message, such as a game invite.
+type MessageActivity struct {
+	Type    int    `json:"type"`
+	PartyID string `json:"party_id"`
 }
 
 // A Member stores user information for Guild members. A guild
@@ -1464,10 +1474,10 @@ type ThreadMember struct {
 
 // AutoModerationRule stores data for an auto moderation rule.
 type AutoModerationRule struct {
-	ID              int64                          `json:"id,omitempty"`
-	GuildID         int64                          `json:"guild_id,omitempty"`
+	ID              int64                          `json:"id,string,omitempty"`
+	GuildID         int64                          `json:"guild_id,string,omitempty"`
 	Name            string                         `json:"name,omitempty"`
-	CreatorID       int64                          `json:"creator_id,omitempty"`
+	CreatorID       int64                          `json:"creator_id,string,omitempty"`
 	EventType       AutoModerationRuleEventType    `json:"event_type,omitempty"`
 	TriggerType     AutoModerationRuleTriggerType  `json:"trigger_type,omitempty"`
 	TriggerMetadata *AutoModerationTriggerMetadata `json:"trigger_metadata,omitempty"`

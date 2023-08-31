@@ -158,6 +158,8 @@ type Message struct {
 	// This is a combination of bit masks; the presence of a certain permission can
 	// be checked by performing a bitwise AND between this int and the flag.
 	Flags MessageFlags `json:"flags"`
+  
+	Activity *MessageActivity `json:"activity"`
 }
 
 func (m *Message) GetGuildID() int64 {

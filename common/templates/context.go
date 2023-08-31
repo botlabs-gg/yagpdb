@@ -420,6 +420,9 @@ func (c *Context) newContextFrame(cs *dstate.ChannelState) *ContextFrame {
 func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error {
 	out, err := c.Execute(source)
 
+	// trim whitespace for accurate character count
+	out = strings.TrimSpace(out)
+
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Template output for " + c.Name + " was longer than 2k (contact an admin on the server...)"
 	}

@@ -181,6 +181,7 @@ func GuildStateFromDgo(guild *discordgo.Guild) *GuildState {
 		Region:                      guild.Region,
 		Name:                        guild.Name,
 		Icon:                        guild.Icon,
+		Banner:                      guild.Banner,
 		Description:                 guild.Description,
 		PreferredLocale:             guild.PreferredLocale,
 		AfkChannelID:                guild.AfkChannelID,
