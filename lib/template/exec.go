@@ -507,11 +507,11 @@ func (s *state) walkRange(dot reflect.Value, r *parse.RangeNode) controlFlowSign
 		}
 		return controlFlowNone
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		intVal := val.Int()
+		intVal := int(val.Int())
 		if intVal <= 0 {
 			break
 		}
-		for i := 0; i < int(intVal); i++ {
+		for i := 0; i < intVal; i++ {
 			val := reflect.ValueOf(i)
 			switch oneIteration(val, val) {
 			case controlFlowBreak:
@@ -526,7 +526,7 @@ func (s *state) walkRange(dot reflect.Value, r *parse.RangeNode) controlFlowSign
 		if intVal <= 0 {
 			break
 		}
-		for i := 0; i < int(intVal); i++ {
+		for i := 0; i < intVal; i++ {
 			val := reflect.ValueOf(i)
 			switch oneIteration(val, val) {
 			case controlFlowBreak:
