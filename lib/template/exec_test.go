@@ -602,6 +602,7 @@ var execTests = []execTest{
 	{"range over int", `{{- range $i, $x := 3 -}}[{{$i}}][{{$x}}]{{- end -}}`, "[0][0][1][1][2][2]", tVal, true},
 	{"range over negative int", `{{- range $i, $x := -3 -}}{{- else -}}empty{{- end -}}`, "empty", tVal, true},
 	{"range over zero", `{{- range $i, $x := 0 -}}{{- else -}}empty{{- end -}}`, "empty", tVal, true},
+	{"range over int without vars", `{{- range 2 -}}{{- . -}}{{- end -}}`, "01", tVal, true},
 
 	// While.
 	{"while increment", "{{$i := 0}}{{while lt $i 5}}<{{$i}}>{{$i = add $i 1}}{{end}}", "<0><1><2><3><4>", tVal, true},
