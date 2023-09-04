@@ -600,7 +600,7 @@ var execTests = []execTest{
 	{"range count", `{{range $i, $x := count 5}}[{{$i}}]{{$x}}{{end}}`, "[0]a[1]b[2]c[3]d[4]e", tVal, true},
 	{"range nil count", `{{range $i, $x := count 0}}{{else}}empty{{end}}`, "empty", tVal, true},
 	{"range over int", `{{- range $i, $x := 3 -}}[{{$i}}][{{$x}}]{{- end -}}`, "[0][0][1][1][2][2]", tVal, true},
-	{"range over negative int", `{{- range $i, $x := -3 -}}{{- else -}}empty{{- end -}}`, "empty", tVal, true},
+	{"range over negative int", `{{- range $i, $x := -3 -}}{{- else -}}empty{{- end -}}`, "", tVal, false},
 	{"range over zero", `{{- range $i, $x := 0 -}}{{- else -}}empty{{- end -}}`, "empty", tVal, true},
 	{"range over int without vars", `{{- range 2 -}}{{- . -}}{{- end -}}`, "01", tVal, true},
 

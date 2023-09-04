@@ -508,8 +508,12 @@ func (s *state) walkRange(dot reflect.Value, r *parse.RangeNode) controlFlowSign
 		return controlFlowNone
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		intVal := int(val.Int())
-		if intVal <= 0 {
+		if intVal == 0 {
 			break
+		}
+		if intVal < 0 {
+			s.errorf("range can't iterate over a negative number")
+			return controlFlowNone
 		}
 		for i := 0; i < intVal; i++ {
 			val := reflect.ValueOf(i)
@@ -523,8 +527,12 @@ func (s *state) walkRange(dot reflect.Value, r *parse.RangeNode) controlFlowSign
 		return controlFlowNone
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		intVal := int(val.Uint())
-		if intVal <= 0 {
+		if intVal == 0 {
 			break
+		}
+		if intVal < 0 {
+			s.errorf("range can't iterate over a negative number")
+			return controlFlowNone
 		}
 		for i := 0; i < intVal; i++ {
 			val := reflect.ValueOf(i)
