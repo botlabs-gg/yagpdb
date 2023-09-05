@@ -62,7 +62,7 @@ type FormGroup struct {
 
 	SingleAutoToggleOff   bool
 	SingleRequireOne      bool
-	TemporaryRoleDuration int `valid:"0,1440"`
+	TemporaryRoleDuration int `valid:"0,576000"`
 }
 
 func (p *Plugin) InitWeb() {
