@@ -27,20 +27,31 @@
             <div class="card-body">
                 <form method="post" action="/manage/{{.ActiveGuild.ID}}/youtube">
                     <p>
-                        <b>Provide either link of youtube channel or video or username </b>
+                        <b>Enter a link for a YouTube channel, video, live stream, or playlist</b>
                         <br>
-                        <u>Direct channel and Video links</u> are preferred as they have the highest accuracy
-                        <br>Other links can lead to incorrect channels sometimes, as they rely on youtube search
+			<u>DISCLAIMER: Using Indirect Channel Links</u>
+			<br>When using an indirect channel link, such as handle links, custom channel links, or username links, YAGDPB may add the incorrect channel.
+			<br>This is because YAGPDB uses the first result from a YouTube search for these types of link, so the channel added, depends on how they're ranked by YouTube.
+			<br>
+			<br>If you experience an issue using these types of links, using one of the examples below is recommended.
                         <br>
                         <br>
-                        <u>Examples of each type of link:</u>
+                        <u>Examples of recommended types of links:</u>
                         <br> Direct channel link: <b>https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw</b>
                         <br> Video link: <b>https://www.youtube.com/watch?v=dQw4w9WgXcQ</b>
-                        <br> Short Video link: <b>https://youtu.be/pBZ_2pX_8mg</b>
-                        <br> User link: <b>https://www.youtube.com/user/MontyPython</b>
+                        <br> Shorts link: <b>https://www.youtube.com/shorts/pBZ_2pX_8mg?feature=share</b>
+			<br> Video sharing link: <b>https://youtu.be/v78KN3wZmNo</b>
+			<br> Live Stream sharing link: <b>https://www.youtube.com/live/jfKfPfyJRdk?feature=share</b>
+			<br> Playlist link: <b>https://www.youtube.com/playlist?list=PLEamUZtdyTMxwDNQ97Y7im8EwqRyht12R</b>
+			<br>
+			<u>Examples of indirect channel links (NOT RECOMMENDED):</u>
+                        <br> Username link: <b>https://www.youtube.com/user/MontyPython</b>
                         <br> Custom link: <b>https://www.youtube.com/c/Taskmaster</b>
                         <br> Handle link: <b>https://www.youtube.com/@TomScottGo</b>
                         <br>
+			<br>
+			<u>Note:</u>
+			<br>Some of these examples are flexible, so don't worry if a link you copied doesn't feature things like <b>www.</b> or <b>?feature=share</b>!
                         </br>
                         For any questions join the support server of the bot
                     </p>
@@ -49,7 +60,7 @@
                         <div class="input-group input-group-sm">
                             <span class="input-group-prepend"><span
                                     class="input-group-text"></span></span>
-                            <input type="text" class="form-control" placeholder="Enter link of youtube channel or video or user" id="yt-url" name="YoutubeUrl">
+                            <input type="text" class="form-control" placeholder="Enter link for a YouTube channel, playlist, live stream, or video" id="yt-url" name="YoutubeUrl">
                         </div>
                     </div>
                     <div class="form-group">

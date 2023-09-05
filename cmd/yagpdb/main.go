@@ -6,6 +6,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/common/prom"
 	"github.com/botlabs-gg/yagpdb/v2/common/run"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 
 	// Core yagpdb packages
@@ -19,7 +20,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/automod"
 	"github.com/botlabs-gg/yagpdb/v2/automod_legacy"
 	"github.com/botlabs-gg/yagpdb/v2/autorole"
-	"github.com/botlabs-gg/yagpdb/v2/aylien"
 	"github.com/botlabs-gg/yagpdb/v2/cah"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands"
@@ -68,7 +68,6 @@ func main() {
 	reddit.RegisterPlugin()
 	moderation.RegisterPlugin()
 	reputation.RegisterPlugin()
-	aylien.RegisterPlugin()
 	streaming.RegisterPlugin()
 	automod_legacy.RegisterPlugin()
 	automod.RegisterPlugin()
@@ -91,6 +90,9 @@ func main() {
 	internalapi.RegisterPlugin()
 	prom.RegisterPlugin()
 	featureflags.RegisterPlugin()
+
+	// Register confusables replacer
+	confusables.Init()
 
 	run.Run()
 }

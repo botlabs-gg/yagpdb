@@ -599,6 +599,9 @@ var execTests = []execTest{
 	{"return top level", `12{{return}}23`, "12", tVal, true},
 	{"return in nested template", `{{define "tmpl"}}12{{return}}34{{end}}{{template "tmpl"}}45`, "1245", tVal, true},
 	{"return in range", `{{range .SI}}{{return}}23{{end}}34`, "", tVal, true},
+	{"return in while", `{{$i := 0}}{{while lt $i 5}}{{return}}{{end}}NOTREACHED`, "", tVal, true},
+	{"return in try", `{{try}}{{return}}{{catch}}{{end}}NOTREACHED`, "", tVal, true},
+	{"return in catch", `{{try}}{{.MyError true}}{{catch}}{{return}}{{end}}NOTREACHED`, "", tVal, true},
 	{"return in if", `{{if true}}{{return}}{{end}}12`, "", tVal, true},
 	{"return with value", `12{{return 34}}45`, "12", tVal, true},
 

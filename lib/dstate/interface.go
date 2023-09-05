@@ -138,6 +138,49 @@ func (gs *GuildSet) GetChannelOrThread(id int64) *ChannelState {
 	return gs.GetThread(id)
 }
 
+// IconURL returns a URL to the guild icon.
+//
+//	size: The size of the guild's icon as a power of two
+//	      if size is an emptry string, no size parameter will
+//	      be added to the URL.
+func (gs *GuildSet) IconURL(size string) string {
+	var url string
+	if gs.Icon == "" {
+		return ""
+	}
+
+	if strings.HasPrefix(gs.Icon, "a_") {
+		url = discordgo.EndpointGuildIconAnimated(gs.ID, gs.Icon)
+	} else {
+		url = discordgo.EndpointGuildIcon(gs.ID, gs.Icon)
+	}
+
+	if size != "" {
+		url += "?size=" + size
+	}
+
+	return url
+}
+
+func (gs *GuildSet) BannerURL(size string) string {
+	var url string
+	if gs.Banner == "" {
+		return ""
+	}
+
+	if strings.HasPrefix(gs.Banner, "a_") {
+		url = discordgo.EndpointGuildBannerAnimated(gs.ID, gs.Banner)
+	} else {
+		url = discordgo.EndpointGuildBanner(gs.ID, gs.Banner)
+	}
+
+	if size != "" {
+		url += "?size=" + size
+	}
+
+	return url
+}
+
 type GuildState struct {
 	ID          int64  `json:"id,string"`
 	Available   bool   `json:"available"`
@@ -146,6 +189,7 @@ type GuildState struct {
 	Region      string `json:"region"`
 	Name        string `json:"name"`
 	Icon        string `json:"icon"`
+	Banner      string `json:"banner"`
 
 	Description string `json:"description"`
 
@@ -197,6 +241,9 @@ type GuildState struct {
 
 	// The Channel ID to which system messages are sent (eg join and leave messages)
 	SystemChannelID string `json:"system_channel_id"`
+
+	// Contains the vanity url of a guild
+	VanityURLCode string `json:"vanity_url_code"`
 }
 
 type ChannelState struct {

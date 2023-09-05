@@ -654,3 +654,22 @@ func FormatList(list []string, conjunction string) string {
 func BoolToPointer(b bool) *bool {
 	return &b
 }
+
+// Also accepts spaces due to how dcmd reconstructs arguments wrapped in triple backticks.
+var codeblockRegexp = regexp.MustCompile(`(?m)\A(?:\x60{2} ?\x60)(?:.*\n)?([\S\s]+)(?:\x60 ?\x60{2})\z`)
+
+// parseCodeblock returns the content wrapped in a Discord markdown block.
+// If no (valid) codeblock was found, the given input is returned back.
+func ParseCodeblock(input string) string {
+	parts := codeblockRegexp.FindStringSubmatch(input)
+
+	// No match found, input was not wrapped in (valid) codeblock markdown
+	// just dump it, don't bother fixing things for the user.
+	if parts == nil {
+		return input
+	}
+
+	logger.Debugf("Found matches: %#v", parts)
+	logger.Debugf("Returning %s", parts[1])
+	return parts[1]
+}

@@ -151,8 +151,10 @@
                                                 <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
                                                     value="{{.CC.TextTrigger}}">
                                             </div>
-
                                             {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
+                                            {{$disabledClass := ""}}
+                                            {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
+                                            {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
                                         </div>
                                     </div>
                                 </div>
@@ -260,6 +262,7 @@
                             </div>
                              <div class="col-sm-4">
                                 <div class="form-group">
+                                    <br/>
                                     <label> Command Enabled?</label>
                                     {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled) }}
                                 </div>

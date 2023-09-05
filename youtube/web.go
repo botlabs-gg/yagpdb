@@ -51,25 +51,11 @@ type YoutubeAnnouncementForm struct {
 	Enabled bool
 }
 
-type ytUrlType int
-
-const (
-	ytUrlTypeVideo ytUrlType = iota
-	ytUrlTypeCustom
-	ytUrlTypeChannel
-	ytUrlTypeUser
-	ytUrlTypeHandle
-	ytUrlTypeInvalid
-)
-
 var (
-	ytUrlRegex        = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com`)
-	ytUrlShortRegex   = regexp.MustCompile(`^(https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+).*`)
-	ytVideoUrlRegex   = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]+).*`)
-	ytChannelUrlRegex = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(channel)\/(UC[\w-]{21}[AQgw])$`)
-	ytCustomUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(c\/)?([\w-]+)$`)
-	ytUserUrlRegex    = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(user\/)([\w-]+)$`)
-	ytHandleUrlRegex  = regexp.MustCompile(`^(https?:\/\/)?((www|m)\.)?youtube\.com\/(@)([\w-]+)$`)
+	ytVideoIDRegex    = regexp.MustCompile(`\A[\w\-]+\z`)
+	ytPlaylistIDRegex = regexp.MustCompile(`\A(?:PL|OLAK|RDCLAK)[-_0-9A-Za-z]+\z`)
+	ytChannelIDRegex  = regexp.MustCompile(`\AUC[\w\-]{21}[AQgw]\z`)
+	ytHandleRegex     = regexp.MustCompile(`\A@[\w\-.]{3,30}\z`)
 )
 
 func (p *Plugin) InitWeb() {
@@ -162,17 +148,29 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
-	url := data.YoutubeUrl
-	if !(ytUrlRegex.MatchString(url) || ytUrlShortRegex.MatchString(url)) {
-		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", url))), nil
+	channelUrl := data.YoutubeUrl
+	parsedUrl, err := url.Parse(channelUrl)
+	if err != nil {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
 	}
 
-	ytChannel, err := p.getYtChannel(url)
+	id, err := p.parseYtUrl(parsedUrl)
 	if err != nil {
-		logger.WithError(err).Errorf("error occurred fetching channel for url %s", url)
+		logger.WithError(err).Errorf("error occured parsing channel from url %q", channelUrl)
+		return templateData.AddAlerts(web.ErrorAlert(err)), err
+	}
+
+	list := p.YTService.Channels.List(listParts).MaxResults(1)
+	cResp, err := id.getChannelList(p, list)
+	if cResp != nil && len(cResp.Items) < 1 {
+		err = ErrNoChannel
+	}
+	if err != nil {
+		logger.WithError(err).Errorf("error occurred fetching channel for url %s", channelUrl)
 		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
 	}
 
+	ytChannel := cResp.Items[0]
 	sub, err := p.AddFeed(activeGuild.ID, data.DiscordChannel, ytChannel, data.MentionEveryone, data.PublishLivestream, data.PublishShorts, data.MentionRoles)
 
 	if err != nil {

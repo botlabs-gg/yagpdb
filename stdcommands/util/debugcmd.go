@@ -34,7 +34,7 @@ func RequireBotAdmin(inner dcmd.RunFunc) dcmd.RunFunc {
 func RequireOwner(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
 		if isExecedByCC(data) {
-			return "", nil
+			return " ", nil
 		}
 
 		if common.IsOwner(data.Author.ID) {

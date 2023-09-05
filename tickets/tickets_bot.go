@@ -102,7 +102,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 		Title:                 topic,
 		CreatedAt:             time.Now(),
 		AuthorID:              ms.User.ID,
-		AuthorUsernameDiscrim: ms.User.Username + "#" + ms.User.Discriminator,
+		AuthorUsernameDiscrim: ms.User.String(),
 	}
 
 	err = dbModel.InsertG(ctx, boil.Infer())

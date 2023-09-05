@@ -363,6 +363,8 @@ type Guild struct {
 
 	Description string `json:"description"`
 
+	Banner string `json:"banner"`
+
 	PreferredLocale string `json:"preferred_locale"`
 
 	// The hash of the guild's icon. Use Session.GuildIcon
@@ -460,8 +462,9 @@ type Guild struct {
 	// The Channel ID to which system messages are sent (eg join and leave messages)
 	SystemChannelID string `json:"system_channel_id"`
 
-	ApproximateMemberCount   int `json:"approximate_member_count"`
-	ApproximatePresenceCount int `json:"approximate_presence_count"`
+	ApproximateMemberCount   int    `json:"approximate_member_count"`
+	ApproximatePresenceCount int    `json:"approximate_presence_count"`
+	VanityURLCode            string `json:"vanity_url_code"`
 }
 
 func (g *Guild) GetGuildID() int64 {
@@ -743,6 +746,12 @@ type Assets struct {
 	SmallImageID string `json:"small_image,omitempty"`
 	LargeText    string `json:"large_text,omitempty"`
 	SmallText    string `json:"small_text,omitempty"`
+}
+
+// A MessageActivity represents the activity sent with a message, such as a game invite.
+type MessageActivity struct {
+	Type    int    `json:"type"`
+	PartyID string `json:"party_id"`
 }
 
 // A Member stores user information for Guild members. A guild
@@ -1462,10 +1471,10 @@ type ThreadMember struct {
 
 // AutoModerationRule stores data for an auto moderation rule.
 type AutoModerationRule struct {
-	ID              int64                          `json:"id,omitempty"`
-	GuildID         int64                          `json:"guild_id,omitempty"`
+	ID              int64                          `json:"id,string,omitempty"`
+	GuildID         int64                          `json:"guild_id,string,omitempty"`
 	Name            string                         `json:"name,omitempty"`
-	CreatorID       int64                          `json:"creator_id,omitempty"`
+	CreatorID       int64                          `json:"creator_id,string,omitempty"`
 	EventType       AutoModerationRuleEventType    `json:"event_type,omitempty"`
 	TriggerType     AutoModerationRuleTriggerType  `json:"trigger_type,omitempty"`
 	TriggerMetadata *AutoModerationTriggerMetadata `json:"trigger_metadata,omitempty"`
@@ -1541,7 +1550,7 @@ const (
 type AutoModerationActionMetadata struct {
 	// Channel to which user content should be logged.
 	// NOTE: should be only used with send alert message action type.
-	ChannelID int64 `json:"channel_id,omitempty"`
+	ChannelID int64 `json:"channel_id,string,omitempty"`
 
 	// Timeout duration in seconds (maximum of 2419200 - 4 weeks).
 	// NOTE: should be only used with timeout action type.

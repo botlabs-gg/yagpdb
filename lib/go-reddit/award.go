@@ -2,7 +2,6 @@ package reddit
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 )
@@ -31,7 +30,7 @@ func (c *Client) GetMyTrophies() ([]*Award, error) {
 	if err != nil {
 		return nil, err
 	} else if resp.StatusCode >= 400 {
-		return nil, errors.New(fmt.Sprintf("HTTP Status Code: %d", resp.StatusCode))
+		return nil, fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 

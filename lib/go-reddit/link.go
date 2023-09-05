@@ -3,7 +3,6 @@ package reddit
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -139,7 +138,7 @@ func (c *Client) HideLink(linkID string) error {
 	if err != nil {
 		return err
 	} else if resp.StatusCode >= 400 {
-		return errors.New(fmt.Sprintf("HTTP Status Code: %d", resp.StatusCode))
+		return fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
@@ -167,9 +166,7 @@ func (c *Client) getLinks(subreddit string, sort, before, after string) ([]*Link
 	}
 
 	logrus.Debugf("Response Headers for %v", req.URL)
-	for k, v := range resp.Header {
-		logrus.Debugf("%s:%s", k, v)
-	}
+	logrus.Debugf("%#v", resp.Header)
 
 	if resp.StatusCode != 200 {
 		return nil, NewError(resp)
@@ -213,27 +210,31 @@ func (c *Client) LinksInfo(fullnames []string) ([]*Link, error) {
 	}
 
 	req.Header.Add("User-Agent", c.userAgent)
+	logrus.Debugf("request %#v", req)
 
 	resp, err := c.http.Do(req)
+
 	if err != nil {
+		logrus.WithError(err).Error("failed getting reddit feed info")
 		return nil, err
 	}
 
 	if resp.StatusCode != 200 {
+		logrus.WithError(NewError(resp)).Error("Status code for reddit was something different than 200")
 		return nil, NewError(resp)
 	}
 
 	defer resp.Body.Close()
 
-	logrus.Debugf("Response Headers for %v", req.URL)
-	for k, v := range resp.Header {
-		logrus.Debugf("%s:%s", k, v)
-	}
+	logrus.Debugf("Response Headers for %v \n", req.URL)
+	logrus.Debugf("%#v \n", resp.Header)
 	d, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		logrus.WithError(err).Error("Failed parsing reddit feed body")
 		return nil, err
 	}
-
+	logrus.Debugf("Response Body %v \n", req.URL)
+	logrus.Debugf("%s \n", string(d))
 	var result linkListing
 	err = json.Unmarshal(d, &result)
 	if err != nil {

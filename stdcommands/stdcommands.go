@@ -18,7 +18,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dadjoke"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dcallvoice"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/define"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dictionary"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dogfact"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/eightball"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/findserver"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/forex"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/globalrl"
@@ -31,7 +33,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listflags"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listroles"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/memstats"
-	"github.com/botlabs-gg/yagpdb/v2/stdcommands/owldictionary"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/ping"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/poll"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/roast"
@@ -105,6 +106,7 @@ func (p *Plugin) AddCommands() {
 		inspire.Command,
 		forex.Command,
 		roast.Command,
+		eightball.Command,
 
 		// Maintenance
 		stateinfo.Command,
@@ -130,13 +132,7 @@ func (p *Plugin) AddCommands() {
 	)
 
 	statedbg.Commands()
-
-	if !owldictionary.ShouldRegister() {
-		common.GetPluginLogger(p).Warn("Owlbot API token not provided, skipping adding dictionary command...")
-		return
-	}
-
-	commands.AddRootCommands(p, owldictionary.Command)
+	commands.AddRootCommands(p, dictionary.Command)
 }
 
 func (p *Plugin) BotInit() {

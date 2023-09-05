@@ -37,6 +37,7 @@ var (
 	MATimeoutRemoved = ModlogAction{Prefix: "Timeout removed from", Emoji: "⏱", Color: 0x9b59b6}
 	MAGiveRole       = ModlogAction{Prefix: "", Emoji: "➕", Color: 0x53fcf9}
 	MARemoveRole     = ModlogAction{Prefix: "", Emoji: "➖", Color: 0x53fcf9}
+	MAClearWarnings  = ModlogAction{Prefix: "Cleared warnings", Emoji: "👌", Color: 0x62c65f}
 )
 
 func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogAction, target *discordgo.User, reason, logLink string) error {
@@ -62,15 +63,15 @@ func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogActi
 
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:    fmt.Sprintf("%s#%s (ID %d)", author.Username, author.Discriminator, author.ID),
+			Name:    fmt.Sprintf("%s (ID %d)", author.String(), author.ID),
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
 		},
 		Color: action.Color,
-		Description: fmt.Sprintf("**%s%s** %s#%s *(ID %d)*\n📄**Reason:** %s",
-			action.Emoji, action.Prefix, target.Username, target.Discriminator, target.ID, reason),
+		Description: fmt.Sprintf("**%s%s** %s *(ID %d)*\n📄**Reason:** %s",
+			action.Emoji, action.Prefix, target.String(), target.ID, reason),
 	}
 
 	if logLink != "" {
@@ -121,7 +122,7 @@ func updateEmbedReason(author *discordgo.User, reason string, embed *discordgo.M
 
 	if author != nil {
 		embed.Author = &discordgo.MessageEmbedAuthor{
-			Name:    fmt.Sprintf("%s#%s (ID %d)", author.Username, author.Discriminator, author.ID),
+			Name:    fmt.Sprintf("%s (ID %d)", author.String(), author.ID),
 			IconURL: discordgo.EndpointUserAvatar(author.ID, author.Avatar),
 		}
 	}

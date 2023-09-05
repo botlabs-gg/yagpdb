@@ -90,7 +90,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			return "Set a reminder in " + durString + " from now (<t:" + tUnix + ":f>)\nView reminders with the `Reminders` command", nil
+			return "Set a reminder in " + durString + " from now (<t:" + tUnix + ":f>)\nView reminders with the `reminders` command", nil
 		},
 	},
 	{
@@ -99,10 +99,15 @@ var cmds = []*commands.YAGCommand{
 		Description:         "Lists your active reminders",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
+		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentReminders, err := GetUserReminders(parsed.Author.ID)
 			if err != nil {
 				return nil, err
+			}
+
+			if len(currentReminders) == 0 {
+				return "You have no reminders. Create reminders with the `remindme` command.", nil
 			}
 
 			out := "Your reminders:\n"
@@ -118,6 +123,7 @@ var cmds = []*commands.YAGCommand{
 		Description:         "Lists reminders in channel, only users with 'manage channel' permissions can use this.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
+		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			ok, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, parsed.ChannelID, parsed.GuildData.MS, discordgo.PermissionManageChannels)
 			if err != nil {
@@ -130,6 +136,10 @@ var cmds = []*commands.YAGCommand{
 			currentReminders, err := GetChannelReminders(parsed.ChannelID)
 			if err != nil {
 				return nil, err
+			}
+
+			if len(currentReminders) == 0 {
+				return "There are no reminders in this channel.", nil
 			}
 
 			out := "Reminders in this channel:\n"
@@ -152,6 +162,7 @@ var cmds = []*commands.YAGCommand{
 		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
+		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var reminder Reminder
 

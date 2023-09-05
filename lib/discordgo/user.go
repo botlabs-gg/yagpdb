@@ -2,6 +2,7 @@ package discordgo
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/gojay"
@@ -14,6 +15,9 @@ type User struct {
 
 	// The user's username.
 	Username string `json:"username"`
+
+	// The user's display name on discord
+	Globalname string `json:"global_name"`
 
 	// The hash of the user's avatar. Use Session.UserAvatar
 	// to retrieve the avatar itself.
@@ -31,6 +35,9 @@ type User struct {
 
 // String returns a unique identifier of the form username#discriminator
 func (u *User) String() string {
+	if u.Discriminator == "0" {
+		return u.Username
+	}
 	return fmt.Sprintf("%s#%s", u.Username, u.Discriminator)
 }
 
@@ -46,6 +53,8 @@ func (u *User) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
 		return DecodeSnowflake(&u.ID, dec)
 	case "username":
 		return dec.String(&u.Username)
+	case "global_name":
+		return dec.String(&u.Globalname)
 	case "avatar":
 		return dec.String(&u.Avatar)
 	case "locale":
@@ -64,13 +73,25 @@ func (u *User) NKeys() int {
 }
 
 // AvatarURL returns a URL to the user's avatar.
-//    size:    The size of the user's avatar as a power of two
-//             if size is an empty string, no size parameter will
-//             be added to the URL.
+//
+//	size:    The size of the user's avatar as a power of two
+//	         if size is an empty string, no size parameter will
+//	         be added to the URL.
 func (u *User) AvatarURL(size string) string {
 	var URL string
 	if u.Avatar == "" {
-		URL = EndpointDefaultUserAvatar(u.Discriminator)
+		// See https://discord.com/developers/docs/reference#image-formatting-cdn-endpoints:
+		//
+		// "For users on the new username system, `index` will be `(user_id >> 22) % 6`.
+		// For users on the legacy username system, `index` will be `discriminator % 5`."
+		var index int
+		if u.Discriminator == "0" {
+			index = int((u.ID >> 22) % 6)
+		} else {
+			discrim, _ := strconv.Atoi(u.Discriminator)
+			index = discrim % 5
+		}
+		URL = EndpointDefaultUserAvatar(index)
 	} else if strings.HasPrefix(u.Avatar, "a_") {
 		URL = EndpointUserAvatarAnimated(u.ID, u.Avatar)
 	} else {

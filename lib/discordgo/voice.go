@@ -79,7 +79,8 @@ type VoiceSpeakingUpdateHandler func(vc *VoiceConnection, vs *VoiceSpeakingUpdat
 // Speaking sends a speaking notification to Discord over the voice websocket.
 // This must be sent as true prior to sending audio and should be set to false
 // once finished sending audio.
-//  b  : Send true if speaking, false if not.
+//
+//	b  : Send true if speaking, false if not.
 func (v *VoiceConnection) Speaking(b bool) (err error) {
 
 	v.log(LogDebug, "called (%t)", b)
@@ -568,10 +569,15 @@ func (v *VoiceConnection) udpOpen() (err error) {
 		return
 	}
 
-	// Create a 70 byte array and put the SSRC code from the Op 2 VoiceConnection event
+	// Create a 74 byte array and put the SSRC code from the Op 2 VoiceConnection event
 	// into it.  Then send that over the UDP connection to Discord
-	sb := make([]byte, 70)
-	binary.BigEndian.PutUint32(sb, v.op2.SSRC)
+	// Create a 74 byte array to store the packet data
+	sb := make([]byte, 74)
+	binary.BigEndian.PutUint16(sb, 1)              // Packet type (0x1 is request, 0x2 is response)
+	binary.BigEndian.PutUint16(sb[2:], 70)         // Packet length (excluding type and length fields)
+	binary.BigEndian.PutUint32(sb[4:], v.op2.SSRC) // The SSRC code from the Op 2 VoiceConnection event
+
+	// And send that data over the UDP connection to Discord.
 	v.log(LogInformational, "op2 SSRC: %d", v.op2.SSRC)
 	_, err = v.udpConn.Write(sb)
 	if err != nil {
@@ -579,11 +585,11 @@ func (v *VoiceConnection) udpOpen() (err error) {
 		return
 	}
 
-	// Create a 70 byte array and listen for the initial handshake response
+	// Create a 74 byte array and listen for the initial handshake response
 	// from Discord.  Once we get it parse the IP and PORT information out
 	// of the response.  This should be our public IP and PORT as Discord
 	// saw us.
-	rb := make([]byte, 70)
+	rb := make([]byte, 74)
 	rChan := v.udpReadBackground(rb)
 	select {
 	case <-time.After(time.Second * 5):
@@ -604,15 +610,15 @@ func (v *VoiceConnection) udpOpen() (err error) {
 	// Loop over position 4 through 20 to grab the IP address
 	// Should never be beyond position 20.
 	var ip string
-	for i := 4; i < 20; i++ {
+	for i := 8; i < len(rb)-2; i++ {
 		if rb[i] == 0 {
 			break
 		}
 		ip += string(rb[i])
 	}
 
-	// Grab port from position 68 and 69
-	port := binary.LittleEndian.Uint16(rb[68:70])
+	// Grab port from position 72 and 73
+	port := binary.BigEndian.Uint16(rb[len(rb)-2:])
 
 	// Take the data from above and send it back to Discord to finalize
 	// the UDP connection handshake.

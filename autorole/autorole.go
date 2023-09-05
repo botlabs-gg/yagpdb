@@ -40,6 +40,7 @@ type GeneralConfig struct {
 	IgnoreRoles              []int64 `valid:"role,true"`
 	OnlyOnJoin               bool
 	AssignRoleAfterScreening bool
+	IgnoreBots               bool
 }
 
 const (

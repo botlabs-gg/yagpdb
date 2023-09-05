@@ -3,7 +3,6 @@ package reddit
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 )
@@ -80,7 +79,7 @@ func (c *Client) GetMyPreferences() (*Preferences, error) {
 	if err != nil {
 		return nil, err
 	} else if resp.StatusCode >= 400 {
-		return nil, errors.New(fmt.Sprintf("HTTP Status Code: %d", resp.StatusCode))
+		return nil, fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 
@@ -110,7 +109,7 @@ func (c *Client) UpdateMyPreferences(preferences *Preferences) (*Preferences, er
 	if err != nil {
 		return nil, err
 	} else if resp.StatusCode >= 400 {
-		return nil, errors.New(fmt.Sprintf("HTTP Status Code: %d", resp.StatusCode))
+		return nil, fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 

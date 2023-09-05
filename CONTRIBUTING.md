@@ -1,7 +1,28 @@
-Are you planning on contributing or suggesting something for the bot? Go ahead, just make sure you know what you are doing, we don't want to have to fix the bot if someone breaks it!
+# Contributing Guidelines
 
-In order to make a suggestion, head to the [support server](https://discord.gg/4udtcA5). Before creating a new suggestion, check that it hasn't already been suggested or requested as a PR.
+Please read these guidelines carefully before opening a pull request, as they contain important information on how we
+process pull requests.
 
-If you want to make a contribution, create a fork, cut a branch from master, make the necessary changes and then make a PR to the dev branch (botlabs-gg/yagpdb/dev). This is key for larger commits and edits to important / complicated parts of the bot so it can be tested safely without breaking everything.
+## Suggesting New Features
 
-Any further inquiries? Join the [support server](https://discord.gg/4udtcA5) and ask a member of the support team or an active contributor!
+If you'd like to propose a new feature, but aren't comfortable with programming in Go, please join the
+[support server](https://discord.gg/4udtcA5) and view the instructions in the `#suggestions` channel.
+
+Before creating a new suggestion, make sure it hasn't already been suggested or pull requested.
+Also check closed pull requests for that matter.
+
+## Opening Pull Requests
+
+For opening pull requests, the following steps apply:
+
+1. Fork the repository
+2. Clone your fork
+3. Make your changes on a new branch stemming from `master` 
+	 ```shell
+	 $ git switch -c my-branch master
+	 ```
+4. Commit your changes
+5. Open a pull request **against the `dev` branch**.
+
+Your commit messages and/or PR titles should be descriptive. Something like "Update README" isn't exactly helpful.
+Please provide a small description of your patch as well, even if it's a rather trivial change.

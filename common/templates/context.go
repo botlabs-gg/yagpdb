@@ -18,6 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/prefix"
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/lib/template"
@@ -39,20 +40,21 @@ var (
 		"toByte":     ToByte,
 
 		// string manipulation
-		"hasPrefix":   strings.HasPrefix,
-		"hasSuffix":   strings.HasSuffix,
-		"joinStr":     joinStrings,
-		"lower":       strings.ToLower,
-		"slice":       slice,
-		"split":       strings.Split,
-		"title":       strings.Title,
-		"trimSpace":   strings.TrimSpace,
-		"upper":       strings.ToUpper,
-		"urlescape":   url.PathEscape,
-		"urlunescape": url.PathUnescape,
-		"print":       withOutputLimit(fmt.Sprint, MaxStringLength),
-		"println":     withOutputLimit(fmt.Sprintln, MaxStringLength),
-		"printf":      withOutputLimitF(fmt.Sprintf, MaxStringLength),
+		"hasPrefix":    strings.HasPrefix,
+		"hasSuffix":    strings.HasSuffix,
+		"joinStr":      joinStrings,
+		"lower":        strings.ToLower,
+		"slice":        slice,
+		"split":        strings.Split,
+		"title":        strings.Title,
+		"trimSpace":    strings.TrimSpace,
+		"upper":        strings.ToUpper,
+		"urlescape":    url.PathEscape,
+		"urlunescape":  url.PathUnescape,
+		"print":        withOutputLimit(fmt.Sprint, MaxStringLength),
+		"println":      withOutputLimit(fmt.Sprintln, MaxStringLength),
+		"printf":       withOutputLimitF(fmt.Sprintf, MaxStringLength),
+		"sanitizeText": confusables.SanitizeText,
 
 		// regexp
 		"reQuoteMeta": regexp.QuoteMeta,
@@ -172,6 +174,8 @@ type Context struct {
 	CurrentFrame *ContextFrame
 
 	IsExecedByLeaveMessage bool
+
+	IsExecedByEvalCC bool
 
 	contextFuncsAdded bool
 }
@@ -316,8 +320,10 @@ func (c *Context) Parse(source string) (*template.Template, error) {
 }
 
 const (
-	MaxOpsNormal  = 1000000
-	MaxOpsPremium = 2500000
+	MaxOpsNormal      = 1000000
+	MaxOpsPremium     = 2500000
+	MaxOpsEvalNormal  = 5000
+	MaxOpsEvalPremium = 10000
 )
 
 func (c *Context) Execute(source string) (string, error) {
@@ -365,8 +371,14 @@ func (c *Context) executeParsed() (string, error) {
 
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
+		if c.IsExecedByEvalCC {
+			parsed = parsed.MaxOps(MaxOpsEvalPremium)
+		}
 	} else {
 		parsed = parsed.MaxOps(MaxOpsNormal)
+		if c.IsExecedByEvalCC {
+			parsed = parsed.MaxOps(MaxOpsEvalNormal)
+		}
 	}
 
 	var buf bytes.Buffer
@@ -405,6 +417,9 @@ func (c *Context) newContextFrame(cs *dstate.ChannelState) *ContextFrame {
 
 func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error {
 	out, err := c.Execute(source)
+
+	// trim whitespace for accurate character count
+	out = strings.TrimSpace(out)
 
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Template output for " + c.Name + " was longer than 2k (contact an admin on the server...)"
@@ -538,6 +553,9 @@ func (c *Context) IncreaseCheckCallCounterPremium(key string, normalLimit, premi
 }
 
 func (c *Context) IncreaseCheckGenericAPICall() bool {
+	if c.IsExecedByEvalCC {
+		return c.IncreaseCheckCallCounter("api_call", 20)
+	}
 	return c.IncreaseCheckCallCounter("api_call", 100)
 }
 

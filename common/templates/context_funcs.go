@@ -147,7 +147,7 @@ func (c *Context) ChannelArgNoDMNoThread(v interface{}) int64 {
 
 func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
 	if c.IsExecedByLeaveMessage {
-		return "", errors.New("Can't use sendTemplateDM on leave msg")
+		return "", errors.New("can't use sendTemplateDM on leave msg")
 	}
 
 	return c.sendNestedTemplate(nil, true, name, data...)
@@ -380,7 +380,9 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			}
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
-			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
+			if !filterSpecialMentions {
+				msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
+			}
 			if isDM {
 				if len(typedMsg.Embeds) > 0 {
 					for _, e := range msgSend.Embeds {
@@ -463,10 +465,16 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			}
 			msgEdit.Content = typedMsg.Content
 			msgEdit.Embeds = typedMsg.Embeds
-			msgEdit.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
+			msgEdit.AllowedMentions = typedMsg.AllowedMentions
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
+		}
+
+		if !filterSpecialMentions {
+			msgEdit.AllowedMentions = discordgo.AllowedMentions{
+				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
+			}
 		}
 
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
@@ -591,7 +599,7 @@ func (c *Context) tmplHasRoleName(name string) (bool, error) {
 	return false, nil
 }
 
-func targetUserID(input interface{}) int64 {
+func TargetUserID(input interface{}) int64 {
 	switch t := input.(type) {
 	case *discordgo.User:
 		return t.ID
@@ -616,7 +624,7 @@ func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) (b
 		return false, ErrTooManyAPICalls
 	}
 
-	targetID := targetUserID(target)
+	targetID := TargetUserID(target)
 	if targetID == 0 {
 		return false, nil
 	}
@@ -642,7 +650,7 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, name string) (bool, 
 		return false, ErrTooManyAPICalls
 	}
 
-	targetID := targetUserID(target)
+	targetID := TargetUserID(target)
 	if targetID == 0 {
 		return false, nil
 	}
@@ -667,7 +675,7 @@ func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}) string 
 		return ""
 	}
 
-	targetID := targetUserID(target)
+	targetID := TargetUserID(target)
 	if targetID == 0 {
 		return ""
 	}
@@ -685,7 +693,7 @@ func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
 		return ""
 	}
 
-	targetID := targetUserID(target)
+	targetID := TargetUserID(target)
 	if targetID == 0 {
 		return ""
 	}
@@ -726,7 +734,7 @@ func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optiona
 		delay = tmplToInt(optionalArgs[0])
 	}
 
-	targetID := targetUserID(target)
+	targetID := TargetUserID(target)
 	if targetID == 0 {
 		return ""
 	}
@@ -749,7 +757,7 @@ func (c *Context) tmplTakeRoleName(target interface{}, name string, optionalArgs
 		delay = tmplToInt(optionalArgs[0])
 	}
 
-	targetID := targetUserID(target)
+	targetID := TargetUserID(target)
 	if targetID == 0 {
 		return ""
 	}
@@ -799,7 +807,7 @@ func (c *Context) tmplSetRoles(target interface{}, input interface{}) (string, e
 			targetID = c.MS.User.ID
 		}
 	} else {
-		targetID = targetUserID(target)
+		targetID = TargetUserID(target)
 	}
 
 	if targetID == 0 {
@@ -1027,7 +1035,7 @@ func (c *Context) tmplTargetHasPermissions(target interface{}, needed int64) (bo
 		return false, ErrTooManyAPICalls
 	}
 
-	targetID := targetUserID(target)
+	targetID := TargetUserID(target)
 	if targetID == 0 {
 		return false, nil
 	}
@@ -1053,7 +1061,7 @@ func (c *Context) tmplGetTargetPermissionsIn(target interface{}, channel interfa
 		return 0, ErrTooManyAPICalls
 	}
 
-	targetID := targetUserID(target)
+	targetID := TargetUserID(target)
 	if targetID == 0 {
 		return 0, nil
 	}
@@ -1159,7 +1167,7 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 		}
 
 		if args[2].IsValid() {
-			uID = targetUserID(args[2].Interface())
+			uID = TargetUserID(args[2].Interface())
 		}
 
 		if uID == 0 {
@@ -1252,7 +1260,7 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 		return nil, ErrTooManyAPICalls
 	}
 
-	mID := targetUserID(target)
+	mID := TargetUserID(target)
 	if mID == 0 {
 		return nil, nil
 	}
@@ -1597,7 +1605,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 		return "", ErrTooManyCalls
 	}
 
-	cID := c.ChannelArgNoDMNoThread(channel)
+	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
 		return "", errors.New("unknown channel")
 	}

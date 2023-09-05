@@ -3,8 +3,9 @@ package reddit
 import (
 	"context"
 	"errors"
-	"golang.org/x/oauth2"
 	"net/http"
+
+	"golang.org/x/oauth2"
 )
 
 // Authenticator provides functions for authenticating a user via OAuth2 and generating a client that can be used to access authorized API endpoints.
@@ -80,10 +81,10 @@ func (a *Authenticator) GetAuthenticationURL() string {
 // GetToken exchanges an authorization code for an access token.
 func (a *Authenticator) GetToken(state string, code string) (*oauth2.Token, error) {
 	if state != a.state {
-		return nil, errors.New("Invalid state")
+		return nil, errors.New("invalid state")
 	}
 
-	return a.config.Exchange(context.WithValue(oauth2.NoContext, oauth2.HTTPClient, &http.Client{Transport: &uaSetterTransport{agent: a.ua}}), code)
+	return a.config.Exchange(context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: &uaSetterTransport{agent: a.ua}}), code)
 }
 
 // GetAuthClient generates a new authenticated client using the supplied access token.
@@ -98,7 +99,7 @@ func (a *Authenticator) httpClient(token *oauth2.Token) *http.Client {
 	uaSetter := &uaSetterTransport{agent: a.ua}
 
 	tr := oauth2.Transport{
-		Source: a.config.TokenSource(context.WithValue(oauth2.NoContext, oauth2.HTTPClient, &http.Client{Transport: uaSetter}), token),
+		Source: a.config.TokenSource(context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: uaSetter}), token),
 		Base:   &http.Transport{},
 	}
 

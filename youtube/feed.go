@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -278,88 +279,139 @@ var (
 	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")
 )
 
-func (p *Plugin) parseYtUrl(url string) (t ytUrlType, id string, err error) {
-	if ytUrlShortRegex.MatchString(url) {
-		capturingGroups := ytUrlShortRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][2]) > 0 {
-			return ytUrlTypeVideo, capturingGroups[0][2], nil
-		}
-	} else if ytVideoUrlRegex.MatchString(url) {
-		capturingGroups := ytVideoUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][4]) > 0 {
-			return ytUrlTypeVideo, capturingGroups[0][4], nil
-		}
-	} else if ytChannelUrlRegex.MatchString(url) {
-		capturingGroups := ytChannelUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeChannel, capturingGroups[0][5], nil
-		}
-	} else if ytCustomUrlRegex.MatchString(url) {
-		capturingGroups := ytCustomUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeCustom, capturingGroups[0][5], nil
-		}
-	} else if ytUserUrlRegex.MatchString(url) {
-		capturingGroups := ytUserUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeUser, capturingGroups[0][5], nil
-		}
-	} else if ytHandleUrlRegex.MatchString(url) {
-		capturingGroups := ytHandleUrlRegex.FindAllStringSubmatch(url, -1)
-		if len(capturingGroups) > 0 && len(capturingGroups[0]) > 0 && len(capturingGroups[0][5]) > 0 {
-			return ytUrlTypeHandle, capturingGroups[0][5], nil
-		}
-	}
-	return ytUrlTypeInvalid, "", errors.New("invalid or incomplete url")
+var listParts = []string{"snippet"}
+
+type ytChannelID interface {
+	getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error)
 }
 
-func (p *Plugin) getYtChannel(url string) (channel *youtube.Channel, err error) {
-	urlType, id, err := p.parseYtUrl(url)
-	if err != nil {
-		return nil, err
-	}
-	var cResp *youtube.ChannelListResponse
-	channelListCall := p.YTService.Channels.List([]string{"snippet"})
+type videoID string
 
-	switch urlType {
-	case ytUrlTypeChannel:
-		channelListCall = channelListCall.Id(id)
-	case ytUrlTypeUser:
-		channelListCall = channelListCall.ForUsername(id)
-	case ytUrlTypeCustom, ytUrlTypeHandle:
-		searchListCall := p.YTService.Search.List([]string{"snippet"})
-		searchListCall = searchListCall.Q(id).Type("channel")
-		sResp, err := searchListCall.Do()
-		if err != nil {
-			return nil, common.ErrWithCaller(err)
-		}
-		if len(sResp.Items) < 1 {
-			return nil, ErrNoChannel
-		}
-		channelListCall = channelListCall.Id(sResp.Items[0].Id.ChannelId)
-	case ytUrlTypeVideo:
-		searchListCall := p.YTService.Search.List([]string{"snippet"})
-		searchListCall = searchListCall.Q(id).Type("video")
-		sResp, err := searchListCall.Do()
-		if err != nil {
-			return nil, common.ErrWithCaller(err)
-		}
-		if len(sResp.Items) < 1 {
-			return nil, ErrNoChannel
-		}
-		channelListCall = channelListCall.Id(sResp.Items[0].Snippet.ChannelId)
-	default:
-		return nil, common.ErrWithCaller(errors.New("invalid youtube Url"))
-	}
-	cResp, err = channelListCall.Do()
-
+func (v videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	videoListCall := p.YTService.Videos.List(listParts)
+	vResp, err := videoListCall.Id(string(v)).MaxResults(1).Do()
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
+	} else if len(vResp.Items) < 1 {
+		return nil, errors.New("video not found")
 	}
-	if len(cResp.Items) < 1 {
+	cResp, err = list.Id(vResp.Items[0].Snippet.ChannelId).Do()
+	return cResp, common.ErrWithCaller(err)
+
+}
+
+type channelID string
+
+func (c channelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.Id(string(c)).Do()
+	return cResp, common.ErrWithCaller(err)
+}
+
+type userID string
+
+func (u userID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	cResp, err = list.ForUsername(string(u)).Do()
+	return cResp, common.ErrWithCaller(err)
+}
+
+type searchChannelID string
+
+func (s searchChannelID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	q := string(s)
+	searchListCall := p.YTService.Search.List(listParts)
+	sResp, err := searchListCall.Q(q).Type("channel").MaxResults(1).Do()
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	} else if len(sResp.Items) < 1 {
 		return nil, ErrNoChannel
 	}
-	return cResp.Items[0], nil
+	cResp, err = list.Id(sResp.Items[0].Id.ChannelId).Do()
+	return cResp, common.ErrWithCaller(err)
+}
+
+type playlistID string
+
+func (pl playlistID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+	id := string(pl)
+	playlistListCall := p.YTService.Playlists.List(listParts)
+	pResp, err := playlistListCall.Id(id).MaxResults(1).Do()
+	if err != nil {
+		return nil, common.ErrWithCaller(err)
+	} else if len(pResp.Items) < 1 {
+		return nil, ErrNoChannel
+	}
+	cResp, err = list.Id(pResp.Items[0].Snippet.ChannelId).Do()
+	return cResp, common.ErrWithCaller(err)
+}
+
+func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
+	// First set of URL types should only have one segment,
+	// so trimming leading forward slash simplifies following operations
+	path := strings.TrimPrefix(channelUrl.Path, "/")
+	host := channelUrl.Host
+
+	if strings.HasSuffix(host, "youtu.be") {
+		return p.parseYtVideoID(path)
+	} else if !strings.HasSuffix(host, "youtube.com") {
+		return nil, fmt.Errorf("%q is not a valid youtube domain", host)
+	}
+
+	if strings.HasPrefix(path, "watch") {
+		// `v` key-value pair should identify the video ID
+		// in URLs with a `watch` segment.
+		val := channelUrl.Query().Get("v")
+		return p.parseYtVideoID(val)
+	} else if strings.HasPrefix(path, "playlist") {
+		val := channelUrl.Query().Get("list")
+		if ytPlaylistIDRegex.MatchString(val) {
+			return playlistID(val), nil
+		} else {
+			return nil, fmt.Errorf("%q is not a valid playlist ID", val)
+		}
+	}
+
+	// Prefix check allows method to provide a more helpful error message,
+	// when attempting to parse an invalid handle URL.
+	if strings.HasPrefix(path, "@") {
+		if ytHandleRegex.MatchString(path) {
+			return searchChannelID(path), nil
+		} else {
+			return nil, fmt.Errorf("%q is not a valid youtube handle", path)
+		}
+	}
+
+	pathSegments := strings.Split(path, "/")
+	if len(pathSegments) != 2 {
+		return nil, fmt.Errorf("%q is not a valid path", path)
+	}
+
+	first := pathSegments[0]
+	second := pathSegments[1]
+
+	switch first {
+	case "shorts", "live":
+		return p.parseYtVideoID(second)
+	case "channel":
+		if ytChannelIDRegex.MatchString(second) {
+			return channelID(second), nil
+		} else {
+			return nil, fmt.Errorf("%q is not a valid youtube channel id", id)
+		}
+	case "c":
+		return searchChannelID(second), nil
+	case "user":
+		return userID(second), nil
+	default:
+		return nil, fmt.Errorf("%q is not a valid path", path)
+	}
+}
+
+func (p *Plugin) parseYtVideoID(parse string) (id ytChannelID, err error) {
+	if ytVideoIDRegex.MatchString(parse) {
+		return videoID(parse), nil
+	} else {
+		return nil, fmt.Errorf("%q is not a valid youtube video id", parse)
+	}
 }
 
 func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {

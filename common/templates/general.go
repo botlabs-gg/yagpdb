@@ -213,13 +213,17 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		return nil, err
 	}
 
-	msg := &discordgo.MessageSend{}
+	msg := &discordgo.MessageSend{
+		AllowedMentions: discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+		},
+	}
 
 	// Default filename
 	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
 	for key, val := range messageSdict {
 
-		switch key {
+		switch strings.ToLower(key) {
 		case "content":
 			msg.Content = ToString(val)
 		case "embed":
@@ -255,6 +259,16 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				ContentType: "text/plain",
 				Reader:      &buf,
 			}
+		case "allowed_mentions":
+			if val == nil {
+				msg.AllowedMentions = discordgo.AllowedMentions{}
+				continue
+			}
+			parsed, err := parseAllowedMentions(val)
+			if err != nil {
+				return nil, err
+			}
+			msg.AllowedMentions = *parsed
 		case "filename":
 			// Cut the filename to a reasonable length if it's too long
 			filename = common.CutStringShort(ToString(val), 64)
@@ -266,6 +280,11 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			msg.Reference = &discordgo.MessageReference{
 				MessageID: msgID,
 			}
+		case "silent":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
@@ -294,7 +313,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 	msg := &discordgo.MessageEdit{}
 	for key, val := range messageSdict {
 
-		switch key {
+		switch strings.ToLower(key) {
 		case "content":
 			temp := fmt.Sprint(val)
 			msg.Content = &temp
@@ -319,6 +338,21 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				}
 				msg.Embeds = []*discordgo.MessageEmbed{embed}
 			}
+		case "silent":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
+		case "allowed_mentions":
+			if val == nil {
+				msg.AllowedMentions = discordgo.AllowedMentions{}
+				continue
+			}
+			parsed, err := parseAllowedMentions(val)
+			if err != nil {
+				return nil, err
+			}
+			msg.AllowedMentions = *parsed
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
@@ -327,6 +361,85 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 
 	return msg, nil
 
+}
+
+func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) {
+
+	if m, ok := Data.(discordgo.AllowedMentions); ok {
+		return &m, nil
+	}
+
+	converted, err := StringKeyDictionary(Data)
+	if err != nil {
+		return nil, err
+	}
+
+	var parsingUsers bool
+	var parsingRoles bool
+
+	allowedMentions := &discordgo.AllowedMentions{}
+	for k, v := range converted {
+
+		switch strings.ToLower(k) {
+		case "parse":
+			var parseMentions []discordgo.AllowedMentionType
+			var parseSlice Slice
+			conv, err := parseSlice.AppendSlice(v)
+			if err != nil {
+				return nil, errors.New(`Allowed Mentions Parsing: invalid datatype passed to "Parse", accepts a slice only`)
+			}
+			for _, elem := range conv.(Slice) {
+				elem_conv, _ := elem.(string)
+				if elem_conv != "users" && elem_conv != "roles" && elem_conv != "everyone" {
+					return nil, errors.New(`Allowed Mentions Parsing: invalid slice element in "Parse", accepts "roles", "users", and "everyone"`)
+				}
+				parseMentions = append(parseMentions, discordgo.AllowedMentionType(elem_conv))
+				if elem_conv == "users" {
+					parsingUsers = true
+				} else if elem_conv == "roles" {
+					parsingRoles = true
+				}
+			}
+			allowedMentions.Parse = parseMentions
+		case "users", "roles":
+			var newslice discordgo.IDSlice
+			var parseSlice Slice
+			conv, err := parseSlice.AppendSlice(v)
+			if err != nil {
+				return nil, fmt.Errorf(`Allowed Mentions Parsing: invalid datatype passed to "%s", accepts a slice of snowflakes only`, k)
+			}
+			for _, elem := range conv.(Slice) {
+				if (ToInt64(elem)) == 0 {
+					return nil, fmt.Errorf(`Allowed Mentions Parsing: "%s" IDSlice: invalid ID passed -`+fmt.Sprint(elem), k)
+				}
+				newslice = append(newslice, ToInt64(elem))
+			}
+			if len(newslice) > 100 {
+				newslice = newslice[:100]
+			}
+			if strings.ToLower(k) == "users" {
+				allowedMentions.Users = newslice
+			} else {
+				allowedMentions.Roles = newslice
+			}
+		case "replied_user":
+			isRepliedUserMention, ok := v.(bool)
+			if !ok {
+				return nil, errors.New(`Allowed Mentions Parsing: invalid datatype passed to "replied_user", accepts a bool only`)
+			}
+			allowedMentions.RepliedUser = isRepliedUserMention
+		default:
+			return nil, errors.New(`Allowed Mentions Parsing: invalid key "` + k + `" for Allowed Mentions`)
+		}
+	}
+
+	if parsingUsers && allowedMentions.Users != nil {
+		return nil, errors.New(`Allowed Mentions Parsing: conflicting values passed, you cannot parse all users if only allowing a set of users`)
+	} else if parsingRoles && allowedMentions.Roles != nil {
+		return nil, errors.New(`Allowed Mentions Parsing: conflicting values passed, you cannot parse all roles if only allowing a set of roles`)
+	}
+
+	return allowedMentions, nil
 }
 
 // indirect is taken from 'text/template/exec.go'
@@ -1106,10 +1219,33 @@ func ToByte(from interface{}) []byte {
 	}
 }
 
-func tmplJson(v interface{}) (string, error) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return "", err
+func tmplJson(v interface{}, flags ...bool) (string, error) {
+	var b []byte
+	var err error
+
+	switch len(flags) {
+
+	case 0:
+		b, err = json.Marshal(v)
+		if err != nil {
+			return "", err
+		}
+
+	case 1:
+		if flags[0] {
+			b, err = json.MarshalIndent(v, "", "\t")
+			if err != nil {
+				return "", err
+			}
+		} else {
+			b, err = json.Marshal(v)
+			if err != nil {
+				return "", err
+			}
+		}
+
+	default:
+		return "", errors.New("Too many flags")
 	}
 
 	return string(b), nil

@@ -1,6 +1,7 @@
 package automod
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -13,17 +14,20 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/automod_legacy"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
+var SanitizeTextName = "Also match visually similar characters such as \"Ĥéĺĺó\""
 
 /////////////////////////////////////////////////////////////
 
 type BaseRegexTriggerData struct {
-	Regex string `valid:",1,250"`
+	Regex        string `valid:",1,250"`
+	SanitizeText bool
 }
 
 type BaseRegexTrigger struct {
@@ -46,6 +50,12 @@ func (r BaseRegexTrigger) UserSettings() []*SettingDef {
 			Kind: SettingTypeString,
 			Min:  1,
 			Max:  250,
+		},
+		{
+			Name:    SanitizeTextName,
+			Key:     "SanitizeText",
+			Kind:    SettingTypeBool,
+			Default: false,
 		},
 	}
 }
@@ -146,7 +156,8 @@ type WordListTrigger struct {
 	Blacklist bool
 }
 type WorldListTriggerData struct {
-	ListID int64
+	ListID       int64
+	SanitizeText bool
 }
 
 func (wl *WordListTrigger) Kind() RulePartType {
@@ -180,6 +191,12 @@ func (wl *WordListTrigger) UserSettings() []*SettingDef {
 			Key:  "ListID",
 			Kind: SettingTypeList,
 		},
+		{
+			Name:    SanitizeTextName,
+			Key:     "SanitizeText",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -192,6 +209,11 @@ func (wl *WordListTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.C
 	}
 
 	messageFields := strings.Fields(mdStripped)
+
+	if dataCast.SanitizeText {
+		messageFieldsFixText := strings.Fields(confusables.SanitizeText(mdStripped))
+		messageFields = append(messageFields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
+	}
 
 	for _, mf := range messageFields {
 		contained := false
@@ -408,8 +430,9 @@ func (vt *ViolationsTrigger) CheckUser(ctxData *TriggeredRuleData, violations []
 /////////////////////////////////////////////////////////////
 
 type AllCapsTriggerData struct {
-	MinLength  int
-	Percentage int
+	MinLength    int
+	Percentage   int
+	SanitizeText bool
 }
 
 var _ MessageTrigger = (*AllCapsTrigger)(nil)
@@ -448,6 +471,12 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 			Min:     1,
 			Max:     100,
 		},
+		{
+			Name:    SanitizeTextName,
+			Key:     "SanitizeText",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -461,8 +490,14 @@ func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.
 	totalCapitalisableChars := 0
 	numCaps := 0
 
+	messageContent := m.Content
+
+	if dataCast.SanitizeText {
+		messageContent = confusables.SanitizeText(messageContent)
+	}
+
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
-	for _, r := range m.Content {
+	for _, r := range messageContent {
 		if unicode.IsUpper(r) {
 			numCaps++
 			totalCapitalisableChars++
@@ -938,7 +973,13 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(m.Content) {
+
+	var sanitizedContent string
+	if dataCast.SanitizeText {
+		sanitizedContent = confusables.SanitizeText(m.Content)
+	}
+
+	if re.MatchString(m.Content) || (dataCast.SanitizeText && re.MatchString(sanitizedContent)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -955,8 +996,9 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 /////////////////////////////////////////////////////////////
 
 type SpamTriggerData struct {
-	Treshold  int
-	TimeLimit int
+	Treshold     int
+	TimeLimit    int
+	SanitizeText bool
 }
 
 var _ MessageTrigger = (*SpamTrigger)(nil)
@@ -997,6 +1039,12 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 			Max:     10000,
 			Default: 30,
 		},
+		{
+			Name:    SanitizeTextName,
+			Key:     "SanitizeText",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -1032,11 +1080,24 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
 		}
 
-		if strings.ToLower(strings.TrimSpace(v.Content)) == mToCheckAgainst {
+		contentStripped := strings.TrimSpace(v.Content)
+		contentLowered := strings.ToLower(contentStripped)
+
+		if contentLowered == mToCheckAgainst {
 			count++
-		} else {
-			break
+			continue
 		}
+
+		if !settingsCast.SanitizeText {
+			continue
+		}
+
+		if confusables.SanitizeText(contentLowered) == mToCheckAgainst {
+			count++
+			continue
+		}
+
+		break
 	}
 
 	if count >= settingsCast.Treshold {
@@ -1087,7 +1148,13 @@ func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.Member.Nick) {
+
+	var sanitizedNick string
+	if dataCast.SanitizeText {
+		sanitizedNick = confusables.SanitizeText(t.MS.Member.Nick)
+	}
+
+	if re.MatchString(t.MS.Member.Nick) || (dataCast.SanitizeText && re.MatchString(sanitizedNick)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1109,7 +1176,8 @@ type NicknameWordlistTrigger struct {
 	Blacklist bool
 }
 type NicknameWordlistTriggerData struct {
-	ListID int64
+	ListID       int64
+	SanitizeText bool
 }
 
 func (nwl *NicknameWordlistTrigger) Kind() RulePartType {
@@ -1143,6 +1211,12 @@ func (nwl *NicknameWordlistTrigger) UserSettings() []*SettingDef {
 			Key:  "ListID",
 			Kind: SettingTypeList,
 		},
+		{
+			Name:    SanitizeTextName,
+			Key:     "SanitizeText",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -1155,6 +1229,10 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 	}
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.Member.Nick))
+	if dataCast.SanitizeText {
+		messageFieldsFixText := strings.Fields(confusables.SanitizeText(PrepareMessageForWordCheck(t.MS.Member.Nick)))
+		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
+	}
 
 	for _, mf := range fields {
 		contained := false
@@ -1220,7 +1298,13 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 	}
 
 	re := item.Value().(*regexp.Regexp)
-	if re.MatchString(t.MS.User.Username) {
+
+	var sanitizedUsername string
+	if dataCast.SanitizeText {
+		sanitizedUsername = confusables.SanitizeText(t.MS.User.Username)
+	}
+
+	if re.MatchString(t.MS.User.Username) || (dataCast.SanitizeText && re.MatchString(sanitizedUsername)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1242,7 +1326,8 @@ type UsernameWordlistTrigger struct {
 	Blacklist bool
 }
 type UsernameWorldlistData struct {
-	ListID int64
+	ListID       int64
+	SanitizeText bool
 }
 
 func (uwl *UsernameWordlistTrigger) Kind() RulePartType {
@@ -1276,6 +1361,12 @@ func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
 			Key:  "ListID",
 			Kind: SettingTypeList,
 		},
+		{
+			Name:    SanitizeTextName,
+			Key:     "SanitizeText",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -1288,6 +1379,10 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 	}
 
 	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
+	if dataCast.SanitizeText {
+		messageFieldsFixText := strings.Fields(confusables.SanitizeText(PrepareMessageForWordCheck(t.MS.User.Username)))
+		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
+	}
 
 	for _, mf := range fields {
 		contained := false
@@ -1482,4 +1577,52 @@ func (ml *MessageLengthTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dst
 	}
 
 	return utf8.RuneCountInString(m.Content) > dataCast.Length, nil
+}
+
+/////////////////////////////////////////////////////////////
+
+var _ AutomodListener = (*AutomodExecution)(nil)
+
+type AutomodExecution struct {
+}
+type AutomodExecutionData struct {
+	RuleID string
+}
+
+func (am *AutomodExecution) Kind() RulePartType {
+	return RulePartTrigger
+}
+
+func (am *AutomodExecution) DataType() interface{} {
+	return &AutomodExecutionData{}
+}
+func (am *AutomodExecution) Name() (name string) {
+	return "Message triggers Discord Automod"
+}
+
+func (am *AutomodExecution) Description() (description string) {
+	return "Triggers when a message is detected by Discord Automod"
+}
+func (am *AutomodExecution) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name: "Rule ID (leave blank for all)",
+			Key:  "RuleID",
+			Kind: SettingTypeString,
+		},
+	}
+}
+
+func (am *AutomodExecution) CheckRuleID(triggerCtx *TriggerContext, ruleID int64) (bool, error) {
+	dataCast := triggerCtx.Data.(*AutomodExecutionData)
+
+	if dataCast.RuleID == fmt.Sprint(ruleID) {
+		return true, nil
+	}
+
+	if dataCast.RuleID == "" {
+		return true, nil
+	}
+
+	return false, nil
 }

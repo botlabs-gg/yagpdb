@@ -61,11 +61,12 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands)
+	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands, cmdEvalCommand)
 }
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleMessageCreate), eventsystem.EventMessageCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleMessageUpdate), eventsystem.EventMessageUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(handleMessageReactions), eventsystem.EventMessageReactionAdd, eventsystem.EventMessageReactionRemove)
 
 	pubsub.AddHandler("custom_commands_run_now", handleCustomCommandsRunNow, models.CustomCommand{})
@@ -115,6 +116,70 @@ type DelayedRunCCData struct {
 	UserKey interface{} `json:"user_key"`
 
 	IsExecedByLeaveMessage bool `json:"is_execed_by_leave_message"`
+}
+
+var cmdEvalCommand = &commands.YAGCommand{
+	CmdCategory:  commands.CategoryTool,
+	Name:         "Evalcc",
+	Description:  "executes custom command code (up to 1k characters)",
+	RequiredArgs: 1,
+	Arguments: []*dcmd.ArgDef{
+		{Name: "code", Type: dcmd.String},
+	},
+	SlashCommandEnabled: false,
+	DefaultEnabled:      true,
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		hasCoreWriteRole := false
+
+		writeRoles := common.GetCoreServerConfCached(data.GuildData.GS.ID).AllowedWriteRoles
+		for _, r := range data.GuildData.MS.Member.Roles {
+			if common.ContainsInt64Slice(writeRoles, r) {
+				hasCoreWriteRole = true
+				break
+			}
+		}
+
+		adminOrPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.GuildData.CS.ID, data.GuildData.MS, discordgo.PermissionManageServer)
+		if err != nil {
+			return nil, err
+		}
+
+		if !(adminOrPerms || hasCoreWriteRole) {
+			return "You need `Manage Server` permissions or control panel write access for this command", nil
+		}
+
+		// Disallow calling via exec / execAdmin
+		if data.Context().Value(commands.CtxKeyExecutedByCC) == true {
+			return "", nil
+		}
+
+		channel := data.GuildData.CS
+		ctx := templates.NewContext(data.GuildData.GS, channel, data.GuildData.MS)
+		ctx.IsExecedByEvalCC = true
+
+		// use stripped message content instead of parsed arg data to avoid dcmd
+		// from misinterpreting backslashes and losing spaces in input; see
+		// https://github.com/botlabs-gg/yagpdb/pull/1547
+		code := common.ParseCodeblock(data.TraditionalTriggerData.MessageStrippedPrefix)
+
+		// Encourage only small code snippets being tested with this command
+		maxRunes := 1000
+		if utf8.RuneCountInString(code) > maxRunes {
+			return "Code is too long for in-place evaluation. Please use the control panel.", nil
+		}
+
+		if channel == nil {
+			return "Something weird happened... Contact the support server.", nil
+		}
+
+		out, err := ctx.Execute(code)
+
+		if err != nil {
+			return formatCustomCommandRunErr(code, err), err
+		}
+
+		return out, nil
+	},
 }
 
 var cmdListCommands = &commands.YAGCommand{
@@ -196,11 +261,11 @@ var cmdListCommands = &commands.YAGCommand{
 				cc.TextTrigger = `​`
 			}
 			if cc.Name.Valid {
-				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Name: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t`",
-					cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.Name.String, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled)
+				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Name: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t` - onEdit: `%t`",
+					cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.Name.String, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			} else {
-				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t`",
-					cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled)
+				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t` - onEdit: `%t`",
+					cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			}
 
 			if ccFile != nil {
@@ -290,9 +355,9 @@ func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 				cc.TextTrigger = `​`
 			}
 			if cc.Name.Valid {
-				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s`  - Name: `%s` - Group: `%s` - Disabled: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled)
+				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s`  - Name: `%s` - Group: `%s` - Disabled: `%t` - onEdit: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			} else {
-				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s` - Group: `%s` - Disabled: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled)
+				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s` - Group: `%s` - Disabled: `%t` - onEdit: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			}
 		}
 	}
@@ -422,8 +487,8 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	return false, nil
 }
 
-func shouldIgnoreChannel(evt *discordgo.MessageCreate, gs *dstate.GuildSet, cState *dstate.ChannelState) bool {
-	if evt.GuildID == 0 {
+func shouldIgnoreChannel(msg *discordgo.Message, gs *dstate.GuildSet, cState *dstate.ChannelState) bool {
+	if msg.GuildID == 0 {
 		return true
 	}
 
@@ -432,11 +497,11 @@ func shouldIgnoreChannel(evt *discordgo.MessageCreate, gs *dstate.GuildSet, cSta
 		return true
 	}
 
-	if !bot.IsNormalUserMessage(evt.Message) {
+	if !bot.IsNormalUserMessage(msg) {
 		return true
 	}
 
-	if evt.Message.Author.Bot {
+	if msg.Author.Bot {
 		return true
 	}
 
@@ -464,6 +529,10 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 		if err != nil {
 			return errors.WrapIf(err, "failed disabling custom commands on premium removal")
 		}
+	}
+	_, err = models.CustomCommands(qm.Where("guild_id = ?", GuildID)).UpdateAllG(context.Background(), models.M{"trigger_on_edit": false})
+	if err != nil {
+		return errors.WrapIf(err, "Failed disabling trigger on edits on premium removal")
 	}
 
 	return nil
@@ -555,6 +624,50 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, gs *dstate.Guild
 	return ExecuteCustomCommand(cc, tmplCtx)
 }
 
+func HandleMessageUpdate(evt *eventsystem.EventData) {
+	mu := evt.MessageUpdate()
+	cs := evt.CSOrThread()
+
+	if isPremium, _ := premium.IsGuildPremiumCached(mu.GuildID); !isPremium {
+		return
+	}
+
+	if !evt.HasFeatureFlag(featureFlagHasCommands) {
+		return
+	}
+
+	if shouldIgnoreChannel(mu.Message, evt.GS, cs) {
+		return
+	}
+
+	member := dstate.MemberStateFromMember(mu.Member)
+	member.GuildID = evt.GS.ID
+	var matchedCustomCommands []*TriggeredCC
+	var err error
+	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
+		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mu.Message)
+	})
+	if err != nil {
+		logger.WithError(err).Error("Error matching custom commands")
+		return
+	}
+
+	if len(matchedCustomCommands) == 0 {
+		return
+	}
+
+	metricsExecutedCommands.With(prometheus.Labels{"trigger": "message"}).Inc()
+	for _, matched := range matchedCustomCommands {
+		if !matched.CC.TriggerOnEdit {
+			continue
+		}
+		err = ExecuteCustomCommandFromMessage(evt.GS, matched.CC, member, cs, matched.Args, matched.Stripped, mu.Message, true)
+		if err != nil {
+			logger.WithField("guild", mu.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
+		}
+	}
+}
+
 func HandleMessageCreate(evt *eventsystem.EventData) {
 	mc := evt.MessageCreate()
 	cs := evt.CSOrThread()
@@ -563,7 +676,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if shouldIgnoreChannel(mc, evt.GS, cs) {
+	if shouldIgnoreChannel(mc.Message, evt.GS, cs) {
 		return
 	}
 
@@ -573,10 +686,10 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	var matchedCustomCommands []*TriggeredCC
 	var err error
 	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
-		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt)
+		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mc.Message)
 	})
 	if err != nil {
-		logger.WithError(err).Error("Error mathching custom commands")
+		logger.WithError(err).Error("Error matching custom commands")
 		return
 	}
 
@@ -587,7 +700,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	metricsExecutedCommands.With(prometheus.Labels{"trigger": "message"}).Inc()
 
 	for _, matched := range matchedCustomCommands {
-		err = ExecuteCustomCommandFromMessage(evt.GS, matched.CC, member, cs, matched.Args, matched.Stripped, mc.Message)
+		err = ExecuteCustomCommandFromMessage(evt.GS, matched.CC, member, cs, matched.Args, matched.Stripped, mc.Message, false)
 		if err != nil {
 			logger.WithField("guild", mc.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
 		}
@@ -600,13 +713,12 @@ type TriggeredCC struct {
 	Args     []string
 }
 
-func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, evt *eventsystem.EventData) (matches []*TriggeredCC, err error) {
+func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, evt *eventsystem.EventData, msg *discordgo.Message) (matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.GuildID, ctx)
 	if err != nil {
 		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
 	}
 
-	mc := evt.MessageCreate().Message
 	prefix, err := commands.GetCommandPrefixBotEvt(evt)
 	if err != nil {
 		return nil, errors.WrapIf(err, "GetCommandPrefix")
@@ -618,7 +730,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 			continue
 		}
 
-		if didMatch, stripped, args := CheckMatch(prefix, cmd, mc.Content); didMatch {
+		if didMatch, stripped, args := CheckMatch(prefix, cmd, msg.Content); didMatch {
 
 			matched = append(matched, &TriggeredCC{
 				CC:       cmd,
@@ -631,7 +743,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 	sortTriggeredCCs(matched)
 
 	limit := CCMessageExecLimitNormal
-	if isPremium, _ := premium.IsGuildPremiumCached(mc.GuildID); isPremium {
+	if isPremium, _ := premium.IsGuildPremiumCached(msg.GuildID); isPremium {
 		limit = CCMessageExecLimitPremium
 	}
 
@@ -645,7 +757,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, userID int64, reaction *discordgo.MessageReaction, add bool) (ms *dstate.MemberState, matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.GuildID, ctx)
 	if err != nil {
-		return nil, nil, errors.WrapIf(err, "BotCachedGetCommandsWithMessageTriggers")
+		return nil, nil, errors.WrapIf(err, "BotCachedGetCommandsWithReactionTriggers")
 	}
 
 	var matched []*TriggeredCC
@@ -721,7 +833,7 @@ func sortTriggeredCCs(ccs []*TriggeredCC) {
 	})
 }
 
-func ExecuteCustomCommandFromMessage(gs *dstate.GuildSet, cmd *models.CustomCommand, member *dstate.MemberState, cs *dstate.ChannelState, cmdArgs []string, stripped string, m *discordgo.Message) error {
+func ExecuteCustomCommandFromMessage(gs *dstate.GuildSet, cmd *models.CustomCommand, member *dstate.MemberState, cs *dstate.ChannelState, cmdArgs []string, stripped string, m *discordgo.Message, isEdit bool) error {
 	tmplCtx := templates.NewContext(gs, cs, member)
 	tmplCtx.Msg = m
 
@@ -740,6 +852,7 @@ func ExecuteCustomCommandFromMessage(gs *dstate.GuildSet, cmd *models.CustomComm
 	} else {
 		tmplCtx.Data["CmdArgs"] = []string{}
 	}
+	tmplCtx.Data["IsMessageEdit"] = isEdit
 	tmplCtx.Data["Message"] = m
 
 	return ExecuteCustomCommand(cmd, tmplCtx)
@@ -797,6 +910,9 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)
+
+	// trim whitespace for accurate character count
+	out = strings.TrimSpace(out)
 
 	if utf8.RuneCountInString(out) > 2000 {
 		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (contact an admin on the server...)"
@@ -1096,10 +1212,10 @@ func BotCachedGetCommandsWithMessageTriggers(guildID int64, ctx context.Context)
 var cmdFixCommands = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryTool,
 	Name:                 "fixscheduledccs",
-	Description:          "Corrects the next run time of interval CCs globally, fixes issues arising from missed executions due to downtime. Bot Admin Only",
+	Description:          "Corrects the next run time of interval CCs globally, fixes issues arising from missed executions due to downtime. Bot Owner Only",
 	HideFromCommandsPage: true,
 	HideFromHelp:         true,
-	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("trigger_type = 5"), qm.Where("now() - INTERVAL '1 hour' > next_run"), qm.Where("disabled = false")).AllG(context.Background())
 		if err != nil {
 			return nil, err

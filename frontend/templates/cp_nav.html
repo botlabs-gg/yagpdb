@@ -110,7 +110,7 @@
                         class="rounded-circle" data-lock-picture="img/!logged-user.jpg" />{{end}}
                 </figure>
                 <div class="profile-info" data-lock-name="{{.User.Username}}" data-lock-email="">
-                    <span class="name">{{.User.Username}}</span>
+                    <span class="name">{{or .User.Globalname .User.Username}}</span>
                     <span class="role">{{adjective | title}}</span>
                 </div>
 

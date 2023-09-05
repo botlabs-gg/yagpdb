@@ -580,3 +580,56 @@ func (mc *MessageEditedCondition) IsMet(data *TriggeredRuleData, settings interf
 func (mc *MessageEditedCondition) MergeDuplicates(data []interface{}) interface{} {
 	return data[0] // no point in having duplicates of this
 }
+
+/////////////////////////////////////////////////////////////////
+
+var _ Condition = (*ThreadCondition)(nil)
+
+type ThreadCondition struct {
+	Threads bool
+}
+
+func (bc *ThreadCondition) Kind() RulePartType {
+	return RulePartCondition
+}
+
+func (bc *ThreadCondition) DataType() interface{} {
+	return nil
+}
+
+func (bc *ThreadCondition) Name() string {
+	if !bc.Threads {
+		return "Ignore threads"
+	}
+
+	return "Active in threads"
+}
+
+func (bc *ThreadCondition) Description() string {
+	if !bc.Threads {
+		return "Ignores messages in threads"
+	}
+
+	return "Only match messages in threads"
+}
+
+func (bc *ThreadCondition) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (bc *ThreadCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+	//Channel won't be present in case the trigger is on member update event like nick update
+	if data.CS == nil {
+		return true, nil
+	}
+
+	if !bc.Threads {
+		return !data.CS.Type.IsThread(), nil
+	}
+
+	return data.CS.Type.IsThread(), nil
+}
+
+func (bc *ThreadCondition) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
+}

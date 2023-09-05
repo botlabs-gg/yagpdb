@@ -379,13 +379,13 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	participantsEmbed := &discordgo.MessageEmbedField{
 		Name:   "Participants",
 		Inline: false,
-		Value:  "```\n",
+		Value:  "\n",
 	}
 
 	waitingListField := &discordgo.MessageEmbedField{
 		Name:   "🕐 Waiting list",
 		Inline: false,
-		Value:  "```\n",
+		Value:  "\n",
 	}
 
 	addedParticipants := 0
@@ -407,7 +407,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 			if !waitingListHitMax {
 
 				// we hit the max limit so add them to the waiting list instead
-				toAdd := user.Username + "#" + user.Discriminator + "\n"
+				toAdd := user.Mention() + "\n"
 				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(waitingListField.Value) >= 990 {
 					waitingListHitMax = true
 				} else {
@@ -421,7 +421,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		}
 
 		if !participantsHitMax {
-			toAdd := user.Username + "#" + user.Discriminator + "\n"
+			toAdd := user.Mention() + "\n"
 			if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(participantsEmbed.Value) > 990 {
 				participantsHitMax = true
 			} else {
@@ -434,21 +434,21 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	}
 
 	// Finalize the participants field
-	if participantsEmbed.Value == "```\n" {
+	if participantsEmbed.Value == "\n" {
 		participantsEmbed.Value += "None"
 	} else if participantsHitMax {
 		participantsEmbed.Value += fmt.Sprintf("+ %d users", addedParticipants-numParticipantsShown)
 	}
-	participantsEmbed.Value += "```"
+	participantsEmbed.Value += "\n"
 
 	// Finalize the waiting list field
 	waitingListField.Name += " (" + strconv.Itoa(numWaitingList) + ")"
-	if waitingListField.Value == "```\n" {
+	if waitingListField.Value == "\n" {
 		waitingListField.Value += "None"
 	} else if waitingListHitMax {
 		waitingListField.Value += fmt.Sprintf("+ %d users", numWaitingList-numWaitingListShown)
 	}
-	waitingListField.Value += "```"
+	waitingListField.Value += "\n"
 
 	if m.MaxParticipants > 0 {
 		participantsEmbed.Name += fmt.Sprintf(" (%d / %d)", addedParticipants, m.MaxParticipants)
@@ -500,7 +500,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 	field := &discordgo.MessageEmbedField{
 		Name:   name,
 		Inline: true,
-		Value:  "```\n",
+		Value:  "\n",
 	}
 
 	count := 0
@@ -512,7 +512,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 
 		if v.JoinState == int16(state) {
 			if !reachedMax {
-				toAdd := user.Username + "#" + user.Discriminator + "\n"
+				toAdd := user.Mention() + "\n"
 				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(field.Value) >= 100 {
 					reachedMax = true
 				} else {
@@ -533,7 +533,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 		}
 	}
 
-	field.Value += "```"
+	field.Value += "\n"
 
 	return field
 }

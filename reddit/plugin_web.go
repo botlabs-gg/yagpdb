@@ -274,7 +274,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetTitle"] = "Reddit feeds"
 	templateData["SettingsPath"] = "/reddit"
 
-	rows, err := models.RedditFeeds(qm.Where("guild_id = ?", ag.ID), qm.GroupBy("slow"), qm.OrderBy("slow asc"), qm.Select("count(*)")).QueryContext(r.Context(), common.PQ)
+	rows, err := models.RedditFeeds(qm.Where("guild_id = ?", ag.ID), qm.GroupBy("slow"), qm.OrderBy("slow asc"), qm.Select("count(*), slow")).QueryContext(r.Context(), common.PQ)
 	if err != nil {
 		return templateData, err
 	}
@@ -282,18 +282,19 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	var slow int
 	var fast int
+	var isSlow bool;
 
-	i := 0
 	for rows.Next() {
 		var err error
-		if i == 0 {
-			err = rows.Scan(&fast)
-		} else {
-			err = rows.Scan(&slow)
-		}
-		i++
-		if err != nil {
+		var val int
+		err = rows.Scan(&val, &isSlow)
+		if(err != nil){
 			return templateData, err
+		}
+		if(isSlow){
+			slow = val;
+		}else {
+			fast = val;
 		}
 	}
 

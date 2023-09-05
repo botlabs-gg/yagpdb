@@ -23,10 +23,11 @@ import (
 	"golang.org/x/net/context"
 )
 
+
+
 var (
 	ErrChannelBlacklisted     = errors.New("Channel blacklisted from creating message logs")
-	confEnableMessageLogPurge = config.RegisterOption("yagpdb.enable_message_log_purge", "If enabled message logs older than 30 days will be deleted", false)
-
+	ConfEnableMessageLogPurge = config.RegisterOption("yagpdb.enable_message_log_purge", "If enabled message logs older than 30 days will be deleted", false)
 	logger = common.GetPluginLogger(&Plugin{})
 )
 
@@ -142,7 +143,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			CreatedAt: v.ParsedCreatedAt,
 			UpdatedAt: v.ParsedCreatedAt,
 
-			AuthorUsername: v.Author.Username + "#" + v.Author.Discriminator,
+			AuthorUsername: v.Author.String(),
 			AuthorID:       v.Author.ID,
 			Deleted:        v.Deleted,
 		}
