@@ -1302,7 +1302,8 @@ const (
 	ErrCodeMaximumGuildRolesReached = 30005
 	ErrCodeTooManyReactions         = 30010
 
-	ErrCodeUnauthorized = 40001
+	ErrCodeUnauthorized              = 40001
+	ErrCodeMessageAlreadyCrossposted = 40033
 
 	ErrCodeMissingAccess                             = 50001
 	ErrCodeInvalidAccountType                        = 50002

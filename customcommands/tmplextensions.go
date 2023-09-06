@@ -223,6 +223,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			newCtx.Data["ExecData"] = data
 			newCtx.Data["StackDepth"] = currentStackDepth + 1
 			newCtx.IsExecedByLeaveMessage = ctx.IsExecedByLeaveMessage
+			newCtx.IsExecedByJoinMessage = ctx.IsExecedByJoinMessage
 
 			go ExecuteCustomCommand(cmd, newCtx)
 			return "", nil
@@ -236,6 +237,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			Message: ctx.Msg,
 
 			IsExecedByLeaveMessage: ctx.IsExecedByLeaveMessage,
+			IsExecedByJoinMessage:  ctx.IsExecedByJoinMessage,
 		}
 
 		// embed data using msgpack to include type information
@@ -310,6 +312,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			UserKey: stringedKey,
 
 			IsExecedByLeaveMessage: ctx.IsExecedByLeaveMessage,
+			IsExecedByJoinMessage:  ctx.IsExecedByJoinMessage,
 		}
 
 		// embed data using msgpack to include type information

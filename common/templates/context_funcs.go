@@ -508,6 +508,52 @@ func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (s
 	}
 }
 
+func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error) {
+	// Too heavily ratelimited by Discord to allow rapid feeds to publish
+	if c.IsExecedByLeaveMessage || c.IsExecedByJoinMessage {
+		return "", errors.New("cannot publish messages from a join/leave feed")
+	}
+
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	if c.IncreaseCheckCallCounter("message_publish", 1) {
+		return "", ErrTooManyCalls
+	}
+
+	cID := c.ChannelArgNoDM(channel)
+	if cID == 0 {
+		return "", errors.New("unknown channel")
+	}
+	mID := ToInt64(msgID)
+
+	// Don't crosspost if the message has already been crossposted
+	msg, err := common.BotSession.ChannelMessage(cID, mID)
+	if err != nil {
+		return "", errors.New("message not found")
+	}
+	messageAlreadyCrossposted := msg.Flags&discordgo.MessageFlagsCrossPosted == discordgo.MessageFlagsCrossPosted
+	if messageAlreadyCrossposted {
+		return "", nil
+	}
+
+	_, err = common.BotSession.ChannelMessageCrosspost(cID, mID)
+	return "", err
+}
+
+func (c *Context) tmplPublishResponse() (string, error) {
+	// Too heavily ratelimited by Discord to allow rapid feeds to publish
+	if c.IsExecedByLeaveMessage || c.IsExecedByJoinMessage {
+		return "", errors.New("cannot publish messages from a join/leave feed")
+	}
+
+	if c.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
+		c.CurrentFrame.PublishResponse = true
+	}
+	return "", nil
+}
+
 func (c *Context) tmplMentionEveryone() string {
 	c.CurrentFrame.MentionEveryone = true
 	return "@everyone"

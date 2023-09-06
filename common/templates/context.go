@@ -174,6 +174,7 @@ type Context struct {
 	CurrentFrame *ContextFrame
 
 	IsExecedByLeaveMessage bool
+	IsExecedByJoinMessage  bool
 
 	IsExecedByEvalCC bool
 
@@ -187,7 +188,8 @@ type ContextFrame struct {
 	MentionHere     bool
 	MentionRoles    []int64
 
-	DelResponse bool
+	DelResponse     bool
+	PublishResponse bool
 
 	DelResponseDelay         int
 	EmebdsToSend             []*discordgo.MessageEmbed
@@ -517,6 +519,10 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 				}
 			}(c.CurrentFrame)
 		}
+
+		if c.CurrentFrame.PublishResponse && c.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
+			common.BotSession.ChannelMessageCrosspost(m.ChannelID, m.ID)
+		}
 	}
 
 	return m, nil
@@ -587,6 +593,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("editMessage", c.tmplEditMessage(true))
 	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
 	c.addContextFunc("pinMessage", c.tmplPinMessage(false))
+	c.addContextFunc("publishMessage", c.tmplPublishMessage)
+	c.addContextFunc("publishResponse", c.tmplPublishResponse)
 	c.addContextFunc("sendDM", c.tmplSendDM)
 	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
