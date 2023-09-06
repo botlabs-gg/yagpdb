@@ -320,12 +320,16 @@ var execTests = []execTest{
 	{"$.U.V", "{{$.U.V}}", "v", tVal, true},
 	{"declare in action", "{{$x := $.U.V}}{{$x}}", "v", tVal, true},
 	{"simple assignment", "{{$x := 2}}{{$x = 3}}{{$x}}", "3", tVal, true},
-	{"nested assignment",
+	{
+		"nested assignment",
 		"{{$x := 2}}{{if true}}{{$x = 3}}{{end}}{{$x}}",
-		"3", tVal, true},
-	{"nested assignment changes the last declaration",
+		"3", tVal, true,
+	},
+	{
+		"nested assignment changes the last declaration",
 		"{{$x := 1}}{{if true}}{{$x := 2}}{{if true}}{{$x = 3}}{{end}}{{end}}{{$x}}",
-		"1", tVal, true},
+		"1", tVal, true,
+	},
 
 	// Type with String method.
 	{"V{6666}.String()", "-{{.V0}}-", "-<6666>-", tVal, true},
@@ -372,15 +376,21 @@ var execTests = []execTest{
 	{".Method3(nil constant)", "-{{.Method3 nil}}-", "-Method3: <nil>-", tVal, true},
 	{".Method3(nil value)", "-{{.Method3 .MXI.unset}}-", "-Method3: <nil>-", tVal, true},
 	{"method on var", "{{if $x := .}}-{{$x.Method2 .U16 $x.X}}{{end}}-", "-Method2: 16 x-", tVal, true},
-	{"method on chained var",
+	{
+		"method on chained var",
 		"{{range .MSIone}}{{if $.U.TrueFalse $.True}}{{$.U.TrueFalse $.True}}{{else}}WRONG{{end}}{{end}}",
-		"true", tVal, true},
-	{"chained method",
+		"true", tVal, true,
+	},
+	{
+		"chained method",
 		"{{range .MSIone}}{{if $.GetU.TrueFalse $.True}}{{$.U.TrueFalse $.True}}{{else}}WRONG{{end}}{{end}}",
-		"true", tVal, true},
-	{"chained method on variable",
+		"true", tVal, true,
+	},
+	{
+		"chained method on variable",
 		"{{with $x := .}}{{with .SI}}{{$.GetU.TrueFalse $.True}}{{end}}{{end}}",
-		"true", tVal, true},
+		"true", tVal, true,
+	},
 	{".NilOKFunc not nil", "{{call .NilOKFunc .PI}}", "false", tVal, true},
 	{".NilOKFunc nil", "{{call .NilOKFunc nil}}", "true", tVal, true},
 	{"method on nil value from slice", "-{{range .}}{{.Method1 1234}}{{end}}-", "-1234-", tSliceOfNil, true},
@@ -480,10 +490,14 @@ var execTests = []execTest{
 	{"printf lots", `{{printf "%d %s %g %s" 127 "hello" 7-3i .Method0}}`, "127 hello (7-3i) M0", tVal, true},
 
 	// HTML.
-	{"html", `{{html "<script>alert(\"XSS\");</script>"}}`,
-		"&lt;script&gt;alert(&#34;XSS&#34;);&lt;/script&gt;", nil, true},
-	{"html pipeline", `{{printf "<script>alert(\"XSS\");</script>" | html}}`,
-		"&lt;script&gt;alert(&#34;XSS&#34;);&lt;/script&gt;", nil, true},
+	{
+		"html", `{{html "<script>alert(\"XSS\");</script>"}}`,
+		"&lt;script&gt;alert(&#34;XSS&#34;);&lt;/script&gt;", nil, true,
+	},
+	{
+		"html pipeline", `{{printf "<script>alert(\"XSS\");</script>" | html}}`,
+		"&lt;script&gt;alert(&#34;XSS&#34;);&lt;/script&gt;", nil, true,
+	},
 	{"html", `{{html .PS}}`, "a string", tVal, true},
 	{"html typed nil", `{{html .NIL}}`, "&lt;nil&gt;", tVal, true},
 	{"html untyped nil", `{{html .Empty0}}`, "&lt;no value&gt;", tVal, true},
@@ -585,6 +599,10 @@ var execTests = []execTest{
 	{"declare in range", "{{range $x := .PSI}}<{{$foo:=$x}}{{$x}}>{{end}}", "<21><22><23>", tVal, true},
 	{"range count", `{{range $i, $x := count 5}}[{{$i}}]{{$x}}{{end}}`, "[0]a[1]b[2]c[3]d[4]e", tVal, true},
 	{"range nil count", `{{range $i, $x := count 0}}{{else}}empty{{end}}`, "empty", tVal, true},
+	{"range over int", `{{- range $i, $x := 3 -}}[{{$i}}][{{$x}}]{{- end -}}`, "[0][0][1][1][2][2]", tVal, true},
+	{"range over negative int", `{{- range $i, $x := -3 -}}{{- else -}}empty{{- end -}}`, "", tVal, false},
+	{"range over zero", `{{- range $i, $x := 0 -}}{{- else -}}empty{{- end -}}`, "empty", tVal, true},
+	{"range over int without vars", `{{- range 2 -}}{{- . -}}{{- end -}}`, "01", tVal, true},
 
 	// While.
 	{"while increment", "{{$i := 0}}{{while lt $i 5}}<{{$i}}>{{$i = add $i 1}}{{end}}", "<0><1><2><3><4>", tVal, true},
@@ -875,7 +893,7 @@ var delimPairs = []string{
 
 func TestDelims(t *testing.T) {
 	const hello = "Hello, world"
-	var value = struct{ Str string }{hello}
+	value := struct{ Str string }{hello}
 	for i := 0; i < len(delimPairs); i += 2 {
 		text := ".Str"
 		left := delimPairs[i+0]
@@ -898,7 +916,7 @@ func TestDelims(t *testing.T) {
 		if err != nil {
 			t.Fatalf("delim %q text %q parse err %s", left, text, err)
 		}
-		var b = new(bytes.Buffer)
+		b := new(bytes.Buffer)
 		err = tmpl.Execute(b, value)
 		if err != nil {
 			t.Fatalf("delim %q exec err %s", left, err)
@@ -997,7 +1015,7 @@ const treeTemplate = `
 `
 
 func TestTree(t *testing.T) {
-	var tree = &Tree{
+	tree := &Tree{
 		1,
 		&Tree{
 			2, &Tree{
@@ -1232,7 +1250,7 @@ var cmpTests = []cmpTest{
 
 func TestComparison(t *testing.T) {
 	b := new(bytes.Buffer)
-	var cmpStruct = struct {
+	cmpStruct := struct {
 		Uthree, Ufour uint
 		NegOne, Three int
 	}{3, 4, -1, 3}
