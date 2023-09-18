@@ -636,16 +636,14 @@ const (
 
 // A Game struct holds the name of the "playing .." game for a user
 type Game struct {
-	Name          string     `json:"name"`
-	Type          GameType   `json:"type"`
-	URL           string     `json:"url,omitempty"`
-	Details       string     `json:"details,omitempty"`
-	State         string     `json:"state,omitempty"`
-	TimeStamps    TimeStamps `json:"timestamps,omitempty"`
-	Assets        Assets     `json:"assets,omitempty"`
-	ApplicationID string     `json:"application_id,omitempty"`
-	Instance      int8       `json:"instance,omitempty"`
-	// TODO: Party and Secrets (unknown structure)
+	Name       string     `json:"name"`
+	Type       GameType   `json:"type"`
+	URL        string     `json:"url,omitempty"`
+	Details    string     `json:"details,omitempty"`
+	State      string     `json:"state,omitempty"`
+	TimeStamps TimeStamps `json:"timestamps,omitempty"`
+	Assets     Assets     `json:"assets,omitempty"`
+	Instance   int8       `json:"instance,omitempty"`
 }
 
 // implement gojay.UnmarshalerJSONObject
@@ -664,20 +662,6 @@ func (g *Game) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
 	case "timestamps":
 		return dec.Object(&g.TimeStamps)
 	case "assets":
-	case "application_id":
-		var i interface{}
-		err := dec.Interface(&i)
-		if err != nil {
-			return err
-		}
-		switch t := i.(type) {
-		case int64:
-			g.ApplicationID = strconv.FormatInt(t, 10)
-		case int32:
-			g.ApplicationID = strconv.FormatInt(int64(t), 10)
-		case string:
-			g.ApplicationID = t
-		}
 	case "instance":
 		return dec.Int8(&g.Instance)
 	}
