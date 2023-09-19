@@ -190,7 +190,7 @@ type ContextFrame struct {
 	DelResponse bool
 
 	DelResponseDelay         int
-	EmebdsToSend             []*discordgo.MessageEmbed
+	EmbedsToSend             []*discordgo.MessageEmbed
 	AddResponseReactionNames []string
 
 	isNestedTemplate bool
@@ -480,29 +480,30 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 	}
 
 	isDM := c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate())
-
+	msgSend := c.MessageSend("")
 	var embeds []*discordgo.MessageEmbed
-	for _, v := range c.CurrentFrame.EmebdsToSend {
-		if isDM {
-			v.Footer = &discordgo.MessageEmbedFooter{
-				Text:    "Custom Command DM from the server " + c.GS.Name,
-				IconURL: c.GS.Icon,
-			}
-		}
-		embeds = append(embeds, v)
-	}
-	common.BotSession.ChannelMessageSendEmbedList(channelID, embeds)
-
-	if strings.TrimSpace(content) == "" || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
+	embeds = append(embeds, c.CurrentFrame.EmbedsToSend...)
+	msgSend.Embeds = embeds
+	msgSend.Content = content
+	if (len(msgSend.Embeds) == 0 && strings.TrimSpace(content) == "") || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
 		// no point in sending the response if it gets deleted immedietely
 		return nil, nil
 	}
-
 	if isDM {
-		content = "Custom Command DM from the server **" + c.GS.Name + "**\n" + content
+		msgSend.Components = []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						Label: common.CutStringShort(fmt.Sprintf("From: %s", c.GS.Name), 80),
+						Style: discordgo.LinkButton,
+						Emoji: discordgo.ComponentEmoji{Name: "📬"},
+						URL:   fmt.Sprintf("https://discord.com/channels/%d", c.GS.ID),
+					},
+				},
+			},
+		}
 	}
-
-	m, err := common.BotSession.ChannelMessageSendComplex(channelID, c.MessageSend(content))
+	m, err := common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
 	if err != nil {
 		logger.WithError(err).Error("Failed sending message")
 	} else {

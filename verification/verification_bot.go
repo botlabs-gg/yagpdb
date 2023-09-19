@@ -206,7 +206,6 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	if strings.TrimSpace(msg) == "" {
 		msg = DefaultDMMessage
 	}
-	msg = "DM sent from server **" + gs.Name + "**(ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
 
 	ms, err := bot.GetMember(guildID, target.ID)
 	if err != nil {
@@ -223,7 +222,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	cs := dstate.ChannelStateFromDgo(channel)
 
 	tmplCTX := templates.NewContext(gs, &cs, ms)
-	tmplCTX.Name = "dm_veification_message"
+	tmplCTX.Name = "dm_verification_message"
 	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), guildID, target.ID, token)
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
