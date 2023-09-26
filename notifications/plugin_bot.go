@@ -160,8 +160,20 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 
 	var m *discordgo.Message
 	if cs.Type == discordgo.ChannelTypeDM {
-		msg = "DM sent from server **" + gs.Name + "** (ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
-		m, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
+		msgSend := ctx.MessageSend(msg)
+		msgSend.Components = []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						Label:    "Show Server Info",
+						Style:    discordgo.PrimaryButton,
+						Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+						CustomID: fmt.Sprintf("DM_%d", gs.ID),
+					},
+				},
+			},
+		}
+		m, err = common.BotSession.ChannelMessageSendComplex(cs.ID, msgSend)
 	} else {
 		if len(ctx.CurrentFrame.AddResponseReactionNames) > 0 || ctx.CurrentFrame.DelResponse || ctx.CurrentFrame.PublishResponse {
 			m, err = common.BotSession.ChannelMessageSendComplex(cs.ID, ctx.MessageSend(msg))

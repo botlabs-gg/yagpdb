@@ -2732,14 +2732,6 @@ func (s *Session) DeleteInteractionResponse(applicationID int64, token string) (
 func (s *Session) CreateFollowupMessage(applicationID int64, token string, data *WebhookParams) (st *Message, err error) {
 	body, err := s.WebhookExecuteComplex(applicationID, token, true, data)
 	return body, err
-
-	// body, err := s.RequestWithBucketID("POST", EndpointWebhookToken(applicationID, token), data, EndpointWebhookToken(0, ""))
-	// if err != nil {
-	// 	return
-	// }
-
-	// err = unmarshal(body, &st)
-	// return
 }
 
 // EditFollowupMessage Edits a followup message for an Interaction. Functions the same as Edit Webhook Message.
