@@ -132,8 +132,6 @@ var (
 
 var logger = common.GetFixedPrefixLogger("templates")
 
-func TODO() {}
-
 type ContextSetupFunc func(ctx *Context)
 
 func RegisterSetupFunc(f ContextSetupFunc) {
@@ -494,10 +492,10 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
 					discordgo.Button{
-						Label: common.CutStringShort(fmt.Sprintf("From: %s", c.GS.Name), 80),
-						Style: discordgo.LinkButton,
-						Emoji: discordgo.ComponentEmoji{Name: "📬"},
-						URL:   fmt.Sprintf("https://discord.com/channels/%d", c.GS.ID),
+						Label:    "Show Server Info",
+						Style:    discordgo.PrimaryButton,
+						Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+						CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
 					},
 				},
 			},

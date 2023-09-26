@@ -50,10 +50,10 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				discordgo.Button{
-					Label: common.CutStringShort(fmt.Sprintf("From: %s", c.GS.Name), 80),
-					Style: discordgo.LinkButton,
-					Emoji: discordgo.ComponentEmoji{Name: "📬"},
-					URL:   fmt.Sprintf("https://discord.com/channels/%d", c.GS.ID),
+					Label:    "Show Server Info",
+					Style:    discordgo.PrimaryButton,
+					Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+					CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
 				},
 			},
 		},
@@ -366,10 +366,10 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
 						discordgo.Button{
-							Label: common.CutStringShort(fmt.Sprintf("From: %s", c.GS.Name), 80),
-							Style: discordgo.LinkButton,
-							Emoji: discordgo.ComponentEmoji{Name: "📬"},
-							URL:   fmt.Sprintf("https://discord.com/channels/%d", c.GS.ID),
+							Label:    "Show Server Info",
+							Style:    discordgo.PrimaryButton,
+							Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+							CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
 						},
 					},
 				},

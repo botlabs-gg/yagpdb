@@ -164,10 +164,10 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
 					discordgo.Button{
-						Label: common.CutStringShort(fmt.Sprintf("From: %s", gs.Name), 80),
-						Style: discordgo.LinkButton,
-						Emoji: discordgo.ComponentEmoji{Name: "📬"},
-						URL:   fmt.Sprintf("https://discord.com/channels/%d", gs.ID),
+						Label:    "Show Server Info",
+						Style:    discordgo.PrimaryButton,
+						Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+						CustomID: fmt.Sprintf("DM_%d", gs.ID),
 					},
 				},
 			},
