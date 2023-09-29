@@ -62,7 +62,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 
 			go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_msg")
 
-			if sendTemplate(gs, thinCState, config.JoinDMMsg, ms, "join dm", false, true) {
+			if sendTemplate(gs, thinCState, config.JoinDMMsg, ms, "join dm", false, templates.ExecutedFromJoin) {
 				return true, nil
 			}
 		}
@@ -77,7 +77,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 		go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_dm")
 
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		if sendTemplate(gs, channel, chanMsg, ms, "join server msg", config.CensorInvites, true) {
+		if sendTemplate(gs, channel, chanMsg, ms, "join server msg", config.CensorInvites, templates.ExecutedFromJoin) {
 			return true, nil
 		}
 	}
@@ -113,7 +113,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 
 	go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_leave_server_msg")
 
-	if sendTemplate(gs, channel, chanMsg, ms, "leave", config.CensorInvites, false) {
+	if sendTemplate(gs, channel, chanMsg, ms, "leave", config.CensorInvites, templates.ExecutedFromLeave) {
 		return true, nil
 	}
 
@@ -121,11 +121,10 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 }
 
 // sendTemplate parses and executes the provided template, returns wether an error occured that we can retry from (temporary network failures and the like)
-func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool, enableSendDM bool) bool {
+func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool, executedFrom templates.ExecutedFromType) bool {
 	ctx := templates.NewContext(gs, cs, ms)
 	ctx.CurrentFrame.SendResponseInDM = cs.Type == discordgo.ChannelTypeDM
-	ctx.IsExecedByLeaveMessage = !enableSendDM
-	ctx.IsExecedByJoinMessage = enableSendDM
+	ctx.ExecutedFrom = executedFrom
 
 	// since were changing the fields, we need a copy
 	msCop := *ms
@@ -142,7 +141,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 
 	// Disable sendDM if needed
 	disableFuncs := []string{}
-	if !enableSendDM {
+	if executedFrom == templates.ExecutedFromLeave {
 		disableFuncs = []string{"sendDM"}
 	}
 	ctx.DisabledContextFuncs = disableFuncs
