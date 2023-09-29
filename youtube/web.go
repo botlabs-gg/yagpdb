@@ -154,6 +154,8 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
 	}
 
+	logger.Debugf("Got Request for new youtube URL add: %s Guild: %d ", channelUrl, activeGuild.ID)
+
 	id, err := p.parseYtUrl(parsedUrl)
 	if err != nil {
 		logger.WithError(err).Errorf("error occured parsing channel from url %q", channelUrl)
