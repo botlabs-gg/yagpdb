@@ -288,6 +288,7 @@ type ytChannelID interface {
 type videoID string
 
 func (v videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+
 	videoListCall := p.YTService.Videos.List(listParts)
 	vResp, err := videoListCall.Id(string(v)).MaxResults(1).Do()
 	if err != nil {
@@ -522,6 +523,7 @@ func (p *Plugin) MaybeAddChannelWatch(lock bool, channel string) error {
 }
 
 func (p *Plugin) CheckVideo(videoID string, channelID string) error {
+	logger.Debugf("Checking video request with videoID %s and channelID %s ", videoID, channelID)
 	subs, err := p.getRemoveSubs(channelID)
 	if err != nil || len(subs) < 1 {
 		return err
