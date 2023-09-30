@@ -522,7 +522,22 @@ func (p *Plugin) MaybeAddChannelWatch(lock bool, channel string) error {
 	return nil
 }
 
-func (p *Plugin) CheckVideo(videoID string, channelID string) error {
+func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
+	if parsedVideo.VideoId == "" || parsedVideo.ChannelID == "" {
+		return nil
+	}
+
+	parsedPublishedTime, err := time.Parse(time.RFC3339, parsedVideo.Published)
+	if err != nil {
+		return errors.New("Failed parsing youtube timestamp: " + err.Error() + ": " + parsedVideo.Published)
+	}
+
+	if time.Since(parsedPublishedTime) > time.Hour {
+		return nil
+	}
+
+	videoID := parsedVideo.VideoId
+	channelID := parsedVideo.ChannelID
 	logger.Debugf("Checking video request with videoID %s and channelID %s ", videoID, channelID)
 	subs, err := p.getRemoveSubs(channelID)
 	if err != nil || len(subs) < 1 {
@@ -532,6 +547,11 @@ func (p *Plugin) CheckVideo(videoID string, channelID string) error {
 	lastVid, lastVidTime, err := p.getLastVidTimes(channelID)
 	if err != nil {
 		return err
+	}
+
+	if lastVidTime.After(parsedPublishedTime) {
+		// wasn't a new vid
+		return nil
 	}
 
 	if lastVid == videoID {
@@ -545,23 +565,9 @@ func (p *Plugin) CheckVideo(videoID string, channelID string) error {
 	}
 
 	item := resp.Items[0]
-	parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
-	if err != nil {
-		return errors.New("Failed parsing youtube timestamp: " + err.Error() + ": " + item.Snippet.PublishedAt)
-	}
-
-	if time.Since(parsedPublishedAt) > time.Hour {
-		// just a safeguard against empty lastVidTime's
-		return nil
-	}
-
-	if lastVidTime.After(parsedPublishedAt) {
-		// wasn't a new vid
-		return nil
-	}
 
 	// This is a new video, post it
-	return p.postVideo(subs, parsedPublishedAt, item, channelID)
+	return p.postVideo(subs, parsedPublishedTime, item, channelID)
 }
 
 func (p *Plugin) isShortsVideo(video *youtube.Video) bool {

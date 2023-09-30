@@ -315,11 +315,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if parsed.VideoId == "" || parsed.ChannelID == "" {
-		return
-	}
-
-	err = p.CheckVideo(parsed.VideoId, parsed.ChannelID)
+	err = p.CheckVideo(parsed)
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed parsing checking new youtube video")
 		w.WriteHeader(http.StatusInternalServerError)
