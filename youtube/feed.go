@@ -233,10 +233,6 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		//full video object in case people want to do more advanced stuff
 		ctx.Data["Video"] = video
 
-		if publishAnnouncement {
-			ctx.CurrentFrame.PublishResponse = true
-		}
-
 		content, err = ctx.Execute(announcement.Message)
 		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone}
@@ -246,6 +242,10 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		}
 		if content == "" {
 			return
+		}
+
+		if ctx.CurrentFrame.PublishResponse {
+			publishAnnouncement = true
 		}
 	} else if sub.MentionEveryone {
 		content = "Hey @everyone " + content
