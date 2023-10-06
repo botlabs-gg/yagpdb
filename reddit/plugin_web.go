@@ -32,22 +32,24 @@ const (
 )
 
 type CreateForm struct {
-	Subreddit  string `schema:"subreddit" valid:",1,100"`
-	Slow       bool   `schema:"slow"`
-	Channel    int64  `schema:"channel" valid:"channel,true"`
-	ID         int64  `schema:"id"`
-	UseEmbeds  bool   `schema:"use_embeds"`
-	NSFWMode   int    `schema:"nsfw_filter"`
-	MinUpvotes int    `schema:"min_upvotes" valid:"0,"`
+	Subreddit       string `schema:"subreddit" valid:",1,100"`
+	Slow            bool   `schema:"slow"`
+	Channel         int64  `schema:"channel" valid:"channel,true"`
+	ID              int64  `schema:"id"`
+	UseEmbeds       bool   `schema:"use_embeds"`
+	NSFWMode        int    `schema:"nsfw_filter"`
+	SpoilersEnabled bool   `schema:"spoilers_enabled"`
+	MinUpvotes      int    `schema:"min_upvotes" valid:"0,"`
 }
 
 type UpdateForm struct {
-	Channel     int64 `schema:"channel" valid:"channel,true"`
-	ID          int64 `schema:"id"`
-	UseEmbeds   bool  `schema:"use_embeds"`
-	NSFWMode    int   `schema:"nsfw_filter"`
-	MinUpvotes  int   `schema:"min_upvotes" valid:"0,"`
-	FeedEnabled bool  `schema:"feed_enabled"`
+	Channel         int64 `schema:"channel" valid:"channel,true"`
+	ID              int64 `schema:"id"`
+	UseEmbeds       bool  `schema:"use_embeds"`
+	NSFWMode        int   `schema:"nsfw_filter"`
+	SpoilersEnabled bool  `schema:"spoilers_enabled"`
+	MinUpvotes      int   `schema:"min_upvotes" valid:"0,"`
+	FeedEnabled     bool  `schema:"feed_enabled"`
 }
 
 var (
@@ -135,12 +137,13 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	watchItem := &models.RedditFeed{
-		GuildID:    activeGuild.ID,
-		ChannelID:  newElem.Channel,
-		Subreddit:  strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
-		UseEmbeds:  newElem.UseEmbeds,
-		FilterNSFW: newElem.NSFWMode,
-		Disabled:   false,
+		GuildID:         activeGuild.ID,
+		ChannelID:       newElem.Channel,
+		Subreddit:       strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+		UseEmbeds:       newElem.UseEmbeds,
+		FilterNSFW:      newElem.NSFWMode,
+		SpoilersEnabled: newElem.SpoilersEnabled,
+		Disabled:        false,
 	}
 
 	if newElem.Slow {
@@ -191,12 +194,13 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	item.ChannelID = updated.Channel
 	item.UseEmbeds = updated.UseEmbeds
 	item.FilterNSFW = updated.NSFWMode
+	item.SpoilersEnabled = updated.SpoilersEnabled
 	item.Disabled = !updated.FeedEnabled
 	if item.Slow {
 		item.MinUpvotes = updated.MinUpvotes
 	}
 
-	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes", "disabled"))
+	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes", "disabled", "spoilers_enabled"))
 	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
@@ -282,19 +286,19 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	var slow int
 	var fast int
-	var isSlow bool;
+	var isSlow bool
 
 	for rows.Next() {
 		var err error
 		var val int
 		err = rows.Scan(&val, &isSlow)
-		if(err != nil){
+		if err != nil {
 			return templateData, err
 		}
-		if(isSlow){
-			slow = val;
-		}else {
-			fast = val;
+		if isSlow {
+			slow = val
+		} else {
+			fast = val
 		}
 	}
 
