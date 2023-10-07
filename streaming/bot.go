@@ -416,15 +416,15 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 	}
 
 	// make sure the channel exists
-	var foundChannel *dstate.ChannelState
+	foundChannel := false
 	for _, v := range guild.Channels {
 		if v.ID == config.AnnounceChannel {
-			foundChannel = &v
+			foundChannel = true
 		}
 	}
 
 	// unknown channel, disable announcements
-	if foundChannel == nil {
+	if !foundChannel {
 		config.AnnounceChannel = 0
 		config.Save(guild.ID)
 
@@ -461,8 +461,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.CurrentFrame.DelResponseDelay)
 	}
 
-	// Publish the messsage if configured to & channel is an announcement channel
-	if (ctx.CurrentFrame.PublishResponse || config.PublishToFollowers) && foundChannel.Type == discordgo.ChannelTypeGuildNews {
+	if ctx.CurrentFrame.PublishResponse {
 		common.BotSession.ChannelMessageCrosspost(config.AnnounceChannel, m.ID)
 	}
 }

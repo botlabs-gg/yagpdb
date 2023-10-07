@@ -39,8 +39,6 @@ type Config struct {
 
 	// Channel to send streaming announcements in
 	AnnounceChannel int64 `json:"announce_channel,string" schema:"announce_channel" valid:"channel,true"`
-	// True if bot should automatically publish messages (when in announcement channels)
-	PublishToFollowers bool `json:"publish_to_followers" schema:"publish_to_followers"`
 	// The message
 	AnnounceMessage string `json:"announce_message" schema:"announce_message" valid:"template,2000"`
 
@@ -61,8 +59,6 @@ type LegacyConfig struct {
 
 	// Channel to send streaming announcements in
 	AnnounceChannel string `json:"announce_channel" schema:"announce_channel" valid:"channel,true"`
-	// True if bot should automatically publish messages (when in announcement channels)
-	PublishToFollowers bool `json:"publish_to_followers" schema:"publish_to_followers"`
 	// The message
 	AnnounceMessage string `json:"announce_message" schema:"announce_message" valid:"template,2000"`
 
@@ -82,7 +78,6 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 	c.IgnoreRole, _ = strconv.ParseInt(tmp.IgnoreRole, 10, 64)
 	c.RequireRole, _ = strconv.ParseInt(tmp.RequireRole, 10, 64)
 	c.AnnounceChannel, _ = strconv.ParseInt(tmp.AnnounceChannel, 10, 64)
-	c.PublishToFollowers = tmp.PublishToFollowers
 
 	c.GameRegex = tmp.GameRegex
 	c.TitleRegex = tmp.TitleRegex

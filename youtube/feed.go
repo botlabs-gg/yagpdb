@@ -187,31 +187,28 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		}
 	}
 
-	guildState, err := discorddata.GetFullGuild(parsedGuild)
-	if err != nil {
-		logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
-		return
-	}
-
-	if guildState == nil {
-		logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
-		p.DisableGuildFeeds(parsedGuild)
-		return
-	}
-
-	channelState := guildState.GetChannel(parsedChannel)
-	if channelState == nil {
-		logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
-		p.DisableChannelFeeds(parsedChannel)
-		return
-	}
-
-	publishAnnouncement := *sub.PublishToFollowers
-	if publishAnnouncement && channelState.Type != discordgo.ChannelTypeGuildNews {
-		publishAnnouncement = false
-	}
+	var publishAnnouncement bool
 
 	if hasCustomAnnouncement && *announcement.Enabled && len(announcement.Message) > 0 {
+		guildState, err := discorddata.GetFullGuild(parsedGuild)
+		if err != nil {
+			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
+			return
+		}
+
+		if guildState == nil {
+			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
+			p.DisableGuildFeeds(parsedGuild)
+			return
+		}
+
+		channelState := guildState.GetChannel(parsedChannel)
+		if channelState == nil {
+			logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
+			p.DisableChannelFeeds(parsedChannel)
+			return
+		}
+
 		ctx := templates.NewContext(guildState, channelState, nil)
 		videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
 		videoDuration, err := common.ParseDuration(videoDurationString)
@@ -243,10 +240,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		if content == "" {
 			return
 		}
-
-		if ctx.CurrentFrame.PublishResponse {
-			publishAnnouncement = true
-		}
+		publishAnnouncement = ctx.CurrentFrame.PublishResponse
 	} else if sub.MentionEveryone {
 		content = "Hey @everyone " + content
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
@@ -424,20 +418,19 @@ func (p *Plugin) parseYtVideoID(parse string) (id ytChannelID, err error) {
 	}
 }
 
-func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishToFollowers bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {
+func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {
 	if mentionEveryone && len(mentionRoles) > 0 {
 		mentionRoles = make([]int64, 0)
 	}
 
 	sub := &ChannelSubscription{
-		GuildID:            discordgo.StrID(guildID),
-		ChannelID:          discordgo.StrID(discordChannelID),
-		MentionEveryone:    mentionEveryone,
-		MentionRoles:       mentionRoles,
-		PublishToFollowers: &publishToFollowers,
-		PublishLivestream:  &publishLivestream,
-		PublishShorts:      &publishShorts,
-		Enabled:            common.BoolToPointer(true),
+		GuildID:           discordgo.StrID(guildID),
+		ChannelID:         discordgo.StrID(discordChannelID),
+		MentionEveryone:   mentionEveryone,
+		MentionRoles:      mentionRoles,
+		PublishLivestream: &publishLivestream,
+		PublishShorts:     &publishShorts,
+		Enabled:           common.BoolToPointer(true),
 	}
 
 	sub.YoutubeChannelName = ytChannel.Snippet.Title

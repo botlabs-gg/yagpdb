@@ -116,7 +116,6 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 		return
 	}
 
-	// Publish the announcement
 	if elem.PublishAnnouncement {
 		_, err = common.BotSession.ChannelMessageCrosspost(elem.ChannelID, m.ID)
 	}

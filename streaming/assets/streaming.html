@@ -49,11 +49,6 @@
                                     <code>{{"{{.StreamTitle}}"}}</code>.</p>
                             </div>
                             <div class="form-group">
-                                <label>Publish announcements?</label>
-                                {{checkbox "publish_to_followers" "publish_to_followers" `Publish to Channel Followers` .StreamingConfig.PublishToFollowers}}
-                                <p class="help-block">Only works in Announcement channels.</p>
-                            </div>
-                            <div class="form-group">
                                 <label>Game Regex</label>
                                 <input type="text" class="form-control" name="game_regex"
                                     value="{{.StreamingConfig.GameRegex}}"></input>
