@@ -352,7 +352,8 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 	//handle dm message guild info interaction
-	if strings.HasPrefix(ic.MessageComponentData().CustomID, "DM_") {
+
+	if ic.Type == discordgo.InteractionMessageComponent && strings.HasPrefix(ic.MessageComponentData().CustomID, "DM_") {
 		handleDmGuildInfoInteraction(evt)
 	} else {
 		err := pubsub.Publish("dm_interaction", -1, ic)
