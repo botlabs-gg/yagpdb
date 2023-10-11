@@ -70,7 +70,7 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/youtube/*"), ytMux)
 	web.CPMux.Handle(pat.New("/youtube"), ytMux)
 
-	// Alll handlers here require guild channels present
+	// All handlers here require guild channels present
 	ytMux.Use(web.RequireBotMemberMW)
 	ytMux.Use(web.RequirePermMW(discordgo.PermissionMentionEveryone))
 
@@ -153,6 +153,8 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	if err != nil {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
 	}
+
+	logger.Debugf("Got Request for new youtube URL add: %s Guild: %d ", channelUrl, activeGuild.ID)
 
 	id, err := p.parseYtUrl(parsedUrl)
 	if err != nil {
@@ -293,7 +295,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle new/udpated video
+	// Handle new/updated video
 	defer r.Body.Close()
 	bodyReader := io.LimitReader(r.Body, 0xffff1)
 
@@ -313,11 +315,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if parsed.VideoId == "" || parsed.ChannelID == "" {
-		return
-	}
-
-	err = p.CheckVideo(parsed.VideoId, parsed.ChannelID)
+	err = p.CheckVideo(parsed)
 	if err != nil {
 		web.CtxLogger(ctx).WithError(err).Error("Failed parsing checking new youtube video")
 		w.WriteHeader(http.StatusInternalServerError)

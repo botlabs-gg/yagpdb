@@ -105,7 +105,8 @@ func Init() error {
 	logger.Info("Retrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
-		panic(fmt.Sprintf("%#+v", err))
+		logrus.WithError(err).Error("Failed getting bot info")
+		panic(err)
 	}
 
 	if !BotUser.Bot {
@@ -118,7 +119,8 @@ func Init() error {
 
 	app, err := BotSession.ApplicationMe()
 	if err != nil {
-		panic(fmt.Sprintf("%#+v", err))
+		logrus.WithError(err).Error("Failed getting bot application")
+		panic(err)
 	}
 
 	BotApplication = app

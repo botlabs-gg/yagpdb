@@ -149,6 +149,16 @@ func init() {
 // set by the premium package to return wether this guild is premium or not
 var GuildPremiumFunc func(guildID int64) (bool, error)
 
+// Defines where a template was executed from to enable certain restrictions
+type ExecutedFromType int
+
+const (
+	ExecutedFromStandard ExecutedFromType = 0
+	ExecutedFromJoin     ExecutedFromType = 1
+	ExecutedFromLeave    ExecutedFromType = 2
+	ExecutedFromEvalCC   ExecutedFromType = 3
+)
+
 type Context struct {
 	Name string
 
@@ -171,10 +181,7 @@ type Context struct {
 
 	CurrentFrame *ContextFrame
 
-	IsExecedByLeaveMessage bool
-	IsExecedByJoinMessage  bool
-
-	IsExecedByEvalCC bool
+	ExecutedFrom ExecutedFromType
 
 	contextFuncsAdded bool
 }
@@ -371,12 +378,12 @@ func (c *Context) executeParsed() (string, error) {
 
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
-		if c.IsExecedByEvalCC {
+		if c.ExecutedFrom == ExecutedFromEvalCC {
 			parsed = parsed.MaxOps(MaxOpsEvalPremium)
 		}
 	} else {
 		parsed = parsed.MaxOps(MaxOpsNormal)
-		if c.IsExecedByEvalCC {
+		if c.ExecutedFrom == ExecutedFromEvalCC {
 			parsed = parsed.MaxOps(MaxOpsEvalNormal)
 		}
 	}
@@ -558,7 +565,7 @@ func (c *Context) IncreaseCheckCallCounterPremium(key string, normalLimit, premi
 }
 
 func (c *Context) IncreaseCheckGenericAPICall() bool {
-	if c.IsExecedByEvalCC {
+	if c.ExecutedFrom == ExecutedFromEvalCC {
 		return c.IncreaseCheckCallCounter("api_call", 20)
 	}
 	return c.IncreaseCheckCallCounter("api_call", 100)

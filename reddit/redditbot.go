@@ -195,7 +195,9 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		"subreddit":    post.Subreddit,
 	}).Debug("Found matched reddit post")
 
-	message, embed := p.createPostMessage(post)
+	// Create messages with and without spoilers
+	messageSpoilersEnabled, embedSpoilersEnabled := p.createPostMessage(post, true)
+	messageSpoilersDisabled, embedSpoilersDisabled := p.createPostMessage(post, false)
 
 	for _, item := range filteredItems {
 		idStr := strconv.FormatInt(item.ID, 10)
@@ -212,6 +214,11 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 			AllowedMentions: discordgo.AllowedMentions{
 				Parse: []discordgo.AllowedMentionType{},
 			},
+		}
+
+		message, embed := messageSpoilersDisabled, embedSpoilersDisabled
+		if item.SpoilersEnabled {
+			message, embed = messageSpoilersEnabled, embedSpoilersEnabled
 		}
 
 		if item.UseEmbeds {
@@ -272,7 +279,7 @@ OUTER:
 	return filteredItems
 }
 
-func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
+func (p *PostHandlerImpl) createPostMessage(post *reddit.Link, allowSpoilers bool) (string, *discordgo.MessageEmbed) {
 	plainMessage := fmt.Sprintf("**%s**\n*by %s (<%s>)*\n",
 		html.UnescapeString(post.Title), post.Author, "https://redd.it/"+post.ID)
 
@@ -298,7 +305,7 @@ func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discord
 		plainBody = post.URL
 	}
 
-	if post.Spoiler || parentSpoiler {
+	if (post.Spoiler || parentSpoiler) && allowSpoilers {
 		plainMessage += "|| " + plainBody + " ||"
 	} else {
 		plainMessage += plainBody
@@ -329,7 +336,7 @@ func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discord
 	if post.IsSelf {
 		//  Handle Self posts
 		embed.Title = "New self post"
-		if post.Spoiler {
+		if post.Spoiler && allowSpoilers {
 			embed.Description += "|| " + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + " ||"
 		} else {
 			embed.Description += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
@@ -345,7 +352,7 @@ func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discord
 		if parent.IsSelf {
 			// Cropsspost was a self post
 			embed.Color = 0xc3fc7e
-			if parent.Spoiler {
+			if parent.Spoiler && allowSpoilers {
 				embed.Description += "|| " + common.CutStringShort(html.UnescapeString(parent.Selftext), 250) + " ||"
 			} else {
 				embed.Description += common.CutStringShort(html.UnescapeString(parent.Selftext), 250)
@@ -373,7 +380,7 @@ func (p *PostHandlerImpl) createPostMessage(post *reddit.Link) (string, *discord
 		}
 	}
 
-	if post.Spoiler {
+	if post.Spoiler && allowSpoilers {
 		embed.Title += " [spoiler]"
 	}
 

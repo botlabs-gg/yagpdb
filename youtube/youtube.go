@@ -113,13 +113,6 @@ func (p *Plugin) DisableGuildFeeds(guildID int64) error {
 }
 
 func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
-	// hub.callback:https://testing.yagpdb.xyz/yt_new_upload
-	// hub.topic:https://www.youtube.com/xml/feeds/videos.xml?channel_id=UCt-ERbX-2yA6cAqfdKOlUwQ
-	// hub.verify:sync
-	// hub.mode:subscribe
-	// hub.verify_token:hmmmmmmmmwhatsthis
-	// hub.secret:
-	// hub.lease_seconds:
 
 	values := url.Values{
 		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
@@ -147,13 +140,6 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 }
 
 func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
-	// hub.callback:https://testing.yagpdb.xyz/yt_new_upload
-	// hub.topic:https://www.youtube.com/xml/feeds/videos.xml?channel_id=UCt-ERbX-2yA6cAqfdKOlUwQ
-	// hub.verify:sync
-	// hub.mode:subscribe
-	// hub.verify_token:hmmmmmmmmwhatsthis
-	// hub.secret:
-	// hub.lease_seconds:
 
 	values := url.Values{
 		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
