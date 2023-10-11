@@ -102,7 +102,7 @@ func requestAPI(query string, result interface{}) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return commands.NewPublicError(fmt.Sprintf("HTTP err: %s", resp.Status))
+		return commands.NewPublicError("Unable to fetch data from API")
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(result)
