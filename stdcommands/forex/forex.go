@@ -101,8 +101,8 @@ func requestAPI(query string, result interface{}) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return commands.NewPublicError("Unable to fetch data from API")
+	if resp.StatusCode != http.StatusOK {
+		return commands.NewPublicError("Failed to convert, Please verify your input")
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(result)
