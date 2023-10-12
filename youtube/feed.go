@@ -187,6 +187,8 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		}
 	}
 
+	var publishAnnouncement bool
+
 	if hasCustomAnnouncement && *announcement.Enabled && len(announcement.Message) > 0 {
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
@@ -238,6 +240,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		if content == "" {
 			return
 		}
+		publishAnnouncement = ctx.CurrentFrame.PublishResponse
 	} else if sub.MentionEveryone {
 		content = "Hey @everyone " + content
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
@@ -253,12 +256,13 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	go analytics.RecordActiveUnit(parsedGuild, p, "posted_youtube_message")
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Inc()
 	mqueue.QueueMessage(&mqueue.QueuedElement{
-		GuildID:      parsedGuild,
-		ChannelID:    parsedChannel,
-		Source:       "youtube",
-		SourceItemID: "",
-		MessageStr:   content,
-		Priority:     2,
+		GuildID:             parsedGuild,
+		ChannelID:           parsedChannel,
+		Source:              "youtube",
+		SourceItemID:        "",
+		MessageStr:          content,
+		PublishAnnouncement: publishAnnouncement,
+		Priority:            2,
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: parseMentions,
 		},

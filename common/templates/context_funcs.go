@@ -23,7 +23,7 @@ var ErrTooManyCalls = errors.New("too many calls to this function")
 var ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
-	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.IsExecedByLeaveMessage {
+	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.ExecutedFrom == ExecutedFromLeave {
 		return ""
 	}
 
@@ -135,7 +135,7 @@ func (c *Context) ChannelArgNoDMNoThread(v interface{}) int64 {
 }
 
 func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
-	if c.IsExecedByLeaveMessage {
+	if c.ExecutedFrom == ExecutedFromLeave {
 		return "", errors.New("can't use sendTemplateDM on leave msg")
 	}
 
@@ -480,7 +480,7 @@ func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (s
 
 func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error) {
 	// Too heavily ratelimited by Discord to allow rapid feeds to publish
-	if c.IsExecedByLeaveMessage || c.IsExecedByJoinMessage {
+	if c.ExecutedFrom == ExecutedFromLeave || c.ExecutedFrom == ExecutedFromJoin {
 		return "", errors.New("cannot publish messages from a join/leave feed")
 	}
 
@@ -514,7 +514,7 @@ func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error)
 
 func (c *Context) tmplPublishResponse() (string, error) {
 	// Too heavily ratelimited by Discord to allow rapid feeds to publish
-	if c.IsExecedByLeaveMessage || c.IsExecedByJoinMessage {
+	if c.ExecutedFrom == ExecutedFromLeave || c.ExecutedFrom == ExecutedFromJoin {
 		return "", errors.New("cannot publish messages from a join/leave feed")
 	}
 
