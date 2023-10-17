@@ -134,7 +134,6 @@ func BaseURL() string {
 	return "http://" + common.ConfHost.GetString()
 }
 
-
 func ManageServerURL(guild *dcmd.GuildContextData) string {
 	return fmt.Sprintf("%s/manage/%d", BaseURL(), guild.GS.ID)
 }
@@ -432,11 +431,12 @@ func loadCoreHTMLTemplate(path string) {
 }
 
 const (
-	SidebarCategoryTopLevel = "Top"
-	SidebarCategoryFeeds    = "Feeds"
-	SidebarCategoryTools    = "Tools"
-	SidebarCategoryFun      = "Fun"
-	SidebarCategoryCore     = "Core"
+	SidebarCategoryTopLevel   = "Top"
+	SidebarCategoryFeeds      = "Feeds"
+	SidebarCategoryTools      = "Tools"
+	SidebarCategoryFun        = "Fun"
+	SidebarCategoryCore       = "Core"
+	SidebarCategoryModeration = "Moderation"
 )
 
 type SidebarItem struct {

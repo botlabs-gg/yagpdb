@@ -49,7 +49,7 @@ func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("verification/assets/verification_control_panel.html", PageHTMLControlPanel)
 	web.AddHTMLTemplate("verification/assets/verification_verify_page.html", PageHTMLVerifyPage)
 
-	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
 		Name: "Verification",
 		URL:  "verification",
 		Icon: "fas fa-address-card",
