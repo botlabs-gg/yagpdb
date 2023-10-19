@@ -189,6 +189,17 @@
                             {{end}}
                         </ul>
                     </li>
+                    <li class="nav-parent">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-user-shield" aria-hidden="true"></i>
+                            <span>Moderation</span>
+                        </a>
+                        <ul class="nav nav-children">
+                            {{range (index .SidebarItems "Moderation")}}
+                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
+                            {{end}}
+                        </ul>
+                    </li>
                     <li class="nav-parent   ">
                         <a class="nav-link" href="#">
                             <i class="fas fa-rss" aria-hidden="true"></i>
