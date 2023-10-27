@@ -246,7 +246,7 @@ func (g *channelOptsHTMLGenState) outputDeletedChannels() {
 	}
 	for _, sel := range g.selections {
 		if !exists[sel] {
-			g.output(fmt.Sprintf(`<option value="%[1]d" selected>Deleted channel: %[1]d</option>\n`, sel))
+			g.output(fmt.Sprintf(`<option value="%[1]d" selected class="deleted-channel">Deleted channel: %[1]d</option>\n`, sel))
 		}
 	}
 }
