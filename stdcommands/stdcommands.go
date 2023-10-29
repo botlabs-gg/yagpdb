@@ -18,6 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dadjoke"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dcallvoice"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/define"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/deletedm"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dictionary"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/dogfact"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/eightball"
@@ -129,6 +130,9 @@ func (p *Plugin) AddCommands() {
 		toggledbg.Command,
 		globalrl.Command,
 		listflags.Command,
+
+		// Other
+		deletedm.Command,
 	)
 
 	statedbg.Commands()
