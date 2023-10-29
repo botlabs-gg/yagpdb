@@ -50,9 +50,12 @@ func (p *Plugin) startSlashCommandsUpdater() {
 }
 
 func (p *Plugin) updateGlobalCommands() {
-	result := make([]*discordgo.CreateApplicationCommandRequest, 0)
+	result := make([]*discordgo.ApplicationCommand, 0)
 
 	for _, v := range CommandSystem.Root.Commands {
+		if v.Trigger.MessageCommand {
+			fmt.Println(v.Trigger.Names)
+		}
 		if cmd := p.yagCommandToSlashCommand(v); cmd != nil {
 			logger.Infof("%s is a global slash command: default enabled: %v", cmd.Name, cmd.DefaultPermission)
 			result = append(result, cmd)
@@ -81,7 +84,7 @@ func (p *Plugin) updateGlobalCommands() {
 
 	logger.Info("Slash commands changed, updating....")
 
-	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
+	ret, err := common.BotSession.ApplicationCommandBulkOverwrite(common.BotApplication.ID, 0, result)
 	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
 	if err != nil {
 		logger.WithError(err).Error("failed updating global slash commands")
@@ -117,12 +120,13 @@ OUTER:
 	}
 }
 
-func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *discordgo.CreateApplicationCommandRequest {
+func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *discordgo.ApplicationCommand {
 	t := true
-	req := &discordgo.CreateApplicationCommandRequest{
+	req := &discordgo.ApplicationCommand{
 		Name:              strings.ToLower(container.container.Names[0]),
 		Description:       common.CutStringShort(container.container.Description, 100),
 		DefaultPermission: &t,
+		Type:              discordgo.ChatApplicationCommand,
 	}
 
 	for _, v := range container.container.Commands {
@@ -150,27 +154,33 @@ func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *dis
 	return req
 }
 
-func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordgo.CreateApplicationCommandRequest {
-
+func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordgo.ApplicationCommand {
 	cast, ok := cmd.Command.(*YAGCommand)
 	if !ok {
 		// probably a container, which is handled seperately, see RegisterSlashCommandsContainer
 		return nil
 	}
 
-	if !cast.SlashCommandEnabled {
+	if !(cast.SlashCommandEnabled || cast.MessageCommand) {
 		// not enabled for slash commands
 		return nil
 	}
-	t := true
+	DefaultPermission := true
+
+	var commandType discordgo.ApplicationCommandType = discordgo.ChatApplicationCommand
+
+	if cast.MessageCommand {
+		commandType = discordgo.MessageApplicationCommand
+	}
 
 	_, opts := cast.slashCommandOptions()
-	return &discordgo.CreateApplicationCommandRequest{
+	return &discordgo.ApplicationCommand{
 		Name:              strings.ToLower(cmd.Trigger.Names[0]),
 		Description:       common.CutStringShort(cast.Description, 100),
-		DefaultPermission: &t,
+		DefaultPermission: &DefaultPermission,
 		Options:           opts,
 		NSFW:              cast.NSFW,
+		Type:              commandType,
 	}
 }
 

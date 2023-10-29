@@ -6,6 +6,7 @@ type Trigger struct {
 
 	HideFromHelp bool
 
+	MessageCommand        bool
 	EnableInDM            bool
 	EnableInGuildChannels bool
 	EnableInThreads       bool
@@ -19,10 +20,16 @@ func NewTrigger(name string, aliases ...string) *Trigger {
 
 	return &Trigger{
 		Names:                 names,
+		MessageCommand:        false,
 		EnableInDM:            true,
 		EnableInGuildChannels: true,
 		EnableInThreads:       true,
 	}
+}
+
+func (t *Trigger) SetMessageCommand(mc bool) *Trigger {
+	t.MessageCommand = mc
+	return t
 }
 
 func (t *Trigger) SetHideFromHelp(hide bool) *Trigger {

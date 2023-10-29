@@ -124,6 +124,10 @@ func (c *Container) Run(data *Data) (interface{}, error) {
 			return nil, nil
 		}
 
+		if matchingCmd.Trigger.MessageCommand {
+			return nil, nil
+		}
+
 		data.TraditionalTriggerData.MessageStrippedPrefix = rest
 	}
 

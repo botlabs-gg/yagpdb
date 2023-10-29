@@ -108,8 +108,9 @@ type YAGCommand struct {
 	CmdCategory        *dcmd.Category
 	GuildScopeCooldown int
 
-	RunInDM      bool // Set to enable this commmand in DM's
-	HideFromHelp bool // Set to hide from help
+	RunInDM        bool // Set to enable this commmand in DM's
+	MessageCommand bool // Command is a message interaction rather than slash command
+	HideFromHelp   bool // Set to hide from help
 
 	RequireDiscordPerms      []int64   // Require users to have one of these permission sets to run the command
 	RequiredDiscordPermsHelp string    // Optional message that shows up when users run the help command that documents user permission requirements for the command
@@ -921,7 +922,7 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 }
 
 func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
-	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetEnableInDM(yc.RunInDM).SetEnableInGuildChannels(true)
+	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetEnableInDM(yc.RunInDM).SetEnableInGuildChannels(true).SetMessageCommand(yc.MessageCommand)
 	trigger = trigger.SetHideFromHelp(yc.HideFromHelp)
 	if len(yc.Middlewares) > 0 {
 		trigger = trigger.SetMiddlewares(yc.Middlewares...)

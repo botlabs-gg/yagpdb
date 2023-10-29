@@ -351,6 +351,10 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	if ic.User.ID == common.BotUser.ID {
 		return
 	}
+	if ic.Interaction.Type != discordgo.InteractionType(discordgo.InteractionMessageComponent) {
+		return
+	}
+
 	//handle dm message guild info interaction
 	if strings.HasPrefix(ic.MessageComponentData().CustomID, "DM_") {
 		handleDmGuildInfoInteraction(evt)

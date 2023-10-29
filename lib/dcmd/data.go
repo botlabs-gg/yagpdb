@@ -22,7 +22,7 @@ type Data struct {
 	// Only set if this command was not ran through slash commands
 	TraditionalTriggerData *TraditionalTriggerData
 
-	// Only set if this command was ran through discord slash commands
+	// Only set if this command was ran through application commands
 	SlashCommandTriggerData *SlashCommandTriggerData
 
 	// Only provided if the command was ran in a DM Context
