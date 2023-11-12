@@ -232,7 +232,11 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 
 	member := web.ContextMember(ctx)
 	if member == nil {
-		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to members only."))
+		goTo := url.QueryEscape(r.RequestURI)
+		alertLink := fmt.Sprintf(`<a href="%s/login?goto=%s>here</a>`, web.BaseURL(), goTo)
+		alertMsg := fmt.Sprintf("This server has restricted log access to members only.\nIf you are a member, click %s to login.", alertLink)
+
+		tmpl.AddAlerts(web.ErrorAlert(alertMsg))
 		return false
 	}
 
