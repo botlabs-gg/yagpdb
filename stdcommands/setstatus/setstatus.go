@@ -19,10 +19,33 @@ var Command = &commands.YAGCommand{
 	},
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "url", Type: dcmd.String, Default: ""},
+		{Name: "type", Type: dcmd.String, Help: "Game type. Allowed values are 'playing', 'streaming', 'listening', 'watching', 'custom', 'competing'.", Default: "custom"},
+		{Name: "status", Type: dcmd.String, Help: "Online status. Allowed values are 'online', 'idle', 'dnd', 'offline'.", Default: "online"},
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
-		streamingURL := data.Switch("url").Str()
-		bot.SetStatus(streamingURL, data.Args[0].Str())
+		statusText := data.Args[0].Str()
+		streamingUrl := data.Switch("url").Str()
+		gameType := data.Switch("type").Str()
+		statusType := data.Switch("status").Str()
+		switch gameType {
+		case "playing":
+		case "streaming":
+		case "listening":
+		case "watching":
+		case "custom":
+		case "competing":
+		default:
+			gameType = "custom"
+		}
+		switch statusType {
+		case "online":
+		case "idle":
+		case "dnd":
+		case "offline":
+		default:
+			statusType = "online"
+		}
+		bot.SetStatus(gameType, statusText, statusType, streamingUrl)
 		return "Doneso", nil
 	}),
 }

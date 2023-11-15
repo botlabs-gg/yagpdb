@@ -797,52 +797,71 @@ func (g *GatewayConnection) Close() error {
 	return nil
 }
 
-func newUpdateStatusData(idle int, gameType GameType, game, url string) *UpdateStatusData {
+func newUpdateStatusData(gameType ActivityType, statusType Status, status, streamingUrl string) *UpdateStatusData {
 	usd := &UpdateStatusData{
-		Status: "online",
+		Status: statusType,
 	}
 
-	if idle > 0 {
+	/*if idle > 0 {
 		usd.IdleSince = &idle
-	}
+	}*/
 
-	if game != "" {
-		usd.Game = &Game{
-			Name: game,
-			Type: gameType,
-			URL:  url,
+	if status != "" {
+		usd.Activity = &Activity{
+			Name:  status,
+			State: status,
+			Type:  gameType,
+			URL:   streamingUrl,
 		}
 	}
-
 	return usd
 }
 
 // UpdateStatus is used to update the user's status.
-// If idle>0 then set status to idle.
-// If game!="" then set game.
-// if otherwise, set status to active, and no game.
-func (s *Session) UpdateStatus(idle int, game string) (err error) {
-	return s.UpdateStatusComplex(*newUpdateStatusData(idle, GameTypeGame, game, ""))
+// Set the custom status to status.
+// Set the online status to statusType.
+func (s *Session) UpdateStatus(status string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeCustom, statusType, status, ""))
+}
+
+// UpdatePlayingStatus is used to update the user's playing status.
+// Set the game being played to status.
+// Set the online status to statusType.
+func (s *Session) UpdatePlayingStatus(status string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeGame, statusType, status, ""))
 }
 
 // UpdateStreamingStatus is used to update the user's streaming status.
-// If idle>0 then set status to idle.
-// If game!="" then set game.
-// If game!="" and url!="" then set the status type to streaming with the URL set.
-// if otherwise, set status to active, and no game.
-func (s *Session) UpdateStreamingStatus(idle int, game string, url string) (err error) {
-	gameType := GameTypeGame
+// Set the name of the stream to status.
+// Set the online status to statusType.
+// Set the stream URL to url.
+func (s *Session) UpdateStreamingStatus(status string, statusType Status, url string) (err error) {
+	gameType := ActivityTypeCustom
 	if url != "" {
-		gameType = GameTypeStreaming
+		gameType = ActivityTypeStreaming
 	}
-	return s.UpdateStatusComplex(*newUpdateStatusData(idle, gameType, game, url))
+	return s.UpdateStatusComplex(*newUpdateStatusData(gameType, statusType, status, url))
 }
 
-// UpdateListeningStatus is used to set the user to "Listening to..."
-// If game!="" then set to what user is listening to
-// Else, set user to active and no game.
-func (s *Session) UpdateListeningStatus(game string) (err error) {
-	return s.UpdateStatusComplex(*newUpdateStatusData(0, GameTypeListening, game, ""))
+// UpdateListeningStatus is used to update the user's listening status
+// Set what the user is listening to to status.
+// Set the online status to statusType.
+func (s *Session) UpdateListeningStatus(status string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeListening, statusType, status, ""))
+}
+
+// UpdateWatchingStatus is used to update the user's watching status
+// Set what the user is watching to status.
+// Set the online status to statusType.
+func (s *Session) UpdateWatchingStatus(status string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeWatching, statusType, status, ""))
+}
+
+// UpdateCompetingStatus is used to update the user's competing status
+// Set what the user is competing in to status.
+// Set the online status to statusType.
+func (s *Session) UpdateCompetingStatus(status string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeCompeting, statusType, status, ""))
 }
 
 func (s *Session) UpdateStatusComplex(usd UpdateStatusData) (err error) {
@@ -1423,10 +1442,10 @@ type resumeData struct {
 }
 
 type UpdateStatusData struct {
-	IdleSince *int   `json:"since"`
-	Game      *Game  `json:"game"`
-	AFK       bool   `json:"afk"`
-	Status    string `json:"status"`
+	IdleSince *int      `json:"since"`
+	Activity  *Activity `json:"game"`
+	AFK       bool      `json:"afk"`
+	Status    Status    `json:"status"`
 }
 
 type RequestGuildMembersData struct {
