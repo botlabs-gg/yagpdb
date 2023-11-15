@@ -12,22 +12,22 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "setstatus",
-	Description:          "Sets the bot's status and optional streaming url. Bot Admin Only",
+	Description:          "Sets the bot's presence type, status text, online status, and optional streaming URL. Bot Admin Only",
 	HideFromHelp:         true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "status", Type: dcmd.String, Default: ""},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		{Name: "url", Type: dcmd.String, Default: ""},
-		{Name: "type", Type: dcmd.String, Help: "Game type. Allowed values are 'playing', 'streaming', 'listening', 'watching', 'custom', 'competing'.", Default: "custom"},
-		{Name: "status", Type: dcmd.String, Help: "Online status. Allowed values are 'online', 'idle', 'dnd', 'offline'.", Default: "online"},
+		{Name: "url", Type: dcmd.String, Help: "The URL to the stream. Must be on twitch.tv or youtube.com. Activity type will always be streaming if this is set.", Default: ""},
+		{Name: "type", Type: dcmd.String, Help: "Set activity type. Allowed values are 'playing', 'streaming', 'listening', 'watching', 'custom', 'competing'. Defaults to custom status", Default: "custom"},
+		{Name: "status", Type: dcmd.String, Help: "Set online status. Allowed values are 'online', 'idle', 'dnd', 'offline'. Defaults to online", Default: "online"},
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
+		activityType := data.Switch("type").Str()
+		statusType := data.Switch("status").Str()
 		statusText := data.Args[0].Str()
 		streamingUrl := data.Switch("url").Str()
-		gameType := data.Switch("type").Str()
-		statusType := data.Switch("status").Str()
-		switch gameType {
+		switch activityType {
 		case "playing":
 		case "streaming":
 		case "listening":
@@ -35,7 +35,7 @@ var Command = &commands.YAGCommand{
 		case "custom":
 		case "competing":
 		default:
-			gameType = "custom"
+			activityType = "custom"
 		}
 		switch statusType {
 		case "online":
@@ -45,7 +45,7 @@ var Command = &commands.YAGCommand{
 		default:
 			statusType = "online"
 		}
-		bot.SetStatus(gameType, statusText, statusType, streamingUrl)
+		bot.SetStatus(activityType, statusType, statusText, streamingUrl)
 		return "Doneso", nil
 	}),
 }

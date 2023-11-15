@@ -797,7 +797,7 @@ func (g *GatewayConnection) Close() error {
 	return nil
 }
 
-func newUpdateStatusData(gameType ActivityType, statusType Status, status, streamingUrl string) *UpdateStatusData {
+func newUpdateStatusData(activityType ActivityType, statusType Status, statusText, streamingUrl string) *UpdateStatusData {
 	usd := &UpdateStatusData{
 		Status: statusType,
 	}
@@ -806,11 +806,11 @@ func newUpdateStatusData(gameType ActivityType, statusType Status, status, strea
 		usd.IdleSince = &idle
 	}*/
 
-	if status != "" {
+	if statusText != "" {
 		usd.Activity = &Activity{
-			Name:  status,
-			State: status,
-			Type:  gameType,
+			Name:  statusText,
+			State: statusText,
+			Type:  activityType,
 			URL:   streamingUrl,
 		}
 	}
@@ -818,50 +818,72 @@ func newUpdateStatusData(gameType ActivityType, statusType Status, status, strea
 }
 
 // UpdateStatus is used to update the user's status.
-// Set the custom status to status.
+// Set the custom status to statusText.
 // Set the online status to statusType.
-func (s *Session) UpdateStatus(status string, statusType Status) (err error) {
-	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeCustom, statusType, status, ""))
+func (s *Session) UpdateStatus(activityType string, statusType Status, statusText, streamingUrl string) (err error) {
+	if streamingUrl != "" {
+		activityType = "streaming"
+	}
+
+	switch activityType {
+	case "playing":
+		return s.UpdatePlayingStatus(statusText, statusType)
+	case "streaming":
+		return s.UpdateStreamingStatus(statusText, statusType, streamingUrl)
+	case "listening":
+		return s.UpdateListeningStatus(statusText, statusType)
+	case "watching":
+		return s.UpdateWatchingStatus(statusText, statusType)
+	case "custom":
+		return s.UpdateCustomStatus(statusText, statusType)
+	case "competing":
+		return s.UpdateCompetingStatus(statusText, statusType)
+	default: // covers any values that shouldn't happen, lol
+		return s.UpdateCustomStatus(statusText, statusType)
+	}
 }
 
 // UpdatePlayingStatus is used to update the user's playing status.
 // Set the game being played to status.
 // Set the online status to statusType.
-func (s *Session) UpdatePlayingStatus(status string, statusType Status) (err error) {
-	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeGame, statusType, status, ""))
+func (s *Session) UpdatePlayingStatus(statusText string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeGame, statusType, statusText, ""))
 }
 
 // UpdateStreamingStatus is used to update the user's streaming status.
 // Set the name of the stream to status.
 // Set the online status to statusType.
 // Set the stream URL to url.
-func (s *Session) UpdateStreamingStatus(status string, statusType Status, url string) (err error) {
-	gameType := ActivityTypeCustom
-	if url != "" {
-		gameType = ActivityTypeStreaming
-	}
-	return s.UpdateStatusComplex(*newUpdateStatusData(gameType, statusType, status, url))
+func (s *Session) UpdateStreamingStatus(statusText string, statusType Status, url string) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeStreaming, statusType, statusText, url))
 }
 
 // UpdateListeningStatus is used to update the user's listening status
 // Set what the user is listening to to status.
 // Set the online status to statusType.
-func (s *Session) UpdateListeningStatus(status string, statusType Status) (err error) {
-	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeListening, statusType, status, ""))
+func (s *Session) UpdateListeningStatus(statusText string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeListening, statusType, statusText, ""))
 }
 
 // UpdateWatchingStatus is used to update the user's watching status
 // Set what the user is watching to status.
 // Set the online status to statusType.
-func (s *Session) UpdateWatchingStatus(status string, statusType Status) (err error) {
-	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeWatching, statusType, status, ""))
+func (s *Session) UpdateWatchingStatus(statusText string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeWatching, statusType, statusText, ""))
+}
+
+// UpdateCustomStatus is used to update the user's custom status
+// Set the user's custom text to status.
+// Set the online status to statusType.
+func (s *Session) UpdateCustomStatus(statusText string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeCustom, statusType, statusText, ""))
 }
 
 // UpdateCompetingStatus is used to update the user's competing status
 // Set what the user is competing in to status.
 // Set the online status to statusType.
-func (s *Session) UpdateCompetingStatus(status string, statusType Status) (err error) {
-	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeCompeting, statusType, status, ""))
+func (s *Session) UpdateCompetingStatus(statusText string, statusType Status) (err error) {
+	return s.UpdateStatusComplex(*newUpdateStatusData(ActivityTypeCompeting, statusType, statusText, ""))
 }
 
 func (s *Session) UpdateStatusComplex(usd UpdateStatusData) (err error) {

@@ -117,15 +117,15 @@ func SnowflakeToTime(i int64) time.Time {
 	return t
 }
 
-func SetStatus(gameType, statusText, statusType, streamingUrl string) {
+func SetStatus(activityType, statusType, statusText, streamingUrl string) {
 	if statusText == "" {
-		statusText = "v" + common.VERSION + " :)"
+		statusText = common.VERSION + " :)"
 	}
+	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_activity_type", activityType))
+	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_type", statusType))
+	err3 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_text", statusText))
+	err4 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming_url", streamingUrl))
 
-	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming_url", streamingUrl))
-	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_name", statusText))
-	err3 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_type", statusType))
-	err4 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_game_type", gameType))
 	if err1 != nil {
 		logger.WithError(err1).Error("failed setting bot status in redis")
 	}
@@ -275,29 +275,25 @@ func NodeID() string {
 
 // RefreshStatus updates the provided sessions status according to the current status set
 func RefreshStatus(session *discordgo.Session) {
-	var streamingUrl string
-	var statusText string
-	var gameType string
-	var statusTypeStr string
+	var activityType, statusTypeStr, statusText, streamingUrl string
 	var statusType discordgo.Status
-	err1 := common.RedisPool.Do(radix.Cmd(&streamingUrl, "GET", "status_streaming_url"))
-	err2 := common.RedisPool.Do(radix.Cmd(&statusText, "GET", "status_name"))
-	err3 := common.RedisPool.Do(radix.Cmd(&gameType, "GET", "status_game_type"))
-	err4 := common.RedisPool.Do(radix.Cmd(&statusTypeStr, "GET", "status_type"))
+	err1 := common.RedisPool.Do(radix.Cmd(&activityType, "GET", "status_activity_type"))
+	err2 := common.RedisPool.Do(radix.Cmd(&statusTypeStr, "GET", "status_type"))
+	err3 := common.RedisPool.Do(radix.Cmd(&statusText, "GET", "status_text"))
+	err4 := common.RedisPool.Do(radix.Cmd(&streamingUrl, "GET", "status_streaming_url"))
 
 	if err1 != nil {
-		logger.WithError(err1).Error("failed retrieving bot streaming status")
+		logger.WithError(err1).Error("failed retrieving bot activity type")
 	}
 	if err2 != nil {
-		logger.WithError(err2).Error("failed retrieving bot status")
+		logger.WithError(err2).Error("failed retrieving bot status type")
 	}
 	if err3 != nil {
-		logger.WithError(err3).Error("failed retrieving bot game type")
+		logger.WithError(err3).Error("failed retrieving bot status text")
 	}
 	if err4 != nil {
-		logger.WithError(err4).Error("failed retrieving bot status type")
+		logger.WithError(err4).Error("failed retrieving bot streaming url")
 	}
-
 	switch statusTypeStr {
 	case "online":
 		statusType = discordgo.StatusOnline
@@ -306,26 +302,11 @@ func RefreshStatus(session *discordgo.Session) {
 	case "dnd":
 		statusType = discordgo.StatusDoNotDisturb
 	case "offline":
-		statusType = discordgo.StatusOffline
+		statusType = discordgo.StatusInvisible
 	default:
 		statusType = discordgo.StatusOnline
 	}
-	if streamingUrl != "" || gameType == "streaming" {
-		session.UpdateStreamingStatus(statusText, statusType, streamingUrl)
-	} else {
-		switch gameType {
-		case "playing":
-			session.UpdatePlayingStatus(statusText, statusType)
-		case "listening":
-			session.UpdateListeningStatus(statusText, statusType)
-		case "watching":
-			session.UpdateWatchingStatus(statusText, statusType)
-		case "competing":
-			session.UpdateCompetingStatus(statusText, statusType)
-		default: // covers "custom"
-			session.UpdateStatus(statusText, statusType)
-		}
-	}
+	session.UpdateStatus(activityType, statusType, statusText, streamingUrl)
 }
 
 // IsMemberAbove returns whether ms1 is above ms2 in terms of roles (e.g the highest role of ms1 is higher than the highest role of ms2)
