@@ -273,11 +273,32 @@ func NodeID() string {
 	return NodeConn.GetIDLock()
 }
 
+// ParseActivityType parses the activity type from a string
+func ParseActivityType(activityType string) (discordgo.ActivityType, error) {
+	switch strings.ToLower(activityType) {
+	case "playing":
+		return discordgo.ActivityTypePlaying, nil
+	case "streaming":
+		return discordgo.ActivityTypeStreaming, nil
+	case "listening":
+		return discordgo.ActivityTypeListening, nil
+	case "watching":
+		return discordgo.ActivityTypeWatching, nil
+	case "custom":
+		return discordgo.ActivityTypeCustom, nil
+	case "competing":
+		return discordgo.ActivityTypeCompeting, nil
+	default:
+		return 0, errors.New("Invalid activity type")
+	}
+}
+
 // RefreshStatus updates the provided sessions status according to the current status set
 func RefreshStatus(session *discordgo.Session) {
-	var activityType, statusTypeStr, statusText, streamingUrl string
+	var activityTypeStr, statusTypeStr, statusText, streamingUrl string
+	//var activityType discordgo.ActivityType
 	var statusType discordgo.Status
-	err1 := common.RedisPool.Do(radix.Cmd(&activityType, "GET", "status_activity_type"))
+	err1 := common.RedisPool.Do(radix.Cmd(&activityTypeStr, "GET", "status_activity_type"))
 	err2 := common.RedisPool.Do(radix.Cmd(&statusTypeStr, "GET", "status_type"))
 	err3 := common.RedisPool.Do(radix.Cmd(&statusText, "GET", "status_text"))
 	err4 := common.RedisPool.Do(radix.Cmd(&streamingUrl, "GET", "status_streaming_url"))
@@ -305,6 +326,11 @@ func RefreshStatus(session *discordgo.Session) {
 		statusType = discordgo.StatusInvisible
 	default:
 		statusType = discordgo.StatusOnline
+	}
+	activityType, err5 := ParseActivityType(activityTypeStr)
+	if err5 != nil {
+		logger.WithError(err5).Error("failed parsing activity type, exiting RefreshStatus")
+		return
 	}
 	session.UpdateStatus(activityType, statusType, statusText, streamingUrl)
 }

@@ -1,6 +1,8 @@
 package setstatus
 
 import (
+	"fmt"
+
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -28,22 +30,16 @@ var Command = &commands.YAGCommand{
 		statusText := data.Args[0].Str()
 		streamingUrl := data.Switch("url").Str()
 		switch activityType {
-		case "playing":
-		case "streaming":
-		case "listening":
-		case "watching":
-		case "custom":
-		case "competing":
+		case "playing", "streaming", "listening", "watching", "custom", "competing":
+			// Valid activity type, do nothing
 		default:
-			activityType = "custom"
+			return nil, commands.NewUserError(fmt.Sprintf("Invalid activity type %q. Allowed values are 'playing', 'streaming', 'listening', 'watching', 'custom', 'competing'", activityType))
 		}
 		switch statusType {
-		case "online":
-		case "idle":
-		case "dnd":
-		case "offline":
+		case "online", "idle", "dnd", "offline":
+			// Valid status type, do nothing
 		default:
-			statusType = "online"
+			return nil, commands.NewUserError(fmt.Sprintf("Invalid status type %q. Allowed values are 'online', 'idle', 'dnd', 'offline'", statusType))
 		}
 		bot.SetStatus(activityType, statusType, statusText, streamingUrl)
 		return "Doneso", nil

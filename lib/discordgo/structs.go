@@ -628,7 +628,7 @@ type ActivityType int
 
 // Valid ActivityType values
 const (
-	ActivityTypeGame ActivityType = iota
+	ActivityTypePlaying ActivityType = iota
 	ActivityTypeStreaming
 	ActivityTypeListening
 	ActivityTypeWatching
