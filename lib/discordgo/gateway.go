@@ -799,12 +799,13 @@ func (g *GatewayConnection) Close() error {
 
 func newUpdateStatusData(activityType ActivityType, statusType Status, statusText, streamingUrl string) *UpdateStatusData {
 	usd := &UpdateStatusData{
+		AFK:    false,
 		Status: statusType,
 	}
-
-	/*if idle > 0 {
-		usd.IdleSince = &idle
-	}*/
+	now := int(time.Now().Unix())
+	if statusType == StatusIdle {
+		usd.IdleSince = &now
+	}
 
 	if statusText != "" {
 		usd.Activity = &Activity{
