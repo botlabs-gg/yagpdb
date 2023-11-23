@@ -117,19 +117,29 @@ func SnowflakeToTime(i int64) time.Time {
 	return t
 }
 
-func SetStatus(streaming, status string) {
-	if status == "" {
-		status = "v" + common.VERSION + " :)"
+func SetStatus(activityType, statusType, statusText, streamingUrl string) {
+	if statusText == "" {
+		statusText = common.VERSION + " :)"
 	}
+	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_activity_type", activityType))
+	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_type", statusType))
+	err3 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_text", statusText))
+	err4 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming_url", streamingUrl))
 
-	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming", streaming))
-	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_name", status))
 	if err1 != nil {
 		logger.WithError(err1).Error("failed setting bot status in redis")
 	}
 
 	if err2 != nil {
 		logger.WithError(err2).Error("failed setting bot status in redis")
+	}
+
+	if err3 != nil {
+		logger.WithError(err3).Error("failed setting bot status in redis")
+	}
+
+	if err4 != nil {
+		logger.WithError(err4).Error("failed setting bot status in redis")
 	}
 
 	pubsub.Publish("bot_status_changed", -1, nil)
@@ -263,28 +273,69 @@ func NodeID() string {
 	return NodeConn.GetIDLock()
 }
 
-// RefreshStatus updates the provided sessions status according to the current status set
-func RefreshStatus(session *discordgo.Session) {
-	var streamingURL string
-	var status string
-	err1 := common.RedisPool.Do(radix.Cmd(&streamingURL, "GET", "status_streaming"))
-	err2 := common.RedisPool.Do(radix.Cmd(&status, "GET", "status_name"))
-	if err1 != nil {
-		logger.WithError(err1).Error("failed retrieiving bot streaming status")
+// ParseActivityType parses the activity type from a string
+func ParseActivityType(activityType string) (discordgo.ActivityType, error) {
+	switch strings.ToLower(activityType) {
+	case "playing":
+		return discordgo.ActivityTypePlaying, nil
+	case "streaming":
+		return discordgo.ActivityTypeStreaming, nil
+	case "listening":
+		return discordgo.ActivityTypeListening, nil
+	case "watching":
+		return discordgo.ActivityTypeWatching, nil
+	case "custom":
+		return discordgo.ActivityTypeCustom, nil
+	case "competing":
+		return discordgo.ActivityTypeCompeting, nil
+	default:
+		return 0, errors.New("Invalid activity type")
 	}
-	if err2 != nil {
-		logger.WithError(err2).Error("failed retrieiving bot status")
-	}
-
-	if streamingURL != "" {
-		session.UpdateStreamingStatus(0, status, streamingURL)
-	} else {
-		session.UpdateStatus(0, status)
-	}
-
 }
 
-// IsMemberAbove returns wether ms1 is above ms2 in terms of roles (e.g the highest role of ms1 is higher than the highest role of ms2)
+// RefreshStatus updates the provided sessions status according to the current status set
+func RefreshStatus(session *discordgo.Session) {
+	var activityTypeStr, statusTypeStr, statusText, streamingUrl string
+	//var activityType discordgo.ActivityType
+	var statusType discordgo.Status
+	err1 := common.RedisPool.Do(radix.Cmd(&activityTypeStr, "GET", "status_activity_type"))
+	err2 := common.RedisPool.Do(radix.Cmd(&statusTypeStr, "GET", "status_type"))
+	err3 := common.RedisPool.Do(radix.Cmd(&statusText, "GET", "status_text"))
+	err4 := common.RedisPool.Do(radix.Cmd(&streamingUrl, "GET", "status_streaming_url"))
+
+	if err1 != nil {
+		logger.WithError(err1).Error("failed retrieving bot activity type")
+	}
+	if err2 != nil {
+		logger.WithError(err2).Error("failed retrieving bot status type")
+	}
+	if err3 != nil {
+		logger.WithError(err3).Error("failed retrieving bot status text")
+	}
+	if err4 != nil {
+		logger.WithError(err4).Error("failed retrieving bot streaming url")
+	}
+	switch statusTypeStr {
+	case "online":
+		statusType = discordgo.StatusOnline
+	case "idle":
+		statusType = discordgo.StatusIdle
+	case "dnd":
+		statusType = discordgo.StatusDoNotDisturb
+	case "offline":
+		statusType = discordgo.StatusInvisible
+	default:
+		statusType = discordgo.StatusOnline
+	}
+	activityType, err5 := ParseActivityType(activityTypeStr)
+	if err5 != nil {
+		logger.WithError(err5).Error("failed parsing activity type, exiting RefreshStatus")
+		return
+	}
+	session.UpdateStatus(activityType, statusType, statusText, streamingUrl)
+}
+
+// IsMemberAbove returns whether ms1 is above ms2 in terms of roles (e.g the highest role of ms1 is higher than the highest role of ms2)
 // assumes gs is locked, otherwise race conditions will occur
 func IsMemberAbove(gs *dstate.GuildSet, ms1 *dstate.MemberState, ms2 *dstate.MemberState) bool {
 	if ms1.User.ID == gs.OwnerID {

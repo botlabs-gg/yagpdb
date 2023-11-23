@@ -611,10 +611,10 @@ func (p *Presence) NKeys() int {
 	return 0
 }
 
-type Activities []*Game
+type Activities []*Activity
 
 func (a *Activities) UnmarshalJSONArray(dec *gojay.Decoder) error {
-	instance := Game{}
+	instance := Activity{}
 	err := dec.Object(&instance)
 	if err != nil {
 		return err
@@ -623,53 +623,55 @@ func (a *Activities) UnmarshalJSONArray(dec *gojay.Decoder) error {
 	return nil
 }
 
-// GameType is the type of "game" (see GameType* consts) in the Game struct
-type GameType int
+// ActivityType is the type of presence (see ActivityType* consts) in the Activity struct
+type ActivityType int
 
-// Valid GameType values
+// Valid ActivityType values
 const (
-	GameTypeGame GameType = iota
-	GameTypeStreaming
-	GameTypeListening
-	GameTypeWatching
+	ActivityTypePlaying ActivityType = iota
+	ActivityTypeStreaming
+	ActivityTypeListening
+	ActivityTypeWatching
+	ActivityTypeCustom
+	ActivityTypeCompeting
 )
 
-// A Game struct holds the name of the "playing .." game for a user
-type Game struct {
-	Name       string     `json:"name"`
-	Type       GameType   `json:"type"`
-	URL        string     `json:"url,omitempty"`
-	Details    string     `json:"details,omitempty"`
-	State      string     `json:"state,omitempty"`
-	TimeStamps TimeStamps `json:"timestamps,omitempty"`
-	Assets     Assets     `json:"assets,omitempty"`
-	Instance   int8       `json:"instance,omitempty"`
+// An Activity struct holds data about a user's activity.
+type Activity struct {
+	Name       string       `json:"name"`
+	Type       ActivityType `json:"type"`
+	URL        string       `json:"url,omitempty"`
+	Details    string       `json:"details,omitempty"`
+	State      string       `json:"state,omitempty"`
+	TimeStamps TimeStamps   `json:"timestamps,omitempty"`
+	Assets     Assets       `json:"assets,omitempty"`
+	Instance   int8         `json:"instance,omitempty"`
 }
 
 // implement gojay.UnmarshalerJSONObject
-func (g *Game) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
+func (a *Activity) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
 	switch key {
 	case "name":
-		return dec.String(&g.Name)
+		return dec.String(&a.Name)
 	case "type":
-		return dec.Int((*int)(&g.Type))
+		return dec.Int((*int)(&a.Type))
 	case "url":
-		return dec.String(&g.URL)
+		return dec.String(&a.URL)
 	case "details":
-		return dec.String(&g.Details)
+		return dec.String(&a.Details)
 	case "state":
-		return dec.String(&g.State)
+		return dec.String(&a.State)
 	case "timestamps":
-		return dec.Object(&g.TimeStamps)
+		return dec.Object(&a.TimeStamps)
 	case "assets":
 	case "instance":
-		return dec.Int8(&g.Instance)
+		return dec.Int8(&a.Instance)
 	}
 
 	return nil
 }
 
-func (g *Game) NKeys() int {
+func (a *Activity) NKeys() int {
 	return 0
 }
 
