@@ -431,3 +431,20 @@ func (p *Plugin) AllFeatureFlags() []string {
 		featureFlagHasCommands, // set if this server has any custom commands at all
 	}
 }
+
+func getDatabaseEntries(ctx context.Context, guildID int64, before, after int64, limit int) (models.TemplatesUserDatabaseSlice, error) {
+	qms := []qm.QueryMod{
+		qm.OrderBy("id desc"),
+		qm.Limit(limit),
+		models.TemplatesUserDatabaseWhere.GuildID.EQ(guildID),
+	}
+
+	if before != 0 {
+		qms = append(qms, models.TemplatesUserDatabaseWhere.ID.LT(before))
+	} else if after != 0 {
+		qms = append(qms, models.TemplatesUserDatabaseWhere.ID.GT(after))
+	}
+
+	entries, err := models.TemplatesUserDatabases(qms...).AllG(ctx)
+	return entries, err
+}
