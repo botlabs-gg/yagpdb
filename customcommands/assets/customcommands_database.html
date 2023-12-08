@@ -107,7 +107,7 @@
                         <td>{{.ID}}</td>
                         <td>{{.CreatedAt}}</td>
                         <td>{{.UpdatedAt}}</td>
-                        <td>{{.ExpiresAt}}</td>
+                        <td>{{if .ExpiresAt.IsZero}}never{{else}}{{.ExpiresAt}}{{end}}</td>
                         <td>{{.UserID}}</td>
                         <td>{{.Key}}</td>
                         <td>{{.Value}}</td>

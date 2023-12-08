@@ -164,16 +164,7 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		return templateData, err
 	}
 
-	entries := make([]*LightDBEntry, 0, len(result))
-	for _, v := range result {
-		converted, err := ToLightDBEntry(v)
-		if err != nil {
-			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
-			continue
-		}
-
-		entries = append(entries, converted)
-	}
+	entries := convertEntries(result)
 
 	templateData["DBEntries"] = entries
 	if len(entries) > 0 {
@@ -212,16 +203,7 @@ func handleSearchDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateD
 		return templateData, err
 	}
 
-	entries := make([]*LightDBEntry, 0, len(result))
-	for _, v := range result {
-		converted, err := ToLightDBEntry(v)
-		if err != nil {
-			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
-			continue
-		}
-
-		entries = append(entries, converted)
-	}
+	entries := convertEntries(result)
 
 	templateData["DBEntries"] = entries
 	if len(entries) > 0 {

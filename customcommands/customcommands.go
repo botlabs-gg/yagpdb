@@ -448,3 +448,26 @@ func getDatabaseEntries(ctx context.Context, guildID int64, before, after int64,
 	entries, err := models.TemplatesUserDatabases(qms...).AllG(ctx)
 	return entries, err
 }
+
+func convertEntries(result models.TemplatesUserDatabaseSlice) []*LightDBEntry {
+	entries := make([]*LightDBEntry, 0, len(result))
+	for _, v := range result {
+		converted, err := ToLightDBEntry(v)
+		if err != nil {
+			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
+			continue
+		}
+
+		b, err := json.Marshal(converted.Value)
+		if err != nil {
+			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
+			continue
+		}
+
+		converted.Value = common.CutStringShort(string(b), 64)
+
+		entries = append(entries, converted)
+	}
+
+	return entries
+}
