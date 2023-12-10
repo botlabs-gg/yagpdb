@@ -50,8 +50,8 @@ type GroupForm struct {
 }
 
 type SearchForm struct {
-	Search string
-	Type   string
+	Query string
+	Type  string
 }
 
 var (
@@ -180,22 +180,22 @@ func handleSearchDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	search := ctx.Value(common.ContextKeyParsedForm).(*SearchForm)
-	if search.Search == "" {
+	if search.Query == "" {
 		return handleGetDatabase(w, r)
 	}
 
 	qms := []qm.QueryMod{
-		qm.Where("guild_id = ?", activeGuild.ID),
+		models.TemplatesUserDatabaseWhere.GuildID.EQ(activeGuild.ID),
 		qm.OrderBy("id desc"),
 	}
 
 	switch search.Type {
 	case "id":
-		qms = append(qms, qm.Where("id = ?", search.Search))
+		qms = append(qms, qm.Where("id = ?", search.Query))
 	case "user_id":
-		qms = append(qms, qm.Where("user_id = ?", search.Search))
+		qms = append(qms, qm.Where("user_id = ?", search.Query))
 	case "key":
-		qms = append(qms, qm.Where("key = ?", search.Search))
+		qms = append(qms, qm.Where("key ILIKE ?", search.Query))
 	}
 
 	result, err := models.TemplatesUserDatabases(qms...).AllG(ctx)

@@ -35,6 +35,8 @@ const (
 	MinIntervalTriggerDurationHours   = 1
 	MaxIntervalTriggerDurationHours   = 744
 	MaxIntervalTriggerDurationMinutes = 44640
+
+	dbPageMaxDisplayLength = 64
 )
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
@@ -464,7 +466,7 @@ func convertEntries(result models.TemplatesUserDatabaseSlice) []*LightDBEntry {
 			continue
 		}
 
-		converted.Value = common.CutStringShort(string(b), 64)
+		converted.Value = common.CutStringShort(string(b), dbPageMaxDisplayLength)
 
 		entries = append(entries, converted)
 	}
