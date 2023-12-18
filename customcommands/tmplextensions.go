@@ -841,7 +841,7 @@ type LightDBEntry struct {
 	Key   string
 	Value interface{}
 
-	Size int
+	ValueSize int
 
 	User discordgo.User
 
@@ -872,7 +872,7 @@ func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 		Key:   m.Key,
 		Value: decodedValue,
 
-		Size: len(m.ValueRaw),
+		ValueSize: len(m.ValueRaw),
 
 		ExpiresAt: m.ExpiresAt.Time,
 	}
