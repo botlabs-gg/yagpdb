@@ -160,8 +160,12 @@ var (
 		return ""
 	}
 
+	EndpointApplicationGlobalCommands = func(aID int64) string {
+		return EndpointApplicationNonOauth2(aID) + "/commands"
+	}
+
 	EndpointApplicationGuildCommands = func(aID int64, gID int64) string {
-		return ""
+		return EndpointApplicationNonOauth2(aID) + "/guilds/" + StrID(gID) + "/commands"
 	}
 
 	EndpointApplicationGuildCommand = func(aID int64, gID int64, cmdID int64) string {
