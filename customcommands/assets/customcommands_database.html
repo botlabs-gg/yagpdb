@@ -101,6 +101,7 @@
                         <th>User ID</th>
                         <th>Key</th>
                         <th>Value</th>
+                        <th>Size</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -114,6 +115,7 @@
                         <td>{{.UserID}}</td>
                         <td>{{.Key}}</td>
                         <td>{{.Value}}</td>
+                        <td>{{.ValueSize}}</td>
                         {{ if $.IsAdmin }}
                         <td>
                             <form method="post" data-async-form>
