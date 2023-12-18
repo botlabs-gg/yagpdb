@@ -2857,16 +2857,19 @@ func (s *Session) CreateGlobalApplicationCommand(applicationID int64, command *C
 	return
 }
 
-// BulkOverwriteGlobalApplicationCommands Takes a list of application commands, overwriting existing commands that are registered globally for this application. Updates will be available in all guilds after 1 hour.
-// PUT /applications/{application.id}/commands
-func (s *Session) BulkOverwriteGlobalApplicationCommands(applicationID int64, data []*CreateApplicationCommandRequest) (st []*ApplicationCommand, err error) {
-	body, err := s.RequestWithBucketID("PUT", EndpointApplicationCommands(applicationID), data, nil, EndpointApplicationCommands(0))
+// ApplicationCommandBulkOverwrite Creates commands overwriting existing commands. Returns a list of commands.
+// appID    : The application ID.
+// commands : The commands to create.
+func (s *Session) ApplicationCommandBulkOverwrite(appID int64, guildID int64, commands []*ApplicationCommand) (createdCommands []*ApplicationCommand, err error) {
+	endpoint := EndpointApplicationGlobalCommands(appID)
+	if guildID != 0 {
+		endpoint = EndpointApplicationGuildCommands(appID, guildID)
+	}
+	body, err := s.RequestWithBucketID("PUT", endpoint, commands, nil, endpoint)
 	if err != nil {
 		return
 	}
-
-	err = unmarshal(body, &st)
-
+	err = unmarshal(body, &createdCommands)
 	return
 }
 

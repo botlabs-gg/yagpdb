@@ -916,8 +916,9 @@ func (cs *YAGCommand) SetCooldownGuild(cc []*dcmd.Container, guildID int64) erro
 }
 
 func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
-	l := logger.WithField("cmd", yc.FindNameFromContainerChain(data.ContainerChain))
+	var l *logrus.Entry
 	if data != nil {
+		l = logger.WithField("cmd", yc.FindNameFromContainerChain(data.ContainerChain))
 		if data.Author != nil {
 			l = l.WithField("user_n", data.Author.Username)
 			l = l.WithField("user_id", data.Author.ID)
@@ -931,7 +932,6 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 			l = l.WithField("guild", data.GuildData.GS.ID)
 		}
 	}
-
 	return l
 }
 
