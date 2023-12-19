@@ -25,7 +25,7 @@ var (
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("moderation/assets/moderation.html", PageHTML)
 
-	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
 		Name: "Moderation",
 		URL:  "moderation",
 		Icon: "fas fa-gavel",

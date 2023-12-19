@@ -1908,6 +1908,23 @@ func (s *Session) ChannelPermissionDelete(channelID, targetID int64) (err error)
 	return
 }
 
+// ChannelMessageCrosspost cross posts a message in a news channel to followers
+// of the channel
+// channelID   : The ID of a Channel
+// messageID   : The ID of a Message
+func (s *Session) ChannelMessageCrosspost(channelID, messageID int64) (st *Message, err error) {
+
+	endpoint := EndpointChannelMessageCrosspost(channelID, messageID)
+
+	body, err := s.RequestWithBucketID("POST", endpoint, nil, nil, endpoint)
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
 // ------------------------------------------------------------------------------------------------
 // Functions specific to Discord Invites
 // ------------------------------------------------------------------------------------------------
@@ -2715,14 +2732,6 @@ func (s *Session) DeleteInteractionResponse(applicationID int64, token string) (
 func (s *Session) CreateFollowupMessage(applicationID int64, token string, data *WebhookParams) (st *Message, err error) {
 	body, err := s.WebhookExecuteComplex(applicationID, token, true, data)
 	return body, err
-
-	// body, err := s.RequestWithBucketID("POST", EndpointWebhookToken(applicationID, token), data, EndpointWebhookToken(0, ""))
-	// if err != nil {
-	// 	return
-	// }
-
-	// err = unmarshal(body, &st)
-	// return
 }
 
 // EditFollowupMessage Edits a followup message for an Interaction. Functions the same as Edit Webhook Message.

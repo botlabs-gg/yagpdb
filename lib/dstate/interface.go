@@ -323,7 +323,7 @@ type LightGame struct {
 	Details string `json:"details,omitempty"`
 	State   string `json:"state,omitempty"`
 
-	Type discordgo.GameType `json:"type"`
+	Type discordgo.ActivityType `json:"type"`
 }
 
 func MemberStateFromMember(member *discordgo.Member) *MemberState {

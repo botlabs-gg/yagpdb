@@ -187,6 +187,8 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		}
 	}
 
+	var publishAnnouncement bool
+
 	if hasCustomAnnouncement && *announcement.Enabled && len(announcement.Message) > 0 {
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
@@ -238,6 +240,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		if content == "" {
 			return
 		}
+		publishAnnouncement = ctx.CurrentFrame.PublishResponse
 	} else if sub.MentionEveryone {
 		content = "Hey @everyone " + content
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
@@ -253,12 +256,13 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	go analytics.RecordActiveUnit(parsedGuild, p, "posted_youtube_message")
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "youtube"}).Inc()
 	mqueue.QueueMessage(&mqueue.QueuedElement{
-		GuildID:      parsedGuild,
-		ChannelID:    parsedChannel,
-		Source:       "youtube",
-		SourceItemID: "",
-		MessageStr:   content,
-		Priority:     2,
+		GuildID:             parsedGuild,
+		ChannelID:           parsedChannel,
+		Source:              "youtube",
+		SourceItemID:        "",
+		MessageStr:          content,
+		PublishAnnouncement: publishAnnouncement,
+		Priority:            2,
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: parseMentions,
 		},
@@ -288,6 +292,7 @@ type ytChannelID interface {
 type videoID string
 
 func (v videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cResp *youtube.ChannelListResponse, err error) {
+
 	videoListCall := p.YTService.Videos.List(listParts)
 	vResp, err := videoListCall.Id(string(v)).MaxResults(1).Do()
 	if err != nil {
@@ -521,7 +526,23 @@ func (p *Plugin) MaybeAddChannelWatch(lock bool, channel string) error {
 	return nil
 }
 
-func (p *Plugin) CheckVideo(videoID string, channelID string) error {
+func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
+	if parsedVideo.VideoId == "" || parsedVideo.ChannelID == "" {
+		return nil
+	}
+
+	parsedPublishedTime, err := time.Parse(time.RFC3339, parsedVideo.Published)
+	if err != nil {
+		return errors.New("Failed parsing youtube timestamp: " + err.Error() + ": " + parsedVideo.Published)
+	}
+
+	if time.Since(parsedPublishedTime) > time.Hour {
+		return nil
+	}
+
+	videoID := parsedVideo.VideoId
+	channelID := parsedVideo.ChannelID
+	logger.Debugf("Checking video request with videoID %s and channelID %s ", videoID, channelID)
 	subs, err := p.getRemoveSubs(channelID)
 	if err != nil || len(subs) < 1 {
 		return err
@@ -530,6 +551,11 @@ func (p *Plugin) CheckVideo(videoID string, channelID string) error {
 	lastVid, lastVidTime, err := p.getLastVidTimes(channelID)
 	if err != nil {
 		return err
+	}
+
+	if lastVidTime.After(parsedPublishedTime) {
+		// wasn't a new vid
+		return nil
 	}
 
 	if lastVid == videoID {
@@ -543,23 +569,9 @@ func (p *Plugin) CheckVideo(videoID string, channelID string) error {
 	}
 
 	item := resp.Items[0]
-	parsedPublishedAt, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
-	if err != nil {
-		return errors.New("Failed parsing youtube timestamp: " + err.Error() + ": " + item.Snippet.PublishedAt)
-	}
-
-	if time.Since(parsedPublishedAt) > time.Hour {
-		// just a safeguard against empty lastVidTime's
-		return nil
-	}
-
-	if lastVidTime.After(parsedPublishedAt) {
-		// wasn't a new vid
-		return nil
-	}
 
 	// This is a new video, post it
-	return p.postVideo(subs, parsedPublishedAt, item, channelID)
+	return p.postVideo(subs, parsedPublishedTime, item, channelID)
 }
 
 func (p *Plugin) isShortsVideo(video *youtube.Video) bool {
@@ -617,7 +629,7 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 	}
 
 	contentType := video.Snippet.LiveBroadcastContent
-	logger.Infof("Got a new video for channel %s with videoid %s, of type %s and publishing to %d subscriptions", channelID, video.Id, contentType, len(subs))
+	logger.Infof("Got a new video for channel %s (%s) with videoid %s (%s), of type %s and publishing to %d subscriptions", channelID, video.Snippet.ChannelTitle, video.Id, video.Snippet.Title, contentType, len(subs))
 	if contentType != "live" && contentType != "none" {
 		return nil
 	}

@@ -82,7 +82,8 @@
                 </div>{{end}}
             </div>
 
-            {{checkbox "use_embeds" (printf "format-new-slow-%t" .Slow) `Use embeds<small class="ml-2">(Videos won't be attached, but just linked)</small>` true}}
+            {{checkbox "spoilers_enabled" (printf "spoiler-toggle-new-slow-%t" .Slow) `Spoilers enabled<small class="ml-2">(On Reddit posts marked as spoilers)</small>` true}}
+            {{checkbox "use_embeds" (printf "embed-new-slow-%t" .Slow) `Use embeds<small class="ml-2">(Videos won't be attached, but just linked)</small>` true}}
 
             <button type="submit" class="btn btn-success">Add</button>
         </form>
@@ -130,8 +131,12 @@
         <div class="col-lg">
             <div class="form-row">
                 <div class="col d-flex flex-column">
+                    <Span class="mb-2">Enable Spoilers</span>
+                    {{checkbox "spoilers_enabled" (joinStr "" "spoiler-toggle-" .ID) `` .SpoilersEnabled}}
+                </div>
+                <div class="col d-flex flex-column">
                     <Span class="mb-2">Use embed</span>
-                    {{checkbox "use_embeds" (joinStr "" "format-" .ID) `` .UseEmbeds}}
+                    {{checkbox "use_embeds" (joinStr "" "use-embed-" .ID) `` .UseEmbeds}}
                 </div>
                 <div class="col d-flex flex-column">
                     <Span class="mb-2">Enabled</span>

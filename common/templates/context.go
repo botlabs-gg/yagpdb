@@ -132,8 +132,6 @@ var (
 
 var logger = common.GetFixedPrefixLogger("templates")
 
-func TODO() {}
-
 type ContextSetupFunc func(ctx *Context)
 
 func RegisterSetupFunc(f ContextSetupFunc) {
@@ -150,6 +148,16 @@ func init() {
 
 // set by the premium package to return wether this guild is premium or not
 var GuildPremiumFunc func(guildID int64) (bool, error)
+
+// Defines where a template was executed from to enable certain restrictions
+type ExecutedFromType int
+
+const (
+	ExecutedFromStandard ExecutedFromType = 0
+	ExecutedFromJoin     ExecutedFromType = 1
+	ExecutedFromLeave    ExecutedFromType = 2
+	ExecutedFromEvalCC   ExecutedFromType = 3
+)
 
 type Context struct {
 	Name string
@@ -173,9 +181,7 @@ type Context struct {
 
 	CurrentFrame *ContextFrame
 
-	IsExecedByLeaveMessage bool
-
-	IsExecedByEvalCC bool
+	ExecutedFrom ExecutedFromType
 
 	contextFuncsAdded bool
 }
@@ -187,10 +193,11 @@ type ContextFrame struct {
 	MentionHere     bool
 	MentionRoles    []int64
 
-	DelResponse bool
+	DelResponse     bool
+	PublishResponse bool
 
 	DelResponseDelay         int
-	EmebdsToSend             []*discordgo.MessageEmbed
+	EmbedsToSend             []*discordgo.MessageEmbed
 	AddResponseReactionNames []string
 
 	isNestedTemplate bool
@@ -371,12 +378,12 @@ func (c *Context) executeParsed() (string, error) {
 
 	if c.IsPremium {
 		parsed = parsed.MaxOps(MaxOpsPremium)
-		if c.IsExecedByEvalCC {
+		if c.ExecutedFrom == ExecutedFromEvalCC {
 			parsed = parsed.MaxOps(MaxOpsEvalPremium)
 		}
 	} else {
 		parsed = parsed.MaxOps(MaxOpsNormal)
-		if c.IsExecedByEvalCC {
+		if c.ExecutedFrom == ExecutedFromEvalCC {
 			parsed = parsed.MaxOps(MaxOpsEvalNormal)
 		}
 	}
@@ -480,29 +487,30 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 	}
 
 	isDM := c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate())
-
+	msgSend := c.MessageSend("")
 	var embeds []*discordgo.MessageEmbed
-	for _, v := range c.CurrentFrame.EmebdsToSend {
-		if isDM {
-			v.Footer = &discordgo.MessageEmbedFooter{
-				Text:    "Custom Command DM from the server " + c.GS.Name,
-				IconURL: c.GS.Icon,
-			}
-		}
-		embeds = append(embeds, v)
-	}
-	common.BotSession.ChannelMessageSendEmbedList(channelID, embeds)
-
-	if strings.TrimSpace(content) == "" || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
+	embeds = append(embeds, c.CurrentFrame.EmbedsToSend...)
+	msgSend.Embeds = embeds
+	msgSend.Content = content
+	if (len(msgSend.Embeds) == 0 && strings.TrimSpace(content) == "") || (c.CurrentFrame.DelResponse && c.CurrentFrame.DelResponseDelay < 1) {
 		// no point in sending the response if it gets deleted immedietely
 		return nil, nil
 	}
-
 	if isDM {
-		content = "Custom Command DM from the server **" + c.GS.Name + "**\n" + content
+		msgSend.Components = []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						Label:    "Show Server Info",
+						Style:    discordgo.PrimaryButton,
+						Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+						CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
+					},
+				},
+			},
+		}
 	}
-
-	m, err := common.BotSession.ChannelMessageSendComplex(channelID, c.MessageSend(content))
+	m, err := common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
 	if err != nil {
 		logger.WithError(err).Error("Failed sending message")
 	} else {
@@ -516,6 +524,10 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 					common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
 				}
 			}(c.CurrentFrame)
+		}
+
+		if c.CurrentFrame.PublishResponse && c.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
+			common.BotSession.ChannelMessageCrosspost(m.ChannelID, m.ID)
 		}
 	}
 
@@ -553,7 +565,7 @@ func (c *Context) IncreaseCheckCallCounterPremium(key string, normalLimit, premi
 }
 
 func (c *Context) IncreaseCheckGenericAPICall() bool {
-	if c.IsExecedByEvalCC {
+	if c.ExecutedFrom == ExecutedFromEvalCC {
 		return c.IncreaseCheckCallCounter("api_call", 20)
 	}
 	return c.IncreaseCheckCallCounter("api_call", 100)
@@ -587,6 +599,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("editMessage", c.tmplEditMessage(true))
 	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
 	c.addContextFunc("pinMessage", c.tmplPinMessage(false))
+	c.addContextFunc("publishMessage", c.tmplPublishMessage)
+	c.addContextFunc("publishResponse", c.tmplPublishResponse)
 	c.addContextFunc("sendDM", c.tmplSendDM)
 	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))

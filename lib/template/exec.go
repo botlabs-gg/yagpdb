@@ -506,6 +506,44 @@ func (s *state) walkRange(dot reflect.Value, r *parse.RangeNode) controlFlowSign
 			break
 		}
 		return controlFlowNone
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		intVal := int(val.Int())
+		if intVal == 0 {
+			break
+		}
+		if intVal < 0 {
+			s.errorf("range can't iterate over a negative number")
+			return controlFlowNone
+		}
+		for i := 0; i < intVal; i++ {
+			val := reflect.ValueOf(i)
+			switch oneIteration(val, val) {
+			case controlFlowBreak:
+				return controlFlowNone
+			case controlFlowReturnValue:
+				return controlFlowReturnValue
+			}
+		}
+		return controlFlowNone
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		intVal := int(val.Uint())
+		if intVal == 0 {
+			break
+		}
+		if intVal < 0 {
+			s.errorf("range can't iterate over a negative number")
+			return controlFlowNone
+		}
+		for i := 0; i < intVal; i++ {
+			val := reflect.ValueOf(i)
+			switch oneIteration(val, val) {
+			case controlFlowBreak:
+				return controlFlowNone
+			case controlFlowReturnValue:
+				return controlFlowReturnValue
+			}
+		}
+		return controlFlowNone
 	case reflect.Invalid:
 		break // An invalid value is likely a nil map, etc. and acts like an empty map.
 	default:

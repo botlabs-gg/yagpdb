@@ -176,6 +176,9 @@ func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 }
 
 func ContextPremium(ctx context.Context) bool {
+	if confAllGuildsPremium.GetBool() {
+		return true
+	}
 	if v := ctx.Value(CtxKeyIsPremium); v != nil {
 		return v.(bool)
 	}
@@ -184,6 +187,10 @@ func ContextPremium(ctx context.Context) bool {
 }
 
 func ContextPremiumTier(ctx context.Context) PremiumTier {
+	if confAllGuildsPremium.GetBool() {
+		return PremiumTierPlus
+	}
+
 	if v := ctx.Value(CtxKeyPremiumTier); v != nil {
 		return v.(PremiumTier)
 	}

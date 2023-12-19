@@ -283,9 +283,9 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 	return nil
 }
 
-func retrieveMainActivity(p *discordgo.Presence) *discordgo.Game {
+func retrieveMainActivity(p *discordgo.Presence) *discordgo.Activity {
 	for _, v := range p.Activities {
-		if v.Type == discordgo.GameTypeStreaming {
+		if v.Type == discordgo.ActivityTypeStreaming {
 			return v
 		}
 	}
@@ -454,8 +454,15 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 	}
 
 	m, err := common.BotSession.ChannelMessageSendComplex(config.AnnounceChannel, ctx.MessageSend(out))
-	if err == nil && ctx.CurrentFrame.DelResponse {
+	if err != nil {
+		return
+	}
+	if ctx.CurrentFrame.DelResponse {
 		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.CurrentFrame.DelResponseDelay)
+	}
+
+	if ctx.CurrentFrame.PublishResponse {
+		common.BotSession.ChannelMessageCrosspost(config.AnnounceChannel, m.ID)
 	}
 }
 

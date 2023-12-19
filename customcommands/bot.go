@@ -115,7 +115,7 @@ type DelayedRunCCData struct {
 
 	UserKey interface{} `json:"user_key"`
 
-	IsExecedByLeaveMessage bool `json:"is_execed_by_leave_message"`
+	ExecutedFrom templates.ExecutedFromType `json:"executed_from"`
 }
 
 var cmdEvalCommand = &commands.YAGCommand{
@@ -155,7 +155,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 
 		channel := data.GuildData.CS
 		ctx := templates.NewContext(data.GuildData.GS, channel, data.GuildData.MS)
-		ctx.IsExecedByEvalCC = true
+		ctx.ExecutedFrom = templates.ExecutedFromEvalCC
 
 		// use stripped message content instead of parsed arg data to avoid dcmd
 		// from misinterpreting backslashes and losing spaces in input; see
@@ -417,7 +417,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		tmplCtx.Data["Message"] = dataCast.Message
 	}
 
-	tmplCtx.IsExecedByLeaveMessage = dataCast.IsExecedByLeaveMessage
+	tmplCtx.ExecutedFrom = dataCast.ExecutedFrom
 
 	// decode userdata
 	if len(dataCast.UserData) > 0 {

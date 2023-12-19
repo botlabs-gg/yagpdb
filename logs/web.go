@@ -7,8 +7,14 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"goji.io"
+	"goji.io/pat"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -17,10 +23,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/logs/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"goji.io"
-	"goji.io/pat"
 )
 
 //go:embed assets/logs_control_panel.html
@@ -64,7 +66,7 @@ func (lp *Plugin) InitWeb() {
 	web.AddHTMLTemplate("logs/assets/logs_control_panel.html", PageHTMLControlPanel)
 	web.AddHTMLTemplate("logs/assets/logs_view.html", PageHTMLView)
 
-	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
 		Name: "Logging",
 		URL:  "logging/",
 		Icon: "fas fa-database",
@@ -230,7 +232,11 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 
 	member := web.ContextMember(ctx)
 	if member == nil {
-		tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to members only."))
+		goTo := url.QueryEscape(r.RequestURI)
+		alertLink := fmt.Sprintf(`<a href="%s/login?goto=%s>here</a>`, web.BaseURL(), goTo)
+		alertMsg := fmt.Sprintf("This server has restricted log access to members only.\nIf you are a member, click %s to login.", alertLink)
+
+		tmpl.AddAlerts(web.ErrorAlert(alertMsg))
 		return false
 	}
 

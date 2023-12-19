@@ -1,7 +1,10 @@
 package bot
 
 import (
+	"fmt"
 	"runtime/debug"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -313,6 +316,30 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 	}
 }
 
+func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
+	ic := evt.InteractionCreate()
+	customID := ic.MessageComponentData().CustomID
+	guild_id, err := strconv.ParseInt(strings.Replace(customID, "DM_", "", 1), 10, 64)
+	if err != nil {
+		logger.Errorf("DM interaction received with incorrect customID: %s from user %d", customID, ic.User.ID)
+	}
+	gs, err := evt.Session.Guild(guild_id)
+	logger.WithError(err).Errorf("Failed getting guild info for DM %s from user %d", customID, ic.User.ID)
+	response := discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{Flags: 64},
+	}
+	content := ""
+	if gs == nil {
+		content = fmt.Sprintf("This DM was sent from server\nID: **%d**, \nI couldn't fetch more information about it.", guild_id)
+	} else {
+		content = fmt.Sprintf("This DM was sent from server\nID: **%d**, \nName: **%s**", guild_id, gs.Name)
+	}
+	response.Data.Content = content
+	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
+	logger.WithError(err).Printf("Interaction Response!")
+}
+
 func HandleInteractionCreate(evt *eventsystem.EventData) {
 	ic := evt.InteractionCreate()
 	if ic.GuildID != 0 {
@@ -321,13 +348,18 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	if ic.User == nil {
 		return
 	}
-
 	if ic.User.ID == common.BotUser.ID {
 		return
 	}
-	err := pubsub.Publish("dm_interaction", -1, ic)
-	if err != nil {
-		logger.WithError(err).Error("failed publishing dm interaction")
+	//handle dm message guild info interaction
+
+	if ic.Type == discordgo.InteractionMessageComponent && strings.HasPrefix(ic.MessageComponentData().CustomID, "DM_") {
+		handleDmGuildInfoInteraction(evt)
+	} else {
+		err := pubsub.Publish("dm_interaction", -1, ic)
+		if err != nil {
+			logger.WithError(err).Error("failed publishing dm interaction")
+		}
 	}
 }
 

@@ -117,6 +117,7 @@ var (
 	EndpointChannelMessagesBulkDelete = func(cID int64) string { return "" }
 	EndpointChannelMessagesPins       = func(cID int64) string { return "" }
 	EndpointChannelMessagePin         = func(cID, mID int64) string { return "" }
+	EndpointChannelMessageCrosspost   = func(cID, mID int64) string { return "" }
 
 	EndpointGroupIcon = func(cID int64, hash string) string { return "" }
 
@@ -294,6 +295,7 @@ func CreateEndpoints(base string) {
 	EndpointChannelMessagesBulkDelete = func(cID int64) string { return EndpointChannel(cID) + "/messages/bulk-delete" }
 	EndpointChannelMessagesPins = func(cID int64) string { return EndpointChannel(cID) + "/pins" }
 	EndpointChannelMessagePin = func(cID, mID int64) string { return EndpointChannel(cID) + "/pins/" + StrID(mID) }
+	EndpointChannelMessageCrosspost = func(cID, mID int64) string { return EndpointChannel(cID) + "/messages/" + StrID(mID) + "/crosspost" }
 
 	EndpointGroupIcon = func(cID int64, hash string) string { return EndpointCDNChannelIcons + StrID(cID) + "/" + hash + ".png" }
 

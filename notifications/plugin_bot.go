@@ -62,7 +62,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 
 			go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_msg")
 
-			if sendTemplate(gs, thinCState, config.JoinDMMsg, ms, "join dm", false, true) {
+			if sendTemplate(gs, thinCState, config.JoinDMMsg, ms, "join dm", false, templates.ExecutedFromJoin) {
 				return true, nil
 			}
 		}
@@ -77,7 +77,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 		go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_dm")
 
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		if sendTemplate(gs, channel, chanMsg, ms, "join server msg", config.CensorInvites, true) {
+		if sendTemplate(gs, channel, chanMsg, ms, "join server msg", config.CensorInvites, templates.ExecutedFromJoin) {
 			return true, nil
 		}
 	}
@@ -113,7 +113,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 
 	go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_leave_server_msg")
 
-	if sendTemplate(gs, channel, chanMsg, ms, "leave", config.CensorInvites, false) {
+	if sendTemplate(gs, channel, chanMsg, ms, "leave", config.CensorInvites, templates.ExecutedFromLeave) {
 		return true, nil
 	}
 
@@ -121,10 +121,10 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 }
 
 // sendTemplate parses and executes the provided template, returns wether an error occured that we can retry from (temporary network failures and the like)
-func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool, enableSendDM bool) bool {
+func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms *dstate.MemberState, name string, censorInvites bool, executedFrom templates.ExecutedFromType) bool {
 	ctx := templates.NewContext(gs, cs, ms)
 	ctx.CurrentFrame.SendResponseInDM = cs.Type == discordgo.ChannelTypeDM
-	ctx.IsExecedByLeaveMessage = !enableSendDM
+	ctx.ExecutedFrom = executedFrom
 
 	// since were changing the fields, we need a copy
 	msCop := *ms
@@ -141,7 +141,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 
 	// Disable sendDM if needed
 	disableFuncs := []string{}
-	if !enableSendDM {
+	if executedFrom == templates.ExecutedFromLeave {
 		disableFuncs = []string{"sendDM"}
 	}
 	ctx.DisabledContextFuncs = disableFuncs
@@ -159,10 +159,22 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 
 	var m *discordgo.Message
 	if cs.Type == discordgo.ChannelTypeDM {
-		msg = "DM sent from server **" + gs.Name + "** (ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
-		m, err = common.BotSession.ChannelMessageSend(cs.ID, msg)
+		msgSend := ctx.MessageSend(msg)
+		msgSend.Components = []discordgo.MessageComponent{
+			discordgo.ActionsRow{
+				Components: []discordgo.MessageComponent{
+					discordgo.Button{
+						Label:    "Show Server Info",
+						Style:    discordgo.PrimaryButton,
+						Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+						CustomID: fmt.Sprintf("DM_%d", gs.ID),
+					},
+				},
+			},
+		}
+		m, err = common.BotSession.ChannelMessageSendComplex(cs.ID, msgSend)
 	} else {
-		if len(ctx.CurrentFrame.AddResponseReactionNames) > 0 || ctx.CurrentFrame.DelResponse {
+		if len(ctx.CurrentFrame.AddResponseReactionNames) > 0 || ctx.CurrentFrame.DelResponse || ctx.CurrentFrame.PublishResponse {
 			m, err = common.BotSession.ChannelMessageSendComplex(cs.ID, ctx.MessageSend(msg))
 			if err == nil && ctx.CurrentFrame.DelResponse {
 				templates.MaybeScheduledDeleteMessage(gs.ID, cs.ID, m.ID, ctx.CurrentFrame.DelResponseDelay)
@@ -173,12 +185,18 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 		}
 	}
 
-	if err == nil && m != nil && len(ctx.CurrentFrame.AddResponseReactionNames) > 0 {
-		go func(frame *templates.ContextFrame) {
-			for _, v := range frame.AddResponseReactionNames {
-				common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
-			}
-		}(ctx.CurrentFrame)
+	if err == nil && m != nil {
+		if len(ctx.CurrentFrame.AddResponseReactionNames) > 0 {
+			go func(frame *templates.ContextFrame) {
+				for _, v := range frame.AddResponseReactionNames {
+					common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
+				}
+			}(ctx.CurrentFrame)
+		}
+
+		if ctx.CurrentFrame.PublishResponse && ctx.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
+			common.BotSession.ChannelMessageCrosspost(m.ChannelID, m.ID)
+		}
 	}
 
 	if err != nil {

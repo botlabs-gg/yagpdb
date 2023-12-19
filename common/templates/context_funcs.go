@@ -23,14 +23,10 @@ var ErrTooManyCalls = errors.New("too many calls to this function")
 var ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
-	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.IsExecedByLeaveMessage {
+	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.ExecutedFrom == ExecutedFromLeave {
 		return ""
 	}
 
-	gIcon := discordgo.EndpointGuildIcon(c.GS.ID, c.GS.Icon)
-
-	info := fmt.Sprintf("Custom Command DM from the server **%s**", c.GS.Name)
-	embedInfo := fmt.Sprintf("Custom Command DM from the server %s", c.GS.Name)
 	msgSend := &discordgo.MessageSend{
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
@@ -39,35 +35,28 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 
 	switch t := s[0].(type) {
 	case *discordgo.MessageEmbed:
-		t.Footer = &discordgo.MessageEmbedFooter{
-			Text:    embedInfo,
-			IconURL: gIcon,
-		}
 		msgSend.Embeds = []*discordgo.MessageEmbed{t}
 	case []*discordgo.MessageEmbed:
-		for _, e := range t {
-			e.Footer = &discordgo.MessageEmbedFooter{
-				Text:    embedInfo,
-				IconURL: gIcon,
-			}
-		}
+		msgSend.Embeds = t
 	case *discordgo.MessageSend:
 		msgSend = t
-		if len(msgSend.Embeds) > 0 {
-			for _, e := range msgSend.Embeds {
-				e.Footer = &discordgo.MessageEmbedFooter{
-					Text:    embedInfo,
-					IconURL: gIcon,
-				}
-			}
-			break
-		}
-		if (strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) {
+		if (len(msgSend.Embeds) == 0 && strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) {
 			return ""
 		}
-		msgSend.Content = info + "\n" + msgSend.Content
 	default:
-		msgSend.Content = fmt.Sprintf("%s\n%s", info, fmt.Sprint(s...))
+		msgSend.Content = fmt.Sprint(s...)
+	}
+	msgSend.Components = []discordgo.MessageComponent{
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					Label:    "Show Server Info",
+					Style:    discordgo.PrimaryButton,
+					Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+					CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
+				},
+			},
+		},
 	}
 
 	channel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
@@ -146,7 +135,7 @@ func (c *Context) ChannelArgNoDMNoThread(v interface{}) int64 {
 }
 
 func (c *Context) tmplSendTemplateDM(name string, data ...interface{}) (interface{}, error) {
-	if c.IsExecedByLeaveMessage {
+	if c.ExecutedFrom == ExecutedFromLeave {
 		return "", errors.New("can't use sendTemplateDM on leave msg")
 	}
 
@@ -346,10 +335,6 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		isDM := cid != c.ChannelArgNoDM(channel)
-		gName := c.GS.Name
-		info := fmt.Sprintf("Custom Command DM from the server **%s**", gName)
-		embedInfo := fmt.Sprintf("Custom Command DM from the server %s", gName)
-		icon := discordgo.EndpointGuildIcon(c.GS.ID, c.GS.Icon)
 
 		var m *discordgo.Message
 		msgSend := &discordgo.MessageSend{
@@ -362,47 +347,32 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 
 		switch typedMsg := msg.(type) {
 		case *discordgo.MessageEmbed:
-			if isDM {
-				typedMsg.Footer = &discordgo.MessageEmbedFooter{
-					Text:    embedInfo,
-					IconURL: icon,
-				}
-			}
 			msgSend.Embeds = []*discordgo.MessageEmbed{typedMsg}
 		case []*discordgo.MessageEmbed:
-			if isDM {
-				for _, e := range typedMsg {
-					e.Footer = &discordgo.MessageEmbedFooter{
-						Text:    embedInfo,
-						IconURL: icon,
-					}
-				}
-			}
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
 			if !filterSpecialMentions {
 				msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 			}
-			if isDM {
-				if len(typedMsg.Embeds) > 0 {
-					for _, e := range msgSend.Embeds {
-						e.Footer = &discordgo.MessageEmbedFooter{
-							Text:    embedInfo,
-							IconURL: icon,
-						}
-					}
-				} else {
-					typedMsg.Content = info + "\n" + typedMsg.Content
-				}
-			}
 			if msgSend.Reference != nil && msgSend.Reference.ChannelID == 0 {
 				msgSend.Reference.ChannelID = cid
 			}
 		default:
-			if isDM {
-				msgSend.Content = info + "\n" + ToString(msg)
-			} else {
-				msgSend.Content = ToString(msg)
+			msgSend.Content = ToString(msg)
+		}
+
+		if isDM {
+			msgSend.Components = []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.Button{
+							Label:    "Show Server Info",
+							Style:    discordgo.PrimaryButton,
+							Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+							CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
+						},
+					},
+				},
 			}
 		}
 
@@ -506,6 +476,52 @@ func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (s
 		}
 		return "", err
 	}
+}
+
+func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error) {
+	// Too heavily ratelimited by Discord to allow rapid feeds to publish
+	if c.ExecutedFrom == ExecutedFromLeave || c.ExecutedFrom == ExecutedFromJoin {
+		return "", errors.New("cannot publish messages from a join/leave feed")
+	}
+
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	if c.IncreaseCheckCallCounter("message_publish", 1) {
+		return "", ErrTooManyCalls
+	}
+
+	cID := c.ChannelArgNoDM(channel)
+	if cID == 0 {
+		return "", errors.New("unknown channel")
+	}
+	mID := ToInt64(msgID)
+
+	// Don't crosspost if the message has already been crossposted
+	msg, err := common.BotSession.ChannelMessage(cID, mID)
+	if err != nil {
+		return "", errors.New("message not found")
+	}
+	messageAlreadyCrossposted := msg.Flags&discordgo.MessageFlagsCrossPosted == discordgo.MessageFlagsCrossPosted
+	if messageAlreadyCrossposted {
+		return "", nil
+	}
+
+	_, err = common.BotSession.ChannelMessageCrosspost(cID, mID)
+	return "", err
+}
+
+func (c *Context) tmplPublishResponse() (string, error) {
+	// Too heavily ratelimited by Discord to allow rapid feeds to publish
+	if c.ExecutedFrom == ExecutedFromLeave || c.ExecutedFrom == ExecutedFromJoin {
+		return "", errors.New("cannot publish messages from a join/leave feed")
+	}
+
+	if c.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
+		c.CurrentFrame.PublishResponse = true
+	}
+	return "", nil
 }
 
 func (c *Context) tmplMentionEveryone() string {

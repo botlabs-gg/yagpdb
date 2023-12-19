@@ -98,7 +98,7 @@ func MemberStateFromPresence(p *discordgo.PresenceUpdate) *MemberState {
 
 	// get the main activity
 	// it either gets the first one, or the one with typ 1 (streaming)
-	var mainActivity *discordgo.Game
+	var mainActivity *discordgo.Activity
 	for i, v := range p.Activities {
 		if i == 0 || v.Type == 1 {
 			mainActivity = v

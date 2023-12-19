@@ -18,7 +18,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
 	"github.com/botlabs-gg/yagpdb/v2/verification/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null"
@@ -49,7 +48,7 @@ func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("verification/assets/verification_control_panel.html", PageHTMLControlPanel)
 	web.AddHTMLTemplate("verification/assets/verification_verify_page.html", PageHTMLVerifyPage)
 
-	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
 		Name: "Verification",
 		URL:  "verification",
 		Icon: "fas fa-address-card",
@@ -178,7 +177,7 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 	}
 
 	unsafe := blackfriday.MarkdownCommon([]byte(msg))
-	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	html := common.UGCHtmlPolicy.SanitizeBytes(unsafe)
 	templateData["RenderedPageContent"] = template.HTML(html)
 
 	return templateData, nil

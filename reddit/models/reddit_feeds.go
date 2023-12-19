@@ -28,6 +28,7 @@ type RedditFeed struct {
 	ChannelID  int64  `boil:"channel_id" json:"channel_id" toml:"channel_id" yaml:"channel_id"`
 	Subreddit  string `boil:"subreddit" json:"subreddit" toml:"subreddit" yaml:"subreddit"`
 	FilterNSFW int    `boil:"filter_nsfw" json:"filter_nsfw" toml:"filter_nsfw" yaml:"filter_nsfw"`
+	SpoilersEnabled bool    `boil:"spoilers_enabled" json:"spoilers_enabled" toml:"spoilers_enabled" yaml:"spoilers_enabled"`
 	MinUpvotes int    `boil:"min_upvotes" json:"min_upvotes" toml:"min_upvotes" yaml:"min_upvotes"`
 	UseEmbeds  bool   `boil:"use_embeds" json:"use_embeds" toml:"use_embeds" yaml:"use_embeds"`
 	Slow       bool   `boil:"slow" json:"slow" toml:"slow" yaml:"slow"`
@@ -43,6 +44,7 @@ var RedditFeedColumns = struct {
 	ChannelID  string
 	Subreddit  string
 	FilterNSFW string
+	SpoilersEnabled string
 	MinUpvotes string
 	UseEmbeds  string
 	Slow       string
@@ -53,6 +55,7 @@ var RedditFeedColumns = struct {
 	ChannelID:  "channel_id",
 	Subreddit:  "subreddit",
 	FilterNSFW: "filter_nsfw",
+	SpoilersEnabled: "spoilers_enabled",
 	MinUpvotes: "min_upvotes",
 	UseEmbeds:  "use_embeds",
 	Slow:       "slow",
@@ -103,6 +106,7 @@ var RedditFeedWhere = struct {
 	ChannelID  whereHelperint64
 	Subreddit  whereHelperstring
 	FilterNSFW whereHelperint
+	SpoilersEnabled whereHelperbool
 	MinUpvotes whereHelperint
 	UseEmbeds  whereHelperbool
 	Slow       whereHelperbool
@@ -113,6 +117,7 @@ var RedditFeedWhere = struct {
 	ChannelID:  whereHelperint64{field: "\"reddit_feeds\".\"channel_id\""},
 	Subreddit:  whereHelperstring{field: "\"reddit_feeds\".\"subreddit\""},
 	FilterNSFW: whereHelperint{field: "\"reddit_feeds\".\"filter_nsfw\""},
+	SpoilersEnabled: whereHelperbool{field: "\"reddit_feeds\".\"spoilers_enabled\""},
 	MinUpvotes: whereHelperint{field: "\"reddit_feeds\".\"min_upvotes\""},
 	UseEmbeds:  whereHelperbool{field: "\"reddit_feeds\".\"use_embeds\""},
 	Slow:       whereHelperbool{field: "\"reddit_feeds\".\"slow\""},
@@ -136,8 +141,8 @@ func (*redditFeedR) NewStruct() *redditFeedR {
 type redditFeedL struct{}
 
 var (
-	redditFeedAllColumns            = []string{"id", "guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow", "disabled"}
-	redditFeedColumnsWithoutDefault = []string{"guild_id", "channel_id", "subreddit", "filter_nsfw", "min_upvotes", "use_embeds", "slow"}
+	redditFeedAllColumns            = []string{"id", "guild_id", "channel_id", "subreddit", "filter_nsfw", "spoilers_enabled", "min_upvotes", "use_embeds", "slow", "disabled"}
+	redditFeedColumnsWithoutDefault = []string{"guild_id", "channel_id", "subreddit", "filter_nsfw", "spoilers_enabled", "min_upvotes", "use_embeds", "slow"}
 	redditFeedColumnsWithDefault    = []string{"id", "disabled"}
 	redditFeedPrimaryKeyColumns     = []string{"id"}
 )
