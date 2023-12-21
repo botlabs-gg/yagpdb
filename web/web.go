@@ -345,7 +345,7 @@ func setupRoutes() *goji.Mux {
 	}
 
 	AddSidebarItem(SidebarCategoryCore, &SidebarItem{
-		Name: "Core",
+		Name: "Control panel access",
 		URL:  "core",
 		Icon: "fas fa-cog",
 	})
@@ -431,12 +431,13 @@ func loadCoreHTMLTemplate(path string) {
 }
 
 const (
-	SidebarCategoryTopLevel   = "Top"
-	SidebarCategoryFeeds      = "Feeds"
-	SidebarCategoryTools      = "Tools"
-	SidebarCategoryFun        = "Fun"
-	SidebarCategoryCore       = "Core"
-	SidebarCategoryModeration = "Moderation"
+	SidebarCategoryTopLevel       = "Top"
+	SidebarCategoryFeeds          = "Feeds"
+	SidebarCategoryTools          = "Tools"
+	SidebarCategoryFun            = "Fun"
+	SidebarCategoryCore           = "Core"
+	SidebarCategoryCustomCommands = "CustomCommands"
+	SidebarCategoryModeration     = "Moderation"
 )
 
 type SidebarItem struct {

@@ -68,15 +68,15 @@ var (
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("customcommands/assets/customcommands.html", PageHTMLMain)
 	web.AddHTMLTemplate("customcommands/assets/customcommands-editcmd.html", PageHTMLEditCmd)
-	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
-		Name: "Custom commands",
+	web.AddSidebarItem(web.SidebarCategoryCustomCommands, &web.SidebarItem{
+		Name: "Commands",
 		URL:  "customcommands",
-		Icon: "fas fa-closed-captioning",
+		Icon: "fas fa-code",
 	})
 
 	web.AddHTMLTemplate("customcommands/assets/customcommands_database.html", PageHTMLDatabase)
-	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
-		Name: "Custom command database",
+	web.AddSidebarItem(web.SidebarCategoryCustomCommands, &web.SidebarItem{
+		Name: "Database",
 		URL:  "customcommands/database",
 		Icon: "fas fa-database",
 	})
