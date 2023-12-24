@@ -58,6 +58,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "nodm", Help: "Disable DM"},
 			{Name: "rr", Help: "Remove role on reaction removed"},
 			{Name: "skip", Help: "Number of roles to skip", Default: 0, Type: dcmd.Int},
+			{Name: "channel", Help: "Channel of rolemenu", Default: 0, Type: dcmd.BigInt},
 		},
 		RunFunc: cmdFuncRoleMenuCreate,
 	}
