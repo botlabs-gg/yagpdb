@@ -95,7 +95,15 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 
 	go analytics.RecordActiveUnit(msg.GuildID, &Plugin{}, "auto_add_rep")
 
-	content := fmt.Sprintf("Gave +1 %s to **%s**", conf.PointsName, who.Mention())
+	newScore, newRank, err := GetUserStats(msg.GuildID, who.ID)
+	if err != nil {
+		newScore = -1
+		newRank = -1
+		logger.WithError(err).Error("Failed retrieving target stats")
+		return
+	}
+
+	content := fmt.Sprintf("Gave +1 %s to **%s** (current: `#%d` - `%d`)", conf.PointsName, who.Mention(), newRank, newScore)
 	common.BotSession.ChannelMessageSend(msg.ChannelID, content)
 }
 
