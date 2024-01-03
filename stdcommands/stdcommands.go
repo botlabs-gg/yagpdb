@@ -33,6 +33,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listflags"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/listroles"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/memstats"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/motivation"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/ping"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/poll"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/roast"
@@ -107,6 +108,7 @@ func (p *Plugin) AddCommands() {
 		forex.Command,
 		roast.Command,
 		eightball.Command,
+		motivation.Command,
 
 		// Maintenance
 		stateinfo.Command,
