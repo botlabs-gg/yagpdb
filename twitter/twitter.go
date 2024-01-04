@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	logger                   = common.GetPluginLogger(&Plugin{})
-	confTwitterProxy         = config.RegisterOption("yagpdb.twitter.proxy", "Proxy URL to scrape feeds from twitter", "")
+	logger = common.GetPluginLogger(&Plugin{})
+
 	confTwitterBatchSize     = config.RegisterOption("yagpdb.twitter.batch_size", "Batch Size for scraping feeds", 50)
 	confTwitterPollFrequency = config.RegisterOption("yagpdb.twitter.poll_frequency", "Minimum Delay in each feed poll for all feeds in minutes", 1)
 	confTwitterBatchDelay    = config.RegisterOption("yagpdb.twitter.batch_delay", "Delay in seconds between each batch", 10)
@@ -38,9 +38,9 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func RegisterPlugin() {
 	twitterScraper := twitterscraper.New()
-	twitterProxy := confTwitterProxy.GetString()
-	if len(twitterProxy) > 0 {
-		twitterScraper.SetProxy(twitterProxy)
+	proxy := common.ConfHttpProxy.GetString()
+	if len(proxy) > 0 {
+		twitterScraper.SetProxy(proxy)
 	}
 
 	twitterScraper.LoginOpenAccount()

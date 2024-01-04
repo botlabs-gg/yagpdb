@@ -7,6 +7,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/prom"
 	"github.com/botlabs-gg/yagpdb/v2/common/run"
 	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
+	"github.com/botlabs-gg/yagpdb/v2/trivia"
 	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 
 	// Core yagpdb packages
@@ -90,6 +91,7 @@ func main() {
 	internalapi.RegisterPlugin()
 	prom.RegisterPlugin()
 	featureflags.RegisterPlugin()
+	trivia.RegisterPlugin()
 
 	// Register confusables replacer
 	confusables.Init()
