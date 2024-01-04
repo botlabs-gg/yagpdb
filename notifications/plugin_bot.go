@@ -166,7 +166,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 					discordgo.Button{
 						Label:    "Show Server Info",
 						Style:    discordgo.PrimaryButton,
-						Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+						Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
 						CustomID: fmt.Sprintf("DM_%d", gs.ID),
 					},
 				},
