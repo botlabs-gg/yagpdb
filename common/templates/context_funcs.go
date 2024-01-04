@@ -52,7 +52,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 				discordgo.Button{
 					Label:    "Show Server Info",
 					Style:    discordgo.PrimaryButton,
-					Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+					Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
 					CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
 				},
 			},

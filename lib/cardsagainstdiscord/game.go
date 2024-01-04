@@ -130,17 +130,17 @@ func GetCommonCahButtons() []discordgo.MessageComponent {
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				discordgo.Button{
-					Emoji:    discordgo.ComponentEmoji{Name: JoinEmoji},
+					Emoji:    &discordgo.ComponentEmoji{Name: JoinEmoji},
 					Style:    discordgo.SuccessButton,
 					CustomID: CahGameJoined,
 				},
 				discordgo.Button{
-					Emoji:    discordgo.ComponentEmoji{Name: LeaveEmoji},
+					Emoji:    &discordgo.ComponentEmoji{Name: LeaveEmoji},
 					Style:    discordgo.DangerButton,
 					CustomID: CahGameLeft,
 				},
 				discordgo.Button{
-					Emoji:    discordgo.ComponentEmoji{Name: PlayPauseEmoji},
+					Emoji:    &discordgo.ComponentEmoji{Name: PlayPauseEmoji},
 					Style:    discordgo.PrimaryButton,
 					CustomID: CahGamePlayPause,
 				},
@@ -823,17 +823,17 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				discordgo.Button{
-					Emoji:    discordgo.ComponentEmoji{Name: JoinEmoji},
+					Emoji:    &discordgo.ComponentEmoji{Name: JoinEmoji},
 					Style:    discordgo.SuccessButton,
 					CustomID: CahGameJoined,
 				},
 				discordgo.Button{
-					Emoji:    discordgo.ComponentEmoji{Name: LeaveEmoji},
+					Emoji:    &discordgo.ComponentEmoji{Name: LeaveEmoji},
 					Style:    discordgo.DangerButton,
 					CustomID: CahGameLeft,
 				},
 				discordgo.Button{
-					Emoji:    discordgo.ComponentEmoji{Name: PlayPauseEmoji},
+					Emoji:    &discordgo.ComponentEmoji{Name: PlayPauseEmoji},
 					Style:    discordgo.PrimaryButton,
 					CustomID: CahGamePlayPause,
 				},
