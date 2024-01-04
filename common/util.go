@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"database/sql"
+	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"path/filepath"
@@ -674,4 +675,12 @@ func ParseCodeblock(input string) string {
 	logger.Debugf("Found matches: %#v", parts)
 	logger.Debugf("Returning %s", parts[1])
 	return parts[1]
+}
+
+func Base64DecodeToString(str string) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
