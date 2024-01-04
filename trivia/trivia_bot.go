@@ -12,7 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-var triviaDurationSeconds = time.Second * 10
+var triviaDuration = time.Second * 10
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
@@ -152,7 +152,7 @@ func (t *triviaSession) tick() (ended bool) {
 		t.updateMessage()
 	}
 
-	if t.optionsRevealed && time.Since(t.optionsRevealedAt) > triviaDurationSeconds {
+	if t.optionsRevealed && time.Since(t.optionsRevealedAt) > triviaDuration {
 		t.ended = true
 		t.updateMessage()
 	}
@@ -245,7 +245,7 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 
 		embed.Fields = append(embed.Fields, optionsField)
 		if t.optionsRevealed && !t.ended {
-			timeLeft := t.optionsRevealedAt.Add(triviaDurationSeconds)
+			timeLeft := t.optionsRevealedAt.Add(triviaDuration)
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 				Name:  "Questions ends",
 				Value: fmt.Sprintf("<t:%d:R>", timeLeft.Unix()),
@@ -309,7 +309,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	}
 
 	// Editing the embed can sometime get ratelimited
-	if t.ended || time.Since(t.optionsRevealedAt) > triviaDurationSeconds {
+	if t.ended || time.Since(t.optionsRevealedAt) > triviaDuration {
 		response.Data.Content = "You're too slow, trivia has already ended."
 		err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 		if err != nil {
