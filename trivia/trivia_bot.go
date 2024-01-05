@@ -12,7 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-var triviaDuration = time.Second * 10
+var triviaDuration = time.Second * 30
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
@@ -275,7 +275,7 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 		}
 
 		if len(winnerResponses) == 0 {
-			field.Value += "**No one got the correct answer 😏 **"
+			field.Value += "**No one got the correct answer **"
 		} else {
 			field.Value += fmt.Sprintf("**Total %d winners!**\n", len(winnerResponses))
 			if len(winnerResponses) > 20 {
