@@ -12,7 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-var TriviaDuration = time.Second * 25
+var TriviaDuration = time.Second * 30
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
@@ -40,18 +40,16 @@ type pickedOption struct {
 }
 
 type triviaSession struct {
-	Manager           *triviaSessionManager
-	GuildID           int64
-	ChannelID         int64
-	MessageID         int64
-	Question          *TriviaQuestion
-	SelectedOptions   []*pickedOption
-	createdAt         time.Time
-	startedAt         time.Time
-	optionsRevealed   bool
-	optionsRevealedAt time.Time
-	ended             bool
-	optionEmojis      []string
+	Manager         *triviaSessionManager
+	GuildID         int64
+	ChannelID       int64
+	MessageID       int64
+	Question        *TriviaQuestion
+	SelectedOptions []*pickedOption
+	createdAt       time.Time
+	startedAt       time.Time
+	ended           bool
+	optionEmojis    []string
 
 	mu sync.Mutex
 }
@@ -152,17 +150,11 @@ func (t *triviaSession) tick() (ended bool) {
 	defer t.mu.Unlock()
 
 	if t.startedAt.IsZero() {
-		t.updateMessage()
 		t.startedAt = time.Now()
-	}
-
-	if time.Since(t.startedAt) > time.Second*1 && !t.optionsRevealed {
-		t.optionsRevealed = true
-		t.optionsRevealedAt = time.Now()
 		t.updateMessage()
 	}
 
-	if t.optionsRevealed && time.Since(t.optionsRevealedAt) > TriviaDuration {
+	if time.Since(t.startedAt) > TriviaDuration {
 		t.ended = true
 		t.updateMessage()
 	}
@@ -181,16 +173,17 @@ func (t *triviaSession) updateMessage() {
 	var err error
 	var m *discordgo.Message
 	if mID == 0 {
-		m, err = common.BotSession.ChannelMessageSendEmbed(t.ChannelID, embed)
+		msgSend := &discordgo.MessageSend{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: buttons}},
+		}
+		m, err = common.BotSession.ChannelMessageSendComplex(t.ChannelID, msgSend)
 	} else {
 		msgEdit := &discordgo.MessageEdit{
-			Channel: t.ChannelID,
-			ID:      mID,
-			Embeds:  []*discordgo.MessageEmbed{embed},
-		}
-
-		if t.optionsRevealed || t.ended {
-			msgEdit.Components = []discordgo.MessageComponent{discordgo.ActionsRow{Components: buttons}}
+			Channel:    t.ChannelID,
+			ID:         mID,
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: buttons}},
 		}
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
 	}
@@ -253,28 +246,26 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 		IconURL: "https://opentdb.com/images/logo-banner.png",
 	}
 
-	if t.optionsRevealed {
-		optionsField := &discordgo.MessageEmbedField{
-			Name:  "Options",
-			Value: "",
-		}
+	optionsField := &discordgo.MessageEmbedField{
+		Name:  "Options",
+		Value: "",
+	}
 
-		for i, v := range t.Question.Options {
-			if t.ended && v != t.Question.Answer {
-				optionsField.Value += fmt.Sprintf("~~ \n%s %s \n\n ~~", t.optionEmojis[i], v)
-			} else {
-				optionsField.Value += fmt.Sprintf("** \n%s %s \n\n ** ", t.optionEmojis[i], v)
-			}
+	for i, v := range t.Question.Options {
+		if t.ended && v != t.Question.Answer {
+			optionsField.Value += fmt.Sprintf("~~\n%s %s\n\n~~", t.optionEmojis[i], v)
+		} else {
+			optionsField.Value += fmt.Sprintf("** \n%s %s \n\n ** ", t.optionEmojis[i], v)
 		}
+	}
 
-		embed.Fields = append(embed.Fields, optionsField)
-		if t.optionsRevealed && !t.ended {
-			timeLeft := t.optionsRevealedAt.Add(TriviaDuration)
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "Timer",
-				Value: fmt.Sprintf("**Trivia ends <t:%d:R> \n**", timeLeft.Unix()),
-			})
-		}
+	embed.Fields = append(embed.Fields, optionsField)
+	if !t.ended {
+		timeLeft := t.startedAt.Add(TriviaDuration)
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+			Name:  "Timer",
+			Value: fmt.Sprintf("**Trivia ends <t:%d:R> \n**", timeLeft.Unix()),
+		})
 	}
 
 	totalParticipants := len(t.SelectedOptions)
@@ -306,7 +297,7 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 			}
 		}
 		embed.Fields = append(embed.Fields, field)
-	} else if t.optionsRevealed && len(t.SelectedOptions) > 0 {
+	} else if !t.ended && len(t.SelectedOptions) > 0 {
 		field := &discordgo.MessageEmbedField{
 			Name: fmt.Sprintf("** \nTotal Participants : %d **", totalParticipants),
 		}
@@ -340,7 +331,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	}
 
 	// Editing the embed can sometime get ratelimited
-	if t.ended || time.Since(t.optionsRevealedAt) > TriviaDuration {
+	if t.ended || time.Since(t.startedAt) > TriviaDuration {
 		response.Data.Content = "You're too slow, trivia has already ended."
 		err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 		if err != nil {
