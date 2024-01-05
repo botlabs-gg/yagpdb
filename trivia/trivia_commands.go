@@ -1,6 +1,8 @@
 package trivia
 
 import (
+	"fmt"
+
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 )
@@ -8,7 +10,7 @@ import (
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(p, &commands.YAGCommand{
 		Name:                "Trivia",
-		Description:         "Asks a random question, you have got 30 seconds to answer!",
+		Description:         fmt.Sprintf("Asks a random question, you have got %d seconds to answer!", TriviaDuration),
 		RunInDM:             false,
 		SlashCommandEnabled: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {

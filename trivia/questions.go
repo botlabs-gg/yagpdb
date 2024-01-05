@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -15,6 +16,7 @@ type TriviaQuestion struct {
 	Question string   `json:"question"`
 	Answer   string   `json:"correct_answer"`
 	Category string   `json:"category"`
+	Type     string   `json:"type"`
 	Options  []string `json:"incorrect_answers"`
 }
 
@@ -65,7 +67,12 @@ func FetchQuestions(amount int) ([]*TriviaQuestion, error) {
 
 	for _, question := range triviaResponse.Questions {
 		question.Decode()
-		question.RandomizeOptionOrder()
+		question.Category = strings.ReplaceAll(question.Category, ": ", " - ")
+		if question.Type == "boolean" {
+			question.Options = []string{"True", "False"}
+		} else {
+			question.RandomizeOptionOrder()
+		}
 	}
 
 	return triviaResponse.Questions, nil
@@ -75,6 +82,7 @@ func (q *TriviaQuestion) Decode() {
 	q.Question, _ = common.Base64DecodeToString(q.Question)
 	q.Answer, _ = common.Base64DecodeToString(q.Answer)
 	q.Category, _ = common.Base64DecodeToString(q.Category)
+	q.Type, _ = common.Base64DecodeToString(q.Type)
 	for index, option := range q.Options {
 		q.Options[index], _ = common.Base64DecodeToString(option)
 	}

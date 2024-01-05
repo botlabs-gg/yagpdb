@@ -12,7 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-var triviaDuration = time.Second * 30
+var TriviaDuration = time.Second * 25
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
@@ -34,6 +34,28 @@ type triviaSessionManager struct {
 	mu       sync.Mutex
 }
 
+type pickedOption struct {
+	User   *discordgo.User
+	Option int
+}
+
+type triviaSession struct {
+	Manager           *triviaSessionManager
+	GuildID           int64
+	ChannelID         int64
+	MessageID         int64
+	Question          *TriviaQuestion
+	SelectedOptions   []*pickedOption
+	createdAt         time.Time
+	startedAt         time.Time
+	optionsRevealed   bool
+	optionsRevealedAt time.Time
+	ended             bool
+	optionEmojis      []string
+
+	mu sync.Mutex
+}
+
 var ErrSessionInChannel = errors.New("a trivia session already exists in this channel")
 
 func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64) error {
@@ -51,12 +73,28 @@ func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64) error 
 	}
 
 	question := triviaQuestions[0]
+	var optionEmojis []string
+	if question.Type == "boolean" {
+		optionEmojis = []string{
+			"\U0001F1F9", // Regional ind. T
+			"\U0001F1EB", // Regional ind. F
+		}
+	} else {
+		optionEmojis = []string{
+			"\U0001F1E6", // Regional ind. A
+			"\U0001F1E7", // Regional ind. B
+			"\U0001F1E8", // Regional ind. C
+			"\U0001F1E9", // Regional ind. D
+		}
+	}
+
 	session := &triviaSession{
-		Manager:   tm,
-		createdAt: time.Now(),
-		GuildID:   guildID,
-		ChannelID: channelID,
-		Question:  question,
+		Manager:      tm,
+		createdAt:    time.Now(),
+		GuildID:      guildID,
+		ChannelID:    channelID,
+		Question:     question,
+		optionEmojis: optionEmojis,
 	}
 
 	tm.sessions = append(tm.sessions, session)
@@ -98,34 +136,6 @@ func (tm *triviaSessionManager) handleInteractionCreate(evt *eventsystem.EventDa
 	tm.mu.Unlock()
 }
 
-type pickedOption struct {
-	User   *discordgo.User
-	Option int
-}
-
-type triviaSession struct {
-	Manager           *triviaSessionManager
-	GuildID           int64
-	ChannelID         int64
-	MessageID         int64
-	Question          *TriviaQuestion
-	SelectedOptions   []*pickedOption
-	createdAt         time.Time
-	startedAt         time.Time
-	optionsRevealed   bool
-	optionsRevealedAt time.Time
-	ended             bool
-
-	mu sync.Mutex
-}
-
-var optionEmojis = []string{
-	"\U0001F1E6", // Regional ind. A
-	"\U0001F1E7", // Regional ind. B
-	"\U0001F1E8", // Regional ind. C
-	"\U0001F1E9", // Regional ind. D
-}
-
 func (t *triviaSession) tickLoop() {
 	for {
 		ended := t.tick()
@@ -152,7 +162,7 @@ func (t *triviaSession) tick() (ended bool) {
 		t.updateMessage()
 	}
 
-	if t.optionsRevealed && time.Since(t.optionsRevealedAt) > triviaDuration {
+	if t.optionsRevealed && time.Since(t.optionsRevealedAt) > TriviaDuration {
 		t.ended = true
 		t.updateMessage()
 	}
@@ -179,11 +189,8 @@ func (t *triviaSession) updateMessage() {
 			Embeds:  []*discordgo.MessageEmbed{embed},
 		}
 
-		if t.optionsRevealed && !t.ended {
+		if t.optionsRevealed || t.ended {
 			msgEdit.Components = []discordgo.MessageComponent{discordgo.ActionsRow{Components: buttons}}
-		}
-		if t.ended {
-			msgEdit.Components = []discordgo.MessageComponent{}
 		}
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
 	}
@@ -201,13 +208,36 @@ func (t *triviaSession) updateMessage() {
 
 func (t *triviaSession) buildButtons() []discordgo.MessageComponent {
 	components := []discordgo.MessageComponent{}
-	for index, option := range t.Question.Options {
-		button := discordgo.Button{
-			Style:    discordgo.PrimaryButton,
-			Emoji:    &discordgo.ComponentEmoji{Name: optionEmojis[index]},
-			CustomID: option,
+	if t.ended {
+		for index, option := range t.Question.Options {
+			totalAnswered := 0
+			for _, v := range t.SelectedOptions {
+				if v.Option == index {
+					totalAnswered++
+				}
+			}
+			style := discordgo.SuccessButton
+			if option != t.Question.Answer {
+				style = discordgo.SecondaryButton
+			}
+			button := discordgo.Button{
+				Style:    style,
+				Disabled: true,
+				Label:    fmt.Sprintf("(%d)", totalAnswered),
+				Emoji:    &discordgo.ComponentEmoji{Name: t.optionEmojis[index]},
+				CustomID: option,
+			}
+			components = append(components, button)
 		}
-		components = append(components, button)
+	} else {
+		for index, option := range t.Question.Options {
+			button := discordgo.Button{
+				Style:    discordgo.PrimaryButton,
+				Emoji:    &discordgo.ComponentEmoji{Name: t.optionEmojis[index]},
+				CustomID: option,
+			}
+			components = append(components, button)
+		}
 	}
 
 	return components
@@ -215,52 +245,42 @@ func (t *triviaSession) buildButtons() []discordgo.MessageComponent {
 
 func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{}
-
-	embed.Title = "Trivia!"
-
-	embed.Description = fmt.Sprintf("**Category**: %s \n", t.Question.Category)
-	embed.Description += fmt.Sprintf("\n**Question**: \n %s \n", t.Question.Question)
+	embed.Title = fmt.Sprintf("Trivia Category: %s ", t.Question.Category)
+	embed.Description += fmt.Sprintf("\n ## %s \n", t.Question.Question)
 
 	embed.Footer = &discordgo.MessageEmbedFooter{
-		Text: "Powered by Opentdb.com",
+		Text:    "Powered by Opentdb.com",
+		IconURL: "https://opentdb.com/images/logo-banner.png",
 	}
 
 	if t.optionsRevealed {
 		optionsField := &discordgo.MessageEmbedField{
-			Name: "Options:",
+			Name:  "Options",
+			Value: "",
 		}
 
 		for i, v := range t.Question.Options {
-			optionsField.Value += optionEmojis[i] + " " + v + "\n\n"
-		}
-
-		if t.ended {
-			optionsField.Value = fmt.Sprintf("~~%s~~", optionsField.Value)
+			if t.ended && v != t.Question.Answer {
+				optionsField.Value += fmt.Sprintf("~~ \n%s %s \n\n ~~", t.optionEmojis[i], v)
+			} else {
+				optionsField.Value += fmt.Sprintf("** \n%s %s \n\n ** ", t.optionEmojis[i], v)
+			}
 		}
 
 		embed.Fields = append(embed.Fields, optionsField)
 		if t.optionsRevealed && !t.ended {
-			timeLeft := t.optionsRevealedAt.Add(triviaDuration)
+			timeLeft := t.optionsRevealedAt.Add(TriviaDuration)
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "Questions ends",
-				Value: fmt.Sprintf("<t:%d:R>", timeLeft.Unix()),
+				Name:  "Timer",
+				Value: fmt.Sprintf("**Trivia ends <t:%d:R> \n**", timeLeft.Unix()),
 			})
 		}
 	}
 
 	totalParticipants := len(t.SelectedOptions)
 	if t.ended {
-
-		correctAnswerIndex := -1
-		for i, v := range t.Question.Options {
-			if v == t.Question.Answer {
-				correctAnswerIndex = i
-			}
-		}
-
 		field := &discordgo.MessageEmbedField{
-			Name:  "Time Up!",
-			Value: fmt.Sprintf("Answer:  \n%s %s\n\n", optionEmojis[correctAnswerIndex], t.Question.Answer),
+			Name: "Time Up!",
 		}
 
 		winnerResponses := make([]*pickedOption, 0)
@@ -272,13 +292,13 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 
 		totalWinners := len(winnerResponses)
 		if totalParticipants == 0 {
-			field.Value += "**No one participated :(**"
+			field.Value = "**No one participated :( \n **"
 		} else if totalWinners == 0 {
-			field.Value += fmt.Sprintf("**No Winners, total participants: %d**", totalParticipants)
+			field.Value = fmt.Sprintf("**No Winners from %d participants! \n **", totalParticipants)
 		} else {
-			field.Value += fmt.Sprintf("**Total %d winners out of %d participants!**\n", totalWinners, totalParticipants)
+			field.Value = fmt.Sprintf("**%d winners from %d participants! \n **", totalWinners, totalParticipants)
 			if totalWinners > 20 {
-				field.Value += "**Fastest 20 winners are shown below:** \n"
+				field.Value += "**First 20 winners: \n **"
 				winnerResponses = winnerResponses[:20]
 			}
 			for _, v := range winnerResponses {
@@ -288,15 +308,15 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 		embed.Fields = append(embed.Fields, field)
 	} else if t.optionsRevealed && len(t.SelectedOptions) > 0 {
 		field := &discordgo.MessageEmbedField{
-			Name: fmt.Sprintf("Total %d Answers, Submitted by:", totalParticipants),
+			Name: fmt.Sprintf("** \nTotal Participants : %d **", totalParticipants),
 		}
 		for i, v := range t.SelectedOptions {
 			if i > 19 {
-				field.Name = fmt.Sprintf("Total %d Answers, Showing first 20:", totalParticipants)
+				field.Name = fmt.Sprintf("** \nTotal Participants : %d, Showing first 20 below **", totalParticipants)
 				//show only the first 20 participants while trivia is in session and hasn't ended
 				break
 			}
-			field.Value += fmt.Sprintf("%s\n", v.User.Mention())
+			field.Value += fmt.Sprintf("\n%s", v.User.Mention())
 		}
 		embed.Fields = append(embed.Fields, field)
 	}
@@ -320,7 +340,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	}
 
 	// Editing the embed can sometime get ratelimited
-	if t.ended || time.Since(t.optionsRevealedAt) > triviaDuration {
+	if t.ended || time.Since(t.optionsRevealedAt) > TriviaDuration {
 		response.Data.Content = "You're too slow, trivia has already ended."
 		err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 		if err != nil {
