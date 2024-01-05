@@ -226,13 +226,8 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 	}
 
 	if t.optionsRevealed {
-
 		optionsField := &discordgo.MessageEmbedField{
 			Name: "Options:",
-		}
-
-		if t.ended {
-			optionsField.Value += "~~"
 		}
 
 		for i, v := range t.Question.Options {
@@ -240,7 +235,7 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 		}
 
 		if t.ended {
-			optionsField.Value += "~~"
+			optionsField.Value = fmt.Sprintf("~~%s~~", optionsField.Value)
 		}
 
 		embed.Fields = append(embed.Fields, optionsField)
@@ -253,6 +248,7 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 		}
 	}
 
+	totalParticipants := len(t.SelectedOptions)
 	if t.ended {
 
 		correctAnswerIndex := -1
@@ -274,19 +270,34 @@ func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 			}
 		}
 
-		if len(winnerResponses) == 0 {
-			field.Value += "**No one got the correct answer **"
+		totalWinners := len(winnerResponses)
+		if totalParticipants == 0 {
+			field.Value += "**No one participated :(**"
+		} else if totalWinners == 0 {
+			field.Value += fmt.Sprintf("**No Winners, total participants: %d**", totalParticipants)
 		} else {
-			field.Value += fmt.Sprintf("**Total %d winners!**\n", len(winnerResponses))
-			if len(winnerResponses) > 20 {
-				field.Value += "Fastest 20 winners are shown below: \n"
+			field.Value += fmt.Sprintf("**Total %d winners out of %d participants!**\n", totalWinners, totalParticipants)
+			if totalWinners > 20 {
+				field.Value += "**Fastest 20 winners are shown below:** \n"
 				winnerResponses = winnerResponses[:20]
 			}
 			for _, v := range winnerResponses {
 				field.Value += fmt.Sprintf("%s\n", v.User.Mention())
 			}
 		}
-
+		embed.Fields = append(embed.Fields, field)
+	} else if t.optionsRevealed && len(t.SelectedOptions) > 0 {
+		field := &discordgo.MessageEmbedField{
+			Name: fmt.Sprintf("Total %d Answers, Submitted by:", totalParticipants),
+		}
+		for i, v := range t.SelectedOptions {
+			if i > 19 {
+				field.Name = fmt.Sprintf("Total %d Answers, Showing first 20:", totalParticipants)
+				//show only the first 20 participants while trivia is in session and hasn't ended
+				break
+			}
+			field.Value += fmt.Sprintf("%s\n", v.User.Mention())
+		}
 		embed.Fields = append(embed.Fields, field)
 	}
 
@@ -344,7 +355,11 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 		Option: optionIndex,
 	})
 
-	response.Data.Content = fmt.Sprintf("I've recorded your answer as `%s`", answer.CustomID)
+	if len(t.SelectedOptions) < 30 {
+		t.updateMessage()
+	}
+	response.Type = discordgo.InteractionResponseDeferredMessageUpdate
+	response.Data.Content = ""
 	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 	if err != nil {
 		logger.WithError(err).Error("Failed creating interaction response")
