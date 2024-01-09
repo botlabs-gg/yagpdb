@@ -32,14 +32,14 @@ func (p *Plugin) AddCommands() {
 			_, err := p.Manager.CreateGame(data.GuildData.GS.ID, data.GuildData.CS.ID, data.Author.ID, data.Author.Username, voteMode, packs...)
 			if err == nil {
 				logrus.Info("[cah] Created a new game in ", data.GuildData.CS.ID, ":", data.GuildData.GS.ID)
-				return "", nil
+				return nil, nil
 			}
 
 			if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
 				return cahErr, nil
 			}
 
-			return "", err
+			return nil, err
 		},
 	}
 
