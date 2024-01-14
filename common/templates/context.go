@@ -503,7 +503,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 					discordgo.Button{
 						Label:    "Show Server Info",
 						Style:    discordgo.PrimaryButton,
-						Emoji:    discordgo.ComponentEmoji{Name: "📬"},
+						Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
 						CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
 					},
 				},

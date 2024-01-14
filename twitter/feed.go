@@ -113,7 +113,7 @@ func (p *Plugin) getTweetsForUser(username string, attempt int, delay time.Durat
 		if tweet.Error != nil {
 			errString := tweet.Error.Error()
 			isNotFound := strings.Contains(errString, "not found")
-			isSuspended := strings.Contains(errString, "User has been suspended")
+			isSuspended := strings.Contains(errString, "visibility-custom-suspension")
 			if isNotFound || isSuspended {
 				_, err := models.TwitterFeeds(models.TwitterFeedWhere.TwitterUsername.EQ(username)).UpdateAllG(context.Background(), models.M{"enabled": false})
 				if err != nil {
