@@ -785,7 +785,7 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 
 			var tmpl TemplateData
 			ctx, tmpl = GetCreateTemplateData(ctx)
-			tmpl.AddAlerts(WarningAlert("In read only mode, you can not change any settings."))
+			tmpl.AddAlerts(WarningAlert("In read only mode, you cannot change any settings."))
 		}
 
 		r = r.WithContext(ctx)
