@@ -288,6 +288,32 @@ const (
 	PermissionOverwriteTypeMember PermissionOverwriteType = 1
 )
 
+// ThreadStart stores all parameters you can use with MessageThreadStartComplex or ThreadStartComplex
+type ThreadStart struct {
+	Name                string      `json:"name"`
+	AutoArchiveDuration int         `json:"auto_archive_duration,omitempty"`
+	Type                ChannelType `json:"type,omitempty"`
+	Invitable           bool        `json:"invitable"`
+	RateLimitPerUser    int         `json:"rate_limit_per_user,omitempty"`
+
+	// NOTE: forum threads only
+	AppliedTags []string `json:"applied_tags,omitempty"`
+}
+
+// ThreadsList represents a list of threads alongisde with thread member objects for the current user.
+type ThreadsList struct {
+	Threads []*Channel      `json:"threads"`
+	Members []*ThreadMember `json:"members"`
+	HasMore bool            `json:"has_more"`
+}
+
+// AddedThreadMember holds information about the user who was added to the thread
+type AddedThreadMember struct {
+	*ThreadMember
+	Member   *Member   `json:"member"`
+	Presence *Presence `json:"presence"`
+}
+
 // Emoji struct holds data related to Emoji's
 type Emoji struct {
 	ID            int64   `json:"id,string"`
@@ -1448,14 +1474,16 @@ type ThreadMetadata struct {
 	AutoArchiveDuration int    `json:"auto_archive_duration"` // duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080
 	ArchiveTimestamp    string `json:"archive_timestamp"`     // timestamp when the thread's archive status was last changed, used for calculating recent activity
 	Locked              bool   `json:"locked"`                // whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it
+	Invitable           bool   `json:"invitable"`             // Whether non-moderators can add other non-moderators to a thread; only available on private threads
 }
 
 // A thread member is used to indicate whether a user has joined a thread or not.
 type ThreadMember struct {
-	ID            int64     `json:"id,string"`      // the id of the thread (NOT INCLUDED IN GUILDCREATE)
-	UserID        int64     `json:"user_id,string"` // the id of the user (NOT INCLUDED IN GUILDCREATE)
-	JoinTimestamp Timestamp `json:"join_timestamp"` // the time the current user last joined the thread
-	Flags         int       `json:"flags"`          // any user-thread settings, currently only used for notifications
+	ID            int64     `json:"id,string"`        // the id of the thread (NOT INCLUDED IN GUILDCREATE)
+	UserID        int64     `json:"user_id,string"`   // the id of the user (NOT INCLUDED IN GUILDCREATE)
+	JoinTimestamp Timestamp `json:"join_timestamp"`   // the time the current user last joined the thread
+	Flags         int       `json:"flags"`            // any user-thread settings, currently only used for notifications
+	Member        *Member   `json:"member,omitempty"` // Additional information about the user. NOTE: only present if the withMember parameter is set to true when calling Session.ThreadMembers or Session.ThreadMember.
 }
 
 // AutoModerationRule stores data for an auto moderation rule.
