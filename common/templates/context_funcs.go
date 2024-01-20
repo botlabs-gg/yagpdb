@@ -1360,6 +1360,104 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 	return CtxChannelFromCS(cstate), nil
 }
 
+func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate ...bool) (*CtxChannel, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
+	}
+
+	cstate := c.GS.GetChannelOrThread(cID)
+	if cstate == nil {
+		return nil, errors.New("channel not in state")
+	}
+
+	if cstate.Type != discordgo.ChannelTypeGuildText {
+		return nil, nil //dont send an error, a nil output would indicate invalid
+	}
+
+	ctype := discordgo.ChannelTypeGuildPublicThread
+	if len(isPrivate) > 0 {
+		if isPrivate[0] == true {
+			ctype = discordgo.ChannelTypeGuildPrivateThread
+		}
+	}
+
+	thread, err := common.BotSession.ThreadStart(cID, name, ctype, 60)
+	if err != nil {
+		return nil, errors.New("unable to create thread")
+	}
+
+	return &CtxChannel{
+		ID:                   thread.ID,
+		IsPrivate:            ctype == discordgo.ChannelTypeGuildPrivateThread,
+		IsThread:             true,
+		GuildID:              thread.GuildID,
+		Name:                 thread.Name,
+		Type:                 thread.Type,
+		Topic:                thread.Topic,
+		NSFW:                 thread.NSFW,
+		Position:             thread.Position,
+		Bitrate:              thread.Bitrate,
+		PermissionOverwrites: thread.PermissionOverwrites,
+		ParentID:             thread.ParentID,
+		OwnerID:              thread.OwnerID,
+	}, nil
+}
+
+func (c *Context) tmplThreadMemberAdd(threadID, memberID interface{}) string {
+
+	if c.IncreaseCheckGenericAPICall() {
+		return ""
+	}
+
+	tID := c.ChannelArg(threadID)
+	if tID == 0 {
+		return ""
+	}
+
+	cstate := c.GS.GetThread(tID)
+	if cstate == nil {
+		return ""
+	}
+
+	targetID := TargetUserID(memberID)
+	if targetID == 0 {
+		return ""
+	}
+
+	common.BotSession.ThreadMemberAdd(tID, discordgo.StrID(targetID))
+	return ""
+}
+
+func (c *Context) tmplThreadMemberRemove(threadID, memberID interface{}) string {
+
+	if c.IncreaseCheckGenericAPICall() {
+		return ""
+	}
+
+	tID := c.ChannelArg(threadID)
+	if tID == 0 {
+		return ""
+	}
+
+	cstate := c.GS.GetThread(tID)
+	if cstate == nil {
+		return ""
+	}
+
+	targetID := TargetUserID(memberID)
+	if targetID == 0 {
+		return ""
+	}
+
+	common.BotSession.ThreadMemberRemove(tID, discordgo.StrID(targetID))
+	return ""
+}
+
 func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, error) {
 
 	if c.IncreaseCheckGenericAPICall() {
