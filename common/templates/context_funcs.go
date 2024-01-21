@@ -1391,21 +1391,33 @@ func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate .
 		return nil, errors.New("unable to create thread")
 	}
 
-	return &CtxChannel{
+	overwrites := make([]discordgo.PermissionOverwrite, 0, 1)
+	for _, v := range thread.PermissionOverwrites {
+		overwrites = append(overwrites, *v)
+	}
+
+	tstate := dstate.ChannelState{
 		ID:                   thread.ID,
-		IsPrivate:            ctype == discordgo.ChannelTypeGuildPrivateThread,
-		IsThread:             true,
 		GuildID:              thread.GuildID,
 		Name:                 thread.Name,
-		Type:                 thread.Type,
 		Topic:                thread.Topic,
+		Type:                 thread.Type,
 		NSFW:                 thread.NSFW,
+		Icon:                 thread.Icon,
 		Position:             thread.Position,
 		Bitrate:              thread.Bitrate,
-		PermissionOverwrites: thread.PermissionOverwrites,
+		UserLimit:            thread.UserLimit,
 		ParentID:             thread.ParentID,
+		RateLimitPerUser:     thread.RateLimitPerUser,
 		OwnerID:              thread.OwnerID,
-	}, nil
+		ThreadMetadata:       thread.ThreadMetadata,
+		PermissionOverwrites: overwrites,
+	}
+
+	// Add new thread to guild state
+	c.GS.Threads = append(c.GS.Threads, tstate)
+
+	return CtxChannelFromCS(&tstate), nil
 }
 
 func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
@@ -1421,6 +1433,19 @@ func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
 	cstate := c.GS.GetThread(cID)
 	if cstate == nil {
 		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+	}
+
+	existingIdx := -1
+	for i, v := range c.GS.Threads {
+		if v.ID == cstate.ID {
+			existingIdx = i
+			break
+		}
+	}
+
+	// Remove thread from guild state
+	if existingIdx >= 0 {
+		c.GS.Threads = append(c.GS.Threads[:existingIdx], c.GS.Threads[existingIdx+1:]...)
 	}
 
 	common.BotSession.ChannelDelete(cID)
