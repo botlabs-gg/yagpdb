@@ -1414,8 +1414,14 @@ func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate .
 		PermissionOverwrites: overwrites,
 	}
 
-	// Add new thread to guild state
-	c.GS.Threads = append(c.GS.Threads, tstate)
+	// Perform a copy so we don't mutate global array
+	gsCopy := *c.GS
+	gsCopy.Threads = make([]dstate.ChannelState, len(c.GS.Threads), len(c.GS.Threads)+1)
+	copy(gsCopy.Threads, c.GS.Threads)
+
+	// Add new thread to copied guild state
+	gsCopy.Threads = append(gsCopy.Threads, tstate)
+	c.GS = &gsCopy
 
 	return CtxChannelFromCS(&tstate), nil
 }
