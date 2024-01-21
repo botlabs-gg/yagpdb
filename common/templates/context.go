@@ -658,8 +658,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("getThread", c.tmplGetThread)
 	c.addContextFunc("createThread", c.tmplCreateThread)
-	c.addContextFunc("threadMemberAdd", c.tmplThreadMemberAdd)
-	c.addContextFunc("threadMemberRemove", c.tmplThreadMemberRemove)
+	c.addContextFunc("addThreadMember", c.tmplThreadMemberAdd)
+	c.addContextFunc("removeThreadMember", c.tmplThreadMemberRemove)
 
 	c.addContextFunc("currentUserAgeHuman", c.tmplCurrentUserAgeHuman)
 	c.addContextFunc("currentUserAgeMinutes", c.tmplCurrentUserAgeMinutes)
