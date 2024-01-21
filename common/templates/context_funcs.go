@@ -1408,6 +1408,25 @@ func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate .
 	}, nil
 }
 
+func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	cID := c.ChannelArg(thread)
+	if cID == 0 {
+		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+	}
+
+	cstate := c.GS.GetThread(cID)
+	if cstate == nil {
+		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+	}
+
+	common.BotSession.ChannelDelete(cID)
+	return "", nil
+}
+
 func (c *Context) tmplThreadMemberAdd(threadID, memberID interface{}) string {
 
 	if c.IncreaseCheckGenericAPICall() {
