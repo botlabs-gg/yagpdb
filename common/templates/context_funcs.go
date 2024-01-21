@@ -1391,9 +1391,9 @@ func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate .
 		return nil, errors.New("unable to create thread")
 	}
 
-	overwrites := make([]discordgo.PermissionOverwrite, 0, 1)
-	for _, v := range thread.PermissionOverwrites {
-		overwrites = append(overwrites, *v)
+	overwrites := make([]discordgo.PermissionOverwrite, len(thread.PermissionOverwrites))
+	for i, v := range thread.PermissionOverwrites {
+		overwrites[i] = *v
 	}
 
 	tstate := dstate.ChannelState{
