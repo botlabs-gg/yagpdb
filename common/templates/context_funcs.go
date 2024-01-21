@@ -1435,19 +1435,6 @@ func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
 		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
-	existingIdx := -1
-	for i, v := range c.GS.Threads {
-		if v.ID == cstate.ID {
-			existingIdx = i
-			break
-		}
-	}
-
-	// Remove thread from guild state
-	if existingIdx >= 0 {
-		c.GS.Threads = append(c.GS.Threads[:existingIdx], c.GS.Threads[existingIdx+1:]...)
-	}
-
 	common.BotSession.ChannelDelete(cID)
 	return "", nil
 }
