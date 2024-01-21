@@ -1360,7 +1360,7 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 	return CtxChannelFromCS(cstate), nil
 }
 
-func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate ...bool) (*CtxChannel, error) {
+func (c *Context) CreateThread(channel interface{}, create func(int64) (*discordgo.Channel, error), sendThreadCreateError bool) (*CtxChannel, error) {
 	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 2) {
 		return nil, ErrTooManyCalls
 	}
@@ -1379,16 +1379,13 @@ func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate .
 		return nil, nil //dont send an error, a nil output would indicate invalid
 	}
 
-	ctype := discordgo.ChannelTypeGuildPublicThread
-	if len(isPrivate) > 0 {
-		if isPrivate[0] == true {
-			ctype = discordgo.ChannelTypeGuildPrivateThread
-		}
-	}
-
-	thread, err := common.BotSession.ThreadStart(cID, name, ctype, 60)
+	thread, err := create(cID)
 	if err != nil {
-		return nil, errors.New("unable to create thread")
+		if sendThreadCreateError == true {
+			return nil, errors.New("unable to create thread")
+		} else {
+			return nil, nil
+		}
 	}
 
 	overwrites := make([]discordgo.PermissionOverwrite, len(thread.PermissionOverwrites))
@@ -1424,6 +1421,28 @@ func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate .
 	c.GS = &gsCopy
 
 	return CtxChannelFromCS(&tstate), nil
+}
+
+func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate ...bool) (*CtxChannel, error) {
+	ctype := discordgo.ChannelTypeGuildPublicThread
+	if len(isPrivate) > 0 {
+		if isPrivate[0] == true {
+			ctype = discordgo.ChannelTypeGuildPrivateThread
+		}
+	}
+
+	return c.CreateThread(channel, func(cID int64) (*discordgo.Channel, error) {
+		return common.BotSession.ThreadStart(cID, name, ctype, 60)
+	}, true)
+}
+
+func (c *Context) tmplCreateMessageThread(channel, msgID interface{}, name string) (*CtxChannel, error) {
+
+	mID := ToInt64(msgID)
+
+	return c.CreateThread(channel, func(cID int64) (*discordgo.Channel, error) {
+		return common.BotSession.MessageThreadStart(cID, mID, name, 60)
+	}, false) // don't send message upon thread create fail since that can happen if a thread already exists for the given message
 }
 
 func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
