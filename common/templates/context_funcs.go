@@ -1361,8 +1361,8 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 }
 
 func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate ...bool) (*CtxChannel, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return nil, ErrTooManyAPICalls
+	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 2) {
+		return nil, ErrTooManyCalls
 	}
 
 	cID := c.ChannelArg(channel)
@@ -1427,8 +1427,8 @@ func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate .
 }
 
 func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
+	if c.IncreaseCheckCallCounterPremium("delete_thread", 1, 2) {
+		return "", ErrTooManyCalls
 	}
 
 	cID := c.ChannelArg(thread)
