@@ -90,7 +90,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		return nil, errors.New("Unknown channel")
 	}
 
-	// note: since the blacklisted channels column is just a TEXT type with a comma seperator...
+	// note: since the blacklisted channels column is just a TEXT type with a comma separator...
 	// i was not a smart person back then
 	blacklist := strings.Split(config.BlacklistedChannels.String, ",")
 	if channel.Type.IsThread() {
