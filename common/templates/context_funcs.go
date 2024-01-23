@@ -1498,11 +1498,14 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 
 	var ctxThread *discordgo.Channel
 	var err error = nil
+	// For non-forum threads we can't specify content in the initial discordgo CreateThread
+	// request, but we can send a followup message into the newly created thread
+	sendFollowupMsg := false
 	if cstate.Type == discordgo.ChannelTypeGuildForum {
 		// Override public/private thread to Forum
 		start.Type = discordgo.ChannelTypeGuildForum
 
-		// Make sure content has something valid
+		// Make sure content has something valid, otherwise Forum API call will fail
 		if data.Content == nil {
 			return nil, errors.New("forum threads must have valid, non-zero length content")
 		}
@@ -1511,8 +1514,10 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 		ctxThread, err = common.BotSession.ForumThreadStartComplex(cID, start, data.Content)
 	} else if data.MessageID > 0 {
 		ctxThread, err = common.BotSession.MessageThreadStartComplex(cID, data.MessageID, start)
+		sendFollowupMsg = data.Content != nil
 	} else {
 		ctxThread, err = common.BotSession.ThreadStartComplex(cID, start)
+		sendFollowupMsg = data.Content != nil
 	}
 
 	if err != nil {
@@ -1550,6 +1555,11 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 	// Add new thread to copied guild state
 	gsCopy.Threads = append(gsCopy.Threads, tstate)
 	c.GS = &gsCopy
+
+	// Only true for non-Forum threads that specified content
+	if sendFollowupMsg {
+		c.tmplSendMessage(true, false)(tstate.ID, data.Content)
+	}
 
 	return CtxChannelFromCS(&tstate), nil
 }
