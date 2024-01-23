@@ -1452,10 +1452,10 @@ func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, err
 	return thread, nil
 }
 
-func ConvertForumTagIds(c *dstate.ChannelState, tagNames []string) []string {
+func ConvertForumTagIds(c *dstate.ChannelState, tagNames []string) ([]discordgo.ForumTag, []string) {
 	tags := dstate.AppliedTagsFromDgo(c.AvailableTags, tagNames)
 	if tags == nil {
-		return nil
+		return nil, nil
 	}
 
 	tagIds := make([]string, len(tags))
@@ -1463,7 +1463,7 @@ func ConvertForumTagIds(c *dstate.ChannelState, tagNames []string) []string {
 		tagIds[i] = tag.ID
 	}
 
-	return tagIds
+	return tags, tagIds
 }
 
 func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, error) {
@@ -1496,13 +1496,14 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 		return nil, errors.New("thread argument must be either string (name) or value returned from complexThread")
 	}
 
+	tags, ids := ConvertForumTagIds(cstate, data.AppliedTags)
 	start := &discordgo.ThreadStart{
 		Name:                data.Name,
 		AutoArchiveDuration: data.AutoArchiveDuration,
 		Type:                data.Type,
 		Invitable:           data.Invitable,
 		RateLimitPerUser:    data.RateLimitPerUser,
-		AppliedTags:         ConvertForumTagIds(cstate, data.AppliedTags),
+		AppliedTags:         ids,
 	}
 
 	var ctxThread *discordgo.Channel
@@ -1533,6 +1534,8 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 	}
 
 	tstate := dstate.ChannelStateFromDgo(ctxThread)
+	// TODO: why is discordgo returning nil applied tags even for forum threads?
+	tstate.AppliedTags = tags
 
 	// Perform a copy so we don't mutate global array
 	gsCopy := *c.GS
