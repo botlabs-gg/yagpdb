@@ -1361,7 +1361,13 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 }
 
 func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, error) {
+
 	// TODO: More things to possibly expose: auto_archive_duration, rate_limit_per_user
+
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
 	thread := &CtxThreadStart{
 		Name:                "Thread",
 		AutoArchiveDuration: 4320, // 3 days
@@ -1392,7 +1398,7 @@ func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, err
 		switch key {
 		case "name":
 			thread.Name = ToString(val)
-		case "is_private":
+		case "private":
 			if val == true {
 				thread.Type = discordgo.ChannelTypeGuildPrivateThread
 			}
