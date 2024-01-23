@@ -1413,12 +1413,12 @@ func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, err
 					size = maxTagsPerThread
 				}
 
-				thread.AppliedTags = make([]string, size)
+				thread.AppliedTagNames = make([]string, size)
 				for i := 0; i < size; i++ {
-					thread.AppliedTags[i] = ToString(v.Index(i).Interface())
+					thread.AppliedTagNames[i] = ToString(v.Index(i).Interface())
 				}
 			} else if v.Kind() == reflect.String {
-				thread.AppliedTags = []string{ToString(val)}
+				thread.AppliedTagNames = []string{ToString(val)}
 			} else {
 				return nil, errors.New("wrong type for tags (expected string or cslice)")
 			}
@@ -1452,18 +1452,24 @@ func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, err
 	return thread, nil
 }
 
-func ConvertForumTagIds(c *dstate.ChannelState, tagNames []string) ([]discordgo.ForumTag, []string) {
-	tags := dstate.AppliedTagsFromDgo(c.AvailableTags, tagNames)
-	if tags == nil {
+func ExtractForumTagIds(c *dstate.ChannelState, tagNames []string) ([]discordgo.ForumTag, []string) {
+	if c.AvailableTags == nil || tagNames == nil {
 		return nil, nil
 	}
 
-	tagIds := make([]string, len(tags))
-	for i, tag := range tags {
-		tagIds[i] = tag.ID
+	// Make initial length 0 since the user may have input some invalid tags
+	tags := make([]discordgo.ForumTag, 0, len(tagNames))
+	ids := make([]string, 0, len(tagNames))
+	for _, name := range tagNames {
+		for _, tag := range c.AvailableTags {
+			if tag.Name == name {
+				tags = append(tags, tag)
+				ids = append(ids, ToString(tag.ID))
+			}
+		}
 	}
 
-	return tags, tagIds
+	return tags, ids
 }
 
 func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, error) {
@@ -1496,7 +1502,7 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 		return nil, errors.New("thread argument must be either string (name) or value returned from complexThread")
 	}
 
-	tags, ids := ConvertForumTagIds(cstate, data.AppliedTags)
+	tags, ids := ExtractForumTagIds(cstate, data.AppliedTagNames)
 	start := &discordgo.ThreadStart{
 		Name:                data.Name,
 		AutoArchiveDuration: data.AutoArchiveDuration,

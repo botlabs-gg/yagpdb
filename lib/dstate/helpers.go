@@ -1,6 +1,7 @@
 package dstate
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -149,12 +150,13 @@ func AppliedTagsFromDgo(availableTags []discordgo.ForumTag, appliedTags []string
 		return nil
 	}
 
-	// discordgo gives us a list of tag names - convert them to ForumTag by walking
+	// discordgo gives us a list of tag ids - convert them to ForumTag by walking
 	// available tags list
 	applied := make([]discordgo.ForumTag, 0, len(appliedTags))
-	for _, name := range appliedTags {
+	for _, strId := range appliedTags {
+		id, _ := strconv.ParseInt(strId, 10, 64)
 		for _, tag := range availableTags {
-			if tag.Name == name {
+			if tag.ID == id {
 				applied = append(applied, tag)
 				break
 			}

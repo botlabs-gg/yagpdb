@@ -302,8 +302,8 @@ type ThreadStart struct {
 	Invitable           bool        `json:"invitable"`
 	RateLimitPerUser    int         `json:"rate_limit_per_user,omitempty"`
 
-	// NOTE: forum threads only
-	AppliedTags []string `json:"applied_tags,omitempty"`
+	// NOTE: forum threads only - these are IDs
+	AppliedTags []string `json:"applied_tags,string,omitempty"`
 }
 
 // ThreadsList represents a list of threads alongisde with thread member objects for the current user.
@@ -331,10 +331,10 @@ type ForumDefaultReaction struct {
 
 // ForumTag represents a tag that is able to be applied to a thread in a forum channel.
 type ForumTag struct {
-	ID        string `json:"id,omitempty"`
+	ID        int64  `json:"id,string,omitempty"`
 	Name      string `json:"name"`
 	Moderated bool   `json:"moderated"`
-	EmojiID   string `json:"emoji_id,omitempty"`
+	EmojiID   int64  `json:"emoji_id,string,omitempty"`
 	EmojiName string `json:"emoji_name,omitempty"`
 }
 

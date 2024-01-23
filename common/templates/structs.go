@@ -41,13 +41,13 @@ type CtxThreadStart struct {
 	Invitable           bool                  `json:"invitable"`
 	RateLimitPerUser    int                   `json:"rate_limit_per_user,omitempty"`
 
-	// NOTE: forum threads only
-	AppliedTags []string `json:"applied_tags,omitempty"`
+	Content *discordgo.MessageSend `json:"content,omitempty"`
+
+	// NOTE: forum threads only - these are names not ids
+	AppliedTagNames []string `json:"applied_tag_names,omitempty"`
 
 	// NOTE: message threads only
 	MessageID int64 `json:"message_id,omitempty"`
-
-	Content *discordgo.MessageSend `json:"content,omitempty"`
 }
 
 func (c *CtxChannel) Mention() (string, error) {
