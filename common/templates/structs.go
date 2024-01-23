@@ -25,6 +25,12 @@ type CtxChannel struct {
 	PermissionOverwrites []*discordgo.PermissionOverwrite `json:"permission_overwrites"`
 	ParentID             int64                            `json:"parent_id"`
 	OwnerID              int64                            `json:"owner_id"`
+
+	// The set of tags that can be used in a forum channel.
+	AvailableTags []discordgo.ForumTag `json:"available_tags"`
+
+	// The IDs of the set of tags that have been applied to a thread in a forum channel.
+	AppliedTags []discordgo.ForumTag `json:"applied_tags"`
 }
 
 // CtxThreadStart is almost a 1:1 copy of discordgo.ThreadStart but with some added fields
@@ -41,7 +47,7 @@ type CtxThreadStart struct {
 	// NOTE: message threads only
 	MessageID int64 `json:"message_id,omitempty"`
 
-	Content *discordgo.MessageSend
+	Content *discordgo.MessageSend `json:"content,omitempty"`
 }
 
 func (c *CtxChannel) Mention() (string, error) {
@@ -72,6 +78,8 @@ func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 		PermissionOverwrites: cop,
 		ParentID:             cs.ParentID,
 		OwnerID:              cs.OwnerID,
+		AvailableTags:        cs.AvailableTags,
+		AppliedTags:          cs.AppliedTags,
 	}
 
 	return ctxChannel

@@ -235,6 +235,12 @@ type Channel struct {
 	// The user ID of the owner of the thread. Nil on normal channels
 	OwnerID int64 `json:"owner_id,string"`
 
+	// The set of tags that can be used in a forum channel.
+	AvailableTags []ForumTag `json:"available_tags"`
+
+	// The IDs of the set of tags that have been applied to a thread in a forum channel.
+	AppliedTags []string `json:"applied_tags"`
+
 	// Thread specific fields
 	ThreadMetadata *ThreadMetadata `json:"thread_metadata"`
 }
@@ -312,6 +318,24 @@ type AddedThreadMember struct {
 	*ThreadMember
 	Member   *Member   `json:"member"`
 	Presence *Presence `json:"presence"`
+}
+
+// ForumDefaultReaction specifies emoji to use as the default reaction to a forum post.
+// NOTE: Exactly one of EmojiID and EmojiName must be set.
+type ForumDefaultReaction struct {
+	// The id of a guild's custom emoji.
+	EmojiID string `json:"emoji_id,omitempty"`
+	// The unicode character of the emoji.
+	EmojiName string `json:"emoji_name,omitempty"`
+}
+
+// ForumTag represents a tag that is able to be applied to a thread in a forum channel.
+type ForumTag struct {
+	ID        string `json:"id,omitempty"`
+	Name      string `json:"name"`
+	Moderated bool   `json:"moderated"`
+	EmojiID   string `json:"emoji_id,omitempty"`
+	EmojiName string `json:"emoji_name,omitempty"`
 }
 
 // Emoji struct holds data related to Emoji's

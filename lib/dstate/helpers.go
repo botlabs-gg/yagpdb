@@ -144,6 +144,26 @@ func MemberStateFromPresence(p *discordgo.PresenceUpdate) *MemberState {
 	}
 }
 
+func AppliedTagsFromDgo(availableTags []discordgo.ForumTag, appliedTags []string) []discordgo.ForumTag {
+	if availableTags == nil || appliedTags == nil {
+		return nil
+	}
+
+	// discordgo gives us a list of tag names - convert them to ForumTag by walking
+	// available tags list
+	applied := make([]discordgo.ForumTag, 0, len(appliedTags))
+	for _, name := range appliedTags {
+		for _, tag := range availableTags {
+			if tag.Name == name {
+				applied = append(applied, tag)
+				break
+			}
+		}
+	}
+
+	return applied
+}
+
 func ChannelStateFromDgo(c *discordgo.Channel) ChannelState {
 	pos := make([]discordgo.PermissionOverwrite, len(c.PermissionOverwrites))
 	for i, v := range c.PermissionOverwrites {
@@ -162,6 +182,8 @@ func ChannelStateFromDgo(c *discordgo.Channel) ChannelState {
 		Position:             c.Position,
 		Bitrate:              c.Bitrate,
 		OwnerID:              c.OwnerID,
+		AvailableTags:        c.AvailableTags,
+		AppliedTags:          AppliedTagsFromDgo(c.AvailableTags, c.AppliedTags),
 	}
 }
 

@@ -1404,37 +1404,32 @@ func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, err
 			}
 		case "invitable":
 			thread.Invitable = val == true
-		// TODO: To make tags work, discordgo.Channel and CtxChannel both need to be updated
-		// 		 to include AvailableTags and AppliedTags so that we can programmatically
-		//		 extract tag ids
 		case "tags":
-			return nil, errors.New("thread tags not yet supported")
-		// case "tags":
-		// 	const maxTagsPerThread = 5 // Discord limitation
-		// 	v, _ := indirect(reflect.ValueOf(val))
-		// 	if v.Kind() == reflect.Slice {
-		// 		size := v.Len()
-		// 		if size > maxTagsPerThread {
-		// 			size = maxTagsPerThread
-		// 		}
+			const maxTagsPerThread = 5 // Discord limitation
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				size := v.Len()
+				if size > maxTagsPerThread {
+					size = maxTagsPerThread
+				}
 
-		// 		thread.AppliedTags = make([]string, size)
-		// 		for i := 0; i < size; i++ {
-		// 			thread.AppliedTags[i] = ToString(v.Index(i).Interface())
-		// 		}
-		// 	} else if v.Kind() == reflect.String {
-		// 		thread.AppliedTags = []string{ToString(val)}
-		// 	} else {
-		// 		return nil, errors.New("wrong type for tags (expected string or cslice)")
-		// 	}
+				thread.AppliedTags = make([]string, size)
+				for i := 0; i < size; i++ {
+					thread.AppliedTags[i] = ToString(v.Index(i).Interface())
+				}
+			} else if v.Kind() == reflect.String {
+				thread.AppliedTags = []string{ToString(val)}
+			} else {
+				return nil, errors.New("wrong type for tags (expected string or cslice)")
+			}
 		case "message_id":
 			thread.MessageID = ToInt64(val)
 		case "content":
-			switch val.(type) {
+			switch val := val.(type) {
 			case *discordgo.MessageSend:
-				thread.Content = val.(*discordgo.MessageSend)
+				thread.Content = val
 			case *discordgo.MessageEmbed:
-				content, err := CreateMessageSend("embed", val.(*discordgo.MessageEmbed))
+				content, err := CreateMessageSend("embed", val)
 				if err != nil {
 					return nil, err
 				}
@@ -1455,6 +1450,20 @@ func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, err
 	}
 
 	return thread, nil
+}
+
+func ConvertForumTagIds(c *dstate.ChannelState, tagNames []string) []string {
+	tags := dstate.AppliedTagsFromDgo(c.AvailableTags, tagNames)
+	if tags == nil {
+		return nil
+	}
+
+	tagIds := make([]string, len(tags))
+	for i, tag := range tags {
+		tagIds[i] = tag.ID
+	}
+
+	return tagIds
 }
 
 func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, error) {
@@ -1493,7 +1502,7 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 		Type:                data.Type,
 		Invitable:           data.Invitable,
 		RateLimitPerUser:    data.RateLimitPerUser,
-		AppliedTags:         data.AppliedTags,
+		AppliedTags:         ConvertForumTagIds(cstate, data.AppliedTags),
 	}
 
 	var ctxThread *discordgo.Channel
@@ -1510,7 +1519,6 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 			return nil, errors.New("forum threads must have valid, non-zero length content")
 		}
 
-		// TODO: When ctxThread.AvailableTags is present, convert all tag names to tag ids
 		ctxThread, err = common.BotSession.ForumThreadStartComplex(cID, start, data.Content)
 	} else if data.MessageID > 0 {
 		ctxThread, err = common.BotSession.MessageThreadStartComplex(cID, data.MessageID, start)
@@ -1524,28 +1532,7 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 		return nil, errors.New("unable to create thread")
 	}
 
-	overwrites := make([]discordgo.PermissionOverwrite, len(ctxThread.PermissionOverwrites))
-	for i, v := range ctxThread.PermissionOverwrites {
-		overwrites[i] = *v
-	}
-
-	tstate := dstate.ChannelState{
-		ID:                   ctxThread.ID,
-		GuildID:              ctxThread.GuildID,
-		Name:                 ctxThread.Name,
-		Topic:                ctxThread.Topic,
-		Type:                 ctxThread.Type,
-		NSFW:                 ctxThread.NSFW,
-		Icon:                 ctxThread.Icon,
-		Position:             ctxThread.Position,
-		Bitrate:              ctxThread.Bitrate,
-		UserLimit:            ctxThread.UserLimit,
-		ParentID:             ctxThread.ParentID,
-		RateLimitPerUser:     ctxThread.RateLimitPerUser,
-		OwnerID:              ctxThread.OwnerID,
-		ThreadMetadata:       ctxThread.ThreadMetadata,
-		PermissionOverwrites: overwrites,
-	}
+	tstate := dstate.ChannelStateFromDgo(ctxThread)
 
 	// Perform a copy so we don't mutate global array
 	gsCopy := *c.GS
