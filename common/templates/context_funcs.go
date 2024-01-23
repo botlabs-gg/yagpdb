@@ -1487,11 +1487,11 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 	}
 
 	var data *CtxThreadStart
-	switch thread.(type) {
+	switch v := thread.(type) {
 	case string:
-		data, _ = c.tmplComplexThread(ToString(thread))
+		data, _ = c.tmplComplexThread(v)
 	case *CtxThreadStart:
-		data = thread.(*CtxThreadStart)
+		data = v
 	default:
 		return nil, errors.New("thread argument must be either string (name) or value returned from complexThread")
 	}
