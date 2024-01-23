@@ -1360,9 +1360,100 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 	return CtxChannelFromCS(cstate), nil
 }
 
-func (c *Context) CreateThread(channel interface{}, create func(int64) (*discordgo.Channel, error), sendThreadCreateError bool) (*CtxChannel, error) {
+func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, error) {
+	// TODO: More things to possibly expose: auto_archive_duration, rate_limit_per_user
+	thread := &CtxThreadStart{
+		Name:                "Thread",
+		AutoArchiveDuration: 4320, // 3 days
+		Type:                discordgo.ChannelTypeGuildPublicThread,
+		Invitable:           true,
+	}
+
+	if len(values) == 0 {
+		return thread, nil
+	}
+
+	if name, ok := values[0].(string); len(values) == 1 {
+		if ok {
+			thread.Name = name
+			return thread, nil
+		} else {
+			return nil, errors.New("requires string type")
+		}
+	}
+
+	threadSdict, err := StringKeyDictionary(values...)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, val := range threadSdict {
+		key = strings.ToLower(key)
+		switch key {
+		case "name":
+			thread.Name = ToString(val)
+		case "is_private":
+			if val == true {
+				thread.Type = discordgo.ChannelTypeGuildPrivateThread
+			}
+		case "invitable":
+			thread.Invitable = val == true
+		// TODO: To make tags work, discordgo.Channel and CtxChannel both need to be updated
+		// 		 to include AvailableTags and AppliedTags so that we can programmatically
+		//		 extract tag ids
+		case "tags":
+			return nil, errors.New("thread tags not yet supported")
+		// case "tags":
+		// 	const maxTagsPerThread = 5 // Discord limitation
+		// 	v, _ := indirect(reflect.ValueOf(val))
+		// 	if v.Kind() == reflect.Slice {
+		// 		size := v.Len()
+		// 		if size > maxTagsPerThread {
+		// 			size = maxTagsPerThread
+		// 		}
+
+		// 		thread.AppliedTags = make([]string, size)
+		// 		for i := 0; i < size; i++ {
+		// 			thread.AppliedTags[i] = ToString(v.Index(i).Interface())
+		// 		}
+		// 	} else if v.Kind() == reflect.String {
+		// 		thread.AppliedTags = []string{ToString(val)}
+		// 	} else {
+		// 		return nil, errors.New("wrong type for tags (expected string or cslice)")
+		// 	}
+		case "message_id":
+			thread.MessageID = ToInt64(val)
+		case "content":
+			switch val.(type) {
+			case *discordgo.MessageSend:
+				thread.Content = val.(*discordgo.MessageSend)
+			case *discordgo.MessageEmbed:
+				content, err := CreateMessageSend("embed", val.(*discordgo.MessageEmbed))
+				if err != nil {
+					return nil, err
+				}
+				thread.Content = content
+			default:
+				content, err := CreateMessageSend("content", ToString(val))
+				if err != nil {
+					return nil, err
+				}
+				thread.Content = content
+			}
+		}
+	}
+
+	return thread, nil
+}
+
+func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, error) {
+
 	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 2) {
 		return nil, ErrTooManyCalls
+	}
+
+	if thread == nil {
+		return nil, errors.New("nil passed as thread argument")
 	}
 
 	cID := c.ChannelArg(channel)
@@ -1370,44 +1461,67 @@ func (c *Context) CreateThread(channel interface{}, create func(int64) (*discord
 		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
-	cstate := c.GS.GetChannelOrThread(cID)
+	cstate := c.GS.GetChannel(cID)
 	if cstate == nil {
 		return nil, errors.New("channel not in state")
 	}
 
-	if cstate.Type != discordgo.ChannelTypeGuildText {
-		return nil, nil //dont send an error, a nil output would indicate invalid
+	var data *CtxThreadStart
+	switch thread.(type) {
+	case string:
+		data, _ = c.tmplComplexThread(ToString(thread))
+	case *CtxThreadStart:
+		data = thread.(*CtxThreadStart)
+	default:
+		return nil, errors.New("thread argument must be either string (name) or value returned from complexThread")
 	}
 
-	thread, err := create(cID)
+	start := &discordgo.ThreadStart{
+		Name:                data.Name,
+		AutoArchiveDuration: data.AutoArchiveDuration,
+		Type:                data.Type,
+		Invitable:           data.Invitable,
+		RateLimitPerUser:    data.RateLimitPerUser,
+		AppliedTags:         data.AppliedTags,
+	}
+
+	var ctxThread *discordgo.Channel
+	var err error = nil
+	if cstate.Type == discordgo.ChannelTypeGuildForum {
+		// Override public/private thread to Forum
+		start.Type = discordgo.ChannelTypeGuildForum
+		// TODO: When ctxThread.AvailableTags is present, convert all tag names to tag ids
+		ctxThread, err = common.BotSession.ForumThreadStartComplex(cID, start, data.Content)
+	} else if data.MessageID > 0 {
+		ctxThread, err = common.BotSession.MessageThreadStartComplex(cID, data.MessageID, start)
+	} else {
+		ctxThread, err = common.BotSession.ThreadStartComplex(cID, start)
+	}
+
 	if err != nil {
-		if sendThreadCreateError == true {
-			return nil, errors.New("unable to create thread")
-		} else {
-			return nil, nil
-		}
+		return nil, errors.New("unable to create thread")
 	}
 
-	overwrites := make([]discordgo.PermissionOverwrite, len(thread.PermissionOverwrites))
-	for i, v := range thread.PermissionOverwrites {
+	overwrites := make([]discordgo.PermissionOverwrite, len(ctxThread.PermissionOverwrites))
+	for i, v := range ctxThread.PermissionOverwrites {
 		overwrites[i] = *v
 	}
 
 	tstate := dstate.ChannelState{
-		ID:                   thread.ID,
-		GuildID:              thread.GuildID,
-		Name:                 thread.Name,
-		Topic:                thread.Topic,
-		Type:                 thread.Type,
-		NSFW:                 thread.NSFW,
-		Icon:                 thread.Icon,
-		Position:             thread.Position,
-		Bitrate:              thread.Bitrate,
-		UserLimit:            thread.UserLimit,
-		ParentID:             thread.ParentID,
-		RateLimitPerUser:     thread.RateLimitPerUser,
-		OwnerID:              thread.OwnerID,
-		ThreadMetadata:       thread.ThreadMetadata,
+		ID:                   ctxThread.ID,
+		GuildID:              ctxThread.GuildID,
+		Name:                 ctxThread.Name,
+		Topic:                ctxThread.Topic,
+		Type:                 ctxThread.Type,
+		NSFW:                 ctxThread.NSFW,
+		Icon:                 ctxThread.Icon,
+		Position:             ctxThread.Position,
+		Bitrate:              ctxThread.Bitrate,
+		UserLimit:            ctxThread.UserLimit,
+		ParentID:             ctxThread.ParentID,
+		RateLimitPerUser:     ctxThread.RateLimitPerUser,
+		OwnerID:              ctxThread.OwnerID,
+		ThreadMetadata:       ctxThread.ThreadMetadata,
 		PermissionOverwrites: overwrites,
 	}
 
@@ -1421,28 +1535,6 @@ func (c *Context) CreateThread(channel interface{}, create func(int64) (*discord
 	c.GS = &gsCopy
 
 	return CtxChannelFromCS(&tstate), nil
-}
-
-func (c *Context) tmplCreateThread(channel interface{}, name string, isPrivate ...bool) (*CtxChannel, error) {
-	ctype := discordgo.ChannelTypeGuildPublicThread
-	if len(isPrivate) > 0 {
-		if isPrivate[0] == true {
-			ctype = discordgo.ChannelTypeGuildPrivateThread
-		}
-	}
-
-	return c.CreateThread(channel, func(cID int64) (*discordgo.Channel, error) {
-		return common.BotSession.ThreadStart(cID, name, ctype, 60)
-	}, true)
-}
-
-func (c *Context) tmplCreateMessageThread(channel, msgID interface{}, name string) (*CtxChannel, error) {
-
-	mID := ToInt64(msgID)
-
-	return c.CreateThread(channel, func(cID int64) (*discordgo.Channel, error) {
-		return common.BotSession.MessageThreadStart(cID, mID, name, 60)
-	}, false) // don't send message upon thread create fail since that can happen if a thread already exists for the given message
 }
 
 func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {

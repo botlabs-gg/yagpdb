@@ -27,6 +27,23 @@ type CtxChannel struct {
 	OwnerID              int64                            `json:"owner_id"`
 }
 
+// CtxThreadStart is almost a 1:1 copy of discordgo.ThreadStart but with some added fields
+type CtxThreadStart struct {
+	Name                string                `json:"name"`
+	AutoArchiveDuration int                   `json:"auto_archive_duration,omitempty"`
+	Type                discordgo.ChannelType `json:"type,omitempty"`
+	Invitable           bool                  `json:"invitable"`
+	RateLimitPerUser    int                   `json:"rate_limit_per_user,omitempty"`
+
+	// NOTE: forum threads only
+	AppliedTags []string `json:"applied_tags,omitempty"`
+
+	// NOTE: message threads only
+	MessageID int64 `json:"message_id,omitempty"`
+
+	Content *discordgo.MessageSend
+}
+
 func (c *CtxChannel) Mention() (string, error) {
 	if c == nil {
 		return "", errors.New("channel not found")

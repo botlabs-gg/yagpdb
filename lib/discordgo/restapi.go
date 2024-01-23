@@ -2432,6 +2432,7 @@ func (s *Session) MessageThreadStartComplex(channelID, messageID int64, data *Th
 func (s *Session) MessageThreadStart(channelID, messageID int64, name string, archiveDuration int) (ch *Channel, err error) {
 	return s.MessageThreadStartComplex(channelID, messageID, &ThreadStart{
 		Name:                name,
+		Invitable:           false,
 		AutoArchiveDuration: archiveDuration,
 	})
 }
