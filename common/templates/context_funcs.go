@@ -1434,7 +1434,12 @@ func (c *Context) tmplComplexThread(values ...interface{}) (*CtxThreadStart, err
 				}
 				thread.Content = content
 			default:
-				content, err := CreateMessageSend("content", ToString(val))
+				strVal := ToString(val)
+				if len(strVal) == 0 {
+					return nil, errors.New("content must be non-zero length")
+				}
+
+				content, err := CreateMessageSend("content", strVal)
 				if err != nil {
 					return nil, err
 				}
@@ -1490,6 +1495,12 @@ func (c *Context) tmplCreateThread(channel, thread interface{}) (*CtxChannel, er
 	if cstate.Type == discordgo.ChannelTypeGuildForum {
 		// Override public/private thread to Forum
 		start.Type = discordgo.ChannelTypeGuildForum
+
+		// Make sure content has something valid
+		if data.Content == nil {
+			return nil, errors.New("forum threads must have valid, non-zero length content")
+		}
+
 		// TODO: When ctxThread.AvailableTags is present, convert all tag names to tag ids
 		ctxThread, err = common.BotSession.ForumThreadStartComplex(cID, start, data.Content)
 	} else if data.MessageID > 0 {
