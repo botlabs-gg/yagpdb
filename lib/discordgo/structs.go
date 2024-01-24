@@ -237,6 +237,12 @@ type Channel struct {
 
 	// Thread specific fields
 	ThreadMetadata *ThreadMetadata `json:"thread_metadata"`
+
+	// The set of tags that can be used in a forum channel.
+	AvailableTags []ForumTag `json:"available_tags"`
+
+	// The IDs of the set of tags that have been applied to a thread in a forum channel.
+	AppliedTags IDSlice `json:"applied_tags"`
 }
 
 func (c *Channel) GetChannelID() int64 {
@@ -297,7 +303,7 @@ type ThreadStart struct {
 	RateLimitPerUser    int         `json:"rate_limit_per_user,omitempty"`
 
 	// NOTE: forum threads only - these are IDs
-	AppliedTags []string `json:"applied_tags,string,omitempty"`
+	AppliedTags IDSlice `json:"applied_tags,string,omitempty"`
 }
 
 // ThreadsList represents a list of threads alongisde with thread member objects for the current user.
@@ -318,7 +324,7 @@ type AddedThreadMember struct {
 // NOTE: Exactly one of EmojiID and EmojiName must be set.
 type ForumDefaultReaction struct {
 	// The id of a guild's custom emoji.
-	EmojiID string `json:"emoji_id,omitempty"`
+	EmojiID int64 `json:"emoji_id,omitempty"`
 	// The unicode character of the emoji.
 	EmojiName string `json:"emoji_name,omitempty"`
 }

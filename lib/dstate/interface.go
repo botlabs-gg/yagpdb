@@ -263,6 +263,9 @@ type ChannelState struct {
 	ThreadMetadata   *discordgo.ThreadMetadata `json:"thread_metadata"`
 
 	PermissionOverwrites []discordgo.PermissionOverwrite `json:"permission_overwrites"`
+
+	AvailableTags []discordgo.ForumTag `json:"available_tags"`
+	AppliedTags   []int64              `json:"applied_tags"`
 }
 
 func (c *ChannelState) IsPrivate() bool {
