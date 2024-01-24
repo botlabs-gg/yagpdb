@@ -224,6 +224,9 @@ type MessageSend struct {
 
 	// TODO: Remove this when compatibility is not required.
 	File *File `json:"-"`
+
+	// TODO: Remove this when compatibility is not required.
+	Embed *MessageEmbed `json:"-"`
 }
 
 // MessageEdit is used to chain parameters via ChannelMessageEditComplex, which
