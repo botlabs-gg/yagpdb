@@ -1404,7 +1404,7 @@ func (c *Context) tmplCreateThread(channel, msgID interface{}, name string, priv
 	}
 
 	if err != nil {
-		return nil, errors.New("unable to create thread")
+		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
 	tstate := dstate.ChannelStateFromDgo(ctxThread)
