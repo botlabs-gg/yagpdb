@@ -1,7 +1,6 @@
 package dstate
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -145,27 +144,6 @@ func MemberStateFromPresence(p *discordgo.PresenceUpdate) *MemberState {
 	}
 }
 
-func AppliedTagsFromDgo(availableTags []discordgo.ForumTag, appliedTags []string) []discordgo.ForumTag {
-	if availableTags == nil || appliedTags == nil {
-		return nil
-	}
-
-	// discordgo gives us a list of tag ids - convert them to ForumTag by walking
-	// available tags list
-	applied := make([]discordgo.ForumTag, 0, len(appliedTags))
-	for _, strId := range appliedTags {
-		id, _ := strconv.ParseInt(strId, 10, 64)
-		for _, tag := range availableTags {
-			if tag.ID == id {
-				applied = append(applied, tag)
-				break
-			}
-		}
-	}
-
-	return applied
-}
-
 func ChannelStateFromDgo(c *discordgo.Channel) ChannelState {
 	pos := make([]discordgo.PermissionOverwrite, len(c.PermissionOverwrites))
 	for i, v := range c.PermissionOverwrites {
@@ -184,8 +162,6 @@ func ChannelStateFromDgo(c *discordgo.Channel) ChannelState {
 		Position:             c.Position,
 		Bitrate:              c.Bitrate,
 		OwnerID:              c.OwnerID,
-		AvailableTags:        c.AvailableTags,
-		AppliedTags:          AppliedTagsFromDgo(c.AvailableTags, c.AppliedTags),
 	}
 }
 

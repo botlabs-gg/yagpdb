@@ -235,12 +235,6 @@ type Channel struct {
 	// The user ID of the owner of the thread. Nil on normal channels
 	OwnerID int64 `json:"owner_id,string"`
 
-	// The set of tags that can be used in a forum channel.
-	AvailableTags []ForumTag `json:"available_tags"`
-
-	// The IDs of the set of tags that have been applied to a thread in a forum channel.
-	AppliedTags []string `json:"applied_tags"`
-
 	// Thread specific fields
 	ThreadMetadata *ThreadMetadata `json:"thread_metadata"`
 }

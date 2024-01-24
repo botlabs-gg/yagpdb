@@ -263,12 +263,6 @@ type ChannelState struct {
 	ThreadMetadata   *discordgo.ThreadMetadata `json:"thread_metadata"`
 
 	PermissionOverwrites []discordgo.PermissionOverwrite `json:"permission_overwrites"`
-
-	// The set of tags that can be used in a forum channel.
-	AvailableTags []discordgo.ForumTag `json:"available_tags"`
-
-	// The IDs of the set of tags that have been applied to a thread in a forum channel.
-	AppliedTags []discordgo.ForumTag `json:"applied_tags"`
 }
 
 func (c *ChannelState) IsPrivate() bool {

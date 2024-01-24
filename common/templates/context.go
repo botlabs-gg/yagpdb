@@ -657,7 +657,6 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
 	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("getThread", c.tmplGetThread)
-	c.addContextFunc("complexThread", c.tmplComplexThread)
 	c.addContextFunc("createThread", c.tmplCreateThread)
 	c.addContextFunc("deleteThread", c.tmplDeleteThread)
 	c.addContextFunc("addThreadMember", c.tmplThreadMemberAdd)
