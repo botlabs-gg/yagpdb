@@ -1494,6 +1494,22 @@ func (c *Context) tmplThreadMemberRemove(threadID, memberID interface{}) string 
 	return ""
 }
 
+func ConvertTagNameToId(c *dstate.ChannelState, tagName string) int64 {
+
+	if c.AvailableTags == nil {
+		return 0
+	}
+
+	// walk available tags list and see if there's a match
+	for _, tag := range c.AvailableTags {
+		if tag.Name == tagName {
+			return tag.ID
+		}
+	}
+
+	return 0
+}
+
 func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{}) (int, []int64, error) {
 
 	if values == nil || len(values) == 0 {
@@ -1507,7 +1523,6 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 
 	rateLimit := c.DefaultThreadRateLimitPerUser
 	var tags []int64 = nil
-	var tagNames []string = nil
 	for key, val := range threadSdict {
 
 		key = strings.ToLower(key)
@@ -1515,10 +1530,18 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 		case "slowmode":
 			rateLimit = tmplToInt(val)
 		case "tags":
+			if c.AvailableTags == nil {
+				break
+			}
+
 			v, _ := indirect(reflect.ValueOf(val))
 			const maxTags = 5 // discord limit
 			if v.Kind() == reflect.String {
-				tagNames = []string{ToString(val)}
+				tag := ConvertTagNameToId(c, ToString(val))
+				// ensure supplied id is valid
+				if tag > 0 {
+					tags = []int64{tag}
+				}
 			} else if v.Kind() == reflect.Slice {
 				// used to get rid of any duplicate tags the user might have sent
 				seen := make(map[string]struct{})
@@ -1527,7 +1550,7 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 					size = maxTags
 				}
 
-				tagNames = make([]string, 0, size)
+				tags = make([]int64, 0, size)
 				for i := 0; i < v.Len() && len(seen) < size; i++ {
 					name := ToString(v.Index(i).Interface())
 					if len(name) == 0 {
@@ -1539,8 +1562,14 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 						continue
 					}
 
+					// try to convert and check if the id is valid
+					tag := ConvertTagNameToId(c, name)
+					if tag == 0 {
+						continue
+					}
+
 					seen[name] = struct{}{}
-					tagNames = append(tagNames, name)
+					tags = append(tags, tag)
 				}
 
 			} else {
@@ -1548,19 +1577,6 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 			}
 		default:
 			return 0, nil, errors.New(`invalid key "` + key + `"`)
-		}
-	}
-
-	if tagNames != nil && c.AvailableTags != nil {
-		tags = make([]int64, 0, len(tagNames))
-		for _, name := range tagNames {
-			// walk available tags list and see if there is a match
-			for _, tag := range c.AvailableTags {
-				if tag.Name == name {
-					tags = append(tags, tag.ID)
-					break
-				}
-			}
 		}
 	}
 
