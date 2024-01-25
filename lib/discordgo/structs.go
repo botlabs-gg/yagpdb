@@ -158,6 +158,28 @@ type Invite struct {
 // ChannelType is the type of a Channel
 type ChannelType int
 
+// ForumSortOrderType represents sort order of a forum channel.
+type ForumSortOrderType int
+
+const (
+	// ForumSortOrderLatestActivity sorts posts by activity.
+	ForumSortOrderLatestActivity ForumSortOrderType = 0
+	// ForumSortOrderCreationDate sorts posts by creation time (from most recent to oldest).
+	ForumSortOrderCreationDate ForumSortOrderType = 1
+)
+
+// ForumLayout represents layout of a forum channel.
+type ForumLayout int
+
+const (
+	// ForumLayoutNotSet represents no default layout.
+	ForumLayoutNotSet ForumLayout = 0
+	// ForumLayoutListView displays forum posts as a list.
+	ForumLayoutListView ForumLayout = 1
+	// ForumLayoutGalleryView displays forum posts as a collection of tiles.
+	ForumLayoutGalleryView ForumLayout = 2
+)
+
 // Block contains known ChannelType values
 const (
 	ChannelTypeGuildText          ChannelType = 0  // a text channel within a server
@@ -176,6 +198,10 @@ const (
 
 func (t ChannelType) IsThread() bool {
 	return t == ChannelTypeGuildPrivateThread || t == ChannelTypeGuildPublicThread
+}
+
+func (t ChannelType) IsForum() bool {
+	return t == ChannelTypeGuildForum
 }
 
 // A Channel holds all data related to an individual Discord channel.
@@ -243,6 +269,21 @@ type Channel struct {
 
 	// The IDs of the set of tags that have been applied to a thread in a forum channel.
 	AppliedTags IDSlice `json:"applied_tags"`
+
+	// Emoji to use as the default reaction to a forum post.
+	DefaultReactionEmoji ForumDefaultReaction `json:"default_reaction_emoji"`
+
+	// The initial RateLimitPerUser to set on newly created threads in a channel.
+	// This field is copied to the thread at creation time and does not live update.
+	DefaultThreadRateLimitPerUser int `json:"default_thread_rate_limit_per_user"`
+
+	// The default sort order type used to order posts in forum channels.
+	// Defaults to null, which indicates a preferred sort order hasn't been set by a channel admin.
+	DefaultSortOrder *ForumSortOrderType `json:"default_sort_order"`
+
+	// The default forum layout view used to display posts in forum channels.
+	// Defaults to ForumLayoutNotSet, which indicates a layout view has not been set by a channel admin.
+	DefaultForumLayout ForumLayout `json:"default_forum_layout"`
 }
 
 func (c *Channel) GetChannelID() int64 {
