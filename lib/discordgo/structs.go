@@ -365,7 +365,7 @@ type AddedThreadMember struct {
 // NOTE: Exactly one of EmojiID and EmojiName must be set.
 type ForumDefaultReaction struct {
 	// The id of a guild's custom emoji.
-	EmojiID int64 `json:"emoji_id,omitempty"`
+	EmojiID int64 `json:"emoji_id,string,omitempty"`
 	// The unicode character of the emoji.
 	EmojiName string `json:"emoji_name,omitempty"`
 }
