@@ -263,6 +263,14 @@ type ChannelState struct {
 	ThreadMetadata   *discordgo.ThreadMetadata `json:"thread_metadata"`
 
 	PermissionOverwrites []discordgo.PermissionOverwrite `json:"permission_overwrites"`
+
+	AvailableTags []discordgo.ForumTag `json:"available_tags"`
+	AppliedTags   []int64              `json:"applied_tags"`
+
+	DefaultReactionEmoji          discordgo.ForumDefaultReaction `json:"default_reaction_emoji"`
+	DefaultThreadRateLimitPerUser int                            `json:"default_thread_rate_limit_per_user"`
+	DefaultSortOrder              *discordgo.ForumSortOrderType  `json:"default_sort_order"`
+	DefaultForumLayout            discordgo.ForumLayout          `json:"default_forum_layout"`
 }
 
 func (c *ChannelState) IsPrivate() bool {
