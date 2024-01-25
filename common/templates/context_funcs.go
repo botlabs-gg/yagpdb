@@ -1424,6 +1424,7 @@ func (c *Context) tmplCreateThread(channel, msgID interface{}, name string, priv
 	return CtxChannelFromCS(&tstate), nil
 }
 
+// This function can delete both basic threads and forum threads
 func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
 
 	if c.IncreaseCheckCallCounterPremium("delete_thread", 1, 1) {
@@ -1646,10 +1647,6 @@ func (c *Context) tmplCreateForumPost(channel interface{}, name string, content 
 	c.AddThreadToGuildSet(&tstate)
 
 	return CtxChannelFromCS(&tstate), nil
-}
-
-func (c *Context) tmplRemoveForumPost(thread interface{}) (string, error) {
-	return c.tmplDeleteThread(thread)
 }
 
 func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, error) {

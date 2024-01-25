@@ -666,7 +666,7 @@ func baseContextFuncs(c *Context) {
 
 	// forum functions
 	c.addContextFunc("createForumPost", c.tmplCreateForumPost)
-	c.addContextFunc("removeForumPost", c.tmplRemoveForumPost)
+	c.addContextFunc("deleteForumPost", c.tmplDeleteThread)
 
 	c.addContextFunc("currentUserAgeHuman", c.tmplCurrentUserAgeHuman)
 	c.addContextFunc("currentUserAgeMinutes", c.tmplCurrentUserAgeMinutes)
