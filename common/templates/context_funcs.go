@@ -1371,7 +1371,7 @@ func (c *Context) AddThreadToGuildSet(t *dstate.ChannelState) {
 	c.GS = &gsCopy
 }
 
-func (c *Context) tmplCreateThread(channel, msgID interface{}, name string, private ...interface{}) (*CtxChannel, error) {
+func (c *Context) tmplCreateThread(channel, msgID, name interface{}, private ...interface{}) (*CtxChannel, error) {
 
 	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 1) {
 		return nil, ErrTooManyCalls
@@ -1400,10 +1400,10 @@ func (c *Context) tmplCreateThread(channel, msgID interface{}, name string, priv
 	}
 
 	start := &discordgo.ThreadStart{
-		Name:                name,
-		AutoArchiveDuration: 10080, // 7 days
-		Type:                threadType,
-		Invitable:           false,
+		Name: ToString(name),
+		//AutoArchiveDuration: 10080, // 7 days
+		Type:      threadType,
+		Invitable: false,
 	}
 
 	var ctxThread *discordgo.Channel
@@ -1584,7 +1584,7 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 	return rateLimit, tags, nil
 }
 
-func (c *Context) tmplCreateForumPost(channel interface{}, name string, content interface{}, optional ...interface{}) (*CtxChannel, error) {
+func (c *Context) tmplCreateForumPost(channel, name, content interface{}, optional ...interface{}) (*CtxChannel, error) {
 
 	// shares same counter as create thread
 	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 1) {
@@ -1615,7 +1615,7 @@ func (c *Context) tmplCreateForumPost(channel interface{}, name string, content 
 	}
 
 	start := &discordgo.ThreadStart{
-		Name:             name,
+		Name:             ToString(name),
 		Type:             discordgo.ChannelTypeGuildPublicThread,
 		Invitable:        false,
 		RateLimitPerUser: rateLimit,
