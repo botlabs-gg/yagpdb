@@ -657,10 +657,16 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
 	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("getThread", c.tmplGetThread)
+
+	// thread functions
 	c.addContextFunc("createThread", c.tmplCreateThread)
 	c.addContextFunc("deleteThread", c.tmplDeleteThread)
 	c.addContextFunc("addThreadMember", c.tmplThreadMemberAdd)
 	c.addContextFunc("removeThreadMember", c.tmplThreadMemberRemove)
+
+	// forum functions
+	c.addContextFunc("createForumPost", c.tmplCreateForumPost)
+	c.addContextFunc("deleteForumPost", c.tmplDeleteThread)
 
 	c.addContextFunc("currentUserAgeHuman", c.tmplCurrentUserAgeHuman)
 	c.addContextFunc("currentUserAgeMinutes", c.tmplCurrentUserAgeMinutes)
