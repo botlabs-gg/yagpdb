@@ -417,9 +417,11 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 
 	// make sure the channel exists
 	foundChannel := false
+	var channel *dstate.ChannelState
 	for _, v := range guild.Channels {
 		if v.ID == config.AnnounceChannel {
 			foundChannel = true
+			channel = guild.GetChannel(config.AnnounceChannel)
 		}
 	}
 
@@ -434,13 +436,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 
 	go analytics.RecordActiveUnit(guild.ID, &Plugin{}, "sent_streaming_announcement")
 
-	ctx := templates.NewContext(guild, nil, ms)
-	// ctx.Data["URL"] = ms.PresenceGame.URL
-	// ctx.Data["url"] = ms.PresenceGame.URL
-	// ctx.Data["Game"] = ms.PresenceGame.State
-	// ctx.Data["StreamTitle"] = ms.PresenceGame.Details
-	// ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
-
+	ctx := templates.NewContext(guild, channel, ms)
 	ctx.Data["URL"] = url
 	ctx.Data["url"] = url
 	ctx.Data["Game"] = gameName
