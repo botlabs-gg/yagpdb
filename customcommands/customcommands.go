@@ -434,11 +434,22 @@ func (p *Plugin) AllFeatureFlags() []string {
 	}
 }
 
-func getDatabaseEntries(ctx context.Context, guildID int64, before, after int64, limit int) (models.TemplatesUserDatabaseSlice, error) {
+func getDatabaseEntries(ctx context.Context, guildID int64, before, after int64, queryType, query string, limit int) (models.TemplatesUserDatabaseSlice, error) {
 	qms := []qm.QueryMod{
 		qm.OrderBy("id desc"),
 		qm.Limit(limit),
 		models.TemplatesUserDatabaseWhere.GuildID.EQ(guildID),
+	}
+
+	if len(query) > 0 {
+		switch queryType {
+		case "id":
+			qms = append(qms, qm.Where("id = ?", query))
+		case "user_id":
+			qms = append(qms, qm.Where("user_id = ?", query))
+		case "key":
+			qms = append(qms, qm.Where("key ILIKE ?", query))
+		}
 	}
 
 	if before != 0 {

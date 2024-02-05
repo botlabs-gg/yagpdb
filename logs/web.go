@@ -112,6 +112,9 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 			tmpl.AddAlerts(web.ErrorAlert("Failed parsing before id"))
 		}
 		beforeID = int(beforeId64)
+		if beforeID < 1 {
+			beforeID = 1
+		}
 	} else {
 		tmpl["FirstPage"] = true
 	}
@@ -124,6 +127,9 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 			tmpl.AddAlerts(web.ErrorAlert("Failed parsing before id"))
 		}
 		afterID = int(id64)
+		if afterID < 1 {
+			afterID = 1
+		}
 		tmpl["FirstPage"] = false
 	}
 

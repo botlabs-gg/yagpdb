@@ -35,7 +35,7 @@ var PageHTMLEditCmd string
 //go:embed assets/customcommands.html
 var PageHTMLMain string
 
-//go:embed assets/customcommands_database.html
+//go:embed assets/customcommands-database.html
 var PageHTMLDatabase string
 
 // GroupForm is the form bindings used when creating or updating groups
@@ -74,7 +74,7 @@ func (p *Plugin) InitWeb() {
 		Icon: "fas fa-code",
 	})
 
-	web.AddHTMLTemplate("customcommands/assets/customcommands_database.html", PageHTMLDatabase)
+	web.AddHTMLTemplate("customcommands/assets/customcommands-database.html", PageHTMLDatabase)
 	web.AddSidebarItem(web.SidebarCategoryCustomCommands, &web.SidebarItem{
 		Name: "Database",
 		URL:  "customcommands/database",
@@ -85,7 +85,6 @@ func (p *Plugin) InitWeb() {
 	getCmdHandler := web.ControllerHandler(handleGetCommand, "cp_custom_commands_edit_cmd")
 	getGroupHandler := web.ControllerHandler(handleGetCommandsGroup, "cp_custom_commands")
 	getDBHandler := web.ControllerHandler(handleGetDatabase, "cp_custom_commands_database")
-	getDBSearchHandler := web.ControllerHandler(handleSearchDatabase, "cp_custom_commands_database")
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/customcommands"), subMux)
@@ -112,7 +111,6 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Handle(pat.Get("/database"), getDBHandler)
 	subMux.Handle(pat.Get("/database/"), getDBHandler)
-	subMux.Handle(pat.Post("/database/search"), web.ControllerPostHandler(handleSearchDatabase, getDBSearchHandler, SearchForm{}))
 	subMux.Handle(pat.Post("/database/delete/:id"), web.ControllerPostHandler(handleDeleteDatabaseEntry, getDBHandler, nil))
 
 	subMux.Handle(pat.Get("/commands/:cmd/"), getCmdHandler)
@@ -139,6 +137,7 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	beforeID := 0
+
 	wantBefore := r.URL.Query().Get("before")
 	if wantBefore != "" {
 		beforeID, err = strconv.Atoi(wantBefore)
@@ -159,7 +158,14 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		templateData["FirstPage"] = false
 	}
 
-	result, err := getDatabaseEntries(ctx, activeGuild.ID, int64(beforeID), int64(afterID), 100)
+	queryType := r.URL.Query().Get("type")
+	query := r.URL.Query().Get("query")
+	if len(query) > 0 {
+		templateData["Query"] = query
+		templateData["QueryType"] = queryType
+	}
+
+	result, err := getDatabaseEntries(ctx, activeGuild.ID, int64(beforeID), int64(afterID), queryType, query, 100)
 	if err != nil {
 		return templateData, err
 	}
@@ -170,45 +176,14 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	if len(entries) > 0 {
 		templateData["Oldest"] = entries[len(entries)-1].ID
 		templateData["Newest"] = entries[0].ID
+	} else {
+		templateData["FirstPage"] = true
 	}
 
-	return templateData, nil
-}
-
-func handleSearchDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	ctx := r.Context()
-	activeGuild, templateData := web.GetBaseCPContextData(ctx)
-
-	search := ctx.Value(common.ContextKeyParsedForm).(*SearchForm)
-	if search.Query == "" {
-		return handleGetDatabase(w, r)
-	}
-
-	qms := []qm.QueryMod{
-		models.TemplatesUserDatabaseWhere.GuildID.EQ(activeGuild.ID),
-		qm.OrderBy("id desc"),
-	}
-
-	switch search.Type {
-	case "id":
-		qms = append(qms, qm.Where("id = ?", search.Query))
-	case "user_id":
-		qms = append(qms, qm.Where("user_id = ?", search.Query))
-	case "key":
-		qms = append(qms, qm.Where("key ILIKE ?", search.Query))
-	}
-
-	result, err := models.TemplatesUserDatabases(qms...).AllG(ctx)
-	if err != nil {
-		return templateData, err
-	}
-
-	entries := convertEntries(result)
-
-	templateData["DBEntries"] = entries
-	if len(entries) > 0 {
-		templateData["Oldest"] = entries[len(entries)-1].ID
-		templateData["Newest"] = entries[0].ID
+	if len(entries) < 100 {
+		templateData["LastPage"] = true
+	} else {
+		templateData["LastPage"] = false
 	}
 
 	return templateData, nil
