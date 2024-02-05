@@ -28,27 +28,27 @@
             </header>
             <div class="card-body">
                 <p>
-                    This page allows you to view and delete stray entries in the custom commands database.
+                    This page lets you view your database entries and delete them if needed.
                 </p>
                 <p>
                     <strong>Warning:</strong> Deleting a database entry is permanent and cannot be undone.
                 </p>
-                <form action="/manage/{{.ActiveGuild.ID}}/customcommands/database/search" method="post" data-async-form>
+                <form>
                     <div class="form-row">
                         <div class="form-group col">
                             <label>Search By</label>
-                            <select class="form-control" id="filter-type-dropdown" name="Type">
-                                <option value="id">ID</option>
-                                <option value="user_id">User ID</option>
-                                <option value="key">Key</option>
+                            <select class="form-control" id="filter-type-dropdown" name="type" >
+                                <option value="key" {{if eq .QueryType "key"}} selected="selected" {{end}}>Key</option>
+                                <option value="user_id" {{if eq .QueryType "user_id"}} selected="selected" {{end}}>User ID</option>
+                                <option value="id" {{if eq .QueryType "id"}} selected="selected" {{end}}>ID</option>
                             </select>
                         </div>
                         <div class="from-group col">
                             <label>Search For</label>
-                            <input type="text" name="Query" class="form-control" placeholder="Enter search term..." />
+                            <input type="text" name="query" class="form-control" placeholder="Enter search term..." value="{{.Query}}"/>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary" value="Search" data-async-form>Search!</button>
+                    <button type="submit" class="btn btn-primary" data-async-form>Search</button>
                 </form>
             </div>
         </section>
@@ -84,9 +84,11 @@
         </div>
         <div class="db-navigation">
             {{if not .FirstPage}}
-            <a href="?after={{.Newest}}" class="nav-link btn btn-sm btn-primary mr-1">Newer</a>
+            <button onclick="fetchBefore({{.Newest}})" class="nav-link btn btn-sm btn-primary mr-1">Newer</a>
             {{end}}
-            <a href="?before={{.Oldest}}" class="nav-link btn btn-sm btn-primary">Older</a>
+            {{if not .LastPage }}
+            <button onclick="fetchAfter({{.Oldest}})" class="nav-link btn btn-sm btn-primary">Older</a>
+            {{end}}
         </div>
     </header>
     <div class="card-body">
@@ -135,14 +137,36 @@
     <div class="card-footer db-footer">
         <div class="db-navigation">
             {{if not .FirstPage}}
-            <a href="?after={{.Newest}}" class="nav-link btn btn-sm btn-primary mr-1">Newer</a>
+            <button onclick="fetchBefore({{.Newest}})" class="nav-link btn btn-sm btn-primary mr-1">Newer</a>
             {{end}}
-            <a href="?before={{.Oldest}}" class="nav-link btn btn-sm btn-primary">Older</a>
+            {{if not .LastPage }}
+            <button onclick="fetchAfter({{.Oldest}})" class="nav-link btn btn-sm btn-primary">Older</a>
+            {{end}}
         </div>
     </div>
 </section>
 </div>
 </div>
+<script>
+  function fetchBefore(id){
+    if(!id){
+      return
+    }
+    let url = new URL(window.location.href)
+    url.searchParams.delete("after")
+    url.searchParams.set("before", id)
+    window.location = url.toString();
+  }
+  function fetchAfter(id){
+    if(!id){
+      return
+    }
+    let url = new URL(window.location.href)
+    url.searchParams.delete("before")
+    url.searchParams.set("after", id)
+    window.location = url.toString();
+  }
+</script>
 
 {{template "cp_footer" .}}
 {{end}}
