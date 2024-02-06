@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -434,10 +435,8 @@ func (p *Plugin) AllFeatureFlags() []string {
 	}
 }
 
-func getDatabaseEntries(ctx context.Context, guildID int64, before, after int64, queryType, query string, limit int) (models.TemplatesUserDatabaseSlice, error) {
+func getDatabaseEntries(ctx context.Context, guildID int64, page int, queryType, query string, limit int) (models.TemplatesUserDatabaseSlice, int64, error) {
 	qms := []qm.QueryMod{
-		qm.OrderBy("id desc"),
-		qm.Limit(limit),
 		models.TemplatesUserDatabaseWhere.GuildID.EQ(guildID),
 	}
 
@@ -452,14 +451,16 @@ func getDatabaseEntries(ctx context.Context, guildID int64, before, after int64,
 		}
 	}
 
-	if before != 0 {
-		qms = append(qms, models.TemplatesUserDatabaseWhere.ID.LT(before))
-	} else if after != 0 {
-		qms = append(qms, models.TemplatesUserDatabaseWhere.ID.GT(after))
+	count, err := models.TemplatesUserDatabases(qms...).CountG(ctx)
+	if int64(page) > (count / 100) {
+		page = int(math.Ceil(float64(count) / 100))
 	}
-
+	if page > 1 {
+		qms = append(qms, qm.Offset((limit * (page - 1))))
+	}
+	qms = append(qms, qm.OrderBy("id desc"), qm.Limit(limit))
 	entries, err := models.TemplatesUserDatabases(qms...).AllG(ctx)
-	return entries, err
+	return entries, count, err
 }
 
 func convertEntries(result models.TemplatesUserDatabaseSlice) []*LightDBEntry {
