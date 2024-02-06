@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -434,32 +435,32 @@ func (p *Plugin) AllFeatureFlags() []string {
 	}
 }
 
-func getDatabaseEntries(ctx context.Context, guildID int64, before, after int64, queryType, query string, limit int) (models.TemplatesUserDatabaseSlice, error) {
-	qms := []qm.QueryMod{
-		qm.OrderBy("id desc"),
-		qm.Limit(limit),
+func getDatabaseEntries(ctx context.Context, guildID int64, page int, queryType, query string, limit int) (models.TemplatesUserDatabaseSlice, int64, error) {
+	dataQuery := []qm.QueryMod{
 		models.TemplatesUserDatabaseWhere.GuildID.EQ(guildID),
 	}
 
 	if len(query) > 0 {
 		switch queryType {
 		case "id":
-			qms = append(qms, qm.Where("id = ?", query))
+			dataQuery = append(dataQuery, qm.Where("id = ?", query))
 		case "user_id":
-			qms = append(qms, qm.Where("user_id = ?", query))
+			dataQuery = append(dataQuery, qm.Where("user_id = ?", query))
 		case "key":
-			qms = append(qms, qm.Where("key ILIKE ?", query))
+			dataQuery = append(dataQuery, qm.Where("key ILIKE ?", query))
 		}
 	}
 
-	if before != 0 {
-		qms = append(qms, models.TemplatesUserDatabaseWhere.ID.LT(before))
-	} else if after != 0 {
-		qms = append(qms, models.TemplatesUserDatabaseWhere.ID.GT(after))
+	count, err := models.TemplatesUserDatabases(dataQuery...).CountG(ctx)
+	if int64(page) > (count / 100) {
+		page = int(math.Ceil(float64(count) / 100))
 	}
-
-	entries, err := models.TemplatesUserDatabases(qms...).AllG(ctx)
-	return entries, err
+	if page > 1 {
+		dataQuery = append(dataQuery, qm.Offset((limit * (page - 1))))
+	}
+	dataQuery = append(dataQuery, qm.OrderBy("id desc"), qm.Limit(limit))
+	entries, err := models.TemplatesUserDatabases(dataQuery...).AllG(ctx)
+	return entries, count, err
 }
 
 func convertEntries(result models.TemplatesUserDatabaseSlice) []*LightDBEntry {

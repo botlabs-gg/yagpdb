@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -136,26 +137,17 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	beforeID := 0
-
-	wantBefore := r.URL.Query().Get("before")
-	if wantBefore != "" {
-		beforeID, err = strconv.Atoi(wantBefore)
+	page := 0
+	pageStr := r.URL.Query().Get("page")
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
 		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Failed parsing before id"))
+			templateData.AddAlerts(web.ErrorAlert("Failed parsing Page"))
 		}
-	} else {
-		templateData["FirstPage"] = true
 	}
 
-	afterID := 0
-	wantAfter := r.URL.Query().Get("after")
-	if wantAfter != "" {
-		afterID, err = strconv.Atoi(wantAfter)
-		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Failed parsing after id"))
-		}
-		templateData["FirstPage"] = false
+	if page < 1 {
+		page = 1
 	}
 
 	queryType := r.URL.Query().Get("type")
@@ -165,26 +157,19 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		templateData["QueryType"] = queryType
 	}
 
-	result, err := getDatabaseEntries(ctx, activeGuild.ID, int64(beforeID), int64(afterID), queryType, query, 100)
+	result, total, err := getDatabaseEntries(ctx, activeGuild.ID, page, queryType, query, 100)
 	if err != nil {
 		return templateData, err
 	}
+	totalPages := int(math.Ceil((float64(total) / 100)))
+	if page > totalPages {
+		page = totalPages
+	}
 
 	entries := convertEntries(result)
-
 	templateData["DBEntries"] = entries
-	if len(entries) > 0 {
-		templateData["Oldest"] = entries[len(entries)-1].ID
-		templateData["Newest"] = entries[0].ID
-	} else {
-		templateData["FirstPage"] = true
-	}
-
-	if len(entries) < 100 {
-		templateData["LastPage"] = true
-	} else {
-		templateData["LastPage"] = false
-	}
+	templateData["TotalPages"] = totalPages
+	templateData["Page"] = page
 
 	return templateData, nil
 }
