@@ -436,30 +436,30 @@ func (p *Plugin) AllFeatureFlags() []string {
 }
 
 func getDatabaseEntries(ctx context.Context, guildID int64, page int, queryType, query string, limit int) (models.TemplatesUserDatabaseSlice, int64, error) {
-	dataQuery := []qm.QueryMod{
+	qms := []qm.QueryMod{
 		models.TemplatesUserDatabaseWhere.GuildID.EQ(guildID),
 	}
 
 	if len(query) > 0 {
 		switch queryType {
 		case "id":
-			dataQuery = append(dataQuery, qm.Where("id = ?", query))
+			qms = append(qms, qm.Where("id = ?", query))
 		case "user_id":
-			dataQuery = append(dataQuery, qm.Where("user_id = ?", query))
+			qms = append(qms, qm.Where("user_id = ?", query))
 		case "key":
-			dataQuery = append(dataQuery, qm.Where("key ILIKE ?", query))
+			qms = append(qms, qm.Where("key ILIKE ?", query))
 		}
 	}
 
-	count, err := models.TemplatesUserDatabases(dataQuery...).CountG(ctx)
+	count, err := models.TemplatesUserDatabases(qms...).CountG(ctx)
 	if int64(page) > (count / 100) {
 		page = int(math.Ceil(float64(count) / 100))
 	}
 	if page > 1 {
-		dataQuery = append(dataQuery, qm.Offset((limit * (page - 1))))
+		qms = append(qms, qm.Offset((limit * (page - 1))))
 	}
-	dataQuery = append(dataQuery, qm.OrderBy("id desc"), qm.Limit(limit))
-	entries, err := models.TemplatesUserDatabases(dataQuery...).AllG(ctx)
+	qms = append(qms, qm.OrderBy("id desc"), qm.Limit(limit))
+	entries, err := models.TemplatesUserDatabases(qms...).AllG(ctx)
 	return entries, count, err
 }
 
