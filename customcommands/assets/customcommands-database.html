@@ -82,13 +82,13 @@
         <div>
             <h2 class="card-title">Database Entries</h2>
         </div>
-        <div class="db-navigation ml-auto">
-            <span class="mr-5">Showing Page {{.Page}} of {{.TotalPages}}</span>
+        <div class="db-navigation ml-auto btn-group-sm">
+            <span class="mr-3">Showing Page {{.Page}} of {{.TotalPages}}</span>
             {{if not (eq .Page 1)}}
-            <button onclick="getPage({{sub .Page 1}})" class="nav-link btn btn-sm btn-primary mr-1">Previous</button>
+            <button onclick="getPage({{sub .Page 1}})" class="btn btn-sm btn-primary mr-1">Previous</button>
             {{end}}
             {{if not (eq .Page .TotalPages) }}
-            <button onclick="getPage({{add .Page 1}})" class="nav-link btn btn-sm btn-primary">Next</button>
+            <button onclick="getPage({{add .Page 1}})" class="btn btn-sm btn-primary">Next</button>
             {{end}}
         </div>
     </header>
@@ -136,14 +136,14 @@
         </div>
     </div>
     <div class="card-footer db-footer">
-        <div class="db-navigation ml-auto">
-        <span class="mr-5">Showing Page {{.Page}} of {{.TotalPages}}</span>
-          {{if not (eq .Page 1)}}
-          <button onclick="getPage({{sub .Page 1}})" class="nav-link btn btn-sm btn-primary mr-1">Previous</button>
-          {{end}}
-          {{if not (eq .Page .TotalPages) }}
-          <button onclick="getPage({{add .Page 1}})" class="nav-link btn btn-sm btn-primary">Next</button>
-          {{end}}
+         <div class="db-navigation ml-auto btn-group-sm">
+            <span class="mr-3">Showing Page {{.Page}} of {{.TotalPages}}</span>
+            {{if not (eq .Page 1)}}
+            <button onclick="getPage({{sub .Page 1}})" class="btn btn-sm btn-primary mr-1">Previous</button>
+            {{end}}
+            {{if not (eq .Page .TotalPages) }}
+            <button onclick="getPage({{add .Page 1}})" class="btn btn-sm btn-primary">Next</button>
+            {{end}}
         </div>
     </div>
 </section>
