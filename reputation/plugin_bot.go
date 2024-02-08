@@ -69,7 +69,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	}
 
 	// Check if thanks detection is allowed in the parent channel
-	if cState.Type.IsForum() || cState.Type.IsThread() {
+	if cState.Type.IsThread() {
 		if !isThanksDetectionAllowedInChannel(conf, cState.ParentID) {
 			return
 		}
