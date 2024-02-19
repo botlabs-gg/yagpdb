@@ -6,7 +6,7 @@
 
 Since ad-networks are denying me and the amazon ads are not giving any return. I'm gonna start seriously looking for other places for funding, such as Patreon which i hadn't taken very seriously before
 
-The patreon goals have therefor been updated: https://www.patreon.com/yagpdb
+The patreon goals have therefor been updated: https://www.patreon.com/quackpdb
 
 Quick run-down:
 

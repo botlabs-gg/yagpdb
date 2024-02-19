@@ -5,19 +5,19 @@ package twitter
 import (
 	"sync"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/quackpdb/v2/twitter/models"
 	twitterscraper "github.com/n0madic/twitter-scraper"
 )
 
 var (
 	logger = common.GetPluginLogger(&Plugin{})
 
-	confTwitterBatchSize     = config.RegisterOption("yagpdb.twitter.batch_size", "Batch Size for scraping feeds", 50)
-	confTwitterPollFrequency = config.RegisterOption("yagpdb.twitter.poll_frequency", "Minimum Delay in each feed poll for all feeds in minutes", 1)
-	confTwitterBatchDelay    = config.RegisterOption("yagpdb.twitter.batch_delay", "Delay in seconds between each batch", 10)
+	confTwitterBatchSize     = config.RegisterOption("quackpdb.twitter.batch_size", "Batch Size for scraping feeds", 50)
+	confTwitterPollFrequency = config.RegisterOption("quackpdb.twitter.poll_frequency", "Minimum Delay in each feed poll for all feeds in minutes", 1)
+	confTwitterBatchDelay    = config.RegisterOption("quackpdb.twitter.batch_delay", "Delay in seconds between each batch", 10)
 )
 
 type Plugin struct {

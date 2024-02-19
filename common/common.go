@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common/cacheset"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/common/cacheset"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
@@ -44,7 +44,7 @@ var (
 
 	RedisPoolSize = 0
 
-	Testing = os.Getenv("YAGPDB_TESTING") != ""
+	Testing = os.Getenv("QUACKPDB_TESTING") != ""
 
 	CurrentRunCounter int64
 
@@ -92,7 +92,7 @@ func Init() error {
 		return err
 	}
 
-	db := "yagpdb"
+	db := "quackpdb"
 	if ConfPQDB.GetString() != "" {
 		db = ConfPQDB.GetString()
 	}
@@ -125,7 +125,7 @@ func Init() error {
 
 	BotApplication = app
 
-	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "yagpdb_run_counter"))
+	err = RedisPool.Do(radix.Cmd(&CurrentRunCounter, "INCR", "quackpdb_run_counter"))
 	if err != nil {
 		panic(err)
 	}
@@ -189,7 +189,7 @@ func setupGlobalDGoSession() (err error) {
 }
 
 func InitTest() {
-	testDB := os.Getenv("YAGPDB_TEST_DB")
+	testDB := os.Getenv("QUACKPDB_TEST_DB")
 	if testDB == "" {
 		return
 	}
@@ -202,11 +202,11 @@ func InitTest() {
 
 var (
 	metricsRedisReconnects = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_redis_reconnects_total",
+		Name: "quackpdb_redis_reconnects_total",
 		Help: "Number of reconnects to the redis server",
 	})
 	metricsRedisRetries = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "yagpdb_redis_retries_total",
+		Name: "quackpdb_redis_retries_total",
 		Help: "Number of retries on redis commands",
 	})
 )
@@ -214,7 +214,7 @@ var (
 var RedisAddr = loadRedisAddr()
 
 func loadRedisAddr() string {
-	addr := os.Getenv("YAGPDB_REDIS")
+	addr := os.Getenv("QUACKPDB_REDIS")
 	if addr == "" {
 		addr = "localhost:6379"
 	}
@@ -225,7 +225,7 @@ func loadRedisAddr() string {
 func connectRedis(unitTests bool) (err error) {
 	maxConns := RedisPoolSize
 	if maxConns == 0 {
-		maxConns, _ = strconv.Atoi(os.Getenv("YAGPDB_REDIS_POOL_SIZE"))
+		maxConns, _ = strconv.Atoi(os.Getenv("QUACKPDB_REDIS_POOL_SIZE"))
 		if maxConns == 0 {
 			maxConns = 10
 		}

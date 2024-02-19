@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/templates"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/bot"
+	"github.com/botlabs-gg/quackpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/templates"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 )
 
 func init() {
@@ -92,7 +92,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 	execBot := func(cmd string, args ...interface{}) (interface{}, error) {
 
 		botUserCopy := *common.BotUser
-		botUserCopy.Username = "YAGPDB (cc: " + ctx.Msg.Author.String() + ")"
+		botUserCopy.Username = "QUACKPDB (cc: " + ctx.Msg.Author.String() + ")"
 
 		messageCopy := *ctx.Msg
 		messageCopy.Author = &botUserCopy

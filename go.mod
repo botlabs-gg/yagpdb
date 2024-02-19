@@ -1,4 +1,4 @@
-module github.com/botlabs-gg/yagpdb/v2
+module github.com/botlabs-gg/quackpdb/v2
 
 go 1.20
 

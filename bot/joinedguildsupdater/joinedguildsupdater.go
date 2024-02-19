@@ -5,10 +5,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/bot/models"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/quackpdb/v2/bot/models"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 

@@ -6,7 +6,7 @@ A here is a "process", which can be spread over hosts if you want.
 
 I would not recommend using this, as 1. it currently only works against my discordgo fork and 2. its lacking a lot of tests still (although this im improving on)
 
-It's currently used in YAGPDB.
+It's currently used in QUACKPDB.
 
 
 

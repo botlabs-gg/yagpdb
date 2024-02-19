@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate/inmemorytracker"
+	"github.com/botlabs-gg/quackpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate/inmemorytracker"
 	"github.com/karlseguin/ccache"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -21,22 +21,22 @@ type ReadyTracker interface {
 }
 
 var metricsRequests = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "yagpdb_memberfetcher_requests_total",
+	Name: "quackpdb_memberfetcher_requests_total",
 	Help: "The total number members added to queue",
 })
 
 var metricsProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_memberfetcher_processed_total",
+	Name: "quackpdb_memberfetcher_processed_total",
 	Help: "The total number of processed queue items",
 }, []string{"type"})
 
 var metricsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_memberfetcher_failed_total",
+	Name: "quackpdb_memberfetcher_failed_total",
 	Help: "The total number of failed queue items",
 }, []string{"type"})
 
 var metricsGatewayChunkFailed = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "yagpdb_memberfetcher_gateway_chunk_fail_total",
+	Name: "quackpdb_memberfetcher_gateway_chunk_fail_total",
 	Help: "The number of failed",
 })
 

@@ -11,18 +11,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
-	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/v2/common/sentryhook"
-	"github.com/botlabs-gg/yagpdb/v2/feeds"
-	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/botlabs-gg/quackpdb/v2/bot"
+	"github.com/botlabs-gg/quackpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/backgroundworkers"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/configstore"
+	"github.com/botlabs-gg/quackpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/quackpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/quackpdb/v2/common/sentryhook"
+	"github.com/botlabs-gg/quackpdb/v2/feeds"
+	"github.com/botlabs-gg/quackpdb/v2/web"
 	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -49,7 +49,7 @@ var (
 	flagVersion bool
 )
 
-var confSentryDSN = config.RegisterOption("yagpdb.sentry_dsn", "Sentry credentials for sentry logging hook", nil)
+var confSentryDSN = config.RegisterOption("quackpdb.sentry_dsn", "Sentry credentials for sentry logging hook", nil)
 
 func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
@@ -58,7 +58,7 @@ func init() {
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver, backgroundworkers and all feeds)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
-	flag.StringVar(&flagLogAppName, "logappname", "yagpdb", "When using syslog, the application name will be set to this")
+	flag.StringVar(&flagLogAppName, "logappname", "quackpdb", "When using syslog, the application name will be set to this")
 	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, atleast one process needs this")
 	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
 	flag.BoolVar(&flagGenConfigDocs, "genconfigdocs", false, "Generate config docs and exit")
@@ -98,7 +98,7 @@ func Init() {
 		os.Exit(1)
 	}
 
-	log.Info("Starting YAGPDB version " + common.VERSION)
+	log.Info("Starting QUACKPDB version " + common.VERSION)
 
 	err := common.CoreInit(true)
 	if err != nil {

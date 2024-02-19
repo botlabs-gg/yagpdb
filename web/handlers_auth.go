@@ -7,16 +7,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/models"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/models"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/web/discorddata"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
 
 var (
-	SessionCookieName = "yagpdb-session-3"
+	SessionCookieName = "quackpdb-session-3"
 	OauthConf         *oauth2.Config
 )
 
@@ -199,7 +199,7 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 
 	cookie = &http.Cookie{
 		// The old cookie name can safely be used after the old format has been phased out (after a day in use)
-		// Name:   "yagpdb-session",
+		// Name:   "quackpdb-session",
 		Name:   SessionCookieName,
 		Value:  yagToken,
 		MaxAge: int(cookieExpirey.Seconds()),

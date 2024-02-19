@@ -21,17 +21,17 @@
     <meta name="theme-color" content="#ffffff">
 
     <!-- More meta stuff -->
-    <meta name="apple-mobile-web-app-title" content="YAGPDB">
-    <meta name="application-name" content="YAGPDB">
+    <meta name="apple-mobile-web-app-title" content="QUACKPDB">
+    <meta name="application-name" content="QUACKPDB">
     <meta name="msapplication-config" content="/static/icons/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
 
-    <meta property="og:title" content="YAGPDB" />
+    <meta property="og:title" content="QUACKPDB" />
     <meta property="og:description" content="Yet Another General Purpose Discord Bot" />
 
-    <title>YAGPDB - Control Panel{{if .ActiveGuild}} | {{.ActiveGuild.Name}}{{end}}</title>
-    <meta name="keywords" content="YAGPDB Discord bot control panel" />
-    <meta name="description" content="YAGPDB - Yet Another General Purpose Discord Bot">
+    <title>QUACKPDB - Control Panel{{if .ActiveGuild}} | {{.ActiveGuild.Name}}{{end}}</title>
+    <meta name="keywords" content="QUACKPDB Discord bot control panel" />
+    <meta name="description" content="QUACKPDB - Yet Another General Purpose Discord Bot">
     <meta name="author" content="jonas747">
 
     <!-- Web Fonts  -->
@@ -230,12 +230,12 @@ $(function(){
 <p class="mb-0">To include the user or server in the message you can use the template data included.<br/>
 Some quick examples: <code>{{"{{"}}.User.Username{{"}}"}}</code> - will be replaced by username, <code>{{"{{"}}.Server.Name{{"}}"}}</code> - will be replaced by server name, <code>{{"{{"}}.User.ID{{"}}"}}</code> - the user's id and so on...<br/>
 For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></code>.<br/>
-<a href="https://docs.yagpdb.xyz" target="_blank">See the documentation for more details</a>
+<a href="https://docs.quackpdb.xyz" target="_blank">See the documentation for more details</a>
 </p>
 {{end}}
 
 {{/*Specific template helpers*/}}
-{{define "template_helper_user"}}<code>{{"{{"}}.User{{"}}"}}: <a href="https://docs.yagpdb.xyz/reference/templates#user"><code>.User</code> object documentation.</a></code>{{end}}
-{{define "template_helper_guild"}}<code>{{"{{"}}.Guild{{"}}"}}<a href="https://docs.yagpdb.xyz/reference/templates#guild-server"><code>.Guild</code> object reference.</a></code>{{end}}
+{{define "template_helper_user"}}<code>{{"{{"}}.User{{"}}"}}: <a href="https://docs.quackpdb.xyz/reference/templates#user"><code>.User</code> object documentation.</a></code>{{end}}
+{{define "template_helper_guild"}}<code>{{"{{"}}.Guild{{"}}"}}<a href="https://docs.quackpdb.xyz/reference/templates#guild-server"><code>.Guild</code> object reference.</a></code>{{end}}
 
 {{define "set_roles"}}<script>var activeGuildRoles = JSON.parse('{{json .ActiveGuild.Roles}}');</script>{{end}}

@@ -7,10 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
 
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
 )
 
 func GenCommandsDocs() {

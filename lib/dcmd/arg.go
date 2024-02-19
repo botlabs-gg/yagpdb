@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate"
 )
 
 // ArgDef represents a argument definition, either a switch or plain arg

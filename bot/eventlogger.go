@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/quackpdb/v2/bot/eventsystem"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -82,12 +82,12 @@ func (e *eventLogger) GetStats() (total [][]int64, perPeriod [][]int64) {
 }
 
 var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_discord_events_shards_total",
+	Name: "quackpdb_discord_events_shards_total",
 	Help: "The total number of processed events, with a shard label",
 }, []string{"shard"})
 
 var metricsHandledEventsHandledTypes = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_discord_events_types_total",
+	Name: "quackpdb_discord_events_types_total",
 	Help: "The total number of processed events, with a type label",
 }, []string{"type"})
 

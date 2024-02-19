@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
 	"github.com/google/safebrowsing"
 	"github.com/sirupsen/logrus"
 )
@@ -16,7 +16,7 @@ var SafeBrowser *safebrowsing.SafeBrowser
 
 var ErrNoSafebrowsingAPIKey = errors.New("no safebrowsing api key provided")
 
-var confSafebrowsingAPIKey = config.RegisterOption("yagpdb.google.safebrowsing_api_key", "Google safebrowsing API Key", "")
+var confSafebrowsingAPIKey = config.RegisterOption("quackpdb.google.safebrowsing_api_key", "Google safebrowsing API Key", "")
 
 func runDatabase() error {
 	safebrowsingAPIKey := confSafebrowsingAPIKey.GetString()

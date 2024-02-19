@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/dca"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dca"
 )
 
 // All global variables used within the program

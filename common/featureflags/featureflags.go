@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/pubsub"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -205,7 +205,7 @@ func GuildHasFlagOrLogError(guildID int64, flag string) bool {
 }
 
 var metricsFeatureFlagsUpdated = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "yagpdb_featureflags_updated_guilds_total",
+	Name: "quackpdb_featureflags_updated_guilds_total",
 	Help: "Guilds featureflags has been updated for",
 })
 

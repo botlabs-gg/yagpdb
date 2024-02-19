@@ -8,13 +8,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/quackpdb/v2/bot/eventsystem"
 	"github.com/mediocregopher/radix/v3"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/node"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dshardorchestrator"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dshardorchestrator/node"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate"
 )
 
 func init() {
@@ -46,7 +46,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 		EventLogger.init(info.TotalShards)
 		go EventLogger.run()
 
-		err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", info.TotalShards))
+		err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "quackpdb_total_shards", info.TotalShards))
 		if err != nil {
 			logger.WithError(err).Error("failed setting shard count")
 		}

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -63,6 +63,6 @@ func Stop(wg *sync.WaitGroup) {
 }
 
 var MetricPostedMessages = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_feed_posted_total",
+	Name: "quackpdb_feed_posted_total",
 	Help: "Feed messages posted",
 }, []string{"source"})

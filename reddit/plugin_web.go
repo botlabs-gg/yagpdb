@@ -10,12 +10,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
-	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/quackpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/reddit/models"
+	"github.com/botlabs-gg/quackpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"goji.io"
@@ -93,7 +93,7 @@ func baseData(inner http.Handler) http.Handler {
 		templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reddit/"
 
 		feeds, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(activeGuild.ID)).AllG(ctx)
-		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the yagpdb server", web.CtxLogger(ctx).Error) {
+		if web.CheckErr(templateData, err, "Failed retrieving config, message support in the quackpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		} else {
 			sort.Slice(feeds, func(i, j int) bool {

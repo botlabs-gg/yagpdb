@@ -10,14 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/analytics"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/v2/feeds"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/go-reddit"
-	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
+	"github.com/botlabs-gg/quackpdb/v2/analytics"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/quackpdb/v2/feeds"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/go-reddit"
+	"github.com/botlabs-gg/quackpdb/v2/reddit/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -25,13 +25,13 @@ import (
 )
 
 var (
-	confClientID     = config.RegisterOption("yagpdb.reddit.clientid", "Client ID for the reddit api application", "")
-	confClientSecret = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
-	confRedirectURI  = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
-	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
+	confClientID     = config.RegisterOption("quackpdb.reddit.clientid", "Client ID for the reddit api application", "")
+	confClientSecret = config.RegisterOption("quackpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
+	confRedirectURI  = config.RegisterOption("quackpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
+	confRefreshToken = config.RegisterOption("quackpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
 
-	confMaxPostsHourFast = config.RegisterOption("yagpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
-	confMaxPostsHourSlow = config.RegisterOption("yagpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)
+	confMaxPostsHourFast = config.RegisterOption("quackpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
+	confMaxPostsHourSlow = config.RegisterOption("quackpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)
 
 	feedLock sync.Mutex
 	fastFeed *PostFetcher
@@ -71,7 +71,7 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 }
 
 func UserAgent() string {
-	return fmt.Sprintf("YAGPDB:%s:%s (by /u/jonas747)", confClientID.GetString(), common.VERSION)
+	return fmt.Sprintf("QUACKPDB:%s:%s (by /u/jonas747)", confClientID.GetString(), common.VERSION)
 }
 
 func setupClient() *reddit.Client {
@@ -84,7 +84,7 @@ func setupClient() *reddit.Client {
 func (p *Plugin) runBot() {
 	feedLock.Lock()
 
-	if os.Getenv("YAGPDB_REDDIT_FAST_FEED_DISABLED") == "" {
+	if os.Getenv("QUACKPDB_REDDIT_FAST_FEED_DISABLED") == "" {
 		fastFeed = NewPostFetcher(p.redditClient, false, NewPostHandler(false))
 		go fastFeed.Run()
 	}
@@ -202,7 +202,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 	for _, item := range filteredItems {
 		idStr := strconv.FormatInt(item.ID, 10)
 
-		webhookUsername := "Reddit • YAGPDB"
+		webhookUsername := "Reddit • QUACKPDB"
 
 		qm := &mqueue.QueuedElement{
 			GuildID:         item.GuildID,

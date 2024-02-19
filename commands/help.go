@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/botlabs-gg/quackpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/web"
 )
 
 var cmdHelp = &YAGCommand{
@@ -97,14 +97,14 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 func createInteractiveHelp(userID int64, helpEmbeds []*discordgo.MessageEmbed) (interface{}, error) {
 	channel, err := common.BotSession.UserChannelCreate(userID)
 	if err != nil {
-		return "Something went wrong, maybe you have DMs disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
+		return "Something went wrong, maybe you have DMs disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.quackpdb.xyz/commands>", err
 	}
 
 	// prepend a introductionairy first page
 	firstPage := &discordgo.MessageEmbed{
-		Title: "YAGPDB Help!",
-		Description: fmt.Sprintf(`YAGPDB is an open-source multipurpose discord bot that is configured through the web interface at %s.
-For more in depth help and information you should visit https://docs.yagpdb.xyz/ as this command only shows information about commands.)
+		Title: "QUACKPDB Help!",
+		Description: fmt.Sprintf(`QUACKPDB is an open-source multipurpose discord bot that is configured through the web interface at %s.
+For more in depth help and information you should visit https://docs.quackpdb.xyz/ as this command only shows information about commands.)
 		
 		
 **Use the emojis under to change pages**`, web.BaseURL()),

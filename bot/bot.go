@@ -9,16 +9,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/bot/shardmemberfetcher"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/node"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate/inmemorytracker"
-	dshardmanager "github.com/botlabs-gg/yagpdb/v2/lib/jdshardmanager"
+	"github.com/botlabs-gg/quackpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/quackpdb/v2/bot/shardmemberfetcher"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dshardorchestrator/node"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate/inmemorytracker"
+	dshardmanager "github.com/botlabs-gg/quackpdb/v2/lib/jdshardmanager"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -37,11 +37,11 @@ var (
 )
 
 var (
-	confConnEventChannel         = config.RegisterOption("yagpdb.connevt.channel", "Gateway connection logging channel", 0)
-	confConnStatus               = config.RegisterOption("yagpdb.connstatus.channel", "Gateway connection status channel", 0)
-	confShardOrchestratorAddress = config.RegisterOption("yagpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
+	confConnEventChannel         = config.RegisterOption("quackpdb.connevt.channel", "Gateway connection logging channel", 0)
+	confConnStatus               = config.RegisterOption("quackpdb.connstatus.channel", "Gateway connection status channel", 0)
+	confShardOrchestratorAddress = config.RegisterOption("quackpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
 
-	confFixedShardingConfig = config.RegisterOption("yagpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")
+	confFixedShardingConfig = config.RegisterOption("quackpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")
 
 	usingFixedSharding bool
 	fixedShardingID    int
@@ -69,7 +69,7 @@ var (
 	totalShardCount int
 )
 
-// Run intializes and starts the discord bot component of yagpdb
+// Run intializes and starts the discord bot component of quackpdb
 func Run(nodeID string) {
 	setup()
 
@@ -136,7 +136,7 @@ func setupStandalone() {
 		ReadyTracker.shardsAdded(i)
 	}
 
-	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", totalShardCount))
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "quackpdb_total_shards", totalShardCount))
 	if err != nil {
 		logger.WithError(err).Error("failed setting shard count")
 	}
@@ -150,17 +150,17 @@ func readFixedShardingConfig() (id int, count int) {
 
 	split := strings.SplitN(conf, ",", 2)
 	if len(split) < 2 {
-		panic("Invalid yagpdb.sharding.fixed_config: " + conf)
+		panic("Invalid quackpdb.sharding.fixed_config: " + conf)
 	}
 
 	parsedID, err := strconv.ParseInt(split[0], 10, 64)
 	if err != nil {
-		panic("Invalid yagpdb.sharding.fixed_config: " + err.Error())
+		panic("Invalid quackpdb.sharding.fixed_config: " + err.Error())
 	}
 
 	parsedCount, err := strconv.ParseInt(split[1], 10, 64)
 	if err != nil {
-		panic("Invalid yagpdb.sharding.fixed_config: " + err.Error())
+		panic("Invalid quackpdb.sharding.fixed_config: " + err.Error())
 	}
 
 	return int(parsedID), int(parsedCount)
@@ -260,7 +260,7 @@ type identifyRatelimiter struct {
 }
 
 func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
-	const key = "yagpdb.gateway.identify.limit"
+	const key = "quackpdb.gateway.identify.limit"
 	for {
 
 		if rl.checkSameBucket(shardID) {
@@ -324,27 +324,27 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 
 // var (
 // 	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
-// 		Name: "yagpdb_state_cache_hits_total",
+// 		Name: "quackpdb_state_cache_hits_total",
 // 		Help: "Cache hits in the satte cache",
 // 	})
 
 // 	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
-// 		Name: "yagpdb_state_cache_misses_total",
+// 		Name: "quackpdb_state_cache_misses_total",
 // 		Help: "Cache misses in the sate cache",
 // 	})
 
 // 	metricsCacheEvictions = promauto.NewCounter(prometheus.CounterOpts{
-// 		Name: "yagpdb_state_cache_evicted_total",
+// 		Name: "quackpdb_state_cache_evicted_total",
 // 		Help: "Cache evictions",
 // 	})
 
 // 	metricsCacheMemberEvictions = promauto.NewCounter(prometheus.CounterOpts{
-// 		Name: "yagpdb_state_members_evicted_total",
+// 		Name: "quackpdb_state_members_evicted_total",
 // 		Help: "Members evicted from state cache",
 // 	})
 // )
 
-var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Remove offline members from state", true)
+var confStateRemoveOfflineMembers = config.RegisterOption("quackpdb.state.remove_offline_members", "Remove offline members from state", true)
 
 // func setupState() {
 // 	// Things may rely on state being available at this point for initialization
@@ -428,7 +428,7 @@ func setupShardManager() {
 	ShardManager = dshardmanager.New(common.GetBotToken())
 	ShardManager.LogChannel = int64(connEvtChannel)
 	ShardManager.StatusMessageChannel = int64(connStatusChannel)
-	ShardManager.Name = "YAGPDB"
+	ShardManager.Name = "QUACKPDB"
 	ShardManager.GuildCountsFunc = GuildCountsFunc
 	ShardManager.SessionFunc = func(token string) (session *discordgo.Session, err error) {
 		session, err = discordgo.New(token)

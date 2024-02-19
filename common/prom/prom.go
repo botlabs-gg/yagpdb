@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	ConfPromListenAddr      = config.RegisterOption("yagpdb.prom_listen_addr", "Prometheus listen address", "")
-	ConfPromListenPortRange = config.RegisterOption("yagpdb.prom_listen_port_range", "Prometheus listen port range", "6001-6100")
+	ConfPromListenAddr      = config.RegisterOption("quackpdb.prom_listen_addr", "Prometheus listen address", "")
+	ConfPromListenPortRange = config.RegisterOption("quackpdb.prom_listen_port_range", "Prometheus listen port range", "6001-6100")
 
 	parsedPortRange []int
 )

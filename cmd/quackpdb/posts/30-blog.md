@@ -6,7 +6,7 @@
 
 It's been a while since last update so i thought i would do a status update here and explain why there hasn't been any updates in a while.
 
-I have done various projects related to discord bots the last months even though there hasn't been any pushed updates to YAGPDB, thats mostly been experiments and various other things. I was also taking a break from this project for a while.
+I have done various projects related to discord bots the last months even though there hasn't been any pushed updates to QUACKPDB, thats mostly been experiments and various other things. I was also taking a break from this project for a while.
 
 As for whats gonna be in the next updates:
  - first i wanna get my new gateway code working, this is not needed but i still wanna do it cause i feel like it, and it may fix the bot getting stuck in voice channels as a side effect.
@@ -26,7 +26,7 @@ After all this i will start on additions and new features again.
 
 Helping out here helps me getting feedback and making the bot more known
 
- - [Rate & Write a review on botlist.co](https://botlist.co/bots/yagpdb)
+ - [Rate & Write a review on botlist.co](https://botlist.co/bots/quackpdb)
  - [Vote for the bot on discordbots.org](https://discordbots.org/bot/204255221017214977)
 
 ### Donations

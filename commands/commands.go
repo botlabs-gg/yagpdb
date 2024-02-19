@@ -6,14 +6,14 @@ package commands
 import (
 	"context"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/commands/models"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
-	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/quackpdb/v2/commands/models"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/featureflags"
+	prfx "github.com/botlabs-gg/quackpdb/v2/common/prefix"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -30,7 +30,7 @@ const (
 type MessageFilterFunc func(evt *eventsystem.EventData, msg *discordgo.Message) bool
 
 var (
-	confSetTyping = config.RegisterOption("yagpdb.commands.typing", "Wether to set typing or not when running commands", true)
+	confSetTyping = config.RegisterOption("quackpdb.commands.typing", "Wether to set typing or not when running commands", true)
 )
 
 // These functions are called on every message, and should return true if the message should be checked for commands, false otherwise

@@ -1,4 +1,4 @@
-// The event system is used to propegate events from different yagpdb instances
+// The event system is used to propegate events from different quackpdb instances
 // For example when you change the streamer settings, and event gets fired
 // Telling the streamer plugin to recheck everyones streaming status
 
@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -106,18 +106,18 @@ func PollEvents() {
 }
 
 var metricsPubsubEvents = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_pubsub_events_handled_total",
+	Name: "quackpdb_pubsub_events_handled_total",
 	Help: "Number of pubsub events handled",
 }, []string{"event"})
 
 var metricsPubsubSent = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_pubsub_events_sent_total",
-	Help: "YAGPDB pubsub sent events",
+	Name: "quackpdb_pubsub_events_sent_total",
+	Help: "QUACKPDB pubsub sent events",
 }, []string{"event"})
 
 var metricsPubsubSkipped = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_pubsub_events_skipped__total",
-	Help: "YAGPDB pubsub skipped events (unmatched target, unknown evt etc)",
+	Name: "quackpdb_pubsub_events_skipped__total",
+	Help: "QUACKPDB pubsub skipped events (unmatched target, unknown evt etc)",
 }, []string{"event"})
 
 func runPollEvents() error {

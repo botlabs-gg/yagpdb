@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
-	"github.com/botlabs-gg/yagpdb/v2/soundboard/models"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/premium"
+	"github.com/botlabs-gg/quackpdb/v2/soundboard/models"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"golang.org/x/net/context"
 )

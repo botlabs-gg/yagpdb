@@ -4,12 +4,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
-	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/quackpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/quackpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/quackpdb/v2/common/templates"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -44,7 +44,7 @@ func (p PremiumTier) String() string {
 }
 
 var (
-	confAllGuildsPremium = config.RegisterOption("yagpdb.premium.all_guilds_premium", "All servers have premium", false)
+	confAllGuildsPremium = config.RegisterOption("quackpdb.premium.all_guilds_premium", "All servers have premium", false)
 )
 
 var logger = common.GetPluginLogger(&Plugin{})

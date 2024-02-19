@@ -8,33 +8,34 @@ volumes:
 
 networks:
   default:
+  proxy-tier:
+    external:
+      name: proxy-tier
 
 services:
   app:
     # We don't provide an official image, but there is a community-made image you can try:
-    #  - teyker/yagpdb (https://hub.docker.com/r/teyker/yagpdb)
+    #  - teyker/quackpdb (https://hub.docker.com/r/teyker/quackpdb)
     #
     # Note that we do not take responsibility for anything that happens as a result of using
     # the image above.
     image: PUT_YOUR_OWN_IMAGE_HERE
     restart: unless-stopped
     command:
-      # - "/app/yagpdb"
+      # - "/app/quackpdb"
       - "-all"
       - "-pa"
-      - "-exthttps=false"
-      - "-https=true"
+      - "-exthttps=true"
+      - "-https=false"
     depends_on:
       - redis
       - db
     networks:
       - default
+      - proxy-tier
     volumes:
       - cert_cache:/app/cert
       - soundboard:/app/soundboard
-    ports:
-      - '80:80'
-      - '443:443'
     env_file:
       - app.env
 

@@ -6,10 +6,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 )
 
 type hltb struct {
@@ -38,7 +38,7 @@ var (
 	hltbHostPath = "api/search"
 )
 
-//Command var needs a comment for lint :)
+// Command var needs a comment for lint :)
 var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryFun,
 	Name:                "HowLongToBeat",

@@ -12,24 +12,24 @@ import (
 
 // ConnectPQ connectes to a postgres database for testing purposes
 func ConnectPQ() (*sql.DB, error) {
-	host := os.Getenv("YAGPDB_TEST_PQ_HOST")
+	host := os.Getenv("QUACKPDB_TEST_PQ_HOST")
 	if host == "" {
 		host = "localhost"
 	}
-	user := os.Getenv("YAGPDB_TEST_PQ_USER")
+	user := os.Getenv("QUACKPDB_TEST_PQ_USER")
 	if user == "" {
-		user = "yagpdb_test"
+		user = "quackpdb_test"
 	}
 
-	dbPassword := os.Getenv("YAGPDB_TEST_PQ_PASSWORD")
-	sslMode := os.Getenv("YAGPDB_TEST_PQ_SSLMODE")
+	dbPassword := os.Getenv("QUACKPDB_TEST_PQ_PASSWORD")
+	sslMode := os.Getenv("QUACKPDB_TEST_PQ_SSLMODE")
 	if sslMode == "" {
 		sslMode = "disable"
 	}
 
-	dbName := os.Getenv("YAGPDB_TEST_PQ_DB")
+	dbName := os.Getenv("QUACKPDB_TEST_PQ_DB")
 	if dbName == "" {
-		dbName = "yagpdb_test"
+		dbName = "quackpdb_test"
 	}
 
 	if !strings.Contains(dbName, "test") {

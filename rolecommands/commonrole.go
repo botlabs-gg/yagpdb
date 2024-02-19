@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
-	schEvtsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/scheduledevents2"
+	schEvtsModels "github.com/botlabs-gg/quackpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/quackpdb/v2/rolecommands/models"
 	"github.com/tidwall/buntdb"
 	v3_qm "github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -252,7 +252,7 @@ func (c *CommonRoleSettings) ParentCanRole(ctx context.Context, ms *dstate.Membe
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
 // or is unable to receie said role
-/// It also calls c.CanRole to check if we can assign it beforehand
+// / It also calls c.CanRole to check if we can assign it beforehand
 func (c *CommonRoleSettings) CheckToggleRole(ctx context.Context, ms *dstate.MemberState) (gaveRole bool, err error) {
 	if can, err := c.CanRole(ctx, ms); !can {
 		return false, err

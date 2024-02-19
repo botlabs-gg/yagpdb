@@ -12,16 +12,16 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
-	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
-	yagtemplate "github.com/botlabs-gg/yagpdb/v2/common/templates"
-	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
-	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/quackpdb/v2/common/featureflags"
+	prfx "github.com/botlabs-gg/quackpdb/v2/common/prefix"
+	"github.com/botlabs-gg/quackpdb/v2/common/pubsub"
+	yagtemplate "github.com/botlabs-gg/quackpdb/v2/common/templates"
+	"github.com/botlabs-gg/quackpdb/v2/customcommands/models"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/premium"
+	"github.com/botlabs-gg/quackpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -713,7 +713,7 @@ func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx c
 
 	additionalMessage := ""
 	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with YAGPDB premium)", MaxCommandsPremium)
+		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with QUACKPDB premium)", MaxCommandsPremium)
 	}
 	templateData["AdditionalMessage"] = additionalMessage
 }

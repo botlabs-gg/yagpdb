@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
-	"github.com/botlabs-gg/yagpdb/v2/serverstats/models"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/premium"
+	"github.com/botlabs-gg/quackpdb/v2/serverstats/models"
 )
 
-var confDeprecated = config.RegisterOption("yagpdb.serverstats.deprecated", "Wether to mark server stats as disabled or not, this will disable recording of new stats", false)
+var confDeprecated = config.RegisterOption("quackpdb.serverstats.deprecated", "Wether to mark server stats as disabled or not, this will disable recording of new stats", false)
 
 type Plugin struct {
 	stopStatsLoop chan *sync.WaitGroup

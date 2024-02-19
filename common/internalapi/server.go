@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -25,8 +25,8 @@ func RegisterPlugin() {
 }
 
 var (
-	confBotrestListenAddr = config.RegisterOption("yagpdb.botrest.listen_address", "botrest listening address, it will use any available port and make which port used avialable using service discovery (see service.go)", "127.0.0.1")
-	ConfListenPortRange   = config.RegisterOption("yagpdb.botrest.port_range", "botrest listen port range", "5100-5999")
+	confBotrestListenAddr = config.RegisterOption("quackpdb.botrest.listen_address", "botrest listening address, it will use any available port and make which port used avialable using service discovery (see service.go)", "127.0.0.1")
+	ConfListenPortRange   = config.RegisterOption("quackpdb.botrest.port_range", "botrest listen port range", "5100-5999")
 	serverLogger          = common.GetFixedPrefixLogger("internalapi_server")
 )
 

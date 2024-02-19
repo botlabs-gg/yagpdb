@@ -4,11 +4,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/bot"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
 )
 
-var confMaxConcurrentSends = config.RegisterOption("yagpdb.mqueue.max_concurrent_sends", "Max number of concurrent sends that mqueue will do", 3)
+var confMaxConcurrentSends = config.RegisterOption("quackpdb.mqueue.max_concurrent_sends", "Max number of concurrent sends that mqueue will do", 3)
 
 type workItem struct {
 	Elem *QueuedElement

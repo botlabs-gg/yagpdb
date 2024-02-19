@@ -12,11 +12,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sirupsen/logrus"
 )
@@ -35,7 +35,7 @@ var Command = &commands.YAGCommand{
 	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		query := strings.ToLower(data.Args[0].Str())
-		url :=  "https://api.dictionaryapi.dev/api/v2/entries/en/"+url.QueryEscape(query)
+		url := "https://api.dictionaryapi.dev/api/v2/entries/en/" + url.QueryEscape(query)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			return nil, err
@@ -90,18 +90,18 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, def *Meaning) *dis
 		Timestamp:   time.Now().Format(time.RFC3339),
 	}
 
-	if(len(res.SourceUrls) > 0) {
-		embed.URL = res.SourceUrls[0];
+	if len(res.SourceUrls) > 0 {
+		embed.URL = res.SourceUrls[0]
 	}
-	
-	var description = "";
+
+	var description = ""
 	for _, d := range def.Definitions {
-		if(len(description) + len(d.Definition) + len(d.Example) > 2000) {
+		if len(description)+len(d.Definition)+len(d.Example) > 2000 {
 			// if all definitions along with examples cannot be fit into the description, skip remaining definitions.
-			break;
+			break
 		}
-		description = fmt.Sprintf("%s\n- %s", description, capitalizeSentences(normalizeOutput(d.Definition)));
-		if d.Example != ""{
+		description = fmt.Sprintf("%s\n- %s", description, capitalizeSentences(normalizeOutput(d.Definition)))
+		if d.Example != "" {
 			var example = capitalizeSentences(normalizeOutput(d.Example))
 			if !hasEndOfSentenceSymbol(example) {
 				example = example + "." // add period if no other symbol that ends the sentence is present
@@ -110,7 +110,7 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, def *Meaning) *dis
 		}
 	}
 
-	embed.Description = common.CutStringShort(description, 2048); 
+	embed.Description = common.CutStringShort(description, 2048)
 
 	if res.Origin != "" {
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
@@ -123,20 +123,20 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, def *Meaning) *dis
 	if len(res.Phonetics) != 0 {
 		var pronunciation = &discordgo.MessageEmbedField{
 			Name:   "Pronunciation",
-			Value: "",
+			Value:  "",
 			Inline: true,
 		}
-		for  _, v := range res.Phonetics {
-			if(v.Audio != ""){
-				if(v.Text == ""){
-					v.Text = res.Word;
+		for _, v := range res.Phonetics {
+			if v.Audio != "" {
+				if v.Text == "" {
+					v.Text = res.Word
 				}
 				pronunciation.Value = fmt.Sprintf("%s\n🔊[%s](%s)", pronunciation.Value, normalizeOutput(v.Text), v.Audio)
-			}else {
+			} else {
 				pronunciation.Value = fmt.Sprintf("%s\n%s", pronunciation.Value, normalizeOutput(v.Text))
 			}
 		}
-		embed.Fields = append(embed.Fields, pronunciation )
+		embed.Fields = append(embed.Fields, pronunciation)
 	}
 
 	if def.PartOfSpeech != "" {
@@ -208,8 +208,8 @@ func hasEndOfSentenceSymbol(s string) bool {
 }
 
 type Phonetic struct {
-	Text string `json:"text"`
-	Audio     string `json:"audio"`
+	Text  string `json:"text"`
+	Audio string `json:"audio"`
 }
 
 type Definition struct {
@@ -227,9 +227,9 @@ type Meaning struct {
 }
 
 type DictionaryResponse struct {
-	Origin string `json:"origin,omitempty"`
+	Origin     string     `json:"origin,omitempty"`
 	Word       string     `json:"word"`
 	Phonetics  []Phonetic `json:"phonetics"`
 	Meanings   []Meaning  `json:"meanings"`
-	SourceUrls []string `json:"sourceUrls"`
+	SourceUrls []string   `json:"sourceUrls"`
 }

@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/template"
+	"github.com/botlabs-gg/quackpdb/v2/lib/template"
 )
 
 // This example demonstrates a custom function to process template text.

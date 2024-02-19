@@ -10,11 +10,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/quackpdb/v2/bot"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate"
 	"github.com/sirupsen/logrus"
 	"goji.io/pattern"
 )
@@ -63,7 +63,7 @@ func RandBase64(size int) string {
 func GenSessionCookie() *http.Cookie {
 	data := RandBase64(32)
 	cookie := &http.Cookie{
-		Name:   "yagpdb-session",
+		Name:   "quackpdb-session",
 		Value:  data,
 		MaxAge: 86400,
 		Path:   "/",

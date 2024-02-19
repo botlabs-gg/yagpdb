@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/bot/joinedguildsupdater"
-	"github.com/botlabs-gg/yagpdb/v2/bot/models"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/quackpdb/v2/bot/joinedguildsupdater"
+	"github.com/botlabs-gg/quackpdb/v2/bot/models"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/quackpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -116,8 +116,8 @@ OUTER:
 var guildJoinHandler = joinedguildsupdater.NewUpdater()
 
 var metricsJoinedGuilds = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "yagpdb_joined_guilds",
-	Help: "Guilds yagpdb newly joined",
+	Name: "quackpdb_joined_guilds",
+	Help: "Guilds quackpdb newly joined",
 })
 
 var commonEventsTotal = promauto.NewCounterVec(prometheus.CounterOpts{

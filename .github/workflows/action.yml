@@ -22,7 +22,7 @@ jobs:
             Hey @${{ github.actor }}! Thank you for your pull request.
             However, please do not open pull requests against `master`, as stated in
             [CONTRIBUTING.md](../../CONTRIBUTING.md):
-            > [...] make a PR to the dev branch (botlabs-gg/yagpdb/dev)
+            > [...] make a PR to the dev branch (botlabs-gg/quackpdb/dev)
 
             To change the base branch, edit the this pull request and select the new base.
             To prevent conflicts, either `git merge upstream/dev` to your local branch, or

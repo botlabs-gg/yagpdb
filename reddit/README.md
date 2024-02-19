@@ -1,4 +1,4 @@
-# Reddit plugin for YAGPDB
+# Reddit plugin for QUACKPDB
 
 ### How the feed works
 

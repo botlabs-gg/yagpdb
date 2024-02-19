@@ -10,10 +10,10 @@ There is some optional configuration, but the twitter feed should otherwise work
 
  ##  Optional configuration 
 
-`YAGPDB_TWITTER_PROXY` accepts an http(s) or a sock proxy url, and all requests are sent through it instead of directly hitting twitter, this helps in preventing twitter from blocking your ip. If this isn't set, all requests are direct requests. 
+`QUACKPDB_TWITTER_PROXY` accepts an http(s) or a sock proxy url, and all requests are sent through it instead of directly hitting twitter, this helps in preventing twitter from blocking your ip. If this isn't set, all requests are direct requests. 
 
-`YAGPDB_TWITTER_BATCH_SIZE` , this is the batch size to split querying to twitter, if you have 100 twitter feeds added, and set this value to 3, then the bot will check for 3 accounts per request. 
+`QUACKPDB_TWITTER_BATCH_SIZE` , this is the batch size to split querying to twitter, if you have 100 twitter feeds added, and set this value to 3, then the bot will check for 3 accounts per request. 
 
-`YAGPDB_TWITTER_POLL_FREQUENCY`, Since YAGPDB users scraping, this is the frequency between the total number of records. If you have 100 feeds, and a batch of 3, after all the feeds are polled once, the amount given here in **Minutes** will be awaited, before restarting polling. 
+`QUACKPDB_TWITTER_POLL_FREQUENCY`, Since QUACKPDB users scraping, this is the frequency between the total number of records. If you have 100 feeds, and a batch of 3, after all the feeds are polled once, the amount given here in **Minutes** will be awaited, before restarting polling. 
 
-`YAGPDB_TWITTER_BATCH_DELAY`, this is the delay in **Seconds** between each batch. 
+`QUACKPDB_TWITTER_BATCH_DELAY`, this is the delay in **Seconds** between each batch. 

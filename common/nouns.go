@@ -1,4 +1,4 @@
-// this package provides core functionality to yagpdb, important security stuff here
+// this package provides core functionality to quackpdb, important security stuff here
 package common
 
 var Nouns = []string{

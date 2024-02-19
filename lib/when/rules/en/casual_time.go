@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/AlekSi/pointer"
-	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
+	"github.com/botlabs-gg/quackpdb/v2/lib/when/rules"
 )
 
 func CasualTime(s rules.Strategy) rules.Rule {

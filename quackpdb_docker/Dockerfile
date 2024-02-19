@@ -1,13 +1,13 @@
 FROM golang:1.20.6 as builder
 
-WORKDIR /appbuild/yagpdb
+WORKDIR /appbuild/quackpdb
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-WORKDIR /appbuild/yagpdb/cmd/yagpdb
-RUN CGO_ENABLED=0 GOOS=linux go build -v -ldflags "-X github.com/botlabs-gg/yagpdb/v2/common.VERSION=$(git describe --tags)"
+WORKDIR /appbuild/quackpdb/cmd/quackpdb
+RUN CGO_ENABLED=0 GOOS=linux go build -v -ldflags "-X github.com/botlabs-gg/quackpdb/v2/common.VERSION=$(git describe --tags)"
 
 
 
@@ -20,7 +20,7 @@ EXPOSE 80 443
 # Dependencies: ca-certificates for client TLS, tzdata for timezone and ffmpeg for soundboard support
 RUN apk --no-cache add ca-certificates ffmpeg tzdata
 
-COPY --from=builder /appbuild/yagpdb/cmd/yagpdb/yagpdb yagpdb
+COPY --from=builder /appbuild/quackpdb/cmd/quackpdb/quackpdb quackpdb
 
-ENTRYPOINT ["/app/yagpdb"]
+ENTRYPOINT ["/app/quackpdb"]
 CMD ["-all", "-pa", "-exthttps=false", "-https=true"]

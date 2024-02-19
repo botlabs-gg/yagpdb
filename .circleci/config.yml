@@ -20,11 +20,11 @@ jobs: # basic units of work in a run
       - run: sudo apt-get update
       - run: sudo apt-get install ffmpeg
       - run: 
-          name: main yagpdb binary build
+          name: main quackpdb binary build
           command: |
             VERSION=$(git describe --tags)
-            cd cmd/yagpdb
-            go install -ldflags "-X github.com/botlabs-gg/yagpdb/v2/common.VERSION=${VERSION}"
+            cd cmd/quackpdb
+            go install -ldflags "-X github.com/botlabs-gg/quackpdb/v2/common.VERSION=${VERSION}"
             cd -
       - run: cd cmd/shardorchestrator && go install && cd -
       - run: cd cmd/capturepanics && go install && cd -

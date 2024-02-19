@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/common"
 )
 
 type TriviaQuestion struct {

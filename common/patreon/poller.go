@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/patreon/patreonapi"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/patreon/patreonapi"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
@@ -25,10 +25,10 @@ type Poller struct {
 }
 
 var (
-	confAccessToken  = config.RegisterOption("yagpdb.patreon.api_access_token", "Access token for the patreon integration", "")
-	confRefreshToken = config.RegisterOption("yagpdb.patreon.api_refresh_token", "Refresh token for the patreon integration", "")
-	confClientID     = config.RegisterOption("yagpdb.patreon.api_client_id", "Client id for the patreon integration", "")
-	confClientSecret = config.RegisterOption("yagpdb.patreon.api_client_secret", "Client secret for the patreon integration", "")
+	confAccessToken  = config.RegisterOption("quackpdb.patreon.api_access_token", "Access token for the patreon integration", "")
+	confRefreshToken = config.RegisterOption("quackpdb.patreon.api_refresh_token", "Refresh token for the patreon integration", "")
+	confClientID     = config.RegisterOption("quackpdb.patreon.api_client_id", "Client id for the patreon integration", "")
+	confClientSecret = config.RegisterOption("quackpdb.patreon.api_client_secret", "Client secret for the patreon integration", "")
 )
 
 func Run() {
@@ -39,7 +39,7 @@ func Run() {
 	clientSecret := confClientSecret.GetString()
 
 	if accessToken == "" || clientID == "" || clientSecret == "" {
-		PatreonDisabled(nil, "Missing one of YAGPDB_PATREON_API_ACCESS_TOKEN, YAGPDB_PATREON_API_CLIENT_ID, YAGPDB_PATREON_API_CLIENT_SECRET")
+		PatreonDisabled(nil, "Missing one of QUACKPDB_PATREON_API_ACCESS_TOKEN, QUACKPDB_PATREON_API_CLIENT_ID, QUACKPDB_PATREON_API_CLIENT_SECRET")
 		return
 	}
 

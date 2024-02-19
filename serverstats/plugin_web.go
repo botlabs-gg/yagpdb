@@ -11,13 +11,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
-	"github.com/botlabs-gg/yagpdb/v2/serverstats/models"
-	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/quackpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/premium"
+	"github.com/botlabs-gg/quackpdb/v2/serverstats/models"
+	"github.com/botlabs-gg/quackpdb/v2/web"
 	"github.com/karlseguin/rcache"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -233,7 +233,7 @@ func emptyChartData() *ChartResponse {
 }
 
 func CacheGetCharts(guildID int64, days int, ctx context.Context) *ChartResponse {
-	if os.Getenv("YAGPDB_SERVERSTATS_DISABLE_SERVERSTATS") != "" {
+	if os.Getenv("QUACKPDB_SERVERSTATS_DISABLE_SERVERSTATS") != "" {
 		return emptyChartData()
 	}
 

@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/template/parse"
+	"github.com/botlabs-gg/quackpdb/v2/lib/template/parse"
 )
 
 // maxExecDepth specifies the maximum stack depth of templates within

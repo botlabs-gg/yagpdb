@@ -20,10 +20,10 @@ import (
 	"github.com/volatiletech/null"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/bot"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
@@ -146,12 +146,12 @@ func (se *ScheduledEvents) runCheckLoop() {
 }
 
 var metricsScheduledEventsProcessed = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "yagpdb_scheduledevents_processed_total",
+	Name: "quackpdb_scheduledevents_processed_total",
 	Help: "Total scheduled events processed",
 })
 
 var metricsScheduledEventsSkipped = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "yagpdb_scheduledevents_skipped_total",
+	Name: "quackpdb_scheduledevents_skipped_total",
 	Help: "Total scheduled events skipped",
 })
 

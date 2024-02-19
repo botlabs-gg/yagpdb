@@ -15,7 +15,7 @@ import (
 	"text/template"
 )
 
-const templateSource = `// GENERATED using yagpdb/cmd/gen/bot_wrappers.go
+const templateSource = `// GENERATED using quackpdb/cmd/gen/bot_wrappers.go
 
 // Custom event handlers that adds a redis connection to the handler
 // They will also recover from panics
@@ -25,7 +25,7 @@ package bot
 import (
 	"context"
 	"github.com/sirupsen/logrus"
-	 "github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	 "github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"runtime/debug"
 )
 

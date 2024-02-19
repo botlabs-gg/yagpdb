@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate/inmemorytracker"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate/inmemorytracker"
 )
 
 var Token string

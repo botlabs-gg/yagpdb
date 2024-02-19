@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
@@ -77,7 +77,7 @@ func (p *STDLogProxy) Write(b []byte) (n int, err error) {
 }
 
 var metricsHighRatelimits = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "yagpdb_discord_high_ratelimits_total",
+	Name: "quackpdb_discord_high_ratelimits_total",
 	Help: "Ratelimits above 1000 seconds",
 })
 
@@ -107,7 +107,7 @@ func discordLogger(msgL, caller int, format string, a ...interface{}) {
 }
 
 var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_request_guildmembers_sent_total",
+	Name: "quackpdb_request_guildmembers_sent_total",
 	Help: "Total number of request guild members commands sent",
 }, []string{"shard"})
 
@@ -162,28 +162,28 @@ var numberRemover = strings.NewReplacer(
 
 var (
 	metricsNumRequestsPath = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "yagpdb_discord_http_requests_path_total",
+		Name: "quackpdb_discord_http_requests_path_total",
 		Help: "Number of http requests to the discord API",
 	}, []string{"path"})
 
 	metrics429Path = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "yagpdb_discord_http_429_path_total",
+		Name: "quackpdb_discord_http_429_path_total",
 		Help: "Number of http requests to the discord API",
 	}, []string{"path"})
 
 	metricsNumRequestsResponseCode = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "yagpdb_discord_http_requests_response_code_total",
+		Name: "quackpdb_discord_http_requests_response_code_total",
 		Help: "Number of http requests to the discord API",
 	}, []string{"response_code"})
 
 	metricsHTTPLatency = promauto.NewSummary(prometheus.SummaryOpts{
-		Name:       "yagpdb_discord_http_latency_seconds",
+		Name:       "quackpdb_discord_http_latency_seconds",
 		Help:       "Latency do the discord API",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 	})
 
 	metricsConcurrentRequests = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "yagpdb_http_concurrent_requests",
+		Name: "quackpdb_http_concurrent_requests",
 		Help: "Number of concurrent requests returned from the ratelimiter",
 	})
 )

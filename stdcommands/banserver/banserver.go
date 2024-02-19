@@ -1,10 +1,10 @@
 package banserver
 
 import (
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/stdcommands/util"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -13,7 +13,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "banserver",
-	Description:          "Bans the specified server from using the bot. YAGPDB will leave the server, and leave whenever invited back. Bot Owner Only",
+	Description:          "Bans the specified server from using the bot. QUACKPDB will leave the server, and leave whenever invited back. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{

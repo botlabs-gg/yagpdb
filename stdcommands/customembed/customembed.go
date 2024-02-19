@@ -3,10 +3,10 @@ package customembed
 import (
 	"encoding/json"
 
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"gopkg.in/yaml.v3"
 )
 
@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryTool,
 	Name:                "CustomEmbed",
 	Aliases:             []string{"ce"},
-	Description:         "Creates an embed from what you give it in json form: https://docs.yagpdb.xyz/others/custom-embeds",
+	Description:         "Creates an embed from what you give it in json form: https://docs.quackpdb.xyz/others/custom-embeds",
 	LongDescription:     "Example: `-ce {\"title\": \"hello\", \"description\": \"wew\"}`",
 	RequiredArgs:        1,
 	RequireDiscordPerms: []int64{discordgo.PermissionManageMessages},

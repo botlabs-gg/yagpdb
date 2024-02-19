@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )

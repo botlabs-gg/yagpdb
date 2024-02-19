@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/quackpdb/v2/common/scheduledevents2"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
 )
@@ -61,7 +61,7 @@ func (r *Reminder) Trigger() error {
 
 	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
 	embed := &discordgo.MessageEmbed{
-		Title:       "Reminder from YAGPDB",
+		Title:       "Reminder from QUACKPDB",
 		Description: common.ReplaceServerInvites(r.Message, r.GuildID, "(removed-invite)"),
 	}
 

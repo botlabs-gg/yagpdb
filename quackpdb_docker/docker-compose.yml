@@ -11,18 +11,19 @@ networks:
 
 services:
   app:
-    build:
-      # We change context so that we can copy the local repo in during
-      # development
-      context: ../
-      dockerfile: yagpdb_docker/Dockerfile
+    # We don't provide an official image, but there is a community-made image you can try:
+    #  - teyker/quackpdb (https://hub.docker.com/r/teyker/quackpdb)
+    #
+    # Note that we do not take responsibility for anything that happens as a result of using
+    # the image above.
+    image: PUT_YOUR_OWN_IMAGE_HERE
     restart: unless-stopped
     command:
-      # - "/app/yagpdb"
+      # - "/app/quackpdb"
       - "-all"
       - "-pa"
       - "-exthttps=false"
-      - "-https=false"
+      - "-https=true"
     depends_on:
       - redis
       - db

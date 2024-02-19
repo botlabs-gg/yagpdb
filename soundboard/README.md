@@ -1,6 +1,6 @@
 # Soundboard
 
-Soundboard plugin for YAGPDB
+Soundboard plugin for QUACKPDB
 
 Folder structure:
 

@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"sync/atomic"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/node"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dshardorchestrator"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dshardorchestrator/node"
 )
 
 type MockBot struct {

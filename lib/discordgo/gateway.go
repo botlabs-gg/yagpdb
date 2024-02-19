@@ -29,7 +29,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/gojay"
+	"github.com/botlabs-gg/quackpdb/v2/lib/gojay"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 )

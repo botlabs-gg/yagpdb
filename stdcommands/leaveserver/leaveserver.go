@@ -1,10 +1,10 @@
 package leaveserver
 
 import (
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/stdcommands/util"
 )
 
 var Command = &commands.YAGCommand{
@@ -12,7 +12,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "leaveserver",
-	Description:          "Causes YAGPDB to leave the specified server. The bot may still be invited back with full functionality restored. Bot Owner Only",
+	Description:          "Causes QUACKPDB to leave the specified server. The bot may still be invited back with full functionality restored. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{

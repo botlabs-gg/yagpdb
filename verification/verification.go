@@ -3,13 +3,13 @@ package verification
 //go:generate sqlboiler --no-hooks psql
 
 import (
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
 )
 
-var confGoogleReCAPTCHASiteKey = config.RegisterOption("yagpdb.google.recaptcha_site_key", "Google reCAPTCHA site key", "")
-var confGoogleReCAPTCHASecret = config.RegisterOption("yagpdb.google.recaptcha_secret", "Google reCAPTCHA site secret", "")
-var confVerificationTrackIPs = config.RegisterOption("yagpdb.verification.track_ips", "Track verified users ip", true)
+var confGoogleReCAPTCHASiteKey = config.RegisterOption("quackpdb.google.recaptcha_site_key", "Google reCAPTCHA site key", "")
+var confGoogleReCAPTCHASecret = config.RegisterOption("quackpdb.google.recaptcha_secret", "Google reCAPTCHA site secret", "")
+var confVerificationTrackIPs = config.RegisterOption("quackpdb.verification.track_ips", "Track verified users ip", true)
 
 type Plugin struct{}
 
@@ -26,7 +26,7 @@ var logger = common.GetPluginLogger(&Plugin{})
 func RegisterPlugin() {
 
 	if confGoogleReCAPTCHASecret.GetString() == "" || confGoogleReCAPTCHASiteKey.GetString() == "" {
-		logger.Warn("no YAGPDB_GOOGLE_RECAPTCHA_SECRET and/or YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY provided, not enabling verification plugin")
+		logger.Warn("no QUACKPDB_GOOGLE_RECAPTCHA_SECRET and/or QUACKPDB_GOOGLE_RECAPTCHA_SITE_KEY provided, not enabling verification plugin")
 		return
 	}
 

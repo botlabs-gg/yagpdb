@@ -1,6 +1,6 @@
-# YAGPDB - Yet Another General Purpose Discord Bot
+# QUACKPDB - Yet Another General Purpose Discord Bot
 
-YAGPDB is a multifunctional, modular Discord bot. It is modular in the sense that for most things plugins exist -- However, some plugins may depend on other plugins.
+QUACKPDB is a multifunctional, modular Discord bot. It is modular in the sense that for most things plugins exist -- However, some plugins may depend on other plugins.
 
 ## Plugins
 
@@ -19,9 +19,9 @@ YAGPDB is a multifunctional, modular Discord bot. It is modular in the sense tha
 
 ## Useful Links
 
-* [Homepage](https://yagpdb.xyz)
+* [Homepage](https://quackpdb.xyz)
 * [Support Server](https://discord.gg/4udtcA5)
-* [Documentation](https://docs.yagpdb.xyz)
+* [Documentation](https://docs.quackpdb.xyz)
 
 ## Selfhosting
 
@@ -32,7 +32,7 @@ There are two ways of selfhosting this bot: [standalone](#Hosting-Standalone), o
 Directions on creating an app and getting credentials may be found
 [here](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
 
-YAGPDB does not require you to authorize the bot: all of that will be handled
+QUACKPDB does not require you to authorize the bot: all of that will be handled
 via the Control Panel.
 
 In addition, you will need to add the following urls to the bot's "REDIRECT URI(S)" configuration:
@@ -45,29 +45,29 @@ In addition, you will need to add the following urls to the bot's "REDIRECT URI(
 If you have docker-compose installed, that might be the fastest route of getting the bot up and running:
 
 ```shell
-git clone https://github.com/botlabs-gg/yagpdb
-cp yagpdb/yagpdb_docker/{app.example.env,app.env}
-cp yagpdb/yagpdb_docker/{db.example.env,db.env}
+git clone https://github.com/botlabs-gg/quackpdb
+cp quackpdb/quackpdb_docker/{app.example.env,app.env}
+cp quackpdb/quackpdb_docker/{db.example.env,db.env}
 ```
 
 Edit both env files accordingly. Make sure ports 80 and 443 are accessible on your network and that you have a proper image in `docker-compose.yml`:
 
 ```shell
-docker-compose -f yagpdb/yagpdb_docker/docker-compose.yml up
+docker-compose -f quackpdb/quackpdb_docker/docker-compose.yml up
 ```
 
 Alternatively, you can run the bot behind a proxy:
 
 ```shell
 docker network create proxy-tier
-docker-compose -p proxy yagpdb/yagpdb_docker/docker-compose.proxy.yml up
-docker-compose -f yagpdb/yagpdb_docker/docker-compose.proxied.yml up
+docker-compose -p proxy quackpdb/quackpdb_docker/docker-compose.proxy.yml up
+docker-compose -f quackpdb/quackpdb_docker/docker-compose.proxied.yml up
 ```
 
 During development, use the `docker-compose.dev.yml` file:
 
 ```shell
-docker-compose -f yagpdb/yagpdb_docker/docker-compose.dev.yml up
+docker-compose -f quackpdb/quackpdb_docker/docker-compose.dev.yml up
 ```
 
 ### Hosting Standalone
@@ -82,24 +82,24 @@ docker-compose -f yagpdb/yagpdb_docker/docker-compose.dev.yml up
 
 Configure Redis and Postgres with your desired settings.
 
-In postgres, create a new user `yagpdb` and database `yagpdb` and grant that user access to that database.
+In postgres, create a new user `quackpdb` and database `quackpdb` and grant that user access to that database.
 
-Set up the environment variables with the credentials from the [general setup](#General-Bot-Setup). See the [sample env file](cmd/yagpdb/sampleenvfile) for a list of all enviroment variables.
+Set up the environment variables with the credentials from the [general setup](#General-Bot-Setup). See the [sample env file](cmd/quackpdb/sampleenvfile) for a list of all enviroment variables.
 
-Afterwards, run the build script located at `/cmd/yagpdb/build.sh` and  start the bot using `./yagpdb`:
+Afterwards, run the build script located at `/cmd/quackpdb/build.sh` and  start the bot using `./quackpdb`:
 
 ```shell
-git clone https://github.com/botlabs-gg/yagpdb
-cd yagpdb/cmd/yagpdb
+git clone https://github.com/botlabs-gg/quackpdb
+cd quackpdb/cmd/quackpdb
 sh build.sh
-./yagpdb -all
+./quackpdb -all
 ```
 
-See `./yagpdb -help` for all usable run flags. The webserver listens by default on ports 5000 (HTTP) and 5001 (HTTPS).
+See `./quackpdb -help` for all usable run flags. The webserver listens by default on ports 5000 (HTTP) and 5001 (HTTPS).
 
 ## Databases
 
-YAGPDB uses Redis for light data and caching, and postgresql for most configurations and heavy data, such as logs.
+QUACKPDB uses Redis for light data and caching, and postgresql for most configurations and heavy data, such as logs.
 
 ### Updating
 

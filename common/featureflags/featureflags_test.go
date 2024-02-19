@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common"
 )
 
 func TestMain(m *testing.M) {

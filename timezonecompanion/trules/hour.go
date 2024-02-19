@@ -7,7 +7,7 @@ import (
 
 	"emperror.dev/errors"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
+	"github.com/botlabs-gg/quackpdb/v2/lib/when/rules"
 )
 
 /*

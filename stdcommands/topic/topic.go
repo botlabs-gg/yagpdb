@@ -3,8 +3,8 @@ package topic
 import (
 	"math/rand"
 
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
 )
 
 var Command = &commands.YAGCommand{

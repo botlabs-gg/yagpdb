@@ -5,11 +5,11 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/bot"
+	"github.com/botlabs-gg/quackpdb/v2/commands"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
 )
@@ -19,7 +19,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "Yagstatus",
 	Aliases:     []string{"status"},
-	Description: "Shows yagpdb status, version, uptime, memory stats, and so on",
+	Description: "Shows quackpdb status, version, uptime, memory stats, and so on",
 	RunInDM:     true,
 	RunFunc:     cmdFuncYagStatus,
 }
@@ -63,7 +63,7 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 			Name:    botUser.Username,
 			IconURL: discordgo.EndpointUserAvatar(botUser.ID, botUser.Avatar),
 		},
-		Title: "YAGPDB Status, version " + common.VERSION,
+		Title: "QUACKPDB Status, version " + common.VERSION,
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "Servers", Value: fmt.Sprint(servers), Inline: true},
 			{Name: "Go Version", Value: runtime.Version(), Inline: true},

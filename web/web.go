@@ -12,14 +12,14 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/patreon"
-	yagtmpl "github.com/botlabs-gg/yagpdb/v2/common/templates"
-	"github.com/botlabs-gg/yagpdb/v2/frontend"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/web/discordblog"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/patreon"
+	yagtmpl "github.com/botlabs-gg/quackpdb/v2/common/templates"
+	"github.com/botlabs-gg/quackpdb/v2/frontend"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/web/discordblog"
 	"github.com/natefinch/lumberjack"
 	"goji.io"
 	"goji.io/pat"
@@ -55,19 +55,19 @@ var (
 
 	logger = common.GetFixedPrefixLogger("web")
 
-	confAnnouncementsChannel       = config.RegisterOption("yagpdb.announcements_channel", "Channel to pull announcements from and display on the control panel homepage", 0)
-	confReverseProxyClientIPHeader = config.RegisterOption("yagpdb.web.reverse_proxy_client_ip_header", "If were behind a reverse proxy, this is the header field with the real ip that the proxy passes along", "")
+	confAnnouncementsChannel       = config.RegisterOption("quackpdb.announcements_channel", "Channel to pull announcements from and display on the control panel homepage", 0)
+	confReverseProxyClientIPHeader = config.RegisterOption("quackpdb.web.reverse_proxy_client_ip_header", "If were behind a reverse proxy, this is the header field with the real ip that the proxy passes along", "")
 
-	confAdPath       = config.RegisterOption("yagpdb.ad.img_path", "The ad image ", "")
-	confAdLinkurl    = config.RegisterOption("yagpdb.ad.link", "Link to follow when clicking on the ad", "")
-	confAdWidth      = config.RegisterOption("yagpdb.ad.w", "Ad width", 0)
-	confAdHeight     = config.RegisterOption("yagpdb.ad.h", "Ad Height", 0)
-	ConfAdVideos     = config.RegisterOption("yagpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
-	confDemoServerID = config.RegisterOption("yagpdb.web.demo_server_id", "Server ID for live demo links", 0)
+	confAdPath       = config.RegisterOption("quackpdb.ad.img_path", "The ad image ", "")
+	confAdLinkurl    = config.RegisterOption("quackpdb.ad.link", "Link to follow when clicking on the ad", "")
+	confAdWidth      = config.RegisterOption("quackpdb.ad.w", "Ad width", 0)
+	confAdHeight     = config.RegisterOption("quackpdb.ad.h", "Ad Height", 0)
+	ConfAdVideos     = config.RegisterOption("quackpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
+	confDemoServerID = config.RegisterOption("quackpdb.web.demo_server_id", "Server ID for live demo links", 0)
 
-	ConfAdsTxt = config.RegisterOption("yagpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
+	ConfAdsTxt = config.RegisterOption("quackpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
 
-	confDisableRequestLogging = config.RegisterOption("yagpdb.disable_request_logging", "Disable logging of http requests to web server", false)
+	confDisableRequestLogging = config.RegisterOption("quackpdb.disable_request_logging", "Disable logging of http requests to web server", false)
 
 	// can be overriden by plugins
 	// main prurpose is to plug in a onboarding process through a properietary plugin
@@ -212,7 +212,7 @@ func IsAcceptingRequests() bool {
 
 func runServers(mainMuxer *goji.Mux) {
 	if !https {
-		logger.Info("Starting yagpdb web server http:", ListenAddressHTTP)
+		logger.Info("Starting quackpdb web server http:", ListenAddressHTTP)
 
 		server := &http.Server{
 			Addr:        ListenAddressHTTP,
@@ -225,7 +225,7 @@ func runServers(mainMuxer *goji.Mux) {
 			logger.Error("Failed http ListenAndServe:", err)
 		}
 	} else {
-		logger.Info("Starting yagpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
+		logger.Info("Starting quackpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
 
 		cache := autocert.DirCache("cert")
 

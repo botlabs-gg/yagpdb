@@ -8,10 +8,10 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/quackpdb/v2/premium"
 	"github.com/lib/pq"
 	"google.golang.org/api/youtube/v3"
 )
@@ -24,8 +24,8 @@ const (
 )
 
 var (
-	confWebsubVerifytoken = config.RegisterOption("yagpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
-	confResubBatchSize    = config.RegisterOption("yagpdb.youtube.resub_batch_size", "Number of Websubs to resubscribe to concurrently", 1)
+	confWebsubVerifytoken = config.RegisterOption("quackpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
+	confResubBatchSize    = config.RegisterOption("quackpdb.youtube.resub_batch_size", "Number of Websubs to resubscribe to concurrently", 1)
 	logger                = common.GetPluginLogger(&Plugin{})
 )
 

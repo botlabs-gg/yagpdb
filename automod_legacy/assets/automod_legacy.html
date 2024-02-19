@@ -99,13 +99,13 @@
             <li><b>Invite links:</b> You can set up a rule for invite links (for example, delete every invite link if
                 the poster doesn't have a certain role).</li>
             <li><b>Links:</b> You can restrict posting any kind of link to a certain role.</li>
-            <li><b>Bad words/websites:</b> YAGPDB comes with a built-in list of bad sites and swear words you can use if
+            <li><b>Bad words/websites:</b> QUACKPDB comes with a built-in list of bad sites and swear words you can use if
                 you want, or you can define your own.</li>
         </ul>
         <p><b>TIP:</b> The ban and kick message from the moderation settings will be used when the bot kicks and bans.
         </p>
         <p><b>Check out the documentation for more info: <a
-                    href="https://docs.yagpdb.xyz/automoderator">docs.yagpdb.xyz/automoderator.</a></b>
+                    href="https://docs.quackpdb.xyz/automoderator">docs.quackpdb.xyz/automoderator.</a></b>
             <p>If you need any help setting up a rule, join the support server above.</p>
     </div>
 </div>
@@ -168,7 +168,7 @@
     {{mTemplate "automod_legacy_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Words "Name" "Words"}}
 
     <p class="help-block">Built in lists</p>
-    {{checkbox "Words.BuiltinSwearWords" "Words-BuiltinSwearWords" `Ban builtin swear words <a href="https://github.com/botlabs-gg/yagpdb/blob/master/automod_legacy/swearwords.go"> (list of swear words here)</a>` .AutomodConfig.Words.BuiltinSwearWords}}
+    {{checkbox "Words.BuiltinSwearWords" "Words-BuiltinSwearWords" `Ban builtin swear words <a href="https://github.com/botlabs-gg/quackpdb/blob/master/automod_legacy/swearwords.go"> (list of swear words here)</a>` .AutomodConfig.Words.BuiltinSwearWords}}
     <hr />
 
     <div class="form-group">

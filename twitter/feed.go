@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/analytics"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/v2/feeds"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
-	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
+	"github.com/botlabs-gg/quackpdb/v2/analytics"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/quackpdb/v2/feeds"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/premium"
+	"github.com/botlabs-gg/quackpdb/v2/twitter/models"
 	"github.com/mediocregopher/radix/v3"
 	twitterscraper "github.com/n0madic/twitter-scraper"
 	"github.com/prometheus/client_golang/prometheus"
@@ -227,7 +227,7 @@ OUTER:
 	if err != nil {
 		logrus.WithError(err).Errorf("Failed getting user info for userID %s", t.Username)
 	}
-	webhookUsername := "Twitter • YAGPDB"
+	webhookUsername := "Twitter • QUACKPDB"
 	embed := p.createTweetEmbed(t, &user)
 	for _, v := range relevantFeeds {
 		go analytics.RecordActiveUnit(v.GuildID, p, "posted_twitter_message")

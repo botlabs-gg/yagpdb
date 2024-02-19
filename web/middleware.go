@@ -13,12 +13,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
+	"github.com/botlabs-gg/quackpdb/v2/common"
+	"github.com/botlabs-gg/quackpdb/v2/common/config"
+	"github.com/botlabs-gg/quackpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/quackpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/quackpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/quackpdb/v2/web/discorddata"
 	"github.com/gorilla/schema"
 	"github.com/miolini/datacounter"
 	"github.com/prometheus/client_golang/prometheus"
@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	confGAID = config.RegisterOption("yagpdb.ga_id", "Google analytics id", "")
+	confGAID = config.RegisterOption("quackpdb.ga_id", "Google analytics id", "")
 )
 
 // Misc mw that adds some headers, (Strict-Transport-Security)
@@ -831,7 +831,7 @@ func SkipStaticMW(maybeSkip func(http.Handler) http.Handler, alwaysRunSuffixes .
 }
 
 var pageHitsStatic = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "yagpdb_web_hits_total",
+	Name: "quackpdb_web_hits_total",
 	Help: "Web hits total",
 }, []string{"type"})
 
