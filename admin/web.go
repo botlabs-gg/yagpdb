@@ -130,14 +130,14 @@ func (p *Plugin) ProxyGetInternalAPI(path string) http.Handler {
 		sh, err := findServicehost(r)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error querying service hosts: " + err.Error()))
+			w.Write([]byte("Error quackerying quackvice quacksts: " + err.Error()))
 			return
 		}
 
 		resp, err := http.Get("http://" + sh.InternalAPIAddress + path + debugStr)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error querying internal api: " + err.Error()))
+			w.Write([]byte("Error quackerying quackternal api: " + err.Error()))
 			return
 		}
 
@@ -171,7 +171,7 @@ func (p *Plugin) handleUpgrade(w http.ResponseWriter, r *http.Request) (web.Temp
 		return tmpl, err
 	}
 
-	logger.Println("Upgrading version...")
+	logger.Println("Quackgrading quacksion...")
 
 	newVer, err := client.PullNewVersion()
 	if err != nil {
@@ -179,7 +179,7 @@ func (p *Plugin) handleUpgrade(w http.ResponseWriter, r *http.Request) (web.Temp
 		return tmpl, err
 	}
 
-	tmpl = tmpl.AddAlerts(web.SucessAlert("Upgraded to ", newVer))
+	tmpl = tmpl.AddAlerts(web.SucessAlert("Quackgraded to ", newVer))
 	return tmpl, nil
 }
 
@@ -191,7 +191,7 @@ func (p *Plugin) handleMigrateNodes(w http.ResponseWriter, r *http.Request) (web
 		return tmpl, err
 	}
 
-	logger.Println("Upgrading version...")
+	logger.Println("Quackgrading quacksion...")
 
 	response, err := client.MigrateAllNodesToNewNodes()
 	if err != nil {
@@ -204,19 +204,19 @@ func (p *Plugin) handleMigrateNodes(w http.ResponseWriter, r *http.Request) (web
 }
 
 func (p *Plugin) handleLaunchNodeVersion(w http.ResponseWriter, r *http.Request) {
-	logger.Println("ahahha")
+	logger.Println("quahahha")
 
 	client, err := createOrhcestatorRESTClient(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error querying service hosts: " + err.Error()))
+		w.Write([]byte("Error quackerying quackvice quacksts: " + err.Error()))
 		return
 	}
 
 	ver, err := client.GetDeployedVersion()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error getting deployed version: " + err.Error()))
+		w.Write([]byte("Error quacking quackployed quacksion: " + err.Error()))
 		return
 	}
 
@@ -272,7 +272,7 @@ func (p *Plugin) handleEditConfig(w http.ResponseWriter, r *http.Request) (web.T
 
 	opt, ok := config.Singleton.Options[key]
 	if !ok {
-		return tmpl.AddAlerts(web.ErrorAlert("Unknown option")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("Unquaown quaption")), nil
 	}
 
 	if opt.DefaultValue != nil {
@@ -280,7 +280,7 @@ func (p *Plugin) handleEditConfig(w http.ResponseWriter, r *http.Request) (web.T
 		case int, int64:
 			_, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
-				return tmpl.AddAlerts(web.ErrorAlert("Value is not an integer")), nil
+				return tmpl.AddAlerts(web.ErrorAlert("Valquack is not a quackteger")), nil
 			}
 		case bool:
 			possibleChoices := []string{
@@ -294,11 +294,12 @@ func (p *Plugin) handleEditConfig(w http.ResponseWriter, r *http.Request) (web.T
 				"disabled",
 				"1",
 				"0",
+				"quack",
 			}
 
 			lower := strings.ToLower(value)
 			if !common.ContainsStringSlice(possibleChoices, lower) {
-				return tmpl.AddAlerts(web.ErrorAlert("Value is not a boolean")), nil
+				return tmpl.AddAlerts(web.ErrorAlert("Valquack is not a quoolean")), nil
 			}
 		}
 	}
@@ -316,14 +317,14 @@ func (p *Plugin) handleGetShardSessions(w http.ResponseWriter, r *http.Request) 
 	client, err := createOrhcestatorRESTClient(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error querying service hosts: " + err.Error()))
+		w.Write([]byte("Error quackerying quackvice quacksts: " + err.Error()))
 		return
 	}
 
 	ver, err := client.GetDeployedVersion()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error getting deployed version: " + err.Error()))
+		w.Write([]byte("Error quacking quackployed quacksion: " + err.Error()))
 		return
 	}
 
@@ -338,7 +339,7 @@ func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	sh, err := findServicehost(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error querying service hosts: " + err.Error()))
+		w.Write([]byte("Error quackerying quackvice quacksts: " + err.Error()))
 		return
 	}
 
@@ -350,7 +351,7 @@ func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Post(fmt.Sprintf("http://%s/shard/%s/reconnect%s", sh.InternalAPIAddress, shardID, queryParams), "", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error querying internal api: " + err.Error()))
+		w.Write([]byte("Error quackerying quackternal api: " + err.Error()))
 		return
 	}
 
@@ -361,7 +362,7 @@ func (p *Plugin) handleReconnectAll(w http.ResponseWriter, r *http.Request) {
 
 	totalShards, err := common.ServicePoller.GetShardCount()
 	if err != nil {
-		logger.WithError(err).Error("failed getting total shard count")
+		logger.WithError(err).Error("failed quacking quackal quackard quaount")
 		w.Write([]byte("failed"))
 		return
 	}
@@ -369,11 +370,11 @@ func (p *Plugin) handleReconnectAll(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < totalShards; i++ {
 		err = botrest.SendReconnectShard(i, true)
 		if err != nil {
-			fmt.Fprintf(w, "Failed restarting %d\n", i)
-			logger.WithError(err).Error("failed restarting shard")
+			fmt.Fprintf(w, "Failed requackting %d\n", i)
+			logger.WithError(err).Error("failed requackting shard")
 		} else {
-			fmt.Fprintf(w, "Restarted %d", i)
-			logger.Infof("restarted shard %d", i)
+			fmt.Fprintf(w, "Requackted %d", i)
+			logger.Infof("requackted quackard %d", i)
 		}
 
 		time.Sleep(time.Second * 5)

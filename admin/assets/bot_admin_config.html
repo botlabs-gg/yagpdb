@@ -2,7 +2,7 @@
 
 {{template "cp_head" .}}
 <header class="page-header">
-    <h2>QUACKPDB internal admin panel</h2>
+    <h2>QUACKPDB internal quack panel</h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -10,17 +10,17 @@
     <div class="col">
     </div>
 </div> -->
-<p>Note: changes requires a restart</p>
+<p>Quack: quacks requackire a requack</p>
 <div class="row">
     <div class="col">
         <div class="table-responsive">
             <table class="table table-bordered table-hover">
                 <tr>
-                    <th>Key</th>
-                    <th>Description</th>
-                    <th>Default</th>
-                    <th>Loaded</th>
-                    <th>Loaded source</th>
+                    <th>Kuack</th>
+                    <th>Duack</th>
+                    <th>Quackfault</th>
+                    <th>Quacked</th>
+                    <th>Quacked source</th>
                     <th style="min-width: 200px;">Change</th>
                 </tr>
                 {{range .ConfigOptions}}
@@ -29,11 +29,11 @@
                     <td>{{.Description}}</td>
                     <td>{{.DefaultValue}}</td>
                     <td>{{.LoadedValue}}</td>
-                    <td>{{if .ConfigSource}}{{.ConfigSource.Name}}{{else}}Default{{end}}</td>
+                    <td>{{if .ConfigSource}}{{.ConfigSource.Name}}{{else}}Quackfault{{end}}</td>
                     <td>
                         <form action="/admin/config/edit/{{.Name}}" method="POST"><input class="form-control"
                                 name="value" type="text" value="{{.LoadedValue}}"><button type="submit"
-                                class="btn btn-sm btn-primary">save</button>
+                                class="btn btn-sm btn-primary">quack</button>
                         </form>
                     </td>
                 </tr>

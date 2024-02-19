@@ -11,7 +11,7 @@ type Plugin struct {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Admin",
+		Name:     "Quackdmin",
 		SysName:  "admin",
 		Category: common.PluginCategoryCore,
 	}

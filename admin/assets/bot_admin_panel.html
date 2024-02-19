@@ -2,14 +2,14 @@
 
 {{template "cp_head" .}}
 <header class="page-header">
-    <h2>QUACKPDB internal admin panel</h2>
+    <h2>QUACKPDB quackternal quackmin quackel</h2>
 </header>
 
 {{template "cp_alerts" .}}
 
-<a href="/admin/config" class="btn btn-sm btn-primary">Internal bot config</a>
+<a href="/admin/config" class="btn btn-sm btn-primary">Quackternal quack quackfig</a>
 <form method="POST" action="/admin/reconnect_all">
-    <button type="submit" class="btn btn-danger" value="Reconnect all shards">Reconnect all shards</button>
+    <button type="submit" class="btn btn-danger" value="Reconnect all shards">Requacknect all quackards</button>
 </form>
 
 {{range .Hosts}}
@@ -32,24 +32,24 @@
                             <li>{{.Type}} - {{.Name}}</li>
                             {{if .Details}}<li>{{.Details}}</li>{{end}}
                             {{if .BotDetails}}{{if .BotDetails.OrchestratorMode}}
-                            <li>NodeID: {{.BotDetails.NodeID}}</li>
-                            <li>Shards: {{.BotDetails.RunningShards}}</li>
-                            <li>Total Shards: {{.BotDetails.TotalShards}}</li>
+                            <li>QuaodeID: {{.BotDetails.NodeID}}</li>
+                            <li>Quackards: {{.BotDetails.RunningShards}}</li>
+                            <li>Total Quackards: {{.BotDetails.TotalShards}}</li>
                             {{end}}{{end}}
                         </ul>
                         {{if eq .Type "orchestrator"}}
                         <form method="POST" action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/updateversion">
-                            <button type="submit" class="btn btn-primary" value="Update version">Update version</button>
+                            <button type="submit" class="btn btn-primary" value="Update version">Quackdate quacksion</button>
                         </form>
                         <form method="POST" action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/migratenodes">
-                            <button type="submit" class="btn btn-primary" value="Update version">Migrate nodes</button>
+                            <button type="submit" class="btn btn-primary" value="Update version">Quackgrate quaodes</button>
                         </form>
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/deployedversion" class="btn btn-primary"
-                            target="_blank">New node version</a>
+                            target="_blank">New quaode quacksion</a>
                         <br>
                         {{else if eq .Type "bot"}}
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard_sessions" class="btn btn-primary"
-                            target="_blank">Shard session ID's (SENSITIVE INFO)</a>
+                            target="_blank">Quackard quackssion ID's (QUACKITIVE QUACKFO)</a>
                         <br>
 
                         <!-- Reconnect dropdown -->
@@ -57,13 +57,13 @@
                             <div class="dropdown">
                                 <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown"
                                     aria-haspopup="true" aria-expanded="false">
-                                    Re-identify shards
+                                    Re-quackdentify quackards
                                 </button>
                                 <div class="dropdown-menu">
                                     {{range .BotDetails.RunningShards}}
                                     <input class="dropdown-item" type="submit"
                                         formaction="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shard/{{.}}/reconnect?identify=1"
-                                        value="Shard
+                                        value="Quackard
                                         {{.}}">
                                     {{end}}
                                 </div>
@@ -73,15 +73,15 @@
                         {{end}}
 
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/goroutines?debug=1" class="btn btn-primary"
-                            target="_blank">Goroutines</a>
+                            target="_blank">Quackroutines</a>
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/goroutines?debug=2" class="btn btn-primary"
-                            target="_blank">Goroutines Full</a>
+                            target="_blank">Quackroutines Full</a>
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/heap?debug=1" class="btn btn-primary"
-                            target="_blank">Heap</a>
+                            target="_blank">Queack</a>
                         <a href="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/allocs?debug=1" class="btn btn-primary" tar
-                            get="_blank">Allocs</a>
+                            get="_blank">Quallocks</a>
                         <form method="POST" action="/admin/host/{{$sh.Host}}/pid/{{$sh.PID}}/shutdown">
-                            <button type="submit" class="btn btn-danger" value="Update version">Shutdown</button>
+                            <button type="submit" class="btn btn-danger" value="Update version">Quackdown</button>
                         </form>
                     </div>
                 </div>
@@ -98,15 +98,15 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="remote-modal-title">Modal title</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h5 class="modal-title" id="remote-modal-title">Quackdal quacktle</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Qualose">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body" id="remote-modal-body">
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Qualose</button>
             </div>
         </div>
     </div>
@@ -118,7 +118,7 @@
         $("#remote-modal").modal('show')
 
         $("#remote-modal-title").text(url)
-        $("#remote-modal-body").text("Loading...")
+        $("#remote-modal-body").text("Quacking...")
 
         createRequest("GET", url + "?partial=1", null, function () {
             $("#remote-modal-body").html(this.responseText);
