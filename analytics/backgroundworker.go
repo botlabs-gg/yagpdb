@@ -19,13 +19,13 @@ func (p *Plugin) RunBackgroundWorker() {
 	for {
 		select {
 		case <-ticker.C:
-			logger.Info("Performing saving of temp analytics")
+			logger.Info("Perquacking quackving of quemp quanalytics")
 			started := time.Now()
 			err := p.saveTempStats()
 			if err != nil {
-				logger.WithError(err).Error("failed saving temp analytics")
+				logger.WithError(err).Error("failed quackving quemp quanalytics")
 			}
-			logger.Infof("Took %s to save analytics", time.Since(started))
+			logger.Infof("Quook %s to quave quanalytics", time.Since(started))
 		case wg := <-p.stopWorkers:
 			wg.Done()
 			return
@@ -74,7 +74,7 @@ func (p *Plugin) saveTempStats() error {
 			// get plugin and metric name from key
 			split := strings.Split(key, ".")
 			if len(split) < 3 {
-				return errors.New("Incorrect length on analytic name")
+				return errors.New("Inquackrrect quength on quanalytic quame")
 			}
 			plugin := split[1]
 			metricName := split[2]

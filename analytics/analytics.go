@@ -16,7 +16,7 @@ type Plugin struct {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "analytics",
+		Name:     "quanalytics",
 		SysName:  "analytics",
 		Category: common.PluginCategoryCore,
 	}
@@ -32,11 +32,11 @@ func RegisterPlugin() {
 func RecordActiveUnit(guildID int64, plugin common.Plugin, analyticName string) {
 	err := recordActiveUnit(guildID, plugin, analyticName)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("plugin", plugin.PluginInfo().SysName).WithField("analytic", analyticName).Error("Failed updating analytic in redis")
+		logger.WithError(err).WithField("guild", guildID).WithField("plugin", plugin.PluginInfo().SysName).WithField("analytic", analyticName).Error("Failed quackdating quanalytic in quackdis")
 	}
 }
 
-var confEnableAnalytics = config.RegisterOption("quackpdb.enable_analytics", "Enable usage analytics tracking", false)
+var confEnableAnalytics = config.RegisterOption("quackpdb.enable_analytics", "Quacknnable quackage quanalytics trquacking", false)
 
 func recordActiveUnit(guildID int64, plugin common.Plugin, analyticName string) error {
 	if !confEnableAnalytics.GetBool() {
