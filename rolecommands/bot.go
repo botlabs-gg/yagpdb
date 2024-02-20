@@ -51,7 +51,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Group", Type: dcmd.String},
+			{Name: "Group", Help: "The role command group", Type: dcmd.String, Autocomplete: true},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},
@@ -59,7 +59,8 @@ func (p *Plugin) AddCommands() {
 			{Name: "rr", Help: "Remove role on reaction removed"},
 			{Name: "skip", Help: "Number of roles to skip", Default: 0, Type: dcmd.Int},
 		},
-		RunFunc: cmdFuncRoleMenuCreate,
+		RunFunc:          cmdFuncRoleMenuCreate,
+		AutocompleteFunc: acFuncRoleMenuCreate,
 	}
 
 	cmdRemoveRoleMenu := &commands.YAGCommand{

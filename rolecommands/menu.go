@@ -30,6 +30,26 @@ import (
 
 var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 
+func acFuncRoleMenuCreate(parsed *dcmd.Data) ([]*discordgo.ApplicationCommandOptionChoice, error) {
+	name := parsed.Args[0].Str()
+	choices := []*discordgo.ApplicationCommandOptionChoice{}
+	groups, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", "%"+name+"%"), qm.Load("RoleCommands"), qm.Limit(25), qm.OrderBy("id asc")).AllG(parsed.Context())
+	if err != nil {
+		if errors.Cause(err) == sql.ErrNoRows {
+			return choices, nil
+		}
+
+		return nil, err
+	}
+	for _, group := range groups {
+		choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
+			Name:  group.Name,
+			Value: group.Name,
+		})
+	}
+	return choices, nil
+}
+
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	name := parsed.Args[0].Str()
 	panelURL := fmt.Sprintf("%s/rolecommands/", web.ManageServerURL(parsed.GuildData))
