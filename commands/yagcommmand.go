@@ -117,10 +117,14 @@ type YAGCommand struct {
 
 	Middlewares []dcmd.MiddleWareFunc
 
-	// Run is ran the the command has sucessfully been parsed
+	// Run is ran when the command has sucessfully been parsed
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
 	RunFunc dcmd.RunFunc
+
+	// Autocomplete is run when the command is valid and the interaction type is autocomplete
+	// It returns a slice of *discordgo.ApplicationCommandOptionChoice
+	AutocompleteFunc func(data *dcmd.Data) ([]*discordgo.ApplicationCommandOptionChoice, error)
 
 	Plugin common.Plugin
 
@@ -172,6 +176,9 @@ var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"name", "trigger_type"})
 
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
+	if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type == discordgo.InteractionApplicationCommandAutocomplete {
+		return yc.AutocompleteFunc(data)
+	}
 	if !yc.RunInDM && data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
 	}
