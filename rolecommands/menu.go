@@ -14,6 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -28,25 +29,42 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
+var (
+	recentMenusTracker             = NewRecentMenusTracker(time.Minute * 10)
+	rolemenuGroupAutocompleteCache = commands.NewAutocompleteCache[int64, map[int64]*discordgo.ApplicationCommandOptionChoice]("rolemenu")
+)
 
-func acFuncRoleMenuCreate(parsed *dcmd.Data) ([]*discordgo.ApplicationCommandOptionChoice, error) {
-	name := parsed.Args[0].Str()
-	choices := []*discordgo.ApplicationCommandOptionChoice{}
-	groups, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", "%"+name+"%"), qm.Load("RoleCommands"), qm.Limit(25), qm.OrderBy("id asc")).AllG(parsed.Context())
-	if err != nil {
-		if errors.Cause(err) == sql.ErrNoRows {
-			return choices, nil
+func roleGroupAutocomplete(parsed *dcmd.Data, arg *dcmd.ParsedArg) ([]*discordgo.ApplicationCommandOptionChoice, error) {
+	name := arg.Str()
+	choiceMap, found := rolemenuGroupAutocompleteCache.Get(parsed.GuildData.GS.ID)
+
+	if !found {
+		groups, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Load("RoleCommands"), qm.OrderBy("id asc")).AllG(parsed.Context())
+
+		if err != nil {
+			return nil, err
 		}
 
-		return nil, err
+		choiceMap = make(map[int64]*discordgo.ApplicationCommandOptionChoice, len(groups))
+		for _, g := range groups {
+			choiceMap[g.ID] = &discordgo.ApplicationCommandOptionChoice{
+				Name:  g.Name,
+				Value: g.Name,
+			}
+		}
+		rolemenuGroupAutocompleteCache.Set(parsed.GuildData.GS.ID, choiceMap)
 	}
-	for _, group := range groups {
-		choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
-			Name:  group.Name,
-			Value: group.Name,
-		})
+
+	choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(choiceMap))
+	for _, v := range choiceMap {
+		if jarowinkler.Similarity([]rune(strings.ToLower(v.Name)), []rune(strings.ToLower(name))) > 0.6 || strings.Contains(strings.ToLower(v.Name), strings.ToLower(name)) {
+			choices = append(choices, v)
+		}
 	}
+	sort.Slice(choices, func(i, j int) bool {
+		return choices[i].Name < choices[j].Name
+	})
+
 	return choices, nil
 }
 

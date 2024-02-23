@@ -450,6 +450,13 @@ func HandleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 		return tmpl, err
 	}
 
+	if choices, ok := rolemenuGroupAutocompleteCache.Get(g.ID); ok {
+		choices[model.ID] = &discordgo.ApplicationCommandOptionChoice{
+			Name:  model.Name,
+			Value: model.Name,
+		}
+	}
+
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: model.Name}))
 	sendEvictMenuCachePubSub(g.ID)
 
@@ -485,6 +492,12 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 		return
 	}
 
+	choices, _ := rolemenuGroupAutocompleteCache.Get(g.ID)
+	if choice, ok := choices[group.ID]; ok {
+		choice.Name = group.Name
+		choice.Value = group.Name
+	}
+
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: group.Name}))
 	sendEvictMenuCachePubSub(g.ID)
 
@@ -499,8 +512,13 @@ func HandleRemoveGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	g, _ := web.GetBaseCPContextData(r.Context())
 
 	idParsed, _ := strconv.ParseInt(r.FormValue("ID"), 10, 64)
+
 	_, err := models.RoleGroups(qm.Where("guild_id=?", g.ID), qm.Where("id=?", idParsed)).DeleteAll(r.Context(), common.PQ)
 	if err == nil {
+		if choices, ok := rolemenuGroupAutocompleteCache.Get(g.ID); ok {
+			delete(choices, idParsed)
+		}
+
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedGroup, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: idParsed}))
 		sendEvictMenuCachePubSub(g.ID)
 	}

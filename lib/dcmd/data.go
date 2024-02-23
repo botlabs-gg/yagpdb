@@ -178,8 +178,7 @@ func (d *Data) SendFollowupMessage(reply interface{}, allowedMentions discordgo.
 			return []*discordgo.Message{m}, err
 		}
 	case []*discordgo.ApplicationCommandOptionChoice:
-		switch d.TriggerType {
-		case TriggerTypeSlashCommands:
+		if d.TriggerType == TriggerTypeSlashCommands {
 			if d.SlashCommandTriggerData.Interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
 				return nil, errors.New("Cannot use autocomplete with interaction type: " + d.SlashCommandTriggerData.Interaction.Type.String())
 			}
