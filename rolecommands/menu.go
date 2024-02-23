@@ -14,7 +14,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -30,40 +29,29 @@ import (
 )
 
 var (
-	recentMenusTracker             = NewRecentMenusTracker(time.Minute * 10)
-	rolemenuGroupAutocompleteCache = commands.NewAutocompleteCache[int64, map[int64]*discordgo.ApplicationCommandOptionChoice]("rolemenu")
+	recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
 )
 
 func roleGroupAutocomplete(parsed *dcmd.Data, arg *dcmd.ParsedArg) ([]*discordgo.ApplicationCommandOptionChoice, error) {
 	name := arg.Str()
-	choiceMap, found := rolemenuGroupAutocompleteCache.Get(parsed.GuildData.GS.ID)
 
-	if !found {
-		groups, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Load("RoleCommands"), qm.OrderBy("id asc")).AllG(parsed.Context())
-
-		if err != nil {
-			return nil, err
-		}
-
-		choiceMap = make(map[int64]*discordgo.ApplicationCommandOptionChoice, len(groups))
-		for _, g := range groups {
-			choiceMap[g.ID] = &discordgo.ApplicationCommandOptionChoice{
-				Name:  g.Name,
-				Value: g.Name,
-			}
-		}
-		rolemenuGroupAutocompleteCache.Set(parsed.GuildData.GS.ID, choiceMap)
+	groups, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Load("RoleCommands"), qm.OrderBy("name asc")).AllG(parsed.Context())
+	if err != nil {
+		return nil, err
 	}
 
-	choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(choiceMap))
-	for _, v := range choiceMap {
+	choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(groups))
+	for _, v := range groups {
 		if jarowinkler.Similarity([]rune(strings.ToLower(v.Name)), []rune(strings.ToLower(name))) > 0.6 || strings.Contains(strings.ToLower(v.Name), strings.ToLower(name)) {
-			choices = append(choices, v)
+			choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
+				Name:  v.Name,
+				Value: v.Name,
+			})
 		}
 	}
-	sort.Slice(choices, func(i, j int) bool {
+	/*sort.Slice(choices, func(i, j int) bool {
 		return choices[i].Name < choices[j].Name
-	})
+	})*/
 
 	return choices, nil
 }
