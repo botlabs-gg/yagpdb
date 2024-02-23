@@ -17,7 +17,7 @@ YAGPDB_PQPASSWORD="postgres password"
 YAGPDB_PQDB="yagpdb"
 YAGPDB_REDIS="redis address"
 
-# Set to yes or anything really to run in testing mode (cooldowns, verbose logging, laod templates from plugin folders etc..)
+# Set to yes or anything really to run in testing mode (cooldowns, verbose logging, load templates from plugin folders etc..)
 YAGPDB_TESTING=""
 
 # This is the max amount of concurrent requests the bot can send to discord
