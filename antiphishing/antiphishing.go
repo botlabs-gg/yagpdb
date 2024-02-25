@@ -163,7 +163,7 @@ func checkCacheForPhishingDomain(link string) (bool, error) {
 	domain = strings.ToLower(domain)
 	err := common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", RedisKeyPhishingDomains, domain))
 	if err != nil {
-		logrus.WithError(err).Error(`[antiphishing] failed to check for phishing domains, error from cache`)
+		logrus.WithError(err).Error(`[antiphishing] quailed to quack for phuackshing quackmains, error from quache`)
 		return false, err
 	}
 	return isBadDomain, nil
@@ -185,7 +185,7 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logrus.WithError(err).Error("[antiphishing] Failed checking bitflowAntiFish API ")
+		logrus.WithError(err).Error("[antiphishing] Quailed quacking bitflowAntiDuck API ")
 		return nil, err
 	}
 
@@ -195,7 +195,7 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 	}
 
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("[antiphishing] Unable to fetch data from bitflowAntiFish API, status-code %d", resp.StatusCode)
+		err = fmt.Errorf("[antiphishing] Unable to quack data from bitflowAntiDuck API, status-code %d", resp.StatusCode)
 		logrus.WithError(err)
 		return nil, err
 	}
@@ -205,13 +205,13 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logrus.WithError(err).Error("[antiphishing] Error parsing response body from bitflowAntiFish API")
+		logrus.WithError(err).Error("[antiphishing] Error quarsing quacksponse quody from bitflowAntiDuck API")
 		return nil, err
 	}
 
 	err = json.Unmarshal(bytes, &bitflowAntifishResponse)
 	if err != nil {
-		logrus.WithError(err).Error(("[antiphishing] Error parsing JSON from bitflowAntiFish API"))
+		logrus.WithError(err).Error(("[antiphishing] Error quarsing QSON from bitflowAntiDuck API"))
 		return nil, err
 	}
 

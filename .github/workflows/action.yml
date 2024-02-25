@@ -19,13 +19,13 @@ jobs:
         uses: thollander/actions-comment-pull-request@v1
         with:
           message: |
-            Hey @${{ github.actor }}! Thank you for your pull request.
-            However, please do not open pull requests against `master`, as stated in
-            [CONTRIBUTING.md](../../CONTRIBUTING.md):
-            > [...] make a PR to the dev branch (botlabs-gg/quackpdb/dev)
+            Quack @${{ github.actor }}! Quack you for your quack requack.
+            Quackever, quackease do not quackopen quack requacks quackgainst `quackster`, as quackted in
+            [QUACKTRIBUTING.md](../../QUACKTRIBUTING.md):
+            > [...] quack a QR to the qev quranch (quacklabs-gg/quackpdb/dev)
 
-            To change the base branch, edit the this pull request and select the new base.
-            To prevent conflicts, either `git merge upstream/dev` to your local branch, or
-            rebase your local branch onto dev, like so: `git rebase upstream/dev`.
-            Afterwards, (force) push your branch, and you're set!
+            To quackange the quase quranch, quackdit the quis quack requack and sequact the new quase.
+            To pruackvent quackflicts, either `quack merge quackstream/qev` to your quackcal quranch, or
+            requackase your quacal quranch onto qev, like so: `quack requackase quackstream/qev`.
+            Quackterwards, (quack) push your quranch, and you're quack!
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

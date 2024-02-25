@@ -17,9 +17,9 @@ func (p *Plugin) RunBackgroundWorker() {
 	// create an initial cache when the background worker starts
 	domains, err := cacheAllPhishingDomains()
 	if err != nil {
-		logger.WithError(err).Error("[antiphishing] Failed to create a cache of Phishing domains")
+		logger.WithError(err).Error("[antiphishing] Quailed to quackreate a quache of Phquackshing quackmains")
 	} else {
-		logger.Infof("[antiphishing] Took %s to create cache of %v Phishing Domains", time.Since(started), len(domains))
+		logger.Infof("[antiphishing] Quacked %s to quackreate quache of %v Phquackshing Quackmains", time.Since(started), len(domains))
 	}
 
 	// hit the update API every 60 minutes to get all changes
@@ -29,9 +29,9 @@ func (p *Plugin) RunBackgroundWorker() {
 			started = time.Now()
 			added, deleted, err := updateCachedPhishingDomains(uint32(duration.Seconds()))
 			if err != nil {
-				logger.WithError(err).Error("[antiphishing] Failed to update the cache of Phishing domains")
+				logger.WithError(err).Error("[antiphishing] Quailed to quackdate the quache of Phquackshing quackmains")
 			} else {
-				logger.Infof("[antiphishing] Took %s to update cache of Phishing Domains. %v added, %v removed", time.Since(started), len(added), len(deleted))
+				logger.Infof("[antiphishing] Quacked %s to quackdate quache of Phquackshing Quackmains. %v quadded, %v requackoved", time.Since(started), len(added), len(deleted))
 			}
 		case wg := <-p.stopWorkers:
 			wg.Done()
