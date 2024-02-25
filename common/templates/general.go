@@ -634,9 +634,9 @@ func tmplMult(args ...interface{}) interface{} {
 		return 0
 	}
 
-	switch args[0].(type) {
+	switch a := args[0].(type) {
 	case float32, float64:
-		sumF := ToFloat64(args[0])
+		sumF := ToFloat64(a)
 		for i, v := range args {
 			if i == 0 {
 				continue
@@ -645,8 +645,28 @@ func tmplMult(args ...interface{}) interface{} {
 			sumF *= ToFloat64(v)
 		}
 		return sumF
+	case time.Duration:
+		sumD := a
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumD *= time.Duration(tmplToInt(v))
+		}
+		return sumD
+	case *time.Duration:
+		sumD := *a
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumD *= time.Duration(tmplToInt(v))
+		}
+		return sumD
 	default:
-		sumI := tmplToInt(args[0])
+		sumI := tmplToInt(a)
 		for i, v := range args {
 			if i == 0 {
 				continue
@@ -663,9 +683,9 @@ func tmplDiv(args ...interface{}) interface{} {
 		return 0
 	}
 
-	switch args[0].(type) {
+	switch a := args[0].(type) {
 	case float32, float64:
-		sumF := ToFloat64(args[0])
+		sumF := ToFloat64(a)
 		for i, v := range args {
 			if i == 0 {
 				continue
@@ -674,8 +694,28 @@ func tmplDiv(args ...interface{}) interface{} {
 			sumF /= ToFloat64(v)
 		}
 		return sumF
+	case time.Duration:
+		sumD := a
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumD /= time.Duration(tmplToInt(v))
+		}
+		return sumD
+	case *time.Duration:
+		sumD := *a
+		for i, v := range args {
+			if i == 0 {
+				continue
+			}
+
+			sumD /= time.Duration(tmplToInt(v))
+		}
+		return sumD
 	default:
-		sumI := tmplToInt(args[0])
+		sumI := tmplToInt(a)
 		for i, v := range args {
 			if i == 0 {
 				continue
