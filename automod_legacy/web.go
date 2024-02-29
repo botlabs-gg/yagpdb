@@ -28,7 +28,7 @@ func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("automod_legacy/assets/automod_legacy.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
-		Name: "Basic Automoderator",
+		Name: "Basic Autoquackerator",
 		URL:  "automod_legacy",
 		Icon: "fas fa-robot",
 	})
@@ -79,7 +79,7 @@ var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, templateData := web.GetBaseCPContextData(r.Context())
 
-	templateData["WidgetTitle"] = "Basic Automoderator"
+	templateData["WidgetTitle"] = "Basic Autoquackerator"
 	templateData["SettingsPath"] = "/automod_legacy"
 
 	config, err := GetConfig(g.ID)

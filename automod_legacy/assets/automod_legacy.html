@@ -1,7 +1,7 @@
 {{define "cp_automod_legacy"}}
 {{template "cp_head" .}}
 <header class="page-header">
-    <h2>Automoderator {{if .AutomodConfig.Enabled}}<span class="bg-success">Enabled</span>{{else}}<span
+    <h2>Autoquackerator {{if .AutomodConfig.Enabled}}<span class="bg-success">Enabled</span>{{else}}<span
             class="bg-danger">Disabled</span>{{end}}</h2>
 </header>
 
@@ -81,7 +81,7 @@
 {{define "automod_legacy_general"}}
 <div class="row">
     <div class="col-lg-12">
-        {{checkbox "Enabled" "automod-enabled" "Enable basic automoderator" .AutomodConfig.Enabled}}
+        {{checkbox "Enabled" "automod-enabled" "Enable basic autoquackerator" .AutomodConfig.Enabled}}
     </div>
 </div>
 <div class="row">
@@ -89,7 +89,7 @@
         <h3>Basic automod</h3>
         <p>This is the basic automod with limited functionality, if you want more flexibility then use automodv2,
             although it's quite a bit more complex</p>
-        <p>The automoderator helps to perform mundane and repetitive duties on servers. It deals with the following
+        <p>The autoquackerator helps to perform mundane and repetitive duties on servers. It deals with the following
             cases:</p>
         <ul>
             <li><b>Slowmode:</b> You can set up a rule to only allow up to a certain amount of messages within a certain

@@ -57,7 +57,7 @@ var (
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("automod/assets/automod.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
-		Name: "Advanced Automoderator",
+		Name: "Advanced Autoquackerator",
 		URL:  "automod",
 		Icon: "fas fa-robot",
 	})
@@ -819,7 +819,7 @@ var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
 
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, templateData := web.GetBaseCPContextData(r.Context())
-	templateData["WidgetTitle"] = "Advanced Automoderator"
+	templateData["WidgetTitle"] = "Advanced Autoquackerator"
 	templateData["SettingsPath"] = "/automod"
 
 	rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", g.ID), qm.Where("enabled = true")).CountG(r.Context())

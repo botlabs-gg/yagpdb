@@ -262,7 +262,7 @@ func (kick *KickUserEffect) UserSettings() []*SettingDef {
 func (kick *KickUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*KickUserEffectData)
 
-	reason := "Automoderator:\n"
+	reason := "Autoquackerator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
 	} else {
@@ -332,7 +332,7 @@ func (ban *BanUserEffect) UserSettings() []*SettingDef {
 func (ban *BanUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*BanUserEffectData)
 
-	reason := "Automoderator:\n"
+	reason := "Autoquackerator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
 	} else {
@@ -395,7 +395,7 @@ func (mute *MuteUserEffect) Description() (description string) {
 func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*MuteUserEffectData)
 
-	reason := "Automoderator:\n"
+	reason := "Autoquackerator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
 	} else {
@@ -464,7 +464,7 @@ func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings int
 
 	settingsCast := settings.(*TimeoutUserEffectData)
 
-	reason := "Automoderator:\n"
+	reason := "Autoquackerator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
 	} else {
@@ -519,7 +519,7 @@ func (warn *WarnUserEffect) Description() (description string) {
 func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*WarnUserEffectData)
 
-	reason := "Automoderator:\n"
+	reason := "Autoquackerator:\n"
 	if settingsCast.CustomReason != "" {
 		reason += settingsCast.CustomReason
 	} else {
@@ -845,7 +845,7 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 		}
 	}
 
-	msgSend.Content += "Automoderator:\n"
+	msgSend.Content += "Autoquackerator:\n"
 	if settingsCast.CustomReason != "" {
 		msgSend.Content += settingsCast.CustomReason
 	} else {
