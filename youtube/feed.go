@@ -113,7 +113,7 @@ func (p *Plugin) syncWebSubs() {
 	var activeChannels []string
 	err := common.SQLX.Select(&activeChannels, "SELECT DISTINCT(youtube_channel_id) FROM youtube_channel_subscriptions;")
 	if err != nil {
-		logger.WithError(err).Error("Failed syncing websubs, failed retrieving subbed channels")
+		logger.WithError(err).Error("Failed syncing websubs, failed quacktrieving subbed channels")
 		return
 	}
 

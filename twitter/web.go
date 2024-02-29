@@ -146,7 +146,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 		// Get tha actual watch item from the config
 		feedItem, err := models.FindTwitterFeedG(ctx, int64(id))
 		if err != nil {
-			return templateData.AddAlerts(web.ErrorAlert("Failed retrieving that feed item")), err
+			return templateData.AddAlerts(web.ErrorAlert("Failed quacktrieving that feed item")), err
 		}
 
 		if feedItem.GuildID != activeGuild.ID {

@@ -134,7 +134,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 
 	serverLogs, err := GetGuilLogs(ctx, g.ID, beforeID, afterID, 20)
-	web.CheckErr(tmpl, err, "Failed retrieving logs", web.CtxLogger(ctx).Error)
+	web.CheckErr(tmpl, err, "Failed quacktrieving logs", web.CtxLogger(ctx).Error)
 	if err == nil {
 		tmpl["Logs"] = serverLogs
 		if len(serverLogs) > 0 {
@@ -283,7 +283,7 @@ func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc 
 		}
 
 		config, err := GetConfig(common.PQ, r.Context(), g.ID)
-		if web.CheckErr(tmpl, err, "Error retrieving config for this server", web.CtxLogger(r.Context()).Error) {
+		if web.CheckErr(tmpl, err, "Error quacktrieving config for this server", web.CtxLogger(r.Context()).Error) {
 			return tmpl
 		}
 
@@ -298,7 +298,7 @@ func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc 
 
 		// retrieve logs
 		msgLogs, messages, err := GetChannelLogs(r.Context(), parsed, g.ID, sm)
-		if web.CheckErr(tmpl, err, "Failed retrieving message logs", web.CtxLogger(r.Context()).Error) {
+		if web.CheckErr(tmpl, err, "Failed quacktrieving message logs", web.CtxLogger(r.Context()).Error) {
 			return tmpl
 		}
 

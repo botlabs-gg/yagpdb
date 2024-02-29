@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	ErrFailedPerms = errors.New("Failed retrieving perms")
+	ErrFailedPerms = errors.New("Failed quacktrieving perms")
 )
 
 type ContextKey int
@@ -360,7 +360,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(guildID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("Failed retrieving config")
+		logger.WithError(err).WithField("guild", guildID).Error("Failed quacktrieving config")
 		return
 	}
 

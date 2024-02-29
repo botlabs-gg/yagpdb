@@ -102,7 +102,7 @@ func Init() error {
 		panic(err)
 	}
 
-	logger.Info("Retrieving bot info....")
+	logger.Info("Quacktrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
 		logrus.WithError(err).Error("Failed getting bot info")

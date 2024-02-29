@@ -959,7 +959,7 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, 
 	if len(membersToFetch) == 1 {
 		member, err := bot.GetMember(gs.ID, membersToFetch[0])
 		if err != nil {
-			ctx.LogEntry().WithError(err).Error("[cc] failed retrieving member")
+			ctx.LogEntry().WithError(err).Error("[cc] failed quacktrieving member")
 			return entries
 		}
 

@@ -204,7 +204,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 		var sub ChannelSubscription
 		err := common.GORM.Model(&ChannelSubscription{}).Where("id = ?", id).First(&sub).Error
 		if err != nil {
-			return templateData.AddAlerts(web.ErrorAlert("Failed retrieving that feed item")), err
+			return templateData.AddAlerts(web.ErrorAlert("Failed quacktrieving that feed item")), err
 		}
 
 		if sub.GuildID != discordgo.StrID(activeGuild.ID) {

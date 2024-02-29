@@ -242,7 +242,7 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
 	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.Context(), parsed.GuildData.GS.ID)
 	if err != nil {
-		return "Failed retrieving role commands", err
+		return "Failed quacktrieving role commands", err
 	}
 
 	output := "Here is a list of available roles:\n"

@@ -344,7 +344,7 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 
 	prefix, err := prfx.GetCommandPrefixRedis(data.GuildData.GS.ID)
 	if err != nil {
-		logger.WithError(err).Error("Failed retrieving commands prefix")
+		logger.WithError(err).Error("Failed quacktrieving commands prefix")
 	}
 
 	return prefix

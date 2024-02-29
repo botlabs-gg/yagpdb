@@ -97,7 +97,7 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 
 	if _, ok := templateData["RepSettings"]; !ok {
 		settings, err := GetConfig(r.Context(), activeGuild.ID)
-		if !web.CheckErr(templateData, err, "Failed retrieving settings", web.CtxLogger(r.Context()).Error) {
+		if !web.CheckErr(templateData, err, "Failed quacktrieving settings", web.CtxLogger(r.Context()).Error) {
 			templateData["RepSettings"] = settings
 		}
 	}

@@ -59,7 +59,7 @@ func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		guild, tmpl := web.GetBaseCPContextData(r.Context())
 		config, err := GetConfig(guild.ID)
-		if web.CheckErr(tmpl, err, "Failed retrieving streaming config :'(", web.CtxLogger(r.Context()).Error) {
+		if web.CheckErr(tmpl, err, "Failed quacktrieving streaming config :'(", web.CtxLogger(r.Context()).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_streaming", tmpl))
 			return
 		}

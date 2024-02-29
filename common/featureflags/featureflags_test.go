@@ -63,7 +63,7 @@ func TestFeatureFlags(t *testing.T) {
 
 	flags, err := GetGuildFlags(1)
 	if err != nil {
-		t.Errorf("Error on retrieving flags %v", err)
+		t.Errorf("Error on quacktrieving flags %v", err)
 	}
 
 	p.checkFlags(t, flags)
@@ -78,7 +78,7 @@ func TestFeatureFlags(t *testing.T) {
 
 	flags, err = GetGuildFlags(1)
 	if err != nil {
-		t.Errorf("Error on retrieving flags %v", err)
+		t.Errorf("Error on quacktrieving flags %v", err)
 	}
 
 	p.checkFlags(t, flags)

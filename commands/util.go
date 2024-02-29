@@ -159,7 +159,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 
 			channelOverrides, err := GetOverridesForChannel(data.ChannelID, cParentID, data.GuildData.GS.ID)
 			if err != nil {
-				logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("failed retrieving command overrides")
+				logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("failed quacktrieving command overrides")
 				return nil, nil
 			}
 

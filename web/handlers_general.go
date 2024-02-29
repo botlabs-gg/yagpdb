@@ -105,7 +105,7 @@ func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
 
 	logs, err := cplogs.GetEntries(activeGuild.ID, 100, 0)
 	if err != nil {
-		templateData.AddAlerts(ErrorAlert("Failed retrieving logs", err))
+		templateData.AddAlerts(ErrorAlert("Failed quacktrieving logs", err))
 	} else {
 		templateData["entries"] = logs
 	}

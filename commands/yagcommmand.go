@@ -433,7 +433,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 		if err != nil {
 			resp = &CanExecuteError{
 				Type:    ReasonError,
-				Message: "Failed retrieving cs.settings",
+				Message: "Failed quacktrieving cs.settings",
 			}
 
 			return false, resp, settings, errors.WithMessage(err, "cs.GetSettings")

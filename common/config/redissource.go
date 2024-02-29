@@ -17,7 +17,7 @@ func (rs *RedisConfigStore) GetValue(key string) interface{} {
 	var v string
 	err := rs.Pool.Do(radix.Cmd(&v, "HGET", "quackpdb_config", prefixStripped))
 	if err != nil {
-		logrus.WithError(err).Error("[redis_config_source] failed retrieving value")
+		logrus.WithError(err).Error("[redis_config_source] failed quacktrieving value")
 		return nil
 	}
 

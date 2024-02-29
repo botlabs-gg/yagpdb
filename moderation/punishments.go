@@ -38,7 +38,7 @@ func getMemberWithFallback(gs *dstate.GuildSet, user *discordgo.User) (ms *dstat
 	ms, err := bot.GetMember(gs.ID, user.ID)
 	if err != nil {
 		// Fallback
-		logger.WithError(err).WithField("guild", gs.ID).Info("Failed retrieving member")
+		logger.WithError(err).WithField("guild", gs.ID).Info("Failed quacktrieving member")
 		ms = &dstate.MemberState{
 			User:    *user,
 			GuildID: gs.ID,

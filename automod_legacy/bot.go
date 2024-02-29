@@ -87,7 +87,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	config, err := CachedGetConfig(cs.GuildID)
 	if err != nil {
-		logger.WithError(err).Error("Failed retrieving config")
+		logger.WithError(err).Error("Failed quacktrieving config")
 		return false
 	}
 

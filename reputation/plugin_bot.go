@@ -75,7 +75,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	target, err := bot.GetMember(msg.GuildID, who.ID)
 	sender := dstate.MemberStateFromMember(msg.Member)
 	if err != nil {
-		logger.WithError(err).Error("Failed retrieving target member")
+		logger.WithError(err).Error("Failed quacktrieving target member")
 		return
 	}
 
@@ -99,7 +99,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		newScore = -1
 		newRank = -1
-		logger.WithError(err).Error("Failed retrieving target stats")
+		logger.WithError(err).Error("Failed quacktrieving target stats")
 		return
 	}
 

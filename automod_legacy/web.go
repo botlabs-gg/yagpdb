@@ -55,7 +55,7 @@ func HandleAutomod(w http.ResponseWriter, r *http.Request) interface{} {
 	g, templateData := web.GetBaseCPContextData(r.Context())
 
 	config, err := GetConfig(g.ID)
-	web.CheckErr(templateData, err, "Failed retrieving rules", web.CtxLogger(r.Context()).Error)
+	web.CheckErr(templateData, err, "Failed quacktrieving rules", web.CtxLogger(r.Context()).Error)
 
 	templateData["AutomodConfig"] = config
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(g.ID) + "/automod_legacy/"

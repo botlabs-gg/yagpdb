@@ -82,7 +82,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
 	general, err := GetGeneralConfig(activeGuild.ID)
-	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
+	web.CheckErr(tmpl, err, "Failed quacktrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general
 
 	var status int

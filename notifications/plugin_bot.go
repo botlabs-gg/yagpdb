@@ -51,7 +51,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 				return true, errors.WithStackIf(err)
 			}
 
-			logger.WithError(err).WithField("user", evt.User.ID).Error("Failed retrieving user channel")
+			logger.WithError(err).WithField("user", evt.User.ID).Error("Failed quacktrieving user channel")
 		} else {
 			thinCState := &dstate.ChannelState{
 				ID:      cid.ID,

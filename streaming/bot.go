@@ -49,7 +49,7 @@ func CheckGuildFull(gs *dstate.GuildSet, fetchMembers bool) {
 
 	config, err := GetConfig(gs.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Error("Failed retrieving streaming config")
+		logger.WithError(err).WithField("guild", gs.ID).Error("Failed quacktrieving streaming config")
 		return
 	}
 
@@ -172,7 +172,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(g.ID)
 	if err != nil {
-		logger.WithError(err).Error("Failed retrieving streaming config")
+		logger.WithError(err).Error("Failed quacktrieving streaming config")
 		return
 	}
 
@@ -510,7 +510,7 @@ func DisableStreamingRole(guildID int64) {
 
 	conf, err := GetConfig(guildID)
 	if err != nil {
-		logger.WithField("guild", guildID).WithError(err).Error("Failed retrieving streaming config, when there should be one?")
+		logger.WithField("guild", guildID).WithError(err).Error("Failed quacktrieving streaming config, when there should be one?")
 		return
 	}
 

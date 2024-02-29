@@ -171,7 +171,7 @@ func RetryGetGuildFlags(guildID int64) (flags []string, err error) {
 	for i := 0; i < maxRetry; i++ {
 		flags, err = GetGuildFlags(guildID)
 		if err != nil {
-			logger.WithError(err).Error("failed retrieving flags, trying again...")
+			logger.WithError(err).Error("failed quacktrieving flags, trying again...")
 			time.Sleep(time.Second)
 			continue
 		}

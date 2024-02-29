@@ -209,7 +209,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	ms, err := bot.GetMember(guildID, target.ID)
 	if err != nil {
-		logger.WithError(err).Error("failed retrieving member")
+		logger.WithError(err).Error("failed quacktrieving member")
 		return
 	}
 
@@ -679,6 +679,6 @@ func (p *Plugin) banAlts(ban *discordgo.GuildBanAdd, alts []*discordgo.User) {
 			}
 		}
 
-		logger.WithError(err).Error("failed retrieving guild ban")
+		logger.WithError(err).Error("failed quacktrieving guild ban")
 	}
 }

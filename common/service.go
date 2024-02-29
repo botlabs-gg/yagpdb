@@ -118,7 +118,7 @@ func (s *serviceTracker) update() {
 
 		botDetails, err := v.botDetailsF()
 		if err != nil {
-			logger.WithError(err).Error("failed retrieving extra service details")
+			logger.WithError(err).Error("failed quacktrieving extra service details")
 			v.BotDetails = &BotServiceDetails{}
 			continue
 		}

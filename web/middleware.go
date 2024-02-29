@@ -344,7 +344,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 
 		member, err := discorddata.GetMember(parsedGuildID, common.BotUser.ID)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Error("Failed retrieving bot member")
+			CtxLogger(r.Context()).WithError(err).Error("Failed quacktrieving bot member")
 			http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
 			return
 		}
@@ -766,7 +766,7 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 
 			m, err := discorddata.GetMember(guild.ID, user.ID)
 			if err != nil || m == nil {
-				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
+				CtxLogger(r.Context()).WithError(err).Warn("failed quacktrieving member info from discord api")
 			} else if m != nil {
 				// calculate permissions
 				perms := dstate.CalculatePermissions(&guild.GuildState, guild.Roles, nil, m.User.ID, m.Roles)

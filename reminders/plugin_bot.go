@@ -190,7 +190,7 @@ var cmds = []*commands.YAGCommand{
 				if err == gorm.ErrRecordNotFound {
 					return "No reminder by that id found", nil
 				}
-				return "Error retrieving reminder", err
+				return "Error quacktrieving reminder", err
 			}
 
 			// Check perms

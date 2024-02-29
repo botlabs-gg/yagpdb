@@ -663,7 +663,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
 		if err == sql.ErrNoRows {
 			return
 		}
-		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed retrieving RSVP session")
+		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed quacktrieving RSVP session")
 		return
 	}
 

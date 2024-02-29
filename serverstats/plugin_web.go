@@ -173,7 +173,7 @@ func HandleStatsJson(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 
 	stats, err := RetrieveDailyStats(time.Now(), activeGuild.ID)
 	if err != nil {
-		web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving stats")
+		web.CtxLogger(r.Context()).WithError(err).Error("Failed quacktrieving stats")
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil
 	}
@@ -279,7 +279,7 @@ func cacheChartFetcher(key string) interface{} {
 
 	periods, err := RetrieveChartDataPeriods(context.Background(), guildID, time.Now(), days)
 	if err != nil {
-		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving chart data")
+		logger.WithError(err).WithField("cache_key", key).Error("failed quacktrieving chart data")
 		return nil
 	}
 
@@ -301,7 +301,7 @@ func GetConfigWeb(guildID int64) *ServerStatsConfig {
 func cacheConfigFetcher(key int) interface{} {
 	config, err := GetConfig(context.Background(), int64(key))
 	if err != nil {
-		logger.WithError(err).WithField("cache_key", key).Error("failed retrieving stats config")
+		logger.WithError(err).WithField("cache_key", key).Error("failed quacktrieving stats config")
 		return nil
 	}
 

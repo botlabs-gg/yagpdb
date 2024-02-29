@@ -304,16 +304,16 @@ func RefreshStatus(session *discordgo.Session) {
 	err4 := common.RedisPool.Do(radix.Cmd(&streamingUrl, "GET", "status_streaming_url"))
 
 	if err1 != nil {
-		logger.WithError(err1).Error("failed retrieving bot activity type")
+		logger.WithError(err1).Error("failed quacktrieving bot activity type")
 	}
 	if err2 != nil {
-		logger.WithError(err2).Error("failed retrieving bot status type")
+		logger.WithError(err2).Error("failed quacktrieving bot status type")
 	}
 	if err3 != nil {
-		logger.WithError(err3).Error("failed retrieving bot status text")
+		logger.WithError(err3).Error("failed quacktrieving bot status text")
 	}
 	if err4 != nil {
-		logger.WithError(err4).Error("failed retrieving bot streaming url")
+		logger.WithError(err4).Error("failed quacktrieving bot streaming url")
 	}
 	switch statusTypeStr {
 	case "online":
@@ -409,7 +409,7 @@ func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
 		user, err := common.BotSession.User(id)
 
 		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("failed retrieving user from api")
+			logger.WithError(err).WithField("guild", guildID).Error("failed quacktrieving user from api")
 			resp = append(resp, &discordgo.User{
 				ID:       id,
 				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",

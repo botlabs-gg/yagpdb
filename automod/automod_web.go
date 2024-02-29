@@ -275,9 +275,9 @@ func (p *Plugin) currentRulesetMW(backupHandler http.Handler) func(http.Handler)
 				qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).OneG(r.Context())
 
 			if err != nil {
-				tmpl.AddAlerts(web.ErrorAlert("Failed retrieving ruleset, maybe it was deleted?"))
+				tmpl.AddAlerts(web.ErrorAlert("Failed quacktrieving ruleset, maybe it was deleted?"))
 				backupHandler.ServeHTTP(w, r)
-				web.CtxLogger(r.Context()).WithError(err).Error("Failed retrieving automod ruleset")
+				web.CtxLogger(r.Context()).WithError(err).Error("Failed quacktrieving automod ruleset")
 				return
 			}
 

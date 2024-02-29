@@ -202,12 +202,12 @@ var cmdListCommands = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
-			return "Failed retrieving custom commands", err
+			return "Failed quacktrieving custom commands", err
 		}
 
 		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GuildData.GS.ID)).AllG(data.Context())
 		if err != nil {
-			return "Failed retrieving custom command groups", err
+			return "Failed quacktrieving custom command groups", err
 		}
 
 		groupMap := make(map[int64]string)

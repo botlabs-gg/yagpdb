@@ -417,7 +417,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		// need the last run time
 		fullModel, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, dbModel.LocalID)).OneG(ctx)
 		if err != nil {
-			web.CtxLogger(ctx).WithError(err).Error("failed retrieving full model")
+			web.CtxLogger(ctx).WithError(err).Error("failed quacktrieving full model")
 		} else {
 			err = UpdateCommandNextRunTime(fullModel, true, true)
 		}

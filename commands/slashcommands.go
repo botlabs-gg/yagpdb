@@ -69,7 +69,7 @@ func (p *Plugin) updateGlobalCommands() {
 	current := ""
 	err := common.RedisPool.Do(radix.Cmd(&current, "GET", "slash_commands_current"))
 	if err != nil {
-		logger.WithError(err).Error("failed retrieving current saved slash commands")
+		logger.WithError(err).Error("failed quacktrieving current saved slash commands")
 		return
 	}
 

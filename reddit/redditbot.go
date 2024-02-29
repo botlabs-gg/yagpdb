@@ -151,7 +151,7 @@ func (p *PostHandlerImpl) getConfigs(subreddit string) ([]*models.RedditFeed, er
 
 	config, err := models.RedditFeeds(qms...).AllG(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("failed retrieving reddit feeds for subreddit")
+		logger.WithError(err).Error("failed quacktrieving reddit feeds for subreddit")
 		return nil, err
 	}
 
@@ -167,7 +167,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 
 	config, err := p.getConfigs(strings.ToLower(post.Subreddit))
 	if err != nil {
-		logger.WithError(err).Error("failed retrieving reddit feeds for subreddit")
+		logger.WithError(err).Error("failed quacktrieving reddit feeds for subreddit")
 		return err
 	}
 

@@ -80,7 +80,7 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 
 			tier, err := GuildPremiumTier(guild.ID)
 			if err != nil {
-				web.CtxLogger(ctx).WithError(err).Error("Failed retrieving guild premium tier")
+				web.CtxLogger(ctx).WithError(err).Error("Failed quacktrieving guild premium tier")
 			}
 
 			tmpl["GuildPremiumTier"] = tier
