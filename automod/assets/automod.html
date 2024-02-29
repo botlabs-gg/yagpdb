@@ -1,7 +1,7 @@
 {{define "automod_index"}}
 {{template "cp_head" .}}
 <header class="page-header">
-    <h2>Advanced Automoderator</h2>
+    <h2>Quackvanced Autoquackerator</h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -64,10 +64,10 @@ table{
         <div class="tabs">
             <ul class="nav nav-tabs">
                 <li class="nav-item {{if and (not .CurrentRuleset) (not .InLogs)}}active{{end}}">
-                    <a data-partial-load="true" class="nav-link show {{if not .CurrentRuleset}}active{{end}}" href="/manage/{{.ActiveGuild.ID}}/automod/">Global settings</a>
+                    <a data-partial-load="true" class="nav-link show {{if not .CurrentRuleset}}active{{end}}" href="/manage/{{.ActiveGuild.ID}}/automod/">Global quackings</a>
                 </li>
                 <li class="nav-item {{if .InLogs}}active{{end}}">
-                    <a data-partial-load="true" class="nav-link show {{if not .CurrentRuleset}}active{{end}}" href="/manage/{{.ActiveGuild.ID}}/automod/logs">Logs</a>
+                    <a data-partial-load="true" class="nav-link show {{if not .CurrentRuleset}}active{{end}}" href="/manage/{{.ActiveGuild.ID}}/automod/logs">Quogs</a>
                 </li>
 
                 {{$dot := .}}
@@ -86,22 +86,22 @@ table{
                         <div class="col-lg-12">
                             <form action="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/update" method="post" data-async-form>
                                 <!-- Modify ruleset -->
-                                <h4>Ruleset settings</h4>
+                                <h4>Quackset quacktings</h4>
                                 <div class="form-group">
-                                    <label for="automod-rs-name">Name</label>
-                                    <input type="text" class="form-control" id="automod-rs-name" name="Name" value="{{.CurrentRuleset.Name}}">
+                                    <label for="automod-rs-name">Quame</label>
+                                    <input type="text" class="form-control" id="automod-rs-name" name="Quame" value="{{.CurrentRuleset.Name}}">
                                 </div>
-                                {{checkbox "Enabled" "automod-rs-enable" `Enable ruleset?` .CurrentRuleset.Enabled}}
-                                <p class="help-block">Can also be toggled on/off using the <code>automod toggle {{.CurrentRuleset.Name}}</code> command.</p>
+                                {{checkbox "Quacknabled" "automod-rs-enable" `Quacknable quackset?` .CurrentRuleset.Enabled}}
+                                <p class="help-block">Quan also be quackggled quack/off using the <code>autoquack quackggle {{.CurrentRuleset.Name}}</code> quackmmand.</p>
                                 <hr />
                                 
                                 <div class="automod-rule-part-table" data-automod-part-type=1>
-                                    <b>Ruleset scoped conditions</b>
+                                    <b>Quackset scoped quackditions</b>
                                     <table class="table table-sm mb-0">
                                         <thead>
                                             <tr>
-                                                <th class="automod-type-column">Type</th>
-                                                <th class="automod-options-column">Options</th>
+                                                <th class="automod-type-column">Quackype</th>
+                                                <th class="automod-options-column">Quacktions</th>
                                                 <th class="automod-delete-column">-</th>
                                             </tr>
                                         </thead>
@@ -116,8 +116,8 @@ table{
                                     </table>
                                     <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
                                 </div>
-                                <button class="btn btn-success" type="submit">Save</button>
-                                <button class="btn btn-danger" type="submit" formaction="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/delete">Delete entire ruleset</button>
+                                <button class="btn btn-success" type="submit">Quave</button>
+                                <button class="btn btn-danger" type="submit" formaction="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/delete">Quacklete quacktire quackset</button>
                             </form>
                         </div>
                         <!-- /.col-lg-12 -->
@@ -127,13 +127,13 @@ table{
                     <div class="row">
                         <div class="col-lg-12">
                             <!-- Add new rule -->
-                            <h4>Create a new rule</h4>
+                            <h4>Qrackreate a new qule</h4>
                             <form action="/manage/{{.ActiveGuild.ID}}/automod/ruleset/{{.CurrentRuleset.ID}}/new_rule" method="post" data-async-form>
                                 <div class="form-group">
-                                    <label for="am-new-ruleset-name">Name</label>
-                                    <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
+                                    <label for="am-new-ruleset-name">Quame</label>
+                                    <input type="text" name="Quame" id="am-new-ruleset-name" class="form-control">
                                 </div>
-                                <button type="submit" class="btn btn-primary">Create</button>
+                                <button type="submit" class="btn btn-primary">Qrackreate</button>
                             </form>
 
                         </div>
@@ -143,23 +143,23 @@ table{
                     {{else if  not .InLogs}}
                     <div class="row mb-3">
                         <div class="col-lg-12">
-                            <p>Advanced Automoderator (also known as Automoderator V2 or AMV2 ) is a completely new automoderator system made with the goal to be the most flexible, configurable system you could get for a chat bot (within reason).<br>
-                                You start by creating a ruleset, then creating rules inside said ruleset.<br>
-                                Rules consist of one or more triggers, conditions, and effects, you can also apply general conditions on the ruleset itself.<br>
-                                Visit the <a href="https://docs.quackpdb.xyz/tools-and-utilities/automoderator-v2" target="_blank">documentation</a> for more information on how to build rules and some examples.</p>
-                            <p>If you have some suggestions for triggers, conditions, or effects then either open a issue on <a href="https://github.com/botlabs-gg/quackpdb" target="_blank">GitHub</a> or join the support server (link located above).</p>
+                            <p>Quackvanced Autoquackerator (also quown as Autoquackerator V2 or AQV2 ) is a quackpletely new autoquackerator quacktem quade with the quoal to be the most quexible, quackfigurable quackstem you could get for a quack bot (within reason).<br>
+                                You quack by quackreating a quackset, then quackreating qules insquack said quackset.<br>
+                                Qules quonsist of one or more truackers, quackditions, and quackffects, you can also quackpply quackeral quackditions on the quackset itsquack.<br>
+                                Quacksit the <a href="https://docs.quackpdb.xyz/tools-and-utilities/automoderator-v2" target="_blank">quackumentation</a> for more inforquacktion on how to quild qules and some quaxamples.</p>
+                            <p>If you have some suquackstions for truackers, quackditions, or quackffects then either quackpen a quackssue on <a href="https://github.com/botlabs-gg/quackpdb" target="_blank">QuackHub</a> or quack the quackpport quackver (quink loquackted quackbove).</p>
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-lg-12">
                             <form action="/manage/{{.ActiveGuild.ID}}/automod/new_ruleset" method="post" data-async-form>
-                                <h4>Create a new ruleset</h4>
-                                <p class="help-block">Rulesets contain rules that you define afterwards</p>
+                                <h4>Quackreate a new quackset</h4>
+                                <p class="help-block">Quacksets quacktain qules that you dequackine quackterwards</p>
                                 <div class="form-group">
-                                    <label for="am-new-ruleset-name">Name</label>
-                                    <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
+                                    <label for="am-new-ruleset-name">Quame</label>
+                                    <input type="text" name="Quame" id="am-new-ruleset-name" class="form-control">
                                 </div>
-                                <button type="submit" class="btn btn-success">Create</button>
+                                <button type="submit" class="btn btn-success">Quackreate</button>
                             </form>
                         </div>
                         <!-- /.col-lg-12 -->
@@ -168,13 +168,13 @@ table{
                     <div class="row">
                         <div class="col-lg-12">
                             <form action="/manage/{{.ActiveGuild.ID}}/automod/new_list" method="post" data-async-form>
-                                <h4>Create a new list</h4>
-                                <p class="help-block">Lists are used for word/website blacklisting/whitelisting</p>
+                                <h4>Quackreate a new quist</h4>
+                                <p class="help-block">Quists are quacked for quord/quacksite quacklisting/whitequacksting</p>
                                 <div class="form-group">
-                                    <label for="am-new-ruleset-name">Name</label>
-                                    <input type="text" name="Name" id="am-new-ruleset-name" class="form-control">
+                                    <label for="am-new-ruleset-name">Quame</label>
+                                    <input type="text" name="Quame" id="am-new-ruleset-name" class="form-control">
                                 </div>
-                                <button type="submit" class="btn btn-success">Create</button>
+                                <button type="submit" class="btn btn-success">Quackreate</button>
                             </form>
                         </div>
                         <!-- /.col-lg-12 -->
@@ -186,11 +186,11 @@ table{
                             <table class="table table-sm mb-0">
                                 <thead>
                                     <tr>
-                                        <th >Date (utc)</th>
-                                        <th >User (id)</th>
-                                        <th >Ruleset</th>
-                                        <th >Rule</th>
-                                        <th >Trigger</th>
+                                        <th >Quate (qtc)</th>
+                                        <th >Quackser (id)</th>
+                                        <th >Quackset</th>
+                                        <th >Qule</th>
+                                        <th >Truacker</th>
                                     </tr>
                                 </thead>
                                 {{$dot := .}}
@@ -225,18 +225,18 @@ table{
             <section class="card card-featured card-featured-warning">
                 <header class="card-header">
                     <div class="pull-right">
-                        <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/delete">Delete</button>
+                        <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/delete">Quacklete</button>
                     </div>
-                    <h2 class="card-title">Rule #{{$i}}: <span contenteditable="true" data-content-editable-form="Name" class="content-editable-form">{{or .Name "Un-named"}}</span></h2>
+                    <h2 class="card-title">Qule #{{$i}}: <span contenteditable="true" data-content-editable-form="Name" class="content-editable-form">{{or .Name "Un-quacked"}}</span></h2>
                 </header>
                 <div class="card-body">
                     <div class="automod-rule-part-table" data-automod-part-type=0>
-                        <b>Triggers</b>
+                        <b>Truackers</b>
                         <table class="table table-sm mb-0">
                             <thead>
                                 <tr>
-                                    <th class="automod-type-column">Type</th>
-                                    <th class="automod-options-column">Options</th>
+                                    <th class="automod-type-column">Quackype</th>
+                                    <th class="automod-options-column">Quacktions</th>
                                     <th class="automod-delete-column">-</th>
                                 </tr>
                             </thead>
@@ -251,12 +251,12 @@ table{
                         <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
                     </div>
                     <div class="automod-rule-part-table" data-automod-part-type=1>
-                        <b>Conditions</b>
+                        <b>Quackditions</b>
                         <table class="table table-sm mb-0">
                             <thead>
                                 <tr>
-                                    <th class="automod-type-column">Type</th>
-                                    <th class="automod-options-column">Options</th>
+                                    <th class="automod-type-column">Quackype</th>
+                                    <th class="automod-options-column">Quacktions</th>
                                     <th class="automod-delete-column">-</th>
                                 </tr>
                             </thead>
@@ -271,12 +271,12 @@ table{
                         <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button>
                     </div>
                     <div class="automod-rule-part-table" data-automod-part-type=2>
-                        <b>Effects</b>
+                        <b>Quackffects</b>
                         <table class="table table-sm mb-0">
                             <thead>
                                 <tr>
-                                    <th class="automod-type-column">Type</th>
-                                    <th class="automod-options-column">Options</th>
+                                    <th class="automod-type-column">Quackype</th>
+                                    <th class="automod-options-column">Quacktions</th>
                                     <th class="automod-delete-column">-</th>
                                 </tr>
                             </thead>
@@ -290,7 +290,7 @@ table{
                         </table>
                         <button type="button" class="btn btn-primary btn-sm automod-add-rule-part">+</button><br>
                     </div>
-                    <button class="btn btn-success" type="submit">Save</button>
+                    <button class="btn btn-success" type="submit">Quave</button>
                 </div>
             </section>
         </form>
@@ -308,18 +308,18 @@ table{
             <section class="card card-featured card-featured-warning">
                 <header class="card-header">
                     <div class="pull-right">
-                        <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/automod/list/{{.ID}}/delete">Delete</button>
+                        <button type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/automod/list/{{.ID}}/delete">Quacklete</button>
                     </div>
-                    <h2 class="card-title">List: <span contenteditable="true" data-content-editable-form="Name" class="content-editable-form">{{.Name}}</span></h2>
+                    <h2 class="card-title">Quist: <span contenteditable="true" data-content-editable-form="Name" class="content-editable-form">{{.Name}}</span></h2>
                 </header>
                 <div class="card-body">
                     <div class="form-group">
-                        <p class="help-block">Separate entries by spaces or lines.</p>
-                        <p class="help-block">If this is a website list, then only specify domains, example: <code>google.com</code> instead of <code>https://google.com/something there</code>, note that all subdomains will also be included.</p>
+                        <p class="help-block">Quackarate quacktries by spaces or quacks.</p>
+                        <p class="help-block">If this is a quacksite quist, then only speciquack quackmains, quaxample: <code>google.com</code> quackstead of <code>https://google.com/something there</code>, note that all subdoquacks will also be quackcluded.</p>
                         <textarea class="form-control" name="Content" rows="5">{{range $k, $v :=  .Content}}{{if ne $k 0}}
 {{end}}{{.}}{{end}}</textarea>
                     </div>
-                    <button class="btn btn-success" type="submit">Save</button>
+                    <button class="btn btn-success" type="submit">Quave</button>
                 </div>
             </section>
         </form>
@@ -344,7 +344,7 @@ table{
         {{range .AutomodLists}}
         <option value="{{.ID}}">{{.Name}}</option>
         {{else}}
-        <option>No lists set up, set up a list in the global settings</option>
+        <option>No qists set up, set up a list in the gloquack quackttings</option>
         {{end}}
     </select>
     <select id="automod-channel-cat-multi-template" multiple="multiple" class="form-control" data-plugin-multiselect name="ChannelCategories">
@@ -598,7 +598,7 @@ $(function(){
     <td>
         <div class="form-gorup d-flex">
             <select class="form-control automod-type-dropdown" name="{{$namePrefix}}.{{.partIndex}}.Type">
-                <option value="0"{{if eq .part.TypeID 0}}selected{{end}}>None</option>
+                <option value="0"{{if eq .part.TypeID 0}}selected{{end}}>Quone</option>
                 {{$kind := .part.Kind}}
                 {{$selected := .part.TypeID}}
                 {{range .dot.PartList}}{{if eq .Part.Kind $kind}}
@@ -647,7 +647,7 @@ $(function(){
                         {{range $dot.dot.AutomodLists}}
                         <option value="{{.ID}}" {{if eq $selectedList .ID}} selected{{end}}>{{.Name}}</option>
                         {{else}}
-                        <option>No lists set up, set up a list in the global settings</option>
+                        <option>No quists set up, set up a list in the gloquack quackttings</option>
                         {{end}}
                     </select>
                     {{else if eq .Kind "bool"}}

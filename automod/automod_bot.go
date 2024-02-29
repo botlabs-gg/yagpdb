@@ -83,13 +83,13 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 	ctxData.TriggeredRules = nil
 
 	if ctxData.RecursionCounter > 2 {
-		logger.WithField("guild", ctxData.GS.ID).Warn("automod stopped quackfinite requacksion")
+		logger.WithField("guild", ctxData.GS.ID).Warn("autoquack stopped quackfinite requacksion")
 		return
 	}
 
 	rulesets, err := p.FetchGuildRulesets(ctxData.GS.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed quacking guild quacksets")
+		logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed quacking quild quacksets")
 		return
 	}
 
@@ -100,7 +100,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 	// retrieve users violations
 	userViolations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ? AND name = ?", ctxData.GS.ID, ctxData.MS.User.ID, violationName)).AllG(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("automod failed retrieving user violations")
+		logger.WithError(err).Error("autoquack failed quacktrieving user vioquacktions")
 		return
 	}
 
@@ -139,7 +139,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 				matched, err := violationTrigger.CheckUser(ctxData, userViolations, trig.ParsedSettings, false)
 				if err != nil {
-					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking violations trigger")
+					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("failed checking vioquacktions trigger")
 					continue
 				}
 
@@ -174,7 +174,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 			violationTrigger := t.Part.(ViolationListener)
 			matched, err := violationTrigger.CheckUser(ctxData, userViolations, t.ParsedSettings, triggeredOne)
 			if err != nil {
-				logger.WithError(err).WithField("part_id", t.RuleModel.ID).Error("failed checking violations trigger")
+				logger.WithError(err).WithField("part_id", t.RuleModel.ID).Error("failed checking vioquacktions trigger")
 				continue
 			}
 
@@ -192,7 +192,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 		cClone.CurrentRule = nil
 
 		go p.RulesetRulesTriggered(cClone, true)
-		logger.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(finalTriggeredRules), " violation rules")
+		logger.WithField("guild", ctxData.GS.ID).Info("autoquack triggered ", len(finalTriggeredRules), " violation rules")
 	}
 }
 
@@ -402,7 +402,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 		go p.RulesetRulesTriggered(ctxData, true)
 		activatededRules = true
 
-		logger.WithField("guild", ctxData.GS.ID).Info("automod triggered ", len(triggeredRules), " rules")
+		logger.WithField("guild", ctxData.GS.ID).Info("autoquack triggered ", len(triggeredRules), " rules")
 	}
 
 	return activatededRules
@@ -447,7 +447,7 @@ func (p *Plugin) CheckConditions(ctxData *TriggeredRuleData, conditions []*Parse
 	for _, cond := range conditions {
 		met, err := cond.Part.(Condition).IsMet(ctxData, cond.ParsedSettings)
 		if err != nil {
-			logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed checking if automod condition was met")
+			logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed checking if autoquack condition was met")
 			return false // assume the condition failed
 		}
 
@@ -473,7 +473,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			go func(fx *ParsedPart, ctx *TriggeredRuleData) {
 				err := fx.Part.(Effect).Apply(ctx, fx.ParsedSettings)
 				if err != nil {
-					logger.WithError(err).WithField("guild", ruleset.RSModel.GuildID).WithField("part", fx.Part.Name()).Error("failed applying automod effect")
+					logger.WithError(err).WithField("guild", ruleset.RSModel.GuildID).WithField("part", fx.Part.Name()).Error("failed applying autoquack effect")
 				}
 			}(effect, ctxData.Clone())
 		}
@@ -502,7 +502,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			var err error
 			serializedExtraData, err = json.Marshal(ctxData.Message)
 			if err != nil {
-				logger.WithError(err).Error("automod failed serializing extra data")
+				logger.WithError(err).Error("autoquack failed serializing extra data")
 				serializedExtraData = []byte("{}")
 			}
 		}
@@ -545,7 +545,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 	// Limit AutomodTriggeredRules to 200 rows per guild
 	_, err = models.AutomodTriggeredRules(qm.SQL("DELETE FROM automod_triggered_rules WHERE id IN (SELECT id FROM automod_triggered_rules WHERE guild_id = $1 ORDER BY created_at DESC OFFSET 200 ROWS);", ctxData.GS.ID)).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		logger.WithError(err).Error("failed deleting older automod triggered rules")
+		logger.WithError(err).Error("failed deleting older autoquack triggered rules")
 		return
 	}
 }
