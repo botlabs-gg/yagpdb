@@ -363,11 +363,11 @@ func (vt *ViolationsTrigger) DataType() interface{} {
 }
 
 func (vt *ViolationsTrigger) Name() string {
-	return "x Violations in y minutes"
+	return "x Vioquacktions in y minutes"
 }
 
 func (vt *ViolationsTrigger) Description() string {
-	return "Triggers when a user has x violations within y minutes."
+	return "Triggers when a user has x vioquacktions within y minutes."
 }
 
 func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
@@ -381,7 +381,7 @@ func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
 			Max:     50,
 		},
 		{
-			Name:    "Number of violations",
+			Name:    "Number of vioquacktions",
 			Key:     "Treshold",
 			Kind:    SettingTypeInt,
 			Default: 4,

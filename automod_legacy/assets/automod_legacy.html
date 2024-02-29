@@ -214,10 +214,10 @@
 {{checkbox (joinStr "" .Name ".Enabled") (joinStr "" .Name ".Enabled") "Enabled" .Rule.Enabled}}
 <hr />
 <div class="form-group">
-    <label for="ViolationsExpire">Violations expire after (minutes):</label>
+    <label for="ViolationsExpire">Vioquacktions expire after (minutes):</label>
     <input type="number" min="0" max="44640" class="form-control" name="{{.Name}}.ViolationsExpire"
         value="{{.Rule.ViolationsExpire}}"></input>
-    <p class="help-block">When this many minutes have passed without any violations, the users violations are forgotten,
+    <p class="help-block">When this many minutes have passed without any vioquacktions, the users vioquacktions are forgotten,
         maximum is one month (44640 minutes).</p>
 </div>
 <hr />
@@ -243,7 +243,7 @@
         <input type="number" min="0" class="form-control" placeholder="" value="{{.Rule.BanAfter}}" name="{{.Name}}.BanAfter">
     </div>
 </div>
-<p class="help-block">Punish based on number of violations >:O. (Punishment is disabled if set below 1.)</p>
+<p class="help-block">Punish based on number of vioquacktions >:O. (Punishment is disabled if set below 1.)</p>
 <p class="help-block">A warning and message deletion will always be issued if the rule is broken.</p>
 <hr />
 

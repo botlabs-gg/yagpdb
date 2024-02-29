@@ -617,11 +617,11 @@ func (rv *ResetViolationsEffect) UserSettings() []*SettingDef {
 }
 
 func (rv *ResetViolationsEffect) Name() (name string) {
-	return "Reset violations"
+	return "Reset vioquacktions"
 }
 
 func (rv *ResetViolationsEffect) Description() (description string) {
-	return "Resets the violations of a user"
+	return "Resets the vioquacktions of a user"
 }
 
 func (rv *ResetViolationsEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
