@@ -59,7 +59,7 @@ func memberPresentInVerificationPendingSet(guildID int64, userID int64) bool {
 	var memberScore int
 	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", VerificationPendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Failed fetching member from the verification pending set")
+		logger.WithError(err).Error("Failed quacking member from the verification pending set")
 	}
 	return memberScore != 0
 }

@@ -278,10 +278,10 @@ func (automodRulesetConditionL) LoadRuleset(ctx context.Context, e boil.ContextE
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.WrapIf(err, "failed to close results of eager load for automod_rulesets")
+		return errors.WrapIf(err, "failed to close results of eager load for automod_quacksets")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_rulesets")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_quacksets")
 	}
 
 	if len(resultSlice) == 0 {

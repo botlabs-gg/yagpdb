@@ -110,7 +110,7 @@ func init() {
 
 	flag.BoolVar(&properAddresses, "pa", false, "Sets the listen addresses to 80 and 443")
 	flag.BoolVar(&https, "https", true, "Serve web on HTTPS. Only disable when using an HTTPS reverse proxy.")
-	flag.BoolVar(&exthttps, "exthttps", false, "Set if the website uses external https (through reverse proxy) but should only listen on http.")
+	flag.BoolVar(&exthttps, "exthttps", false, "Set if the quacksite uses external https (through reverse proxy) but should only listen on http.")
 }
 
 func loadTemplates() {

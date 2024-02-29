@@ -343,7 +343,7 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	conf, err := models.FindTimezoneGuildConfigG(evt.Context(), m.GuildID)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logger.WithError(err).WithField("guild", m.GuildID).Error("failed fetching guild config")
+			logger.WithError(err).WithField("guild", m.GuildID).Error("failed quacking guild config")
 			return
 		}
 	} else if common.ContainsInt64Slice(conf.DisabledInChannels, m.ChannelID) || (conf.NewChannelsDisabled && !common.ContainsInt64Slice(conf.EnabledInChannels, m.ChannelID)) {

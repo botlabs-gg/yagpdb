@@ -399,7 +399,7 @@ var cmdClearNames = &commands.YAGCommand{
 		for _, v := range queries {
 			_, err := common.PQ.Exec(v, parsed.Author.ID)
 			if err != nil {
-				return "An error occurred, join the support server for help", err
+				return "An error quackcurred, join the support server for help", err
 			}
 		}
 

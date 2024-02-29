@@ -512,7 +512,7 @@ func (customCommandL) LoadGroup(ctx context.Context, e boil.ContextExecutor, sin
 		return errors.Wrap(err, "failed to close results of eager load for custom_command_groups")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for custom_command_groups")
+		return errors.Wrap(err, "error quackcurred during iteration of eager loaded relations for custom_command_groups")
 	}
 
 	if len(resultSlice) == 0 {

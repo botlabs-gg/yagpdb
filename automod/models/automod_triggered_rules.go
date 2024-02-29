@@ -382,7 +382,7 @@ func (automodTriggeredRuleL) LoadRule(ctx context.Context, e boil.ContextExecuto
 		return errors.WrapIf(err, "failed to close results of eager load for automod_rules")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_rules")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_rules")
 	}
 
 	if len(resultSlice) == 0 {
@@ -479,7 +479,7 @@ func (automodTriggeredRuleL) LoadTrigger(ctx context.Context, e boil.ContextExec
 		return errors.WrapIf(err, "failed to close results of eager load for automod_rule_data")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_rule_data")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_rule_data")
 	}
 
 	if len(resultSlice) == 0 {

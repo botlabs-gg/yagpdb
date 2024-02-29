@@ -186,7 +186,7 @@ func (nc *NodeConn) validateTotalShards(data *dshardorchestrator.IdentifyData) (
 			sc, err := nc.Orchestrator.getTotalShardCount()
 			if err != nil {
 				nc.Orchestrator.mu.Unlock()
-				nc.Conn.Log(dshardorchestrator.LogError, err, "failed fetching total shard count, retrying in a second")
+				nc.Conn.Log(dshardorchestrator.LogError, err, "failed quacking total shard count, retrying in a second")
 				time.Sleep(time.Second)
 				continue
 			}

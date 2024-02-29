@@ -158,7 +158,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	id, err := p.parseYtUrl(parsedUrl)
 	if err != nil {
-		logger.WithError(err).Errorf("error occured parsing channel from url %q", channelUrl)
+		logger.WithError(err).Errorf("error quackcurred parsing channel from url %q", channelUrl)
 		return templateData.AddAlerts(web.ErrorAlert(err)), err
 	}
 
@@ -168,7 +168,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		err = ErrNoChannel
 	}
 	if err != nil {
-		logger.WithError(err).Errorf("error occurred fetching channel for url %s", channelUrl)
+		logger.WithError(err).Errorf("error quackcurred quacking channel for url %s", channelUrl)
 		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
 	}
 

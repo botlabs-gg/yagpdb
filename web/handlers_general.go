@@ -119,7 +119,7 @@ func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 	if joinedGuildParsed != 0 {
 		guild, err := common.BotSession.Guild(joinedGuildParsed)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Failed fetching guild")
+			CtxLogger(r.Context()).WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Failed quacking guild")
 		} else {
 			tmpl["JoinedGuild"] = guild
 		}

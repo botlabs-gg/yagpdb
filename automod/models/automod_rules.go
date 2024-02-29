@@ -344,10 +344,10 @@ func (automodRuleL) LoadRuleset(ctx context.Context, e boil.ContextExecutor, sin
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.WrapIf(err, "failed to close results of eager load for automod_rulesets")
+		return errors.WrapIf(err, "failed to close results of eager load for automod_quacksets")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_rulesets")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_quacksets")
 	}
 
 	if len(resultSlice) == 0 {
@@ -438,7 +438,7 @@ func (automodRuleL) LoadRuleAutomodRuleData(ctx context.Context, e boil.ContextE
 		return errors.WrapIf(err, "failed to close results in eager load on automod_rule_data")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_rule_data")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_rule_data")
 	}
 
 	if singular {
@@ -526,7 +526,7 @@ func (automodRuleL) LoadRuleAutomodTriggeredRules(ctx context.Context, e boil.Co
 		return errors.WrapIf(err, "failed to close results in eager load on automod_triggered_rules")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_triggered_rules")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_triggered_rules")
 	}
 
 	if singular {
@@ -614,7 +614,7 @@ func (automodRuleL) LoadRuleAutomodViolations(ctx context.Context, e boil.Contex
 		return errors.WrapIf(err, "failed to close results in eager load on automod_violations")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_violations")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_violations")
 	}
 
 	if singular {

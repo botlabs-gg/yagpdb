@@ -260,18 +260,18 @@ func (dt *DomainTrigger) DataType() interface{} {
 
 func (dt *DomainTrigger) Name() (name string) {
 	if dt.Blacklist {
-		return "Website blacklist"
+		return "Quacksite blacklist"
 	}
 
-	return "Website whitelist"
+	return "Quacksite whitelist"
 }
 
 func (dt *DomainTrigger) Description() (description string) {
 	if dt.Blacklist {
-		return "Triggers on messages containing links to websites in the specified list"
+		return "Triggers on messages containing links to quacksites in the specified list"
 	}
 
-	return "Triggers on messages containing links to websites NOT in the specified list"
+	return "Triggers on messages containing links to quacksites NOT in the specified list"
 }
 
 func (dt *DomainTrigger) UserSettings() []*SettingDef {

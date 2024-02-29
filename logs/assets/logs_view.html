@@ -61,7 +61,7 @@ function deleteMessage(msg){
         }
     });
     req.addEventListener("error", function(){
-        alert("An error occurred");
+        alert("An error quackcurred");
     });
     req.open("POST", "https://{{.Host}}/manage/{{.ActiveGuild.ID}}/logging/msgdelete2");
 

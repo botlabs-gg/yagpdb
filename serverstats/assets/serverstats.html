@@ -188,7 +188,7 @@
         }
 
         function fetchDailyStats() {
-            console.log("Fetching stats...");
+            console.log("quacking stats...");
             createRequest("GET", "/{{if .Public}}public{{else}}manage{{end}}/{{.ActiveGuild.ID}}/stats/daily_json", null, dailyStatsCB);
         }
         statsInterval = setInterval(fetchDailyStats, 10000);

@@ -144,7 +144,7 @@ func (q automodRulesetQuery) One(ctx context.Context, exec boil.ContextExecutor)
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.WrapIf(err, "models: failed to execute a one query for automod_rulesets")
+		return nil, errors.WrapIf(err, "models: failed to execute a one query for automod_quacksets")
 	}
 
 	return o, nil
@@ -181,7 +181,7 @@ func (q automodRulesetQuery) Count(ctx context.Context, exec boil.ContextExecuto
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to count automod_rulesets rows")
+		return 0, errors.WrapIf(err, "models: failed to count automod_quacksets rows")
 	}
 
 	return count, nil
@@ -202,7 +202,7 @@ func (q automodRulesetQuery) Exists(ctx context.Context, exec boil.ContextExecut
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.WrapIf(err, "models: failed to check if automod_rulesets exists")
+		return false, errors.WrapIf(err, "models: failed to check if automod_quacksets exists")
 	}
 
 	return count > 0, nil
@@ -308,7 +308,7 @@ func (automodRulesetL) LoadRulesetAutomodRules(ctx context.Context, e boil.Conte
 		return errors.WrapIf(err, "failed to close results in eager load on automod_rules")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_rules")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_rules")
 	}
 
 	if singular {
@@ -396,7 +396,7 @@ func (automodRulesetL) LoadRulesetAutomodRulesetConditions(ctx context.Context, 
 		return errors.WrapIf(err, "failed to close results in eager load on automod_ruleset_conditions")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for automod_ruleset_conditions")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for automod_ruleset_conditions")
 	}
 
 	if singular {
@@ -581,7 +581,7 @@ func FindAutomodRuleset(ctx context.Context, exec boil.ContextExecutor, iD int64
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.WrapIf(err, "models: unable to select from automod_rulesets")
+		return nil, errors.WrapIf(err, "models: unable to select from automod_quacksets")
 	}
 
 	return automodRulesetObj, nil
@@ -596,7 +596,7 @@ func (o *AutomodRuleset) InsertG(ctx context.Context, columns boil.Columns) erro
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
 func (o *AutomodRuleset) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
-		return errors.New("models: no automod_rulesets provided for insertion")
+		return errors.New("models: no automod_quacksets provided for insertion")
 	}
 
 	var err error
@@ -654,7 +654,7 @@ func (o *AutomodRuleset) Insert(ctx context.Context, exec boil.ContextExecutor, 
 	}
 
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to insert into automod_rulesets")
+		return errors.WrapIf(err, "models: unable to insert into automod_quacksets")
 	}
 
 	if !cached {
@@ -692,7 +692,7 @@ func (o *AutomodRuleset) Update(ctx context.Context, exec boil.ContextExecutor, 
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return 0, errors.New("models: unable to update automod_rulesets, could not build whitelist")
+			return 0, errors.New("models: unable to update automod_quacksets, could not build whitelist")
 		}
 
 		cache.query = fmt.Sprintf("UPDATE \"automod_rulesets\" SET %s WHERE %s",
@@ -715,12 +715,12 @@ func (o *AutomodRuleset) Update(ctx context.Context, exec boil.ContextExecutor, 
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to update automod_rulesets row")
+		return 0, errors.WrapIf(err, "models: unable to update automod_quacksets row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by update for automod_quacksets")
 	}
 
 	if !cached {
@@ -743,12 +743,12 @@ func (q automodRulesetQuery) UpdateAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to update all for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: unable to update all for automod_quacksets")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: unable to retrieve rows affected for automod_quacksets")
 	}
 
 	return rowsAff, nil
@@ -816,7 +816,7 @@ func (o *AutomodRuleset) UpsertG(ctx context.Context, updateOnConflict bool, con
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
 func (o *AutomodRuleset) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
-		return errors.New("models: no automod_rulesets provided for upsert")
+		return errors.New("models: no automod_quacksets provided for upsert")
 	}
 
 	nzDefaults := queries.NonZeroDefaultSet(automodRulesetColumnsWithDefault, o)
@@ -868,7 +868,7 @@ func (o *AutomodRuleset) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 		)
 
 		if updateOnConflict && len(update) == 0 {
-			return errors.New("models: unable to upsert automod_rulesets, could not build update column list")
+			return errors.New("models: unable to upsert automod_quacksets, could not build update column list")
 		}
 
 		conflict := conflictColumns
@@ -911,7 +911,7 @@ func (o *AutomodRuleset) Upsert(ctx context.Context, exec boil.ContextExecutor, 
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to upsert automod_rulesets")
+		return errors.WrapIf(err, "models: unable to upsert automod_quacksets")
 	}
 
 	if !cached {
@@ -946,12 +946,12 @@ func (o *AutomodRuleset) Delete(ctx context.Context, exec boil.ContextExecutor) 
 
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to delete from automod_rulesets")
+		return 0, errors.WrapIf(err, "models: unable to delete from automod_quacksets")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by delete for automod_quacksets")
 	}
 
 	return rowsAff, nil
@@ -967,12 +967,12 @@ func (q automodRulesetQuery) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: unable to delete all from automod_rulesets")
+		return 0, errors.WrapIf(err, "models: unable to delete all from automod_quacksets")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for automod_quacksets")
 	}
 
 	return rowsAff, nil
@@ -1010,7 +1010,7 @@ func (o AutomodRulesetSlice) DeleteAll(ctx context.Context, exec boil.ContextExe
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for automod_rulesets")
+		return 0, errors.WrapIf(err, "models: failed to get rows affected by deleteall for automod_quacksets")
 	}
 
 	return rowsAff, nil
@@ -1041,7 +1041,7 @@ func (o *AutomodRuleset) Reload(ctx context.Context, exec boil.ContextExecutor) 
 // and overwrites the original object slice with the newly updated slice.
 func (o *AutomodRulesetSlice) ReloadAllG(ctx context.Context) error {
 	if o == nil {
-		return errors.New("models: empty AutomodRulesetSlice provided for reload all")
+		return errors.New("models: empty AutomodQuacksetslice provided for reload all")
 	}
 
 	return o.ReloadAll(ctx, boil.GetContextDB())
@@ -1068,7 +1068,7 @@ func (o *AutomodRulesetSlice) ReloadAll(ctx context.Context, exec boil.ContextEx
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.WrapIf(err, "models: unable to reload all in AutomodRulesetSlice")
+		return errors.WrapIf(err, "models: unable to reload all in AutomodQuacksetslice")
 	}
 
 	*o = slice
@@ -1095,7 +1095,7 @@ func AutomodRulesetExists(ctx context.Context, exec boil.ContextExecutor, iD int
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.WrapIf(err, "models: unable to check if automod_rulesets exists")
+		return false, errors.WrapIf(err, "models: unable to check if automod_quacksets exists")
 	}
 
 	return exists, nil

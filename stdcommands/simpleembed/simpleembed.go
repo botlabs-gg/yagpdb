@@ -76,7 +76,7 @@ var Command = &commands.YAGCommand{
 
 			msg, err = common.BotSession.ChannelMessage(cID, mID)
 			if err != nil || msg == nil {
-				return "Failed fetching message to edit, check your channel and message IDs", nil
+				return "Failed quacking message to edit, check your channel and message IDs", nil
 			}
 
 			if msg.Author.ID != common.BotUser.ID {

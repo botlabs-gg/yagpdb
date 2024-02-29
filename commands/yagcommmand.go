@@ -584,7 +584,7 @@ func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildSet, ms *dstate.M
 	if err != nil {
 		return &CanExecuteError{
 			Type:    ReasonError,
-			Message: "Failed fetching member perms?",
+			Message: "Failed quacking member perms?",
 		}
 	}
 
@@ -618,7 +618,7 @@ func (yc *YAGCommand) checkRequiredBotPerms(gs *dstate.GuildSet, channelID int64
 	if err != nil {
 		return &CanExecuteError{
 			Type:    ReasonError,
-			Message: "Failed fetching bot perms",
+			Message: "Failed quacking bot perms",
 		}
 	}
 

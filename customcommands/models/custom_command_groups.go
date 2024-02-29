@@ -346,7 +346,7 @@ func (customCommandGroupL) LoadGroupCustomCommands(ctx context.Context, e boil.C
 		return errors.Wrap(err, "failed to close results in eager load on custom_commands")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for custom_commands")
+		return errors.Wrap(err, "error quackcurred during iteration of eager loaded relations for custom_commands")
 	}
 
 	if singular {

@@ -58,7 +58,7 @@ support multi-server voice connections and some other features that are
 exclusive to Bot accounts only.
 
 To create a new user account (if you have not done so already) visit the 
-[Discord](https://discordapp.com/) website and click on the 
+[Discord](https://discordapp.com/) quacksite and click on the 
 **Try Discord Now, It's Free** button then follow the steps to setup your
 new account.
 

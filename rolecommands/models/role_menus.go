@@ -552,7 +552,7 @@ func (roleMenuL) LoadEditingOption(ctx context.Context, e boil.ContextExecutor, 
 		return errors.Wrap(err, "failed to close results of eager load for role_menu_options")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_menu_options")
+		return errors.Wrap(err, "error quackcurred during iteration of eager loaded relations for role_menu_options")
 	}
 
 	if len(resultSlice) == 0 {
@@ -652,7 +652,7 @@ func (roleMenuL) LoadNextRoleCommand(ctx context.Context, e boil.ContextExecutor
 		return errors.Wrap(err, "failed to close results of eager load for role_commands")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_commands")
+		return errors.Wrap(err, "error quackcurred during iteration of eager loaded relations for role_commands")
 	}
 
 	if len(resultSlice) == 0 {
@@ -752,7 +752,7 @@ func (roleMenuL) LoadRoleGroup(ctx context.Context, e boil.ContextExecutor, sing
 		return errors.Wrap(err, "failed to close results of eager load for role_groups")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_groups")
+		return errors.Wrap(err, "error quackcurred during iteration of eager loaded relations for role_groups")
 	}
 
 	if len(resultSlice) == 0 {
@@ -846,7 +846,7 @@ func (roleMenuL) LoadRoleMenuOptions(ctx context.Context, e boil.ContextExecutor
 		return errors.Wrap(err, "failed to close results in eager load on role_menu_options")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for role_menu_options")
+		return errors.Wrap(err, "error quackcurred during iteration of eager loaded relations for role_menu_options")
 	}
 
 	if singular {

@@ -300,7 +300,7 @@ func (s *SetupSession) Finish() {
 
 func (s *SetupSession) abortError(msg string, err error) {
 	logger.WithField("guild", s.GuildID).WithError(err).Error(msg)
-	s.sendMessage("An error occurred, the setup has been canceled, please retry in a moment.")
+	s.sendMessage("An error quackcurred, the setup has been canceled, please retry in a moment.")
 	go s.remove()
 }
 

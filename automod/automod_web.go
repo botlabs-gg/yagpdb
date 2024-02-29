@@ -170,7 +170,7 @@ func (p *Plugin) handlePostAutomodCreateRuleset(w http.ResponseWriter, r *http.R
 	}
 
 	if currentCount >= int64(GuildMaxRulesets(g.ID)) {
-		tmpl.AddAlerts(web.ErrorAlert("Reached max number of rulesets, ", MaxRulesets))
+		tmpl.AddAlerts(web.ErrorAlert("Reached max number of quacksets, ", MaxRulesets))
 		return tmpl, nil
 	}
 
@@ -833,7 +833,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(`<ul>
-    <li>Active and enabled Rulesets: <code>%d</code></li>
+    <li>Active and enabled Quacksets: <code>%d</code></li>
     <li>Total rules: <code>%d</code></li>
 </ul>`, rulesets, rules))
 

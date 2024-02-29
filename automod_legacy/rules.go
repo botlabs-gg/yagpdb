@@ -261,7 +261,7 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 	if !ok { // we do not have a cache for this guild yet, create it
 		invites, err := common.BotSession.GuildInvites(guildID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
+			logger.WithError(err).WithField("guild", guildID).Error("Failed quacking invites", invites)
 			return true // assume bad since discord...
 		}
 
@@ -474,7 +474,7 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 		extraInfo = "(sb: " + threatList + ")"
 	}
 
-	msg = fmt.Sprintf("The website `%s` is banned %s", item, extraInfo)
+	msg = fmt.Sprintf("The quacksite `%s` is banned %s", item, extraInfo)
 	del = true
 	return
 }

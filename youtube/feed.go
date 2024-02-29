@@ -183,7 +183,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.WithError(err).Debugf("Custom announcement doesn't exist for guild_id %d", parsedGuild)
 		} else {
-			logger.WithError(err).Errorf("Failed fetching custom announcement for guild_id %d", parsedGuild)
+			logger.WithError(err).Errorf("Failed quacking custom announcement for guild_id %d", parsedGuild)
 		}
 	}
 

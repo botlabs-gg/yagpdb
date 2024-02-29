@@ -83,13 +83,13 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 	ctxData.TriggeredRules = nil
 
 	if ctxData.RecursionCounter > 2 {
-		logger.WithField("guild", ctxData.GS.ID).Warn("automod stopped infinite recursion")
+		logger.WithField("guild", ctxData.GS.ID).Warn("automod stopped quackfinite requacksion")
 		return
 	}
 
 	rulesets, err := p.FetchGuildRulesets(ctxData.GS.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed fetching guild rulesets")
+		logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("failed quacking guild quacksets")
 		return
 	}
 
@@ -324,7 +324,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 		var err error
 		rulesets, err = p.FetchGuildRulesets(gs.ID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", msg.GuildID).Error("failed fetching triggers")
+			logger.WithError(err).WithField("guild", msg.GuildID).Error("failed quacking triggers")
 			return false
 		}
 

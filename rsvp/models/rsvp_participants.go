@@ -328,7 +328,7 @@ func (rsvpParticipantL) LoadRSVPSessionsMessage(ctx context.Context, e boil.Cont
 		return errors.WrapIf(err, "failed to close results of eager load for rsvp_sessions")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for rsvp_sessions")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for rsvp_sessions")
 	}
 
 	if len(resultSlice) == 0 {

@@ -60,7 +60,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Rulesets",
 		Aliases:             []string{"r", "list", "l"},
 		CmdCategory:         commands.CategoryModeration,
-		Description:         "Lists all rulesets and their status",
+		Description:         "Lists all quacksets and their status",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
@@ -69,11 +69,11 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if len(rulesets) < 1 {
-				return "No automod v2 rulesets set up on this server", nil
+				return "No automod v2 quacksets set up on this server", nil
 			}
 
 			out := &strings.Builder{}
-			out.WriteString("Rulesets on this server:\n```\n")
+			out.WriteString("Quacksets on this server:\n```\n")
 			for _, v := range rulesets {
 				onOff := "Enabled"
 				if !v.Enabled {
@@ -146,7 +146,7 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ListViolationsCount",
-		Description:   "Lists Violations summary in entire server or of specified user optionally filtered by max violation age.\n Specify number of violations to skip while fetching using -skip flag ; max entries fetched 500",
+		Description:   "Lists Violations summary in entire server or of specified user optionally filtered by max violation age.\n Specify number of violations to skip while quacking using -skip flag ; max entries fetched 500",
 		Aliases:       []string{"ViolationsCount", "VCount"},
 		RequiredArgs:  0,
 		Arguments: []*dcmd.ArgDef{

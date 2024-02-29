@@ -200,7 +200,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Check if the user can execute the command
 		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
 		if err != nil {
-			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+			yc.Logger(data).WithError(err).Error("An error quackcurred while checking if we could run command")
 		}
 
 		if resp != nil {
@@ -318,7 +318,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		var err error
 		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed fetching command prefix")
+			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed quacking command prefix")
 		}
 	}
 

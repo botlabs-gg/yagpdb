@@ -99,7 +99,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 func checkHierarchy(cmdData *dcmd.Data, targetID int64) error {
 	botMember, err := bot.GetMember(cmdData.GuildData.GS.ID, common.BotUser.ID)
 	if err != nil {
-		return commands.NewUserError("Failed fetching bot member to check hierarchy")
+		return commands.NewUserError("Failed quacking bot member to check hierarchy")
 	}
 
 	gs := cmdData.GuildData.GS

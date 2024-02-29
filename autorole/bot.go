@@ -102,7 +102,7 @@ func addMemberToAutorolePendingSet(guildID int64, userID int64) {
 	var memberScore int
 	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", AutorolePendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Failed fetching member from the autorole pending set")
+		logger.WithError(err).Error("Failed quacking member from the autorole pending set")
 	}
 	if memberScore != 0 {
 		// Member is already in the set
@@ -510,7 +510,7 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		// Check for this member in the autorole pending set
 		err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", AutorolePendingMembersKey(update.GuildID), strconv.FormatInt(update.User.ID, 10)))
 		if err != nil {
-			logger.WithError(err).Error("Failed fetching member from the autorole pending set")
+			logger.WithError(err).Error("Failed quacking member from the autorole pending set")
 		}
 
 		if memberScore != 0 {

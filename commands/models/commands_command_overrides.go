@@ -327,7 +327,7 @@ func (commandsCommandOverrideL) LoadCommandsChannelsOverride(ctx context.Context
 		return errors.WrapIf(err, "failed to close results of eager load for commands_channels_overrides")
 	}
 	if err = results.Err(); err != nil {
-		return errors.WrapIf(err, "error occurred during iteration of eager loaded relations for commands_channels_overrides")
+		return errors.WrapIf(err, "error quackcurred during iteration of eager loaded relations for commands_channels_overrides")
 	}
 
 	if len(resultSlice) == 0 {

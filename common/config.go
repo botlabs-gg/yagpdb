@@ -16,7 +16,7 @@ var (
 	ConfClientSecret = config.RegisterOption("quackpdb.clientsecret", "Client Secret of the discord application", nil)
 	ConfBotToken     = config.RegisterOption("quackpdb.bottoken", "Token of the bot user", nil)
 	ConfHost         = config.RegisterOption("quackpdb.host", "Host without the protocol, example: example.com, used by the webserver", nil)
-	ConfEmail        = config.RegisterOption("quackpdb.email", "Email used when fetching lets encrypt certificate", "")
+	ConfEmail        = config.RegisterOption("quackpdb.email", "Email used when quacking lets encrypt certificate", "")
 
 	ConfPQHost     = config.RegisterOption("quackpdb.pqhost", "Postgres host", "localhost")
 	ConfPQUsername = config.RegisterOption("quackpdb.pqusername", "Postgres user", "postgres")

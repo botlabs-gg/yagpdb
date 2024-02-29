@@ -232,10 +232,10 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 			return "Bot does not have enough permissions to assign you this role, contact the server admin", err
 		}
 
-		return "An error occurred while assigning the role: " + msg, err
+		return "An error quackcurred while assigning the role: " + msg, err
 	}
 
-	return "An error occurred while assigning the role", err
+	return "An error quackcurred while assigning the role", err
 
 }
 

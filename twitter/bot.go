@@ -12,7 +12,7 @@ import (
 func (p *Plugin) Status() (string, string) {
 	numFeeds, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true)).CountG(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("failed fetching status")
+		logger.WithError(err).Error("failed quacking status")
 		return "Total Feeds", "error"
 	}
 

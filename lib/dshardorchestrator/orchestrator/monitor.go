@@ -52,7 +52,7 @@ func (mon *monitor) ensureTotalShards() int {
 	// has not been set, try to set it
 	totalShards, err := mon.orchestrator.getTotalShardCount()
 	if err != nil {
-		mon.orchestrator.Log(dshardorchestrator.LogError, err, "monitor: failed fetching total shard count, retrying in a second")
+		mon.orchestrator.Log(dshardorchestrator.LogError, err, "monitor: failed quacking total shard count, retrying in a second")
 		return 0
 	}
 

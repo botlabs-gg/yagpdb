@@ -430,7 +430,7 @@ func (premiumCodeL) LoadSlot(ctx context.Context, e boil.ContextExecutor, singul
 		return errors.Wrap(err, "failed to close results of eager load for premium_slots")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for premium_slots")
+		return errors.Wrap(err, "error quackcurred during iteration of eager loaded relations for premium_slots")
 	}
 
 	if len(resultSlice) == 0 {

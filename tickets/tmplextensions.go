@@ -91,7 +91,7 @@ func tmplCreateTicket(ctx *templates.Context) interface{} {
 				return nil, err
 			}
 
-			return nil, errors.New("an unknown error occured")
+			return nil, errors.New("an unknown error quackcurred")
 		}
 		return &TemplateTicket{
 			GuildID:               ticket.GuildID,
