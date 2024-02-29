@@ -158,7 +158,7 @@ type Message struct {
 	// This is a combination of bit masks; the presence of a certain permission can
 	// be checked by performing a bitwise AND between this int and the flag.
 	Flags MessageFlags `json:"flags"`
-  
+
 	Activity *MessageActivity `json:"activity"`
 }
 
@@ -224,6 +224,9 @@ type MessageSend struct {
 
 	// TODO: Remove this when compatibility is not required.
 	File *File `json:"-"`
+
+	// TODO: Remove this when compatibility is not required.
+	Embed *MessageEmbed `json:"-"`
 }
 
 // MessageEdit is used to chain parameters via ChannelMessageEditComplex, which
@@ -365,9 +368,19 @@ func (e *MessageEmbed) MarshalJSON() ([]byte, error) {
 
 // MessageReactions holds a reactions object for a message.
 type MessageReactions struct {
-	Count int    `json:"count"`
-	Me    bool   `json:"me"`
-	Emoji *Emoji `json:"emoji"`
+	Count        int                          `json:"count"`
+	CountDetails MessageReactionsCountDetails `json:"count_details"`
+	Me           bool                         `json:"me"`
+	MeBurst      bool                         `json:"me_burst"`
+	Emoji        *Emoji                       `json:"emoji"`
+	BurstColors  []string                     `json:"burst_colors"`
+}
+
+// MessageReactionsCountDetails holds normal and super reaction counts for the
+// associated emoji.
+type MessageReactionsCountDetails struct {
+	Burst  int `json:"burst"`
+	Normal int `json:"normal"`
 }
 
 // ContentWithMentionsReplaced will replace all @<id> mentions with the
