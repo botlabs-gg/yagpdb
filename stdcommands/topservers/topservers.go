@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryDebug,
 	Name:        "TopServers",
-	Description: "Responds with the top 20 servers I'm on",
+	Description: "Responds with the top 20 servers I'm on. *Bot admin only.",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int, Default: 0},
 	},
