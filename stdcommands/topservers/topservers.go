@@ -13,7 +13,7 @@ import (
 
 var Command = &commands.YAGCommand{
 	Cooldown:    5,
-	CmdCategory: commands.CategoryFun,
+	CmdCategory: commands.CategoryDebug,
 	Name:        "TopServers",
 	Description: "Responds with the top 20 servers I'm on",
 	Arguments: []*dcmd.ArgDef{
