@@ -39,7 +39,7 @@ func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
 	logger.WithField("guild_id", guildID).Infof("Removed Excess Twitter Feeds")
 	_, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(int64(guildID))).UpdateAllG(context.Background(), models.M{"enabled": false})
 	if err != nil {
-		logger.WithError(err).WithField("guild_id", guildID).Error("failed disabling feed for missing premium")
+		logger.WithError(err).WithField("guild_id", guildID).Error("failed disabling feed for missing quackmium")
 		return err
 	}
 	return nil

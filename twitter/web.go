@@ -90,7 +90,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		return templateData.AddAlerts(web.ErrorAlert("Twitter feeds are paid premium only")), nil
+		return templateData.AddAlerts(web.ErrorAlert("Twitter feeds are paid quackmium only")), nil
 	}
 
 	// limit it to max 25 feeds
@@ -164,7 +164,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	_, templateData = web.GetBaseCPContextData(ctx)
 
 	if !premium.ContextPremium(ctx) {
-		return templateData.AddAlerts(web.ErrorAlert("Twitter feeds are premium only")), nil
+		return templateData.AddAlerts(web.ErrorAlert("Twitter feeds are quackmium only")), nil
 	}
 
 	sub := ctx.Value(ContextKeySub).(*models.TwitterFeed)

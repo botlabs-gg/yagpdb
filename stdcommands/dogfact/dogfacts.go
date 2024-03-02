@@ -352,7 +352,7 @@ var dogfacts = []string{
 	`Dogs curl up to keep themselves warm and protect vital organs.`,
 	`A dog's sense of smell is 10,000 times stronger than a human's.`,
 	`The Norwegian Lundehund is the only dog with six toes on each foot.`,
-	`Dogs can get jealous when their humans display affection toward someone or something else.`,
+	`Dogs can get jealous when their humans display affection toward somequack or something else.`,
 	`Dogs can be trained to detect cancer and other diseases in humans.`,
 	`A dog's whiskers are used as sensing devices.`,
 	`Three of the 12 dogs on the Titanic survived.`,

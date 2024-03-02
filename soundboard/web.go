@@ -130,7 +130,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		return tmpl, err
 	}
 	if count >= int64(MaxSoundsForContext(ctx)) {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d sounds allowed (%d for premium servers)", MaxGuildSounds, MaxGuildSoundsPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d sounds allowed (%d for quackmium servquacks)", MaxGuildSounds, MaxGuildSoundsPremium)))
 		return tmpl, nil
 	}
 

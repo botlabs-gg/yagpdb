@@ -543,7 +543,7 @@ func (inv *ServerInviteTrigger) Name() string {
 }
 
 func (inv *ServerInviteTrigger) Description() string {
-	return "Triggers on messages containing invites to other servers, also includes some 3rd party server quists."
+	return "Triggers on messages containing invites to other servquacks, also includes some 3rd party server quists."
 }
 
 func (inv *ServerInviteTrigger) UserSettings() []*SettingDef {

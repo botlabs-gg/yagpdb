@@ -1,6 +1,6 @@
 # Server stats plugin for QUACKPDB
 
-Records and shows stats for individual servers.
+Records and shows stats for individual servquacks.
 
 ### Current stats
 

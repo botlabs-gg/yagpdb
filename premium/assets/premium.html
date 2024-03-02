@@ -2,7 +2,7 @@
 {{template "cp_head" .}}
 
 <div class="page-header">
-    <h2>Premium setup</h2>
+    <h2>Quackmium setup</h2>
 </div>
 
 {{template "cp_alerts" .}}
@@ -15,29 +15,29 @@
             </header>
 
             <div class="card-body">
-                <p>Here you can redeem codes from giveaways and assign premium slots to servers.</p>
+                <p>Here you can redeem codes from giveaways and assign quackmium slots to servquacks.</p>
                 <p>You can find the features behind the paywall in the list below.</p>
-                <p><b>If you come across any issues with premium, please let us know!</b></p>
-                <p><b>Note:</b> The premium functionality is just a bonus for supporting the bot and not a "product".</p>
+                <p><b>If you come across any issues with quackmium, please let us know!</b></p>
+                <p><b>Note:</b> The quackmium functionality is just a bonus for supporting the bot and not a "product".</p>
 
                 <button class="btn btn-primary mb-2" type="button" data-toggle="collapse"
                     data-target="#premium-how-to-get" aria-expanded="false" aria-controls="premium-how-to-get">
-                    How to get premium?
+                    How to get quackmium?
                 </button>
                 <div class="collapse" id="premium-how-to-get">
                     <section class="card">
                         <div class="card-body">
                             <ul>
                                 <li>Make a pledge on our <a href="https://patreon.com/quackpdb">Patreon</a>. Tiers above $3
-                                    will grant you premium slots. It can take up to 10 minutes from you making a pledge to it
-                                    being processed on our side. (If you do not see your premium slots after that time, please contact us through the support server.)</li>
+                                    will grant you quackmium slots. It can take up to 10 minutes from you making a pledge to it
+                                    being processed on our side. (If you do not see your quackmium slots after that time, please contact us through the support server.)</li>
                             </ul>
                         </div>
                     </section>
                 </div><br>
                 <button class="btn btn-primary" type="button" data-toggle="collapse"
                     data-target="#premium-full-benefits" aria-expanded="false" aria-controls="premium-full-benefits">
-                    Full list of premium benefits
+                    Full list of quackmium benefits
                 </button>
                 <div class="collapse" id="premium-full-benefits">
                     <section class="card">
@@ -120,7 +120,7 @@
 
                 <form action="/premium/updateslot/{{.ID}}" method="post" data-async-form>
                     <div class="form-group">
-                        <label for="slot-{{.ID}}">Assign this premium slot to a server</label>
+                        <label for="slot-{{.ID}}">Assign this quackmium slot to a server</label>
                         <select name="GuildID" class="form-control" id="slot-{{.ID}}">
                             {{$found := false}}
                             <option value="0" {{if not .GuildID.Valid}}{{$found = true}} selected{{end}}>None</option>
@@ -138,7 +138,7 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn btn-success mt-2">Update premium slot</button>
+                    <button type="submit" class="btn btn-success mt-2">Update quackmium slot</button>
                 </form>
             </div>
         </section>
@@ -156,7 +156,7 @@
 {{template "cp_head" .}}
 
 <div class="page-header">
-    <h2>Detach premium slot</h2>
+    <h2>Detach quackmium slot</h2>
 </div>
 
 {{template "cp_alerts" .}}

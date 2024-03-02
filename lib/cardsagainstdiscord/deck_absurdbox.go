@@ -226,7 +226,7 @@ func init() {
 			`Pulling a sick, shit-covered raccoon out of the toilet and nursing it back to health`,
 			`Pulling the butt cheeks apart so the fart comes out quieter`,
 			`Pushing my boob up to lick the nipple`,
-			`Putting dirty dishes in the sink and hoping someone else deals with them`,
+			`Putting dirty dishes in the sink and hoping somequack else deals with them`,
 			`Quality, affordable menswear`,
 			`Reparations for slavery`,
 			`Representing the entire black community`,

@@ -240,7 +240,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 		}
 
 		if err != nil {
-			return nil, web.NewPublicError("Channels override not found, someone else deledted it in the meantime perhaps? Check control panel logs")
+			return nil, web.NewPublicError("Channels override not found, somequack else deledted it in the meantime perhaps? Check control panel logs")
 		}
 
 		tmpl, err := inner(w, r, override)

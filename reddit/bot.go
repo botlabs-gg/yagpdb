@@ -38,7 +38,7 @@ func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
 	if len(feeds) > 0 {
 		_, err = feeds.UpdateAllG(context.Background(), models.M{"disabled": true})
 		if err != nil {
-			return errors.WrapIf(err, "failed disabling reddit feeds on premium removal")
+			return errors.WrapIf(err, "failed disabling reddit feeds on quackmium removal")
 		}
 	}
 

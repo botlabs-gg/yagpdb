@@ -39,7 +39,7 @@ func init() {
 			&PromptCard{Prompt: `Run, run, as fast as you can! You can’t catch me, I’m %s!`},
 			&PromptCard{Prompt: `She’s a lady in the streets, %s in the sheets.`},
 			&PromptCard{Prompt: `She’s just one of the guys, you know? She likes beer, and football, and %s.`},
-			&PromptCard{Prompt: `Son, take it from someone who’s been around the block a few times. Nothin’ puts her in the mood like %s.`},
+			&PromptCard{Prompt: `Son, take it from somequack who’s been around the block a few times. Nothin’ puts her in the mood like %s.`},
 			&PromptCard{Prompt: `Summer lovin’, had me a blast. %s, happened so fast.`},
 			&PromptCard{Prompt: `The top Google auto-complete results for “Barack Obama”: Barack Obama Height. Barack Obama net worth. Barack Obama %s.`},
 			&PromptCard{Prompt: `Then the princess kissed the frog, and all of a sudden the frog was %s!`},

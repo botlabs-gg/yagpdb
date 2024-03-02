@@ -69,7 +69,7 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 
 		isPremium, err := IsGuildPremium(guild.ID)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("Failed checking if guild is premium")
+			web.CtxLogger(r.Context()).WithError(err).Error("Failed checking if guild is quackmium")
 		}
 
 		ctx := r.Context()
@@ -80,7 +80,7 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 
 			tier, err := GuildPremiumTier(guild.ID)
 			if err != nil {
-				web.CtxLogger(ctx).WithError(err).Error("Failed quacktrieving guild premium tier")
+				web.CtxLogger(ctx).WithError(err).Error("Failed quacktrieving guild quackmium tier")
 			}
 
 			tmpl["GuildPremiumTier"] = tier
@@ -168,7 +168,7 @@ func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 	if data.GuildID != 0 {
 		err = AttachSlotToGuild(r.Context(), parsedSlotID, user.ID, data.GuildID)
 		if err == ErrGuildAlreadyPremium {
-			tmpl.AddAlerts(web.ErrorAlert("Server already has premium from another slot (possibly from another user)"))
+			tmpl.AddAlerts(web.ErrorAlert("Server already has quackmium from another slot (possibly from another user)"))
 		}
 	}
 
@@ -204,9 +204,9 @@ var _ web.ServerHomeWidgetWithOrder = (*Plugin)(nil)
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ag, templateData := web.GetBaseCPContextData(r.Context())
 
-	templateData["WidgetTitle"] = "Premium Status"
+	templateData["WidgetTitle"] = "Quackmium Status"
 
-	footer := "<p><a href=\"/premium\">Manage your user premium slots</a></p>"
+	footer := "<p><a href=\"/premium\">Manage your user quackmium slots</a></p>"
 
 	if ContextPremium(r.Context()) {
 		body := strings.Builder{}
@@ -236,12 +236,12 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 				}
 
 				detForm := fmt.Sprintf(`<form data-async-form action="/manage/%d/premium/detach">
-			<button type="submit" class="btn btn-danger">Detach premium slot</button>
+			<button type="submit" class="btn btn-danger">Detach quackmium slot</button>
 		</form>`, ag.ID)
 
-				body.WriteString(fmt.Sprintf("<p>Premium tier <b>%s</b> active and provided by user <code>%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), premiumBy, detForm))
+				body.WriteString(fmt.Sprintf("<p>Quackmium tier <b>%s</b> active and provided by user <code>%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), premiumBy, detForm))
 			} else {
-				body.WriteString(fmt.Sprintf("<p class=\"mt-3\">Premium tier <b>%s</b> active and provided by %s: %s</p>", tier.String(), v.Name(), status))
+				body.WriteString(fmt.Sprintf("<p class=\"mt-3\">Quackmium tier <b>%s</b> active and provided by %s: %s</p>", tier.String(), v.Name(), status))
 			}
 		}
 
@@ -251,7 +251,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		return templateData, nil
 	} else {
 		templateData["WidgetDisabled"] = true
-		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Premium not active on this server :(</p>\n\n%s", footer))
+		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Quackmium not active on this server :(</p>\n\n%s", footer))
 	}
 
 	return templateData, nil
@@ -267,7 +267,7 @@ func HandlePostDetachGuildSlot(w http.ResponseWriter, r *http.Request) (tmpl web
 	slot, err := models.PremiumSlots(qm.Where("guild_id = ?", activeGuild.ID)).OneG(r.Context())
 	if err != nil {
 		if err == sql.ErrNoRows {
-			templateData.AddAlerts(web.ErrorAlert("No premium slot attached to this server"))
+			templateData.AddAlerts(web.ErrorAlert("No quackmium slot attached to this server"))
 			return templateData, nil
 		}
 

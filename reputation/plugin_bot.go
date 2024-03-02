@@ -112,7 +112,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryFun,
 		Name:         "TakeRep",
 		Aliases:      []string{"-", "tr", "trep", "-rep"},
-		Description:  "Takes away rep from someone",
+		Description:  "Takes away rep from somequack",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
@@ -132,7 +132,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:         commands.CategoryFun,
 		Name:                "GiveRep",
 		Aliases:             []string{"+", "gr", "grep", "+rep"},
-		Description:         "Gives rep to someone",
+		Description:         "Gives rep to somequack",
 		RequiredArgs:        1,
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
@@ -199,7 +199,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:         commands.CategoryFun,
 		Name:                "DelRep",
-		Description:         "Deletes someone from the reputation list completely, this cannot be undone.",
+		Description:         "Deletes somequack from the reputation list completely, this cannot be undone.",
 		RequiredArgs:        1,
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
@@ -217,7 +217,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
-				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
+				return "You're not an reputation admin. (no manage servquacks perms and no rep admin role)", nil
 			}
 
 			target := parsed.Args[0].Int64()
@@ -249,7 +249,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
-				return "You're not an reputation admin. (no manage servers perms and no rep admin role)", nil
+				return "You're not an reputation admin. (no manage servquacks perms and no rep admin role)", nil
 			}
 
 			targetID := parsed.Args[0].Int64()

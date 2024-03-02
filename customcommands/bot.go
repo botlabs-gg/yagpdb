@@ -532,7 +532,7 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 	}
 	_, err = models.CustomCommands(qm.Where("guild_id = ?", GuildID)).UpdateAllG(context.Background(), models.M{"trigger_on_edit": false})
 	if err != nil {
-		return errors.WrapIf(err, "Failed disabling trigger on edits on premium removal")
+		return errors.WrapIf(err, "Failed disabling trigger on edits on quackmium removal")
 	}
 
 	return nil

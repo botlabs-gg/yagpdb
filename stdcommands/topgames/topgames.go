@@ -33,7 +33,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 				return nil, err
 			}
 
-			return "Only bot admins can check top games of all servers", nil
+			return "Only bot admins can check top games of all servquacks", nil
 		}
 	}
 

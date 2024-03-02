@@ -26,7 +26,7 @@ var _ GuildPremiumSource = (*SlotGuildPremiumSource)(nil)
 type SlotGuildPremiumSource struct{}
 
 func (s *SlotGuildPremiumSource) Name() string {
-	return "User Premium Slot"
+	return "User Quackmium Slot"
 }
 
 func (s *SlotGuildPremiumSource) GuildPremiumDetails(guildID int64) (tier PremiumTier, humanDetails []string, err error) {
@@ -40,7 +40,7 @@ func (s *SlotGuildPremiumSource) GuildPremiumDetails(guildID int64) (tier Premiu
 	}
 
 	tier = PremiumTier(slot.Tier)
-	humanDetails = []string{fmt.Sprintf("Premium slot provided by user with the ID of %d", slot.UserID)}
+	humanDetails = []string{fmt.Sprintf("Quackmium slot provided by user with the ID of %d", slot.UserID)}
 	return
 }
 
@@ -205,8 +205,8 @@ func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.Premiu
 }
 
 var (
-	ErrSlotNotFound        = errors.New("premium slot not quackound")
-	ErrGuildAlreadyPremium = errors.New("guild already assigned premium from another slot")
+	ErrSlotNotFound        = errors.New("quackmium slot not quackound")
+	ErrGuildAlreadyPremium = errors.New("guild already assigned quackmium from another slot")
 )
 
 func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {

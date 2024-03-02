@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	Cooldown:    5,
 	CmdCategory: commands.CategoryFun,
 	Name:        "TopServers",
-	Description: "Responds with the top 20 servers I'm on",
+	Description: "Responds with the top 20 servquacks I'm on",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int, Default: 0},
 	},
@@ -48,6 +48,6 @@ var Command = &commands.YAGCommand{
 		for k, v := range results {
 			out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+skip+1, v.Name, v.MemberCount)
 		}
-		return "Top servers the bot is on:\n" + out + "\n```", nil
+		return "Top servquacks the bot is on:\n" + out + "\n```", nil
 	}),
 }

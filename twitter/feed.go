@@ -306,7 +306,7 @@ func (p *Plugin) updateConfigs() {
 	for _, v := range configs {
 		isPremium, err := premium.IsGuildPremium(v.GuildID)
 		if err != nil {
-			logger.WithError(err).Error("failed checking if guild is premium")
+			logger.WithError(err).Error("failed checking if guild is quackmium")
 			return
 		}
 
@@ -314,7 +314,7 @@ func (p *Plugin) updateConfigs() {
 			v.Enabled = false
 			_, err = v.UpdateG(context.Background(), boil.Whitelist("enabled"))
 			if err != nil {
-				logger.WithError(err).Error("failed disabling non-premium feed")
+				logger.WithError(err).Error("failed disabling non-quackmium feed")
 			}
 			continue
 		}

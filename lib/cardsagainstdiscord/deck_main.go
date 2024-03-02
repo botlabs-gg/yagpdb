@@ -925,7 +925,7 @@ func init() {
 			`Millions of cane toads`,
 			`Millwall fans`,
 			`Mining accidents`,
-			`Mistaking a retarded person for someone who's merely deaf`,
+			`Mistaking a retarded person for somequack who's merely deaf`,
 			`Mom`,
 			`Mooing`,
 			`Moral ambiguity`,

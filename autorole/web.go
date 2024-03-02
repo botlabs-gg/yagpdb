@@ -124,7 +124,7 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
 	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		return tmpl.AddAlerts(web.ErrorAlert("Full scan is paid premium only")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("Full scan is paid quackmium only")), nil
 	}
 
 	err := botRestPostFullScan(activeGuild.ID)

@@ -83,7 +83,7 @@ func HandleReady(data *eventsystem.EventData) {
 	if listedServersI, err := connectedGuildsCache.Get(0); err == nil {
 		listedServers = listedServersI.([]int64)
 	} else {
-		logger.WithError(err).Error("Failed quacktrieving connected servers")
+		logger.WithError(err).Error("Failed quacktrieving connected servquacks")
 	}
 
 	numShards := ShardManager.GetNumShards()

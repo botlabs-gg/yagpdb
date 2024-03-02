@@ -27,11 +27,11 @@ func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
 func runMonitor() {
 	ticker := time.NewTicker(time.Second * 30)
 	time.Sleep(time.Second * 3)
-	logger.Info("started premium server monitor")
+	logger.Info("started quackmium server monitor")
 
 	err := checkExpiredSlots(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("Failed checking for expired premium slots")
+		logger.WithError(err).Error("Failed checking for expired quackmium slots")
 	}
 
 	checkedExpiredSlots := false
@@ -41,13 +41,13 @@ func runMonitor() {
 		if checkedExpiredSlots {
 			err := updatePremiumServers(context.Background())
 			if err != nil {
-				logger.WithError(err).Error("Failed updating premium servers")
+				logger.WithError(err).Error("Failed updating quackmium servquacks")
 			}
 			checkedExpiredSlots = false
 		} else {
 			err := checkExpiredSlots(context.Background())
 			if err != nil {
-				logger.WithError(err).Error("Failed checking for expired premium slots")
+				logger.WithError(err).Error("Failed checking for expired quackmium slots")
 			}
 			checkedExpiredSlots = true
 		}
@@ -66,7 +66,7 @@ func checkExpiredSlots(ctx context.Context) error {
 		if SlotDurationLeft(v) <= 0 {
 			err := SlotExpired(ctx, v)
 			if err != nil {
-				logger.WithError(err).WithField("slot", v.ID).Error("Failed expiring premium slot")
+				logger.WithError(err).WithField("slot", v.ID).Error("Failed expiring quackmium slot")
 			}
 		}
 	}

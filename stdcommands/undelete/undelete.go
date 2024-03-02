@@ -52,7 +52,7 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		resp := "Up to 10 last deleted messages (last hour or 12 hours for premium): \n\n"
+		resp := "Up to 10 last deleted messages (last hour or 12 hours for quackmium): \n\n"
 		numFound := 0
 
 		messages := bot.State.GetMessages(data.GuildData.GS.ID, channel.ID, &dstate.MessagesQuery{Limit: 100, IncludeDeleted: true})

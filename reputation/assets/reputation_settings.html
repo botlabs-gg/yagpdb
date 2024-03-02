@@ -40,7 +40,7 @@
                                 <input type="number" min="1" class="form-control" id="max-rep-amount-remove"
                                     name="MaxRemoveAmount" value="{{.RepSettings.MaxRemoveAmount}}">
                             </div>
-                            {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when someone says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection) `onchange="toggleThanksDetection(this)"`}}
+                            {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when somequack says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection) `onchange="toggleThanksDetection(this)"`}}
                             <div id="thanks-channels" {{if eq .RepSettings.DisableThanksDetection true}}hidden{{end}}>
                                 <div class="form-group">
                                     <label>Whitelisted channels for giving rep using thanks</label><br>

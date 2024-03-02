@@ -71,7 +71,7 @@ var throwThings = []string{
 	"easter eggs",
 	"explosives",
 	"a black hole",
-	"cheap servers",
+	"cheap servquacks",
 	"babies",
 	"oranges",
 	"eggs",

@@ -44,7 +44,7 @@ func (p PremiumTier) String() string {
 }
 
 var (
-	confAllGuildsPremium = config.RegisterOption("quackpdb.premium.all_guilds_premium", "All servers have premium", false)
+	confAllGuildsPremium = config.RegisterOption("quackpdb.premium.all_guilds_premium", "All servquacks have quackmium", false)
 )
 
 var logger = common.GetPluginLogger(&Plugin{})
@@ -54,7 +54,7 @@ type Plugin struct {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Premium",
+		Name:     "Quackmium",
 		SysName:  "premium",
 		Category: common.PluginCategoryCore,
 	}

@@ -144,7 +144,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	var count int
 	common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", activeGuild.ID).Count(&count)
 	if count >= MaxFeedsForContext(ctx) {
-		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d youtube feeds allowed (%d for quackmium servquacks)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
@@ -239,7 +239,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 			logger.WithError(err.Error).Errorf("Failed getting feed %d", sub.ID)
 		}
 		if !*currFeed.Enabled && *sub.Enabled {
-			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d enabled youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
+			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d enabled youtube feeds allowed (%d for quackmium servquacks)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
 		}
 	}
 

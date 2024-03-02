@@ -1,6 +1,6 @@
 # Logs
 
-The logs plugin logs certain information from servers.
+The logs plugin logs certain information from servquacks.
 
 
  - Can store a subset of the message history with deleted messages

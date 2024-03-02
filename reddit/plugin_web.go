@@ -133,7 +133,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 
 	maxFeeds := MaxFeedForCtx(ctx)
 	if len(currentConfig) >= maxFeeds {
-		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d feeds allowed (or %d for premium servers)", GuildMaxFeedsNormal, GuildMaxFeedsPremium)))
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d feeds allowed (or %d for quackmium servquacks)", GuildMaxFeedsNormal, GuildMaxFeedsPremium)))
 	}
 
 	watchItem := &models.RedditFeed{

@@ -83,7 +83,7 @@ func init() {
 			`Crawling into a vagina`,
 			`Dividing by zero`,
 			`Ejaculating a pound of tinsel`,
-			`Faking a jellyfish sting so someone will pee on you`,
+			`Faking a jellyfish sting so somequack will pee on you`,
 			`Ladles`,
 			`My dick in your mouth`,
 			`Playing an ocarina to summon Ultra-Congress from the sea`,

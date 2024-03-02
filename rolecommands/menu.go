@@ -336,7 +336,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 			code, _ := common.DiscordError(err)
 			switch code {
 			case discordgo.ErrCodeUnknownEmoji:
-				return "I do not have access to that emoji, i can only use emojis from servers im on.", nil
+				return "I do not have access to that emoji, i can only use emojis from servquacks im on.", nil
 			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
 			case discordgo.ErrCodeTooManyReactions:
@@ -602,7 +602,7 @@ func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, us
 
 	isPremium, err := premium.IsGuildPremiumCached(rm.GuildID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", rm.GuildID).Error("Failed checking if guild is premium")
+		logger.WithError(err).WithField("guild", rm.GuildID).Error("Failed checking if guild is quackmium")
 		return
 	}
 
@@ -834,7 +834,7 @@ func cmdFuncRoleMenuListGroups(data *dcmd.Data) (interface{}, error) {
 
 func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
 	if userID != rm.OwnerID {
-		return "Someone is currently editing or setting up this menu, please wait", nil
+		return "Somequack is currently editing or setting up this menu, please wait", nil
 	}
 
 	switch rm.State {

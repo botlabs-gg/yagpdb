@@ -59,7 +59,7 @@ func RunPoller() {
 		<-ticker.C
 		err := UpdatePremiumSlots(context.Background())
 		if err != nil {
-			logger.WithError(err).Error("Failed updating premium slots for patrons")
+			logger.WithError(err).Error("Failed updating quackmium slots for patrons")
 		}
 	}
 }
@@ -114,7 +114,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 					return errors.WithMessage(err, "CreatePremiumSlot")
 				}
 
-				logger.Info("Created patreon premium slot #", slot.ID, slot.UserID)
+				logger.Info("Created patreon quackmium slot #", slot.ID, slot.UserID)
 			}
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
@@ -157,7 +157,7 @@ OUTER:
 				return errors.WithMessage(err, "new CreatePremiumSlot")
 			}
 
-			logger.Info("Created new patreon premium slot #", slot.ID, slot.ID)
+			logger.Info("Created new patreon quackmium slot #", slot.ID, slot.ID)
 		}
 	}
 

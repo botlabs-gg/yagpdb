@@ -13,7 +13,7 @@ import (
 
 var (
 	// Send bot leaves joins to this discord channel
-	confBotLeavesJoins = config.RegisterOption("quackpdb.botleavesjoins", "Channel to log added/left servers to", 0)
+	confBotLeavesJoins = config.RegisterOption("quackpdb.botleavesjoins", "Channel to log added/left servquacks to", 0)
 
 	logger = common.GetPluginLogger(&Plugin{})
 )
@@ -70,7 +70,7 @@ func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", common.ReplaceServerInvites(evt.GuildCreate().Guild.Name, 0, "[removed-server-invite]"))
 	}
 
-	msg += fmt.Sprintf(" (now connected to %d servers)", count)
+	msg += fmt.Sprintf(" (now connected to %d servquacks)", count)
 	_, err = common.BotSession.ChannelMessageSend(int64(confBotLeavesJoins.GetInt()), msg)
 	return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 }

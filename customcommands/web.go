@@ -316,7 +316,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	if int(c) >= MaxCommandsForContext(ctx) {
-		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
+		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for quackmium servquacks)", MaxCommands, MaxCommandsPremium))
 	}
 
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
@@ -368,7 +368,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 			return templateData, err
 		}
 		if int(c) >= MaxCommandsForContext(ctx) {
-			return templateData, web.NewPublicError(fmt.Sprintf("Max %d enabled custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
+			return templateData, web.NewPublicError(fmt.Sprintf("Max %d enabled custom commands allowed (or %d for quackmium servquacks)", MaxCommands, MaxCommandsPremium))
 		}
 	}
 
@@ -385,7 +385,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	if !premium.ContextPremium(ctx) && cmdEdit.TriggerOnEdit {
-		return templateData.AddAlerts(web.ErrorAlert("`Trigger on edits` is a premium feature, your command wasn't saved, please save again after disabling `Trigger on edits`")), nil
+		return templateData.AddAlerts(web.ErrorAlert("`Trigger on edits` is a quackmium feature, your command wasn't saved, please save again after disabling `Trigger on edits`")), nil
 	}
 
 	dbModel := cmdEdit.ToDBModel()
@@ -713,7 +713,7 @@ func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx c
 
 	additionalMessage := ""
 	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with QUACKPDB premium)", MaxCommandsPremium)
+		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with QUACKPDB quackmium)", MaxCommandsPremium)
 	}
 	templateData["AdditionalMessage"] = additionalMessage
 }

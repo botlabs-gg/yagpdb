@@ -28,13 +28,13 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Ruleset-Name", Type: dcmd.String},
 		},
-		Description:         "Toggles a ruleset on/off",
+		Description:         "Toggles a quackset on/off",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			rulesetName := data.Args[0].Str()
 			ruleset, err := models.AutomodRulesets(qm.Where("guild_id = ? AND name ILIKE ?", data.GuildData.GS.ID, rulesetName)).OneG(data.Context())
 			if err != nil {
-				return "Unable to find the ruleset, did you type the name correctly?", err
+				return "Unable to find the quackset, did you type the name correctly?", err
 			}
 
 			ruleset.Enabled = !ruleset.Enabled
@@ -52,7 +52,7 @@ func (p *Plugin) AddCommands() {
 				enabledStr = "disabled"
 			}
 
-			return fmt.Sprintf("Ruleset **%s** is now `%s`", ruleset.Name, enabledStr), nil
+			return fmt.Sprintf("Quackset **%s** is now `%s`", ruleset.Name, enabledStr), nil
 		},
 	}
 
