@@ -1484,6 +1484,7 @@ type applicationCommandInteractionDataOptionTemporary struct {
 	Type    ApplicationCommandOptionType               `json:"type"`    // value of ApplicationCommandOptionType
 	Value   json.RawMessage                            `json:"value"`   // the value of the pair
 	Options []*ApplicationCommandInteractionDataOption `json:"options"` // present if this option is a group or subcommand
+	Focused bool                                       `json:"focused"` // present if this option is currently focused (in autocomplete)
 }
 
 func (a *ApplicationCommandInteractionDataOption) UnmarshalJSON(b []byte) error {
@@ -1497,6 +1498,7 @@ func (a *ApplicationCommandInteractionDataOption) UnmarshalJSON(b []byte) error 
 		Name:    temp.Name,
 		Type:    temp.Type,
 		Options: temp.Options,
+		Focused: temp.Focused,
 	}
 
 	switch temp.Type {

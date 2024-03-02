@@ -359,7 +359,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 
 func handleInteractionCreate(evt *eventsystem.EventData) {
 	interaction := evt.InteractionCreate()
-	if interaction.Type != discordgo.InteractionApplicationCommand {
+	if interaction.Type != discordgo.InteractionApplicationCommand && interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
 		return
 	}
 	if interaction.DataCommand == nil {

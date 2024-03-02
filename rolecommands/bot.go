@@ -51,7 +51,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Group", Type: dcmd.String},
+			{Name: "Group", Help: "The role command group", Type: dcmd.String, AutocompleteFunc: roleGroupAutocomplete},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},

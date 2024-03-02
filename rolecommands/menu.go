@@ -28,7 +28,33 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
+var (
+	recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
+)
+
+func roleGroupAutocomplete(parsed *dcmd.Data, arg *dcmd.ParsedArg) ([]*discordgo.ApplicationCommandOptionChoice, error) {
+	name := arg.Str()
+
+	groups, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Load("RoleCommands"), qm.OrderBy("name asc")).AllG(parsed.Context())
+	if err != nil {
+		return nil, err
+	}
+
+	choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(groups))
+	for _, v := range groups {
+		if jarowinkler.Similarity([]rune(strings.ToLower(v.Name)), []rune(strings.ToLower(name))) > 0.6 || strings.Contains(strings.ToLower(v.Name), strings.ToLower(name)) {
+			choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
+				Name:  v.Name,
+				Value: v.Name,
+			})
+		}
+	}
+	/*sort.Slice(choices, func(i, j int) bool {
+		return choices[i].Name < choices[j].Name
+	})*/
+
+	return choices, nil
+}
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	name := parsed.Args[0].Str()
