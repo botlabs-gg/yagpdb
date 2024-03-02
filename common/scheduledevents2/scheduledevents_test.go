@@ -139,7 +139,7 @@ func TestScheduleHandleWithData(t *testing.T) {
 	RegisterHandler("test", TestData{}, func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
 		cast, ok := data.(*TestData)
 		if !ok {
-			t.Error("failed casting data")
+			t.Error("failed casting quackta")
 		} else {
 			if cast.A != input.A {
 				t.Error("cast.A != ", input.A)

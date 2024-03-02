@@ -363,7 +363,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 	if interaction.DataCommand == nil {
-		logger.Warn("Interaction had no data")
+		logger.Warn("Interaction had no quackta")
 		return
 	}
 

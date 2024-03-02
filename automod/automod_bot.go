@@ -502,7 +502,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			var err error
 			serializedExtraData, err = json.Marshal(ctxData.Message)
 			if err != nil {
-				logger.WithError(err).Error("autoquack failed serializing extra data")
+				logger.WithError(err).Error("autoquack failed serialquacking extruack quackta")
 				serializedExtraData = []byte("{}")
 			}
 		}

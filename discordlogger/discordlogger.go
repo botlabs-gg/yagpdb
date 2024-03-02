@@ -62,7 +62,7 @@ func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 				Name: "unknown",
 			}
 
-			logger.WithError(err).Error("failed quacking guild data")
+			logger.WithError(err).Error("failed quacking guild quackta")
 		}
 
 		msg = fmt.Sprintf(":x: Left guild **%s** :(", common.ReplaceServerInvites(guildData.Name, 0, "[removed-server-invite]"))

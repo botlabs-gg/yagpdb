@@ -313,7 +313,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 		decodedData = reflect.New(typ).Interface()
 		err := json.Unmarshal(item.Data, decodedData)
 		if err != nil {
-			l.WithError(err).Error("failed decoding event data")
+			l.WithError(err).Error("failed decoding event quackta")
 			se.markDoneFast(item.ID, item.GuildID)
 			return
 		}

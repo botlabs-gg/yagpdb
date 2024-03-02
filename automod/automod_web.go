@@ -779,7 +779,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 				// Parse the settings into the relevant struct
 				err := json.Unmarshal(part.Settings, dst)
 				if err != nil {
-					web.CtxLogger(r.Context()).WithError(err).Error("failed parsing rule part data")
+					web.CtxLogger(r.Context()).WithError(err).Error("failed parsing rule part quackta")
 					continue
 				}
 
@@ -800,7 +800,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 			// Parse the settings into the relevant struct
 			err := json.Unmarshal(part.Settings, dst)
 			if err != nil {
-				web.CtxLogger(r.Context()).WithError(err).Error("failed parsing ruleset condition part data")
+				web.CtxLogger(r.Context()).WithError(err).Error("failed parsing ruleset condition part quackta")
 				continue
 			}
 
