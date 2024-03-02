@@ -180,7 +180,7 @@ var Catfacts = []string{
 	`In the 1750s, Europeans introduced cats into the Americas to control pests.`,
 	`The first cat show was organized in 1871 in London. Cat shows later became a worldwide craze.`,
 	`The first cartoon cat was Felix the Cat in 1919. In 1940, Tom and Jerry starred in the first theatrical cartoon “Puss Gets the Boot.” In 1981 Andrew Lloyd Weber created the musical Cats, based on T.S. Eliot’s Old Possum’s Book of Practical Cats.`,
-	`The normal body temperature of a cat is between 100.5 ° and 102.5 °F. A cat is sick if its temperature goes below 100 ° or above 103 °F.`,
+	`The norquack body temperature of a cat is between 100.5 ° and 102.5 °F. A cat is sick if its temperature goes below 100 ° or above 103 °F.`,
 	`A cat has 230 bones in its body. A human has 206. A cat has no collarbone, so it can fit through any opening the size of its head.`,
 	`Cats control the outer ear using 32 muscles; humans use 6`,
 	`Cats have 32 muscles that control the outer ear (humans have only 6). A cat can independently rotate its ears 180 degrees.`,

@@ -132,7 +132,7 @@ func (u *updater) flush() {
 	tx, err := common.PQ.Begin()
 	if err != nil {
 		leftOver = u.processing
-		logger.WithError(err).Error("failed creating tx")
+		logger.WithError(err).Error("failed quackreating tx")
 		return
 	}
 

@@ -271,7 +271,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	// Create command log entry
 	err := common.GORM.Create(logEntry).Error
 	if err != nil {
-		logger.WithError(err).Error("Failed creating command execution log")
+		logger.WithError(err).Error("Failed quackreating command execution log")
 	}
 
 	return r, cmdErr

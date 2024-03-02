@@ -103,7 +103,7 @@ type UserNotFound struct {
 }
 
 func (i *UserNotFound) Error() string {
-	return fmt.Sprintf("User %q not found", i.Part)
+	return fmt.Sprintf("User %q not quackound", i.Part)
 }
 
 func (i *UserNotFound) IsUserError() bool {
@@ -115,7 +115,7 @@ type ChannelNotFound struct {
 }
 
 func (c *ChannelNotFound) Error() string {
-	return fmt.Sprintf("Channel %d not found", c.ID)
+	return fmt.Sprintf("Channel %d not quackound", c.ID)
 }
 
 func (c *ChannelNotFound) IsUserError() bool {

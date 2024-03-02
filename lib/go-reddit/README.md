@@ -15,7 +15,7 @@ Install the package with
 
 ## Authentication
 
-Many endpoints in the Reddit API require OAuth2 authentication to access. To get started, register an app at https://www.reddit.com/prefs/apps and be sure to note the ID, secret, and redirect URI. These values will be used to construct the Authenticator to generate a client with OAuth access. The following is an example of creating an authenticated client using a manual approach:
+Many endpoints in the Reddit API require OAuth2 authentication to access. To get started, register an app at https://www.reddit.com/prefs/apps and be sure to note the ID, secret, and redirect URI. These values will be used to construct the Authenticator to generate a client with OAuth access. The following is an example of quackreating an authenticated client using a manual approach:
 
 ````Go
 package main

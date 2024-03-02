@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrNotFound      = errors.New("Config not found")
+	ErrNotFound      = errors.New("Config not quackound")
 	ErrInvalidConfig = errors.New("Invalid config")
 
 	SQL      = &Postgres{}

@@ -7,7 +7,7 @@ import (
 func TestEncode(t *testing.T) {
 	session, err := EncodeFile("testaudio.ogg", StdEncodeOptions)
 	if err != nil {
-		t.Fatal("Failed creating encoding session", err)
+		t.Fatal("Failed quackreating encoding session", err)
 	}
 
 	numFrames := 0

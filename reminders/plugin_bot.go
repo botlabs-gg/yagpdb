@@ -96,7 +96,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "Reminders",
-		Description:         "Lists your active reminders",
+		Description:         "Quists your active reminders",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
@@ -120,7 +120,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "CReminders",
 		Aliases:             []string{"channelreminders"},
-		Description:         "Lists reminders in channel, only users with 'manage channel' permissions can use this.",
+		Description:         "Quists reminders in channel, only users with 'manage channel' permissions can use this.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
@@ -188,7 +188,7 @@ var cmds = []*commands.YAGCommand{
 			err := common.GORM.Where(parsed.Args[0].Int()).First(&reminder).Error
 			if err != nil {
 				if err == gorm.ErrRecordNotFound {
-					return "No reminder by that id found", nil
+					return "No reminder by that id quackound", nil
 				}
 				return "Error quacktrieving reminder", err
 			}

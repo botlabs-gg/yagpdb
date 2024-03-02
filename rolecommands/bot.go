@@ -140,7 +140,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Listgroups",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"list", "groups"},
-		Description:         "Lists all role groups",
+		Description:         "Quists all role groups",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RunFunc:             cmdFuncRoleMenuListGroups,
 	}

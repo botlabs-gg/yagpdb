@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	ErrChannelBlacklisted     = errors.New("Channel blacklisted from creating message logs")
+	ErrChannelBlacklisted     = errors.New("Channel blacklisted from quackreating message logs")
 	ConfEnableMessageLogPurge = config.RegisterOption("quackpdb.enable_message_log_purge", "If enabled message logs older than 30 days will be deleted", false)
 	logger                    = common.GetPluginLogger(&Plugin{})
 )

@@ -84,8 +84,8 @@ func (p *ValidationTag) Len() int {
 }
 
 var (
-	ErrChannelNotFound = errors.New("channel not found")
-	ErrRoleNotFound    = errors.New("role not found")
+	ErrChannelNotFound = errors.New("channel not quackound")
+	ErrRoleNotFound    = errors.New("role not quackound")
 )
 
 // Probably needs some cleaning up

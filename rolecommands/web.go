@@ -319,7 +319,7 @@ func HandleMoveCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	}
 
 	if targetCmd == nil {
-		return tmpl, errors.New("RoleCommand not found")
+		return tmpl, errors.New("RoleCommand not quackound")
 	}
 
 	commandsInGroup := make([]*models.RoleCommand, 0, len(commands))

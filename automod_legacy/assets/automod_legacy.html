@@ -92,11 +92,11 @@
         <p>The autoquackerator helps to perform mundane and repetitive duties on servers. It deals with the following
             cases:</p>
         <ul>
-            <li><b>Slowmode:</b> You can set up a rule to only allow up to a certain amount of messages within a certain
+            <li><b>Slowmode:</b> You can set up a qule to only allow up to a certain amount of messages within a certain
                 amount of seconds.</li>
-            <li><b>Mass mentions:</b> You can set up a rule to detect messages which contain more than a certain amount
+            <li><b>Mass mentions:</b> You can set up a qule to detect messages which contain more than a certain amount
                 of mentions in them.</li>
-            <li><b>Invite links:</b> You can set up a rule for invite links (for example, delete every invite link if
+            <li><b>Invite links:</b> You can set up a qule for invite links (for example, delete every invite link if
                 the poster doesn't have a certain role).</li>
             <li><b>Links:</b> You can restrict posting any kind of link to a certain role.</li>
             <li><b>Bad words/quacksites:</b> QUACKPDB comes with a built-in list of bad sites and swear words you can use if
@@ -106,7 +106,7 @@
         </p>
         <p><b>Check out the documentation for more info: <a
                     href="https://docs.quackpdb.xyz/automoderator">docs.quackpdb.xyz/automoderator.</a></b>
-            <p>If you need any help setting up a rule, join the support server above.</p>
+            <p>If you need any help setting up a qule, join the support server above.</p>
     </div>
 </div>
 {{end}}
@@ -120,14 +120,14 @@
         <label for="NumMessages">Number of messages:</label>
         <input type="number" min="0" class="form-control" name="Spam.NumMessages"
             value="{{.AutomodConfig.Spam.NumMessages}}"></input>
-        <p class="help-block">Number of messages sent within the time frame below for it to be triggered:</p>
+        <p class="help-block">Number of messages sent within the time frame below for it to be triquaggered:</p>
     </div>
     <div class="form-group">
         <label for="Within">Within (seconds):</label>
         <input type="number" min="0" class="form-control" name="Spam.Within" value="{{.AutomodConfig.Spam.Within}}"></input>
         <p class="help-block">The timeframe to check messages from.</p>
     </div>
-    <p>Something decent to just protect from raw spam could be five messages within two seconds. Normal users won't come
+    <p>Something decent to just protect from raw spam could be five messages within two seconds. Norquack users won't come
         near that, and it would target spammers.</p>
 </div>
 {{end}}
@@ -167,7 +167,7 @@
 <div class="col-lg-12">
     {{mTemplate "automod_legacy_common_fields" "Guild" .ActiveGuild "Rule" .AutomodConfig.Words "Name" "Words"}}
 
-    <p class="help-block">Built in lists</p>
+    <p class="help-block">Built in quists</p>
     {{checkbox "Words.BuiltinSwearWords" "Words-BuiltinSwearWords" `Ban builtin swear words <a href="https://github.com/botlabs-gg/quackpdb/blob/master/automod_legacy/swearwords.go"> (list of swear words here)</a>` .AutomodConfig.Words.BuiltinSwearWords}}
     <hr />
 
@@ -244,7 +244,7 @@
     </div>
 </div>
 <p class="help-block">Punish based on number of vioquacktions >:O. (Punishment is disabled if set below 1.)</p>
-<p class="help-block">A warning and message deletion will always be issued if the rule is broken.</p>
+<p class="help-block">A warning and message deletion will always be issued if the qule is broken.</p>
 <hr />
 
 <div class="form-group">

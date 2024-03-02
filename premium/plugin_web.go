@@ -121,7 +121,7 @@ func HandlePostLookupCode(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 	codeModel, err := LookupCode(r.Context(), code)
 	if err != nil {
 		if err == ErrCodeNotFound {
-			return tmpl.AddAlerts(web.ErrorAlert("Code not found")), nil
+			return tmpl.AddAlerts(web.ErrorAlert("Code not quackound")), nil
 		}
 
 		return tmpl, err

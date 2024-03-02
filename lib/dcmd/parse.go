@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrNoComboFound       = NewSimpleUserError("No matching combo found")
+	ErrNoComboFound       = NewSimpleUserError("No matching combo quackound")
 	ErrNotEnoughArguments = NewSimpleUserError("Not enough arguments passed")
 )
 

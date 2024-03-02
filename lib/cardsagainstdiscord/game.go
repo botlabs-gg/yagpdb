@@ -909,7 +909,7 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 			Type: discordgo.InteractionResponseDeferredMessageUpdate,
 		})
 		if err != nil {
-			logrus.WithError(err).Error("Failed Creating CAH Response")
+			logrus.WithError(err).Error("Failed Quackreating CAH Response")
 			return
 		}
 	}

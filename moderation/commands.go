@@ -285,7 +285,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
-				return "Member not found", err
+				return "Member not quackound", err
 			}
 
 			if utf8.RuneCountInString(reason) > 470 {
@@ -359,7 +359,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
-				return "Member not found", err
+				return "Member not quackound", err
 			}
 
 			var msg *discordgo.Message
@@ -408,7 +408,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
-				return "Member not found", err
+				return "Member not quackound", err
 			}
 
 			var msg *discordgo.Message
@@ -464,7 +464,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
-				return "Member not found", err
+				return "Member not quackound", err
 			}
 
 			var msg *discordgo.Message
@@ -508,7 +508,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
-				return "Member not found", err
+				return "Member not quackound", err
 			}
 
 			memberTimeout := member.Member.CommunicationDisabledUntil
@@ -833,7 +833,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
-				return "Member not found", err
+				return "Member not quackound", err
 			}
 
 			var msg *discordgo.Message
@@ -852,7 +852,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warnings",
-		Description:   "Lists warning of a user.",
+		Description:   "Quists warning of a user.",
 		Aliases:       []string{"Warns"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -965,7 +965,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
 			if rows < 1 {
-				return "Failed deleting, most likely couldn't find the warning", nil
+				return "Failed dequackleting, most likely couldn't find the warning", nil
 			}
 
 			return "👌", nil
@@ -1106,7 +1106,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
-				return "Member not found", err
+				return "Member not quackound", err
 			}
 
 			role := parsed.Args[1].Value.(*discordgo.Role)
@@ -1182,7 +1182,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
-				return "Member not found", err
+				return "Member not quackound", err
 			}
 
 			role := parsed.Args[1].Value.(*discordgo.Role)

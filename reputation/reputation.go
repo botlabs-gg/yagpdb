@@ -59,7 +59,7 @@ func KeyCooldown(guildID, userID int64) string {
 }
 
 var (
-	ErrUserNotFound = errors.New("User not found")
+	ErrUserNotFound = errors.New("User not quackound")
 )
 
 func GetUserStats(guildID, userID int64) (score int64, rank int, err error) {

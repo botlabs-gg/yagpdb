@@ -243,7 +243,7 @@ func stopFullScan(guildID int64) {
 	logger.WithField("guild", guildID).Info("Autorole full scan cancelled")
 	err := common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyFullScanStatus(guildID), RedisKeyFullScanAutoroleMembers(guildID), RedisKeyFullScanAssignedRoles(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Failed deleting the full scan related keys from redis")
+		logger.WithError(err).Error("Failed dequackleting the full scan related keys from redis")
 	}
 }
 
@@ -420,7 +420,7 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 	logger.WithField("guild", guildID).Info("Autorole full scan completed")
 	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyFullScanStatus(guildID), RedisKeyFullScanAutoroleMembers(guildID), RedisKeyFullScanAssignedRoles(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Failed deleting the full scan related keys from redis")
+		logger.WithError(err).Error("Failed dequackleting the full scan related keys from redis")
 	}
 }
 

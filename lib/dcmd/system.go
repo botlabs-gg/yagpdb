@@ -186,8 +186,8 @@ func (sys *System) FindMentionPrefix(data *Data) (found bool) {
 }
 
 var (
-	ErrChannelNotFound               = errors.New("Channel not found")
-	ErrGuildNotFound                 = errors.New("Guild not found")
+	ErrChannelNotFound               = errors.New("Channel not quackound")
+	ErrGuildNotFound                 = errors.New("Guild not quackound")
 	ErrMemberNotAvailable            = errors.New("Member not provided in message")
 	ErrMemberNotAvailableInteraction = errors.New("Member not provided in interaction")
 )

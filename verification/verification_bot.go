@@ -192,7 +192,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	token, err := p.createVerificationSession(target.ID, guildID)
 	if err != nil {
-		logger.WithError(err).WithField("user", target.ID).WithField("guild", guildID).Error("failed creating verification session")
+		logger.WithError(err).WithField("user", target.ID).WithField("guild", guildID).Error("failed quackreating verification session")
 		return
 	}
 
@@ -215,7 +215,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	channel, err := common.BotSession.UserChannelCreate(ms.User.ID)
 	if err != nil {
-		logger.WithError(err).Error("failed creating user channel")
+		logger.WithError(err).Error("failed quackreating user channel")
 		return
 	}
 
@@ -636,7 +636,7 @@ func (p *Plugin) handleBanAdd(evt *eventsystem.EventData) {
 		if err == sql.ErrNoRows {
 			return
 		}
-		logger.WithError(err).Error("error finding verified user in banadd")
+		logger.WithError(err).Error("error fiquackding verified user in banadd")
 		return
 	}
 
@@ -646,7 +646,7 @@ func (p *Plugin) handleBanAdd(evt *eventsystem.EventData) {
 
 	alts, err := p.findIPConflicts(ban.GuildID, ban.User.ID, model.IP)
 	if err != nil {
-		logger.WithError(err).Error("error finding ip conflicts in banadd")
+		logger.WithError(err).Error("error fiquackding ip conflicts in banadd")
 		return
 	}
 

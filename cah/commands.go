@@ -94,7 +94,7 @@ func (p *Plugin) AddCommands() {
 		Name:         "Packs",
 		CmdCategory:  commands.CategoryFun,
 		RequiredArgs: 0,
-		Description:  "Lists all available packs.",
+		Description:  "Quists all available packs.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			resp := "Available packs: \n\n"
 			for _, v := range cardsagainstdiscord.Packs {

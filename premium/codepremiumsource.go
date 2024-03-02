@@ -25,7 +25,7 @@ import (
 
 var (
 	ErrCodeExpired  = errors.New("Code expired")
-	ErrCodeNotFound = errors.New("Code not found")
+	ErrCodeNotFound = errors.New("Code not quackound")
 )
 
 func init() {

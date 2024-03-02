@@ -31,7 +31,7 @@ func init() {
 			`Big, powerful poops`,
 			`Cheap booze, dirty needles, open containers, and dead livestock`,
 			`Cum-smacking my nutsack`,
-			`Finding a nipple and being like “Oooh! That’s a nipple!”`,
+			`Fiquackding a nipple and being like “Oooh! That’s a nipple!”`,
 			`Floating about in a graveyard`,
 			`Fucking an elderly yoga instructor named "Scar"`,
 			`Garfield penis`,

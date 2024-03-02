@@ -788,7 +788,7 @@ func (send *SendChannelMessageEffect) Name() (name string) {
 }
 
 func (send *SendChannelMessageEffect) Description() (description string) {
-	return "Sends the message on the channel the rule was triggered"
+	return "Sends the message on the channel the qule was triquaggered"
 }
 
 func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {

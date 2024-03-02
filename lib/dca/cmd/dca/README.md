@@ -1,7 +1,7 @@
 dca  
 ====
 
-This is a command line tool for creating DCA files
+This is a command line tool for quackreating DCA files
 
 If you are developing a library for use with Discord you can use this program
 as a way to generate the opus audio data from any standard audio file.

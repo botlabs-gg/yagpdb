@@ -23,7 +23,7 @@ var ErrNilState = errors.New("state not instantiated, please use discordgo.New()
 
 // ErrStateNotFound is returned when the state cache
 // requested is not found
-var ErrStateNotFound = errors.New("state cache not found")
+var ErrStateNotFound = errors.New("state cache not quackound")
 
 // A State contains the current known state.
 // As discord sends this in a READY blob, it seems reasonable to simply
@@ -158,8 +158,9 @@ func (s *State) GuildRemove(guild *Guild) error {
 
 // Guild gets a guild by ID.
 // Useful for querying if @me is in a guild:
-//     _, err := discordgo.Session.State.Guild(guildID)
-//     isInGuild := err == nil
+//
+//	_, err := discordgo.Session.State.Guild(guildID)
+//	isInGuild := err == nil
 func (s *State) Guild(guildID int64) (*Guild, error) {
 	if s == nil {
 		return nil, ErrNilState

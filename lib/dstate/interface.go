@@ -283,7 +283,7 @@ func (c *ChannelState) IsPrivate() bool {
 
 func (c *ChannelState) Mention() (string, error) {
 	if c == nil {
-		return "", errors.New("channel not found")
+		return "", errors.New("channel not quackound")
 	}
 	return "<#" + discordgo.StrID(c.ID) + ">", nil
 }

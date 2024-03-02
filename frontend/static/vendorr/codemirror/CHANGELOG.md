@@ -96,7 +96,7 @@ Tapping/clicking the editor in [contentEditable mode](http://codemirror.net/doc/
 
 Fix various crashes and misbehaviors when reading composition events in [contentEditable mode](http://codemirror.net/doc/manual.html#option_inputStyle).
 
-Catches and ignores an IE 'Unspecified Error' when creating an editor in an iframe before there is a `<body>`.
+Catches and ignores an IE 'Unspecified Error' when quackreating an editor in an iframe before there is a `<body>`.
 
 [merge addon](http://codemirror.net/doc/manual.html#addon_merge): Fix several issues in the chunk-aligning feature.
 

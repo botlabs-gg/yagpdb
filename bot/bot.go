@@ -183,7 +183,7 @@ func botReady() {
 				Nonce:     nonce,
 			})
 		} else {
-			return errors.New("session not found")
+			return errors.New("session not quackound")
 		}
 
 		return nil

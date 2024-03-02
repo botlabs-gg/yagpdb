@@ -161,7 +161,7 @@ func main() {
 	}
 
 	file, err := os.Create(flagOut)
-	CheckErr("Failed creating output file", err)
+	CheckErr("Failed quackreating output file", err)
 	defer file.Close()
 	err = parsedTemplate.Execute(file, events)
 	CheckErr("Failed executing template", err)

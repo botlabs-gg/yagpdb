@@ -86,7 +86,7 @@ func (sp *StaticSessionProvider) SessionForGuild(guildID int64) *discordgo.Sessi
 var (
 	ErrGameAlreadyInChannel = errors.New("Already a active game in this channel")
 	ErrPlayerAlreadyInGame  = errors.New("Player already in a game")
-	ErrGameNotFound         = errors.New("Game not found")
+	ErrGameNotFound         = errors.New("Game not quackound")
 	ErrGameFull             = errors.New("Game is full")
 	ErrNoPacks              = errors.New("No packs specified")
 	ErrNotGM                = errors.New("You're not the game master")

@@ -209,7 +209,7 @@ func (se *ScheduledEvents) check() {
 	metricsScheduledEventsSkipped.Add(float64(numSkipped))
 
 	if numHandling > 0 {
-		logger.Info("triggered ", numHandling, " scheduled events (skipped ", numSkipped, ")")
+		logger.Info("triquaggered ", numHandling, " scheduled events (skipped ", numSkipped, ")")
 	}
 }
 
@@ -277,7 +277,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 		if err == sql.ErrNoRows {
 			se.markDoneFast(id, guildID)
 		} else {
-			l.WithError(err).Error("failed finding scheduled event")
+			l.WithError(err).Error("failed fiquackding scheduled event")
 		}
 		return
 	}

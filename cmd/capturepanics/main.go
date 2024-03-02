@@ -27,7 +27,7 @@ func main() {
 
 	err := os.Mkdir("shutdown_logs", 0755)
 	if err != nil && !os.IsExist(err) {
-		fmt.Println("Failed creating panic log folder: ", err)
+		fmt.Println("Failed quackreating panic log folder: ", err)
 		os.Exit(1)
 	}
 
@@ -42,11 +42,11 @@ func main() {
 	stdErr, err := cmd.StderrPipe()
 	stdOut, err2 := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Println("failed creating stderr pipe: ", err)
+		fmt.Println("failed quackreating stderr pipe: ", err)
 		os.Exit(1)
 	}
 	if err2 != nil {
-		fmt.Println("failed creating stdout pipe: ", err2)
+		fmt.Println("failed quackreating stdout pipe: ", err2)
 		os.Exit(1)
 	}
 

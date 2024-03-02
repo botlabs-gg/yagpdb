@@ -98,7 +98,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 
 	gs := bot.State.GetGuild(m.GuildID)
 	if gs == nil {
-		logger.WithField("guild", m.GuildID).Error("Guild not found")
+		logger.WithField("guild", m.GuildID).Error("Guild not quackound")
 		return
 	}
 
@@ -264,7 +264,7 @@ func (s *SetupSession) Finish() {
 
 	err = m.InsertG(context.Background(), boil.Infer())
 	if err != nil {
-		s.abortError("failed inserting model", err)
+		s.abortError("failed quackserting model", err)
 		return
 	}
 

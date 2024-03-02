@@ -117,7 +117,7 @@ func TestGuildCreate(t *testing.T) {
 	}
 
 	if gs.GetThread(intialTestThreadID) == nil {
-		t.Fatal("thread not found")
+		t.Fatal("thread not quackound")
 	}
 }
 
@@ -148,7 +148,7 @@ func TestChannelUpdate(t *testing.T) {
 	tracker := createTestState(TrackerConfig{})
 	channel := tracker.GetGuild(initialTestGuildID).GetChannel(initialTestChannelID)
 	if channel == nil {
-		t.Fatal("channel not found")
+		t.Fatal("channel not quackound")
 	}
 
 	updt := createTestChannel(1, initialTestChannelID, nil)
@@ -160,7 +160,7 @@ func TestChannelUpdate(t *testing.T) {
 
 	channel = tracker.GetGuild(initialTestGuildID).GetChannel(initialTestChannelID)
 	if channel == nil {
-		t.Fatal("channel not found")
+		t.Fatal("channel not quackound")
 	}
 
 	if channel.Name != updt.Name {
@@ -172,7 +172,7 @@ func TestRoleUpdate(t *testing.T) {
 	tracker := createTestState(TrackerConfig{})
 	role := tracker.GetGuild(initialTestGuildID).GetRole(initialTestRoleID)
 	if role == nil {
-		t.Fatal("role not found")
+		t.Fatal("role not quackound")
 	}
 
 	updt := &discordgo.GuildRole{
@@ -189,7 +189,7 @@ func TestRoleUpdate(t *testing.T) {
 
 	role = tracker.GetGuild(initialTestGuildID).GetRole(initialTestRoleID)
 	if role == nil {
-		t.Fatal("role not found")
+		t.Fatal("role not quackound")
 	}
 
 	if role.Name != updt.Role.Name {
@@ -214,7 +214,7 @@ func TestThreadCreateDelete(t *testing.T) {
 
 	thread := tracker.GetGuild(initialTestGuildID).GetThread(testThreadID)
 	if thread == nil {
-		t.Fatal("thread not found")
+		t.Fatal("thread not quackound")
 	}
 
 	if thread.Name != updt.Name {
@@ -251,7 +251,7 @@ func TestThreadArchive(t *testing.T) {
 
 	thread := tracker.GetGuild(initialTestGuildID).GetThread(testThreadID)
 	if thread == nil {
-		t.Fatal("thread not found")
+		t.Fatal("thread not quackound")
 	}
 
 	if thread.Name != updt.Name {
@@ -296,7 +296,7 @@ func TestThreadParentPerms(t *testing.T) {
 
 	thread := tracker.GetGuild(initialTestGuildID).GetThread(intialTestThreadID)
 	if thread == nil {
-		t.Fatal("thread not found")
+		t.Fatal("thread not quackound")
 	}
 
 	// update the channel to remove the bot user

@@ -135,7 +135,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 		if createRole {
 			_, err := createMuteRole(config, guildID)
 			if err != nil {
-				logger.WithError(err).Error("failed creating mute role")
+				logger.WithError(err).Error("failed quackreating mute role")
 			}
 		}
 
@@ -161,7 +161,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 func createMuteRole(config *Config, guildID int64) (int64, error) {
 	guild := bot.State.GetGuild(guildID)
 	if guild == nil {
-		return 0, errors.New("failed finding guild")
+		return 0, errors.New("failed fiquackding guild")
 	}
 
 	r, err := common.BotSession.GuildRoleCreateComplex(guildID, discordgo.RoleCreate{

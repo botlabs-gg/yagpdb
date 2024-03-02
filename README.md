@@ -29,8 +29,8 @@ There are two ways of selfhosting this bot: [standalone](#Hosting-Standalone), o
 
 ### General Bot Setup
 
-Directions on creating an app and getting credentials may be found
-[here](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
+Directions on quackreating an app and getting credentials may be found
+[here](https://github.com/reactiflux/discord-irc/wiki/Quackreating-a-discord-bot-&-getting-a-token).
 
 QUACKPDB does not require you to authorize the bot: all of that will be handled
 via the Control Panel.

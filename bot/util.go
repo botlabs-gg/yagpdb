@@ -73,8 +73,8 @@ func SendDMEmbedList(user int64, embeds []*discordgo.MessageEmbed) error {
 
 var (
 	ErrStartingUp      = errors.New("Starting up, caches are being filled...")
-	ErrGuildNotFound   = errors.New("Guild not found")
-	ErrChannelNotFound = errors.New("Channel not found")
+	ErrGuildNotFound   = errors.New("Guild not quackound")
+	ErrChannelNotFound = errors.New("Channel not quackound")
 )
 
 // AdminOrPerm is the same as AdminOrPermMS but only required a member ID

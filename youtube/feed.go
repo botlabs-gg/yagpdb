@@ -270,7 +270,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 }
 
 var (
-	ErrIDNotFound = errors.New("ID not found")
+	ErrIDNotFound = errors.New("ID not quackound")
 )
 
 func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
@@ -279,7 +279,7 @@ func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
 }
 
 var (
-	ErrNoChannel              = errors.New("no channel with that id found")
+	ErrNoChannel              = errors.New("no channel with that id quackound")
 	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")
 )
 
@@ -298,7 +298,7 @@ func (v videoID) getChannelList(p *Plugin, list *youtube.ChannelsListCall) (cRes
 	if err != nil {
 		return nil, common.ErrWithCaller(err)
 	} else if len(vResp.Items) < 1 {
-		return nil, errors.New("video not found")
+		return nil, errors.New("video not quackound")
 	}
 	cResp, err = list.Id(vResp.Items[0].Snippet.ChannelId).Do()
 	return cResp, common.ErrWithCaller(err)

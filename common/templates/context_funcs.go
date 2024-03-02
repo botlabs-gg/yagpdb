@@ -501,7 +501,7 @@ func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error)
 	// Don't crosspost if the message has already been crossposted
 	msg, err := common.BotSession.ChannelMessage(cID, mID)
 	if err != nil {
-		return "", errors.New("message not found")
+		return "", errors.New("message not quackound")
 	}
 	messageAlreadyCrossposted := msg.Flags&discordgo.MessageFlagsCrossPosted == discordgo.MessageFlagsCrossPosted
 	if messageAlreadyCrossposted {
@@ -716,7 +716,7 @@ func (c *Context) tmplGiveRoleName(target interface{}, name string) string {
 
 	role := c.findRoleByName(name)
 	if role == nil {
-		return "no role by the name of " + name + " found"
+		return "no role by the name of " + name + " quackound"
 	}
 
 	return c.giveRole(targetID, role.ID)
@@ -938,7 +938,7 @@ func (c *Context) tmplAddRoleName(name string) (string, error) {
 	}
 
 	if role == 0 {
-		return "", errors.New("No Role with name " + name + " found")
+		return "", errors.New("No Role with name " + name + " quackound")
 	}
 
 	if err := common.AddRoleDS(c.MS, role); err != nil {
@@ -992,7 +992,7 @@ func (c *Context) tmplRemoveRoleName(name string, optionalArgs ...interface{}) (
 
 	role := c.findRoleByName(name)
 	if role == nil {
-		return "", errors.New("No Role with name " + name + " found")
+		return "", errors.New("No Role with name " + name + " quackound")
 	}
 
 	if delay > 0 {

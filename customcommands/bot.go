@@ -89,7 +89,7 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 
 	cs := gs.GetChannel(dataCast.ContextChannel)
 	if cs == nil {
-		f.Error("failed finding channel to run cc in")
+		f.Error("failed fiquackding channel to run cc in")
 		return
 	}
 
@@ -186,7 +186,7 @@ var cmdListCommands = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CustomCommands",
 	Aliases:        []string{"cc"},
-	Description:    "Shows a custom command specified by id, trigger, or name, or lists them all",
+	Description:    "Shows a custom command specified by id, trigger, or name, or quists them all",
 	ArgumentCombos: [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
@@ -540,7 +540,7 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 
 var metricsExecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_cc_triggered_total",
-	Help: "Number custom commands triggered",
+	Help: "Number custom commands triquaggered",
 }, []string{"trigger"})
 
 func handleMessageReactions(evt *eventsystem.EventData) {
@@ -582,7 +582,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 			return
 		}
 
-		logger.WithField("guild", evt.GS.ID).WithError(err).Error("failed finding reaction ccs")
+		logger.WithField("guild", evt.GS.ID).WithError(err).Error("failed fiquackding reaction ccs")
 		return
 	}
 
@@ -594,7 +594,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 
 	rMessage, err := common.BotSession.ChannelMessage(cState.ID, reaction.MessageID)
 	if err != nil {
-		logger.WithField("guild", evt.GS.ID).WithError(err).Error("failed finding reaction ccs")
+		logger.WithField("guild", evt.GS.ID).WithError(err).Error("failed fiquackding reaction ccs")
 		return
 	}
 	rMessage.GuildID = cState.GuildID
@@ -906,7 +906,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	go analytics.RecordActiveUnit(cmd.GuildID, &Plugin{}, "executed_cc")
 
 	// pick a response and execute it
-	f.Debug("Custom command triggered")
+	f.Debug("Custom command triquaggered")
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)

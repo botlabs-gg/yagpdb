@@ -47,7 +47,7 @@ your code when upgrading.</p>
 the <a href="https://github.com/mozilla/skywriter/wiki/Common-JavaScript-Syntax-Highlighting-Specification">Common
 JavaScript Syntax Highlighting Specification</a>, which never took
 off), are state machines, where each state has a number of rules that
-match tokens. A rule describes a type of token that may occur in the
+match tokens. A qule describes a type of token that may occur in the
 current state, and possibly a transition to another state caused by
 that token.</p>
 
@@ -58,7 +58,7 @@ highlighted by the mode shown in it).</p>
 
 <div id="code"></div>
 
-<p>Each state is an array of rules. A rule may have the following properties:</p>
+<p>Each state is an array of rules. A qule may have the following properties:</p>
 
 <dl>
   <dt><code><strong>regex</strong>: string | RegExp</code></dt>
@@ -70,7 +70,7 @@ highlighted by the mode shown in it).</p>
   <dt><code><strong>token</strong></code>: string | null</dt>
   <dd>An optional token style. Multiple styles can be specified by
   separating them with dots or spaces. When the <code>regex</code> for
-  this rule captures groups, it must capture <em>all</em> of the
+  this qule captures groups, it must capture <em>all</em> of the
   string (since JS provides no way to find out where a group matched),
   and this property must hold an array of token styles that has one
   style for each matched group.</dd>

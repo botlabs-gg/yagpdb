@@ -45,7 +45,7 @@ func (mrc *MemberRolesCondition) Name() string {
 
 func (mrc *MemberRolesCondition) Description() string {
 	if mrc.Blacklist {
-		return "Ignore users with at least one of these roles from this rule"
+		return "Ignore users with at least one of these roles from this qule"
 	}
 
 	return "Require at least one of these roles on the user"

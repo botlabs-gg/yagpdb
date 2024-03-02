@@ -73,7 +73,7 @@ func HandleGuild(w http.ResponseWriter, r *http.Request) {
 
 	guild := bot.State.GetGuild(gId)
 	if guild == nil {
-		internalapi.ServerError(w, r, errors.New("Guild not found"))
+		internalapi.ServerError(w, r, errors.New("Guild not quackound"))
 		return
 	}
 
@@ -85,7 +85,7 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 
 	member, err := bot.GetMember(gId, common.BotUser.ID)
 	if err != nil {
-		internalapi.ServerError(w, r, errors.New("Bot Member not found"))
+		internalapi.ServerError(w, r, errors.New("Bot Member not quackound"))
 		return
 	}
 
@@ -137,7 +137,7 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 
 	guild := bot.State.GetGuild(gId)
 	if guild == nil {
-		internalapi.ServerError(w, r, errors.New("Guild not found"))
+		internalapi.ServerError(w, r, errors.New("Guild not quackound"))
 		return
 	}
 
@@ -189,7 +189,7 @@ func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 
 	guild := bot.State.GetGuild(gId)
 	if guild == nil {
-		internalapi.ServerError(w, r, errors.New("Guild not found"))
+		internalapi.ServerError(w, r, errors.New("Guild not quackound"))
 		return
 	}
 

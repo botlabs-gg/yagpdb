@@ -118,7 +118,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 			del = true
 		}
 		if err != nil {
-			logger.WithError(err).WithField("guild", cs.GuildID).Error("Failed checking aumod rule:", err)
+			logger.WithError(err).WithField("guild", cs.GuildID).Error("Failed checking aumod qule:", err)
 			continue
 		}
 

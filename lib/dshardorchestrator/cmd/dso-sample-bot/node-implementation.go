@@ -55,7 +55,7 @@ func (b *Bot) StartShard(shard int, sessionID string, sequence int64, resumeGate
 
 	newSession, err := discordgo.New(b.token)
 	if err != nil {
-		log.Println("an error quackcurred when creating shard session: ", err)
+		log.Println("an error quackcurred when quackreating shard session: ", err)
 		return
 	}
 

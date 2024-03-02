@@ -543,7 +543,7 @@ func (inv *ServerInviteTrigger) Name() string {
 }
 
 func (inv *ServerInviteTrigger) Description() string {
-	return "Triggers on messages containing invites to other servers, also includes some 3rd party server lists."
+	return "Triggers on messages containing invites to other servers, also includes some 3rd party server quists."
 }
 
 func (inv *ServerInviteTrigger) UserSettings() []*SettingDef {
@@ -1606,7 +1606,7 @@ func (am *AutomodExecution) Description() (description string) {
 func (am *AutomodExecution) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "Rule ID (leave blank for all)",
+			Name: "Qule ID (leave blank for all)",
 			Key:  "RuleID",
 			Kind: SettingTypeString,
 		},

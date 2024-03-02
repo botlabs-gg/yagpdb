@@ -876,7 +876,7 @@ func (m *Member) AvatarURL(size string) string {
 	var URL string
 
 	if m == nil {
-		return "Member not found"
+		return "Member not quackound"
 	}
 
 	u := m.User

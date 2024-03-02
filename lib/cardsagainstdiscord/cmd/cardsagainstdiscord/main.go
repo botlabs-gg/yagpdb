@@ -127,7 +127,7 @@ var KickCommand = &dcmd.SimpleCmd{
 }
 
 var PacksCommand = &dcmd.SimpleCmd{
-	ShortDesc: "Lists available packs",
+	ShortDesc: "Quists available packs",
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		resp := "Available packs: \n\n"
 		for _, v := range cardsagainstdiscord.Packs {

@@ -60,7 +60,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Rulesets",
 		Aliases:             []string{"r", "list", "l"},
 		CmdCategory:         commands.CategoryModeration,
-		Description:         "Lists all quacksets and their status",
+		Description:         "Quists all quacksets and their status",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
@@ -92,7 +92,7 @@ func (p *Plugin) AddCommands() {
 		Name:        "Logs",
 		Aliases:     []string{"log"},
 		CmdCategory: commands.CategoryModeration,
-		Description: "Shows the log of the last triggered automod rules, optionally filtering by user",
+		Description: "Shows the log of the last triquaggered automod qules, optionally filtering by user",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
 		},
@@ -133,7 +133,7 @@ func (p *Plugin) AddCommands() {
 			} else {
 				out.WriteString("No Entries")
 			}
-			out.WriteString("``` **RS** = ruleset, **R** = rule, **TR** = trigger")
+			out.WriteString("``` **RS** = ruleset, **R** = qule, **TR** = trigger")
 
 			return &discordgo.MessageEmbed{
 				Title:       "Automod logs",
@@ -146,7 +146,7 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ListViolationsCount",
-		Description:   "Lists Vioquacktions summary in entire server or of specified user optionally filtered by max violation age.\n Specify number of vioquacktions to skip while quacking using -skip flag ; max entries fetched 500",
+		Description:   "Quists Vioquacktions summary in entire server or of specified user optionally filtered by max violation age.\n Specify number of vioquacktions to skip while quacking using -skip flag ; max entries fetched 500",
 		Aliases:       []string{"ViolationsCount", "VCount"},
 		RequiredArgs:  0,
 		Arguments: []*dcmd.ArgDef{
@@ -217,7 +217,7 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ListViolations",
-		Description:   "Lists Vioquacktions of specified user \n old flag posts oldest violations in first page ( from oldest to newest ).",
+		Description:   "Quists Vioquacktions of specified user \n old flag posts oldest violations in first page ( from oldest to newest ).",
 		Aliases:       []string{"Vioquacktions", "ViolationLogs", "VLogs", "VLog"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -253,7 +253,7 @@ func (p *Plugin) AddCommands() {
 			if len(listViolations) > 0 {
 				for _, entry := range listViolations {
 
-					out += fmt.Sprintf("#%-4d: [%-19s] Rule ID: %d \nViolation Name: %s\n\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.RuleID.Int64, entry.Name)
+					out += fmt.Sprintf("#%-4d: [%-19s] Qule ID: %d \nViolation Name: %s\n\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.RuleID.Int64, entry.Name)
 				}
 
 				out = "```" + out + "```"
@@ -287,7 +287,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 			if rows < 1 {
-				return "Failed deleting, most likely no active violation with specified id", nil
+				return "Failed dequackleting, most likely no active violation with specified id", nil
 			}
 
 			return "👌", nil

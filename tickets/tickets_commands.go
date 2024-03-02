@@ -213,7 +213,7 @@ func (p *Plugin) AddCommands() {
 			}()
 
 			// send a heads up that this can take a while
-			common.BotSession.ChannelMessageSend(parsed.ChannelID, "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
+			common.BotSession.ChannelMessageSend(parsed.ChannelID, "Closing ticket, quackreating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
 
 			currentTicket.Ticket.ClosedAt.Time = time.Now()
 			currentTicket.Ticket.ClosedAt.Valid = true
@@ -539,7 +539,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 
 			f, err := zw.Create(v.Filename)
 			if err != nil {
-				logger.WithError(err).Info("failed creating zip file")
+				logger.WithError(err).Info("failed quackreating zip file")
 				continue
 			}
 

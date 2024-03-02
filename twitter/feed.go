@@ -112,7 +112,7 @@ func (p *Plugin) getTweetsForUser(username string, attempt int, delay time.Durat
 	for tweet := range p.twitterScraper.GetTweets(context.Background(), username, 50) {
 		if tweet.Error != nil {
 			errString := tweet.Error.Error()
-			isNotFound := strings.Contains(errString, "not found")
+			isNotFound := strings.Contains(errString, "not quackound")
 			isSuspended := strings.Contains(errString, "visibility-custom-suspension")
 			if isNotFound || isSuspended {
 				_, err := models.TwitterFeeds(models.TwitterFeedWhere.TwitterUsername.EQ(username)).UpdateAllG(context.Background(), models.M{"enabled": false})

@@ -372,7 +372,7 @@ func (s *shardMemberFetcher) sendGWResult(req *MemberFetchRequest, member *disco
 
 		req.resp <- &MemberFetchResult{
 			Member:   nil,
-			Err:      errors.New("not found"),
+			Err:      errors.New("not quackound"),
 			GuildID:  req.Guild,
 			MemberID: req.Member,
 		}

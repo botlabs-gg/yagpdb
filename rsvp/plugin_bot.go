@@ -180,7 +180,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         catEvents,
 		Name:                "List",
 		Aliases:             []string{"ls"},
-		Description:         "Lists all events in this server",
+		Description:         "Quists all events in this server",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {

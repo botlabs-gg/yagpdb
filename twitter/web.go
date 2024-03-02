@@ -108,7 +108,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	// search up the ID
 	user, err := p.twitterScraper.GetProfile(form.TwitterUser)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("User not found")), nil
+		return templateData.AddAlerts(web.ErrorAlert("User not quackound")), nil
 	}
 
 	userId, err := strconv.ParseInt(user.UserID, 10, 64)

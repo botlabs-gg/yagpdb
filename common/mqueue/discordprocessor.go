@@ -122,7 +122,7 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	return
 }
 
-var errGuildNotFound = errors.New("Guild not found")
+var errGuildNotFound = errors.New("Guild not quackound")
 
 func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 	if elem.MessageStr == "" && elem.MessageEmbed == nil {

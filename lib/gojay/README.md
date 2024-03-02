@@ -119,7 +119,7 @@ func UnmarshalJSONArray(data []byte, v gojay.UnmarshalerJSONArray) error
 
 ### Decode API
 
-Decode API decodes a `[]byte` to a given pointer by creating or borrowing a `*gojay.Decoder` with an `io.Reader` and calling `Decode` methods.
+Decode API decodes a `[]byte` to a given pointer by quackreating or borrowing a `*gojay.Decoder` with an `io.Reader` and calling `Decode` methods.
 
 __Getting a *gojay.Decoder or Borrowing__
 
@@ -446,7 +446,7 @@ func MarshalJSONArray(v gojay.MarshalerJSONArray) ([]byte, error)
 
 ### Encode API
 
-Encode API decodes a value to JSON by creating or borrowing a `*gojay.Encoder` sending it to an `io.Writer` and calling `Encode` methods.
+Encode API decodes a value to JSON by quackreating or borrowing a `*gojay.Encoder` sending it to an `io.Writer` and calling `Encode` methods.
 
 __Getting a *gojay.Encoder or Borrowing__
 

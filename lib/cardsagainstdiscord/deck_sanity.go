@@ -23,7 +23,7 @@ func init() {
 			&PromptCard{Prompt: `One day when I have kids, I’ll be able to sit them all down and tell them the story of %s.`},
 			&PromptCard{Prompt: `Please go like my page “%s Cosplay”. It’s got almost 100 followers!`},
 			&PromptCard{Prompt: `Scott McNeil said he wouldn't show up to another convention if %s were there.`},
-			&PromptCard{Prompt: `Screw the rules! I have %s!`},
+			&PromptCard{Prompt: `Screw the qules! I have %s!`},
 			&PromptCard{Prompt: `There are conventions themed around gaming, anime, and comic books. But you wouldn't believe what the next convention’s theme is…`},
 			&PromptCard{Prompt: `What did I forget to pack for this convention?`},
 			&PromptCard{Prompt: `What do you mean they ran out of %s? This after-party sucks!`},

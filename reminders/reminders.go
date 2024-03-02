@@ -59,7 +59,7 @@ func (r *Reminder) Trigger() error {
 		logger.Info("Tried to execute multiple reminders at once")
 	}
 
-	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
+	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triquaggered reminder")
 	embed := &discordgo.MessageEmbed{
 		Title:       "Reminder from QUACKPDB",
 		Description: common.ReplaceServerInvites(r.Message, r.GuildID, "(removed-invite)"),

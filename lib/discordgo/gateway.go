@@ -519,7 +519,7 @@ func (g *GatewayConnectionManager) onVoiceStateUpdate(st *VoiceStateUpdate) {
 	}
 
 	if st.ChannelID == 0 {
-		g.session.log(LogInformational, "Deleting VoiceConnection %d", st.GuildID)
+		g.session.log(LogInformational, "Dequackleting VoiceConnection %d", st.GuildID)
 		delete(g.voiceConnections, st.GuildID)
 		g.mu.Unlock()
 		return
@@ -1129,7 +1129,7 @@ func (g *GatewayConnection) handleReadMessage() {
 		// zlib.NewReader apperently needs the header straight away, or it will block forever
 		zr, err := zlib.NewReader(g.readMessageBuffer)
 		if err != nil {
-			go g.onError(err, "failed creating zlib reader")
+			go g.onError(err, "failed quackreating zlib reader")
 			return
 
 		}

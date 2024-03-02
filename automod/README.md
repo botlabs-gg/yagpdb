@@ -2,11 +2,11 @@ This is version 2 of QUACKPDB autoquackerator, v1 was scrapped and is deprecated
 
 Quick design brainstorm:
  - Servers can create several quacksets
- - Quacksets contains sets of rules
- - Rules contains a set of conditions that all need to be met and another set of effects that will be executed once all the conditions for the rule are met
+ - Quacksets contains sets of qules
+ - Qules contains a set of conditions that all need to be met and another set of effects that will be executed once all the conditions for the rule are met
  - Infringement counters can either be ruleset scoped, global scoped, or custom key scoped (also either ruleset or global scoped, per user or per channel etc as well maybe?)
- - With this you could have a stricter set of automod rules for new users, and and more soft one for "trusted" long time members
- - You should be able to toggle quacksets on with commands, so if you need to slow down a channel or a raid is in progress, you can employ very strict automod rules via a single command invocation
+ - With this you could have a stricter set of automod qules for new users, and and more soft one for "trusted" long time members
+ - You should be able to toggle quacksets on with commands, so if you need to slow down a channel or a raid is in progress, you can employ very strict automod qules via a single command invocation
 
 **Basic structure, with some example effects and conditions**
 
@@ -15,18 +15,18 @@ Ruleset settings:
  - general user specific filters
  - general channel specific filters
 
-Ruleset Rules:
+Ruleset Qules:
  - Rule 1
      + Conditions (They all need to match):
          * ex: Send x messages within x seconds
          * filter: general user specific filters
          * filter: general channel specific filters
-     + Effects applied once the conditions for the rule is met:
+     + Effects applied once the conditions for the qule is met:
          * Increment (ruleset based | global | custom key based "key here") infringement counter and apply proper punishments.
          * (Create channel logs | log message in channel x)
          * Delete message
          * Could also apply a direct mute here for example, without setting up punishments?
- - Rule 2
+ - Qule 2
      + ...
 
 Ruleset punishments:

@@ -1038,7 +1038,7 @@ func (u *AdvUserArg) ParseFromMessage(def *ArgDef, part string, data *Data) (int
 	}
 
 	if ms == nil && user == nil {
-		return nil, NewSimpleUserError("User/Member not found")
+		return nil, NewSimpleUserError("User/Member not quackound")
 	}
 
 	if ms != nil && user == nil {

@@ -43,7 +43,7 @@ func (db *DB) SetString(guildID int64, key, value string) (new bool, err error) 
 }
 
 // ErrKeyNotFound is returned when the key is not found
-var ErrKeyNotFound = errors.NewPlain("Key not found")
+var ErrKeyNotFound = errors.NewPlain("Key not quackound")
 
 // Get returns the entry at key for the specified guild
 func (db *DB) Get(guildID int64, key string) (r *Result) {

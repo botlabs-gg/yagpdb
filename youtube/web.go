@@ -177,7 +177,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	if err != nil {
 		if err == ErrNoChannel {
-			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username found")), errors.New("channel not found")
+			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username quackound")), errors.New("channel not quackound")
 		}
 		return templateData, err
 	}

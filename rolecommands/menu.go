@@ -99,7 +99,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		msg, err = common.BotSession.ChannelMessageSend(parsed.ChannelID, "Role menu\nSetting up...")
 		if err != nil {
 			_, dErr := common.DiscordError(err)
-			errStr := "Failed creating the menu message, check the permissions on the channel"
+			errStr := "Failed quackreating the menu message, check the permissions on the channel"
 			if dErr != "" {
 				errStr += ", Discord responded with: " + errStr
 			}
@@ -253,7 +253,7 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 
 	gs := bot.State.GetGuild(rm.GuildID)
 	if gs == nil {
-		return errors.New("Guild not found")
+		return errors.New("Guild not quackound")
 	}
 
 	for _, opt := range opts {
@@ -360,7 +360,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 
 		err = model.InsertG(ctx, boil.Infer())
 		if err != nil {
-			return "Failed inserting option into the database, please retry adding the emoji.", err
+			return "Failed quackserting option into the database, please retry adding the emoji.", err
 		}
 
 		model.R = model.R.NewStruct()
@@ -449,7 +449,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 	menu, err := GetRolemenuCached(evt.Context(), evt.GS, mID)
 	if err != nil {
-		logger.WithError(err).Error("RoleCommandsMenu: Failed finding menu")
+		logger.WithError(err).Error("RoleCommandsMenu: Failed fiquackding menu")
 		return
 	}
 
@@ -928,7 +928,7 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 
 	msg, err := common.BotSession.ChannelMessageSend(rm.ChannelID, msgContents)
 	if err != nil {
-		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed creating setup message for menu")
+		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed quackreating setup message for menu")
 		return
 	}
 

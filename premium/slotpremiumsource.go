@@ -205,7 +205,7 @@ func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.Premiu
 }
 
 var (
-	ErrSlotNotFound        = errors.New("premium slot not found")
+	ErrSlotNotFound        = errors.New("premium slot not quackound")
 	ErrGuildAlreadyPremium = errors.New("guild already assigned premium from another slot")
 )
 

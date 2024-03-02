@@ -71,7 +71,7 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 
 		// default settings normal member access
 		{
-			Name:     "default settings normal normal member access (ro)",
+			Name:     "default settings norquack norquack member access (ro)",
 			Conf:     &models.CoreConfig{},
 			GWC:      createUserGuild(true, false, false),
 			Roles:    nil,
