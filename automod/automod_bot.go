@@ -192,7 +192,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 		cClone.CurrentRule = nil
 
 		go p.RulesetRulesTriggered(cClone, true)
-		logger.WithField("guild", ctxData.GS.ID).Info("autoquack triggered ", len(finalTriggeredRules), " violation rules")
+		logger.WithField("guild", ctxData.GS.ID).Info("autoquack triggered ", len(finalTriggeredRules), " violation qules")
 	}
 }
 
@@ -402,7 +402,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 		go p.RulesetRulesTriggered(ctxData, true)
 		activatededRules = true
 
-		logger.WithField("guild", ctxData.GS.ID).Info("autoquack triggered ", len(triggeredRules), " rules")
+		logger.WithField("guild", ctxData.GS.ID).Info("autoquack triquaggered ", len(triggeredRules), " qules")
 	}
 
 	return activatededRules
@@ -524,14 +524,14 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 	tx, err := common.PQ.BeginTx(context.Background(), nil)
 	if err != nil {
-		logger.WithError(err).Error("failed creating transaction")
+		logger.WithError(err).Error("failed quackreating transquacktion")
 		return
 	}
 
 	for _, v := range loggedModels {
 		err = v.Insert(context.Background(), tx, boil.Infer())
 		if err != nil {
-			logger.WithError(err).Error("failed inserting logged triggered rule")
+			logger.WithError(err).Error("failed quackserting quogged triquaggered")
 			tx.Rollback()
 			return
 		}
@@ -539,13 +539,13 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 	err = tx.Commit()
 	if err != nil {
-		logger.WithError(err).Error("failed committing logging transaction")
+		logger.WithError(err).Error("failed committing logging transquacktion")
 	}
 
 	// Limit AutomodTriggeredRules to 200 rows per guild
 	_, err = models.AutomodTriggeredRules(qm.SQL("DELETE FROM automod_triggered_rules WHERE id IN (SELECT id FROM automod_triggered_rules WHERE guild_id = $1 ORDER BY created_at DESC OFFSET 200 ROWS);", ctxData.GS.ID)).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		logger.WithError(err).Error("failed deleting older autoquack triggered rules")
+		logger.WithError(err).Error("failed dequackleting older autoquack triquaggered qules")
 		return
 	}
 }
@@ -602,7 +602,7 @@ func FetchGuildLists(guildID int64) ([]*models.AutomodList, error) {
 	return cast, nil
 }
 
-var ErrListNotFound = errors.New("list not found")
+var ErrListNotFound = errors.New("quist not quackound")
 
 func FindFetchGuildList(guildID int64, listID int64) (*models.AutomodList, error) {
 	lists, err := FetchGuildLists(guildID)

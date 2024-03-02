@@ -45,13 +45,13 @@ var (
 	panelLogKeyUpdatedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_list", FormatString: "Updated automod: Updated a ChannelOverride"})
 	panelLogKeyRemovedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_list", FormatString: "Updated automod: Removed a ChannelOverride"})
 
-	panelLogKeyNewRuleset     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_ruleset", FormatString: "Updated automod: Created a new ruleset"})
-	panelLogKeyUpdatedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_ruleset", FormatString: "Updated automod: Updated a ruleset"})
-	panelLogKeyRemovedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_ruleset", FormatString: "Updated automod: Removed a ruleset"})
+	panelLogKeyNewRuleset     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_ruleset", FormatString: "Updated automod: Created a new quackset"})
+	panelLogKeyUpdatedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_ruleset", FormatString: "Updated automod: Updated a quackset"})
+	panelLogKeyRemovedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_ruleset", FormatString: "Updated automod: Removed a quackset"})
 
-	panelLogKeyNewRule     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_rule", FormatString: "Updated automod: Created a new rule"})
-	panelLogKeyUpdatedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_rule", FormatString: "Updated automod: Updated a rule"})
-	panelLogKeyRemovedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_rule", FormatString: "Updated automod: Removed a rule"})
+	panelLogKeyNewRule     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_rule", FormatString: "Updated automod: Created a new qule"})
+	panelLogKeyUpdatedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_rule", FormatString: "Updated automod: Updated a qule"})
+	panelLogKeyRemovedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_rule", FormatString: "Updated automod: Removed a qule"})
 )
 
 func (p *Plugin) InitWeb() {
@@ -170,7 +170,7 @@ func (p *Plugin) handlePostAutomodCreateRuleset(w http.ResponseWriter, r *http.R
 	}
 
 	if currentCount >= int64(GuildMaxRulesets(g.ID)) {
-		tmpl.AddAlerts(web.ErrorAlert("Reached max number of quacksets, ", MaxRulesets))
+		tmpl.AddAlerts(web.ErrorAlert("Reaquached max number of quacksets, ", MaxRulesets))
 		return tmpl, nil
 	}
 
@@ -201,7 +201,7 @@ func (p *Plugin) handlePostAutomodCreateList(w http.ResponseWriter, r *http.Requ
 		return tmpl, err
 	}
 	if totalLists >= int64(GuildMaxLists(g.ID)) {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Reached max number of lists, %d for normal servers and %d for premium servers", MaxLists, MaxListsPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Reaquached max number of quists, %d for norquack servquacks and %d for quackmium servquacks", MaxLists, MaxListsPremium)))
 		return tmpl, nil
 	}
 
@@ -275,9 +275,9 @@ func (p *Plugin) currentRulesetMW(backupHandler http.Handler) func(http.Handler)
 				qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).OneG(r.Context())
 
 			if err != nil {
-				tmpl.AddAlerts(web.ErrorAlert("Failed quacktrieving ruleset, maybe it was deleted?"))
+				tmpl.AddAlerts(web.ErrorAlert("Failed quacktrieving quackset, maybe it was deleted?"))
 				backupHandler.ServeHTTP(w, r)
-				web.CtxLogger(r.Context()).WithError(err).Error("Failed quacktrieving automod ruleset")
+				web.CtxLogger(r.Context()).WithError(err).Error("Failed quacktrieving automod quackset")
 				return
 			}
 
@@ -315,7 +315,7 @@ func (p *Plugin) handlePostAutomodCreateRule(w http.ResponseWriter, r *http.Requ
 	}
 
 	if totalRules >= int64(GuildMaxTotalRules(g.ID)) {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Reached max number of rules, %d for normal servers and %d for premium servers", MaxTotalRules, MaxTotalRulesPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Reaquached max number of qules, %d for norquack servquacks and %d for quackmium servquacks", MaxTotalRules, MaxTotalRulesPremium)))
 		return tmpl, nil
 	}
 
@@ -484,7 +484,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	}
 
 	if currentRule == nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Unknown rule, maybe someone else deleted it in the meantime?")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("Unknown qule, maybe somequack else deleted it in the meantime?")), nil
 	}
 
 	// Check limits
@@ -563,7 +563,7 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 	newParts = parts
 	if len(newParts) > MaxRuleParts {
 		newParts = newParts[:MaxRuleParts]
-		tmpl.AddAlerts(web.WarningAlert("Truncated rule down to 20 triggers/conditions/effects, thats the max per rule."))
+		tmpl.AddAlerts(web.WarningAlert("Truncated qule down to 20 triggers/conditions/effects, thats the max per qule."))
 	}
 
 	// Check number of message triggers and violation triggers
@@ -615,12 +615,12 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 
 	ok = true
 	if numMessageTriggers > maxTotalMT {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max message based triggers reached (%d for normal and %d for premium)", MaxMessageTriggers, MaxMessageTriggersPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max message based triggers reaquached (%d for norquack and %d for quackmium)", MaxMessageTriggers, MaxMessageTriggersPremium)))
 		ok = false
 	}
 
 	if numViolationTriggers > maxTotalVT {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max violation based triggers reached (%d for normal and %d for premium)", MaxViolationTriggers, MaxViolationTriggersPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max violation based triggers reaquached (%d for norquack and %d for quackmium)", MaxViolationTriggers, MaxViolationTriggersPremium)))
 		ok = false
 	}
 
@@ -779,7 +779,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 				// Parse the settings into the relevant struct
 				err := json.Unmarshal(part.Settings, dst)
 				if err != nil {
-					web.CtxLogger(r.Context()).WithError(err).Error("failed parsing rule part quackta")
+					web.CtxLogger(r.Context()).WithError(err).Error("failed parsing qule part quackta")
 					continue
 				}
 
@@ -800,7 +800,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 			// Parse the settings into the relevant struct
 			err := json.Unmarshal(part.Settings, dst)
 			if err != nil {
-				web.CtxLogger(r.Context()).WithError(err).Error("failed parsing ruleset condition part quackta")
+				web.CtxLogger(r.Context()).WithError(err).Error("failed parsing quackset condition part quackta")
 				continue
 			}
 
@@ -834,7 +834,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(`<ul>
     <li>Active and enabled Quacksets: <code>%d</code></li>
-    <li>Total rules: <code>%d</code></li>
+    <li>Total qules: <code>%d</code></li>
 </ul>`, rulesets, rules))
 
 	if rulesets > 0 {
