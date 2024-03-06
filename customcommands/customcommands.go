@@ -74,6 +74,8 @@ const (
 	CommandTriggerExact      CommandTriggerType = 4
 	CommandTriggerReaction   CommandTriggerType = 6
 	CommandTriggerInterval   CommandTriggerType = 5
+	CommandTriggerComponent  CommandTriggerType = 7
+	CommandTriggerModal      CommandTriggerType = 8
 )
 
 var (
@@ -86,6 +88,8 @@ var (
 		CommandTriggerInterval,
 		CommandTriggerReaction,
 		CommandTriggerNone,
+		CommandTriggerComponent,
+		CommandTriggerModal,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
@@ -97,6 +101,8 @@ var (
 		CommandTriggerInterval:   "Interval",
 		CommandTriggerReaction:   "Reaction",
 		CommandTriggerNone:       "None",
+		CommandTriggerComponent:  "Component",
+		CommandTriggerModal:      "Modal",
 	}
 )
 
