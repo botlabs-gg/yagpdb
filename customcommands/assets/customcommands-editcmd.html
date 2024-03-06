@@ -94,6 +94,10 @@
                                                     {{if eq (call .GetCCIntervalType .CC) 0}}selected{{end}}>
                                                     Minute interval
                                                 </option>
+                                                <option value="component" {{if eq .CC.TriggerType 7}} selected{{end}}>
+                                                    Message Component</option>
+                                                <option value="modal" {{if eq .CC.TriggerType 8}} selected{{end}}>
+                                                    Modal Submission</option>
                                             </select>
                                         </div>
                                     </div>
@@ -130,6 +134,12 @@
                                         <p id="trigger-desc-interval_minutes">
                                             The command will run at a minute interval, for example every 10 minutes.
                                         </p>
+                                        <p id="trigger-desc-component">
+                                            When a component (a button or a select menu) whose custom ID matches the regex is used, it will run the command.
+                                        </p>
+                                        <p id="trigger-desc-modal">
+                                            When a modal whose custom ID matches the regex is submitted, it will run the command.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -137,7 +147,8 @@
                                 <div class="row">
                                     <div class="col-lg-12">
                                         <div class="form-group">
-                                            <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="text-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="customid-trigger-label">Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <div class="input-group mb-2">
                                                 <div class="input-group-prepend" id="command-trigger-prepended-prefix">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
@@ -148,9 +159,11 @@
                                             <div class="row">
                                               <div class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
                                               <div class="col-lg-6">
-                                                {{$disabledClass := ""}}
-                                                {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
-                                                {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
+                                                <div id="cc-message-trigger-details">
+                                                    {{$disabledClass := ""}}
+                                                    {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
+                                                    {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
+                                                </div>
                                               </div>
                                             </div>
                                           </div>

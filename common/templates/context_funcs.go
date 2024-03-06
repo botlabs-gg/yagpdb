@@ -331,12 +331,15 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			return ""
 		}
 
+		sendMessageType := sendMessageGuildChannel
 		cid := c.ChannelArg(channel)
 		if cid == 0 {
 			return ""
 		}
 
-		isDM := cid != c.ChannelArgNoDM(channel)
+		if cid != c.ChannelArgNoDM(channel) {
+			sendMessageType = sendMessageDM
+		}
 
 		var m *discordgo.Message
 		msgSend := &discordgo.MessageSend{
@@ -351,6 +354,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		case *discordgo.MessageEmbed:
 			msgSend.Embeds = []*discordgo.MessageEmbed{typedMsg}
 		case []*discordgo.MessageEmbed:
+			msgSend.Embeds = typedMsg
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
 			if !filterSpecialMentions {
@@ -363,7 +367,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			msgSend.Content = ToString(msg)
 		}
 
-		if isDM {
+		if sendMessageType == sendMessageDM {
 			msgSend.Components = []discordgo.MessageComponent{
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
@@ -437,6 +441,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			}
 			msgEdit.Content = typedMsg.Content
 			msgEdit.Embeds = typedMsg.Embeds
+			msgEdit.Components = typedMsg.Components
 			msgEdit.AllowedMentions = typedMsg.AllowedMentions
 		default:
 			temp := fmt.Sprint(msg)
@@ -1795,6 +1800,411 @@ func comparatorOf(v reflect.Value) (comparator, error) {
 		}
 		return invalidComparator, fmt.Errorf("cannot compare value of type %s", v.Type())
 	}
+}
+
+func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(interactionToken, msgID, msg interface{}) (interface{}, error) {
+	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+	if !filterSpecialMentions {
+		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+	}
+	return func(interactionToken, msgID, msg interface{}) (interface{}, error) {
+		if c.IncreaseCheckGenericAPICall() {
+			return "", ErrTooManyAPICalls
+		}
+
+		_, token := c.tokenArg(interactionToken)
+		if token == "" {
+			return "", errors.New("invalid interaction token")
+		}
+
+		var editOriginal bool
+		mID := ToInt64(msgID)
+		if mID == 0 {
+			editOriginal = true
+		}
+
+		msgEdit := &discordgo.WebhookParams{
+			AllowedMentions: &discordgo.AllowedMentions{Parse: parseMentions},
+		}
+		var err error
+
+		switch typedMsg := msg.(type) {
+
+		case *discordgo.MessageEmbed:
+			msgEdit.Embeds = []*discordgo.MessageEmbed{typedMsg}
+		case []*discordgo.MessageEmbed:
+			msgEdit.Embeds = typedMsg
+		case *discordgo.MessageEdit:
+			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
+			//If there are no Embeds and string are explicitly set as null, give an error message.
+			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
+				if len(typedMsg.Embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+
+				//only keep valid embeds
+				for _, e := range typedMsg.Embeds {
+					if e != nil && !e.GetMarshalNil() {
+						embeds = append(typedMsg.Embeds, e)
+					}
+				}
+				if len(embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+			}
+			msgEdit.Content = *typedMsg.Content
+			msgEdit.Embeds = typedMsg.Embeds
+			msgEdit.Components = typedMsg.Components
+			msgEdit.AllowedMentions = &typedMsg.AllowedMentions
+		default:
+			temp := fmt.Sprint(msg)
+			msgEdit.Content = temp
+		}
+
+		if !filterSpecialMentions {
+			msgEdit.AllowedMentions = &discordgo.AllowedMentions{
+				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
+			}
+		}
+
+		if editOriginal {
+			_, err = common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, token, msgEdit)
+			if err == nil && token == c.CurrentFrame.Interaction.Token {
+				c.CurrentFrame.Interaction.RespondedTo = true
+			}
+		} else {
+			_, err = common.BotSession.EditFollowupMessage(common.BotApplication.ID, token, mID, msgEdit)
+		}
+
+		if err != nil {
+			return "", err
+		}
+
+		return "", nil
+	}
+}
+
+func (c *Context) tmplEphemeralResponse() string {
+	if c.CurrentFrame.Interaction != nil {
+		c.CurrentFrame.EphemeralResponse = true
+	}
+	return ""
+}
+
+func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return "", ErrTooManyAPICalls
+	}
+
+	var typedModal *discordgo.InteractionResponse
+	switch m := modal.(type) {
+	case *discordgo.InteractionResponse:
+		typedModal = m
+	case discordgo.InteractionResponse:
+		typedModal = &m
+	default:
+		return "", errors.New("invalid modal passed to sendModal")
+	}
+
+	if typedModal.Type != discordgo.InteractionResponseModal {
+		return "", errors.New("invalid modal passed to sendModal")
+	}
+
+	if c.CurrentFrame.Interaction == nil {
+		return "", errors.New("no interaction data in context")
+	}
+
+	err := common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, typedModal)
+	if err != nil {
+		return "", err
+	}
+	c.CurrentFrame.Interaction.RespondedTo = true
+	return "", nil
+}
+
+func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, returnID bool) func(interactionToken interface{}, msg interface{}) interface{} {
+	var repliedUser bool
+	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+	if !filterSpecialMentions {
+		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+		repliedUser = true
+	}
+
+	return func(interactionToken interface{}, msg interface{}) interface{} {
+		if c.IncreaseCheckGenericAPICall() {
+			return ""
+		}
+
+		sendMessageType, token := c.tokenArg(interactionToken)
+		if token == "" {
+			return ""
+		}
+
+		var m *discordgo.Message
+		msgSend := &discordgo.InteractionResponseData{
+			AllowedMentions: &discordgo.AllowedMentions{
+				Parse:       parseMentions,
+				RepliedUser: repliedUser,
+			},
+		}
+		var err error
+
+		switch typedMsg := msg.(type) {
+		case *discordgo.MessageEmbed:
+			msgSend.Embeds = []*discordgo.MessageEmbed{typedMsg}
+		case []*discordgo.MessageEmbed:
+			msgSend.Embeds = typedMsg
+		case *discordgo.MessageSend:
+			msgSend.Content = typedMsg.Content
+			msgSend.Embeds = typedMsg.Embeds
+			msgSend.Components = typedMsg.Components
+			msgSend.Flags = typedMsg.Flags
+			msgSend.Files = typedMsg.Files
+			if !filterSpecialMentions {
+				msgSend.AllowedMentions = &discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
+			}
+		default:
+			msgSend.Content = ToString(msg)
+		}
+
+		switch sendMessageType {
+		case sendMessageInteractionResponse:
+			err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, token, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: msgSend,
+			})
+			if err == nil {
+				if token == c.CurrentFrame.Interaction.Token {
+					c.CurrentFrame.Interaction.RespondedTo = true
+				}
+				if returnID {
+					m, err = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, token)
+				}
+			}
+		case sendMessageInteractionFollowup:
+			m, err = common.BotSession.CreateFollowupMessage(common.BotApplication.ID, token, &discordgo.WebhookParams{
+				Content:         msgSend.Content,
+				Components:      msgSend.Components,
+				Embeds:          msgSend.Embeds,
+				AllowedMentions: msgSend.AllowedMentions,
+				Flags:           int64(msgSend.Flags),
+			})
+		}
+
+		if err == nil && returnID {
+			return m.ID
+		}
+
+		return ""
+	}
+}
+
+func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interface{}) (interface{}, error) {
+	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+	if !filterSpecialMentions {
+		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+	}
+	return func(msg interface{}) (interface{}, error) {
+		if c.IncreaseCheckGenericAPICall() {
+			return "", ErrTooManyAPICalls
+		}
+
+		msgEdit := &discordgo.InteractionResponseData{
+			AllowedMentions: &discordgo.AllowedMentions{Parse: parseMentions},
+		}
+		var err error
+
+		switch typedMsg := msg.(type) {
+
+		case *discordgo.MessageEmbed:
+			msgEdit.Embeds = []*discordgo.MessageEmbed{typedMsg}
+		case []*discordgo.MessageEmbed:
+			msgEdit.Embeds = typedMsg
+		case *discordgo.MessageEdit:
+			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
+			//If there are no Embeds and string are explicitly set as null, give an error message.
+			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
+				if len(typedMsg.Embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+
+				//only keep valid embeds
+				for _, e := range typedMsg.Embeds {
+					if e != nil && !e.GetMarshalNil() {
+						embeds = append(typedMsg.Embeds, e)
+					}
+				}
+				if len(embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+			}
+			msgEdit.Content = *typedMsg.Content
+			msgEdit.Embeds = typedMsg.Embeds
+			msgEdit.Components = typedMsg.Components
+			msgEdit.AllowedMentions = &typedMsg.AllowedMentions
+		default:
+			temp := fmt.Sprint(msg)
+			msgEdit.Content = temp
+		}
+
+		if !filterSpecialMentions {
+			msgEdit.AllowedMentions = &discordgo.AllowedMentions{
+				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
+			}
+		}
+
+		err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseUpdateMessage,
+			Data: msgEdit,
+		})
+
+		if err != nil {
+			return "", err
+		}
+
+		c.CurrentFrame.Interaction.RespondedTo = true
+		return "", nil
+	}
+}
+
+func (c *Context) tmplParseButton(values ...interface{}) (*discordgo.Button, error) {
+	var button discordgo.Button
+	messageSdict, err := StringKeyDictionary(values...)
+	if err != nil {
+		return nil, err
+	}
+
+	convertedButton := make(map[string]interface{})
+	for k, v := range messageSdict {
+		switch strings.ToLower(k) {
+		case "style":
+			val, ok := v.(string)
+			if !ok {
+				return nil, errors.New("invalid button style")
+			}
+			switch strings.ToLower(val) {
+			case "primary", "blue", "purple", "blurple":
+				convertedButton["style"] = discordgo.PrimaryButton
+			case "secondary", "grey":
+				convertedButton["style"] = discordgo.SecondaryButton
+			case "success", "green":
+				convertedButton["style"] = discordgo.SuccessButton
+			case "danger", "red":
+				convertedButton["style"] = discordgo.DangerButton
+			case "link", "url":
+				convertedButton["style"] = discordgo.LinkButton
+			default:
+				return nil, errors.New("invalid button style")
+			}
+		case "link":
+			// discord made a button style named "link" but it needs a "url"
+			// not a "link" field. this makes it a bit more user friendly
+			convertedButton["url"] = v
+		default:
+			convertedButton[k] = v
+		}
+	}
+
+	b, err := CreateComponent(discordgo.ButtonComponent, convertedButton)
+	if err == nil {
+		button = b.(discordgo.Button)
+		// validation
+		if button.Style == discordgo.LinkButton {
+			button.CustomID = ""
+			if button.URL == "" {
+				return nil, errors.New("a url field is required for a link button")
+			}
+		} else {
+			button.CustomID = "templates-" + button.CustomID
+			button.URL = ""
+		}
+		if button.Label == "" && button.Emoji == nil {
+			return nil, errors.New("button must have a label or emoji")
+		}
+	}
+	return &button, err
+}
+
+func (c *Context) tmplParseSelectMenu(values ...interface{}) (*discordgo.SelectMenu, error) {
+	var menu discordgo.SelectMenu
+	messageSdict, err := StringKeyDictionary(values...)
+	if err != nil {
+		return nil, err
+	}
+
+	menuType := discordgo.SelectMenuComponent
+
+	convertedMenu := make(map[string]interface{})
+	for k, v := range messageSdict {
+		switch strings.ToLower(k) {
+		case "type":
+			val, ok := v.(string)
+			if !ok {
+				return nil, errors.New("invalid select menu type")
+			}
+			switch strings.ToLower(val) {
+			case "string", "text":
+			case "user":
+				menuType = discordgo.UserSelectMenuComponent
+			case "role":
+				menuType = discordgo.RoleSelectMenuComponent
+			case "mentionable":
+				menuType = discordgo.MentionableSelectMenuComponent
+			case "channel":
+				menuType = discordgo.ChannelSelectMenuComponent
+			default:
+				return nil, errors.New("invalid select menu type")
+			}
+		default:
+			convertedMenu[k] = v
+		}
+	}
+
+	m, err := CreateComponent(menuType, convertedMenu)
+	if err == nil {
+		menu = m.(discordgo.SelectMenu)
+		menu.CustomID = "templates-" + menu.CustomID
+
+		// validation
+		if menu.MenuType == discordgo.StringSelectMenu && len(menu.Options) < 1 || len(menu.Options) > 25 {
+			return nil, errors.New("invalid number of menu options, must have between 1 and 25")
+		}
+		if menu.MinValues != nil {
+			if *menu.MinValues < 1 || *menu.MinValues > 25 {
+				return nil, errors.New("invalid min values, must be between 1 and 25")
+			}
+		}
+		if menu.MaxValues > 25 {
+			return nil, errors.New("invalid max values, max 25")
+		}
+		checked := []string{}
+		for _, o := range menu.Options {
+			if in(checked, o.Value) {
+				return nil, errors.New("select menu options must have unique values")
+			}
+			checked = append(checked, o.Value)
+		}
+	}
+	return &menu, err
+}
+
+func (c *Context) tokenArg(interactionToken interface{}) (sendType int, token string) {
+	sendType = sendMessageInteractionFollowup
+
+	token, ok := interactionToken.(string)
+	if !ok {
+		if interactionToken == nil && c.CurrentFrame.Interaction != nil {
+			// no token provided, assume current interaction
+			token = c.CurrentFrame.Interaction.Token
+		} else {
+			return
+		}
+	}
+
+	if c.CurrentFrame.Interaction != nil && token == c.CurrentFrame.Interaction.Token && !c.CurrentFrame.Interaction.RespondedTo {
+		sendType = sendMessageInteractionResponse
+	}
+	return
 }
 
 // c.FindRole accepts all possible role inputs (names, IDs and mentions)

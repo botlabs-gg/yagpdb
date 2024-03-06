@@ -791,6 +791,10 @@ func triggerTypeFromForm(str string) CommandTriggerType {
 		return CommandTriggerReaction
 	case "interval_minutes", "interval_hours":
 		return CommandTriggerInterval
+	case "component":
+		return CommandTriggerComponent
+	case "modal":
+		return CommandTriggerModal
 	default:
 		return CommandTriggerCommand
 
