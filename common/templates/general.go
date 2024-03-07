@@ -321,14 +321,8 @@ func CreateButton(values ...interface{}) (*discordgo.Button, error) {
 	if err == nil {
 		button = b.(discordgo.Button)
 		// validation
-		if button.Style == discordgo.LinkButton {
-			button.CustomID = ""
-			if button.URL == "" {
-				return nil, errors.New("a url field is required for a link button")
-			}
-		} else {
-			button.CustomID = "templates-" + button.CustomID
-			button.URL = ""
+		if button.Style == discordgo.LinkButton && button.URL == "" {
+			return nil, errors.New("a url field is required for a link button")
 		}
 		if button.Label == "" && button.Emoji == nil {
 			return nil, errors.New("button must have a label or emoji")
@@ -388,7 +382,6 @@ func CreateSelectMenu(values ...interface{}) (*discordgo.SelectMenu, error) {
 	m, err := CreateComponent(menuType, convertedMenu)
 	if err == nil {
 		menu = m.(discordgo.SelectMenu)
-		menu.CustomID = "templates-" + menu.CustomID
 
 		// validation
 		if menu.MenuType == discordgo.StringSelectMenu && len(menu.Options) < 1 || len(menu.Options) > 25 {
@@ -486,6 +479,19 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		case "filename":
 			// Cut the filename to a reasonable length if it's too long
 			filename = common.CutStringShort(ToString(val), 64)
+		case "reply":
+			msgID := ToInt64(val)
+			if msgID <= 0 {
+				return nil, errors.New(fmt.Sprintf("invalid message id '%s' provided to reply.", ToString(val)))
+			}
+			msg.Reference = &discordgo.MessageReference{
+				MessageID: msgID,
+			}
+		case "silent":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
 		case "components":
 			if val == nil {
 				continue
@@ -500,14 +506,8 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				var component discordgo.MessageComponent
 				switch comp := val.(type) {
 				case *discordgo.SelectMenu:
-					validateCustomID(&comp.CustomID, 0, nil)
 					component = comp
 				case *discordgo.Button:
-					if comp.Style != discordgo.LinkButton {
-						validateCustomID(&comp.CustomID, 0, nil)
-					} else {
-						comp.CustomID = ""
-					}
 					component = comp
 				default:
 					return nil, errors.New("invalid component passed to send message builder")
@@ -519,19 +519,6 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				continue
 			}
 			msg.Flags |= discordgo.MessageFlagsEphemeral
-		case "reply":
-			msgID := ToInt64(val)
-			if msgID <= 0 {
-				return nil, errors.New(fmt.Sprintf("invalid message id '%s' provided to reply.", ToString(val)))
-			}
-			msg.Reference = &discordgo.MessageReference{
-				MessageID: msgID,
-			}
-		case "silent":
-			if val == nil || val == false {
-				continue
-			}
-			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
@@ -540,6 +527,13 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 	if msg.File != nil {
 		// We hardcode the extension to .txt to prevent possible abuse via .bat or other possible harmful/easily corruptable file formats
 		msg.File.Name = filename + ".txt"
+	}
+
+	if len(msg.Components) > 0 {
+		err := validateActionRowsCustomIDs(&msg.Components)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return msg, nil
@@ -559,7 +553,6 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 	}
 	msg := &discordgo.MessageEdit{}
 	for key, val := range messageSdict {
-
 		switch strings.ToLower(key) {
 		case "content":
 			temp := fmt.Sprint(val)
@@ -614,14 +607,8 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				var component discordgo.MessageComponent
 				switch comp := val.(type) {
 				case *discordgo.SelectMenu:
-					validateCustomID(&comp.CustomID, 0, nil)
 					component = comp
 				case *discordgo.Button:
-					if comp.Style != discordgo.LinkButton {
-						validateCustomID(&comp.CustomID, 0, nil)
-					} else {
-						comp.CustomID = ""
-					}
 					component = comp
 				default:
 					return nil, errors.New("invalid component passed to send message builder")
@@ -632,6 +619,13 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
 
+	}
+
+	if len(msg.Components) > 0 {
+		err := validateActionRowsCustomIDs(&msg.Components)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return msg, nil
@@ -779,9 +773,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 				if field.Style == 0 {
 					field.Style = discordgo.TextInputShort
 				}
-				if field.CustomID == "" {
-					field.CustomID = "templates-0"
-				}
+				validateCustomID(&field.CustomID, 0, nil)
 				modal.Components = append(modal.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{field}})
 			}
 		default:
@@ -803,7 +795,6 @@ func distributeComponents(components reflect.Value) (returnComponents []discordg
 
 	const maxRows = 5       // Discord limitation
 	const maxComponents = 5 // (per action row) Discord limitation
-	usedCustomIDs := []string{}
 	v, _ := indirect(reflect.ValueOf(components.Index(0).Interface()))
 	if v.Kind() == reflect.Slice {
 		// slice within a slice. user is defining their own action row
@@ -813,25 +804,10 @@ func distributeComponents(components reflect.Value) (returnComponents []discordg
 			tempRow := discordgo.ActionsRow{}
 			for compIdx := 0; compIdx < currentInputRow.Len() && compIdx < maxComponents; compIdx++ {
 				var component discordgo.MessageComponent
-				index := rowIdx*5 + compIdx
 				switch val := currentInputRow.Index(compIdx).Interface().(type) {
 				case *discordgo.Button:
-					if val.Style != discordgo.LinkButton {
-						err := validateCustomID(&val.CustomID, index, &usedCustomIDs)
-						if err != nil {
-							return nil, err
-						}
-						usedCustomIDs = append(usedCustomIDs, val.CustomID)
-					} else {
-						val.CustomID = ""
-					}
 					component = val
 				case *discordgo.SelectMenu:
-					err := validateCustomID(&val.CustomID, index, &usedCustomIDs)
-					if err != nil {
-						return nil, err
-					}
-					usedCustomIDs = append(usedCustomIDs, val.CustomID)
 					component = val
 				default:
 					return nil, errors.New("invalid component passed to send message builder")
@@ -855,23 +831,9 @@ func distributeComponents(components reflect.Value) (returnComponents []discordg
 
 			switch val := components.Index(i).Interface().(type) {
 			case *discordgo.Button:
-				if val.Style != discordgo.LinkButton {
-					err := validateCustomID(&val.CustomID, i, &usedCustomIDs)
-					if err != nil {
-						return nil, err
-					}
-					usedCustomIDs = append(usedCustomIDs, val.CustomID)
-				} else {
-					val.CustomID = ""
-				}
 				component = val
 			case *discordgo.SelectMenu:
 				isMenu = true
-				err := validateCustomID(&val.CustomID, i, &usedCustomIDs)
-				if err != nil {
-					return nil, err
-				}
-				usedCustomIDs = append(usedCustomIDs, val.CustomID)
 				component = val
 			default:
 				return nil, errors.New("invalid component passed to send message builder")
@@ -906,7 +868,7 @@ func validateCustomID(id *string, componentIndex int, used *[]string) error {
 		return nil
 	}
 
-	if *id == "templates-" || *id == "" {
+	if *id == "" {
 		*id = fmt.Sprint("templates-", componentIndex)
 	}
 
@@ -917,6 +879,46 @@ func validateCustomID(id *string, componentIndex int, used *[]string) error {
 	if in(*used, *id) {
 		return errors.New("duplicate custom ids used")
 	}
+	return nil
+}
+
+// validateCustomIDs sets unique custom IDs for any component in the action
+// rows provided in the slice, sets any link buttons' ids to an empty string,
+// and returns an error if duplicate custom ids are used.
+func validateActionRowsCustomIDs(rows *[]discordgo.MessageComponent) error {
+	used := []string{}
+	newComponents := []discordgo.MessageComponent{}
+	for rowIdx := 0; rowIdx < len(*rows); rowIdx++ {
+		var row *discordgo.ActionsRow
+		switch r := (*rows)[rowIdx].(type) {
+		case discordgo.ActionsRow:
+			row = &r
+		case *discordgo.ActionsRow:
+			row = r
+		}
+		rowComps := row.Components
+		for compIdx := 0; compIdx < len(rowComps); compIdx++ {
+			componentCount := rowIdx*5 + compIdx
+			var err error
+			switch c := rowComps[compIdx].(type) {
+			case *discordgo.Button:
+				if c.Style == discordgo.LinkButton {
+					c.CustomID = ""
+					continue
+				}
+				err = validateCustomID(&c.CustomID, componentCount, &used)
+				used = append(used, c.CustomID)
+			case *discordgo.SelectMenu:
+				err = validateCustomID(&c.CustomID, componentCount, &used)
+				used = append(used, c.CustomID)
+			}
+			if err != nil {
+				return err
+			}
+		}
+		newComponents = append(newComponents, discordgo.ActionsRow{rowComps})
+	}
+	*rows = newComponents
 	return nil
 }
 
