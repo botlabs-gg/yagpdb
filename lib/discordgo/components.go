@@ -126,7 +126,7 @@ const (
 // ComponentEmoji represents button emoji, if it does have one.
 type ComponentEmoji struct {
 	Name     string `json:"name,omitempty"`
-	ID       string `json:"id,omitempty"`
+	ID       int64  `json:"id,string,omitempty"`
 	Animated bool   `json:"animated,omitempty"`
 }
 
