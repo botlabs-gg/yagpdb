@@ -159,6 +159,43 @@ func CreateSlice(values ...interface{}) (Slice, error) {
 	return Slice(slice), nil
 }
 
+func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
+	if len(values) < 1 {
+		return &discordgo.MessageEmbed{}, nil
+	}
+
+	var m map[string]interface{}
+	switch t := values[0].(type) {
+	case SDict:
+		m = t
+	case *SDict:
+		m = *t
+	case map[string]interface{}:
+		m = t
+	case *discordgo.MessageEmbed:
+		return t, nil
+	default:
+		dict, err := StringKeyDictionary(values...)
+		if err != nil {
+			return nil, err
+		}
+		m = dict
+	}
+
+	encoded, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+
+	var embed *discordgo.MessageEmbed
+	err = json.Unmarshal(encoded, &embed)
+	if err != nil {
+		return nil, err
+	}
+
+	return embed, nil
+}
+
 func CreateComponent(expectedType discordgo.ComponentType, values ...interface{}) (discordgo.MessageComponent, error) {
 	if len(values) < 1 && expectedType != discordgo.ActionsRowComponent {
 		return discordgo.ActionsRow{}, errors.New("no values passed to component builder")
@@ -226,41 +263,151 @@ func CreateComponent(expectedType discordgo.ComponentType, values ...interface{}
 	return component, nil
 }
 
-func CreateEmbed(values ...interface{}) (*discordgo.MessageEmbed, error) {
-	if len(values) < 1 {
-		return &discordgo.MessageEmbed{}, nil
-	}
-
-	var m map[string]interface{}
+func CreateButton(values ...interface{}) (*discordgo.Button, error) {
+	var messageSdict map[string]interface{}
 	switch t := values[0].(type) {
 	case SDict:
-		m = t
+		messageSdict = t
 	case *SDict:
-		m = *t
+		messageSdict = *t
 	case map[string]interface{}:
-		m = t
-	case *discordgo.MessageEmbed:
+		messageSdict = t
+	case *discordgo.Button:
 		return t, nil
 	default:
 		dict, err := StringKeyDictionary(values...)
 		if err != nil {
 			return nil, err
 		}
-		m = dict
+		messageSdict = dict
 	}
 
-	encoded, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
+	convertedButton := make(map[string]interface{})
+	for k, v := range messageSdict {
+		switch strings.ToLower(k) {
+		case "style":
+			val, ok := v.(string)
+			if !ok {
+				return nil, errors.New("invalid button style")
+			}
+			switch strings.ToLower(val) {
+			case "primary", "blue", "purple", "blurple":
+				convertedButton["style"] = discordgo.PrimaryButton
+			case "secondary", "grey":
+				convertedButton["style"] = discordgo.SecondaryButton
+			case "success", "green":
+				convertedButton["style"] = discordgo.SuccessButton
+			case "danger", "red":
+				convertedButton["style"] = discordgo.DangerButton
+			case "link", "url":
+				convertedButton["style"] = discordgo.LinkButton
+			default:
+				return nil, errors.New("invalid button style")
+			}
+		case "link":
+			// discord made a button style named "link" but it needs a "url"
+			// not a "link" field. this makes it a bit more user friendly
+			convertedButton["url"] = v
+		default:
+			convertedButton[k] = v
+		}
 	}
 
-	var embed *discordgo.MessageEmbed
-	err = json.Unmarshal(encoded, &embed)
-	if err != nil {
-		return nil, err
+	var button discordgo.Button
+	b, err := CreateComponent(discordgo.ButtonComponent, convertedButton)
+	if err == nil {
+		button = b.(discordgo.Button)
+		// validation
+		if button.Style == discordgo.LinkButton {
+			button.CustomID = ""
+			if button.URL == "" {
+				return nil, errors.New("a url field is required for a link button")
+			}
+		} else {
+			button.CustomID = "templates-" + button.CustomID
+			button.URL = ""
+		}
+		if button.Label == "" && button.Emoji == nil {
+			return nil, errors.New("button must have a label or emoji")
+		}
+	}
+	return &button, err
+}
+
+func CreateSelectMenu(values ...interface{}) (*discordgo.SelectMenu, error) {
+	var messageSdict map[string]interface{}
+	switch t := values[0].(type) {
+	case SDict:
+		messageSdict = t
+	case *SDict:
+		messageSdict = *t
+	case map[string]interface{}:
+		messageSdict = t
+	case *discordgo.SelectMenu:
+		return t, nil
+	default:
+		dict, err := StringKeyDictionary(values...)
+		if err != nil {
+			return nil, err
+		}
+		messageSdict = dict
 	}
 
-	return embed, nil
+	menuType := discordgo.SelectMenuComponent
+
+	convertedMenu := make(map[string]interface{})
+	for k, v := range messageSdict {
+		switch strings.ToLower(k) {
+		case "type":
+			val, ok := v.(string)
+			if !ok {
+				return nil, errors.New("invalid select menu type")
+			}
+			switch strings.ToLower(val) {
+			case "string", "text":
+			case "user":
+				menuType = discordgo.UserSelectMenuComponent
+			case "role":
+				menuType = discordgo.RoleSelectMenuComponent
+			case "mentionable":
+				menuType = discordgo.MentionableSelectMenuComponent
+			case "channel":
+				menuType = discordgo.ChannelSelectMenuComponent
+			default:
+				return nil, errors.New("invalid select menu type")
+			}
+		default:
+			convertedMenu[k] = v
+		}
+	}
+
+	var menu discordgo.SelectMenu
+	m, err := CreateComponent(menuType, convertedMenu)
+	if err == nil {
+		menu = m.(discordgo.SelectMenu)
+		menu.CustomID = "templates-" + menu.CustomID
+
+		// validation
+		if menu.MenuType == discordgo.StringSelectMenu && len(menu.Options) < 1 || len(menu.Options) > 25 {
+			return nil, errors.New("invalid number of menu options, must have between 1 and 25")
+		}
+		if menu.MinValues != nil {
+			if *menu.MinValues < 1 || *menu.MinValues > 25 {
+				return nil, errors.New("invalid min values, must be between 1 and 25")
+			}
+		}
+		if menu.MaxValues > 25 {
+			return nil, errors.New("invalid max values, max 25")
+		}
+		checked := []string{}
+		for _, o := range menu.Options {
+			if in(checked, o.Value) {
+				return nil, errors.New("select menu options must have unique values")
+			}
+			checked = append(checked, o.Value)
+		}
+	}
+	return &menu, err
 }
 
 func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {

@@ -93,6 +93,9 @@ var (
 		"sdict":              StringKeyDictionary,
 		"structToSdict":      StructToSdict,
 		"cembed":             CreateEmbed,
+		"cbutton":            CreateButton,
+		"cmenu":              CreateSelectMenu,
+		"cmodal":             CreateModal,
 		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
 		"complexMessageEdit": CreateMessageEdit,
@@ -744,10 +747,6 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("sendResponseRetID", c.tmplSendInteractionResponse(true, true))
 	c.addContextFunc("updateMessage", c.tmplUpdateMessage(true))
 	c.addContextFunc("updateMessageNoEscape", c.tmplUpdateMessage(false))
-
-	c.addContextFunc("cbutton", c.tmplParseButton)
-	c.addContextFunc("cmenu", c.tmplParseSelectMenu)
-	c.addContextFunc("cmodal", CreateModal)
 }
 
 type limitedWriter struct {
