@@ -146,6 +146,7 @@ func StringKeyValueSlices(values ...interface{}) (dictKeys []string, dictValues 
 					return
 				}
 			}
+			return
 		default:
 			err = errors.New("cannot convert data of type: " + reflect.TypeOf(values[0]).String())
 			return
@@ -1048,8 +1049,10 @@ func validateCustomID(id *string, componentIndex int, used *[]string) error {
 	}
 
 	if *id == "" {
-		*id = fmt.Sprint("templates-", componentIndex)
+		*id = fmt.Sprint(componentIndex)
 	}
+
+	*id = fmt.Sprint("templates-", *id)
 
 	if used == nil {
 		return nil
