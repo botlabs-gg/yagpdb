@@ -516,6 +516,63 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				continue
 			}
 			msg.Flags |= discordgo.MessageFlagsEphemeral
+		case "buttons":
+			if val == nil {
+				continue
+			}
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				buttons := []*discordgo.Button{}
+				const maxButtons = 25 // Discord limitation
+				for i := 0; i < v.Len() && i < maxButtons; i++ {
+					button, err := CreateButton(v.Index(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					buttons = append(buttons, button)
+				}
+				comps, err := distributeComponents(reflect.ValueOf(buttons))
+				if err != nil {
+					return nil, err
+				}
+				msg.Components = append(msg.Components, comps...)
+			} else {
+				button, err := CreateButton(val)
+				if err != nil {
+					return nil, err
+				}
+				if button.Style == discordgo.LinkButton {
+					button.CustomID = ""
+				}
+				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{button}})
+			}
+		case "menus":
+			if val == nil {
+				continue
+			}
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				menus := []*discordgo.SelectMenu{}
+				const maxMenus = 5 // Discord limitation
+				for i := 0; i < v.Len() && i < maxMenus; i++ {
+					menu, err := CreateSelectMenu(v.Index(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					menus = append(menus, menu)
+				}
+				comps, err := distributeComponents(reflect.ValueOf(menus))
+				if err != nil {
+					return nil, err
+				}
+				msg.Components = append(msg.Components, comps...)
+			} else {
+				menu, err := CreateSelectMenu(val)
+				if err != nil {
+					return nil, err
+				}
+				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{menu}})
+			}
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
 		}
@@ -611,6 +668,63 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 					return nil, errors.New("invalid component passed to send message builder")
 				}
 				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{component}})
+			}
+		case "buttons":
+			if val == nil {
+				continue
+			}
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				buttons := []*discordgo.Button{}
+				const maxButtons = 25 // Discord limitation
+				for i := 0; i < v.Len() && i < maxButtons; i++ {
+					button, err := CreateButton(v.Index(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					buttons = append(buttons, button)
+				}
+				comps, err := distributeComponents(reflect.ValueOf(buttons))
+				if err != nil {
+					return nil, err
+				}
+				msg.Components = append(msg.Components, comps...)
+			} else {
+				button, err := CreateButton(val)
+				if err != nil {
+					return nil, err
+				}
+				if button.Style == discordgo.LinkButton {
+					button.CustomID = ""
+				}
+				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{button}})
+			}
+		case "menus":
+			if val == nil {
+				continue
+			}
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				menus := []*discordgo.SelectMenu{}
+				const maxMenus = 5 // Discord limitation
+				for i := 0; i < v.Len() && i < maxMenus; i++ {
+					menu, err := CreateSelectMenu(v.Index(i).Interface())
+					if err != nil {
+						return nil, err
+					}
+					menus = append(menus, menu)
+				}
+				comps, err := distributeComponents(reflect.ValueOf(menus))
+				if err != nil {
+					return nil, err
+				}
+				msg.Components = append(msg.Components, comps...)
+			} else {
+				menu, err := CreateSelectMenu(val)
+				if err != nil {
+					return nil, err
+				}
+				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{menu}})
 			}
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
