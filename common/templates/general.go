@@ -111,6 +111,67 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	return SDict(dict), nil
 }
 
+// StringKeyValueSlices parses given input of key-value pairs but returns the
+// keys and the values as separate slices. this is used when you need to have
+// duplicate keys and therefore cannot use a map.
+func StringKeyValueSlices(values ...interface{}) (dictKeys []string, dictValues []interface{}, err error) {
+	dict := make(map[string]interface{})
+
+	if len(values) == 1 {
+		val, isNil := indirect(reflect.ValueOf(values[0]))
+		if isNil || values[0] == nil {
+			err = errors.New("Sdict: nil value passed")
+			return
+		}
+
+		if sdict, ok := val.Interface().(SDict); ok {
+			dict = sdict
+		}
+
+		switch val.Kind() {
+		case reflect.Map:
+			iter := val.MapRange()
+			for iter.Next() {
+
+				key, isNil := indirect(iter.Key())
+				if isNil {
+					err = errors.New("map with nil key encountered")
+					return
+				}
+				if key.Kind() == reflect.String {
+					dictKeys = append(dictKeys, key.String())
+					dictValues = append(dictValues, iter.Value().Interface())
+				} else {
+					err = errors.New("map has non string key of type: " + key.Type().String())
+					return
+				}
+			}
+		default:
+			err = errors.New("cannot convert data of type: " + reflect.TypeOf(values[0]).String())
+			return
+		}
+
+	}
+
+	if len(values)%2 != 0 {
+		err = errors.New("invalid dict call")
+		return
+	}
+	for i := 0; i < len(values); i += 2 {
+		key := values[i]
+		s, ok := key.(string)
+		if !ok {
+			err = errors.New("Only string keys supported in sdict")
+			return
+		}
+
+		dictKeys = append(dictKeys, s)
+		dictValues = append(dictValues, values[i+1])
+		dict[s] = values[i+1]
+	}
+	return
+}
+
 func KindOf(input interface{}, flag ...bool) (string, error) { //flag used only for indirect vs direct for now.
 
 	switch len(flag) {
@@ -412,7 +473,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		return m, nil
 	}
 
-	messageSdict, err := StringKeyDictionary(values...)
+	dictKeys, dictValues, err := StringKeyValueSlices(values...)
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +486,8 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 	// Default filename
 	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
-	for key, val := range messageSdict {
+	for i, key := range dictKeys {
+		val := dictValues[i]
 
 		switch strings.ToLower(key) {
 		case "content":
@@ -449,7 +511,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				if err != nil {
 					return nil, err
 				}
-				msg.Embeds = []*discordgo.MessageEmbed{embed}
+				msg.Embeds = append(msg.Embeds, embed)
 			}
 		case "file":
 			stringFile := ToString(val)
@@ -601,12 +663,15 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 	if m, ok := values[0].(*discordgo.MessageEdit); len(values) == 1 && ok {
 		return m, nil
 	}
-	messageSdict, err := StringKeyDictionary(values...)
+
+	dictKeys, dictValues, err := StringKeyValueSlices(values...)
 	if err != nil {
 		return nil, err
 	}
+
 	msg := &discordgo.MessageEdit{}
-	for key, val := range messageSdict {
+	for i, key := range dictKeys {
+		val := dictValues[i]
 		switch strings.ToLower(key) {
 		case "content":
 			temp := fmt.Sprint(val)
@@ -630,7 +695,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				if err != nil {
 					return nil, err
 				}
-				msg.Embeds = []*discordgo.MessageEmbed{embed}
+				msg.Embeds = append(msg.Embeds, embed)
 			}
 		case "silent":
 			if val == nil || val == false {
