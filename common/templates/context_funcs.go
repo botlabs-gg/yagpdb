@@ -1896,6 +1896,10 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 		return "", ErrTooManyAPICalls
 	}
 
+	if c.IncreaseCheckCallCounter("interaction_response", 1) {
+		return "", ErrTooManyCalls
+	}
+
 	var typedModal *discordgo.InteractionResponse
 	switch m := modal.(type) {
 	case *discordgo.InteractionResponse:
@@ -1969,6 +1973,9 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 
 		switch sendType {
 		case sendMessageInteractionResponse:
+			if c.IncreaseCheckCallCounter("interaction_response", 1) {
+				return ""
+			}
 			err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, token, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: msgSend,
@@ -2007,6 +2014,10 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 	return func(msg interface{}) (interface{}, error) {
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
+		}
+
+		if c.IncreaseCheckCallCounter("interaction_response", 1) {
+			return "", ErrTooManyCalls
 		}
 
 		msgEdit := &discordgo.InteractionResponseData{

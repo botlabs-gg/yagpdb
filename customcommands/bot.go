@@ -985,6 +985,15 @@ func findComponentOrModalTriggerCustomCommands(ctx context.Context, cs *dstate.C
 
 	sortTriggeredCCs(filtered)
 
+	limit := CCMessageExecLimitNormal
+	if isPremium, _ := premium.IsGuildPremiumCached(cs.GuildID); isPremium {
+		limit = CCMessageExecLimitPremium
+	}
+
+	if len(filtered) > limit {
+		filtered = filtered[:limit]
+	}
+
 	return filtered, nil
 }
 
