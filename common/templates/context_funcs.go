@@ -331,14 +331,14 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			return ""
 		}
 
-		sendMessageType := sendMessageGuildChannel
+		sendType := sendMessageGuildChannel
 		cid := c.ChannelArg(channel)
 		if cid == 0 {
 			return ""
 		}
 
 		if cid != c.ChannelArgNoDM(channel) {
-			sendMessageType = sendMessageDM
+			sendType = sendMessageDM
 		}
 
 		var m *discordgo.Message
@@ -367,7 +367,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			msgSend.Content = ToString(msg)
 		}
 
-		if sendMessageType == sendMessageDM {
+		if sendType == sendMessageDM {
 			msgSend.Components = []discordgo.MessageComponent{
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
@@ -1935,7 +1935,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			return ""
 		}
 
-		sendMessageType, token := c.tokenArg(interactionToken)
+		sendType, token := c.tokenArg(interactionToken)
 		if token == "" {
 			return ""
 		}
@@ -1967,7 +1967,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			msgSend.Content = ToString(msg)
 		}
 
-		switch sendMessageType {
+		switch sendType {
 		case sendMessageInteractionResponse:
 			err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, token, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -2067,7 +2067,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 	}
 }
 
-func (c *Context) tokenArg(interactionToken interface{}) (sendType int, token string) {
+func (c *Context) tokenArg(interactionToken interface{}) (sendType sendMessageType, token string) {
 	sendType = sendMessageInteractionFollowup
 
 	token, ok := interactionToken.(string)

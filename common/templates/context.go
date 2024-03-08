@@ -452,15 +452,15 @@ func (c *Context) MessageSend(content string) *discordgo.MessageSend {
 func (c *Context) SendResponse(content string) (m *discordgo.Message, err error) {
 	channelID := int64(0)
 
-	sendMessageType := sendMessageGuildChannel
+	sendType := sendMessageGuildChannel
 	if c.CurrentFrame.Interaction != nil {
 		if c.CurrentFrame.Interaction.RespondedTo {
-			sendMessageType = sendMessageInteractionFollowup
+			sendType = sendMessageInteractionFollowup
 		} else {
-			sendMessageType = sendMessageInteractionResponse
+			sendType = sendMessageInteractionResponse
 		}
 	} else if c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate()) {
-		sendMessageType = sendMessageDM
+		sendType = sendMessageDM
 		if c.CurrentFrame.CS != nil && c.CurrentFrame.CS.Type == discordgo.ChannelTypeDM {
 			channelID = c.CurrentFrame.CS.ID
 		} else {
@@ -492,7 +492,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 		// no point in sending the response if it gets deleted immedietely
 		return nil, nil
 	}
-	if sendMessageType == sendMessageDM {
+	if sendType == sendMessageDM {
 		msgSend.Components = []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
@@ -510,7 +510,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 		msgSend.Flags |= discordgo.MessageFlagsEphemeral
 	}
 	var getErr error
-	switch sendMessageType {
+	switch sendType {
 	case sendMessageInteractionResponse:
 		err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -560,11 +560,13 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 	return
 }
 
+type sendMessageType uint
+
 const (
-	sendMessageGuildChannel = iota
-	sendMessageDM
-	sendMessageInteractionResponse
-	sendMessageInteractionFollowup
+	sendMessageGuildChannel        sendMessageType = 0
+	sendMessageDM                  sendMessageType = 1
+	sendMessageInteractionResponse sendMessageType = 2
+	sendMessageInteractionFollowup sendMessageType = 3
 )
 
 // IncreaseCheckCallCounter Returns true if key is above the limit
