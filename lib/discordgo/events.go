@@ -1,6 +1,8 @@
 package discordgo
 
 import (
+	"encoding/json"
+
 	"github.com/botlabs-gg/yagpdb/v2/lib/gojay"
 	"github.com/pkg/errors"
 )
@@ -226,14 +228,29 @@ type MessageCreate struct {
 	*Message
 }
 
+// UnmarshalJSON is a helper function to unmarshal MessageCreate object.
+func (m *MessageCreate) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &m.Message)
+}
+
 // MessageUpdate is the data for a MessageUpdate event.
 type MessageUpdate struct {
 	*Message
 }
 
+// UnmarshalJSON is a helper function to unmarshal MessageUpdate object.
+func (m *MessageUpdate) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &m.Message)
+}
+
 // MessageDelete is the data for a MessageDelete event.
 type MessageDelete struct {
 	*Message
+}
+
+// UnmarshalJSON is a helper function to unmarshal MessageDelete object.
+func (m *MessageDelete) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &m.Message)
 }
 
 // MessageReactionAdd is the data for a MessageReactionAdd event.
