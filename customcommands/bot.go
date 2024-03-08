@@ -690,9 +690,8 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		cID := interaction.MessageComponentData().CustomID
 
 		// continue only if this component was created by a cc
-		if strings.HasPrefix(cID, "templates-") {
-			cID = strings.TrimPrefix(cID, "templates-")
-		} else {
+		cID, ok := strings.CutPrefix(cID, "templates-")
+		if !ok {
 			return
 		}
 
