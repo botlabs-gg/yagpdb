@@ -1901,13 +1901,19 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 	}
 
 	var typedModal *discordgo.InteractionResponse
+	var err error
 	switch m := modal.(type) {
 	case *discordgo.InteractionResponse:
 		typedModal = m
 	case discordgo.InteractionResponse:
 		typedModal = &m
+	case SDict, *SDict, map[string]interface{}:
+		typedModal, err = CreateModal(m)
 	default:
 		return "", errors.New("invalid modal passed to sendModal")
+	}
+	if err != nil {
+		return "", err
 	}
 
 	if typedModal.Type != discordgo.InteractionResponseModal {
@@ -1918,7 +1924,7 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 		return "", errors.New("no interaction data in context")
 	}
 
-	err := common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, typedModal)
+	err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, typedModal)
 	if err != nil {
 		return "", err
 	}
