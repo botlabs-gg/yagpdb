@@ -348,20 +348,32 @@ func CreateButton(values ...interface{}) (*discordgo.Button, error) {
 	for k, v := range messageSdict {
 		switch strings.ToLower(k) {
 		case "style":
-			val, ok := v.(string)
-			if !ok {
-				return nil, errors.New("invalid button style")
+			var val string
+			switch typed := v.(type) {
+			case string:
+				val = typed
+			case discordgo.ButtonStyle:
+				val = strconv.Itoa(int(typed))
+			case *discordgo.ButtonStyle:
+				val = strconv.Itoa(int(*typed))
+			default:
+				num := tmplToInt(typed)
+				if num < 1 || num > 5 {
+					return nil, errors.New("invalid button style")
+				}
+				val = strconv.Itoa(num)
 			}
+
 			switch strings.ToLower(val) {
-			case "primary", "blue", "purple", "blurple":
+			case "primary", "blue", "purple", "blurple", "1":
 				convertedButton["style"] = discordgo.PrimaryButton
-			case "secondary", "grey":
+			case "secondary", "grey", "2":
 				convertedButton["style"] = discordgo.SecondaryButton
-			case "success", "green":
+			case "success", "green", "3":
 				convertedButton["style"] = discordgo.SuccessButton
-			case "danger", "red":
+			case "danger", "destructive", "red", "4":
 				convertedButton["style"] = discordgo.DangerButton
-			case "link", "url":
+			case "link", "url", "5":
 				convertedButton["style"] = discordgo.LinkButton
 			default:
 				return nil, errors.New("invalid button style")
