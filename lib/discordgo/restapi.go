@@ -3054,6 +3054,16 @@ func (s *Session) BatchEditGuildApplicationCommandsPermissions(applicationID int
 // CreateInteractionResponse Create a response to an Interaction from the gateway. Takes an Interaction response.
 // POST /interactions/{interaction.id}/{interaction.token}/callback
 func (s *Session) CreateInteractionResponse(interactionID int64, token string, data *InteractionResponse) (err error) {
+	if data.Data != nil && len(data.Data.Files) > 0 {
+		contentType, body, err := MultipartBodyWithJSON(data, data.Data.Files)
+		if err != nil {
+			return err
+		}
+
+		_, err = s.request("POST", EndpointInteractionCallback(interactionID, token), contentType, body, nil, EndpointInteractionCallback(0, ""))
+		return err
+	}
+
 	_, err = s.RequestWithBucketID("POST", EndpointInteractionCallback(interactionID, token), data, nil, EndpointInteractionCallback(0, ""))
 	return
 }

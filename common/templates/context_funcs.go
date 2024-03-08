@@ -1970,6 +1970,9 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			msgSend.Components = typedMsg.Components
 			msgSend.Flags = typedMsg.Flags
 			msgSend.Files = typedMsg.Files
+			if typedMsg.File != nil {
+				msgSend.Files = []*discordgo.File{typedMsg.File}
+			}
 			if !filterSpecialMentions {
 				msgSend.AllowedMentions = &discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 			}
@@ -1995,12 +1998,18 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 				}
 			}
 		case sendMessageInteractionFollowup:
+			var file *discordgo.File
+			if len(msgSend.Files) > 0 {
+				file = msgSend.Files[0]
+			}
+
 			m, err = common.BotSession.CreateFollowupMessage(common.BotApplication.ID, token, &discordgo.WebhookParams{
 				Content:         msgSend.Content,
 				Components:      msgSend.Components,
 				Embeds:          msgSend.Embeds,
 				AllowedMentions: msgSend.AllowedMentions,
 				Flags:           int64(msgSend.Flags),
+				File:            file,
 			})
 		}
 
