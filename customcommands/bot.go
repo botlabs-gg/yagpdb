@@ -676,7 +676,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		}
 
 		for _, matched := range triggeredCmds {
-			err = ExecuteCustomCommandFromComponent(matched.CC, evt.GS, cState, matched.Stripped, &interaction)
+			err = ExecuteCustomCommandFromComponent(matched.CC, evt.GS, cState, matched.Args, matched.Stripped, &interaction)
 			if err != nil {
 				logger.WithField("guild", cState.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
 			}
@@ -701,7 +701,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		}
 
 		for _, matched := range triggeredCmds {
-			err = ExecuteCustomCommandFromModal(matched.CC, evt.GS, cState, matched.Stripped, &interaction)
+			err = ExecuteCustomCommandFromModal(matched.CC, evt.GS, cState, matched.Args, matched.Stripped, &interaction)
 			if err != nil {
 				logger.WithField("guild", cState.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
 			}
@@ -910,19 +910,21 @@ func findComponentOrModalTriggerCustomCommands(ctx context.Context, cs *dstate.C
 		}
 
 		if modal {
-			if didMatch, stripped := CheckMatchModal(cmd, cID); didMatch {
+			if didMatch, stripped, args := CheckMatchModal(cmd, cID); didMatch {
 
 				matched = append(matched, &TriggeredCC{
 					CC:       cmd,
 					Stripped: stripped,
+					Args:     args,
 				})
 			}
 		} else {
-			if didMatch, stripped := CheckMatchComponent(cmd, cID); didMatch {
+			if didMatch, stripped, args := CheckMatchComponent(cmd, cID); didMatch {
 
 				matched = append(matched, &TriggeredCC{
 					CC:       cmd,
 					Stripped: stripped,
+					Args:     args,
 				})
 			}
 		}
@@ -1090,15 +1092,21 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	return nil
 }
 
-func ExecuteCustomCommandFromComponent(cc *models.CustomCommand, gs *dstate.GuildSet, cs *dstate.ChannelState, stripped string, interaction *templates.CustomCommandInteraction) error {
+func ExecuteCustomCommandFromComponent(cc *models.CustomCommand, gs *dstate.GuildSet, cs *dstate.ChannelState, cmdArgs []string, stripped string, interaction *templates.CustomCommandInteraction) error {
 	ms := dstate.MemberStateFromMember(interaction.Member)
 	tmplCtx := templates.NewContext(gs, cs, ms)
 	tmplCtx.CurrentFrame.Interaction = interaction
 
 	tmplCtx.Data["Interaction"] = interaction
 	tmplCtx.Data["InteractionData"] = interaction.MessageComponentData()
-	tmplCtx.Data["CustomID"] = interaction.MessageComponentData().CustomID
-	tmplCtx.Data["Cmd"] = interaction.MessageComponentData().CustomID
+	cid := strings.TrimPrefix(interaction.MessageComponentData().CustomID, "templates-")
+	tmplCtx.Data["CustomID"] = cid
+	tmplCtx.Data["Cmd"] = cmdArgs[0]
+	if len(cmdArgs) > 1 {
+		tmplCtx.Data["CmdArgs"] = cmdArgs[1:]
+	} else {
+		tmplCtx.Data["CmdArgs"] = []string{}
+	}
 	tmplCtx.Data["StrippedID"] = stripped
 	tmplCtx.Data["StrippedMsg"] = stripped
 	tmplCtx.Data["IsButton"] = interaction.MessageComponentData().ComponentType == discordgo.ButtonComponent
@@ -1116,7 +1124,7 @@ func ExecuteCustomCommandFromComponent(cc *models.CustomCommand, gs *dstate.Guil
 		case discordgo.ChannelSelectMenuComponent:
 			tmplCtx.Data["MenuType"] = "channel"
 		}
-		tmplCtx.Data["CmdArgs"] = interaction.MessageComponentData().Values
+		tmplCtx.Data["Values"] = interaction.MessageComponentData().Values
 	}
 
 	msg := interaction.Message
@@ -1129,15 +1137,21 @@ func ExecuteCustomCommandFromComponent(cc *models.CustomCommand, gs *dstate.Guil
 	return ExecuteCustomCommand(cc, tmplCtx)
 }
 
-func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet, cs *dstate.ChannelState, stripped string, interaction *templates.CustomCommandInteraction) error {
+func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet, cs *dstate.ChannelState, cmdArgs []string, stripped string, interaction *templates.CustomCommandInteraction) error {
 	ms := dstate.MemberStateFromMember(interaction.Member)
 	tmplCtx := templates.NewContext(gs, cs, ms)
 	tmplCtx.CurrentFrame.Interaction = interaction
 
 	tmplCtx.Data["Interaction"] = interaction
 	tmplCtx.Data["InteractionData"] = interaction.ModalSubmitData()
-	tmplCtx.Data["CustomID"] = interaction.ModalSubmitData().CustomID
-	tmplCtx.Data["Cmd"] = interaction.ModalSubmitData().CustomID
+	cid := strings.TrimPrefix(interaction.MessageComponentData().CustomID, "templates-")
+	tmplCtx.Data["CustomID"] = cid
+	tmplCtx.Data["Cmd"] = cmdArgs[0]
+	if len(cmdArgs) > 1 {
+		tmplCtx.Data["CmdArgs"] = cmdArgs[1:]
+	} else {
+		tmplCtx.Data["CmdArgs"] = []string{}
+	}
 	tmplCtx.Data["StrippedID"] = stripped
 	tmplCtx.Data["StrippedMsg"] = stripped
 	tmplCtx.Data["IsModal"] = true
@@ -1147,7 +1161,7 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 		field := row.Components[0].(*discordgo.TextInput)
 		cmdValues = append(cmdValues, field.Value)
 	}
-	tmplCtx.Data["CmdArgs"] = cmdValues
+	tmplCtx.Data["Values"] = cmdValues
 
 	msg := interaction.Message
 	msg.Member = ms.DgoMember()
@@ -1382,10 +1396,10 @@ func CheckMatchReaction(cmd *models.CustomCommand, reaction *discordgo.MessageRe
 	return false
 }
 
-func CheckMatchComponent(cmd *models.CustomCommand, cID string) (match bool, stripped string) {
+func CheckMatchComponent(cmd *models.CustomCommand, cID string) (match bool, stripped string, args []string) {
 
 	if cmd.TriggerType != int(CommandTriggerComponent) {
-		return false, ""
+		return false, "", nil
 	}
 
 	cmdMatch := "(?m)"
@@ -1394,14 +1408,14 @@ func CheckMatchComponent(cmd *models.CustomCommand, cID string) (match bool, str
 	}
 	cmdMatch += cmd.TextTrigger
 
-	match, stripped, _ = matchRegexSplitArgs(cmdMatch, cID)
+	match, stripped, args = matchRegexSplitArgs(cmdMatch, cID)
 	return
 }
 
-func CheckMatchModal(cmd *models.CustomCommand, cID string) (match bool, stripped string) {
+func CheckMatchModal(cmd *models.CustomCommand, cID string) (match bool, stripped string, args []string) {
 
 	if cmd.TriggerType != int(CommandTriggerModal) {
-		return false, ""
+		return false, "", nil
 	}
 
 	cmdMatch := "(?m)"
@@ -1410,7 +1424,7 @@ func CheckMatchModal(cmd *models.CustomCommand, cID string) (match bool, strippe
 	}
 	cmdMatch += cmd.TextTrigger
 
-	match, stripped, _ = matchRegexSplitArgs(cmdMatch, cID)
+	match, stripped, args = matchRegexSplitArgs(cmdMatch, cID)
 	return
 }
 
