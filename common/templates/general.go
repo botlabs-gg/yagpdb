@@ -1061,7 +1061,14 @@ func validateCustomID(id *string, componentIndex int, used *[]string) error {
 		*id = fmt.Sprint(componentIndex)
 	}
 
-	*id = fmt.Sprint("templates-", *id)
+	if !strings.HasPrefix(*id, "templates-") {
+		*id = fmt.Sprint("templates-", *id)
+	}
+
+	const maxCIDLength = 100 // discord limitation
+	if len(*id) > maxCIDLength {
+		return errors.New("custom id too long (max 90 chars)") // maxCIDLength - len("templates-")
+	}
 
 	if used == nil {
 		return nil

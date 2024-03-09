@@ -715,9 +715,8 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		cID := interaction.ModalSubmitData().CustomID
 
 		// continue only if this modal was created by a cc
-		if strings.HasPrefix(cID, "templates-") {
-			cID = strings.TrimPrefix(cID, "templates-")
-		} else {
+		cID, ok := strings.CutPrefix(cID, "templates-")
+		if !ok {
 			return
 		}
 
