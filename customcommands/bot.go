@@ -156,6 +156,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 		channel := data.GuildData.CS
 		ctx := templates.NewContext(data.GuildData.GS, channel, data.GuildData.MS)
 		ctx.ExecutedFrom = templates.ExecutedFromEvalCC
+		ctx.Msg = data.TraditionalTriggerData.Message
 
 		// use stripped message content instead of parsed arg data to avoid dcmd
 		// from misinterpreting backslashes and losing spaces in input; see
