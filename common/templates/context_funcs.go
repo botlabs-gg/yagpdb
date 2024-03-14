@@ -2223,7 +2223,7 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
 			//If there are no Embeds and string are explicitly set as null, give an error message.
 			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
-				if len(typedMsg.Embeds) == 0 {
+				if len(typedMsg.Embeds) == 0 && len(typedMsg.Components) == 0 {
 					return "", errors.New("both content and embed cannot be null")
 				}
 
@@ -2233,11 +2233,13 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 						embeds = append(typedMsg.Embeds, e)
 					}
 				}
-				if len(embeds) == 0 {
+				if len(embeds) == 0 && len(typedMsg.Components) == 0 {
 					return "", errors.New("both content and embed cannot be null")
 				}
 			}
-			msgEdit.Content = *typedMsg.Content
+			if typedMsg.Content != nil {
+				msgEdit.Content = *typedMsg.Content
+			}
 			msgEdit.Embeds = typedMsg.Embeds
 			msgEdit.Components = typedMsg.Components
 			msgEdit.AllowedMentions = &typedMsg.AllowedMentions
@@ -2460,7 +2462,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
 			//If there are no Embeds and string are explicitly set as null, give an error message.
 			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
-				if len(typedMsg.Embeds) == 0 {
+				if len(typedMsg.Embeds) == 0 && len(typedMsg.Components) == 0 {
 					return "", errors.New("both content and embed cannot be null")
 				}
 
@@ -2470,11 +2472,13 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 						embeds = append(typedMsg.Embeds, e)
 					}
 				}
-				if len(embeds) == 0 {
+				if len(embeds) == 0 && len(typedMsg.Components) == 0 {
 					return "", errors.New("both content and embed cannot be null")
 				}
 			}
-			msgEdit.Content = *typedMsg.Content
+			if typedMsg.Content != nil {
+				msgEdit.Content = *typedMsg.Content
+			}
 			msgEdit.Embeds = typedMsg.Embeds
 			msgEdit.Components = typedMsg.Components
 			msgEdit.AllowedMentions = &typedMsg.AllowedMentions
