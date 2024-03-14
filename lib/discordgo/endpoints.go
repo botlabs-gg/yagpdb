@@ -134,6 +134,9 @@ var (
 	EndpointChannelWebhooks = func(cID int64) string { return "" }
 	EndpointWebhook         = func(wID int64) string { return "" }
 	EndpointWebhookToken    = func(wID int64, token string) string { return "" }
+	EndpointWebhookMessage  = func(wID int64, token string, messageID int64) string {
+		return EndpointWebhookToken(wID, token) + "/messages/" + StrID(messageID)
+	}
 
 	EndpointDefaultUserAvatar = func(index int) string { return "" }
 
