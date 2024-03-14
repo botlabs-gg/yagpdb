@@ -1891,6 +1891,31 @@ func (c *Context) tmplEphemeralResponse() string {
 	return ""
 }
 
+func (c *Context) tmplGetResponse(interactionToken, msgID interface{}) (message *discordgo.Message, err error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	_, token := c.tokenArg(interactionToken)
+	if token == "" {
+		return nil, errors.New("invalid interaction token")
+	}
+
+	var getOriginal bool
+	mID := ToInt64(msgID)
+	if mID == 0 {
+		getOriginal = true
+	}
+
+	if getOriginal {
+		message, err = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, token)
+	} else {
+		message, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, mID)
+	}
+
+	return
+}
+
 func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
@@ -2093,6 +2118,9 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 	}
 }
 
+// tokenArg validates the interaction token, or falls back to the one in
+// context if it exists. it returns an empty string on failure of both of
+// these. also returns the sendMessageType.
 func (c *Context) tokenArg(interactionToken interface{}) (sendType sendMessageType, token string) {
 	sendType = sendMessageInteractionFollowup
 

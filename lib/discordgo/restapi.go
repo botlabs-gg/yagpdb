@@ -2327,6 +2327,23 @@ func (s *Session) WebhookExecuteComplex(webhookID int64, token string, wait bool
 	// return
 }
 
+// WebhookMessage gets a webhook message.
+// webhookID : The ID of a webhook
+// token     : The auth token for the webhook
+// messageID : The ID of message to get
+func (s *Session) WebhookMessage(webhookID int64, token string, messageID int64) (message *Message, err error) {
+	uri := EndpointWebhookMessage(webhookID, token, messageID)
+
+	body, err := s.RequestWithBucketID("GET", uri, nil, nil, EndpointWebhookToken(0, ""))
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(body, &message)
+
+	return
+}
+
 // MessageReactionAdd creates an emoji reaction to a message.
 // channelID : The channel ID.
 // messageID : The message ID.

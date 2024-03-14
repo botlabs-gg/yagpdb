@@ -742,6 +742,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("editResponse", c.tmplEditInteractionResponse(true))
 	c.addContextFunc("editResponseNoEscape", c.tmplEditInteractionResponse(false))
 	c.addContextFunc("ephemeralResponse", c.tmplEphemeralResponse)
+	c.addContextFunc("getResponse", c.tmplGetResponse)
 	c.addContextFunc("sendModal", c.tmplSendModal)
 	c.addContextFunc("sendResponse", c.tmplSendInteractionResponse(true, false))
 	c.addContextFunc("sendResponseNoEscape", c.tmplSendInteractionResponse(false, false))
