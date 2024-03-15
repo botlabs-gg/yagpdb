@@ -2295,9 +2295,9 @@ func (c *Context) tmplGetResponse(interactionToken, msgID interface{}) (message 
 	}
 
 	if getOriginal {
-		message, err = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, token)
+		message, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, "@original")
 	} else {
-		message, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, mID)
+		message, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, strconv.FormatInt(mID, 10))
 	}
 
 	return
@@ -2406,7 +2406,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 					c.CurrentFrame.Interaction.RespondedTo = true
 				}
 				if returnID {
-					m, err = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, token)
+					m, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, "@original")
 				}
 			}
 		case sendMessageInteractionFollowup:
