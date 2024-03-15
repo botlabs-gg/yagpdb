@@ -1293,66 +1293,34 @@ func shuffle(seq interface{}) (interface{}, error) {
 }
 
 func tmplToInt(from interface{}) int {
-	switch t := from.(type) {
-	case int:
-		return t
-	case int32:
-		return int(t)
-	case int64:
-		return int(t)
-	case float32:
-		return int(t)
-	case float64:
-		return int(t)
-	case uint:
-		return int(t)
-	case uint8:
-		return int(t)
-	case uint32:
-		return int(t)
-	case uint64:
-		return int(t)
-	case string:
-		parsed, _ := strconv.ParseInt(t, 10, 64)
+	t := reflect.ValueOf(from)
+	switch {
+	case t.CanInt():
+		return int(t.Int())
+	case t.CanFloat():
+		return int(t.Float())
+	case t.CanUint():
+		return int(t.Uint())
+	case t.Kind() == reflect.String:
+		parsed, _ := strconv.ParseInt(t.String(), 10, 64)
 		return int(parsed)
-	case time.Duration:
-		return int(t)
-	case time.Month:
-		return int(t)
-	case time.Weekday:
-		return int(t)
 	default:
 		return 0
 	}
 }
 
 func ToInt64(from interface{}) int64 {
-	switch t := from.(type) {
-	case int:
-		return int64(t)
-	case int32:
-		return int64(t)
-	case int64:
-		return int64(t)
-	case float32:
-		return int64(t)
-	case float64:
-		return int64(t)
-	case uint:
-		return int64(t)
-	case uint32:
-		return int64(t)
-	case uint64:
-		return int64(t)
-	case string:
-		parsed, _ := strconv.ParseInt(t, 10, 64)
+	t := reflect.ValueOf(from)
+	switch {
+	case t.CanInt():
+		return t.Int()
+	case t.CanFloat():
+		return int64(t.Float())
+	case t.CanUint():
+		return int64(t.Uint())
+	case t.Kind() == reflect.String:
+		parsed, _ := strconv.ParseInt(t.String(), 10, 64)
 		return parsed
-	case time.Duration:
-		return int64(t)
-	case time.Month:
-		return int64(t)
-	case time.Weekday:
-		return int64(t)
 	default:
 		return 0
 	}
@@ -1390,32 +1358,17 @@ func ToString(from interface{}) string {
 }
 
 func ToFloat64(from interface{}) float64 {
-	switch t := from.(type) {
-	case int:
-		return float64(t)
-	case int32:
-		return float64(t)
-	case int64:
-		return float64(t)
-	case float32:
-		return float64(t)
-	case float64:
-		return float64(t)
-	case uint:
-		return float64(t)
-	case uint32:
-		return float64(t)
-	case uint64:
-		return float64(t)
-	case string:
-		parsed, _ := strconv.ParseFloat(t, 64)
+	t := reflect.ValueOf(from)
+	switch {
+	case t.CanInt():
+		return float64(t.Int())
+	case t.CanFloat():
+		return t.Float()
+	case t.CanUint():
+		return float64(t.Uint())
+	case t.Kind() == reflect.String:
+		parsed, _ := strconv.ParseFloat(t.String(), 64)
 		return parsed
-	case time.Duration:
-		return float64(t)
-	case time.Month:
-		return float64(t)
-	case time.Weekday:
-		return float64(t)
 	default:
 		return 0
 	}
