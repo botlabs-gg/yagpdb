@@ -1910,9 +1910,9 @@ func (c *Context) tmplGetResponse(interactionToken, msgID interface{}) (message 
 	}
 
 	if getOriginal {
-		message, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, "@original")
+		message, err = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, token)
 	} else {
-		message, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, strconv.FormatInt(mID, 10))
+		message, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, mID)
 	}
 
 	return
@@ -2021,7 +2021,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 					c.CurrentFrame.Interaction.RespondedTo = true
 				}
 				if returnID {
-					m, err = common.BotSession.WebhookMessage(common.BotApplication.ID, token, "@original")
+					m, err = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, token)
 				}
 			}
 		case sendMessageInteractionFollowup:

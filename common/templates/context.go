@@ -523,7 +523,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 		})
 		if err == nil {
 			c.CurrentFrame.Interaction.RespondedTo = true
-			m, getErr = common.BotSession.WebhookMessage(common.BotApplication.ID, c.CurrentFrame.Interaction.Token, "@original")
+			m, getErr = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, c.CurrentFrame.Interaction.Token)
 		}
 	case sendMessageInteractionFollowup:
 		m, err = common.BotSession.CreateFollowupMessage(common.BotApplication.ID, c.CurrentFrame.Interaction.Token, &discordgo.WebhookParams{

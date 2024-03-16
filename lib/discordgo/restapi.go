@@ -2331,7 +2331,7 @@ func (s *Session) WebhookExecuteComplex(webhookID int64, token string, wait bool
 // webhookID : The ID of a webhook
 // token     : The auth token for the webhook
 // messageID : The ID of message to get
-func (s *Session) WebhookMessage(webhookID int64, token, messageID string) (message *Message, err error) {
+func (s *Session) WebhookMessage(webhookID int64, token string, messageID int64) (message *Message, err error) {
 	uri := EndpointWebhookMessage(webhookID, token, messageID)
 
 	body, err := s.RequestWithBucketID("GET", uri, nil, nil, EndpointWebhookToken(0, ""))
@@ -3082,6 +3082,18 @@ func (s *Session) CreateInteractionResponse(interactionID int64, token string, d
 	}
 
 	_, err = s.RequestWithBucketID("POST", EndpointInteractionCallback(interactionID, token), data, nil, EndpointInteractionCallback(0, ""))
+	return
+}
+
+// GetOriginalInteractionResponse Returns the initial Interaction response. Functions the same as Get Webhook Message.
+// GET /webhooks/{application.id}/{interaction.token}/messages/@original
+func (s *Session) GetOriginalInteractionResponse(applicationID int64, token string) (st *Message, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointInteractionOriginalMessage(applicationID, token), nil, nil, EndpointInteractionOriginalMessage(0, ""))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
 	return
 }
 
