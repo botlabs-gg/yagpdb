@@ -2332,7 +2332,7 @@ func (s *Session) WebhookExecuteComplex(webhookID int64, token string, wait bool
 // token     : The auth token for the webhook
 // messageID : The ID of message to get
 func (s *Session) WebhookMessage(webhookID int64, token string, messageID int64) (message *Message, err error) {
-	uri := EndpointWebhookMessage(webhookID, token, messageID)
+	uri := EndpointWebhookMessage(webhookID, token, strconv.FormatInt(messageID, 10))
 
 	body, err := s.RequestWithBucketID("GET", uri, nil, nil, EndpointWebhookToken(0, ""))
 	if err != nil {
