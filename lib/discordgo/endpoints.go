@@ -134,7 +134,9 @@ var (
 	EndpointChannelWebhooks = func(cID int64) string { return "" }
 	EndpointWebhook         = func(wID int64) string { return "" }
 	EndpointWebhookToken    = func(wID int64, token string) string { return "" }
-	EndpointWebhookMessage  = func(wID int64, token, mID string) string { return "" }
+	EndpointWebhookMessage  = func(wID int64, token string, messageID int64) string {
+		return EndpointWebhookToken(wID, token) + "/messages/" + StrID(messageID)
+	}
 
 	EndpointDefaultUserAvatar = func(index int) string { return "" }
 
@@ -323,9 +325,6 @@ func CreateEndpoints(base string) {
 	EndpointChannelWebhooks = func(cID int64) string { return EndpointChannel(cID) + "/webhooks" }
 	EndpointWebhook = func(wID int64) string { return EndpointWebhooks + StrID(wID) }
 	EndpointWebhookToken = func(wID int64, token string) string { return EndpointWebhooks + StrID(wID) + "/" + token }
-	EndpointWebhookMessage = func(wID int64, token, mID string) string {
-		return EndpointWebhookToken(wID, token) + "/messages/" + mID
-	}
 
 	EndpointDefaultUserAvatar = func(index int) string {
 		return EndpointCDN + "embed/avatars/" + strconv.Itoa(index) + ".png"
