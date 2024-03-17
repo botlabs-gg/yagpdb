@@ -11,6 +11,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/calc"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/catfact"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/ccreqs"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/cleardm"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/createinvite"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/currentshard"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/currenttime"
@@ -112,6 +113,7 @@ func (p *Plugin) AddCommands() {
 		stateinfo.Command,
 		leaveserver.Command,
 		banserver.Command,
+		cleardm.Command,
 		allocstat.Command,
 		unbanserver.Command,
 		topservers.Command,
