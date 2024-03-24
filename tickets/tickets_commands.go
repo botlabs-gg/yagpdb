@@ -441,7 +441,7 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 			// download attachments
 		OUTER:
 			for _, att := range msg.Attachments {
-				msg.Content += fmt.Sprintf("(attatchment: %s)", att.Filename)
+				msg.Content += fmt.Sprintf("(attachment: %s)", att.Filename)
 
 				totalAttachmentSize += att.Size
 				if totalAttachmentSize > 500000000 {
