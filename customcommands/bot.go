@@ -16,6 +16,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/lib/template"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -242,7 +243,7 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		var ccFile *discordgo.File
-		var msg *discordgo.MessageSend
+		msg := &discordgo.MessageSend{Flags: discordgo.MessageFlagsSuppressEmbeds}
 
 		responses := fmt.Sprintf("```\n%s\n```", strings.Join(cc.Responses, "```\n```"))
 		if data.Switches["file"].Value != nil || len(responses) >= 2000 && data.Switches["raw"].Value == nil {
@@ -255,6 +256,8 @@ var cmdListCommands = &commands.YAGCommand{
 			}
 		}
 
+		ccIDWithLink := fmt.Sprintf("[%[1]d](%[2]s/customcommands/commands/%[1]d/)", cc.LocalID, web.ManageServerURL(data.GuildData))
+
 		// Every text-based custom command trigger has a numerical value less than 5, so this is quite safe to do
 		if cc.TriggerType < 5 {
 			var header string
@@ -262,54 +265,48 @@ var cmdListCommands = &commands.YAGCommand{
 				cc.TextTrigger = `​`
 			}
 			if cc.Name.Valid {
-				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Name: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t` - onEdit: `%t`",
-					cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.Name.String, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
+				header = fmt.Sprintf("#%s - Trigger: `%s` - Type: `%s` - Name: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t` - onEdit: `%t`",
+					ccIDWithLink, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.Name.String, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			} else {
-				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t` - onEdit: `%t`",
-					cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
+				header = fmt.Sprintf("#%s - Trigger: `%s` - Type: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t` - onEdit: `%t`",
+					ccIDWithLink, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			}
 
 			if ccFile != nil {
-				msg = &discordgo.MessageSend{
-					Content: header,
-					Files: []*discordgo.File{
-						ccFile,
-					},
-				}
+				msg.Content = header
+				msg.Files = []*discordgo.File{ccFile}
 				return msg, nil
 			}
 
-			return fmt.Sprintf("%s\n```%s\n%s\n```", header, highlight, strings.Join(cc.Responses, "```\n```")), nil
+			msg.Content = fmt.Sprintf("%s\n```%s\n%s\n```", header, highlight, strings.Join(cc.Responses, "```\n```"))
+			return msg, nil
 		}
 
 		if ccFile != nil {
 			var header string
 			if cc.Name.Valid {
-				header = fmt.Sprintf("#%d - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], cc.Disabled)
+				header = fmt.Sprintf("#%s - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`", ccIDWithLink, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], cc.Disabled)
 			} else {
-				header = fmt.Sprintf("#%d - Type: `%s` - Group: `%s` - Disabled: `%t`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled)
+				header = fmt.Sprintf("#%s - Type: `%s` - Group: `%s` - Disabled: `%t`", ccIDWithLink, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled)
 			}
 
-			msg = &discordgo.MessageSend{
-				Content: header,
-				Files: []*discordgo.File{
-					ccFile,
-				},
-			}
+			msg.Content = header
+			msg.Files = []*discordgo.File{ccFile}
 
 			return msg, nil
 
 		}
 
 		if cc.Name.Valid {
-			return fmt.Sprintf("#%d - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
-				cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], cc.Disabled,
-				highlight, strings.Join(cc.Responses, "```\n```")), nil
+			msg.Content = fmt.Sprintf("#%s - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
+				ccIDWithLink, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], cc.Disabled,
+				highlight, strings.Join(cc.Responses, "```\n```"))
+		} else {
+			msg.Content = fmt.Sprintf("#%s - Type: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
+				ccIDWithLink, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled,
+				highlight, strings.Join(cc.Responses, "```\n```"))
 		}
-
-		return fmt.Sprintf("#%d - Type: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
-			cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled,
-			highlight, strings.Join(cc.Responses, "```\n```")), nil
+		return msg, nil
 	},
 }
 
