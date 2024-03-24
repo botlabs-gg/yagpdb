@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -524,7 +523,7 @@ type InteractionResponseData struct {
 	Components      []MessageComponent `json:"components"`
 	Embeds          []*MessageEmbed    `json:"embeds"`
 	AllowedMentions *AllowedMentions   `json:"allowed_mentions,omitempty"`
-	Flags           uint64             `json:"flags,omitempty"`
+	Flags           MessageFlags       `json:"flags,omitempty"`
 	Files           []*File            `json:"-"`
 
 	// NOTE: autocomplete interaction only.
@@ -568,7 +567,7 @@ func VerifyInteraction(r *http.Request, key ed25519.PublicKey) bool {
 
 	// at the end of the function, copy the original body back into the request
 	defer func() {
-		r.Body = ioutil.NopCloser(&body)
+		r.Body = io.NopCloser(&body)
 	}()
 
 	// copy body into buffers
