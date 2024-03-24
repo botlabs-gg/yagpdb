@@ -243,7 +243,7 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		var ccFile *discordgo.File
-		var msg *discordgo.MessageSend
+		msg := &discordgo.MessageSend{Flags: discordgo.MessageFlagsSuppressEmbeds}
 
 		responses := fmt.Sprintf("```\n%s\n```", strings.Join(cc.Responses, "```\n```"))
 		if data.Switches["file"].Value != nil || len(responses) >= 2000 && data.Switches["raw"].Value == nil {
@@ -273,16 +273,13 @@ var cmdListCommands = &commands.YAGCommand{
 			}
 
 			if ccFile != nil {
-				msg = &discordgo.MessageSend{
-					Content: header,
-					Files: []*discordgo.File{
-						ccFile,
-					},
-				}
+				msg.Content = header
+				msg.Files = []*discordgo.File{ccFile}
 				return msg, nil
 			}
 
-			return fmt.Sprintf("%s\n```%s\n%s\n```", header, highlight, strings.Join(cc.Responses, "```\n```")), nil
+			msg.Content = fmt.Sprintf("%s\n```%s\n%s\n```", header, highlight, strings.Join(cc.Responses, "```\n```"))
+			return msg, nil
 		}
 
 		if ccFile != nil {
@@ -293,26 +290,23 @@ var cmdListCommands = &commands.YAGCommand{
 				header = fmt.Sprintf("#%s - Type: `%s` - Group: `%s` - Disabled: `%t`", ccIDWithLink, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled)
 			}
 
-			msg = &discordgo.MessageSend{
-				Content: header,
-				Files: []*discordgo.File{
-					ccFile,
-				},
-			}
+			msg.Content = header
+			msg.Files = []*discordgo.File{ccFile}
 
 			return msg, nil
 
 		}
 
 		if cc.Name.Valid {
-			return fmt.Sprintf("#%s - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
+			msg.Content = fmt.Sprintf("#%s - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
 				ccIDWithLink, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], cc.Disabled,
-				highlight, strings.Join(cc.Responses, "```\n```")), nil
+				highlight, strings.Join(cc.Responses, "```\n```"))
+		} else {
+			msg.Content = fmt.Sprintf("#%s - Type: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
+				ccIDWithLink, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled,
+				highlight, strings.Join(cc.Responses, "```\n```"))
 		}
-
-		return fmt.Sprintf("#%s - Type: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
-			ccIDWithLink, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled,
-			highlight, strings.Join(cc.Responses, "```\n```")), nil
+		return msg, nil
 	},
 }
 
