@@ -2857,16 +2857,19 @@ func (s *Session) CreateGlobalApplicationCommand(applicationID int64, command *C
 	return
 }
 
-// BulkOverwriteGlobalApplicationCommands Takes a list of application commands, overwriting existing commands that are registered globally for this application. Updates will be available in all guilds after 1 hour.
-// PUT /applications/{application.id}/commands
-func (s *Session) BulkOverwriteGlobalApplicationCommands(applicationID int64, data []*CreateApplicationCommandRequest) (st []*ApplicationCommand, err error) {
-	body, err := s.RequestWithBucketID("PUT", EndpointApplicationCommands(applicationID), data, nil, EndpointApplicationCommands(0))
+// ApplicationCommandBulkOverwrite Creates commands overwriting existing commands. Returns a list of commands.
+// appID    : The application ID.
+// commands : The commands to create.
+func (s *Session) ApplicationCommandBulkOverwrite(appID int64, guildID int64, commands []*ApplicationCommand) (createdCommands []*ApplicationCommand, err error) {
+	endpoint := EndpointApplicationGlobalCommands(appID)
+	if guildID != 0 {
+		endpoint = EndpointApplicationGuildCommands(appID, guildID)
+	}
+	body, err := s.RequestWithBucketID("PUT", endpoint, commands, nil, endpoint)
 	if err != nil {
 		return
 	}
-
-	err = unmarshal(body, &st)
-
+	err = unmarshal(body, &createdCommands)
 	return
 }
 
@@ -2884,10 +2887,11 @@ func (s *Session) GetGlobalApplicationCommand(applicationID int64, cmdID int64) 
 }
 
 type EditApplicationCommandRequest struct {
-	Name              *string                      `json:"name,omitempty"`               //	1-32 character name matching ^[\w-]{1,32}$
-	Description       *string                      `json:"description,omitempty"`        //	1-100 character description
-	Options           *[]*ApplicationCommandOption `json:"options,omitempty"`            // the parameters for the command
-	DefaultPermission *bool                        `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
+	Name                     *string                      `json:"name,omitempty"`        //	1-32 character name matching ^[\w-]{1,32}$
+	Description              *string                      `json:"description,omitempty"` //	1-100 character description
+	Options                  *[]*ApplicationCommandOption `json:"options,omitempty"`     // the parameters for the command
+	DefaultMemberPermissions *int64                       `json:"default_member_permissions,string,omitempty"`
+	DMPermission             *bool                        `json:"dm_permission,omitempty"`
 }
 
 // EditGlobalApplicationCommand edits a global command. Updates will be available in all guilds after 1 hour.

@@ -270,7 +270,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdDel, cmdDel.GetTrigger())
 	container.AddCommand(cmdStopSetup, cmdStopSetup.GetTrigger())
 	container.Description = "Manage events"
-	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
+	commands.RegisterSlashCommandsContainer(container, discordgo.PermissionManageServer, false, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 }

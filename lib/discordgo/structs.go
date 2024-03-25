@@ -1416,11 +1416,13 @@ type InviteUser struct {
 }
 
 type CreateApplicationCommandRequest struct {
-	Name              string                      `json:"name"`                         // 1-32 character name matching ^[\w-]{1,32}$
-	Description       string                      `json:"description"`                  // 1-100 character description
-	Options           []*ApplicationCommandOption `json:"options"`                      // the parameters for the command
-	DefaultPermission *bool                       `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
-	NSFW              bool                        `json:"nsfw,omitempty"`               // marks a command as age-restricted
+	Name                     string                      `json:"name"`        // 1-32 character name matching ^[\w-]{1,32}$
+	Description              string                      `json:"description"` // 1-100 character description
+	Options                  []*ApplicationCommandOption `json:"options"`     // the parameters for the command
+	DefaultMemberPermissions int64                       `json:"default_member_permissions,string,omitempty"`
+	DMPermission             bool                        `json:"dm_permission,omitempty"`
+
+	NSFW bool `json:"nsfw,omitempty"` // marks a command as age-restricted
 }
 
 func (a *ApplicationCommandInteractionDataResolved) UnmarshalJSON(b []byte) error {
