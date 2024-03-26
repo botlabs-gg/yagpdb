@@ -1422,7 +1422,7 @@ type CreateApplicationCommandRequest struct {
 	DefaultPermission *bool                       `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
 	NSFW              bool                        `json:"nsfw,omitempty"`               // marks a command as age-restricted
 	Integration_Types []int                       `json:"integration_types"`            // Defines the integration types a command supports https://discord.com/developers/docs/resources/application#application-object-application-integration-types
-	Contexts          []int                       `json:"contexts"`                     // Defines the integration contexts supported https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-context-types
+	Contexts          []int                       `json:"contexts"`                     // Defines the interaction contexts supported https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-context-types
 }
 
 func (a *ApplicationCommandInteractionDataResolved) UnmarshalJSON(b []byte) error {
