@@ -164,12 +164,12 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 	}
 	t := true
 
-	integration_types := []int{0}
+	integrationtypes := []int{0}
 	contexts := []int{0}
 
 	if cast.RunInDM {
-		integration_types = append(integration_types, 1) // USER_INSTALL
-		contexts = append(contexts, 1, 2)                // BOT_DM, PRIVATE_CHANNEL
+		integrationtypes = append(integrationtypes, 1) // USER_INSTALL
+		contexts = append(contexts, 1, 2)              // BOT_DM, PRIVATE_CHANNEL
 	}
 
 	_, opts := cast.slashCommandOptions()
@@ -179,7 +179,7 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		DefaultPermission: &t,
 		Options:           opts,
 		NSFW:              cast.NSFW,
-		Integration_Types: integration_types,
+		IntegrationTypes:  integrationtypes,
 		Contexts:          contexts,
 	}
 }
