@@ -15,6 +15,9 @@ type Data struct {
 	Args     []*ParsedArg
 	Switches map[string]*ParsedArg
 
+	// True if user has integration installed and bot is in the guild
+	UserInstalledGuild bool
+
 	// These fields are always available
 	ChannelID int64
 	Author    *discordgo.User

@@ -222,7 +222,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}()
 
 	guildID := int64(0)
-	if data.GuildData != nil {
+	if data.GuildData != nil && !data.UserInstalledGuild {
 		guildID = data.GuildData.GS.ID
 	}
 
@@ -242,7 +242,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		TimeStamp:  time.Now(),
 	}
 
-	if data.GuildData != nil {
+	if data.GuildData != nil && !data.UserInstalledGuild {
 		logEntry.GuildID = discordgo.StrID(data.GuildData.GS.ID)
 
 	}
@@ -321,7 +321,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		yc.Logger(cmdData).WithError(err).Error("Command returned error")
 	}
 
-	if cmdData.GuildData != nil {
+	if cmdData.GuildData != nil && !cmdData.UserInstalledGuild {
 		if resp == nil && err != nil {
 			err = errors.New(FilterResp(err.Error(), cmdData.GuildData.GS.ID).(string))
 		} else if resp != nil {
@@ -427,7 +427,7 @@ type CanExecuteError struct {
 // checks if the specified user can execute the command, and if so returns the settings for said command
 func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, resp *CanExecuteError, settings *CommandSettings, err error) {
 	// Check guild specific settings if not triggered from a DM
-	if data.GuildData != nil {
+	if data.GuildData != nil && !data.UserInstalledGuild {
 		guild := data.GuildData.GS
 
 		if data.TriggerType != dcmd.TriggerTypeSlashCommands {
@@ -488,7 +488,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 	}
 
 	guildID := int64(0)
-	if data.GuildData != nil {
+	if data.GuildData != nil && !data.UserInstalledGuild {
 		guildID = data.GuildData.GS.ID
 	}
 

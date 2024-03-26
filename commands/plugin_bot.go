@@ -167,8 +167,9 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 			return resp, err
 		}
+
 		guildID := int64(0)
-		if data.GuildData != nil {
+		if data.GuildData != nil && !data.UserInstalledGuild {
 			guildID = data.GuildData.GS.ID
 		}
 

@@ -164,6 +164,14 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 	}
 	t := true
 
+	integration_types := []int{0}
+	contexts := []int{0}
+
+	if cast.RunInDM {
+		integration_types = append(integration_types, 1) // USER_INSTALL
+		contexts = append(contexts, 1, 2)                // BOT_DM, PRIVATE_CHANNEL
+	}
+
 	_, opts := cast.slashCommandOptions()
 	return &discordgo.CreateApplicationCommandRequest{
 		Name:              strings.ToLower(cmd.Trigger.Names[0]),
@@ -171,6 +179,8 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		DefaultPermission: &t,
 		Options:           opts,
 		NSFW:              cast.NSFW,
+		Integration_Types: integration_types,
+		Contexts:          contexts,
 	}
 }
 
