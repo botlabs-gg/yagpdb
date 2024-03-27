@@ -357,7 +357,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 
 	// Send the response
 	var replies []*discordgo.Message
-	if resp == nil && cmdData.TriggerType == dcmd.TriggerTypeSlashCommands {
+	if resp == nil && cmdData.TriggerType == dcmd.TriggerTypeSlashCommands && !(cmdData.SlashCommandTriggerData.Interaction.Channel.Type == discordgo.ChannelTypeDM || cmdData.SlashCommandTriggerData.Interaction.Channel.Type == discordgo.ChannelTypeGroupDM) {
 		common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, cmdData.SlashCommandTriggerData.Interaction.Token)
 	} else if resp != nil {
 		replies, err = dcmd.SendResponseInterface(cmdData, resp, true)

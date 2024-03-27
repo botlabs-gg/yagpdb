@@ -1,12 +1,14 @@
 package paginatedmessages
 
 import (
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
@@ -93,9 +95,15 @@ func createNavigationButtons(prevDisabled bool, nextDisabled bool) []discordgo.M
 	}
 }
 
-func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pagerFunc PagerFunc) (*PaginatedMessage, error) {
+func CreatePaginatedMessage(data *dcmd.Data, guildID, channelID int64, initPage, maxPages int, pagerFunc PagerFunc) (*PaginatedMessage, error) {
 	if initPage < 1 {
 		initPage = 1
+	}
+
+	var interaction = &discordgo.Interaction{ID: 0}
+
+	if !reflect.ValueOf(data.SlashCommandTriggerData).IsNil() {
+		interaction = data.SlashCommandTriggerData.Interaction
 	}
 
 	pm := &PaginatedMessage{
@@ -123,6 +131,26 @@ func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pa
 		Text: footer,
 	}
 	embed.Timestamp = time.Now().Format(time.RFC3339)
+
+	if interaction.ID != int64(0) && (interaction.Channel.Type == discordgo.ChannelTypeDM || interaction.Channel.Type == discordgo.ChannelTypeGroupDM) {
+		msg, err := common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, interaction.Token, &discordgo.WebhookParams{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: createNavigationButtons(true, nextButtonDisabled),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		pm.MessageID = msg.ID
+		pm.LastResponse = embed
+
+		menusLock.Lock()
+		activePaginatedMessagesMap[pm.MessageID] = pm
+		menusLock.Unlock()
+
+		go pm.paginationTicker()
+		return pm, nil
+	}
 
 	msg, err := common.BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 		Embeds:     []*discordgo.MessageEmbed{embed},
@@ -200,13 +228,10 @@ func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate
 	}
 	newMsg.Timestamp = time.Now().Format(time.RFC3339)
 
-	_, err = common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
+	_, err = common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, ic.Token, &discordgo.WebhookParams{
 		Embeds:     []*discordgo.MessageEmbed{newMsg},
 		Components: createNavigationButtons(newPage <= 1, nextButtonDisabled),
-		Channel:    ic.ChannelID,
-		ID:         ic.Message.ID,
 	})
-
 	if err != nil {
 		switch code, _ := common.DiscordError(err); code {
 		case discordgo.ErrCodeUnknownChannel, discordgo.ErrCodeUnknownMessage, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:

@@ -46,6 +46,7 @@ var Command = &commands.YAGCommand{
 
 		if paginatedView {
 			_, err := paginatedmessages.CreatePaginatedMessage(
+				data,
 				data.GuildData.GS.ID, data.ChannelID, 1, len(qResp.Results), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					i := page - 1
 

@@ -186,6 +186,7 @@ type Interaction struct {
 	Data          InteractionData `json:"data"`
 	GuildID       int64           `json:"guild_id,string"`
 	ChannelID     int64           `json:"channel_id,string"`
+	Channel       Channel         `json:"channel"`
 	// https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-authorizing-integration-owners-object
 	IntegrationOwners map[string]interface{} `json:"authorizing_integration_owners"` // Left as interface due to discord being inconsistent, with the value being an int at some times and a string at others.
 
