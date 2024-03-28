@@ -245,8 +245,9 @@ func (sys *System) FillDataInteraction(s *discordgo.Session, interaction *discor
 
 	var gs *dstate.GuildSet
 	var cs *dstate.ChannelState
+	var isUserInstalledGuild = (interaction.IntegrationOwners["0"] == nil && interaction.IntegrationOwners["1"] != nil)
 
-	if interaction.GuildID != 0 {
+	if interaction.GuildID != 0 && !isUserInstalledGuild {
 		gs = sys.State.GetGuild(interaction.GuildID)
 		if gs == nil {
 			return nil, ErrGuildNotFound
@@ -272,6 +273,7 @@ func (sys *System) FillDataInteraction(s *discordgo.Session, interaction *discor
 		SlashCommandTriggerData: &SlashCommandTriggerData{
 			Interaction: interaction,
 		},
+		UserInstalledGuild: isUserInstalledGuild,
 	}
 
 	if interaction.GuildID == 0 {
