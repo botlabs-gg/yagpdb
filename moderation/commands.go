@@ -900,7 +900,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
 				return PaginateWarnings(parsed)(nil, page)
 			}
-			_, err = paginatedmessages.CreatePaginatedMessage(parsed, parsed.GuildData.GS.ID, parsed.GuildData.CS.ID, page, 0, PaginateWarnings(parsed))
+			_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.GuildData.CS.ID, page, 0, PaginateWarnings(parsed))
 			return nil, err
 		},
 	},

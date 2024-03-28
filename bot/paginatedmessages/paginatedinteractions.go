@@ -95,15 +95,15 @@ func createNavigationButtons(prevDisabled bool, nextDisabled bool) []discordgo.M
 	}
 }
 
-func CreatePaginatedMessage(data *dcmd.Data, guildID, channelID int64, initPage, maxPages int, pagerFunc PagerFunc) (*PaginatedMessage, error) {
+func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pagerFunc PagerFunc, data ...*dcmd.Data) (*PaginatedMessage, error) {
 	if initPage < 1 {
 		initPage = 1
 	}
 
 	var interaction = &discordgo.Interaction{ID: 0}
 
-	if !reflect.ValueOf(data.SlashCommandTriggerData).IsNil() {
-		interaction = data.SlashCommandTriggerData.Interaction
+	if len(data) >= 1 && !reflect.ValueOf(data[0].SlashCommandTriggerData).IsNil() {
+		interaction = data[0].SlashCommandTriggerData.Interaction
 	}
 
 	pm := &PaginatedMessage{

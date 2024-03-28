@@ -51,7 +51,6 @@ var Command = &commands.YAGCommand{
 			}
 			inspireArray = arrayMaker(inspireArray, result)
 			_, err = paginatedmessages.CreatePaginatedMessage(
-				data,
 				data.GuildData.GS.ID, data.ChannelID, 1, 15, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					if page-1 == len(inspireArray) {
 						result, err := inspireFromAPI(true, season)

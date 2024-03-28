@@ -427,7 +427,7 @@ var cmds = []*commands.YAGCommand{
 				return topRepPager(parsed.GuildData.GS.ID, nil, page)
 			}
 
-			_, err := paginatedmessages.CreatePaginatedMessage(parsed, parsed.GuildData.GS.ID, parsed.ChannelID, page, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			_, err := paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, page, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 				return topRepPager(parsed.GuildData.GS.ID, p, page)
 			})
 

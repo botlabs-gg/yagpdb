@@ -68,7 +68,7 @@ var Command = &commands.YAGCommand{
 			return createDictionaryDefinitionEmbed(dictionary, &dictionary.Meanings[0]), nil
 		}
 
-		_, err = paginatedmessages.CreatePaginatedMessage(data, data.GuildData.GS.ID, data.ChannelID, 1, len(dictionary.Meanings), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		_, err = paginatedmessages.CreatePaginatedMessage(data.GuildData.GS.ID, data.ChannelID, 1, len(dictionary.Meanings), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			if page > len(dictionary.Meanings) {
 				return nil, paginatedmessages.ErrNoResults
 			}

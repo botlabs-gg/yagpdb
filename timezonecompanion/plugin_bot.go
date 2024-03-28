@@ -94,7 +94,7 @@ func (p *Plugin) AddCommands() {
 						return paginatedTimezones(zones)(nil, 1)
 					}
 					_, err := paginatedmessages.CreatePaginatedMessage(
-						parsed, parsed.GuildData.GS.ID, parsed.ChannelID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
+						parsed.GuildData.GS.ID, parsed.ChannelID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
 					return nil, err
 				}
 

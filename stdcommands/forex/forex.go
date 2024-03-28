@@ -59,18 +59,17 @@ var Command = &commands.YAGCommand{
 		// If the currency isn't supported by API.
 		if !toExist || !fromExist {
 			guildID := int64(0)
-			if data.Source == dcmd.TriggerSourceGuild {
+			if data.Source == dcmd.TriggerSourceGuild && !data.UserInstalledGuild {
 				guildID = data.GuildData.GS.ID
 			}
 			_, err = paginatedmessages.CreatePaginatedMessage(
-				data,
 				guildID, data.ChannelID, 1, maxPages, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					embed, err := errEmbed(currenciesResult, page)
 					if err != nil {
 						return nil, err
 					}
 					return embed, nil
-				})
+				}, data)
 			if err != nil {
 				return nil, err
 			}
