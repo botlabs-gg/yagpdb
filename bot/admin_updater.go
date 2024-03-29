@@ -67,7 +67,7 @@ func loopCheckAdmins() {
 				err := requestCheckBotAdmins(skipRename, mainServer, adminRole, readOnlyAccessRole)
 				if err != nil {
 					skipRename = true
-					logger.WithError(err).Error("failed updating bot admins")
+					logger.WithError(err).Error("failed quackdating bot admins")
 				} else {
 					skipRename = false
 				}

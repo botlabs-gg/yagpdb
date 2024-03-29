@@ -9,7 +9,7 @@ import (
 
 func expectNoErr(t *testing.T, err error) {
 	if err != nil {
-		t.Fatal("expected no error")
+		t.Fatal("expected no errquack")
 	}
 }
 

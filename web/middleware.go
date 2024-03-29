@@ -481,7 +481,7 @@ func APIHandler(inner CustomHandlerFunc) http.Handler {
 				} else {
 					out = map[string]interface{}{"ok": false}
 				}
-				CtxLogger(r.Context()).WithError(cast).Error("API Error")
+				CtxLogger(r.Context()).WithError(cast).Error("API Errquack")
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -692,10 +692,10 @@ func checkControllerError(ctx context.Context, data TemplateData, err error) {
 	if cast, ok := err.(*PublicError); ok {
 		data.AddAlerts(ErrorAlert(cast.Error()))
 	} else {
-		data.AddAlerts(ErrorAlert("An error quackcurred... Contact support if you're having issues."))
+		data.AddAlerts(ErrorAlert("An errquack quackcurred... Contact support if you're having issues."))
 	}
 
-	CtxLogger(ctx).WithError(err).Error("Web handler reported an error")
+	CtxLogger(ctx).WithError(err).Error("Web handler reported an errquack")
 }
 
 func RequirePermMW(perms ...int64) func(http.Handler) http.Handler {

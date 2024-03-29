@@ -460,7 +460,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				d = time.Minute
 			}
 			if d > MaxTimeOutDuration {
-				return fmt.Sprintf("Error: Max duration of Timeouts can be %v days", (MaxTimeOutDuration.Hours() / 24)), nil
+				return fmt.Sprintf("Errquack: Max duration of Timeouts can be %v days", (MaxTimeOutDuration.Hours() / 24)), nil
 			}
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
@@ -932,7 +932,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				"message", fmt.Sprintf("%s (updated by %s (%d))", parsed.Args[1].Str(), parsed.Author.String(), parsed.Author.ID)).RowsAffected
 
 			if rows < 1 {
-				return "Failed updating, most likely couldn't find the warning", nil
+				return "Failed quackdating, most likely couldn't find the warning", nil
 			}
 
 			return "👌", nil

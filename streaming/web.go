@@ -91,7 +91,7 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 
 	err = featureflags.UpdatePluginFeatureFlags(guild.ID, &Plugin{})
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("failed updating feature flags")
+		web.CtxLogger(ctx).WithError(err).Error("failed quackdating feature flags")
 	}
 
 	err = pubsub.Publish("update_streaming", guild.ID, nil)

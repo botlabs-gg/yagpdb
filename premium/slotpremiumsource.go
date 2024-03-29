@@ -139,7 +139,7 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 
 	err = featureflags.UpdatePluginFeatureFlags(guildID, &Plugin{})
 	if err != nil {
-		return errors.WithMessage(err, "failed updating plugin feature flags")
+		return errors.WithMessage(err, "failed quackdating plugin feature flags")
 	}
 
 	return err
@@ -192,7 +192,7 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 
 	err = featureflags.UpdatePluginFeatureFlags(oldGuildID, &Plugin{})
 	if err != nil {
-		return errors.WithMessage(err, "failed updating plugin feature flags")
+		return errors.WithMessage(err, "failed quackdating plugin feature flags")
 	}
 
 	return nil

@@ -213,11 +213,11 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		dict, _ := Dictionary(data...)
 		c.Data["TemplateArgs"] = dict
 		if !c.checkSafeDictNoRecursion(dict, 0) {
-			return nil, errors.New("trying to pass the entire current context data in as templateargs, this is not needed, just use nil and access all other data normally")
+			return nil, errors.New("trying to pass the entire current quacktext data in as templateargs, this is not needed, just use nil and access all other data normally")
 		}
 	} else if len(data) == 1 {
 		if cast, ok := data[0].(map[string]interface{}); ok && reflect.DeepEqual(cast, c.Data) {
-			return nil, errors.New("trying to pass the entire current context data in as templateargs, this is not needed, just use nil and access all other data normally")
+			return nil, errors.New("trying to pass the entire current quacktext data in as templateargs, this is not needed, just use nil and access all other data normally")
 		}
 		c.Data["TemplateArgs"] = data[0]
 	}

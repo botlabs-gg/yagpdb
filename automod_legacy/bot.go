@@ -165,7 +165,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		common.BotSession.ChannelMessageDelete(m.ChannelID, m.ID)
 
 		if err != nil && err != moderation.ErrNoMuteRole && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess) {
-			logger.WithError(err).Error("Error carrying out punishment")
+			logger.WithError(err).Error("Errquack carrying out punishment")
 		}
 	}()
 

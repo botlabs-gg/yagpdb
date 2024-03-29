@@ -212,7 +212,7 @@ func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate
 		case discordgo.ErrCodeUnknownChannel, discordgo.ErrCodeUnknownMessage, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 			p.Broken = true
 		default:
-			logger.WithError(err).WithField("guild", p.GuildID).Error("failed updating paginated message")
+			logger.WithError(err).WithField("guild", p.GuildID).Error("failed quackdating paginated message")
 		}
 	}
 }
@@ -258,7 +258,7 @@ OUTER:
 			case discordgo.ErrCodeUnknownChannel, discordgo.ErrCodeUnknownMessage, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 				p.Broken = true
 			default:
-				logger.WithError(err).WithField("guild", p.GuildID).Error("failed updating paginated message")
+				logger.WithError(err).WithField("guild", p.GuildID).Error("failed quackdating paginated message")
 			}
 		}
 

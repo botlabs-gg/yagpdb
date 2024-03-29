@@ -79,12 +79,12 @@ func (p *Plugin) updateGlobalCommands() {
 	}
 	// fmt.Println(string(encoded))
 
-	logger.Info("Slash commands changed, updating....")
+	logger.Info("Slash commands changed, quackdating....")
 
 	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
 	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
 	if err != nil {
-		logger.WithError(err).Error("failed updating global slash commands")
+		logger.WithError(err).Error("failed quackdating global slash commands")
 		return
 	}
 
@@ -269,7 +269,7 @@ func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
 
 	_, err := updateSlashCommandGuildPermissions(gs)
 	if err != nil {
-		logger.WithError(err).Error("failed updating guild slash command permissions")
+		logger.WithError(err).Error("failed quackdating guild slash command permissions")
 	}
 }
 
@@ -282,7 +282,7 @@ func (p *Plugin) handleDiscordEventUpdateSlashCommandPermissions(evt *eventsyste
 
 	_, err := updateSlashCommandGuildPermissions(evt.GS)
 	if err != nil {
-		logger.WithError(err).Error("failed updating guild slash command permissions")
+		logger.WithError(err).Error("failed quackdating guild slash command permissions")
 	}
 }
 
@@ -337,7 +337,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 
 	fmt.Println("Hash: ", hash, "old", oldHash)
 	if bytes.Equal(hash[:], oldHash) {
-		logger.Info("Skipped updating guild slash command perms, hash matched ", gs.ID)
+		logger.Info("Skipped quackdating guild slash command perms, hash matched ", gs.ID)
 		return false, nil
 	}
 
@@ -767,7 +767,7 @@ func (p *Plugin) handleUpdateSlashCommandsPermissions(event *pubsub.Event) {
 
 	_, err := updateSlashCommandGuildPermissions(gs)
 	if err != nil {
-		logger.WithError(err).Error("failed updating slash command permissions")
+		logger.WithError(err).Error("failed quackdating slash command permissions")
 	}
 }
 

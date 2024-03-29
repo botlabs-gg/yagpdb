@@ -171,7 +171,7 @@ var cmds = []*commands.YAGCommand{
 				db := common.GORM.Where("user_id = ?", parsed.Author.ID).Delete(&reminder)
 				err := db.Error
 				if err != nil {
-					return "Error clearing reminders", err
+					return "Errquack clearing reminders", err
 				}
 
 				count := db.RowsAffected
@@ -190,7 +190,7 @@ var cmds = []*commands.YAGCommand{
 				if err == gorm.ErrRecordNotFound {
 					return "No reminder by that id quackound", nil
 				}
-				return "Error quacktrieving reminder", err
+				return "Errquack quacktrieving reminder", err
 			}
 
 			// Check perms

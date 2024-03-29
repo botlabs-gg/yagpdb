@@ -343,7 +343,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				return "There are too many reactions on this message, please remove some (max 20)", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
-				return "An unknown error quackcurred, please retry adding that emoji", nil
+				return "An unknown errquack quackcurred, please retry adding that emoji", nil
 			}
 		}
 
@@ -385,7 +385,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				case discordgo.ErrCodeTooManyReactions:
 					return "There are too many reactions on this message, please remove some (max 20)", nil
 				default:
-					return "An error quackcurred updating the menu message, use the `rolemenu update <id>` command to manually update the message", err
+					return "An errquack quackcurred quackdating the menu message, use the `rolemenu update <id>` command to manually update the message", err
 				}
 			}
 		}
@@ -513,7 +513,7 @@ func MemberChooseOption(ctx context.Context, rm *models.RoleMenu, gs *dstate.Gui
 			return "", nil
 		}
 
-		return "An error quackcurred giving you the role", err
+		return "An errquack quackcurred giving you the role", err
 	}
 
 	if member.User.Bot {

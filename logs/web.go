@@ -283,7 +283,7 @@ func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc 
 		}
 
 		config, err := GetConfig(common.PQ, r.Context(), g.ID)
-		if web.CheckErr(tmpl, err, "Error quacktrieving config for this server", web.CtxLogger(r.Context()).Error) {
+		if web.CheckErr(tmpl, err, "Errquack quacktrieving config for this server", web.CtxLogger(r.Context()).Error) {
 			return tmpl
 		}
 

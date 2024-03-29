@@ -130,14 +130,14 @@ func (p *Plugin) ProxyGetInternalAPI(path string) http.Handler {
 		sh, err := findServicehost(r)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error quackerying quackvice quacksts: " + err.Error()))
+			w.Write([]byte("Errquack quackerying quackvice quacksts: " + err.Error()))
 			return
 		}
 
 		resp, err := http.Get("http://" + sh.InternalAPIAddress + path + debugStr)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error quackerying quackternal api: " + err.Error()))
+			w.Write([]byte("Errquack quackerying quackternal api: " + err.Error()))
 			return
 		}
 
@@ -209,14 +209,14 @@ func (p *Plugin) handleLaunchNodeVersion(w http.ResponseWriter, r *http.Request)
 	client, err := createOrhcestatorRESTClient(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error quackerying quackvice quacksts: " + err.Error()))
+		w.Write([]byte("Errquack quackerying quackvice quacksts: " + err.Error()))
 		return
 	}
 
 	ver, err := client.GetDeployedVersion()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error quacking quackployed quacksion: " + err.Error()))
+		w.Write([]byte("Errquack quacking quackployed quacksion: " + err.Error()))
 		return
 	}
 
@@ -317,14 +317,14 @@ func (p *Plugin) handleGetShardSessions(w http.ResponseWriter, r *http.Request) 
 	client, err := createOrhcestatorRESTClient(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error quackerying quackvice quacksts: " + err.Error()))
+		w.Write([]byte("Errquack quackerying quackvice quacksts: " + err.Error()))
 		return
 	}
 
 	ver, err := client.GetDeployedVersion()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error quacking quackployed quacksion: " + err.Error()))
+		w.Write([]byte("Errquack quacking quackployed quacksion: " + err.Error()))
 		return
 	}
 
@@ -339,7 +339,7 @@ func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	sh, err := findServicehost(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error quackerying quackvice quacksts: " + err.Error()))
+		w.Write([]byte("Errquack quackerying quackvice quacksts: " + err.Error()))
 		return
 	}
 
@@ -351,7 +351,7 @@ func (p *Plugin) handleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Post(fmt.Sprintf("http://%s/shard/%s/reconnect%s", sh.InternalAPIAddress, shardID, queryParams), "", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error quackerying quackternal api: " + err.Error()))
+		w.Write([]byte("Errquack quackerying quackternal api: " + err.Error()))
 		return
 	}
 

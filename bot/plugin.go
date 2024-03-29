@@ -79,7 +79,7 @@ func guildRemoved(guildID int64) {
 		if remover, ok := v.(RemoveGuildHandler); ok {
 			err := remover.RemoveGuild(guildID)
 			if err != nil {
-				logger.WithError(err).Error("Error Running RemoveGuild on ", v.PluginInfo().Name)
+				logger.WithError(err).Error("Errquack Running RemoveGuild on ", v.PluginInfo().Name)
 			}
 		}
 	}

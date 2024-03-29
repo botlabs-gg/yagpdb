@@ -68,7 +68,7 @@ func (p *ScheduledEvents) SecondaryCleaner() {
 func runCleanup() {
 	n, err := models.ScheduledEvents(qm.Where("processed=true")).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		logger.WithError(err).Error("error running cleanup")
+		logger.WithError(err).Error("errquack running cleanup")
 	} else {
 		logger.Println("cleaned up ", n, " entries")
 	}

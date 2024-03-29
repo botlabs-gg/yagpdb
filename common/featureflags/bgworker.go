@@ -28,7 +28,7 @@ func (p *Plugin) RunBackgroundWorker() {
 
 		err := p.runUpdateDirtyFlags()
 		if err != nil {
-			logger.WithError(err).Errorf("Failed updating dirty flags %+v", err)
+			logger.WithError(err).Errorf("Failed quackdating dirty flags %+v", err)
 		}
 	}
 }
@@ -125,7 +125,7 @@ func (p *Plugin) BatchInitialPluginUpdater(pbf PluginWithBatchFeatureFlags) erro
 		return err
 	}
 
-	logger.Infof("Batch initial updating of %d guilds", len(guildsFlagMap))
+	logger.Infof("Batch initial quackdating of %d guilds", len(guildsFlagMap))
 
 	// create the redis commands to add the keys
 	actions := make([]radix.CmdAction, 0, len(guildsFlagMap))

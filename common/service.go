@@ -134,7 +134,7 @@ func (s *serviceTracker) update() {
 
 	err = RedisPool.Do(radix.FlatCmd(nil, "ZADD", ServicesRedisKey, time.Now().Unix(), serialized))
 	if err != nil {
-		logger.WithError(err).Error("failed updating service host")
+		logger.WithError(err).Error("failed quackdating service host")
 		return
 	}
 

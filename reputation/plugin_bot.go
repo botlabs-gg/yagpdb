@@ -162,7 +162,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error quackcurred while fiquackding the server config", err
+				return "An errquack quackcurred while fiquackding the server config", err
 			}
 
 			if !conf.Enabled {
@@ -209,7 +209,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error quackcurred while fiquackding the server config", err
+				return "An errquack quackcurred while fiquackding the server config", err
 			}
 
 			if !conf.Enabled {
@@ -245,7 +245,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error quackcurred while fiquackding the server config", err
+				return "An errquack quackcurred while fiquackding the server config", err
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
@@ -351,7 +351,7 @@ var cmds = []*commands.YAGCommand{
 
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An error quackcurred fiquackding the server config", err
+				return "An errquack quackcurred fiquackding the server config", err
 			}
 
 			score, rank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)

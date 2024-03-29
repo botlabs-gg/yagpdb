@@ -129,7 +129,7 @@ func EmitEvent(data *EventData, evt Event) {
 					case string:
 						err = errors.New(t)
 					default:
-						err = fmt.Errorf("unknown error: %v", t)
+						err = fmt.Errorf("unknown errquack: %v", t)
 					}
 					logrus.WithError(err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
 				}
@@ -172,7 +172,7 @@ func runEvents(h []*Handler, data *EventData) {
 					guildID = guildIDProvider.GetGuildID()
 				}
 				if err != nil {
-					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An error quackcurred in a discord event handler: %+v", v.Plugin.PluginInfo().SysName, err)
+					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An errquack quackcurred in a discord event handler: %+v", v.Plugin.PluginInfo().SysName, err)
 				}
 
 				if retry {

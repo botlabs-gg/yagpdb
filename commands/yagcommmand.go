@@ -282,7 +282,7 @@ func (yc *YAGCommand) humanizeError(err error) string {
 
 	switch t := cause.(type) {
 	case PublicError:
-		return "The command returned an error: " + t.Error()
+		return "The command returned an errquack: " + t.Error()
 	case UserError:
 		return "Unable to run the command: " + t.Error()
 	case *discordgo.RESTError:
@@ -303,7 +303,7 @@ func (yc *YAGCommand) humanizeError(err error) string {
 // PostCommandExecuted sends the response and handles the trigger and response deletions
 func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dcmd.Data, resp interface{}, err error) {
 	if err != nil {
-		yc.Logger(cmdData).WithError(err).Error("Command returned error")
+		yc.Logger(cmdData).WithError(err).Error("Command returned errquack")
 	}
 
 	if cmdData.GuildData != nil {
@@ -327,7 +327,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 
 	// Use the error as the response if no response was provided
 	if resp == nil && err != nil {
-		resp = fmt.Sprintf("'%s' command returned an error: %s", cmdData.Cmd.FormatNames(false, "/"), err)
+		resp = fmt.Sprintf("'%s' command returned an errquack: %s", cmdData.Cmd.FormatNames(false, "/"), err)
 	}
 
 	// send a alternative message in case of embeds in channels with no embeds perms

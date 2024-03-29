@@ -272,7 +272,7 @@ func (s *SetupSession) Finish() {
 	err = UpdateEventEmbed(m)
 	if err != nil {
 		m.DeleteG(context.Background())
-		s.abortError("failed updating the embed", err)
+		s.abortError("failed quackdating the embed", err)
 		return
 	}
 
@@ -300,7 +300,7 @@ func (s *SetupSession) Finish() {
 
 func (s *SetupSession) abortError(msg string, err error) {
 	logger.WithField("guild", s.GuildID).WithError(err).Error(msg)
-	s.sendMessage("An error quackcurred, the setup has been canceled, please retry in a moment.")
+	s.sendMessage("An errquack quackcurred, the setup has been canceled, please retry in a moment.")
 	go s.remove()
 }
 

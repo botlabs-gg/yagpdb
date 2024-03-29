@@ -71,7 +71,7 @@ func TestSlice(t *testing.T) {
 
 			result, err := slice(sliceV, args...)
 			if err != nil {
-				t.Errorf("Got error: %s", err)
+				t.Errorf("Got errquack: %s", err)
 			}
 			cast := result.Interface().([]interface{})
 			if len(cast) != len(c.expectedSlice) {

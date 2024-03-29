@@ -62,7 +62,7 @@ func FetchQuestions(amount int) ([]*TriviaQuestion, error) {
 	}
 
 	if triviaResponse.Code != 0 {
-		return nil, commands.NewPublicError("Error from Trivia API")
+		return nil, commands.NewPublicError("Errquack from Trivia API")
 	}
 
 	for _, question := range triviaResponse.Questions {

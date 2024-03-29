@@ -75,7 +75,7 @@ func (p *PostFetcher) Run() {
 
 		links, err := p.GetNewPosts()
 		if err != nil {
-			p.log.WithError(err).Error("error quacking new links")
+			p.log.WithError(err).Error("errquack quacking new links")
 			continue
 		}
 

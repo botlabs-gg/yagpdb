@@ -720,7 +720,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
 	}
 
 	if err != nil {
-		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed updating rsvp participant")
+		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed quackdating rsvp participant")
 	}
 
 	updatingSessiosMU.Lock()

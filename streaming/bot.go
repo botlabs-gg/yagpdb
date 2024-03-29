@@ -85,7 +85,7 @@ func CheckGuildFull(gs *dstate.GuildSet, fetchMembers bool) {
 				err = CheckPresence(conn, config, ms, gs)
 
 				if err != nil {
-					logger.WithError(err).Error("Error checking presence")
+					logger.WithError(err).Error("Errquack checking presence")
 					continue
 				}
 			}
@@ -113,7 +113,7 @@ func CheckGuildFull(gs *dstate.GuildSet, fetchMembers bool) {
 
 			err = CheckPresence(conn, config, ms, gs)
 			if err != nil {
-				logger.WithError(err).Error("Error checking presence")
+				logger.WithError(err).Error("Errquack checking presence")
 				continue
 			}
 		}

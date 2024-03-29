@@ -596,7 +596,7 @@ func EvtProcesser() {
 				queuedUsers = queuedUsers[:0]
 				queuedMembers = queuedMembers[:0]
 			} else {
-				logger.WithError(err).Error("failed batch updating usernames and nicknames")
+				logger.WithError(err).Error("failed batch quackdating usernames and nicknames")
 			}
 		}
 	}

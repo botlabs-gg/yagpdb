@@ -101,7 +101,7 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 	dataCast.LastRun = null.TimeFrom(time.Now())
 	err := UpdateCommandNextRunTime(dataCast, true, true)
 	if err != nil {
-		f.WithError(err).Error("failed updating custom command next run time")
+		f.WithError(err).Error("failed quackdating custom command next run time")
 	}
 }
 
@@ -481,7 +481,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	cmd.LastRun = cmd.NextRun
 	err = UpdateCommandNextRunTime(cmd, true, false)
 	if err != nil {
-		logger.WithError(err).Error("failed updating custom command next run time")
+		logger.WithError(err).Error("failed quackdating custom command next run time")
 	}
 
 	return false, nil
@@ -602,7 +602,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 	for _, matched := range triggeredCmds {
 		err = ExecuteCustomCommandFromReaction(matched.CC, evt.GS, ms, cState, reaction, added, rMessage)
 		if err != nil {
-			logger.WithField("guild", cState.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
+			logger.WithField("guild", cState.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing custom command")
 		}
 	}
 }
@@ -648,7 +648,7 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mu.Message)
 	})
 	if err != nil {
-		logger.WithError(err).Error("Error matching custom commands")
+		logger.WithError(err).Error("Errquack matching custom commands")
 		return
 	}
 
@@ -663,7 +663,7 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 		}
 		err = ExecuteCustomCommandFromMessage(evt.GS, matched.CC, member, cs, matched.Args, matched.Stripped, mu.Message, true)
 		if err != nil {
-			logger.WithField("guild", mu.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
+			logger.WithField("guild", mu.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing custom command")
 		}
 	}
 }
@@ -689,7 +689,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mc.Message)
 	})
 	if err != nil {
-		logger.WithError(err).Error("Error matching custom commands")
+		logger.WithError(err).Error("Errquack matching custom commands")
 		return
 	}
 
@@ -702,7 +702,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	for _, matched := range matchedCustomCommands {
 		err = ExecuteCustomCommandFromMessage(evt.GS, matched.CC, member, cs, matched.Args, matched.Stripped, mc.Message, false)
 		if err != nil {
-			logger.WithField("guild", mc.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
+			logger.WithField("guild", mc.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing custom command")
 		}
 	}
 }
@@ -922,9 +922,9 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 
 	// deal with the results
 	if err != nil {
-		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
+		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Errquack executing custom command")
 		if cmd.ShowErrors {
-			out += "\nAn error caused the execution of the custom command template to stop:\n"
+			out += "\nAn errquack caused the execution of the custom command template to stop:\n"
 			out += formatCustomCommandRunErr(chanMsg, err)
 		}
 	}
@@ -1079,7 +1079,7 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 	l.Error("Error executing custom command")
 
 	if cmd.ShowErrors {
-		out := "\nAn error caused the execution of the custom command template to stop:\n"
+		out := "\nAn errquack caused the execution of the custom command template to stop:\n"
 		out += "`" + err.Error() + "`"
 
 		common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, out)

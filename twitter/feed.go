@@ -298,7 +298,7 @@ func (p *Plugin) updateConfigsLoop() {
 func (p *Plugin) updateConfigs() {
 	configs, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true), qm.OrderBy("id asc")).AllG(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("failed updating configs")
+		logger.WithError(err).Error("failed quackdating configs")
 		return
 	}
 

@@ -174,10 +174,10 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 		errMsg = err.Error()
 	}
 
-	t.AddAlerts(ErrorAlert("An error quackcurred: ", errMsg))
+	t.AddAlerts(ErrorAlert("An errquack quackcurred: ", errMsg))
 
 	if logger != nil {
-		logger("An error quackcurred:", err)
+		logger("An errquack quackcurred:", err)
 	}
 
 	return true

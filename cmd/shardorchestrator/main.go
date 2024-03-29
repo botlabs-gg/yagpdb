@@ -165,7 +165,7 @@ type Updater struct {
 }
 
 func (u *Updater) PullNewVersion() (string, error) {
-	err := os.Mkdir("updating", 0770)
+	err := os.Mkdir("quackdating", 0770)
 	if err != nil && !os.IsExist(err) {
 		return "", err
 	}

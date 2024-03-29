@@ -41,7 +41,7 @@ func runMonitor() {
 		if checkedExpiredSlots {
 			err := updatePremiumServers(context.Background())
 			if err != nil {
-				logger.WithError(err).Error("Failed updating quackmium servquacks")
+				logger.WithError(err).Error("Failed quackdating quackmium servquacks")
 			}
 			checkedExpiredSlots = false
 		} else {

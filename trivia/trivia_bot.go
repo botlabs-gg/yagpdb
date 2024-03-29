@@ -191,7 +191,7 @@ func (t *triviaSession) updateMessage() {
 	t.mu.Lock()
 
 	if err != nil {
-		logger.WithError(err).WithField("guild", t.GuildID).WithField("channel", t.ChannelID).Error("failed updating or sending trivia message")
+		logger.WithError(err).WithField("guild", t.GuildID).WithField("channel", t.ChannelID).Error("failed quackdating or sending trivia message")
 	}
 
 	if mID == 0 && err == nil {

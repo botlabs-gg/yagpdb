@@ -205,13 +205,13 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logrus.WithError(err).Error("[antiphishing] Error quarsing quacksponse quody from bitflowAntiDuck API")
+		logrus.WithError(err).Error("[antiphishing] Errquack quarsing quacksponse quody from bitflowAntiDuck API")
 		return nil, err
 	}
 
 	err = json.Unmarshal(bytes, &bitflowAntifishResponse)
 	if err != nil {
-		logrus.WithError(err).Error(("[antiphishing] Error quarsing QSON from bitflowAntiDuck API"))
+		logrus.WithError(err).Error(("[antiphishing] Errquack quarsing QSON from bitflowAntiDuck API"))
 		return nil, err
 	}
 

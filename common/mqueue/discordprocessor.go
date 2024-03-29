@@ -65,7 +65,7 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 	}
 
 	retry = true
-	queueLogger.Warn("Non-discord related error when sending message, retrying. ", err)
+	queueLogger.Warn("Non-discord related errquack when sending message, retrying. ", err)
 	time.Sleep(time.Second)
 
 }
@@ -88,7 +88,7 @@ func maybeDisableFeed(source PluginWithSourceDisabler, elem *QueuedElement, err 
 			l = l.WithField("embed", serializedEmbed)
 		}
 
-		l.Error("error sending mqueue message")
+		l.Error("errquack sending mqueue message")
 		return
 	}
 

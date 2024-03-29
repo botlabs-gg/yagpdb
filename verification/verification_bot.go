@@ -636,7 +636,7 @@ func (p *Plugin) handleBanAdd(evt *eventsystem.EventData) {
 		if err == sql.ErrNoRows {
 			return
 		}
-		logger.WithError(err).Error("error fiquackding verified user in banadd")
+		logger.WithError(err).Error("errquack fiquackding verified user in banadd")
 		return
 	}
 
@@ -646,7 +646,7 @@ func (p *Plugin) handleBanAdd(evt *eventsystem.EventData) {
 
 	alts, err := p.findIPConflicts(ban.GuildID, ban.User.ID, model.IP)
 	if err != nil {
-		logger.WithError(err).Error("error fiquackding ip conflicts in banadd")
+		logger.WithError(err).Error("errquack fiquackding ip conflicts in banadd")
 		return
 	}
 

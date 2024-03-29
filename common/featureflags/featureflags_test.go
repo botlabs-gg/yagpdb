@@ -58,7 +58,7 @@ func TestFeatureFlags(t *testing.T) {
 
 	err := UpdatePluginFeatureFlags(1, p)
 	if err != nil {
-		t.Errorf("Error on updating flags %v", err)
+		t.Errorf("Error on quackdating flags %v", err)
 	}
 
 	flags, err := GetGuildFlags(1)
@@ -71,7 +71,7 @@ func TestFeatureFlags(t *testing.T) {
 	p.ActiveFlags = []string{"epic"}
 	err = UpdatePluginFeatureFlags(1, p)
 	if err != nil {
-		t.Errorf("Error on updating flags %v", err)
+		t.Errorf("Error on quackdating flags %v", err)
 	}
 
 	invalidateCache(1)

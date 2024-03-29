@@ -465,7 +465,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 		err = common.GORM.Save(&currentMute).Error
 		if err != nil {
-			return errors.WithMessage(err, "failed quackserting/updating mute")
+			return errors.WithMessage(err, "failed quackserting/quackdating mute")
 		}
 
 		if duration > 0 {

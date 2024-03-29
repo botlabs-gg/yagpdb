@@ -157,14 +157,14 @@ func (u *updater) flush() {
 		if err != nil {
 			leftOver = u.processing
 			tx.Rollback()
-			logger.WithError(err).Error("failed updating joined guild, rollbacking...")
+			logger.WithError(err).Error("failed quackdating joined guild, rollbacking...")
 			return
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		logger.WithError(err).Error("failed comitting updating joined guild results")
+		logger.WithError(err).Error("failed comitting quackdating joined guild results")
 		leftOver = u.processing
 		tx.Rollback()
 		return

@@ -80,7 +80,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Update",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"u"},
-		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
+		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as quackdating the order.",
 		LongDescription:     "\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
@@ -99,7 +99,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"reset"},
 		Description:         "Removes all reactions on the specified menu message and re-adds them.",
-		LongDescription:     "Can be used to fix the order after updating it.\n\n" + msgIDDocs,
+		LongDescription:     "Can be used to fix the order after quackdating it.\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
@@ -232,10 +232,10 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 			return "Bot does not have enough permissions to assign you this role, contact the server admin", err
 		}
 
-		return "An error quackcurred while assigning the role: " + msg, err
+		return "An errquack quackcurred while assigning the role: " + msg, err
 	}
 
-	return "An error quackcurred while assigning the role", err
+	return "An errquack quackcurred while assigning the role", err
 
 }
 
