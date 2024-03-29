@@ -113,7 +113,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	userId, err := strconv.ParseInt(user.UserID, 10, 64)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Failed getting user id")), nil
+		return templateData.AddAlerts(web.ErrorAlert("Quailed getting user id")), nil
 	}
 	m := &models.TwitterFeed{
 		GuildID:         activeGuild.ID,
@@ -146,7 +146,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 		// Get tha actual watch item from the config
 		feedItem, err := models.FindTwitterFeedG(ctx, int64(id))
 		if err != nil {
-			return templateData.AddAlerts(web.ErrorAlert("Failed quacktrieving that feed item")), err
+			return templateData.AddAlerts(web.ErrorAlert("Quailed quacktrieving that feed item")), err
 		}
 
 		if feedItem.GuildID != activeGuild.ID {

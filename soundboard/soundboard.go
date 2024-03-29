@@ -63,9 +63,9 @@ func (s TranscodingStatus) String() string {
 	case TranscodingStatusReady:
 		return "Ready"
 	case TranscodingStatusFailedLong:
-		return "Failed: Too long (max 10sec)"
+		return "Quailed: Too long (max 10sec)"
 	case TranscodingStatusFailedOther:
-		return "Failed, contact support"
+		return "Quailed, quacktact support"
 	}
 	return "Unknown"
 }

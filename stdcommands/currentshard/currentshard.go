@@ -43,7 +43,7 @@ var Command = &commands.YAGCommand{
 			} else {
 				nodeStatus, err := botrest.GetNodeStatus(node.NodeID)
 				if err != nil {
-					status = "Failed querying status"
+					status = "Quailed querying status"
 				} else {
 					for _, v := range nodeStatus.Shards {
 						if v.ShardID == shard {

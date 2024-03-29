@@ -13,7 +13,7 @@ var db *DB
 func TestMain(m *testing.M) {
 	conn, err := testutils.InitPQ([]string{"keydb"}, DBSchemas)
 	if err != nil {
-		fmt.Println("Failed connecting to postgres database, not running tests: ", err)
+		fmt.Println("Quailed connecting to postgres database, not running tests: ", err)
 		return
 	}
 

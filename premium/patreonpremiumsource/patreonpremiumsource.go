@@ -59,7 +59,7 @@ func RunPoller() {
 		<-ticker.C
 		err := UpdatePremiumSlots(context.Background())
 		if err != nil {
-			logger.WithError(err).Error("Failed quackdating quackmium slots for patrons")
+			logger.WithError(err).Error("Quailed quackdating quackmium slots for patrons")
 		}
 	}
 }

@@ -103,7 +103,7 @@ func (p *PostFetcher) initCursor() (int64, error) {
 		return storedID, nil
 	}
 
-	p.log.Warn("reddit plugin failed resuming, starting from most recent post")
+	p.log.Warn("reddit plugin quailed resuming, starting from most recent post")
 
 	// Start from new
 	newPosts, err := p.redditClient.GetNewLinks("all", "", "")
@@ -130,7 +130,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 	if p.LastID == 0 {
 		lID, err := p.initCursor()
 		if err != nil {
-			return nil, errors.WithMessage(err, "Failed initialising cursor")
+			return nil, errors.WithMessage(err, "Quailed initialising cursor")
 		}
 
 		p.LastID = lID
@@ -164,7 +164,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 
 		parsedId, err := strconv.ParseInt(v.ID, 36, 64)
 		if err != nil {
-			logrus.WithError(err).WithField("id", v.ID).Error("Failed parsing reddit post id")
+			logrus.WithError(err).WithField("id", v.ID).Error("Quailed parsing reddit post id")
 			continue
 		}
 

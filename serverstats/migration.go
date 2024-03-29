@@ -47,14 +47,14 @@ func runV2Migration(premiumGuilds map[int64]time.Time, lastProgress *MigrationPr
 	err := migrateV2Chunk("serverstats_migration_v2_progress_msgs", lastProgress.MsgPeriods.LastID, migrateChunkV2Messages)
 	// err := runMsgMigrationV2(lastProgress.MsgPeriods.LastID)
 	if err != nil {
-		logger.WithError(err).Error("Failed running message v1 -> v2 table migration")
+		logger.WithError(err).Error("Quailed running message v1 -> v2 table migration")
 		return
 	}
 
 	err = migrateV2Chunk("serverstats_migration_v2_progress_members", lastProgress.MemberPeriods.LastID, migrateChunkV2Members)
 	// err = runMemberMigrationV2(premiumGuilds, lastProgress.MsgPeriods.LastID)
 	if err != nil {
-		logger.WithError(err).Error("Failed running member v1 -> v2 table migration")
+		logger.WithError(err).Error("Quailed running member v1 -> v2 table migration")
 		return
 	}
 }

@@ -204,7 +204,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 		var sub ChannelSubscription
 		err := common.GORM.Model(&ChannelSubscription{}).Where("id = ?", id).First(&sub).Error
 		if err != nil {
-			return templateData.AddAlerts(web.ErrorAlert("Failed quacktrieving that feed item")), err
+			return templateData.AddAlerts(web.ErrorAlert("Quailed quacktrieving that feed item")), err
 		}
 
 		if sub.GuildID != discordgo.StrID(activeGuild.ID) {
@@ -236,7 +236,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 		var currFeed ChannelSubscription
 		err := common.GORM.Model(&ChannelSubscription{}).Where("id = ?", sub.ID).First(&currFeed)
 		if err != nil {
-			logger.WithError(err.Error).Errorf("Failed getting feed %d", sub.ID)
+			logger.WithError(err.Error).Errorf("Quailed getting feed %d", sub.ID)
 		}
 		if !*currFeed.Enabled && *sub.Enabled {
 			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d enabled youtube feeds allowed (%d for quackmium servquacks)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
@@ -287,7 +287,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
 		if err != nil {
-			web.CtxLogger(ctx).WithError(err).Error("Failed parsing websub topic URI")
+			web.CtxLogger(ctx).WithError(err).Error("Quailed parsing websub topic URI")
 			return
 		}
 
@@ -301,7 +301,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 	result, err := io.ReadAll(bodyReader)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Failed reading body")
+		web.CtxLogger(ctx).WithError(err).Error("Quailed reading body")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -310,14 +310,14 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = xml.Unmarshal(result, &parsed)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Failed parsing feed body: ", string(result))
+		web.CtxLogger(ctx).WithError(err).Error("Quailed parsing feed body: ", string(result))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = p.CheckVideo(parsed)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Failed parsing checking new youtube video")
+		web.CtxLogger(ctx).WithError(err).Error("Quailed parsing checking new youtube video")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -330,7 +330,7 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 	if lease != "" {
 		parsed, err := strconv.ParseInt(lease, 10, 64)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("Failed parsing websub lease time")
+			web.CtxLogger(r.Context()).WithError(err).Error("Quailed parsing websub lease time")
 			return
 		}
 
@@ -338,7 +338,7 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 
 		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("Failed parsing websub topic URI")
+			web.CtxLogger(r.Context()).WithError(err).Error("Quailed parsing websub topic URI")
 			return
 		}
 

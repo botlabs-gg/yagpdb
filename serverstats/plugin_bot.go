@@ -187,7 +187,7 @@ func (p *Plugin) runOnlineUpdater() {
 
 		err := common.RedisPool.Do(radix.Pipeline(updateActions...))
 		if err != nil {
-			logger.WithError(err).Error("failed quackdating members period runner")
+			logger.WithError(err).Error("quailed quackdating members period runner")
 		}
 
 		if time.Since(started) > time.Second {

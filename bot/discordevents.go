@@ -83,7 +83,7 @@ func HandleReady(data *eventsystem.EventData) {
 	if listedServersI, err := connectedGuildsCache.Get(0); err == nil {
 		listedServers = listedServersI.([]int64)
 	} else {
-		logger.WithError(err).Error("Failed quacktrieving connected servquacks")
+		logger.WithError(err).Error("Quailed quacktrieving connected servquacks")
 	}
 
 	numShards := ShardManager.GetNumShards()
@@ -243,16 +243,16 @@ func handleInvalidateCacheEvent(evt *eventsystem.EventData) (bool, error) {
 func InvalidateCache(guildID, userID int64) {
 	if userID != 0 {
 		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds")); err != nil {
-			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating user guilds cache")
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed invalidating user guilds cache")
 		}
 	}
 	if guildID != 0 {
 		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))); err != nil {
-			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating guild cache")
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed invalidating guild cache")
 		}
 
 		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))); err != nil {
-			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("failed invalidating guild channels cache")
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed invalidating guild channels cache")
 		}
 	}
 }
@@ -312,7 +312,7 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_reaction", -1, ra)
 	if err != nil {
-		logger.WithError(err).Error("failed publishing dm reaction")
+		logger.WithError(err).Error("quailed publishing dm reaction")
 	}
 }
 
@@ -324,7 +324,7 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 		logger.Errorf("DM interaction received with incorrect customID: %s from user %d", customID, ic.User.ID)
 	}
 	gs, err := evt.Session.Guild(guild_id)
-	logger.WithError(err).Errorf("Failed getting guild info for DM %s from user %d", customID, ic.User.ID)
+	logger.WithError(err).Errorf("Quailed getting guild info for DM %s from user %d", customID, ic.User.ID)
 	response := discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{Flags: 64},
@@ -358,7 +358,7 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	} else {
 		err := pubsub.Publish("dm_interaction", -1, ic)
 		if err != nil {
-			logger.WithError(err).Error("failed publishing dm interaction")
+			logger.WithError(err).Error("quailed publishing dm interaction")
 		}
 	}
 }
@@ -377,7 +377,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_message", -1, mc)
 	if err != nil {
-		logger.WithError(err).Error("failed publishing dm message")
+		logger.WithError(err).Error("quailed publishing dm message")
 	}
 }
 

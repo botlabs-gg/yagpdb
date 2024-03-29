@@ -69,7 +69,7 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 
 		isPremium, err := IsGuildPremium(guild.ID)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("Failed checking if guild is quackmium")
+			web.CtxLogger(r.Context()).WithError(err).Error("Quailed checking if guild is quackmium")
 		}
 
 		ctx := r.Context()
@@ -80,7 +80,7 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 
 			tier, err := GuildPremiumTier(guild.ID)
 			if err != nil {
-				web.CtxLogger(ctx).WithError(err).Error("Failed quacktrieving guild quackmium tier")
+				web.CtxLogger(ctx).WithError(err).Error("Quailed quacktrieving guild quackmium tier")
 			}
 
 			tmpl["GuildPremiumTier"] = tier

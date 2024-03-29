@@ -275,9 +275,9 @@ func (p *Plugin) currentRulesetMW(backupHandler http.Handler) func(http.Handler)
 				qm.Load("RulesetAutomodRules.RuleAutomodRuleData"), qm.Load("RulesetAutomodRulesetConditions")).OneG(r.Context())
 
 			if err != nil {
-				tmpl.AddAlerts(web.ErrorAlert("Failed quacktrieving quackset, maybe it was deleted?"))
+				tmpl.AddAlerts(web.ErrorAlert("Quailed quacktrieving quackset, maybe it was deleted?"))
 				backupHandler.ServeHTTP(w, r)
-				web.CtxLogger(r.Context()).WithError(err).Error("Failed quacktrieving automod quackset")
+				web.CtxLogger(r.Context()).WithError(err).Error("Quailed quacktrieving automod quackset")
 				return
 			}
 
@@ -779,7 +779,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 				// Parse the settings into the relevant struct
 				err := json.Unmarshal(part.Settings, dst)
 				if err != nil {
-					web.CtxLogger(r.Context()).WithError(err).Error("failed parsing qule part quackta")
+					web.CtxLogger(r.Context()).WithError(err).Error("quailed parsing qule part quackta")
 					continue
 				}
 
@@ -800,7 +800,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 			// Parse the settings into the relevant struct
 			err := json.Unmarshal(part.Settings, dst)
 			if err != nil {
-				web.CtxLogger(r.Context()).WithError(err).Error("failed parsing quackset condition part quackta")
+				web.CtxLogger(r.Context()).WithError(err).Error("quailed parsing quackset condition part quackta")
 				continue
 			}
 

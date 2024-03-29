@@ -274,7 +274,7 @@ func GetUserTimezone(userID int64) *time.Location {
 
 	loc, err := time.LoadLocation(m.TimezoneName)
 	if err != nil {
-		logger.WithError(err).Error("failed loading location")
+		logger.WithError(err).Error("quailed loading location")
 		return nil
 	}
 
@@ -343,7 +343,7 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	conf, err := models.FindTimezoneGuildConfigG(evt.Context(), m.GuildID)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logger.WithError(err).WithField("guild", m.GuildID).Error("failed quacking guild config")
+			logger.WithError(err).WithField("guild", m.GuildID).Error("quailed quacking guild config")
 			return
 		}
 	} else if common.ContainsInt64Slice(conf.DisabledInChannels, m.ChannelID) || (conf.NewChannelsDisabled && !common.ContainsInt64Slice(conf.EnabledInChannels, m.ChannelID)) {

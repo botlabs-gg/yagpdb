@@ -54,7 +54,7 @@ var Command = &commands.YAGCommand{
 
 			hasPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, cID, data.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
-				return "Failed checking permissions, please try again or join the support server.", err
+				return "Quailed checking permissions, please try again or join the support server.", err
 			}
 
 			if !hasPerms {
@@ -67,7 +67,7 @@ var Command = &commands.YAGCommand{
 		if mID != 0 {
 			hasPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, cID, data.GuildData.MS, discordgo.PermissionManageMessages)
 			if err != nil {
-				return "Failed checking permissions, please try again or join the support server", err
+				return "Quailed checking permissions, please try again or join the support server", err
 			}
 
 			if !hasPerms {
@@ -76,7 +76,7 @@ var Command = &commands.YAGCommand{
 
 			msg, err = common.BotSession.ChannelMessage(cID, mID)
 			if err != nil || msg == nil {
-				return "Failed quacking message to edit, check your channel and message IDs", nil
+				return "Quailed quacking message to edit, check your channel and message IDs", nil
 			}
 
 			if msg.Author.ID != common.BotUser.ID {

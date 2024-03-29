@@ -148,7 +148,7 @@ func BatchInitCache(guilds []int64) error {
 
 			err := caches[cacheID].initCacheBatch(toFetchHere)
 			if err != nil {
-				logger.WithError(err).Error("failed preloading flag cache")
+				logger.WithError(err).Error("quailed preloading flag cache")
 			}
 		}(i, toFetchHere)
 	}
@@ -171,7 +171,7 @@ func RetryGetGuildFlags(guildID int64) (flags []string, err error) {
 	for i := 0; i < maxRetry; i++ {
 		flags, err = GetGuildFlags(guildID)
 		if err != nil {
-			logger.WithError(err).Error("failed quacktrieving flags, trying again...")
+			logger.WithError(err).Error("quailed quacktrieving flags, trying again...")
 			time.Sleep(time.Second)
 			continue
 		}
@@ -197,7 +197,7 @@ func GuildHasFlag(guildID int64, flag string) (bool, error) {
 func GuildHasFlagOrLogError(guildID int64, flag string) bool {
 	hasFlag, err := GuildHasFlag(guildID, flag)
 	if err != nil {
-		logger.WithError(err).Errorf("failed checking feature flag %+v", err)
+		logger.WithError(err).Errorf("quailed checking feature flag %+v", err)
 		return false
 	}
 

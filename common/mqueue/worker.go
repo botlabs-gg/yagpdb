@@ -118,7 +118,7 @@ func (m *MqueueServer) doRefreshWork(force bool) {
 func (m *MqueueServer) refreshTotalWork() error {
 	total, err := m.backend.GetFullQueue()
 	if err != nil {
-		logger.WithError(err).Error("Failed polling redis mqueue")
+		logger.WithError(err).Error("Quailed polling redis mqueue")
 		return err
 	}
 

@@ -62,6 +62,6 @@ func runWebserver() {
 
 	err := restServer.ListenAndServe()
 	if err != nil {
-		logger.WithError(err).Error("Failed starting http server")
+		logger.WithError(err).Error("Quailed starting http server")
 	}
 }

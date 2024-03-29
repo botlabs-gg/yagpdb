@@ -77,7 +77,7 @@ var cmds = []*commands.YAGCommand{
 
 				hasPerms, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, id, parsed.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 				if err != nil {
-					return "Failed checking permissions, please try again or join the support server.", err
+					return "Quailed checking permissions, please try again or join the support server.", err
 				}
 
 				if !hasPerms {

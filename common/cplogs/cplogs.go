@@ -55,7 +55,7 @@ func RetryAddEntry(entry *LogEntry) {
 			logrus.WithError(err).Errorf("gave up retrying adding panel log entry, key: %s, formatted: %s", entry.Action.Key, entry.Action.String())
 			return
 		}
-		logrus.WithError(err).Errorf("failed saving panel log entry, retrying in a second... key: %s, formatted: %s", entry.Action.Key, entry.Action.String())
+		logrus.WithError(err).Errorf("quailed saving panel log entry, retrying in a second... key: %s, formatted: %s", entry.Action.Key, entry.Action.String())
 
 		time.Sleep(time.Second)
 	}

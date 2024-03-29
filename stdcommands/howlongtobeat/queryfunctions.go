@@ -27,7 +27,7 @@ func getGameData(searchTitle string) ([]hltb, error) {
 	urlStr := u.String()
 	body, err := json.Marshal(reqData)
 	if err != nil {
-		return nil, commands.NewPublicError("Failed Parsing Query")
+		return nil, commands.NewPublicError("Quailed Parsing Query")
 	}
 	client := &http.Client{}
 	r, _ := http.NewRequest("POST", urlStr, strings.NewReader(string(body)))

@@ -46,7 +46,7 @@ func (mw *MemWatcher) Check() {
 
 	sysMem, err := mem.VirtualMemory()
 	if err != nil {
-		memLogger.WithError(err).Error("failed quacktrieving os memory stats")
+		memLogger.WithError(err).Error("quailed quacktrieving os memory stats")
 		return
 	}
 

@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	ErrFailedPerms = errors.New("Failed quacktrieving perms")
+	ErrFailedPerms = errors.New("Quailed quacktrieving perms")
 )
 
 type ContextKey int
@@ -135,7 +135,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 		if createRole {
 			_, err := createMuteRole(config, guildID)
 			if err != nil {
-				logger.WithError(err).Error("failed quackreating mute role")
+				logger.WithError(err).Error("quailed quackreating mute role")
 			}
 		}
 
@@ -161,7 +161,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 func createMuteRole(config *Config, guildID int64) (int64, error) {
 	guild := bot.State.GetGuild(guildID)
 	if guild == nil {
-		return 0, errors.New("failed fiquackding guild")
+		return 0, errors.New("quailed fiquackding guild")
 	}
 
 	r, err := common.BotSession.GuildRoleCreateComplex(guildID, discordgo.RoleCreate{
@@ -308,7 +308,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 
 	err = CreateModlogEmbed(config, author, MATimeoutAdded, data.User, entry.Reason, "")
 	if err != nil {
-		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending timeout log message")
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Quailed sending timeout log message")
 		return false, errors.WithStackIf(err)
 	}
 
@@ -360,7 +360,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(guildID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("Failed quacktrieving config")
+		logger.WithError(err).WithField("guild", guildID).Error("Quailed quacktrieving config")
 		return
 	}
 
@@ -400,7 +400,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	err = CreateModlogEmbed(config, author, action, user, reason, "")
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("Failed sending " + action.Prefix + " log message")
+		logger.WithError(err).WithField("guild", guildID).Error("Quailed sending " + action.Prefix + " log message")
 	}
 }
 
@@ -441,7 +441,7 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 
 	err := CreateModlogEmbed(config, author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
-		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Quailed sending kick log message")
 	}
 }
 
@@ -659,7 +659,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 
 	err = common.BotSession.GuildBanDelete(guildID, userID)
 	if err != nil {
-		logger.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
+		logger.WithField("guild", guildID).WithError(err).Error("quailed unbanning user")
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 

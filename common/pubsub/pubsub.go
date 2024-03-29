@@ -83,7 +83,7 @@ func Publish(evt string, target int64, data interface{}) error {
 func PublishLogErr(evt string, target int64, data interface{}) {
 	err := Publish(evt, target, data)
 	if err != nil {
-		logger.WithError(err).WithField("target", target).WithField("evt", evt).Error("failed sending pubsub")
+		logger.WithError(err).WithField("target", target).WithField("evt", evt).Error("quailed sending pubsub")
 	}
 }
 
@@ -180,7 +180,7 @@ func handleEvent(evt string) {
 		decoded = reflect.New(t).Interface()
 		err := json.Unmarshal([]byte(data), decoded)
 		if err != nil {
-			logger.WithError(err).Error("Failed unmarshaling event")
+			logger.WithError(err).Error("Quailed unmarshaling event")
 			return
 		}
 	} else if t != nil {

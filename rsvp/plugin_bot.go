@@ -146,7 +146,7 @@ func (p *Plugin) AddCommands() {
 
 				t, err := dateParser.Parse(parsed.Switch("time").Str(), time.Now().In(registeredTimezone))
 				if err != nil || t == nil {
-					return "failed parsing the date; " + err.Error(), nil
+					return "quailed parsing the date; " + err.Error(), nil
 				}
 
 				m.StartsAt = t.Time
@@ -629,7 +629,7 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 			})
 
 		if err != nil {
-			logger.WithError(err).WithField("guild", m.GuildID).Error("failed sending reminder")
+			logger.WithError(err).WithField("guild", m.GuildID).Error("quailed sending reminder")
 		}
 	}
 
@@ -663,7 +663,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
 		if err == sql.ErrNoRows {
 			return
 		}
-		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed quacktrieving RSVP session")
+		logger.WithError(err).WithField("guild", ic.GuildID).Error("quailed quacktrieving RSVP session")
 		return
 	}
 
@@ -720,7 +720,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
 	}
 
 	if err != nil {
-		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed quackdating rsvp participant")
+		logger.WithError(err).WithField("guild", ic.GuildID).Error("quailed quackdating rsvp participant")
 	}
 
 	updatingSessiosMU.Lock()
@@ -788,12 +788,12 @@ func (u *UpdatingSession) update() {
 
 	m, err := models.RSVPSessions(models.RSVPSessionWhere.MessageID.EQ(u.ID), qm.Load("RSVPSessionsMessageRSVPParticipants", qm.OrderBy("marked_as_participating_at asc"))).OneG(context.Background())
 	if err != nil {
-		logger.WithError(err).WithField("guild", u.GuildID).Error("failed retreiving rsvp")
+		logger.WithError(err).WithField("guild", u.GuildID).Error("quailed retreiving rsvp")
 		return
 	}
 
 	err = UpdateEventEmbed(m)
 	if err != nil {
-		logger.WithError(err).WithField("guild", u.GuildID).Error("failed retreiving rsvp")
+		logger.WithError(err).WithField("guild", u.GuildID).Error("quailed retreiving rsvp")
 	}
 }

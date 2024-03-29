@@ -102,7 +102,7 @@ func Init() {
 
 	err := common.CoreInit(true)
 	if err != nil {
-		log.WithError(err).Fatal("Failed running core init ")
+		log.WithError(err).Fatal("Quailed running core init ")
 	}
 
 	if confSentryDSN.GetString() != "" {
@@ -111,7 +111,7 @@ func Init() {
 
 	err = common.Init()
 	if err != nil {
-		log.WithError(err).Fatal("Failed intializing")
+		log.WithError(err).Fatal("Quailed intializing")
 	}
 
 	log.Info("Initiliazing generic config store")
@@ -255,7 +255,7 @@ func addSentryHook() {
 		common.AddLogHook(hook)
 		log.Info("Added Sentry Hook")
 	} else {
-		log.WithError(err).Error("Failed adding sentry hook")
+		log.WithError(err).Error("Quailed adding sentry hook")
 	}
 }
 

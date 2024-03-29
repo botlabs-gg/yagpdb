@@ -55,7 +55,7 @@ func GetGeneralConfig(guildID int64) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}
 	err := common.GetRedisJson(KeyGeneral(guildID), conf)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("failed retreiving autorole config")
+		logger.WithError(err).WithField("guild", guildID).Error("quailed retreiving autorole config")
 	}
 	return conf, err
 }

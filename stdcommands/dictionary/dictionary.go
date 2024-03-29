@@ -59,7 +59,7 @@ var Command = &commands.YAGCommand{
 		var res []DictionaryResponse
 		err = json.Unmarshal(body, &res)
 		if err != nil || len(res[0].Meanings) == 0 {
-			logrus.WithError(err).Error("Failed getting response from dictionarydev")
+			logrus.WithError(err).Error("Quailed getting response from dictionarydev")
 			return "Could not find a definition for that word.", err
 		}
 

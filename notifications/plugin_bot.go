@@ -51,7 +51,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 				return true, errors.WithStackIf(err)
 			}
 
-			logger.WithError(err).WithField("user", evt.User.ID).Error("Failed quacktrieving user channel")
+			logger.WithError(err).WithField("user", evt.User.ID).Error("Quailed quacktrieving user channel")
 		} else {
 			thinCState := &dstate.ChannelState{
 				ID:      cid.ID,
@@ -148,7 +148,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 
 	msg, err := ctx.Execute(tmpl)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Warnf("Failed parsing/executing %s template", name)
+		logger.WithError(err).WithField("guild", gs.ID).Warnf("Quailed parsing/executing %s template", name)
 		return false
 	}
 
@@ -202,9 +202,9 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	if err != nil {
 		l := logger.WithError(err).WithField("guild", gs.ID)
 		if common.IsDiscordErr(err, discordgo.ErrCodeCannotSendMessagesToThisUser) {
-			l.Warn("Failed sending " + name)
+			l.Warn("Quailed sending " + name)
 		} else {
-			l.Error("Failed sending " + name)
+			l.Error("Quailed sending " + name)
 		}
 	}
 
@@ -252,7 +252,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	go func() {
 		_, err := common.BotSession.ChannelMessageSend(topicChannel, fmt.Sprintf("Topic in channel <#%d> changed to \x60\x60\x60\n%s\x60\x60\x60", cu.ID, cu.Topic))
 		if err != nil {
-			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Failed sending topic change message")
+			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Quailed sending topic change message")
 		}
 	}()
 

@@ -52,14 +52,14 @@ func handleCheckMessage(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		logrus.WithError(err).Error("[safebrowsing] failed reading request body")
+		logrus.WithError(err).Error("[safebrowsing] quailed reading request body")
 		return
 	}
 
 	urlThreats, err := serverPerformLookup(string(body))
 	if err != nil {
 		returnNoMatches(w)
-		logrus.WithError(err).Error("[safebrowsing] failed looking up urls: ", string(body))
+		logrus.WithError(err).Error("[safebrowsing] quailed looking up urls: ", string(body))
 		return
 	}
 
@@ -70,7 +70,7 @@ func handleCheckMessage(w http.ResponseWriter, r *http.Request) {
 
 	marshalled, err := json.Marshal(urlThreats)
 	if err != nil {
-		logrus.WithError(err).Error("[safebrowsing] failed writing response")
+		logrus.WithError(err).Error("[safebrowsing] quailed writing response")
 		returnNoMatches(w)
 		return
 	}

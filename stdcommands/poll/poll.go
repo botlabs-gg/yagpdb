@@ -76,7 +76,7 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 
 	pollMsg, err := common.BotSession.ChannelMessageSendEmbed(data.ChannelID, &response)
 	if err != nil {
-		return nil, errors.WrapIf(err, "failed to add poll description")
+		return nil, errors.WrapIf(err, "quailed to add poll description")
 	}
 	for i := range options {
 		common.BotSession.MessageReactionAdd(pollMsg.ChannelID, pollMsg.ID, pollReactions[i])

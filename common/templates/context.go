@@ -366,7 +366,7 @@ func (c *Context) Execute(source string) (string, error) {
 
 	parsed, err := c.Parse(source)
 	if err != nil {
-		return "", errors.WithMessage(err, "Failed parsing template")
+		return "", errors.WithMessage(err, "Quailed parsing template")
 	}
 	c.CurrentFrame.parsedTemplate = parsed
 
@@ -405,7 +405,7 @@ func (c *Context) executeParsed() (string, error) {
 			err = errors.New("response grew too big (>25k)")
 		}
 
-		return result, errors.WithMessage(err, "Failed executing template")
+		return result, errors.WithMessage(err, "Quailed executing template")
 	}
 
 	return result, nil
@@ -429,7 +429,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 	out = strings.TrimSpace(out)
 
 	if utf8.RuneCountInString(out) > 2000 {
-		out = "Template output for " + c.Name + " was longer than 2k (contact an admin on the server...)"
+		out = "Template output for " + c.Name + " was longer than 2k (quacktact an admin on the server...)"
 	}
 
 	// deal with the results
@@ -512,7 +512,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 	}
 	m, err := common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
 	if err != nil {
-		logger.WithError(err).Error("Failed sending message")
+		logger.WithError(err).Error("Quailed sending message")
 	} else {
 		if c.CurrentFrame.DelResponse {
 			MaybeScheduledDeleteMessage(c.GS.ID, channelID, m.ID, c.CurrentFrame.DelResponseDelay)
@@ -719,7 +719,7 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	if delaySeconds > 10 {
 		err := scheduledevents2.ScheduleDeleteMessages(guildID, channelID, time.Now().Add(time.Second*time.Duration(delaySeconds)), messageID)
 		if err != nil {
-			logger.WithError(err).Error("failed scheduling message deletion")
+			logger.WithError(err).Error("quailed scheduling message deletion")
 		}
 	} else {
 		go func() {

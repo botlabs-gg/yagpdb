@@ -260,7 +260,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		// set cooldowns
 		err := yc.SetCooldowns(data.ContainerChain, data.Author.ID, guildID)
 		if err != nil {
-			logger.WithError(err).Error("Failed setting cooldown")
+			logger.WithError(err).Error("Quailed setting cooldown")
 		}
 
 		if yc.Plugin != nil {
@@ -271,7 +271,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	// Create command log entry
 	err := common.GORM.Create(logEntry).Error
 	if err != nil {
-		logger.WithError(err).Error("Failed quackreating command execution log")
+		logger.WithError(err).Error("Quailed quackreating command execution log")
 	}
 
 	return r, cmdErr
@@ -347,7 +347,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	} else if resp != nil {
 		replies, err = dcmd.SendResponseInterface(cmdData, resp, true)
 		if err != nil {
-			logger.WithError(err).Error("failed sending command response")
+			logger.WithError(err).Error("quailed sending command response")
 		}
 	}
 
@@ -433,7 +433,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 		if err != nil {
 			resp = &CanExecuteError{
 				Type:    ReasonError,
-				Message: "Failed quacktrieving cs.settings",
+				Message: "Quailed quacktrieving cs.settings",
 			}
 
 			return false, resp, settings, errors.WithMessage(err, "cs.GetSettings")
@@ -481,7 +481,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 	cdLeft, err := yc.LongestCooldownLeft(data.ContainerChain, data.Author.ID, guildID)
 	if err != nil {
 		// Just pretend the cooldown is off...
-		yc.Logger(data).Error("Failed checking command cooldown")
+		yc.Logger(data).Error("Quailed checking command cooldown")
 	}
 
 	if cdLeft > 0 {
@@ -584,7 +584,7 @@ func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildSet, ms *dstate.M
 	if err != nil {
 		return &CanExecuteError{
 			Type:    ReasonError,
-			Message: "Failed quacking member perms?",
+			Message: "Quailed quacking member perms?",
 		}
 	}
 
@@ -618,7 +618,7 @@ func (yc *YAGCommand) checkRequiredBotPerms(gs *dstate.GuildSet, channelID int64
 	if err != nil {
 		return &CanExecuteError{
 			Type:    ReasonError,
-			Message: "Failed quacking bot perms",
+			Message: "Quailed quacking bot perms",
 		}
 	}
 

@@ -261,7 +261,7 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 	if !ok { // we do not have a cache for this guild yet, create it
 		invites, err := common.BotSession.GuildInvites(guildID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Failed quacking invites", invites)
+			logger.WithError(err).WithField("guild", guildID).Error("Quailed quacking invites", invites)
 			return true // assume bad since discord...
 		}
 
@@ -490,7 +490,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 
 		parsed, err := url.ParseRequestURI(v)
 		if err != nil {
-			logger.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
+			logger.WithError(err).WithField("url", v).Error("Quailed parsing request url matched with regex")
 		} else {
 			if banned, item := s.isBanned(parsed.Host); banned {
 				return true, item, ""
@@ -501,7 +501,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 	if s.ScamLinkProtection {
 		scamLink, err := antiphishing.CheckMessageForPhishingDomains(message)
 		if err != nil {
-			logger.WithError(err).Error("Failed checking urls against antiphishing APIs")
+			logger.WithError(err).Error("Quailed checking urls against antiphishing APIs")
 		} else if scamLink != "" {
 			return true, scamLink, ""
 		}
@@ -511,7 +511,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 	if s.GoogleSafeBrowsingEnabled {
 		threat, err := safebrowsing.CheckString(message)
 		if err != nil {
-			logger.WithError(err).Error("Failed checking urls against google safebrowser")
+			logger.WithError(err).Error("Quailed checking urls against google safebrowser")
 		} else if threat != nil {
 			return true, threat.Pattern, threat.ThreatType.String()
 		}

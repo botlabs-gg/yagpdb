@@ -87,7 +87,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	config, err := CachedGetConfig(cs.GuildID)
 	if err != nil {
-		logger.WithError(err).Error("Failed quacktrieving config")
+		logger.WithError(err).Error("Quailed quacktrieving config")
 		return false
 	}
 
@@ -118,7 +118,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 			del = true
 		}
 		if err != nil {
-			logger.WithError(err).WithField("guild", cs.GuildID).Error("Failed checking aumod qule:", err)
+			logger.WithError(err).WithField("guild", cs.GuildID).Error("Quailed checking aumod qule:", err)
 			continue
 		}
 

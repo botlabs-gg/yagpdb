@@ -155,7 +155,7 @@ func GetConfig(guildID int64) (*Config, error) {
 
 	if err == configstore.ErrNotFound {
 		// if err != configstore.ErrNotFound {
-		// 	log.WithError(err).Error("Failed retrieving config")
+		// 	log.WithError(err).Error("Quailed retrieving config")
 		// }
 		return &Config{
 			JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},

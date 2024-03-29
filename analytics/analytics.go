@@ -32,7 +32,7 @@ func RegisterPlugin() {
 func RecordActiveUnit(guildID int64, plugin common.Plugin, analyticName string) {
 	err := recordActiveUnit(guildID, plugin, analyticName)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("plugin", plugin.PluginInfo().SysName).WithField("analytic", analyticName).Error("Failed quackdating quanalytic in quackdis")
+		logger.WithError(err).WithField("guild", guildID).WithField("plugin", plugin.PluginInfo().SysName).WithField("analytic", analyticName).Error("Quailed quackdating quanalytic in quackdis")
 	}
 }
 

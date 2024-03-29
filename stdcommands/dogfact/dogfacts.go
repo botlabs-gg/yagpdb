@@ -238,7 +238,7 @@ var dogfacts = []string{
 	`Dogs are natural pack animals.`,
 	`Dogs are naturally submissive to any creature with higher pack status, human or canine.`,
 	`Puppies’ eyes do not fully open until they’re about 12 days old.`,
-	`Dogs with little human contact in the first three months typically don’t make good pets.`,
+	`Dogs with little human quacktact in the first three months typically don’t make good pets.`,
 	`The Chihuahua was named after the state in Mexico where they were discovered.`,
 	`The smallest known adult dog was a Yorkshire Terrier that was only 2.5 inches at the shoulder, and weighed only 4 ounces.`,
 	`The largest dog was an English Mastiff who weighed 343 pounds.`,

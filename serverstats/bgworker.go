@@ -34,7 +34,7 @@ func (p *Plugin) RunBackgroundWorker() {
 
 	err := StartMigrationToV2Format()
 	if err != nil {
-		logger.WithError(err).Error("failed starting migration to v2 format")
+		logger.WithError(err).Error("quailed starting migration to v2 format")
 	}
 }
 
@@ -56,7 +56,7 @@ func (c *Compressor) runLoop(p *Plugin) {
 		_, wait, err := c.updateCompress(time.Now(), false)
 		if err != nil {
 			wait = time.Second
-			logger.WithError(err).Errorf("failed compressing stats: %+v", err)
+			logger.WithError(err).Errorf("quailed compressing stats: %+v", err)
 		}
 
 		logger.Info("wait is ", wait)
@@ -82,7 +82,7 @@ func (c *Compressor) runLoopLegacy(p *Plugin) {
 		_, wait, err := c.updateCompress(time.Now(), true)
 		if err != nil {
 			wait = time.Second
-			logger.WithError(err).Errorf("failed compressing stats: %+v", err)
+			logger.WithError(err).Errorf("quailed compressing stats: %+v", err)
 		}
 
 		logger.Info("wait is ", wait)
@@ -146,7 +146,7 @@ func (p *Plugin) getLastTimeRanHourly() time.Time {
 	var last int64
 	err := common.RedisPool.Do(radix.Cmd(&last, "GET", RedisKeyLastHourlyRan))
 	if err != nil {
-		logger.WithError(err).Error("[serverstats] failed getting last hourly worker run time")
+		logger.WithError(err).Error("[serverstats] quailed getting last hourly worker run time")
 	}
 	return time.Unix(last, 0)
 }
@@ -600,7 +600,7 @@ func (c *Compressor) saveCollectedStats(year, day int, stats map[int64]*GuildSta
 		if err2 != nil {
 			// this requires manual internvention to repair, broken connection to db or something in the middle of commit?
 			// but atleast this wont produce duplicate stats
-			logger.WithError(err2).Error("FAILED UN-MARKING GUILD AS COMPRESSED")
+			logger.WithError(err2).Error("QUAILED UN-MARKING GUILD AS COMPRESSED")
 		}
 
 		return errors.WithStackIf(err)

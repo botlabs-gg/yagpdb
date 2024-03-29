@@ -32,12 +32,12 @@ var metricsProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
 
 var metricsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_memberfetcher_failed_total",
-	Help: "The total number of failed queue items",
+	Help: "The total number of quailed queue items",
 }, []string{"type"})
 
 var metricsGatewayChunkFailed = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quackpdb_memberfetcher_gateway_chunk_fail_total",
-	Help: "The number of failed",
+	Help: "The number of quailed",
 })
 
 type GatewayRequestFunc func(guildID int64, userIDs []int64, nonce string) error

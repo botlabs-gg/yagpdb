@@ -28,7 +28,7 @@ func RunPoller(session *discordgo.Session, channel int64, interval time.Duration
 	for {
 		err := updatePosts(session, channel)
 		if err != nil {
-			logrus.WithError(err).Error("Failed polling discord blog")
+			logrus.WithError(err).Error("Quailed polling discord blog")
 		}
 
 		<-ticker.C

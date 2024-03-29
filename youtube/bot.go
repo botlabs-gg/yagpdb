@@ -24,14 +24,14 @@ func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
 		"id desc",
 	).Find(&feeds).Error
 	if err != nil {
-		logger.WithError(err).Errorf("failed getting feed ids for guild_id %d", guildID)
+		logger.WithError(err).Errorf("quailed getting feed ids for guild_id %d", guildID)
 		return err
 	}
 
 	if len(feeds) > 0 {
 		err = common.GORM.Model(&feeds).Update(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 		if err != nil {
-			logger.WithError(err).Errorf("failed getting feed ids for guild_id %d", guildID)
+			logger.WithError(err).Errorf("quailed getting feed ids for guild_id %d", guildID)
 			return err
 		}
 	}

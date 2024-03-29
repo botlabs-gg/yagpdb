@@ -318,7 +318,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		var err error
 		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed quacking command prefix")
+			logger.WithError(err).WithField("guild", evt.GS.ID).Error("quailed quacking command prefix")
 		}
 	}
 
@@ -344,7 +344,7 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 
 	prefix, err := prfx.GetCommandPrefixRedis(data.GuildData.GS.ID)
 	if err != nil {
-		logger.WithError(err).Error("Failed quacktrieving commands prefix")
+		logger.WithError(err).Error("Quailed quacktrieving commands prefix")
 	}
 
 	return prefix

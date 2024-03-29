@@ -152,6 +152,6 @@ func InvalidateGuildCache(guildID interface{}, conf GuildConfig) {
 	Cached.InvalidateCache(gID, conf.GetName())
 	err := pubsub.Publish("invalidate_guild_config_cache", gID, conf.GetName())
 	if err != nil {
-		logger.WithError(err).Error("FAILED INVALIDATING CACHE")
+		logger.WithError(err).Error("QUAILED INVALIDATING CACHE")
 	}
 }

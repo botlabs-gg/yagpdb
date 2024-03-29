@@ -159,7 +159,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 
 			channelOverrides, err := GetOverridesForChannel(data.ChannelID, cParentID, data.GuildData.GS.ID)
 			if err != nil {
-				logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("failed quacktrieving command overrides")
+				logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("quailed quacktrieving command overrides")
 				return nil, nil
 			}
 
@@ -172,7 +172,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 				cast := v.Command.(*YAGCommand)
 				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GuildData.GS.ID, channelOverrides)
 				if err != nil {
-					logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("failed checking if command was enabled")
+					logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("quailed checking if command was enabled")
 					continue
 				}
 

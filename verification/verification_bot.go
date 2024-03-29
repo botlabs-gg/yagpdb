@@ -59,7 +59,7 @@ func memberPresentInVerificationPendingSet(guildID int64, userID int64) bool {
 	var memberScore int
 	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", VerificationPendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Failed quacking member from the verification pending set")
+		logger.WithError(err).Error("Quailed quacking member from the verification pending set")
 	}
 	return memberScore != 0
 }
@@ -73,7 +73,7 @@ func addMemberToVerificationPendingSet(guildID int64, userID int64) {
 
 	err := common.RedisPool.Do(radix.Cmd(nil, "ZADD", VerificationPendingMembersKey(guildID), "1", strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Failed adding member to the verification pending set")
+		logger.WithError(err).Error("Quailed adding member to the verification pending set")
 	}
 }
 
@@ -116,7 +116,7 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 	if common.ContainsInt64Slice(member.Roles, conf.VerifiedRole) {
 		err = p.clearScheduledEvents(context.Background(), member.GuildID, member.User.ID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("failed clearing past scheduled warn/kick events")
+			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("quailed clearing past scheduled warn/kick events")
 		}
 		return
 	}
@@ -157,7 +157,7 @@ func (p *Plugin) handleMemberUpdate(evt *eventsystem.EventData) {
 		// Member was found in the verification pending set, remove from the set and assign role to the member
 		err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", VerificationPendingMembersKey(updateEvt.GuildID), strconv.FormatInt(updateEvt.User.ID, 10)))
 		if err != nil {
-			logger.WithError(err).Error("Failed removing member from the verification pending set")
+			logger.WithError(err).Error("Quailed removing member from the verification pending set")
 		}
 		p.handleVerificationAfterScreening(updateEvt.Member)
 	}
@@ -192,7 +192,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	token, err := p.createVerificationSession(target.ID, guildID)
 	if err != nil {
-		logger.WithError(err).WithField("user", target.ID).WithField("guild", guildID).Error("failed quackreating verification session")
+		logger.WithError(err).WithField("user", target.ID).WithField("guild", guildID).Error("quailed quackreating verification session")
 		return
 	}
 
@@ -209,13 +209,13 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	ms, err := bot.GetMember(guildID, target.ID)
 	if err != nil {
-		logger.WithError(err).Error("failed quacktrieving member")
+		logger.WithError(err).Error("quailed quacktrieving member")
 		return
 	}
 
 	channel, err := common.BotSession.UserChannelCreate(ms.User.ID)
 	if err != nil {
-		logger.WithError(err).Error("failed quackreating user channel")
+		logger.WithError(err).Error("quailed quackreating user channel")
 		return
 	}
 
@@ -227,7 +227,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed sending verification dm message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending verification dm message")
 	}
 
 	evt := &VerificationEventData{
@@ -238,7 +238,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	// schedule the kick and warnings
 	err = p.clearScheduledEvents(context.Background(), gs.ID, ms.User.ID) //clear old scheduled events
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed clearing past scheduled warn/kick events.")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled warn/kick events.")
 	}
 	if conf.WarnUnverifiedAfter > 0 && conf.WarnMessage != "" {
 		scheduledevents2.ScheduleEvent("verification_user_warn", guildID, time.Now().Add(time.Minute*time.Duration(conf.WarnUnverifiedAfter)), evt)
@@ -368,7 +368,7 @@ func (p *Plugin) checkMemberAlreadyVerified(ms *dstate.MemberState, conf *models
 
 	err := p.clearScheduledEvents(context.Background(), ms.GuildID, ms.User.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", ms.GuildID).WithField("user", ms.User.ID).Error("failed clearing past scheduled warn/kick events")
+		logger.WithError(err).WithField("guild", ms.GuildID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled warn/kick events")
 	}
 	return true
 }
@@ -479,7 +479,7 @@ func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token 
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("failed sending warning message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending warning message")
 	}
 
 	return nil
@@ -531,7 +531,7 @@ func (p *Plugin) logAction(guildID int64, channelID int64, author *discordgo.Use
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownChannel) {
 			go p.disableLogChannel(guildID)
 		} else {
-			logger.WithError(err).WithField("channel", channelID).Error("failed sending log message")
+			logger.WithError(err).WithField("channel", channelID).Error("quailed sending log message")
 		}
 	}
 }
@@ -542,7 +542,7 @@ func (p *Plugin) disableLogChannel(guildID int64) {
 	const q = `UPDATE verification_configs SET log_channel=0 WHERE guild_id=$1`
 	_, err := common.PQ.Exec(q, guildID)
 	if err != nil {
-		logger.WithField("guild", guildID).WithError(err).Error("failed disabling log channel")
+		logger.WithField("guild", guildID).WithError(err).Error("quailed disabling log channel")
 	}
 }
 
@@ -679,6 +679,6 @@ func (p *Plugin) banAlts(ban *discordgo.GuildBanAdd, alts []*discordgo.User) {
 			}
 		}
 
-		logger.WithError(err).Error("failed quacktrieving guild ban")
+		logger.WithError(err).Error("quailed quacktrieving guild ban")
 	}
 }

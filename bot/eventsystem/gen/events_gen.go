@@ -161,11 +161,11 @@ func main() {
 	}
 
 	file, err := os.Create(flagOut)
-	CheckErr("Failed quackreating output file", err)
+	CheckErr("Quailed quackreating output file", err)
 	defer file.Close()
 	err = parsedTemplate.Execute(file, events)
-	CheckErr("Failed executing template", err)
+	CheckErr("Quailed executing template", err)
 	cmd := exec.Command("go", "fmt")
 	err = cmd.Run()
-	CheckErr("Failed running gofmt", err)
+	CheckErr("Quailed running gofmt", err)
 }

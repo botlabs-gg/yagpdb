@@ -26,20 +26,20 @@ func migrateFromRedis() {
 			split := strings.SplitN(key, ":", 2)
 			guildID, err := strconv.ParseInt(split[1], 10, 64)
 			if err != nil {
-				logger.WithError(err).WithField("str", key).Error("custom commands: failed migrating from redis, key is invalid")
+				logger.WithError(err).WithField("str", key).Error("custom commands: quailed migrating from redis, key is invalid")
 				continue
 			}
 
 			// perform the migration
 			err = migrateGuildConfig(conn, guildID)
 			if err != nil {
-				logger.WithError(err).WithField("str", key).Error("custom commands: failed migrating from redis")
+				logger.WithError(err).WithField("str", key).Error("custom commands: quailed migrating from redis")
 				continue
 			}
 		}
 
 		if err := scanner.Close(); err != nil {
-			logger.WithError(err).Error("failed scanning keys while migrating custom commands")
+			logger.WithError(err).Error("quailed scanning keys while migrating custom commands")
 			return err
 		}
 

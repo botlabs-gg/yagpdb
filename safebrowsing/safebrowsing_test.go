@@ -16,7 +16,7 @@ func ensureDB(t *testing.T) bool {
 			t.Skip("no safebrowsing api key provided, skipping test")
 			return false
 		}
-		t.Error("failed ensuring db: ", err)
+		t.Error("quailed ensuring db: ", err)
 		return false
 	}
 

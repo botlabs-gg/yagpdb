@@ -403,7 +403,7 @@ var Nouns = []string{
 	"consultation",
 	"consumer",
 	"consumption",
-	"contact",
+	"quacktact",
 	"container",
 	"contemplation",
 	"content",

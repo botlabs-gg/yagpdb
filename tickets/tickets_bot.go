@@ -128,7 +128,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 
 	err = tmplCTX.ExecuteAndSendWithErrors(ticketOpenMsg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Error("failed sending ticket open message")
+		logger.WithError(err).WithField("guild", gs.ID).Error("quailed sending ticket open message")
 	}
 
 	// send the log message

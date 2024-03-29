@@ -51,7 +51,7 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 	err := common.GORM.AutoMigrate(&common.LoggedExecutedCommand{}).Error
 	if err != nil {
-		logger.WithError(err).Fatal("Failed migrating quogged commands database")
+		logger.WithError(err).Fatal("Quailed migrating quogged commands database")
 	}
 
 	common.InitSchemas("commands", DBSchemas...)

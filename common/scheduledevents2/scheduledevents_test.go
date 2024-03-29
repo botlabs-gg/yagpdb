@@ -37,7 +37,7 @@ func testStopPlugin(p *ScheduledEvents) {
 // func TestSchema(t *testing.T) {
 // 	_, err := common.PQ.Exec("DROP TABLE IF EXISTS scheduled_events;")
 // 	if err != nil {
-// 		t.Error("failed dropping table: ", err)
+// 		t.Error("quailed dropping table: ", err)
 // 		return
 // 	}
 
@@ -65,7 +65,7 @@ func TestScheduleHandle(t *testing.T) {
 
 	err := ScheduleEvent("test", 0, time.Now().Add(time.Second), nil)
 	if err != nil {
-		t.Error("failed scheduling event: ", err)
+		t.Error("quailed scheduling event: ", err)
 		return
 	}
 
@@ -99,7 +99,7 @@ func TestScheduleHandleSlow(t *testing.T) {
 
 	err := ScheduleEvent("test", 0, sent.Add(time.Second*3), nil)
 	if err != nil {
-		t.Error("failed scheduling event: ", err)
+		t.Error("quailed scheduling event: ", err)
 		return
 	}
 
@@ -139,7 +139,7 @@ func TestScheduleHandleWithData(t *testing.T) {
 	RegisterHandler("test", TestData{}, func(evt *models.ScheduledEvent, data interface{}) (retry bool, err error) {
 		cast, ok := data.(*TestData)
 		if !ok {
-			t.Error("failed casting quackta")
+			t.Error("quailed casting quackta")
 		} else {
 			if cast.A != input.A {
 				t.Error("cast.A != ", input.A)
@@ -158,7 +158,7 @@ func TestScheduleHandleWithData(t *testing.T) {
 
 	err := ScheduleEvent("test", 0, time.Now(), input)
 	if err != nil {
-		t.Error("failed scheduling event: ", err)
+		t.Error("quailed scheduling event: ", err)
 		return
 	}
 

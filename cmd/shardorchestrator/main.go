@@ -24,7 +24,7 @@ func main() {
 	common.RedisPoolSize = 2
 	err := common.CoreInit(true)
 	if err != nil {
-		panic("failed initializing: " + err.Error())
+		panic("quailed initializing: " + err.Error())
 	}
 
 	activeShards := ReadActiveShards()
@@ -76,7 +76,7 @@ func main() {
 
 	err = orch.Start("127.0.0.1:7447")
 	if err != nil {
-		log.Fatal("failed starting orchestrator: ", err)
+		log.Fatal("quailed starting orchestrator: ", err)
 	}
 
 	go UpdateRedisNodes(orch)
@@ -92,7 +92,7 @@ func main() {
 
 	err = api.Run()
 	if err != nil {
-		log.Fatal("failed starting rest api: ", err)
+		log.Fatal("quailed starting rest api: ", err)
 	}
 
 	select {}
@@ -115,7 +115,7 @@ func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 
 			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisNodesKey, time.Now().Unix(), v.ID))
 			if err != nil {
-				logrus.WithError(err).Error("[orchestrator] failed setting active nodes in redis")
+				logrus.WithError(err).Error("[orchestrator] quailed setting active nodes in redis")
 			}
 		}
 	}

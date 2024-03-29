@@ -100,7 +100,7 @@ func (p *Plugin) run(muxer *goji.Mux) {
 
 	l, port, err := p.createListener(listenAddr)
 	if err != nil {
-		serverLogger.WithError(err).Panicf("failed starting internal http server on %s:%d", listenAddr, port)
+		serverLogger.WithError(err).Panicf("quailed starting internal http server on %s:%d", listenAddr, port)
 		return
 	}
 
@@ -115,7 +115,7 @@ func (p *Plugin) run(muxer *goji.Mux) {
 				return
 			}
 
-			serverLogger.WithError(err).Error("failed serving internal api")
+			serverLogger.WithError(err).Error("quailed serving internal api")
 			return
 		}
 	}()
@@ -147,7 +147,7 @@ func (p *Plugin) createListener(addr string) (net.Listener, int, error) {
 func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		serverLogger.WithError(err).Error("Failed sending json")
+		serverLogger.WithError(err).Error("Quailed sending json")
 	}
 }
 

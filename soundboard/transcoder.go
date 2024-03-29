@@ -60,7 +60,7 @@ func transcoderLoop() {
 				err := handleQueueItem(v)
 				logger.Println("done handling queue item")
 				if err != nil {
-					logger.WithError(err).WithField("soundid", v).Error("Failed processing transcode queue item")
+					logger.WithError(err).WithField("soundid", v).Error("Quailed processing transcode queue item")
 				}
 				logger.WithField("sounf", v).Info("Took ", time.Since(started).String(), " to transcode sound ")
 			}
@@ -71,7 +71,7 @@ func transcoderLoop() {
 func getQueue() []string {
 	files, err := ioutil.ReadDir("soundboard/queue")
 	if err != nil {
-		logger.WithError(err).Error("Failed checking queue directory")
+		logger.WithError(err).Error("Quailed checking queue directory")
 		return []string{}
 	}
 
@@ -119,7 +119,7 @@ func handleQueueItem(item string) error {
 	if !skipTranscode {
 		err = transcodeSound(sound)
 		if err != nil {
-			logger.WithError(err).WithField("sound", sound.ID).Error("Failed transcoding sound")
+			logger.WithError(err).WithField("sound", sound.ID).Error("Quailed transcoding sound")
 			common.GORM.Model(&sound).Update("Status", TranscodingStatusFailedOther)
 			os.Remove(SoundFilePath(sound.ID, TranscodingStatusReady))
 		} else {
@@ -161,7 +161,7 @@ func (p *Plugin) bgworkerHandleGetSound(w http.ResponseWriter, r *http.Request) 
 
 	f, err := os.Open(SoundFilePath(int(parsed), TranscodingStatusReady))
 	if err != nil {
-		logger.WithError(err).WithField("sound", parsed).Error("failed opening sound")
+		logger.WithError(err).WithField("sound", parsed).Error("quailed opening sound")
 		return
 	}
 

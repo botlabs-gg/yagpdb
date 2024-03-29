@@ -83,13 +83,13 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 
 	gs := bot.State.GetGuild(dataCast.GuildID)
 	if gs == nil {
-		f.Error("failed quacking active guild from state")
+		f.Error("quailed quacking active guild from state")
 		return
 	}
 
 	cs := gs.GetChannel(dataCast.ContextChannel)
 	if cs == nil {
-		f.Error("failed fiquackding channel to run cc in")
+		f.Error("quailed fiquackding channel to run cc in")
 		return
 	}
 
@@ -101,7 +101,7 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 	dataCast.LastRun = null.TimeFrom(time.Now())
 	err := UpdateCommandNextRunTime(dataCast, true, true)
 	if err != nil {
-		f.WithError(err).Error("failed quackdating custom command next run time")
+		f.WithError(err).Error("quailed quackdating custom command next run time")
 	}
 }
 
@@ -169,7 +169,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 		}
 
 		if channel == nil {
-			return "Something weird happened... Contact the support server.", nil
+			return "Something weird happened... Quacktact the support server.", nil
 		}
 
 		out, err := ctx.Execute(code)
@@ -202,12 +202,12 @@ var cmdListCommands = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
-			return "Failed quacktrieving custom commands", err
+			return "Quailed quacktrieving custom commands", err
 		}
 
 		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GuildData.GS.ID)).AllG(data.Context())
 		if err != nil {
-			return "Failed quacktrieving custom command groups", err
+			return "Quailed quacktrieving custom command groups", err
 		}
 
 		groupMap := make(map[int64]string)
@@ -387,7 +387,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
 			return false, nil
 		} else if err != nil {
-			logger.WithError(err).Error("failed checking if bot is on guild")
+			logger.WithError(err).Error("quailed checking if bot is on guild")
 		}
 
 		return true, nil
@@ -456,7 +456,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
 			return false, nil
 		} else if err != nil {
-			logger.WithError(err).Error("failed checking if bot is on guild")
+			logger.WithError(err).Error("quailed checking if bot is on guild")
 		}
 
 		return true, nil
@@ -481,7 +481,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	cmd.LastRun = cmd.NextRun
 	err = UpdateCommandNextRunTime(cmd, true, false)
 	if err != nil {
-		logger.WithError(err).Error("failed quackdating custom command next run time")
+		logger.WithError(err).Error("quailed quackdating custom command next run time")
 	}
 
 	return false, nil
@@ -521,18 +521,18 @@ const (
 func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 	commands, err := models.CustomCommands(qm.Where("guild_id = ?", GuildID), qm.Offset(MaxCommands)).AllG(context.Background())
 	if err != nil {
-		return errors.WrapIf(err, "failed getting custom commands")
+		return errors.WrapIf(err, "quailed getting custom commands")
 	}
 
 	if len(commands) > 0 {
 		_, err = commands.UpdateAllG(context.Background(), models.M{"disabled": true})
 		if err != nil {
-			return errors.WrapIf(err, "failed disabling custom commands on premium removal")
+			return errors.WrapIf(err, "quailed disabling custom commands on premium removal")
 		}
 	}
 	_, err = models.CustomCommands(qm.Where("guild_id = ?", GuildID)).UpdateAllG(context.Background(), models.M{"trigger_on_edit": false})
 	if err != nil {
-		return errors.WrapIf(err, "Failed disabling trigger on edits on quackmium removal")
+		return errors.WrapIf(err, "Quailed disabling trigger on edits on quackmium removal")
 	}
 
 	return nil
@@ -582,7 +582,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 			return
 		}
 
-		logger.WithField("guild", evt.GS.ID).WithError(err).Error("failed fiquackding reaction ccs")
+		logger.WithField("guild", evt.GS.ID).WithError(err).Error("quailed fiquackding reaction ccs")
 		return
 	}
 
@@ -594,7 +594,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 
 	rMessage, err := common.BotSession.ChannelMessage(cState.ID, reaction.MessageID)
 	if err != nil {
-		logger.WithField("guild", evt.GS.ID).WithError(err).Error("failed fiquackding reaction ccs")
+		logger.WithField("guild", evt.GS.ID).WithError(err).Error("quailed fiquackding reaction ccs")
 		return
 	}
 	rMessage.GuildID = cState.GuildID
@@ -915,7 +915,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	out = strings.TrimSpace(out)
 
 	if utf8.RuneCountInString(out) > 2000 {
-		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (contact an admin on the server...)"
+		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (quacktact an admin on the server...)"
 	}
 
 	go updatePostCommandRan(cmd, err)
@@ -946,7 +946,7 @@ func formatCustomCommandRunErr(src string, err error) string {
 			return "`" + err.Error() + "`"
 		}
 
-		out := fmt.Sprintf("`Failed executing CC #%d, line %d, row %d: %s`", data.CCID, data.Line, data.Row, data.Msg)
+		out := fmt.Sprintf("`Quailed executing CC #%d, line %d, row %d: %s`", data.CCID, data.Line, data.Row, data.Msg)
 		lines := strings.Split(src, "\n")
 		if len(lines) < int(data.Line) {
 			return out
@@ -1100,13 +1100,13 @@ func updatePostCommandRan(cmd *models.CustomCommand, runErr error) {
 	}
 
 	if err != nil {
-		logger.WithError(err).WithField("guild", cmd.GuildID).Error("failed running post command executed query")
+		logger.WithError(err).WithField("guild", cmd.GuildID).Error("quailed running post command executed query")
 	}
 
 	// if runErr != nil {
 	// 	err := pubsub.Publish("custom_commands_clear_cache", cmd.GuildID, nil)
 	// 	if err != nil {
-	// 		logger.WithError(err).Error("failed creating cache eviction pubsub event in updatePostCommandRan")
+	// 		logger.WithError(err).Error("quailed creating cache eviction pubsub event in updatePostCommandRan")
 	// 	}
 	// }
 }

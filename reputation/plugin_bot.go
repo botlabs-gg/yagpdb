@@ -75,7 +75,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	target, err := bot.GetMember(msg.GuildID, who.ID)
 	sender := dstate.MemberStateFromMember(msg.Member)
 	if err != nil {
-		logger.WithError(err).Error("Failed quacktrieving target member")
+		logger.WithError(err).Error("Quailed quacktrieving target member")
 		return
 	}
 
@@ -89,7 +89,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 			// Ignore this error silently
 			return
 		}
-		logger.WithError(err).Error("Failed giving rep")
+		logger.WithError(err).Error("Quailed giving rep")
 		return
 	}
 
@@ -99,7 +99,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 	if err != nil {
 		newScore = -1
 		newRank = -1
-		logger.WithError(err).Error("Failed quacktrieving target stats")
+		logger.WithError(err).Error("Quailed quacktrieving target stats")
 		return
 	}
 
@@ -403,7 +403,7 @@ var cmds = []*commands.YAGCommand{
 					if err == sql.ErrNoRows {
 						return "Could not find that user on the leaderboard", nil
 					}
-					return "Failed fiquackding that user on the leaderboard, try again", err
+					return "Quailed fiquackding that user on the leaderboard, try again", err
 				}
 
 				page = (pos-1)/15 + 1 // pos and page are both one-based

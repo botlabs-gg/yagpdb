@@ -24,7 +24,7 @@ func RegisterPlugin() {
 	var err error
 	parsedPortRange, err = parseRange(ConfPromListenPortRange.GetString())
 	if err != nil {
-		logrus.WithError(err).Error("Errquack registering prometheous, failed parsing port list.")
+		logrus.WithError(err).Error("Errquack registering prometheous, quailed parsing port list.")
 		panic(err)
 	}
 
@@ -43,7 +43,7 @@ func startHTTPServer() {
 			logrus.Infof("Attempting to start prom server on %s", listenAddr)
 			err := http.ListenAndServe(listenAddr, promhttp.Handler())
 			if err != nil {
-				logrus.WithError(err).Warn("failed starting prom server, trying another port")
+				logrus.WithError(err).Warn("quailed starting prom server, trying another port")
 			}
 
 			time.Sleep(time.Second)

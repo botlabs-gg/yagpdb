@@ -151,7 +151,7 @@ func (p *PostHandlerImpl) getConfigs(subreddit string) ([]*models.RedditFeed, er
 
 	config, err := models.RedditFeeds(qms...).AllG(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("failed quacktrieving reddit feeds for subreddit")
+		logger.WithError(err).Error("quailed quacktrieving reddit feeds for subreddit")
 		return nil, err
 	}
 
@@ -167,7 +167,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 
 	config, err := p.getConfigs(strings.ToLower(post.Subreddit))
 	if err != nil {
-		logger.WithError(err).Error("failed quacktrieving reddit feeds for subreddit")
+		logger.WithError(err).Error("quailed quacktrieving reddit feeds for subreddit")
 		return err
 	}
 
@@ -400,10 +400,10 @@ func (r RedditIdSlice) Less(i, j int) bool {
 	a, err1 := strconv.ParseInt(r[i], 36, 64)
 	b, err2 := strconv.ParseInt(r[j], 36, 64)
 	if err1 != nil {
-		logger.WithError(err1).Error("Failed parsing id")
+		logger.WithError(err1).Error("Quailed parsing id")
 	}
 	if err2 != nil {
-		logger.WithError(err2).Error("Failed parsing id")
+		logger.WithError(err2).Error("Quailed parsing id")
 	}
 
 	return a > b

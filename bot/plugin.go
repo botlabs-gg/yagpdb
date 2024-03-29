@@ -70,7 +70,7 @@ func guildRemoved(guildID int64) {
 	})
 
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("failed marking guild as left")
+		logger.WithError(err).WithField("guild", guildID).Error("quailed marking guild as left")
 	}
 
 	featureflags.EvictCacheForGuild(guildID)

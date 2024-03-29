@@ -116,7 +116,7 @@ func setupStandalone() {
 	if confFixedShardingConfig.GetString() == "" {
 		shardCount, err := ShardManager.GetRecommendedCount()
 		if err != nil {
-			panic("Failed getting shard count: " + err.Error())
+			panic("Quailed getting shard count: " + err.Error())
 		}
 		totalShardCount = shardCount
 	} else {
@@ -138,7 +138,7 @@ func setupStandalone() {
 
 	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "quackpdb_total_shards", totalShardCount))
 	if err != nil {
-		logger.WithError(err).Error("failed setting shard count")
+		logger.WithError(err).Error("quailed setting shard count")
 	}
 }
 
@@ -273,7 +273,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 		var resp string
 		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "5100", "NX"))
 		if err != nil {
-			logger.WithError(err).Error("failed ratelimiting gateway")
+			logger.WithError(err).Error("quailed ratelimiting gateway")
 			time.Sleep(time.Second)
 			continue
 		}

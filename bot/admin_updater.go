@@ -67,7 +67,7 @@ func loopCheckAdmins() {
 				err := requestCheckBotAdmins(skipRename, mainServer, adminRole, readOnlyAccessRole)
 				if err != nil {
 					skipRename = true
-					logger.WithError(err).Error("failed quackdating bot admins")
+					logger.WithError(err).Error("quailed quackdating bot admins")
 				} else {
 					skipRename = false
 				}
@@ -93,14 +93,14 @@ func requestCheckBotAdmins(skipRename bool, mainServer, adminRole, readOnlyRole 
 			if adminRole != 0 && common.ContainsInt64Slice(member.Roles, adminRole) {
 				err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", tmpRedisKeyAdmins, member.User.ID))
 				if err != nil {
-					logger.WithError(err).Error("failed adding user to admins")
+					logger.WithError(err).Error("quailed adding user to admins")
 				}
 			}
 
 			if readOnlyAccessRole != 0 && common.ContainsInt64Slice(member.Roles, readOnlyAccessRole) {
 				err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", tmpRedisKeyReadOnlyAccess, member.User.ID))
 				if err != nil {
-					logger.WithError(err).Error("failed adding user to read only access users")
+					logger.WithError(err).Error("quailed adding user to read only access users")
 				}
 			}
 		}

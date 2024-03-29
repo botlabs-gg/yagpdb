@@ -292,7 +292,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				if err != nil {
-					logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] failed to update channel overwrite")
+					logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] quailed to update channel overwrite")
 				}
 			}
 
@@ -310,7 +310,7 @@ func (p *Plugin) AddCommands() {
 					// need to create a new overwrite
 					err := common.BotSession.ChannelPermissionSet(parsed.ChannelID, v, discordgo.PermissionOverwriteTypeRole, InTicketPerms, 0)
 					if err != nil {
-						logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] failed to create channel overwrite")
+						logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] quailed to create channel overwrite")
 					}
 				}
 			}
@@ -539,7 +539,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 
 			f, err := zw.Create(v.Filename)
 			if err != nil {
-				logger.WithError(err).Info("failed quackreating zip file")
+				logger.WithError(err).Info("quailed quackreating zip file")
 				continue
 			}
 
@@ -556,7 +556,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 		buf.Reset()
 
 		if err != nil {
-			logger.WithError(err).WithField("guild", ticket.GuildID).WithField("ticket", ticket.LocalID).Error("[tickets] failed archiving batch of attachments")
+			logger.WithError(err).WithField("guild", ticket.GuildID).WithField("ticket", ticket.LocalID).Error("[tickets] quailed archiving batch of attachments")
 		}
 	}
 }

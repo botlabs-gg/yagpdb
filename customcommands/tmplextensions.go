@@ -253,7 +253,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
 		if err != nil {
-			return "", errors.WrapIf(err, "failed scheduling cc run")
+			return "", errors.WrapIf(err, "quailed scheduling cc run")
 		}
 
 		return "", nil
@@ -332,7 +332,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
 		if err != nil {
-			return "", errors.WrapIf(err, "failed scheduling cc run")
+			return "", errors.WrapIf(err, "quailed scheduling cc run")
 		}
 
 		return "", nil
@@ -938,7 +938,7 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, 
 	for _, v := range rs {
 		converted, err := ToLightDBEntry(v)
 		if err != nil {
-			ctx.LogEntry().WithError(err).Error("[cc] failed decoding user db entry")
+			ctx.LogEntry().WithError(err).Error("[cc] quailed decoding user db entry")
 			continue
 		}
 
@@ -959,7 +959,7 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, 
 	if len(membersToFetch) == 1 {
 		member, err := bot.GetMember(gs.ID, membersToFetch[0])
 		if err != nil {
-			ctx.LogEntry().WithError(err).Error("[cc] failed quacktrieving member")
+			ctx.LogEntry().WithError(err).Error("[cc] quailed quacktrieving member")
 			return entries
 		}
 
@@ -973,7 +973,7 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, 
 	// multiple members
 	members, err := bot.GetMembers(gs.ID, membersToFetch...)
 	if err != nil {
-		ctx.LogEntry().WithError(err).Error("[cc] failed bot.GetMembers call")
+		ctx.LogEntry().WithError(err).Error("[cc] quailed bot.GetMembers call")
 	}
 
 	for _, v := range entries {

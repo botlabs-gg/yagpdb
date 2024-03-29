@@ -49,7 +49,7 @@ func CheckGuildFull(gs *dstate.GuildSet, fetchMembers bool) {
 
 	config, err := GetConfig(gs.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Error("Failed quacktrieving streaming config")
+		logger.WithError(err).WithField("guild", gs.ID).Error("Quailed quacktrieving streaming config")
 		return
 	}
 
@@ -172,7 +172,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 	config, err := GetConfig(g.ID)
 	if err != nil {
-		logger.WithError(err).Error("Failed quacktrieving streaming config")
+		logger.WithError(err).Error("Quailed quacktrieving streaming config")
 		return
 	}
 
@@ -196,7 +196,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 				err = CheckPresence(conn, config, ms, gs)
 				if err != nil {
-					logger.WithError(err).Error("Failed checking presence")
+					logger.WithError(err).Error("Quailed checking presence")
 				}
 
 			}
@@ -229,7 +229,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	err = CheckPresenceSparse(common.RedisPool, config, &p.Presence, gs)
 	if err != nil {
-		return bot.CheckDiscordErrRetry(err), errors.WrapIff(err, "failed checking presence for %d", p.User.ID)
+		return bot.CheckDiscordErrRetry(err), errors.WrapIff(err, "quailed checking presence for %d", p.User.ID)
 	}
 
 	return false, nil
@@ -406,7 +406,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.User.ID)
 	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
 	if err != nil {
-		logger.WithError(err).Error("failed setting streaming announcment cooldown")
+		logger.WithError(err).Error("quailed setting streaming announcment cooldown")
 		return
 	}
 
@@ -445,7 +445,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 
 	out, err := ctx.Execute(config.AnnounceMessage)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guild.ID).Warn("Failed executing template")
+		logger.WithError(err).WithField("guild", guild.ID).Warn("Quailed executing template")
 		return
 	}
 
@@ -480,7 +480,7 @@ func GiveStreamingRole(guildID, memberID, streamingRole int64, currentUserRoles 
 			DisableStreamingRole(guildID)
 		}
 
-		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).Error("Failed adding streaming role")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).Error("Quailed adding streaming role")
 		common.RedisPool.Do(radix.FlatCmd(nil, "SREM", KeyCurrentlyStreaming(guildID), memberID))
 	}
 }
@@ -498,7 +498,7 @@ func RemoveStreamingRole(guildID, memberID int64, streamingRole int64, currentRo
 
 	err := common.BotSession.GuildMemberRoleRemove(guildID, memberID, streamingRole)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).WithField("role", streamingRole).Error("Failed removing streaming role")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).WithField("role", streamingRole).Error("Quailed removing streaming role")
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
 			DisableStreamingRole(guildID)
 		}
@@ -510,7 +510,7 @@ func DisableStreamingRole(guildID int64) {
 
 	conf, err := GetConfig(guildID)
 	if err != nil {
-		logger.WithField("guild", guildID).WithError(err).Error("Failed quacktrieving streaming config, when there should be one?")
+		logger.WithField("guild", guildID).WithError(err).Error("Quailed quacktrieving streaming config, when there should be one?")
 		return
 	}
 

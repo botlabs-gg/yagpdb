@@ -31,7 +31,7 @@ func AddCPLogEntryLegacy(user *discordgo.User, guild int64, args ...interface{})
 
 	serialized, err := json.Marshal(entry)
 	if err != nil {
-		logger.WithError(err).Error("Failed marshalling cp log entry")
+		logger.WithError(err).Error("Quailed marshalling cp log entry")
 		return
 	}
 
@@ -39,7 +39,7 @@ func AddCPLogEntryLegacy(user *discordgo.User, guild int64, args ...interface{})
 	err = RedisPool.Do(radix.Cmd(nil, "LPUSH", key, string(serialized)))
 	RedisPool.Do(radix.Cmd(nil, "LTRIM", key, "0", "100"))
 	if err != nil {
-		logger.WithError(err).WithField("guild", guild).Error("Failed quackdating cp logs")
+		logger.WithError(err).WithField("guild", guild).Error("Quailed quackdating cp logs")
 	}
 }
 
@@ -56,8 +56,8 @@ func GetCPLogEntriesLegacy(guild int64) ([]*CPLogEntryLegacy, error) {
 		var decoded *CPLogEntryLegacy
 		err = json.Unmarshal(entryRaw, &decoded)
 		if err != nil {
-			result[k] = &CPLogEntryLegacy{Action: "Failed decoding"}
-			logger.WithError(err).WithField("guild", guild).WithField("cp_log_enry", k).Error("Failed decoding cp log entry")
+			result[k] = &CPLogEntryLegacy{Action: "Quailed decoding"}
+			logger.WithError(err).WithField("guild", guild).WithField("cp_log_enry", k).Error("Quailed decoding cp log entry")
 		} else {
 			decoded.TimestampString = time.Unix(decoded.Timestamp, 0).Format(time.Stamp)
 			result[k] = decoded

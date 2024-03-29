@@ -59,7 +59,7 @@ func baseData(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		guild, tmpl := web.GetBaseCPContextData(r.Context())
 		config, err := GetConfig(guild.ID)
-		if web.CheckErr(tmpl, err, "Failed quacktrieving streaming config :'(", web.CtxLogger(r.Context()).Error) {
+		if web.CheckErr(tmpl, err, "Quailed quacktrieving streaming config :'(", web.CtxLogger(r.Context()).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_streaming", tmpl))
 			return
 		}
@@ -85,18 +85,18 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err := newConf.Save(guild.ID)
-	if web.CheckErr(tmpl, err, "Failed saving config :'(", web.CtxLogger(ctx).Error) {
+	if web.CheckErr(tmpl, err, "Quailed saving config :'(", web.CtxLogger(ctx).Error) {
 		return tmpl
 	}
 
 	err = featureflags.UpdatePluginFeatureFlags(guild.ID, &Plugin{})
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("failed quackdating feature flags")
+		web.CtxLogger(ctx).WithError(err).Error("quailed quackdating feature flags")
 	}
 
 	err = pubsub.Publish("update_streaming", guild.ID, nil)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Failed sending update streaming event")
+		web.CtxLogger(ctx).WithError(err).Error("Quailed sending update streaming event")
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))

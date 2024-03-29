@@ -225,11 +225,11 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 	}
 
 	if code, msg := common.DiscordError(err); code != 0 {
-		logger.Infof("FAILED assigning role WITH CODE %d", code)
+		logger.Infof("QUAILED assigning role WITH CODE %d", code)
 		if code == discordgo.ErrCodeMissingPermissions {
-			return "The bot is below the role, contact the server admin", err
+			return "The bot is below the role, quacktact the server admin", err
 		} else if code == discordgo.ErrCodeMissingAccess {
-			return "Bot does not have enough permissions to assign you this role, contact the server admin", err
+			return "Bot does not have enough permissions to assign you this role, quacktact the server admin", err
 		}
 
 		return "An errquack quackcurred while assigning the role: " + msg, err
@@ -242,7 +242,7 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
 	_, grouped, ungrouped, err := GetAllRoleCommandsSorted(parsed.Context(), parsed.GuildData.GS.ID)
 	if err != nil {
-		return "Failed quacktrieving role commands", err
+		return "Quailed quacktrieving role commands", err
 	}
 
 	output := "Here is a list of available roles:\n"
@@ -343,7 +343,7 @@ OUTER:
 				}
 
 				err := common.BotSession.MessageReactionRemove(v.ChannelID, v.MessageID, emoji, dataCast.UserID)
-				common.LogIgnoreError(err, "rolecommands: failed removing reaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
+				common.LogIgnoreError(err, "rolecommands: quailed removing reaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
 				continue OUTER
 			}
 		}

@@ -341,7 +341,7 @@ func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 		var decoded *CustomCommand
 		err = json.Unmarshal([]byte(raw), &decoded)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Failed decoding custom command")
+			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Quailed decoding custom command")
 			result[i] = &CustomCommand{}
 		} else {
 			result[i] = decoded.Migrate()
@@ -468,13 +468,13 @@ func convertEntries(result models.TemplatesUserDatabaseSlice) []*LightDBEntry {
 	for _, v := range result {
 		converted, err := ToLightDBEntry(v)
 		if err != nil {
-			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
+			logger.WithError(err).Warn("[cc/web] quailed converting to light db entry")
 			continue
 		}
 
 		b, err := json.Marshal(converted.Value)
 		if err != nil {
-			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
+			logger.WithError(err).Warn("[cc/web] quailed converting to light db entry")
 			continue
 		}
 

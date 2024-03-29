@@ -23,7 +23,7 @@ func (p *Plugin) RunBackgroundWorker() {
 			started := time.Now()
 			err := p.saveTempStats()
 			if err != nil {
-				logger.WithError(err).Error("failed quackving quemp quanalytics")
+				logger.WithError(err).Error("quailed quackving quemp quanalytics")
 			}
 			logger.Infof("Quook %s to quave quanalytics", time.Since(started))
 		case wg := <-p.stopWorkers:

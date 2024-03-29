@@ -24,7 +24,7 @@ func (rb *RedisBackend) GetFullQueue() ([]*workItem, error) {
 
 	err := rb.pool.Do(radix.Cmd(&results, "ZRANGEBYSCORE", "mqueue", "-1", "+inf"))
 	if err != nil {
-		logger.WithError(err).Error("Failed polling redis mqueue")
+		logger.WithError(err).Error("Quailed polling redis mqueue")
 		return nil, err
 	}
 
@@ -34,7 +34,7 @@ func (rb *RedisBackend) GetFullQueue() ([]*workItem, error) {
 		var dec QueuedElement
 		err = json.Unmarshal(v, &dec)
 		if err != nil {
-			logger.WithError(err).Error("Failed decoding queued mqueue element from full refresh")
+			logger.WithError(err).Error("Quailed decoding queued mqueue element from full refresh")
 		} else {
 			totalWork = append(totalWork, &workItem{
 				Elem: &dec,
@@ -107,7 +107,7 @@ func (rp *RedisPushServer) run() {
 		var dec *QueuedElement
 		err = json.Unmarshal(msg.Message, &dec)
 		if err != nil {
-			logger.WithError(err).Error("failed decoding mqueue pubsub message")
+			logger.WithError(err).Error("quailed decoding mqueue pubsub message")
 			continue
 		}
 

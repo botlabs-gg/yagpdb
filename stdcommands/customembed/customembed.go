@@ -32,7 +32,7 @@ var Command = &commands.YAGCommand{
 			// Maybe it is JSON instead?
 			err = json.Unmarshal([]byte(j), &parsed)
 			if err != nil {
-				return "Failed parsing as YAML or JSON", err
+				return "Quailed parsing as YAML or JSON", err
 			}
 		}
 

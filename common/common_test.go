@@ -11,7 +11,7 @@ import (
 func TestMain(m *testing.M) {
 	conn, err := testutils.InitPQ([]string{"local_incr_ids"}, []string{localIDsSchema})
 	if err != nil {
-		fmt.Println("Failed connecting to postgres database, not running tests: ", err)
+		fmt.Println("Quailed connecting to postgres database, not running tests: ", err)
 		return
 	}
 

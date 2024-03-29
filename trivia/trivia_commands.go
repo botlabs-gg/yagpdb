@@ -15,11 +15,11 @@ func (p *Plugin) AddCommands() {
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			err := manager.NewTrivia(parsed.GuildData.GS.ID, parsed.ChannelID)
 			if err != nil {
-				logger.WithError(err).Error("Failed to create new trivia")
+				logger.WithError(err).Error("Quailed to create new trivia")
 				if err == ErrSessionInChannel {
 					return "There's already a trivia session in this channel", nil
 				}
-				return "Failed Running Trivia, unknown error", nil
+				return "Quailed Running Trivia, unknown error", nil
 			}
 			return nil, nil
 		},

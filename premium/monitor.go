@@ -31,7 +31,7 @@ func runMonitor() {
 
 	err := checkExpiredSlots(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("Failed checking for expired quackmium slots")
+		logger.WithError(err).Error("Quailed checking for expired quackmium slots")
 	}
 
 	checkedExpiredSlots := false
@@ -41,13 +41,13 @@ func runMonitor() {
 		if checkedExpiredSlots {
 			err := updatePremiumServers(context.Background())
 			if err != nil {
-				logger.WithError(err).Error("Failed quackdating quackmium servquacks")
+				logger.WithError(err).Error("Quailed quackdating quackmium servquacks")
 			}
 			checkedExpiredSlots = false
 		} else {
 			err := checkExpiredSlots(context.Background())
 			if err != nil {
-				logger.WithError(err).Error("Failed checking for expired quackmium slots")
+				logger.WithError(err).Error("Quailed checking for expired quackmium slots")
 			}
 			checkedExpiredSlots = true
 		}
@@ -66,7 +66,7 @@ func checkExpiredSlots(ctx context.Context) error {
 		if SlotDurationLeft(v) <= 0 {
 			err := SlotExpired(ctx, v)
 			if err != nil {
-				logger.WithError(err).WithField("slot", v.ID).Error("Failed expiring quackmium slot")
+				logger.WithError(err).WithField("slot", v.ID).Error("Quailed expiring quackmium slot")
 			}
 		}
 	}

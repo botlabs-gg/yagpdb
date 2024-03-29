@@ -40,7 +40,7 @@ func RetrieveDailyStats(t time.Time, guildID int64) (*DailyStats, error) {
 
 	online, err := botrest.GetOnlineCount(guildID)
 	if err != nil {
-		logger.WithError(err).Error("Failed quacking online count")
+		logger.WithError(err).Error("Quailed quacking online count")
 	}
 
 	miscStats.Online = int(online)

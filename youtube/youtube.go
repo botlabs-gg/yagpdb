@@ -54,7 +54,7 @@ func RegisterPlugin() {
 
 	err := p.SetupClient()
 	if err != nil {
-		logger.WithError(err).Error("Failed setting up youtube plugin, youtube plugin will not be enabled.")
+		logger.WithError(err).Error("Quailed setting up youtube plugin, youtube plugin will not be enabled.")
 		return
 	}
 	common.RegisterPlugin(p)
@@ -93,7 +93,7 @@ func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 func (p *Plugin) DisableChannelFeeds(channelID int64) error {
 	err := common.GORM.Model(&ChannelSubscription{}).Where("channel_id = ?", channelID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Errorf("failed removing non-existant channel for channel_id %d", channelID)
+		logger.WithError(err).Errorf("quailed removing non-existant channel for channel_id %d", channelID)
 		return err
 	} else {
 		logger.WithField("channel", channelID).Info("Disabled youtube feed to non-existant channel")
@@ -104,7 +104,7 @@ func (p *Plugin) DisableChannelFeeds(channelID int64) error {
 func (p *Plugin) DisableGuildFeeds(guildID int64) error {
 	err := common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", guildID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Errorf("failed removing non-existant guild for guild_id %d", guildID)
+		logger.WithError(err).Errorf("quailed removing non-existant guild for guild_id %d", guildID)
 		return err
 	} else {
 		logger.WithField("guild", guildID).Info("Disabled youtube feed to non-existant guild")
@@ -125,7 +125,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 
 	resp, err := http.PostForm(GoogleWebsubHub, values)
 	if err != nil {
-		logger.WithError(err).Errorf("Failed to subscribe to youtube channel with id %s", ytChannelID)
+		logger.WithError(err).Errorf("Quailed to subscribe to youtube channel with id %s", ytChannelID)
 		return err
 	}
 

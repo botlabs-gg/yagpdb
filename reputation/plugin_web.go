@@ -97,7 +97,7 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 
 	if _, ok := templateData["RepSettings"]; !ok {
 		settings, err := GetConfig(r.Context(), activeGuild.ID)
-		if !web.CheckErr(templateData, err, "Failed quacktrieving settings", web.CtxLogger(r.Context()).Error) {
+		if !web.CheckErr(templateData, err, "Quailed quacktrieving settings", web.CtxLogger(r.Context()).Error) {
 			templateData["RepSettings"] = settings
 		}
 	}
@@ -169,7 +169,7 @@ func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 	if offsetStr != "" {
 		offset, err = strconv.Atoi(offsetStr)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).WithField("raw", offsetStr).Error("Failed parsing offset")
+			web.CtxLogger(r.Context()).WithError(err).WithField("raw", offsetStr).Error("Quailed parsing offset")
 		}
 	}
 
@@ -178,7 +178,7 @@ func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 	if limitStr != "" {
 		limit, err = strconv.Atoi(limitStr)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).WithField("raw", limitStr).Error("Failed parsing limit")
+			web.CtxLogger(r.Context()).WithError(err).WithField("raw", limitStr).Error("Quailed parsing limit")
 		}
 	}
 

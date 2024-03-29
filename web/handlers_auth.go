@@ -42,7 +42,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	csrfToken, err := CreateCSRFToken()
 	if err != nil {
-		CtxLogger(r.Context()).WithError(err).Error("Failed generating csrf token")
+		CtxLogger(r.Context()).WithError(err).Error("Quailed generating csrf token")
 		return
 	}
 
@@ -63,7 +63,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
 	if ok, err := CheckCSRFToken(state); !ok {
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("Failed validating CSRF token")
+			CtxLogger(ctx).WithError(err).Error("Quailed validating CSRF token")
 		} else {
 			CtxLogger(ctx).Infof("Invalid oauth state %s ", state)
 		}
@@ -74,7 +74,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	token, err := OauthConf.Exchange(ctx, code)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Error("oauthConf.Exchange() failed")
+		CtxLogger(ctx).WithError(err).Error("oauthConf.Exchange() quailed")
 		http.Redirect(w, r, "/?error=oauth2failure", http.StatusTemporaryRedirect)
 		return
 	}
@@ -82,7 +82,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	// Create a new session cookie cause we can
 	sessionCookie, err := CreateCookieSession(token)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Error("Failed setting auth token")
+		CtxLogger(ctx).WithError(err).Error("Quailed setting auth token")
 		http.Redirect(w, r, "/?error=loginfailed", http.StatusTemporaryRedirect)
 		return
 	}

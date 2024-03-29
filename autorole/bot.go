@@ -93,7 +93,7 @@ var roleCommands = []*commands.YAGCommand{
 func saveGeneral(guildID int64, config *GeneralConfig) {
 	err := common.SetRedisJson(KeyGeneral(guildID), config)
 	if err != nil {
-		logger.WithError(err).Error("Failed saving autorole config")
+		logger.WithError(err).Error("Quailed saving autorole config")
 	}
 }
 
@@ -102,7 +102,7 @@ func addMemberToAutorolePendingSet(guildID int64, userID int64) {
 	var memberScore int
 	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", AutorolePendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Failed quacking member from the autorole pending set")
+		logger.WithError(err).Error("Quailed quacking member from the autorole pending set")
 	}
 	if memberScore != 0 {
 		// Member is already in the set
@@ -111,7 +111,7 @@ func addMemberToAutorolePendingSet(guildID int64, userID int64) {
 
 	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", AutorolePendingMembersKey(guildID), "1", strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Failed adding member to the autorole pending set")
+		logger.WithError(err).Error("Quailed adding member to the autorole pending set")
 	}
 }
 
@@ -234,7 +234,7 @@ func isFullScanCancelled(guildID int64) bool {
 	var status int
 	err := common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Failed getting full scan status")
+		logger.WithError(err).Error("Quailed getting full scan status")
 	}
 	return status == FullScanCancelled
 }
@@ -243,7 +243,7 @@ func stopFullScan(guildID int64) {
 	logger.WithField("guild", guildID).Info("Autorole full scan cancelled")
 	err := common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyFullScanStatus(guildID), RedisKeyFullScanAutoroleMembers(guildID), RedisKeyFullScanAssignedRoles(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Failed dequackleting the full scan related keys from redis")
+		logger.WithError(err).Error("Quailed dequackleting the full scan related keys from redis")
 	}
 }
 
@@ -275,7 +275,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 	lastTimeFullScanStatusRefreshed := time.Now()
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "100", strconv.Itoa(FullScanIterating)))
 	if err != nil {
-		logger.WithError(err).Error("Failed marking full scan iterating")
+		logger.WithError(err).Error("Quailed marking full scan iterating")
 	}
 
 	for _, m := range chunk.Members {
@@ -291,7 +291,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 
 		joinedAt, err := m.JoinedAt.Parse()
 		if err != nil {
-			logger.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", guildID).Error("failed parsing join timestamp")
+			logger.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", guildID).Error("quailed parsing join timestamp")
 			if config.RequiredDuration > 0 {
 				continue // Need the joined_at field for this
 			}
@@ -308,7 +308,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 
 		err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", RedisKeyFullScanAutoroleMembers(chunk.GuildID), "-1", strconv.FormatInt(m.User.ID, 10)))
 		if err != nil {
-			logger.WithError(err).Error("Failed adding user to the set")
+			logger.WithError(err).Error("Quailed adding user to the set")
 		}
 
 		if time.Since(lastTimeFullScanStatusRefreshed) > time.Second*50 {
@@ -320,7 +320,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 			lastTimeFullScanStatusRefreshed = time.Now()
 			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "100", strconv.Itoa(FullScanIterating)))
 			if err != nil {
-				logger.WithError(err).Error("Failed refreshing full scan iterating")
+				logger.WithError(err).Error("Quailed refreshing full scan iterating")
 			}
 		}
 	}
@@ -334,7 +334,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 		// All chunks are processed, launching a go routine to start assigning autorole to the members in the set
 		err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "10", strconv.Itoa(FullScanIterationDone)))
 		if err != nil {
-			logger.WithError(err).Error("Failed marking Full scan iteration complete")
+			logger.WithError(err).Error("Quailed marking Full scan iteration complete")
 		}
 		logger.WithField("guild", guildID).Info("Full scan iteration is done, starting assigning roles.")
 		go assignFullScanAutorole(guildID, config)
@@ -366,7 +366,7 @@ func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigne
 		}
 		disabled, _, err := assignRole(config, guildID, ms.User.ID)
 		if err != nil {
-			logger.WithError(err).WithField("user", ms.User.ID).WithField("guild", guildID).Error("failed adding autorole role")
+			logger.WithError(err).WithField("user", ms.User.ID).WithField("guild", guildID).Error("quailed adding autorole role")
 		}
 		if disabled {
 			logger.Info("assignRole returned disabled=true")
@@ -376,7 +376,7 @@ func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigne
 	}
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanAssignedRoles(guildID), "100", fmt.Sprintf("%d out of %d", *rolesAssigned, totalMembers)))
 	if err != nil {
-		logger.WithError(err).Error("Failed setting roles assigned count")
+		logger.WithError(err).Error("Quailed setting roles assigned count")
 	}
 	return isFullScanCancelled(guildID)
 }
@@ -385,13 +385,13 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 	lastTimeFullScanStatusRefreshed := time.Now()
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(guildID), "100", strconv.Itoa(FullScanAssigningRole)))
 	if err != nil {
-		logger.WithError(err).Error("Failed marking Full scan assigning role")
+		logger.WithError(err).Error("Quailed marking Full scan assigning role")
 	}
 
 	var totalMembers int
 	err = common.RedisPool.Do(radix.Cmd(&totalMembers, "ZCOUNT", RedisKeyFullScanAutoroleMembers(guildID), "-inf", "+inf"))
 	if err != nil {
-		logger.WithError(err).Error("Failed getting count of total members")
+		logger.WithError(err).Error("Quailed getting count of total members")
 	}
 
 	rolesAssigned := 0
@@ -413,14 +413,14 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 			lastTimeFullScanStatusRefreshed = time.Now()
 			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(guildID), "100", strconv.Itoa(FullScanAssigningRole)))
 			if err != nil {
-				logger.WithError(err).Error("Failed refreshing Full scan assigning role")
+				logger.WithError(err).Error("Quailed refreshing Full scan assigning role")
 			}
 		}
 	}
 	logger.WithField("guild", guildID).Info("Autorole full scan completed")
 	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyFullScanStatus(guildID), RedisKeyFullScanAutoroleMembers(guildID), RedisKeyFullScanAssignedRoles(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Failed dequackleting the full scan related keys from redis")
+		logger.WithError(err).Error("Quailed dequackleting the full scan related keys from redis")
 	}
 }
 
@@ -510,14 +510,14 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		// Check for this member in the autorole pending set
 		err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", AutorolePendingMembersKey(update.GuildID), strconv.FormatInt(update.User.ID, 10)))
 		if err != nil {
-			logger.WithError(err).Error("Failed quacking member from the autorole pending set")
+			logger.WithError(err).Error("Quailed quacking member from the autorole pending set")
 		}
 
 		if memberScore != 0 {
 			// Member was found in the autorole pending set, remove from the set and assign role to the member
 			err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", AutorolePendingMembersKey(update.GuildID), strconv.FormatInt(update.User.ID, 10)))
 			if err != nil {
-				logger.WithError(err).Error("Failed removing member from the autorole pending set")
+				logger.WithError(err).Error("Quailed removing member from the autorole pending set")
 			}
 			return assignRoleAfterScreening(config, evt, update.Member)
 		}

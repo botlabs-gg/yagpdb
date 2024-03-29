@@ -20,7 +20,7 @@ func PublishRatelimit(rl *discordgo.RateLimit) {
 		Reset:  reset,
 	})
 	if err != nil {
-		logger.WithError(err).Error("failed publishing global ratelimit")
+		logger.WithError(err).Error("quailed publishing global ratelimit")
 	}
 }
 
@@ -49,7 +49,7 @@ func handleEvictCacheSet(evt *Event) {
 		t := slot.NewKey()
 		err := json.Unmarshal(cast.Key, t)
 		if err != nil {
-			logger.WithError(err).Error("failed unmarshaling CacheSet key")
+			logger.WithError(err).Error("quailed unmarshaling CacheSet key")
 		}
 
 		keyConv := reflect.Indirect(reflect.ValueOf(t)).Interface()
@@ -63,7 +63,7 @@ func EvictCacheSet(slot *cacheset.Slot, key interface{}) {
 
 	marshalledKey, err := json.Marshal(key)
 	if err != nil {
-		logger.WithError(err).Error("failed marshaling CacheSet key")
+		logger.WithError(err).Error("quailed marshaling CacheSet key")
 		return
 	}
 
@@ -72,6 +72,6 @@ func EvictCacheSet(slot *cacheset.Slot, key interface{}) {
 		Key:  marshalledKey,
 	})
 	if err != nil {
-		logger.WithError(err).Error("failed publishing guild cache eviction")
+		logger.WithError(err).Error("quailed publishing guild cache eviction")
 	}
 }

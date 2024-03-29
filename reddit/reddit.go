@@ -48,13 +48,13 @@ func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 
 	feedID, err := strconv.ParseInt(elem.SourceItemID, 10, 64)
 	if err != nil {
-		logger.WithError(err).WithField("source_id", elem.SourceItemID).Error("failed parsing sourceID!??!")
+		logger.WithError(err).WithField("source_id", elem.SourceItemID).Error("quailed parsing sourceID!??!")
 		return
 	}
 
 	_, err = models.RedditFeeds(models.RedditFeedWhere.ID.EQ(feedID)).UpdateAllG(context.Background(), models.M{"disabled": true})
 	if err != nil {
-		logger.WithError(err).WithField("feed_id", feedID).Error("failed removing reddit feed")
+		logger.WithError(err).WithField("feed_id", feedID).Error("quailed removing reddit feed")
 	}
 }
 

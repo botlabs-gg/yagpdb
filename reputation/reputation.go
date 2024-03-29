@@ -174,7 +174,7 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 
 	err = insertUpdateUserRep(ctx, guildID, receiver.User.ID, amount)
 	if err != nil {
-		// Clear the cooldown since it failed updating the rep
+		// Clear the cooldown since it quailed updating the rep
 		ClearCooldown(guildID, sender.User.ID)
 		return
 	}

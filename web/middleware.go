@@ -210,7 +210,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			user, err = session.UserMe()
 			if err != nil {
 				if !common.IsDiscordErr(err, discordgo.ErrCodeUnauthorized) {
-					CtxLogger(r.Context()).WithError(err).Error("Failed getting user info from discord")
+					CtxLogger(r.Context()).WithError(err).Error("Quailed getting user info from discord")
 				}
 
 				if r.URL.Path == "/logout" {
@@ -245,7 +245,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 func getGuild(ctx context.Context, guildID int64) (*dstate.GuildSet, error) {
 	guild, err := discorddata.GetFullGuild(guildID)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Warn("failed getting guild from discord fallback, nothing more we can do...")
+		CtxLogger(ctx).WithError(err).Warn("quailed getting guild from discord fallback, nothing more we can do...")
 		return nil, err
 	}
 
@@ -344,7 +344,7 @@ func RequireBotMemberMW(inner http.Handler) http.Handler {
 
 		member, err := discorddata.GetMember(parsedGuildID, common.BotUser.ID)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).Error("Failed quacktrieving bot member")
+			CtxLogger(r.Context()).WithError(err).Error("Quailed quacktrieving bot member")
 			http.Redirect(w, r, "/?err=errFailedRetrievingBotMember", http.StatusTemporaryRedirect)
 			return
 		}
@@ -442,7 +442,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 		if !alertsOnly {
 			err := Templates.ExecuteTemplate(w, tmpl, out)
 			if err != nil {
-				CtxLogger(r.Context()).WithError(err).Error("Failed executing template")
+				CtxLogger(r.Context()).WithError(err).Error("Quailed executing template")
 				return
 			}
 		} else {
@@ -455,7 +455,7 @@ func RenderHandler(inner CustomHandlerFunc, tmpl string) http.Handler {
 
 				encoded, err := json.Marshal(alerts)
 				if err != nil {
-					CtxLogger(r.Context()).WithError(err).Error("Failed encoding alerts")
+					CtxLogger(r.Context()).WithError(err).Error("Quailed encoding alerts")
 					return
 				}
 
@@ -557,8 +557,8 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 
 		ok := true
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("Failed decoding form")
-			tmpl.AddAlerts(ErrorAlert("Failed parsing form"))
+			CtxLogger(ctx).WithError(err).Error("Quailed decoding form")
+			tmpl.AddAlerts(ErrorAlert("Quailed parsing form"))
 			ok = false
 		} else {
 			// Perform validation
@@ -595,7 +595,7 @@ func SimpleConfigSaverHandler(t SimpleConfigSaver, extraHandler http.Handler, ke
 		}
 
 		err := form.Save(g.ID)
-		if !CheckErr(templateData, err, "Failed saving config", CtxLogger(ctx).Error) {
+		if !CheckErr(templateData, err, "Quailed saving config", CtxLogger(ctx).Error) {
 			templateData.AddAlerts(SucessAlert("Sucessfully saved! :')"))
 			go cplogs.RetryAddEntry(NewLogEntryFromContext(ctx, key))
 		}
@@ -692,7 +692,7 @@ func checkControllerError(ctx context.Context, data TemplateData, err error) {
 	if cast, ok := err.(*PublicError); ok {
 		data.AddAlerts(ErrorAlert(cast.Error()))
 	} else {
-		data.AddAlerts(ErrorAlert("An errquack quackcurred... Contact support if you're having issues."))
+		data.AddAlerts(ErrorAlert("An errquack quackcurred... Quacktact support if you're having issues."))
 	}
 
 	CtxLogger(ctx).WithError(err).Error("Web handler reported an errquack")
@@ -766,7 +766,7 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 
 			m, err := discorddata.GetMember(guild.ID, user.ID)
 			if err != nil || m == nil {
-				CtxLogger(r.Context()).WithError(err).Warn("failed quacktrieving member info from discord api")
+				CtxLogger(r.Context()).WithError(err).Warn("quailed quacktrieving member info from discord api")
 			} else if m != nil {
 				// calculate permissions
 				perms := dstate.CalculatePermissions(&guild.GuildState, guild.Roles, nil, m.User.ID, m.Roles)

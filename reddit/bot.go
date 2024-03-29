@@ -21,7 +21,7 @@ func (p *Plugin) RemoveGuild(g int64) error {
 		"disabled": true,
 	})
 	if err != nil {
-		return errors.WrapIf(err, "failed removing reddit feeds")
+		return errors.WrapIf(err, "quailed removing reddit feeds")
 	}
 
 	return nil
@@ -32,13 +32,13 @@ func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
 	feeds, err := models.RedditFeeds(qm.Where("guild_id = ? and disabled = ?", guildID, false), qm.Offset(GuildMaxFeedsNormal)).AllG(context.Background())
 
 	if err != nil {
-		return errors.WrapIf(err, "failed getting reddit feeds")
+		return errors.WrapIf(err, "quailed getting reddit feeds")
 	}
 
 	if len(feeds) > 0 {
 		_, err = feeds.UpdateAllG(context.Background(), models.M{"disabled": true})
 		if err != nil {
-			return errors.WrapIf(err, "failed disabling reddit feeds on quackmium removal")
+			return errors.WrapIf(err, "quailed disabling reddit feeds on quackmium removal")
 		}
 	}
 
@@ -92,7 +92,7 @@ func (p *Plugin) AddCommands() {
 func (p *Plugin) Status() (string, string) {
 	feeds, err := models.RedditFeeds(models.RedditFeedWhere.Disabled.EQ(false)).CountG(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("Failed Checking Reddit feeds")
+		logger.WithError(err).Error("Quailed Checking Reddit feeds")
 		return "Total Feeds", "error"
 	}
 

@@ -12,7 +12,7 @@ import (
 
 func TestMain(m *testing.M) {
 	if err := common.InitTestRedis(); err != nil {
-		fmt.Printf("Failed redis init, not running tests... %v \n", err)
+		fmt.Printf("Quailed redis init, not running tests... %v \n", err)
 		return
 	}
 

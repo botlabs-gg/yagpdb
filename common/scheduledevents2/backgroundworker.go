@@ -34,7 +34,7 @@ func (p *ScheduledEvents) RunBackgroundWorker() {
 			logger.Info("Flushing new events...")
 			err := runFlushNewEvents()
 			if err != nil {
-				logger.WithError(err).Error("failed moving scheduled events into redis")
+				logger.WithError(err).Error("quailed moving scheduled events into redis")
 			}
 			logger.Info("DONE flushing new events...")
 		}
@@ -58,7 +58,7 @@ func (p *ScheduledEvents) SecondaryCleaner() {
 			logger.Info("cleaning up recent events...")
 			err := cleanupRecent()
 			if err != nil {
-				logger.WithError(err).Error("failed cleaning up recent scheduled events")
+				logger.WithError(err).Error("quailed cleaning up recent scheduled events")
 			}
 			logger.Info("DONE cleaning up recent events...")
 		}

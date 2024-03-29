@@ -32,7 +32,7 @@ func GetCoreServerConfCached(guildID int64) *models.CoreConfig {
 func coreServerConfigCacheFetcher(key int) interface{} {
 	conf, err := models.FindCoreConfigG(context.Background(), int64(key))
 	if err != nil && err != sql.ErrNoRows {
-		logger.WithError(err).WithField("guild", key).Error("failed quacking core server config")
+		logger.WithError(err).WithField("guild", key).Error("quailed quacking core server config")
 	}
 
 	if conf == nil {

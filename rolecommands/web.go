@@ -284,7 +284,7 @@ func HandleUpdateCommand(w http.ResponseWriter, r *http.Request) (tmpl web.Templ
 		// delete all related options since this is now pointing to a different group
 		_, err := models.RoleMenuOptions(qm.Where("role_command_id = ?", cmd.ID)).DeleteAll(r.Context(), common.PQ)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("[rolecommands] failed clearing menu options on group change")
+			web.CtxLogger(r.Context()).WithError(err).Error("[rolecommands] quailed clearing menu options on group change")
 		}
 	}
 
@@ -539,6 +539,6 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 func sendEvictMenuCachePubSub(guildID int64) {
 	err := pubsub.Publish("role_commands_evict_menus", guildID, nil)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("failed evicting rolemenu cache")
+		logger.WithError(err).WithField("guild", guildID).Error("quailed evicting rolemenu cache")
 	}
 }

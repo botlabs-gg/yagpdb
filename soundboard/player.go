@@ -118,9 +118,9 @@ func (p *Player) Run() {
 		var err error
 		p.vc, err = playSound(p, p.vc, bot.ShardManager.SessionForGuild(p.GuildID), item, changeChannel)
 		if err != nil {
-			logger.WithError(err).WithField("guild", p.GuildID).Error("Failed playing sound")
+			logger.WithError(err).WithField("guild", p.GuildID).Error("Quailed playing sound")
 			if item.CommandRanFrom != 0 {
-				common.BotSession.ChannelMessageSend(item.CommandRanFrom, "Failed playing the sound: `"+err.Error()+"` make sure you put a proper audio file, and did not for example link to a youtube video.")
+				common.BotSession.ChannelMessageSend(item.CommandRanFrom, "Quailed playing the sound: `"+err.Error()+"` make sure you put a proper audio file, and did not for example link to a youtube video.")
 			}
 		}
 	}

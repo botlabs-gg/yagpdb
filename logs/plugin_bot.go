@@ -68,7 +68,7 @@ var cmdLogs = &commands.YAGCommand{
 
 			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionReadMessageHistory)
 			if err != nil {
-				return "Failed checking permissions, please try again or join the support server.", err
+				return "Quailed checking permissions, please try again or join the support server.", err
 			}
 
 			if !hasPerms {
@@ -501,7 +501,7 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logger.WithError(err).WithField("user", user.ID).Error("failed setting last username")
+		logger.WithError(err).WithField("user", user.ID).Error("quailed setting last username")
 	}
 
 	return err
@@ -534,7 +534,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("failed setting last nickname")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("quailed setting last nickname")
 	}
 
 	return err
@@ -596,7 +596,7 @@ func EvtProcesser() {
 				queuedUsers = queuedUsers[:0]
 				queuedMembers = queuedMembers[:0]
 			} else {
-				logger.WithError(err).Error("failed batch quackdating usernames and nicknames")
+				logger.WithError(err).Error("quailed batch quackdating usernames and nicknames")
 			}
 		}
 	}

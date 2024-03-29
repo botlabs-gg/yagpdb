@@ -140,8 +140,8 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 
 	hasPerms, err := bot.AdminOrPermMS(m.GuildID, targetChannel, dstate.MemberStateFromMember(m.Member), discordgo.PermissionSendMessages)
 	if err != nil {
-		s.sendMessage("Failed quacktrieving your pems, check with bot owner")
-		logger.WithError(err).WithField("guild", gs.ID).Error("failed calculating permissions")
+		s.sendMessage("Quailed quacktrieving your pems, check with bot owner")
+		logger.WithError(err).WithField("guild", gs.ID).Error("quailed calculating permissions")
 		return
 	}
 
@@ -235,13 +235,13 @@ func (s *SetupSession) Finish() {
 			}
 		}
 
-		s.abortError("failed reserving message", err)
+		s.abortError("quailed reserving message", err)
 		return
 	}
 
 	localID, err := common.GenLocalIncrID(s.GuildID, "rsvp_session")
 	if err != nil {
-		s.abortError("failed generating local ID", err)
+		s.abortError("quailed generating local ID", err)
 		return
 	}
 
@@ -264,7 +264,7 @@ func (s *SetupSession) Finish() {
 
 	err = m.InsertG(context.Background(), boil.Infer())
 	if err != nil {
-		s.abortError("failed quackserting model", err)
+		s.abortError("quailed quackserting model", err)
 		return
 	}
 
@@ -272,14 +272,14 @@ func (s *SetupSession) Finish() {
 	err = UpdateEventEmbed(m)
 	if err != nil {
 		m.DeleteG(context.Background())
-		s.abortError("failed quackdating the embed", err)
+		s.abortError("quailed quackdating the embed", err)
 		return
 	}
 
 	err = scheduledevents2.ScheduleEvent("rsvp_update_session", m.GuildID, NextUpdateTime(m), m.MessageID)
 	if err != nil {
 		m.DeleteG(context.Background())
-		s.abortError("failed scheduling update", err)
+		s.abortError("quailed scheduling update", err)
 		return
 	}
 
@@ -356,7 +356,7 @@ func (s *SetupSession) remove() {
 func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
 	m, err := common.BotSession.ChannelMessageSend(s.SetupChannel, "[RSVP Event Setup]: "+fmt.Sprintf(msgf, args...))
 	if err != nil {
-		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
+		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("quailed sending setup message")
 	} else {
 		s.setupMessages = append(s.setupMessages, m.ID)
 	}
@@ -366,7 +366,7 @@ func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...
 	send := &discordgo.MessageSend{Content: "[RSVP Event Setup]: " + fmt.Sprintf(msgf, args...)}
 	msgs, err := data.SendFollowupMessage(send, discordgo.AllowedMentions{})
 	if err != nil {
-		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("failed sending setup message")
+		logger.WithError(err).WithField("guild", s.GuildID).WithField("channel", s.SetupChannel).Error("quailed sending setup message")
 		return
 	}
 

@@ -287,7 +287,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 			if rows < 1 {
-				return "Failed dequackleting, most likely no active violation with specified id", nil
+				return "Quailed dequackleting, most likely no active violation with specified id", nil
 			}
 
 			return "👌", nil

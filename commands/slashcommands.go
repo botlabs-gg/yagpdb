@@ -69,7 +69,7 @@ func (p *Plugin) updateGlobalCommands() {
 	current := ""
 	err := common.RedisPool.Do(radix.Cmd(&current, "GET", "slash_commands_current"))
 	if err != nil {
-		logger.WithError(err).Error("failed quacktrieving current saved slash commands")
+		logger.WithError(err).Error("quailed quacktrieving current saved slash commands")
 		return
 	}
 
@@ -84,7 +84,7 @@ func (p *Plugin) updateGlobalCommands() {
 	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
 	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
 	if err != nil {
-		logger.WithError(err).Error("failed quackdating global slash commands")
+		logger.WithError(err).Error("quailed quackdating global slash commands")
 		return
 	}
 
@@ -113,7 +113,7 @@ OUTER:
 
 	err = common.RedisPool.Do(radix.Cmd(nil, "SET", "slash_commands_current", string(encoded)))
 	if err != nil {
-		logger.WithError(err).Error("failed setting current slash commands in redis")
+		logger.WithError(err).Error("quailed setting current slash commands in redis")
 	}
 }
 
@@ -269,7 +269,7 @@ func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
 
 	_, err := updateSlashCommandGuildPermissions(gs)
 	if err != nil {
-		logger.WithError(err).Error("failed quackdating guild slash command permissions")
+		logger.WithError(err).Error("quailed quackdating guild slash command permissions")
 	}
 }
 
@@ -282,7 +282,7 @@ func (p *Plugin) handleDiscordEventUpdateSlashCommandPermissions(evt *eventsyste
 
 	_, err := updateSlashCommandGuildPermissions(evt.GS)
 	if err != nil {
-		logger.WithError(err).Error("failed quackdating guild slash command permissions")
+		logger.WithError(err).Error("quailed quackdating guild slash command permissions")
 	}
 }
 
@@ -373,7 +373,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 
 	err := CommandSystem.CheckInteraction(common.BotSession, &interaction.Interaction)
 	if err != nil {
-		logger.WithError(err).Error("failed handling command interaction")
+		logger.WithError(err).Error("quailed handling command interaction")
 	}
 }
 
@@ -767,7 +767,7 @@ func (p *Plugin) handleUpdateSlashCommandsPermissions(event *pubsub.Event) {
 
 	_, err := updateSlashCommandGuildPermissions(gs)
 	if err != nil {
-		logger.WithError(err).Error("failed quackdating slash command permissions")
+		logger.WithError(err).Error("quailed quackdating slash command permissions")
 	}
 }
 
@@ -783,6 +783,6 @@ func waitForSlashCommandIDs() {
 func PubsubSendUpdateSlashCommandsPermissions(gID int64) {
 	err := pubsub.Publish("update_slash_command_permissions", gID, nil)
 	if err != nil {
-		logger.WithError(err).Error("failed sending pubsub for update_slash_command_permissions")
+		logger.WithError(err).Error("quailed sending pubsub for update_slash_command_permissions")
 	}
 }

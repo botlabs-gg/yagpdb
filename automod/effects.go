@@ -861,7 +861,7 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 
 	message, err := common.BotSession.ChannelMessageSendComplex(logChannel, msgSend)
 	if err != nil {
-		logger.WithError(err).Error("Failed to send message for AutomodV2")
+		logger.WithError(err).Error("Quailed to send message for AutomodV2")
 		return err
 	}
 	if settingsCast.Duration > 0 && message != nil {

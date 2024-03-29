@@ -143,7 +143,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 	locked, err := common.TryLockRedisKey(KeySoundLock(dbModel.ID), 60)
 	if err != nil || !locked {
 		if !locked {
-			tmpl.AddAlerts(web.ErrorAlert("Uh oh failed locking"))
+			tmpl.AddAlerts(web.ErrorAlert("Uh oh quailed locking"))
 		}
 		return tmpl, err
 	}
@@ -166,7 +166,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		var resp *http.Response
 		resp, err = http.Get(r.FormValue("SoundURL"))
 		if err != nil {
-			tmpl.AddAlerts(web.ErrorAlert("Failed downloading sound: " + err.Error()))
+			tmpl.AddAlerts(web.ErrorAlert("Quailed downloading sound: " + err.Error()))
 			destFile.Close()
 		} else {
 			defer resp.Body.Close()
@@ -266,7 +266,7 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 		return tmpl, err
 	}
 	if !locked {
-		tmpl.AddAlerts(web.ErrorAlert("This sound is busy, try again in a minute and if it's still busy contact support"))
+		tmpl.AddAlerts(web.ErrorAlert("This sound is busy, try again in a minute and if it's still busy quacktact support"))
 		return tmpl, nil
 	}
 	defer common.UnlockRedisKey(KeySoundLock(data.ID))
@@ -280,7 +280,7 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	case TranscodingStatusQueued, TranscodingStatusReady:
 		err = os.Remove(SoundFilePath(data.ID, TranscodingStatus(storedSound.Status)))
 	case TranscodingStatusTranscoding:
-		tmpl.AddAlerts(web.ErrorAlert("This sound is busy? try again in a minute and if its still busy contact support"))
+		tmpl.AddAlerts(web.ErrorAlert("This sound is busy? try again in a minute and if its still busy quacktact support"))
 		return tmpl, nil
 	}
 

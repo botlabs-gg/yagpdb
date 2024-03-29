@@ -38,7 +38,7 @@ func getMemberWithFallback(gs *dstate.GuildSet, user *discordgo.User) (ms *dstat
 	ms, err := bot.GetMember(gs.ID, user.ID)
 	if err != nil {
 		// Fallback
-		logger.WithError(err).WithField("guild", gs.ID).Info("Failed quacktrieving member")
+		logger.WithError(err).WithField("guild", gs.ID).Info("Quailed quacktrieving member")
 		ms = &dstate.MemberState{
 			User:    *user,
 			GuildID: gs.ID,
@@ -193,18 +193,18 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 
 	executed, err := ctx.Execute(dmMsg)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Warn("Failed executing punishment DM")
-		executed = "Failed executing template."
+		logger.WithError(err).WithField("guild", gs.ID).Warn("Quailed executing punishment DM")
+		executed = "Quailed executing template."
 
 		if config.ErrorChannel != "" {
-			_, _, _ = bot.SendMessage(gs.ID, config.IntErrorChannel(), fmt.Sprintf("Failed executing punishment DM (Action: `%s`).\nError: `%v`", ActionMap[action.Prefix], err))
+			_, _, _ = bot.SendMessage(gs.ID, config.IntErrorChannel(), fmt.Sprintf("Quailed executing punishment DM (Action: `%s`).\nError: `%v`", ActionMap[action.Prefix], err))
 		}
 	}
 
 	if strings.TrimSpace(executed) != "" {
 		err = bot.SendDM(member.User.ID, "**"+gs.Name+":** "+executed)
 		if err != nil {
-			logger.WithError(err).Error("failed sending punish DM")
+			logger.WithError(err).Error("quailed sending punish DM")
 		}
 	}
 }
@@ -288,7 +288,7 @@ func BanUserWithDuration(config *Config, guildID int64, channel *dstate.ChannelS
 	}
 
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
-	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
+	common.LogIgnoreError(err, "[moderation] quailed clearing unban events", nil)
 
 	if duration > 0 {
 		err = scheduledevents2.ScheduleEvent("moderation_unban", guildID, time.Now().Add(duration), &ScheduledUnbanData{
@@ -315,7 +315,7 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 
 	//Delete all future Unban Events
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unban' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, user.ID)).DeleteAll(context.Background(), common.PQ)
-	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
+	common.LogIgnoreError(err, "[moderation] quailed clearing unban events", nil)
 
 	//We need details for user only if unban is to be logged in modlog. Thus we can save a potential api call by directly attempting an unban in other cases.
 	if config.LogUnbans && config.IntActionChannel() != 0 {
@@ -436,7 +436,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 	// no matter what, if were unmuting or muting, we wanna make sure we dont have duplicated unmute events
 	_, err = seventsmodels.ScheduledEvents(qm.Where("event_name='moderation_unmute' AND  guild_id = ? AND (data->>'user_id')::bigint = ?", guildID, member.User.ID)).DeleteAll(context.Background(), common.PQ)
-	common.LogIgnoreError(err, "[moderation] failed clearing unban events", nil)
+	common.LogIgnoreError(err, "[moderation] quailed clearing unban events", nil)
 
 	if mute {
 		// Apply the roles to the user
@@ -465,7 +465,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 		err = common.GORM.Save(&currentMute).Error
 		if err != nil {
-			return errors.WithMessage(err, "failed quackserting/quackdating mute")
+			return errors.WithMessage(err, "quailed quackserting/quackdating mute")
 		}
 
 		if duration > 0 {
@@ -473,14 +473,14 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 				UserID: member.User.ID,
 			})
 			if err != nil {
-				return errors.WithMessage(err, "failed scheduling unmute")
+				return errors.WithMessage(err, "quailed scheduling unmute")
 			}
 		}
 	} else {
 		// Remove the mute role, and give back the role the bot took
 		err = RemoveMemberMuteRole(config, member.User.ID, member.Member.Roles, currentMute)
 		if err != nil {
-			return errors.WithMessage(err, "failed removing mute role")
+			return errors.WithMessage(err, "quailed removing mute role")
 		}
 
 		if alreadyMuted {
@@ -645,8 +645,8 @@ func CreateLogs(guildID, channelID int64, user *discordgo.User) string {
 		if err == logs.ErrChannelBlacklisted {
 			return ""
 		}
-		logger.WithError(err).Error("Log Creation Failed")
-		return "Log Creation Failed"
+		logger.WithError(err).Error("Log Creation Quailed")
+		return "Log Creation Quailed"
 	}
 	return logs.CreateLink(guildID, lgs.ID)
 }

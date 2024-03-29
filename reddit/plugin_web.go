@@ -93,7 +93,7 @@ func baseData(inner http.Handler) http.Handler {
 		templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reddit/"
 
 		feeds, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(activeGuild.ID)).AllG(ctx)
-		if web.CheckErr(templateData, err, "Failed quacktrieving config, message support in the quackpdb server", web.CtxLogger(ctx).Error) {
+		if web.CheckErr(templateData, err, "Quailed quacktrieving config, message support in the quackpdb server", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		} else {
 			sort.Slice(feeds, func(i, j int) bool {
@@ -152,7 +152,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	err := watchItem.InsertG(ctx, boil.Infer())
-	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
+	if web.CheckErr(templateData, err, "Quailed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
@@ -201,7 +201,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	_, err := item.UpdateG(ctx, boil.Whitelist("channel_id", "use_embeds", "filter_nsfw", "min_upvotes", "disabled", "spoilers_enabled"))
-	if web.CheckErr(templateData, err, "Failed saving item :'(", web.CtxLogger(ctx).Error) {
+	if web.CheckErr(templateData, err, "Quailed saving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 
@@ -226,7 +226,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	id := pat.Param(r, "item")
 	idInt, err := strconv.ParseInt(id, 10, 32)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Failed parsing id", err))
+		return templateData.AddAlerts(web.ErrorAlert("Quailed parsing id", err))
 	}
 
 	// Get tha actual watch item from the config
@@ -236,7 +236,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	_, err = item.DeleteG(ctx)
-	if web.CheckErr(templateData, err, "Failed removing item :'(", web.CtxLogger(ctx).Error) {
+	if web.CheckErr(templateData, err, "Quailed removing item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 

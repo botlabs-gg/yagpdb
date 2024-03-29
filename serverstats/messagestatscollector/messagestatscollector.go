@@ -53,7 +53,7 @@ func (c *Collector) run() {
 		case <-ticker.C:
 			err := c.flush()
 			if err != nil {
-				c.l.Errorf("failed quackdating temp serverstats: %+v", err)
+				c.l.Errorf("quailed quackdating temp serverstats: %+v", err)
 			}
 		}
 	}

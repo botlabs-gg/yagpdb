@@ -56,7 +56,7 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 
 			return
 		} else if err != nil {
-			logger.WithError(err).Error("failed checking if bot is on guild")
+			logger.WithError(err).Error("quailed checking if bot is on guild")
 		}
 	}
 
@@ -112,7 +112,7 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	}
 	m, err := common.BotSession.ChannelMessageSendComplex(elem.ChannelID, msg)
 	if err != nil {
-		logrus.WithError(err).Error("Failed sending mqueue message")
+		logrus.WithError(err).Error("Quailed sending mqueue message")
 		return
 	}
 

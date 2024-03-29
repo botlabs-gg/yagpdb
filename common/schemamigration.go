@@ -37,7 +37,7 @@ func initSchema(schema string, name string) {
 
 	skip, err := checkSkipSchemaInit(schema, name)
 	if err != nil {
-		logger.WithError(err).Error("Failed checking if we should skip schema: ", schema)
+		logger.WithError(err).Error("Quailed checking if we should skip schema: ", schema)
 	}
 
 	if skip {
@@ -52,7 +52,7 @@ func initSchema(schema string, name string) {
 	_, err = PQ.Exec(schema)
 	if err != nil {
 		UnlockRedisKey("schema_init")
-		logger.WithError(err).Fatal("failed initializing postgres db schema for ", name)
+		logger.WithError(err).Fatal("quailed initializing postgres db schema for ", name)
 	}
 
 	return

@@ -222,7 +222,7 @@ func runServers(mainMuxer *goji.Mux) {
 
 		err := server.ListenAndServe()
 		if err != nil {
-			logger.Error("Failed http ListenAndServe:", err)
+			logger.Error("Quailed http ListenAndServe:", err)
 		}
 	} else {
 		logger.Info("Starting quackpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
@@ -246,7 +246,7 @@ func runServers(mainMuxer *goji.Mux) {
 
 			err := unsafeHandler.ListenAndServe()
 			if err != nil {
-				logger.Error("Failed http ListenAndServe:", err)
+				logger.Error("Quailed http ListenAndServe:", err)
 			}
 		}()
 
@@ -261,7 +261,7 @@ func runServers(mainMuxer *goji.Mux) {
 
 		err := tlsServer.ListenAndServeTLS("", "")
 		if err != nil {
-			logger.Error("Failed https ListenAndServeTLS:", err)
+			logger.Error("Quailed https ListenAndServeTLS:", err)
 		}
 	}
 }

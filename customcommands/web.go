@@ -142,7 +142,7 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	if pageStr != "" {
 		page, err = strconv.Atoi(pageStr)
 		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Failed parsing Page"))
+			templateData.AddAlerts(web.ErrorAlert("Quailed parsing Page"))
 		}
 	}
 
@@ -417,7 +417,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		// need the last run time
 		fullModel, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, dbModel.LocalID)).OneG(ctx)
 		if err != nil {
-			web.CtxLogger(ctx).WithError(err).Error("failed quacktrieving full model")
+			web.CtxLogger(ctx).WithError(err).Error("quailed quacktrieving full model")
 		} else {
 			err = UpdateCommandNextRunTime(fullModel, true, true)
 		}
@@ -426,7 +426,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("failed quackdating next custom command run time")
+		web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("quailed quackdating next custom command run time")
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))

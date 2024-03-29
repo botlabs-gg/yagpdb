@@ -73,7 +73,7 @@ func (p *Plugin) runWebsubChecker() {
 func (p *Plugin) checkExpiringWebsubs() {
 	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
 	if err != nil {
-		logger.WithError(err).Error("Failed locking channels lock")
+		logger.WithError(err).Error("Quailed locking channels lock")
 		return
 	}
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
@@ -83,7 +83,7 @@ func (p *Plugin) checkExpiringWebsubs() {
 	var expiring []string
 	err = common.RedisPool.Do(radix.FlatCmd(&expiring, "ZRANGEBYSCORE", RedisKeyWebSubChannels, "-inf", maxScore))
 	if err != nil {
-		logger.WithError(err).Error("Failed checking websubs")
+		logger.WithError(err).Error("Quailed checking websubs")
 		return
 	}
 
@@ -113,7 +113,7 @@ func (p *Plugin) syncWebSubs() {
 	var activeChannels []string
 	err := common.SQLX.Select(&activeChannels, "SELECT DISTINCT(youtube_channel_id) FROM youtube_channel_subscriptions;")
 	if err != nil {
-		logger.WithError(err).Error("Failed syncing websubs, failed quacktrieving subbed channels")
+		logger.WithError(err).Error("Quailed syncing websubs, quailed quacktrieving subbed channels")
 		return
 	}
 
@@ -122,7 +122,7 @@ func (p *Plugin) syncWebSubs() {
 		if !locked {
 			err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
 			if err != nil {
-				logger.WithError(err).Error("Failed locking channels lock")
+				logger.WithError(err).Error("Quailed locking channels lock")
 				return err
 			}
 			locked = true
@@ -183,7 +183,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.WithError(err).Debugf("Custom announcement doesn't exist for guild_id %d", parsedGuild)
 		} else {
-			logger.WithError(err).Errorf("Failed quacking custom announcement for guild_id %d", parsedGuild)
+			logger.WithError(err).Errorf("Quailed quacking custom announcement for guild_id %d", parsedGuild)
 		}
 	}
 
@@ -192,7 +192,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	if hasCustomAnnouncement && *announcement.Enabled && len(announcement.Message) > 0 {
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
-			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
+			logger.WithError(err).Errorf("Quailed to get guild state for guild_id %d", parsedGuild)
 			return
 		}
 
@@ -234,7 +234,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone}
 		if err != nil {
-			logger.WithError(err).WithField("guild", parsedGuild).Warn("Announcement parsing failed")
+			logger.WithError(err).WithField("guild", parsedGuild).Warn("Announcement parsing quailed")
 			return
 		}
 		if content == "" {
@@ -464,7 +464,7 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
 	if err != nil || count > 0 {
 		if err != nil {
-			logger.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")
+			logger.WithError(err).WithField("yt_channel", channel).Error("Quailed getting sub count")
 		}
 		return
 	}
@@ -481,7 +481,7 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 
 	err = p.WebSubUnsubscribe(channel)
 	if err != nil {
-		logger.WithError(err).Error("Failed unsubscribing to channel ", channel)
+		logger.WithError(err).Error("Quailed unsubscribing to channel ", channel)
 	}
 
 	logger.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
@@ -519,7 +519,7 @@ func (p *Plugin) MaybeAddChannelWatch(lock bool, channel string) error {
 	logger.Info("Added websub")
 	err = p.WebSubSubscribe(channel)
 	if err != nil {
-		logger.WithError(err).Error("Failed subscribing to channel ", channel)
+		logger.WithError(err).Error("Quailed subscribing to channel ", channel)
 	}
 
 	logger.WithField("yt_channel", channel).Info("Added new youtube channel watch")
@@ -533,7 +533,7 @@ func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
 
 	parsedPublishedTime, err := time.Parse(time.RFC3339, parsedVideo.Published)
 	if err != nil {
-		return errors.New("Failed parsing youtube timestamp: " + err.Error() + ": " + parsedVideo.Published)
+		return errors.New("Quailed parsing youtube timestamp: " + err.Error() + ": " + parsedVideo.Published)
 	}
 
 	if time.Since(parsedPublishedTime) > time.Hour {
@@ -585,7 +585,7 @@ func (p *Plugin) isShortsVideo(video *youtube.Video) bool {
 	videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
 	videoDuration, err := common.ParseDuration(videoDurationString)
 	if err != nil {
-		logger.WithError(err).Errorf("Failed to parse video duration with value %s, assuming it is not a short video", videoDurationString)
+		logger.WithError(err).Errorf("Quailed to parse video duration with value %s, assuming it is not a short video", videoDurationString)
 		return false
 	}
 	if videoDuration > time.Minute {
@@ -605,13 +605,13 @@ func (p *Plugin) isShortsRedirect(videoId string) bool {
 
 	req, err := http.NewRequest("HEAD", shortsUrl, nil)
 	if err != nil {
-		logger.WithError(err).Error("Failed to make youtube shorts request")
+		logger.WithError(err).Error("Quailed to make youtube shorts request")
 		return false
 	}
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36")
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.WithError(err).Error("Failed to make youtube shorts request")
+		logger.WithError(err).Error("Quailed to make youtube shorts request")
 		return false
 	}
 

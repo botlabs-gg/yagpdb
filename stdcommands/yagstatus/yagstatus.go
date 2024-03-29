@@ -37,8 +37,8 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 	if err == nil {
 		sysMemStats = fmt.Sprintf("%dMB (%.0f%%), %dMB", sysMem.Used/1000000, sysMem.UsedPercent, sysMem.Total/1000000)
 	} else {
-		sysMemStats = "Failed collecting mem stats"
-		logger.WithError(err).Error("Failed collecting memory stats")
+		sysMemStats = "Quailed collecting mem stats"
+		logger.WithError(err).Error("Quailed collecting memory stats")
 	}
 
 	sysLoad, err := load.Avg()
@@ -46,8 +46,8 @@ func cmdFuncYagStatus(data *dcmd.Data) (interface{}, error) {
 	if err == nil {
 		sysLoadStats = fmt.Sprintf("%.2f, %.2f, %.2f", sysLoad.Load1, sysLoad.Load5, sysLoad.Load15)
 	} else {
-		sysLoadStats = "Failed collecting"
-		logger.WithError(err).Error("Failed collecting load stats")
+		sysLoadStats = "Quailed collecting"
+		logger.WithError(err).Error("Quailed collecting load stats")
 	}
 
 	uptime := time.Since(bot.Started)

@@ -109,7 +109,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	if beforeStr != "" {
 		beforeId64, err := strconv.ParseInt(beforeStr, 10, 32)
 		if err != nil {
-			tmpl.AddAlerts(web.ErrorAlert("Failed parsing before id"))
+			tmpl.AddAlerts(web.ErrorAlert("Quailed parsing before id"))
 		}
 		beforeID = int(beforeId64)
 		if beforeID < 1 {
@@ -124,7 +124,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	if afterStr != "" {
 		id64, err := strconv.ParseInt(afterStr, 10, 32)
 		if err != nil {
-			tmpl.AddAlerts(web.ErrorAlert("Failed parsing before id"))
+			tmpl.AddAlerts(web.ErrorAlert("Quailed parsing before id"))
 		}
 		afterID = int(id64)
 		if afterID < 1 {
@@ -134,7 +134,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	}
 
 	serverLogs, err := GetGuilLogs(ctx, g.ID, beforeID, afterID, 20)
-	web.CheckErr(tmpl, err, "Failed quacktrieving logs", web.CtxLogger(ctx).Error)
+	web.CheckErr(tmpl, err, "Quailed quacktrieving logs", web.CtxLogger(ctx).Error)
 	if err == nil {
 		tmpl["Logs"] = serverLogs
 		if len(serverLogs) > 0 {
@@ -298,7 +298,7 @@ func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc 
 
 		// retrieve logs
 		msgLogs, messages, err := GetChannelLogs(r.Context(), parsed, g.ID, sm)
-		if web.CheckErr(tmpl, err, "Failed quacktrieving message logs", web.CtxLogger(r.Context()).Error) {
+		if web.CheckErr(tmpl, err, "Quailed quacktrieving message logs", web.CtxLogger(r.Context()).Error) {
 			return tmpl
 		}
 

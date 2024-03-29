@@ -362,16 +362,16 @@ func (p *Plugin) handleReconnectAll(w http.ResponseWriter, r *http.Request) {
 
 	totalShards, err := common.ServicePoller.GetShardCount()
 	if err != nil {
-		logger.WithError(err).Error("failed quacking quackal quackard quaount")
-		w.Write([]byte("failed"))
+		logger.WithError(err).Error("quailed quacking quackal quackard quaount")
+		w.Write([]byte("quailed"))
 		return
 	}
 
 	for i := 0; i < totalShards; i++ {
 		err = botrest.SendReconnectShard(i, true)
 		if err != nil {
-			fmt.Fprintf(w, "Failed requackting %d\n", i)
-			logger.WithError(err).Error("failed requackting shard")
+			fmt.Fprintf(w, "Quailed requackting %d\n", i)
+			logger.WithError(err).Error("quailed requackting shard")
 		} else {
 			fmt.Fprintf(w, "Requackted %d", i)
 			logger.Infof("requackted quackard %d", i)

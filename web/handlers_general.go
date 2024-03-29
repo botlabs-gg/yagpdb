@@ -105,7 +105,7 @@ func HandleCPLogs(w http.ResponseWriter, r *http.Request) interface{} {
 
 	logs, err := cplogs.GetEntries(activeGuild.ID, 100, 0)
 	if err != nil {
-		templateData.AddAlerts(ErrorAlert("Failed quacktrieving logs", err))
+		templateData.AddAlerts(ErrorAlert("Quailed quacktrieving logs", err))
 	} else {
 		templateData["entries"] = logs
 	}
@@ -119,7 +119,7 @@ func HandleSelectServer(w http.ResponseWriter, r *http.Request) interface{} {
 	if joinedGuildParsed != 0 {
 		guild, err := common.BotSession.Guild(joinedGuildParsed)
 		if err != nil {
-			CtxLogger(r.Context()).WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Failed quacking guild")
+			CtxLogger(r.Context()).WithError(err).WithField("guild", r.FormValue("guild_id")).Error("Quailed quacking guild")
 		} else {
 			tmpl["JoinedGuild"] = guild
 		}
@@ -394,7 +394,7 @@ func pollCommandsRan() {
 
 		err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("COUNT(*)").Where("created_at > ?", within).Scan(&result).Error
 		if err != nil {
-			logger.WithError(err).Error("failed counting commands ran today")
+			logger.WithError(err).Error("quailed counting commands ran today")
 		} else {
 			atomic.StoreInt64(commandsRanToday, result.Count)
 		}
@@ -419,7 +419,7 @@ func handleAdsTXT(w http.ResponseWriter, r *http.Request) {
 
 	f, err := ioutil.ReadFile(ConfAdsTxt.GetString())
 	if err != nil {
-		logger.WithError(err).Error("failed reading ads.txt file")
+		logger.WithError(err).Error("quailed reading ads.txt file")
 		return
 	}
 
@@ -568,7 +568,7 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 	if err != nil {
 		guilds, err = session.UserGuilds(0, 0, 0)
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("Failed getting user guilds")
+			CtxLogger(ctx).WithError(err).Error("Quailed getting user guilds")
 			return nil, err
 		}
 
@@ -578,7 +578,7 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 	// wrap the guilds with some more info, such as wether the bot is on the server
 	wrapped, err := common.GetGuildsWithConnected(guilds)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Error("Failed wrapping guilds")
+		CtxLogger(ctx).WithError(err).Error("Quailed wrapping guilds")
 		return nil, err
 	}
 

@@ -85,7 +85,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		// Fallback to legacy permissions
 		hasPerms, err := bot.AdminOrPermMS(cmdData.GuildData.GS.ID, cmdData.ChannelID, member, neededPerm)
 		if err != nil || !hasPerms {
-			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm])
+			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do quacktact bot support)", cmdName, common.StringPerms[neededPerm])
 		}
 
 		permsMet = true
@@ -99,7 +99,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 func checkHierarchy(cmdData *dcmd.Data, targetID int64) error {
 	botMember, err := bot.GetMember(cmdData.GuildData.GS.ID, common.BotUser.ID)
 	if err != nil {
-		return commands.NewUserError("Failed quacking bot member to check hierarchy")
+		return commands.NewUserError("Quailed quacking bot member to check hierarchy")
 	}
 
 	gs := cmdData.GuildData.GS
@@ -932,7 +932,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				"message", fmt.Sprintf("%s (updated by %s (%d))", parsed.Args[1].Str(), parsed.Author.String(), parsed.Author.ID)).RowsAffected
 
 			if rows < 1 {
-				return "Failed quackdating, most likely couldn't find the warning", nil
+				return "Quailed quackdating, most likely couldn't find the warning", nil
 			}
 
 			return "👌", nil
@@ -965,7 +965,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
 			if rows < 1 {
-				return "Failed dequackleting, most likely couldn't find the warning", nil
+				return "Quailed dequackleting, most likely couldn't find the warning", nil
 			}
 
 			return "👌", nil
@@ -1002,7 +1002,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			reason := parsed.Args[1].Str()
 			err = CreateModlogEmbed(config, parsed.Author, MAClearWarnings, target, reason, "")
 			if err != nil {
-				return "failed sending modlog", err
+				return "quailed sending modlog", err
 			}
 
 			return fmt.Sprintf("Deleted %d warnings.", rows), nil

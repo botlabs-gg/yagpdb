@@ -52,7 +52,7 @@ func RegisterPlugin() {
 	var err error
 	webhookSession, err = discordgo.New()
 	if err != nil {
-		logger.WithError(err).Error("failed initiializing webhook session")
+		logger.WithError(err).Error("quailed initiializing webhook session")
 	}
 	webhookSession.AddHandler(handleWebhookSessionRatelimit)
 
@@ -73,7 +73,7 @@ func RegisterPlugin() {
 
 	_, err = common.PQ.Exec(DBSchema)
 	if err != nil {
-		logrus.WithError(err).Error("[mqueue] failed initiializing db schema")
+		logrus.WithError(err).Error("[mqueue] quailed initiializing db schema")
 	}
 
 	p := &Plugin{}

@@ -132,7 +132,7 @@ func (u *updater) flush() {
 	tx, err := common.PQ.Begin()
 	if err != nil {
 		leftOver = u.processing
-		logger.WithError(err).Error("failed quackreating tx")
+		logger.WithError(err).Error("quailed quackreating tx")
 		return
 	}
 
@@ -157,14 +157,14 @@ func (u *updater) flush() {
 		if err != nil {
 			leftOver = u.processing
 			tx.Rollback()
-			logger.WithError(err).Error("failed quackdating joined guild, rollbacking...")
+			logger.WithError(err).Error("quailed quackdating joined guild, rollbacking...")
 			return
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		logger.WithError(err).Error("failed comitting quackdating joined guild results")
+		logger.WithError(err).Error("quailed comitting quackdating joined guild results")
 		leftOver = u.processing
 		tx.Rollback()
 		return

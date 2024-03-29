@@ -82,7 +82,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
 	general, err := GetGeneralConfig(activeGuild.ID)
-	web.CheckErr(tmpl, err, "Failed quacktrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
+	web.CheckErr(tmpl, err, "Quailed quacktrieving general config (quacktact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general
 
 	var status int
@@ -153,7 +153,7 @@ func handleCancelFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateD
 
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(activeGuild.ID), "10", strconv.Itoa(FullScanCancelled)))
 	if err != nil {
-		logger.WithError(err).Error("Failed marking Full scan as cancelled")
+		logger.WithError(err).Error("Quailed marking Full scan as cancelled")
 	}
 
 	return tmpl, nil

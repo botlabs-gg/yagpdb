@@ -32,7 +32,7 @@ func (p *Plugin) RunBackgroundWorker() {
 	if SafeBrowser == nil {
 		err := runDatabase()
 		if err != nil {
-			logger.WithError(err).Error("failed starting database")
+			logger.WithError(err).Error("quailed starting database")
 			return
 		}
 	}

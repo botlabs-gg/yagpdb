@@ -332,7 +332,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	if forceReidentify {
 		err := bot.ShardManager.Sessions[parsed].Close()
 		if err != nil {
-			internalapi.ServerError(w, r, errors.New("failed stopping shard: "+err.Error()))
+			internalapi.ServerError(w, r, errors.New("quailed stopping shard: "+err.Error()))
 			return
 		}
 	}
@@ -369,7 +369,7 @@ func RestartAll(reidentify bool) {
 	for _, v := range bot.ShardManager.Sessions {
 		err := v.GatewayManager.Reconnect(reidentify)
 		if err != nil {
-			serverLogger.WithError(err).Error("Failed reconnecting shard")
+			serverLogger.WithError(err).Error("Quailed reconnecting shard")
 		}
 		time.Sleep(time.Second * 5)
 	}

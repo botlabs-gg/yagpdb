@@ -160,7 +160,7 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 
 		if err != nil {
 			if err == sql.ErrNoRows {
-				templateData.AddAlerts(web.ErrorAlert("No verification session, try rejoining the server or contact an admin if the problem persist"))
+				templateData.AddAlerts(web.ErrorAlert("No verification session, try rejoining the server or quacktact an admin if the problem persist"))
 				return templateData, nil
 			}
 
@@ -206,7 +206,7 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 
 	valid, err := p.checkCAPTCHAResponse(r.FormValue("g-recaptcha-response"))
 	if err != nil {
-		logrus.WithError(err).Error("Failed recaptcha response")
+		logrus.WithError(err).Error("Quailed recaptcha response")
 	}
 
 	token := pat.Param(r, "token")
@@ -220,7 +220,7 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			templateData.AddAlerts(web.ErrorAlert("No verification session, try rejoining the server or contact an admin if the problem persist"))
+			templateData.AddAlerts(web.ErrorAlert("No verification session, try rejoining the server or quacktact an admin if the problem persist"))
 			return templateData, nil
 		}
 
@@ -242,7 +242,7 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 
 		err := model.UpsertG(ctx, true, []string{"guild_id", "user_id"}, boil.Infer(), boil.Infer())
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("failed verifying user")
+			web.CtxLogger(r.Context()).WithError(err).Error("quailed verifying user")
 			return templateData, err
 		}
 
@@ -295,7 +295,7 @@ func (p *Plugin) checkCAPTCHAResponse(response string) (valid bool, err error) {
 	}
 
 	if !dst.Success {
-		logger.Warnf("reCAPTCHA failed: %#v", dst)
+		logger.Warnf("reCAPTCHA quailed: %#v", dst)
 	}
 
 	return dst.Success, nil

@@ -383,7 +383,7 @@ func ValidateStringField(s string, tags *ValidationTag, guild *dstate.GuildSet) 
 		for i := startIndex; i < len(tags.values); i++ {
 			t, ok := tags.Str(i)
 			if !ok {
-				return str, errors.New("Failed reading tag: " + str)
+				return str, errors.New("Quailed reading tag: " + str)
 			}
 			switch t {
 			case "trimspace":

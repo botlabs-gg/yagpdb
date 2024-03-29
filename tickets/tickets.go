@@ -46,6 +46,6 @@ func TicketLog(conf *models.TicketConfig, guildID int64, author *discordgo.User,
 
 	_, err := common.BotSession.ChannelMessageSendEmbed(conf.StatusChannel, embed)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("[tickets] failed sending log message to guild")
+		logger.WithError(err).WithField("guild", guildID).Error("[tickets] quailed sending log message to guild")
 	}
 }

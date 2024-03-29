@@ -28,7 +28,7 @@ func (p *Plugin) RunBackgroundWorker() {
 
 		err := p.runUpdateDirtyFlags()
 		if err != nil {
-			logger.WithError(err).Errorf("Failed quackdating dirty flags %+v", err)
+			logger.WithError(err).Errorf("Quailed quackdating dirty flags %+v", err)
 		}
 	}
 }
@@ -43,7 +43,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 	var currentInitFlags []string
 	err := common.RedisPool.Do(radix.Cmd(&currentInitFlags, "SMEMBERS", "feature_flags_initialized"))
 	if err != nil {
-		panic(fmt.Sprintf("Failed intializing feature flags, failed retreiving old intiailized feature-flags: %v", err))
+		panic(fmt.Sprintf("Quailed intializing feature flags, quailed retreiving old intiailized feature-flags: %v", err))
 	}
 
 	var newFlags []string
@@ -83,13 +83,13 @@ func (p *Plugin) checkInitFeatureFlags() {
 			logger.Info("Plugin is a batch updater, trying to initially fast batch update the feature flags")
 			err = p.BatchInitialPluginUpdater(batchUpdater)
 			if err != nil {
-				panic("Failed to batch update feature flags, falling back to legacy full update")
+				panic("Quailed to batch update feature flags, falling back to legacy full update")
 			}
 
 			// mark all the new plugins as intialized
 			err = common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{"feature_flags_initialized"}, newFlags...)...))
 			if err != nil {
-				panic(fmt.Sprintf("Failed intializing feature flags, failed setting new intialized feature flags: %v", err))
+				panic(fmt.Sprintf("Quailed intializing feature flags, quailed setting new intialized feature flags: %v", err))
 			}
 
 			return
@@ -99,13 +99,13 @@ func (p *Plugin) checkInitFeatureFlags() {
 	// mark all guilds are dirty, but low priority as to not interrupt normal operation
 	err = common.RedisPool.Do(radix.Cmd(nil, "SUNIONSTORE", "feature_flags_dirty_low_priority", "feature_flags_dirty_low_priority", "connected_guilds"))
 	if err != nil {
-		panic(fmt.Sprintf("Failed intializing feature flags, failed marking all guilds as dirty: %v", err))
+		panic(fmt.Sprintf("Quailed intializing feature flags, quailed marking all guilds as dirty: %v", err))
 	}
 
 	// mark all the new plugins as intialized
 	err = common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{"feature_flags_initialized"}, newFlags...)...))
 	if err != nil {
-		panic(fmt.Sprintf("Failed intializing feature flags, failed setting new intialized feature flags: %v", err))
+		panic(fmt.Sprintf("Quailed intializing feature flags, quailed setting new intialized feature flags: %v", err))
 	}
 }
 
@@ -187,7 +187,7 @@ func MarkGuildDirty(guildID int64) {
 			break
 		}
 
-		logger.WithError(err).Errorf("failed marking guild dirty, trying again... %+v", err)
+		logger.WithError(err).Errorf("quailed marking guild dirty, trying again... %+v", err)
 		time.Sleep(time.Second)
 	}
 }

@@ -52,7 +52,7 @@ func FetchQuestions(amount int) ([]*TriviaQuestion, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, commands.NewPublicError("Failed Getting Questions from opentdb")
+		return nil, commands.NewPublicError("Quailed Getting Questions from opentdb")
 	}
 
 	var triviaResponse TriviaResponse

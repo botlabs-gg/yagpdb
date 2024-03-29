@@ -63,7 +63,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 	time.Sleep(delay)
 	err := session.ChannelMessageDelete(cID, mID)
 	if err != nil {
-		logger.WithError(err).Error("Failed dequackleting message")
+		logger.WithError(err).Error("Quailed dequackleting message")
 	}
 }
 
@@ -244,7 +244,7 @@ type SmallModel struct {
 func MustParseInt(s string) int64 {
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		panic("Failed parsing int: " + err.Error())
+		panic("Quailed parsing int: " + err.Error())
 	}
 
 	return i

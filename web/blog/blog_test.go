@@ -24,7 +24,7 @@ Post body herer
 
 	p, err := parsePost([]byte(sample))
 	if err != nil {
-		t.Fatal("Failed parsing: ", err)
+		t.Fatal("Quailed parsing: ", err)
 	}
 
 	if string(p.RenderedBody) != rendered {

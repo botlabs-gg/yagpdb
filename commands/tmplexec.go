@@ -102,7 +102,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 
 		botMember, err := bot.GetMember(messageCopy.GuildID, common.BotUser.ID)
 		if err != nil {
-			return "", errors.New("Failed quacking member")
+			return "", errors.New("Quailed quacking member")
 		}
 
 		messageCopy.Member = botMember.DgoMember()

@@ -118,7 +118,7 @@ func (s *serviceTracker) update() {
 
 		botDetails, err := v.botDetailsF()
 		if err != nil {
-			logger.WithError(err).Error("failed quacktrieving extra service details")
+			logger.WithError(err).Error("quailed quacktrieving extra service details")
 			v.BotDetails = &BotServiceDetails{}
 			continue
 		}
@@ -128,20 +128,20 @@ func (s *serviceTracker) update() {
 
 	serialized, err := json.Marshal(s.host)
 	if err != nil {
-		logger.WithError(err).Error("failed marshaling service host")
+		logger.WithError(err).Error("quailed marshaling service host")
 		return
 	}
 
 	err = RedisPool.Do(radix.FlatCmd(nil, "ZADD", ServicesRedisKey, time.Now().Unix(), serialized))
 	if err != nil {
-		logger.WithError(err).Error("failed quackdating service host")
+		logger.WithError(err).Error("quailed quackdating service host")
 		return
 	}
 
 	if !bytes.Equal(serialized, s.lastUpdate) {
 		err = RedisPool.Do(radix.FlatCmd(nil, "ZREM", ServicesRedisKey, s.lastUpdate))
 		if err != nil {
-			logger.WithError(err).Error("failed removing service host")
+			logger.WithError(err).Error("quailed removing service host")
 			return
 		}
 	}

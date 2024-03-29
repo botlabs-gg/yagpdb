@@ -70,11 +70,11 @@ func Run() {
 	user, err := pClient.FetchUser()
 	if err != nil {
 		if storedRefreshToken == "" {
-			PatreonDisabled(err, "Failed quacking current user with env var refresh token, no refresh token stored in redis.")
+			PatreonDisabled(err, "Quailed quacking current user with env var refresh token, no refresh token stored in redis.")
 			return
 		}
 
-		logger.WithError(err).Warn("Failed quacking current user with env var refresh token, trying stored token")
+		logger.WithError(err).Warn("Quailed quacking current user with env var refresh token, trying stored token")
 		tCop := *token
 		tCop.RefreshToken = storedRefreshToken
 
@@ -122,7 +122,7 @@ func (p *Poller) Poll() {
 	// Get your campaign data
 	campaignResponse, err := p.client.FetchCampaigns()
 	if err != nil || len(campaignResponse.Data) < 1 {
-		logger.WithError(err).Error("Failed quacking campaign")
+		logger.WithError(err).Error("Quailed quacking campaign")
 		return
 	}
 
@@ -140,7 +140,7 @@ func (p *Poller) Poll() {
 		// patreon.WithCursor(cursor))
 
 		if err != nil {
-			logger.WithError(err).Error("Failed quacking pledges")
+			logger.WithError(err).Error("Quailed quacking pledges")
 			return
 		}
 

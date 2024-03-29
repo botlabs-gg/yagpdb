@@ -84,7 +84,7 @@ func (p *Plugin) getLastTweetInfo(username string) (tweetId string, tweetTime ti
 func (p *Plugin) checkTweet(tweet *twitterscraper.Tweet) {
 	lastTweetID, lastTweetTime, err := p.getLastTweetInfo(tweet.Username)
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed getting last tweet info for username %s", tweet.Username)
+		logrus.WithError(err).Errorf("Quailed getting last tweet info for username %s", tweet.Username)
 		return
 	}
 
@@ -117,12 +117,12 @@ func (p *Plugin) getTweetsForUser(username string, attempt int, delay time.Durat
 			if isNotFound || isSuspended {
 				_, err := models.TwitterFeeds(models.TwitterFeedWhere.TwitterUsername.EQ(username)).UpdateAllG(context.Background(), models.M{"enabled": false})
 				if err != nil {
-					logrus.WithError(err).Errorf("Failed suspending feed for user %s", username)
+					logrus.WithError(err).Errorf("Quailed suspending feed for user %s", username)
 				} else {
 					logrus.WithError(tweet.Error).Errorf("Disabled feed for %s", username)
 				}
 			} else {
-				logrus.WithError(tweet.Error).Errorf("Failed getting tweets for user %s, ", username)
+				logrus.WithError(tweet.Error).Errorf("Quailed getting tweets for user %s, ", username)
 				if attempt < 3 {
 					logrus.Infof("Retrying to get tweets for user %s with attempt %d and delay of %d seconds", username, attempt+1, delay)
 					time.Sleep(delay * time.Second)
@@ -213,19 +213,19 @@ OUTER:
 	}
 	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyLastTweetTime(t.Username), time.Now().Unix()))
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed Saving tweet time for %s ", t.UserID)
+		logrus.WithError(err).Errorf("Quailed Saving tweet time for %s ", t.UserID)
 		return
 	}
 
 	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", KeyLastTweetID(t.Username), t.ID))
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed Saving tweet id for %s ", t.Username)
+		logrus.WithError(err).Errorf("Quailed Saving tweet id for %s ", t.Username)
 		return
 	}
 
 	user, err := p.twitterScraper.GetProfile(t.Username)
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed getting user info for userID %s", t.Username)
+		logrus.WithError(err).Errorf("Quailed getting user info for userID %s", t.Username)
 	}
 	webhookUsername := "Twitter • QUACKPDB"
 	embed := p.createTweetEmbed(t, &user)
@@ -298,7 +298,7 @@ func (p *Plugin) updateConfigsLoop() {
 func (p *Plugin) updateConfigs() {
 	configs, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true), qm.OrderBy("id asc")).AllG(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("failed quackdating configs")
+		logger.WithError(err).Error("quailed quackdating configs")
 		return
 	}
 
@@ -306,7 +306,7 @@ func (p *Plugin) updateConfigs() {
 	for _, v := range configs {
 		isPremium, err := premium.IsGuildPremium(v.GuildID)
 		if err != nil {
-			logger.WithError(err).Error("failed checking if guild is quackmium")
+			logger.WithError(err).Error("quailed checking if guild is quackmium")
 			return
 		}
 
@@ -314,7 +314,7 @@ func (p *Plugin) updateConfigs() {
 			v.Enabled = false
 			_, err = v.UpdateG(context.Background(), boil.Whitelist("enabled"))
 			if err != nil {
-				logger.WithError(err).Error("failed disabling non-quackmium feed")
+				logger.WithError(err).Error("quailed disabling non-quackmium feed")
 			}
 			continue
 		}

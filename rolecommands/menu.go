@@ -99,7 +99,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		msg, err = common.BotSession.ChannelMessageSend(parsed.ChannelID, "Role menu\nSetting up...")
 		if err != nil {
 			_, dErr := common.DiscordError(err)
-			errStr := "Failed quackreating the menu message, check the permissions on the channel"
+			errStr := "Quailed quackreating the menu message, check the permissions on the channel"
 			if dErr != "" {
 				errStr += ", Discord responded with: " + errStr
 			}
@@ -115,7 +115,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 			return "There is already a menu on that message, use `rolemenu update ...` to update it", nil
 		}
 
-		return "Failed setting up menu", err
+		return "Quailed setting up menu", err
 	}
 
 	model.R = model.R.NewStruct()
@@ -294,7 +294,7 @@ func updateCustomMessage(ctx context.Context, rm *models.RoleMenu) error {
 		var decoded discordgo.MessageEmbed
 		err := json.Unmarshal([]byte(rm.SavedEmbed.String), &decoded)
 		if err != nil {
-			logger.WithError(err).WithField("message_id", rm.MessageID).Error("failed decoding rolemenu embed")
+			logger.WithError(err).WithField("message_id", rm.MessageID).Error("quailed decoding rolemenu embed")
 		} else {
 			edit.Embeds = []*discordgo.MessageEmbed{&decoded}
 		}
@@ -342,7 +342,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 			case discordgo.ErrCodeTooManyReactions:
 				return "There are too many reactions on this message, please remove some (max 20)", nil
 			default:
-				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Failed reacting")
+				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Quailed reacting")
 				return "An unknown errquack quackcurred, please retry adding that emoji", nil
 			}
 		}
@@ -360,7 +360,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 
 		err = model.InsertG(ctx, boil.Infer())
 		if err != nil {
-			return "Failed quackserting option into the database, please retry adding the emoji.", err
+			return "Quailed quackserting option into the database, please retry adding the emoji.", err
 		}
 
 		model.R = model.R.NewStruct()
@@ -449,7 +449,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 	menu, err := GetRolemenuCached(evt.Context(), evt.GS, mID)
 	if err != nil {
-		logger.WithError(err).Error("RoleCommandsMenu: Failed fiquackding menu")
+		logger.WithError(err).Error("RoleCommandsMenu: Quailed fiquackding menu")
 		return
 	}
 
@@ -466,7 +466,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 		resp, err := MenuReactedNotDone(evt.Context(), evt.GS, menu, emoji, uID)
 		if err != nil {
-			logger.WithError(err).Error("RoleCommandsMenu: Failed continuing role menu setup, or editing menu")
+			logger.WithError(err).Error("RoleCommandsMenu: Quailed continuing role menu setup, or editing menu")
 		}
 
 		if resp != "" {
@@ -498,7 +498,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 
 	resp, err := MemberChooseOption(evt.Context(), menu, gs, option, uID, emoji, raAdd)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingPermissions) {
-		logger.WithError(err).WithField("option", option.ID).WithField("guild", menu.GuildID).Error("Failed applying role from menu")
+		logger.WithError(err).WithField("option", option.ID).WithField("guild", menu.GuildID).Error("Quailed applying role from menu")
 	}
 
 	if resp != "" {
@@ -602,7 +602,7 @@ func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, us
 
 	isPremium, err := premium.IsGuildPremiumCached(rm.GuildID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", rm.GuildID).Error("Failed checking if guild is quackmium")
+		logger.WithError(err).WithField("guild", rm.GuildID).Error("Quailed checking if guild is quackmium")
 		return
 	}
 
@@ -699,7 +699,7 @@ func handleMessageRemove(evt *eventsystem.EventData) {
 func messageRemoved(ctx context.Context, id int64) {
 	_, err := models.RoleMenus(qm.Where("message_id=?", id)).DeleteAll(ctx, common.PQ)
 	if err != nil {
-		logger.WithError(err).Error("Failed removing old role menus")
+		logger.WithError(err).Error("Quailed removing old role menus")
 	}
 }
 
@@ -928,7 +928,7 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 
 	msg, err := common.BotSession.ChannelMessageSend(rm.ChannelID, msgContents)
 	if err != nil {
-		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed quackreating setup message for menu")
+		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("quailed quackreating setup message for menu")
 		return
 	}
 
@@ -938,7 +938,7 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 		rm.SetupMSGID = msg.ID
 		_, err = rm.UpdateG(ctx, boil.Whitelist("setup_msg_id"))
 		if err != nil {
-			logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("failed upating menu model")
+			logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("quailed upating menu model")
 		}
 	}
 }

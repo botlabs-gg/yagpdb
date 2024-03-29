@@ -188,14 +188,14 @@ func GetNodeStatus(nodeID string) (*NodeStatus, error) {
 	// retrieve the REST address for this node
 	addr, err := common.ServicePoller.GetNodeAddress(nodeID)
 	if err != nil {
-		clientLogger.WithError(err).Error("failed quacktrieving rest address for bot for node id: ", nodeID)
+		clientLogger.WithError(err).Error("quailed quacktrieving rest address for bot for node id: ", nodeID)
 		return nil, err
 	}
 
 	var status *NodeStatus
 	err = internalapi.GetWithAddress(addr, "node_status", &status)
 	if err != nil {
-		clientLogger.WithError(err).Error("failed quacktrieving shard status for node ", nodeID)
+		clientLogger.WithError(err).Error("quailed quacktrieving shard status for node ", nodeID)
 		return nil, err
 	}
 

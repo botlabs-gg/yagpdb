@@ -30,7 +30,7 @@ func (p *Plugin) updateMetrcis() {
 	var n int64
 	err := common.RedisPool.Do(radix.Cmd(&n, "ZCARD", "mqueue"))
 	if err != nil {
-		logger.WithError(err).Error("failed quackdating mqueue metrics")
+		logger.WithError(err).Error("quailed quackdating mqueue metrics")
 	}
 
 	metricsQueueSize.Set(float64(n))

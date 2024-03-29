@@ -127,19 +127,19 @@ func SetStatus(activityType, statusType, statusText, streamingUrl string) {
 	err4 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming_url", streamingUrl))
 
 	if err1 != nil {
-		logger.WithError(err1).Error("failed setting bot status in redis")
+		logger.WithError(err1).Error("quailed setting bot status in redis")
 	}
 
 	if err2 != nil {
-		logger.WithError(err2).Error("failed setting bot status in redis")
+		logger.WithError(err2).Error("quailed setting bot status in redis")
 	}
 
 	if err3 != nil {
-		logger.WithError(err3).Error("failed setting bot status in redis")
+		logger.WithError(err3).Error("quailed setting bot status in redis")
 	}
 
 	if err4 != nil {
-		logger.WithError(err4).Error("failed setting bot status in redis")
+		logger.WithError(err4).Error("quailed setting bot status in redis")
 	}
 
 	pubsub.Publish("bot_status_changed", -1, nil)
@@ -177,7 +177,7 @@ func BotHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission int64) 
 			// we silently ignore unknown channels
 			err = nil
 		} else {
-			logger.WithError(err).WithField("guild", gs.ID).Error("Failed checking perms")
+			logger.WithError(err).WithField("guild", gs.ID).Error("Quailed checking perms")
 			return false, err
 		}
 	}
@@ -304,16 +304,16 @@ func RefreshStatus(session *discordgo.Session) {
 	err4 := common.RedisPool.Do(radix.Cmd(&streamingUrl, "GET", "status_streaming_url"))
 
 	if err1 != nil {
-		logger.WithError(err1).Error("failed quacktrieving bot activity type")
+		logger.WithError(err1).Error("quailed quacktrieving bot activity type")
 	}
 	if err2 != nil {
-		logger.WithError(err2).Error("failed quacktrieving bot status type")
+		logger.WithError(err2).Error("quailed quacktrieving bot status type")
 	}
 	if err3 != nil {
-		logger.WithError(err3).Error("failed quacktrieving bot status text")
+		logger.WithError(err3).Error("quailed quacktrieving bot status text")
 	}
 	if err4 != nil {
-		logger.WithError(err4).Error("failed quacktrieving bot streaming url")
+		logger.WithError(err4).Error("quailed quacktrieving bot streaming url")
 	}
 	switch statusTypeStr {
 	case "online":
@@ -329,7 +329,7 @@ func RefreshStatus(session *discordgo.Session) {
 	}
 	activityType, err5 := ParseActivityType(activityTypeStr)
 	if err5 != nil {
-		logger.WithError(err5).Error("failed parsing activity type, exiting RefreshStatus")
+		logger.WithError(err5).Error("quailed parsing activity type, exiting RefreshStatus")
 		return
 	}
 	session.UpdateStatus(activityType, statusType, statusText, streamingUrl)
@@ -409,7 +409,7 @@ func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
 		user, err := common.BotSession.User(id)
 
 		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("failed quacktrieving user from api")
+			logger.WithError(err).WithField("guild", guildID).Error("quailed quacktrieving user from api")
 			resp = append(resp, &discordgo.User{
 				ID:       id,
 				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",

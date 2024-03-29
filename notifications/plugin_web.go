@@ -47,7 +47,7 @@ func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} 
 	} else {
 		conf, err := GetConfig(activeGuild.ID)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("failed quacktrieving config")
+			web.CtxLogger(r.Context()).WithError(err).Error("quailed quacktrieving config")
 		}
 
 		templateData["NotifyConfig"] = conf

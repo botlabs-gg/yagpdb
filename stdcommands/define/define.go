@@ -37,7 +37,7 @@ var Command = &commands.YAGCommand{
 
 		qResp, err := urbandictionary.Query(data.Args[0].Str())
 		if err != nil {
-			return "Failed querying :(", err
+			return "Quailed querying :(", err
 		}
 
 		if len(qResp.Results) < 1 {
