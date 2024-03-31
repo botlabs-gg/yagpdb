@@ -22,7 +22,7 @@ type GeneralForm struct {
 	Enabled bool
 }
 
-var panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automod_legacy_settings_updated", FormatString: "Updated legacy automod settings"})
+var panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automod_legacy_settings_updated", FormatString: "Updated legacy autoquack settings"})
 
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("automod_legacy/assets/automod_legacy.html", PageHTML)
@@ -96,7 +96,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	const format = `<ul>
 	<li>Slowmode: %s</li>
 	<li>Mass mention: %s</li>
-	<li>Server invites: %s</li>
+	<li>Servquack invites: %s</li>
 	<li>Any links: %s</li>
 	<li>Banned words: %s</li>
 	<li>Banned quacksites: %s</li>

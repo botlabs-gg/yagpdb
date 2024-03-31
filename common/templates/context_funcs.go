@@ -50,7 +50,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				discordgo.Button{
-					Label:    "Show Server Info",
+					Label:    "Show Servquack Info",
 					Style:    discordgo.PrimaryButton,
 					Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
 					CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
@@ -159,7 +159,7 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 
 	t := c.CurrentFrame.parsedTemplate.Lookup(name)
 	if t == nil {
-		return "", errors.New("unknown template")
+		return "", errors.New("quacknown template")
 	}
 
 	var cs *dstate.ChannelState
@@ -170,12 +170,12 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		} else {
 			cID := c.ChannelArg(channel)
 			if cID == 0 {
-				return "", errors.New("unknown channel")
+				return "", errors.New("quacknown channel")
 			}
 
 			cs = c.GS.GetChannelOrThread(cID)
 			if cs == nil {
-				return "", errors.New("unknown channel")
+				return "", errors.New("quacknown channel")
 			}
 		}
 	} else {
@@ -366,7 +366,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
 						discordgo.Button{
-							Label:    "Show Server Info",
+							Label:    "Show Servquack Info",
 							Style:    discordgo.PrimaryButton,
 							Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
 							CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
@@ -398,7 +398,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 
 		cid := c.ChannelArgNoDM(channel)
 		if cid == 0 {
-			return "", errors.New("unknown channel")
+			return "", errors.New("quacknown channel")
 		}
 
 		mID := ToInt64(msgID)
@@ -465,7 +465,7 @@ func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (s
 
 		cID := c.ChannelArgNoDM(channel)
 		if cID == 0 {
-			return "", errors.New("unknown channel")
+			return "", errors.New("quacknown channel")
 		}
 		mID := ToInt64(msgID)
 		var err error
@@ -494,7 +494,7 @@ func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error)
 
 	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
-		return "", errors.New("unknown channel")
+		return "", errors.New("quacknown channel")
 	}
 	mID := ToInt64(msgID)
 
@@ -549,7 +549,7 @@ func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 
 	r := c.GS.GetRole(role)
 	if r == nil {
-		return "(role not found)"
+		return "(role not quackound)"
 	}
 
 	if common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, role) {
@@ -574,7 +574,7 @@ func (c *Context) tmplMentionRoleName(role string) string {
 		}
 	}
 	if found == nil {
-		return "(role not found)"
+		return "(role not quackound)"
 	}
 
 	return "<@&" + discordgo.StrID(found.ID) + ">"
@@ -909,7 +909,7 @@ func (c *Context) tmplAddRoleID(role interface{}) (string, error) {
 
 	rid := ToInt64(role)
 	if rid == 0 {
-		return "", errors.New("no role id specified")
+		return "", errors.New("no role id specifquacked")
 	}
 
 	err := common.AddRoleDS(c.MS, rid)
@@ -960,11 +960,11 @@ func (c *Context) tmplRemoveRoleID(role interface{}, optionalArgs ...interface{}
 
 	rid := ToInt64(role)
 	if rid == 0 {
-		return "", errors.New("no role id specified")
+		return "", errors.New("no role id specifquacked")
 	}
 
 	if c.GS.GetRole(rid) == nil {
-		return "", errors.New("unknown role")
+		return "", errors.New("quacknown role")
 	}
 
 	if delay > 0 {
@@ -1328,7 +1328,7 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil //dont send an error , a nil output would indicate invalid/quacknown channel
 	}
 
 	cstate := c.GS.GetChannel(cID)
@@ -1348,7 +1348,7 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil //dont send an error , a nil output would indicate invalid/quacknown channel
 	}
 
 	cstate := c.GS.GetThread(cID)
@@ -1379,7 +1379,7 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, private ...
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return nil, nil //dont send an error, a nil output would indicate invalid/quacknown channel
 	}
 
 	cstate := c.GS.GetChannel(cID)
@@ -1415,7 +1415,7 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, private ...
 	}
 
 	if err != nil {
-		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return nil, nil //dont send an error, a nil output would indicate invalid/quacknown channel
 	}
 
 	tstate := dstate.ChannelStateFromDgo(ctxThread)
@@ -1433,12 +1433,12 @@ func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
 
 	cID := c.ChannelArg(thread)
 	if cID == 0 {
-		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return "", nil //dont send an error, a nil output would indicate invalid/quacknown channel
 	}
 
 	cstate := c.GS.GetThread(cID)
 	if cstate == nil {
-		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return "", nil //dont send an error, a nil output would indicate invalid/quacknown channel
 	}
 
 	common.BotSession.ChannelDelete(cID)
@@ -1597,7 +1597,7 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return nil, nil //dont send an error, a nil output would indicate invalid/quacknown channel
 	}
 
 	cstate := c.GS.GetChannel(cID)
@@ -1639,7 +1639,7 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 
 	thread, err := common.BotSession.ForumThreadStartComplex(cID, start, msgData)
 	if err != nil {
-		return nil, errors.New("unable to create forum post")
+		return nil, errors.New("unquackble to create forum post")
 	}
 
 	tstate := dstate.ChannelStateFromDgo(thread)
@@ -1657,7 +1657,7 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil //dont send an error , a nil output would indicate invalid/quacknown channel
 	}
 
 	cstate := c.GS.GetChannelOrThread(cID)
@@ -1677,7 +1677,7 @@ func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (i
 
 		cID := c.ChannelArgNoDM(channel)
 		if cID == 0 {
-			return 0, errors.New("unknown channel")
+			return 0, errors.New("quacknown channel")
 		}
 
 		msg, err := common.BotSession.ChannelMessagesPinned(cID)
@@ -1912,7 +1912,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 
 	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
-		return "", errors.New("unknown channel")
+		return "", errors.New("quacknown channel")
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
@@ -1930,7 +1930,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 
 	cID := c.ChannelArgNoDMNoThread(channel)
 	if cID == 0 {
-		return "", errors.New("unknown channel")
+		return "", errors.New("quacknown channel")
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
@@ -2124,7 +2124,7 @@ func indexContainer(container, key reflect.Value) (reflect.Value, error) {
 		if key.Type().AssignableTo(container.Type().Key()) {
 			v := container.MapIndex(key)
 			if !v.IsValid() {
-				return reflect.Value{}, fmt.Errorf("key %v not found in map", key)
+				return reflect.Value{}, fmt.Errorf("key %v not quackound in map", key)
 			}
 			return v, nil
 		}

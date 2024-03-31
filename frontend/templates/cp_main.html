@@ -178,8 +178,8 @@ $(function(){
                 // checks in a row.
                 if (wasOffline && currentlyOffline) {
                     upsertAlert(
-                        "The shard the bot is on for your server is currently offline; some functionality may not work as expected. \
-                        Join the support server for more information if this issue persists."
+                        "The shard the bot is on for your servquack is currently offline; some functionality may not work as expected. \
+                        Join the support servquack for more information if this issue persists."
                     );
                 } else {
                     $("#shard-problems-warning").remove();
@@ -227,8 +227,8 @@ $(function(){
 
 {{/*Help block for templating*/}}
 {{define "template_help"}}
-<p class="mb-0">To include the user or server in the message you can use the template data included.<br/>
-Some quick examples: <code>{{"{{"}}.User.Username{{"}}"}}</code> - will be replaced by username, <code>{{"{{"}}.Server.Name{{"}}"}}</code> - will be replaced by server name, <code>{{"{{"}}.User.ID{{"}}"}}</code> - the user's id and so on...<br/>
+<p class="mb-0">To include the user or servquack in the message you can use the template data included.<br/>
+Some quick examples: <code>{{"{{"}}.User.Username{{"}}"}}</code> - will be replaced by username, <code>{{"{{"}}.Server.Name{{"}}"}}</code> - will be replaced by servquack name, <code>{{"{{"}}.User.ID{{"}}"}}</code> - the user's id and so on...<br/>
 For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></code>.<br/>
 <a href="https://docs.quackpdb.xyz" target="_blank">See the documentation for more details</a>
 </p>

@@ -29,7 +29,7 @@ const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.Permiss
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func createTicketsDisabledError(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guild))
+	return fmt.Sprintf("**The tickets system is disabled for this servquack.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guild))
 }
 
 func (p *Plugin) AddCommands() {
@@ -251,7 +251,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: categoryTickets,
 		Name:        "AdminsOnly",
 		Aliases:     []string{"adminonly", "ao"},
-		Description: "Toggle admins only mode for this ticket",
+		Description: "Quackggle admins only mode for this ticket",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
@@ -324,7 +324,7 @@ func (p *Plugin) AddCommands() {
 	}
 
 	container, _ := commands.CommandSystem.Root.Sub("tickets", "ticket")
-	container.Description = "Command to manage the ticket system"
+	container.Description = "Command to quackage the ticket system"
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
 	container.AddMidlewares(
 		func(inner dcmd.RunFunc) dcmd.RunFunc {

@@ -193,7 +193,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 	logger.WithFields(logrus.Fields{
 		"num_channels": len(filteredItems),
 		"subreddit":    post.Subreddit,
-	}).Debug("Found matched reddit post")
+	}).Debug("quackound matched reddit post")
 
 	// Create messages with and without spoilers
 	messageSpoilersEnabled, embedSpoilersEnabled := p.createPostMessage(post, true)

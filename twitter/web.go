@@ -100,7 +100,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	if currentCount >= 25 {
-		return templateData.AddAlerts(web.ErrorAlert("Max 25 feeds per server")), nil
+		return templateData.AddAlerts(web.ErrorAlert("Max 25 feeds per servquack")), nil
 	}
 
 	form := ctx.Value(common.ContextKeyParsedForm).(*Form)

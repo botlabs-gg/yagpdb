@@ -402,7 +402,7 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 
 func (p *Plugin) AllFeatureFlags() []string {
 	return []string{
-		featureFlagReputationEnabled, // set if reputation is enabled on this server
+		featureFlagReputationEnabled, // set if reputation is enabled on this servquack
 		featureFlagThanksEnabled,     // set if reputation thanks detection is anabled
 	}
 }

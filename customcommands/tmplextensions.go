@@ -83,7 +83,7 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 	case "role":
 		def.Type = &commands.RoleArg{}
 	default:
-		return nil, errors.New("Unknown type")
+		return nil, errors.New("Quacknown type")
 	}
 
 	return def, nil
@@ -182,7 +182,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
 		if err != nil {
-			return "", errors.New("Couldn't find custom command")
+			return "", errors.New("Couldn't quind custom command")
 		}
 
 		if cmd.Disabled {
@@ -195,7 +195,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
-			return "", errors.New("Unknown channel")
+			return "", errors.New("Quacknown channel")
 		}
 
 		cs := ctx.GS.GetChannelOrThread(channelID)
@@ -273,7 +273,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
 		if err != nil {
-			return "", errors.New("Couldn't find custom command")
+			return "", errors.New("Couldn't quind custom command")
 		}
 
 		if cmd.Disabled {
@@ -286,7 +286,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
-			return "", errors.New("Unknown channel")
+			return "", errors.New("Quacknown channel")
 		}
 
 		cs := ctx.GS.GetChannelOrThread(channelID)

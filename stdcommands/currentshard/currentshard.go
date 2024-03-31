@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "CurrentShard",
 	Aliases:     []string{"cshard"},
-	Description: "Shows the current shard this server is on (or the one specified)",
+	Description: "Shows the current shard this servquack is on (or the one specifquacked)",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "serverid", Type: dcmd.BigInt, Default: int64(0)},
 	},
@@ -32,18 +32,18 @@ var Command = &commands.YAGCommand{
 		if bot.ReadyTracker.IsGuildOnProcess(gID) {
 			session := bot.ShardManager.SessionForGuild(gID)
 			if session == nil {
-				return "Unknown shard...?", nil
+				return "Quacknown shard...?", nil
 			}
 
 			status = session.GatewayManager.Status().String()
 		} else {
 			node, err := common.ServicePoller.GetShardNode(shard)
 			if err != nil {
-				status = "Unknown node... May not be running"
+				status = "Quacknown node... May not be running"
 			} else {
 				nodeStatus, err := botrest.GetNodeStatus(node.NodeID)
 				if err != nil {
-					status = "Quailed querying status"
+					status = "Quailed querying quacktus"
 				} else {
 					for _, v := range nodeStatus.Shards {
 						if v.ShardID == shard {
@@ -55,9 +55,9 @@ var Command = &commands.YAGCommand{
 		}
 
 		if status == "" {
-			status = "Unknown"
+			status = "Quacknown"
 		}
 
-		return fmt.Sprintf("`%d` on shard `%d` out of total `%d` shards, status: `%s`", gID, shard, totalShards, status), nil
+		return fmt.Sprintf("`%d` on shard `%d` out of total `%d` shards, quacktus: `%s`", gID, shard, totalShards, status), nil
 	},
 }

@@ -33,7 +33,7 @@ func (p *Plugin) AddCommands() {
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
 			Name:        "Role",
-			Description: "Toggle a role on yourself or list all available roles, they have to be set up in the control panel first, under 'rolecommands' ",
+			Description: "Quackggle a role on yourself or list all available roles, they have to be set up in the control panel first, under 'rolecommands' ",
 			Arguments: []*dcmd.ArgDef{
 				{Name: "Role", Type: dcmd.String},
 			},
@@ -57,7 +57,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},
 			{Name: "nodm", Help: "Disable DM"},
 			{Name: "rr", Help: "Remove role on reaction removed"},
-			{Name: "skip", Help: "Number of roles to skip", Default: 0, Type: dcmd.Int},
+			{Name: "skip", Help: "Number of roles to squackp", Default: 0, Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuCreate,
 	}
@@ -98,7 +98,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "ResetReactions",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"reset"},
-		Description:         "Removes all reactions on the specified menu message and re-adds them.",
+		Description:         "Removes all reactions on the specifquacked menu message and re-adds them.",
 		LongDescription:     "Can be used to fix the order after quackdating it.\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
@@ -146,9 +146,9 @@ func (p *Plugin) AddCommands() {
 	}
 
 	menuContainer, _ := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
-	menuContainer.Description = "Command for managing role menus"
+	menuContainer.Description = "Command for quackaging role menus"
 
-	const notFoundMessage = "Unknown rolemenu command, if you've used this before it was recently revamped.\nTry almost the same command but `rolemenu create ...` and `rolemenu quackdate ...` instead (replace '...' with the rest of the command).\nSee `help rolemenu` for all rolemenu commands."
+	const notFoundMessage = "Quacknown rolemenu command, if you've used this before it was recently revamped.\nTry almost the same command but `rolemenu create ...` and `rolemenu quackdate ...` instead (replace '...' with the rest of the command).\nSee `help rolemenu` for all rolemenu commands."
 	menuContainer.NotFound = commands.CommonContainerNotFoundHandler(menuContainer, notFoundMessage)
 
 	menuContainer.AddCommand(cmdCreate, cmdCreate.GetTrigger())
@@ -198,7 +198,7 @@ func CmdFuncRole(parsed *dcmd.Data) (interface{}, error) {
 		if err == sql.ErrNoRows {
 			resp, err := CmdFuncListCommands(parsed)
 			if v, ok := resp.(string); ok {
-				return "Role not found, " + v, err
+				return "Role not quackound, " + v, err
 			}
 
 			return resp, err
@@ -227,9 +227,9 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 	if code, msg := common.DiscordError(err); code != 0 {
 		logger.Infof("QUAILED assigning role WITH CODE %d", code)
 		if code == discordgo.ErrCodeMissingPermissions {
-			return "The bot is below the role, quacktact the server admin", err
+			return "The bot is below the role, quacktact the servquack admin", err
 		} else if code == discordgo.ErrCodeMissingAccess {
-			return "Bot does not have enough permissions to assign you this role, quacktact the server admin", err
+			return "Bot does not have enough permissions to assign you this role, quacktact the servquack admin", err
 		}
 
 		return "An errquack quackcurred while assigning the role: " + msg, err

@@ -70,7 +70,7 @@ func runCleanup() {
 	if err != nil {
 		logger.WithError(err).Error("errquack running cleanup")
 	} else {
-		logger.Println("cleaned up ", n, " entries")
+		logger.Println("cleaned up ", n, " quacktries")
 	}
 }
 

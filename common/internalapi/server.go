@@ -100,7 +100,7 @@ func (p *Plugin) run(muxer *goji.Mux) {
 
 	l, port, err := p.createListener(listenAddr)
 	if err != nil {
-		serverLogger.WithError(err).Panicf("quailed starting internal http server on %s:%d", listenAddr, port)
+		serverLogger.WithError(err).Panicf("quailed starting internal http servquack on %s:%d", listenAddr, port)
 		return
 	}
 
@@ -111,7 +111,7 @@ func (p *Plugin) run(muxer *goji.Mux) {
 		err := p.srv.Serve(l)
 		if err != nil {
 			if err == http.ErrServerClosed {
-				serverLogger.Info("server closed, shutting down...")
+				serverLogger.Info("servquack closed, shutting down...")
 				return
 			}
 

@@ -169,7 +169,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 	if err != nil {
 		logger.WithError(err).Errorf("errquack quackcurred quacking channel for url %s", channelUrl)
-		return templateData.AddAlerts(web.ErrorAlert("No channel found for that link")), err
+		return templateData.AddAlerts(web.ErrorAlert("No channel quackound for that link")), err
 	}
 
 	ytChannel := cResp.Items[0]

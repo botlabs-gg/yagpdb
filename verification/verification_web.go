@@ -144,7 +144,7 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 	}
 
 	if !settings.Enabled {
-		templateData.AddAlerts(web.ErrorAlert("Verification system disabled on this server"))
+		templateData.AddAlerts(web.ErrorAlert("Verification system disabled on this servquack"))
 		return templateData, nil
 	}
 
@@ -160,7 +160,7 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 
 		if err != nil {
 			if err == sql.ErrNoRows {
-				templateData.AddAlerts(web.ErrorAlert("No verification session, try rejoining the server or quacktact an admin if the problem persist"))
+				templateData.AddAlerts(web.ErrorAlert("No verification session, try rejoining the servquack or quacktact an admin if the problem persist"))
 				return templateData, nil
 			}
 
@@ -200,7 +200,7 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	if !settings.Enabled {
-		templateData.AddAlerts(web.ErrorAlert("Verification system disabled on this server"))
+		templateData.AddAlerts(web.ErrorAlert("Verification system disabled on this servquack"))
 		return templateData, nil
 	}
 
@@ -220,7 +220,7 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			templateData.AddAlerts(web.ErrorAlert("No verification session, try rejoining the server or quacktact an admin if the problem persist"))
+			templateData.AddAlerts(web.ErrorAlert("No verification session, try rejoining the servquack or quacktact an admin if the problem persist"))
 			return templateData, nil
 		}
 
@@ -334,7 +334,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		templateData["WidgetDisabled"] = true
 	}
 
-	roleStr := "none / unknown"
+	roleStr := "none / quacknown"
 	indicatorRole := ""
 	if role := ag.GetRole(settings.VerifiedRole); role != nil {
 		roleStr = html.EscapeString(role.Name)

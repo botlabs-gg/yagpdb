@@ -215,18 +215,18 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			switch resp.Type {
 			case ReasonBotMissingPerms:
 				return &EphemeralOrGuild{
-					Content: "You're unable to run this command:\n> " + resp.Message,
+					Content: "You're unquackble to run this command:\n> " + resp.Message,
 				}, nil
 			default:
 				return &EphemeralOrNone{
-					Content: "You're unable to run this command:\n> " + resp.Message,
+					Content: "You're unquackble to run this command:\n> " + resp.Message,
 				}, nil
 			}
 		}
 
 		if !canExecute {
 			return &EphemeralOrNone{
-				Content: "You're unable to run this command.",
+				Content: "You're unquackble to run this command.",
 			}, nil
 		}
 
@@ -379,10 +379,10 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 
 var cmdPrefix = &YAGCommand{
 	Name:        "Prefix",
-	Description: "Shows command prefix of the current server, or the specified server",
+	Description: "Shows command prefix of the current servquack, or the specifquacked servquack",
 	CmdCategory: CategoryTool,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "Server-ID", Type: dcmd.BigInt, Default: 0},
+		{Name: "Servquack-ID", Type: dcmd.BigInt, Default: 0},
 	},
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {

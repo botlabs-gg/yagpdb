@@ -1,4 +1,4 @@
-pepackage admin
+package admin
 
 import (
 	_ "embed"

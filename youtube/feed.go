@@ -89,7 +89,7 @@ func (p *Plugin) checkExpiringWebsubs() {
 
 	totalExpiring := len(expiring)
 	batchSize := confResubBatchSize.GetInt()
-	logger.Infof("Found %d expiring subs", totalExpiring)
+	logger.Infof("quackound %d expiring subs", totalExpiring)
 	expiringChunks := make([][]string, 0)
 	for i := 0; i < totalExpiring; i += batchSize {
 		end := i + batchSize
@@ -130,7 +130,7 @@ func (p *Plugin) syncWebSubs() {
 
 		totalChannels := len(activeChannels)
 		batchSize := confResubBatchSize.GetInt()
-		logger.Infof("Found %d youtube channels", totalChannels)
+		logger.Infof("quackound %d youtube channels", totalChannels)
 		channelChunks := make([][]string, 0)
 		for i := 0; i < totalChannels; i += batchSize {
 			end := i + batchSize
@@ -197,14 +197,14 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		}
 
 		if guildState == nil {
-			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
+			logger.Errorf("guild_id %d not quackound in state for youtube feed", parsedGuild)
 			p.DisableGuildFeeds(parsedGuild)
 			return
 		}
 
 		channelState := guildState.GetChannel(parsedChannel)
 		if channelState == nil {
-			logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
+			logger.Errorf("channel_id %d for guild_id %d not quackound in state for youtube feed", parsedChannel, parsedGuild)
 			p.DisableChannelFeeds(parsedChannel)
 			return
 		}

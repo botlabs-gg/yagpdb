@@ -45,7 +45,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				if sound == nil {
-					return "Sound not found, " + ListSounds(sounds, member), nil
+					return "Sound not quackound, " + ListSounds(sounds, member), nil
 				} else if !CanPlaySound(sound, member.Member.Roles) {
 					return "You can't play that sound, either you have a blacklisted role or missing a required role for this sound", nil
 				}

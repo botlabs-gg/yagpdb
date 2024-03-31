@@ -304,7 +304,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		}
 
 		if c < 1 {
-			return templateData.AddAlerts(web.ErrorAlert("Unknown group")), nil
+			return templateData.AddAlerts(web.ErrorAlert("Quacknown group")), nil
 		}
 
 		templateData["CurrentGroupID"] = groupID
@@ -380,7 +380,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}
 
 		if c < 1 {
-			return templateData.AddAlerts(web.ErrorAlert("Unknown group")), nil
+			return templateData.AddAlerts(web.ErrorAlert("Quacknown group")), nil
 		}
 	}
 

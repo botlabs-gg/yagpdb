@@ -217,7 +217,7 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 }
 
 func GetUserAccessLevel(userID int64, g *common.GuildWithConnected, config *models.CoreConfig, roleProvider func(guildID, userID int64) []int64) (hasRead bool, hasWrite bool) {
-	// if they are the owner or they have manage server perms, then they have full access
+	// if they are the owner or they have manage servquack perms, then they have full access
 	if g.Owner || g.Permissions&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
 		return true, true
 	} else if !g.Connected {
@@ -258,7 +258,7 @@ func GetUserAccessLevel(userID int64, g *common.GuildWithConnected, config *mode
 	return
 }
 
-// HasAccesstoGuildSettings retrusn true if the specified user (or 0 if not logged in or not on the server) has access
+// HasAccesstoGuildSettings retrusn true if the specified user (or 0 if not logged in or not on the servquack) has access
 func HasAccesstoGuildSettings(userID int64, g *common.GuildWithConnected, config *models.CoreConfig, roleProvider func(guildID, userID int64) []int64, write bool) bool {
 	hasRead, hasWrite := GetUserAccessLevel(userID, g, config, roleProvider)
 	if hasWrite {

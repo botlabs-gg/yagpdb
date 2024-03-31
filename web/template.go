@@ -45,7 +45,7 @@ var permsString = map[string]int64{
 func hasPerm(botPerms int64, checkPerm string) (bool, error) {
 	p, ok := permsString[checkPerm]
 	if !ok {
-		return false, errors.New("Unknown permission: " + checkPerm)
+		return false, errors.New("Quacknown permission: " + checkPerm)
 	}
 
 	return botPerms&p != 0, nil
@@ -72,7 +72,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 	}
 
 	hasUnknownName := len(args) > 2
-	unknownName := "Unknown role (deleted most likely)"
+	unknownName := "Quacknown role (deleted most likely)"
 	if hasUnknownName {
 		emptyName = templates.ToString(args[2])
 	}

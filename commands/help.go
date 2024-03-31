@@ -26,7 +26,7 @@ var cmdHelp = &YAGCommand{
 }
 
 func CmdNotFound(search string) string {
-	return fmt.Sprintf("Couldn't find command '%s'", search)
+	return fmt.Sprintf("Couldn't quind command '%s'", search)
 }
 
 func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {

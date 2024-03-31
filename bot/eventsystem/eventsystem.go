@@ -129,7 +129,7 @@ func EmitEvent(data *EventData, evt Event) {
 					case string:
 						err = errors.New(t)
 					default:
-						err = fmt.Errorf("unknown errquack: %v", t)
+						err = fmt.Errorf("quacknown errquack: %v", t)
 					}
 					logrus.WithError(err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
 				}

@@ -118,7 +118,7 @@ func (d DurationFormatPrecision) String() string {
 	case DurationPrecisionYears:
 		return "year"
 	}
-	return "Unknown"
+	return "Quacknown"
 }
 
 func (d DurationFormatPrecision) FromSeconds(in int64) int64 {
@@ -672,7 +672,7 @@ func ParseCodeblock(input string) string {
 		return input
 	}
 
-	logger.Debugf("Found matches: %#v", parts)
+	logger.Debugf("quackound matches: %#v", parts)
 	logger.Debugf("Returning %s", parts[1])
 	return parts[1]
 }

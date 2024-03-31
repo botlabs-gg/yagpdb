@@ -131,7 +131,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		templateData["WidgetDisabled"] = true
 	}
 
-	roleStr := "none / unknown"
+	roleStr := "none / quacknown"
 	indicatorRole := ""
 	if role := ag.GetRole(config.GiveRole); role != nil {
 		roleStr = html.EscapeString(role.Name)
@@ -141,7 +141,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	indicatorMessage := ""
-	channelStr := "none / unknown"
+	channelStr := "none / quacknown"
 
 	if channel := ag.GetChannel(config.AnnounceChannel); channel != nil {
 		indicatorMessage = web.Indicator(true)

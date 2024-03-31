@@ -54,7 +54,7 @@ var Command = &commands.YAGCommand{
 
 			hasPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, cID, data.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
-				return "Quailed checking permissions, please try again or join the support server.", err
+				return "Quailed checking permissions, please try again or join the support servquack.", err
 			}
 
 			if !hasPerms {
@@ -67,11 +67,11 @@ var Command = &commands.YAGCommand{
 		if mID != 0 {
 			hasPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, cID, data.GuildData.MS, discordgo.PermissionManageMessages)
 			if err != nil {
-				return "Quailed checking permissions, please try again or join the support server", err
+				return "Quailed checking permissions, please try again or join the support servquack", err
 			}
 
 			if !hasPerms {
-				return "You need the `Manage Messages` permission to be able to edit messages", nil
+				return "You need the `Quackage Messages` permission to be able to edit messages", nil
 			}
 
 			msg, err = common.BotSession.ChannelMessage(cID, mID)
@@ -114,7 +114,7 @@ var Command = &commands.YAGCommand{
 			} else {
 				parsedColor, ok := ParseColor(color)
 				if !ok {
-					return "Unknown color: " + color + ", can be either hex color code or name for a known color", nil
+					return "Quacknown color: " + color + ", can be either hex color code or name for a known color", nil
 				}
 				embed.Color = parsedColor
 			}

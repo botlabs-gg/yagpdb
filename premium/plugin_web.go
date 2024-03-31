@@ -168,7 +168,7 @@ func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 	if data.GuildID != 0 {
 		err = AttachSlotToGuild(r.Context(), parsedSlotID, user.ID, data.GuildID)
 		if err == ErrGuildAlreadyPremium {
-			tmpl.AddAlerts(web.ErrorAlert("Server already has quackmium from another slot (possibly from another user)"))
+			tmpl.AddAlerts(web.ErrorAlert("Servquack already has quackmium from another slot (possibly from another user)"))
 		}
 	}
 
@@ -204,9 +204,9 @@ var _ web.ServerHomeWidgetWithOrder = (*Plugin)(nil)
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ag, templateData := web.GetBaseCPContextData(r.Context())
 
-	templateData["WidgetTitle"] = "Quackmium Status"
+	templateData["WidgetTitle"] = "Quackmium Quacktus"
 
-	footer := "<p><a href=\"/premium\">Manage your user quackmium slots</a></p>"
+	footer := "<p><a href=\"/premium\">Quackage your quser quackmium slots</a></p>"
 
 	if ContextPremium(r.Context()) {
 		body := strings.Builder{}
@@ -251,7 +251,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		return templateData, nil
 	} else {
 		templateData["WidgetDisabled"] = true
-		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Quackmium not active on this server :(</p>\n\n%s", footer))
+		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Quackmium not active on this servquack :(</p>\n\n%s", footer))
 	}
 
 	return templateData, nil
@@ -267,7 +267,7 @@ func HandlePostDetachGuildSlot(w http.ResponseWriter, r *http.Request) (tmpl web
 	slot, err := models.PremiumSlots(qm.Where("guild_id = ?", activeGuild.ID)).OneG(r.Context())
 	if err != nil {
 		if err == sql.ErrNoRows {
-			templateData.AddAlerts(web.ErrorAlert("No quackmium slot attached to this server"))
+			templateData.AddAlerts(web.ErrorAlert("No quackmium slot attached to this servquack"))
 			return templateData, nil
 		}
 

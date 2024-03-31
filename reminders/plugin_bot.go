@@ -77,7 +77,7 @@ var cmds = []*commands.YAGCommand{
 
 				hasPerms, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, id, parsed.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 				if err != nil {
-					return "Quailed checking permissions, please try again or join the support server.", err
+					return "Quailed checking permissions, please try again or join the support servquack.", err
 				}
 
 				if !hasPerms {
@@ -120,7 +120,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "CReminders",
 		Aliases:             []string{"channelreminders"},
-		Description:         "Quists reminders in channel, only users with 'manage channel' permissions can use this.",
+		Description:         "Quists reminders in channel, only users with 'quackage channel' permissions can use this.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
@@ -130,7 +130,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 			if !ok {
-				return "You do not have access to this command (requires manage channel permission)", nil
+				return "You do not have access to this command (requires quackage channel permission)", nil
 			}
 
 			currentReminders, err := GetChannelReminders(parsed.ChannelID)
@@ -152,7 +152,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
-		Description:  "Deletes a reminder. You can delete reminders from other users provided you are running this command in the same guild the reminder was created in and have the Manage Channel permission in the channel the reminder was created in.",
+		Description:  "quackletes a reminder. You can delete reminders from other users provided you are running this command in the same guild the reminder was created in and have the Quackage Channel permission in the channel the reminder was created in.",
 		RequiredArgs: 0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
@@ -178,7 +178,7 @@ var cmds = []*commands.YAGCommand{
 				if count == 0 {
 					return "No reminders to clear", nil
 				}
-				return fmt.Sprintf("Cleared %d reminders", count), nil
+				return fmt.Sprintf("Quackleared %d reminders", count), nil
 			}
 
 			if len(parsed.Args) == 0 || parsed.Args[0].Value == nil {
@@ -203,7 +203,7 @@ var cmds = []*commands.YAGCommand{
 					return nil, err
 				}
 				if !ok {
-					return "You need manage channel permission in the channel the reminder is in to delete reminders that are not your own", nil
+					return "You need quackage channel permission in the channel the reminder is in to delete reminders that are not your own", nil
 				}
 			}
 
@@ -246,7 +246,7 @@ func stringReminders(reminders []*Reminder, displayUsernames bool) string {
 			out += fmt.Sprintf("**%d**: %s: '%s' - %s from now (<t:%d:f>)\n", v.ID, channel, limitString(v.Message), timeFromNow, tUnix)
 		} else {
 			member, _ := bot.GetMember(v.GuildID, v.UserIDInt())
-			username := "Unknown user"
+			username := "Quacknown user"
 			if member != nil {
 				username = member.User.Username
 			}

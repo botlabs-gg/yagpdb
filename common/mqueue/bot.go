@@ -47,7 +47,7 @@ func (p *Plugin) LateBotInit() {
 	go redisPubsub.run()
 	p.server = server
 
-	logger.Info("Started mqueue server")
+	logger.Info("Started mqueue servquack")
 }
 
 // StopBot implements bot.BotStopperHandler

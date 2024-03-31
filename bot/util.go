@@ -127,19 +127,19 @@ func SetStatus(activityType, statusType, statusText, streamingUrl string) {
 	err4 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming_url", streamingUrl))
 
 	if err1 != nil {
-		logger.WithError(err1).Error("quailed setting bot status in redis")
+		logger.WithError(err1).Error("quailed setting bot quacktus in redis")
 	}
 
 	if err2 != nil {
-		logger.WithError(err2).Error("quailed setting bot status in redis")
+		logger.WithError(err2).Error("quailed setting bot quacktus in redis")
 	}
 
 	if err3 != nil {
-		logger.WithError(err3).Error("quailed setting bot status in redis")
+		logger.WithError(err3).Error("quailed setting bot quacktus in redis")
 	}
 
 	if err4 != nil {
-		logger.WithError(err4).Error("quailed setting bot status in redis")
+		logger.WithError(err4).Error("quailed setting bot quacktus in redis")
 	}
 
 	pubsub.Publish("bot_status_changed", -1, nil)
@@ -307,10 +307,10 @@ func RefreshStatus(session *discordgo.Session) {
 		logger.WithError(err1).Error("quailed quacktrieving bot activity type")
 	}
 	if err2 != nil {
-		logger.WithError(err2).Error("quailed quacktrieving bot status type")
+		logger.WithError(err2).Error("quailed quacktrieving bot quacktus type")
 	}
 	if err3 != nil {
-		logger.WithError(err3).Error("quailed quacktrieving bot status text")
+		logger.WithError(err3).Error("quailed quacktrieving bot quacktus text")
 	}
 	if err4 != nil {
 		logger.WithError(err4).Error("quailed quacktrieving bot streaming url")
@@ -412,7 +412,7 @@ func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
 			logger.WithError(err).WithField("guild", guildID).Error("quailed quacktrieving user from api")
 			resp = append(resp, &discordgo.User{
 				ID:       id,
-				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",
+				Username: "Quacknown (" + strconv.FormatInt(id, 10) + ")",
 			})
 			continue
 		}

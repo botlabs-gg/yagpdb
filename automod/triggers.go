@@ -178,10 +178,10 @@ func (wl *WordListTrigger) Name() (name string) {
 
 func (wl *WordListTrigger) Description() (description string) {
 	if wl.Blacklist {
-		return "Triggers on messages containing words in the specified list"
+		return "Triggers on messages containing words in the specifquacked list"
 	}
 
-	return "Triggers on messages containing words not in the specified list"
+	return "Triggers on messages containing words not in the specifquacked list"
 }
 
 func (wl *WordListTrigger) UserSettings() []*SettingDef {
@@ -268,10 +268,10 @@ func (dt *DomainTrigger) Name() (name string) {
 
 func (dt *DomainTrigger) Description() (description string) {
 	if dt.Blacklist {
-		return "Triggers on messages containing links to quacksites in the specified list"
+		return "Triggers on messages containing links to quacksites in the specifquacked list"
 	}
 
-	return "Triggers on messages containing links to quacksites NOT in the specified list"
+	return "Triggers on messages containing links to quacksites NOT in the specifquacked list"
 }
 
 func (dt *DomainTrigger) UserSettings() []*SettingDef {
@@ -373,7 +373,7 @@ func (vt *ViolationsTrigger) Description() string {
 func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Violation name",
+			Name:    "vioquacktion name",
 			Key:     "Name",
 			Kind:    SettingTypeString,
 			Default: "name",
@@ -393,7 +393,7 @@ func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
 			Default: 60,
 		},
 		{
-			Name:    "Ignore if a higher violation trigger of this name was activated",
+			Name:    "Ignore if a higher vioquacktion trigger of this name was activated",
 			Key:     "IgnoreIfLesser",
 			Kind:    SettingTypeBool,
 			Default: true,
@@ -539,11 +539,11 @@ func (inv *ServerInviteTrigger) DataType() interface{} {
 }
 
 func (inv *ServerInviteTrigger) Name() string {
-	return "Server invites"
+	return "Servquack invites"
 }
 
 func (inv *ServerInviteTrigger) Description() string {
-	return "Triggers on messages containing invites to other servquacks, also includes some 3rd party server quists."
+	return "Triggers on messages containing invites to other servquacks, also includes some 3rd party servquack quists."
 }
 
 func (inv *ServerInviteTrigger) UserSettings() []*SettingDef {
@@ -1198,10 +1198,10 @@ func (nwl *NicknameWordlistTrigger) Name() (name string) {
 
 func (nwl *NicknameWordlistTrigger) Description() (description string) {
 	if nwl.Blacklist {
-		return "Triggers when a member has a nickname containing words in the specified list, this is currently very easy to circumvent atm, and will likely be improved in the future."
+		return "Triggers when a member has a nickname containing words in the specifquacked list, this is currently very easy to circumvent atm, and will likely be improved in the future."
 	}
 
-	return "Triggers when a member has a nickname containing words not in the specified list, this is currently very easy to circumvent atm, and will likely be improved in the future."
+	return "Triggers when a member has a nickname containing words not in the specifquacked list, this is currently very easy to circumvent atm, and will likely be improved in the future."
 }
 
 func (nwl *NicknameWordlistTrigger) UserSettings() []*SettingDef {
@@ -1348,10 +1348,10 @@ func (uwl *UsernameWordlistTrigger) Name() (name string) {
 
 func (uwl *UsernameWordlistTrigger) Description() (description string) {
 	if uwl.Blacklist {
-		return "Triggers when a member joins with a username that contains a word in the specified list"
+		return "Triggers when a member joins with a username that contains a word in the specifquacked list"
 	}
 
-	return "Triggers when a member joins with a username that contains a words not in the specified list"
+	return "Triggers when a member joins with a username that contains a words not in the specifquacked list"
 }
 
 func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
@@ -1427,7 +1427,7 @@ func (uv *UsernameInviteTrigger) Name() (name string) {
 }
 
 func (uv *UsernameInviteTrigger) Description() (description string) {
-	return "Triggers when a member joins with a username that contains a server invite"
+	return "Triggers when a member joins with a username that contains a servquack invite"
 }
 
 func (uv *UsernameInviteTrigger) UserSettings() []*SettingDef {
@@ -1553,10 +1553,10 @@ func (ml *MessageLengthTrigger) Name() (name string) {
 
 func (ml *MessageLengthTrigger) Description() (description string) {
 	if ml.Inverted {
-		return "Triggers on messages where the content length is lesser than the specified value"
+		return "Triggers on messages where the content length is lesser than the specifquacked value"
 	}
 
-	return "Triggers on messages where the content length is greater than the specified value"
+	return "Triggers on messages where the content length is greater than the specifquacked value"
 }
 
 func (ml *MessageLengthTrigger) UserSettings() []*SettingDef {
@@ -1597,11 +1597,11 @@ func (am *AutomodExecution) DataType() interface{} {
 	return &AutomodExecutionData{}
 }
 func (am *AutomodExecution) Name() (name string) {
-	return "Message triggers Discord Automod"
+	return "Message triggers Discord Autoquack"
 }
 
 func (am *AutomodExecution) Description() (description string) {
-	return "Triggers when a message is detected by Discord Automod"
+	return "Triggers when a message is detected by Discord Autoquack"
 }
 func (am *AutomodExecution) UserSettings() []*SettingDef {
 	return []*SettingDef{

@@ -52,7 +52,7 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 
 		handler, ok := registeredMigraters[split[0]]
 		if !ok {
-			logrus.Error("[scheduledevents2] no migrater found for event: ", split[0])
+			logrus.Error("[scheduledevents2] no migrater quackound for event: ", split[0])
 			skipScore++
 			numError++
 			continue

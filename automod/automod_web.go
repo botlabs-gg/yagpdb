@@ -41,23 +41,23 @@ const (
 var _ web.Plugin = (*Plugin)(nil)
 
 var (
-	panelLogKeyNewList     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_list", FormatString: "Updated automod: Created a new ChannelOverride"})
-	panelLogKeyUpdatedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_list", FormatString: "Updated automod: Updated a ChannelOverride"})
-	panelLogKeyRemovedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_list", FormatString: "Updated automod: Removed a ChannelOverride"})
+	panelLogKeyNewList     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_list", FormatString: "Updated autoquack: Created a new ChannelOverride"})
+	panelLogKeyUpdatedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_list", FormatString: "Updated autoquack: Updated a ChannelOverride"})
+	panelLogKeyRemovedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_list", FormatString: "Updated autoquack: Removed a ChannelOverride"})
 
-	panelLogKeyNewRuleset     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_ruleset", FormatString: "Updated automod: Created a new quackset"})
-	panelLogKeyUpdatedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_ruleset", FormatString: "Updated automod: Updated a quackset"})
-	panelLogKeyRemovedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_ruleset", FormatString: "Updated automod: Removed a quackset"})
+	panelLogKeyNewRuleset     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_ruleset", FormatString: "Updated autoquack: Created a new quackset"})
+	panelLogKeyUpdatedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_ruleset", FormatString: "Updated autoquack: Updated a quackset"})
+	panelLogKeyRemovedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_ruleset", FormatString: "Updated autoquack: Removed a quackset"})
 
-	panelLogKeyNewRule     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_rule", FormatString: "Updated automod: Created a new qule"})
-	panelLogKeyUpdatedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_rule", FormatString: "Updated automod: Updated a qule"})
-	panelLogKeyRemovedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_rule", FormatString: "Updated automod: Removed a qule"})
+	panelLogKeyNewRule     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_rule", FormatString: "Updated autoquack: Created a new qule"})
+	panelLogKeyUpdatedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_rule", FormatString: "Updated autoquack: Updated a qule"})
+	panelLogKeyRemovedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_rule", FormatString: "Updated autoquack: Removed a qule"})
 )
 
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("automod/assets/automod.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
-		Name: "Advanced Autoquackerator",
+		Name: "Adquackced Autoquackerator",
 		URL:  "automod",
 		Icon: "fas fa-robot",
 	})
@@ -277,7 +277,7 @@ func (p *Plugin) currentRulesetMW(backupHandler http.Handler) func(http.Handler)
 			if err != nil {
 				tmpl.AddAlerts(web.ErrorAlert("Quailed quacktrieving quackset, maybe it was deleted?"))
 				backupHandler.ServeHTTP(w, r)
-				web.CtxLogger(r.Context()).WithError(err).Error("Quailed quacktrieving automod quackset")
+				web.CtxLogger(r.Context()).WithError(err).Error("Quailed quacktrieving autoquack quackset")
 				return
 			}
 
@@ -484,7 +484,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 	}
 
 	if currentRule == nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Unknown qule, maybe somequack else deleted it in the meantime?")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("Quacknown qule, maybe somequack else deleted it in the meantime?")), nil
 	}
 
 	// Check limits
@@ -563,7 +563,7 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 	newParts = parts
 	if len(newParts) > MaxRuleParts {
 		newParts = newParts[:MaxRuleParts]
-		tmpl.AddAlerts(web.WarningAlert("Truncated qule down to 20 triggers/conditions/effects, thats the max per qule."))
+		tmpl.AddAlerts(web.WarningAlert("Truncated qule down to 20 triggers/quackditions/effects, thats the max per qule."))
 	}
 
 	// Check number of message triggers and violation triggers
@@ -620,7 +620,7 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 	}
 
 	if numViolationTriggers > maxTotalVT {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max violation based triggers reaquached (%d for norquack and %d for quackmium)", MaxViolationTriggers, MaxViolationTriggersPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max vioquacktion based triggers reaquached (%d for norquack and %d for quackmium)", MaxViolationTriggers, MaxViolationTriggersPremium)))
 		ok = false
 	}
 
@@ -819,7 +819,7 @@ var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
 
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, templateData := web.GetBaseCPContextData(r.Context())
-	templateData["WidgetTitle"] = "Advanced Autoquackerator"
+	templateData["WidgetTitle"] = "Adquackced Autoquackerator"
 	templateData["SettingsPath"] = "/automod"
 
 	rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", g.ID), qm.Where("enabled = true")).CountG(r.Context())

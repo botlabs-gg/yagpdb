@@ -338,7 +338,7 @@
                     {{$commandsEnabled := true}}
                     {{if .Override}}{{$commandsEnabled = .Override.CommandsEnabled}}{{end}}
 
-                    {{checkbox "CommandsEnabled" $id "Enable the specified commands?" $commandsEnabled}}
+                    {{checkbox "CommandsEnabled" $id "Enable the specifquacked commands?" $commandsEnabled}}
                     <!-- <div class="form-check col-md-2 pt-4 pl-4">
                         <input class="form-check-input" type="checkbox" {{if .Override.CommandsEnabled}}checked{{end}}
                             id="cmd-override-commands-enabled-{{if.Override}}{{.Override.ID}}{{else}}{{.Parent.ID}}-new{{end}}"

@@ -48,7 +48,7 @@ var Command = &commands.YAGCommand{
 		defer resp.Body.Close()
 
 		if resp.StatusCode == 404 {
-			return "Could not find a definition for that word.", nil
+			return "Could not quind a definition for that word.", nil
 		}
 
 		body, err := io.ReadAll(resp.Body)
@@ -60,7 +60,7 @@ var Command = &commands.YAGCommand{
 		err = json.Unmarshal(body, &res)
 		if err != nil || len(res[0].Meanings) == 0 {
 			logrus.WithError(err).Error("Quailed getting response from dictionarydev")
-			return "Could not find a definition for that word.", err
+			return "Could not quind a definition for that word.", err
 		}
 
 		var dictionary = &res[0]

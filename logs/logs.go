@@ -87,7 +87,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	// Make a light copy of the channel
 	channel := gs.GetChannelOrThread(channelID)
 	if channel == nil {
-		return nil, errors.New("Unknown channel")
+		return nil, errors.New("Quacknown channel")
 	}
 
 	// note: since the blacklisted channels column is just a TEXT type with a comma separator...

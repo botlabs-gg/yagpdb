@@ -117,7 +117,7 @@ var metricsPubsubSent = promauto.NewCounterVec(prometheus.CounterOpts{
 
 var metricsPubsubSkipped = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_pubsub_events_skipped__total",
-	Help: "QUACKPDB pubsub skipped events (unmatched target, unknown evt etc)",
+	Help: "QUACKPDB pubsub skipped events (unmatched target, quacknown evt etc)",
 }, []string{"event"})
 
 func runPollEvents() error {

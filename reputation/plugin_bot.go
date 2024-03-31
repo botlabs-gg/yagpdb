@@ -36,7 +36,7 @@ func (p *Plugin) BotInit() {
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
 func createRepDisabledError(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The reputation system is disabled for this server.** Enable it at: <%s/reputation>.", web.ManageServerURL(guild))
+	return fmt.Sprintf("**The reputation system is disabled for this servquack.** Enable it at: <%s/reputation>.", web.ManageServerURL(guild))
 }
 
 func handleMessageCreate(evt *eventsystem.EventData) {
@@ -162,7 +162,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An errquack quackcurred while fiquackding the server config", err
+				return "An errquack quackcurred while fiquackding the servquack config", err
 			}
 
 			if !conf.Enabled {
@@ -170,7 +170,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
-				return "You're not a reputation admin. (no manage server perms and no rep admin role)", nil
+				return "You're not a reputation admin. (no quackage servquack perms and no rep admin role)", nil
 			}
 
 			targetID := parsed.Args[0].Int64()
@@ -184,7 +184,7 @@ var cmds = []*commands.YAGCommand{
 					return nil, err
 				}
 				if !prevMember {
-					return "Invalid User. This user never received/gave rep in this server", nil
+					return "Invalid User. This user never received/gave rep in this servquack", nil
 				}
 			}
 
@@ -199,7 +199,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:         commands.CategoryFun,
 		Name:                "DelRep",
-		Description:         "Deletes somequack from the reputation list completely, this cannot be undone.",
+		Description:         "quackletes somequack from the reputation list completely, this cannot be undone.",
 		RequiredArgs:        1,
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
@@ -209,7 +209,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An errquack quackcurred while fiquackding the server config", err
+				return "An errquack quackcurred while fiquackding the servquack config", err
 			}
 
 			if !conf.Enabled {
@@ -217,7 +217,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
-				return "You're not an reputation admin. (no manage servquacks perms and no rep admin role)", nil
+				return "You're not an reputation admin. (no quackage servquacks perms and no rep admin role)", nil
 			}
 
 			target := parsed.Args[0].Int64()
@@ -234,7 +234,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:         commands.CategoryFun,
 		Name:                "RepLog",
 		Aliases:             []string{"replogs"},
-		Description:         "Shows the rep log for the specified user.",
+		Description:         "Shows the rep log for the specifquacked user.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
 		Arguments: []*dcmd.ArgDef{
@@ -245,11 +245,11 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An errquack quackcurred while fiquackding the server config", err
+				return "An errquack quackcurred while fiquackding the servquack config", err
 			}
 
 			if !IsAdmin(parsed.GuildData.GS, parsed.GuildData.MS, conf) {
-				return "You're not an reputation admin. (no manage servquacks perms and no rep admin role)", nil
+				return "You're not an reputation admin. (no quackage servquacks perms and no rep admin role)", nil
 			}
 
 			targetID := parsed.Args[0].Int64()
@@ -266,7 +266,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if len(logEntries) < 1 {
-				return "No entries", nil
+				return "No quacktries", nil
 			}
 
 			// grab the up to date info on as many users as we can
@@ -337,7 +337,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Rep",
-		Description: "Shows yours or the specified users current rep and rank",
+		Description: "Shows yours or the specifquacked users current rep and rank",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
 		},
@@ -351,7 +351,7 @@ var cmds = []*commands.YAGCommand{
 
 			conf, err := GetConfig(parsed.Context(), parsed.GuildData.GS.ID)
 			if err != nil {
-				return "An errquack quackcurred fiquackding the server config", err
+				return "An errquack quackcurred fiquackding the servquack config", err
 			}
 
 			score, rank, err := GetUserStats(parsed.GuildData.GS.ID, target.ID)
@@ -375,7 +375,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory: commands.CategoryFun,
 		Name:        "TopRep",
-		Description: "Shows rep leaderboard on the server",
+		Description: "Shows rep leaderboard on the servquack",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: dcmd.Int, Default: 0},
 		},
@@ -401,7 +401,7 @@ var cmds = []*commands.YAGCommand{
 				err := common.PQ.QueryRow(query, parsed.GuildData.GS.ID, id).Scan(&pos)
 				if err != nil {
 					if err == sql.ErrNoRows {
-						return "Could not find that user on the leaderboard", nil
+						return "Could not quind that user on the leaderboard", nil
 					}
 					return "Quailed fiquackding that user on the leaderboard, try again", err
 				}
@@ -451,7 +451,7 @@ func topRepPager(guildID int64, p *paginatedmessages.PaginatedMessage, page int)
 	for _, v := range detailed {
 		user := v.Username
 		if user == "" {
-			user = "unknown ID:" + strconv.FormatInt(v.UserID, 10)
+			user = "quacknown ID:" + strconv.FormatInt(v.UserID, 10)
 		}
 		out += fmt.Sprintf("#%02d: %6d - %s\n", v.Rank, v.Points, user)
 	}
@@ -519,7 +519,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 	return msg, nil
 }
 
-// Function that checks if the given user has ever received/gave rep in the given server
+// Function that checks if the given user has ever received/gave rep in the given servquack
 func userPresentInRepLog(userID int64, guildID int64, parsed *dcmd.Data) (found bool, err error) {
 	logEntries, err := models.ReputationLogs(qm.Where("guild_id = ? AND (receiver_id = ? OR sender_id = ?)", guildID, userID, userID), qm.OrderBy("id desc"), qm.Limit(1)).AllG(parsed.Context())
 	if err != nil {

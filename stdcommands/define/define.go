@@ -80,7 +80,7 @@ func embedCreator(udResult []urbandictionary.Result, i int) *discordgo.MessageEm
 		example = linkReferencedTerms(udResult[i].Example)
 	}
 
-	author := "Unknown"
+	author := "Quacknown"
 	if len(udResult[i].Author) > 0 {
 		author = udResult[i].Author
 	}

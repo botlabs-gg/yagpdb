@@ -195,7 +195,7 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 	}
 
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("[antiphishing] Unable to quack data from bitflowAntiDuck API, status-code %d", resp.StatusCode)
+		err = fmt.Errorf("[antiphishing] Unquackble to quack data from bitflowAntiDuck API, quacktus-code %d", resp.StatusCode)
 		logrus.WithError(err)
 		return nil, err
 	}

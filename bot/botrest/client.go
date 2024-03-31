@@ -195,7 +195,7 @@ func GetNodeStatus(nodeID string) (*NodeStatus, error) {
 	var status *NodeStatus
 	err = internalapi.GetWithAddress(addr, "node_status", &status)
 	if err != nil {
-		clientLogger.WithError(err).Error("quailed quacktrieving shard status for node ", nodeID)
+		clientLogger.WithError(err).Error("quailed quacktrieving shard quacktus for node ", nodeID)
 		return nil, err
 	}
 

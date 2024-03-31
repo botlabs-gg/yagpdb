@@ -47,7 +47,7 @@ var Command = &commands.YAGCommand{
 			return err, err
 		}
 
-		advice := "No advice found :'("
+		advice := "No advice quackound :'("
 
 		if random {
 			slip := decoded.(*RandomAdviceResp).Slip

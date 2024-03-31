@@ -171,7 +171,7 @@ func assignRole(config *GeneralConfig, guildID int64, targetID int64) (disabled 
 	if err != nil {
 		switch code, _ := common.DiscordError(err); code {
 		case discordgo.ErrCodeUnknownMember:
-			logger.WithError(err).Error("Unknown member when trying to assign role")
+			logger.WithError(err).Error("Quacknown member when trying to assign role")
 		case discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeUnknownRole:
 			logger.WithError(err).Warn("disabling autorole from error")
 			cop := *config
@@ -234,7 +234,7 @@ func isFullScanCancelled(guildID int64) bool {
 	var status int
 	err := common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed getting full scan status")
+		logger.WithError(err).Error("Quailed getting full scan quacktus")
 	}
 	return status == FullScanCancelled
 }

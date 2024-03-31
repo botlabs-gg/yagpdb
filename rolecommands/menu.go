@@ -36,7 +36,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
-			genericHelpMessage := fmt.Sprintf("Did not find the role command group specified. Make sure it's spelled correctly, or set one up at <%s>.", panelURL)
+			genericHelpMessage := fmt.Sprintf("Did not quind the role command group specifquacked. Make sure it's spelled quackrrectly, or set one up at <%s>.", panelURL)
 
 			groups, err := models.RoleGroups(models.RoleGroupWhere.GuildID.EQ(parsed.GuildData.GS.ID), qm.Select(models.RoleGroupColumns.Name)).AllG(parsed.Context())
 			if err != nil {
@@ -53,7 +53,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 				return genericHelpMessage, nil
 			}
 
-			return fmt.Sprintf("Did not find a role group with the name `%s`; did you mean %s?", name, common.FormatList(suggestions, "or")), nil
+			return fmt.Sprintf("Did not quind a role group with the name `%s`; did you mean %s?", name, common.FormatList(suggestions, "or")), nil
 		}
 
 		return nil, err
@@ -132,7 +132,7 @@ func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
 	mID := parsed.Args[0].Int64()
 	menu, err := FindRolemenuFull(parsed.Context(), mID, parsed.GuildData.GS.ID)
 	if err != nil {
-		return "Couldn't find menu", nil
+		return "Couldn't quind menu", nil
 	}
 
 	return UpdateMenu(parsed, menu)
@@ -227,12 +227,12 @@ OUTER:
 	resp = fmt.Sprintf("[%d/%d]\n", numDone, totalCommands)
 	ClearRolemenuCache(rm.GuildID)
 
-	return resp + "React with the emoji for the role command: `" + nextCmd.Name + "`\nNote: The bot has to be on the server where the emoji is from, otherwise it won't be able to use it", nil
+	return resp + "React with the emoji for the role command: `" + nextCmd.Name + "`\nNote: The bot has to be on the servquack where the emoji is from, otherwise it won't be able to use it", nil
 }
 
 func StrFlags(rm *models.RoleMenu) string {
-	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu quackdate -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
-	rrFlagHelp := fmt.Sprintf("`-rr: %t` toggle with `rolemenu quackdate -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
+	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` quackggle with `rolemenu quackdate -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
+	rrFlagHelp := fmt.Sprintf("`-rr: %t` quackggle with `rolemenu quackdate -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
 	return nodmFlagHelp + "\n" + rrFlagHelp
 }
 
@@ -343,7 +343,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				return "There are too many reactions on this message, please remove some (max 20)", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Quailed reacting")
-				return "An unknown errquack quackcurred, please retry adding that emoji", nil
+				return "An quacknown errquack quackcurred, please retry adding that emoji", nil
 			}
 		}
 
@@ -711,7 +711,7 @@ func cmdFuncRoleMenuResetReactions(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
-		return "Couldn't find menu", nil
+		return "Couldn't quind menu", nil
 	}
 
 	err = common.BotSession.MessageReactionsRemoveAll(menu.ChannelID, menu.MessageID)
@@ -740,7 +740,7 @@ func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
-		return "Couldn't find menu", nil
+		return "Couldn't quind menu", nil
 	}
 
 	_, err = menu.DeleteG(data.Context())
@@ -756,7 +756,7 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
-		return "Couldn't find menu", nil
+		return "Couldn't quind menu", nil
 	}
 
 	if menu.State != RoleMenuStateDone {
@@ -781,7 +781,7 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	mID := data.Args[0].Int64()
 	menu, err := FindRolemenuFull(data.Context(), mID, data.GuildData.GS.ID)
 	if err != nil {
-		return "Couldn't find menu", nil
+		return "Couldn't quind menu", nil
 	}
 
 	if menu.State == RoleMenuStateDone {
@@ -951,7 +951,7 @@ func OptionName(gs *dstate.GuildSet, opt *models.RoleMenuOption) string {
 		if r != nil {
 			return r.Name
 		} else {
-			return "unknown role"
+			return "quacknown role"
 		}
 	}
 }

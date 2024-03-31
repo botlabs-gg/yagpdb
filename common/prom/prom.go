@@ -30,7 +30,7 @@ func RegisterPlugin() {
 
 	logrus.Infof("Using port range %v", parsedPortRange)
 	if len(parsedPortRange) == 0 {
-		logrus.Warn("No prom ports defined, not launching prom server")
+		logrus.Warn("No prom ports defined, not launching prom servquack")
 		return
 	}
 	go startHTTPServer()
@@ -40,10 +40,10 @@ func startHTTPServer() {
 	for {
 		for _, p := range parsedPortRange {
 			listenAddr := fmt.Sprintf("%s:%d", ConfPromListenAddr.GetString(), p)
-			logrus.Infof("Attempting to start prom server on %s", listenAddr)
+			logrus.Infof("Attempting to start prom servquack on %s", listenAddr)
 			err := http.ListenAndServe(listenAddr, promhttp.Handler())
 			if err != nil {
-				logrus.WithError(err).Warn("quailed starting prom server, trying another port")
+				logrus.WithError(err).Warn("quailed starting prom servquack, trying another port")
 			}
 
 			time.Sleep(time.Second)

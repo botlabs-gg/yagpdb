@@ -87,7 +87,7 @@ func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	return fmt.Sprintf("Fetched: %v, ```json\n%s\n```", didFetch, string(serialized)), nil
+	return fmt.Sprintf("quacktched: %v, ```json\n%s\n```", didFetch, string(serialized)), nil
 }
 
 var botMember = &commands.YAGCommand{
@@ -114,5 +114,5 @@ func cmdFuncBotMember(data *dcmd.Data) (interface{}, error) {
 		}
 	}
 
-	return fmt.Sprintf("Bot member found on %d/%d guilds", numFound, numFound+numNotFound), nil
+	return fmt.Sprintf("Bot member quackound on %d/%d guilds", numFound, numFound+numNotFound), nil
 }

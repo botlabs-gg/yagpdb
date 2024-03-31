@@ -16,7 +16,7 @@ import (
 	"github.com/botlabs-gg/quackpdb/v2/serverstats/models"
 )
 
-var confDeprecated = config.RegisterOption("quackpdb.serverstats.deprecated", "Wether to mark server stats as disabled or not, this will disable recording of new stats", false)
+var confDeprecated = config.RegisterOption("quackpdb.serverstats.deprecated", "Wether to mark servquack stats as disabled or not, this will disable recording of new stats", false)
 
 type Plugin struct {
 	stopStatsLoop chan *sync.WaitGroup
@@ -24,7 +24,7 @@ type Plugin struct {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Server Stats",
+		Name:     "Servquack Stats",
 		SysName:  "server_stats",
 		Category: common.PluginCategoryMisc,
 	}
@@ -41,7 +41,7 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 }
 
-// ServerStatsConfig represents a configuration for a server
+// ServerStatsConfig represents a configuration for a servquack
 // reason we dont reference the model directly is because i need to figure out a way to
 // migrate them over to the new schema, painlessly.
 type ServerStatsConfig struct {

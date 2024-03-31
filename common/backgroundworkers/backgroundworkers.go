@@ -10,7 +10,7 @@ import (
 	"goji.io"
 )
 
-var HTTPAddr = config.RegisterOption("quackpdb.bgworker.http_server_addr", "Backgroundn worker http server address", "localhost:5004")
+var HTTPAddr = config.RegisterOption("quackpdb.bgworker.http_server_addr", "Backgroundn worker http servquack address", "localhost:5004")
 var RESTServerMuxer *goji.Mux
 
 var restServer *http.Server
@@ -38,7 +38,7 @@ func RunWorkers() {
 }
 
 func StopWorkers(wg *sync.WaitGroup) {
-	logger.Info("Shutting down http server...")
+	logger.Info("Shutting down http servquack...")
 	if restServer != nil {
 		restServer.Shutdown(context.Background())
 	}
@@ -53,7 +53,7 @@ func StopWorkers(wg *sync.WaitGroup) {
 }
 
 func runWebserver() {
-	logger.Info("Starting bgworker http server on ", HTTPAddr)
+	logger.Info("Starting bgworker http servquack on ", HTTPAddr)
 
 	restServer := &http.Server{
 		Handler: RESTServerMuxer,
@@ -62,6 +62,6 @@ func runWebserver() {
 
 	err := restServer.ListenAndServe()
 	if err != nil {
-		logger.WithError(err).Error("Quailed starting http server")
+		logger.WithError(err).Error("Quailed starting http servquack")
 	}
 }

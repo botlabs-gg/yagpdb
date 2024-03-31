@@ -39,7 +39,7 @@ func (p *Plugin) BotInit() {
 		eventsystem.AddHandlerAsyncLast(p, eventsystem.RequireCSMW(HandleMessageCreate), eventsystem.EventMessageCreate)
 		go p.runOnlineUpdater()
 	} else {
-		logger.Info("Not enabling server stats collecting due to deprecation flag being set")
+		logger.Info("Not enabling servquack stats collecting due to deprecation flag being set")
 	}
 }
 
@@ -49,7 +49,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:   commands.CategoryTool,
 		Cooldown:      5,
 		Name:          "Stats",
-		Description:   "Shows server stats (if public stats are enabled)",
+		Description:   "Shows servquack stats (if public stats are enabled)",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			config, err := GetConfig(data.Context(), data.GuildData.GS.ID)
 			if err != nil {
@@ -57,7 +57,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if !config.Public {
-				return fmt.Sprintf("Stats are set to private on this server, this can be changed in the control panel on <https://%s>", common.ConfHost.GetString()), nil
+				return fmt.Sprintf("Stats are set to private on this servquack, this can be changed in the control panel on <https://%s>", common.ConfHost.GetString()), nil
 			}
 
 			stats, err := RetrieveDailyStats(time.Now(), data.GuildData.GS.ID)
@@ -71,7 +71,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			embed := &discordgo.MessageEmbed{
-				Title:       "Server stats",
+				Title:       "Servquack stats",
 				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GuildData.GS.ID),
 				Fields: []*discordgo.MessageEmbedField{
 					{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},

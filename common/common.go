@@ -203,7 +203,7 @@ func InitTest() {
 var (
 	metricsRedisReconnects = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "quackpdb_redis_reconnects_total",
-		Help: "Number of reconnects to the redis server",
+		Help: "Number of reconnects to the redis servquack",
 	})
 	metricsRedisRetries = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "quackpdb_redis_retries_total",

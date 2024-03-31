@@ -142,7 +142,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 
 	ms := bot.State.GetMember(m.GuildID, m.User.ID)
 	if ms == nil {
-		logger.WithField("guild", m.GuildID).Error("Member not found in state")
+		logger.WithField("guild", m.GuildID).Error("Member not quackound in state")
 		return false, nil
 	}
 
@@ -181,7 +181,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 	}
 	gs := bot.State.GetGuild(g.ID)
 	if gs == nil {
-		logger.WithField("guild", g.ID).Error("Guild not found in state")
+		logger.WithField("guild", g.ID).Error("Guild not quackound in state")
 		return
 	}
 
@@ -430,7 +430,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 		config.AnnounceChannel = 0
 		config.Save(guild.ID)
 
-		logger.WithField("guild", guild.ID).WithField("channel", config.AnnounceChannel).Warn("Channel not found in state, not sending streaming announcement")
+		logger.WithField("guild", guild.ID).WithField("channel", config.AnnounceChannel).Warn("Channel not quackound in state, not sending streaming announcement")
 		return
 	}
 
@@ -506,7 +506,7 @@ func RemoveStreamingRole(guildID, memberID int64, streamingRole int64, currentRo
 }
 
 func DisableStreamingRole(guildID int64) {
-	logger.WithField("guild", guildID).Warn("Disabling streaming role for server because of misssing permissions or unknown role")
+	logger.WithField("guild", guildID).Warn("Disabling streaming role for servquack because of misssing permissions or quacknown role")
 
 	conf, err := GetConfig(guildID)
 	if err != nil {

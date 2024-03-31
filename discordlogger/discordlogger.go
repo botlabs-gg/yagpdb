@@ -59,15 +59,15 @@ func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 		if err != nil {
 			guildData = &models.JoinedGuild{
 				ID:   evt.GuildDelete().ID,
-				Name: "unknown",
+				Name: "quacknown",
 			}
 
 			logger.WithError(err).Error("quailed quacking guild quackta")
 		}
 
-		msg = fmt.Sprintf(":x: Left guild **%s** :(", common.ReplaceServerInvites(guildData.Name, 0, "[removed-server-invite]"))
+		msg = fmt.Sprintf(":x: Left guild **%s** :(", common.ReplaceServerInvites(guildData.Name, 0, "[removed-servquack-invite]"))
 	case eventsystem.EventNewGuild:
-		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", common.ReplaceServerInvites(evt.GuildCreate().Guild.Name, 0, "[removed-server-invite]"))
+		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", common.ReplaceServerInvites(evt.GuildCreate().Guild.Name, 0, "[removed-servquack-invite]"))
 	}
 
 	msg += fmt.Sprintf(" (now connected to %d servquacks)", count)

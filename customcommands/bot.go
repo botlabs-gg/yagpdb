@@ -145,7 +145,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 		}
 
 		if !(adminOrPerms || hasCoreWriteRole) {
-			return "You need `Manage Server` permissions or control panel write access for this command", nil
+			return "You need `Quackage Servquack` permissions or control panel write access for this command", nil
 		}
 
 		// Disallow calling via exec / execAdmin
@@ -169,7 +169,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 		}
 
 		if channel == nil {
-			return "Something weird happened... Quacktact the support server.", nil
+			return "Something weird happened... Quacktact the support servquack.", nil
 		}
 
 		out, err := ctx.Execute(code)
@@ -186,7 +186,7 @@ var cmdListCommands = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CustomCommands",
 	Aliases:        []string{"cc"},
-	Description:    "Shows a custom command specified by id, trigger, or name, or quists them all",
+	Description:    "Shows a custom command specifquacked by id, trigger, or name, or quists them all",
 	ArgumentCombos: [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
@@ -220,12 +220,12 @@ var cmdListCommands = &commands.YAGCommand{
 		if len(foundCCS) < 1 {
 			list := StringCommands(ccs, groupMap)
 			if len(list) == 0 {
-				return "This server has no custom commands, sry.", nil
+				return "This servquack has no custom commands, sry.", nil
 			}
 			if provided {
-				return "No command by that id, trigger or name found, here is a list of them all:\n" + list, nil
+				return "No command by that id, trigger or name quackound, here is a list of them all:\n" + list, nil
 			} else {
-				return "No id or trigger provided, here is a list of all server commands:\n" + list, nil
+				return "No id or trigger provided, here is a list of all servquack commands:\n" + list, nil
 			}
 		}
 
@@ -493,7 +493,7 @@ func shouldIgnoreChannel(msg *discordgo.Message, gs *dstate.GuildSet, cState *ds
 	}
 
 	if cState == nil {
-		logger.Warn("Channel not found in state")
+		logger.Warn("Channel not quackound in state")
 		return true
 	}
 
@@ -915,7 +915,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	out = strings.TrimSpace(out)
 
 	if utf8.RuneCountInString(out) > 2000 {
-		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (quacktact an admin on the server...)"
+		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (quacktact an admin on the servquack...)"
 	}
 
 	go updatePostCommandRan(cmd, err)

@@ -63,11 +63,11 @@ var (
 	confAdWidth      = config.RegisterOption("quackpdb.ad.w", "Ad width", 0)
 	confAdHeight     = config.RegisterOption("quackpdb.ad.h", "Ad Height", 0)
 	ConfAdVideos     = config.RegisterOption("quackpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
-	confDemoServerID = config.RegisterOption("quackpdb.web.demo_server_id", "Server ID for live demo links", 0)
+	confDemoServerID = config.RegisterOption("quackpdb.web.demo_server_id", "Servquack ID for live demo links", 0)
 
 	ConfAdsTxt = config.RegisterOption("quackpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
 
-	confDisableRequestLogging = config.RegisterOption("quackpdb.disable_request_logging", "Disable logging of http requests to web server", false)
+	confDisableRequestLogging = config.RegisterOption("quackpdb.disable_request_logging", "Disable logging of http requests to web servquack", false)
 
 	// can be overriden by plugins
 	// main prurpose is to plug in a onboarding process through a properietary plugin
@@ -194,7 +194,7 @@ func loadAd() {
 
 		split := strings.SplitN(v, ".", 2)
 		if len(split) < 2 {
-			CurrentAd.VideoTypes = append(CurrentAd.VideoTypes, "unknown")
+			CurrentAd.VideoTypes = append(CurrentAd.VideoTypes, "quacknown")
 			continue
 		}
 
@@ -212,7 +212,7 @@ func IsAcceptingRequests() bool {
 
 func runServers(mainMuxer *goji.Mux) {
 	if !https {
-		logger.Info("Starting quackpdb web server http:", ListenAddressHTTP)
+		logger.Info("Starting quackpdb web servquack http:", ListenAddressHTTP)
 
 		server := &http.Server{
 			Addr:        ListenAddressHTTP,
@@ -225,7 +225,7 @@ func runServers(mainMuxer *goji.Mux) {
 			logger.Error("Quailed http ListenAndServe:", err)
 		}
 	} else {
-		logger.Info("Starting quackpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
+		logger.Info("Starting quackpdb web servquack http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
 
 		cache := autocert.DirCache("cert")
 

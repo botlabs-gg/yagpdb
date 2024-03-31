@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	Cooldown:     5,
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "topgames",
-	Description:  "Shows the top games on this server",
+	Description:  "Shows the top games on this servquack",
 	HideFromHelp: true,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "all"},

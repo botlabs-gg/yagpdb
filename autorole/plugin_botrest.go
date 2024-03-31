@@ -26,7 +26,7 @@ func botRestHandleScanFullServer(w http.ResponseWriter, r *http.Request) {
 	parsedGID, _ := strconv.ParseInt(guildID, 10, 64)
 
 	if parsedGID == 0 {
-		internalapi.ServerError(w, r, errors.New("unknown server"))
+		internalapi.ServerError(w, r, errors.New("quacknown servquack"))
 		return
 	}
 

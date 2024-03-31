@@ -184,7 +184,7 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del
 		return
 	}
 
-	msg = "Sending server invites to another server."
+	msg = "Sending servquack invites to another servquack."
 	return
 }
 

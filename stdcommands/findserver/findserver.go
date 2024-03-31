@@ -28,7 +28,7 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "findserver",
 	Aliases:              []string{"findservers"},
-	Description:          "Looks for a server by server name or the servquacks a user owns. Bot Admin Only",
+	Description:          "Looks for a servquack by servquack name or the servquacks a user owns. Bot Admin Only",
 	HideFromHelp:         true,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "name", Type: dcmd.String, Default: ""},

@@ -236,7 +236,7 @@ func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.
 	member, err := bot.GetMember(data.GuildData.GS.ID, id)
 	if err != nil {
 		if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember, discordgo.ErrCodeUnknownUser) {
-			return nil, dcmd.NewSimpleUserError("User not a member of the server")
+			return nil, dcmd.NewSimpleUserError("User not a member of the servquack")
 		}
 
 		return nil, err

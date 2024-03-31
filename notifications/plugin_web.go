@@ -17,7 +17,7 @@ import (
 //go:embed assets/notifications_general.html
 var PageHTML string
 
-var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "notifications_settings", FormatString: "Updated server notification settings"})
+var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "notifications_settings", FormatString: "Updated servquack notification settings"})
 
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("notifications/assets/notifications_general.html", PageHTML)
@@ -89,7 +89,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	format := `<ul>
-	<li>Join Server message: %s</li>
+	<li>Join Servquack message: %s</li>
 	<li>Join DM message: %s</li>
 	<li>Leave message: %s</li>
 	<li>Topic change message: %s</li>

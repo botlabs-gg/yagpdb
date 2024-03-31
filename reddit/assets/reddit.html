@@ -17,7 +17,7 @@
                     </a></li>
                 <li class="nav-item"><a class="nav-link" href="#slow-feeds" aria-controls="slow-feeds" role="tab"
                         data-toggle="tab">
-                        Slow / Advanced
+                        Slow / Adquackced
                     </a></li>
             </ul>
             <div class="tab-content">
@@ -39,7 +39,7 @@
 <div class="row mb-5 pb-2">
     <div class="col-md-6">
         <h3>{{if .Slow}}Slow{{else}}Fast{{end}} reddit feeds</h3>
-        <p>Reddit feeds will post posts from subreddits in your discord server, the fast feed is ratelimited at 300
+        <p>Reddit feeds will post posts from subreddits in your discord servquack, the fast feed is ratelimited at 300
             posts per hour and the slow feed is 200.</p>
         <p>{{if .Slow}}<b>Slow</b> feeds are 15 minutes behind so that you can apply score filters to them to only post
             popular posts in your discord. Useful for big subs. If you have it set to 10 it means that if the post has a
@@ -48,7 +48,7 @@
             for that.{{end}}</p>
         <p>The subreddit field is just the name of the subreddit (no /r/ in front of it), examples: "games",
             "multicopter"</p>
-        <p><b>If Server Channel is set to "None" the added or already active Reddit feed will be disabled.</b></p>
+        <p><b>If Servquack Channel is set to "None" the added or already active Reddit feed will be disabled.</b></p>
     </div>
     <div class="col-md-6">
         <h3>New feed</h3>
@@ -61,7 +61,7 @@
                         placeholder="discord_irl">
                 </div>
                 <div class="form-group col">
-                    <label for="new-channel-slow-{{.Slow}}">Server Channel</label>
+                    <label for="new-channel-slow-{{.Slow}}">Servquack Channel</label>
                     <select id="new-channel-slow-{{.Slow}}" class="form-control" name="channel">
                         {{textChannelOptions .Dot.ActiveGuild.Channels nil false ""}}
                     </select>
@@ -69,7 +69,7 @@
             </div>
             <div class="form-row mb-3">
                 <div class="form-group col">
-                    <label>NSFW Filtering</label>
+                    <label>NSFW Quacktering</label>
                     <select name="nsfw_filter" class="form-control">
                         <option value="0">None</option>
                         <option value="1">Ignore NSFW Posts</option>
@@ -105,7 +105,7 @@
                     <p class="form-control-static"><a class="feedlink" href="https://reddit.com/r/{{.Subreddit}}" target="_blank">r/{{.Subreddit}}</a></p>
                 </div>
                 <div class="form-group col">
-                    <label for="channel-feed-{{.ID}}">Server Channel</label>
+                    <label for="channel-feed-{{.ID}}">Servquack Channel</label>
                     <select id="channel-feed-{{.ID}}" class="form-control" name="channel">
                         {{textChannelOptions $channels .ChannelID false ""}}
                     </select>
@@ -115,7 +115,7 @@
         <div class="col-lg">
             <div class="form-row">
                 <div class="form-group col">
-                    <label>NSFW Filtering</label>
+                    <label>NSFW Quacktering</label>
                     <select name="nsfw_filter" class="form-control">
                         <option value="0" {{if eq .FilterNSFW 0}}selected{{end}}>None</option>
                         <option value="1" {{if eq .FilterNSFW 1}}selected{{end}}>Ignore NSFW Posts</option>

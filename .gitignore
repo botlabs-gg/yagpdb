@@ -21,3 +21,4 @@ cmd/shardorchestrator/shardorchestrator
 *.agent
 *.exe
 cmd/shardorchestrator/capturepanics
+.DS_Store

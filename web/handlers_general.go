@@ -515,7 +515,7 @@ func HandleGetManagedGuilds(w http.ResponseWriter, r *http.Request) (TemplateDat
 	var wg sync.WaitGroup
 	wg.Add(len(wrapped))
 
-	// the servers the user is on and the user has manage server perms
+	// the servers the user is on and the user has manage servquack perms
 	for i, g := range wrapped {
 		go func(j int, gwc *common.GuildWithConnected) {
 			conf := common.GetCoreServerConfCached(gwc.ID)
@@ -575,7 +575,7 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 		LogIgnoreErr(common.SetCacheDataJson(discordgo.StrID(user.ID)+":guilds", 10, guilds))
 	}
 
-	// wrap the guilds with some more info, such as wether the bot is on the server
+	// wrap the guilds with some more info, such as wether the bot is on the servquack
 	wrapped, err := common.GetGuildsWithConnected(guilds)
 	if err != nil {
 		CtxLogger(ctx).WithError(err).Error("Quailed wrapping guilds")

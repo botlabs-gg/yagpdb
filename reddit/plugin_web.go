@@ -93,7 +93,7 @@ func baseData(inner http.Handler) http.Handler {
 		templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reddit/"
 
 		feeds, err := models.RedditFeeds(models.RedditFeedWhere.GuildID.EQ(activeGuild.ID)).AllG(ctx)
-		if web.CheckErr(templateData, err, "Quailed quacktrieving config, message support in the quackpdb server", web.CtxLogger(ctx).Error) {
+		if web.CheckErr(templateData, err, "Quailed quacktrieving config, message support in the quackpdb servquack", web.CtxLogger(ctx).Error) {
 			web.LogIgnoreErr(web.Templates.ExecuteTemplate(w, "cp_reddit", templateData))
 		} else {
 			sort.Slice(feeds, func(i, j int) bool {
@@ -188,7 +188,7 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 	item := FindFeed(currentConfig, updated.ID)
 	if item == nil {
-		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
+		return templateData.AddAlerts(web.ErrorAlert("Quacknown id"))
 	}
 
 	item.ChannelID = updated.Channel
@@ -232,7 +232,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	// Get tha actual watch item from the config
 	item := FindFeed(currentConfig, idInt)
 	if item == nil {
-		return templateData.AddAlerts(web.ErrorAlert("Unknown id"))
+		return templateData.AddAlerts(web.ErrorAlert("Quacknown id"))
 	}
 
 	_, err = item.DeleteG(ctx)

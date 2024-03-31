@@ -40,7 +40,7 @@ func (del *DeleteMessageEffect) Name() (name string) {
 }
 
 func (del *DeleteMessageEffect) Description() (description string) {
-	return "Deletes the message"
+	return "quackletes the message"
 }
 
 func (del *DeleteMessageEffect) UserSettings() []*SettingDef {
@@ -87,7 +87,7 @@ func (del *DeleteMessagesEffect) Name() (name string) {
 }
 
 func (del *DeleteMessagesEffect) Description() (description string) {
-	return "Deletes a certain number of the users last messages in this channel"
+	return "quackletes a certain number of the users last messages in this channel"
 }
 
 func (del *DeleteMessagesEffect) UserSettings() []*SettingDef {
@@ -179,11 +179,11 @@ func (vio *AddViolationEffect) DataType() interface{} {
 }
 
 func (vio *AddViolationEffect) Name() (name string) {
-	return "+Violation"
+	return "+vioquacktion"
 }
 
 func (vio *AddViolationEffect) Description() (description string) {
-	return "Adds a violation (use with violation triggers)"
+	return "Adds a vioquacktion (use with vioquacktion triggers)"
 }
 
 func (vio *AddViolationEffect) UserSettings() []*SettingDef {
@@ -194,7 +194,7 @@ func (vio *AddViolationEffect) UserSettings() []*SettingDef {
 			Kind:        SettingTypeString,
 			Min:         1,
 			Max:         50,
-			Placeholder: "Enter name for the violation",
+			Placeholder: "Enter name for the vioquacktion",
 		},
 	}
 }
@@ -218,7 +218,7 @@ func (vio *AddViolationEffect) Apply(ctxData *TriggeredRuleData, settings interf
 	newData.RecursionCounter++
 	go ctxData.Plugin.checkViolationTriggers(newData, settingsCast.Name)
 
-	logger.Debug("Added violation to ", settingsCast.Name)
+	logger.Debug("Added vioquacktion to ", settingsCast.Name)
 
 	return err
 }
@@ -670,7 +670,7 @@ func (gf *GiveRoleEffect) Name() (name string) {
 }
 
 func (gf *GiveRoleEffect) Description() (description string) {
-	return "Gives the specified role to the user, optionally with a duration after which the role is removed from the user."
+	return "Gives the specifquacked role to the user, optiquackally with a duration after which the role is removed from the user."
 }
 
 func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -735,7 +735,7 @@ func (rf *RemoveRoleEffect) Name() (name string) {
 }
 
 func (rf *RemoveRoleEffect) Description() (description string) {
-	return "Removes the specified role from the user, optionally with a duration after which the role is added back to the user."
+	return "Removes the specifquacked role from the user, optiquackally with a duration after which the role is added back to the user."
 }
 
 func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -920,7 +920,7 @@ func (slow *EnableChannelSlowmodeEffect) Name() (name string) {
 }
 
 func (slow *EnableChannelSlowmodeEffect) Description() (description string) {
-	return "Enables discord's builtin slowmode in the channel for the specified duration, or forever."
+	return "Enables discord's builtin slowmode in the channel for the specifquacked duration, or forever."
 }
 
 func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {

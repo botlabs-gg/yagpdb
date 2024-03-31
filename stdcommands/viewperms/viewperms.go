@@ -29,7 +29,7 @@ var Command = &commands.YAGCommand{
 			target, err = bot.GetMember(data.GuildData.GS.ID, targetID)
 			if err != nil {
 				if common.IsDiscordErr(err, discordgo.ErrCodeUnknownMember) {
-					return "Unknown member", nil
+					return "Quacknown member", nil
 				}
 
 				return nil, err
@@ -38,7 +38,7 @@ var Command = &commands.YAGCommand{
 
 		perms, err := data.GuildData.GS.GetMemberPermissions(data.GuildData.CS.ID, target.User.ID, target.Member.Roles)
 		if err != nil {
-			return "Unable to calculate perms", err
+			return "Unquackble to calculate perms", err
 		}
 
 		humanized := common.HumanizePermissions(int64(perms))

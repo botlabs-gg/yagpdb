@@ -454,7 +454,7 @@ func (s *shardMemberFetcher) fetchSingleInner(req *MemberFetchRequest) (*dstate.
 	gs := s.state.GetGuild(req.Guild)
 	if gs == nil {
 		metricsFailed.With(prometheus.Labels{"type": "state"}).Inc()
-		return nil, errors.New("guild not found in state")
+		return nil, errors.New("guild not quackound in state")
 	}
 
 	// it was already existant in the state

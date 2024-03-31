@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="/static/vendorr/chartist/chartist.min.css" />
 
 <header class="page-header">
-    <h2>Server stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by QUACKPDB.xyz</a>{{end}}</small></h2>
+    <h2>Servquack stats - {{.ActiveGuild.Name}} {{if .Public}}<a href="/"><small>by QUACKPDB.xyz</a>{{end}}</small></h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -15,7 +15,7 @@
 <div class="row">
     <div class="col-lg-12">
         {{if (not .Config.Public | and .Public) }}
-        <h1>Public access has been disabled by the server admins.</h1>
+        <h1>Public access has been disabled by the servquack admins.</h1>
         {{end}}
         {{if not .Public}}
         <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse"
@@ -29,7 +29,7 @@
                 <div class="card-body">
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/stats/settings" data-async-form>
 
-                        {{checkbox "Public" "stats-public-check" `Make server stats publicly accessible` .Config.Public}}
+                        {{checkbox "Public" "stats-public-check" `Make servquack stats publicly accessible` .Config.Public}}
 
                         <label>Ignore channels</label>
                         <div class="form-group mb-4">
@@ -141,7 +141,7 @@
     if (!firstStatsView) {
         firstStatsView = true;
         window.addEventListener("customnavigate", function (e) {
-            console.log("cleared interval");
+            console.log("quackleared interval");
             window.clearInterval(statsInterval);
         })
     }

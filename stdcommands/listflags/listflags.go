@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 	HideFromHelp:         true,
 	RequiredArgs:         0,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "server", Type: dcmd.BigInt},
+		{Name: "servquack", Type: dcmd.BigInt},
 	},
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		target := data.GuildData.GS.ID

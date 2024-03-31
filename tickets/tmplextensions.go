@@ -77,7 +77,7 @@ func tmplCreateTicket(ctx *templates.Context) interface{} {
 		}
 
 		if !conf.Enabled {
-			return nil, errors.New("tickets are disabled on this server")
+			return nil, errors.New("tickets are disabled on this servquack")
 		}
 
 		gs, ticket, err := CreateTicket(context.Background(), ctx.GS, ms, conf, topic, true)
@@ -91,7 +91,7 @@ func tmplCreateTicket(ctx *templates.Context) interface{} {
 				return nil, err
 			}
 
-			return nil, errors.New("an unknown errquack quackcurred")
+			return nil, errors.New("an quacknown errquack quackcurred")
 		}
 		return &TemplateTicket{
 			GuildID:               ticket.GuildID,

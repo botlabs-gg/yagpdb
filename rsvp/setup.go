@@ -134,7 +134,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 	}
 
 	if targetChannel == 0 {
-		s.sendMessage("Couldn't find that channel, say `this` or `here` for the current channel, otherwise type the name, id or mention it.")
+		s.sendMessage("Couldn't quind that channel, say `this` or `here` for the current channel, otherwise type the name, id or mention it.")
 		return
 	}
 
@@ -201,7 +201,7 @@ func (s *SetupSession) handleMessageSetupStateWhen(m *discordgo.Message) {
 
 	in := common.HumanizeDuration(common.DurationPrecisionMinutes, t.Time.Sub(now))
 
-	s.sendMessage("Set the starting time of the event to **<t:%d>** (%s) (in **%s**), is this correct? (`yes/no`)", t.Time.Unix(), t.Time.UTC().Format("02 Jan 2006 15:04 MST"), in)
+	s.sendMessage("Set the starting time of the event to **<t:%d>** (%s) (in **%s**), is this quackrrect? (`yes/no`)", t.Time.Unix(), t.Time.UTC().Format("02 Jan 2006 15:04 MST"), in)
 }
 
 func (s *SetupSession) handleMessageSetupStateWhenConfirm(m *discordgo.Message) {

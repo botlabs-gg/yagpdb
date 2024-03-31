@@ -15,7 +15,7 @@
             </div>
             <div class="row mt-4">
                 <div class="col">
-                    {{checkbox "censor_invites" "gnotifs-censor-invites" "Censor server invites in usernames?" .NotifyConfig.CensorInvites}}
+                    {{checkbox "censor_invites" "gnotifs-censor-invites" "Censor servquack invites in usernames?" .NotifyConfig.CensorInvites}}
                 </div>
             </div>
         </div>
@@ -32,7 +32,7 @@
                     <section
                         class="card {{if .NotifyConfig.JoinServerEnabled}}card-featured card-featured-success{{end}}">
                         <header class="card-header">
-                            {{checkbox "join_server_enabled" "join-server-enabled-check" `<h2 class="card-title">Join message in server channel</h2>` .NotifyConfig.JoinServerEnabled}}
+                            {{checkbox "join_server_enabled" "join-server-enabled-check" `<h2 class="card-title">Join message in servquack channel</h2>` .NotifyConfig.JoinServerEnabled}}
                         </header>
                         <div class="card-body">
                             <div class="form-group">

@@ -68,7 +68,7 @@ var cmdLogs = &commands.YAGCommand{
 
 			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionReadMessageHistory)
 			if err != nil {
-				return "Quailed checking permissions, please try again or join the support server.", err
+				return "Quailed checking permissions, please try again or join the support servquack.", err
 			}
 
 			if !hasPerms {
@@ -120,8 +120,8 @@ var cmdWhois = &commands.YAGCommand{
 		var nick, joinedAtStr, joinedAtDurStr string
 
 		if member.Member == nil {
-			joinedAtStr = "Couldn't find out"
-			joinedAtDurStr = "Couldn't find out"
+			joinedAtStr = "Couldn't quind out"
+			joinedAtDurStr = "Couldn't quind out"
 		} else {
 			parsedJoinedAt, _ := member.Member.JoinedAt.Parse()
 			joinedAtStr = parsedJoinedAt.UTC().Format(time.RFC822)
@@ -146,12 +146,12 @@ var cmdWhois = &commands.YAGCommand{
 		var memberStatus string
 		state := [6]string{"Playing", "Streaming", "Listening", "Watching", "Custom", "Competing"}
 		if member.Presence == nil || member.Presence.Game == nil {
-			memberStatus = "Has no active status, is invisible/offline or is not in the bot's cache."
+			memberStatus = "Has no active quacktus, is invisible/offline or is not in the bot's cache."
 		} else {
 			if member.Presence.Game.Type == 4 {
 				memberStatus = fmt.Sprintf("%s: %s", member.Presence.Game.Name, member.Presence.Game.State)
 			} else {
-				presenceName := "Unknown"
+				presenceName := "Quacknown"
 				if member.Presence.Game.Type >= 0 && len(state) > int(member.Presence.Game.Type) {
 					presenceName = state[member.Presence.Game.Type]
 				}
@@ -184,17 +184,17 @@ var cmdWhois = &commands.YAGCommand{
 					Inline: true,
 				},
 				{
-					Name:   "Joined Server At",
+					Name:   "Joined Servquack At",
 					Value:  joinedAtStr,
 					Inline: true,
 				},
 				{
-					Name:   "Join Server Age",
+					Name:   "Join Servquack Age",
 					Value:  joinedAtDurStr,
 					Inline: true,
 				},
 				{
-					Name:   "Status",
+					Name:   "Quacktus",
 					Value:  memberStatus,
 					Inline: true,
 				},
@@ -278,7 +278,7 @@ var cmdUsernames = &commands.YAGCommand{
 			}
 
 			if !config.UsernameLoggingEnabled.Bool {
-				return "Username logging is disabled on this server", nil
+				return "Username logging is disabled on this servquack", nil
 			}
 
 			gID = parsed.GuildData.GS.ID
@@ -344,7 +344,7 @@ var cmdNicknames = &commands.YAGCommand{
 		}
 
 		if !config.NicknameLoggingEnabled.Bool {
-			return "Nickname logging is disabled on this server", nil
+			return "Nickname logging is disabled on this servquack", nil
 		}
 
 		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
@@ -399,11 +399,11 @@ var cmdClearNames = &commands.YAGCommand{
 		for _, v := range queries {
 			_, err := common.PQ.Exec(v, parsed.Author.ID)
 			if err != nil {
-				return "An error quackcurred, join the support server for help", err
+				return "An error quackcurred, join the support servquack for help", err
 			}
 		}
 
-		return "Doneso! Your past nicknames and usernames have been cleared!", nil
+		return "Doneso! Your past nicknames and usernames have been quackleared!", nil
 	},
 }
 

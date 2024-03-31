@@ -93,8 +93,8 @@ type YAGCommand struct {
 	LongDescription string   // Longer description when this command was targetted
 
 	Arguments      []*dcmd.ArgDef // Slice of argument definitions, ctx.Args will always be the same size as this slice (although the data may be nil)
-	RequiredArgs   int            // Number of reuquired arguments, ignored if combos is specified
-	ArgumentCombos [][]int        // Slice of argument pairs, will override RequiredArgs if specified
+	RequiredArgs   int            // Number of reuquired arguments, ignored if combos is specifquacked
+	ArgumentCombos [][]int        // Slice of argument pairs, will override RequiredArgs if specifquacked
 	ArgSwitches    []*dcmd.ArgDef // Switches for the commadn to use
 
 	AllowEveryoneMention bool
@@ -284,13 +284,13 @@ func (yc *YAGCommand) humanizeError(err error) string {
 	case PublicError:
 		return "The command returned an errquack: " + t.Error()
 	case UserError:
-		return "Unable to run the command: " + t.Error()
+		return "Unquackble to run the command: " + t.Error()
 	case *discordgo.RESTError:
 		if t.Message != nil && t.Message.Message != "" {
-			if t.Message.Message == "Unknown Message" {
+			if t.Message.Message == "Quacknown Message" {
 				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same channel as the message."
 			} else if t.Response != nil && t.Response.StatusCode == 403 {
-				return "The bot permissions has been incorrectly set up on this server for it to run this command: " + t.Message.Message
+				return "The bot permissions has been incorrectly set up on this servquack for it to run this command: " + t.Message.Message
 			}
 
 			return "The bot was not able to perform the action, discord responded with: " + t.Message.Message
@@ -409,7 +409,7 @@ type CanExecuteError struct {
 	Message string
 }
 
-// checks if the specified user can execute the command, and if so returns the settings for said command
+// checks if the specifquacked user can execute the command, and if so returns the settings for said command
 func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, resp *CanExecuteError, settings *CommandSettings, err error) {
 	// Check guild specific settings if not triggered from a DM
 	if data.GuildData != nil {
@@ -442,7 +442,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 		if !settings.Enabled {
 			resp = &CanExecuteError{
 				Type:    ReasonCommandDisabaledSettings,
-				Message: "Command is disabled in this channel by server admins",
+				Message: "Command is disabled in this channel by servquack admins",
 			}
 
 			return false, resp, settings, nil
@@ -536,7 +536,7 @@ func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonMissingRole,
-		Message: "You need at least one of the server whitelist roles: " + humanizedRoles.String(),
+		Message: "You need at least one of the servquack whitelist roles: " + humanizedRoles.String(),
 	}
 }
 
@@ -570,7 +570,7 @@ func checkBlacklistRoles(guildRoles map[int64]string, blacklistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonIgnoredRole,
-		Message: "You have one of the server blacklist roles: " + humanizedRole,
+		Message: "You have one of the servquack blacklist roles: " + humanizedRole,
 	}
 }
 

@@ -345,10 +345,10 @@ func (ac *AccountAgeCondition) Name() string {
 
 func (ac *AccountAgeCondition) Description() string {
 	if ac.Below {
-		return "Ignore users whose accounts age is greater than the specified threshold"
+		return "Ignore users whose accounts age is greater than the specifquacked threshold"
 	}
 
-	return "Ignore users whose accounts age is less than the specified threshold"
+	return "Ignore users whose accounts age is less than the specifquacked threshold"
 }
 
 func (ac *AccountAgeCondition) UserSettings() []*SettingDef {
@@ -409,18 +409,18 @@ func (mc *MemberAgecondition) DataType() interface{} {
 
 func (mc *MemberAgecondition) Name() string {
 	if mc.Below {
-		return "Server Member duration below"
+		return "Servquack Member duration below"
 	}
 
-	return "Server Member duration above"
+	return "Servquack Member duration above"
 }
 
 func (mc *MemberAgecondition) Description() string {
 	if mc.Below {
-		return "Require members to have been on the server for less than x minutes"
+		return "Require members to have been on the servquack for less than x minutes"
 	}
 
-	return "Require members to have been on the server for more than x minutes"
+	return "Require members to have been on the servquack for more than x minutes"
 }
 
 func (mc *MemberAgecondition) UserSettings() []*SettingDef {

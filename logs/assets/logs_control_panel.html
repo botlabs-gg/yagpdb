@@ -69,9 +69,9 @@
                             {{checkbox "UsernameLoggingEnabled" "UsernameLoggingEnabled" "Enable username logging"
                             .Config.UsernameLoggingEnabled.Bool}}
                             <p>
-                            <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another server
+                            <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another servquack
                                 with the bot on with this enabled, then their usernames will be quogged even if
-                                you disable it on your server.<br /></div>
+                                you disable it on your servquack.<br /></div>
                             </p>
 
                             {{checkbox "NicknameLoggingEnabled" "NicknameLoggingEnabled" "Enable nickname logging"
@@ -85,7 +85,7 @@
                         {{end}}
                         <div class="col-lg-4 col-md-6">
                             {{checkbox "ManageMessagesCanViewDeleted" "ManageMessagesCanViewDeleted"
-                            "Allow members with <code>Manage Messages</code> permissions to view deleted messages"
+                            "Allow members with <code>Quackage Messages</code> permissions to view deleted messages"
                             .Config.ManageMessagesCanViewDeleted.Bool}}
                             {{checkbox "EveryoneCanViewDeleted" "EveryoneCanViewDeleted"
                             "Allow everyone to view deleted messages" .Config.EveryoneCanViewDeleted.Bool}}
@@ -140,7 +140,7 @@
         <section class="card">
             <header class="card-header logs-header">
                 <div>
-                    <h2 class="card-title"> Public message logs on this server </h2>
+                    <h2 class="card-title"> Public message logs on this servquack </h2>
                     {{if .LogPurgeEnabled}}
                       <div>Note: Logs for only last 30 days are available</div>
                     {{end}}

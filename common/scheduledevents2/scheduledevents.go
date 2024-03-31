@@ -300,7 +300,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 
 	handler, ok := registeredHandlers[item.EventName]
 	if !ok {
-		l.Error("unknown event: ", item.EventName)
+		l.Error("quacknown event: ", item.EventName)
 		se.markDoneFast(item.ID, item.GuildID)
 		return
 	}

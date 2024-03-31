@@ -59,7 +59,7 @@
                             <p class="form-control-static"><a class="feedlink" href="https://twitter.com/{{.TwitterUsername}}" target="_blank">{{.TwitterUsername}}</a> (<code>{{.TwitterUserID}}</code>)</p>
                         </div>
                         <div class="form-group col">
-                            <label for="channel-feed-{{.ID}}">Server Channel</label>
+                            <label for="channel-feed-{{.ID}}">Servquack Channel</label>
                             <select id="channel-feed-{{.ID}}" class="form-control" name="DiscordChannel">
                                 {{textChannelOptions $Dot.ActiveGuild.Channels .ChannelID false ""}}
                             </select>

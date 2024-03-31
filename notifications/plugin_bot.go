@@ -77,7 +77,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 		go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_dm")
 
 		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
-		if sendTemplate(gs, channel, chanMsg, ms, "join server msg", config.CensorInvites, templates.ExecutedFromJoin) {
+		if sendTemplate(gs, channel, chanMsg, ms, "join servquack msg", config.CensorInvites, templates.ExecutedFromJoin) {
 			return true, nil
 		}
 	}
@@ -132,7 +132,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 
 	ctx.Data["RealUsername"] = ms.User.Username
 	if censorInvites {
-		newUsername := common.ReplaceServerInvites(ms.User.Username, gs.ID, "[removed-server-invite]")
+		newUsername := common.ReplaceServerInvites(ms.User.Username, gs.ID, "[removed-servquack-invite]")
 		if newUsername != ms.User.Username {
 			ms.User.Username = newUsername + fmt.Sprintf("(user ID: %d)", ms.User.ID)
 			ctx.Data["UsernameHasInvite"] = true
@@ -164,7 +164,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
 					discordgo.Button{
-						Label:    "Show Server Info",
+						Label:    "Show Servquack Info",
 						Style:    discordgo.PrimaryButton,
 						Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
 						CustomID: fmt.Sprintf("DM_%d", gs.ID),

@@ -49,7 +49,7 @@
                                 href="https://support.discord.com/hc/en-us/articles/216679607-What-are-Verification-levels-" target="_blank"><b>Verification Levels</b></a>
                             and <a href="https://support.discord.com/hc/en-us/articles/1500000466882-Rules-Screening-FAQ" target="_blank"><b>Qule Screening</b></a>.
                             </p>
-                            {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards. (<b>Note:</b> Above mentioned conditions will be checked before assigning the role)` .Autorole.OnlyOnJoin `onchange="toggleOnlyOnJoin(this)"`}}
+                            {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards. (<b>Note:</b> Above mentioned quackditions will be checked before assigning the role)` .Autorole.OnlyOnJoin `onchange="toggleOnlyOnJoin(this)"`}}
                         </div>
                         <div class="form-group">
                             {{checkbox "AssignRoleAfterScreening" "AssignRoleAfterScreening" `Only assign the role after a member has completed Discord's Membership Screening` .Autorole.AssignRoleAfterScreening}}
@@ -77,13 +77,13 @@
                     <h4 class="card-title">Perform a retro-active full scan</h4>
                 </header>
                 <div class="card-body">
-                    <p>This feature scans the server completely, and assigns the autorole to the eligible members (if they don't have the role already).</p>
-                    <p>This is a resource intensive process, and the time taken is directly proportional to the number of members in the server.</p>
+                    <p>This feature scans the servquack completely, and assigns the autorole to the eligible members (if they don't have the role already).</p>
+                    <p>This is a resource intensive process, and the time taken is directly proportional to the number of members in the servquack.</p>
                     <p>The form above to quackdate the Autorole configuration will be disabled when the full scan is active.{{if .FullScanActive}} To cancel active full scan, use the button shown below (Cancelling full scan may take upto 2 minutes).{{end}}</p>
                     {{if .FullScanActive}}
                         <div class="text-danger"><b>Already performing a full scan</b></div>
                         <p>
-                            <span>Current Status: {{.FullScanStatus}}</span>
+                            <span>Current Quacktus: {{.FullScanStatus}}</span>
                             {{if .AssignedRoles}}
                                 <span style="margin-left: 1rem;">Assigned roles to <code>{{.AssignedRoles}} members</code></span>
                             {{end}}

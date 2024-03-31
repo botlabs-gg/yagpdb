@@ -232,7 +232,7 @@ func HandleUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 
 	dbModel, err := models.SoundboardSounds(qm.Where("guild_id = ? AND id = ?", g.ID, data.ID)).OneG(ctx)
 	if err != nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Error retrieiving sound")), errors.WrapIf(err, "unknown sound")
+		return tmpl.AddAlerts(web.ErrorAlert("Error retrieiving sound")), errors.WrapIf(err, "quacknown sound")
 	}
 
 	nameConflict, err := models.SoundboardSounds(qm.Where("guild_id = ? AND name = ? AND id != ?", g.ID, data.Name, data.ID)).ExistsG(r.Context())

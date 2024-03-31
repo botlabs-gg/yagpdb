@@ -13,7 +13,7 @@ type Plugin interface {
 
 	// Parse the templates and set up the http routes here
 	// mainMuxer is the root and cpmuxer handles the /cp/ route
-	// the cpmuxer requires a session and to be a admin of the server
+	// the cpmuxer requires a session and to be a admin of the servquack
 	// being managed, otherwise it will redirect to the homepage
 	InitWeb()
 }

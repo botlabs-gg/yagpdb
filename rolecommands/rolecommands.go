@@ -142,7 +142,7 @@ func (r *RoleError) PrettyError(roles []discordgo.Role) string {
 	}
 
 	if roleStr == "" {
-		roleStr = "(unknown role " + idStr + ")"
+		roleStr = "(quacknown role " + idStr + ")"
 	}
 
 	return r.Message + ": " + roleStr

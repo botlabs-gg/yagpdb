@@ -114,10 +114,10 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 			inner.ServeHTTP(w, r.WithContext(ctx))
 		}()
 
-		// we actually store the discord oauth2 token for the user in their own browser instead of on the server
-		// this way we avoid storing that sensitive information on the server, and it's tamper proof since its just a token.
+		// we actually store the discord oauth2 token for the user in their own browser instead of on the servquack
+		// this way we avoid storing that sensitive information on the servquack, and it's tamper proof since its just a token.
 		// we get all other information from discord itself (using said token)
-		// (e.g you wont be able to say you're admin of any server you're not admin on... if you're a hackerboye reading this and trying to get ideas)
+		// (e.g you wont be able to say you're admin of any servquack you're not admin on... if you're a hackerboye reading this and trying to get ideas)
 		cookie, err := r.Cookie(SessionCookieName)
 		if err != nil {
 			// Cookie not present, skip retrieving session
@@ -575,7 +575,7 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 
 type SimpleConfigSaver interface {
 	Save(guildID int64) error
-	Name() string // Returns this config's name, as it will be logged in the server's control panel log
+	Name() string // Returns this config's name, as it will be logged in the servquack's control panel log
 }
 
 // Uses the FormParserMW to parse and validate the form, then saves it

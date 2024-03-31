@@ -34,7 +34,7 @@ func DecodeIncludes(includes []*Include) error {
 func DecodeInclude(include *Include) (interface{}, error) {
 	t, ok := TypeMap[include.Type]
 	if !ok {
-		return nil, errors.New("Unknown include: " + include.Type)
+		return nil, errors.New("Quacknown include: " + include.Type)
 	}
 
 	typ := reflect.TypeOf(t)

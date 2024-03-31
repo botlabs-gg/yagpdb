@@ -174,7 +174,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 				cmdLine += str
 			}
 		default:
-			return "", errors.New("Unknown type in exec, only strings, numbers, users and string slices are supported")
+			return "", errors.New("Quacknown type in exec, only strings, numbers, users and string slices are supported")
 		}
 		cmdLine += " "
 	}
@@ -191,7 +191,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	data.TraditionalTriggerData.MessageStrippedPrefix = fakeMsg.Content
 	foundCmd, foundContainer, rest := CommandSystem.Root.AbsFindCommandWithRest(cmdLine)
 	if foundCmd == nil {
-		return "Unknown command", nil
+		return "Quacknown command", nil
 	}
 
 	data.TraditionalTriggerData.MessageStrippedPrefix = rest

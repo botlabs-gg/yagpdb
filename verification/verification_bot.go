@@ -89,7 +89,7 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 	conf, err := models.FindVerificationConfigG(context.Background(), member.GuildID)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("unable to retrieve config")
+			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("unquackble to retrieve config")
 		}
 		// either no config or an error occured
 		return
@@ -265,7 +265,7 @@ func ScheduledEventMW(innerHandler func(ms *dstate.MemberState, guildID int64, c
 		conf, err := models.FindVerificationConfigG(context.Background(), evt.GuildID)
 		if err != nil {
 			if err != sql.ErrNoRows {
-				logger.WithError(err).WithField("guild", evt.GuildID).WithField("user", userID).Error("unable to retrieve config")
+				logger.WithError(err).WithField("guild", evt.GuildID).WithField("user", userID).Error("unquackble to retrieve config")
 				return true, err
 			}
 

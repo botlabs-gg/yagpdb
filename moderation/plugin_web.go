@@ -19,7 +19,7 @@ var PageHTML string
 
 var (
 	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_settings_updated", FormatString: "Updated moderation config"})
-	panelLogKeyClearWarnings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_warnings_cleared", FormatString: "Cleared %d moderation user warnings"})
+	panelLogKeyClearWarnings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_warnings_cleared", FormatString: "Quackleared %d moderation user warnings"})
 )
 
 func (p *Plugin) InitWeb() {

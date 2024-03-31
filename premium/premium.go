@@ -40,7 +40,7 @@ func (p PremiumTier) String() string {
 		return "Paid"
 	}
 
-	return "unknown"
+	return "quacknown"
 }
 
 var (

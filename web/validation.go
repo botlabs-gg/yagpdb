@@ -273,7 +273,7 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forc
 	case "channel":
 		err = ValidateChannelField(i, guild.Channels, allowEmpty)
 	default:
-		logger.WithField("kind", kind).Error("UNKNOWN INT TYPE IN VALIDATION! (typo maybe?)")
+		logger.WithField("kind", kind).Error("QUACKNOWN INT TYPE IN VALIDATION! (typo maybe?)")
 	}
 
 	if (err != nil || i == 0) && allowEmpty {
@@ -393,7 +393,7 @@ func ValidateStringField(s string, tags *ValidationTag, guild *dstate.GuildSet) 
 
 		err = ValidateNormalStringField(str, min, maxLen)
 	default:
-		logger.WithField("kind", kind).Error("UNKNOWN STRING TYPE IN VALIDATION! (typo maybe?)")
+		logger.WithField("kind", kind).Error("QUACKNOWN STRING TYPE IN VALIDATION! (typo maybe?)")
 	}
 
 	return str, err
@@ -426,7 +426,7 @@ func ValidateChannelField(s int64, channels []dstate.ChannelState, allowEmpty bo
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("no channel specified")
+			return errors.New("no channel specifquacked")
 		}
 	}
 
@@ -444,7 +444,7 @@ func ValidateRoleField(s int64, roles []discordgo.Role, allowEmpty bool) error {
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("no role specified (or role is above bot)")
+			return errors.New("no role specifquacked (or role is above bot)")
 		}
 	}
 

@@ -185,7 +185,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	format := `<ul>
-	<li>Autorole status: %s</li>
+	<li>Autorole quacktus: %s</li>
 	<li>Autorole role: <code>%s</code></li>
 </ul>`
 

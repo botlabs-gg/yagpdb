@@ -101,7 +101,7 @@ OUTER:
 			}
 		}
 
-		logger.Info("Left server while bot was down: ", v)
+		logger.Info("Left servquack while bot was down: ", v)
 		go guildRemoved(v)
 	}
 
@@ -154,8 +154,8 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	// check if the server is banned from using the bot
 	if isBanned {
-		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
-		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
+		logger.WithField("guild", g.ID).Info("Banned servquack tried to add bot back")
+		common.BotSession.ChannelMessageSend(g.ID, "This servquack is banned from using this bot. Join the support servquack for more info.")
 		err = common.BotSession.GuildLeave(g.ID)
 		if err != nil {
 			return CheckDiscordErrRetry(err), errors.WithStackIf(err)
@@ -331,9 +331,9 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 	}
 	content := ""
 	if gs == nil {
-		content = fmt.Sprintf("This DM was sent from server\nID: **%d**, \nI couldn't fetch more information about it.", guild_id)
+		content = fmt.Sprintf("This DM was sent from servquack\nID: **%d**, \nI couldn't fetch more information about it.", guild_id)
 	} else {
-		content = fmt.Sprintf("This DM was sent from server\nID: **%d**, \nName: **%s**", guild_id, gs.Name)
+		content = fmt.Sprintf("This DM was sent from servquack\nID: **%d**, \nName: **%s**", guild_id, gs.Name)
 	}
 	response.Data.Content = content
 	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)

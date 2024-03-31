@@ -240,7 +240,7 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 	if member == nil {
 		goTo := url.QueryEscape(r.RequestURI)
 		alertLink := fmt.Sprintf(`<a href="%s/login?goto=%s>here</a>`, web.BaseURL(), goTo)
-		alertMsg := fmt.Sprintf("This server has restricted log access to members only.\nIf you are a member, click %s to login.", alertLink)
+		alertMsg := fmt.Sprintf("This servquack has restricted log access to members only.\nIf you are a member, click %s to login.", alertLink)
 
 		tmpl.AddAlerts(web.ErrorAlert(alertMsg))
 		return false
@@ -249,7 +249,7 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 	memberPermissions := web.ContextMemberPerms(ctx)
 	guild := web.ContextGuild(ctx)
 
-	// if access mode is everyone or the user is the owner or they have administrator/manage server perms, then they can access the logs
+	// if access mode is everyone or the user is the owner or they have administrator/manage servquack perms, then they can access the logs
 	if (config.AccessMode == 1) || (member.User.ID == guild.OwnerID) || (memberPermissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator) || (memberPermissions&discordgo.PermissionManageServer == discordgo.PermissionManageServer) {
 		return true
 	}
@@ -259,7 +259,7 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 		return true
 	}
 
-	tmpl.AddAlerts(web.ErrorAlert("This server has restricted log access to certain roles, you don't have any of them."))
+	tmpl.AddAlerts(web.ErrorAlert("This servquack has restricted log access to certain roles, you don't have any of them."))
 	return false
 }
 
@@ -283,7 +283,7 @@ func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc 
 		}
 
 		config, err := GetConfig(common.PQ, r.Context(), g.ID)
-		if web.CheckErr(tmpl, err, "Errquack quacktrieving config for this server", web.CtxLogger(r.Context()).Error) {
+		if web.CheckErr(tmpl, err, "Errquack quacktrieving config for this servquack", web.CtxLogger(r.Context()).Error) {
 			return tmpl
 		}
 
@@ -303,7 +303,7 @@ func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc 
 		}
 
 		if msgLogs.GuildID != g.ID {
-			return tmpl.AddAlerts(web.ErrorAlert("Couldn't find the logs im so sorry please dont hurt me i have a family D:"))
+			return tmpl.AddAlerts(web.ErrorAlert("Couldn't quind the logs im so sorry please dont hurt me i have a family D:"))
 		}
 
 		ctx := r.Context()

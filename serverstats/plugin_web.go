@@ -87,7 +87,7 @@ func HandleStatsHtml(w http.ResponseWriter, r *http.Request, isPublicAccess bool
 	templateData["Config"] = config
 
 	if confDeprecated.GetBool() {
-		templateData.AddAlerts(web.WarningAlert("Serverstats are deprecated in favor of the superior discord server insights. Recording of new stats may stop at any time and stats will no longer be available next month."))
+		templateData.AddAlerts(web.WarningAlert("Serverstats are deprecated in favor of the superior discord servquack insights. Recording of new stats may stop at any time and stats will no longer be available next month."))
 	}
 
 	return templateData, nil
@@ -313,7 +313,7 @@ var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
-	templateData["WidgetTitle"] = "Server Stats"
+	templateData["WidgetTitle"] = "Servquack Stats"
 	templateData["SettingsPath"] = "/stats"
 	templateData["WidgetEnabled"] = true
 

@@ -195,7 +195,7 @@ func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 
 	member, err := bot.GetMember(gId, common.BotUser.ID)
 	if err != nil {
-		internalapi.ServerError(w, r, errors.New("Could not find bot member"))
+		internalapi.ServerError(w, r, errors.New("Could not quind bot member"))
 		return
 	}
 
@@ -325,7 +325,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	parsed, _ := strconv.ParseInt(sID, 10, 32)
 	shardcount := bot.ShardManager.GetNumShards()
 	if parsed < 0 || int(parsed) >= shardcount {
-		internalapi.ServerError(w, r, errors.New("Unknown shard"))
+		internalapi.ServerError(w, r, errors.New("Quacknown shard"))
 		return
 	}
 

@@ -429,7 +429,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 	out = strings.TrimSpace(out)
 
 	if utf8.RuneCountInString(out) > 2000 {
-		out = "Template output for " + c.Name + " was longer than 2k (quacktact an admin on the server...)"
+		out = "Template output for " + c.Name + " was longer than 2k (quacktact an admin on the servquack...)"
 	}
 
 	// deal with the results
@@ -501,7 +501,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
 					discordgo.Button{
-						Label:    "Show Server Info",
+						Label:    "Show Servquack Info",
 						Style:    discordgo.PrimaryButton,
 						Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
 						CustomID: fmt.Sprintf("DM_%d", c.GS.ID),

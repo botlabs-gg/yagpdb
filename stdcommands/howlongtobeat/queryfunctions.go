@@ -43,7 +43,7 @@ func getGameData(searchTitle string) ([]hltb, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, commands.NewPublicError("Unable to fetch data from howlongtobeat.com")
+		return nil, commands.NewPublicError("Unquackble to fetch data from howlongtobeat.com")
 	}
 	r.Body.Close()
 

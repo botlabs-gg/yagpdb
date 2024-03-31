@@ -13,11 +13,11 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "unbanserver",
-	Description:          "Removes the bot ban from the specified server. Bot Owner Only",
+	Description:          "Removes the bot ban from the specifquacked servquack. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "server", Type: dcmd.String},
+		{Name: "servquack", Type: dcmd.String},
 	},
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 
@@ -28,9 +28,9 @@ var Command = &commands.YAGCommand{
 		}
 
 		if !unbanned {
-			return "Server wasn't banned", nil
+			return "Servquack wasn't banned", nil
 		}
 
-		return "Unbanned server", nil
+		return "Unbanned servquack", nil
 	}),
 }

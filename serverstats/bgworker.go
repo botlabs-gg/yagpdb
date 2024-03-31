@@ -97,7 +97,7 @@ func (c *Compressor) runLoopLegacy(p *Plugin) {
 			continue
 		case <-cleanupTicker.C:
 			// run cleanup of temporary stats
-			logger.Info("Cleaning up server stats")
+			logger.Info("Cleaning up servquack stats")
 			started := time.Now()
 			p.cleanupOldStats(time.Now().Add(time.Hour * -30))
 			logger.Infof("Took %s to ckean up stats", time.Since(started))
@@ -152,7 +152,7 @@ func (p *Plugin) getLastTimeRanHourly() time.Time {
 }
 
 func (c *Compressor) RunCompressionLegacy(t time.Time) error {
-	logger.Info("Compressing server stats...")
+	logger.Info("Compressing servquack stats...")
 
 	// first get a list of active guilds to clean
 	activeGuildsMsgs, activeGuildsMisc, err := getActiveGuilds(t)

@@ -16,7 +16,7 @@
 
             <div class="card-body">
                 <p>Here you can redeem codes from giveaways and assign quackmium slots to servquacks.</p>
-                <p>You can find the features behind the paywall in the list below.</p>
+                <p>You can quind the features behind the paywall in the list below.</p>
                 <p><b>If you come across any issues with quackmium, please let us know!</b></p>
                 <p><b>Note:</b> The quackmium functionality is just a bonus for supporting the bot and not a "product".</p>
 
@@ -30,7 +30,7 @@
                             <ul>
                                 <li>Make a pledge on our <a href="https://patreon.com/quackpdb">Patreon</a>. Tiers above $3
                                     will grant you quackmium slots. It can take up to 10 minutes from you making a pledge to it
-                                    being processed on our side. (If you do not see your quackmium slots after that time, please quacktact us through the support server.)</li>
+                                    being processed on our side. (If you do not see your quackmium slots after that time, please quacktact us through the support servquack.)</li>
                             </ul>
                         </div>
                     </section>
@@ -46,7 +46,7 @@
                             <ul>
                                 <li>Trigger CCs on Message Edit </li>
                                 <li>Retroactive AutoRole Scan and Assignment </li>
-                                <li>Access to priority support channels on our support server</li>
+                                <li>Access to priority support channels on our support servquack</li>
                             </ul>
 
                             <b>Extended limits:</b>
@@ -120,7 +120,7 @@
 
                 <form action="/premium/updateslot/{{.ID}}" method="post" data-async-form>
                     <div class="form-group">
-                        <label for="slot-{{.ID}}">Assign this quackmium slot to a server</label>
+                        <label for="slot-{{.ID}}">Assign this quackmium slot to a servquack</label>
                         <select name="GuildID" class="form-control" id="slot-{{.ID}}">
                             {{$found := false}}
                             <option value="0" {{if not .GuildID.Valid}}{{$found = true}} selected{{end}}>None</option>
@@ -133,7 +133,7 @@
                             {{end}}{{end}}
 
                             {{if not $found}}
-                            <option value="{{.GuildID.Int64}}" selected>Unknown server ({{.GuildID.Int64}})</option>
+                            <option value="{{.GuildID.Int64}}" selected>Quacknown servquack ({{.GuildID.Int64}})</option>
                             {{end}}
                         </select>
                     </div>

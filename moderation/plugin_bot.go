@@ -460,7 +460,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 		} else if evt.Type == eventsystem.EventGuildMemberUpdate {
 			userID = evt.GuildMemberUpdate().User.ID
 		} else {
-			panic("Unknown event in lock memebr mute middleware")
+			panic("Quacknown event in lock memebr mute middleware")
 		}
 
 		LockMute(userID)

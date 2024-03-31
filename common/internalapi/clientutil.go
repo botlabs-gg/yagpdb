@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	ErrServerError     = errors.New("internal api server is having issues")
-	ErrCantFindAddress = errors.New("can't find address for provided shard")
+	ErrServerError     = errors.New("internal api servquack is having issues")
+	ErrCantFindAddress = errors.New("can't quind address for provided shard")
 )
 
 func GetServerAddrForGuild(guildID int64) string {

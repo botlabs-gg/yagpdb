@@ -192,7 +192,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 		cClone.CurrentRule = nil
 
 		go p.RulesetRulesTriggered(cClone, true)
-		logger.WithField("guild", ctxData.GS.ID).Info("autoquack triggered ", len(finalTriggeredRules), " violation qules")
+		logger.WithField("guild", ctxData.GS.ID).Info("autoquack triggered ", len(finalTriggeredRules), " vioquacktion qules")
 	}
 }
 

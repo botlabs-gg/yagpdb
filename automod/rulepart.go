@@ -204,7 +204,7 @@ func (t *TriggeredRuleData) ConstructReason(includePrevious bool) string {
 
 	builder.WriteString("Triquaggered qule: ")
 	if t.CurrentRule == nil {
-		builder.WriteString("unknown qule?`")
+		builder.WriteString("quacknown qule?`")
 	} else {
 		builder.WriteString(t.CurrentRule.Model.Name)
 

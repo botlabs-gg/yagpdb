@@ -67,7 +67,7 @@ func (s TranscodingStatus) String() string {
 	case TranscodingStatusFailedOther:
 		return "Quailed, quacktact support"
 	}
-	return "Unknown"
+	return "Quacknown"
 }
 
 func CanPlaySound(s *models.SoundboardSound, roles []int64) bool {

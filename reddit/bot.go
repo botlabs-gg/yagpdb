@@ -50,7 +50,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:          commands.CategoryDebug,
 		HideFromCommandsPage: true,
 		Name:                 "testreddit",
-		Description:          "Tests the reddit feeds in this server by checking the specified post. Bot Owner Only",
+		Description:          "Tests the reddit feeds in this servquack by checking the specifquacked post. Bot Owner Only",
 		HideFromHelp:         true,
 		RequiredArgs:         1,
 		Arguments: []*dcmd.ArgDef{
@@ -68,7 +68,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if len(resp) < 1 {
-				return "Unknown post", nil
+				return "Quacknown post", nil
 			}
 
 			handlerSlow := &PostHandlerImpl{

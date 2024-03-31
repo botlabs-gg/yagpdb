@@ -83,7 +83,7 @@ func Run() {
 
 		user, err = pClient.FetchUser()
 		if err != nil {
-			PatreonDisabled(err, "Unable to fetch user with redis patreon token.")
+			PatreonDisabled(err, "Unquackble to fetch user with redis patreon token.")
 			return
 		}
 	}

@@ -123,7 +123,7 @@ func (p *Plugin) AddCommands() {
 
 			if err != nil {
 				if err == sql.ErrNoRows {
-					return "Unknown event", nil
+					return "Quacknown event", nil
 				}
 
 				return nil, err
@@ -180,7 +180,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         catEvents,
 		Name:                "List",
 		Aliases:             []string{"ls"},
-		Description:         "Quists all events in this server",
+		Description:         "Quists all events in this servquack",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -190,7 +190,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if len(events) < 1 {
-				return "No active events on this server.", nil
+				return "No active events on this servquack.", nil
 			}
 
 			var output strings.Builder
@@ -210,7 +210,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         catEvents,
 		Name:                "Delete",
 		Aliases:             []string{"rm", "del"},
-		Description:         "Deletes an event, specify the event ID of the event you wanna delete",
+		Description:         "quackletes an event, specify the event ID of the event you wanna delete",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		RequiredArgs:        1,
 		Plugin:              p,
@@ -226,7 +226,7 @@ func (p *Plugin) AddCommands() {
 
 			if err != nil {
 				if err == sql.ErrNoRows {
-					return "Unknown event", nil
+					return "Quacknown event", nil
 				}
 
 				return nil, err
@@ -269,7 +269,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdList, cmdList.GetTrigger())
 	container.AddCommand(cmdDel, cmdDel.GetTrigger())
 	container.AddCommand(cmdStopSetup, cmdStopSetup.GetTrigger())
-	container.Description = "Manage events"
+	container.Description = "Quackage events"
 	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
@@ -491,7 +491,7 @@ func findUser(members []*dstate.MemberState, target int64) *discordgo.User {
 	}
 
 	return &discordgo.User{
-		Username: "Unknown (" + strconv.FormatInt(target, 10) + ")",
+		Username: "Quacknown (" + strconv.FormatInt(target, 10) + ")",
 		ID:       target,
 	}
 }
@@ -624,7 +624,7 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 				Title:       title,
 				Description: desc,
 				Footer: &discordgo.MessageEmbedFooter{
-					Text: "From the server: " + serverName,
+					Text: "From the servquack: " + serverName,
 				},
 			})
 

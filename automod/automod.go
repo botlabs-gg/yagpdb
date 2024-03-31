@@ -28,7 +28,7 @@ type Plugin struct {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Advanced Autoquackerator",
+		Name:     "Adquackced Autoquackerator",
 		SysName:  "automod_v2",
 		Category: common.PluginCategoryModeration,
 	}
@@ -48,7 +48,7 @@ type ErrUnknownTypeID struct {
 }
 
 func (e *ErrUnknownTypeID) Error() string {
-	return "Unknown TypeID: " + strconv.Itoa(e.TypeID)
+	return "Quacknown TypeID: " + strconv.Itoa(e.TypeID)
 }
 
 func ParseRulePartData(model *models.AutomodRuleDatum) (interface{}, error) {

@@ -27,7 +27,7 @@ func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
 func runMonitor() {
 	ticker := time.NewTicker(time.Second * 30)
 	time.Sleep(time.Second * 3)
-	logger.Info("started quackmium server monitor")
+	logger.Info("started quackmium servquack monitor")
 
 	err := checkExpiredSlots(context.Background())
 	if err != nil {

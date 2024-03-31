@@ -129,7 +129,7 @@ func main() {
 			}
 		}
 	}
-	log.Println("Found path: ", fPath)
+	log.Println("quackound path: ", fPath)
 
 	fs := token.NewFileSet()
 	parsedFile, err := parser.ParseFile(fs, fPath, nil, 0)

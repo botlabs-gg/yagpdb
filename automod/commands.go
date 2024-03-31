@@ -28,13 +28,13 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Ruleset-Name", Type: dcmd.String},
 		},
-		Description:         "Toggles a quackset on/off",
+		Description:         "Quackggles a quackset on/off",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			rulesetName := data.Args[0].Str()
 			ruleset, err := models.AutomodRulesets(qm.Where("guild_id = ? AND name ILIKE ?", data.GuildData.GS.ID, rulesetName)).OneG(data.Context())
 			if err != nil {
-				return "Unable to find the quackset, did you type the name correctly?", err
+				return "Unquackble to quind the quackset, did you qype the quame quackrrectly?", err
 			}
 
 			ruleset.Enabled = !ruleset.Enabled
@@ -60,7 +60,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Rulesets",
 		Aliases:             []string{"r", "list", "l"},
 		CmdCategory:         commands.CategoryModeration,
-		Description:         "Quists all quacksets and their status",
+		Description:         "Quists all quacksets and their quacktus",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
@@ -69,15 +69,15 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if len(rulesets) < 1 {
-				return "No automod v2 quacksets set up on this server", nil
+				return "No autoquack v2 quacksets set up on this servquack", nil
 			}
 
 			out := &strings.Builder{}
-			out.WriteString("Quacksets on this server:\n```\n")
+			out.WriteString("Quacksets on this servquack:\n```\n")
 			for _, v := range rulesets {
-				onOff := "Enabled"
+				onOff := "Quacknabled"
 				if !v.Enabled {
-					onOff = "Disabled"
+					onOff = "Quacksabled"
 				}
 
 				out.WriteString(fmt.Sprintf("%s: %s\n", v.Name, onOff))
@@ -92,7 +92,7 @@ func (p *Plugin) AddCommands() {
 		Name:        "Logs",
 		Aliases:     []string{"log"},
 		CmdCategory: commands.CategoryModeration,
-		Description: "Shows the log of the last triquaggered automod qules, optionally filtering by user",
+		Description: "Shows the log of the last triquaggered autoquack qules, optiquackally quacktering by user",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
 		},
@@ -131,12 +131,12 @@ func (p *Plugin) AddCommands() {
 					out.WriteString(fmt.Sprintf("[%-17s] - %s\nRS:%s - R:%s - TR:%s\n\n", t, v.UserName, v.RulesetName, v.RuleName, RulePartMap[v.TriggerTypeid].Name()))
 				}
 			} else {
-				out.WriteString("No Entries")
+				out.WriteString("No Quacktries")
 			}
-			out.WriteString("``` **RS** = ruleset, **R** = qule, **TR** = trigger")
+			out.WriteString("``` **RS** = quackset, **R** = qule, **TR** = triquagger")
 
 			return &discordgo.MessageEmbed{
-				Title:       "Automod logs",
+				Title:       "Autoquack logs",
 				Description: out.String(),
 			}, nil
 		}),
@@ -146,15 +146,15 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ListViolationsCount",
-		Description:   "Quists Vioquacktions summary in entire server or of specified user optionally filtered by max violation age.\n Specify number of vioquacktions to skip while quacking using -skip flag ; max entries fetched 500",
+		Description:   "Quists Vioquacktions quackmmary in quacktire servquack or of specifquacked user optiquackally filtquacked by max vioquacktion age.\n Specify number of vioquacktions to squackp while quacking using -skip flag ; max quacktries quacktched 500",
 		Aliases:       []string{"ViolationsCount", "VCount"},
 		RequiredArgs:  0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "ma", Help: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			{Name: "skip", Help: "Amount Skipped", Type: dcmd.Int, Default: 0},
+			{Name: "ma", Help: "Max vioquacktion Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "skip", Help: "Quackmount Skquackpped", Type: dcmd.Int, Default: 0},
 		},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -187,7 +187,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if len(listViolations) < 1 {
-				return "No Active Vioquacktions or No Vioquacktions fetched with specified conditions", nil
+				return "No Quacktive Vioquacktions or No Vioquacktions quacktched with specifquacked quackditions", nil
 			}
 
 			out := ""
@@ -198,16 +198,16 @@ func (p *Plugin) AddCommands() {
 			}
 
 			for name, count := range violations {
-				out += fmt.Sprintf("%-31s Count: %d\n", common.CutStringShort(name, 30), count)
+				out += fmt.Sprintf("%-31s Quount: %d\n", common.CutStringShort(name, 30), count)
 			}
 
 			if out == "" {
-				return "No Vioquacktions found with specified conditions", nil
+				return "No Vioquacktions quackound with specifquacked quackditions", nil
 			}
 
-			out = "```" + out + fmt.Sprintf("\n%-31s Count: %d\n", "Total", len(listViolations)) + "```"
+			out = "```" + out + fmt.Sprintf("\n%-31s Quount: %d\n", "Totquack", len(listViolations)) + "```"
 			return &discordgo.MessageEmbed{
-				Title:       "Vioquacktions Summary",
+				Title:       "Vioquacktions Quackmmary",
 				Description: out,
 			}, nil
 		},
@@ -217,7 +217,7 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ListViolations",
-		Description:   "Quists Vioquacktions of specified user \n old flag posts oldest violations in first page ( from oldest to newest ).",
+		Description:   "Quists Vioquacktions of specifquacked quackser \n old flquag quosts quoldest violquacktions in first quage ( from quoldest to quewest ).",
 		Aliases:       []string{"Vioquacktions", "ViolationLogs", "VLogs", "VLog"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -253,7 +253,7 @@ func (p *Plugin) AddCommands() {
 			if len(listViolations) > 0 {
 				for _, entry := range listViolations {
 
-					out += fmt.Sprintf("#%-4d: [%-19s] Qule ID: %d \nViolation Name: %s\n\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.RuleID.Int64, entry.Name)
+					out += fmt.Sprintf("#%-4d: [%-19s] Qule ID: %d \nVioquacktion Quame: %s\n\n", entry.ID, entry.CreatedAt.UTC().Format(time.RFC822), entry.RuleID.Int64, entry.Name)
 				}
 
 				out = "```" + out + "```"
@@ -262,7 +262,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			return &discordgo.MessageEmbed{
-				Title:       "Violation Logs",
+				Title:       "vioquacktion Quogs",
 				Description: out,
 			}, nil
 		}),
@@ -272,7 +272,7 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "DeleteViolation",
-		Description:   "Deletes a Violation with the specified ID. ID is the first number of each Violation in the ListViolations command.",
+		Description:   "Quackletes a vioquacktion with the specifquacked ID. ID is the first quackber of queach vioquacktion in the ListViolations command.",
 		Aliases:       []string{"DelViolation", "DelV", "DV"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -287,7 +287,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 			if rows < 1 {
-				return "Quailed dequackleting, most likely no active violation with specified id", nil
+				return "Quailed dequackleting, most likely no quacktive vioquacktion with specifquacked id", nil
 			}
 
 			return "👌", nil
@@ -298,18 +298,18 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ClearViolations",
-		Description:   "Clears Vioquacktions of specified user (or global if User ID = 0 or unspecified) optionally filtered by Name, Min/Max age and other conditions. By default, more recent vioquacktions are preferentially cleared. Maximum of 2000 can be cleared at a time.",
+		Description:   "Clears Vioquacktions of specifquacked quser (or global if Quser ID = 0 or unspecifquacked) optiquackally filtquacked by Quame, Min/Max age and other quackditions. By quackfault, more recent vioquacktions are preferentquackally quackleared. Maximum of 2000 can be quackleared at a time.",
 		Aliases:       []string{"ClearV", "ClrViolations", "ClrV"},
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Default: 0, Type: dcmd.UserID},
-			{Name: "Violation-Name", Type: dcmd.String},
+			{Name: "vioquacktion-Name", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "ma", Help: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			{Name: "minage", Help: "Min Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
-			{Name: "num", Help: "Max Vioquacktions Cleared", Default: 2000, Type: &dcmd.IntArg{Min: 0, Max: 2000}},
-			{Name: "old", Help: "Preferentially Clear Older Vioquacktions"},
-			{Name: "skip", Help: "Amount Skipped", Default: 0, Type: dcmd.Int},
+			{Name: "ma", Help: "Max vioquacktion Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "minage", Help: "Min vioquacktion Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
+			{Name: "num", Help: "Max Vioquacktions Quackleared", Default: 2000, Type: &dcmd.IntArg{Min: 0, Max: 2000}},
+			{Name: "old", Help: "Quackferentially Clear Older Vioquacktions"},
+			{Name: "skip", Help: "Amount Skuapped", Default: 0, Type: dcmd.Int},
 		},
 		ArgumentCombos:      [][]int{{0, 1}, {0}, {1}, {}},
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
@@ -361,13 +361,13 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			return fmt.Sprintf("%d Vioquacktions Cleared!!", cleared), nil
+			return fmt.Sprintf("%d Vioquacktions Quackleared!!", cleared), nil
 		},
 	}
 
 	container, _ := commands.CommandSystem.Root.Sub("automod", "amod")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
-	container.Description = "Commands for managing automod"
+	container.Description = "Quackmmands for quackaging autoquack"
 
 	container.AddCommand(cmdViewRulesets, cmdViewRulesets.GetTrigger())
 	container.AddCommand(cmdToggleRuleset, cmdToggleRuleset.GetTrigger())

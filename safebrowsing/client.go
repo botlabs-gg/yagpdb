@@ -13,7 +13,7 @@ import (
 
 // CheckString checks a string against google safebrowsing for threats
 // if the safebrowser is running on this process then it will perform the check instantly
-// otherwise it will make a api request towards the safebrowsing proxy server (or return an error)
+// otherwise it will make a api request towards the safebrowsing proxy servquack (or return an error)
 func CheckString(input string) (*safebrowsing.URLThreat, error) {
 	if SafeBrowser != nil {
 		return performLocalLookup(input)
