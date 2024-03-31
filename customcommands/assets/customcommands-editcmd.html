@@ -95,9 +95,9 @@
                                                     Minute interval
                                                 </option>
                                                 <option value="component" {{if eq .CC.TriggerType 7}} selected{{end}}>
-                                                    Message Component</option>
+                                                    Message Component (BETA)</option>
                                                 <option value="modal" {{if eq .CC.TriggerType 8}} selected{{end}}>
-                                                    Modal Submission</option>
+                                                    Modal Submission (BETA)</option>
                                             </select>
                                         </div>
                                     </div>
@@ -135,10 +135,11 @@
                                             The command will run at a minute interval, for example every 10 minutes.
                                         </p>
                                         <p id="trigger-desc-component">
-                                            The command will run when a component (a button or a select menu) whose custom ID matches the given regex is used.
+                                            The command will run when a component (a button or a select menu) whose
+                                            custom ID matches the given regex is used. BETA FEATURE.
                                         </p>
                                         <p id="trigger-desc-modal">
-                                            The command will run when a modal whose custom ID matches the given regex is submitted.
+                                            The command will run when a modal whose custom ID matches the given regex is submitted. BETA FEATURE.
                                         </p>
                                     </div>
                                 </div>
@@ -148,7 +149,7 @@
                                     <div class="col-lg-12">
                                         <div class="form-group">
                                             <label id="text-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
-                                            <label id="customid-trigger-label">Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="customid-trigger-label">ComponentCustom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <div class="input-group mb-2">
                                                 <div class="input-group-prepend" id="command-trigger-prepended-prefix">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
