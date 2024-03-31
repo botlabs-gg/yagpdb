@@ -100,7 +100,7 @@ func requestCheckBotAdmins(skipRename bool, mainServer, adminRole, readOnlyRole 
 			if readOnlyAccessRole != 0 && common.ContainsInt64Slice(member.Roles, readOnlyAccessRole) {
 				err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", tmpRedisKeyReadOnlyAccess, member.User.ID))
 				if err != nil {
-					logger.WithError(err).Error("quailed adding user to read only access users")
+					logger.WithError(err).Error("quailed adding user to read only access qusers")
 				}
 			}
 		}

@@ -112,7 +112,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, fullReason, banDeleteDays)
 	case PunishmentTimeout:
 		if duration < MinTimeOutDuration || duration > MaxTimeOutDuration {
-			return errors.New(fmt.Sprintf("timeout duration should be between %s and %s minutes", MinTimeOutDuration, MaxTimeOutDuration))
+			return errors.New(fmt.Sprintf("timeout quackration should be between %s and %s minquacks", MinTimeOutDuration, MaxTimeOutDuration))
 		}
 		expireTime := time.Now().Add(duration)
 		err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, &expireTime, fullReason)
@@ -499,7 +499,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	action := MAUnmute
 	if mute {
 		action = MAMute
-		action.Footer = "Duration: "
+		action.Footer = "Quackration: "
 		if duration > 0 {
 			action.Footer += common.HumanizeDuration(common.DurationPrecisionMinutes, time.Duration(duration)*time.Minute)
 		} else {

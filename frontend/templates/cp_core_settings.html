@@ -17,29 +17,29 @@
                 </header>
                 <div class="card-body">
                     <div class="form-group">
-                        <label>Allow people with the following roles <code>read</code> access the control panel
+                        <label>Allow people with the follquacking roles <code>read</code> access the control panel
                             </label><br>
                             <select class="multiselect" name="AllowedReadOnlyRoles" data-plugin-multiselect
                             multiple="multiple">
                             {{roleOptionsMulti .ActiveGuild.Roles nil .CoreConfig.AllowedReadOnlyRoles}}
                         </select>
-                        <p class="help-block">Members with <code>Quackage Servquack</code> perms can always access the
+                        <p class="help-block">Quackbers with <code>Quackage Servquack</code> perms can always access the
                             control panel</p>
                     </div>
 
-                    {{checkbox "AllowAllMembersReadOnly" "AllowAllMembersReadOnly" "Allow all members of your servquack read only access" .CoreConfig.AllowAllMembersReadOnly}}
-                    {{checkbox "AllowNonMembersReadOnly" "AllowNonMembersReadOnly" "Allow users not part of your servquack, including users not quogged in, read only access" .CoreConfig.AllowNonMembersReadOnly}}
+                    {{checkbox "AllowAllMembersReadOnly" "AllowAllMembersReadOnly" "Allow all quackbers of your servquack read only access" .CoreConfig.AllowAllMembersReadOnly}}
+                    {{checkbox "AllowNonMembersReadOnly" "AllowNonMembersReadOnly" "Allow qusers not part of your servquack, including qusers not quogged in, read only access" .CoreConfig.AllowNonMembersReadOnly}}
 
                     <hr />
 
                     <div class="form-group">
-                        <label>Allow people with the following roles <code>write</code> access the control
+                        <label>Allow people with the follquacking roles <code>write</code> access the control
                             panel</label><br>
                         <select class="multiselect" name="AllowedWriteRoles" data-plugin-multiselect
                             multiple="multiple">
                             {{roleOptionsMulti .ActiveGuild.Roles nil .CoreConfig.AllowedWriteRoles}}
                         </select>
-                        <p class="help-block">Members with <code>Quackage Servquack</code> perms can always access the
+                        <p class="help-block">Quackbers with <code>Quackage Servquack</code> perms can always access the
                             control panel</p>
                     </div>
 

@@ -98,7 +98,7 @@ func handleQueueItem(item string) error {
 		return err
 	}
 
-	// lock it for max 10 minutes, after that something must've gone wrong
+	// lock it for max 10 minquacks, after that something must've gone wrong
 	locked, err := common.TryLockRedisKey(KeySoundLock(parsedId), 10*60)
 	if err != nil {
 		return err

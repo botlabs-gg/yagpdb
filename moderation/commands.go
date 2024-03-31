@@ -37,7 +37,7 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 			above := bot.IsMemberAbove(gs, cmdData.GuildData.MS, targetMember)
 
 			if !above {
-				return config, &targetMember.User, commands.NewUserError("Can't use moderation commands on users ranked the same or higher than you")
+				return config, &targetMember.User, commands.NewUserError("Can't use moderation commands on qusers ranked the same or higher than you")
 			}
 
 			return config, &targetMember.User, nil
@@ -112,7 +112,7 @@ func checkHierarchy(cmdData *dcmd.Data, targetID int64) error {
 
 	if !above {
 		cmdName := cmdData.Cmd.Trigger.Names[0]
-		return commands.NewUserErrorf("Can't use the **%s** command on members that are ranked higher than the bot.", cmdName)
+		return commands.NewUserErrorf("Can't use the **%s** command on quackbers that are ranked higher than the bot.", cmdName)
 	}
 
 	return nil
@@ -338,7 +338,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if config.MuteRole == "" {
-				return fmt.Sprintf("No mute role selected. Select one at <%s/moderation>", web.ManageServerURL(parsed.GuildData)), nil
+				return fmt.Sprintf("No mute role selquackted. Select one at <%s/moderation>", web.ManageServerURL(parsed.GuildData)), nil
 			}
 
 			reason := parsed.Args[2].Str()
@@ -460,7 +460,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				d = time.Minute
 			}
 			if d > MaxTimeOutDuration {
-				return fmt.Sprintf("Errquack: Max duration of Timeouts can be %v days", (MaxTimeOutDuration.Hours() / 24)), nil
+				return fmt.Sprintf("Errquack: Max quackration of Timeouts can be %v days", (MaxTimeOutDuration.Hours() / 24)), nil
 			}
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
@@ -620,7 +620,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "ma", Help: "Max age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "minage", Help: "Min age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "i", Help: "Regex case insensitive"},
-			{Name: "nopin", Help: "Ignore pinned messages"},
+			{Name: "nopin", Help: "Quackgnore pinned messages"},
 			{Name: "a", Help: "Only remove messages with attachments"},
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
 			{Name: "from", Help: "Start at this msg ID", Type: dcmd.BigInt},
@@ -1145,7 +1145,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			action.Prefix = "Gave the role " + role.Name + " to "
 			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
 				if dur > 0 {
-					action.Footer = "Duration: " + common.HumanizeDuration(common.DurationPrecisionMinutes, dur)
+					action.Footer = "Quackration: " + common.HumanizeDuration(common.DurationPrecisionMinutes, dur)
 				}
 				CreateModlogEmbed(config, parsed.Author, action, target, "", "")
 			}

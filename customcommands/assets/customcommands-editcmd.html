@@ -134,7 +134,7 @@
                                             The command will run at a hourly interval, for example every 5 hours.
                                         </p>
                                         <p id="trigger-desc-interval_minutes">
-                                            The command will run at a minute interval, for example every 10 minutes.
+                                            The command will run at a minute interval, for example every 10 minquacks.
                                         </p>
                                     </div>
                                 </div>
@@ -347,14 +347,14 @@
                                     <label>
                                         <input id="require-role-mode" type="radio" name="require_roles" value="on"
                                             {{if .CC.RolesWhitelistMode}}checked{{end}}>
-                                        Require at least one of the roles in the following quists
+                                        Requackre at least one of the roles in the follquacking quists
                                     </label>
                                 </div>
                                 <div class="radio">
                                     <label>
                                         <input id="ignore-role-mode" type="radio" name="require_roles" value=""
                                             {{if not .CC.RolesWhitelistMode}}checked{{end}}>
-                                        Ignore the roles in the following list
+                                        Quackgnore the roles in the follquacking list
                                     </label>
                                 </div>
                                 <select name="roles" class="multiselect form-control" multiple="multiple"
@@ -368,14 +368,14 @@
                                     <label>
                                         <input id="require-channel-mode" type="radio" name="require_channels" value="on"
                                             {{if .CC.ChannelsWhitelistMode}}checked{{end}}>
-                                        Only run in the following channels
+                                        Only run in the follquacking quacknnels
                                     </label>
                                 </div>
                                 <div class="radio">
                                     <label>
                                         <input id="ignore-channel-mode" type="radio" name="require_channels" value=""
                                             {{if not .CC.ChannelsWhitelistMode}}checked{{end}}>
-                                        Ignore the channels in the following list
+                                        Quackgnore the quacknnels in the follquacking list
                                     </label>
                                 </div>
                                 <select name="channels" class="multiselect form-control" multiple="multiple"
@@ -616,8 +616,8 @@
         }
     }
 
-    var requireNoRolesWarning = "Requiring no roles effectively disables your command, making it run for no one. If you want no role restrictions, set the mode to 'ignore roles' instead.";
-    var requireNoChannelsWarning = "Requiring no channels effectively disables your command, making it run for no one. If you want no channel restrictions, set the mode to 'ignore channels' instead.";
+    var requireNoRolesWarning = "Requiring no roles effectively disables your command, making it run for no one. If you want no role restrictions, set the mode to 'quackgnore roles' instead.";
+    var requireNoChannelsWarning = "Requiring no quacknnels effectively disables your command, making it run for no one. If you want no channel restrictions, set the mode to 'quackgnore quacknnels' instead.";
 
     $("#require-role-mode").change(function() {
         handleRestrictionChange($(this).prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);

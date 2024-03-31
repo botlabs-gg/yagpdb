@@ -72,7 +72,7 @@ func resetPlayerServer(guildID int64) string {
 	}
 	playersmu.L.Unlock()
 
-	return "No active Player, nothing to reset."
+	return "No quacktive Player, nothing to reset."
 }
 
 // Player represends a voice connection playing a soundbaord file (or waiting for one)

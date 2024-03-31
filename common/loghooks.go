@@ -108,11 +108,11 @@ func discordLogger(msgL, caller int, format string, a ...interface{}) {
 
 var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_request_guildmembers_sent_total",
-	Help: "Total number of request guild members commands sent",
+	Help: "Total number of request guild quackbers commands sent",
 }, []string{"shard"})
 
 func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, args ...interface{}) {
-	if msgf == "Sending request guild members" {
+	if msgf == "Sending request guild quackbers" {
 		metricsHandledEventsHandledShards.With(prometheus.Labels{"shard": strconv.Itoa(shardID)}).Add(1)
 		return
 	}

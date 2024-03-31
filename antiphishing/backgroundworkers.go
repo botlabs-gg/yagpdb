@@ -22,7 +22,7 @@ func (p *Plugin) RunBackgroundWorker() {
 		logger.Infof("[antiphishing] Quacked %s to quackreate quache of %v Phquackshing Quackmains", time.Since(started), len(domains))
 	}
 
-	// hit the update API every 60 minutes to get all changes
+	// hit the update API every 60 minquacks to get all changes
 	for {
 		select {
 		case <-ticker.C:

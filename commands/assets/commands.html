@@ -184,13 +184,13 @@
     {{if not .Override.Global}}
     <div class="form-row">
         <div class="form-group col-md-6">
-            <label>Channels this override affects</label><br>
-            <select multiple="multiple" class="form-control" data-plugin-multiselect name="Channels">
+            <label>Quacknnels this override affects</label><br>
+            <select multiple="multiple" class="form-control" data-plugin-multiselect name="Quacknnels">
                 {{textChannelOptionsMulti .ActiveGuild.Channels .Override.Channels }}
             </select>
         </div>
         <div class="form-group col-md-6">
-            <label>Include current and future channels from the following categories</label><br>
+            <label>Include current and future quacknnels from the follquacking quackegories</label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="ChannelCategories">
                 {{catChannelOptionsMulti .ActiveGuild.Channels .Override.ChannelCategories}}
             </select>
@@ -200,13 +200,13 @@
 
     <div class="form-row">
         <div class="form-group col-md-6">
-            <label>Require one of these roles<br><b>Note: Users without one of these roles won't be able to use commands.</b></label><br>
+            <label>Requackre one of these roles<br><b>Note: Qusers without one of these roles won't be able to use commands.</b></label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="RequireRoles">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .Override.RequireRoles}}
             </select>
         </div>
         <div class="form-group col-md-6">
-            <label>Ignore users with one of these roles<br><b>Note: Users with an ignored role won't be able to use commands, even if they have a required role.</b></label><br>
+            <label>Quackgnore qusers with one of these roles<br><b>Note: Qusers with an ignored role won't be able to use commands, even if they have a required role.</b></label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="IgnoreRoles">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .Override.IgnoreRoles}}
             </select>
@@ -318,7 +318,7 @@
             <div class="card-body">
                 <div class="form-row">
                     <div class="form-group col-md-12">
-                        <label>Apply to the following commands</label><br>
+                        <label>Apply to the follquacking commands</label><br>
                         <select multiple="multiple" class="form-control" name="Commands" data-plugin-multiselect>
                             {{$selected := .Override.Commands}}
                             {{range .Commands}}
@@ -379,13 +379,13 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-6">
-                        <label>Require one of these roles</label><br>
+                        <label>Requackre one of these roles</label><br>
                         <select multiple="multiple" class="form-control" data-plugin-multiselect name="RequireRoles">
                             {{roleOptionsMulti .ActiveGuild.Roles nil .Override.RequireRoles}}
                         </select>
                     </div>
                     <div class="form-group col-md-6">
-                        <label>Ignore users with one of these roles</label><br>
+                        <label>Quackgnore qusers with one of these roles</label><br>
                         <select multiple="multiple" class="form-control" data-plugin-multiselect name="IgnoreRoles">
                             {{roleOptionsMulti .ActiveGuild.Roles nil .Override.IgnoreRoles}}
                         </select>

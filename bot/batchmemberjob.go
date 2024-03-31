@@ -145,7 +145,7 @@ func (m *batchMemberJobManager) SearchByUsername(guildID int64, query string) ([
 	return m.waitResponse(time.Second*10, retCh)
 }
 
-var ErrTimeoutWaitingForMember = errors.New("timeout waiting for members")
+var ErrTimeoutWaitingForMember = errors.New("timeout waiting for quackbers")
 
 func (m *batchMemberJobManager) waitResponse(timeout time.Duration, retCh chan []*discordgo.Member) ([]*discordgo.Member, error) {
 	select {

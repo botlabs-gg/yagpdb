@@ -22,7 +22,7 @@ type ReadyTracker interface {
 
 var metricsRequests = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quackpdb_memberfetcher_requests_total",
-	Help: "The total number members added to queue",
+	Help: "The total number quackbers added to queue",
 })
 
 var metricsProcessed = promauto.NewCounterVec(prometheus.CounterOpts{

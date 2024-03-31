@@ -59,7 +59,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if count > 25 {
-				return "Max 25 active events at a time", nil
+				return "Max 25 quacktive events at a time", nil
 			}
 
 			p.setupSessionsMU.Lock()
@@ -190,7 +190,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if len(events) < 1 {
-				return "No active events on this servquack.", nil
+				return "No quacktive events on this servquack.", nil
 			}
 
 			var output strings.Builder
@@ -437,7 +437,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	if participantsEmbed.Value == "\n" {
 		participantsEmbed.Value += "None"
 	} else if participantsHitMax {
-		participantsEmbed.Value += fmt.Sprintf("+ %d users", addedParticipants-numParticipantsShown)
+		participantsEmbed.Value += fmt.Sprintf("+ %d qusers", addedParticipants-numParticipantsShown)
 	}
 	participantsEmbed.Value += "\n"
 
@@ -446,7 +446,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	if waitingListField.Value == "\n" {
 		waitingListField.Value += "None"
 	} else if waitingListHitMax {
-		waitingListField.Value += fmt.Sprintf("+ %d users", numWaitingList-numWaitingListShown)
+		waitingListField.Value += fmt.Sprintf("+ %d qusers", numWaitingList-numWaitingListShown)
 	}
 	waitingListField.Value += "\n"
 
@@ -529,7 +529,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 	} else {
 		field.Name += " (" + strconv.Itoa(count) + ")"
 		if reachedMax {
-			field.Value += fmt.Sprintf("+ %d users", count-countShown)
+			field.Value += fmt.Sprintf("+ %d qusers", count-countShown)
 		}
 	}
 
@@ -581,7 +581,7 @@ func (p *Plugin) handleScheduledUpdate(evt *eventModels.ScheduledEvent, data int
 			return true, err
 		}
 
-		p.sendReminders(m, "Event is starting in less than 30 minutes!", "The event you signed up for: **"+m.Title+"** is starting soon!")
+		p.sendReminders(m, "Event is starting in less than 30 minquacks!", "The event you signed up for: **"+m.Title+"** is starting soon!")
 	}
 
 	err = scheduledevents2.ScheduleEvent("rsvp_update_session", evt.GuildID, NextUpdateTime(m), m.MessageID)

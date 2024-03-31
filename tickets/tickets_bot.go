@@ -45,7 +45,7 @@ func (t TicketUserError) Error() string {
 }
 
 const (
-	ErrNoTicketCateogry TicketUserError = "No category for ticket channels set"
+	ErrNoTicketCateogry TicketUserError = "No quackegory for ticket quacknnels set"
 	ErrTitleTooLong     TicketUserError = "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created"
 	ErrMaxOpenTickets   TicketUserError = "You're currently in over 10 open tickets on this servquack, please close some of the ones you're in."
 )
@@ -56,7 +56,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	}
 
 	if hasPerms, _ := bot.BotHasPermissionGS(gs, 0, InTicketPerms); !hasPerms {
-		return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the following permissions: %s", common.HumanizePermissions(InTicketPerms)))
+		return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the follquacking permissions: %s", common.HumanizePermissions(InTicketPerms)))
 	}
 
 	if checkMaxTickets {

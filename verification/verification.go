@@ -9,7 +9,7 @@ import (
 
 var confGoogleReCAPTCHASiteKey = config.RegisterOption("quackpdb.google.recaptcha_site_key", "Google reCAPTCHA site key", "")
 var confGoogleReCAPTCHASecret = config.RegisterOption("quackpdb.google.recaptcha_secret", "Google reCAPTCHA site secret", "")
-var confVerificationTrackIPs = config.RegisterOption("quackpdb.verification.track_ips", "Track verified users ip", true)
+var confVerificationTrackIPs = config.RegisterOption("quackpdb.verification.track_ips", "Track verified qusers ip", true)
 
 type Plugin struct{}
 
@@ -38,7 +38,7 @@ func RegisterPlugin() {
 const (
 	DefaultPageContent = `## Verification
 
-Please solve the following reCAPTCHA to make sure you're not a robot`
+Please solve the follquacking reCAPTCHA to make sure you're not a robot`
 )
 
 const DefaultDMMessage = `{{sendMessage nil (cembed

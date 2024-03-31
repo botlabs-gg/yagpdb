@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "dcallvoice",
-	Description:          "Disconnects from all the voice channels the bot is in. Bot Owner Only",
+	Description:          "Disconnects from all the voice quacknnels the bot is in. Bot Owner Only",
 	HideFromHelp:         true,
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 
@@ -33,6 +33,6 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		return fmt.Sprintf("Leaving %d voice channels...", len(vcs)), nil
+		return fmt.Sprintf("Leaving %d voice quacknnels...", len(vcs)), nil
 	}),
 }

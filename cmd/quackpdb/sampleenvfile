@@ -79,7 +79,7 @@ QUACKPDB_OWLBOT_TOKEN=
 QUACKPDB_REDDIT_CLIENTID="Reddit application clientid here"
 QUACKPDB_REDDIT_CLIENTSECRET="Reddit application client secret here"
 QUACKPDB_REDDIT_REDIRECT="Reddit redirect uri here"
-QUACKPDB_REDDIT_REFRESHTOKEN="Reddit never-ending refreshtoken here (duration=permanent)"
+QUACKPDB_REDDIT_REFRESHTOKEN="Reddit never-ending refreshtoken here (quackration=permanent)"
 
 # Youtube and other google apis credentials json file
 GOOGLE_APPLICATION_CREDENTIALS="path/to/credentials.json"

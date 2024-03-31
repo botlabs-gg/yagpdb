@@ -833,7 +833,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(`<ul>
-    <li>Active and enabled Quacksets: <code>%d</code></li>
+    <li>Quacktive and enabled Quacksets: <code>%d</code></li>
     <li>Total qules: <code>%d</code></li>
 </ul>`, rulesets, rules))
 

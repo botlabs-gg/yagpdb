@@ -238,7 +238,7 @@ func (t *triviaSession) buildButtons() []discordgo.MessageComponent {
 
 func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{}
-	embed.Title = fmt.Sprintf("Trivia Category: %s ", t.Question.Category)
+	embed.Title = fmt.Sprintf("Trivia Quackegory: %s ", t.Question.Category)
 	embed.Description += fmt.Sprintf("\n ## %s \n", t.Question.Question)
 
 	embed.Footer = &discordgo.MessageEmbedFooter{
@@ -343,7 +343,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	// Check if user already picked a option
 	for _, v := range t.SelectedOptions {
 		if v.User.ID == ic.Member.User.ID {
-			response.Data.Content = fmt.Sprintf("You've already picked an answer: `%s`, I am going to ignore this 😒", t.Question.Options[v.Option])
+			response.Data.Content = fmt.Sprintf("You've already picked an answer: `%s`, I am going to quackgnore this 😒", t.Question.Options[v.Option])
 			err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 			if err != nil {
 				logger.WithError(err).Error("Quailed quackreating interaction response")

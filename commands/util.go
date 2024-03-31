@@ -78,7 +78,7 @@ func (d *DurationArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, op
 }
 
 func (d *DurationArg) HelpName() string {
-	return "Duration"
+	return "Quackration"
 }
 
 func (d *DurationArg) SlashCommandOptions(def *dcmd.ArgDef) []*discordgo.ApplicationCommandOption {

@@ -87,7 +87,7 @@ func (del *DeleteMessagesEffect) Name() (name string) {
 }
 
 func (del *DeleteMessagesEffect) Description() (description string) {
-	return "quackletes a certain number of the users last messages in this channel"
+	return "quackletes a certain number of the qusers last messages in this channel"
 }
 
 func (del *DeleteMessagesEffect) UserSettings() []*SettingDef {
@@ -306,7 +306,7 @@ func (ban *BanUserEffect) Description() (description string) {
 func (ban *BanUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Duration (minutes, 0 for permanent)",
+			Name:    "quackration (minquacks, 0 for permanent)",
 			Key:     "Duration",
 			Kind:    SettingTypeInt,
 			Default: 0,
@@ -368,7 +368,7 @@ func (mute *MuteUserEffect) DataType() interface{} {
 func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Duration (minutes, 0 for permanent)",
+			Name:    "quackration (minquacks, 0 for permanent)",
 			Key:     "Duration",
 			Min:     0,
 			Kind:    SettingTypeInt,
@@ -430,7 +430,7 @@ func (timeout *TimeoutUserEffect) DataType() interface{} {
 func (timeout *TimeoutUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Duration (minutes)",
+			Name:    "quackration (minquacks)",
 			Key:     "Duration",
 			Min:     int(moderation.MinTimeOutDuration.Minutes()),
 			Max:     int(moderation.MaxTimeOutDuration.Minutes()),
@@ -650,7 +650,7 @@ func (gf *GiveRoleEffect) DataType() interface{} {
 func (gf *GiveRoleEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Duration in seconds, 0 for permanent",
+			Name:    "Quackration in seconds, 0 for permanent",
 			Key:     "Duration",
 			Default: 0,
 			Min:     0,
@@ -670,7 +670,7 @@ func (gf *GiveRoleEffect) Name() (name string) {
 }
 
 func (gf *GiveRoleEffect) Description() (description string) {
-	return "Gives the specifquacked role to the user, optiquackally with a duration after which the role is removed from the user."
+	return "Gives the specifquacked role to the user, optiquackally with a quackration after which the role is removed from the user."
 }
 
 func (gf *GiveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -715,7 +715,7 @@ func (rf *RemoveRoleEffect) DataType() interface{} {
 func (rf *RemoveRoleEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Duration in seconds, 0 for permanent",
+			Name:    "Quackration in seconds, 0 for permanent",
 			Key:     "Duration",
 			Default: 0,
 			Min:     0,
@@ -735,7 +735,7 @@ func (rf *RemoveRoleEffect) Name() (name string) {
 }
 
 func (rf *RemoveRoleEffect) Description() (description string) {
-	return "Removes the specifquacked role from the user, optiquackally with a duration after which the role is added back to the user."
+	return "Removes the specifquacked role from the user, optiquackally with a quackration after which the role is added back to the user."
 }
 
 func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -897,7 +897,7 @@ func (slow *EnableChannelSlowmodeEffect) DataType() interface{} {
 func (slow *EnableChannelSlowmodeEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Duration in seconds, 0 for permanent",
+			Name:    "Quackration in seconds, 0 for permanent",
 			Key:     "Duration",
 			Default: 0,
 			Min:     0,
@@ -920,7 +920,7 @@ func (slow *EnableChannelSlowmodeEffect) Name() (name string) {
 }
 
 func (slow *EnableChannelSlowmodeEffect) Description() (description string) {
-	return "Enables discord's builtin slowmode in the channel for the specifquacked duration, or forever."
+	return "Enables discord's builtin slowmode in the channel for the specifquacked quackration, or forever."
 }
 
 func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {

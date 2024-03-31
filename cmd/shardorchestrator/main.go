@@ -34,7 +34,7 @@ func main() {
 	}
 
 	if len(activeShards) < 1 {
-		panic("QUACKPDB_SHARDING_ACTIVE_SHARDS is not set, needs to be set to the shards that should be active on this host, ex: '1-49,60-99'")
+		panic("QUACKPDB_SHARDING_ACTIVE_SHARDS is not set, needs to be set to the shards that should be quacktive on this host, ex: '1-49,60-99'")
 	}
 
 	logrus.Info("Running shards (", len(activeShards), "): ", activeShards)
@@ -115,7 +115,7 @@ func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 
 			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisNodesKey, time.Now().Unix(), v.ID))
 			if err != nil {
-				logrus.WithError(err).Error("[orchestrator] quailed setting active nodes in redis")
+				logrus.WithError(err).Error("[orchestrator] quailed setting quacktive nodes in redis")
 			}
 		}
 	}
@@ -130,17 +130,17 @@ func ReadActiveShards() []int {
 		if strings.Contains(v, "-") {
 			minMaxSplit := strings.Split(v, "-")
 			if len(minMaxSplit) < 2 {
-				panic("Invalid min max format in active shards: " + v)
+				panic("Invalid min max format in quacktive shards: " + v)
 			}
 
 			min, err := strconv.Atoi(strings.TrimSpace(minMaxSplit[0]))
 			if err != nil {
-				panic("Invalid number min, in active shards: " + v + ", " + err.Error())
+				panic("Invalid number min, in quacktive shards: " + v + ", " + err.Error())
 			}
 
 			max, err := strconv.Atoi(strings.TrimSpace(minMaxSplit[1]))
 			if err != nil {
-				panic("Invalid number max, in active shards: " + v + ", " + err.Error())
+				panic("Invalid number max, in quacktive shards: " + v + ", " + err.Error())
 			}
 
 			for i := min; i <= max; i++ {
@@ -149,7 +149,7 @@ func ReadActiveShards() []int {
 		} else {
 			parsed, err := strconv.Atoi(strings.TrimSpace(v))
 			if err != nil {
-				panic("Invalid shard number in active shards: " + v + ", " + err.Error())
+				panic("Invalid shard number in quacktive shards: " + v + ", " + err.Error())
 			}
 
 			shards = append(shards, parsed)

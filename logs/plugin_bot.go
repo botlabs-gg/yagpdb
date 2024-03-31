@@ -146,7 +146,7 @@ var cmdWhois = &commands.YAGCommand{
 		var memberStatus string
 		state := [6]string{"Playing", "Streaming", "Listening", "Watching", "Custom", "Competing"}
 		if member.Presence == nil || member.Presence.Game == nil {
-			memberStatus = "Has no active quacktus, is invisible/offline or is not in the bot's cache."
+			memberStatus = "Has no quacktive quacktus, is invisible/offline or is not in the bot's cache."
 		} else {
 			if member.Presence.Game.Type == 4 {
 				memberStatus = fmt.Sprintf("%s: %s", member.Presence.Game.Name, member.Presence.Game.State)
@@ -174,12 +174,12 @@ var cmdWhois = &commands.YAGCommand{
 					Inline: true,
 				},
 				{
-					Name:   "Account Created",
+					Name:   "Quaccount Created",
 					Value:  t.UTC().Format(time.RFC822),
 					Inline: true,
 				},
 				{
-					Name:   "Account Age",
+					Name:   "Quaccount Age",
 					Value:  createdDurStr,
 					Inline: true,
 				},
@@ -590,7 +590,7 @@ func EvtProcesser() {
 
 			started := time.Now()
 			err := ProcessBatch(queuedUsers, queuedMembers)
-			logger.Debugf("Updated %d members and %d users in %s", len(queuedMembers), len(queuedUsers), time.Since(started).String())
+			logger.Debugf("Updated %d quackbers and %d qusers in %s", len(queuedMembers), len(queuedUsers), time.Since(started).String())
 			if err == nil {
 				// reset the slices
 				queuedUsers = queuedUsers[:0]
@@ -689,12 +689,12 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 
 			err = CheckUsername(tx, context.Background(), usernameStatement, v.User)
 			if err != nil {
-				return errors.WrapIf(err, "members username check")
+				return errors.WrapIf(err, "quackbers username check")
 			}
 
 			err = CheckNickname(tx, context.Background(), nickStatement, v.User.ID, v.GuildID, v.Nick)
 			if err != nil {
-				return errors.WrapIf(err, "members nickname check")
+				return errors.WrapIf(err, "quackbers nickname check")
 			}
 		}
 

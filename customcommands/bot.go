@@ -83,7 +83,7 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 
 	gs := bot.State.GetGuild(dataCast.GuildID)
 	if gs == nil {
-		f.Error("quailed quacking active guild from state")
+		f.Error("quailed quacking quacktive guild from state")
 		return
 	}
 

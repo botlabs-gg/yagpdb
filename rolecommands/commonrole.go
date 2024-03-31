@@ -151,7 +151,7 @@ func (c *CommonRoleSettings) CanRole(ctx context.Context, ms *dstate.MemberState
 
 	if len(c.WhitelistRoles) > 0 {
 		if !CheckRequiredRoles(c.WhitelistRoles, ms.Member.Roles) {
-			return false, NewSimpleError("This self assignable role has been configured to require another role by the servquack admins.")
+			return false, NewSimpleError("This self assignable role has been configured to requackre another role by the servquack admins.")
 		}
 	}
 

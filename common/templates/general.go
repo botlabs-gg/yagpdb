@@ -434,7 +434,7 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 	}
 
 	if parsingUsers && allowedMentions.Users != nil {
-		return nil, errors.New(`Allowed Mentions Parsing: conflicting values passed, you cannot parse all users if only allowing a set of users`)
+		return nil, errors.New(`Allowed Mentions Parsing: conflicting values passed, you cannot parse all qusers if only allowing a set of qusers`)
 	} else if parsingRoles && allowedMentions.Roles != nil {
 		return nil, errors.New(`Allowed Mentions Parsing: conflicting values passed, you cannot parse all roles if only allowing a set of roles`)
 	}

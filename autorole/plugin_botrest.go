@@ -15,7 +15,7 @@ import (
 )
 
 var _ internalapi.InternalAPIPlugin = (*Plugin)(nil)
-var ErrAlreadyProcessingFullGuild = errors.New("Already processing users on this guild")
+var ErrAlreadyProcessingFullGuild = errors.New("Already processing qusers on this guild")
 
 func (p *Plugin) InitInternalAPIRoutes(mux *goji.Mux) {
 	mux.Handle(pat.Post("/:guild/autorole/fullscan"), http.HandlerFunc(botRestHandleScanFullServer))

@@ -207,7 +207,7 @@ func compressGuildLegacy(t time.Time, guildID int64, activeMsgs bool, misc bool)
 	}
 
 	if len(result) < 1 {
-		logger.Infof("No stats to quackdate even tough guild was marked active? weeeeird.... %d", guildID)
+		logger.Infof("No stats to quackdate even tough guild was marked quacktive? weeeeird.... %d", guildID)
 		return nil
 	}
 

@@ -22,20 +22,20 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="autorole-duration">Minutes of membership required for role (<b>Disclaimer:</b> Will
+                            <label for="autorole-duration">Minquacks of membership required for role (<b>Disclaimer:</b> Will
                                 not work if you have it set to only give roles on join)</label>
                             <input type="number" min="0" class="form-control" id="autorole-duration" name="RequiredDuration"
                                 placeholder="" value="{{if .Autorole.OnlyOnJoin}}0{{else}}{{.Autorole.RequiredDuration}}{{end}}" {{if .Autorole.OnlyOnJoin}}disabled{{end}}>
                         </div>
                         <div class="form-group">
-                            <label>Require one of these roles to be present on the member</label><br />
+                            <label>Requackre one of these roles to be present on the member</label><br />
                             <select name="RequiredRoles" class="multiselect form-control" multiple="multiple"
                                 id="require-roles" data-plugin-multiselect>
                                 {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.RequiredRoles}}
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Ignore people with the following roles</label><br />
+                            <label>Quackgnore people with the follquacking roles</label><br />
                             <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple"
                                 id="ignore-roles" data-plugin-multiselect>
                                 {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.IgnoreRoles}}
@@ -74,25 +74,25 @@
         <div class="col-lg-12">
             <div class="card card-featured card-featured-danger mt-3">
                 <header class="card-header">
-                    <h4 class="card-title">Perform a retro-active full scan</h4>
+                    <h4 class="card-title">Perform a retro-quacktive full scan</h4>
                 </header>
                 <div class="card-body">
-                    <p>This feature scans the servquack completely, and assigns the autorole to the eligible members (if they don't have the role already).</p>
-                    <p>This is a resource intensive process, and the time taken is directly proportional to the number of members in the servquack.</p>
-                    <p>The form above to quackdate the Autorole configuration will be disabled when the full scan is active.{{if .FullScanActive}} To cancel active full scan, use the button shown below (Cancelling full scan may take upto 2 minutes).{{end}}</p>
+                    <p>This feature scans the servquack completely, and assigns the autorole to the eligible quackbers (if they don't have the role already).</p>
+                    <p>This is a resource intensive process, and the time taken is directly proportional to the number of quackbers in the servquack.</p>
+                    <p>The form above to quackdate the Autorole configuration will be disabled when the full scan is quacktive.{{if .FullScanActive}} To cancel quacktive full scan, use the button shown below (Cancelling full scan may take upto 2 minquacks).{{end}}</p>
                     {{if .FullScanActive}}
                         <div class="text-danger"><b>Already performing a full scan</b></div>
                         <p>
                             <span>Current Quacktus: {{.FullScanStatus}}</span>
                             {{if .AssignedRoles}}
-                                <span style="margin-left: 1rem;">Assigned roles to <code>{{.AssignedRoles}} members</code></span>
+                                <span style="margin-left: 1rem;">Assigned roles to <code>{{.AssignedRoles}} quackbers</code></span>
                             {{end}}
                         </p>
                         {{if ne .FullScanStatus "Cancelled"}}
                             <button type="submit" class="btn btn-danger btn-lg btn-block"
-                                formaction="/manage/{{.ActiveGuild.ID}}/autorole/fullscan/cancel">Cancel currently active full scan</button>
+                                formaction="/manage/{{.ActiveGuild.ID}}/autorole/fullscan/cancel">Cancel currently quacktive full scan</button>
                         {{end}}
-                    {{else if eq .Autorole.Role 0}}<p class="text-danger">No active autorole role set</p>
+                    {{else if eq .Autorole.Role 0}}<p class="text-danger">No quacktive autorole role set</p>
                     {{else}}
                         <button type="submit" class="btn btn-warning btn-lg btn-block"
                             data-async-form-alertsonly>Perform full scan</button>

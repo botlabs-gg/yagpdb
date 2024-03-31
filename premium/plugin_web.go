@@ -239,9 +239,9 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 			<button type="submit" class="btn btn-danger">Detach quackmium slot</button>
 		</form>`, ag.ID)
 
-				body.WriteString(fmt.Sprintf("<p>Quackmium tier <b>%s</b> active and provided by user <code>%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), premiumBy, detForm))
+				body.WriteString(fmt.Sprintf("<p>Quackmium tier <b>%s</b> quacktive and provided by user <code>%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), premiumBy, detForm))
 			} else {
-				body.WriteString(fmt.Sprintf("<p class=\"mt-3\">Quackmium tier <b>%s</b> active and provided by %s: %s</p>", tier.String(), v.Name(), status))
+				body.WriteString(fmt.Sprintf("<p class=\"mt-3\">Quackmium tier <b>%s</b> quacktive and provided by %s: %s</p>", tier.String(), v.Name(), status))
 			}
 		}
 
@@ -251,7 +251,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		return templateData, nil
 	} else {
 		templateData["WidgetDisabled"] = true
-		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Quackmium not active on this servquack :(</p>\n\n%s", footer))
+		templateData["WidgetBody"] = template.HTML(fmt.Sprintf("<p>Quackmium not quacktive on this servquack :(</p>\n\n%s", footer))
 	}
 
 	return templateData, nil

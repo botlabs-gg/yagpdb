@@ -20,7 +20,7 @@ var metricsTotalShards = promauto.NewGauge(prometheus.GaugeOpts{
 
 var metricsMembersTotal = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "bot_members_total",
-	Help: "Total number of members on this node",
+	Help: "Total number of quackbers on this node",
 })
 
 var metricsGuildsTotal = promauto.NewGauge(prometheus.GaugeOpts{

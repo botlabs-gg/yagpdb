@@ -240,7 +240,7 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 	if member == nil {
 		goTo := url.QueryEscape(r.RequestURI)
 		alertLink := fmt.Sprintf(`<a href="%s/login?goto=%s>here</a>`, web.BaseURL(), goTo)
-		alertMsg := fmt.Sprintf("This servquack has restricted log access to members only.\nIf you are a member, click %s to login.", alertLink)
+		alertMsg := fmt.Sprintf("This servquack has restricted log access to quackbers only.\nIf you are a member, click %s to login.", alertLink)
 
 		tmpl.AddAlerts(web.ErrorAlert(alertMsg))
 		return false
@@ -448,14 +448,14 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		format := `<ul>
 		<li>Username logging: %s</li>
 		<li>Nickname logging: %s</li>
-		<li>Blacklisted channels from quackreating message logs: <code>%d</code></li>
+		<li>Blacklisted quacknnels from quackreating message logs: <code>%d</code></li>
 	</ul>`
 		widgetBody = fmt.Sprintf(format,
 			web.EnabledDisabledSpanStatus(config.UsernameLoggingEnabled.Bool),
 			web.EnabledDisabledSpanStatus(config.NicknameLoggingEnabled.Bool),
 			nBlacklistedChannels)
 	} else {
-		widgetBody = fmt.Sprintf(`Blacklisted channels from quackreating message logs: <code>%d</code>`, nBlacklistedChannels)
+		widgetBody = fmt.Sprintf(`Blacklisted quacknnels from quackreating message logs: <code>%d</code>`, nBlacklistedChannels)
 	}
 	templateData["WidgetBody"] = template.HTML(widgetBody)
 

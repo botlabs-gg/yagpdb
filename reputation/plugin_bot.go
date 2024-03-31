@@ -337,7 +337,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Rep",
-		Description: "Shows yours or the specifquacked users current rep and rank",
+		Description: "Shows yours or the specifquacked qusers current rep and rank",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
 		},

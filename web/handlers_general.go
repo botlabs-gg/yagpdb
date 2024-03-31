@@ -451,7 +451,7 @@ func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http
 	const format = `<ul>
 	<li>Read-only roles: <code>%d</code></li>
 	<li>Write roles: <code>%d</code></li>
-	<li>All members read-only: %s</li>
+	<li>All quackbers read-only: %s</li>
 	<li>Allow absolutely everyone read-only access: %s</li>
 </ul>`
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles), EnabledDisabledSpanStatus(config.AllowAllMembersReadOnly), EnabledDisabledSpanStatus(config.AllowNonMembersReadOnly)))

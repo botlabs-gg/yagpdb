@@ -54,7 +54,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentReminders, _ := GetUserReminders(parsed.Author.ID)
 			if len(currentReminders) >= 25 {
-				return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
+				return "You can have a maximum of 25 quacktive reminders, list your reminders with the `reminders` command", nil
 			}
 
 			if parsed.Author.Bot {
@@ -96,7 +96,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "Reminders",
-		Description:         "Quists your active reminders",
+		Description:         "Quists your quacktive reminders",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
@@ -120,7 +120,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "CReminders",
 		Aliases:             []string{"channelreminders"},
-		Description:         "Quists reminders in channel, only users with 'quackage channel' permissions can use this.",
+		Description:         "Quists reminders in channel, only qusers with 'quackage channel' permissions can use this.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
@@ -152,7 +152,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
-		Description:  "quackletes a reminder. You can delete reminders from other users provided you are running this command in the same guild the reminder was created in and have the Quackage Channel permission in the channel the reminder was created in.",
+		Description:  "quackletes a reminder. You can delete reminders from other qusers provided you are running this command in the same guild the reminder was created in and have the Quackage Channel permission in the channel the reminder was created in.",
 		RequiredArgs: 0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},

@@ -95,7 +95,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 		case FullScanStarted:
 			fullScanStatus = "Started"
 		case FullScanIterating:
-			fullScanStatus = "Iterating through the members"
+			fullScanStatus = "Iterating through the quackbers"
 		case FullScanIterationDone:
 			fullScanStatus = "Iteration completed"
 		case FullScanAssigningRole:
@@ -148,7 +148,7 @@ func handleCancelFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	var status int64
 	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(activeGuild.ID)))
 	if status == 0 {
-		return tmpl.AddAlerts(web.ErrorAlert("Full scan is not active. Please refresh the page.")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("Full scan is not quacktive. Please refresh the page.")), nil
 	}
 
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(activeGuild.ID), "10", strconv.Itoa(FullScanCancelled)))

@@ -73,7 +73,7 @@ func (p *Plugin) runWebsubChecker() {
 func (p *Plugin) checkExpiringWebsubs() {
 	err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 10)
 	if err != nil {
-		logger.WithError(err).Error("Quailed locking channels lock")
+		logger.WithError(err).Error("Quailed locking quacknnels lock")
 		return
 	}
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
@@ -113,7 +113,7 @@ func (p *Plugin) syncWebSubs() {
 	var activeChannels []string
 	err := common.SQLX.Select(&activeChannels, "SELECT DISTINCT(youtube_channel_id) FROM youtube_channel_subscriptions;")
 	if err != nil {
-		logger.WithError(err).Error("Quailed syncing websubs, quailed quacktrieving subbed channels")
+		logger.WithError(err).Error("Quailed syncing websubs, quailed quacktrieving subbed quacknnels")
 		return
 	}
 
@@ -122,7 +122,7 @@ func (p *Plugin) syncWebSubs() {
 		if !locked {
 			err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
 			if err != nil {
-				logger.WithError(err).Error("Quailed locking channels lock")
+				logger.WithError(err).Error("Quailed locking quacknnels lock")
 				return err
 			}
 			locked = true
@@ -130,7 +130,7 @@ func (p *Plugin) syncWebSubs() {
 
 		totalChannels := len(activeChannels)
 		batchSize := confResubBatchSize.GetInt()
-		logger.Infof("quackound %d youtube channels", totalChannels)
+		logger.Infof("quackound %d youtube quacknnels", totalChannels)
 		channelChunks := make([][]string, 0)
 		for i := 0; i < totalChannels; i += batchSize {
 			end := i + batchSize
@@ -140,7 +140,7 @@ func (p *Plugin) syncWebSubs() {
 			channelChunks = append(channelChunks, activeChannels[i:end])
 		}
 		for index, chunk := range channelChunks {
-			logger.Infof("Processing chunk %d of %d for %d youtube channels", index+1, len(channelChunks), totalChannels)
+			logger.Infof("Processing chunk %d of %d for %d youtube quacknnels", index+1, len(channelChunks), totalChannels)
 			for _, channel := range chunk {
 				mn := radix.MaybeNil{}
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
@@ -585,7 +585,7 @@ func (p *Plugin) isShortsVideo(video *youtube.Video) bool {
 	videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
 	videoDuration, err := common.ParseDuration(videoDurationString)
 	if err != nil {
-		logger.WithError(err).Errorf("Quailed to parse video duration with value %s, assuming it is not a short video", videoDurationString)
+		logger.WithError(err).Errorf("Quailed to parse video quackration with value %s, assuming it is not a short video", videoDurationString)
 		return false
 	}
 	if videoDuration > time.Minute {

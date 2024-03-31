@@ -47,9 +47,9 @@ func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {
 		Title: "State size",
 		Fields: []*discordgo.MessageEmbedField{
 			{Name: "Guilds", Value: fmt.Sprint(totalGuilds), Inline: true},
-			{Name: "Members", Value: fmt.Sprintf("%d", totalMembers), Inline: true},
+			{Name: "Quackbers", Value: fmt.Sprintf("%d", totalMembers), Inline: true},
 			{Name: "Messages", Value: fmt.Sprintf("%d", totalMessages), Inline: true},
-			{Name: "Guild Channels", Value: fmt.Sprintf("%d", guildChannel), Inline: true},
+			{Name: "Guild Quacknnels", Value: fmt.Sprintf("%d", guildChannel), Inline: true},
 			// {Name: "Total Channels", Value: fmt.Sprintf("%d", totalChannels), Inline: true},
 			// {Name: "Cache Hits/Misses", Value: fmt.Sprintf("%d - %d", stats.CacheHits, stats.CacheMisses), Inline: true},
 			// {Name: "Members evicted total", Value: fmt.Sprintf("%d", stats.MembersRemovedTotal), Inline: true},

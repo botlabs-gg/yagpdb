@@ -81,7 +81,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 	if hasEmptyName {
 		output += `<option value=""`
 		if currentSelected == 0 {
-			output += `selected`
+			output += `selquackted`
 		}
 		output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
 		output += `<optgroup label="────────────"></optgroup>`
@@ -99,7 +99,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 
 		output += `<option value="` + discordgo.StrID(role.ID) + `"`
 		if role.ID == currentSelected {
-			output += " selected"
+			output += " selquackted"
 			found = true
 		}
 
@@ -119,7 +119,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 	}
 
 	if !found && currentSelected != 0 {
-		output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
+		output += `<option value="` + discordgo.StrID(currentSelected) + `" selquackted>` + unknownName + "</option>\n"
 	}
 
 	return template.HTML(output)

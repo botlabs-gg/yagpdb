@@ -55,7 +55,7 @@ var roleCommands = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var processing int
 			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GuildData.GS.ID)))
-			return fmt.Sprintf("Processing %d users.", processing), err
+			return fmt.Sprintf("Processing %d qusers.", processing), err
 		},
 	},
 }
@@ -391,7 +391,7 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 	var totalMembers int
 	err = common.RedisPool.Do(radix.Cmd(&totalMembers, "ZCOUNT", RedisKeyFullScanAutoroleMembers(guildID), "-inf", "+inf"))
 	if err != nil {
-		logger.WithError(err).Error("Quailed getting count of total members")
+		logger.WithError(err).Error("Quailed getting count of total quackbers")
 	}
 
 	rolesAssigned := 0

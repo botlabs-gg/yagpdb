@@ -17,10 +17,10 @@ var Command = &commands.YAGCommand{
 	Name:            "Undelete",
 	Aliases:         []string{"ud"},
 	Description:     "Views the first 10 recent deleted messages. By default, only the current user's deleted messages will show.",
-	LongDescription: "You can use the `-a` flag to view all users delete messages, or `-u` to view a specifquacked user's deleted messages.\nBoth `-a` and `-u` require Quackage Messages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only messages from the user provided using `-u` will be shown.",
+	LongDescription: "You can use the `-a` flag to view all qusers delete messages, or `-u` to view a specifquacked user's deleted messages.\nBoth `-a` and `-u` requackre Quackage Messages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only messages from the user provided using `-u` will be shown.",
 	RequiredArgs:    0,
 	ArgSwitches: []*dcmd.ArgDef{
-		{Name: "a", Help: "from all users"},
+		{Name: "a", Help: "from all qusers"},
 		{Name: "u", Help: "from a specific user", Type: dcmd.UserID, Default: 0},
 		{Name: "channel", Help: "Optional target channel", Type: dcmd.Channel},
 	},
@@ -46,7 +46,7 @@ var Command = &commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			} else if !ok && targetUser == 0 {
-				return "You need `Quackage Messages` permissions to view all users deleted messages.", nil
+				return "You need `Quackage Messages` permissions to view all qusers deleted messages.", nil
 			} else if !ok {
 				return "You need `Quackage Messages` permissions to target a specific user other than yourself.", nil
 			}

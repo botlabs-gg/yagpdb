@@ -249,7 +249,7 @@ OUTER:
 
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "twitter"}).Add(float64(len(relevantFeeds)))
 
-	logger.Infof("Handled tweet %q from %s on %d channels", t.Text, t.Username, len(relevantFeeds))
+	logger.Infof("Handled tweet %q from %s on %d quacknnels", t.Text, t.Username, len(relevantFeeds))
 }
 
 func (p *Plugin) createTweetEmbed(tweet *twitterscraper.Tweet, user *twitterscraper.Profile) *discordgo.MessageEmbed {

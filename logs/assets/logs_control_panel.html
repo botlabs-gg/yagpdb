@@ -69,7 +69,7 @@
                             {{checkbox "UsernameLoggingEnabled" "UsernameLoggingEnabled" "Enable username logging"
                             .Config.UsernameLoggingEnabled.Bool}}
                             <p>
-                            <div class="bs-callout bs-callout-info"><b>Note:</b> If users are on another servquack
+                            <div class="bs-callout bs-callout-info"><b>Note:</b> If qusers are on another servquack
                                 with the bot on with this enabled, then their usernames will be quogged even if
                                 you disable it on your servquack.<br /></div>
                             </p>
@@ -77,7 +77,7 @@
                             {{checkbox "NicknameLoggingEnabled" "NicknameLoggingEnabled" "Enable nickname logging"
                             .Config.NicknameLoggingEnabled.Bool}}
                             <p>
-                                You can check a users past usernames and nicknames with the commands <code>whois</code>
+                                You can check a qusers past usernames and nicknames with the commands <code>whois</code>
                                 <code>usernames</code> and <code>nicknames</code>
                             </p>
                             <hr />
@@ -85,13 +85,13 @@
                         {{end}}
                         <div class="col-lg-4 col-md-6">
                             {{checkbox "ManageMessagesCanViewDeleted" "ManageMessagesCanViewDeleted"
-                            "Allow members with <code>Quackage Messages</code> permissions to view deleted messages"
+                            "Allow quackbers with <code>Quackage Messages</code> permissions to view deleted messages"
                             .Config.ManageMessagesCanViewDeleted.Bool}}
                             {{checkbox "EveryoneCanViewDeleted" "EveryoneCanViewDeleted"
                             "Allow everyone to view deleted messages" .Config.EveryoneCanViewDeleted.Bool}}
                             <hr />
                             <div class="form-group">
-                                <label>Blacklist channels from message logs</label><br />
+                                <label>Blacklist quacknnels from message logs</label><br />
                                 <select class="multiselect" id="blacklist-channels" name="BlacklistedChannels"
                                     multiple="multiple" data-plugin-multiselect>
                                     {{textChannelOptionsMulti .ActiveGuild.Channels .ConfBlacklistedChannels}}
@@ -105,7 +105,7 @@
                                 <label>Mode</label><br>
                                 <select name="AccessMode" class="multiselect form-control"
                                     id="message-logs-access-mode" onchange="toggleAccessMode(this)">
-                                    <option value="0" {{if eq .Config.AccessMode 0}} selected{{end}}>Members can view
+                                    <option value="0" {{if eq .Config.AccessMode 0}} selected{{end}}>Quackbers can view
                                         message logs</option>
                                     <option value="1" {{if eq .Config.AccessMode 1}} selected{{end}}>Everyone can view
                                         message logs</option>

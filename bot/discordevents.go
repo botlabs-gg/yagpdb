@@ -252,7 +252,7 @@ func InvalidateCache(guildID, userID int64) {
 		}
 
 		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))); err != nil {
-			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed invalidating guild channels cache")
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed invalidating guild quacknnels cache")
 		}
 	}
 }

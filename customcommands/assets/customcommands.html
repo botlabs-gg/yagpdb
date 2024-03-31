@@ -61,7 +61,7 @@
             <!-- Tab panes -->
             <div class="tab-content">
                 <div class="tab-pane active">
-                    {{if not .CurrentCommandGroup}}<p>Create a new group to put whitelist/blacklist roles/channels on
+                    {{if not .CurrentCommandGroup}}<p>Create a new group to put whitelist/blacklist roles/quacknnels on
                         multiple commands at the same time, as well as keeping things organized.</p>{{else}}
                     <form class="form-horizontal" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
@@ -93,14 +93,14 @@
                             </div>
                             <div class="col-6">
                                 <div class="form-group">
-                                    <label>Channels these commands can be used in (empty for all)</label><br>
+                                    <label>Quacknnels these commands can be used in (empty for all)</label><br>
                                     <select multiple="multiple" class="form-control" data-plugin-multiselect
                                         name="WhitelistChannels" data-placeholder="Everywhere">
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.WhitelistChannels }}
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Channels blacklisted</label><br>
+                                    <label>Quacknnels blacklisted</label><br>
                                     <select multiple="multiple" class="form-control" data-plugin-multiselect
                                         name="BlacklistChannels">
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}

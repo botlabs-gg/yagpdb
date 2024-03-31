@@ -43,14 +43,14 @@
                             {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when somequack says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection) `onchange="toggleThanksDetection(this)"`}}
                             <div id="thanks-channels" {{if eq .RepSettings.DisableThanksDetection true}}hidden{{end}}>
                                 <div class="form-group">
-                                    <label>Whitelisted channels for giving rep using thanks</label><br>
+                                    <label>Whitelisted quacknnels for giving rep using thanks</label><br>
                                     <select name="WhitelistedThanksChannels" class="multiselect form-control"
                                         multiple="multiple" id="whitelisted-channels" data-plugin-multiselect>
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.WhitelistedThanksChannels}}
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Blacklisted channels for giving rep using thanks</label><br>
+                                    <label>Blacklisted quacknnels for giving rep using thanks</label><br>
                                     <select name="BlacklistedThanksChannels" class="multiselect form-control"
                                         multiple="multiple" id="blacklisted-channels" data-plugin-multiselect>
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.BlacklistedThanksChannels}}
@@ -173,7 +173,7 @@
             <div class="card-body">
                 <p>Completely wipe all reputation from the servquack, <b>CANNOT BE UNDONE</b></p>
                 <form action="/manage/{{.ActiveGuild.ID}}/reputation/reset_users" data-async-form method="post">
-                    <button type="submit" class="btn btn-danger">Completely reset all users rep!</button>
+                    <button type="submit" class="btn btn-danger">Completely reset all qusers rep!</button>
                 </form>
             </div>
         </section>

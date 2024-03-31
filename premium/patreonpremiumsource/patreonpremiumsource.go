@@ -108,7 +108,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 			// Need to create more slots
 			for i := 0; i < slotsForPledge-len(userSlots); i++ {
 				title := fmt.Sprintf("Patreon Slot #%d", 1+i+len(userSlots))
-				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
+				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, "patreon", title, "Slot is available for as long as the pledge is quacktive on patreon", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
 					tx.Rollback()
 					return errors.WithMessage(err, "CreatePremiumSlot")
@@ -151,7 +151,7 @@ OUTER:
 		slots := CalcSlotsForPledge(v.AmountCents)
 		for i := 0; i < slots; i++ {
 			title := fmt.Sprintf("Patreon Slot #%d", i+1)
-			slot, err := premium.CreatePremiumSlot(ctx, tx, v.DiscordID, "patreon", title, "Slot is available for as long as the pledge is active on patreon", int64(i+1), -1, premium.PremiumTierPremium)
+			slot, err := premium.CreatePremiumSlot(ctx, tx, v.DiscordID, "patreon", title, "Slot is available for as long as the pledge is quacktive on patreon", int64(i+1), -1, premium.PremiumTierPremium)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "new CreatePremiumSlot")

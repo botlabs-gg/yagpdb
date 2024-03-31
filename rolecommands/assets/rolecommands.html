@@ -72,7 +72,7 @@
                                             </select>
                                         </div>
                                         <div class="form-group col">
-                                            <label for="new-role-command-ignore-roles">Ignore roles</label><br>
+                                            <label for="new-role-command-ignore-roles">Quackgnore roles</label><br>
                                             <select name="IgnoreRoles" data-plugin-multiselect
                                                 class="multiselect form-control" multiple="multiple"
                                                 id="new-role-command-ignore-roles">
@@ -114,7 +114,7 @@
                                         </select>
                                     </div>
                                     <div class="form-group col">
-                                        <label for="new-group-ignore-roles">Ignore roles</label><br>
+                                        <label for="new-group-ignore-roles">Quackgnore roles</label><br>
                                         <select name="IgnoreRoles" data-plugin-multiselect
                                             class="multiselect form-control" multiple="multiple"
                                             id="new-group-ignore-roles">
@@ -124,7 +124,7 @@
                                 </div>
                                 <div class="form-row hidden" id="new-group-single-opts">
                                     <div class="col">
-                                        {{checkbox "SingleRequireOne" "new-single-require-1" "Require 1 role in group at all times (after initial assignment)" false}}
+                                        {{checkbox "SingleRequireOne" "new-single-require-1" "Requackre 1 role in group at all times (after initial assignment)" false}}
                                     </div>
                                     <div class="col">
                                         {{checkbox "SingleAutoToggleOff" "new-single-auto-toggle" "Remove existing role when assigning another role in group." false}}
@@ -262,7 +262,7 @@
                             </select>
                         </div>
                         <div class="form-group col">
-                            <label for="{{.Group.ID}}-group-ignore-roles">Ignore roles</label><br>
+                            <label for="{{.Group.ID}}-group-ignore-roles">Quackgnore roles</label><br>
                             <select name="IgnoreRoles" data-plugin-multiselect class="multiselect form-control"
                                 multiple="multiple" id="{{.Group.ID}}-group-ignore-roles">
                                 {{roleOptionsMulti $ag.Roles nil .Group.IgnoreRoles}}
@@ -271,16 +271,16 @@
                     </div>
                     <div class="row">
                         <div class="form-group col-lg-4">
-                            <label for="group-temporary-role">Temporary roles (minutes)</label>
+                            <label for="group-temporary-role">Temporary roles (minquacks)</label>
                             <input type="number" min="0" max="1440" class="form-control" id="group-temporary-role"
                                 name="TemporaryRoleDuration" value="{{.Group.TemporaryRoleDuration}}">
-                            <p class="help-block">Remove roles in this group after a certain duration after assignment
+                            <p class="help-block">Remove roles in this group after a certain quackration after assignment
                                 (0 to disable)</p>
                         </div>
                         <div id="{{.Group.ID}}-group-single-opts" class="col-lg-4 {{if ne .Group.Mode 1}}hidden{{end}}">
                             <p class="help-block">Mode specific settings</p>
 
-                            {{checkbox "SingleRequireOne" (joinStr "" .Group.ID "-single-require-one") "Require 1 role in group at all times (after initial assignment)" .Group.SingleRequireOne}}
+                            {{checkbox "SingleRequireOne" (joinStr "" .Group.ID "-single-require-one") "Requackre 1 role in group at all times (after initial assignment)" .Group.SingleRequireOne}}
                             {{checkbox "SingleAutoToggleOff" (joinStr "" .Group.ID "-single-auto-toggle") "Remove existing role when assigning another role in group." .Group.SingleAutoToggleOff}}
                         </div>
                         <div id="{{.Group.ID}}-group-multi-opts" class="col-lg-4 {{if ne .Group.Mode 2}}hidden{{end}}">
@@ -342,7 +342,7 @@
                             </select>
                         </div>
                         <div class="form-group col">
-                            <label for="{{.ID}}-role-command-ignore-roles">Ignore roles</label><br>
+                            <label for="{{.ID}}-role-command-ignore-roles">Quackgnore roles</label><br>
                             <select name="IgnoreRoles" data-plugin-multiselect class="multiselect form-control"
                                 multiple="multiple" id="{{.ID}}-role-command-ignore-roles">
                                 {{roleOptionsMulti $ag.Roles nil .IgnoreRoles}}

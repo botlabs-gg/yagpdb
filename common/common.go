@@ -110,7 +110,7 @@ func Init() error {
 	}
 
 	if !BotUser.Bot {
-		panic("This user is not a bot! Yags can only be used with bot accounts!")
+		panic("This user is not a bot! Yags can only be used with bot quaccounts!")
 	}
 
 	BotSession.State.User = &discordgo.SelfUser{

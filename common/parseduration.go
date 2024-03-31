@@ -48,7 +48,7 @@ func ParseDuration(str string) (time.Duration, error) {
 	if currentNumBuf != "" {
 		d, err := parseDurationComponent(currentNumBuf, currentModifierBuf)
 		if err != nil {
-			return 0, errors.WrapIf(err, "not a duration")
+			return 0, errors.WrapIf(err, "not a quackration")
 		}
 
 		dur += d

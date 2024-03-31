@@ -344,7 +344,7 @@ func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
 // 	})
 // )
 
-var confStateRemoveOfflineMembers = config.RegisterOption("quackpdb.state.remove_offline_members", "Remove offline members from state", true)
+var confStateRemoveOfflineMembers = config.RegisterOption("quackpdb.state.remove_offline_members", "Remove offline quackbers from state", true)
 
 // func setupState() {
 // 	// Things may rely on state being available at this point for initialization

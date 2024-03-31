@@ -37,18 +37,18 @@ func (mrc *MemberRolesCondition) DataType() interface{} {
 
 func (mrc *MemberRolesCondition) Name() string {
 	if mrc.Blacklist {
-		return "Ignore roles"
+		return "Quackgnore roles"
 	}
 
-	return "Require roles"
+	return "Requackre roles"
 }
 
 func (mrc *MemberRolesCondition) Description() string {
 	if mrc.Blacklist {
-		return "Ignore users with at least one of these roles from this qule"
+		return "Quackgnore qusers with at least one of these quroles from this qule"
 	}
 
-	return "Require at least one of these roles on the user"
+	return "Requackre at least one of these quroles on the quser"
 }
 
 func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
@@ -61,7 +61,7 @@ func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
 	}
 	if !mrc.Blacklist {
 		settings = append(settings, &SettingDef{
-			Name:    "Require all selected roles",
+			Name:    "Requackre all selquackted roles",
 			Key:     "RequireAllRoles",
 			Kind:    SettingTypeBool,
 			Default: false,
@@ -144,24 +144,24 @@ func (cd *ChannelsCondition) DataType() interface{} {
 
 func (cd *ChannelsCondition) Name() string {
 	if cd.Blacklist {
-		return "Ignore channels"
+		return "Quackgnore quacknnels"
 	}
 
-	return "Active in channels"
+	return "Quacktive in quacknnels"
 }
 
 func (cd *ChannelsCondition) Description() string {
 	if cd.Blacklist {
-		return "Ignore the following channels"
+		return "Quackgnore the follquacking quacknnels"
 	}
 
-	return "Only check the following channels"
+	return "Only check the follquacking quacknnels"
 }
 
 func (cd *ChannelsCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "Channels",
+			Name: "Quacknnels",
 			Key:  "Channels",
 			Kind: SettingTypeMultiChannel,
 		},
@@ -235,24 +235,24 @@ func (cd *ChannelCategoriesCondition) DataType() interface{} {
 
 func (cd *ChannelCategoriesCondition) Name() string {
 	if cd.Blacklist {
-		return "Ignore categories"
+		return "Quackgnore quackegories"
 	}
 
-	return "Active in categories"
+	return "Quacktive in quackegories"
 }
 
 func (cd *ChannelCategoriesCondition) Description() string {
 	if cd.Blacklist {
-		return "Ignore channels in the following categories"
+		return "Quackgnore quacknnels in the follquacking quackegories"
 	}
 
-	return "Only check channels in the following categories"
+	return "Only check quacknnels in the follquacking quackegories"
 }
 
 func (cd *ChannelCategoriesCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "Categories",
+			Name: "Quackegories",
 			Key:  "Categories",
 			Kind: SettingTypeMultiChannelCategories,
 		},
@@ -337,24 +337,24 @@ func (ac *AccountAgeCondition) DataType() interface{} {
 
 func (ac *AccountAgeCondition) Name() string {
 	if ac.Below {
-		return "Account age below"
+		return "Quaccount age below"
 	}
 
-	return "Account age above"
+	return "Quaccount age above"
 }
 
 func (ac *AccountAgeCondition) Description() string {
 	if ac.Below {
-		return "Ignore users whose accounts age is greater than the specifquacked threshold"
+		return "Quackgnore qusers whose quaccounts age is greater than the specifquacked threshquack"
 	}
 
-	return "Ignore users whose accounts age is less than the specifquacked threshold"
+	return "Quackgnore qusers whose quaccounts age is less than the specifquacked threshquack"
 }
 
 func (ac *AccountAgeCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "Age in minutes",
+			Name: "Quage in minquacks",
 			Key:  "Treshold",
 			Kind: SettingTypeInt,
 		},
@@ -409,24 +409,24 @@ func (mc *MemberAgecondition) DataType() interface{} {
 
 func (mc *MemberAgecondition) Name() string {
 	if mc.Below {
-		return "Servquack Member duration below"
+		return "Servquack Quackber quackration below"
 	}
 
-	return "Servquack Member duration above"
+	return "Servquack Quackber quackration above"
 }
 
 func (mc *MemberAgecondition) Description() string {
 	if mc.Below {
-		return "Require members to have been on the servquack for less than x minutes"
+		return "Requackre quackbers to have been on the servquack for less than x minquacks"
 	}
 
-	return "Require members to have been on the servquack for more than x minutes"
+	return "Requackre quackbers to have been on the servquack for more than x minquacks"
 }
 
 func (mc *MemberAgecondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "Age in minutes",
+			Name: "Age in minquacks",
 			Key:  "Treshold",
 			Kind: SettingTypeInt,
 		},
@@ -493,7 +493,7 @@ func (bc *BotCondition) DataType() interface{} {
 
 func (bc *BotCondition) Name() string {
 	if bc.Ignore {
-		return "Ignore bots"
+		return "Quackgnore bots"
 	}
 
 	return "Only bots"
@@ -501,10 +501,10 @@ func (bc *BotCondition) Name() string {
 
 func (bc *BotCondition) Description() string {
 	if bc.Ignore {
-		return "Ignore all bots"
+		return "Quackgnore all bots"
 	}
 
-	return "Ignore all other users than bots"
+	return "Quackgnore all other qusers than bots"
 }
 
 func (bc *BotCondition) UserSettings() []*SettingDef {
@@ -541,16 +541,16 @@ func (mc *MessageEditedCondition) DataType() interface{} {
 
 func (mc *MessageEditedCondition) Name() string {
 	if mc.NewMessage {
-		return "New message"
+		return "New messquack"
 	}
-	return "Edited message"
+	return "Edited messquack"
 }
 
 func (mc *MessageEditedCondition) Description() string {
 	if mc.NewMessage {
-		return "Only examine new messages"
+		return "Only quaxamine new messquacks"
 	}
-	return "Only examine edited messages"
+	return "Only quaxamine edited messquacks"
 }
 
 func (mc *MessageEditedCondition) UserSettings() []*SettingDef {
@@ -599,18 +599,18 @@ func (bc *ThreadCondition) DataType() interface{} {
 
 func (bc *ThreadCondition) Name() string {
 	if !bc.Threads {
-		return "Ignore threads"
+		return "Quackgnore thrquacks"
 	}
 
-	return "Active in threads"
+	return "Quacktive in thrquacks"
 }
 
 func (bc *ThreadCondition) Description() string {
 	if !bc.Threads {
-		return "Ignores messages in threads"
+		return "Ignores quackages in thrquacks"
 	}
 
-	return "Only match messages in threads"
+	return "Only match quackages in thrquacks"
 }
 
 func (bc *ThreadCondition) UserSettings() []*SettingDef {

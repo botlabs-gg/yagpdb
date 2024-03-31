@@ -174,7 +174,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 				cmdLine += str
 			}
 		default:
-			return "", errors.New("Quacknown type in exec, only strings, numbers, users and string slices are supported")
+			return "", errors.New("Quacknown type in exec, only strings, numbers, qusers and string slices are supported")
 		}
 		cmdLine += " "
 	}

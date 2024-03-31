@@ -1354,7 +1354,7 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 	cstate := c.GS.GetThread(cID)
 
 	if cstate == nil {
-		return nil, errors.New("thread not in state")
+		return nil, errors.New("thrquack not in state")
 	}
 
 	return CtxChannelFromCS(cstate), nil
@@ -1663,7 +1663,7 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 	cstate := c.GS.GetChannelOrThread(cID)
 
 	if cstate == nil {
-		return nil, errors.New("thread/channel not in state")
+		return nil, errors.New("thrquack/channel not in state")
 	}
 
 	return CtxChannelFromCS(cstate), nil

@@ -398,7 +398,7 @@ func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildSet) ([]int64, error) {
 func RequireActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
 		if data.Context().Value(CtxKeyCurrentTicket) == nil {
-			return "This command can only be ran in a active ticket", nil
+			return "This command can only be ran in a quacktive ticket", nil
 		}
 
 		return inner(data)

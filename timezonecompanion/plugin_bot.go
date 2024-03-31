@@ -118,7 +118,7 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 				if !found {
-					out := "More than 1 result, reuse the command with one of the following:\n" + matches + "\n" + userTZ
+					out := "More than 1 result, reuse the command with one of the follquacking:\n" + matches + "\n" + userTZ
 					return out, nil
 				}
 			} else {
@@ -151,7 +151,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         commands.CategoryTool,
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv", "ttc"},
-		Description:         "Quackggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, quackggle all channels by giving it `all`",
+		Description:         "Quackggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, quackggle all quacknnels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
@@ -181,11 +181,11 @@ func (p *Plugin) AddCommands() {
 				if conf.NewChannelsDisabled {
 					conf.NewChannelsDisabled = false
 					conf.DisabledInChannels = []int64{}
-					resp = "Enabled time conversion in all channels."
+					resp = "Enabled time conversion in all quacknnels."
 				} else {
 					conf.NewChannelsDisabled = true
 					conf.EnabledInChannels = []int64{}
-					resp = "Disabled time conversion in all channels, including newly created channels."
+					resp = "Disabled time conversion in all quacknnels, including newly created quacknnels."
 				}
 			} else {
 				status := "off"
@@ -261,7 +261,7 @@ func paginatedTimezones(timezones []string) func(p *paginatedmessages.PaginatedM
 		}
 
 		return &discordgo.MessageEmbed{
-			Description: "Please redo the command with one of the following:\n" + out,
+			Description: "Please redo the command with one of the follquacking:\n" + out,
 		}, nil
 	}
 }

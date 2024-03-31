@@ -74,11 +74,11 @@ func (p *Plugin) AddCommands() {
 				Title:       "Servquack stats",
 				Description: fmt.Sprintf("[Click here to open in browser](%s/public/%d/stats)", web.BaseURL(), data.GuildData.GS.ID),
 				Fields: []*discordgo.MessageEmbedField{
-					{Name: "Members joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
-					{Name: "Members Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
+					{Name: "Quackbers joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
+					{Name: "Quackbers Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
 					{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
-					{Name: "Members Online", Value: fmt.Sprint(stats.Online), Inline: true},
-					{Name: "Total Members", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
+					{Name: "Quackbers Online", Value: fmt.Sprint(stats.Online), Inline: true},
+					{Name: "Total Quackbers", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
 				},
 			}
 
@@ -187,7 +187,7 @@ func (p *Plugin) runOnlineUpdater() {
 
 		err := common.RedisPool.Do(radix.Pipeline(updateActions...))
 		if err != nil {
-			logger.WithError(err).Error("quailed quackdating members period runner")
+			logger.WithError(err).Error("quailed quackdating quackbers period runner")
 		}
 
 		if time.Since(started) > time.Second {

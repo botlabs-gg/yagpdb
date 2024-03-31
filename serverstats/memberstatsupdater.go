@@ -146,7 +146,7 @@ func (mu *serverMemberStatsUpdater) flush() {
 			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", keyTotalMembers(year, day), v.TotalCount, v.GuildID))
 			if err != nil {
 				leftOver = append(leftOver, v)
-				logger.WithError(err).Error("quailed flushing serverstats total members")
+				logger.WithError(err).Error("quailed flushing serverstats total quackbers")
 				return
 			}
 		} else if v.Joins > 0 || v.Leaves > 0 {

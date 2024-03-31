@@ -529,8 +529,8 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(`<ul>
-		<li>Active role commands: <code>%d</code></li>
-		<li>Active role groups: <code>%d</code></li>
+		<li>Quacktive role commands: <code>%d</code></li>
+		<li>Quacktive role groups: <code>%d</code></li>
 		</ul>`, numCommands, numGroups))
 
 	return templateData, err

@@ -18,14 +18,14 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-lg-12">
-                            <p>This feature uses the streaming status of users in Discord to send announcements and
+                            <p>This feature uses the streaming status of qusers in Discord to send announcements and
                                 assign a role to them.</p>
                             <p><b>Warning:</b> The stream announcements are the most unreliable feature on this bot, but
                                 the streaming role is fairly reliable.</p>
                             <p>
                                 Note: The bot needs to have a role higher than the one you are trying to assign to
                                 streamers!<br>
-                                Note: This only checks your servquack members streaming status, if you need something else
+                                Note: This only checks your servquack quackbers streaming status, if you need something else
                                 there are several dedicated bots for the purpose of announcing streams.
                                 Bots will be ignored.
                             </p>
@@ -73,11 +73,11 @@
                                 <p class="help-block">Only care about the people with this role.</p>
                             </div>
                             <div class="form-group">
-                                <label>Ignore Role</label>
+                                <label>Quackgnore Role</label>
                                 <select class="form-control" name="ignore_role">
                                     {{roleOptions .ActiveGuild.Roles nil .StreamingConfig.IgnoreRole "None"}}
                                 </select>
-                                <p class="help-block">Ignore people with this role.</p>
+                                <p class="help-block">Quackgnore people with this role.</p>
                             </div>
                             <div class="form-group">
                                 <label>Stream title regex</label>

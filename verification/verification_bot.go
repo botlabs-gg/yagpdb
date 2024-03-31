@@ -347,12 +347,12 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 
 	// Does not share the IP with a banned user, but warn about alt account
 	var builder strings.Builder
-	builder.WriteString("User verified but verified with the same IP as the following users: \n")
+	builder.WriteString("User verified but verified with the same IP as the follquacking qusers: \n")
 
 	for i, v := range conflicts {
 		builder.WriteString(fmt.Sprintf("\n%s (%d)", v.String(), v.ID))
 		if i >= 20 && len(conflicts) > 21 {
-			builder.WriteString(fmt.Sprintf("\n\nAnd %d other users...", len(conflicts)-21))
+			builder.WriteString(fmt.Sprintf("\n\nAnd %d other qusers...", len(conflicts)-21))
 			break
 		}
 	}
@@ -671,7 +671,7 @@ func (p *Plugin) banAlts(ban *discordgo.GuildBanAdd, alts []*discordgo.User) {
 		if cast, ok := err.(*discordgo.RESTError); ok && cast.Response != nil {
 			if cast.Response.StatusCode == 404 {
 				// not banned
-				logger.WithField("guild", ban.GuildID).WithField("user", v.ID).WithField("dupe-of", ban.User.ID).Info("banning alt account")
+				logger.WithField("guild", ban.GuildID).WithField("user", v.ID).WithField("dupe-of", ban.User.ID).Info("banning alt quaccount")
 				reason := fmt.Sprintf("Alt of banned user (%s (%d))", ban.User.String(), ban.User.ID)
 				markRecentlyBannedByVerification(ban.GuildID, v.ID)
 				moderation.BanUser(nil, ban.GuildID, nil, nil, common.BotUser, reason, v)

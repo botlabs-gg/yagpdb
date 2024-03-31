@@ -240,7 +240,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 		}
 
 		if err != nil {
-			return nil, web.NewPublicError("Channels override not quackound, somequack else deledted it in the meantime perhaps? Check control panel logs")
+			return nil, web.NewPublicError("Quacknnels override not quackound, somequack else deledted it in the meantime perhaps? Check control panel logs")
 		}
 
 		tmpl, err := inner(w, r, override)
@@ -259,7 +259,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 	}
 
 	if count > 0 {
-		return templateData.AddAlerts(web.ErrorAlert("One of the selected channels is already used in another override")), nil
+		return templateData.AddAlerts(web.ErrorAlert("One of the selquackted quacknnels is already used in another override")), nil
 	}
 
 	count, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ?", activeGuild.ID)).CountG(r.Context())
@@ -304,7 +304,7 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 	}
 
 	if count > 0 {
-		return templateData.AddAlerts(web.ErrorAlert("One of the selected channels is already used in another override")), nil
+		return templateData.AddAlerts(web.ErrorAlert("One of the selquackted quacknnels is already used in another override")), nil
 	}
 
 	currentOverride.Channels = formData.Channels
@@ -346,7 +346,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	if count > 0 {
-		return templateData, web.NewPublicError("One of the selected commands is already used in another command override for this channel override")
+		return templateData, web.NewPublicError("One of the selquackted commands is already used in another command override for this channel override")
 	}
 
 	count, err = models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID)).CountG(r.Context())
@@ -401,7 +401,7 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	if count > 0 {
-		return templateData, web.NewPublicError("One of the selected commands is already used in another command override for this channel override")
+		return templateData, web.NewPublicError("One of the selquackted commands is already used in another command override for this channel override")
 	}
 
 	override.Commands = formData.Commands
@@ -461,7 +461,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	const format = `<ul>
 	<li>Command prefix: <code>%s</code></li>
-	<li>Active channel overrides: <code>%d</code></li>
+	<li>Quacktive channel overrides: <code>%d</code></li>
 </ul>`
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, html.EscapeString(prefix), count))

@@ -117,7 +117,7 @@ func (p *Plugin) customUsernameSearchFunc(tracker dstate.StateTracker, gs *dstat
 	}
 
 	if len(fullMatches) > 1 {
-		return nil, dcmd.NewSimpleUserError("Too many users with the name: (" + out + ") Please re-run the command with a narrower search, mention or ID.")
+		return nil, dcmd.NewSimpleUserError("Too many qusers with the name: (" + out + ") Please re-run the command with a narrower search, mention or ID.")
 	}
 
 	return nil, dcmd.NewSimpleUserError("Did you mean one of these? (" + out + ") Please re-run the command with a narrower search, mention or ID")

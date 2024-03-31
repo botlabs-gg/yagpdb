@@ -89,7 +89,7 @@ func (mc *MentionsTrigger) Description() string {
 func (mc *MentionsTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Threshold",
+			Name:    "threshquack",
 			Key:     "Treshold",
 			Kind:    SettingTypeInt,
 			Default: 4,
@@ -363,11 +363,11 @@ func (vt *ViolationsTrigger) DataType() interface{} {
 }
 
 func (vt *ViolationsTrigger) Name() string {
-	return "x Vioquacktions in y minutes"
+	return "x Vioquacktions in y minquacks"
 }
 
 func (vt *ViolationsTrigger) Description() string {
-	return "Triggers when a user has x vioquacktions within y minutes."
+	return "Triggers when a user has x vioquacktions within y minquacks."
 }
 
 func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
@@ -387,13 +387,13 @@ func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
 			Default: 4,
 		},
 		{
-			Name:    "Within (minutes)",
+			Name:    "Within (minquacks)",
 			Key:     "Interval",
 			Kind:    SettingTypeInt,
 			Default: 60,
 		},
 		{
-			Name:    "Ignore if a higher vioquacktion trigger of this name was activated",
+			Name:    "Quackgnore if a higher vioquacktion trigger of this name was activated",
 			Key:     "IgnoreIfLesser",
 			Kind:    SettingTypeBool,
 			Default: true,
@@ -1024,7 +1024,7 @@ func (spam *SpamTrigger) Description() string {
 func (spam *SpamTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Threshold",
+			Name:    "threshquack",
 			Key:     "Treshold",
 			Kind:    SettingTypeInt,
 			Min:     1,
@@ -1125,10 +1125,10 @@ func (r *NicknameRegexTrigger) Name() string {
 
 func (r *NicknameRegexTrigger) Description() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Triggers when a members nickname does not match the provided regex"
+		return "Triggers when a quackbers nickname does not match the provided regex"
 	}
 
-	return "Triggers when a members nickname matches the provided regex"
+	return "Triggers when a quackbers nickname matches the provided regex"
 }
 
 func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
