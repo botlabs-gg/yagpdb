@@ -1174,7 +1174,7 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 
 	tmplCtx.Data["Interaction"] = interaction
 	tmplCtx.Data["InteractionData"] = interaction.ModalSubmitData()
-	cid := strings.TrimPrefix(interaction.MessageComponentData().CustomID, "templates-")
+	cid := strings.TrimPrefix(interaction.ModalSubmitData().CustomID, "templates-")
 	tmplCtx.Data["CustomID"] = cid
 	tmplCtx.Data["Cmd"] = cmdArgs[0]
 	if len(cmdArgs) > 1 {
