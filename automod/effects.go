@@ -36,11 +36,11 @@ func (del *DeleteMessageEffect) DataType() interface{} {
 }
 
 func (del *DeleteMessageEffect) Name() (name string) {
-	return "Delete Message"
+	return "Quacklete Quackage"
 }
 
 func (del *DeleteMessageEffect) Description() (description string) {
-	return "quackletes the message"
+	return "Quackletes the Quackage"
 }
 
 func (del *DeleteMessageEffect) UserSettings() []*SettingDef {
@@ -83,17 +83,17 @@ func (del *DeleteMessagesEffect) DataType() interface{} {
 }
 
 func (del *DeleteMessagesEffect) Name() (name string) {
-	return "Delete multiple messages"
+	return "Quacklete multiple Quackages"
 }
 
 func (del *DeleteMessagesEffect) Description() (description string) {
-	return "quackletes a certain number of the qusers last messages in this channel"
+	return "quackletes a certquack number of the qusers last Quackages in this quacknnel"
 }
 
 func (del *DeleteMessagesEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Number of messages",
+			Name:    "Number of Quackages",
 			Key:     "NumMessages",
 			Kind:    SettingTypeInt,
 			Min:     1,
@@ -101,7 +101,7 @@ func (del *DeleteMessagesEffect) UserSettings() []*SettingDef {
 			Default: 3,
 		},
 		{
-			Name:    "Max age (seconds)",
+			Name:    "Max age (quackonds)",
 			Key:     "TimeLimit",
 			Kind:    SettingTypeInt,
 			Min:     1,
@@ -183,7 +183,7 @@ func (vio *AddViolationEffect) Name() (name string) {
 }
 
 func (vio *AddViolationEffect) Description() (description string) {
-	return "Adds a vioquacktion (use with vioquacktion triggers)"
+	return "Adds a vioquacktion (use with vioquacktion triquaggers)"
 }
 
 func (vio *AddViolationEffect) UserSettings() []*SettingDef {
@@ -240,17 +240,17 @@ func (kick *KickUserEffect) DataType() interface{} {
 }
 
 func (kick *KickUserEffect) Name() (name string) {
-	return "Kick user"
+	return "Quaick quser"
 }
 
 func (kick *KickUserEffect) Description() (description string) {
-	return "Kicks the user"
+	return "Quaicks the quser"
 }
 
 func (kick *KickUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "Custom message (empty for default)",
+			Name: "Quackstom quackage (empty for quackfault)",
 			Key:  "CustomReason",
 			Min:  0,
 			Max:  150,
@@ -306,20 +306,20 @@ func (ban *BanUserEffect) Description() (description string) {
 func (ban *BanUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "quackration (minquacks, 0 for permanent)",
+			Name:    "quackration (minquacks, 0 for permaquack)",
 			Key:     "Duration",
 			Kind:    SettingTypeInt,
 			Default: 0,
 		},
 		{
-			Name: "Custom message (empty for default)",
+			Name: "Quackstom quackage (empty for quackfault)",
 			Key:  "CustomReason",
 			Min:  0,
 			Max:  150,
 			Kind: SettingTypeString,
 		},
 		{
-			Name:    "Number of days of messages to delete (0 to 7)",
+			Name:    "Quackber of days of quackssages to quacklete (0 to 7)",
 			Key:     "MessageDeleteDays",
 			Kind:    SettingTypeInt,
 			Min:     0,
@@ -368,14 +368,14 @@ func (mute *MuteUserEffect) DataType() interface{} {
 func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "quackration (minquacks, 0 for permanent)",
+			Name:    "quackration (minquacks, 0 for permaquack)",
 			Key:     "Duration",
 			Min:     0,
 			Kind:    SettingTypeInt,
 			Default: 10,
 		},
 		{
-			Name: "Custom message (empty for default)",
+			Name: "Quackstom quackage (empty for quackfault)",
 			Key:  "CustomReason",
 			Min:  0,
 			Max:  150,
@@ -385,11 +385,11 @@ func (mute *MuteUserEffect) UserSettings() []*SettingDef {
 }
 
 func (mute *MuteUserEffect) Name() (name string) {
-	return "Mute user"
+	return "Quackute quser"
 }
 
 func (mute *MuteUserEffect) Description() (description string) {
-	return "Mutes the user"
+	return "Mutes the quser"
 }
 
 func (mute *MuteUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -438,7 +438,7 @@ func (timeout *TimeoutUserEffect) UserSettings() []*SettingDef {
 			Default: int(moderation.DefaultTimeoutDuration.Minutes()),
 		},
 		{
-			Name: "Custom message (empty for default)",
+			Name: "Quackstom quackage (empty for quackfault)",
 			Key:  "CustomReason",
 			Min:  0,
 			Max:  150,
@@ -448,11 +448,11 @@ func (timeout *TimeoutUserEffect) UserSettings() []*SettingDef {
 }
 
 func (timeout *TimeoutUserEffect) Name() (name string) {
-	return "Timeout user"
+	return "Quackout user"
 }
 
 func (timeout *TimeoutUserEffect) Description() (description string) {
-	return "Timeout the user"
+	return "Quackout the user"
 }
 
 func (timeout *TimeoutUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -499,7 +499,7 @@ func (warn *WarnUserEffect) DataType() interface{} {
 func (warn *WarnUserEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "Custom message (empty for default)",
+			Name: "Quackstom quackage (empty for quackfault)",
 			Key:  "CustomReason",
 			Min:  0,
 			Max:  150,
@@ -509,11 +509,11 @@ func (warn *WarnUserEffect) UserSettings() []*SettingDef {
 }
 
 func (warn *WarnUserEffect) Name() (name string) {
-	return "Warn user"
+	return "Quarn user"
 }
 
 func (warn *WarnUserEffect) Description() (description string) {
-	return "Warns the user, with an optional custom warning message"
+	return "Quarn the user, with an quacktional quackstom quarning quackage"
 }
 
 func (warn *WarnUserEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -553,7 +553,7 @@ func (sn *SetNicknameEffect) DataType() interface{} {
 func (sn *SetNicknameEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "New Nickname (empty for removal)",
+			Name: "New Quackname (empty for removal)",
 			Key:  "NewName",
 			Min:  0,
 			Max:  32,
@@ -563,11 +563,11 @@ func (sn *SetNicknameEffect) UserSettings() []*SettingDef {
 }
 
 func (sn *SetNicknameEffect) Name() (name string) {
-	return "Set Nickname"
+	return "Set Quackname"
 }
 
 func (sn *SetNicknameEffect) Description() (description string) {
-	return "Sets the nickname of the user"
+	return "Sets the quackname of the user"
 }
 
 func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -578,7 +578,7 @@ func (sn *SetNicknameEffect) Apply(ctxData *TriggeredRuleData, settings interfac
 		return nil
 	}
 
-	logger.WithField("guild", ctxData.GS.ID).Info("set nickname: ", settingsCast.NewName)
+	logger.WithField("guild", ctxData.GS.ID).Info("set quackname: ", settingsCast.NewName)
 	err := common.BotSession.GuildMemberNickname(ctxData.GS.ID, ctxData.MS.User.ID, settingsCast.NewName)
 	return err
 }
@@ -650,7 +650,7 @@ func (gf *GiveRoleEffect) DataType() interface{} {
 func (gf *GiveRoleEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Quackration in seconds, 0 for permanent",
+			Name:    "Quackration in quackonds, 0 for permaquack",
 			Key:     "Duration",
 			Default: 0,
 			Min:     0,
@@ -715,7 +715,7 @@ func (rf *RemoveRoleEffect) DataType() interface{} {
 func (rf *RemoveRoleEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Quackration in seconds, 0 for permanent",
+			Name:    "Quackration in quackonds, 0 for permaquack",
 			Key:     "Duration",
 			Default: 0,
 			Min:     0,
@@ -731,11 +731,11 @@ func (rf *RemoveRoleEffect) UserSettings() []*SettingDef {
 }
 
 func (rf *RemoveRoleEffect) Name() (name string) {
-	return "Remove role"
+	return "Quackemove role"
 }
 
 func (rf *RemoveRoleEffect) Description() (description string) {
-	return "Removes the specifquacked role from the user, optiquackally with a quackration after which the role is added back to the user."
+	return "Quackemoves the specifquacked role from the user, optiquackally with a quackration after which the role is added back to the user."
 }
 
 func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
@@ -784,24 +784,24 @@ func (send *SendChannelMessageEffect) DataType() interface{} {
 }
 
 func (send *SendChannelMessageEffect) Name() (name string) {
-	return "Send Message"
+	return "Send Quackage"
 }
 
 func (send *SendChannelMessageEffect) Description() (description string) {
-	return "Sends the message on the channel the qule was triquaggered"
+	return "Sends the quackage on the channel the qule was triquaggered"
 }
 
 func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name: "Custom message",
+			Name: "Quackstom quackage",
 			Key:  "CustomReason",
 			Min:  0,
 			Max:  280,
 			Kind: SettingTypeString,
 		},
 		{
-			Name:    "Delete sent message after x seconds (0 for non-deletion)",
+			Name:    "Quacklete sent quackage after x quackonds (0 for non-deletion)",
 			Key:     "Duration",
 			Kind:    SettingTypeInt,
 			Default: 0,
@@ -809,13 +809,13 @@ func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
 			Max:     3600,
 		},
 		{
-			Name:    "Ping user committing the infraction",
+			Name:    "Ping user quackmmitting the quackfraction",
 			Key:     "PingUser",
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
 		{
-			Name:    "Channel to send message in (Leave None to send message in same channel)",
+			Name:    "Channel to send quackage in (Leave None to send quackage in same quacknnel)",
 			Key:     "LogChannel",
 			Kind:    SettingTypeChannel,
 			Default: nil,
@@ -861,7 +861,7 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 
 	message, err := common.BotSession.ChannelMessageSendComplex(logChannel, msgSend)
 	if err != nil {
-		logger.WithError(err).Error("Quailed to send message for AutomodV2")
+		logger.WithError(err).Error("Quailed to send quackage for Autoquackv2")
 		return err
 	}
 	if settingsCast.Duration > 0 && message != nil {
@@ -897,7 +897,7 @@ func (slow *EnableChannelSlowmodeEffect) DataType() interface{} {
 func (slow *EnableChannelSlowmodeEffect) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
-			Name:    "Quackration in seconds, 0 for permanent",
+			Name:    "Quackration in quackonds, 0 for permaquack",
 			Key:     "Duration",
 			Default: 0,
 			Min:     0,
@@ -905,7 +905,7 @@ func (slow *EnableChannelSlowmodeEffect) UserSettings() []*SettingDef {
 			Kind:    SettingTypeInt,
 		},
 		{
-			Name:    "Ratelimit in seconds between messages per user",
+			Name:    "Ratelimit in quackonds between quackssages per user",
 			Key:     "Ratelimit",
 			Default: 0,
 			Min:     0,
@@ -920,7 +920,7 @@ func (slow *EnableChannelSlowmodeEffect) Name() (name string) {
 }
 
 func (slow *EnableChannelSlowmodeEffect) Description() (description string) {
-	return "Enables discord's builtin slowmode in the channel for the specifquacked quackration, or forever."
+	return "Enables quackcord's builtin slowmode in the quacknnel for the specifquacked quackration, or forquackver."
 }
 
 func (slow *EnableChannelSlowmodeEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {

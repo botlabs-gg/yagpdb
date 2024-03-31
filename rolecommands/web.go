@@ -193,9 +193,9 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	if existing, err := models.RoleCommands(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID), qm.Where(models.RoleCommandColumns.Name+" ILIKE ?", form.Name),
 		qm.Load(models.RoleCommandRels.RoleGroup)).OneG(r.Context()); err == nil {
 		if existing.R.RoleGroup == nil {
-			tmpl.AddAlerts(web.ErrorAlert("Already a role command with that name in the ungrouped section; delete it or use a different name"))
+			tmpl.AddAlerts(web.ErrorAlert("Already a role command with that name in the ungrouped section; quacklete it or use a different name"))
 		} else {
-			tmpl.AddAlerts(web.ErrorAlert(`Already a role command with that name in the "` + existing.R.RoleGroup.Name + `" group; delete it or use a different name`))
+			tmpl.AddAlerts(web.ErrorAlert(`Already a role command with that name in the "` + existing.R.RoleGroup.Name + `" group; quacklete it or use a different name`))
 		}
 		return tmpl, nil
 	}

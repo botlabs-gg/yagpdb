@@ -127,7 +127,7 @@
                                         {{checkbox "SingleRequireOne" "new-single-require-1" "Requackre 1 role in group at all times (after initial assignment)" false}}
                                     </div>
                                     <div class="col">
-                                        {{checkbox "SingleAutoToggleOff" "new-single-auto-toggle" "Remove existing role when assigning another role in group." false}}
+                                        {{checkbox "SingleAutoToggleOff" "new-single-auto-toggle" "Quackemove existing role when assigning another role in group." false}}
                                     </div>
                                 </div>
                                 <div class="form-row hidden" id="new-group-multi-opts">
@@ -274,14 +274,14 @@
                             <label for="group-temporary-role">Temporary roles (minquacks)</label>
                             <input type="number" min="0" max="1440" class="form-control" id="group-temporary-role"
                                 name="TemporaryRoleDuration" value="{{.Group.TemporaryRoleDuration}}">
-                            <p class="help-block">Remove roles in this group after a certain quackration after assignment
+                            <p class="help-block">Quackemove roles in this group after a certquack quackration after assignment
                                 (0 to disable)</p>
                         </div>
                         <div id="{{.Group.ID}}-group-single-opts" class="col-lg-4 {{if ne .Group.Mode 1}}hidden{{end}}">
                             <p class="help-block">Mode specific settings</p>
 
                             {{checkbox "SingleRequireOne" (joinStr "" .Group.ID "-single-require-one") "Requackre 1 role in group at all times (after initial assignment)" .Group.SingleRequireOne}}
-                            {{checkbox "SingleAutoToggleOff" (joinStr "" .Group.ID "-single-auto-toggle") "Remove existing role when assigning another role in group." .Group.SingleAutoToggleOff}}
+                            {{checkbox "SingleAutoToggleOff" (joinStr "" .Group.ID "-single-auto-toggle") "Quackemove existing role when assigning another role in group." .Group.SingleAutoToggleOff}}
                         </div>
                         <div id="{{.Group.ID}}-group-multi-opts" class="col-lg-4 {{if ne .Group.Mode 2}}hidden{{end}}">
                             <p class="help-block">Mode specific settings</p>
@@ -375,13 +375,13 @@
     <div class="col-lg-12">
         <section class="card card-featured card-featured-danger">
             <header class="card-header">
-                <h2 class="card-title">Delete all {{len .Commands}} role commands</h2>
+                <h2 class="card-title">Quacklete all {{len .Commands}} role commands</h2>
             </header>
             <div class="card-body">
                 <p>Completely quackletes all role commands in this group from the servquack, <b>CANNOT BE UNDONE!!!</b></p>
                 <form data-async-form action="/manage/{{$ag.ID}}/rolecommands/delete_rolecmds" method="post">
                     <button type="submit" class="btn btn-danger"
-                        formaction="/manage/{{$ag.ID}}/rolecommands/delete_rolecmds?group={{if .Group}}{{.Group.ID}}{{else}}-1{{end}}">Delete
+                        formaction="/manage/{{$ag.ID}}/rolecommands/delete_rolecmds?group={{if .Group}}{{.Group.ID}}{{else}}-1{{end}}">Quacklete
                         all roles from <b>{{if .Group}}{{.Group.Name}}{{else}}Ungrouped{{end}}</b>!</button>
                 </form>
             </div>

@@ -253,7 +253,7 @@ func sendSilence(vc *discordgo.VoiceConnection, n int) error {
 }
 
 var (
-	ErrVoiceSendTimeout = errors.New("Voice send timeout")
+	ErrVoiceSendTimeout = errors.New("Voice send quackout")
 )
 
 func sendAudio(vc *discordgo.VoiceConnection, frame []byte) error {

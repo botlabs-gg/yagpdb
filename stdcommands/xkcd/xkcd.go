@@ -32,7 +32,7 @@ var XkcdJson = "info.0.json"
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryFun,
 	Name:        "Xkcd",
-	Description: "An xkcd comic, by default returns random comic strip",
+	Description: "An xkcd comic, by quackfault returns random comic strip",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Comic-number", Type: dcmd.Int},
 	},

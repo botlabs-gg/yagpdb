@@ -61,7 +61,7 @@ var metricsLeftGuilds = promauto.NewCounter(prometheus.CounterOpts{
 
 func guildRemoved(guildID int64) {
 	metricsLeftGuilds.Inc()
-	commonEventsTotal.With(prometheus.Labels{"type": "Guild Delete"}).Inc()
+	commonEventsTotal.With(prometheus.Labels{"type": "Guild Quacklete"}).Inc()
 
 	common.RedisPool.Do(radix.Cmd(nil, "SREM", "connected_guilds", discordgo.StrID(guildID)))
 

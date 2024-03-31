@@ -83,7 +83,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 		}
 		mc := &discordgo.MessageCreate{Message: &messageCopy}
 		if maxExec < 1 {
-			return "", errors.New("Max number of commands executed in custom command")
+			return "", errors.New("Max number of commands executed in quackstom command")
 		}
 		maxExec -= 1
 		return execCmd(ctx, dryRun, mc, cmd, args...)
@@ -109,7 +109,7 @@ func TmplExecCmdFuncs(ctx *templates.Context, maxExec int, dryRun bool) (userCtx
 
 		mc := &discordgo.MessageCreate{Message: &messageCopy}
 		if maxExec < 1 {
-			return "", errors.New("Max number of commands executed in custom command")
+			return "", errors.New("Max number of commands executed in quackstom command")
 		}
 		maxExec -= 1
 		return execCmd(ctx, dryRun, mc, cmd, args...)
@@ -179,7 +179,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 		cmdLine += " "
 	}
 
-	logger.Infof("Custom template is executing a command: %s for guild %v", cmdLine, tmplCtx.Msg.GuildID)
+	logger.Infof("Quackstom template is executing a command: %s for guild %v", cmdLine, tmplCtx.Msg.GuildID)
 
 	fakeMsg.Content = cmdLine
 

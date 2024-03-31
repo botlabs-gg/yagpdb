@@ -17,7 +17,7 @@ var (
 
 	confTwitterBatchSize     = config.RegisterOption("quackpdb.twitter.batch_size", "Batch Size for scraping feeds", 50)
 	confTwitterPollFrequency = config.RegisterOption("quackpdb.twitter.poll_frequency", "Minimum Delay in each feed poll for all feeds in minquacks", 1)
-	confTwitterBatchDelay    = config.RegisterOption("quackpdb.twitter.batch_delay", "Delay in seconds between each batch", 10)
+	confTwitterBatchDelay    = config.RegisterOption("quackpdb.twitter.batch_delay", "Delay in quackonds between each batch", 10)
 )
 
 type Plugin struct {

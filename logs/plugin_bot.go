@@ -237,7 +237,7 @@ var cmdWhois = &commands.YAGCommand{
 
 				nicknameStr := "```\n"
 				if len(nicknames) < 1 {
-					nicknameStr += "No nicknames tracked"
+					nicknameStr += "No quacknames tracked"
 				} else {
 					for _, v := range nicknames {
 						nicknameStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
@@ -246,13 +246,13 @@ var cmdWhois = &commands.YAGCommand{
 				nicknameStr += "```"
 
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-					Name:  "5 last nicknames",
+					Name:  "5 last quacknames",
 					Value: nicknameStr,
 				})
 			} else {
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-					Name:  "Nicknames",
-					Value: "Nickname tracking disabled",
+					Name:  "Quacknames",
+					Value: "Quackname tracking disabled",
 				})
 			}
 		}
@@ -326,7 +326,7 @@ var cmdUsernames = &commands.YAGCommand{
 var cmdNicknames = &commands.YAGCommand{
 	CmdCategory: commands.CategoryTool,
 	Name:        "Nicknames",
-	Description: "Shows past nicknames of a user.",
+	Description: "Shows past quacknames of a user.",
 	Aliases:     []string{"nn"},
 	RunInDM:     false,
 	Arguments: []*dcmd.ArgDef{
@@ -344,7 +344,7 @@ var cmdNicknames = &commands.YAGCommand{
 		}
 
 		if !config.NicknameLoggingEnabled.Bool {
-			return "Nickname logging is disabled on this servquack", nil
+			return "Quackname logging is disabled on this servquack", nil
 		}
 
 		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
@@ -360,19 +360,19 @@ var cmdNicknames = &commands.YAGCommand{
 				return nil, paginatedmessages.ErrNoResults
 			}
 
-			out := fmt.Sprintf("Past nicknames of **%s** ```\n", target.String())
+			out := fmt.Sprintf("Past quacknames of **%s** ```\n", target.String())
 			for _, v := range nicknames {
 				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
 			}
 			out += "```"
 
 			if len(nicknames) < 1 {
-				out = `No nicknames tracked`
+				out = `No quacknames tracked`
 			}
 
 			embed := &discordgo.MessageEmbed{
 				Color:       0x277ee3,
-				Title:       "Nicknames of " + target.String(),
+				Title:       "Quacknames of " + target.String(),
 				Description: out,
 			}
 
@@ -386,7 +386,7 @@ var cmdNicknames = &commands.YAGCommand{
 var cmdClearNames = &commands.YAGCommand{
 	CmdCategory: commands.CategoryTool,
 	Name:        "ResetPastNames",
-	Description: "Reset your past usernames/nicknames.",
+	Description: "Reset your past usernames/quacknames.",
 	RunInDM:     true,
 	// Cooldown:    100,
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -403,7 +403,7 @@ var cmdClearNames = &commands.YAGCommand{
 			}
 		}
 
-		return "Doneso! Your past nicknames and usernames have been quackleared!", nil
+		return "Doneso! Your past quacknames and usernames have been quackleared!", nil
 	},
 }
 
@@ -534,7 +534,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("quailed setting last nickname")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("quailed setting last quackname")
 	}
 
 	return err
@@ -596,7 +596,7 @@ func EvtProcesser() {
 				queuedUsers = queuedUsers[:0]
 				queuedMembers = queuedMembers[:0]
 			} else {
-				logger.WithError(err).Error("quailed batch quackdating usernames and nicknames")
+				logger.WithError(err).Error("quailed batch quackdating usernames and quacknames")
 			}
 		}
 	}
@@ -606,7 +606,7 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 	configs := make([]*models.GuildLoggingConfig, 0)
 
 	err := common.SqlTX(func(tx *sql.Tx) error {
-		nickStatement, err := tx.Prepare("select nickname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
+		nickStatement, err := tx.Prepare("select quackname from nickname_listings where user_id=$1 AND guild_id=$2 order by id desc limit 1;")
 		if err != nil {
 			return errors.WrapIf(err, "nick stmnt prepare")
 		}
@@ -694,7 +694,7 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 
 			err = CheckNickname(tx, context.Background(), nickStatement, v.User.ID, v.GuildID, v.Nick)
 			if err != nil {
-				return errors.WrapIf(err, "quackbers nickname check")
+				return errors.WrapIf(err, "quackbers quackname check")
 			}
 		}
 

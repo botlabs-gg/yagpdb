@@ -34,10 +34,10 @@ var (
 	MAUnbanned       = ModlogAction{Prefix: "Unbanned", Emoji: "🔓", Color: 0x62c65f}
 	MAWarned         = ModlogAction{Prefix: "Warned", Emoji: "⚠", Color: 0xfca253}
 	MATimeoutAdded   = ModlogAction{Prefix: "Timed out", Emoji: "⏱", Color: 0x9b59b6}
-	MATimeoutRemoved = ModlogAction{Prefix: "Timeout removed from", Emoji: "⏱", Color: 0x9b59b6}
+	MATimeoutRemoved = ModlogAction{Prefix: "Quackout removed from", Emoji: "⏱", Color: 0x9b59b6}
 	MAGiveRole       = ModlogAction{Prefix: "", Emoji: "➕", Color: 0x53fcf9}
 	MARemoveRole     = ModlogAction{Prefix: "", Emoji: "➖", Color: 0x53fcf9}
-	MAClearWarnings  = ModlogAction{Prefix: "Quackleared warnings", Emoji: "👌", Color: 0x62c65f}
+	MAClearWarnings  = ModlogAction{Prefix: "Quackleared quarnings", Emoji: "👌", Color: 0x62c65f}
 )
 
 func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogAction, target *discordgo.User, reason, logLink string) error {

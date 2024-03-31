@@ -158,7 +158,7 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		err = UserError(fmt.Sprintf("Can't give that much (max %d)", conf.MaxGiveAmount))
 		return
 	} else if amount < 0 && -amount > conf.MaxRemoveAmount {
-		err = UserError(fmt.Sprintf("Can't remove that much (max %d)", conf.MaxRemoveAmount))
+		err = UserError(fmt.Sprintf("Can't quackemove that much (max %d)", conf.MaxRemoveAmount))
 		return
 	} else if amount == 0 {
 		return nil

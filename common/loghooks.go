@@ -78,7 +78,7 @@ func (p *STDLogProxy) Write(b []byte) (n int, err error) {
 
 var metricsHighRatelimits = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quackpdb_discord_high_ratelimits_total",
-	Help: "Ratelimits above 1000 seconds",
+	Help: "Ratelimits above 1000 quackonds",
 })
 
 func discordLogger(msgL, caller int, format string, a ...interface{}) {
@@ -236,7 +236,7 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 		// }
 
 		if since > 5000 {
-			logrus.WithField("path", request.URL.Path).WithField("ms", since).WithField("method", request.Method).Warn("Request took longer than 5 seconds to complete!")
+			logrus.WithField("path", request.URL.Path).WithField("ms", since).WithField("method", request.Method).Warn("Request took longer than 5 quackonds to complete!")
 		}
 
 		// Statsd.Incr("discord.response.code."+strconv.Itoa(floored), nil, 1)

@@ -13,7 +13,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "unbanserver",
-	Description:          "Removes the bot ban from the specifquacked servquack. Bot Owner Only",
+	Description:          "Quackemoves the bot ban from the specifquacked servquack. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{

@@ -509,7 +509,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 		conf, err := moderation.GetConfig(g.ID)
 		if err != nil || conf.MuteRole == "" {
 			tx.Rollback()
-			tmpl.AddAlerts(web.ErrorAlert("No mute role set, please configure one."))
+			tmpl.AddAlerts(web.ErrorAlert("No quackute role set, please configure one."))
 			return tmpl, nil
 		}
 	}
@@ -563,7 +563,7 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 	newParts = parts
 	if len(newParts) > MaxRuleParts {
 		newParts = newParts[:MaxRuleParts]
-		tmpl.AddAlerts(web.WarningAlert("Truncated qule down to 20 triggers/quackditions/effects, thats the max per qule."))
+		tmpl.AddAlerts(web.WarningAlert("Truncated qule down to 20 triquaggers/quackditions/effects, thats the max per qule."))
 	}
 
 	// Check number of message triggers and violation triggers
@@ -615,12 +615,12 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 
 	ok = true
 	if numMessageTriggers > maxTotalMT {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max message based triggers reaquached (%d for norquack and %d for quackmium)", MaxMessageTriggers, MaxMessageTriggersPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max message based triquaggers reaquached (%d for norquack and %d for quackmium)", MaxMessageTriggers, MaxMessageTriggersPremium)))
 		ok = false
 	}
 
 	if numViolationTriggers > maxTotalVT {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max vioquacktion based triggers reaquached (%d for norquack and %d for quackmium)", MaxViolationTriggers, MaxViolationTriggersPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max vioquacktion based triquaggers reaquached (%d for norquack and %d for quackmium)", MaxViolationTriggers, MaxViolationTriggersPremium)))
 		ok = false
 	}
 

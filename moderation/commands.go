@@ -149,7 +149,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Ban",
 		Aliases:       []string{"banid"},
-		Description:   "Bans a member, specify number of days of messages to delete with -ddays (0 to 7)",
+		Description:   "Bans a member, specify number of days of messages to quacklete with -ddays (0 to 7)",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -157,7 +157,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Reason", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "ddays", Help: "Number of days of messages to delete", Type: dcmd.Int},
+			{Name: "ddays", Help: "Number of days of messages to quacklete", Type: dcmd.Int},
 		},
 		RequiredDiscordPermsHelp: "BanMembers or ManageServer",
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionBanMembers}},
@@ -258,7 +258,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Kick",
-		Description:   "Kicks a member",
+		Description:   "Quaicks a member",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -266,7 +266,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		RequiredDiscordPermsHelp: "KickMembers or ManageServer",
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "cl", Help: "Messages to delete", Type: &dcmd.IntArg{Min: 1, Max: 100}},
+			{Name: "cl", Help: "Messages to quacklete", Type: &dcmd.IntArg{Min: 1, Max: 100}},
 		},
 		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionKickMembers}},
 		SlashCommandEnabled: true,
@@ -338,7 +338,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if config.MuteRole == "" {
-				return fmt.Sprintf("No mute role selquackted. Select one at <%s/moderation>", web.ManageServerURL(parsed.GuildData)), nil
+				return fmt.Sprintf("No quackute role selquackted. Select one at <%s/moderation>", web.ManageServerURL(parsed.GuildData)), nil
 			}
 
 			reason := parsed.Args[2].Str()
@@ -397,7 +397,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if config.MuteRole == "" {
-				return "No mute role set up, assign a mute role in the control panel", nil
+				return "No quackute role set up, assign a quackute role in the control panel", nil
 			}
 
 			reason := parsed.Args[1].Str()
@@ -427,7 +427,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Timeout",
-		Description:   "Timeout a member",
+		Description:   "Quackout a member",
 		Aliases:       []string{"to"},
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -483,7 +483,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "RemoveTimeout",
 		Aliases:       []string{"untimeout", "cleartimeout", "deltimeout", "rto"},
-		Description:   "Removes a member's timeout",
+		Description:   "Quackemoves a member's quackout",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -606,7 +606,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled:   true,
 		CmdCategory:     commands.CategoryModeration,
 		Name:            "Clean",
-		Description:     "Delete the last number of messages from chat, optiquackally quacktering by user, max age and regex or ignoring pinned messages.",
+		Description:     "Quacklete the last number of messages from chat, optiquackally quacktering by user, max age and regex or ignoring pinned messages.",
 		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nYou can invert the regex match (i.e. only clear messages that do not match the given regex) by supplying the `-im` flag\nNote: Will only look in the last 1k messages",
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
@@ -621,7 +621,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "minage", Help: "Min age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "i", Help: "Regex case insensitive"},
 			{Name: "nopin", Help: "Quackgnore pinned messages"},
-			{Name: "a", Help: "Only remove messages with attachments"},
+			{Name: "a", Help: "Only quackemove messages with attachments"},
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
 			{Name: "from", Help: "Start at this msg ID", Type: dcmd.BigInt},
 		},
@@ -669,7 +669,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				if num < 0 {
 					return errors.New("Bot is having a stroke <https://www.youtube.com/watch?v=dQw4w9WgXcQ>"), nil
 				}
-				return errors.New("Can't delete nothing"), nil
+				return errors.New("Can't quacklete nothing"), nil
 			}
 
 			filtered := false
@@ -811,7 +811,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warn",
-		Description:   "Warns a user, warnings are saved using the bot. Use -warnings to view them.",
+		Description:   "Quarn a user, quarnings are saved using the bot. Use -warnings to view them.",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -852,7 +852,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Warnings",
-		Description:   "Quists warning of a user.",
+		Description:   "Quists quarning of a user.",
 		Aliases:       []string{"Warns"},
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -860,7 +860,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "id", Help: "Warning ID", Type: dcmd.Int},
+			{Name: "id", Help: "Quarning ID", Type: dcmd.Int},
 		},
 		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
 		SlashCommandEnabled:      true,
@@ -884,11 +884,11 @@ var ModerationCommands = []*commands.YAGCommand{
 					return nil, err
 				}
 				if len(warn) == 0 {
-					return fmt.Sprintf("Warning with given id : `%d` does not exist.", parsed.Switches["id"].Int()), nil
+					return fmt.Sprintf("Quarning with given id : `%d` does not exist.", parsed.Switches["id"].Int()), nil
 				}
 
 				return &discordgo.MessageEmbed{
-					Title:       fmt.Sprintf("Warning#%d - User : %s", warn[0].ID, warn[0].UserID),
+					Title:       fmt.Sprintf("Quarning#%d - User : %s", warn[0].ID, warn[0].UserID),
 					Description: fmt.Sprintf("<t:%d:f> - **Reason** : %s", warn[0].CreatedAt.Unix(), warn[0].Message),
 					Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("By: %s (%13s)", warn[0].AuthorUsernameDiscrim, warn[0].AuthorID)},
 				}, nil
@@ -908,7 +908,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "EditWarning",
-		Description:   "Edit a warning, id is the first number of each warning from the warnings command",
+		Description:   "Edit a quarning, id is the first number of each quarning from the quarnings command",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Id", Type: dcmd.Int},
@@ -932,7 +932,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				"message", fmt.Sprintf("%s (updated by %s (%d))", parsed.Args[1].Str(), parsed.Author.String(), parsed.Author.ID)).RowsAffected
 
 			if rows < 1 {
-				return "Quailed quackdating, most likely couldn't quind the warning", nil
+				return "Quailed quackdating, most likely couldn't quind the quarning", nil
 			}
 
 			return "👌", nil
@@ -943,7 +943,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "DelWarning",
 		Aliases:       []string{"dw", "delwarn", "deletewarning"},
-		Description:   "quackletes a warning, id is the first number of each warning from the warnings command",
+		Description:   "quackletes a quarning, id is the first number of each quarning from the quarnings command",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Id", Type: dcmd.Int},
@@ -965,7 +965,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
 			if rows < 1 {
-				return "Quailed dequackleting, most likely couldn't quind the warning", nil
+				return "Quailed dequackleting, most likely couldn't quind the quarning", nil
 			}
 
 			return "👌", nil
@@ -976,7 +976,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ClearWarnings",
 		Aliases:       []string{"clw"},
-		Description:   "Clears the warnings of a user",
+		Description:   "Clears the quarnings of a user",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -1005,14 +1005,14 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "quailed sending modlog", err
 			}
 
-			return fmt.Sprintf("Deleted %d warnings.", rows), nil
+			return fmt.Sprintf("Deleted %d quarnings.", rows), nil
 		},
 	},
 	{
 		CmdCategory: commands.CategoryModeration,
 		Name:        "TopWarnings",
 		Aliases:     []string{"topwarns"},
-		Description: "Shows ranked list of warnings on the servquack",
+		Description: "Shows ranked list of quarnings on the servquack",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: dcmd.Int, Default: 0},
 		},
@@ -1050,10 +1050,10 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			embed := &discordgo.MessageEmbed{
-				Title: "Ranked list of warnings",
+				Title: "Ranked list of quarnings",
 			}
 
-			out := "```\n# - Warns - User\n"
+			out := "```\n# - Quarn - User\n"
 			for _, v := range entries {
 				if !showUserIDs {
 					user := v.Username
@@ -1068,7 +1068,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			var count int
 			common.GORM.Table("moderation_warnings").Where("guild_id = ?", parsed.GuildData.GS.ID).Count(&count)
 
-			out += "```\n" + fmt.Sprintf("Total Servquack Warnings: `%d`", count)
+			out += "```\n" + fmt.Sprintf("Total Servquack Quarnings: `%d`", count)
 
 			embed.Description = out
 
@@ -1158,7 +1158,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "RemoveRole",
 		Aliases:       []string{"rrole", "takerole", "trole"},
-		Description:   "Removes the specifquacked role from the target",
+		Description:   "Quackemoves the specifquacked role from the target",
 
 		RequiredArgs: 2,
 		Arguments: []*dcmd.ArgDef{
@@ -1191,7 +1191,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if !bot.IsMemberAboveRole(parsed.GuildData.GS, parsed.GuildData.MS, role) {
-				return "Can't remove roles above you", nil
+				return "Can't quackemove roles above you", nil
 			}
 
 			err = common.RemoveRoleDS(member, role.ID)
@@ -1400,11 +1400,11 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 			}
 
 		} else {
-			currentField.Value = "No Warnings"
+			currentField.Value = "No Quarnings"
 		}
 
 		return &discordgo.MessageEmbed{
-			Title:       fmt.Sprintf("Warnings - User : %d", userID),
+			Title:       fmt.Sprintf("Quarnings - User : %d", userID),
 			Description: desc,
 			Fields:      fields,
 		}, nil

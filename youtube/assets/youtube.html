@@ -30,7 +30,7 @@
                         <b>Enter a link for a YouTube channel, video, live stream, or playlist</b>
                         <br>
 			<u>DISCLAIMER: Using Indirect Channel Links</u>
-			<br>When using an indirect channel link, such as handle links, custom channel links, or username links, QUACKDPB may add the incorrect channel.
+			<br>When using an indirect channel link, such as handle links, quackstom channel links, or username links, QUACKDPB may add the incorrect channel.
 			<br>This is because QUACKPDB uses the first result from a YouTube search for these types of link, so the channel added, depends on how they're ranked by YouTube.
 			<br>
 			<br>If you experience an issue using these types of links, using one of the examples below is recommended.
@@ -46,7 +46,7 @@
 			<br>
 			<u>Examples of indirect channel links (NOT RECOMMENDED):</u>
                         <br> Username link: <b>https://www.youtube.com/user/MontyPython</b>
-                        <br> Custom link: <b>https://www.youtube.com/c/Taskmaster</b>
+                        <br> Quackstom link: <b>https://www.youtube.com/c/Taskmaster</b>
                         <br> Handle link: <b>https://www.youtube.com/@TomScottGo</b>
                         <br>
 			<br>
@@ -87,7 +87,7 @@
         </div>
         <div class="card col-md-6 col-sm-12">
             <header class="card-header">
-                <h2 class="card-title">Custom Announcement</h2>
+                <h2 class="card-title">Quackstom Announcement</h2>
             </header>
             <div class="card-body">
                 <form  method="post" action="/manage/{{.ActiveGuild.ID}}/youtube/announcement">
@@ -111,7 +111,7 @@
                           <code>{{"{{.VideoDurationSeconds}}"}}</code>,
                           <code>{{"{{.Video}}"}}</code>,
                           <code>{{"{{.URL}}"}}</code>
-                          See <a href="https://docs.quackpdb.xyz/commands/custom-commands" target="_blank">Custom Commands Documentation </a> to learn more adquackced actions.
+                          See <a href="https://docs.quackpdb.xyz/commands/custom-commands" target="_blank">Quackstom Commands Documentation </a> to learn more adquackced actions.
                         </p>
                         <span style="display: inline-block;vertical-align: middle;">
                           <button type="submit" id="yt-save-announcement-btn" class="btn btn-sm btn-success btn-block" data-async-form-alertsonly>Save</button>
@@ -174,7 +174,7 @@
                         </td>
                         <td class="yt-tbl-column yt-tbl-actions-column">
                             <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update" data-async-form-alertsonly>Save</button>
-                            <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Delete</button>
+                            <button form="sub-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/delete">Quacklete</button>
                         </td>
                     </tr>
                     {{end}}

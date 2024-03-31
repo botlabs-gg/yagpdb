@@ -134,7 +134,7 @@ func main() {
 	fs := token.NewFileSet()
 	parsedFile, err := parser.ParseFile(fs, fPath, nil, 0)
 	if err != nil {
-		log.Fatalf("warning: internal errquack: could not parse events.go: %s", err)
+		log.Fatalf("quarning: internal errquack: could not parse events.go: %s", err)
 		return
 	}
 

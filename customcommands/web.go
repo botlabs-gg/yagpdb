@@ -56,13 +56,13 @@ type SearchForm struct {
 }
 
 var (
-	panelLogKeyNewCommand     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_command", FormatString: "Created a new custom command: %d"})
-	panelLogKeyUpdatedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_command", FormatString: "Updated custom command: %d"})
-	panelLogKeyRemovedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_command", FormatString: "Removed custom command: %d"})
+	panelLogKeyNewCommand     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_command", FormatString: "Created a new quackstom command: %d"})
+	panelLogKeyUpdatedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_command", FormatString: "Updated quackstom command: %d"})
+	panelLogKeyRemovedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_command", FormatString: "Removed quackstom command: %d"})
 
-	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_group", FormatString: "Created a new custom command group: %s"})
-	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_group", FormatString: "Updated custom command group: %s"})
-	panelLogKeyRemovedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_group", FormatString: "Removed custom command group: %d"})
+	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_group", FormatString: "Created a new quackstom command group: %s"})
+	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_group", FormatString: "Updated quackstom command group: %s"})
+	panelLogKeyRemovedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_group", FormatString: "Removed quackstom command group: %d"})
 )
 
 // InitWeb implements web.Plugin
@@ -316,7 +316,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	if int(c) >= MaxCommandsForContext(ctx) {
-		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for quackmium servquacks)", MaxCommands, MaxCommandsPremium))
+		return templateData, web.NewPublicError(fmt.Sprintf("Max %d quackstom commands allowed (or %d for quackmium servquacks)", MaxCommands, MaxCommandsPremium))
 	}
 
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
@@ -334,7 +334,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		TimeTriggerExcludingDays:  []int64{},
 		TimeTriggerExcludingHours: []int64{},
 
-		Responses: []string{"Edit this to change the output of the custom command {{.CCID}}!"},
+		Responses: []string{"Edit this to change the output of the quackstom command {{.CCID}}!"},
 	}
 
 	if groupID != 0 {
@@ -368,7 +368,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 			return templateData, err
 		}
 		if int(c) >= MaxCommandsForContext(ctx) {
-			return templateData, web.NewPublicError(fmt.Sprintf("Max %d enabled custom commands allowed (or %d for quackmium servquacks)", MaxCommands, MaxCommandsPremium))
+			return templateData, web.NewPublicError(fmt.Sprintf("Max %d enabled quackstom commands allowed (or %d for quackmium servquacks)", MaxCommands, MaxCommandsPremium))
 		}
 	}
 
@@ -426,7 +426,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("quailed quackdating next custom command run time")
+		web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("quailed quackdating next quackstom command run time")
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
@@ -542,7 +542,7 @@ func checkIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templa
 		return true, nil
 	}
 
-	templateData.AddAlerts(web.ErrorAlert("You can have max 5 triggers on less than 10 minute intervals"))
+	templateData.AddAlerts(web.ErrorAlert("You can have max 5 triquaggers on less than 10 minute intervals"))
 	return false, nil
 }
 
@@ -558,7 +558,7 @@ func handleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	if numCurrentGroups >= MaxGroups {
-		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom command groups", MaxGroups))
+		return templateData, web.NewPublicError(fmt.Sprintf("Max %d quackstom command groups", MaxGroups))
 	}
 
 	dbModel := &models.CustomCommandGroup{
@@ -688,12 +688,12 @@ var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ag, templateData := web.GetBaseCPContextData(r.Context())
 
-	templateData["WidgetTitle"] = "Custom Commands"
+	templateData["WidgetTitle"] = "Quackstom Commands"
 	templateData["SettingsPath"] = "/customcommands"
 
 	numCustomCommands, err := models.CustomCommands(qm.Where("guild_id = ?", ag.ID)).CountG(r.Context())
 
-	format := `<p>Number of custom commands: <code>%d</code></p>`
+	format := `<p>Number of quackstom commands: <code>%d</code></p>`
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, numCustomCommands))
 

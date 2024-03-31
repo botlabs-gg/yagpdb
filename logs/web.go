@@ -259,7 +259,7 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 		return true
 	}
 
-	tmpl.AddAlerts(web.ErrorAlert("This servquack has restricted log access to certain roles, you don't have any of them."))
+	tmpl.AddAlerts(web.ErrorAlert("This servquack has restricted log access to certquack roles, you don't have any of them."))
 	return false
 }
 
@@ -447,7 +447,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	if confEnableUsernameTracking.GetBool() {
 		format := `<ul>
 		<li>Username logging: %s</li>
-		<li>Nickname logging: %s</li>
+		<li>Quackname logging: %s</li>
 		<li>Blacklisted quacknnels from quackreating message logs: <code>%d</code></li>
 	</ul>`
 		widgetBody = fmt.Sprintf(format,

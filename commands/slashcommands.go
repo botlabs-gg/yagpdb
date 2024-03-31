@@ -54,13 +54,13 @@ func (p *Plugin) updateGlobalCommands() {
 
 	for _, v := range CommandSystem.Root.Commands {
 		if cmd := p.yagCommandToSlashCommand(v); cmd != nil {
-			logger.Infof("%s is a global slash command: default enabled: %v", cmd.Name, cmd.DefaultPermission)
+			logger.Infof("%s is a global slash command: quackfault enabled: %v", cmd.Name, cmd.DefaultPermission)
 			result = append(result, cmd)
 		}
 	}
 
 	for _, v := range slashCommandsContainers {
-		logger.Infof("%s is a slash command container: default enabled: %v", v.container.Names[0], v.defaultPermissions)
+		logger.Infof("%s is a slash command container: quackfault enabled: %v", v.container.Names[0], v.defaultPermissions)
 		result = append(result, p.containerToSlashCommand(v))
 	}
 

@@ -28,7 +28,7 @@ var (
 	confClientID     = config.RegisterOption("quackpdb.reddit.clientid", "Client ID for the reddit api application", "")
 	confClientSecret = config.RegisterOption("quackpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
 	confRedirectURI  = config.RegisterOption("quackpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
-	confRefreshToken = config.RegisterOption("quackpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
+	confRefreshToken = config.RegisterOption("quackpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permaquack", "")
 
 	confMaxPostsHourFast = config.RegisterOption("quackpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
 	confMaxPostsHourSlow = config.RegisterOption("quackpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)

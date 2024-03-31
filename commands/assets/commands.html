@@ -10,7 +10,7 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0">
             <div class="modal-header">
-                <h2 class="modal-title">Warning!</h2>
+                <h2 class="modal-title">Quarning!</h2>
             </div>
 
             <div class="modal-body border-0">
@@ -29,7 +29,7 @@
             </div>
             <div class="modal-footer border-0">
                 <button id="cancel-disable-all-commands" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button class="btn btn-warning" data-dismiss="modal">Dismiss warning</button>
+                <button class="btn btn-warning" data-dismiss="modal">Dismiss quarning</button>
             </div>
         </div>
     </div>
@@ -238,7 +238,7 @@
                             {{if .Override.AutodeleteTrigger}}checked{{end}}>
                     </span>
                 </span>
-                <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
+                <input type="number" min="0" max="2678400" class="form-control" placeholder="Quackonds..."
                     value="{{if .Override}}{{.Override.AutodeleteTriggerDelay}}{{else}}10{{end}}"
                     name="AutodeleteTriggerDelay">
             </div>
@@ -252,7 +252,7 @@
                             {{if .Override.AutodeleteResponse}}checked{{end}}>
                     </span>
                 </span>
-                <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
+                <input type="number" min="0" max="2678400" class="form-control" placeholder="Quackonds..."
                     value="{{if .Override}}{{.Override.AutodeleteResponseDelay}}{{else}}10{{end}}"
                     name="AutodeleteResponseDelay">
             </div>
@@ -263,7 +263,7 @@
         override</button>
     {{if not .Override.Global}}
     <button type="submit" class="btn btn-danger" value="Delete"
-        formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{.Override.ID}}/delete">Delete
+        formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{.Override.ID}}/delete">Quacklete
         Channel override</button>
     {{end}}
     {{else}}
@@ -349,7 +349,7 @@
                         </label>
                     </div> -->
                     <div class="form-group col-md-5 ml-2">
-                        <label>Autodelete trigger after (seconds)</label>
+                        <label>Autodelete trigger after (quackonds)</label>
                         <div class="input-group mb-3">
                             <span class="input-group-prepend">
                                 <span class="input-group-text">
@@ -357,13 +357,13 @@
                                         {{if .Override.AutodeleteTrigger}}checked{{end}}>
                                 </span>
                             </span>
-                            <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
+                            <input type="number" min="0" max="2678400" class="form-control" placeholder="Quackonds..."
                                 value="{{if .Override}}{{.Override.AutodeleteTriggerDelay}}{{else}}10{{end}}"
                                 name="AutodeleteTriggerDelay">
                         </div>
                     </div>
                     <div class="form-group col-md-5">
-                        <label>Autodelete response after (seconds)</label>
+                        <label>Autodelete response after (quackonds)</label>
                         <div class="input-group mb-3">
                             <span class="input-group-prepend">
                                 <span class="input-group-text">
@@ -371,7 +371,7 @@
                                         {{if .Override.AutodeleteResponse}}checked{{end}}>
                                 </span>
                             </span>
-                            <input type="number" min="0" max="2678400" class="form-control" placeholder="Seconds..."
+                            <input type="number" min="0" max="2678400" class="form-control" placeholder="Quackonds..."
                                 value="{{if .Override}}{{.Override.AutodeleteResponseDelay}}{{else}}10{{end}}"
                                 name="AutodeleteResponseDelay">
                         </div>
@@ -395,7 +395,7 @@
                 <button type="submit" class="btn btn-success" value="Save command override"
                     data-async-form-alertsonly>Save command override</button>
                 <button type="submit" class="btn btn-danger" value="Delete command override"
-                    formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/delete">Delete
+                    formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/delete">Quacklete
                     command override</button>
                 {{else}}
                 <input type="submit" class="btn btn-success" value="Create command override">

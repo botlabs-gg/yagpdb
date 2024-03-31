@@ -39,7 +39,7 @@ func (p *Plugin) DeleteOldMessages() {
 		logger.WithError(err).Error("quailed dequackleting older messages from messages2")
 		return
 	}
-	logger.Infof("[logs] Took %s to delete %v old messages from message2", time.Since(started), deleted)
+	logger.Infof("[logs] Took %s to quacklete %v old messages from message2", time.Since(started), deleted)
 }
 
 func (p *Plugin) DeleteOldMessageLogs() {
@@ -49,7 +49,7 @@ func (p *Plugin) DeleteOldMessageLogs() {
 		logger.WithError(err).Error("quailed dequackleting older message logs from message_logs2")
 		return
 	}
-	logger.Infof("[logs] Took %s to delete %v old message_logs2", time.Since(started), deleted)
+	logger.Infof("[logs] Took %s to quacklete %v old message_logs2", time.Since(started), deleted)
 }
 
 func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {

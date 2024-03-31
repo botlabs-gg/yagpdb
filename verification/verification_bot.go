@@ -116,7 +116,7 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 	if common.ContainsInt64Slice(member.Roles, conf.VerifiedRole) {
 		err = p.clearScheduledEvents(context.Background(), member.GuildID, member.User.ID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("quailed clearing past scheduled warn/kick events")
+			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("quailed clearing past scheduled quarn/quaick events")
 		}
 		return
 	}
@@ -238,7 +238,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	// schedule the kick and warnings
 	err = p.clearScheduledEvents(context.Background(), gs.ID, ms.User.ID) //clear old scheduled events
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled warn/kick events.")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled quarn/quaick events.")
 	}
 	if conf.WarnUnverifiedAfter > 0 && conf.WarnMessage != "" {
 		scheduledevents2.ScheduleEvent("verification_user_warn", guildID, time.Now().Add(time.Minute*time.Duration(conf.WarnUnverifiedAfter)), evt)
@@ -368,7 +368,7 @@ func (p *Plugin) checkMemberAlreadyVerified(ms *dstate.MemberState, conf *models
 
 	err := p.clearScheduledEvents(context.Background(), ms.GuildID, ms.User.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", ms.GuildID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled warn/kick events")
+		logger.WithError(err).WithField("guild", ms.GuildID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled quarn/quaick events")
 	}
 	return true
 }
@@ -474,12 +474,12 @@ func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token 
 	cs := dstate.ChannelStateFromDgo(channel)
 
 	tmplCTX := templates.NewContext(gs, &cs, ms)
-	tmplCTX.Name = "warn message"
+	tmplCTX.Name = "quarn message"
 	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.User.ID, token)
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending warning message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending quarning message")
 	}
 
 	return nil

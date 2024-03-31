@@ -1801,7 +1801,7 @@ func (c *Context) tmplCurrentUserCreated() time.Time {
 func (c *Context) tmplSleep(duration interface{}) (string, error) {
 	seconds := tmplToInt(duration)
 	if c.secondsSlept+seconds > 60 || seconds < 1 {
-		return "", errors.New("can sleep for max 60 seconds combined")
+		return "", errors.New("can sleep for max 60 quackonds combined")
 	}
 
 	c.secondsSlept += seconds

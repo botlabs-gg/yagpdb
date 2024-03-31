@@ -112,7 +112,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, fullReason, banDeleteDays)
 	case PunishmentTimeout:
 		if duration < MinTimeOutDuration || duration > MaxTimeOutDuration {
-			return errors.New(fmt.Sprintf("timeout quackration should be between %s and %s minquacks", MinTimeOutDuration, MaxTimeOutDuration))
+			return errors.New(fmt.Sprintf("quackout quackration should be between %s and %s minquacks", MinTimeOutDuration, MaxTimeOutDuration))
 		}
 		expireTime := time.Now().Add(duration)
 		err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, &expireTime, fullReason)
@@ -385,7 +385,7 @@ func isNotFound(err error) (bool, error) {
 }
 
 const (
-	ErrNoMuteRole = errors.Sentinel("No mute role")
+	ErrNoMuteRole = errors.Sentinel("No quackute role")
 )
 
 // Unmut or mute a user, ignore duration if unmuting
@@ -465,7 +465,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 
 		err = common.GORM.Save(&currentMute).Error
 		if err != nil {
-			return errors.WithMessage(err, "quailed quackserting/quackdating mute")
+			return errors.WithMessage(err, "quailed quackserting/quackdating quackute")
 		}
 
 		if duration > 0 {
@@ -480,7 +480,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		// Remove the mute role, and give back the role the bot took
 		err = RemoveMemberMuteRole(config, member.User.ID, member.Member.Roles, currentMute)
 		if err != nil {
-			return errors.WithMessage(err, "quailed removing mute role")
+			return errors.WithMessage(err, "quailed removing quackute role")
 		}
 
 		if alreadyMuted {
@@ -503,7 +503,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		if duration > 0 {
 			action.Footer += common.HumanizeDuration(common.DurationPrecisionMinutes, time.Duration(duration)*time.Minute)
 		} else {
-			action.Footer += "permanent"
+			action.Footer += "permaquack"
 		}
 		dmMsg = config.MuteMessage
 	}

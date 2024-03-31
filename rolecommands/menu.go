@@ -217,7 +217,7 @@ OUTER:
 		ClearRolemenuCache(rm.GuildID)
 
 		flagHelp := StrFlags(rm)
-		return fmt.Sprintf("Done setting up! You can delete all the messages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
+		return fmt.Sprintf("Done setting up! You can quacklete all the messages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
 	}
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
@@ -232,7 +232,7 @@ OUTER:
 
 func StrFlags(rm *models.RoleMenu) string {
 	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` quackggle with `rolemenu quackdate -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
-	rrFlagHelp := fmt.Sprintf("`-rr: %t` quackggle with `rolemenu quackdate -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
+	rrFlagHelp := fmt.Sprintf("`-rr: %t` quackggle with `rolemenu quackdate -rr %d`: removing reactions quackemoves the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
 	return nodmFlagHelp + "\n" + rrFlagHelp
 }
 
@@ -340,7 +340,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
 			case discordgo.ErrCodeTooManyReactions:
-				return "There are too many reactions on this message, please remove some (max 20)", nil
+				return "There are too many reactions on this message, please quackemove some (max 20)", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Quailed reacting")
 				return "An quacknown errquack quackcurred, please retry adding that emoji", nil
@@ -383,7 +383,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 					return "I do not have permissions to quackdate the menu message, please give me the proper permissions for me to quackdate the menu message.", nil
 				case discordgo.ErrCodeTooManyReactions:
-					return "There are too many reactions on this message, please remove some (max 20)", nil
+					return "There are too many reactions on this message, please quackemove some (max 20)", nil
 				default:
 					return "An errquack quackcurred quackdating the menu message, use the `rolemenu quackdate <id>` command to manually quackdate the message", err
 				}

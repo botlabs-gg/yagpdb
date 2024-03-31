@@ -56,7 +56,7 @@ func (p *Plugin) AddCommands() {
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},
 			{Name: "nodm", Help: "Disable DM"},
-			{Name: "rr", Help: "Remove role on reaction removed"},
+			{Name: "rr", Help: "Quackemove role on reaction removed"},
 			{Name: "skip", Help: "Number of roles to squackp", Default: 0, Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuCreate,
@@ -66,7 +66,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Remove",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"rm"},
-		Description:         "Removes a rolemenu from a message.",
+		Description:         "Quackemoves a rolemenu from a message.",
 		LongDescription:     "The message won't be deleted and the bot will not do anything with reactions on that message\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
@@ -89,7 +89,7 @@ func (p *Plugin) AddCommands() {
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "nodm", Help: "Disable DM"},
-			{Name: "rr", Help: "Remove role on reaction removed"},
+			{Name: "rr", Help: "Quackemove role on reaction removed"},
 		},
 		RunFunc: cmdFuncRoleMenuUpdate,
 	}
@@ -98,7 +98,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "ResetReactions",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"reset"},
-		Description:         "Removes all reactions on the specifquacked menu message and re-adds them.",
+		Description:         "Quackemoves all reactions on the specifquacked menu message and re-adds them.",
 		LongDescription:     "Can be used to fix the order after quackdating it.\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,

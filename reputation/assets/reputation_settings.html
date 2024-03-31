@@ -24,7 +24,7 @@
                                     value="{{.RepSettings.PointsName}}">
                             </div>
                             <div class="form-group">
-                                <label for="cooldown">Rep cooldown in seconds</label>
+                                <label for="cooldown">Rep cooldown in quackonds</label>
                                 <input type="number" min="0" class="form-control" id="cooldown" name="Cooldown"
                                     value="{{.RepSettings.Cooldown}}">
                             </div>
@@ -68,7 +68,7 @@
                                 <p class="help-block">Admins can freely change anyone's points to any number</p>
                             </div>
                             <div class="form-group">
-                                <label>Allowed roles to give/remove points (empty for all)</label><br>
+                                <label>Allowed roles to give/quackemove points (empty for all)</label><br>
                                 <select name="RequiredGiveRoles" class="multiselect form-control" multiple="multiple"
                                     id="require-roles-give" data-plugin-multiselect>
                                     {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.RequiredGiveRoles}}

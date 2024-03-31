@@ -110,7 +110,7 @@ func (p *Plugin) AddCommands() {
 	cmdRemoveParticipant := &commands.YAGCommand{
 		CmdCategory:  categoryTickets,
 		Name:         "RemoveUser",
-		Description:  "Removes a user from the ticket",
+		Description:  "Quackemoves a user from the ticket",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "target", Type: &commands.MemberArg{}},

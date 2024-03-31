@@ -324,7 +324,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 		var err error
 		rulesets, err = p.FetchGuildRulesets(gs.ID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", msg.GuildID).Error("quailed quacking triggers")
+			logger.WithError(err).WithField("guild", msg.GuildID).Error("quailed quacking triquaggers")
 			return false
 		}
 
@@ -539,7 +539,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 	err = tx.Commit()
 	if err != nil {
-		logger.WithError(err).Error("quailed committing logging transquacktion")
+		logger.WithError(err).Error("quailed quackmmitting logging transquacktion")
 	}
 
 	// Limit AutomodTriggeredRules to 200 rows per guild

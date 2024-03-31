@@ -8,7 +8,7 @@ import (
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(p, &commands.YAGCommand{
 		Name:                "Trivia",
-		Description:         "Asks a random question, you have got 30 seconds to answer!",
+		Description:         "Asks a random question, you have got 30 quackonds to answer!",
 		RunInDM:             false,
 		CmdCategory:         commands.CategoryFun,
 		SlashCommandEnabled: true,

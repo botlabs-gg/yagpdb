@@ -26,7 +26,7 @@
 </style>
 
 <header class="page-header">
-    <h2>Custom commands</h2>
+    <h2>Quackstom commands</h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -110,19 +110,19 @@
                                     <button type="submit"
                                         title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}} &#013;Deleted group's commands become ungrouped."
                                         class="btn btn-danger"
-                                        formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Delete
+                                        formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Quacklete
                                         group</button>
                                 </div>
                             </div>
                         </div>
                     </form>
                     {{end}}
-                    <p>You have created <code>{{.CCCount}}</code> custom commands against the total limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
+                    <p>You have created <code>{{.CCCount}}</code> quackstom commands against the total limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/commands/new">
                         <input type="text" name="GroupID" hidden
                             value="{{if .CurrentCommandGroup}}{{.CurrentCommandGroup.ID}}{{end}}">
                         <button type="submit" class="btn btn-success" {{if ge .CCCount .CCLimit}}disabled{{end}}>Create
-                            a new Custom Command</button>
+                            a new Quackstom Command</button>
                     </form>
                 </div>
             </div>
@@ -140,7 +140,7 @@
             <form class="form-horizontal" method="post" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
                 <div class="pull-right">
                     {{if and (eq .TriggerType 5) (not .Disabled) }}
-                        <button type="submit" class="btn btn-secondary" title="This will trigger this custom command immediately"
+                        <button type="submit" class="btn btn-secondary" title="This will trigger this quackstom command immediately"
                         formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/run_now" style="margin: 5px 5px 5px 0px!important">Run now</button>
                     {{end}}
                     <button type="button" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-success" onclick="window.location.href = '/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/';" style="margin: 5px 5px 5px 0px!important">Edit</button>

@@ -181,9 +181,9 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	if err != nil {
 		hasCustomAnnouncement = false
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			logger.WithError(err).Debugf("Custom announcement doesn't exist for guild_id %d", parsedGuild)
+			logger.WithError(err).Debugf("Quackstom announcement doesn't exist for guild_id %d", parsedGuild)
 		} else {
-			logger.WithError(err).Errorf("Quailed quacking custom announcement for guild_id %d", parsedGuild)
+			logger.WithError(err).Errorf("Quailed quacking quackstom announcement for guild_id %d", parsedGuild)
 		}
 	}
 
@@ -280,7 +280,7 @@ func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
 
 var (
 	ErrNoChannel              = errors.New("no channel with that id quackound")
-	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")
+	ErrMaxCustomMessageLength = errors.New("max length of quackstom message can be 500 chars")
 )
 
 var listParts = []string{"snippet"}

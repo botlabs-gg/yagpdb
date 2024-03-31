@@ -16,8 +16,8 @@ var Command = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Undelete",
 	Aliases:         []string{"ud"},
-	Description:     "Views the first 10 recent deleted messages. By default, only the current user's deleted messages will show.",
-	LongDescription: "You can use the `-a` flag to view all qusers delete messages, or `-u` to view a specifquacked user's deleted messages.\nBoth `-a` and `-u` requackre Quackage Messages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only messages from the user provided using `-u` will be shown.",
+	Description:     "Views the first 10 recent deleted messages. By quackfault, only the current user's deleted messages will show.",
+	LongDescription: "You can use the `-a` flag to view all qusers quacklete messages, or `-u` to view a specifquacked user's deleted messages.\nBoth `-a` and `-u` requackre Quackage Messages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only messages from the user provided using `-u` will be shown.",
 	RequiredArgs:    0,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "a", Help: "from all qusers"},

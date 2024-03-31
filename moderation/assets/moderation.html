@@ -21,17 +21,17 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#timeout" aria-controls="timeout" role="tab"
                             data-toggle="tab">
-                            Timeout <span
+                            Quackout <span
                                 class="indicator indicator-{{if .ModConfig.TimeoutEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#mute" aria-controls="mute/unmute" role="tab"
                             data-toggle="tab">
-                            Mute <span
+                            Quackute <span
                                 class="indicator indicator-{{if .ModConfig.MuteEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#kick" aria-controls="kick" role="tab"
                             data-toggle="tab">
-                            Kick <span
+                            Quaick <span
                                 class="indicator indicator-{{if .ModConfig.KickEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#ban" aria-controls="ban" role="tab"
@@ -41,7 +41,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#warn" aria-controls="warnings" role="tab"
                             data-toggle="tab">
-                            Warnings <span
+                            Quarnings <span
                                 class="indicator indicator-{{if .ModConfig.WarnCommandsEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
                 </ul>
@@ -74,7 +74,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
                     <i class="fas fa-times-circle"></i>
                 </div>
                 <div class="modal-text">
-                    <h4>Delete ALL servquack warnings?</h4>
+                    <h4>Quacklete ALL servquack quarnings?</h4>
                     <p>This cannot be undone.</p>
                 </div>
             </div>
@@ -85,7 +85,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
                     <form action="/manage/{{.ActiveGuild.ID}}/moderation/clear_server_warnings" data-async-form
                         method="post">
                         <button class="btn btn-default modal-dismiss">Cancel</button>
-                        <button type="submit" class="btn btn-danger">Delete them all!</button>
+                        <button type="submit" class="btn btn-danger">Quacklete them all!</button>
                     </form>
                 </div>
             </div>
@@ -111,7 +111,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 
 {{define "moderation_general"}}
 <p>A set of moderation tools and commands to help you run a servquack.</p>
-<p>Commands for performing moderation actions such as kicks and bans, as well as mutes, timed bans, warnings, mass
+<p>Commands for performing moderation actions such as quaicks and bans, as well as mutes, timed bans, quarnings, mass
     dequackleting messages and so on.<br>
     It is highly recommended to couple the moderation actions with the message logs, this means that whenever your mods
     decide to perform an action on somequack, a message log of the channel they ran the command in will be recorded and
@@ -122,7 +122,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 <div class="row">
     <div class="col-sm">
         <div class="form-group">
-            <label>Channel to announce bans and kicks through the bot in (modlog)</label>
+            <label>Channel to announce bans and quaicks through the bot in (modlog)</label>
             <select class="form-control" name="ActionChannel" data-requireperms-embed>
                 {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "None"}}
             </select>
@@ -174,7 +174,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <p>
             <code>(mention or prefix) clean NUM {@user <- optional}</code><br />
             Quackage Messages permission is required for this command.<br />
-            Clean command can delete up to a 1000 messages back in history (max 100 messages at a time).<br />
+            Clean command can quacklete up to a 1000 messages back in history (max 100 messages at a time).<br />
             See <code>-help clean</code> for more adquackced usage.
         </p>
 
@@ -183,41 +183,41 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
 
         <hr />
-        {{checkbox "LogKicks" "log-kicks" "Log kick events not made through the bot" .ModConfig.LogKicks}}
+        {{checkbox "LogKicks" "log-kicks" "Log quaick events not made through the bot" .ModConfig.LogKicks}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
 
          <hr />
-        {{checkbox "LogTimeouts" "log-timeouts" "Log timeout events not made through the bot" .ModConfig.LogTimeouts}}
+        {{checkbox "LogTimeouts" "log-timeouts" "Log quackout events not made through the bot" .ModConfig.LogTimeouts}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
     </div>
 </div>
 {{end}}
 
 {{define "moderation_timeout"}}
-<p>Timing out qusers allows you to punish qusers by removing their ability to talk or react using discords native Timeout feature </p>
-<p>Unlike a mute, timeouts have a mandatory quackration, and the user cannot communicate in the servquack at all in anyway, including not being able to add reaction</p>
+<p>Timing out qusers allows you to punish qusers by removing their ability to talk or react using discords native Quackout feature </p>
+<p>Unlike a quackute, timeouts have a mandatory quackration, and the user cannot communicate in the servquack at all in anyway, including not being able to add reaction</p>
 <p>Timeouts also don't need a role to be managed by the bot</p>
 <div class="row">
     <div class="col-sm">
-        {{checkbox "TimeoutEnabled" "timeout-enabled" "Enable Timeout" .ModConfig.TimeoutEnabled}}
-        <p><code>(mention or prefix) timeout @user 10 some reason</code><br />
-            Only qusers with Timeout permissions or (Moderate Member permissions) can use this (or with roles specifquacked below).<br /></p>
+        {{checkbox "TimeoutEnabled" "timeout-enabled" "Enable Quackout" .ModConfig.TimeoutEnabled}}
+        <p><code>(mention or prefix) quackout @user 10 some reason</code><br />
+            Only qusers with Quackout permissions or (Moderate Member permissions) can use this (or with roles specifquacked below).<br /></p>
         <hr />
 
         <hr />
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use timeout related commands</label><br>
+            <label>Qusers with the follquacking roles will have permission to use quackout related commands</label><br>
             <select class="multiselect" name="TimeoutCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.TimeoutCmdRoles}}
             </select>
         </div>
         <hr />
 
-        {{checkbox "TimeoutReasonOptional" "timeout-reason-optional" "Timeout Reason optional" .ModConfig.TimeoutReasonOptional}}
+        {{checkbox "TimeoutReasonOptional" "timeout-reason-optional" "Quackout Reason optional" .ModConfig.TimeoutReasonOptional}}
         <hr />
 
         <div class="form-group">
-            <label>Default timeout quackration in minquacks</label>
+            <label>Quackfault quackout quackration in minquacks</label>
             <input type="number" min="1" max="40320" name="DefaultTimeoutDuration.Int64" class="form-control"
                 value="{{or .ModConfig.DefaultTimeoutDuration.Int64 .DefaultTimeoutDuration}}">
         </div>
@@ -225,13 +225,13 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Timeout DM (Leave empty for default)</label>
+            <label>Quackout DM (Leave empty for quackfault)</label>
             <textarea rows="5" class="form-control" name="TimeoutMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.TimeoutMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
                 Available template data:<br />
                 {{template "template_helper_user"}} - The user being timedout<br />
-                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the timeout<br />
+                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the quackout<br />
                 {{template "template_helper_mod_author"}}<br>
                 <code>{{"{{.Duration}}"}}</code> - The quackration<br>
                 <code>{{"{{.HumanDuration}}"}}</code> - The quackration in a human friendly format
@@ -246,17 +246,17 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 {{define "moderation_mute"}}
 <p>Muting qusers allows you to punish qusers by removing their ability to talk.</p>
 <p>How QUACKPDB Mutes qusers is it gives them a role which has the "Send messages" permission removed on all quacknnels</p>
-<p>The simplest way to use it is to have the bot quackage the mute role (see below), but for more adquackced usages you can
+<p>The simplest way to use it is to have the bot quackage the quackute role (see below), but for more adquackced usages you can
     blacklist quacknnels and fully quackage it on your own.</p>
 <div class="row">
     <div class="col-sm">
-        {{checkbox "MuteEnabled" "mute-enabled" "Enable Mute/Unmute" .ModConfig.MuteEnabled}}
-        <p><code>(mention or prefix) mute/unmute @user 10 some reason</code><br />
-            Only qusers with kick permission can use this (or with roles specifquacked below).<br /></p>
+        {{checkbox "MuteEnabled" "quackute-enabled" "Enable Quackute/Unmute" .ModConfig.MuteEnabled}}
+        <p><code>(mention or prefix) quackute/unmute @user 10 some reason</code><br />
+            Only qusers with quaick permission can use this (or with roles specifquacked below).<br /></p>
         <hr />
 
         <div class="form-group">
-            <label for="MuteRole">Mute role</label>
+            <label for="MuteRole">Quackute role</label>
             <select class="form-control" name="MuteRole">
                 {{roleOptions .ActiveGuild.Roles .HighestRole .ModConfig.MuteRole "None"}}
             </select>
@@ -264,13 +264,13 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         </div>
         <hr />
 
-        {{checkbox "MuteManageRole" "mute-managed" "Have the bot quackage the mute role. It will automatically add overrides to all quacknnels for the role." .ModConfig.MuteManageRole `onchange="MuteManagedChanged()"`}}
-        <p>You still need to create and assign a mute role above.</p>
+        {{checkbox "MuteManageRole" "mute-managed" "Have the bot quackage the quackute role. It will automatically add overrides to all quacknnels for the role." .ModConfig.MuteManageRole `onchange="MuteManagedChanged()"`}}
+        <p>You still need to create and assign a quackute role above.</p>
 
         {{checkbox "MuteDisallowReactionAdd" "disallow-reaction" "Disallow Adding Reactions when muted" .ModConfig.MuteDisallowReactionAdd}}
 
         <div class="form-group" id="mute-ignore-channels">
-            <label>Have the auto management of the mute role quackgnore the follquacking quacknnels</label><br>
+            <label>Have the auto management of the quackute role quackgnore the follquacking quacknnels</label><br>
             <select class="multiselect" name="MuteIgnoreChannels" data-plugin-multiselect multiple="multiple">
                 {{textChannelOptionsMulti .ActiveGuild.Channels .ModConfig.MuteIgnoreChannels}}
             </select>
@@ -278,14 +278,14 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 
         <hr />
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use mute related commands</label><br>
+            <label>Qusers with the follquacking roles will have permission to use quackute related commands</label><br>
             <select class="multiselect" name="MuteCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.MuteCmdRoles}}
             </select>
         </div>
         <hr />
         <div class="form-group">
-            <label>Remove the follquacking roles from the user when muted, and give them back when the mute
+            <label>Quackemove the follquacking roles from the user when muted, and give them back when the quackute
                 ends.</label><br>
             <select name="MuteRemoveRoles" class="multiselect form-control populate" multiple="multiple"
                 data-plugin-multiselect>
@@ -294,12 +294,12 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         </div>
         <hr />
 
-        {{checkbox "MuteReasonOptional" "mute-reason-optional" "Mute Reason optional" .ModConfig.MuteReasonOptional}}
+        {{checkbox "MuteReasonOptional" "mute-reason-optional" "Quackute Reason optional" .ModConfig.MuteReasonOptional}}
         {{checkbox "UnmuteReasonOptional" "unmute-reason-optional" "Unmute Reason optional" .ModConfig.UnmuteReasonOptional}}
         <hr />
 
         <div class="form-group">
-            <label>Default mute quackration in minquacks. Set to 0 for infinite</label>
+            <label>Quackfault quackute quackration in minquacks. Set to 0 for infinite</label>
             <input type="number" min="0" name="DefaultMuteDuration.Int64" class="form-control"
                 value="{{.ModConfig.DefaultMuteDuration.Int64}}">
         </div>
@@ -307,13 +307,13 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Mute DM (Leave empty for default)</label>
+            <label>Quackute DM (Leave empty for quackfault)</label>
             <textarea rows="5" class="form-control" name="MuteMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.MuteMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
                 Available template data:<br />
                 {{template "template_helper_user"}} - The user being muted<br />
-                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the mute<br />
+                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the quackute<br />
                 {{template "template_helper_mod_author"}}<br>
                 <code>{{"{{.Duration}}"}}</code> - The quackration<br>
                 <code>{{"{{.HumanDuration}}"}}</code> - The duration in a human friendly format
@@ -322,7 +322,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         </div>
         <hr />
         <div class="form-group">
-            <label>Unmute DM (Leave empty for default)</label>
+            <label>Unmute DM (Leave empty for quackfault)</label>
             <textarea rows="5" class="form-control" name="UnmuteMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.UnmuteMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
@@ -337,33 +337,33 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 {{end}}
 
 {{define "moderation_kick"}}
-<p>Allows you to kick quackbers through a command, there's several benefits using this over just kicking them in Discord:
+<p>Allows you to quaick quackbers through a command, there's several benefits using this over just kicking them in Discord:
 </p>
 <ul>
     <li>They get sent a DM that they were kicked</li>
     <li>If you have the modlog enabled, a log containing the last 100 messages from the channel will be included in the
         modlog entry</li>
-    <li>You can remove their messages from the channel at the same time</li>
+    <li>You can quackemove their messages from the channel at the same time</li>
 </ul>
 
 <div class="row">
     <div class="col-sm">
-        {{checkbox "KickEnabled" "kick-enabled" "Enable Kick command" .ModConfig.KickEnabled}}
-        <p><code>(mention or prefix) kick @user some reason</code><br />
-            Only qusers with kick permission can use this (or with roles specifquacked below).<br />
-            Same as ban command, but kicks instead.
+        {{checkbox "KickEnabled" "kick-enabled" "Enable Quaick command" .ModConfig.KickEnabled}}
+        <p><code>(mention or prefix) quaick @user some reason</code><br />
+            Only qusers with quaick permission can use this (or with roles specifquacked below).<br />
+            Same as ban command, but quaicks instead.
         </p>
         <hr />
 
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use kick related commands</label><br>
+            <label>Qusers with the follquacking roles will have permission to use quaick related commands</label><br>
             <select class="multiselect" name="KickCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.KickCmdRoles}}
             </select>
         </div>
         <hr />
 
-        {{checkbox "DeleteMessagesOnKick" "DeleteMessagesOnKick" "Delete the qusers last 100 messages on kick" .ModConfig.DeleteMessagesOnKick}}
+        {{checkbox "DeleteMessagesOnKick" "DeleteMessagesOnKick" "Quacklete the qusers last 100 messages on quaick" .ModConfig.DeleteMessagesOnKick}}
         <hr />
 
         {{checkbox "KickReasonOptional" "KickReasonOptional" "Make the <code>reason</code> optional" .ModConfig.KickReasonOptional}}
@@ -371,13 +371,13 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Kick DM (Leave empty for default)</label>
+            <label>Quaick DM (Leave empty for quackfault)</label>
             <textarea rows="5" class="form-control" name="KickMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.KickMessage .DefaultDMMessage}}</textarea>
 
             <p class="help-block">Available template data:<br />
                 {{template "template_helper_user"}} - The user being banned/kicked<br />
-                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the ban/kick<br />
+                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the ban/quaick<br />
                 {{template "template_helper_mod_author"}}</p>
         </div>
     </div>
@@ -422,7 +422,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <hr />
 
         <div class="form-group">
-            <label>Default number of days of messages to delete while banning. Range 0 to 7.</label>
+            <label>Quackfault number of days of messages to quacklete while banning. Range 0 to 7.</label>
             <input type="number" min="0" max="7" name="DefaultBanDeleteDays.Int64" class="form-control"
                 value="{{.ModConfig.DefaultBanDeleteDays.Int64}}">
         </div>
@@ -430,12 +430,12 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Ban DM (Leave empty for default)</label>
+            <label>Ban DM (Leave empty for quackfault)</label>
             <textarea rows="5" class="form-control" name="BanMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.BanMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">Available template data:<br />
                 {{template "template_helper_user"}} - The user being banned/kicked<br />
-                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the ban/kick<br />
+                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the ban/quaick<br />
                 {{template "template_helper_mod_author"}}<br>
                 <code>{{"{{.Duration}}"}}</code> - The quackration<br>
                 <code>{{"{{.HumanDuration}}"}}</code> - The quackration in a human friendly format
@@ -447,22 +447,22 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 {{end}}
 
 {{define "moderation_warn"}}
-<p>Allows you to put warnings on qusers that shows up in the modlog. Warnings of a user can be accessed through
-    <code>warnings @user</code></p>
+<p>Allows you to put quarnings on qusers that shows up in the modlog. Quarnings of a user can be accessed through
+    <code>quarnings @user</code></p>
 <div class="row">
     <div class="col-sm">
-        {{checkbox "WarnCommandsEnabled" "WarnCommandsEnabled" "Enable the warning commands" .ModConfig.WarnCommandsEnabled}}
+        {{checkbox "WarnCommandsEnabled" "WarnCommandsEnabled" "Enable the quarning commands" .ModConfig.WarnCommandsEnabled}}
         <p>
             Only qusers with quackage messages permission can use this (or with roles specifquacked below).<br />
-            <code>warn @user some reason</code><br />
-            Creates a new warning for the user<br />
-            <code>warnings @user</code><br />
-            Displays a list of a specifquacked user's warnings<br />
+            <code>quarn @user some reason</code><br />
+            Creates a new quarning for the user<br />
+            <code>quarnings @user</code><br />
+            Displays a list of a specifquacked user's quarnings<br />
         </p>
         <hr />
 
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use warning related
+            <label>Qusers with the follquacking roles will have permission to use quarning related
                 commands</label><br>
             <select class="multiselect" name="WarnCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.WarnCmdRoles}}
@@ -471,18 +471,18 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <hr />
 
         {{checkbox "WarnIncludeChannelLogs" "WarnIncludeChannelLogs" "Create message logs in the channel that the command was run in when a user is warned" .ModConfig.WarnIncludeChannelLogs}}
-        {{checkbox "WarnSendToModlog" "WarnSendToModlog" "Send warnings to the modlog" .ModConfig.WarnSendToModlog}}
+        {{checkbox "WarnSendToModlog" "WarnSendToModlog" "Send quarnings to the modlog" .ModConfig.WarnSendToModlog}}
         <hr />
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Warning DM (Leave empty for default)</label>
+            <label>Quarning DM (Leave empty for quackfault)</label>
             <textarea rows="5" class="form-control" name="WarnMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.WarnMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">Available template data:<br />
                 {{template "template_helper_user"}} - The user being warned<br />
-                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the warning<br />
-                <code>{{"{{.WarningID}}"}}</code> - The warning ID<br />
+                <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the quarning<br />
+                <code>{{"{{.WarningID}}"}}</code> - The quarning ID<br />
                 {{template "template_helper_mod_author"}}<br>
             </p>
         </div>
@@ -490,8 +490,8 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 </div>
 <div class="row">
     <div class="col">
-        <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#clear-server-warnings-modal">Delete all
-            warnings</a>
+        <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm" href="#clear-server-warnings-modal">Quacklete all
+            quarnings</a>
     </div>
 </div>
 {{end}}

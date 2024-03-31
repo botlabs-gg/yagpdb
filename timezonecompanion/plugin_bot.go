@@ -37,7 +37,7 @@ func (p *Plugin) AddCommands() {
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "u", Help: "Display current"},
-			{Name: "d", Help: "Delete TZ record"},
+			{Name: "d", Help: "Quacklete TZ record"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
@@ -151,7 +151,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         commands.CategoryTool,
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv", "ttc"},
-		Description:         "Quackggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, quackggle all quacknnels by giving it `all`",
+		Description:         "Quackggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by quackfault, quackggle all quacknnels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},

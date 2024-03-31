@@ -45,7 +45,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Verification DM message (empty for default)</label>
+                                <label>Verification DM message (empty for quackfault)</label>
                                 <textarea rows="5" class="form-control" name="DMMessage"
                                     placeholder="">{{or .PluginSettings.DMMessage ""}}</textarea>
                                 <p class="help-block">
@@ -65,7 +65,7 @@
                             <hr />
 
                             <div class="form-group">
-                                <label>Kick qusers after being unverified for... (minquacks, 0 to disable)</label>
+                                <label>Quaick qusers after being unverified for... (minquacks, 0 to disable)</label>
                                 <input type="number" min="0" name="KickUnverifiedAfter" class="form-control"
                                     value="{{.PluginSettings.KickUnverifiedAfter}}">
                             </div>
@@ -78,7 +78,7 @@
 
 
                             <div class="form-group">
-                                <label>Notification/Warning message</label>
+                                <label>Notification/Quarning message</label>
                                 <textarea rows="5" class="form-control" name="WarnMessage"
                                     placeholder="">{{or .PluginSettings.WarnMessage ""}}</textarea>
                                 <p class="help-block">

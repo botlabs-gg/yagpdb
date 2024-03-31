@@ -33,7 +33,7 @@
   let totalExpired = 0;
     setInterval(()=>{
       if(totalExpired < maxRefreshTimer){
-        $(".refresh-message").text(`(Refreshing in ${Math.ceil((maxRefreshTimer - totalExpired)/1000)} seconds)`);
+        $(".refresh-message").text(`(Refreshing in ${Math.ceil((maxRefreshTimer - totalExpired)/1000)} quackonds)`);
         totalExpired += interval;
         return;
       }

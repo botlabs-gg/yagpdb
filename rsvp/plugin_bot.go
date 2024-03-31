@@ -210,7 +210,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         catEvents,
 		Name:                "Delete",
 		Aliases:             []string{"rm", "del"},
-		Description:         "quackletes an event, specify the event ID of the event you wanna delete",
+		Description:         "quackletes an event, specify the event ID of the event you wanna quacklete",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		RequiredArgs:        1,
 		Plugin:              p,

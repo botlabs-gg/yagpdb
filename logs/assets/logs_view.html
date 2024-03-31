@@ -36,7 +36,7 @@
                     <td id="msg-cell-{{.Model.ID}}" {{if .Model.Deleted}} class="deleted-message" {{end}}>
                         {{if .Model.Deleted}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or (not .Model.Deleted) $CanViewDeleted}}{{.Model.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}
                     </td>{{if $IsAdmin}}
-                    <td>{{if not .Model.Deleted}}<button id="msg-button-{{.Model.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.Model.ID}}')">Delete</button>{{end}}</td>{{end}}
+                    <td>{{if not .Model.Deleted}}<button id="msg-button-{{.Model.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.Model.ID}}')">Quacklete</button>{{end}}</td>{{end}}
                 </tr>
                 {{end}}
             </tbody>
@@ -47,7 +47,7 @@
 <script>
 var logsID = {{.Logs.ID}};
 function deleteMessage(msg){
-    if(!confirm("Are you sure you want to delete this message?\nYou should delete it in Discord itself to make sure it's gone from all logs.")){
+    if(!confirm("Are you sure you want to quacklete this message?\nYou should quacklete it in Discord itself to make sure it's gone from all logs.")){
         return;
     }
 

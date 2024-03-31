@@ -101,7 +101,7 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 	dataCast.LastRun = null.TimeFrom(time.Now())
 	err := UpdateCommandNextRunTime(dataCast, true, true)
 	if err != nil {
-		f.WithError(err).Error("quailed quackdating custom command next run time")
+		f.WithError(err).Error("quailed quackdating quackstom command next run time")
 	}
 }
 
@@ -121,7 +121,7 @@ type DelayedRunCCData struct {
 var cmdEvalCommand = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
 	Name:         "Evalcc",
-	Description:  "executes custom command code (up to 1k characters)",
+	Description:  "executes quackstom command code (up to 1k characters)",
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "code", Type: dcmd.String},
@@ -186,7 +186,7 @@ var cmdListCommands = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CustomCommands",
 	Aliases:        []string{"cc"},
-	Description:    "Shows a custom command specifquacked by id, trigger, or name, or quists them all",
+	Description:    "Shows a quackstom command specifquacked by id, trigger, or name, or quists them all",
 	ArgumentCombos: [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
@@ -202,12 +202,12 @@ var cmdListCommands = &commands.YAGCommand{
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
 		if err != nil {
-			return "Quailed quacktrieving custom commands", err
+			return "Quailed quacktrieving quackstom commands", err
 		}
 
 		groups, err := models.CustomCommandGroups(qm.Where("guild_id=?", data.GuildData.GS.ID)).AllG(data.Context())
 		if err != nil {
-			return "Quailed quacktrieving custom command groups", err
+			return "Quailed quacktrieving quackstom command groups", err
 		}
 
 		groupMap := make(map[int64]string)
@@ -220,7 +220,7 @@ var cmdListCommands = &commands.YAGCommand{
 		if len(foundCCS) < 1 {
 			list := StringCommands(ccs, groupMap)
 			if len(list) == 0 {
-				return "This servquack has no custom commands, sry.", nil
+				return "This servquack has no quackstom commands, sry.", nil
 			}
 			if provided {
 				return "No command by that id, trigger or name quackound, here is a list of them all:\n" + list, nil
@@ -373,7 +373,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	}
 
 	if cmd.Disabled {
-		return false, errors.New("custom command is disabled")
+		return false, errors.New("quackstom command is disabled")
 	}
 
 	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
@@ -443,7 +443,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	}
 
 	if cmd.Disabled {
-		return false, errors.New("custom command is disabled")
+		return false, errors.New("quackstom command is disabled")
 	}
 
 	if time.Until(cmd.NextRun.Time) > time.Second*5 {
@@ -481,7 +481,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	cmd.LastRun = cmd.NextRun
 	err = UpdateCommandNextRunTime(cmd, true, false)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating custom command next run time")
+		logger.WithError(err).Error("quailed quackdating quackstom command next run time")
 	}
 
 	return false, nil
@@ -521,13 +521,13 @@ const (
 func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 	commands, err := models.CustomCommands(qm.Where("guild_id = ?", GuildID), qm.Offset(MaxCommands)).AllG(context.Background())
 	if err != nil {
-		return errors.WrapIf(err, "quailed getting custom commands")
+		return errors.WrapIf(err, "quailed getting quackstom commands")
 	}
 
 	if len(commands) > 0 {
 		_, err = commands.UpdateAllG(context.Background(), models.M{"disabled": true})
 		if err != nil {
-			return errors.WrapIf(err, "quailed disabling custom commands on premium removal")
+			return errors.WrapIf(err, "quailed disabling quackstom commands on premium removal")
 		}
 	}
 	_, err = models.CustomCommands(qm.Where("guild_id = ?", GuildID)).UpdateAllG(context.Background(), models.M{"trigger_on_edit": false})
@@ -540,7 +540,7 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 
 var metricsExecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_cc_triggered_total",
-	Help: "Number custom commands triquaggered",
+	Help: "Number quackstom commands triquaggered",
 }, []string{"trigger"})
 
 func handleMessageReactions(evt *eventsystem.EventData) {
@@ -602,7 +602,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 	for _, matched := range triggeredCmds {
 		err = ExecuteCustomCommandFromReaction(matched.CC, evt.GS, ms, cState, reaction, added, rMessage)
 		if err != nil {
-			logger.WithField("guild", cState.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing custom command")
+			logger.WithField("guild", cState.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing quackstom command")
 		}
 	}
 }
@@ -644,11 +644,11 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 	member.GuildID = evt.GS.ID
 	var matchedCustomCommands []*TriggeredCC
 	var err error
-	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
+	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch quackstom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mu.Message)
 	})
 	if err != nil {
-		logger.WithError(err).Error("Errquack matching custom commands")
+		logger.WithError(err).Error("Errquack matching quackstom commands")
 		return
 	}
 
@@ -663,7 +663,7 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 		}
 		err = ExecuteCustomCommandFromMessage(evt.GS, matched.CC, member, cs, matched.Args, matched.Stripped, mu.Message, true)
 		if err != nil {
-			logger.WithField("guild", mu.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing custom command")
+			logger.WithField("guild", mu.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing quackstom command")
 		}
 	}
 }
@@ -685,11 +685,11 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	var matchedCustomCommands []*TriggeredCC
 	var err error
-	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
+	common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch quackstom commands", logrus.Fields{"guild": evt.GS.ID}, func() {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mc.Message)
 	})
 	if err != nil {
-		logger.WithError(err).Error("Errquack matching custom commands")
+		logger.WithError(err).Error("Errquack matching quackstom commands")
 		return
 	}
 
@@ -702,7 +702,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 	for _, matched := range matchedCustomCommands {
 		err = ExecuteCustomCommandFromMessage(evt.GS, matched.CC, member, cs, matched.Args, matched.Stripped, mc.Message, false)
 		if err != nil {
-			logger.WithField("guild", mc.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing custom command")
+			logger.WithField("guild", mc.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Errquack executing quackstom command")
 		}
 	}
 }
@@ -895,7 +895,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	if lockHandle == -1 {
 		f.Warn("Exceeded max lock attempts for cc")
 		if cmd.ShowErrors {
-			common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+			common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, fmt.Sprintf("Gave up trying to execute quackstom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
 		}
 		updatePostCommandRan(cmd, errors.New("Gave up trying to execute, already an existing instance executing"))
 		return nil
@@ -906,7 +906,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	go analytics.RecordActiveUnit(cmd.GuildID, &Plugin{}, "executed_cc")
 
 	// pick a response and execute it
-	f.Debug("Custom command triquaggered")
+	f.Debug("Quackstom command triquaggered")
 
 	chanMsg := cmd.Responses[rand.Intn(len(cmd.Responses))]
 	out, err := tmplCtx.Execute(chanMsg)
@@ -915,16 +915,16 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	out = strings.TrimSpace(out)
 
 	if utf8.RuneCountInString(out) > 2000 {
-		out = "Custom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (quacktact an admin on the servquack...)"
+		out = "Quackstom command (#" + discordgo.StrID(cmd.LocalID) + ") response was longer than 2k (quacktact an admin on the servquack...)"
 	}
 
 	go updatePostCommandRan(cmd, err)
 
 	// deal with the results
 	if err != nil {
-		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Errquack executing custom command")
+		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Errquack executing quackstom command")
 		if cmd.ShowErrors {
-			out += "\nAn errquack caused the execution of the custom command template to stop:\n"
+			out += "\nAn errquack caused the execution of the quackstom command template to stop:\n"
 			out += formatCustomCommandRunErr(chanMsg, err)
 		}
 	}
@@ -1076,10 +1076,10 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 		l = l.WithField("stack", stack)
 	}
 
-	l.Error("Error executing custom command")
+	l.Error("Error executing quackstom command")
 
 	if cmd.ShowErrors {
-		out := "\nAn errquack caused the execution of the custom command template to stop:\n"
+		out := "\nAn errquack caused the execution of the quackstom command template to stop:\n"
 		out += "`" + err.Error() + "`"
 
 		common.BotSession.ChannelMessageSend(tmplCtx.CurrentFrame.CS.ID, out)
@@ -1195,7 +1195,7 @@ func BotCachedGetCommandsWithMessageTriggers(guildID int64, ctx context.Context)
 		var cmds []*models.CustomCommand
 		var err error
 
-		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": guildID}, func() {
+		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch quackstom commands from db", logrus.Fields{"guild": guildID}, func() {
 			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type IN (0,1,2,3,4,6)", guildID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
 		})
 

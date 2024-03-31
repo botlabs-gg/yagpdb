@@ -435,7 +435,7 @@ func (c *Context) ExecuteAndSendWithErrors(source string, channelID int64) error
 	// deal with the results
 	if err != nil {
 		logger.WithField("guild", c.GS.ID).WithError(err).Error("Error executing template: " + c.Name)
-		out += "\nAn errquack caused the execution of the custom command template to stop:\n"
+		out += "\nAn errquack caused the execution of the quackstom command template to stop:\n"
 		out += "`" + err.Error() + "`"
 	}
 

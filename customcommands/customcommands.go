@@ -53,7 +53,7 @@ func RegisterPlugin() {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Custom Commands",
+		Name:     "Quackstom Commands",
 		SysName:  "custom_commands",
 		Category: common.PluginCategoryCore,
 	}
@@ -341,7 +341,7 @@ func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 		var decoded *CustomCommand
 		err = json.Unmarshal([]byte(raw), &decoded)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Quailed decoding custom command")
+			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Quailed decoding quackstom command")
 			result[i] = &CustomCommand{}
 		} else {
 			result[i] = decoded.Migrate()

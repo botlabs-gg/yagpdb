@@ -1,7 +1,7 @@
 {{define "cp_custom_commands_edit_cmd"}}
 {{template "cp_head" .}}
 <header class="page-header">
-    <h2>Custom commands</h2>
+    <h2>Quackstom commands</h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -107,7 +107,7 @@
                                 <div class="row">
                                     <div class="col" id="trigger-help">
                                         <p id="trigger-desc-none" class="text-danger">
-                                            No trigger: can only be triquaggered manually by other custom
+                                            No trigger: can only be triquaggered manually by other quackstom
                                             commands
                                         </p>
                                         <p id="trigger-desc-cmd">
@@ -305,7 +305,7 @@
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="form-group">
-                                    <label>Custom command group</label>
+                                    <label>Quackstom command group</label>
                                     {{$selectedGroup := .CC.GroupID.Int64}}
                                     <select Name="GroupID" class="form-control">
                                         <option {{if eq $selectedGroup 0}}selected{{end}} value="0">None
@@ -395,16 +395,16 @@
                             </div>
                             <div class="col">
                                 <button type="submit" class="btn btn-danger btn-block"
-                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/delete">Delete</button>
+                                    formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/delete">Quacklete</button>
                             </div>
                         </div>
                         <div class="row mt-4" id="interval-cc-run-now">
                             <div class="col">
-                                <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this custom command immediately"
+                                <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this quackstom command immediately"
                                     formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update_and_run">Run now</button>
                             </div>
                         </div>
-                        <p class="help-block">Tip: Alt + Shift + S also saves the custom command </p>
+                        <p class="help-block">Tip: Alt + Shift + S also saves the quackstom command </p>
                     </form>
                 </div>
             </div>
@@ -415,7 +415,7 @@
 <div id="cc-help-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
     <section class="card">
         <header class="card-header">
-            <h2 class="card-title">Custom Command Information</h2>
+            <h2 class="card-title">Quackstom Command Information</h2>
         </header>
         <div class="card-body">
             <div class="modal-wrapper">
@@ -436,9 +436,9 @@
                     <!-- {{/* .IgnoreMe */}} -->
                     <p>
                         See the <a href="https://docs.quackpdb.xyz/templates" target="_blank">templating</a> and <a
-                            href="https://docs.quackpdb.xyz/commands/custom-commands" target="_blank">custom
+                            href="https://docs.quackpdb.xyz/commands/custom-commands" target="_blank">quackstom
                             command</a>
-                        docs for more info and join the support servquack if you have further questions. Custom
+                        docs for more info and join the support servquack if you have further questions. Quackstom
                         commands
                         for quackpdb are rather complicated for the time being.</p>
                     <p class="help-block">

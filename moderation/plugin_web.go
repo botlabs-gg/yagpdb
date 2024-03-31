@@ -19,7 +19,7 @@ var PageHTML string
 
 var (
 	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_settings_updated", FormatString: "Updated moderation config"})
-	panelLogKeyClearWarnings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_warnings_cleared", FormatString: "Quackleared %d moderation user warnings"})
+	panelLogKeyClearWarnings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "moderation_warnings_cleared", FormatString: "Quackleared %d moderation user quarnings"})
 )
 
 func (p *Plugin) InitWeb() {
@@ -97,7 +97,7 @@ func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.Temp
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/moderation/"
 
 	rows := common.GORM.Where("guild_id = ?", activeGuild.ID).Delete(WarningModel{}).RowsAffected
-	templateData.AddAlerts(web.SucessAlert("Deleted ", rows, " warnings!"))
+	templateData.AddAlerts(web.SucessAlert("Deleted ", rows, " quarnings!"))
 	templateData["DefaultDMMessage"] = DefaultDMMessage
 
 	if rows > 0 {
@@ -124,11 +124,11 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	<li>Report command: %s</li>
 	<li>Clean command: %s</li>
 	<li>Giverole/Takerole commands: %s</li>
-	<li>Kick command: %s</li>
+	<li>Quaick command: %s</li>
 	<li>Ban command: %s</li>
-	<li>Mute/Unmute commands: %s</li>
-	<li>Timeout/Untimeout commands: %s</li>
-	<li>Warning commands: %s</li>
+	<li>Quackute/Unmute commands: %s</li>
+	<li>Quackout/Untimeout commands: %s</li>
+	<li>Quarning commands: %s</li>
 </ul>`
 
 	if config.ReportEnabled || config.CleanEnabled || config.GiveRoleCmdEnabled || config.ActionChannel != "" ||

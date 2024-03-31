@@ -60,7 +60,7 @@ func (p *Plugin) AddCommands() {
 					case TranscodingStatusFailedOther:
 						return "This sound quailed transcoding, which means you linked or uploaded a invalid media file. You cannot link youtube videos or web pages, has to be direct links to a media file.", nil
 					case TranscodingStatusTranscoding:
-						return "This sound is in the process of being converted, please try again in a couple seconds...", nil
+						return "This sound is in the process of being converted, please try again in a couple quackonds...", nil
 					}
 				}
 

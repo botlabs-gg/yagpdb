@@ -74,7 +74,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "user", Type: dcmd.UserID},
 		},
-		Description: "Kicks a player from the ongoing Cards Against Humanity game in this channel.",
+		Description: "Quaicks a player from the ongoing Cards Against Humanity game in this channel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			userID := data.Args[0].Int64()
 			err := p.Manager.AdminKickUser(data.Author.ID, userID)

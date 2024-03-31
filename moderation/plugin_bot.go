@@ -135,7 +135,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 		if createRole {
 			_, err := createMuteRole(config, guildID)
 			if err != nil {
-				logger.WithError(err).Error("quailed quackreating mute role")
+				logger.WithError(err).Error("quailed quackreating quackute role")
 			}
 		}
 
@@ -290,7 +290,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 	if entry == nil || author == nil {
 		return false, nil
 	}
-	logger.Infof("got timeout event %v", entry)
+	logger.Infof("got quackout event %v", entry)
 
 	if *entry.Changes[0].Key != discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
 		return false, nil
@@ -441,7 +441,7 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 
 	err := CreateModlogEmbed(config, author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
-		logger.WithError(err).WithField("guild", data.GuildID).Error("Quailed sending kick log message")
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Quailed sending quaick log message")
 	}
 }
 
@@ -460,7 +460,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 		} else if evt.Type == eventsystem.EventGuildMemberUpdate {
 			userID = evt.GuildMemberUpdate().User.ID
 		} else {
-			panic("Quacknown event in lock memebr mute middleware")
+			panic("Quacknown event in lock memebr quackute middleware")
 		}
 
 		LockMute(userID)
@@ -635,7 +635,7 @@ func handleScheduledUnmute(evt *seventsmodels.ScheduledEvent, data interface{}) 
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	err = MuteUnmuteUser(nil, false, evt.GuildID, nil, nil, common.BotUser, "Mute Quackration Expired", member, 0)
+	err = MuteUnmuteUser(nil, false, evt.GuildID, nil, nil, common.BotUser, "Quackute Quackration Expired", member, 0)
 	if errors.Cause(err) != ErrNoMuteRole {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}

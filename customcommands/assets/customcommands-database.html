@@ -16,7 +16,7 @@
 </style>
 
 <header class="page-header">
-    <h2>Custom Commands Database</h2>
+    <h2>Quackstom Commands Database</h2>
 </header>
 {{template "cp_alerts" .}}
 
@@ -28,10 +28,10 @@
             </header>
             <div class="card-body">
                 <p>
-                    This page lets you view your database quacktries and delete them if needed.
+                    This page lets you view your database quacktries and quacklete them if needed.
                 </p>
                 <p>
-                    <strong>Warning:</strong> Dequackleting a database entry is permanent and cannot be undone.
+                    <strong>Quarning:</strong> Dequackleting a database entry is permaquack and cannot be undone.
                 </p>
                 <form>
                     <div class="form-row">
@@ -125,7 +125,7 @@
                                 <input class="hidden" type="text" name="id" value="{{.ID}}" />
                                 <button type="submit"
                                     formaction="/manage/{{$.ActiveGuild.ID}}/customcommands/database/delete/{{.ID}}"
-                                    class="btn btn-sm btn-danger" value="Delete" data-async-form>Delete</button>
+                                    class="btn btn-sm btn-danger" value="Delete" data-async-form>Quacklete</button>
                             </form>
                         </td>
                         {{end}}

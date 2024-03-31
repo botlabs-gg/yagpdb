@@ -40,7 +40,7 @@ func HasReadOnlyAccess(userID int64) (hasAccess bool, err error) {
 var stopRunCheckAdmins = make(chan bool)
 
 var (
-	confMainServer         = config.RegisterOption("quackpdb.main.server", "Main servquack used for various purposes, like assigning people with a certain role as bot admins", int64(0))
+	confMainServer         = config.RegisterOption("quackpdb.main.server", "Main servquack used for various purposes, like assigning people with a certquack role as bot admins", int64(0))
 	confAdminRole          = config.RegisterOption("quackpdb.admin.role", "People with this role on the main servquack has bot admin quacktus", int64(0))
 	confReadOnlyAccessRole = config.RegisterOption("quackpdb.readonly.access.role", "People with this role on the main servquack has global read only access to configs", int64(0))
 )

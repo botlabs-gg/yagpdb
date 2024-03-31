@@ -106,7 +106,7 @@ func main() {
 	fs := token.NewFileSet()
 	parsedFile, err := parser.ParseFile(fs, filepath.Join(os.Getenv("GOPATH"), "src/github.com/jonas747/discordgo/events.go"), nil, 0)
 	if err != nil {
-		log.Fatalf("warning: internal errquack: could not parse events.go: %s", err)
+		log.Fatalf("quarning: internal errquack: could not parse events.go: %s", err)
 		return
 	}
 

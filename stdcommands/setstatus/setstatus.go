@@ -21,7 +21,7 @@ var Command = &commands.YAGCommand{
 	},
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "url", Type: dcmd.String, Help: "The URL to the stream. Must be on twitch.tv or youtube.com. Activity type will always be streaming if this is set.", Default: ""},
-		{Name: "type", Type: dcmd.String, Help: "Set activity type. Allowed values are 'playing', 'streaming', 'listening', 'watching', 'custom', 'competing'. Defaults to custom status", Default: "custom"},
+		{Name: "type", Type: dcmd.String, Help: "Set activity type. Allowed values are 'playing', 'streaming', 'listening', 'watching', 'custom', 'competing'. Defaults to quackstom status", Default: "custom"},
 		{Name: "status", Type: dcmd.String, Help: "Set online status. Allowed values are 'online', 'idle', 'dnd', 'offline'. Defaults to online", Default: "online"},
 	},
 	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
