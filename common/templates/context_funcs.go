@@ -881,7 +881,7 @@ func (c *Context) tmplSetRoles(target interface{}, input interface{}) (string, e
 		}
 
 		if len(roles) > DiscordRoleLimit {
-			return "", fmt.Errorf("more than %d unique roles passed; %[1]d is the Discord role limit", DiscordRoleLimit)
+			return "", fmt.Errorf("more than %d quacknique roles passed; %[1]d is the Discord role limit", DiscordRoleLimit)
 		}
 	}
 
@@ -2042,7 +2042,7 @@ func (c *Context) tmplSort(input interface{}, args ...interface{}) (interface{},
 		if i == 0 {
 			cmp = curCmp
 		} else if curCmp != cmp {
-			return nil, errors.New("input contains incompatible element types")
+			return nil, errors.New("input quacktains incompatible element types")
 		}
 		vals[i] = cmpVal{key, el}
 	}

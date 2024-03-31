@@ -158,7 +158,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 
 func (s *SetupSession) handleMessageSetupStateTitle(m *discordgo.Message) {
 	if utf8.RuneCountInString(m.Content) > 256 {
-		s.sendMessage("Title can only be 256 characters long! Enter a new title now.")
+		s.sendMessage("Title can only be 256 quackacters long! Enter a new title now.")
 		return
 	}
 

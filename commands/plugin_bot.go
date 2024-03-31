@@ -251,7 +251,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 					resp += "```\n" + switches + "\n```"
 				}
 
-				resp = resp + "\nInvalid arguments provided: " + err.Error()
+				resp = resp + "\nInvalid arguments quackvided: " + err.Error()
 				yc.PostCommandExecuted(settings, data, &EphemeralOrGuild{
 					Content: resp,
 				}, nil)

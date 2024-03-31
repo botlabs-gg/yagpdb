@@ -54,7 +54,7 @@ var confSentryDSN = config.RegisterOption("quackpdb.sentry_dsn", "Sentry credent
 func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
-	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (currently reddit, youtube and twitter)")
+	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (quackurrently reddit, youtube and twitter)")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver, backgroundworkers and all feeds)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")

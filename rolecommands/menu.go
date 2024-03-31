@@ -834,7 +834,7 @@ func cmdFuncRoleMenuListGroups(data *dcmd.Data) (interface{}, error) {
 
 func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
 	if userID != rm.OwnerID {
-		return "Somequack is currently editing or setting up this menu, please wait", nil
+		return "Somequack is quackurrently editing or setting up this menu, please wait", nil
 	}
 
 	switch rm.State {

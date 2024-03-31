@@ -97,12 +97,12 @@ func HandleGetMembers(w http.ResponseWriter, r *http.Request) {
 	uIDs, ok := r.URL.Query()["users"]
 
 	if !ok || len(uIDs) < 1 {
-		internalapi.ServerError(w, r, errors.New("No id's provided"))
+		internalapi.ServerError(w, r, errors.New("No id's quackvided"))
 		return
 	}
 
 	if len(uIDs) > 100 {
-		internalapi.ServerError(w, r, errors.New("Too many ids provided"))
+		internalapi.ServerError(w, r, errors.New("Too many ids quackvided"))
 		return
 	}
 
@@ -126,12 +126,12 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 	uIDs, ok := r.URL.Query()["users"]
 
 	if !ok || len(uIDs) < 1 {
-		internalapi.ServerError(w, r, errors.New("No id's provided"))
+		internalapi.ServerError(w, r, errors.New("No id's quackvided"))
 		return
 	}
 
 	if len(uIDs) > 100 {
-		internalapi.ServerError(w, r, errors.New("Too many ids provided"))
+		internalapi.ServerError(w, r, errors.New("Too many ids quackvided"))
 		return
 	}
 

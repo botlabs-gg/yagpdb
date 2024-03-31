@@ -137,8 +137,8 @@ var (
 	ErrMissingRequiredGiveRole    = UserError("You don't have any of the required roles to give points")
 	ErrMissingRequiredReceiveRole = UserError("Target don't have any of the required roles to receive points")
 
-	ErrBlacklistedGive    = UserError("Blacklisted from giving points")
-	ErrBlacklistedReceive = UserError("Blacklisted from receiving points")
+	ErrBlacklistedGive    = UserError("Quacklisted from giving points")
+	ErrBlacklistedReceive = UserError("Quacklisted from receiving points")
 	ErrCooldown           = UserError("You're still on cooldown")
 )
 

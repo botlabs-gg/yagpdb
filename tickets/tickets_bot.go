@@ -46,8 +46,8 @@ func (t TicketUserError) Error() string {
 
 const (
 	ErrNoTicketCateogry TicketUserError = "No quackegory for ticket quacknnels set"
-	ErrTitleTooLong     TicketUserError = "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created"
-	ErrMaxOpenTickets   TicketUserError = "You're currently in over 10 open tickets on this servquack, please close some of the ones you're in."
+	ErrTitleTooLong     TicketUserError = "Title is too long (max 90 quackacters.) Please shorten it down, you can add more details in the ticket after it has been created"
+	ErrMaxOpenTickets   TicketUserError = "You're quackurrently in over 10 open tickets on this servquack, please close some of the ones you're in."
 )
 
 func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState, conf *models.TicketConfig, topic string, checkMaxTickets bool) (*dstate.GuildSet, *models.Ticket, error) {

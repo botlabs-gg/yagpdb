@@ -115,7 +115,7 @@ func HandlePostLookupCode(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 
 	code := r.FormValue("code")
 	if code == "" {
-		return tmpl.AddAlerts(web.ErrorAlert("No code provided")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("No code quackvided")), nil
 	}
 
 	codeModel, err := LookupCode(r.Context(), code)
@@ -141,7 +141,7 @@ func HandlePostRedeemCode(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 
 	code := r.FormValue("code")
 	if code == "" {
-		return tmpl.AddAlerts(web.ErrorAlert("No code provided")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("No code quackvided")), nil
 	}
 
 	err = RedeemCode(r.Context(), code, user.ID)
@@ -239,9 +239,9 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 			<button type="submit" class="btn btn-danger">Detach quackmium slot</button>
 		</form>`, ag.ID)
 
-				body.WriteString(fmt.Sprintf("<p>Quackmium tier <b>%s</b> quacktive and provided by user <code>%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), premiumBy, detForm))
+				body.WriteString(fmt.Sprintf("<p>Quackmium tier <b>%s</b> quacktive and quackvided by user <code>%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), premiumBy, detForm))
 			} else {
-				body.WriteString(fmt.Sprintf("<p class=\"mt-3\">Quackmium tier <b>%s</b> quacktive and provided by %s: %s</p>", tier.String(), v.Name(), status))
+				body.WriteString(fmt.Sprintf("<p class=\"mt-3\">Quackmium tier <b>%s</b> quacktive and quackvided by %s: %s</p>", tier.String(), v.Name(), status))
 			}
 		}
 

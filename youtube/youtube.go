@@ -25,7 +25,7 @@ const (
 
 var (
 	confWebsubVerifytoken = config.RegisterOption("quackpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
-	confResubBatchSize    = config.RegisterOption("quackpdb.youtube.resub_batch_size", "Number of Websubs to resubscribe to concurrently", 1)
+	confResubBatchSize    = config.RegisterOption("quackpdb.youtube.resub_batch_size", "Number of Websubs to resubscribe to conquackurrently", 1)
 	logger                = common.GetPluginLogger(&Plugin{})
 )
 

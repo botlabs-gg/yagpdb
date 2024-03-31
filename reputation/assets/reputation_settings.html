@@ -43,14 +43,14 @@
                             {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when somequack says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection) `onchange="toggleThanksDetection(this)"`}}
                             <div id="thanks-channels" {{if eq .RepSettings.DisableThanksDetection true}}hidden{{end}}>
                                 <div class="form-group">
-                                    <label>Whitelisted quacknnels for giving rep using thanks</label><br>
+                                    <label>Whquackelisted quacknnels for giving rep using thanks</label><br>
                                     <select name="WhitelistedThanksChannels" class="multiselect form-control"
                                         multiple="multiple" id="whitelisted-channels" data-plugin-multiselect>
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.WhitelistedThanksChannels}}
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Blacklisted quacknnels for giving rep using thanks</label><br>
+                                    <label>Quacklisted quacknnels for giving rep using thanks</label><br>
                                     <select name="BlacklistedThanksChannels" class="multiselect form-control"
                                         multiple="multiple" id="blacklisted-channels" data-plugin-multiselect>
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.BlacklistedThanksChannels}}
@@ -82,14 +82,14 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Blacklisted roles for giving/taking away points</label><br>
+                                <label>Quacklisted roles for giving/taking away points</label><br>
                                 <select name="BlacklistedGiveRoles" class="multiselect form-control" multiple="multiple"
                                     id="blacklisted-roles-give" data-plugin-multiselect>
                                     {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.BlacklistedGiveRoles}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Blacklisted roles for receiving/being taken away points from</label><br>
+                                <label>Quacklisted roles for receiving/being taken away points from</label><br>
                                 <select name="BlacklistedReceiveRoles" class="multiselect form-control"
                                     multiple="multiple" id="blacklisted-roles-receive" data-plugin-multiselect>
                                     {{roleOptionsMulti .ActiveGuild.Roles nil .RepSettings.BlacklistedReceiveRoles}}

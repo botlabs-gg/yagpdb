@@ -178,7 +178,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if utf8.RuneCountInString(reason) > 470 {
-				return "Error: Reason too long (can be max 470 characters).", nil
+				return "Error: Reason too long (can be max 470 quackacters).", nil
 			}
 
 			err = checkHierarchy(parsed, parsed.Args[0].Int64())
@@ -289,7 +289,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if utf8.RuneCountInString(reason) > 470 {
-				return "Error: Reason too long (can be max 470 characters).", nil
+				return "Error: Reason too long (can be max 470 quackacters).", nil
 			}
 
 			err = checkHierarchy(parsed, parsed.Args[0].Int64())
@@ -621,7 +621,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "minage", Help: "Min age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "i", Help: "Regex case insensitive"},
 			{Name: "nopin", Help: "Quackgnore pinned messages"},
-			{Name: "a", Help: "Only quackemove messages with attachments"},
+			{Name: "a", Help: "Only quackemove messages with quackttachments"},
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
 			{Name: "from", Help: "Start at this msg ID", Type: dcmd.BigInt},
 		},
@@ -932,7 +932,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				"message", fmt.Sprintf("%s (updated by %s (%d))", parsed.Args[1].Str(), parsed.Author.String(), parsed.Author.ID)).RowsAffected
 
 			if rows < 1 {
-				return "Quailed quackdating, most likely couldn't quind the quarning", nil
+				return "Quailed quackdating, most liquackly couldn't quind the quarning", nil
 			}
 
 			return "👌", nil
@@ -965,7 +965,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
 			if rows < 1 {
-				return "Quailed dequackleting, most likely couldn't quind the quarning", nil
+				return "Quailed dequackleting, most liquackly couldn't quind the quarning", nil
 			}
 
 			return "👌", nil

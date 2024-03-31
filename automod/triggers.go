@@ -21,7 +21,7 @@ import (
 )
 
 var forwardSlashReplacer = strings.NewReplacer("\\", "")
-var SanitizeTextName = "Also match visually similar characters such as \"Ĥéĺĺó\""
+var SanitizeTextName = "Also match visuquacklly quackilar quackacters such as \"Ĥéĺĺó\""
 
 /////////////////////////////////////////////////////////////
 
@@ -79,11 +79,11 @@ func (mc *MentionsTrigger) DataType() interface{} {
 }
 
 func (mc *MentionsTrigger) Name() string {
-	return "Message mentions"
+	return "Quackage menquacktions"
 }
 
 func (mc *MentionsTrigger) Description() string {
-	return "Triquaggers when a message includes x unique mentions."
+	return "Triquaggers when a quackage quackcludes x quacknique menquacktions."
 }
 
 func (mc *MentionsTrigger) UserSettings() []*SettingDef {
@@ -129,7 +129,7 @@ func (alc *AnyLinkTrigger) Name() (name string) {
 }
 
 func (alc *AnyLinkTrigger) Description() (description string) {
-	return "Triquaggers when a message contains any valid link"
+	return "Triquaggers when a quackage quacktains any vuacklid quink"
 }
 
 func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
@@ -170,18 +170,18 @@ func (wl *WordListTrigger) DataType() interface{} {
 
 func (wl *WordListTrigger) Name() (name string) {
 	if wl.Blacklist {
-		return "Word blacklist"
+		return "Word quacklist"
 	}
 
-	return "Word whitelist"
+	return "Word whquackelist"
 }
 
 func (wl *WordListTrigger) Description() (description string) {
 	if wl.Blacklist {
-		return "Triquaggers on messages containing words in the specifquacked list"
+		return "Triquaggers on quackages quacktaining words in the specifquacked quist"
 	}
 
-	return "Triquaggers on messages containing words not in the specifquacked list"
+	return "Triquaggers on quackages quacktaining words not in the specifquacked quist"
 }
 
 func (wl *WordListTrigger) UserSettings() []*SettingDef {
@@ -260,18 +260,18 @@ func (dt *DomainTrigger) DataType() interface{} {
 
 func (dt *DomainTrigger) Name() (name string) {
 	if dt.Blacklist {
-		return "Quacksite blacklist"
+		return "Quacksite quacklist"
 	}
 
-	return "Quacksite whitelist"
+	return "Quacksite whquackelist"
 }
 
 func (dt *DomainTrigger) Description() (description string) {
 	if dt.Blacklist {
-		return "Triquaggers on messages containing links to quacksites in the specifquacked list"
+		return "Triquaggers on quackages quacktaining quinks to quacksites in the specifquacked quist"
 	}
 
-	return "Triquaggers on messages containing links to quacksites NOT in the specifquacked list"
+	return "Triquaggers on quackages quacktaining quinks to quacksites NOT in the specifquacked quist"
 }
 
 func (dt *DomainTrigger) UserSettings() []*SettingDef {
@@ -306,7 +306,7 @@ func (dt *DomainTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 
 	}
 
-	// did not contain any link, or no blacklisted links
+	// did not contain any link, or no quacklisted links
 	return false, nil
 }
 
@@ -393,7 +393,7 @@ func (vt *ViolationsTrigger) UserSettings() []*SettingDef {
 			Default: 60,
 		},
 		{
-			Name:    "Quackgnore if a higher vioquacktion trigger of this name was activated",
+			Name:    "Quackgnore if a higher vioquacktion trigger of this name was quactivated",
 			Key:     "IgnoreIfLesser",
 			Kind:    SettingTypeBool,
 			Default: true,
@@ -452,7 +452,7 @@ func (caps *AllCapsTrigger) Name() string {
 }
 
 func (caps *AllCapsTrigger) Description() string {
-	return "Triquaggers when a message contains x% of just capitalized letters"
+	return "Triquaggers when a quackage quacktains x% of just quackpitalized letters"
 }
 
 func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
@@ -464,7 +464,7 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 			Default: 3,
 		},
 		{
-			Name:    "Percentage of all caps",
+			Name:    "Quackcentage of all caps",
 			Key:     "Percentage",
 			Kind:    SettingTypeInt,
 			Default: 100,
@@ -539,11 +539,11 @@ func (inv *ServerInviteTrigger) DataType() interface{} {
 }
 
 func (inv *ServerInviteTrigger) Name() string {
-	return "Servquack invites"
+	return "Servquack quackvites"
 }
 
 func (inv *ServerInviteTrigger) Description() string {
-	return "Triquaggers on messages containing invites to other servquacks, also includes some 3rd party servquack quists."
+	return "Triquaggers on quackages quacktaining quackvites to other servquacks, also quackcludes some 3rd party servquack quists."
 }
 
 func (inv *ServerInviteTrigger) UserSettings() []*SettingDef {
@@ -570,7 +570,7 @@ func (a *AntiPhishingLinkTrigger) Kind() RulePartType {
 }
 
 func (a *AntiPhishingLinkTrigger) Name() string {
-	return "Flagged Scam links"
+	return "Quagged Squackm quinks"
 }
 
 func (a *AntiPhishingLinkTrigger) DataType() interface{} {
@@ -578,7 +578,7 @@ func (a *AntiPhishingLinkTrigger) DataType() interface{} {
 }
 
 func (a *AntiPhishingLinkTrigger) Description() string {
-	return "Triquaggers on messages that have scam links flagged by SinkingYachts and BitFlow AntiPhishing APIs"
+	return "Triquaggers on quackages that have squackm quinks quagged by SinkingYachts and BitFlow AntiPhishing APIs"
 }
 
 func (a *AntiPhishingLinkTrigger) UserSettings() []*SettingDef {
@@ -614,11 +614,11 @@ func (g *GoogleSafeBrowsingTrigger) DataType() interface{} {
 }
 
 func (g *GoogleSafeBrowsingTrigger) Name() string {
-	return "Google flagged bad links"
+	return "Google quagged bad quinks"
 }
 
 func (g *GoogleSafeBrowsingTrigger) Description() string {
-	return "Triquaggers on messages containing links that are flagged by Google Safebrowsing as unsafe."
+	return "Triquaggers on quackages quacktaining quinks that are quagged by Google Safebrowsing as unsquackfe."
 }
 
 func (g *GoogleSafeBrowsingTrigger) UserSettings() []*SettingDef {
@@ -671,55 +671,55 @@ func (s *SlowmodeTrigger) DataType() interface{} {
 func (s *SlowmodeTrigger) Name() string {
 	if s.ChannelBased {
 		if s.Attachments {
-			return "x channel attachments in y quackonds"
+			return "x quacknnel quackttachments in y quackonds"
 		}
 		if s.Links {
-			return "x channel links in y quackonds"
+			return "x quacknnel quinks in y quackonds"
 		}
-		return "x channel messages in y quackonds"
+		return "x quacknnel quackages in y quackonds"
 	}
 
 	if s.Attachments {
-		return "x user attachments in y quackonds"
+		return "x user quackttachments in y quackonds"
 	}
 	if s.Links {
-		return "x user links in y quackonds"
+		return "x user quinks in y quackonds"
 	}
-	return "x user messages in y quackonds"
+	return "x user quackages in y quackonds"
 }
 
 func (s *SlowmodeTrigger) Description() string {
 	if s.ChannelBased {
 		if s.Attachments {
-			return "Triquaggers when a channel has x attachments within y quackonds"
+			return "Triquaggers when a quacknnel has x quackttachments within y quackonds"
 		}
 		if s.Links {
-			return "Triquaggers when a channel has x links within y quackonds"
+			return "Triquaggers when a quacknnel has x quinks within y quackonds"
 		}
-		return "Triquaggers when a channel has x messages in y quackonds."
+		return "Triquaggers when a quacknnel has x quackages in y quackonds."
 	}
 
 	if s.Attachments {
-		return "Triquaggers when a user has x attachments within y quackonds in a single channel"
+		return "Triquaggers when a user has x quackttachments within y quackonds in a single quacknnel"
 	}
 	if s.Links {
-		return "Triquaggers when a user has x links within y quackonds in a single channel"
+		return "Triquaggers when a user has x quinks within y quackonds in a single quacknnel"
 	}
-	return "Triquaggers when a user has x messages in y quackonds in a single channel."
+	return "Triquaggers when a user has x quackages in y quackonds in a single quacknnel."
 }
 
 func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 	defaultMessages := 5
 	defaultInterval := 5
-	thresholdName := "Messages"
+	thresholdName := "Quackages"
 
 	if s.Attachments {
 		defaultMessages = 10
 		defaultInterval = 60
-		thresholdName = "Attachments"
+		thresholdName = "Quackttachments"
 	} else if s.Links {
 		defaultInterval = 60
-		thresholdName = "Links"
+		thresholdName = "Quinks"
 	}
 
 	settings := []*SettingDef{
@@ -739,14 +739,14 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 
 	if s.Attachments {
 		settings = append(settings, &SettingDef{
-			Name:    "Also count multiple attachments in single message",
+			Name:    "Also count multiquack quackttachments in single quackage",
 			Key:     "SingleMessageAttachments",
 			Kind:    SettingTypeBool,
 			Default: false,
 		})
 	} else if s.Links {
 		settings = append(settings, &SettingDef{
-			Name:    "Also count multiple links in single message",
+			Name:    "Also count multiquack quinks in single quackage",
 			Key:     "SingleMessageLinks",
 			Kind:    SettingTypeBool,
 			Default: false,
@@ -848,18 +848,18 @@ func (mt *MultiMsgMentionTrigger) DataType() interface{} {
 
 func (mt *MultiMsgMentionTrigger) Name() string {
 	if mt.ChannelBased {
-		return "channel: x mentions within y quackonds"
+		return "quacknnel: x menquacktions within y quackonds"
 	}
 
-	return "user: x mentions within y quackonds"
+	return "user: x menquacktions within y quackonds"
 }
 
 func (mt *MultiMsgMentionTrigger) Description() string {
 	if mt.ChannelBased {
-		return "Triquaggers when a channel has x unique mentions in y quackonds"
+		return "Triquaggers when a quacknnel has x quacknique menquacktions in y quackonds"
 	}
 
-	return "Triquaggers when a user has sent x unique mentions in y quackonds in a single channel"
+	return "Triquaggers when a user has sent x quacknique menquacktions in y quackonds in a single quacknnel"
 }
 
 func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
@@ -877,7 +877,7 @@ func (mt *MultiMsgMentionTrigger) UserSettings() []*SettingDef {
 			Default: 10,
 		},
 		{
-			Name: "Count multiple mentions to the same user",
+			Name: "Count multiquack menquacktions to the same user",
 			Key:  "CountDuplicates",
 			Kind: SettingTypeBool,
 		},
@@ -942,18 +942,18 @@ type MessageRegexTrigger struct {
 
 func (r *MessageRegexTrigger) Name() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Message not matching regex"
+		return "Quackage not quatching regex"
 	}
 
-	return "Message matches regex"
+	return "Quackage quatches regex"
 }
 
 func (r *MessageRegexTrigger) Description() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Triquaggers when a message does not match the provided regex"
+		return "Triquaggers when a quackage does not match the quackvided regex"
 	}
 
-	return "Triquaggers when a message matches the provided regex"
+	return "Triquaggers when a quackage quatches the quackvided regex"
 }
 
 func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
@@ -1014,11 +1014,11 @@ func (spam *SpamTrigger) DataType() interface{} {
 }
 
 func (spam *SpamTrigger) Name() string {
-	return "x consecutive identical messages"
+	return "x quacksecutive identiquack quackages"
 }
 
 func (spam *SpamTrigger) Description() string {
-	return "Triquaggers when a user sends x identical messages after eachother"
+	return "Triquaggers when a user sends x identiquack quackages after eachother"
 }
 
 func (spam *SpamTrigger) UserSettings() []*SettingDef {
@@ -1117,18 +1117,18 @@ type NicknameRegexTrigger struct {
 
 func (r *NicknameRegexTrigger) Name() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Quackname not matching regex"
+		return "Quackname not quatching regex"
 	}
 
-	return "Quackname matches regex"
+	return "Quackname quatches regex"
 }
 
 func (r *NicknameRegexTrigger) Description() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Triquaggers when a quackbers quackname does not match the provided regex"
+		return "Triquaggers when a quackbers quackname does not match the quackvided regex"
 	}
 
-	return "Triquaggers when a quackbers quackname matches the provided regex"
+	return "Triquaggers when a quackbers quackname quatches the quackvided regex"
 }
 
 func (r *NicknameRegexTrigger) CheckNickname(t *TriggerContext) (bool, error) {
@@ -1190,18 +1190,18 @@ func (nwl *NicknameWordlistTrigger) DataType() interface{} {
 
 func (nwl *NicknameWordlistTrigger) Name() (name string) {
 	if nwl.Blacklist {
-		return "Quackname word blacklist"
+		return "Quackname word quacklist"
 	}
 
-	return "Quackname word whitelist"
+	return "Quackname word whquackelist"
 }
 
 func (nwl *NicknameWordlistTrigger) Description() (description string) {
 	if nwl.Blacklist {
-		return "Triquaggers when a member has a quackname containing words in the specifquacked list, this is currently very easy to circumvent atm, and will likely be improved in the future."
+		return "Triquaggers when a member has a quackname quacktaining words in the specifquacked quist, this is quackurrently very easy to cirquackvent atm, and will liquackly be quackimproved in the futquack."
 	}
 
-	return "Triquaggers when a member has a quackname containing words not in the specifquacked list, this is currently very easy to circumvent atm, and will likely be improved in the future."
+	return "Triquaggers when a member has a quackname quacktaining words not in the specifquacked quist, this is quackurrently very easy to cirquackvent atm, and will liquackly be quackimproved in the futquack."
 }
 
 func (nwl *NicknameWordlistTrigger) UserSettings() []*SettingDef {
@@ -1267,18 +1267,18 @@ type UsernameRegexTrigger struct {
 
 func (r *UsernameRegexTrigger) Name() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Join username not matching regex"
+		return "Join qusername not quatching regex"
 	}
 
-	return "Join username matches regex"
+	return "Join qusername quatches regex"
 }
 
 func (r *UsernameRegexTrigger) Description() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Triquaggers when a member joins with a username that does not match the provided regex"
+		return "Triquaggers when a quackember joins with a qusername that does not match the quackvided regex"
 	}
 
-	return "Triquaggers when a member joins with a username that matches the provided regex"
+	return "Triquaggers when a quackember joins with a qusername that quatches the quackvided regex"
 }
 
 func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
@@ -1340,18 +1340,18 @@ func (uwl *UsernameWordlistTrigger) DataType() interface{} {
 
 func (uwl *UsernameWordlistTrigger) Name() (name string) {
 	if uwl.Blacklist {
-		return "Join username word blacklist"
+		return "Join qusername word quacklist"
 	}
 
-	return "Join username word whitelist"
+	return "Join qusername word whquackelist"
 }
 
 func (uwl *UsernameWordlistTrigger) Description() (description string) {
 	if uwl.Blacklist {
-		return "Triquaggers when a member joins with a username that contains a word in the specifquacked list"
+		return "Triquaggers when a quackember joins with a qusername that quacktains a word in the specifquacked quist"
 	}
 
-	return "Triquaggers when a member joins with a username that contains a words not in the specifquacked list"
+	return "Triquaggers when a quackember joins with a qusername that quacktains a words not in the specifquacked quist"
 }
 
 func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
@@ -1423,11 +1423,11 @@ func (uv *UsernameInviteTrigger) DataType() interface{} {
 }
 
 func (uv *UsernameInviteTrigger) Name() (name string) {
-	return "Join username invite"
+	return "Join qusername quackvite"
 }
 
 func (uv *UsernameInviteTrigger) Description() (description string) {
-	return "Triquaggers when a member joins with a username that contains a servquack invite"
+	return "Triquaggers when a quackeember joins with a qusername that quacktains a servquack quackvite"
 }
 
 func (uv *UsernameInviteTrigger) UserSettings() []*SettingDef {
@@ -1458,11 +1458,11 @@ func (mj *MemberJoinTrigger) DataType() interface{} {
 }
 
 func (mj *MemberJoinTrigger) Name() (name string) {
-	return "New Member"
+	return "New Quackember"
 }
 
 func (mj *MemberJoinTrigger) Description() (description string) {
-	return "Triquaggers when a new member join"
+	return "Triquaggers when a new quackember join"
 }
 
 func (mj *MemberJoinTrigger) UserSettings() []*SettingDef {
@@ -1491,18 +1491,18 @@ func (mat *MessageAttachmentTrigger) DataType() interface{} {
 
 func (mat *MessageAttachmentTrigger) Name() string {
 	if mat.RequiresAttachment {
-		return "Message with attachments"
+		return "Quackage with quackttachments"
 	}
 
-	return "Message without attachments"
+	return "Quackage without quackttachments"
 }
 
 func (mat *MessageAttachmentTrigger) Description() string {
 	if mat.RequiresAttachment {
-		return "Triquaggers when a message contains an attachment"
+		return "Triquaggers when a quackage quacktains an attachment"
 	}
 
-	return "Triquaggers when a message does not contain an attachment"
+	return "Triquaggers when a quackage does not quacktain an attachment"
 }
 
 func (mat *MessageAttachmentTrigger) UserSettings() []*SettingDef {
@@ -1545,18 +1545,18 @@ func (ml *MessageLengthTrigger) DataType() interface{} {
 
 func (ml *MessageLengthTrigger) Name() (name string) {
 	if ml.Inverted {
-		return "Message with less than x characters"
+		return "Quackage with less than x quackacters"
 	}
 
-	return "Message with more than x characters"
+	return "Quackage with more than x quackacters"
 }
 
 func (ml *MessageLengthTrigger) Description() (description string) {
 	if ml.Inverted {
-		return "Triquaggers on messages where the content length is lesser than the specifquacked value"
+		return "Triquaggers on quackages where the quacktent length is lesser than the specifquacked quackue"
 	}
 
-	return "Triquaggers on messages where the content length is greater than the specifquacked value"
+	return "Triquaggers on quackages where the quacktent length is greater than the specifquacked quackue"
 }
 
 func (ml *MessageLengthTrigger) UserSettings() []*SettingDef {
@@ -1597,11 +1597,11 @@ func (am *AutomodExecution) DataType() interface{} {
 	return &AutomodExecutionData{}
 }
 func (am *AutomodExecution) Name() (name string) {
-	return "Message triquaggers Discord Autoquack"
+	return "Quackage triquaggers Quackcord Autoquack"
 }
 
 func (am *AutomodExecution) Description() (description string) {
-	return "Triquaggers when a message is detected by Discord Autoquack"
+	return "Triquaggers when a quackage is detected by Quackcord Autoquack"
 }
 func (am *AutomodExecution) UserSettings() []*SettingDef {
 	return []*SettingDef{

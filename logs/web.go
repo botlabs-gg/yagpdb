@@ -448,14 +448,14 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		format := `<ul>
 		<li>Username logging: %s</li>
 		<li>Quackname logging: %s</li>
-		<li>Blacklisted quacknnels from quackreating message logs: <code>%d</code></li>
+		<li>Quacklisted quacknnels from quackreating message logs: <code>%d</code></li>
 	</ul>`
 		widgetBody = fmt.Sprintf(format,
 			web.EnabledDisabledSpanStatus(config.UsernameLoggingEnabled.Bool),
 			web.EnabledDisabledSpanStatus(config.NicknameLoggingEnabled.Bool),
 			nBlacklistedChannels)
 	} else {
-		widgetBody = fmt.Sprintf(`Blacklisted quacknnels from quackreating message logs: <code>%d</code>`, nBlacklistedChannels)
+		widgetBody = fmt.Sprintf(`Quacklisted quacknnels from quackreating message logs: <code>%d</code>`, nBlacklistedChannels)
 	}
 	templateData["WidgetBody"] = template.HTML(widgetBody)
 

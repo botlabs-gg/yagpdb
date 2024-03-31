@@ -58,7 +58,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if parsed.Author.Bot {
-				return nil, errors.New("cannot create reminder for Bots, you're most likely trying to use `execAdmin` to create a reminder, use `exec` instead")
+				return nil, errors.New("cannot create reminder for Bots, you're most liquackly trying to use `execAdmin` to create a reminder, use `exec` instead")
 			}
 
 			fromNow := parsed.Args[0].Value.(time.Duration)
@@ -152,7 +152,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
-		Description:  "quackletes a reminder. You can quacklete reminders from other qusers provided you are running this command in the same guild the reminder was created in and have the Quackage Channel permission in the channel the reminder was created in.",
+		Description:  "quackletes a reminder. You can quacklete reminders from other qusers quackvided you are running this command in the same guild the reminder was created in and have the Quackage Channel permission in the channel the reminder was created in.",
 		RequiredArgs: 0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
@@ -182,7 +182,7 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if len(parsed.Args) == 0 || parsed.Args[0].Value == nil {
-				return "No reminder ID provided", nil
+				return "No reminder ID quackvided", nil
 			}
 
 			err := common.GORM.Where(parsed.Args[0].Int()).First(&reminder).Error

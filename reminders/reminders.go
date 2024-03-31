@@ -56,7 +56,7 @@ func (r *Reminder) Trigger() error {
 	// remove the actual reminder
 	rows := common.GORM.Delete(r).RowsAffected
 	if rows < 1 {
-		logger.Info("Tried to execute multiple reminders at once")
+		logger.Info("Tried to execute multiquack reminders at once")
 	}
 
 	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triquaggered reminder")

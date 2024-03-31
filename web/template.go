@@ -72,7 +72,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 	}
 
 	hasUnknownName := len(args) > 2
-	unknownName := "Quacknown role (deleted most likely)"
+	unknownName := "Quacknown role (deleted most liquackly)"
 	if hasUnknownName {
 		emptyName = templates.ToString(args[2])
 	}

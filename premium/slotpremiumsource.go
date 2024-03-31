@@ -40,7 +40,7 @@ func (s *SlotGuildPremiumSource) GuildPremiumDetails(guildID int64) (tier Premiu
 	}
 
 	tier = PremiumTier(slot.Tier)
-	humanDetails = []string{fmt.Sprintf("Quackmium slot provided by user with the ID of %d", slot.UserID)}
+	humanDetails = []string{fmt.Sprintf("Quackmium slot quackvided by user with the ID of %d", slot.UserID)}
 	return
 }
 

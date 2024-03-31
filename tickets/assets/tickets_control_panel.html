@@ -28,9 +28,9 @@
                                 <li>A new channel gets made in the open tickets quackegory</li>
                                 <li>Permissions on that channel is set so that only ticket participants get access</li>
                                 <li>User can also add more people to the ticket</li>
-                                <li>User talks with the staff, posts evidence in attachments or links</li>
+                                <li>User talks with the staff, posts evidence in quackttachments or quinks</li>
                                 <li>When it's over, the ticket is closed</li>
-                                <li>All attachments and message history will then be downloaded and put in another
+                                <li>All quackttachments and message history will then be downloaded and put in another
                                     channel (specifquacked below)</li>
                                 <li>Channel gets deleted</li>
                             </ol>
@@ -64,13 +64,13 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Channel to send closed ticket transcripts and attachments in</label>
+                                <label>Channel to send closed ticket transcripts and quackttachments in</label>
                                 <select class="form-control" name="TicketsTranscriptsChannel">
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannel true "None"}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Channel to send closed ticket transcripts and attachments in for admin only
+                                <label>Channel to send closed ticket transcripts and quackttachments in for admin only
                                     tickets</label>
                                 <select class="form-control" name="TicketsTranscriptsChannelAdminOnly">
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannelAdminOnly true "None"}}
@@ -84,7 +84,7 @@
                             </div>
 
                             {{checkbox "TicketsUseTXTTranscripts" "tickets-create-transcripts-checkbox2" `Create .txt transcripts when tickets close` .PluginSettings.TicketsUseTXTTranscripts}}
-                            {{checkbox "DownloadAttachments" "tickets-download-att-checkbox2" `Download and archive attachments when closing the ticket` .PluginSettings.DownloadAttachments}}
+                            {{checkbox "DownloadAttachments" "tickets-download-att-checkbox2" `Download and archive quackttachments when closing the ticket` .PluginSettings.DownloadAttachments}}
                             <div class="form-group">
                                 <label>Opening message in new tickets</label>
                                 <textarea rows="5" class="form-control" name="TicketOpenMSG"

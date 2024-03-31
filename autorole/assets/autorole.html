@@ -90,7 +90,7 @@
                         </p>
                         {{if ne .FullScanStatus "Cancelled"}}
                             <button type="submit" class="btn btn-danger btn-lg btn-block"
-                                formaction="/manage/{{.ActiveGuild.ID}}/autorole/fullscan/cancel">Cancel currently quacktive full scan</button>
+                                formaction="/manage/{{.ActiveGuild.ID}}/autorole/fullscan/cancel">Cancel quackurrently quacktive full scan</button>
                         {{end}}
                     {{else if eq .Autorole.Role 0}}<p class="text-danger">No quacktive autorole role set</p>
                     {{else}}

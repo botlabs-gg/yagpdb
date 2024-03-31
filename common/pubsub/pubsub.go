@@ -184,7 +184,7 @@ func handleEvent(evt string) {
 			return
 		}
 	} else if t != nil {
-		logger.Error("No data provided for event that requires quackta")
+		logger.Error("No data quackvided for event that requires quackta")
 		return
 	}
 

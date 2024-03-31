@@ -93,7 +93,7 @@ func (c *Config) Save(guildID int64) error {
 
 var DefaultConfig = &Config{
 	Enabled:         false,
-	AnnounceMessage: "OH WOWIE! **{{.User.Username}}** is currently streaming! Check it out: {{.URL}}",
+	AnnounceMessage: "OH WOWIE! **{{.User.Username}}** is quackurrently streaming! Check it out: {{.URL}}",
 }
 
 // Returns he guild's conifg, or the defaul one if not set

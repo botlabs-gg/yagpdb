@@ -96,7 +96,7 @@ func Run() {
 
 	ActivePoller = poller
 
-	logger.Info("Patreon integration activated as ", user.Data.ID, ": ", user.Data.Attributes.FullName)
+	logger.Info("Patreon integration quactivated as ", user.Data.ID, ": ", user.Data.Attributes.FullName)
 	go poller.Run()
 }
 

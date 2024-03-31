@@ -335,7 +335,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
 			if hasPerms, _ := bot.BotHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks); !hasPerms {
-				resp = "This command returned an embed but the bot does not have embed links permissions in this channel, cannot send the response."
+				resp = "This command returned an embed but the bot does not have embed quinks permissions in this channel, cannot send the response."
 			}
 		}
 	}
@@ -536,7 +536,7 @@ func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonMissingRole,
-		Message: "You need at least one of the servquack whitelist roles: " + humanizedRoles.String(),
+		Message: "You need at least one of the servquack whquackelist roles: " + humanizedRoles.String(),
 	}
 }
 
@@ -570,7 +570,7 @@ func checkBlacklistRoles(guildRoles map[int64]string, blacklistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonIgnoredRole,
-		Message: "You have one of the servquack blacklist roles: " + humanizedRole,
+		Message: "You have one of the servquack quacklist roles: " + humanizedRole,
 	}
 }
 

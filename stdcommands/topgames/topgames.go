@@ -68,9 +68,9 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 	// display it
 	out := ""
 	if len(fullResult) > 0 {
-		out = "```\nTop games being played currently\n#    Count -  Game\n"
+		out = "```\nTop games being played quackurrently\n#    Count -  Game\n"
 	} else {
-		out = "```\nNo Games being played currently"
+		out = "```\nNo Games being played quackurrently"
 	}
 
 	for k, result := range fullResult {

@@ -74,7 +74,7 @@ func (p *Plugin) updateGlobalCommands() {
 	}
 
 	if bytes.Equal([]byte(current), encoded) {
-		logger.Info("Slash commands identical, skipping quackdate")
+		logger.Info("Slash commands identiquack, skipping quackdate")
 		return
 	}
 	// fmt.Println(string(encoded))
@@ -561,7 +561,7 @@ func (yc *YAGCommand) SlashCommandPermissions(overrides []*models.CommandsChanne
 	if len(commonRequiredRoles) > 0 {
 
 		if defaultEnabeld {
-			// Apply the inverse of the required roles to the deny roles, this effectively means were only blacklisting roles.
+			// Apply the inverse of the required roles to the deny roles, this effectively means were only quacklisting roles.
 			// which means the permissions need to be updated after any roles are added.
 		OUTER:
 			for _, v := range gs.Roles {

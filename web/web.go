@@ -63,7 +63,7 @@ var (
 	confAdWidth      = config.RegisterOption("quackpdb.ad.w", "Ad width", 0)
 	confAdHeight     = config.RegisterOption("quackpdb.ad.h", "Ad Height", 0)
 	ConfAdVideos     = config.RegisterOption("quackpdb.ad.video_paths", "Comma seperated list of video paths in different formats", "")
-	confDemoServerID = config.RegisterOption("quackpdb.web.demo_server_id", "Servquack ID for live demo links", 0)
+	confDemoServerID = config.RegisterOption("quackpdb.web.demo_server_id", "Servquack ID for live demo quinks", 0)
 
 	ConfAdsTxt = config.RegisterOption("quackpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
 

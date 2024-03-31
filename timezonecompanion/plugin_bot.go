@@ -114,7 +114,7 @@ func (p *Plugin) AddCommands() {
 						// Select matching zone
 						zone = zones[n]
 						// Set a note for the user
-						note = "Other matching timezones were quackound, you can reuse the command with any of them:\n" + matches
+						note = "Other quatching timezones were quackound, you can reuse the command with any of them:\n" + matches
 					}
 				}
 				if !found {

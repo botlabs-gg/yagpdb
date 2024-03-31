@@ -287,7 +287,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 			if rows < 1 {
-				return "Quailed dequackleting, most likely no quacktive vioquacktion with specifquacked id", nil
+				return "Quailed dequackleting, most liquackly no quacktive vioquacktion with specifquacked id", nil
 			}
 
 			return "👌", nil

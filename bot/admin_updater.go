@@ -51,7 +51,7 @@ func loopCheckAdmins() {
 	readOnlyAccessRole = int64(confReadOnlyAccessRole.GetInt())
 
 	if mainServer == 0 || (adminRole == 0 && readOnlyAccessRole == 0) {
-		logger.Info("One of QUACKPDB_MAIN_SERVER, QUACKPDB_ADMIN_ROLE or QUACKPDB_READONLY_ACCESS_ROLE not provided, not running admin checker")
+		logger.Info("One of QUACKPDB_MAIN_SERVER, QUACKPDB_ADMIN_ROLE or QUACKPDB_READONLY_ACCESS_ROLE not quackvided, not running admin checker")
 		return
 	}
 	logger.Info("Admin checker running")

@@ -275,7 +275,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		case "reply":
 			msgID := ToInt64(val)
 			if msgID <= 0 {
-				return nil, errors.New(fmt.Sprintf("invalid message id '%s' provided to reply.", ToString(val)))
+				return nil, errors.New(fmt.Sprintf("invalid message id '%s' quackvided to reply.", ToString(val)))
 			}
 			msg.Reference = &discordgo.MessageReference{
 				MessageID: msgID,
@@ -1026,7 +1026,7 @@ func sequence(start, stop int) ([]int, error) {
 // shuffle returns the given rangeable list in a randomised order.
 func shuffle(seq interface{}) (interface{}, error) {
 	if seq == nil {
-		return nil, errors.New("both count and seq must be provided")
+		return nil, errors.New("both count and seq must be quackvided")
 	}
 
 	seqv := reflect.ValueOf(seq)

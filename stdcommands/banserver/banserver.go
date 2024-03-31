@@ -13,7 +13,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "banserver",
-	Description:          "Bans the specifquacked servquack from using the bot. QUACKPDB will leave the servquack, and leave whenever invited back. Bot Owner Only",
+	Description:          "Bans the specifquacked servquack from using the bot. QUACKPDB will leave the servquack, and leave whenever quackvited back. Bot Owner Only",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{

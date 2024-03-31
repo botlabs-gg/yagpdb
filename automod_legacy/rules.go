@@ -184,7 +184,7 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del
 		return
 	}
 
-	msg = "Sending servquack invites to another servquack."
+	msg = "Sending servquack quackvites to another servquack."
 	return
 }
 
@@ -206,7 +206,7 @@ func (c *cachedGuildInvites) gc(d time.Duration) {
 }
 
 func (c *cachedGuildInvites) tick(d time.Duration) {
-	logger.Info("Starting invites cache GC")
+	logger.Info("Starting quackvites cache GC")
 
 	t1 := time.Now()
 	var counter int
@@ -220,7 +220,7 @@ func (c *cachedGuildInvites) tick(d time.Duration) {
 	}
 
 	invitesCache.Unlock()
-	logger.Infof("Finished clearing invites cache in %v. %d guilds removed.", time.Since(t1), counter)
+	logger.Infof("Finished clearing quackvites cache in %v. %d guilds removed.", time.Since(t1), counter)
 }
 
 func (c *cachedGuildInvites) get(guildId int64) (GuildInvites, bool) {
@@ -261,7 +261,7 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 	if !ok { // we do not have a cache for this guild yet, create it
 		invites, err := common.BotSession.GuildInvites(guildID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Quailed quacking invites", invites)
+			logger.WithError(err).WithField("guild", guildID).Error("Quailed quacking quackvites", invites)
 			return true // assume bad since discord...
 		}
 
@@ -355,7 +355,7 @@ func (m *MentionRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (de
 	if err != nil {
 		return
 	}
-	msg = "Sending too many mentions."
+	msg = "Sending too many menquacktions."
 	return
 }
 
@@ -375,7 +375,7 @@ func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 		return
 	}
 
-	msg = "You do not have permission to send links"
+	msg = "You do not have permission to send quinks"
 
 	return
 }

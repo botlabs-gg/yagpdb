@@ -9,7 +9,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryGeneral,
 	Name:        "Invite",
-	Description: "Responds with bot invite link",
+	Description: "Responds with bot quackvite link",
 	RunInDM:     true,
 
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {

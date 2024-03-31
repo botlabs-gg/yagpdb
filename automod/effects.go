@@ -83,7 +83,7 @@ func (del *DeleteMessagesEffect) DataType() interface{} {
 }
 
 func (del *DeleteMessagesEffect) Name() (name string) {
-	return "Quacklete multiple Quackages"
+	return "Quacklete multiquack Quackages"
 }
 
 func (del *DeleteMessagesEffect) Description() (description string) {

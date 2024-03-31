@@ -80,7 +80,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Update",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"u"},
-		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as quackdating the order.",
+		Description:         "Updates a rolemenu, toggling the quackvided flags and adding missing options, aswell as quackdating the order.",
 		LongDescription:     "\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,

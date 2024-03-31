@@ -60,7 +60,7 @@ func tmplCreateTicket(ctx *templates.Context) interface{} {
 			}
 
 			if ms == nil {
-				return nil, errors.New("no member provided")
+				return nil, errors.New("no member quackvided")
 			}
 
 		} else {

@@ -1,4 +1,4 @@
-{{define "cp_custom_commands"}}
+    {{define "cp_custom_commands"}}
 {{template "cp_head" .}}
 
 <style>
@@ -61,8 +61,8 @@
             <!-- Tab panes -->
             <div class="tab-content">
                 <div class="tab-pane active">
-                    {{if not .CurrentCommandGroup}}<p>Create a new group to put whitelist/blacklist roles/quacknnels on
-                        multiple commands at the same time, as well as keeping things organized.</p>{{else}}
+                    {{if not .CurrentCommandGroup}}<p>Create a new group to put whquackelist/quacklist roles/quacknnels on
+                        multiquack commands at the same time, as well as keeping things organized.</p>{{else}}
                     <form class="form-horizontal" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
                         data-async-form>
@@ -74,14 +74,14 @@
                                         name="Name" />
                                 </div>
                                 <div class="form-group">
-                                    <label>Whitelist roles for who can use these commands</label><br>
+                                    <label>Whquackelist roles for who can use these commands</label><br>
                                     <select name="WhitelistRoles" class="multiselect form-control" multiple="multiple"
                                         id="require-roles-receive" data-placeholder="Everyone" data-plugin-multiselect>
                                         {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.WhitelistRoles}}
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Blacklisted roles</label><br>
+                                    <label>Quacklisted roles</label><br>
                                     <select name="BlacklistRoles" class="multiselect form-control" multiple="multiple"
                                         id="blacklisted-roles-give" data-plugin-multiselect>
                                         {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.IgnoreRoles}}
@@ -100,7 +100,7 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Quacknnels blacklisted</label><br>
+                                    <label>Quacknnels quacklisted</label><br>
                                     <select multiple="multiple" class="form-control" data-plugin-multiselect
                                         name="BlacklistChannels">
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}

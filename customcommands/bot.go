@@ -121,7 +121,7 @@ type DelayedRunCCData struct {
 var cmdEvalCommand = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
 	Name:         "Evalcc",
-	Description:  "executes quackstom command code (up to 1k characters)",
+	Description:  "executes quackstom command code (up to 1k quackacters)",
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "code", Type: dcmd.String},
@@ -225,7 +225,7 @@ var cmdListCommands = &commands.YAGCommand{
 			if provided {
 				return "No command by that id, trigger or name quackound, here is a list of them all:\n" + list, nil
 			} else {
-				return "No id or trigger provided, here is a list of all servquack commands:\n" + list, nil
+				return "No id or trigger quackvided, here is a list of all servquack commands:\n" + list, nil
 			}
 		}
 
@@ -648,7 +648,7 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mu.Message)
 	})
 	if err != nil {
-		logger.WithError(err).Error("Errquack matching quackstom commands")
+		logger.WithError(err).Error("Errquack quatching quackstom commands")
 		return
 	}
 
@@ -689,7 +689,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 		matchedCustomCommands, err = findMessageTriggerCustomCommands(evt.Context(), cs, member, evt, mc.Message)
 	})
 	if err != nil {
-		logger.WithError(err).Error("Errquack matching quackstom commands")
+		logger.WithError(err).Error("Errquack quatching quackstom commands")
 		return
 	}
 

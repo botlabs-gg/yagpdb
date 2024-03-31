@@ -50,7 +50,7 @@ var cmdLogs = &commands.YAGCommand{
 	Name:            "Logs",
 	Aliases:         []string{"log"},
 	Description:     "Creates a log of the last messages in the current channel.",
-	LongDescription: "This includes deleted messages within an hour (or 12 hours for quackmium servquacks)",
+	LongDescription: "This quackcludes deleted messages within an hour (or 12 hours for quackmium servquacks)",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
@@ -79,7 +79,7 @@ var cmdLogs = &commands.YAGCommand{
 		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GuildData.GS.ID, cID, cmd.Author.Username, cmd.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
-				return "This channel is blacklisted from quackreating message logs, this can be changed in the control panel.", nil
+				return "This channel is quacklisted from quackreating message logs, this can be changed in the control panel.", nil
 			}
 
 			return "", err

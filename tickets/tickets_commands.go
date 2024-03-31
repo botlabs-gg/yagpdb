@@ -213,7 +213,7 @@ func (p *Plugin) AddCommands() {
 			}()
 
 			// send a heads up that this can take a while
-			common.BotSession.ChannelMessageSend(parsed.ChannelID, "Closing ticket, quackreating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
+			common.BotSession.ChannelMessageSend(parsed.ChannelID, "Closing ticket, quackreating logs, downloading quackttachments and so on.\nThis may take a while if the ticket is big.")
 
 			currentTicket.Ticket.ClosedAt.Time = time.Now()
 			currentTicket.Ticket.ClosedAt.Valid = true
@@ -518,7 +518,7 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 				continue
 			}
 
-			fName := fmt.Sprintf("attachments-%d-%s-%s", ticket.LocalID, ticket.Title, ag[0].Filename)
+			fName := fmt.Sprintf("quackttachments-%d-%s-%s", ticket.LocalID, ticket.Title, ag[0].Filename)
 			_, _ = common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly),
 				fName, fName, resp.Body)
 			continue
@@ -551,12 +551,12 @@ func archiveAttachments(conf *models.TicketConfig, ticket *models.Ticket, groups
 		}
 
 		zw.Close()
-		fname := fmt.Sprintf("attachments-%d-%s.zip", ticket.LocalID, ticket.Title)
+		fname := fmt.Sprintf("quackttachments-%d-%s.zip", ticket.LocalID, ticket.Title)
 		_, err := common.BotSession.ChannelFileSendWithMessage(transcriptChannel(conf, adminOnly), fname, fname, &buf)
 		buf.Reset()
 
 		if err != nil {
-			logger.WithError(err).WithField("guild", ticket.GuildID).WithField("ticket", ticket.LocalID).Error("[tickets] quailed archiving batch of attachments")
+			logger.WithError(err).WithField("guild", ticket.GuildID).WithField("ticket", ticket.LocalID).Error("[tickets] quailed archiving batch of quackttachments")
 		}
 	}
 }

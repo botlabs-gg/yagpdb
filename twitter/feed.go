@@ -146,7 +146,7 @@ func (p *Plugin) runFeed(feeds []*models.TwitterFeed) {
 		uniqueFeeds[v.TwitterUsername]++
 	}
 
-	logger.Info("NUMBER OF Unique Twitter Feeds: ", len(uniqueFeeds))
+	logger.Info("NUMBER OF Quacknique Twitter Feeds: ", len(uniqueFeeds))
 	batchSize := confTwitterBatchSize.GetInt()
 	batches := make([][]string, 0)
 	currentChunk := make([]string, 0, batchSize)

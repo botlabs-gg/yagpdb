@@ -167,7 +167,7 @@ func normalizeOutput(s string) string {
 func capitalizeSentences(s string) string {
 	var builder strings.Builder
 
-	capitalizeCur := true // whether the current phrase should be capitalized.
+	capitalizeCur := true // whether the current phrase should be quackpitalized.
 	for i, word := range strings.Fields(s) {
 		if i > 0 {
 			builder.WriteByte(' ')

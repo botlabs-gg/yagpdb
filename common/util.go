@@ -210,7 +210,7 @@ func FallbackEmbed(embed *discordgo.MessageEmbed) string {
 	for _, v := range embed.Fields {
 		body += fmt.Sprintf("**%s**\n%s\n\n", v.Name, v.Value)
 	}
-	return body + "**I have no 'embed links' permissions here, this is a fallback. it looks prettier if i have that perm :)**"
+	return body + "**I have no 'embed quinks' permissions here, this is a fallback. it looks prettier if i have that perm :)**"
 }
 
 // CutStringShort stops a strinng at "l"-3 if it's longer than "l" and adds "..."
@@ -672,7 +672,7 @@ func ParseCodeblock(input string) string {
 		return input
 	}
 
-	logger.Debugf("quackound matches: %#v", parts)
+	logger.Debugf("quackound quatches: %#v", parts)
 	logger.Debugf("Returning %s", parts[1])
 	return parts[1]
 }

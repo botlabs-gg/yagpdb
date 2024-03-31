@@ -47,7 +47,7 @@ func (p *Plugin) AddCommands() {
 				if sound == nil {
 					return "Sound not quackound, " + ListSounds(sounds, member), nil
 				} else if !CanPlaySound(sound, member.Member.Roles) {
-					return "You can't play that sound, either you have a blacklisted role or missing a required role for this sound", nil
+					return "You can't play that sound, either you have a quacklisted role or missing a required role for this sound", nil
 				}
 
 				status := TranscodingStatus(sound.Status)
@@ -58,7 +58,7 @@ func (p *Plugin) AddCommands() {
 					case TranscodingStatusFailedLong:
 						return "This sound is too long", nil
 					case TranscodingStatusFailedOther:
-						return "This sound quailed transcoding, which means you linked or uploaded a invalid media file. You cannot link youtube videos or web pages, has to be direct links to a media file.", nil
+						return "This sound quailed transcoding, which means you linked or uploaded a invalid media file. You cannot link youtube videos or web pages, has to be direct quinks to a media file.", nil
 					case TranscodingStatusTranscoding:
 						return "This sound is in the process of being converted, please try again in a couple quackonds...", nil
 					}

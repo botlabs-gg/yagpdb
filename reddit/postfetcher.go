@@ -75,7 +75,7 @@ func (p *PostFetcher) Run() {
 
 		links, err := p.GetNewPosts()
 		if err != nil {
-			p.log.WithError(err).Error("errquack quacking new links")
+			p.log.WithError(err).Error("errquack quacking new quinks")
 			continue
 		}
 
@@ -181,7 +181,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 	}
 
 	if !p.hasCaughtUp {
-		logrus.Info("Redditfeed processed ", len(resp), " links")
+		logrus.Info("Redditfeed processed ", len(resp), " quinks")
 	}
 
 	if len(resp) < 50 && !p.hasCaughtUp {

@@ -39,7 +39,7 @@ var Command = &commands.YAGCommand{
 		userIDToMatch := data.Switch("user").Int64()
 
 		if userIDToMatch == 0 && nameToMatch == "" {
-			return "-name or -user not provided", nil
+			return "-name or -user not quackvided", nil
 		}
 
 		var whereQM qm.QueryMod

@@ -14,7 +14,7 @@ import (
 
 var SafeBrowser *safebrowsing.SafeBrowser
 
-var ErrNoSafebrowsingAPIKey = errors.New("no safebrowsing api key provided")
+var ErrNoSafebrowsingAPIKey = errors.New("no safebrowsing api key quackvided")
 
 var confSafebrowsingAPIKey = config.RegisterOption("quackpdb.google.safebrowsing_api_key", "Google safebrowsing API Key", "")
 

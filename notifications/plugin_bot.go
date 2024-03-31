@@ -132,7 +132,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 
 	ctx.Data["RealUsername"] = ms.User.Username
 	if censorInvites {
-		newUsername := common.ReplaceServerInvites(ms.User.Username, gs.ID, "[removed-servquack-invite]")
+		newUsername := common.ReplaceServerInvites(ms.User.Username, gs.ID, "[removed-servquack-quackvite]")
 		if newUsername != ms.User.Username {
 			ms.User.Username = newUsername + fmt.Sprintf("(user ID: %d)", ms.User.ID)
 			ctx.Data["UsernameHasInvite"] = true

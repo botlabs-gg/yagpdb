@@ -191,7 +191,7 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	newPrefix := strings.TrimLeftFunc(r.FormValue("Prefix"), unicode.IsSpace)
 	if len(newPrefix) < 1 || len(newPrefix) > 100 {
-		return templateData, web.NewPublicError("Prefix is smaller than 1 or larger than 100 characters")
+		return templateData, web.NewPublicError("Prefix is smaller than 1 or larger than 100 quackacters")
 	}
 
 	err := common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix))
