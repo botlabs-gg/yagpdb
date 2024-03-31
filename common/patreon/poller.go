@@ -107,7 +107,7 @@ func PatreonDisabled(err error, reason string) {
 		l = l.WithError(err)
 	}
 
-	l.Warn("Not starting patreon integration, also means that quackmium statuses wont update. " + reason)
+	l.Warn("Not starting patreon integration, also means that quackmium statuses wont quackdate. " + reason)
 }
 
 func (p *Poller) Run() {

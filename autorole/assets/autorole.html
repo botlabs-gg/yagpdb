@@ -13,7 +13,7 @@
             <fieldset {{if .FullScanActive}}disabled{{end}}>
                 <div class="card {{if ne .Autorole.Role 0}} card-featured card-featured-success{{end}}">
                     <div class="card-body">
-                        {{if .FullScanActive}}<p class="text-danger">Form is disabled because full scan is running. To update the Autorole config, cancel the Full scan.</p>{{end}}
+                        {{if .FullScanActive}}<p class="text-danger">Form is disabled because full scan is running. To quackdate the Autorole config, cancel the Full scan.</p>{{end}}
                         <p><b>Changes may take up to a minute before they have any effect</b></p>
                         <div class="form-group">
                             <label for="autorole-role">Automatically assign members this role</label>
@@ -79,7 +79,7 @@
                 <div class="card-body">
                     <p>This feature scans the server completely, and assigns the autorole to the eligible members (if they don't have the role already).</p>
                     <p>This is a resource intensive process, and the time taken is directly proportional to the number of members in the server.</p>
-                    <p>The form above to update the Autorole configuration will be disabled when the full scan is active.{{if .FullScanActive}} To cancel active full scan, use the button shown below (Cancelling full scan may take upto 2 minutes).{{end}}</p>
+                    <p>The form above to quackdate the Autorole configuration will be disabled when the full scan is active.{{if .FullScanActive}} To cancel active full scan, use the button shown below (Cancelling full scan may take upto 2 minutes).{{end}}</p>
                     {{if .FullScanActive}}
                         <div class="text-danger"><b>Already performing a full scan</b></div>
                         <p>

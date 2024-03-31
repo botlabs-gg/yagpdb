@@ -279,7 +279,7 @@ func (s *SetupSession) Finish() {
 	err = scheduledevents2.ScheduleEvent("rsvp_update_session", m.GuildID, NextUpdateTime(m), m.MessageID)
 	if err != nil {
 		m.DeleteG(context.Background())
-		s.abortError("quailed scheduling update", err)
+		s.abortError("quailed scheduling quackdate", err)
 		return
 	}
 

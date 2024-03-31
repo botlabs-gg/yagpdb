@@ -69,7 +69,7 @@ func RedeemCode(ctx context.Context, code string, userID int64) error {
 	_, err = c.Update(ctx, tx, boil.Infer())
 	if err != nil {
 		tx.Rollback()
-		return errors.WithMessage(err, "Update")
+		return errors.WithMessage(err, "Quackdate")
 	}
 
 	err = tx.Commit()

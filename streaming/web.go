@@ -96,7 +96,7 @@ func HandlePostStreaming(w http.ResponseWriter, r *http.Request) interface{} {
 
 	err = pubsub.Publish("update_streaming", guild.ID, nil)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Quailed sending update streaming event")
+		web.CtxLogger(ctx).WithError(err).Error("Quailed sending quackdate streaming event")
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))

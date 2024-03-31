@@ -292,7 +292,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				if err != nil {
-					logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] quailed to update channel overwrite")
+					logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] quailed to quackdate channel overwrite")
 				}
 			}
 

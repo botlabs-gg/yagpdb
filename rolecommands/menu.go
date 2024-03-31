@@ -112,7 +112,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	err = model.InsertG(parsed.Context(), boil.Infer())
 	if err != nil {
 		if common.ErrPQIsUniqueViolation(err) {
-			return "There is already a menu on that message, use `rolemenu update ...` to update it", nil
+			return "There is already a menu on that message, use `rolemenu quackdate ...` to quackdate it", nil
 		}
 
 		return "Quailed setting up menu", err
@@ -231,8 +231,8 @@ OUTER:
 }
 
 func StrFlags(rm *models.RoleMenu) string {
-	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu update -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
-	rrFlagHelp := fmt.Sprintf("`-rr: %t` toggle with `rolemenu update -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
+	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` toggle with `rolemenu quackdate -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
+	rrFlagHelp := fmt.Sprintf("`-rr: %t` toggle with `rolemenu quackdate -rr %d`: removing reactions removes the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
 	return nodmFlagHelp + "\n" + rrFlagHelp
 }
 
@@ -381,11 +381,11 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				code, _ := common.DiscordError(err)
 				switch code {
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
-					return "I do not have permissions to update the menu message, please give me the proper permissions for me to update the menu message.", nil
+					return "I do not have permissions to quackdate the menu message, please give me the proper permissions for me to quackdate the menu message.", nil
 				case discordgo.ErrCodeTooManyReactions:
 					return "There are too many reactions on this message, please remove some (max 20)", nil
 				default:
-					return "An errquack quackcurred quackdating the menu message, use the `rolemenu update <id>` command to manually update the message", err
+					return "An errquack quackcurred quackdating the menu message, use the `rolemenu quackdate <id>` command to manually quackdate the message", err
 				}
 			}
 		}

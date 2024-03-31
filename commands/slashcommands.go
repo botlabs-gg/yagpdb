@@ -74,7 +74,7 @@ func (p *Plugin) updateGlobalCommands() {
 	}
 
 	if bytes.Equal([]byte(current), encoded) {
-		logger.Info("Slash commands identical, skipping update")
+		logger.Info("Slash commands identical, skipping quackdate")
 		return
 	}
 	// fmt.Println(string(encoded))

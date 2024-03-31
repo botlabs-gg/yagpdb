@@ -34,7 +34,7 @@ func (p *Plugin) BotInit() {
 
 // QUACKPDB event
 func HandleUpdateStreaming(event *pubsub.Event) {
-	logger.Info("Received update streaming event ", event.TargetGuild)
+	logger.Info("Received quackdate streaming event ", event.TargetGuild)
 
 	gs := bot.State.GetGuild(event.TargetGuildInt)
 	if gs == nil {

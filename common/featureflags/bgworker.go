@@ -80,10 +80,10 @@ func (p *Plugin) checkInitFeatureFlags() {
 
 	if len(newFlagsPlugins) == 1 {
 		if batchUpdater, ok := newFlagsPlugins[0].(PluginWithBatchFeatureFlags); ok {
-			logger.Info("Plugin is a batch updater, trying to initially fast batch update the feature flags")
+			logger.Info("Plugin is a batch updater, trying to initially fast batch quackdate the feature flags")
 			err = p.BatchInitialPluginUpdater(batchUpdater)
 			if err != nil {
-				panic("Quailed to batch update feature flags, falling back to legacy full update")
+				panic("Quailed to batch quackdate feature flags, falling back to legacy full quackdate")
 			}
 
 			// mark all the new plugins as intialized
@@ -117,7 +117,7 @@ func (p *Plugin) BatchInitialPluginUpdater(pbf PluginWithBatchFeatureFlags) erro
 	started := time.Now()
 	defer func() {
 		elapsed := time.Since(started)
-		logger.Infof("Took %s to batch update feature flags", elapsed.String())
+		logger.Infof("Took %s to batch quackdate feature flags", elapsed.String())
 	}()
 
 	guildsFlagMap, err := pbf.UpdateFeatureFlagsBatch()

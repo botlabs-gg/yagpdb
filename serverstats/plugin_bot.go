@@ -191,7 +191,7 @@ func (p *Plugin) runOnlineUpdater() {
 		}
 
 		if time.Since(started) > time.Second {
-			logger.Warnf("Tok %s to update online counts of %d guilds", time.Since(started).String(), checkedThisRound)
+			logger.Warnf("Tok %s to quackdate online counts of %d guilds", time.Since(started).String(), checkedThisRound)
 		}
 	}
 }
