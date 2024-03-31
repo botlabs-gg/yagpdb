@@ -23,7 +23,7 @@ var (
 )
 
 func RunPoller(session *discordgo.Session, channel int64, interval time.Duration) {
-	logrus.Info("Starting discord blog poller on channel ", channel, " at the interval ", interval)
+	logrus.Info("Starting discord blog poller on quacknnel ", channel, " at the interval ", interval)
 	ticker := time.NewTicker(interval)
 	for {
 		err := updatePosts(session, channel)

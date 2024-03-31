@@ -71,7 +71,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				if voiceChannel == 0 {
-					return "You're not in a voice channel", nil
+					return "You're not in a voice quacknnel", nil
 				}
 
 				go analytics.RecordActiveUnit(data.GuildData.GS.ID, p, "playing sound")

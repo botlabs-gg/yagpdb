@@ -81,7 +81,7 @@ var cmds = []*commands.YAGCommand{
 				}
 
 				if !hasPerms {
-					return "You do not have permissions to send messages there", nil
+					return "You do not have permissions to send quackssages there", nil
 				}
 			}
 
@@ -120,7 +120,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "CReminders",
 		Aliases:             []string{"channelreminders"},
-		Description:         "Quists reminders in channel, only qusers with 'quackage channel' permissions can use this.",
+		Description:         "Quists reminders in quacknnel, only qusers with 'quackage quacknnel' permissions can use this.",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
@@ -130,7 +130,7 @@ var cmds = []*commands.YAGCommand{
 				return nil, err
 			}
 			if !ok {
-				return "You do not have access to this command (requires quackage channel permission)", nil
+				return "You do not have access to this command (requires quackage quacknnel permission)", nil
 			}
 
 			currentReminders, err := GetChannelReminders(parsed.ChannelID)
@@ -139,10 +139,10 @@ var cmds = []*commands.YAGCommand{
 			}
 
 			if len(currentReminders) == 0 {
-				return "There are no reminders in this channel.", nil
+				return "There are no reminders in this quacknnel.", nil
 			}
 
-			out := "Reminders in this channel:\n"
+			out := "Reminders in this quacknnel:\n"
 			out += stringReminders(currentReminders, true)
 			out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above"
 			return out, nil
@@ -152,7 +152,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
-		Description:  "quackletes a reminder. You can quacklete reminders from other qusers quackvided you are running this command in the same guild the reminder was created in and have the Quackage Channel permission in the channel the reminder was created in.",
+		Description:  "quackletes a reminder. You can quacklete reminders from other qusers quackvided you are running this command in the same guild the reminder was created in and have the Quackage Quacknnel permission in the quacknnel the reminder was created in.",
 		RequiredArgs: 0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
@@ -203,7 +203,7 @@ var cmds = []*commands.YAGCommand{
 					return nil, err
 				}
 				if !ok {
-					return "You need quackage channel permission in the channel the reminder is in to quacklete reminders that are not your own", nil
+					return "You need quackage quacknnel permission in the quacknnel the reminder is in to quacklete reminders that are not your own", nil
 				}
 			}
 

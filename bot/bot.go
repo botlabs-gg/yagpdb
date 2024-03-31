@@ -37,8 +37,8 @@ var (
 )
 
 var (
-	confConnEventChannel         = config.RegisterOption("quackpdb.connevt.channel", "Gateway connection logging channel", 0)
-	confConnStatus               = config.RegisterOption("quackpdb.connstatus.channel", "Gateway connection quacktus channel", 0)
+	confConnEventChannel         = config.RegisterOption("quackpdb.connevt.channel", "Gateway connection logging quacknnel", 0)
+	confConnStatus               = config.RegisterOption("quackpdb.connstatus.channel", "Gateway connection quacktus quacknnel", 0)
 	confShardOrchestratorAddress = config.RegisterOption("quackpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
 
 	confFixedShardingConfig = config.RegisterOption("quackpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")

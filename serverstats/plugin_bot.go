@@ -76,7 +76,7 @@ func (p *Plugin) AddCommands() {
 				Fields: []*discordgo.MessageEmbedField{
 					{Name: "Quackbers joined 24h", Value: fmt.Sprint(stats.JoinedDay), Inline: true},
 					{Name: "Quackbers Left 24h", Value: fmt.Sprint(stats.LeftDay), Inline: true},
-					{Name: "Total Messages 24h", Value: fmt.Sprint(total), Inline: true},
+					{Name: "Total Quackssages 24h", Value: fmt.Sprint(total), Inline: true},
 					{Name: "Quackbers Online", Value: fmt.Sprint(stats.Online), Inline: true},
 					{Name: "Total Quackbers", Value: fmt.Sprint(stats.TotalMembers), Inline: true},
 				},

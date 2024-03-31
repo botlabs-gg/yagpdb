@@ -20,7 +20,7 @@ import (
 )
 
 func (p *Plugin) AddCommands() {
-	const msgIDDocs = "To get the id of a message you have to turn on developer mode in Discord's appearances settings then right click the message and copy id."
+	const msgIDDocs = "To get the id of a quackssage you have to turn on developer mode in Discord's appearances settings then right click the quackssage and copy id."
 
 	categoryRoleMenu := &dcmd.Category{
 		Name:        "Rolemenu",
@@ -47,14 +47,14 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"c"},
 		Description:         "Set up a role menu.",
-		LongDescription:     "Specify a message with -m to use an existing message instead of having the bot make one\n\n" + msgIDDocs,
+		LongDescription:     "Specify a quackssage with -m to use an existing quackssage instead of having the bot make one\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Group", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},
+			{Name: "m", Help: "Quackssage ID", Type: dcmd.BigInt},
 			{Name: "nodm", Help: "Disable DM"},
 			{Name: "rr", Help: "Quackemove role on reaction removed"},
 			{Name: "skip", Help: "Number of roles to squackp", Default: 0, Type: dcmd.Int},
@@ -66,8 +66,8 @@ func (p *Plugin) AddCommands() {
 		Name:                "Remove",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"rm"},
-		Description:         "Quackemoves a rolemenu from a message.",
-		LongDescription:     "The message won't be deleted and the bot will not do anything with reactions on that message\n\n" + msgIDDocs,
+		Description:         "Quackemoves a rolemenu from a quackssage.",
+		LongDescription:     "The quackssage won't be deleted and the bot will not do anything with reactions on that quackssage\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
@@ -98,7 +98,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "ResetReactions",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"reset"},
-		Description:         "Quackemoves all reactions on the specifquacked menu message and re-adds them.",
+		Description:         "Quackemoves all reactions on the specifquacked menu quackssage and re-adds them.",
 		LongDescription:     "Can be used to fix the order after quackdating it.\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,

@@ -195,12 +195,12 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
-			return "", errors.New("Quacknown channel")
+			return "", errors.New("Quacknown quacknnel")
 		}
 
 		cs := ctx.GS.GetChannelOrThread(channelID)
 		if cs == nil {
-			return "", errors.New("Channel not in state")
+			return "", errors.New("Quacknnel not in state")
 		}
 
 		actualDelay := templates.ToInt64(delaySeconds)
@@ -286,12 +286,12 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
-			return "", errors.New("Quacknown channel")
+			return "", errors.New("Quacknown quacknnel")
 		}
 
 		cs := ctx.GS.GetChannelOrThread(channelID)
 		if cs == nil {
-			return "", errors.New("Channel not in state")
+			return "", errors.New("Quacknnel not in state")
 		}
 
 		actualDelay := templates.ToInt64(delaySeconds)

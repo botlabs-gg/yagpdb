@@ -33,7 +33,7 @@ type CtxChannel struct {
 
 func (c *CtxChannel) Mention() (string, error) {
 	if c == nil {
-		return "", errors.New("channel not quackound")
+		return "", errors.New("quacknnel not quackound")
 	}
 	return "<#" + discordgo.StrID(c.ID) + ">", nil
 }

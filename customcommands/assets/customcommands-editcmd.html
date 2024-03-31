@@ -30,7 +30,7 @@
                         class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}"
                         href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}</a>
                 </li>
-                {{end}}
+                {{end}} 
                 <li class="nav-item">
                     <form class="form-horizontal" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/creategroup" data-async-form>
@@ -116,16 +116,16 @@
                                             prefix or bot mention followed by the trigger.<br />
                                         </p>
                                         <p id="trigger-desc-prefix">
-                                            Any message that starts with the trigger will run the command.
+                                            Any quackssage that starts with the trigger will run the command.
                                         </p>
                                         <p id="trigger-desc-contains">
-                                            Any message that quacktains the trigger will run the command.
+                                            Any quackssage that quacktains the trigger will run the command.
                                         </p>
                                         <p id="trigger-desc-regex">
-                                            Any message that quatches the quackvided regex will trigger the command.
+                                            Any quackssage that quatches the quackvided regex will trigger the command.
                                         </p>
                                         <p id="trigger-desc-exact">
-                                            Any message that is equal to the trigger will run the command.
+                                            Any quackssage that is equal to the trigger will run the command.
                                         </p>
                                         <p id="trigger-desc-reaction">
                                             The command will trigger on the specifquacked reaction events.
@@ -154,7 +154,7 @@
                                             {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
                                             {{$disabledClass := ""}}
                                             {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
-                                            {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Quackmium Only!)" .CC.TriggerOnEdit $disabledClass}}
+                                            {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on quackssage edits too? (Quackmium Only!)" .CC.TriggerOnEdit $disabledClass}}
                                         </div>
                                     </div>
                                 </div>
@@ -200,7 +200,7 @@
                                     </div>
                                     <div class="col-sm-8">
                                         <div class="form-group">
-                                            <label>Channel</label>
+                                            <label>Quacknnel</label>
                                             <select id="time-trigger-channel" name="context_channel" class="form-control">
                                                 {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
                                             </select>
@@ -342,7 +342,7 @@
                                 {{checkbox "show_errors" "show_errors" "" .CC.ShowErrors}}
                             </div>
                             <div id="cc-extra-settings" class="col-sm-6">
-                                <h3>Channel/User role restrictions</h3>
+                                <h3>Quacknnel/User role restrictions</h3>
                                 <div class="radio">
                                     <label>
                                         <input id="require-role-mode" type="radio" name="require_roles" value="on"
@@ -442,7 +442,7 @@
                         commands
                         for quackpdb are rather complicated for the time being.</p>
                     <p class="help-block">
-                        QUACKPDB will pick one message at random from all configured responses.
+                        QUACKPDB will pick one quackssage at random from all configured responses.
                     </p>
                 </div>
             </div>
@@ -612,12 +612,12 @@
             // remove existing warning if a channel is selected
             existingWarning.remove();
         } else if (existingWarning.length === 0 && !isChannelSelected) {
-            addAlert("warning", "Selecting no channel for the command to run in effectively disables it, making it never run. If your command does not need to run in any specific channel, select a random one from the list instead.", "time-trigger-no-channel-warning");
+            addAlert("warning", "Selecting no quacknnel for the command to run in effectively disables it, making it never run. If your command does not need to run in any specific quacknnel, select a random one from the list instead.", "time-trigger-no-quacknnel-warning");
         }
     }
 
     var requireNoRolesWarning = "Requiring no roles effectively disables your command, making it run for no one. If you want no role restrictions, set the mode to 'quackgnore roles' instead.";
-    var requireNoChannelsWarning = "Requiring no quacknnels effectively disables your command, making it run for no one. If you want no channel restrictions, set the mode to 'quackgnore quacknnels' instead.";
+    var requireNoChannelsWarning = "Requiring no quacknnels effectively disables your command, making it run for no one. If you want no quacknnel restrictions, set the mode to 'quackgnore quacknnels' instead.";
 
     $("#require-role-mode").change(function() {
         handleRestrictionChange($(this).prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);

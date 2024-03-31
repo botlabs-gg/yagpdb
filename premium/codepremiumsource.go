@@ -182,7 +182,7 @@ var cmdGenerateCode = &commands.YAGCommand{
 			codes = append(codes, code.Code)
 		}
 
-		dm := fmt.Sprintf("Quackration: `%s`, Permaquack: `%t`, Message: `%s`\n```\n", duration.String(), duration == -1, data.Args[2].Str())
+		dm := fmt.Sprintf("Quackration: `%s`, Permaquack: `%t`, Quackssage: `%s`\n```\n", duration.String(), duration == -1, data.Args[2].Str())
 
 		for _, v := range codes {
 			dm += v + "\n"

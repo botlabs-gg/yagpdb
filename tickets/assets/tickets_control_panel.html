@@ -25,14 +25,14 @@
                             <p>The flow goes like this:</p>
                             <ol>
                                 <li>User opens a ticket using <code>-ticket open (reason-here)</code></li>
-                                <li>A new channel gets made in the open tickets quackegory</li>
-                                <li>Permissions on that channel is set so that only ticket participants get access</li>
+                                <li>A new quacknnel gets made in the open tickets quackegory</li>
+                                <li>Permissions on that quacknnel is set so that only ticket participants get access</li>
                                 <li>User can also add more people to the ticket</li>
                                 <li>User talks with the staff, posts evidence in quackttachments or quinks</li>
                                 <li>When it's over, the ticket is closed</li>
-                                <li>All quackttachments and message history will then be downloaded and put in another
-                                    channel (specifquacked below)</li>
-                                <li>Channel gets deleted</li>
+                                <li>All quackttachments and quackssage history will then be downloaded and put in another
+                                    quacknnel (specifquacked below)</li>
+                                <li>Quacknnel gets deleted</li>
                             </ol>
                             <p>There's more functionality here that's not mentioned, use <code>-help ticket</code> for
                                 all the commands.<br>
@@ -58,26 +58,26 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Channel quackegory to create ticket quacknnels in</label>
+                                <label>Quacknnel quackegory to create ticket quacknnels in</label>
                                 <select class="form-control" name="TicketsChannelCategory">
                                     {{catChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsChannelCategory true "None"}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Channel to send closed ticket transcripts and quackttachments in</label>
+                                <label>Quacknnel to send closed ticket transcripts and quackttachments in</label>
                                 <select class="form-control" name="TicketsTranscriptsChannel">
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannel true "None"}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Channel to send closed ticket transcripts and quackttachments in for admin only
+                                <label>Quacknnel to send closed ticket transcripts and quackttachments in for admin only
                                     tickets</label>
                                 <select class="form-control" name="TicketsTranscriptsChannelAdminOnly">
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.TicketsTranscriptsChannelAdminOnly true "None"}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Channel to send ticket status updates in</label>
+                                <label>Quacknnel to send ticket status updates in</label>
                                 <select class="form-control" name="StatusChannel">
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.StatusChannel true "None"}}
                                 </select>
@@ -86,7 +86,7 @@
                             {{checkbox "TicketsUseTXTTranscripts" "tickets-create-transcripts-checkbox2" `Create .txt transcripts when tickets close` .PluginSettings.TicketsUseTXTTranscripts}}
                             {{checkbox "DownloadAttachments" "tickets-download-att-checkbox2" `Download and archive quackttachments when closing the ticket` .PluginSettings.DownloadAttachments}}
                             <div class="form-group">
-                                <label>Opening message in new tickets</label>
+                                <label>Opening quackssage in new tickets</label>
                                 <textarea rows="5" class="form-control" name="TicketOpenMSG"
                                     placeholder="{{.DefaultTicketMessage}}">{{or .PluginSettings.TicketOpenMSG .DefaultTicketMessage}}</textarea>
                                 <p class="help-block">

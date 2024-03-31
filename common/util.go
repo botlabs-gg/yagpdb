@@ -63,7 +63,7 @@ func DelayedMessageDelete(session *discordgo.Session, delay time.Duration, cID, 
 	time.Sleep(delay)
 	err := session.ChannelMessageDelete(cID, mID)
 	if err != nil {
-		logger.WithError(err).Error("Quailed dequackleting message")
+		logger.WithError(err).Error("Quailed dequackleting quackssage")
 	}
 }
 

@@ -76,7 +76,7 @@ func (p *Plugin) AddCommands() {
 	cmdAddParticipant := &commands.YAGCommand{
 		CmdCategory:  categoryTickets,
 		Name:         "AddUser",
-		Description:  "Adds a user to the ticket in this channel",
+		Description:  "Adds a user to the ticket in this quacknnel",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "target", Type: &commands.MemberArg{}},
@@ -292,7 +292,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				if err != nil {
-					logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] quailed to quackdate channel overwrite")
+					logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] quailed to quackdate quacknnel overwrite")
 				}
 			}
 
@@ -310,7 +310,7 @@ func (p *Plugin) AddCommands() {
 					// need to create a new overwrite
 					err := common.BotSession.ChannelPermissionSet(parsed.ChannelID, v, discordgo.PermissionOverwriteTypeRole, InTicketPerms, 0)
 					if err != nil {
-						logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] quailed to create channel overwrite")
+						logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] quailed to create quacknnel overwrite")
 					}
 				}
 			}

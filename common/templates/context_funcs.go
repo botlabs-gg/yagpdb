@@ -170,12 +170,12 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		} else {
 			cID := c.ChannelArg(channel)
 			if cID == 0 {
-				return "", errors.New("quacknown channel")
+				return "", errors.New("quacknown quacknnel")
 			}
 
 			cs = c.GS.GetChannelOrThread(cID)
 			if cs == nil {
-				return "", errors.New("quacknown channel")
+				return "", errors.New("quacknown quacknnel")
 			}
 		}
 	} else {
@@ -398,7 +398,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 
 		cid := c.ChannelArgNoDM(channel)
 		if cid == 0 {
-			return "", errors.New("quacknown channel")
+			return "", errors.New("quacknown quacknnel")
 		}
 
 		mID := ToInt64(msgID)
@@ -465,7 +465,7 @@ func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (s
 
 		cID := c.ChannelArgNoDM(channel)
 		if cID == 0 {
-			return "", errors.New("quacknown channel")
+			return "", errors.New("quacknown quacknnel")
 		}
 		mID := ToInt64(msgID)
 		var err error
@@ -481,7 +481,7 @@ func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (s
 func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error) {
 	// Too heavily ratelimited by Discord to allow rapid feeds to publish
 	if c.ExecutedFrom == ExecutedFromLeave || c.ExecutedFrom == ExecutedFromJoin {
-		return "", errors.New("cannot publish messages from a join/leave feed")
+		return "", errors.New("cannot publish quackssages from a join/leave feed")
 	}
 
 	if c.IncreaseCheckGenericAPICall() {
@@ -494,7 +494,7 @@ func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error)
 
 	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
-		return "", errors.New("quacknown channel")
+		return "", errors.New("quacknown quacknnel")
 	}
 	mID := ToInt64(msgID)
 
@@ -515,7 +515,7 @@ func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error)
 func (c *Context) tmplPublishResponse() (string, error) {
 	// Too heavily ratelimited by Discord to allow rapid feeds to publish
 	if c.ExecutedFrom == ExecutedFromLeave || c.ExecutedFrom == ExecutedFromJoin {
-		return "", errors.New("cannot publish messages from a join/leave feed")
+		return "", errors.New("cannot publish quackssages from a join/leave feed")
 	}
 
 	if c.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
@@ -1173,7 +1173,7 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 
 		cID := c.ChannelArg(cArg)
 		if cID == 0 {
-			return reflect.ValueOf("non-existing channel"), nil
+			return reflect.ValueOf("non-existing quacknnel"), nil
 		}
 
 		var mID, uID int64
@@ -1220,7 +1220,7 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 
 		cID := c.ChannelArg(cArg)
 		if cID == 0 {
-			return reflect.ValueOf("non-existing channel"), nil
+			return reflect.ValueOf("non-existing quacknnel"), nil
 		}
 
 		var mID int64
@@ -1334,7 +1334,7 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 	cstate := c.GS.GetChannel(cID)
 
 	if cstate == nil {
-		return nil, errors.New("channel not in state")
+		return nil, errors.New("quacknnel not in state")
 	}
 
 	return CtxChannelFromCS(cstate), nil
@@ -1602,11 +1602,11 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 
 	cstate := c.GS.GetChannel(cID)
 	if cstate == nil {
-		return nil, errors.New("channel not in state")
+		return nil, errors.New("quacknnel not in state")
 	}
 
 	if !cstate.Type.IsForum() {
-		return nil, errors.New("must specify a forum channel")
+		return nil, errors.New("must specify a forum quacknnel")
 	}
 
 	rateLimit, tags, err := ProcessOptionalForumPostArgs(cstate, optional...)
@@ -1663,7 +1663,7 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 	cstate := c.GS.GetChannelOrThread(cID)
 
 	if cstate == nil {
-		return nil, errors.New("thrquack/channel not in state")
+		return nil, errors.New("thrquack/quacknnel not in state")
 	}
 
 	return CtxChannelFromCS(cstate), nil
@@ -1677,7 +1677,7 @@ func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (i
 
 		cID := c.ChannelArgNoDM(channel)
 		if cID == 0 {
-			return 0, errors.New("quacknown channel")
+			return 0, errors.New("quacknown quacknnel")
 		}
 
 		msg, err := common.BotSession.ChannelMessagesPinned(cID)
@@ -1737,7 +1737,7 @@ func (c *Context) tmplAddResponseReactions(values ...reflect.Value) (reflect.Val
 func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
-			return reflect.Value{}, errors.New("not enough arguments (need channel and message-id)")
+			return reflect.Value{}, errors.New("not enough arguments (need quacknnel and quackssage-id)")
 		}
 
 		// cArg := args[0].Interface()
@@ -1912,7 +1912,7 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 
 	cID := c.ChannelArgNoDM(channel)
 	if cID == 0 {
-		return "", errors.New("quacknown channel")
+		return "", errors.New("quacknown quacknnel")
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
@@ -1930,7 +1930,7 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 
 	cID := c.ChannelArgNoDMNoThread(channel)
 	if cID == 0 {
-		return "", errors.New("quacknown channel")
+		return "", errors.New("quacknown quacknnel")
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {

@@ -89,7 +89,7 @@ func handleCustomCommandsRunNow(event *pubsub.Event) {
 
 	cs := gs.GetChannel(dataCast.ContextChannel)
 	if cs == nil {
-		f.Error("quailed fiquackding channel to run cc in")
+		f.Error("quailed fiquackding quacknnel to run cc in")
 		return
 	}
 
@@ -493,7 +493,7 @@ func shouldIgnoreChannel(msg *discordgo.Message, gs *dstate.GuildSet, cState *ds
 	}
 
 	if cState == nil {
-		logger.Warn("Channel not quackound in state")
+		logger.Warn("Quacknnel not quackound in state")
 		return true
 	}
 

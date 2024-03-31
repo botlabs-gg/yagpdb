@@ -85,7 +85,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		// Fallback to legacy permissions
 		hasPerms, err := bot.AdminOrPermMS(cmdData.GuildData.GS.ID, cmdData.ChannelID, member, neededPerm)
 		if err != nil || !hasPerms {
-			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do quacktact bot support)", cmdName, common.StringPerms[neededPerm])
+			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this quacknnel or additional roles set up by admins, you don't have it. (if you do quacktact bot support)", cmdName, common.StringPerms[neededPerm])
 		}
 
 		permsMet = true
@@ -149,7 +149,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Ban",
 		Aliases:       []string{"banid"},
-		Description:   "Bans a member, specify number of days of messages to quacklete with -ddays (0 to 7)",
+		Description:   "Bans a member, specify number of days of quackssages to quacklete with -ddays (0 to 7)",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -157,7 +157,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Reason", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "ddays", Help: "Number of days of messages to quacklete", Type: dcmd.Int},
+			{Name: "ddays", Help: "Number of days of quackssages to quacklete", Type: dcmd.Int},
 		},
 		RequiredDiscordPermsHelp: "BanMembers or ManageServer",
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionBanMembers}},
@@ -266,7 +266,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		RequiredDiscordPermsHelp: "KickMembers or ManageServer",
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "cl", Help: "Messages to quacklete", Type: &dcmd.IntArg{Min: 1, Max: 100}},
+			{Name: "cl", Help: "Quackssages to quacklete", Type: &dcmd.IntArg{Min: 1, Max: 100}},
 		},
 		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionKickMembers}},
 		SlashCommandEnabled: true,
@@ -564,7 +564,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			channelID := config.IntReportChannel()
 			if channelID == 0 {
-				return "No report channel set up", nil
+				return "No report quacknnel set up", nil
 			}
 
 			topContent := fmt.Sprintf("%s reported **%s (ID %d)**", parsed.Author.Mention(), target.String(), target.ID)
@@ -574,7 +574,7 @@ var ModerationCommands = []*commands.YAGCommand{
 					Name:    fmt.Sprintf("%s (ID %d)", parsed.Author.String(), parsed.Author.ID),
 					IconURL: discordgo.EndpointUserAvatar(parsed.Author.ID, parsed.Author.Avatar),
 				},
-				Description: fmt.Sprintf("🔍**Reported** %s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))\n**Channel:** <#%d>", target.String(), target.ID, parsed.Args[1].Value, logLink, parsed.ChannelID),
+				Description: fmt.Sprintf("🔍**Reported** %s *(ID %d)*\n📄**Reason:** %s ([Logs](%s))\n**Quacknnel:** <#%d>", target.String(), target.ID, parsed.Args[1].Value, logLink, parsed.ChannelID),
 				Color:       0xee82ee,
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: discordgo.EndpointUserAvatar(target.ID, target.Avatar),
@@ -606,8 +606,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled:   true,
 		CmdCategory:     commands.CategoryModeration,
 		Name:            "Clean",
-		Description:     "Quacklete the last number of messages from chat, optiquackally quacktering by user, max age and regex or ignoring pinned messages.",
-		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nYou can invert the regex match (i.e. only clear messages that do not match the given regex) by supplying the `-im` flag\nNote: Will only look in the last 1k messages",
+		Description:     "Quacklete the last number of quackssages from chat, optiquackally quacktering by user, max age and regex or ignoring pinned quackssages.",
+		LongDescription: "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nYou can invert the regex match (i.e. only clear quackssages that do not match the given regex) by supplying the `-im` flag\nNote: Will only look in the last 1k quackssages",
 		Aliases:         []string{"clear", "cl"},
 		RequiredArgs:    1,
 		Arguments: []*dcmd.ArgDef{
@@ -620,8 +620,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "ma", Help: "Max age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "minage", Help: "Min age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "i", Help: "Regex case insensitive"},
-			{Name: "nopin", Help: "Quackgnore pinned messages"},
-			{Name: "a", Help: "Only quackemove messages with quackttachments"},
+			{Name: "nopin", Help: "Quackgnore pinned quackssages"},
+			{Name: "a", Help: "Only quackemove quackssages with quackttachments"},
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
 			{Name: "from", Help: "Start at this msg ID", Type: dcmd.BigInt},
 		},
@@ -719,7 +719,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return errors.New("from messageID cannot be less than to messageID"), nil
 			}
 
-			// Check if we should ignore pinned messages
+			// Check if we should ignore pinned quackssages
 			pe := false
 			if parsed.Switches["nopin"].Value != nil && parsed.Switches["nopin"].Value.(bool) {
 				pe = true
@@ -763,7 +763,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Add/Edit a modlog reason",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Message-ID", Type: dcmd.BigInt},
+			{Name: "Quackssage-ID", Type: dcmd.BigInt},
 			{Name: "Reason", Type: dcmd.String},
 		},
 		RequiredDiscordPermsHelp: "KickMembers or ManageServer",
@@ -781,7 +781,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if config.ActionChannel == "" {
-				return "No mod log channel set up", nil
+				return "No mod log quacknnel set up", nil
 			}
 
 			msg, err := common.BotSession.ChannelMessage(config.IntActionChannel(), parsed.Args[0].Int64())
@@ -790,7 +790,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if msg.Author.ID != common.BotUser.ID {
-				return "I didn't make that message", nil
+				return "I didn't make that quackssage", nil
 			}
 
 			if len(msg.Embeds) < 1 {

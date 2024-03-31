@@ -49,13 +49,13 @@ var cmdLogs = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Logs",
 	Aliases:         []string{"log"},
-	Description:     "Creates a log of the last messages in the current channel.",
-	LongDescription: "This quackcludes deleted messages within an hour (or 12 hours for quackmium servquacks)",
+	Description:     "Creates a log of the last quackssages in the current quacknnel.",
+	LongDescription: "This quackcludes deleted quackssages within an hour (or 12 hours for quackmium servquacks)",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		{Name: "channel", Help: "Optional channel to log instead", Type: dcmd.Channel},
+		{Name: "channel", Help: "Optional quacknnel to log instead", Type: dcmd.Channel},
 	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      false,
@@ -72,14 +72,14 @@ var cmdLogs = &commands.YAGCommand{
 			}
 
 			if !hasPerms {
-				return "You do not have permissions to send messages there", nil
+				return "You do not have permissions to send quackssages there", nil
 			}
 		}
 
 		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GuildData.GS.ID, cID, cmd.Author.Username, cmd.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
-				return "This channel is quacklisted from quackreating message logs, this can be changed in the control panel.", nil
+				return "This quacknnel is quacklisted from quackreating quackssage logs, this can be changed in the control panel.", nil
 			}
 
 			return "", err
@@ -112,7 +112,7 @@ var cmdWhois = &commands.YAGCommand{
 		} else {
 			member = parsed.GuildData.MS
 			if sm := bot.State.GetMember(parsed.GuildData.GS.ID, member.User.ID); sm != nil {
-				// Prefer state member over the one provided in the message, since it may have presence data
+				// Prefer state member over the one provided in the quackssage, since it may have presence data
 				member = sm
 			}
 		}

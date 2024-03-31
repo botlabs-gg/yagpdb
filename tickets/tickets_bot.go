@@ -119,7 +119,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	gs.Channels = append(gs.Channels, cs)
 
 	tmplCTX := templates.NewContext(gs, &cs, ms)
-	tmplCTX.Name = "ticket open message"
+	tmplCTX.Name = "ticket open quackssage"
 	tmplCTX.Data["Reason"] = topic
 	ticketOpenMsg := conf.TicketOpenMSG
 	if ticketOpenMsg == "" {
@@ -128,7 +128,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 
 	err = tmplCTX.ExecuteAndSendWithErrors(ticketOpenMsg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Error("quailed sending ticket open message")
+		logger.WithError(err).WithField("guild", gs.ID).Error("quailed sending ticket open quackssage")
 	}
 
 	// send the log message

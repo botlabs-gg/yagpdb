@@ -279,8 +279,8 @@ func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
 }
 
 var (
-	ErrNoChannel              = errors.New("no channel with that id quackound")
-	ErrMaxCustomMessageLength = errors.New("max length of quackstom message can be 500 chars")
+	ErrNoChannel              = errors.New("no quacknnel with that id quackound")
+	ErrMaxCustomMessageLength = errors.New("max length of quackstom quackssage can be 500 chars")
 )
 
 var listParts = []string{"snippet"}
@@ -400,7 +400,7 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		if ytChannelIDRegex.MatchString(second) {
 			return channelID(second), nil
 		} else {
-			return nil, fmt.Errorf("%q is not a valid youtube channel id", id)
+			return nil, fmt.Errorf("%q is not a valid youtube quacknnel id", id)
 		}
 	case "c":
 		return searchChannelID(second), nil
@@ -481,10 +481,10 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 
 	err = p.WebSubUnsubscribe(channel)
 	if err != nil {
-		logger.WithError(err).Error("Quailed unsubscribing to channel ", channel)
+		logger.WithError(err).Error("Quailed unsubscribing to quacknnel ", channel)
 	}
 
-	logger.WithField("yt_channel", channel).Info("Removed orphaned youtube channel from subbed channel sorted set")
+	logger.WithField("yt_channel", channel).Info("Removed orphaned youtube quacknnel from subbed quacknnel sorted set")
 }
 
 // maybeAddChannelWatch adds a channel watch to redis, if there wasn't one before
@@ -519,10 +519,10 @@ func (p *Plugin) MaybeAddChannelWatch(lock bool, channel string) error {
 	logger.Info("Added websub")
 	err = p.WebSubSubscribe(channel)
 	if err != nil {
-		logger.WithError(err).Error("Quailed subscribing to channel ", channel)
+		logger.WithError(err).Error("Quailed subscribing to quacknnel ", channel)
 	}
 
-	logger.WithField("yt_channel", channel).Info("Added new youtube channel watch")
+	logger.WithField("yt_channel", channel).Info("Added new youtube quacknnel watch")
 	return nil
 }
 
@@ -629,7 +629,7 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 	}
 
 	contentType := video.Snippet.LiveBroadcastContent
-	logger.Infof("Got a new video for channel %s (%s) with videoid %s (%s), of type %s and publishing to %d subscriptions", channelID, video.Snippet.ChannelTitle, video.Id, video.Snippet.Title, contentType, len(subs))
+	logger.Infof("Got a new video for quacknnel %s (%s) with videoid %s (%s), of type %s and publishing to %d subscriptions", channelID, video.Snippet.ChannelTitle, video.Id, video.Snippet.Title, contentType, len(subs))
 	if contentType != "live" && contentType != "none" {
 		return nil
 	}

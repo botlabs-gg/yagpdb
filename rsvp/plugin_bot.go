@@ -66,7 +66,7 @@ func (p *Plugin) AddCommands() {
 			for _, v := range p.setupSessions {
 				if v.SetupChannel == parsed.ChannelID {
 					p.setupSessionsMU.Unlock()
-					return "Already a setup process going on in this channel, if you want to exit it type `exit`, admins can force cancel setups with `events stopsetup`", nil
+					return "Already a setup process going on in this quacknnel, if you want to exit it type `exit`, admins can force cancel setups with `events stopsetup`", nil
 				}
 			}
 			var msgID int64
@@ -92,7 +92,7 @@ func (p *Plugin) AddCommands() {
 			p.setupSessionsMU.Unlock()
 
 			setupSession.mu.Lock()
-			setupSession.sendInitialMessage(parsed, "Started interactive setup:\nWhat channel should i put the event embed in? (type `this` or `here` for the current one)")
+			setupSession.sendInitialMessage(parsed, "Started interactive setup:\nWhat quacknnel should i put the event embed in? (type `this` or `here` for the current one)")
 			setupSession.mu.Unlock()
 
 			return "", nil
@@ -245,7 +245,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         catEvents,
 		Name:                "StopSetup",
 		Aliases:             []string{"cancelsetup"},
-		Description:         "Force cancels the current setup session in this channel",
+		Description:         "Force cancels the current setup session in this quacknnel",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -255,12 +255,12 @@ func (p *Plugin) AddCommands() {
 				if v.SetupChannel == parsed.ChannelID {
 					p.setupSessionsMU.Unlock()
 					go v.remove()
-					return "Canceled the current setup in this channel", nil
+					return "Canceled the current setup in this quacknnel", nil
 				}
 			}
 			p.setupSessionsMU.Unlock()
 
-			return "No ongoing setup in the current channel.", nil
+			return "No ongoing setup in the current quacknnel.", nil
 		},
 	}
 

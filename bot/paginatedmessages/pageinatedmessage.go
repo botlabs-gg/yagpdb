@@ -24,7 +24,7 @@ type Plugin struct{}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Paginated Messages",
+		Name:     "Paginated Quackssages",
 		SysName:  "paginatedmessages",
 		Category: common.PluginCategoryMisc,
 	}

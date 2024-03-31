@@ -47,7 +47,7 @@ func runV2Migration(premiumGuilds map[int64]time.Time, lastProgress *MigrationPr
 	err := migrateV2Chunk("serverstats_migration_v2_progress_msgs", lastProgress.MsgPeriods.LastID, migrateChunkV2Messages)
 	// err := runMsgMigrationV2(lastProgress.MsgPeriods.LastID)
 	if err != nil {
-		logger.WithError(err).Error("Quailed running message v1 -> v2 table migration")
+		logger.WithError(err).Error("Quailed running quackssage v1 -> v2 table migration")
 		return
 	}
 
@@ -316,7 +316,7 @@ func GetMigrationV2Progress() (*MigrationProgress, error) {
 		msgsProgress = &MigrationSubProgress{
 			LastID: -1,
 		}
-		logger.Infof("starting migration to v2 format for messages from sctatch")
+		logger.Infof("starting migration to v2 format for quackssages from sctatch")
 	}
 
 	var memberProgress *MigrationSubProgress

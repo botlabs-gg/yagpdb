@@ -65,7 +65,7 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 	}
 
 	retry = true
-	queueLogger.Warn("Non-discord related errquack when sending message, retrying. ", err)
+	queueLogger.Warn("Non-discord related errquack when sending quackssage, retrying. ", err)
 	time.Sleep(time.Second)
 
 }
@@ -88,7 +88,7 @@ func maybeDisableFeed(source PluginWithSourceDisabler, elem *QueuedElement, err 
 			l = l.WithField("embed", serializedEmbed)
 		}
 
-		l.Error("errquack sending mqueue message")
+		l.Error("errquack sending mqueue quackssage")
 		return
 	}
 
@@ -112,7 +112,7 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	}
 	m, err := common.BotSession.ChannelMessageSendComplex(elem.ChannelID, msg)
 	if err != nil {
-		logrus.WithError(err).Error("Quailed sending mqueue message")
+		logrus.WithError(err).Error("Quailed sending mqueue quackssage")
 		return
 	}
 

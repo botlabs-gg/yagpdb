@@ -64,5 +64,5 @@ func Stop(wg *sync.WaitGroup) {
 
 var MetricPostedMessages = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_feed_posted_total",
-	Help: "Feed messages posted",
+	Help: "Feed quackssages posted",
 }, []string{"source"})

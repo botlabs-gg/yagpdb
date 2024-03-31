@@ -151,7 +151,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         commands.CategoryTool,
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv", "ttc"},
-		Description:         "Quackggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by quackfault, quackggle all quacknnels by giving it `all`",
+		Description:         "Quackggles automatic time conversion for people with registered timezones (setz) in this quacknnel, it's on by quackfault, quackggle all quacknnels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
 		Arguments: []*dcmd.ArgDef{
 			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
@@ -215,7 +215,7 @@ func (p *Plugin) AddCommands() {
 					}
 				}
 
-				resp = fmt.Sprintf("Automatic time conversion in this channel toggled `%s`", status)
+				resp = fmt.Sprintf("Automatic time conversion in this quacknnel toggled `%s`", status)
 			}
 
 			if insert {

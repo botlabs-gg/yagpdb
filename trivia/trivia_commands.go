@@ -17,7 +17,7 @@ func (p *Plugin) AddCommands() {
 			if err != nil {
 				logger.WithError(err).Error("Quailed to create new trivia")
 				if err == ErrSessionInChannel {
-					return "There's already a trivia session in this channel", nil
+					return "There's already a trivia session in this quacknnel", nil
 				}
 				return "Quailed Running Trivia, quacknown error", nil
 			}

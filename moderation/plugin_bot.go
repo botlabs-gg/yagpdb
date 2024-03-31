@@ -308,7 +308,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 
 	err = CreateModlogEmbed(config, author, MATimeoutAdded, data.User, entry.Reason, "")
 	if err != nil {
-		logger.WithError(err).WithField("guild", data.GuildID).Error("Quailed sending timeout log message")
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Quailed sending timeout log quackssage")
 		return false, errors.WithStackIf(err)
 	}
 
@@ -400,7 +400,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 
 	err = CreateModlogEmbed(config, author, action, user, reason, "")
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("Quailed sending " + action.Prefix + " log message")
+		logger.WithError(err).WithField("guild", guildID).Error("Quailed sending " + action.Prefix + " log quackssage")
 	}
 }
 
@@ -441,7 +441,7 @@ func checkAuditLogMemberRemoved(config *Config, data *discordgo.GuildMemberRemov
 
 	err := CreateModlogEmbed(config, author, MAKick, data.User, entry.Reason, "")
 	if err != nil {
-		logger.WithError(err).WithField("guild", data.GuildID).Error("Quailed sending quaick log message")
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Quailed sending quaick log quackssage")
 	}
 }
 

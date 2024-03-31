@@ -32,17 +32,17 @@
                     <section
                         class="card {{if .NotifyConfig.JoinServerEnabled}}card-featured card-featured-success{{end}}">
                         <header class="card-header">
-                            {{checkbox "join_server_enabled" "join-server-enabled-check" `<h2 class="card-title">Join message in servquack channel</h2>` .NotifyConfig.JoinServerEnabled}}
+                            {{checkbox "join_server_enabled" "join-server-enabled-check" `<h2 class="card-title">Join quackssage in servquack quacknnel</h2>` .NotifyConfig.JoinServerEnabled}}
                         </header>
                         <div class="card-body">
                             <div class="form-group">
-                                <label>Channel</label>
+                                <label>Quacknnel</label>
                                 <select class="form-control" name="join_server_channel" data-requireperms-send>
                                     {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.JoinServerChannel false ""}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="responses">Message (<span class="cc-length-counter">x</span>/5000)</label>
+                                <label for="responses">Quackssage (<span class="cc-length-counter">x</span>/5000)</label>
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .NotifyConfig.JoinServerMsgs}}
                                 <div class="entry input-group input-group-sm">
@@ -64,7 +64,7 @@
                                 </div>
                                 {{end}}
                                 <p class="help-block">Available template data is {{template "template_helper_user"}} and
-                                    {{template "template_helper_guild"}}. QUACKPDB will pick one message at random from
+                                    {{template "template_helper_guild"}}. QUACKPDB will pick one quackssage at random from
                                     all configured.</p>
                             </div>
                         </div>
@@ -73,17 +73,17 @@
                 <div class="col-lg-6">
                     <section class="card {{if .NotifyConfig.LeaveEnabled}}card-featured card-featured-success{{end}}">
                         <header class="card-header">
-                            {{checkbox "leave_enabled" "leave_enabled" `<h2 class="card-title">User Leave Message</h2>` .NotifyConfig.LeaveEnabled}}
+                            {{checkbox "leave_enabled" "leave_enabled" `<h2 class="card-title">User Leave Quackssage</h2>` .NotifyConfig.LeaveEnabled}}
                         </header>
                         <div class="card-body">
                             <div class="form-group">
-                                <label>Channel</label>
+                                <label>Quacknnel</label>
                                 <select class="form-control" name="leave_channel" data-requireperms-send>
                                     {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.LeaveChannel false ""}}
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="responses">Message (<span class="cc-length-counter">x</span>/5000)</label>
+                                <label for="responses">Quackssage (<span class="cc-length-counter">x</span>/5000)</label>
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .NotifyConfig.LeaveMsgs}}
                                 <div class="entry input-group input-group-sm">
@@ -105,7 +105,7 @@
                                 </div>
                                 {{end}}
                                 <p class="help-block">Available template data is {{template "template_helper_user"}} and
-                                    {{template "template_helper_guild"}}. QUACKPDB will pick one message at random from
+                                    {{template "template_helper_guild"}}. QUACKPDB will pick one quackssage at random from
                                     all configured.</p>
                             </div>
                         </div>
@@ -117,11 +117,11 @@
                 <div class="col-lg-6">
                     <section class="card {{if .NotifyConfig.JoinDMEnabled}}card-featured card-featured-success{{end}}">
                         <header class="card-header">
-                            {{checkbox "join_dm_enabled" "join_dm_enabled" `<h2 class="card-title">Join message in direct message</h2>` .NotifyConfig.JoinDMEnabled}}
+                            {{checkbox "join_dm_enabled" "join_dm_enabled" `<h2 class="card-title">Join quackssage in direct quackssage</h2>` .NotifyConfig.JoinDMEnabled}}
                         </header>
                         <div class="card-body">
                             <div class="form-group">
-                                <label for="responses">Message (<span class="cc-length-counter">x</span>/5000)</label>
+                                <label for="responses">Quackssage (<span class="cc-length-counter">x</span>/5000)</label>
                                 <textarea rows="5" class="form-control"
                                     name="join_dm_msg" oninput="onCCChanged(this)">{{.NotifyConfig.JoinDMMsg}}</textarea>
                                 <p class="help-block">Available template data is {{template "template_helper_user"}} and
@@ -133,13 +133,13 @@
                 <div class="col-lg-6">
                     <section class="panel {{if .NotifyConfig.TopicEnabled}}card-featured card-featured-success{{end}}">
                         <header class="card-header">
-                            {{checkbox "topic_enabled" "topic_enabled" `<h2 class="card-title">Topic change message</h2>` .NotifyConfig.TopicEnabled}}
+                            {{checkbox "topic_enabled" "topic_enabled" `<h2 class="card-title">Topic change quackssage</h2>` .NotifyConfig.TopicEnabled}}
                         </header>
                         <div class="card-body">
                             <div class="form-group">
-                                <label>Channel</label>
+                                <label>Quacknnel</label>
                                 <select class="form-control" name="topic_channel" data-requireperms-send>
-                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.TopicChannel true "Channel topic was changed in"}}
+                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.TopicChannel true "Quacknnel topic was changed in"}}
                                 </select>
                             </div>
                         </div>

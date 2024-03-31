@@ -120,7 +120,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	format := `<ul>
 	<li>Streaming status: %s</li>
 	<li>Streaming role: <code>%s</code>%s</li>
-	<li>Streaming message: <code>#%s</code>%s</li>
+	<li>Streaming quackssage: <code>#%s</code>%s</li>
 </ul>`
 
 	status := web.EnabledDisabledSpanStatus(config.Enabled)

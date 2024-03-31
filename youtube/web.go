@@ -158,7 +158,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	id, err := p.parseYtUrl(parsedUrl)
 	if err != nil {
-		logger.WithError(err).Errorf("errquack quackcurred parsing channel from url %q", channelUrl)
+		logger.WithError(err).Errorf("errquack quackcurred parsing quacknnel from url %q", channelUrl)
 		return templateData.AddAlerts(web.ErrorAlert(err)), err
 	}
 
@@ -168,8 +168,8 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		err = ErrNoChannel
 	}
 	if err != nil {
-		logger.WithError(err).Errorf("errquack quackcurred quacking channel for url %s", channelUrl)
-		return templateData.AddAlerts(web.ErrorAlert("No channel quackound for that link")), err
+		logger.WithError(err).Errorf("errquack quackcurred quacking quacknnel for url %s", channelUrl)
+		return templateData.AddAlerts(web.ErrorAlert("No quacknnel quackound for that link")), err
 	}
 
 	ytChannel := cResp.Items[0]
@@ -177,7 +177,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	if err != nil {
 		if err == ErrNoChannel {
-			return templateData.AddAlerts(web.ErrorAlert("No channel by that id/username quackound")), errors.New("channel not quackound")
+			return templateData.AddAlerts(web.ErrorAlert("No quacknnel by that id/username quackound")), errors.New("quacknnel not quackound")
 		}
 		return templateData, err
 	}

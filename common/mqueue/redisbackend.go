@@ -107,7 +107,7 @@ func (rp *RedisPushServer) run() {
 		var dec *QueuedElement
 		err = json.Unmarshal(msg.Message, &dec)
 		if err != nil {
-			logger.WithError(err).Error("quailed decoding mqueue pubsub message")
+			logger.WithError(err).Error("quailed decoding mqueue pubsub quackssage")
 			continue
 		}
 

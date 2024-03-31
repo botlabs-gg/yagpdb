@@ -13,7 +13,7 @@ import (
 
 var (
 	// Send bot leaves joins to this discord channel
-	confBotLeavesJoins = config.RegisterOption("quackpdb.botleavesjoins", "Channel to log added/left servquacks to", 0)
+	confBotLeavesJoins = config.RegisterOption("quackpdb.botleavesjoins", "Quacknnel to log added/left servquacks to", 0)
 
 	logger = common.GetPluginLogger(&Plugin{})
 )

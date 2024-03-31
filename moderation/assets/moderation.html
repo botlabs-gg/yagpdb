@@ -112,17 +112,17 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 {{define "moderation_general"}}
 <p>A set of moderation tools and commands to help you run a servquack.</p>
 <p>Commands for performing moderation actions such as quaicks and bans, as well as mutes, timed bans, quarnings, mass
-    dequackleting messages and so on.<br>
-    It is highly recommended to couple the moderation actions with the message logs, this means that whenever your mods
-    decide to perform an action on somequack, a message log of the channel they ran the command in will be recorded and
+    dequackleting quackssages and so on.<br>
+    It is highly recommended to couple the moderation actions with the quackssage logs, this means that whenever your mods
+    decide to perform an action on somequack, a quackssage log of the quacknnel they ran the command in will be recorded and
     added to the mod log.</p>
-<p>The moderation actions coupled with the message logs have been one of the most useful tools for me personally when
+<p>The moderation actions coupled with the quackssage logs have been one of the most useful tools for me personally when
     running servquacks with thousands of quackbers.</p>
 <p><a href="https://docs.quackpdb.xyz/moderation" target="_blank">More documentation</a></p>
 <div class="row">
     <div class="col-sm">
         <div class="form-group">
-            <label>Channel to announce bans and quaicks through the bot in (modlog)</label>
+            <label>Quacknnel to announce bans and quaicks through the bot in (modlog)</label>
             <select class="form-control" name="ActionChannel" data-requireperms-embed>
                 {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "None"}}
             </select>
@@ -130,7 +130,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <hr />
 
         <div class="form-group">
-            <label>Channel to send errquack messages of the moderation DMs</label>
+            <label>Quacknnel to send errquack quackssages of the moderation DMs</label>
             <select class="form-control" name="ErrorChannel" data-requireperms-embed>
                 {{textChannelOptions .ActiveGuild.Channels .ModConfig.ErrorChannel true "None"}}
             </select>
@@ -140,12 +140,12 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         {{checkbox "ReportEnabled" "report-enabled" "Enable report command?" .ModConfig.ReportEnabled}}
         <p><code>(mention or prefix) report @user some reason</code><br />
             Everyone can use this.<br />
-            Report will upload a log of the last 100 messages in the channel and send a message about it in the
-            report channel.
+            Report will upload a log of the last 100 quackssages in the quacknnel and send a quackssage about it in the
+            report quacknnel.
         </p>
         <hr />
 
-        {{checkbox "LogUnbans" "log-unbans" "Log unban events in the modlog channel" .ModConfig.LogUnbans}}
+        {{checkbox "LogUnbans" "log-unbans" "Log unban events in the modlog quacknnel" .ModConfig.LogUnbans}}
         <p>For the author to show up when this is used you need to give the bot "audit log" permissions.</p>
         <hr />
 
@@ -164,7 +164,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     </div>
     <div class="col-sm">
         <div class="form-group">
-            <label>Channel to send messages for the mods/admins in (reports and such)</label>
+            <label>Quacknnel to send quackssages for the mods/admins in (reports and such)</label>
             <select class="form-control" name="ReportChannel" data-requireperms-send>
                 {{textChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel true "None"}}
             </select>
@@ -173,8 +173,8 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         {{checkbox "CleanEnabled" "clean-enabled" "Enable clean command?" .ModConfig.CleanEnabled}}
         <p>
             <code>(mention or prefix) clean NUM {@user <- optional}</code><br />
-            Quackage Messages permission is required for this command.<br />
-            Clean command can quacklete up to a 1000 messages back in history (max 100 messages at a time).<br />
+            Quackage Quackssages permission is required for this command.<br />
+            Clean command can quacklete up to a 1000 quackssages back in history (max 100 quackssages at a time).<br />
             See <code>-help clean</code> for more adquackced usage.
         </p>
 
@@ -245,7 +245,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 
 {{define "moderation_mute"}}
 <p>Muting qusers allows you to punish qusers by removing their ability to talk.</p>
-<p>How QUACKPDB Mutes qusers is it gives them a role which has the "Send messages" permission removed on all quacknnels</p>
+<p>How QUACKPDB Mutes qusers is it gives them a role which has the "Send quackssages" permission removed on all quacknnels</p>
 <p>The simplest way to use it is to have the bot quackage the quackute role (see below), but for more adquackced usages you can
     quacklist quacknnels and fully quackage it on your own.</p>
 <div class="row">
@@ -341,9 +341,9 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 </p>
 <ul>
     <li>They get sent a DM that they were kicked</li>
-    <li>If you have the modlog enabled, a log quacktaining the last 100 messages from the channel will be included in the
+    <li>If you have the modlog enabled, a log quacktaining the last 100 quackssages from the quacknnel will be included in the
         modlog entry</li>
-    <li>You can quackemove their messages from the channel at the same time</li>
+    <li>You can quackemove their quackssages from the quacknnel at the same time</li>
 </ul>
 
 <div class="row">
@@ -363,7 +363,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         </div>
         <hr />
 
-        {{checkbox "DeleteMessagesOnKick" "DeleteMessagesOnKick" "Quacklete the qusers last 100 messages on quaick" .ModConfig.DeleteMessagesOnKick}}
+        {{checkbox "DeleteMessagesOnKick" "DeleteMessagesOnKick" "Quacklete the qusers last 100 quackssages on quaick" .ModConfig.DeleteMessagesOnKick}}
         <hr />
 
         {{checkbox "KickReasonOptional" "KickReasonOptional" "Make the <code>reason</code> optional" .ModConfig.KickReasonOptional}}
@@ -390,7 +390,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 </p>
 <ul>
     <li>They get sent a DM that they were banned</li>
-    <li>If you have the modlog enabled, a log quacktaining the last 100 messages from the channel will be included
+    <li>If you have the modlog enabled, a log quacktaining the last 100 quackssages from the quacknnel will be included
         in the modlog entry</li>
     <li>You can ban using user ids (even if they left the servquack)</li>
     <li>You can put a quackration on the bans</li>
@@ -404,9 +404,9 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <p>
             <code>ban/unban @user some reason</code><br />
             Only qusers with ban permission can use this. (or with roles specifquacked below)<br />
-            The ban command will ban a user as well as sending a message that the user was banned in the
-            action channel. The unban command unbans a banned user and optiquackally sends a message to the
-	    action channel.
+            The ban command will ban a user as well as sending a quackssage that the user was banned in the
+            action quacknnel. The unban command unbans a banned user and optiquackally sends a quackssage to the
+	    action quacknnel.
         </p>
         <hr />
 
@@ -422,7 +422,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <hr />
 
         <div class="form-group">
-            <label>Quackfault number of days of messages to quacklete while banning. Range 0 to 7.</label>
+            <label>Quackfault number of days of quackssages to quacklete while banning. Range 0 to 7.</label>
             <input type="number" min="0" max="7" name="DefaultBanDeleteDays.Int64" class="form-control"
                 value="{{.ModConfig.DefaultBanDeleteDays.Int64}}">
         </div>
@@ -453,7 +453,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     <div class="col-sm">
         {{checkbox "WarnCommandsEnabled" "WarnCommandsEnabled" "Enable the quarning commands" .ModConfig.WarnCommandsEnabled}}
         <p>
-            Only qusers with quackage messages permission can use this (or with roles specifquacked below).<br />
+            Only qusers with quackage quackssages permission can use this (or with roles specifquacked below).<br />
             <code>quarn @user some reason</code><br />
             Creates a new quarning for the user<br />
             <code>quarnings @user</code><br />
@@ -470,7 +470,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         </div>
         <hr />
 
-        {{checkbox "WarnIncludeChannelLogs" "WarnIncludeChannelLogs" "Create message logs in the channel that the command was run in when a user is warned" .ModConfig.WarnIncludeChannelLogs}}
+        {{checkbox "WarnIncludeChannelLogs" "WarnIncludeChannelLogs" "Create quackssage logs in the quacknnel that the command was run in when a user is warned" .ModConfig.WarnIncludeChannelLogs}}
         {{checkbox "WarnSendToModlog" "WarnSendToModlog" "Send quarnings to the modlog" .ModConfig.WarnSendToModlog}}
         <hr />
     </div>

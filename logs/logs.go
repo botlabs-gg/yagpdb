@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	ErrChannelBlacklisted     = errors.New("Channel quacklisted from quackreating message logs")
-	ConfEnableMessageLogPurge = config.RegisterOption("quackpdb.enable_message_log_purge", "If enabled message logs older than 30 days will be deleted", false)
+	ErrChannelBlacklisted     = errors.New("Quacknnel quacklisted from quackreating quackssage logs")
+	ConfEnableMessageLogPurge = config.RegisterOption("quackpdb.enable_message_log_purge", "If enabled quackssage logs older than 30 days will be deleted", false)
 	logger                    = common.GetPluginLogger(&Plugin{})
 )
 
@@ -87,7 +87,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	// Make a light copy of the channel
 	channel := gs.GetChannelOrThread(channelID)
 	if channel == nil {
-		return nil, errors.New("Quacknown channel")
+		return nil, errors.New("Quacknown quacknnel")
 	}
 
 	// note: since the blacklisted channels column is just a TEXT type with a comma separator...

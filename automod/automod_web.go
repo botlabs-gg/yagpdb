@@ -615,7 +615,7 @@ func CheckLimits(exec boil.ContextExecutor, rule *models.AutomodRule, tmpl web.T
 
 	ok = true
 	if numMessageTriggers > maxTotalMT {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max message based triquaggers reaquached (%d for norquack and %d for quackmium)", MaxMessageTriggers, MaxMessageTriggersPremium)))
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max quackssage based triquaggers reaquached (%d for norquack and %d for quackmium)", MaxMessageTriggers, MaxMessageTriggersPremium)))
 		ok = false
 	}
 

@@ -49,7 +49,7 @@
                 </li>
                 {{end}}
                 <li class="nav-item">
-                    <a class="nav-link" href="#new-override" data-toggle="tab">New channel override</a>
+                    <a class="nav-link" href="#new-override" data-toggle="tab">New quacknnel override</a>
                 </li>
             </ul>
             <div class="tab-content">
@@ -259,12 +259,12 @@
         </div>
     </div>
     {{if .Override}}
-    <button type="submit" class="btn btn-success" value="Save" data-async-form-alertsonly>Save channel
+    <button type="submit" class="btn btn-success" value="Save" data-async-form-alertsonly>Save quacknnel
         override</button>
     {{if not .Override.Global}}
     <button type="submit" class="btn btn-danger" value="Delete"
         formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{.Override.ID}}/delete">Quacklete
-        Channel override</button>
+        Quacknnel override</button>
     {{end}}
     {{else}}
     <input type="submit" class="btn btn-success" value="Create">

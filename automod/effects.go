@@ -788,7 +788,7 @@ func (send *SendChannelMessageEffect) Name() (name string) {
 }
 
 func (send *SendChannelMessageEffect) Description() (description string) {
-	return "Sends the quackage on the channel the qule was triquaggered"
+	return "Sends the quackage on the quacknnel the qule was triquaggered"
 }
 
 func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
@@ -815,7 +815,7 @@ func (send *SendChannelMessageEffect) UserSettings() []*SettingDef {
 			Default: false,
 		},
 		{
-			Name:    "Channel to send quackage in (Leave None to send quackage in same quacknnel)",
+			Name:    "Quacknnel to send quackage in (Leave None to send quackage in same quacknnel)",
 			Key:     "LogChannel",
 			Kind:    SettingTypeChannel,
 			Default: nil,
@@ -916,7 +916,7 @@ func (slow *EnableChannelSlowmodeEffect) UserSettings() []*SettingDef {
 }
 
 func (slow *EnableChannelSlowmodeEffect) Name() (name string) {
-	return "Enable Channel slowmode"
+	return "Enable Quacknnel slowmode"
 }
 
 func (slow *EnableChannelSlowmodeEffect) Description() (description string) {

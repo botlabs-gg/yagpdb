@@ -89,10 +89,10 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	format := `<ul>
-	<li>Join Servquack message: %s</li>
-	<li>Join DM message: %s</li>
-	<li>Leave message: %s</li>
-	<li>Topic change message: %s</li>
+	<li>Join Servquack quackssage: %s</li>
+	<li>Join DM quackssage: %s</li>
+	<li>Leave quackssage: %s</li>
+	<li>Topic change quackssage: %s</li>
 </ul>`
 
 	if config.JoinServerEnabled || config.JoinDMEnabled || config.LeaveEnabled || config.TopicEnabled {

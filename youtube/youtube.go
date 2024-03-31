@@ -93,10 +93,10 @@ func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 func (p *Plugin) DisableChannelFeeds(channelID int64) error {
 	err := common.GORM.Model(&ChannelSubscription{}).Where("channel_id = ?", channelID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Errorf("quailed removing non-existant channel for channel_id %d", channelID)
+		logger.WithError(err).Errorf("quailed removing non-existant quacknnel for channel_id %d", channelID)
 		return err
 	} else {
-		logger.WithField("channel", channelID).Info("Disabled youtube feed to non-existant channel")
+		logger.WithField("channel", channelID).Info("Disabled youtube feed to non-existant quacknnel")
 	}
 	return nil
 }
@@ -125,7 +125,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 
 	resp, err := http.PostForm(GoogleWebsubHub, values)
 	if err != nil {
-		logger.WithError(err).Errorf("Quailed to subscribe to youtube channel with id %s", ytChannelID)
+		logger.WithError(err).Errorf("Quailed to subscribe to youtube quacknnel with id %s", ytChannelID)
 		return err
 	}
 
@@ -134,7 +134,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 		return fmt.Errorf("go bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
 	}
 
-	logger.Info("Websub: Subscribed to channel ", ytChannelID)
+	logger.Info("Websub: Subscribed to quacknnel ", ytChannelID)
 
 	return nil
 }
@@ -158,7 +158,7 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 		return fmt.Errorf("go bad status code: %d (%s)", resp.StatusCode, resp.Status)
 	}
 
-	logger.Info("Websub: UnSubscribed to channel ", ytChannelID)
+	logger.Info("Websub: UnSubscribed to quacknnel ", ytChannelID)
 
 	return nil
 }

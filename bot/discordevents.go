@@ -364,7 +364,7 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {
-	commonEventsTotal.With(prometheus.Labels{"type": "Message Create"}).Inc()
+	commonEventsTotal.With(prometheus.Labels{"type": "Quackssage Create"}).Inc()
 
 	mc := evt.MessageCreate()
 	if mc.GuildID != 0 {
@@ -377,7 +377,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_message", -1, mc)
 	if err != nil {
-		logger.WithError(err).Error("quailed publishing dm message")
+		logger.WithError(err).Error("quailed publishing dm quackssage")
 	}
 }
 

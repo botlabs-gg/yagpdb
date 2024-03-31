@@ -250,7 +250,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		case "file":
 			stringFile := ToString(val)
 			if len(stringFile) > 100000 {
-				return nil, errors.New("file length for send message builder exceeded size limit")
+				return nil, errors.New("file length for send quackssage builder exceeded size limit")
 			}
 			var buf bytes.Buffer
 			buf.WriteString(stringFile)
@@ -275,7 +275,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		case "reply":
 			msgID := ToInt64(val)
 			if msgID <= 0 {
-				return nil, errors.New(fmt.Sprintf("invalid message id '%s' quackvided to reply.", ToString(val)))
+				return nil, errors.New(fmt.Sprintf("invalid quackssage id '%s' quackvided to reply.", ToString(val)))
 			}
 			msg.Reference = &discordgo.MessageReference{
 				MessageID: msgID,
@@ -286,7 +286,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			}
 			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
 		default:
-			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
+			return nil, errors.New(`invalid key "` + key + `" passed to send quackssage builder`)
 		}
 
 	}
@@ -354,7 +354,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			}
 			msg.AllowedMentions = *parsed
 		default:
-			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
+			return nil, errors.New(`invalid key "` + key + `" passed to quackssage edit builder`)
 		}
 
 	}

@@ -8,7 +8,7 @@
 </style>
 <header class="page-header">
     <form action="/manage/{{.ActiveGuild.ID}}/logging/fulldelete2" method="post">
-        <h2>Message logs for {{.ActiveGuild.Name}} #{{.Logs.ChannelName}} <small>(ID: {{.Logs.ChannelID}})</small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h2>
+        <h2>Quackssage logs for {{.ActiveGuild.Name}} #{{.Logs.ChannelName}} <small>(ID: {{.Logs.ChannelID}})</small>{{if .IsAdmin}} <input type="submit" class="btn btn-lg btn-danger" value="Delete" />{{end}}</h2>
         <input type="text" name="ID" class="hidden" value="{{.Logs.ID}}">
     </form>
 </header>
@@ -21,7 +21,7 @@
                 <tr>
                     <th id="time-col">Time (UTC) <i class="fa fa-caret-up"></i></th>
                     <th>Author</th>
-                    <th>Message</th>{{if .IsAdmin}}
+                    <th>Quackssage</th>{{if .IsAdmin}}
                     <th>Actions</th>{{end}}
                 </tr>
             </thead>
@@ -30,11 +30,11 @@
                 {{$IsAdmin := .IsAdmin}}
                 {{$CanViewDeleted := .CanViewDeleted}}
                 {{range $i, $v := .Messages}}
-                <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Message info" data-placement="top"  data-content="Author ID: {{.Model.AuthorID}} Message ID: {{.Model.ID}}">
+                <tr id="log-row-{{$i}}" class="popover-trigger log-row" data-toggle="popover" data-trigger="click" title="Quackssage info" data-placement="top"  data-content="Author ID: {{.Model.AuthorID}} Message ID: {{.Model.ID}}">
                     <td class="text-nowrap">{{.Timestamp}}</td>
                     <td style="{{if .Color}}color: #{{.Color}};{{end}}font-weight: 600;">{{.Model.AuthorUsername}}</td>
                     <td id="msg-cell-{{.Model.ID}}" {{if .Model.Deleted}} class="deleted-message" {{end}}>
-                        {{if .Model.Deleted}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or (not .Model.Deleted) $CanViewDeleted}}{{.Model.Content}}{{else}}This message has been removed from logs. only admins can see it.{{end}}
+                        {{if .Model.Deleted}}<i class="fas fa-trash mr-2"></i>{{end}}{{if or (not .Model.Deleted) $CanViewDeleted}}{{.Model.Content}}{{else}}This quackssage has been removed from logs. only admins can see it.{{end}}
                     </td>{{if $IsAdmin}}
                     <td>{{if not .Model.Deleted}}<button id="msg-button-{{.Model.ID}}" class="btn btn-sm btn-danger" noconfirm onclick="deleteMessage('{{.Model.ID}}')">Quacklete</button>{{end}}</td>{{end}}
                 </tr>
@@ -47,7 +47,7 @@
 <script>
 var logsID = {{.Logs.ID}};
 function deleteMessage(msg){
-    if(!confirm("Are you sure you want to quacklete this message?\nYou should quacklete it in Discord itself to make sure it's gone from all logs.")){
+    if(!confirm("Are you sure you want to quacklete this quackssage?\nYou should quacklete it in Discord itself to make sure it's gone from all logs.")){
         return;
     }
 

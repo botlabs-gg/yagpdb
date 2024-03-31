@@ -17,12 +17,12 @@ var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryTool,
 	Name:                "SimpleEmbed",
 	Aliases:             []string{"se"},
-	Description:         "A more simpler version of CustomEmbed, controlled completely using switches.\nYou can edit existing messages by supplying the `-message` flag.",
+	Description:         "A more simpler version of CustomEmbed, controlled completely using switches.\nYou can edit existing quackssages by supplying the `-message` flag.",
 	RequireDiscordPerms: []int64{discordgo.PermissionManageMessages},
 	ArgSwitches: []*dcmd.ArgDef{
-		{Name: "channel", Help: "Optional channel to send in", Type: dcmd.Channel},
-		{Name: "message", Help: "Optional message ID to edit", Type: dcmd.BigInt},
-		{Name: "content", Help: "Text content for the message", Type: dcmd.String},
+		{Name: "channel", Help: "Optional quacknnel to send in", Type: dcmd.Channel},
+		{Name: "message", Help: "Optional quackssage ID to edit", Type: dcmd.BigInt},
+		{Name: "content", Help: "Text content for the quackssage", Type: dcmd.String},
 
 		{Name: "title", Type: dcmd.String, Default: ""},
 		{Name: "desc", Type: dcmd.String, Help: "Text in the 'description' field"},
@@ -58,7 +58,7 @@ var Command = &commands.YAGCommand{
 			}
 
 			if !hasPerms {
-				return "You do not have permissions to send messages there", nil
+				return "You do not have permissions to send quackssages there", nil
 			}
 		}
 
@@ -71,16 +71,16 @@ var Command = &commands.YAGCommand{
 			}
 
 			if !hasPerms {
-				return "You need the `Quackage Messages` permission to be able to edit messages", nil
+				return "You need the `Quackage Quackssages` permission to be able to edit quackssages", nil
 			}
 
 			msg, err = common.BotSession.ChannelMessage(cID, mID)
 			if err != nil || msg == nil {
-				return "Quailed quacking message to edit, check your channel and message IDs", nil
+				return "Quailed quacking quackssage to edit, check your quacknnel and quackssage IDs", nil
 			}
 
 			if msg.Author.ID != common.BotUser.ID {
-				return "I can only edit messages sent by me", nil
+				return "I can only edit quackssages sent by me", nil
 			}
 		}
 
@@ -170,7 +170,7 @@ var Command = &commands.YAGCommand{
 			}
 
 			if send.Content == "" && len(send.Embeds) == 0 {
-				return "Cannot send an empty message", nil
+				return "Cannot send an empty quackssage", nil
 			}
 
 			_, err := common.BotSession.ChannelMessageSendComplex(cID, send)
@@ -203,7 +203,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		if edit.Content == nil && len(edit.Embeds) == 0 {
-			return "Cannot edit a message to have no content and no embed", nil
+			return "Cannot edit a quackssage to have no content and no embed", nil
 		}
 
 		_, err := common.BotSession.ChannelMessageEditComplex(edit)

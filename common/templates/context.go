@@ -719,7 +719,7 @@ func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySecon
 	if delaySeconds > 10 {
 		err := scheduledevents2.ScheduleDeleteMessages(guildID, channelID, time.Now().Add(time.Second*time.Duration(delaySeconds)), messageID)
 		if err != nil {
-			logger.WithError(err).Error("quailed scheduling message deletion")
+			logger.WithError(err).Error("quailed scheduling quackssage deletion")
 		}
 	} else {
 		go func() {

@@ -215,7 +215,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	channel, err := common.BotSession.UserChannelCreate(ms.User.ID)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackreating user channel")
+		logger.WithError(err).Error("quailed quackreating user quacknnel")
 		return
 	}
 
@@ -227,7 +227,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending verification dm message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending verification dm quackssage")
 	}
 
 	evt := &VerificationEventData{
@@ -474,12 +474,12 @@ func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token 
 	cs := dstate.ChannelStateFromDgo(channel)
 
 	tmplCTX := templates.NewContext(gs, &cs, ms)
-	tmplCTX.Name = "quarn message"
+	tmplCTX.Name = "quarn quackssage"
 	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), gs.ID, ms.User.ID, token)
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending quarning message")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending quarning quackssage")
 	}
 
 	return nil
@@ -531,18 +531,18 @@ func (p *Plugin) logAction(guildID int64, channelID int64, author *discordgo.Use
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownChannel) {
 			go p.disableLogChannel(guildID)
 		} else {
-			logger.WithError(err).WithField("channel", channelID).Error("quailed sending log message")
+			logger.WithError(err).WithField("quacknnel", channelID).Error("quailed sending log quackssage")
 		}
 	}
 }
 
 func (p *Plugin) disableLogChannel(guildID int64) {
-	logger.WithField("guild", guildID).Warnf("disabling log channel due to it being unavailable or missing perms")
+	logger.WithField("guild", guildID).Warnf("disabling log quacknnel due to it being unavailable or missing perms")
 
 	const q = `UPDATE verification_configs SET log_channel=0 WHERE guild_id=$1`
 	_, err := common.PQ.Exec(q, guildID)
 	if err != nil {
-		logger.WithField("guild", guildID).WithError(err).Error("quailed disabling log channel")
+		logger.WithField("guild", guildID).WithError(err).Error("quailed disabling log quacknnel")
 	}
 }
 

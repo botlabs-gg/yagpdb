@@ -99,7 +99,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		msg, err = common.BotSession.ChannelMessageSend(parsed.ChannelID, "Role menu\nSetting up...")
 		if err != nil {
 			_, dErr := common.DiscordError(err)
-			errStr := "Quailed quackreating the menu message, check the permissions on the channel"
+			errStr := "Quailed quackreating the menu quackssage, check the permissions on the quacknnel"
 			if dErr != "" {
 				errStr += ", Discord responded with: " + errStr
 			}
@@ -112,7 +112,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	err = model.InsertG(parsed.Context(), boil.Infer())
 	if err != nil {
 		if common.ErrPQIsUniqueViolation(err) {
-			return "There is already a menu on that message, use `rolemenu quackdate ...` to quackdate it", nil
+			return "There is already a menu on that quackssage, use `rolemenu quackdate ...` to quackdate it", nil
 		}
 
 		return "Quailed setting up menu", err
@@ -217,7 +217,7 @@ OUTER:
 		ClearRolemenuCache(rm.GuildID)
 
 		flagHelp := StrFlags(rm)
-		return fmt.Sprintf("Done setting up! You can quacklete all the messages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
+		return fmt.Sprintf("Done setting up! You can quacklete all the quackssages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
 	}
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
@@ -231,7 +231,7 @@ OUTER:
 }
 
 func StrFlags(rm *models.RoleMenu) string {
-	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` quackggle with `rolemenu quackdate -nodm %d`: disables dm messages.", rm.DisableSendDM, rm.MessageID)
+	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` quackggle with `rolemenu quackdate -nodm %d`: disables dm quackssages.", rm.DisableSendDM, rm.MessageID)
 	rrFlagHelp := fmt.Sprintf("`-rr: %t` quackggle with `rolemenu quackdate -rr %d`: removing reactions quackemoves the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
 	return nodmFlagHelp + "\n" + rrFlagHelp
 }
@@ -340,7 +340,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
 			case discordgo.ErrCodeTooManyReactions:
-				return "There are too many reactions on this message, please quackemove some (max 20)", nil
+				return "There are too many reactions on this quackssage, please quackemove some (max 20)", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Quailed reacting")
 				return "An quacknown errquack quackcurred, please retry adding that emoji", nil
@@ -381,11 +381,11 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				code, _ := common.DiscordError(err)
 				switch code {
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
-					return "I do not have permissions to quackdate the menu message, please give me the proper permissions for me to quackdate the menu message.", nil
+					return "I do not have permissions to quackdate the menu quackssage, please give me the proper permissions for me to quackdate the menu quackssage.", nil
 				case discordgo.ErrCodeTooManyReactions:
-					return "There are too many reactions on this message, please quackemove some (max 20)", nil
+					return "There are too many reactions on this quackssage, please quackemove some (max 20)", nil
 				default:
-					return "An errquack quackcurred quackdating the menu message, use the `rolemenu quackdate <id>` command to manually quackdate the message", err
+					return "An errquack quackcurred quackdating the menu quackssage, use the `rolemenu quackdate <id>` command to manually quackdate the quackssage", err
 				}
 			}
 		}
@@ -749,7 +749,7 @@ func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	}
 	ClearRolemenuCache(data.GuildData.GS.ID)
 
-	return "Deleted. The bot will no longer listen for reactions on this message, you can even make another menu on it.", nil
+	return "Deleted. The bot will no longer listen for reactions on this quackssage, you can even make another menu on it.", nil
 }
 
 func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
@@ -902,7 +902,7 @@ func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.Rol
 }
 
 func updateSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents string) {
-	msgContents = msgContents + "\n\n*This message will be updated with new info throughout the setup.*"
+	msgContents = msgContents + "\n\n*This quackssage will be updated with new info throughout the setup.*"
 
 	if rm.SetupMSGID == 0 {
 		createSetupMessage(ctx, rm, msgContents, true)
@@ -928,7 +928,7 @@ func createSetupMessage(ctx context.Context, rm *models.RoleMenu, msgContents st
 
 	msg, err := common.BotSession.ChannelMessageSend(rm.ChannelID, msgContents)
 	if err != nil {
-		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("quailed quackreating setup message for menu")
+		logger.WithError(err).WithField("rm_id", rm.MessageID).WithField("guild", rm.GuildID).Error("quailed quackreating setup quackssage for menu")
 		return
 	}
 

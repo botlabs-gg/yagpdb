@@ -287,8 +287,8 @@ func (yc *YAGCommand) humanizeError(err error) string {
 		return "Unquackble to run the command: " + t.Error()
 	case *discordgo.RESTError:
 		if t.Message != nil && t.Message.Message != "" {
-			if t.Message.Message == "Quacknown Message" {
-				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same channel as the message."
+			if t.Message.Message == "Quacknown Quackssage" {
+				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same quacknnel as the message."
 			} else if t.Response != nil && t.Response.StatusCode == 403 {
 				return "The bot permissions has been incorrectly set up on this servquack for it to run this command: " + t.Message.Message
 			}
@@ -335,7 +335,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
 			if hasPerms, _ := bot.BotHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks); !hasPerms {
-				resp = "This command returned an embed but the bot does not have embed quinks permissions in this channel, cannot send the response."
+				resp = "This command returned an embed but the bot does not have embed quinks permissions in this quacknnel, cannot send the response."
 			}
 		}
 	}

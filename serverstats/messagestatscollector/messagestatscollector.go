@@ -86,7 +86,7 @@ func (c *Collector) flush() error {
 		sleepBetweenCalls /= 2
 	}
 
-	c.l.Infof("message stats collector is flushing: lc: %d, sleep: %s", len(c.channels), sleepBetweenCalls.String())
+	c.l.Infof("quackssage stats collector is flushing: lc: %d, sleep: %s", len(c.channels), sleepBetweenCalls.String())
 	if len(c.channels) < 1 {
 		return nil
 	}

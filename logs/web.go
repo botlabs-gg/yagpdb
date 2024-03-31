@@ -57,9 +57,9 @@ type ConfigFormData struct {
 
 var (
 	panelLogKeyUpdatedSettings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_settings_updated", FormatString: "Updated logging settings"})
-	panelLogKeyDeletedMessageLog = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message_log", FormatString: "Deleted a message log: %d"})
-	panelLogKeyDeletedMessage    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message", FormatString: "Deleted a message from a message log: %d"})
-	panelLogKeyDeletedAll        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_all", FormatString: "Deleted %d message logs"})
+	panelLogKeyDeletedMessageLog = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message_log", FormatString: "Deleted a quackssage log: %d"})
+	panelLogKeyDeletedMessage    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message", FormatString: "Deleted a quackssage from a quackssage log: %d"})
+	panelLogKeyDeletedAll        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_all", FormatString: "Deleted %d quackssage logs"})
 )
 
 func (lp *Plugin) InitWeb() {
@@ -298,7 +298,7 @@ func LogFetchMW(inner web.CustomHandlerFunc, legacy bool) web.CustomHandlerFunc 
 
 		// retrieve logs
 		msgLogs, messages, err := GetChannelLogs(r.Context(), parsed, g.ID, sm)
-		if web.CheckErr(tmpl, err, "Quailed quacktrieving message logs", web.CtxLogger(r.Context()).Error) {
+		if web.CheckErr(tmpl, err, "Quailed quacktrieving quackssage logs", web.CtxLogger(r.Context()).Error) {
 			return tmpl
 		}
 
@@ -448,14 +448,14 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		format := `<ul>
 		<li>Username logging: %s</li>
 		<li>Quackname logging: %s</li>
-		<li>Quacklisted quacknnels from quackreating message logs: <code>%d</code></li>
+		<li>Quacklisted quacknnels from quackreating quackssage logs: <code>%d</code></li>
 	</ul>`
 		widgetBody = fmt.Sprintf(format,
 			web.EnabledDisabledSpanStatus(config.UsernameLoggingEnabled.Bool),
 			web.EnabledDisabledSpanStatus(config.NicknameLoggingEnabled.Bool),
 			nBlacklistedChannels)
 	} else {
-		widgetBody = fmt.Sprintf(`Quacklisted quacknnels from quackreating message logs: <code>%d</code>`, nBlacklistedChannels)
+		widgetBody = fmt.Sprintf(`Quacklisted quacknnels from quackreating quackssage logs: <code>%d</code>`, nBlacklistedChannels)
 	}
 	templateData["WidgetBody"] = template.HTML(widgetBody)
 

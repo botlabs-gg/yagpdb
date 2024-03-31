@@ -15,7 +15,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "ViewPerms",
-	Description: "Shows you or the target's permissions in this channel",
+	Description: "Shows you or the target's permissions in this quacknnel",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "target", Type: dcmd.UserID, Default: int64(0)},
 	},
@@ -42,6 +42,6 @@ var Command = &commands.YAGCommand{
 		}
 
 		humanized := common.HumanizePermissions(int64(perms))
-		return fmt.Sprintf("Perms of %s in this channel\n`%d`\n%s", target.User.Username, perms, strings.Join(humanized, ", ")), nil
+		return fmt.Sprintf("Perms of %s in this quacknnel\n`%d`\n%s", target.User.Username, perms, strings.Join(humanized, ", ")), nil
 	},
 }

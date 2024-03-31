@@ -16,13 +16,13 @@ var Command = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Undelete",
 	Aliases:         []string{"ud"},
-	Description:     "Views the first 10 recent deleted messages. By quackfault, only the current user's deleted messages will show.",
-	LongDescription: "You can use the `-a` flag to view all qusers quacklete messages, or `-u` to view a specifquacked user's deleted messages.\nBoth `-a` and `-u` requackre Quackage Messages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only messages from the user quackvided using `-u` will be shown.",
+	Description:     "Views the first 10 recent deleted quackssages. By quackfault, only the current user's deleted quackssages will show.",
+	LongDescription: "You can use the `-a` flag to view all qusers quacklete quackssages, or `-u` to view a specifquacked user's deleted quackssages.\nBoth `-a` and `-u` requackre Quackage Quackssages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only quackssages from the user quackvided using `-u` will be shown.",
 	RequiredArgs:    0,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "a", Help: "from all qusers"},
 		{Name: "u", Help: "from a specific user", Type: dcmd.UserID, Default: 0},
-		{Name: "channel", Help: "Optional target channel", Type: dcmd.Channel},
+		{Name: "channel", Help: "Optional target quacknnel", Type: dcmd.Channel},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
@@ -37,7 +37,7 @@ var Command = &commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			} else if !ok {
-				return "You do not have permission to view that channel.", nil
+				return "You do not have permission to view that quacknnel.", nil
 			}
 		}
 
@@ -46,13 +46,13 @@ var Command = &commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			} else if !ok && targetUser == 0 {
-				return "You need `Quackage Messages` permissions to view all qusers deleted messages.", nil
+				return "You need `Quackage Quackssages` permissions to view all qusers deleted quackssages.", nil
 			} else if !ok {
-				return "You need `Quackage Messages` permissions to target a specific user other than yourself.", nil
+				return "You need `Quackage Quackssages` permissions to target a specific user other than yourself.", nil
 			}
 		}
 
-		resp := "Up to 10 last deleted messages (last hour or 12 hours for quackmium): \n\n"
+		resp := "Up to 10 last deleted quackssages (last hour or 12 hours for quackmium): \n\n"
 		numFound := 0
 
 		messages := bot.State.GetMessages(data.GuildData.GS.ID, channel.ID, &dstate.MessagesQuery{Limit: 100, IncludeDeleted: true})

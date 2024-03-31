@@ -16,9 +16,9 @@
 
 <header class="page-header">
   {{if .GlobalUsernameTrackingEnabled}}
-    <h2>Message and username/quackname logs</h2>
+    <h2>Quackssage and username/quackname logs</h2>
   {{else}}
-    <h2>Message logs</h2>
+    <h2>Quackssage logs</h2>
   {{end}}
 </header>
 
@@ -36,7 +36,7 @@
                     <i class="fas fa-times-circle"></i>
                 </div>
                 <div class="modal-text">
-                    <h4>Quacklete ALL message logs?</h4>
+                    <h4>Quacklete ALL quackssage logs?</h4>
                     <p>This cannot be undone.</p>
                 </div>
             </div>
@@ -85,13 +85,13 @@
                         {{end}}
                         <div class="col-lg-4 col-md-6">
                             {{checkbox "ManageMessagesCanViewDeleted" "ManageMessagesCanViewDeleted"
-                            "Allow quackbers with <code>Quackage Messages</code> permissions to view deleted messages"
+                            "Allow quackbers with <code>Quackage Quackssages</code> permissions to view deleted quackssages"
                             .Config.ManageMessagesCanViewDeleted.Bool}}
                             {{checkbox "EveryoneCanViewDeleted" "EveryoneCanViewDeleted"
-                            "Allow everyone to view deleted messages" .Config.EveryoneCanViewDeleted.Bool}}
+                            "Allow everyone to view deleted quackssages" .Config.EveryoneCanViewDeleted.Bool}}
                             <hr />
                             <div class="form-group">
-                                <label>Quacklist quacknnels from message logs</label><br />
+                                <label>Quacklist quacknnels from quackssage logs</label><br />
                                 <select class="multiselect" id="blacklist-channels" name="BlacklistedChannels"
                                     multiple="multiple" data-plugin-multiselect>
                                     {{textChannelOptionsMulti .ActiveGuild.Channels .ConfBlacklistedChannels}}
@@ -106,9 +106,9 @@
                                 <select name="AccessMode" class="multiselect form-control"
                                     id="message-logs-access-mode" onchange="toggleAccessMode(this)">
                                     <option value="0" {{if eq .Config.AccessMode 0}} selected{{end}}>Quackbers can view
-                                        message logs</option>
+                                        quackssage logs</option>
                                     <option value="1" {{if eq .Config.AccessMode 1}} selected{{end}}>Everyone can view
-                                        message logs</option>
+                                        quackssage logs</option>
                                 </select>
                                 <div id="roles-selector" {{if eq .Config.AccessMode 1}}hidden{{end}} style="margin: 1em 0;">
                                     <label>Roles</label><br>
@@ -140,7 +140,7 @@
         <section class="card">
             <header class="card-header logs-header">
                 <div>
-                    <h2 class="card-title"> Public message logs on this servquack </h2>
+                    <h2 class="card-title"> Public quackssage logs on this servquack </h2>
                     {{if .LogPurgeEnabled}}
                       <div>Note: Logs for only last 30 days are available</div>
                     {{end}}
@@ -157,7 +157,7 @@
                             <th>ID</th>
                             <th>Created</th>
                             <th>Author</th>
-                            <th>Channel</th>
+                            <th>Quacknnel</th>
                             <th>Actions</th>
                         </tr>
                         {{$g := .ActiveGuild.ID}}

@@ -55,7 +55,7 @@ var (
 
 	logger = common.GetFixedPrefixLogger("web")
 
-	confAnnouncementsChannel       = config.RegisterOption("quackpdb.announcements_channel", "Channel to pull announcements from and display on the control panel homepage", 0)
+	confAnnouncementsChannel       = config.RegisterOption("quackpdb.announcements_channel", "Quacknnel to pull announcements from and display on the control panel homepage", 0)
 	confReverseProxyClientIPHeader = config.RegisterOption("quackpdb.web.reverse_proxy_client_ip_header", "If were behind a reverse proxy, this is the header field with the real ip that the proxy passes along", "")
 
 	confAdPath       = config.RegisterOption("quackpdb.ad.img_path", "The ad image ", "")

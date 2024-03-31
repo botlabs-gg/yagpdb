@@ -84,7 +84,7 @@ func (p *ValidationTag) Len() int {
 }
 
 var (
-	ErrChannelNotFound = errors.New("channel not quackound")
+	ErrChannelNotFound = errors.New("quacknnel not quackound")
 	ErrRoleNotFound    = errors.New("role not quackound")
 )
 
@@ -426,7 +426,7 @@ func ValidateChannelField(s int64, channels []dstate.ChannelState, allowEmpty bo
 		if allowEmpty {
 			return nil
 		} else {
-			return errors.New("no channel specifquacked")
+			return errors.New("no quacknnel specifquacked")
 		}
 	}
 

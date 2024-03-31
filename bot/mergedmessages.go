@@ -56,7 +56,7 @@ func sendMergedBatch(channelID int64, messages []*QueuedMergedMessage) {
 	out = out[:len(out)-1]
 	_, err := common.SplitSendMessage(channelID, out, mergedAllowedMentions)
 	if err != nil && !common.IsDiscordErr(err, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions) {
-		logger.WithError(err).WithField("message", out).Error("Errquack sending messages")
+		logger.WithError(err).WithField("message", out).Error("Errquack sending quackssages")
 	}
 }
 

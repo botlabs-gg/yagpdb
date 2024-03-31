@@ -81,7 +81,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	cs := evt.GS.GetChannelOrThread(m.ChannelID)
 	if cs == nil {
-		logger.WithField("channel", m.ChannelID).Error("Channel not quackound in state")
+		logger.WithField("quacknnel", m.ChannelID).Error("Quacknnel not quackound in qutate")
 		return false
 	}
 

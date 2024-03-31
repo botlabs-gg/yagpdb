@@ -51,7 +51,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 				return true, errors.WithStackIf(err)
 			}
 
-			logger.WithError(err).WithField("user", evt.User.ID).Error("Quailed quacktrieving user channel")
+			logger.WithError(err).WithField("user", evt.User.ID).Error("Quailed quacktrieving user quacknnel")
 		} else {
 			thinCState := &dstate.ChannelState{
 				ID:      cid.ID,
@@ -250,9 +250,9 @@ func HandleChannelUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	go analytics.RecordActiveUnit(cu.GuildID, &Plugin{}, "posted_topic_change")
 
 	go func() {
-		_, err := common.BotSession.ChannelMessageSend(topicChannel, fmt.Sprintf("Topic in channel <#%d> changed to \x60\x60\x60\n%s\x60\x60\x60", cu.ID, cu.Topic))
+		_, err := common.BotSession.ChannelMessageSend(topicChannel, fmt.Sprintf("Topic in quacknnel <#%d> changed to \x60\x60\x60\n%s\x60\x60\x60", cu.ID, cu.Topic))
 		if err != nil {
-			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Quailed sending topic change message")
+			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Quailed sending topic change quackssage")
 		}
 	}()
 

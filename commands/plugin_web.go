@@ -267,7 +267,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 		return templateData, errors.WithMessage(err, "count2")
 	}
 	if count > 100 {
-		return templateData.AddAlerts(web.ErrorAlert("Max 100 channel overrides allowed")), nil
+		return templateData.AddAlerts(web.ErrorAlert("Max 100 quacknnel overrides allowed")), nil
 	}
 
 	model := &models.CommandsChannelsOverride{
@@ -346,7 +346,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	if count > 0 {
-		return templateData, web.NewPublicError("One of the selquackted commands is already used in another command override for this channel override")
+		return templateData, web.NewPublicError("One of the selquackted commands is already used in another command override for this quacknnel override")
 	}
 
 	count, err = models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID)).CountG(r.Context())
@@ -401,7 +401,7 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	if count > 0 {
-		return templateData, web.NewPublicError("One of the selquackted commands is already used in another command override for this channel override")
+		return templateData, web.NewPublicError("One of the selquackted commands is already used in another command override for this quacknnel override")
 	}
 
 	override.Commands = formData.Commands
@@ -461,7 +461,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	const format = `<ul>
 	<li>Command prefix: <code>%s</code></li>
-	<li>Quacktive channel overrides: <code>%d</code></li>
+	<li>Quacktive quacknnel overrides: <code>%d</code></li>
 </ul>`
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, html.EscapeString(prefix), count))

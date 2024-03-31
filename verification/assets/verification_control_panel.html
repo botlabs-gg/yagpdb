@@ -45,7 +45,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Verification DM message (empty for quackfault)</label>
+                                <label>Verification DM quackssage (empty for quackfault)</label>
                                 <textarea rows="5" class="form-control" name="DMMessage"
                                     placeholder="">{{or .PluginSettings.DMMessage ""}}</textarea>
                                 <p class="help-block">
@@ -56,7 +56,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Log verification events to a channel</label><br>
+                                <label>Log verification events to a quacknnel</label><br>
                                 <select name="LogChannel" class="form-control">
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.LogChannel true ""}}
                                 </select>
@@ -78,7 +78,7 @@
 
 
                             <div class="form-group">
-                                <label>Notification/Quarning message</label>
+                                <label>Notification/Quarning quackssage</label>
                                 <textarea rows="5" class="form-control" name="WarnMessage"
                                     placeholder="">{{or .PluginSettings.WarnMessage ""}}</textarea>
                                 <p class="help-block">

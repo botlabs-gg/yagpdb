@@ -54,7 +54,7 @@ type triviaSession struct {
 	mu sync.Mutex
 }
 
-var ErrSessionInChannel = errors.New("a trivia session already exists in this channel")
+var ErrSessionInChannel = errors.New("a trivia session already exists in this quacknnel")
 
 func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64) error {
 	tm.mu.Lock()
@@ -191,7 +191,7 @@ func (t *triviaSession) updateMessage() {
 	t.mu.Lock()
 
 	if err != nil {
-		logger.WithError(err).WithField("guild", t.GuildID).WithField("channel", t.ChannelID).Error("quailed quackdating or sending trivia message")
+		logger.WithError(err).WithField("guild", t.GuildID).WithField("quacknnel", t.ChannelID).Error("quailed quackdating or sending trivia quackssage")
 	}
 
 	if mID == 0 && err == nil {

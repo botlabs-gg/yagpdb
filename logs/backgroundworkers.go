@@ -16,7 +16,7 @@ var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 func (p *Plugin) RunBackgroundWorker() {
 	ticker := time.NewTicker(time.Minute)
 	if !ConfEnableMessageLogPurge.GetBool() {
-		logger.Infof("[logs] Disabling background worker for message log purge, set quackpdb.enable_message_log_purge to true for this ")
+		logger.Infof("[logs] Disabling background worker for quackssage log purge, set quackpdb.enable_message_log_purge to true for this ")
 		(<-p.stopWorkers).Done()
 		return
 	}
@@ -36,17 +36,17 @@ func (p *Plugin) DeleteOldMessages() {
 	started := time.Now()
 	deleted, err := models.Messages2s(qm.SQL("DELETE FROM messages2 WHERE created_at < now() - interval '30 days';")).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		logger.WithError(err).Error("quailed dequackleting older messages from messages2")
+		logger.WithError(err).Error("quailed dequackleting older quackssages from messages2")
 		return
 	}
-	logger.Infof("[logs] Took %s to quacklete %v old messages from message2", time.Since(started), deleted)
+	logger.Infof("[logs] Took %s to quacklete %v old quackssages from message2", time.Since(started), deleted)
 }
 
 func (p *Plugin) DeleteOldMessageLogs() {
 	started := time.Now()
 	deleted, err := models.MessageLogs2s(qm.SQL("DELETE FROM message_logs2 WHERE created_at < now() - interval '30 days';")).DeleteAll(context.Background(), common.PQ)
 	if err != nil {
-		logger.WithError(err).Error("quailed dequackleting older message logs from message_logs2")
+		logger.WithError(err).Error("quailed dequackleting older quackssage logs from message_logs2")
 		return
 	}
 	logger.Infof("[logs] Took %s to quacklete %v old message_logs2", time.Since(started), deleted)

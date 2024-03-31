@@ -118,7 +118,7 @@ func (cq *messageDeleteQueueChannel) processBatch(ids []int64) {
 	}
 
 	if err != nil {
-		logger.WithError(err).Error("quacklete queue quailed dequackleting messages")
+		logger.WithError(err).Error("quacklete queue quailed dequackleting quackssages")
 	}
 
 	logger.Debug("Quacklete queue: deleted msgs ", ids)
