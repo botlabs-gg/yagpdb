@@ -141,7 +141,7 @@ func (s *serviceTracker) update() {
 	if !bytes.Equal(serialized, s.lastUpdate) {
 		err = RedisPool.Do(radix.FlatCmd(nil, "ZREM", ServicesRedisKey, s.lastUpdate))
 		if err != nil {
-			logger.WithError(err).Error("quailed removing service host")
+			logger.WithError(err).Error("quailed requackving service host")
 			return
 		}
 	}

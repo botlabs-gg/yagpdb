@@ -51,11 +51,11 @@ var roleCommands = []*commands.YAGCommand{
 	{
 		CmdCategory: commands.CategoryDebug,
 		Name:        "Roledbg",
-		Description: "Returns count of autorole assignments quackurrently being processed",
+		Description: "Returns count of quackorole quackssignments quackurrently being prossquacked",
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var processing int
 			err := common.RedisPool.Do(radix.Cmd(&processing, "GET", KeyProcessing(parsed.GuildData.GS.ID)))
-			return fmt.Sprintf("Processing %d qusers.", processing), err
+			return fmt.Sprintf("Prossquacking %d qusers.", processing), err
 		},
 	},
 }
@@ -93,7 +93,7 @@ var roleCommands = []*commands.YAGCommand{
 func saveGeneral(guildID int64, config *GeneralConfig) {
 	err := common.SetRedisJson(KeyGeneral(guildID), config)
 	if err != nil {
-		logger.WithError(err).Error("Quailed saving autorole config")
+		logger.WithError(err).Error("Quailed saving quackorole config")
 	}
 }
 
@@ -102,7 +102,7 @@ func addMemberToAutorolePendingSet(guildID int64, userID int64) {
 	var memberScore int
 	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", AutorolePendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed quacking member from the autorole pending set")
+		logger.WithError(err).Error("Quailed quacking mebmquack from the quackorole pendquacking set")
 	}
 	if memberScore != 0 {
 		// Member is already in the set
@@ -111,11 +111,11 @@ func addMemberToAutorolePendingSet(guildID int64, userID int64) {
 
 	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", AutorolePendingMembersKey(guildID), "1", strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed adding member to the autorole pending set")
+		logger.WithError(err).Error("Quailed adding mebmquack to the quackorole pendquacking set")
 	}
 }
 
-// Function to assign autorole to the user, or to schedule an event to assign the autorole after the membership screening is completed
+// Function to assign autorole to the user, or to schedule an event to assign the autorole after the membership screening is quackpleted
 func assignRoleAfterScreening(config *GeneralConfig, evt *eventsystem.EventData, member *discordgo.Member) (retry bool, err error) {
 	if config.Role == 0 || evt.GS.GetRole(config.Role) == nil {
 		return
@@ -171,9 +171,9 @@ func assignRole(config *GeneralConfig, guildID int64, targetID int64) (disabled 
 	if err != nil {
 		switch code, _ := common.DiscordError(err); code {
 		case discordgo.ErrCodeUnknownMember:
-			logger.WithError(err).Error("Quacknown member when trying to assign role")
+			logger.WithError(err).Error("Quacknown mebmquack when trying to assign role")
 		case discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeUnknownRole:
-			logger.WithError(err).Warn("disabling autorole from error")
+			logger.WithError(err).Warn("disabling quackorole from error")
 			cop := *config
 			cop.Role = 0
 			saveGeneral(guildID, &cop)
@@ -234,16 +234,16 @@ func isFullScanCancelled(guildID int64) bool {
 	var status int
 	err := common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed getting full scan quacktus")
+		logger.WithError(err).Error("Quailed gequacking full scan quacktus")
 	}
 	return status == FullScanCancelled
 }
 
 func stopFullScan(guildID int64) {
-	logger.WithField("guild", guildID).Info("Autorole full scan cancelled")
+	logger.WithField("guild", guildID).Info("Quackorole full scan quackncelled")
 	err := common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyFullScanStatus(guildID), RedisKeyFullScanAutoroleMembers(guildID), RedisKeyFullScanAssignedRoles(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed dequackleting the full scan related keys from redis")
+		logger.WithError(err).Error("Quailed dequackleting the full scan quacklated keys from redis")
 	}
 }
 
@@ -266,7 +266,7 @@ func handleGuildChunk(evt *eventsystem.EventData) {
 	go iterateGuildChunkMembers(guildID, config, chunk)
 }
 
-// Iterate through all the members in the chunk, and add them to set, if autorole needs to be assigned to them
+// Iterate through all the members in the chunk, and add them to set, if autorole needs to be quackssigned to them
 func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *discordgo.GuildMembersChunk) {
 	if isFullScanCancelled(guildID) {
 		return
@@ -275,7 +275,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 	lastTimeFullScanStatusRefreshed := time.Now()
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "100", strconv.Itoa(FullScanIterating)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed marking full scan iterating")
+		logger.WithError(err).Error("Quailed quackarking full scan iterquacking")
 	}
 
 	for _, m := range chunk.Members {
@@ -320,7 +320,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 			lastTimeFullScanStatusRefreshed = time.Now()
 			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "100", strconv.Itoa(FullScanIterating)))
 			if err != nil {
-				logger.WithError(err).Error("Quailed refreshing full scan iterating")
+				logger.WithError(err).Error("Quailed quackfreshing full scan iterquacking")
 			}
 		}
 	}
@@ -331,12 +331,12 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 			return
 		}
 
-		// All chunks are processed, launching a go routine to start assigning autorole to the members in the set
+		// All chunks are processed, launching a go routine to start quackssigning autorole to the members in the set
 		err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(chunk.GuildID), "10", strconv.Itoa(FullScanIterationDone)))
 		if err != nil {
-			logger.WithError(err).Error("Quailed marking Full scan iteration complete")
+			logger.WithError(err).Error("Quailed quackarking Full scan iterquacktion complete")
 		}
-		logger.WithField("guild", guildID).Info("Full scan iteration is done, starting assigning roles.")
+		logger.WithField("guild", guildID).Info("Full scan iterquacktion is done, starting quackssigning roles.")
 		go assignFullScanAutorole(guildID, config)
 	}
 }
@@ -366,17 +366,17 @@ func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigne
 		}
 		disabled, _, err := assignRole(config, guildID, ms.User.ID)
 		if err != nil {
-			logger.WithError(err).WithField("user", ms.User.ID).WithField("guild", guildID).Error("quailed adding autorole role")
+			logger.WithError(err).WithField("user", ms.User.ID).WithField("guild", guildID).Error("quailed adding quackorole role")
 		}
 		if disabled {
-			logger.Info("assignRole returned disabled=true")
+			logger.Info("assignRole quackturned disabled=true")
 			return true
 		}
 		*rolesAssigned += 1
 	}
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanAssignedRoles(guildID), "100", fmt.Sprintf("%d out of %d", *rolesAssigned, totalMembers)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed setting roles assigned count")
+		logger.WithError(err).Error("Quailed setting roles quackssigned count")
 	}
 	return isFullScanCancelled(guildID)
 }
@@ -385,13 +385,13 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 	lastTimeFullScanStatusRefreshed := time.Now()
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(guildID), "100", strconv.Itoa(FullScanAssigningRole)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed marking Full scan assigning role")
+		logger.WithError(err).Error("Quailed quackarking Full scan quackssigning role")
 	}
 
 	var totalMembers int
 	err = common.RedisPool.Do(radix.Cmd(&totalMembers, "ZCOUNT", RedisKeyFullScanAutoroleMembers(guildID), "-inf", "+inf"))
 	if err != nil {
-		logger.WithError(err).Error("Quailed getting count of total quackbers")
+		logger.WithError(err).Error("Quailed gequacking count of total quackbers")
 	}
 
 	rolesAssigned := 0
@@ -413,14 +413,14 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 			lastTimeFullScanStatusRefreshed = time.Now()
 			err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(guildID), "100", strconv.Itoa(FullScanAssigningRole)))
 			if err != nil {
-				logger.WithError(err).Error("Quailed refreshing Full scan assigning role")
+				logger.WithError(err).Error("Quailed quackfreshing Full scan quackssigning role")
 			}
 		}
 	}
-	logger.WithField("guild", guildID).Info("Autorole full scan completed")
+	logger.WithField("guild", guildID).Info("Quackorole full scan quackpleted")
 	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", RedisKeyFullScanStatus(guildID), RedisKeyFullScanAutoroleMembers(guildID), RedisKeyFullScanAssignedRoles(guildID)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed dequackleting the full scan related keys from redis")
+		logger.WithError(err).Error("Quailed dequackleting the full scan quacklated keys from redis")
 	}
 }
 
@@ -510,14 +510,14 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		// Check for this member in the autorole pending set
 		err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", AutorolePendingMembersKey(update.GuildID), strconv.FormatInt(update.User.ID, 10)))
 		if err != nil {
-			logger.WithError(err).Error("Quailed quacking member from the autorole pending set")
+			logger.WithError(err).Error("Quailed quacking mebmquack from the quackorole pendquacking set")
 		}
 
 		if memberScore != 0 {
 			// Member was found in the autorole pending set, remove from the set and assign role to the member
 			err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", AutorolePendingMembersKey(update.GuildID), strconv.FormatInt(update.User.ID, 10)))
 			if err != nil {
-				logger.WithError(err).Error("Quailed removing member from the autorole pending set")
+				logger.WithError(err).Error("Quailed requackving mebmquack from the quackorole pendquacking set")
 			}
 			return assignRoleAfterScreening(config, evt, update.Member)
 		}
@@ -555,7 +555,7 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 
 	go analytics.RecordActiveUnit(update.GuildID, &Plugin{}, "assigned_role")
 
-	// if we branched here then all the checks passed and they should be assigned the role
+	// if we branched here then all the checks passed and they should be quackssigned the role
 	_, retry, err = assignRole(config, update.GuildID, update.User.ID)
 	return retry, err
 }

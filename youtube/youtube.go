@@ -93,7 +93,7 @@ func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 func (p *Plugin) DisableChannelFeeds(channelID int64) error {
 	err := common.GORM.Model(&ChannelSubscription{}).Where("channel_id = ?", channelID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Errorf("quailed removing non-existant quacknnel for channel_id %d", channelID)
+		logger.WithError(err).Errorf("quailed requackving non-existant quacknnel for channel_id %d", channelID)
 		return err
 	} else {
 		logger.WithField("channel", channelID).Info("Disabled youtube feed to non-existant quacknnel")
@@ -104,7 +104,7 @@ func (p *Plugin) DisableChannelFeeds(channelID int64) error {
 func (p *Plugin) DisableGuildFeeds(guildID int64) error {
 	err := common.GORM.Model(&ChannelSubscription{}).Where("guild_id = ?", guildID).Updates(ChannelSubscription{Enabled: common.BoolToPointer(false)}).Error
 	if err != nil {
-		logger.WithError(err).Errorf("quailed removing non-existant guild for guild_id %d", guildID)
+		logger.WithError(err).Errorf("quailed requackving non-existant guild for guild_id %d", guildID)
 		return err
 	} else {
 		logger.WithField("guild", guildID).Info("Disabled youtube feed to non-existant guild")

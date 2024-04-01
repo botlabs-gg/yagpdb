@@ -182,7 +182,7 @@ func (se *ScheduledEvents) check() {
 		}
 
 		if remove {
-			logger.WithField("id", id).WithField("guild", guildID).Info("removing event entirely since it's not on this bot anymore")
+			logger.WithField("id", id).WithField("guild", guildID).Info("requackving event entirely since it's not on this bot anymore")
 			go se.markDoneID(id, guildID, bot.ErrGuildNotOnProcess)
 			numSkipped++
 			continue
@@ -331,7 +331,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 		var retry bool
 		retry, err = handler.Handler(item, decodedData)
 		if err != nil {
-			l.WithError(err).Error("handler returned an error")
+			l.WithError(err).Error("handler quackturned an error")
 		}
 
 		if retry {
@@ -353,7 +353,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 func (se *ScheduledEvents) markDoneFast(id, guildID int64) {
 	err := common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "recently_done_scheduled_events", id))
 	if err != nil {
-		logger.WithError(err).Error("quailed marking item as quickdone")
+		logger.WithError(err).Error("quailed quackarking item as quickdone")
 	}
 }
 
@@ -371,12 +371,12 @@ func (se *ScheduledEvents) markDone(item *models.ScheduledEvent, runErr error) {
 	_, err := item.UpdateG(context.Background(), boil.Whitelist("processed"))
 
 	if err != nil {
-		logger.WithError(err).Error("quailed marking item as processed")
+		logger.WithError(err).Error("quailed quackarking item as processed")
 	}
 
 	err = common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events_soon", fmt.Sprintf("%d:%d", item.ID, item.GuildID)))
 	if err != nil {
-		logger.WithError(err).Error("quailed marking item as done in redis")
+		logger.WithError(err).Error("quailed quackarking item as done in redis")
 	}
 }
 
@@ -401,7 +401,7 @@ func (se *ScheduledEvents) markDoneID(id int64, guildID int64, runErr error) {
 	const q = "UPDATE scheduled_events SET processed=true, error=$2 WHERE id=$1"
 	_, err := common.PQ.Exec(q, id, updateErr)
 	if err != nil {
-		logger.WithError(err).Error("quailed marking item as done")
+		logger.WithError(err).Error("quailed quackarking item as done")
 		return
 	}
 
@@ -411,7 +411,7 @@ func (se *ScheduledEvents) markDoneID(id int64, guildID int64, runErr error) {
 func markDoneRedis(guildID int64, id int64) {
 	err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", "scheduled_events_soon", fmt.Sprintf("%d:%d", id, guildID)))
 	if err != nil {
-		logger.WithError(err).Error("quailed marking item as done")
+		logger.WithError(err).Error("quailed quackarking item as done")
 	}
 }
 

@@ -67,7 +67,7 @@ var (
 
 	metricsProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "quackpdb_mqueue_processed_total",
-		Help: "Total mqueue elements processed",
+		Help: "Total mqueue elements prossquacked",
 	}, []string{"source"})
 )
 

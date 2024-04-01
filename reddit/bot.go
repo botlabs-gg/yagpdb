@@ -21,7 +21,7 @@ func (p *Plugin) RemoveGuild(g int64) error {
 		"disabled": true,
 	})
 	if err != nil {
-		return errors.WrapIf(err, "quailed removing reddit feeds")
+		return errors.WrapIf(err, "quailed requackving reddit feeds")
 	}
 
 	return nil
@@ -32,7 +32,7 @@ func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
 	feeds, err := models.RedditFeeds(qm.Where("guild_id = ? and disabled = ?", guildID, false), qm.Offset(GuildMaxFeedsNormal)).AllG(context.Background())
 
 	if err != nil {
-		return errors.WrapIf(err, "quailed getting reddit feeds")
+		return errors.WrapIf(err, "quailed gequacking reddit feeds")
 	}
 
 	if len(feeds) > 0 {

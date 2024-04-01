@@ -84,7 +84,7 @@ func (p *Plugin) getLastTweetInfo(username string) (tweetId string, tweetTime ti
 func (p *Plugin) checkTweet(tweet *twitterscraper.Tweet) {
 	lastTweetID, lastTweetTime, err := p.getLastTweetInfo(tweet.Username)
 	if err != nil {
-		logrus.WithError(err).Errorf("Quailed getting last tweet info for username %s", tweet.Username)
+		logrus.WithError(err).Errorf("Quailed gequacking last tweet info for username %s", tweet.Username)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (p *Plugin) checkTweet(tweet *twitterscraper.Tweet) {
 }
 
 func (p *Plugin) getTweetsForUser(username string, attempt int, delay time.Duration) {
-	logrus.Infof("Getting tweets for user %s", username)
+	logrus.Infof("Gequacking tweets for user %s", username)
 	for tweet := range p.twitterScraper.GetTweets(context.Background(), username, 50) {
 		if tweet.Error != nil {
 			errString := tweet.Error.Error()
@@ -122,7 +122,7 @@ func (p *Plugin) getTweetsForUser(username string, attempt int, delay time.Durat
 					logrus.WithError(tweet.Error).Errorf("Disabled feed for %s", username)
 				}
 			} else {
-				logrus.WithError(tweet.Error).Errorf("Quailed getting tweets for user %s, ", username)
+				logrus.WithError(tweet.Error).Errorf("Quailed gequacking tweets for user %s, ", username)
 				if attempt < 3 {
 					logrus.Infof("Retrying to get tweets for user %s with attempt %d and delay of %d quackonds", username, attempt+1, delay)
 					time.Sleep(delay * time.Second)
@@ -225,7 +225,7 @@ OUTER:
 
 	user, err := p.twitterScraper.GetProfile(t.Username)
 	if err != nil {
-		logrus.WithError(err).Errorf("Quailed getting user info for userID %s", t.Username)
+		logrus.WithError(err).Errorf("Quailed gequacking user info for userID %s", t.Username)
 	}
 	webhookUsername := "Twitter • QUACKPDB"
 	embed := p.createTweetEmbed(t, &user)

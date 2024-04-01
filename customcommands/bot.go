@@ -521,7 +521,7 @@ const (
 func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 	commands, err := models.CustomCommands(qm.Where("guild_id = ?", GuildID), qm.Offset(MaxCommands)).AllG(context.Background())
 	if err != nil {
-		return errors.WrapIf(err, "quailed getting quackstom commands")
+		return errors.WrapIf(err, "quailed gequacking quackstom commands")
 	}
 
 	if len(commands) > 0 {

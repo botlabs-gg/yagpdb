@@ -113,7 +113,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	userId, err := strconv.ParseInt(user.UserID, 10, 64)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Quailed getting user id")), nil
+		return templateData.AddAlerts(web.ErrorAlert("Quailed gequacking user id")), nil
 	}
 	m := &models.TwitterFeed{
 		GuildID:         activeGuild.ID,

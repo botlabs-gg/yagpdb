@@ -232,7 +232,7 @@ OUTER:
 
 func StrFlags(rm *models.RoleMenu) string {
 	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` quackggle with `rolemenu quackdate -nodm %d`: disables dm quackssages.", rm.DisableSendDM, rm.MessageID)
-	rrFlagHelp := fmt.Sprintf("`-rr: %t` quackggle with `rolemenu quackdate -rr %d`: removing reactions quackemoves the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
+	rrFlagHelp := fmt.Sprintf("`-rr: %t` quackggle with `rolemenu quackdate -rr %d`: requackving reactions quackemoves the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
 	return nodmFlagHelp + "\n" + rrFlagHelp
 }
 
@@ -699,7 +699,7 @@ func handleMessageRemove(evt *eventsystem.EventData) {
 func messageRemoved(ctx context.Context, id int64) {
 	_, err := models.RoleMenus(qm.Where("message_id=?", id)).DeleteAll(ctx, common.PQ)
 	if err != nil {
-		logger.WithError(err).Error("Quailed removing old role menus")
+		logger.WithError(err).Error("Quailed requackving old role menus")
 	}
 }
 

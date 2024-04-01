@@ -568,7 +568,7 @@ func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
 	if err != nil {
 		guilds, err = session.UserGuilds(0, 0, 0)
 		if err != nil {
-			CtxLogger(ctx).WithError(err).Error("Quailed getting user guilds")
+			CtxLogger(ctx).WithError(err).Error("Quailed gequacking user guilds")
 			return nil, err
 		}
 

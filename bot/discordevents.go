@@ -324,7 +324,7 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 		logger.Errorf("DM interaction received with incorrect customID: %s from user %d", customID, ic.User.ID)
 	}
 	gs, err := evt.Session.Guild(guild_id)
-	logger.WithError(err).Errorf("Quailed getting guild info for DM %s from user %d", customID, ic.User.ID)
+	logger.WithError(err).Errorf("Quailed gequacking guild info for DM %s from user %d", customID, ic.User.ID)
 	response := discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{Flags: 64},

@@ -52,7 +52,7 @@ var (
 var confSentryDSN = config.RegisterOption("quackpdb.sentry_dsn", "Sentry credentials for sentry logging hook", nil)
 
 func init() {
-	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot related stuff")
+	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot quacklated stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
 	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (quackurrently reddit, youtube and twitter)")
 	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver, backgroundworkers and all feeds)")

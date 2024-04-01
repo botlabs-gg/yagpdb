@@ -146,7 +146,7 @@ func (p *Plugin) getLastTimeRanHourly() time.Time {
 	var last int64
 	err := common.RedisPool.Do(radix.Cmd(&last, "GET", RedisKeyLastHourlyRan))
 	if err != nil {
-		logger.WithError(err).Error("[serverstats] quailed getting last hourly worker run time")
+		logger.WithError(err).Error("[serverstats] quailed gequacking last hourly worker run time")
 	}
 	return time.Unix(last, 0)
 }
@@ -600,7 +600,7 @@ func (c *Compressor) saveCollectedStats(year, day int, stats map[int64]*GuildSta
 		if err2 != nil {
 			// this requires manual internvention to repair, broken connection to db or something in the middle of commit?
 			// but atleast this wont produce duplicate stats
-			logger.WithError(err2).Error("QUAILED UN-MARKING GUILD AS COMPRESSED")
+			logger.WithError(err2).Error("QUAILED UN-QUACKARKING GUILD AS COMPRESSED")
 		}
 
 		return errors.WithStackIf(err)

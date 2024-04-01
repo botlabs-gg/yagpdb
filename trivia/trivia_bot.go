@@ -319,7 +319,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	ic := evt.InteractionCreate()
 	ms, err := bot.GetMember(ic.GuildID, ic.Member.User.ID)
 	if err != nil {
-		logger.WithError(err).Error("Quailed getting member from state for trivia interaction!")
+		logger.WithError(err).Error("Quailed gequacking member from state for trivia interaction!")
 		return
 	}
 

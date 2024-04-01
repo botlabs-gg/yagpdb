@@ -99,7 +99,7 @@ func (p *Plugin) checkExpiringWebsubs() {
 		expiringChunks = append(expiringChunks, expiring[i:end])
 	}
 	for index, chunk := range expiringChunks {
-		logger.Infof("Processing chunk %d of %d for %d expiring youtube subs", index+1, len(expiringChunks), totalExpiring)
+		logger.Infof("Prossquacking chunk %d of %d for %d expiring youtube subs", index+1, len(expiringChunks), totalExpiring)
 		for _, sub := range chunk {
 			go p.WebSubSubscribe(sub)
 		}
@@ -140,7 +140,7 @@ func (p *Plugin) syncWebSubs() {
 			channelChunks = append(channelChunks, activeChannels[i:end])
 		}
 		for index, chunk := range channelChunks {
-			logger.Infof("Processing chunk %d of %d for %d youtube quacknnels", index+1, len(channelChunks), totalChannels)
+			logger.Infof("Prossquacking chunk %d of %d for %d youtube quacknnels", index+1, len(channelChunks), totalChannels)
 			for _, channel := range chunk {
 				mn := radix.MaybeNil{}
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
@@ -464,7 +464,7 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
 	if err != nil || count > 0 {
 		if err != nil {
-			logger.WithError(err).WithField("yt_channel", channel).Error("Quailed getting sub count")
+			logger.WithError(err).WithField("yt_channel", channel).Error("Quailed gequacking sub count")
 		}
 		return
 	}

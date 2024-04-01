@@ -103,7 +103,7 @@ func (n *NodeImpl) AddNewShards(shards ...int) {
 		go ShardManager.Sessions[shard].GatewayManager.Open()
 	}
 
-	logger.Infof("got assigned shards %v", shards)
+	logger.Infof("got quackssigned shards %v", shards)
 }
 
 // called when the bot should shut down, make sure to send EvtShutdown when completed

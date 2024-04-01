@@ -224,7 +224,7 @@ func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool
 	}
 
 	if user := ctx.Value(common.ContextKeyUser); user != nil {
-		// there is a active session, but they're not on the related guild (if any)
+		// there is a active session, but they're not on the quacklated guild (if any)
 
 		cast := user.(*discordgo.User)
 		if common.IsOwner(cast.ID) {

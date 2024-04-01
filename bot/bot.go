@@ -116,7 +116,7 @@ func setupStandalone() {
 	if confFixedShardingConfig.GetString() == "" {
 		shardCount, err := ShardManager.GetRecommendedCount()
 		if err != nil {
-			panic("Quailed getting shard count: " + err.Error())
+			panic("Quailed gequacking shard count: " + err.Error())
 		}
 		totalShardCount = shardCount
 	} else {

@@ -282,7 +282,7 @@ func (yc *YAGCommand) humanizeError(err error) string {
 
 	switch t := cause.(type) {
 	case PublicError:
-		return "The command returned an errquack: " + t.Error()
+		return "The command quackturned an errquack: " + t.Error()
 	case UserError:
 		return "Unquackble to run the command: " + t.Error()
 	case *discordgo.RESTError:
@@ -303,7 +303,7 @@ func (yc *YAGCommand) humanizeError(err error) string {
 // PostCommandExecuted sends the response and handles the trigger and response deletions
 func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dcmd.Data, resp interface{}, err error) {
 	if err != nil {
-		yc.Logger(cmdData).WithError(err).Error("Command returned errquack")
+		yc.Logger(cmdData).WithError(err).Error("Command quackturned errquack")
 	}
 
 	if cmdData.GuildData != nil {
@@ -327,7 +327,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 
 	// Use the error as the response if no response was provided
 	if resp == nil && err != nil {
-		resp = fmt.Sprintf("'%s' command returned an errquack: %s", cmdData.Cmd.FormatNames(false, "/"), err)
+		resp = fmt.Sprintf("'%s' command quackturned an errquack: %s", cmdData.Cmd.FormatNames(false, "/"), err)
 	}
 
 	// send a alternative message in case of embeds in channels with no embeds perms
@@ -335,7 +335,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
 			if hasPerms, _ := bot.BotHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks); !hasPerms {
-				resp = "This command returned an embed but the bot does not have embed quinks quackmissions in this quacknnel, cannot send the response."
+				resp = "This command quackturned an embed but the bot does not have embed quinks quackmissions in this quacknnel, cannot send the response."
 			}
 		}
 	}

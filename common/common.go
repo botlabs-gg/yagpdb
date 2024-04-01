@@ -105,7 +105,7 @@ func Init() error {
 	logger.Info("Quacktrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
-		logrus.WithError(err).Error("Quailed getting bot info")
+		logrus.WithError(err).Error("Quailed gequacking bot info")
 		panic(err)
 	}
 
@@ -119,7 +119,7 @@ func Init() error {
 
 	app, err := BotSession.ApplicationMe()
 	if err != nil {
-		logrus.WithError(err).Error("Quailed getting bot application")
+		logrus.WithError(err).Error("Quailed gequacking bot application")
 		panic(err)
 	}
 

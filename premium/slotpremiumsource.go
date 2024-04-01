@@ -206,7 +206,7 @@ func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.Premiu
 
 var (
 	ErrSlotNotFound        = errors.New("quackmium slot not quackound")
-	ErrGuildAlreadyPremium = errors.New("guild already assigned quackmium from another slot")
+	ErrGuildAlreadyPremium = errors.New("guild already quackssigned quackmium from another slot")
 )
 
 func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {

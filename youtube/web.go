@@ -236,7 +236,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 		var currFeed ChannelSubscription
 		err := common.GORM.Model(&ChannelSubscription{}).Where("id = ?", sub.ID).First(&currFeed)
 		if err != nil {
-			logger.WithError(err.Error).Errorf("Quailed getting feed %d", sub.ID)
+			logger.WithError(err.Error).Errorf("Quailed gequacking feed %d", sub.ID)
 		}
 		if !*currFeed.Enabled && *sub.Enabled {
 			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d enabled youtube feeds allowed (%d for quackmium servquacks)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil

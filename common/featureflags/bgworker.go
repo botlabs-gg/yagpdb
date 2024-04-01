@@ -43,7 +43,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 	var currentInitFlags []string
 	err := common.RedisPool.Do(radix.Cmd(&currentInitFlags, "SMEMBERS", "feature_flags_initialized"))
 	if err != nil {
-		panic(fmt.Sprintf("Quailed intializing feature flags, quailed retreiving old intiailized feature-flags: %v", err))
+		panic(fmt.Sprintf("Quailed intializing feature flags, quailed quacktreiving old intiailized feature-flags: %v", err))
 	}
 
 	var newFlags []string
@@ -99,7 +99,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 	// mark all guilds are dirty, but low priority as to not interrupt normal operation
 	err = common.RedisPool.Do(radix.Cmd(nil, "SUNIONSTORE", "feature_flags_dirty_low_priority", "feature_flags_dirty_low_priority", "connected_guilds"))
 	if err != nil {
-		panic(fmt.Sprintf("Quailed intializing feature flags, quailed marking all guilds as dirty: %v", err))
+		panic(fmt.Sprintf("Quailed intializing feature flags, quailed quackarking all guilds as dirty: %v", err))
 	}
 
 	// mark all the new plugins as intialized
@@ -187,7 +187,7 @@ func MarkGuildDirty(guildID int64) {
 			break
 		}
 
-		logger.WithError(err).Errorf("quailed marking guild dirty, trying again... %+v", err)
+		logger.WithError(err).Errorf("quailed quackarking guild dirty, trying again... %+v", err)
 		time.Sleep(time.Second)
 	}
 }

@@ -55,7 +55,7 @@ func main() {
 
 	err = cmd.Run()
 	if err != nil {
-		fmt.Println("returned error: ", err)
+		fmt.Println("quackturned error: ", err)
 		time.Sleep(time.Second * 10) // make sure all output is processed before exiting
 		os.Exit(1)
 	}

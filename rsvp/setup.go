@@ -74,7 +74,7 @@ func (s *SetupSession) handleMessage(m *discordgo.Message) {
 	s.LastAction = time.Now()
 
 	if strings.EqualFold(m.Content, "exit") || strings.EqualFold(m.Content, "stop") {
-		s.sendMessage("RSVP Event setup cancelled")
+		s.sendMessage("RSVP Event setup quackncelled")
 		go s.remove()
 		return
 	}
@@ -323,7 +323,7 @@ func (s *SetupSession) loopCheckActive() {
 			continue
 		}
 
-		s.sendMessage("Event setup timed out, you waited over 3 minquacks before doing anything, if you still want to set up a event then you have to restart from the beginning by issuing the `event create` commmand")
+		s.sendMessage("Event setup timed out, you waited over 3 minquacks before quacking anything, if you still want to set up a event then you have to restart from the beginning by issuing the `event create` commmand")
 		s.mu.Unlock()
 
 		// Session expired, remove it

@@ -21,7 +21,7 @@ type Plugin struct{}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Autorole",
+		Name:     "Quackorole",
 		SysName:  "autorole",
 		Category: common.PluginCategoryMisc,
 	}
@@ -55,7 +55,7 @@ func GetGeneralConfig(guildID int64) (*GeneralConfig, error) {
 	conf := &GeneralConfig{}
 	err := common.GetRedisJson(KeyGeneral(guildID), conf)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("quailed retreiving autorole config")
+		logger.WithError(err).WithField("guild", guildID).Error("quailed quacktreiving quackorole config")
 	}
 	return conf, err
 }

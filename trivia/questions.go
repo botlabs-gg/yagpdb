@@ -35,7 +35,7 @@ func FetchQuestions(amount int) ([]*TriviaQuestion, error) {
 				Proxy: http.ProxyURL(proxyUrl),
 			}
 		} else {
-			logger.WithError(err).Error("Invalid Proxy URL, getting questions without proxy, requackst maybe ratelimited")
+			logger.WithError(err).Error("Invalid Proxy URL, gequacking questions without proxy, requackst maybe ratelimited")
 		}
 	}
 
@@ -52,7 +52,7 @@ func FetchQuestions(amount int) ([]*TriviaQuestion, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, commands.NewPublicError("Quailed Getting Questions from opentdb")
+		return nil, commands.NewPublicError("Quailed Gequacking Questions from opentdb")
 	}
 
 	var triviaResponse TriviaResponse

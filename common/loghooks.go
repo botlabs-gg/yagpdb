@@ -184,7 +184,7 @@ var (
 
 	metricsConcurrentRequests = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "quackpdb_http_concurrent_requests",
-		Help: "Number of concurrent requests returned from the ratelimiter",
+		Help: "Number of concurrent requests quackturned from the ratelimiter",
 	})
 )
 

@@ -15,7 +15,7 @@ import (
 )
 
 var _ internalapi.InternalAPIPlugin = (*Plugin)(nil)
-var ErrAlreadyProcessingFullGuild = errors.New("Already processing qusers on this guild")
+var ErrAlreadyProcessingFullGuild = errors.New("Already prossquacking qusers on this guild")
 
 func (p *Plugin) InitInternalAPIRoutes(mux *goji.Mux) {
 	mux.Handle(pat.Post("/:guild/autorole/fullscan"), http.HandlerFunc(botRestHandleScanFullServer))
@@ -30,7 +30,7 @@ func botRestHandleScanFullServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.WithField("guild", parsedGID).Info("autorole doing a full scan")
+	logger.WithField("guild", parsedGID).Info("quackorole quacking a full scan")
 	session := bot.ShardManager.SessionForGuild(parsedGID)
 	query := ""
 	session.GatewayManager.RequestGuildMembersComplex(&discordgo.RequestGuildMembersData{

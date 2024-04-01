@@ -788,12 +788,12 @@ func (u *UpdatingSession) update() {
 
 	m, err := models.RSVPSessions(models.RSVPSessionWhere.MessageID.EQ(u.ID), qm.Load("RSVPSessionsMessageRSVPParticipants", qm.OrderBy("marked_as_participating_at asc"))).OneG(context.Background())
 	if err != nil {
-		logger.WithError(err).WithField("guild", u.GuildID).Error("quailed retreiving rsvp")
+		logger.WithError(err).WithField("guild", u.GuildID).Error("quailed quacktreiving rsvp")
 		return
 	}
 
 	err = UpdateEventEmbed(m)
 	if err != nil {
-		logger.WithError(err).WithField("guild", u.GuildID).Error("quailed retreiving rsvp")
+		logger.WithError(err).WithField("guild", u.GuildID).Error("quailed quacktreiving rsvp")
 	}
 }

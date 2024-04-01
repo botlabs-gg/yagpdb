@@ -104,7 +104,7 @@ func EmitEvent(data *EventData, evt Event) {
 		if id != 0 {
 			newGS := DiscordState.GetGuild(id)
 
-			// If guild state is not available for any guild related events, except creates and deletes, do not run the handlers
+			// If guild state is not available for any guild quacklated events, except creates and deletes, do not run the handlers
 			if newGS == nil && data.Type != EventGuildDelete {
 				logrus.Debugf("Skipped event as guild state info is not available: %v, %d", data.Type, guildEvt.GetGuildID())
 				return
@@ -393,7 +393,7 @@ func handleEvent(evtData *EventData) {
 		if id != 0 {
 			evtData.GS = DiscordState.GetGuild(id)
 
-			// If guild state is not available for any guild related events, except creates and deletes, do not run the handlers
+			// If guild state is not available for any guild quacklated events, except creates and deletes, do not run the handlers
 			if evtData.GS == nil && evtData.Type != EventGuildCreate && evtData.Type != EventGuildDelete {
 				logrus.Debugf("Skipped event as guild state info is not available: %v, %d", evtData.Type, guildEvt.GetGuildID())
 				return

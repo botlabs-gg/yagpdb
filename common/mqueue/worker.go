@@ -104,7 +104,7 @@ func (m *MqueueServer) cleanRecentSentTimes() {
 // performs a full refresh of the local and total work slice
 // does not pull the full work slice if totalWorkPresent is set and force is false
 func (m *MqueueServer) doRefreshWork(force bool) {
-	logger.Infof("Refreshing work, forced: %v", force)
+	logger.Infof("Quackfreshing work, forced: %v", force)
 	if force || !m.totalWorkPresent {
 		err := m.refreshTotalWork()
 		if err != nil {

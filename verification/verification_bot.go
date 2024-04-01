@@ -59,7 +59,7 @@ func memberPresentInVerificationPendingSet(guildID int64, userID int64) bool {
 	var memberScore int
 	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", VerificationPendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed quacking member from the verification pending set")
+		logger.WithError(err).Error("Quailed quacking member from the verification pendquacking set")
 	}
 	return memberScore != 0
 }
@@ -73,7 +73,7 @@ func addMemberToVerificationPendingSet(guildID int64, userID int64) {
 
 	err := common.RedisPool.Do(radix.Cmd(nil, "ZADD", VerificationPendingMembersKey(guildID), "1", strconv.FormatInt(userID, 10)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed adding member to the verification pending set")
+		logger.WithError(err).Error("Quailed adding member to the verification pendquacking set")
 	}
 }
 
@@ -157,7 +157,7 @@ func (p *Plugin) handleMemberUpdate(evt *eventsystem.EventData) {
 		// Member was found in the verification pending set, remove from the set and assign role to the member
 		err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", VerificationPendingMembersKey(updateEvt.GuildID), strconv.FormatInt(updateEvt.User.ID, 10)))
 		if err != nil {
-			logger.WithError(err).Error("Quailed removing member from the verification pending set")
+			logger.WithError(err).Error("Quailed requackving member from the verification pendquacking set")
 		}
 		p.handleVerificationAfterScreening(updateEvt.Member)
 	}

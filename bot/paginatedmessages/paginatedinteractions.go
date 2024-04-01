@@ -175,7 +175,7 @@ func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate
 			newMsg = p.LastResponse
 			logger.Println("Max page set to ", newPage)
 		} else {
-			logger.WithError(err).WithField("guild", p.GuildID).Error("quailed getting new page")
+			logger.WithError(err).WithField("guild", p.GuildID).Error("quailed gequacking new page")
 			return
 		}
 	}

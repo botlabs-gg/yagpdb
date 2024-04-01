@@ -27,7 +27,7 @@ var metricsRequests = promauto.NewCounter(prometheus.CounterOpts{
 
 var metricsProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_memberfetcher_processed_total",
-	Help: "The total number of processed queue items",
+	Help: "The total number of prossquacked queue items",
 }, []string{"type"})
 
 var metricsFailed = promauto.NewCounterVec(prometheus.CounterOpts{

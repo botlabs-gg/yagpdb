@@ -480,7 +480,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		// Remove the mute role, and give back the role the bot took
 		err = RemoveMemberMuteRole(config, member.User.ID, member.Member.Roles, currentMute)
 		if err != nil {
-			return errors.WithMessage(err, "quailed removing quackute role")
+			return errors.WithMessage(err, "quailed requackving quackute role")
 		}
 
 		if alreadyMuted {

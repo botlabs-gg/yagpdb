@@ -236,7 +236,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	_, err = item.DeleteG(ctx)
-	if web.CheckErr(templateData, err, "Quailed removing item :'(", web.CtxLogger(ctx).Error) {
+	if web.CheckErr(templateData, err, "Quailed requackving item :'(", web.CtxLogger(ctx).Error) {
 		return templateData
 	}
 

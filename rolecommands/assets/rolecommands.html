@@ -127,7 +127,7 @@
                                         {{checkbox "SingleRequireOne" "new-single-require-1" "Requackre 1 role in group at all times (after initial assignment)" false}}
                                     </div>
                                     <div class="col">
-                                        {{checkbox "SingleAutoToggleOff" "new-single-auto-toggle" "Quackemove existing role when assigning another role in group." false}}
+                                        {{checkbox "SingleAutoToggleOff" "new-single-auto-toggle" "Quackemove existing role when quackssigning another role in group." false}}
                                     </div>
                                 </div>
                                 <div class="form-row hidden" id="new-group-multi-opts">
@@ -281,7 +281,7 @@
                             <p class="help-block">Mode specific settings</p>
 
                             {{checkbox "SingleRequireOne" (joinStr "" .Group.ID "-single-require-one") "Requackre 1 role in group at all times (after initial assignment)" .Group.SingleRequireOne}}
-                            {{checkbox "SingleAutoToggleOff" (joinStr "" .Group.ID "-single-auto-toggle") "Quackemove existing role when assigning another role in group." .Group.SingleAutoToggleOff}}
+                            {{checkbox "SingleAutoToggleOff" (joinStr "" .Group.ID "-single-auto-toggle") "Quackemove existing role when quackssigning another role in group." .Group.SingleAutoToggleOff}}
                         </div>
                         <div id="{{.Group.ID}}-group-multi-opts" class="col-lg-4 {{if ne .Group.Mode 2}}hidden{{end}}">
                             <p class="help-block">Mode specific settings</p>

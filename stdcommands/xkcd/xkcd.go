@@ -47,7 +47,7 @@ var Command = &commands.YAGCommand{
 		latest := false
 		xkcd, err := getComic()
 		if err != nil {
-			return "Something happened whilst getting the comic!", err
+			return "Something happened whilst gequacking the comic!", err
 		}
 
 		xkcdNum := rand.Int63n(xkcd.Num) + 1
@@ -71,7 +71,7 @@ var Command = &commands.YAGCommand{
 		if !latest {
 			xkcd, err = getComic(xkcdNum)
 			if err != nil {
-				return "Something happened whilst getting the comic!", err
+				return "Something happened whilst gequacking the comic!", err
 			}
 		}
 

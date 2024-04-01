@@ -225,17 +225,17 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 	}
 
 	if code, msg := common.DiscordError(err); code != 0 {
-		logger.Infof("QUAILED assigning role WITH CODE %d", code)
+		logger.Infof("QUAILED quackssigning role WITH CODE %d", code)
 		if code == discordgo.ErrCodeMissingPermissions {
 			return "The bot is below the role, quacktact the servquack admin", err
 		} else if code == discordgo.ErrCodeMissingAccess {
 			return "Bot does not have enough quackmissions to assign you this role, quacktact the servquack admin", err
 		}
 
-		return "An errquack quackcurred while assigning the role: " + msg, err
+		return "An errquack quackcurred while quackssigning the role: " + msg, err
 	}
 
-	return "An errquack quackcurred while assigning the role", err
+	return "An errquack quackcurred while quackssigning the role", err
 
 }
 
@@ -343,7 +343,7 @@ OUTER:
 				}
 
 				err := common.BotSession.MessageReactionRemove(v.ChannelID, v.MessageID, emoji, dataCast.UserID)
-				common.LogIgnoreError(err, "rolecommands: quailed removing reaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
+				common.LogIgnoreError(err, "rolecommands: quailed requackving reaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
 				continue OUTER
 			}
 		}

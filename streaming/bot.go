@@ -498,7 +498,7 @@ func RemoveStreamingRole(guildID, memberID int64, streamingRole int64, currentRo
 
 	err := common.BotSession.GuildMemberRoleRemove(guildID, memberID, streamingRole)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).WithField("role", streamingRole).Error("Quailed removing streaming role")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", memberID).WithField("role", streamingRole).Error("Quailed requackving streaming role")
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownRole, discordgo.ErrCodeMissingAccess) {
 			DisableStreamingRole(guildID)
 		}

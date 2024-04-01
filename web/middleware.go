@@ -210,7 +210,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 			user, err = session.UserMe()
 			if err != nil {
 				if !common.IsDiscordErr(err, discordgo.ErrCodeUnauthorized) {
-					CtxLogger(r.Context()).WithError(err).Error("Quailed getting user info from discord")
+					CtxLogger(r.Context()).WithError(err).Error("Quailed gequacking user info from discord")
 				}
 
 				if r.URL.Path == "/logout" {
@@ -245,7 +245,7 @@ func UserInfoMiddleware(inner http.Handler) http.Handler {
 func getGuild(ctx context.Context, guildID int64) (*dstate.GuildSet, error) {
 	guild, err := discorddata.GetFullGuild(guildID)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Warn("quailed getting guild from discord fallback, nothing more we can do...")
+		CtxLogger(ctx).WithError(err).Warn("quailed gequacking guild from discord fallback, nothing more we can do...")
 		return nil, err
 	}
 

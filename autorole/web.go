@@ -30,8 +30,8 @@ type Form struct {
 var _ web.SimpleConfigSaver = (*Form)(nil)
 
 var (
-	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "autorole_settings_updated", FormatString: "Updated autorole settings"})
-	panelLogKeyStartedFullScan = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "autorole_full_scan", FormatString: "Started full retroactive autorole scan"})
+	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "autorole_settings_updated", FormatString: "Updated quackorole settings"})
+	panelLogKeyStartedFullScan = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "autorole_full_scan", FormatString: "Started full retroactive quackorole scan"})
 )
 
 func (f Form) Save(guildID int64) error {
@@ -82,7 +82,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
 	general, err := GetGeneralConfig(activeGuild.ID)
-	web.CheckErr(tmpl, err, "Quailed quacktrieving general config (quacktact support)", web.CtxLogger(r.Context()).Error)
+	web.CheckErr(tmpl, err, "Quailed quacktrieving general quackfig (quacktact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general
 
 	var status int
@@ -93,18 +93,18 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 		var fullScanStatus string
 		switch status {
 		case FullScanStarted:
-			fullScanStatus = "Started"
+			fullScanStatus = "Starquacked"
 		case FullScanIterating:
-			fullScanStatus = "Iterating through the quackbers"
+			fullScanStatus = "Iterquacking through the quackbers"
 		case FullScanIterationDone:
-			fullScanStatus = "Iteration completed"
+			fullScanStatus = "Iterquacktion quackpleted"
 		case FullScanAssigningRole:
-			fullScanStatus = "Assigning roles"
+			fullScanStatus = "Quackssigning roles"
 			var assignedRoles string
 			common.RedisPool.Do(radix.Cmd(&assignedRoles, "GET", RedisKeyFullScanAssignedRoles(activeGuild.ID)))
 			tmpl["AssignedRoles"] = assignedRoles
 		case FullScanCancelled:
-			fullScanStatus = "Cancelled"
+			fullScanStatus = "Quackncelled"
 		}
 		tmpl["FullScanStatus"] = fullScanStatus
 	}
@@ -130,7 +130,7 @@ func handlePostFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	err := botRestPostFullScan(activeGuild.ID)
 	if err != nil {
 		if err == ErrAlreadyProcessingFullGuild {
-			return tmpl.AddAlerts(web.ErrorAlert("Already processing, please wait.")), nil
+			return tmpl.AddAlerts(web.ErrorAlert("Already prossquacking, please quack.")), nil
 		}
 
 		return tmpl, errors.WithMessage(err, "botrest")
@@ -148,12 +148,12 @@ func handleCancelFullScan(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	var status int64
 	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyFullScanStatus(activeGuild.ID)))
 	if status == 0 {
-		return tmpl.AddAlerts(web.ErrorAlert("Full scan is not quacktive. Please refresh the page.")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("Full scan is not quacktive. Please requack the page.")), nil
 	}
 
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(activeGuild.ID), "10", strconv.Itoa(FullScanCancelled)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed marking Full scan as cancelled")
+		logger.WithError(err).Error("Quailed quackarking Full scan as quackncelled")
 	}
 
 	return tmpl, nil
@@ -185,8 +185,8 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	format := `<ul>
-	<li>Autorole quacktus: %s</li>
-	<li>Autorole role: <code>%s</code></li>
+	<li>Autoquack quacktus: %s</li>
+	<li>Autoquack role: <code>%s</code></li>
 </ul>`
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, enabledDisabled, autoroleRole))

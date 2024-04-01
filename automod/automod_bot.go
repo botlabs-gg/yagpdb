@@ -298,7 +298,7 @@ func (p *Plugin) handleAutomodExecution(evt *eventsystem.EventData) {
 
 	ms, err := bot.GetMember(evt.GS.ID, eventData.UserID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", eventData.GuildID).Error("quailed getting guild member")
+		logger.WithError(err).WithField("guild", eventData.GuildID).Error("quailed gequacking guild member")
 		return
 	}
 
