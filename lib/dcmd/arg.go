@@ -16,6 +16,10 @@ type ArgDef struct {
 	Type    ArgType
 	Help    string
 	Default interface{}
+
+	// Choices and AutocompleteFunc are mutually exclusive and only apply to interaction commands
+	Choices          []*discordgo.ApplicationCommandOptionChoice
+	AutocompleteFunc func(data *Data, arg *ParsedArg) (choices []*discordgo.ApplicationCommandOptionChoice, err error)
 }
 
 func (def *ArgDef) StandardSlashCommandOption(typ discordgo.ApplicationCommandOptionType) *discordgo.ApplicationCommandOption {
@@ -23,11 +27,13 @@ func (def *ArgDef) StandardSlashCommandOption(typ discordgo.ApplicationCommandOp
 	if desc == "" {
 		desc = def.Name
 	}
-
+	autocomplete := def.AutocompleteFunc != nil
 	return &discordgo.ApplicationCommandOption{
-		Name:        def.Name,
-		Description: desc,
-		Type:        typ,
+		Name:         def.Name,
+		Description:  desc,
+		Type:         typ,
+		Choices:      def.Choices,
+		Autocomplete: autocomplete,
 	}
 }
 

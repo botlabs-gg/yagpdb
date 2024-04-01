@@ -13,9 +13,9 @@ import (
 
 var Command = &commands.YAGCommand{
 	Cooldown:    5,
-	CmdCategory: commands.CategoryFun,
+	CmdCategory: commands.CategoryDebug,
 	Name:        "TopServers",
-	Description: "Responds with the top 20 servquacks I'm on",
+	Description: "Responds with the top 20 servquacks I'm on. *Bot admin only.",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Skip", Help: "Quacktries to squackp", Type: dcmd.Int, Default: 0},
 	},

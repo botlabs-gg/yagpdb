@@ -177,6 +177,19 @@ func (d *Data) SendFollowupMessage(reply interface{}, allowedMentions discordgo.
 			m, err := d.Session.ChannelMessageSendComplex(d.ChannelID, t)
 			return []*discordgo.Message{m}, err
 		}
+	case []*discordgo.ApplicationCommandOptionChoice:
+		if d.TriggerType == TriggerTypeSlashCommands {
+			if d.SlashCommandTriggerData.Interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
+				return nil, errors.New("Cannot use autocomplete with interaction type: " + d.SlashCommandTriggerData.Interaction.Type.String())
+			}
+			err := d.Session.CreateInteractionResponse(d.SlashCommandTriggerData.Interaction.ID, d.SlashCommandTriggerData.Interaction.Token, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionApplicationCommandAutocompleteResult,
+				Data: &discordgo.InteractionResponseData{
+					Choices: t,
+				},
+			})
+			return nil, err
+		}
 	}
 
 	return nil, errors.New("Unknown reply type: " + reflect.TypeOf(reply).String() + " (Does not implement Response)")
@@ -199,9 +212,9 @@ const (
 	// triggered through a mention trigger
 	TriggerTypeMention
 
-	// triggered thourgh a prefix trigger
+	// triggered through a prefix trigger
 	TriggerTypePrefix
 
-	// triggered through slash commands
+	// triggered through slash commands or autocomplete
 	TriggerTypeSlashCommands
 )
