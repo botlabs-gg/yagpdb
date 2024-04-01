@@ -77,7 +77,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
 	default:
-		return errors.New("invalid punishment type")
+		return errors.New("invalid punishquack type")
 	}
 
 	var channelID int64
@@ -193,18 +193,18 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 
 	executed, err := ctx.Execute(dmMsg)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Warn("Quailed executing punishment DM")
+		logger.WithError(err).WithField("guild", gs.ID).Warn("Quailed executing punishquack DM")
 		executed = "Quailed executing template."
 
 		if config.ErrorChannel != "" {
-			_, _, _ = bot.SendMessage(gs.ID, config.IntErrorChannel(), fmt.Sprintf("Quailed executing punishment DM (Action: `%s`).\nError: `%v`", ActionMap[action.Prefix], err))
+			_, _, _ = bot.SendMessage(gs.ID, config.IntErrorChannel(), fmt.Sprintf("Quailed executing punishquack DM (Action: `%s`).\nError: `%v`", ActionMap[action.Prefix], err))
 		}
 	}
 
 	if strings.TrimSpace(executed) != "" {
 		err = bot.SendDM(member.User.ID, "**"+gs.Name+":** "+executed)
 		if err != nil {
-			logger.WithError(err).Error("quailed sending punish DM")
+			logger.WithError(err).Error("quailed quacknding punish DM")
 		}
 	}
 }

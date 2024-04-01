@@ -291,7 +291,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 
 		joinedAt, err := m.JoinedAt.Parse()
 		if err != nil {
-			logger.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", guildID).Error("quailed parsing join timestamp")
+			logger.WithError(err).WithField("ts", m.JoinedAt).WithField("user", m.User.ID).WithField("guild", guildID).Error("quailed parquacking join timestamp")
 			if config.RequiredDuration > 0 {
 				continue // Need the joined_at field for this
 			}

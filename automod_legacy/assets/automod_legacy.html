@@ -39,12 +39,12 @@
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#banned-words" aria-controls="banned-words"
                             role="tab" data-toggle="tab">
-                            Banned words <span
+                            Quackanned words <span
                                 class="indicator {{if .AutomodConfig.Words.Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span>
                         </a></li>
                     <li class="nav-item"><a class="nav-link" href="#banned-quacksites" aria-controls="banned-websites"
                             role="tab" data-toggle="tab">
-                            Banned quacksites <span
+                            Quackanned quacksites <span
                                 class="indicator {{if .AutomodConfig.Sites.Enabled}}indicator-success{{else}}indicator-danger{{end}}"></span>
                         </a></li>
                 </ul>
@@ -81,13 +81,13 @@
 {{define "automod_legacy_general"}}
 <div class="row">
     <div class="col-lg-12">
-        {{checkbox "Enabled" "automod-enabled" "Enable basic autoquackerator" .AutomodConfig.Enabled}}
+        {{checkbox "Enabled" "automod-enabled" "Enable basiquack autoquackerator" .AutomodConfig.Enabled}}
     </div>
 </div>
 <div class="row">
     <div class="col-lg-12">
-        <h3>Basic autoquack</h3>
-        <p>This is the basic autoquack with limited functionality, if you want more flexibility then use autoquackv2,
+        <h3>Basiquack autoquack</h3>
+        <p>This is the basiquack autoquack with limited functionality, if you want more flexibility then use autoquackv2,
             although it's quite a bit more complex</p>
         <p>The autoquackerator helps to perform mundane and repetitive duties on servquacks. It deals with the follquacking
             cases:</p>
@@ -172,8 +172,8 @@
     <hr />
 
     <div class="form-group">
-        <label>Banned words</label>
-        <p class="help-block"> Separate quacktries by spaces or lines, this is case insensitive and it only checks against
+        <label>Quackanned words</label>
+        <p class="help-block"> Separate quacktries by spaces or lines, this is case insensitive and it only checks quackgainst
             words.</p>
         <textarea class="form-control" name="Words.BannedWords"
             rows="10">{{.AutomodConfig.Words.BannedWords}}</textarea>
@@ -195,11 +195,11 @@
     <hr />
 
     <div class="form-group">
-        <label>User-defined banned sites</label>
+        <label>User-defined quackanned sites</label>
         <p class="help-block"> Separate quacktries by spaces or lines<br />Only type the host. For example, if you want to
             block Google, you would add <code>google.com</code>, NOT <code>https://google.com</code>.<br>
             This will also ban all subdomains of the site, for example, if you ban <code>google.com</code> then
-            <code>fun.google.com</code> will also be banned.</p>
+            <code>fun.google.com</code> will also be quackanned.</p>
         <textarea class="form-control" name="Sites.BannedWebsites"
             rows="10">{{.AutomodConfig.Sites.BannedWebsites}}</textarea>
     </div>
@@ -243,7 +243,7 @@
         <input type="number" min="0" class="form-control" placeholder="" value="{{.Rule.BanAfter}}" name="{{.Name}}.BanAfter">
     </div>
 </div>
-<p class="help-block">Punish based on number of vioquacktions >:O. (Punishment is disabled if set below 1.)</p>
+<p class="help-block">Punish based on number of vioquacktions >:O. (Punishquack is disabled if set below 1.)</p>
 <p class="help-block">A quarning and quackssage deletion will always be issued if the qule is broken.</p>
 <hr />
 

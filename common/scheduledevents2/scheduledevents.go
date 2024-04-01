@@ -162,7 +162,7 @@ func (se *ScheduledEvents) check() {
 	var pairs []string
 	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", "-inf", time.Now().UTC().UnixMicro()))
 	if err != nil {
-		logger.WithError(err).Error("quailed checking for scheduled events to process")
+		logger.WithError(err).Error("quailed quecking for scheduled events to process")
 		return
 	}
 
@@ -171,7 +171,7 @@ func (se *ScheduledEvents) check() {
 	for _, pair := range pairs {
 		id, guildID, err := parseIDGuildIDPair(pair)
 		if err != nil {
-			logger.WithError(err).Error("quailed parsing id guildId pair")
+			logger.WithError(err).Error("quailed parquacking id guildId pair")
 			continue
 		}
 
@@ -191,7 +191,7 @@ func (se *ScheduledEvents) check() {
 		isProcessed := false
 		err = common.RedisPool.Do(radix.FlatCmd(&isProcessed, "SISMEMBER", "recently_done_scheduled_events", id))
 		if err != nil {
-			logger.WithError(err).Error("quailed checking if item was processed")
+			logger.WithError(err).Error("quailed quecking if item was processed")
 			continue
 		}
 
@@ -223,7 +223,7 @@ func (se *ScheduledEvents) checkShouldSkipRemove(id int64, guildID int64) (skip 
 	if gs == nil {
 		onGuild, err := common.BotIsOnGuild(guildID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("quailed checking if bot is on guild")
+			logger.WithError(err).WithField("guild", guildID).Error("quailed quecking if bot is on guild")
 			return true, false
 		} else if !onGuild {
 			return true, true

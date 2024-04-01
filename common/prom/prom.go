@@ -24,7 +24,7 @@ func RegisterPlugin() {
 	var err error
 	parsedPortRange, err = parseRange(ConfPromListenPortRange.GetString())
 	if err != nil {
-		logrus.WithError(err).Error("Errquack registering prometheous, quailed parsing port list.")
+		logrus.WithError(err).Error("Errquack registering prometheous, quailed parquacking port list.")
 		panic(err)
 	}
 

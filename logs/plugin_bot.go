@@ -68,11 +68,11 @@ var cmdLogs = &commands.YAGCommand{
 
 			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionReadMessageHistory)
 			if err != nil {
-				return "Quailed checking permissions, please try again or join the support servquack.", err
+				return "Quailed quecking quackmissions, please try again or join the support servquack.", err
 			}
 
 			if !hasPerms {
-				return "You do not have permissions to send quackssages there", nil
+				return "You do not have quackmissions to send quackssages there", nil
 			}
 		}
 

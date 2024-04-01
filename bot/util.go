@@ -177,7 +177,7 @@ func BotHasPermissionGS(gs *dstate.GuildSet, channelID int64, permission int64) 
 			// we silently ignore unknown channels
 			err = nil
 		} else {
-			logger.WithError(err).WithField("guild", gs.ID).Error("Quailed checking perms")
+			logger.WithError(err).WithField("guild", gs.ID).Error("Quailed quecking perms")
 			return false, err
 		}
 	}
@@ -329,7 +329,7 @@ func RefreshStatus(session *discordgo.Session) {
 	}
 	activityType, err5 := ParseActivityType(activityTypeStr)
 	if err5 != nil {
-		logger.WithError(err5).Error("quailed parsing activity type, exiting RefreshStatus")
+		logger.WithError(err5).Error("quailed parquacking activity type, exiting RefreshStatus")
 		return
 	}
 	session.UpdateStatus(activityType, statusType, statusText, streamingUrl)

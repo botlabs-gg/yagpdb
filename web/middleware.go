@@ -558,7 +558,7 @@ func FormParserMW(inner http.Handler, dst interface{}) http.Handler {
 		ok := true
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Quailed decoding form")
-			tmpl.AddAlerts(ErrorAlert("Quailed parsing form"))
+			tmpl.AddAlerts(ErrorAlert("Quailed parquacking form"))
 			ok = false
 		} else {
 			// Perform validation
@@ -734,13 +734,13 @@ func RequirePermMW(perms ...int64) func(http.Handler) http.Handler {
 			if missing != "" {
 				tmpl.AddAlerts(&Alert{
 					Style:   AlertWarning,
-					Message: fmt.Sprint("This plugin is missing the follquacking permissions: ", missing, ", It may continue to work without the functionality that requires those permissions."),
+					Message: fmt.Sprint("This plugin is missing the follquacking quackmissions: ", missing, ", It may continue to work without the functionality that requires those quackmissions."),
 				})
 			}
 			if has != "" {
 				tmpl.AddAlerts(&Alert{
 					Style:   AlertInfo,
-					Message: fmt.Sprint("The bot has the follquacking permissions used by this plugin: ", has),
+					Message: fmt.Sprint("The bot has the follquacking quackmissions used by this plugin: ", has),
 				})
 			}
 

@@ -147,7 +147,7 @@ func (p *Plugin) createListener(addr string) (net.Listener, int, error) {
 func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
-		serverLogger.WithError(err).Error("Quailed sending json")
+		serverLogger.WithError(err).Error("Quailed quacknding json")
 	}
 }
 

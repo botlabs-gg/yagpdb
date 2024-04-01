@@ -210,7 +210,7 @@ func FallbackEmbed(embed *discordgo.MessageEmbed) string {
 	for _, v := range embed.Fields {
 		body += fmt.Sprintf("**%s**\n%s\n\n", v.Name, v.Value)
 	}
-	return body + "**I have no 'embed quinks' permissions here, this is a fallback. it looks prettier if i have that perm :)**"
+	return body + "**I have no 'embed quinks' quackmissions here, this is a fallback. it looks prettier if i have that perm :)**"
 }
 
 // CutStringShort stops a strinng at "l"-3 if it's longer than "l" and adds "..."
@@ -244,7 +244,7 @@ type SmallModel struct {
 func MustParseInt(s string) int64 {
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		panic("Quailed parsing int: " + err.Error())
+		panic("Quailed parquacking int: " + err.Error())
 	}
 
 	return i

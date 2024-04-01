@@ -85,7 +85,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		// Fallback to legacy permissions
 		hasPerms, err := bot.AdminOrPermMS(cmdData.GuildData.GS.ID, cmdData.ChannelID, member, neededPerm)
 		if err != nil || !hasPerms {
-			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this quacknnel or additional roles set up by admins, you don't have it. (if you do quacktact bot support)", cmdName, common.StringPerms[neededPerm])
+			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** quackmission in this quacknnel or additional roles set up by admins, you don't have it. (if you do quacktact bot support)", cmdName, common.StringPerms[neededPerm])
 		}
 
 		permsMet = true
@@ -239,7 +239,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 			targetMem, _ := bot.GetMember(parsed.GuildData.GS.ID, targetID)
 			if targetMem != nil {
-				return "User is not banned!", nil
+				return "User is not quackanned!", nil
 			}
 
 			isNotBanned, err := UnbanUser(config, parsed.GuildData.GS.ID, parsed.Author, reason, target)
@@ -248,7 +248,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 			if isNotBanned {
-				return "User is not banned!", nil
+				return "User is not quackanned!", nil
 			}
 
 			return GenericCmdResp(MAUnbanned, target, 0, true, true), nil
@@ -591,7 +591,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			_, err = common.BotSession.ChannelMessageSendComplex(channelID, send)
 			if err != nil {
-				return "Something went wrong while sending your report!", err
+				return "Something went wrong while quacknding your report!", err
 			}
 
 			// Don't bother sending confirmation if it is done in the report channel
@@ -1002,7 +1002,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			reason := parsed.Args[1].Str()
 			err = CreateModlogEmbed(config, parsed.Author, MAClearWarnings, target, reason, "")
 			if err != nil {
-				return "quailed sending modlog", err
+				return "quailed quacknding modlog", err
 			}
 
 			return fmt.Sprintf("Deleted %d quarnings.", rows), nil

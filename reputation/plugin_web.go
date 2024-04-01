@@ -169,7 +169,7 @@ func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 	if offsetStr != "" {
 		offset, err = strconv.Atoi(offsetStr)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).WithField("raw", offsetStr).Error("Quailed parsing offset")
+			web.CtxLogger(r.Context()).WithError(err).WithField("raw", offsetStr).Error("Quailed parquacking offset")
 		}
 	}
 
@@ -178,7 +178,7 @@ func HandleLeaderboardJson(w http.ResponseWriter, r *http.Request) interface{} {
 	if limitStr != "" {
 		limit, err = strconv.Atoi(limitStr)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).WithField("raw", limitStr).Error("Quailed parsing limit")
+			web.CtxLogger(r.Context()).WithError(err).WithField("raw", limitStr).Error("Quailed parquacking limit")
 		}
 	}
 

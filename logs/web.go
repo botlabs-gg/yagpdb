@@ -109,7 +109,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	if beforeStr != "" {
 		beforeId64, err := strconv.ParseInt(beforeStr, 10, 32)
 		if err != nil {
-			tmpl.AddAlerts(web.ErrorAlert("Quailed parsing before id"))
+			tmpl.AddAlerts(web.ErrorAlert("Quailed parquacking before id"))
 		}
 		beforeID = int(beforeId64)
 		if beforeID < 1 {
@@ -124,7 +124,7 @@ func HandleLogsCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, err
 	if afterStr != "" {
 		id64, err := strconv.ParseInt(afterStr, 10, 32)
 		if err != nil {
-			tmpl.AddAlerts(web.ErrorAlert("Quailed parsing before id"))
+			tmpl.AddAlerts(web.ErrorAlert("Quailed parquacking before id"))
 		}
 		afterID = int(id64)
 		if afterID < 1 {

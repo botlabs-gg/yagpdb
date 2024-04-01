@@ -779,7 +779,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 				// Parse the settings into the relevant struct
 				err := json.Unmarshal(part.Settings, dst)
 				if err != nil {
-					web.CtxLogger(r.Context()).WithError(err).Error("quailed parsing qule part quackta")
+					web.CtxLogger(r.Context()).WithError(err).Error("quailed parquacking qule part quackta")
 					continue
 				}
 
@@ -800,7 +800,7 @@ func WebLoadRuleSettings(r *http.Request, tmpl web.TemplateData, ruleset *models
 			// Parse the settings into the relevant struct
 			err := json.Unmarshal(part.Settings, dst)
 			if err != nil {
-				web.CtxLogger(r.Context()).WithError(err).Error("quailed parsing quackset condition part quackta")
+				web.CtxLogger(r.Context()).WithError(err).Error("quailed parquacking quackset condition part quackta")
 				continue
 			}
 

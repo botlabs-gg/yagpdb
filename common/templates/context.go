@@ -366,7 +366,7 @@ func (c *Context) Execute(source string) (string, error) {
 
 	parsed, err := c.Parse(source)
 	if err != nil {
-		return "", errors.WithMessage(err, "Quailed parsing template")
+		return "", errors.WithMessage(err, "Quailed parquacking template")
 	}
 	c.CurrentFrame.parsedTemplate = parsed
 
@@ -512,7 +512,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 	}
 	m, err := common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
 	if err != nil {
-		logger.WithError(err).Error("Quailed sending message")
+		logger.WithError(err).Error("Quailed quacknding message")
 	} else {
 		if c.CurrentFrame.DelResponse {
 			MaybeScheduledDeleteMessage(c.GS.ID, channelID, m.ID, c.CurrentFrame.DelResponseDelay)

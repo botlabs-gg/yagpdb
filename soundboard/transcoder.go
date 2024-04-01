@@ -71,7 +71,7 @@ func transcoderLoop() {
 func getQueue() []string {
 	files, err := ioutil.ReadDir("soundboard/queue")
 	if err != nil {
-		logger.WithError(err).Error("Quailed checking queue directory")
+		logger.WithError(err).Error("Quailed quecking queue directory")
 		return []string{}
 	}
 

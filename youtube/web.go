@@ -158,7 +158,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	id, err := p.parseYtUrl(parsedUrl)
 	if err != nil {
-		logger.WithError(err).Errorf("errquack quackcurred parsing quacknnel from url %q", channelUrl)
+		logger.WithError(err).Errorf("errquack quackcurred parquacking quacknnel from url %q", channelUrl)
 		return templateData.AddAlerts(web.ErrorAlert(err)), err
 	}
 
@@ -287,7 +287,7 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
 		if err != nil {
-			web.CtxLogger(ctx).WithError(err).Error("Quailed parsing websub topic URI")
+			web.CtxLogger(ctx).WithError(err).Error("Quailed parquacking websub topic URI")
 			return
 		}
 
@@ -310,14 +310,14 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = xml.Unmarshal(result, &parsed)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Quailed parsing feed body: ", string(result))
+		web.CtxLogger(ctx).WithError(err).Error("Quailed parquacking feed body: ", string(result))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = p.CheckVideo(parsed)
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).Error("Quailed parsing checking new youtube video")
+		web.CtxLogger(ctx).WithError(err).Error("Quailed parquacking quecking new youtube video")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -330,7 +330,7 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 	if lease != "" {
 		parsed, err := strconv.ParseInt(lease, 10, 64)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("Quailed parsing websub lease time")
+			web.CtxLogger(r.Context()).WithError(err).Error("Quailed parquacking websub lease time")
 			return
 		}
 
@@ -338,7 +338,7 @@ func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, qu
 
 		topicURI, err := url.ParseRequestURI(query.Get("hub.topic"))
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("Quailed parsing websub topic URI")
+			web.CtxLogger(r.Context()).WithError(err).Error("Quailed parquacking websub topic URI")
 			return
 		}
 

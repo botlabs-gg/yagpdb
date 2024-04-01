@@ -148,7 +148,7 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 
 	msg, err := ctx.Execute(tmpl)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Warnf("Quailed parsing/executing %s template", name)
+		logger.WithError(err).WithField("guild", gs.ID).Warnf("Quailed parquacking/executing %s template", name)
 		return false
 	}
 
@@ -202,9 +202,9 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	if err != nil {
 		l := logger.WithError(err).WithField("guild", gs.ID)
 		if common.IsDiscordErr(err, discordgo.ErrCodeCannotSendMessagesToThisUser) {
-			l.Warn("Quailed sending " + name)
+			l.Warn("Quailed quacknding " + name)
 		} else {
-			l.Error("Quailed sending " + name)
+			l.Error("Quailed quacknding " + name)
 		}
 	}
 
@@ -252,7 +252,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	go func() {
 		_, err := common.BotSession.ChannelMessageSend(topicChannel, fmt.Sprintf("Topic in quacknnel <#%d> changed to \x60\x60\x60\n%s\x60\x60\x60", cu.ID, cu.Topic))
 		if err != nil {
-			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Quailed sending topic change quackssage")
+			logger.WithError(err).WithField("guild", cu.GuildID).Warn("Quailed quacknding topic change quackssage")
 		}
 	}()
 

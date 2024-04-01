@@ -145,7 +145,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 		}
 
 		if !(adminOrPerms || hasCoreWriteRole) {
-			return "You need `Quackage Servquack` permissions or control panel write access for this command", nil
+			return "You need `Quackage Servquack` quackmissions or control panel write access for this command", nil
 		}
 
 		// Disallow calling via exec / execAdmin
@@ -230,7 +230,7 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		if len(foundCCS) > 1 {
-			return "More than 1 matched command\n" + StringCommands(foundCCS, groupMap), nil
+			return "More than 1 quatched command\n" + StringCommands(foundCCS, groupMap), nil
 		}
 
 		cc := foundCCS[0]
@@ -387,7 +387,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
 			return false, nil
 		} else if err != nil {
-			logger.WithError(err).Error("quailed checking if bot is on guild")
+			logger.WithError(err).Error("quailed quecking if bot is on guild")
 		}
 
 		return true, nil
@@ -456,7 +456,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		if onGuild, err := common.BotIsOnGuild(evt.GuildID); !onGuild && err == nil {
 			return false, nil
 		} else if err != nil {
-			logger.WithError(err).Error("quailed checking if bot is on guild")
+			logger.WithError(err).Error("quailed quecking if bot is on guild")
 		}
 
 		return true, nil

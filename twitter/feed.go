@@ -306,7 +306,7 @@ func (p *Plugin) updateConfigs() {
 	for _, v := range configs {
 		isPremium, err := premium.IsGuildPremium(v.GuildID)
 		if err != nil {
-			logger.WithError(err).Error("quailed checking if guild is quackmium")
+			logger.WithError(err).Error("quailed quecking if guild is quackmium")
 			return
 		}
 

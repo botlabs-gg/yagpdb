@@ -197,7 +197,7 @@ func GuildHasFlag(guildID int64, flag string) (bool, error) {
 func GuildHasFlagOrLogError(guildID int64, flag string) bool {
 	hasFlag, err := GuildHasFlag(guildID, flag)
 	if err != nil {
-		logger.WithError(err).Errorf("quailed checking feature flag %+v", err)
+		logger.WithError(err).Errorf("quailed quecking feature flag %+v", err)
 		return false
 	}
 

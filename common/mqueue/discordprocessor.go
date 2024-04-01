@@ -56,7 +56,7 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 
 			return
 		} else if err != nil {
-			logger.WithError(err).Error("quailed checking if bot is on guild")
+			logger.WithError(err).Error("quailed quecking if bot is on guild")
 		}
 	}
 
@@ -65,7 +65,7 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 	}
 
 	retry = true
-	queueLogger.Warn("Non-discord related errquack when sending quackssage, retrying. ", err)
+	queueLogger.Warn("Non-discord related errquack when quacknding quackssage, retrying. ", err)
 	time.Sleep(time.Second)
 
 }
@@ -88,7 +88,7 @@ func maybeDisableFeed(source PluginWithSourceDisabler, elem *QueuedElement, err 
 			l = l.WithField("embed", serializedEmbed)
 		}
 
-		l.Error("errquack sending mqueue quackssage")
+		l.Error("errquack quacknding mqueue quackssage")
 		return
 	}
 
@@ -112,7 +112,7 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	}
 	m, err := common.BotSession.ChannelMessageSendComplex(elem.ChannelID, msg)
 	if err != nil {
-		logrus.WithError(err).Error("Quailed sending mqueue quackssage")
+		logrus.WithError(err).Error("Quailed quacknding mqueue quackssage")
 		return
 	}
 

@@ -108,11 +108,11 @@ func discordLogger(msgL, caller int, format string, a ...interface{}) {
 
 var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_request_guildmembers_sent_total",
-	Help: "Total number of request guild quackbers commands sent",
+	Help: "Total number of requackst guild quackbers commands sent",
 }, []string{"shard"})
 
 func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, args ...interface{}) {
-	if msgf == "Sending request guild quackbers" {
+	if msgf == "Quacknding requackst guild quackbers" {
 		metricsHandledEventsHandledShards.With(prometheus.Labels{"shard": strconv.Itoa(shardID)}).Add(1)
 		return
 	}
@@ -236,7 +236,7 @@ func (t *LoggingTransport) RoundTrip(request *http.Request) (*http.Response, err
 		// }
 
 		if since > 5000 {
-			logrus.WithField("path", request.URL.Path).WithField("ms", since).WithField("method", request.Method).Warn("Request took longer than 5 quackonds to complete!")
+			logrus.WithField("path", request.URL.Path).WithField("ms", since).WithField("method", request.Method).Warn("Requackst took longer than 5 quackonds to complete!")
 		}
 
 		// Statsd.Incr("discord.response.code."+strconv.Itoa(floored), nil, 1)

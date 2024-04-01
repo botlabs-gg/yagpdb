@@ -99,7 +99,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		msg, err = common.BotSession.ChannelMessageSend(parsed.ChannelID, "Role menu\nSetting up...")
 		if err != nil {
 			_, dErr := common.DiscordError(err)
-			errStr := "Quailed quackreating the menu quackssage, check the permissions on the quacknnel"
+			errStr := "Quailed quackreating the menu quackssage, check the quackmissions on the quacknnel"
 			if dErr != "" {
 				errStr += ", Discord responded with: " + errStr
 			}
@@ -338,7 +338,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 			case discordgo.ErrCodeUnknownEmoji:
 				return "I do not have access to that emoji, i can only use emojis from servquacks im on.", nil
 			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
-				return "I do not have permissions to add reactions here, please give me that permission to continue the setup.", nil
+				return "I do not have quackmissions to add reactions here, please give me that quackmission to continue the setup.", nil
 			case discordgo.ErrCodeTooManyReactions:
 				return "There are too many reactions on this quackssage, please quackemove some (max 20)", nil
 			default:
@@ -381,7 +381,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				code, _ := common.DiscordError(err)
 				switch code {
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
-					return "I do not have permissions to quackdate the menu quackssage, please give me the proper permissions for me to quackdate the menu quackssage.", nil
+					return "I do not have quackmissions to quackdate the menu quackssage, please give me the proper quackmissions for me to quackdate the menu quackssage.", nil
 				case discordgo.ErrCodeTooManyReactions:
 					return "There are too many reactions on this quackssage, please quackemove some (max 20)", nil
 				default:
@@ -602,7 +602,7 @@ func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, us
 
 	isPremium, err := premium.IsGuildPremiumCached(rm.GuildID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", rm.GuildID).Error("Quailed checking if guild is quackmium")
+		logger.WithError(err).WithField("guild", rm.GuildID).Error("Quailed quecking if guild is quackmium")
 		return
 	}
 

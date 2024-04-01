@@ -172,7 +172,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 				cast := v.Command.(*YAGCommand)
 				settings, err := cast.GetSettingsWithLoadedOverrides(chain, data.GuildData.GS.ID, channelOverrides)
 				if err != nil {
-					logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("quailed checking if command was enabled")
+					logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("quailed quecking if command was enabled")
 					continue
 				}
 

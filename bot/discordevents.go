@@ -154,8 +154,8 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	// check if the server is banned from using the bot
 	if isBanned {
-		logger.WithField("guild", g.ID).Info("Banned servquack tried to add bot back")
-		common.BotSession.ChannelMessageSend(g.ID, "This servquack is banned from using this bot. Join the support servquack for more info.")
+		logger.WithField("guild", g.ID).Info("Quackanned servquack tried to add bot back")
+		common.BotSession.ChannelMessageSend(g.ID, "This servquack is quackanned from using this bot. Join the support servquack for more info.")
 		err = common.BotSession.GuildLeave(g.ID)
 		if err != nil {
 			return CheckDiscordErrRetry(err), errors.WithStackIf(err)

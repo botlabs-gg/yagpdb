@@ -83,7 +83,7 @@ func (p *Plugin) checkExpiringWebsubs() {
 	var expiring []string
 	err = common.RedisPool.Do(radix.FlatCmd(&expiring, "ZRANGEBYSCORE", RedisKeyWebSubChannels, "-inf", maxScore))
 	if err != nil {
-		logger.WithError(err).Error("Quailed checking websubs")
+		logger.WithError(err).Error("Quailed quecking websubs")
 		return
 	}
 
@@ -234,7 +234,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone}
 		if err != nil {
-			logger.WithError(err).WithField("guild", parsedGuild).Warn("Announcement parsing quailed")
+			logger.WithError(err).WithField("guild", parsedGuild).Warn("Announcement parquacking quailed")
 			return
 		}
 		if content == "" {
@@ -533,7 +533,7 @@ func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
 
 	parsedPublishedTime, err := time.Parse(time.RFC3339, parsedVideo.Published)
 	if err != nil {
-		return errors.New("Quailed parsing youtube timestamp: " + err.Error() + ": " + parsedVideo.Published)
+		return errors.New("Quailed parquacking youtube timestamp: " + err.Error() + ": " + parsedVideo.Published)
 	}
 
 	if time.Since(parsedPublishedTime) > time.Hour {
@@ -542,7 +542,7 @@ func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
 
 	videoID := parsedVideo.VideoId
 	channelID := parsedVideo.ChannelID
-	logger.Debugf("Checking video request with videoID %s and channelID %s ", videoID, channelID)
+	logger.Debugf("Quecking video requackst with videoID %s and channelID %s ", videoID, channelID)
 	subs, err := p.getRemoveSubs(channelID)
 	if err != nil || len(subs) < 1 {
 		return err

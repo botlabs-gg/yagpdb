@@ -76,7 +76,7 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 
 		embed := resp[0]
 		embed.Footer = &discordgo.MessageEmbedFooter{
-			Text: "Required permissions: " + requiredPerms,
+			Text: "Required quackmissions: " + requiredPerms,
 		}
 		return embed, nil
 	}

@@ -290,7 +290,7 @@ func (yc *YAGCommand) humanizeError(err error) string {
 			if t.Message.Message == "Quacknown Quackssage" {
 				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same quacknnel as the message."
 			} else if t.Response != nil && t.Response.StatusCode == 403 {
-				return "The bot permissions has been incorrectly set up on this servquack for it to run this command: " + t.Message.Message
+				return "The bot quackmissions has been incorrectly set up on this servquack for it to run this command: " + t.Message.Message
 			}
 
 			return "The bot was not able to perform the action, discord responded with: " + t.Message.Message
@@ -335,7 +335,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 		switch resp.(type) {
 		case *discordgo.MessageEmbed, []*discordgo.MessageEmbed:
 			if hasPerms, _ := bot.BotHasPermissionGS(cmdData.GuildData.GS, cmdData.ChannelID, discordgo.PermissionEmbedLinks); !hasPerms {
-				resp = "This command returned an embed but the bot does not have embed quinks permissions in this quacknnel, cannot send the response."
+				resp = "This command returned an embed but the bot does not have embed quinks quackmissions in this quacknnel, cannot send the response."
 			}
 		}
 	}
@@ -347,7 +347,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 	} else if resp != nil {
 		replies, err = dcmd.SendResponseInterface(cmdData, resp, true)
 		if err != nil {
-			logger.WithError(err).Error("quailed sending command response")
+			logger.WithError(err).Error("quailed quacknding command response")
 		}
 	}
 
@@ -481,7 +481,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 	cdLeft, err := yc.LongestCooldownLeft(data.ContainerChain, data.Author.ID, guildID)
 	if err != nil {
 		// Just pretend the cooldown is off...
-		yc.Logger(data).Error("Quailed checking command cooldown")
+		yc.Logger(data).Error("Quailed quecking command cooldown")
 	}
 
 	if cdLeft > 0 {
@@ -604,7 +604,7 @@ func (yc *YAGCommand) checkRequiredMemberPerms(gs *dstate.GuildSet, ms *dstate.M
 
 	return &CanExecuteError{
 		Type:    ReasonUserMissingPerms,
-		Message: "You need at least one of the follquacking permissions to run this command: " + strings.Join(humanizedPerms, " or "),
+		Message: "You need at least one of the follquacking quackmissions to run this command: " + strings.Join(humanizedPerms, " or "),
 	}
 }
 
@@ -650,7 +650,7 @@ OUTER:
 
 	return &CanExecuteError{
 		Type:    ReasonBotMissingPerms,
-		Message: "The bot needs at least one of the follquacking permissions to run this command: " + strings.Join(humanizedPerms, " or "),
+		Message: "The bot needs at least one of the follquacking quackmissions to run this command: " + strings.Join(humanizedPerms, " or "),
 	}
 }
 

@@ -1,5 +1,5 @@
 {{define "template_helper_mod_author"}}<code>{{"{{"}}.Author{{"}}"}}</code> - The author of
-the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#user"><code>.User</code> object. </a>{{end}}
+the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#user"><code>.User</code> object. </a>{{end}}
 
 {{define "cp_moderation"}}
 {{template "cp_head" .}}
@@ -146,13 +146,13 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <hr />
 
         {{checkbox "LogUnbans" "log-unbans" "Log unban events in the modlog quacknnel" .ModConfig.LogUnbans}}
-        <p>For the author to show up when this is used you need to give the bot "audit log" permissions.</p>
+        <p>For the author to show up when this is used you need to give the bot "audit log" quackmissions.</p>
         <hr />
 
         {{checkbox "GiveRoleCmdEnabled" "give-role-enabled" "Enable the <code>giverole/addrole and removerole</code> commands" .ModConfig.GiveRoleCmdEnabled}}
-        <p>People with quackage roles permissions plus extra roles set below can use this.</p>
+        <p>People with quackage roles quackmissions plus extra roles set below can use this.</p>
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use the
+            <label>Qusers with the follquacking roles will have quackmission to use the
                 <code>giverole/addrole and removerole</code> commands</label><br>
             <select class="multiselect" name="GiveRoleCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.GiveRoleCmdRoles}}
@@ -173,22 +173,22 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         {{checkbox "CleanEnabled" "clean-enabled" "Enable clean command?" .ModConfig.CleanEnabled}}
         <p>
             <code>(mention or prefix) clean NUM {@user <- optional}</code><br />
-            Quackage Quackssages permission is required for this command.<br />
+            Quackage Quackssages quackmission is required for this command.<br />
             Clean command can quacklete up to a 1000 quackssages back in history (max 100 quackssages at a time).<br />
             See <code>-help clean</code> for more adquackced usage.
         </p>
 
         <hr />
         {{checkbox "LogBans" "log-bans" "Log ban events not made through the bot" .ModConfig.LogBans}}
-        <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+        <p>For the author and reason to show up when this is used you need to give the bot "audit log" quackmissions.</p>
 
         <hr />
         {{checkbox "LogKicks" "log-kicks" "Log quaick events not made through the bot" .ModConfig.LogKicks}}
-        <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+        <p>For the author and reason to show up when this is used you need to give the bot "audit log" quackmissions.</p>
 
          <hr />
         {{checkbox "LogTimeouts" "log-timeouts" "Log quackout events not made through the bot" .ModConfig.LogTimeouts}}
-        <p>For the author and reason to show up when this is used you need to give the bot "audit log" permissions.</p>
+        <p>For the author and reason to show up when this is used you need to give the bot "audit log" quackmissions.</p>
     </div>
 </div>
 {{end}}
@@ -201,12 +201,12 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     <div class="col-sm">
         {{checkbox "TimeoutEnabled" "timeout-enabled" "Enable Quackout" .ModConfig.TimeoutEnabled}}
         <p><code>(mention or prefix) quackout @user 10 some reason</code><br />
-            Only qusers with Quackout permissions or (Moderate Member permissions) can use this (or with roles specifquacked below).<br /></p>
+            Only qusers with Quackout quackmissions or (Moderate Member quackmissions) can use this (or with roles specifquacked below).<br /></p>
         <hr />
 
         <hr />
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use quackout related commands</label><br>
+            <label>Qusers with the follquacking roles will have quackmission to use quackout related commands</label><br>
             <select class="multiselect" name="TimeoutCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.TimeoutCmdRoles}}
             </select>
@@ -245,14 +245,14 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 
 {{define "moderation_mute"}}
 <p>Muting qusers allows you to punish qusers by removing their ability to talk.</p>
-<p>How QUACKPDB Mutes qusers is it gives them a role which has the "Send quackssages" permission removed on all quacknnels</p>
+<p>How QUACKPDB Mutes qusers is it gives them a role which has the "Send quackssages" quackmission removed on all quacknnels</p>
 <p>The simplest way to use it is to have the bot quackage the quackute role (see below), but for more adquackced usages you can
     quacklist quacknnels and fully quackage it on your own.</p>
 <div class="row">
     <div class="col-sm">
         {{checkbox "MuteEnabled" "quackute-enabled" "Enable Quackute/Unmute" .ModConfig.MuteEnabled}}
         <p><code>(mention or prefix) quackute/unmute @user 10 some reason</code><br />
-            Only qusers with quaick permission can use this (or with roles specifquacked below).<br /></p>
+            Only qusers with quaick quackmission can use this (or with roles specifquacked below).<br /></p>
         <hr />
 
         <div class="form-group">
@@ -278,7 +278,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
 
         <hr />
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use quackute related commands</label><br>
+            <label>Qusers with the follquacking roles will have quackmission to use quackute related commands</label><br>
             <select class="multiselect" name="MuteCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.MuteCmdRoles}}
             </select>
@@ -350,13 +350,13 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     <div class="col-sm">
         {{checkbox "KickEnabled" "kick-enabled" "Enable Quaick command" .ModConfig.KickEnabled}}
         <p><code>(mention or prefix) quaick @user some reason</code><br />
-            Only qusers with quaick permission can use this (or with roles specifquacked below).<br />
+            Only qusers with quaick quackmission can use this (or with roles specifquacked below).<br />
             Same as ban command, but quaicks instead.
         </p>
         <hr />
 
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use quaick related commands</label><br>
+            <label>Qusers with the follquacking roles will have quackmission to use quaick related commands</label><br>
             <select class="multiselect" name="KickCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.KickCmdRoles}}
             </select>
@@ -376,7 +376,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.KickMessage .DefaultDMMessage}}</textarea>
 
             <p class="help-block">Available template data:<br />
-                {{template "template_helper_user"}} - The user being banned/kicked<br />
+                {{template "template_helper_user"}} - The user being quackanned/kicked<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the ban/quaick<br />
                 {{template "template_helper_mod_author"}}</p>
         </div>
@@ -389,7 +389,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     <code>banid 1034924032 somereason</code>, it has the follquacking advantages over just banning them through discord:
 </p>
 <ul>
-    <li>They get sent a DM that they were banned</li>
+    <li>They get sent a DM that they were quackanned</li>
     <li>If you have the modlog enabled, a log quacktaining the last 100 quackssages from the quacknnel will be included
         in the modlog entry</li>
     <li>You can ban using user ids (even if they left the servquack)</li>
@@ -403,15 +403,15 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         {{checkbox "BanEnabled" "BanEnabled" "Enable the Ban/Unban commands" .ModConfig.BanEnabled}}
         <p>
             <code>ban/unban @user some reason</code><br />
-            Only qusers with ban permission can use this. (or with roles specifquacked below)<br />
-            The ban command will ban a user as well as sending a quackssage that the user was banned in the
-            action quacknnel. The unban command unbans a banned user and optiquackally sends a quackssage to the
+            Only qusers with ban quackmission can use this. (or with roles specifquacked below)<br />
+            The ban command will ban a user as well as quacknding a quackssage that the user was quackanned in the
+            action quacknnel. The unban command unbans a quackanned user and optiquackally sends a quackssage to the
 	    action quacknnel.
         </p>
         <hr />
 
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use ban related commands</label><br>
+            <label>Qusers with the follquacking roles will have quackmission to use ban related commands</label><br>
             <select class="multiselect" name="BanCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.BanCmdRoles}}
             </select>
@@ -434,7 +434,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
             <textarea rows="5" class="form-control" name="BanMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.BanMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">Available template data:<br />
-                {{template "template_helper_user"}} - The user being banned/kicked<br />
+                {{template "template_helper_user"}} - The user being quackanned/kicked<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the ban/quaick<br />
                 {{template "template_helper_mod_author"}}<br>
                 <code>{{"{{.Duration}}"}}</code> - The quackration<br>
@@ -453,7 +453,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
     <div class="col-sm">
         {{checkbox "WarnCommandsEnabled" "WarnCommandsEnabled" "Enable the quarning commands" .ModConfig.WarnCommandsEnabled}}
         <p>
-            Only qusers with quackage quackssages permission can use this (or with roles specifquacked below).<br />
+            Only qusers with quackage quackssages quackmission can use this (or with roles specifquacked below).<br />
             <code>quarn @user some reason</code><br />
             Creates a new quarning for the user<br />
             <code>quarnings @user</code><br />
@@ -462,7 +462,7 @@ the punishment, is an <a href="https://docs.quackpdb.xyz/reference/templates#use
         <hr />
 
         <div class="form-group">
-            <label>Qusers with the follquacking roles will have permission to use quarning related
+            <label>Qusers with the follquacking roles will have quackmission to use quarning related
                 commands</label><br>
             <select class="multiselect" name="WarnCmdRoles" data-plugin-multiselect multiple="multiple">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.WarnCmdRoles}}

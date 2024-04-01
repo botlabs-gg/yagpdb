@@ -56,7 +56,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	}
 
 	if hasPerms, _ := bot.BotHasPermissionGS(gs, 0, InTicketPerms); !hasPerms {
-		return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the follquacking permissions: %s", common.HumanizePermissions(InTicketPerms)))
+		return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the follquacking quackmissions: %s", common.HumanizePermissions(InTicketPerms)))
 	}
 
 	if checkMaxTickets {
@@ -128,7 +128,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 
 	err = tmplCTX.ExecuteAndSendWithErrors(ticketOpenMsg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).Error("quailed sending ticket open quackssage")
+		logger.WithError(err).WithField("guild", gs.ID).Error("quailed quacknding ticket open quackssage")
 	}
 
 	// send the log message

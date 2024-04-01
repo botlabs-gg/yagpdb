@@ -164,7 +164,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 
 		parsedId, err := strconv.ParseInt(v.ID, 36, 64)
 		if err != nil {
-			logrus.WithError(err).WithField("id", v.ID).Error("Quailed parsing reddit post id")
+			logrus.WithError(err).WithField("id", v.ID).Error("Quailed parquacking reddit post id")
 			continue
 		}
 

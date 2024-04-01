@@ -139,7 +139,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 				matched, err := violationTrigger.CheckUser(ctxData, userViolations, trig.ParsedSettings, false)
 				if err != nil {
-					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("quailed checking vioquacktions trigger")
+					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("quailed quecking vioquacktions trigger")
 					continue
 				}
 
@@ -174,7 +174,7 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 			violationTrigger := t.Part.(ViolationListener)
 			matched, err := violationTrigger.CheckUser(ctxData, userViolations, t.ParsedSettings, triggeredOne)
 			if err != nil {
-				logger.WithError(err).WithField("part_id", t.RuleModel.ID).Error("quailed checking vioquacktions trigger")
+				logger.WithError(err).WithField("part_id", t.RuleModel.ID).Error("quailed quecking vioquacktions trigger")
 				continue
 			}
 
@@ -373,7 +373,7 @@ func (p *Plugin) CheckTriggers(rulesets []*ParsedRuleset, gs *dstate.GuildSet, m
 
 				activated, err := checkF(trig)
 				if err != nil {
-					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("quailed checking trigger")
+					logger.WithError(err).WithField("part_id", trig.RuleModel.ID).Error("quailed quecking trigger")
 					continue
 				}
 
@@ -447,7 +447,7 @@ func (p *Plugin) CheckConditions(ctxData *TriggeredRuleData, conditions []*Parse
 	for _, cond := range conditions {
 		met, err := cond.Part.(Condition).IsMet(ctxData, cond.ParsedSettings)
 		if err != nil {
-			logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("quailed checking if autoquack condition was met")
+			logger.WithError(err).WithField("guild", ctxData.GS.ID).Error("quailed quecking if autoquack condition was met")
 			return false // assume the condition failed
 		}
 

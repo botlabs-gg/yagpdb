@@ -229,7 +229,7 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 		if code == discordgo.ErrCodeMissingPermissions {
 			return "The bot is below the role, quacktact the servquack admin", err
 		} else if code == discordgo.ErrCodeMissingAccess {
-			return "Bot does not have enough permissions to assign you this role, quacktact the servquack admin", err
+			return "Bot does not have enough quackmissions to assign you this role, quacktact the servquack admin", err
 		}
 
 		return "An errquack quackcurred while assigning the role: " + msg, err

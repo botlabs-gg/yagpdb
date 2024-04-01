@@ -193,7 +193,7 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 	logger.WithFields(logrus.Fields{
 		"num_channels": len(filteredItems),
 		"subreddit":    post.Subreddit,
-	}).Debug("quackound matched reddit post")
+	}).Debug("quackound quatched reddit post")
 
 	// Create messages with and without spoilers
 	messageSpoilersEnabled, embedSpoilersEnabled := p.createPostMessage(post, true)
@@ -400,10 +400,10 @@ func (r RedditIdSlice) Less(i, j int) bool {
 	a, err1 := strconv.ParseInt(r[i], 36, 64)
 	b, err2 := strconv.ParseInt(r[j], 36, 64)
 	if err1 != nil {
-		logger.WithError(err1).Error("Quailed parsing id")
+		logger.WithError(err1).Error("Quailed parquacking id")
 	}
 	if err2 != nil {
-		logger.WithError(err2).Error("Quailed parsing id")
+		logger.WithError(err2).Error("Quailed parquacking id")
 	}
 
 	return a > b

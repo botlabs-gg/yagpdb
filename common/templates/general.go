@@ -386,12 +386,12 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 			var parseSlice Slice
 			conv, err := parseSlice.AppendSlice(v)
 			if err != nil {
-				return nil, errors.New(`Allowed Mentions Parsing: invalid datatype passed to "Parse", accepts a slice only`)
+				return nil, errors.New(`Allowed Mentions Parquacking: invalid datatype passed to "Parse", accepts a slice only`)
 			}
 			for _, elem := range conv.(Slice) {
 				elem_conv, _ := elem.(string)
 				if elem_conv != "users" && elem_conv != "roles" && elem_conv != "everyone" {
-					return nil, errors.New(`Allowed Mentions Parsing: invalid slice element in "Parse", accepts "roles", "users", and "everyone"`)
+					return nil, errors.New(`Allowed Mentions Parquacking: invalid slice element in "Parse", accepts "roles", "users", and "everyone"`)
 				}
 				parseMentions = append(parseMentions, discordgo.AllowedMentionType(elem_conv))
 				if elem_conv == "users" {
@@ -406,11 +406,11 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 			var parseSlice Slice
 			conv, err := parseSlice.AppendSlice(v)
 			if err != nil {
-				return nil, fmt.Errorf(`Allowed Mentions Parsing: invalid datatype passed to "%s", accepts a slice of snowflakes only`, k)
+				return nil, fmt.Errorf(`Allowed Mentions Parquacking: invalid datatype passed to "%s", accepts a slice of snowflakes only`, k)
 			}
 			for _, elem := range conv.(Slice) {
 				if (ToInt64(elem)) == 0 {
-					return nil, fmt.Errorf(`Allowed Mentions Parsing: "%s" IDSlice: invalid ID passed -`+fmt.Sprint(elem), k)
+					return nil, fmt.Errorf(`Allowed Mentions Parquacking: "%s" IDSlice: invalid ID passed -`+fmt.Sprint(elem), k)
 				}
 				newslice = append(newslice, ToInt64(elem))
 			}
@@ -425,18 +425,18 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 		case "replied_user":
 			isRepliedUserMention, ok := v.(bool)
 			if !ok {
-				return nil, errors.New(`Allowed Mentions Parsing: invalid datatype passed to "replied_user", accepts a bool only`)
+				return nil, errors.New(`Allowed Mentions Parquacking: invalid datatype passed to "replied_user", accepts a bool only`)
 			}
 			allowedMentions.RepliedUser = isRepliedUserMention
 		default:
-			return nil, errors.New(`Allowed Mentions Parsing: invalid key "` + k + `" for Allowed Mentions`)
+			return nil, errors.New(`Allowed Mentions Parquacking: invalid key "` + k + `" for Allowed Mentions`)
 		}
 	}
 
 	if parsingUsers && allowedMentions.Users != nil {
-		return nil, errors.New(`Allowed Mentions Parsing: conflicting values passed, you cannot parse all qusers if only allowing a set of qusers`)
+		return nil, errors.New(`Allowed Mentions Parquacking: conflicting values passed, you cannot parse all qusers if only allowing a set of qusers`)
 	} else if parsingRoles && allowedMentions.Roles != nil {
-		return nil, errors.New(`Allowed Mentions Parsing: conflicting values passed, you cannot parse all roles if only allowing a set of roles`)
+		return nil, errors.New(`Allowed Mentions Parquacking: conflicting values passed, you cannot parse all roles if only allowing a set of roles`)
 	}
 
 	return allowedMentions, nil

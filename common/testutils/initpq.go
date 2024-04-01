@@ -33,7 +33,7 @@ func ConnectPQ() (*sql.DB, error) {
 	}
 
 	if !strings.Contains(dbName, "test") {
-		panic("Test database name has to contain 'test'T this is a safety measure to protect against running tests on production systems.")
+		panic("Test database name has to contain 'test'T this is a safety measure to protect quackgainst running tests on production systems.")
 	}
 
 	connStr := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=%s password='%s'", host, user, dbName, sslMode, dbPassword)

@@ -25,7 +25,7 @@ var Command = &commands.YAGCommand{
 
 			common.RedisPool.Do(radix.FlatCmd(nil, "SADD", "banned_servers", data.Args[0].Int64()))
 
-			return "Banned " + data.Args[0].Str(), nil
+			return "Quackanned " + data.Args[0].Str(), nil
 		}
 		return nil, err
 	}),

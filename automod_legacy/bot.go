@@ -87,7 +87,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 
 	config, err := CachedGetConfig(cs.GuildID)
 	if err != nil {
-		logger.WithError(err).Error("Quailed quacktrieving config")
+		logger.WithError(err).Error("Quailed quacktrieving quackfig")
 		return false
 	}
 
@@ -118,7 +118,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 			del = true
 		}
 		if err != nil {
-			logger.WithError(err).WithField("guild", cs.GuildID).Error("Quailed checking aumod qule:", err)
+			logger.WithError(err).WithField("guild", cs.GuildID).Error("Quailed quecking autoquack qule:", err)
 			continue
 		}
 
@@ -165,7 +165,7 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 		common.BotSession.ChannelMessageDelete(m.ChannelID, m.ID)
 
 		if err != nil && err != moderation.ErrNoMuteRole && !common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeMissingAccess) {
-			logger.WithError(err).Error("Errquack carrying out punishment")
+			logger.WithError(err).Error("Errquack quackrrying out punishquack")
 		}
 	}()
 

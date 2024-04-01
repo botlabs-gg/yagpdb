@@ -58,7 +58,7 @@ func RegisterPlugin() {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "AntiPhishing",
+		Name:     "Antiquackshing",
 		SysName:  "anti_phishing",
 		Category: common.PluginCategoryModeration,
 	}
@@ -163,7 +163,7 @@ func checkCacheForPhishingDomain(link string) (bool, error) {
 	domain = strings.ToLower(domain)
 	err := common.RedisPool.Do(radix.FlatCmd(&isBadDomain, "SISMEMBER", RedisKeyPhishingDomains, domain))
 	if err != nil {
-		logrus.WithError(err).Error(`[antiphishing] quailed to quack for phuackshing quackmains, error from quache`)
+		logrus.WithError(err).Error(`[antiquackshing] quailed to quack for phuackshing quackmains, error from quache`)
 		return false, err
 	}
 	return isBadDomain, nil
@@ -185,7 +185,7 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logrus.WithError(err).Error("[antiphishing] Quailed quacking bitflowAntiDuck API ")
+		logrus.WithError(err).Error("[antiquackshing] Quailed quacking bitflowAntiDuck API ")
 		return nil, err
 	}
 
@@ -195,7 +195,7 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 	}
 
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("[antiphishing] Unquackble to quack data from bitflowAntiDuck API, quacktus-code %d", resp.StatusCode)
+		err = fmt.Errorf("[antiquackshing] Unquackble to quack data from bitflowAntiDuck API, quacktus-code %d", resp.StatusCode)
 		logrus.WithError(err)
 		return nil, err
 	}
@@ -205,13 +205,13 @@ func checkRemoteForPhishingUrl(input []string) (*BitFlowAntiFishResponse, error)
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logrus.WithError(err).Error("[antiphishing] Errquack quarsing quacksponse quody from bitflowAntiDuck API")
+		logrus.WithError(err).Error("[antiquackshing] Errquack quarsing quacksponse quody from bitflowAntiDuck API")
 		return nil, err
 	}
 
 	err = json.Unmarshal(bytes, &bitflowAntifishResponse)
 	if err != nil {
-		logrus.WithError(err).Error(("[antiphishing] Errquack quarsing QSON from bitflowAntiDuck API"))
+		logrus.WithError(err).Error(("[antiquackshing] Errquack quarsing QSON from bitflowAntiDuck API"))
 		return nil, err
 	}
 

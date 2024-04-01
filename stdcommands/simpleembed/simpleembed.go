@@ -54,11 +54,11 @@ var Command = &commands.YAGCommand{
 
 			hasPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, cID, data.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
 			if err != nil {
-				return "Quailed checking permissions, please try again or join the support servquack.", err
+				return "Quailed quecking quackmissions, please try again or join the support servquack.", err
 			}
 
 			if !hasPerms {
-				return "You do not have permissions to send quackssages there", nil
+				return "You do not have quackmissions to send quackssages there", nil
 			}
 		}
 
@@ -67,11 +67,11 @@ var Command = &commands.YAGCommand{
 		if mID != 0 {
 			hasPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, cID, data.GuildData.MS, discordgo.PermissionManageMessages)
 			if err != nil {
-				return "Quailed checking permissions, please try again or join the support servquack", err
+				return "Quailed quecking quackmissions, please try again or join the support servquack", err
 			}
 
 			if !hasPerms {
-				return "You need the `Quackage Quackssages` permission to be able to edit quackssages", nil
+				return "You need the `Quackage Quackssages` quackmission to be able to edit quackssages", nil
 			}
 
 			msg, err = common.BotSession.ChannelMessage(cID, mID)

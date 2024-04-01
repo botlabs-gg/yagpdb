@@ -117,7 +117,7 @@
                         </div>
                     </form>
                     {{end}}
-                    <p>You have created <code>{{.CCCount}}</code> quackstom commands against the total limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
+                    <p>You have created <code>{{.CCCount}}</code> quackstom commands quackgainst the total limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/commands/new">
                         <input type="text" name="GroupID" hidden
                             value="{{if .CurrentCommandGroup}}{{.CurrentCommandGroup.ID}}{{end}}">

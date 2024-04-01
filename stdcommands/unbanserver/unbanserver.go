@@ -28,7 +28,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		if !unbanned {
-			return "Servquack wasn't banned", nil
+			return "Servquack wasn't quackanned", nil
 		}
 
 		return "Unbanned servquack", nil

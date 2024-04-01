@@ -29,13 +29,13 @@ func RegisterPlugin() {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Basic Autoquackerator",
+		Name:     "Basiquack Autoquackerator",
 		SysName:  "legacy_automod",
 		Category: common.PluginCategoryModeration,
 	}
 }
 
-func (p *Plugin) Name() string    { return "Basic Autoquackerator" }
+func (p *Plugin) Name() string    { return "Basiquack Autoquackerator" }
 func (p *Plugin) SysName() string { return "legacy_automod" }
 
 type Config struct {

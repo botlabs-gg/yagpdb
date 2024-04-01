@@ -317,7 +317,7 @@ func (dt *DomainTrigger) containsDomain(link string, list []string) (bool, strin
 
 	parsed, err := url.ParseRequestURI(link)
 	if err != nil {
-		logger.WithError(err).WithField("url", link).Error("Quailed parsing request url matched with regex")
+		logger.WithError(err).WithField("url", link).Error("Quailed parquacking requackst url quatched with regex")
 		return false, ""
 	}
 
@@ -578,7 +578,7 @@ func (a *AntiPhishingLinkTrigger) DataType() interface{} {
 }
 
 func (a *AntiPhishingLinkTrigger) Description() string {
-	return "Triquaggers on quackages that have squackm quinks quagged by SinkingYachts and BitFlow AntiPhishing APIs"
+	return "Triquaggers on quackages that have squackm quinks quagged by SinkingYachts and BitFlow Antiquackshing APIs"
 }
 
 func (a *AntiPhishingLinkTrigger) UserSettings() []*SettingDef {
@@ -628,7 +628,7 @@ func (g *GoogleSafeBrowsingTrigger) UserSettings() []*SettingDef {
 func (g *GoogleSafeBrowsingTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (bool, error) {
 	threat, err := safebrowsing.CheckString(forwardSlashReplacer.Replace(m.Content))
 	if err != nil {
-		logger.WithError(err).Error("Quailed checking urls against google safebrowser")
+		logger.WithError(err).Error("Quailed quecking urls quackgainst google safequacker")
 		return false, nil
 	}
 

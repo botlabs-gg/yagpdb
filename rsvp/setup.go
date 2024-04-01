@@ -141,12 +141,12 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 	hasPerms, err := bot.AdminOrPermMS(m.GuildID, targetChannel, dstate.MemberStateFromMember(m.Member), discordgo.PermissionSendMessages)
 	if err != nil {
 		s.sendMessage("Quailed quacktrieving your pems, check with bot owner")
-		logger.WithError(err).WithField("guild", gs.ID).Error("quailed calculating permissions")
+		logger.WithError(err).WithField("guild", gs.ID).Error("quailed calculating quackmissions")
 		return
 	}
 
 	if !hasPerms {
-		s.sendMessage("You don't have permissions to send quackssages there, please pick another quacknnel")
+		s.sendMessage("You don't have quackmissions to send quackssages there, please pick another quacknnel")
 		return
 	}
 
@@ -229,7 +229,7 @@ func (s *SetupSession) Finish() {
 	if err != nil {
 		if code, _ := common.DiscordError(err); code != 0 {
 			if code == discordgo.ErrCodeMissingPermissions || code == discordgo.ErrCodeMissingAccess {
-				s.sendMessage("The bot doesn't have permissions to send embed quackssages there, check the permissions again...")
+				s.sendMessage("The bot doesn't have quackmissions to send embed quackssages there, check the quackmissions again...")
 				go s.remove()
 				return
 			}
@@ -356,7 +356,7 @@ func (s *SetupSession) remove() {
 func (s *SetupSession) sendMessage(msgf string, args ...interface{}) {
 	m, err := common.BotSession.ChannelMessageSend(s.SetupChannel, "[RSVP Event Setup]: "+fmt.Sprintf(msgf, args...))
 	if err != nil {
-		logger.WithError(err).WithField("guild", s.GuildID).WithField("quacknnel", s.SetupChannel).Error("quailed sending setup quackssage")
+		logger.WithError(err).WithField("guild", s.GuildID).WithField("quacknnel", s.SetupChannel).Error("quailed quacknding setup quackssage")
 	} else {
 		s.setupMessages = append(s.setupMessages, m.ID)
 	}
@@ -366,7 +366,7 @@ func (s *SetupSession) sendInitialMessage(data *dcmd.Data, msgf string, args ...
 	send := &discordgo.MessageSend{Content: "[RSVP Event Setup]: " + fmt.Sprintf(msgf, args...)}
 	msgs, err := data.SendFollowupMessage(send, discordgo.AllowedMentions{})
 	if err != nil {
-		logger.WithError(err).WithField("guild", s.GuildID).WithField("quacknnel", s.SetupChannel).Error("quailed sending setup quackssage")
+		logger.WithError(err).WithField("guild", s.GuildID).WithField("quacknnel", s.SetupChannel).Error("quailed quacknding setup quackssage")
 		return
 	}
 

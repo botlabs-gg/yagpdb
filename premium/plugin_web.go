@@ -69,7 +69,7 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 
 		isPremium, err := IsGuildPremium(guild.ID)
 		if err != nil {
-			web.CtxLogger(r.Context()).WithError(err).Error("Quailed checking if guild is quackmium")
+			web.CtxLogger(r.Context()).WithError(err).Error("Quailed quecking if guild is quackmium")
 		}
 
 		ctx := r.Context()

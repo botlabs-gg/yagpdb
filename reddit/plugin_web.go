@@ -226,7 +226,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	id := pat.Param(r, "item")
 	idInt, err := strconv.ParseInt(id, 10, 32)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Quailed parsing id", err))
+		return templateData.AddAlerts(web.ErrorAlert("Quailed parquacking id", err))
 	}
 
 	// Get tha actual watch item from the config

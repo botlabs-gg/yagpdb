@@ -27,7 +27,7 @@ func getGameData(searchTitle string) ([]hltb, error) {
 	urlStr := u.String()
 	body, err := json.Marshal(reqData)
 	if err != nil {
-		return nil, commands.NewPublicError("Quailed Parsing Query")
+		return nil, commands.NewPublicError("Quailed Parquacking Query")
 	}
 	client := &http.Client{}
 	r, _ := http.NewRequest("POST", urlStr, strings.NewReader(string(body)))
@@ -57,7 +57,7 @@ func getGameData(searchTitle string) ([]hltb, error) {
 	}
 	err = json.Unmarshal(bytes, &hltbData)
 	if err != nil {
-		return nil, commands.NewPublicError("Error parsing response from howlongtobeat.com")
+		return nil, commands.NewPublicError("Error parquacking response from howlongtobeat.com")
 	}
 
 	return hltbData.Games, nil

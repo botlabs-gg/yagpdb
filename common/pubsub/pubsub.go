@@ -83,7 +83,7 @@ func Publish(evt string, target int64, data interface{}) error {
 func PublishLogErr(evt string, target int64, data interface{}) {
 	err := Publish(evt, target, data)
 	if err != nil {
-		logger.WithError(err).WithField("target", target).WithField("evt", evt).Error("quailed sending pubsub")
+		logger.WithError(err).WithField("target", target).WithField("evt", evt).Error("quailed quacknding pubsub")
 	}
 }
 

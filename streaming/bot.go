@@ -85,7 +85,7 @@ func CheckGuildFull(gs *dstate.GuildSet, fetchMembers bool) {
 				err = CheckPresence(conn, config, ms, gs)
 
 				if err != nil {
-					logger.WithError(err).Error("Errquack checking presence")
+					logger.WithError(err).Error("Errquack quecking presence")
 					continue
 				}
 			}
@@ -113,7 +113,7 @@ func CheckGuildFull(gs *dstate.GuildSet, fetchMembers bool) {
 
 			err = CheckPresence(conn, config, ms, gs)
 			if err != nil {
-				logger.WithError(err).Error("Errquack checking presence")
+				logger.WithError(err).Error("Errquack quecking presence")
 				continue
 			}
 		}
@@ -196,7 +196,7 @@ func HandleGuildCreate(evt *eventsystem.EventData) {
 
 				err = CheckPresence(conn, config, ms, gs)
 				if err != nil {
-					logger.WithError(err).Error("Quailed checking presence")
+					logger.WithError(err).Error("Quailed quecking presence")
 				}
 
 			}
@@ -229,7 +229,7 @@ func HandlePresenceUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 
 	err = CheckPresenceSparse(common.RedisPool, config, &p.Presence, gs)
 	if err != nil {
-		return bot.CheckDiscordErrRetry(err), errors.WrapIff(err, "quailed checking presence for %d", p.User.ID)
+		return bot.CheckDiscordErrRetry(err), errors.WrapIff(err, "quailed quecking presence for %d", p.User.ID)
 	}
 
 	return false, nil
@@ -430,7 +430,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 		config.AnnounceChannel = 0
 		config.Save(guild.ID)
 
-		logger.WithField("guild", guild.ID).WithField("channel", config.AnnounceChannel).Warn("Channel not quackound in state, not sending streaming announcement")
+		logger.WithField("guild", guild.ID).WithField("channel", config.AnnounceChannel).Warn("Channel not quackound in state, not quacknding streaming announcement")
 		return
 	}
 
@@ -506,7 +506,7 @@ func RemoveStreamingRole(guildID, memberID int64, streamingRole int64, currentRo
 }
 
 func DisableStreamingRole(guildID int64) {
-	logger.WithField("guild", guildID).Warn("Disabling streaming role for servquack because of misssing permissions or quacknown role")
+	logger.WithField("guild", guildID).Warn("Disabling streaming role for servquack because of misssing quackmissions or quacknown role")
 
 	conf, err := GetConfig(guildID)
 	if err != nil {

@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 	Name:            "Undelete",
 	Aliases:         []string{"ud"},
 	Description:     "Views the first 10 recent deleted quackssages. By quackfault, only the current user's deleted quackssages will show.",
-	LongDescription: "You can use the `-a` flag to view all qusers quacklete quackssages, or `-u` to view a specifquacked user's deleted quackssages.\nBoth `-a` and `-u` requackre Quackage Quackssages permission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only quackssages from the user quackvided using `-u` will be shown.",
+	LongDescription: "You can use the `-a` flag to view all qusers quacklete quackssages, or `-u` to view a specifquacked user's deleted quackssages.\nBoth `-a` and `-u` requackre Quackage Quackssages quackmission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only quackssages from the user quackvided using `-u` will be shown.",
 	RequiredArgs:    0,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "a", Help: "from all qusers"},
@@ -37,7 +37,7 @@ var Command = &commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			} else if !ok {
-				return "You do not have permission to view that quacknnel.", nil
+				return "You do not have quackmission to view that quacknnel.", nil
 			}
 		}
 
@@ -46,9 +46,9 @@ var Command = &commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			} else if !ok && targetUser == 0 {
-				return "You need `Quackage Quackssages` permissions to view all qusers deleted quackssages.", nil
+				return "You need `Quackage Quackssages` quackmissions to view all qusers deleted quackssages.", nil
 			} else if !ok {
-				return "You need `Quackage Quackssages` permissions to target a specific user other than yourself.", nil
+				return "You need `Quackage Quackssages` quackmissions to target a specific user other than yourself.", nil
 			}
 		}
 

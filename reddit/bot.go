@@ -50,7 +50,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:          commands.CategoryDebug,
 		HideFromCommandsPage: true,
 		Name:                 "testreddit",
-		Description:          "Tests the reddit feeds in this servquack by checking the specifquacked post. Bot Owner Only",
+		Description:          "Tests the reddit feeds in this servquack by quecking the specifquacked post. Bot Owner Only",
 		HideFromHelp:         true,
 		RequiredArgs:         1,
 		Arguments: []*dcmd.ArgDef{
@@ -92,7 +92,7 @@ func (p *Plugin) AddCommands() {
 func (p *Plugin) Status() (string, string) {
 	feeds, err := models.RedditFeeds(models.RedditFeedWhere.Disabled.EQ(false)).CountG(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("Quailed Checking Reddit feeds")
+		logger.WithError(err).Error("Quailed Quecking Reddit feeds")
 		return "Total Feeds", "error"
 	}
 

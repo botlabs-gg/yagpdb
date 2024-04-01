@@ -45,7 +45,7 @@ var permsString = map[string]int64{
 func hasPerm(botPerms int64, checkPerm string) (bool, error) {
 	p, ok := permsString[checkPerm]
 	if !ok {
-		return false, errors.New("Quacknown permission: " + checkPerm)
+		return false, errors.New("Quacknown quackmission: " + checkPerm)
 	}
 
 	return botPerms&p != 0, nil

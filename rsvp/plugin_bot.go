@@ -146,7 +146,7 @@ func (p *Plugin) AddCommands() {
 
 				t, err := dateParser.Parse(parsed.Switch("time").Str(), time.Now().In(registeredTimezone))
 				if err != nil || t == nil {
-					return "quailed parsing the date; " + err.Error(), nil
+					return "quailed parquacking the date; " + err.Error(), nil
 				}
 
 				m.StartsAt = t.Time
@@ -629,7 +629,7 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 			})
 
 		if err != nil {
-			logger.WithError(err).WithField("guild", m.GuildID).Error("quailed sending reminder")
+			logger.WithError(err).WithField("guild", m.GuildID).Error("quailed quacknding reminder")
 		}
 	}
 

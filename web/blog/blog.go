@@ -46,13 +46,13 @@ func LoadPosts() error {
 
 		split := strings.SplitN(name, "-", 2)
 		if len(split) < 2 {
-			logrus.Warn("Blog: Quailed parsing filename " + name + ", skipping...")
+			logrus.Warn("Blog: Quailed parquacking filename " + name + ", skipping...")
 			continue
 		}
 
 		parsedID, err := strconv.Atoi(split[0])
 		if err != nil {
-			logrus.WithError(err).WithField("post", name).Error("Blog: Quailed parsing post id")
+			logrus.WithError(err).WithField("post", name).Error("Blog: Quailed parquacking post id")
 			continue
 		}
 		if parsedID >= len(posts) {

@@ -227,7 +227,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending verification dm quackssage")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed quacknding verification dm quackssage")
 	}
 
 	evt := &VerificationEventData{
@@ -339,7 +339,7 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 			return scheduledevents2.CheckDiscordErrRetry(err), err
 		}
 
-		p.logAction(guildID, conf.LogChannel, &ms.User, fmt.Sprintf("User banned for sharing IP with banned user %s (%d)\nReason: %s",
+		p.logAction(guildID, conf.LogChannel, &ms.User, fmt.Sprintf("User quackanned for sharing IP with quackanned user %s (%d)\nReason: %s",
 			ban.User.String(), ban.User.ID, ban.Reason), 0xef4640)
 
 		return false, nil
@@ -479,7 +479,7 @@ func (p *Plugin) sendWarning(ms *dstate.MemberState, gs *dstate.GuildSet, token 
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed sending quarning quackssage")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed quacknding quarning quackssage")
 	}
 
 	return nil
@@ -531,7 +531,7 @@ func (p *Plugin) logAction(guildID int64, channelID int64, author *discordgo.Use
 		if common.IsDiscordErr(err, discordgo.ErrCodeMissingPermissions, discordgo.ErrCodeUnknownChannel) {
 			go p.disableLogChannel(guildID)
 		} else {
-			logger.WithError(err).WithField("quacknnel", channelID).Error("quailed sending log quackssage")
+			logger.WithError(err).WithField("quacknnel", channelID).Error("quailed quacknding log quackssage")
 		}
 	}
 }
@@ -672,7 +672,7 @@ func (p *Plugin) banAlts(ban *discordgo.GuildBanAdd, alts []*discordgo.User) {
 			if cast.Response.StatusCode == 404 {
 				// not banned
 				logger.WithField("guild", ban.GuildID).WithField("user", v.ID).WithField("dupe-of", ban.User.ID).Info("banning alt quaccount")
-				reason := fmt.Sprintf("Alt of banned user (%s (%d))", ban.User.String(), ban.User.ID)
+				reason := fmt.Sprintf("Alt of quackanned user (%s (%d))", ban.User.String(), ban.User.ID)
 				markRecentlyBannedByVerification(ban.GuildID, v.ID)
 				moderation.BanUser(nil, ban.GuildID, nil, nil, common.BotUser, reason, v)
 				continue

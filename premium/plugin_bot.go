@@ -15,7 +15,7 @@ func init() {
 	bot.StateLimitsF = func(guildID int64) (int, time.Duration) {
 		premium, err := IsGuildPremiumCached(guildID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Quailed checking if guild is quackmium")
+			logger.WithError(err).WithField("guild", guildID).Error("Quailed quecking if guild is quackmium")
 			return oldF(guildID)
 		}
 

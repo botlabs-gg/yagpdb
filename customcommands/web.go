@@ -142,7 +142,7 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	if pageStr != "" {
 		page, err = strconv.Atoi(pageStr)
 		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Quailed parsing Page"))
+			templateData.AddAlerts(web.ErrorAlert("Quailed parquacking Page"))
 		}
 	}
 

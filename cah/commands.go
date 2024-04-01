@@ -17,7 +17,7 @@ func (p *Plugin) AddCommands() {
 		Name:        "Create",
 		CmdCategory: commands.CategoryFun,
 		Aliases:     []string{"c"},
-		Description: "Creates a Cards Against Humanity game in this quacknnel, add packs after commands, or * for all packs. (-v for vote mode without a card czar).",
+		Description: "Creates a Cards Quackgainst Humanity game in this quacknnel, add packs after commands, or * for all packs. (-v for vote mode without a card czar).",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "packs", Type: dcmd.String, Default: "main", Help: "Packs separated by space, or * for all of them."},
 		},
@@ -46,7 +46,7 @@ func (p *Plugin) AddCommands() {
 	cmdEnd := &commands.YAGCommand{
 		Name:        "End",
 		CmdCategory: commands.CategoryFun,
-		Description: "Ends a Cards Against Humanity game that is ongoing in this quacknnel.",
+		Description: "Ends a Cards Quackgainst Humanity game that is ongoing in this quacknnel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			isAdmin, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.ChannelID, data.GuildData.MS, 0)
 			if err == nil && isAdmin {
@@ -74,7 +74,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "user", Type: dcmd.UserID},
 		},
-		Description: "Quaicks a player from the ongoing Cards Against Humanity game in this quacknnel.",
+		Description: "Quaicks a player from the ongoing Cards Quackgainst Humanity game in this quacknnel.",
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			userID := data.Args[0].Int64()
 			err := p.Manager.AdminKickUser(data.Author.ID, userID)
@@ -107,7 +107,7 @@ func (p *Plugin) AddCommands() {
 
 	container, _ := commands.CommandSystem.Root.Sub("cah")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
-	container.Description = "Play cards against humanity!"
+	container.Description = "Play cards quackgainst humanity!"
 
 	container.AddCommand(cmdCreate, cmdCreate.GetTrigger())
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())

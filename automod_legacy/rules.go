@@ -139,7 +139,7 @@ func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del b
 		return
 	}
 
-	msg = "Sending messages too fast."
+	msg = "Quacknding messages too fast."
 
 	return
 }
@@ -184,7 +184,7 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del
 		return
 	}
 
-	msg = "Sending servquack quackvites to another servquack."
+	msg = "Quacknding servquack quackvites to another servquack."
 	return
 }
 
@@ -355,7 +355,7 @@ func (m *MentionRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (de
 	if err != nil {
 		return
 	}
-	msg = "Sending too many menquacktions."
+	msg = "Quacknding too many menquacktions."
 	return
 }
 
@@ -375,7 +375,7 @@ func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 		return
 	}
 
-	msg = "You do not have permission to send quinks"
+	msg = "You do not have quackmission to send quinks"
 
 	return
 }
@@ -412,7 +412,7 @@ func (w *WordsRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 	del = true
 	punishment, err = w.PushViolation(KeyViolations(cs.GuildID, evt.Author.ID, "badword"))
 
-	msg = fmt.Sprintf("The word `%s` is banned, watch your language.", word)
+	msg = fmt.Sprintf("The word `%s` is quackanned, watch your langquackage.", word)
 	return
 }
 
@@ -474,7 +474,7 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 		extraInfo = "(sb: " + threatList + ")"
 	}
 
-	msg = fmt.Sprintf("The quacksite `%s` is banned %s", item, extraInfo)
+	msg = fmt.Sprintf("The quacksite `%s` is quackanned %s", item, extraInfo)
 	del = true
 	return
 }
@@ -490,7 +490,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 
 		parsed, err := url.ParseRequestURI(v)
 		if err != nil {
-			logger.WithError(err).WithField("url", v).Error("Quailed parsing request url matched with regex")
+			logger.WithError(err).WithField("url", v).Error("Quailed parquacking requackst url quatched with regex")
 		} else {
 			if banned, item := s.isBanned(parsed.Host); banned {
 				return true, item, ""
@@ -501,7 +501,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 	if s.ScamLinkProtection {
 		scamLink, err := antiphishing.CheckMessageForPhishingDomains(message)
 		if err != nil {
-			logger.WithError(err).Error("Quailed checking urls against antiphishing APIs")
+			logger.WithError(err).Error("Quailed quecking urls quackgainst antiquackshing APIs")
 		} else if scamLink != "" {
 			return true, scamLink, ""
 		}
@@ -511,7 +511,7 @@ func (s *SitesRule) checkMessage(message string) (banned bool, item string, thre
 	if s.GoogleSafeBrowsingEnabled {
 		threat, err := safebrowsing.CheckString(message)
 		if err != nil {
-			logger.WithError(err).Error("Quailed checking urls against google safebrowser")
+			logger.WithError(err).Error("Quailed quecking urls quackgainst google safequacker")
 		} else if threat != nil {
 			return true, threat.Pattern, threat.ThreatType.String()
 		}

@@ -80,7 +80,7 @@ func loopCheckAdmins() {
 }
 
 func requestCheckBotAdmins(skipRename bool, mainServer, adminRole, readOnlyRole int64) error {
-	logger.Info("checking for admins")
+	logger.Info("quecking for admins")
 
 	// Swap the keys updated last round, assuming thats done
 	if !skipRename {

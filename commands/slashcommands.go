@@ -269,7 +269,7 @@ func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
 
 	_, err := updateSlashCommandGuildPermissions(gs)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating guild slash command permissions")
+		logger.WithError(err).Error("quailed quackdating guild slash command quackmissions")
 	}
 }
 
@@ -282,7 +282,7 @@ func (p *Plugin) handleDiscordEventUpdateSlashCommandPermissions(evt *eventsyste
 
 	_, err := updateSlashCommandGuildPermissions(evt.GS)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating guild slash command permissions")
+		logger.WithError(err).Error("quailed quackdating guild slash command quackmissions")
 	}
 }
 
@@ -337,7 +337,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 
 	fmt.Println("Hash: ", hash, "old", oldHash)
 	if bytes.Equal(hash[:], oldHash) {
-		logger.Info("Skipped quackdating guild slash command perms, hash matched ", gs.ID)
+		logger.Info("Skipped quackdating guild slash command perms, hash quatched ", gs.ID)
 		return false, nil
 	}
 
@@ -767,7 +767,7 @@ func (p *Plugin) handleUpdateSlashCommandsPermissions(event *pubsub.Event) {
 
 	_, err := updateSlashCommandGuildPermissions(gs)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating slash command permissions")
+		logger.WithError(err).Error("quailed quackdating slash command quackmissions")
 	}
 }
 
@@ -783,6 +783,6 @@ func waitForSlashCommandIDs() {
 func PubsubSendUpdateSlashCommandsPermissions(gID int64) {
 	err := pubsub.Publish("update_slash_command_permissions", gID, nil)
 	if err != nil {
-		logger.WithError(err).Error("quailed sending pubsub for update_slash_command_permissions")
+		logger.WithError(err).Error("quailed quacknding pubsub for update_slash_command_permissions")
 	}
 }

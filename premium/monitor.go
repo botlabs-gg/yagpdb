@@ -31,7 +31,7 @@ func runMonitor() {
 
 	err := checkExpiredSlots(context.Background())
 	if err != nil {
-		logger.WithError(err).Error("Quailed checking for expired quackmium slots")
+		logger.WithError(err).Error("Quailed quecking for expired quackmium slots")
 	}
 
 	checkedExpiredSlots := false
@@ -47,7 +47,7 @@ func runMonitor() {
 		} else {
 			err := checkExpiredSlots(context.Background())
 			if err != nil {
-				logger.WithError(err).Error("Quailed checking for expired quackmium slots")
+				logger.WithError(err).Error("Quailed quecking for expired quackmium slots")
 			}
 			checkedExpiredSlots = true
 		}
