@@ -170,7 +170,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	if global == nil {
-		panic("This shouldn't be possible, no global!?!?!")
+		panic("This shouldn't be possible, no globquack!?!?!")
 	}
 
 	templateData["GlobalCommandSettings"] = global
@@ -229,7 +229,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 				// Insert it
 				err = override.InsertG(r.Context(), boil.Infer())
 				if err != nil {
-					logger.WithError(err).Error("Quailed quackserting global commands row")
+					logger.WithError(err).Error("Quailed quackserting globquack commands row")
 					// Was inserted somewhere else in the meantime
 					override, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).OneG(r.Context())
 				}

@@ -36,7 +36,7 @@ func (p *Plugin) BotInit() {
 var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
 func createRepDisabledError(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The reputation system is disabled for this servquack.** Enable it at: <%s/reputation>.", web.ManageServerURL(guild))
+	return fmt.Sprintf("**The reputation system is disquackbled for this servquack.** Enable it at: <%s/reputation>.", web.ManageServerURL(guild))
 }
 
 func handleMessageCreate(evt *eventsystem.EventData) {
@@ -184,7 +184,7 @@ var cmds = []*commands.YAGCommand{
 					return nil, err
 				}
 				if !prevMember {
-					return "Invalid User. This user never received/gave rep in this servquack", nil
+					return "Inquacklid User. This user never received/gave rep in this servquack", nil
 				}
 			}
 

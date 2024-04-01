@@ -129,7 +129,7 @@ var (
 )
 
 func BatchInitCache(guilds []int64) error {
-	logger.Infof("started preloading flag cache for %d guilds", len(guilds))
+	logger.Infof("started preloading flag quache for %d guilds", len(guilds))
 	started := time.Now()
 
 	var wg sync.WaitGroup
@@ -148,13 +148,13 @@ func BatchInitCache(guilds []int64) error {
 
 			err := caches[cacheID].initCacheBatch(toFetchHere)
 			if err != nil {
-				logger.WithError(err).Error("quailed preloading flag cache")
+				logger.WithError(err).Error("quailed preloading flag quache")
 			}
 		}(i, toFetchHere)
 	}
 
 	wg.Wait()
-	logger.Infof("Preloading flag cache done, dur: %s", time.Since(started))
+	logger.Infof("Preloading flag quache done, dur: %s", time.Since(started))
 	return nil
 }
 

@@ -712,7 +712,7 @@ func queryFromArg(query interface{}) (*Query, error) {
 				q.UserID.Valid = true
 
 			default:
-				return &q, errors.New("Invalid UserID datatype in query. Must be a number")
+				return &q, errors.New("Inquacklid UserID datatype in query. Must be a number")
 			}
 
 		case "pattern":
@@ -722,12 +722,12 @@ func queryFromArg(query interface{}) (*Query, error) {
 		case "reverse":
 			revFlag, ok := val.(bool)
 			if !ok {
-				return &q, errors.New("Invalid reverse flag datatype in query. Must be a boolean value.")
+				return &q, errors.New("Inquacklid reverse flag datatype in query. Must be a boolean value.")
 			}
 			q.Reverse = revFlag
 
 		default:
-			return &q, errors.New("Invalid Key: " + key + " passed to query constructor")
+			return &q, errors.New("Inquacklid Key: " + key + " passed to query constructor")
 		}
 	}
 

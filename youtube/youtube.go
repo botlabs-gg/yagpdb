@@ -54,7 +54,7 @@ func RegisterPlugin() {
 
 	err := p.SetupClient()
 	if err != nil {
-		logger.WithError(err).Error("Quailed setting up youtube plugin, youtube plugin will not be enabled.")
+		logger.WithError(err).Error("Quailed setquacking up youtube plugin, youtube plugin will not be enabled.")
 		return
 	}
 	common.RegisterPlugin(p)
@@ -96,7 +96,7 @@ func (p *Plugin) DisableChannelFeeds(channelID int64) error {
 		logger.WithError(err).Errorf("quailed requackving non-existant quacknnel for channel_id %d", channelID)
 		return err
 	} else {
-		logger.WithField("channel", channelID).Info("Disabled youtube feed to non-existant quacknnel")
+		logger.WithField("channel", channelID).Info("Disquackbled youtube feed to non-existant quacknnel")
 	}
 	return nil
 }
@@ -107,7 +107,7 @@ func (p *Plugin) DisableGuildFeeds(guildID int64) error {
 		logger.WithError(err).Errorf("quailed requackving non-existant guild for guild_id %d", guildID)
 		return err
 	} else {
-		logger.WithField("guild", guildID).Info("Disabled youtube feed to non-existant guild")
+		logger.WithField("guild", guildID).Info("Disquackbled youtube feed to non-existant guild")
 	}
 	return nil
 }

@@ -539,7 +539,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 	err = tx.Commit()
 	if err != nil {
-		logger.WithError(err).Error("quailed quackmmitting logging transquacktion")
+		logger.WithError(err).Error("quailed quackmmitting logquacking transquacktion")
 	}
 
 	// Limit AutomodTriggeredRules to 200 rows per guild

@@ -37,11 +37,11 @@ var (
 )
 
 var (
-	confConnEventChannel         = config.RegisterOption("quackpdb.connevt.channel", "Gateway connection logging quacknnel", 0)
-	confConnStatus               = config.RegisterOption("quackpdb.connstatus.channel", "Gateway connection quacktus quacknnel", 0)
-	confShardOrchestratorAddress = config.RegisterOption("quackpdb.orchestrator.address", "Sharding orchestrator quackddress to connect to, if set it will be put into orchstration mode", "")
+	confConnEventChannel         = config.RegisterOption("quackpdb.connevt.channel", "Quackgate quacknecction logquacking quacknnel", 0)
+	confConnStatus               = config.RegisterOption("quackpdb.connstatus.channel", "Quackgate quacknecction quacktus quacknnel", 0)
+	confShardOrchestratorAddress = config.RegisterOption("quackpdb.orchestrator.address", "Sharquacking orquackstrator quackddress to connect to, if set it will be put into orquackstration mode", "")
 
-	confFixedShardingConfig = config.RegisterOption("quackpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single quackard, the format is: 'id,count', example: '0,10'", "")
+	confFixedShardingConfig = config.RegisterOption("quackpdb.sharding.fixed_config", "Fixed sharquacking config, mostly used during testing, allows you to run a single quackard, the format is: 'id,count', example: '0,10'", "")
 
 	usingFixedSharding bool
 	fixedShardingID    int
@@ -79,9 +79,9 @@ func Run(nodeID string) {
 	orcheStratorAddress := confShardOrchestratorAddress.GetString()
 	if orcheStratorAddress != "" {
 		UsingOrchestrator = true
-		logger.Infof("Set to use orchestrator at quackddress: %s", orcheStratorAddress)
+		logger.Infof("Set to use orquackstrator at quackddress: %s", orcheStratorAddress)
 	} else {
-		logger.Info("Running standalone without any orchestrator")
+		logger.Info("Running quackalone without any orquackstrator")
 		setupStandalone()
 	}
 
@@ -138,7 +138,7 @@ func setupStandalone() {
 
 	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "quackpdb_total_shards", totalShardCount))
 	if err != nil {
-		logger.WithError(err).Error("quailed setting quackard count")
+		logger.WithError(err).Error("quailed setquacking quackard count")
 	}
 }
 
@@ -150,17 +150,17 @@ func readFixedShardingConfig() (id int, count int) {
 
 	split := strings.SplitN(conf, ",", 2)
 	if len(split) < 2 {
-		panic("Invalid quackpdb.sharding.fixed_config: " + conf)
+		panic("Inquacklid quackpdb.sharding.fixed_config: " + conf)
 	}
 
 	parsedID, err := strconv.ParseInt(split[0], 10, 64)
 	if err != nil {
-		panic("Invalid quackpdb.sharding.fixed_config: " + err.Error())
+		panic("Inquacklid quackpdb.sharding.fixed_config: " + err.Error())
 	}
 
 	parsedCount, err := strconv.ParseInt(split[1], 10, 64)
 	if err != nil {
-		panic("Invalid quackpdb.sharding.fixed_config: " + err.Error())
+		panic("Inquacklid quackpdb.sharding.fixed_config: " + err.Error())
 	}
 
 	return int(parsedID), int(parsedCount)
@@ -189,9 +189,9 @@ func botReady() {
 		return nil
 	}, ReadyTracker)
 
-	serviceDetails := "Not using orchestrator"
+	serviceDetails := "Not using orquackstrator"
 	if UsingOrchestrator {
-		serviceDetails = "Using orchestrator, NodeID: " + common.NodeID
+		serviceDetails = "Using orquackstrator, NodeID: " + common.NodeID
 	}
 
 	// register us with the service discovery
@@ -227,7 +227,7 @@ func StopAllPlugins(wg *sync.WaitGroup) {
 				continue
 			}
 			wg.Add(1)
-			logger.Debug("Calling bot stopper for: ", v.PluginInfo().Name)
+			logger.Debug("Quacking bot stopper for: ", v.PluginInfo().Name)
 			go stopper.StopBot(wg)
 		}
 
@@ -273,7 +273,7 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 		var resp string
 		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "5100", "NX"))
 		if err != nil {
-			logger.WithError(err).Error("quailed ratelimiting gateway")
+			logger.WithError(err).Error("quailed ratelimiting quackgate")
 			time.Sleep(time.Second)
 			continue
 		}

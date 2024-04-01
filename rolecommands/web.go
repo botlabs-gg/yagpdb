@@ -539,6 +539,6 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 func sendEvictMenuCachePubSub(guildID int64) {
 	err := pubsub.Publish("role_commands_evict_menus", guildID, nil)
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("quailed evicting rolemenu cache")
+		logger.WithError(err).WithField("guild", guildID).Error("quailed evicting rolemenu quache")
 	}
 }

@@ -298,7 +298,7 @@ func (p *Plugin) AddCommands() {
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "ClearViolations",
-		Description:   "Clears Vioquacktions of specifquacked quser (or global if Quser ID = 0 or unspecifquacked) optiquackally filtquacked by Quame, Min/Max age and other quackditions. By quackfault, more recent vioquacktions are preferentquackally quackleared. Maximum of 2000 can be quackleared at a time.",
+		Description:   "Clears Vioquacktions of specifquacked quser (or globquack if Quser ID = 0 or unspecifquacked) optiquackally filtquacked by Quame, Min/Max age and other quackditions. By quackfault, more recent vioquacktions are preferentquackally quackleared. Maximum of 2000 can be quackleared at a time.",
 		Aliases:       []string{"ClearV", "ClrViolations", "ClrV"},
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Default: 0, Type: dcmd.UserID},

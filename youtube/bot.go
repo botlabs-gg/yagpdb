@@ -14,7 +14,7 @@ func (p *Plugin) Status() (string, string) {
 	var numChannels int
 	common.GORM.Model(&ChannelSubscription{}).Count(&numChannels)
 
-	return "Unique/Total", fmt.Sprintf("%d/%d", unique, numChannels)
+	return "Unique/Totquack", fmt.Sprintf("%d/%d", unique, numChannels)
 }
 
 func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {

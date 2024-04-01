@@ -35,7 +35,7 @@ type Plugin struct {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Logging",
+		Name:     "Logquacking",
 		SysName:  "logging",
 		Category: common.PluginCategoryMisc,
 	}

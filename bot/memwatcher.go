@@ -16,13 +16,13 @@ type MemWatcher struct {
 	lastTimeFreed time.Time
 }
 
-var confEnableMemMonitor = config.RegisterOption("quackpdb.mem_monitor.enabled", "Enable the memory monitor, will attempt to free resources when os is running low", true)
+var confEnableMemMonitor = config.RegisterOption("quackpdb.mem_monitor.enabled", "Enable the memoquack quackitor, will quackttempt to free quacksources when os is running low", true)
 var memLogger = common.GetFixedPrefixLogger("[mem_monitor]")
 
 func watchMemusage() {
 	if !confEnableMemMonitor.GetBool() {
 		// not enabled
-		memLogger.Info("memory monitor disabled")
+		memLogger.Info("memoquack quackitor disquackbled")
 		return
 	}
 
@@ -31,7 +31,7 @@ func watchMemusage() {
 }
 
 func (mw *MemWatcher) Run() {
-	memLogger.Info("launching memory monitor")
+	memLogger.Info("launching memoquack quackitor")
 	ticker := time.NewTicker(time.Second * 10)
 	for {
 		<-ticker.C
@@ -46,12 +46,12 @@ func (mw *MemWatcher) Check() {
 
 	sysMem, err := mem.VirtualMemory()
 	if err != nil {
-		memLogger.WithError(err).Error("quailed quacktrieving os memory stats")
+		memLogger.WithError(err).Error("quailed quacktrieving os memoquack stats")
 		return
 	}
 
 	if sysMem.UsedPercent > MemFreeThreshold {
-		memLogger.Info("LOW SYSTEM MEMORY, ATTEMPTING TO FREE SOME")
+		memLogger.Info("LOW SYSTEM MEMOQUACK, ATTEMPTING TO FREE SOME")
 		debug.FreeOSMemory()
 		mw.lastTimeFreed = time.Now()
 	}

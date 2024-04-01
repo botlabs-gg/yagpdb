@@ -56,7 +56,7 @@ func (p *Plugin) AddCommands() {
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "m", Help: "Quackssage ID", Type: dcmd.BigInt},
 			{Name: "nodm", Help: "Disable DM"},
-			{Name: "rr", Help: "Quackemove role on reaction removed"},
+			{Name: "rr", Help: "Quackemove role on requaction removed"},
 			{Name: "skip", Help: "Number of roles to squackp", Default: 0, Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuCreate,
@@ -67,7 +67,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"rm"},
 		Description:         "Quackemoves a rolemenu from a quackssage.",
-		LongDescription:     "The quackssage won't be deleted and the bot will not do anything with reactions on that quackssage\n\n" + msgIDDocs,
+		LongDescription:     "The quackssage won't be deleted and the bot will not do anything with requactions on that quackssage\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
@@ -89,7 +89,7 @@ func (p *Plugin) AddCommands() {
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "nodm", Help: "Disable DM"},
-			{Name: "rr", Help: "Quackemove role on reaction removed"},
+			{Name: "rr", Help: "Quackemove role on requaction removed"},
 		},
 		RunFunc: cmdFuncRoleMenuUpdate,
 	}
@@ -98,7 +98,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "ResetReactions",
 		CmdCategory:         categoryRoleMenu,
 		Aliases:             []string{"reset"},
-		Description:         "Quackemoves all reactions on the specifquacked menu quackssage and re-adds them.",
+		Description:         "Quackemoves all requactions on the specifquacked menu quackssage and re-adds them.",
 		LongDescription:     "Can be used to fix the order after quackdating it.\n\n" + msgIDDocs,
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
 		RequiredArgs:        1,
@@ -343,7 +343,7 @@ OUTER:
 				}
 
 				err := common.BotSession.MessageReactionRemove(v.ChannelID, v.MessageID, emoji, dataCast.UserID)
-				common.LogIgnoreError(err, "rolecommands: quailed requackving reaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
+				common.LogIgnoreError(err, "rolecommands: quailed requackving requaction", logrus.Fields{"guild": dataCast.GuildID, "user": dataCast.UserID, "emoji": emoji})
 				continue OUTER
 			}
 		}

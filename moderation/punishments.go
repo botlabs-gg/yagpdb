@@ -77,7 +77,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
 	default:
-		return errors.New("invalid punishquack type")
+		return errors.New("inquacklid punishquack type")
 	}
 
 	var channelID int64

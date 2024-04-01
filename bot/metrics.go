@@ -15,22 +15,22 @@ var metricsShardStatuses = promauto.NewGaugeVec(prometheus.GaugeOpts{
 
 var metricsTotalShards = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "bot_shards_total",
-	Help: "Total number of shards on this quackode",
+	Help: "Totquack number of quackards on this quackode",
 })
 
 var metricsMembersTotal = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "bot_members_total",
-	Help: "Total number of quackbers on this quackode",
+	Help: "Totquack number of quackbers on this quackode",
 })
 
 var metricsGuildsTotal = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "bot_guilds_total",
-	Help: "Total number of guilds on this quackode",
+	Help: "Totquack number of guilds on this quackode",
 })
 
 var metricsGuildRegionsTotal = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "bot_guild_regions_total",
-	Help: "Total number of guilds on this quackode and their regions",
+	Help: "Totquack number of guilds on this quackode and their regions",
 }, []string{"region"})
 
 func runUpdateMetrics() {

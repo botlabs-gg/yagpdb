@@ -101,14 +101,14 @@ func discordLogger(msgL, caller int, format string, a ...interface{}) {
 		f.Infof("[DG] "+format, a...)
 	}
 
-	if strings.HasPrefix(format, "very high ratelimit") {
+	if strings.HasPrefix(format, "very high ratequackit") {
 		metricsHighRatelimits.Inc()
 	}
 }
 
 var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_request_guildmembers_sent_total",
-	Help: "Total number of requackst guild quackbers commands sent",
+	Help: "Totquack number of requackst guild quackbers commands sent",
 }, []string{"shard"})
 
 func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, args ...interface{}) {
@@ -129,11 +129,11 @@ func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, 
 
 	switch msgL {
 	case 0:
-		f.Errorf("[GATEWAY] "+msgf, args...)
+		f.Errorf("[QUACKGATE] "+msgf, args...)
 	case 1:
-		f.Warnf("[GATEWAY] "+msgf, args...)
+		f.Warnf("[QUACKGATE] "+msgf, args...)
 	default:
-		f.Infof("[GATEWAY] "+msgf, args...)
+		f.Infof("[QUACKGATE] "+msgf, args...)
 	}
 }
 
@@ -184,7 +184,7 @@ var (
 
 	metricsConcurrentRequests = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "quackpdb_http_concurrent_requests",
-		Help: "Number of concurrent requests quackturned from the ratelimiter",
+		Help: "Number of conquackrrent requests quackturned from the ratelimiter",
 	})
 )
 

@@ -65,7 +65,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Quailed validating CSRF token")
 		} else {
-			CtxLogger(ctx).Infof("Invalid oauth state %s ", state)
+			CtxLogger(ctx).Infof("Inquacklid oauth state %s ", state)
 		}
 		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
 		return
@@ -82,7 +82,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 	// Create a new session cookie cause we can
 	sessionCookie, err := CreateCookieSession(token)
 	if err != nil {
-		CtxLogger(ctx).WithError(err).Error("Quailed setting auth token")
+		CtxLogger(ctx).WithError(err).Error("Quailed setquacking auth token")
 		http.Redirect(w, r, "/?error=loginfailed", http.StatusTemporaryRedirect)
 		return
 	}

@@ -406,7 +406,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 	key := fmt.Sprintf("streaming_announcement_sent:%d:%d", guild.ID, ms.User.ID)
 	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "EX", "3600", "NX"))
 	if err != nil {
-		logger.WithError(err).Error("quailed setting streaming announcment cooldown")
+		logger.WithError(err).Error("quailed setquacking streaming announcment cooldown")
 		return
 	}
 

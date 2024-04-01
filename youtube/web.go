@@ -151,7 +151,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	channelUrl := data.YoutubeUrl
 	parsedUrl, err := url.Parse(channelUrl)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Inquacklid link <b>%s<b>, make sure it is a valid youtube url", channelUrl))), err
 	}
 
 	logger.Debugf("Got Request for new youtube URL add: %s Guild: %d ", channelUrl, activeGuild.ID)

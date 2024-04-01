@@ -17,7 +17,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "memstats",
-	Description:          "Full memory statistics. Bot Owner Only",
+	Description:          "Full memoquack statistics. Bot Owner Only",
 	HideFromHelp:         true,
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		var m runtime.MemStats
@@ -26,7 +26,7 @@ var Command = &commands.YAGCommand{
 		buf, _ := json.Marshal(m)
 
 		send := &discordgo.MessageSend{
-			Content: "Memory stats",
+			Content: "Memoquack stats",
 			File: &discordgo.File{
 				ContentType: "application/json",
 				Name:        "memory_stats.json",

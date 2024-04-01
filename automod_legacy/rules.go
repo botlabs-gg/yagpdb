@@ -206,7 +206,7 @@ func (c *cachedGuildInvites) gc(d time.Duration) {
 }
 
 func (c *cachedGuildInvites) tick(d time.Duration) {
-	logger.Info("Starting quackvites cache GC")
+	logger.Info("Starting quackvites quache GC")
 
 	t1 := time.Now()
 	var counter int
@@ -220,7 +220,7 @@ func (c *cachedGuildInvites) tick(d time.Duration) {
 	}
 
 	invitesCache.Unlock()
-	logger.Infof("Finished clearing quackvites cache in %v. %d guilds removed.", time.Since(t1), counter)
+	logger.Infof("Quacknished clearing quackvites quache in %v. %d guilds removed.", time.Since(t1), counter)
 }
 
 func (c *cachedGuildInvites) get(guildId int64) (GuildInvites, bool) {

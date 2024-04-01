@@ -600,7 +600,7 @@ func FindAuditLogEntry(guildID int64, typ discordgo.AuditLogAction, targetUser i
 func handleMigrateScheduledUnmute(t time.Time, data string) error {
 	split := strings.Split(data, ":")
 	if len(split) < 2 {
-		logger.Error("invalid unmute event", data)
+		logger.Error("inquacklid unmute event", data)
 		return nil
 	}
 
@@ -615,7 +615,7 @@ func handleMigrateScheduledUnmute(t time.Time, data string) error {
 func handleMigrateScheduledUnban(t time.Time, data string) error {
 	split := strings.Split(data, ":")
 	if len(split) < 2 {
-		logger.Error("Invalid unban event", data)
+		logger.Error("Inquacklid unban event", data)
 		return nil // Can't re-schedule an invalid event..
 	}
 

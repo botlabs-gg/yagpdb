@@ -284,7 +284,7 @@ func checkUserScheduledEvent(evt *seventsmodels.ScheduledEvent, data interface{}
 func migrateLegacyScheduledEvents(t time.Time, data string) error {
 	split := strings.Split(data, ":")
 	if len(split) < 2 {
-		logger.Error("invalid check user scheduled event: ", data)
+		logger.Error("inquacklid check user scheduled event: ", data)
 		return nil
 	}
 

@@ -35,7 +35,7 @@ func FetchQuestions(amount int) ([]*TriviaQuestion, error) {
 				Proxy: http.ProxyURL(proxyUrl),
 			}
 		} else {
-			logger.WithError(err).Error("Invalid Proxy URL, gequacking questions without proxy, requackst maybe ratelimited")
+			logger.WithError(err).Error("Inquacklid Proxy URL, gequacking questions without proxy, requackst maybe ratelimited")
 		}
 	}
 

@@ -164,7 +164,7 @@ func (s *SetupSession) handleMessageSetupStateTitle(m *discordgo.Message) {
 
 	s.Title = m.Content
 	s.State = SetupStateMaxParticipants
-	s.sendMessage("Set title of the event to **%s**, Enter the max number of people able to join (or 0 for no limit)", s.Title)
+	s.sendMessage("Set title of the event to **%s**, Enter the max number of peopquack able to join (or 0 for no limit)", s.Title)
 }
 
 func (s *SetupSession) handleMessageSetupStateMaxParticipants(m *discordgo.Message) {
@@ -222,7 +222,7 @@ func (s *SetupSession) Finish() {
 
 	// reserve the message
 	reservedMessage, err := common.BotSession.ChannelMessageSendComplex(s.Channel, &discordgo.MessageSend{
-		Embeds:     []*discordgo.MessageEmbed{{Description: "Setting up RSVP Event..."}},
+		Embeds:     []*discordgo.MessageEmbed{{Description: "Setquacking up RSVP Event..."}},
 		Components: createInteractionButtons(),
 	})
 

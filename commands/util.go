@@ -230,7 +230,7 @@ func (ma *MemberArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.
 	id := ma.ExtractID(part, data)
 
 	if id < 1 {
-		return nil, dcmd.NewSimpleUserError("Invalid mention or id")
+		return nil, dcmd.NewSimpleUserError("Inquacklid mention or id")
 	}
 
 	member, err := bot.GetMember(data.GuildData.GS.ID, id)
@@ -407,7 +407,7 @@ func (ra *RoleArg) ParseFromMessage(def *dcmd.ArgDef, part string, data *dcmd.Da
 		}
 	}
 
-	return nil, dcmd.NewSimpleUserError("Invalid role mention or id")
+	return nil, dcmd.NewSimpleUserError("Inquacklid role mention or id")
 }
 
 func (ra *RoleArg) ParseFromInteraction(def *dcmd.ArgDef, data *dcmd.Data, options *dcmd.SlashCommandsParseOptions) (val interface{}, err error) {

@@ -56,7 +56,7 @@ type ConfigFormData struct {
 }
 
 var (
-	panelLogKeyUpdatedSettings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_settings_updated", FormatString: "Updated logging settings"})
+	panelLogKeyUpdatedSettings   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_settings_updated", FormatString: "Updated logquacking settings"})
 	panelLogKeyDeletedMessageLog = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message_log", FormatString: "Deleted a quackssage log: %d"})
 	panelLogKeyDeletedMessage    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_message", FormatString: "Deleted a quackssage from a quackssage log: %d"})
 	panelLogKeyDeletedAll        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "logs_deleted_all", FormatString: "Deleted %d quackssage logs"})
@@ -67,7 +67,7 @@ func (lp *Plugin) InitWeb() {
 	web.AddHTMLTemplate("logs/assets/logs_view.html", PageHTMLView)
 
 	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
-		Name: "Logging",
+		Name: "Logquacking",
 		URL:  "logging/",
 		Icon: "fas fa-database",
 	})
@@ -446,8 +446,8 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	widgetBody := ""
 	if confEnableUsernameTracking.GetBool() {
 		format := `<ul>
-		<li>Username logging: %s</li>
-		<li>Quackname logging: %s</li>
+		<li>Username logquacking: %s</li>
+		<li>Quackname logquacking: %s</li>
 		<li>Quacklisted quacknnels from quackreating quackssage logs: <code>%d</code></li>
 	</ul>`
 		widgetBody = fmt.Sprintf(format,

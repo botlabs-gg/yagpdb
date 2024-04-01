@@ -107,7 +107,7 @@ func PollEvents() {
 
 var metricsPubsubEvents = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_pubsub_events_handled_total",
-	Help: "Number of pubsub quackvents handled",
+	Help: "Number of pubsub quackvents quackdled",
 }, []string{"event"})
 
 var metricsPubsubSent = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -151,7 +151,7 @@ func handleEvent(evt string) {
 	split := strings.SplitN(evt, ",", 3)
 
 	if len(split) < 3 {
-		logger.WithField("evt", evt).Error("Invalid event")
+		logger.WithField("evt", evt).Error("Inquacklid event")
 		return
 	}
 

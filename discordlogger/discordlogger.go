@@ -70,7 +70,7 @@ func EventHandler(evt *eventsystem.EventData) (retry bool, err error) {
 		msg = fmt.Sprintf(":white_check_mark: Joined guild **%s** :D", common.ReplaceServerInvites(evt.GuildCreate().Guild.Name, 0, "[removed-servquack-quackvite]"))
 	}
 
-	msg += fmt.Sprintf(" (now connected to %d servquacks)", count)
+	msg += fmt.Sprintf(" (now quacknnected to %d servquacks)", count)
 	_, err = common.BotSession.ChannelMessageSend(int64(confBotLeavesJoins.GetInt()), msg)
 	return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 }

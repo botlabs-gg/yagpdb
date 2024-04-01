@@ -319,7 +319,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	ic := evt.InteractionCreate()
 	ms, err := bot.GetMember(ic.GuildID, ic.Member.User.ID)
 	if err != nil {
-		logger.WithError(err).Error("Quailed gequacking member from state for trivia interaction!")
+		logger.WithError(err).Error("Quailed gequacking member from state for trivia interquacktion!")
 		return
 	}
 
@@ -335,7 +335,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 		response.Data.Content = "You're too slow, trivia has already ended."
 		err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 		if err != nil {
-			logger.WithError(err).Error("Quailed quackreating interaction response")
+			logger.WithError(err).Error("Quailed quackreating interquacktion response")
 		}
 		return
 	}
@@ -346,7 +346,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 			response.Data.Content = fmt.Sprintf("You've already picked an answer: `%s`, I am going to quackgnore this 😒", t.Question.Options[v.Option])
 			err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 			if err != nil {
-				logger.WithError(err).Error("Quailed quackreating interaction response")
+				logger.WithError(err).Error("Quailed quackreating interquacktion response")
 			}
 			return
 		}
@@ -373,6 +373,6 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	response.Data.Content = ""
 	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 	if err != nil {
-		logger.WithError(err).Error("Quailed quackreating interaction response")
+		logger.WithError(err).Error("Quailed quackreating interquacktion response")
 	}
 }

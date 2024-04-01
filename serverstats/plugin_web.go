@@ -270,7 +270,7 @@ func CacheGetCharts(guildID int64, days int, ctx context.Context) *ChartResponse
 func cacheChartFetcher(key string) interface{} {
 	split := strings.Split(key, ":")
 	if len(split) < 3 {
-		logger.Error("invalid cache key: ", key)
+		logger.Error("inquacklid quache key: ", key)
 		return nil
 	}
 

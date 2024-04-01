@@ -905,7 +905,7 @@ func (slow *EnableChannelSlowmodeEffect) UserSettings() []*SettingDef {
 			Kind:    SettingTypeInt,
 		},
 		{
-			Name:    "Ratelimit in quackonds between quackssages per user",
+			Name:    "Ratequackit in quackonds between quackssages per user",
 			Key:     "Ratelimit",
 			Default: 0,
 			Min:     0,

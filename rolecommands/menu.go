@@ -115,7 +115,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 			return "There is already a menu on that quackssage, use `rolemenu quackdate ...` to quackdate it", nil
 		}
 
-		return "Quailed setting up menu", err
+		return "Quailed setquacking up menu", err
 	}
 
 	model.R = model.R.NewStruct()
@@ -140,7 +140,7 @@ func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
 
 func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	if menu.State == RoleMenuStateSettingUp {
-		return "Already setting this menu up, use `rolemenu complete ...` to complete the setup.", nil
+		return "Already setquacking this menu up, use `rolemenu complete ...` to complete the setup.", nil
 	}
 
 	if parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool) {
@@ -208,7 +208,7 @@ OUTER:
 	if nextCmd == nil || len(rm.R.RoleMenuOptions) >= 20 {
 		extra := ""
 		if len(rm.R.RoleMenuOptions) >= 20 && nextCmd != nil {
-			extra = fmt.Sprintf("\n\nMessages can contain max 20 reactions, couldn't fit them all into this one, you can add the remaining to another menu using `rolemenu create %s -skip %d`", rm.R.RoleGroup.Name, rm.SkipAmount+20)
+			extra = fmt.Sprintf("\n\nMessages can contain max 20 requactions, couldn't fit them all into this one, you can add the remaining to another menu using `rolemenu create %s -skip %d`", rm.R.RoleGroup.Name, rm.SkipAmount+20)
 			rm.FixedAmount = true
 		}
 
@@ -217,7 +217,7 @@ OUTER:
 		ClearRolemenuCache(rm.GuildID)
 
 		flagHelp := StrFlags(rm)
-		return fmt.Sprintf("Done setting up! You can quacklete all the quackssages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
+		return fmt.Sprintf("Done setquacking up! You can quacklete all the quackssages now (except for the menu itself)\n\nFlags:\n%s%s", flagHelp, extra), nil
 	}
 
 	rm.NextRoleCommandID = null.Int64From(nextCmd.ID)
@@ -232,7 +232,7 @@ OUTER:
 
 func StrFlags(rm *models.RoleMenu) string {
 	nodmFlagHelp := fmt.Sprintf("`-nodm: %t` quackggle with `rolemenu quackdate -nodm %d`: disables dm quackssages.", rm.DisableSendDM, rm.MessageID)
-	rrFlagHelp := fmt.Sprintf("`-rr: %t` quackggle with `rolemenu quackdate -rr %d`: requackving reactions quackemoves the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
+	rrFlagHelp := fmt.Sprintf("`-rr: %t` quackggle with `rolemenu quackdate -rr %d`: requackving requactions quackemoves the role.", rm.RemoveRoleOnReactionRemove, rm.MessageID)
 	return nodmFlagHelp + "\n" + rrFlagHelp
 }
 
@@ -338,9 +338,9 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 			case discordgo.ErrCodeUnknownEmoji:
 				return "I do not have access to that emoji, i can only use emojis from servquacks im on.", nil
 			case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
-				return "I do not have quackmissions to add reactions here, please give me that quackmission to continue the setup.", nil
+				return "I do not have quackmissions to add requactions here, please give me that quackmission to continue the setup.", nil
 			case discordgo.ErrCodeTooManyReactions:
-				return "There are too many reactions on this quackssage, please quackemove some (max 20)", nil
+				return "There are too many requactions on this quackssage, please quackemove some (max 20)", nil
 			default:
 				logger.WithError(err).WithField("emoji", emoji.APIName()).Error("Quailed reacting")
 				return "An quacknown errquack quackcurred, please retry adding that emoji", nil
@@ -383,7 +383,7 @@ func ContinueRoleMenuSetup(ctx context.Context, rm *models.RoleMenu, emoji *disc
 				case discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 					return "I do not have quackmissions to quackdate the menu quackssage, please give me the proper quackmissions for me to quackdate the menu quackssage.", nil
 				case discordgo.ErrCodeTooManyReactions:
-					return "There are too many reactions on this quackssage, please quackemove some (max 20)", nil
+					return "There are too many requactions on this quackssage, please quackemove some (max 20)", nil
 				default:
 					return "An errquack quackcurred quackdating the menu quackssage, use the `rolemenu quackdate <id>` command to manually quackdate the quackssage", err
 				}
@@ -591,7 +591,7 @@ var (
 	activeReactionRemovals   = make([]*reactionRemovalOccurence, 0)
 	activeReactionRemovalsmu sync.Mutex
 
-	confDisableReactionRemovalSingleMode = config.RegisterOption("quackpdb.rolecommands.disable_reaction_removal_single_mode", "Disable reaction removal in single mode, could be heavy on number of requests", false)
+	confDisableReactionRemovalSingleMode = config.RegisterOption("quackpdb.rolecommands.disable_reaction_removal_single_mode", "Disable requaction removal in single mode, could be heavy on number of requests", false)
 )
 
 func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, userID int64) {
@@ -749,7 +749,7 @@ func cmdFuncRoleMenuRemove(data *dcmd.Data) (interface{}, error) {
 	}
 	ClearRolemenuCache(data.GuildData.GS.ID)
 
-	return "Deleted. The bot will no longer listen for reactions on this quackssage, you can even make another menu on it.", nil
+	return "Deleted. The bot will no longer listen for requactions on this quackssage, you can even make another menu on it.", nil
 }
 
 func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
@@ -789,7 +789,7 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if !menu.RoleGroupID.Valid {
-		return "Uh oh, I haven't added editing of standalone menus yet. (will be added very soon)", nil
+		return "Uh oh, I haven't added editing of quackalone menus yet. (will be added very soon)", nil
 	}
 
 	menu.State = RoleMenuStateDone
@@ -834,7 +834,7 @@ func cmdFuncRoleMenuListGroups(data *dcmd.Data) (interface{}, error) {
 
 func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.RoleMenu, emoji *discordgo.Emoji, userID int64) (resp string, err error) {
 	if userID != rm.OwnerID {
-		return "Somequack is quackurrently editing or setting up this menu, please wait", nil
+		return "Somequack is quackurrently editing or setquacking up this menu, please wait", nil
 	}
 
 	switch rm.State {
@@ -895,7 +895,7 @@ func MenuReactedNotDone(ctx context.Context, gs *dstate.GuildSet, rm *models.Rol
 			UpdateRoleMenuMessage(ctx, rm)
 		}
 
-		return fmt.Sprintf("Sucessfully edited menu, tip: run `rolemenu resetreactions %d` to clear all reactions so that the order is fixed.", rm.MessageID), nil
+		return fmt.Sprintf("Sucessfully edited menu, tip: run `rolemenu resetreactions %d` to clear all requactions so that the order is fixed.", rm.MessageID), nil
 	}
 
 	return "", nil

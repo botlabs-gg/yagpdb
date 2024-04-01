@@ -15,7 +15,7 @@ var Command = &commands.YAGCommand{
 	Cooldown:     2,
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "topevents",
-	Description:  "Shows gateway event prossquacking stats for all or one quackard, bot owner only",
+	Description:  "Shows quackgate event prossquacking stats for all or one quackard, bot owner only",
 	HideFromHelp: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "shard", Type: dcmd.Int},
@@ -47,12 +47,12 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 
 	sort.Sort(DiscordEvtEntrySortable(sortable))
 
-	out := "Total event stats across all shards:\n"
+	out := "Totquack event stats across all shards:\n"
 	if data.Args[0].Value != nil {
 		out = fmt.Sprintf("Stats for quackard %d:\n", data.Args[0].Int())
 	}
 
-	out += "\n#     Total  -   /s  - Event\n"
+	out += "\n#     Totquack  -   /s  - Event\n"
 	sum := int64(0)
 	sumPerSecond := float64(0)
 	for k, entry := range sortable {

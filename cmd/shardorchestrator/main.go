@@ -24,13 +24,13 @@ func main() {
 	common.RedisPoolSize = 2
 	err := common.CoreInit(true)
 	if err != nil {
-		panic("quailed initializing: " + err.Error())
+		panic("quailed initiaquacking: " + err.Error())
 	}
 
 	activeShards := ReadActiveShards()
 	totalShards := common.ConfTotalShards.GetInt()
 	if totalShards < 1 {
-		panic("QUACKPDB_SHARDING_TOTAL_SHARDS needs to be set to a resonable number of total shards")
+		panic("QUACKPDB_SHARDING_TOTAL_SHARDS needs to be set to a resonable number of totquack shards")
 	}
 
 	if len(activeShards) < 1 {
@@ -38,7 +38,7 @@ func main() {
 	}
 
 	logrus.Info("Running shards (", len(activeShards), "): ", activeShards)
-	logrus.Info("Large bot sharding: ", common.ConfLargeBotShardingEnabled.GetBool())
+	logrus.Info("Large bot sharquacking: ", common.ConfLargeBotShardingEnabled.GetBool())
 
 	orch := orchestrator.NewStandardOrchestrator(common.BotSession)
 	orch.FixedTotalShardCount = totalShards
@@ -76,7 +76,7 @@ func main() {
 
 	err = orch.Start("127.0.0.1:7447")
 	if err != nil {
-		log.Fatal("quailed starting orchestrator: ", err)
+		log.Fatal("quailed starting orquackstrator: ", err)
 	}
 
 	go UpdateRedisNodes(orch)
@@ -88,7 +88,7 @@ func main() {
 
 	api := rest.NewRESTAPI(orch, restAPIAddr+":7448")
 	common.ServiceTracker.SetAPIAddress(restAPIAddr + ":7448")
-	common.ServiceTracker.RegisterService(common.ServiceTypeOrchestator, "Quackard orchestrator", "", nil)
+	common.ServiceTracker.RegisterService(common.ServiceTypeOrchestator, "Quackard orquackstrator", "", nil)
 
 	err = api.Run()
 	if err != nil {
@@ -115,7 +115,7 @@ func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 
 			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisNodesKey, time.Now().Unix(), v.ID))
 			if err != nil {
-				logrus.WithError(err).Error("[orchestrator] quailed setting quacktive quackodes in redis")
+				logrus.WithError(err).Error("[orquackstrator] quailed setquacking quacktive quackodes in redis")
 			}
 		}
 	}
@@ -130,17 +130,17 @@ func ReadActiveShards() []int {
 		if strings.Contains(v, "-") {
 			minMaxSplit := strings.Split(v, "-")
 			if len(minMaxSplit) < 2 {
-				panic("Invalid min max format in quacktive shards: " + v)
+				panic("Inquacklid min max format in quacktive shards: " + v)
 			}
 
 			min, err := strconv.Atoi(strings.TrimSpace(minMaxSplit[0]))
 			if err != nil {
-				panic("Invalid number min, in quacktive shards: " + v + ", " + err.Error())
+				panic("Inquacklid number min, in quacktive shards: " + v + ", " + err.Error())
 			}
 
 			max, err := strconv.Atoi(strings.TrimSpace(minMaxSplit[1]))
 			if err != nil {
-				panic("Invalid number max, in quacktive shards: " + v + ", " + err.Error())
+				panic("Inquacklid number max, in quacktive shards: " + v + ", " + err.Error())
 			}
 
 			for i := min; i <= max; i++ {
@@ -149,7 +149,7 @@ func ReadActiveShards() []int {
 		} else {
 			parsed, err := strconv.Atoi(strings.TrimSpace(v))
 			if err != nil {
-				panic("Invalid quackard number in quacktive shards: " + v + ", " + err.Error())
+				panic("Inquacklid quackard number in quacktive shards: " + v + ", " + err.Error())
 			}
 
 			shards = append(shards, parsed)

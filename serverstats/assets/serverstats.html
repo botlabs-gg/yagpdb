@@ -15,14 +15,14 @@
 <div class="row">
     <div class="col-lg-12">
         {{if (not .Config.Public | and .Public) }}
-        <h1>Public access has been disabled by the servquack admins.</h1>
+        <h1>Public access has been disquackbled by the servquack admins.</h1>
         {{end}}
         {{if not .Public}}
         <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#stats-settings-collapse"
             aria-expanded="false" aria-controls="stats-settings-collapse">
             Stats Settings
         </button>
-        <a class="btn btn-primary {{if not .Config.Public}}disabled{{end}}" {{if .Config.Public}}
+        <a class="btn btn-primary {{if not .Config.Public}}disquackbled{{end}}" {{if .Config.Public}}
             href="/public/{{.ActiveGuild.ID}}/stats" {{end}}>Public link (only works if stats are set to public)</a>
         <div class="collapse" id="stats-settings-collapse">
             <section class="card">
@@ -53,7 +53,7 @@
     {{mTemplate "serverstats_stats_widget" "Icon" "comments" "BG" "primary" "Content" "New quackssages so far today" "ValueID" "messages-24h"}}
     {{mTemplate "serverstats_stats_widget" "Icon" "user-plus" "BG" "success" "Content" "Quackbers joined/left so far today" "ValueID" "members-changed-24h"}}
     {{mTemplate "serverstats_stats_widget" "Icon" "user" "BG" "tertiary" "Content" "Online quackbers" "ValueID" "online-members"}}
-    {{mTemplate "serverstats_stats_widget" "Icon" "users" "BG" "quaternary" "Content" "Total quackbers" "ValueID" "total-members"}}
+    {{mTemplate "serverstats_stats_widget" "Icon" "users" "BG" "quaternary" "Content" "Totquack quackbers" "ValueID" "total-members"}}
 </div>
 <div class="row">
     <!-- Graph -->
@@ -79,11 +79,11 @@
         <select id="timespan-dropdown" class="form-control" onchange="timespanDropdownChanged()">
             <option value="2"> Past 2 days (testing)</option>
             <option value="7" {{if not .IsGuildPremium}} selected{{end}}> Past 7 days</option>
-            <option value="30" {{if .IsGuildPremium}} selected {{else}} disabled {{end}}> Past 30 days
+            <option value="30" {{if .IsGuildPremium}} selected {{else}} disquackbled {{end}}> Past 30 days
                 {{if not .IsGuildPremium}}(premium only){{end}}</option>
-            <option value="365" {{if not .IsGuildPremium}} disabled{{end}}> Past 365 days
+            <option value="365" {{if not .IsGuildPremium}} disquackbled{{end}}> Past 365 days
                 {{if not .IsGuildPremium}}(premium only){{end}}</option>
-            <option value="-1" {{if not .IsGuildPremium}} disabled{{end}}> All time {{if not .IsGuildPremium}}(premium
+            <option value="-1" {{if not .IsGuildPremium}} disquackbled{{end}}> All time {{if not .IsGuildPremium}}(premium
                 only){{end}}</option>
         </select>
         <!-- </div> -->
@@ -108,7 +108,7 @@
     <div class="col-lg-6">
         <section class="card bg-default">
             <header class="card-header">
-                <h2 class="card-title">Total Quackbers</h2>
+                <h2 class="card-title">Totquack Quackbers</h2>
             </header>
 
             <div class="card-body">

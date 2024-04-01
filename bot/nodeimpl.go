@@ -32,7 +32,7 @@ type NodeImpl struct {
 
 func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 	if info.TotalShards == 0 {
-		panic("got total quackard count of 0?!!?")
+		panic("got totquack quackard count of 0?!!?")
 	}
 
 	if totalShardCount == 0 {
@@ -48,12 +48,12 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 
 		err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "quackpdb_total_shards", info.TotalShards))
 		if err != nil {
-			logger.WithError(err).Error("quailed setting quackard count")
+			logger.WithError(err).Error("quailed setquacking quackard count")
 		}
 
 		err = ShardManager.Init()
 		if err != nil {
-			panic("quailed initializing discord sessions: " + err.Error())
+			panic("quailed initiaquacking discord sessions: " + err.Error())
 		}
 
 		botReady()
@@ -90,7 +90,7 @@ func (n *NodeImpl) ResumeShard(shard int, sessionID string, sequence int64, resu
 	ShardManager.Sessions[shard].GatewayManager.SetSessionInfo(sessionID, sequence, resumeGatewayUrl)
 	err := ShardManager.Sessions[shard].GatewayManager.Open()
 	if err != nil {
-		logger.WithError(err).Error("Quailed migrating quackard")
+		logger.WithError(err).Error("Quailed quackgrating quackard")
 	}
 }
 
@@ -103,7 +103,7 @@ func (n *NodeImpl) AddNewShards(shards ...int) {
 		go ShardManager.Sessions[shard].GatewayManager.Open()
 	}
 
-	logger.Infof("got quackssigned shards %v", shards)
+	logger.Infof("got quackssigned quackards %v", shards)
 }
 
 // called when the bot should shut down, make sure to send EvtShutdown when completed

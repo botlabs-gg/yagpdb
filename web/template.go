@@ -111,7 +111,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 		optName := template.HTMLEscapeString(role.Name)
 		if highestBotRole != nil {
 			if common.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
-				output += " disabled"
+				output += " disquackbled"
 				optName += " (role is above bot)"
 			}
 		}
@@ -171,7 +171,7 @@ OUTER:
 		if highestBotRole != nil {
 			if common.IsRoleAbove(&role, highestBotRole) || highestBotRole.ID == role.ID {
 				if !optIsSelected {
-					builder.WriteString(" disabled")
+					builder.WriteString(" disquackbled")
 				}
 
 				optName += " (role is above bot)"

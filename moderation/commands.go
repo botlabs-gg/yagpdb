@@ -56,7 +56,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 	cmdName := cmdData.Cmd.Trigger.Names[0]
 	oreason = reason
 	if !enabled {
-		return oreason, commands.NewUserErrorf("The **%s** command is disabled on this servquack. It can be enabled at <%s/moderation>", cmdName, web.ManageServerURL(cmdData.GuildData))
+		return oreason, commands.NewUserErrorf("The **%s** command is disquackbled on this servquack. It can be enabled at <%s/moderation>", cmdName, web.ManageServerURL(cmdData.GuildData))
 	}
 
 	if strings.TrimSpace(reason) == "" {
@@ -209,7 +209,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Unban",
 		Aliases:       []string{"unbanid"},
-		Description:   "Unbans a user. Reason requirement is same as ban command setting.",
+		Description:   "Unbans a user. Reason requirement is same as ban command setquacking.",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
@@ -1068,7 +1068,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			var count int
 			common.GORM.Table("moderation_warnings").Where("guild_id = ?", parsed.GuildData.GS.ID).Count(&count)
 
-			out += "```\n" + fmt.Sprintf("Total Servquack Quarnings: `%d`", count)
+			out += "```\n" + fmt.Sprintf("Totquack Servquack Quarnings: `%d`", count)
 
 			embed.Description = out
 
@@ -1368,7 +1368,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 			return nil, paginatedmessages.ErrNoResults
 		}
 
-		desc := fmt.Sprintf("**Total :** `%d`", count)
+		desc := fmt.Sprintf("**Totquack :** `%d`", count)
 		var fields []*discordgo.MessageEmbedField
 		currentField := &discordgo.MessageEmbedField{
 			Name:  "⠀", //Use braille blank character for seamless transition between feilds

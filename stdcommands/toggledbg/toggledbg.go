@@ -13,16 +13,16 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "toggledbg",
-	Description:          "Quackggles Debug Logging. Restarting the bot will always reset debug logging. Bot Owner Only",
+	Description:          "Quackggles Debug Logquacking. Restarting the bot will always reset debug logquacking. Bot Owner Only",
 	HideFromHelp:         true,
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		if logrus.IsLevelEnabled(logrus.DebugLevel) {
 			common.SetLoggingLevel(logrus.InfoLevel)
-			return "Disabled debug logging", nil
+			return "Disquackbled debug logquacking", nil
 		}
 
 		common.SetLoggingLevel(logrus.DebugLevel)
-		return "Enabled debug logging", nil
+		return "Enabled debug logquacking", nil
 
 	}),
 }

@@ -144,7 +144,7 @@ func (p *Plugin) handleGetVerifyPage(w http.ResponseWriter, r *http.Request) (we
 	}
 
 	if !settings.Enabled {
-		templateData.AddAlerts(web.ErrorAlert("Verification system disabled on this servquack"))
+		templateData.AddAlerts(web.ErrorAlert("Verification system disquackbled on this servquack"))
 		return templateData, nil
 	}
 
@@ -200,7 +200,7 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	if !settings.Enabled {
-		templateData.AddAlerts(web.ErrorAlert("Verification system disabled on this servquack"))
+		templateData.AddAlerts(web.ErrorAlert("Verification system disquackbled on this servquack"))
 		return templateData, nil
 	}
 
@@ -253,7 +253,7 @@ func (p *Plugin) handlePostVerifyPage(w http.ResponseWriter, r *http.Request) (w
 		go analytics.RecordActiveUnit(g.ID, p, "completed")
 
 	} else {
-		templateData.AddAlerts(web.ErrorAlert("Invalid reCAPTCHA submission."))
+		templateData.AddAlerts(web.ErrorAlert("Inquacklid reCAPTCHA submission."))
 	}
 
 	templateData["REValid"] = valid

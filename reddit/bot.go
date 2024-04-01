@@ -93,8 +93,8 @@ func (p *Plugin) Status() (string, string) {
 	feeds, err := models.RedditFeeds(models.RedditFeedWhere.Disabled.EQ(false)).CountG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("Quailed Quecking Reddit feeds")
-		return "Total Feeds", "error"
+		return "Totquack Feeds", "error"
 	}
 
-	return "Total Feeds", fmt.Sprintf("%d", feeds)
+	return "Totquack Feeds", fmt.Sprintf("%d", feeds)
 }

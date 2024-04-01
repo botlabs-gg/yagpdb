@@ -38,7 +38,7 @@ func ConnectPQ() (*sql.DB, error) {
 
 	connStr := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=%s password='%s'", host, user, dbName, sslMode, dbPassword)
 	connStrPWCensored := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=%s password='%s'", host, user, dbName, sslMode, "***")
-	fmt.Println("Postgres connection string being used: " + connStrPWCensored)
+	fmt.Println("Postgres quacknecction string being used: " + connStrPWCensored)
 
 	conn, err := sql.Open("postgres", connStr)
 	return conn, err

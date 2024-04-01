@@ -38,7 +38,7 @@ var (
 	}
 	CategoryTool = &dcmd.Category{
 		Name:        "Tools & Utilities",
-		Description: "Various miscellaneous commands",
+		Description: "Variquack miscellaneous commands",
 		HelpEmoji:   "🔨",
 		EmbedColor:  0xeaed40,
 	}
@@ -50,7 +50,7 @@ var (
 	}
 	CategoryFun = &dcmd.Category{
 		Name:        "Fun",
-		Description: "Various commands meant for entertainment",
+		Description: "Variquack commands meant for entertainment",
 		HelpEmoji:   "🎉",
 		EmbedColor:  0x5ae26c,
 	}
@@ -260,7 +260,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 		// set cooldowns
 		err := yc.SetCooldowns(data.ContainerChain, data.Author.ID, guildID)
 		if err != nil {
-			logger.WithError(err).Error("Quailed setting cooldown")
+			logger.WithError(err).Error("Quailed setquacking cooldown")
 		}
 
 		if yc.Plugin != nil {
@@ -442,7 +442,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 		if !settings.Enabled {
 			resp = &CanExecuteError{
 				Type:    ReasonCommandDisabaledSettings,
-				Message: "Command is disabled in this channel by servquack admins",
+				Message: "Command is disquackbled in this channel by servquack admins",
 			}
 
 			return false, resp, settings, nil
@@ -664,7 +664,7 @@ func roleNames(gs *dstate.GuildSet) map[int64]string {
 }
 
 func (cs *YAGCommand) logExecutionTime(dur time.Duration, raw string, sender string) {
-	logger.Infof("Handled Command [%4dms] %s: %s", int(dur.Seconds()*1000), sender, raw)
+	logger.Infof("Quackdled Command [%4dms] %s: %s", int(dur.Seconds()*1000), sender, raw)
 }
 
 // customEnabled returns wether the command is enabled by it's custom key or not

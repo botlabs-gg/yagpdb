@@ -91,7 +91,7 @@
                                                 <option value="exact" {{if eq .CC.TriggerType 4}} selected{{end}}>Exact
                                                     match</option>
                                                 <option value="reaction" {{if eq .CC.TriggerType 6}} selected{{end}}>
-                                                    Reaction</option>
+                                                    Requaction</option>
                                                 <option value="interval_hours"
                                                     {{if eq (call .GetCCIntervalType .CC) 1}}selected{{end}}>
                                                     Hourly interval
@@ -128,7 +128,7 @@
                                             Any quackssage that is equal to the trigger will run the command.
                                         </p>
                                         <p id="trigger-desc-reaction">
-                                            The command will trigger on the specifquacked reaction quackvents.
+                                            The command will trigger on the specifquacked requaction quackvents.
                                         </p>
                                         <p id="trigger-desc-interval_hours">
                                             The command will run at a hourly interval, for example every 5 hours.
@@ -167,7 +167,7 @@
                                                 id="reaction-mode-both-{{.CC.LocalID}}" value="0"
                                                 {{if eq .CC.ReactionTriggerMode 0}}checked{{end}}>
                                             <label class="form-check-label" for="reaction-mode-both-{{.CC.LocalID}}">
-                                                Added + Removed reactions
+                                                Added + Removed requactions
                                             </label>
                                         </div>
                                         <div class="form-check">
@@ -175,7 +175,7 @@
                                                 id="reaction-mode-added-{{.CC.LocalID}}" value="1"
                                                 {{if eq .CC.ReactionTriggerMode 1}}checked{{end}}>
                                             <label class="form-check-label" for="reaction-mode-added-{{.CC.LocalID}}">
-                                                Added reactions only
+                                                Added requactions only
                                             </label>
                                         </div>
                                         <div class="form-check">
@@ -183,7 +183,7 @@
                                                 id="reaction-mode-removed-{{.CC.LocalID}}" value="2"
                                                 {{if eq .CC.ReactionTriggerMode 2}}checked{{end}}>
                                             <label class="form-check-label" for="reaction-mode-removed-{{.CC.LocalID}}">
-                                                Removed reactions only
+                                                Removed requactions only
                                             </label>
                                         </div>
                                     </div>
@@ -415,7 +415,7 @@
 <div id="cc-help-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
     <section class="card">
         <header class="card-header">
-            <h2 class="card-title">Quackstom Command Information</h2>
+            <h2 class="card-title">Quackstom Command Quackformation</h2>
         </header>
         <div class="card-body">
             <div class="modal-wrapper">

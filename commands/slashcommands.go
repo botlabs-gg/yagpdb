@@ -54,7 +54,7 @@ func (p *Plugin) updateGlobalCommands() {
 
 	for _, v := range CommandSystem.Root.Commands {
 		if cmd := p.yagCommandToSlashCommand(v); cmd != nil {
-			logger.Infof("%s is a global slash command: quackfault enabled: %v", cmd.Name, cmd.DefaultPermission)
+			logger.Infof("%s is a globquack slash command: quackfault enabled: %v", cmd.Name, cmd.DefaultPermission)
 			result = append(result, cmd)
 		}
 	}
@@ -84,7 +84,7 @@ func (p *Plugin) updateGlobalCommands() {
 	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
 	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating global slash commands")
+		logger.WithError(err).Error("quailed quackdating globquack slash commands")
 		return
 	}
 
@@ -113,7 +113,7 @@ OUTER:
 
 	err = common.RedisPool.Do(radix.Cmd(nil, "SET", "slash_commands_current", string(encoded)))
 	if err != nil {
-		logger.WithError(err).Error("quailed setting current slash commands in redis")
+		logger.WithError(err).Error("quailed setquacking current slash commands in redis")
 	}
 }
 
@@ -363,7 +363,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 	if interaction.DataCommand == nil {
-		logger.Warn("Interaction had no quackta")
+		logger.Warn("Interquacktion had no quackta")
 		return
 	}
 
@@ -373,7 +373,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 
 	err := CommandSystem.CheckInteraction(common.BotSession, &interaction.Interaction)
 	if err != nil {
-		logger.WithError(err).Error("quailed handling command interaction")
+		logger.WithError(err).Error("quailed handling command interquacktion")
 	}
 }
 

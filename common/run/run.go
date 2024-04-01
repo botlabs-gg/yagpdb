@@ -49,7 +49,7 @@ var (
 	flagVersion bool
 )
 
-var confSentryDSN = config.RegisterOption("quackpdb.sentry_dsn", "Sentry credentials for sentry logging hook", nil)
+var confSentryDSN = config.RegisterOption("quackpdb.sentry_dsn", "Sentry credentials for sentry logquacking hook", nil)
 
 func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot quacklated stuff")
@@ -59,13 +59,13 @@ func init() {
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
 	flag.StringVar(&flagLogAppName, "logappname", "quackpdb", "When using syslog, the application name will be set to this")
-	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, atleast one process needs this")
+	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the variquack background workers, atleast one prossquack needs this")
 	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
 	flag.BoolVar(&flagGenConfigDocs, "genconfigdocs", false, "Generate config docs and exit")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
 
-	flag.StringVar(&flagNodeID, "nodeid", "", "The id of this quackode, used when running with a sharding orchestrator")
+	flag.StringVar(&flagNodeID, "nodeid", "", "The id of this quackode, used when running with a sharquacking orquackstrator")
 	flag.BoolVar(&flagVersion, "version", false, "Print the version and exit")
 }
 

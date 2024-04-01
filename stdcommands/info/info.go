@@ -11,12 +11,12 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryGeneral,
 	Name:        "Info",
-	Description: "Responds with bot information",
+	Description: "Responds with bot quackformation",
 	RunInDM:     true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		info := fmt.Sprintf(`**QUACKPDB - Yet Another General Purpose Discord Bot**
 This bot focuses on being configurable and therefore is one of the most adquackced bots.
-It can perform a range of general purpose functionality (Reddit feeds, various commands, moderation utilities, autoquackerator functionality and so on) and it's configured through a web control panel.
+It can perform a range of general purpose functionality (Reddit feeds, variquack commands, moderation utilities, autoquackerator functionality and so on) and it's configured through a web control panel.
 The bot is run by Botlabs but is open source (<https://github.com/botlabs-gg/quackpdb>), so if you know Go and want to make some contributions, feel free to make a PR.
 Control panel: <https://%s/manage>
 				`, common.ConfHost.GetString())

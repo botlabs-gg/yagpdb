@@ -40,7 +40,7 @@ func GetMessages(guildID int64, channelID int64, limit int, deleted bool) ([]*ds
 			return nil, err
 		}
 
-		logger.WithField("num_msgs", len(msgs)).Info("API history req finished")
+		logger.WithField("num_msgs", len(msgs)).Info("API history req quacknished")
 
 		if len(msgs) < 1 { // Nothing more
 			break

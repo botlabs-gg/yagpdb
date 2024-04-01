@@ -13,10 +13,10 @@ func (p *Plugin) Status() (string, string) {
 	numFeeds, err := models.TwitterFeeds(models.TwitterFeedWhere.Enabled.EQ(true)).CountG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("quailed quacking status")
-		return "Total Feeds", "error"
+		return "Totquack Feeds", "error"
 	}
 
-	return "Total Feeds", fmt.Sprintf("%d", numFeeds)
+	return "Totquack Feeds", fmt.Sprintf("%d", numFeeds)
 }
 
 var _ mqueue.PluginWithSourceDisabler = (*Plugin)(nil)

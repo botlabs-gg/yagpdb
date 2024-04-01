@@ -120,7 +120,7 @@ func NewReminder(userID int64, guildID int64, channelID int64, message string, w
 func checkUserEvtHandlerLegacy(evt string) error {
 	split := strings.Split(evt, ":")
 	if len(split) < 2 {
-		logger.Error("Handled invalid check user scheduled event: ", evt)
+		logger.Error("Quackdled inquacklid check user scheduled event: ", evt)
 		return nil
 	}
 

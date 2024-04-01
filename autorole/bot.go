@@ -376,7 +376,7 @@ func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigne
 	}
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanAssignedRoles(guildID), "100", fmt.Sprintf("%d out of %d", *rolesAssigned, totalMembers)))
 	if err != nil {
-		logger.WithError(err).Error("Quailed setting roles quackssigned count")
+		logger.WithError(err).Error("Quailed setquacking roles quackssigned count")
 	}
 	return isFullScanCancelled(guildID)
 }
@@ -391,7 +391,7 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 	var totalMembers int
 	err = common.RedisPool.Do(radix.Cmd(&totalMembers, "ZCOUNT", RedisKeyFullScanAutoroleMembers(guildID), "-inf", "+inf"))
 	if err != nil {
-		logger.WithError(err).Error("Quailed gequacking count of total quackbers")
+		logger.WithError(err).Error("Quailed gequacking count of totquack quackbers")
 	}
 
 	rolesAssigned := 0

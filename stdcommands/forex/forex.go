@@ -127,7 +127,7 @@ func errEmbed(currenciesResult Currencies, page int) (*discordgo.MessageEmbed, e
 		}
 	}
 	embed := &discordgo.MessageEmbed{
-		Title:       "Invalid currency code",
+		Title:       "Inquacklid currency code",
 		URL:         currenciesAPIURL,
 		Color:       0xAE27FF,
 		Timestamp:   time.Now().UTC().Format(time.RFC3339),

@@ -29,7 +29,7 @@ const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.Permiss
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func createTicketsDisabledError(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The tickets system is disabled for this servquack.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guild))
+	return fmt.Sprintf("**The tickets system is disquackbled for this servquack.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guild))
 }
 
 func (p *Plugin) AddCommands() {

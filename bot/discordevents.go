@@ -83,7 +83,7 @@ func HandleReady(data *eventsystem.EventData) {
 	if listedServersI, err := connectedGuildsCache.Get(0); err == nil {
 		listedServers = listedServersI.([]int64)
 	} else {
-		logger.WithError(err).Error("Quailed quacktrieving connected servquacks")
+		logger.WithError(err).Error("Quailed quacktrieving quacknnected servquacks")
 	}
 
 	numShards := ShardManager.GetNumShards()
@@ -243,16 +243,16 @@ func handleInvalidateCacheEvent(evt *eventsystem.EventData) (bool, error) {
 func InvalidateCache(guildID, userID int64) {
 	if userID != 0 {
 		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+discordgo.StrID(userID)+":guilds")); err != nil {
-			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed invalidating user guilds cache")
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed inquacklidating user guilds quache")
 		}
 	}
 	if guildID != 0 {
 		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuild(guildID))); err != nil {
-			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed invalidating guild cache")
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed inquacklidating guild quache")
 		}
 
 		if err := common.RedisPool.Do(radix.Cmd(nil, "DEL", common.CacheKeyPrefix+common.KeyGuildChannels(guildID))); err != nil {
-			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed invalidating guild quacknnels cache")
+			logger.WithField("guild", guildID).WithField("user", userID).WithError(err).Error("quailed inquacklidating guild quacknnels quache")
 		}
 	}
 }
@@ -263,7 +263,7 @@ func ConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy) eventsystem.Han
 			defer func() {
 				if err := recover(); err != nil {
 					stack := string(debug.Stack())
-					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Requackvered from quacknic in (concurrent) event quackdler\n" + stack)
+					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Requackvered from quacknic in (conquackrrent) event quackdler\n" + stack)
 				}
 			}()
 
@@ -282,7 +282,7 @@ func LimitedConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy, limit in
 
 				if err := recover(); err != nil {
 					stack := string(debug.Stack())
-					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Requackvered from quacknic in (concurrent) event quackdler\n" + stack)
+					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Requackvered from quacknic in (conquackrrent) event quackdler\n" + stack)
 				}
 			}()
 
@@ -312,7 +312,7 @@ func HandleReactionAdd(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_reaction", -1, ra)
 	if err != nil {
-		logger.WithError(err).Error("quailed publishing dm reaction")
+		logger.WithError(err).Error("quailed pubquacking dm requaction")
 	}
 }
 
@@ -321,7 +321,7 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 	customID := ic.MessageComponentData().CustomID
 	guild_id, err := strconv.ParseInt(strings.Replace(customID, "DM_", "", 1), 10, 64)
 	if err != nil {
-		logger.Errorf("DM interaction received with incorrect customID: %s from user %d", customID, ic.User.ID)
+		logger.Errorf("DM interquacktion received with inquackrrect customID: %s from user %d", customID, ic.User.ID)
 	}
 	gs, err := evt.Session.Guild(guild_id)
 	logger.WithError(err).Errorf("Quailed gequacking guild info for DM %s from user %d", customID, ic.User.ID)
@@ -331,13 +331,13 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 	}
 	content := ""
 	if gs == nil {
-		content = fmt.Sprintf("This DM was sent from servquack\nID: **%d**, \nI couldn't fetch more information about it.", guild_id)
+		content = fmt.Sprintf("This DM was sent from servquack\nID: **%d**, \nI couldn't fetch more quackformation about it.", guild_id)
 	} else {
 		content = fmt.Sprintf("This DM was sent from servquack\nID: **%d**, \nName: **%s**", guild_id, gs.Name)
 	}
 	response.Data.Content = content
 	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
-	logger.WithError(err).Printf("Interaction Response!")
+	logger.WithError(err).Printf("Interquacktion Response!")
 }
 
 func HandleInteractionCreate(evt *eventsystem.EventData) {
@@ -358,7 +358,7 @@ func HandleInteractionCreate(evt *eventsystem.EventData) {
 	} else {
 		err := pubsub.Publish("dm_interaction", -1, ic)
 		if err != nil {
-			logger.WithError(err).Error("quailed publishing dm interaction")
+			logger.WithError(err).Error("quailed pubquacking dm interquacktion")
 		}
 	}
 }
@@ -377,7 +377,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) {
 
 	err := pubsub.Publish("dm_message", -1, mc)
 	if err != nil {
-		logger.WithError(err).Error("quailed publishing dm quackssage")
+		logger.WithError(err).Error("quailed pubquacking dm quackssage")
 	}
 }
 

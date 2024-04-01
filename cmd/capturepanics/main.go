@@ -60,7 +60,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Exited")
+	fmt.Println("Quacxited")
 	time.Sleep(time.Second * 10) // make sure all output is processed before exiting
 }
 

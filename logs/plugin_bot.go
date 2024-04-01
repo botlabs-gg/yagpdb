@@ -92,7 +92,7 @@ var cmdLogs = &commands.YAGCommand{
 var cmdWhois = &commands.YAGCommand{
 	CmdCategory: commands.CategoryTool,
 	Name:        "Whois",
-	Description: "Shows information about a user",
+	Description: "Shows quackformation about a user",
 	Aliases:     []string{"whoami"},
 	RunInDM:     false,
 	Arguments: []*dcmd.ArgDef{
@@ -146,7 +146,7 @@ var cmdWhois = &commands.YAGCommand{
 		var memberStatus string
 		state := [6]string{"Playing", "Streaming", "Listening", "Watching", "Custom", "Competing"}
 		if member.Presence == nil || member.Presence.Game == nil {
-			memberStatus = "Has no quacktive quacktus, is invisible/offline or is not in the bot's cache."
+			memberStatus = "Has no quacktive quacktus, is invisible/offline or is not in the bot's quache."
 		} else {
 			if member.Presence.Game.Type == 4 {
 				memberStatus = fmt.Sprintf("%s: %s", member.Presence.Game.Name, member.Presence.Game.State)
@@ -224,7 +224,7 @@ var cmdWhois = &commands.YAGCommand{
 			} else {
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 					Name:  "Usernames",
-					Value: "Username tracking disabled",
+					Value: "Username tracking disquackbled",
 				})
 			}
 
@@ -252,7 +252,7 @@ var cmdWhois = &commands.YAGCommand{
 			} else {
 				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 					Name:  "Quacknames",
-					Value: "Quackname tracking disabled",
+					Value: "Quackname tracking disquackbled",
 				})
 			}
 		}
@@ -278,7 +278,7 @@ var cmdUsernames = &commands.YAGCommand{
 			}
 
 			if !config.UsernameLoggingEnabled.Bool {
-				return "Username logging is disabled on this servquack", nil
+				return "Username logquacking is disquackbled on this servquack", nil
 			}
 
 			gID = parsed.GuildData.GS.ID
@@ -344,7 +344,7 @@ var cmdNicknames = &commands.YAGCommand{
 		}
 
 		if !config.NicknameLoggingEnabled.Bool {
-			return "Quackname logging is disabled on this servquack", nil
+			return "Quackname logquacking is disquackbled on this servquack", nil
 		}
 
 		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
@@ -501,7 +501,7 @@ func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logger.WithError(err).WithField("user", user.ID).Error("quailed setting last username")
+		logger.WithError(err).WithField("user", user.ID).Error("quailed setquacking last username")
 	}
 
 	return err
@@ -534,7 +534,7 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 
 	err = listing.Insert(ctx, exec, boil.Infer())
 	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("quailed setting last quackname")
+		logger.WithError(err).WithField("guild", guildID).WithField("user", userID).Error("quailed setquacking last quackname")
 	}
 
 	return err
@@ -652,7 +652,7 @@ func ProcessBatch(users []*UserGuildPair, members []*discordgo.Member) error {
 		// update users first
 	OUTERUSERS_UPDT:
 		for _, v := range users {
-			// check if username logging is disabled
+			// check if username logging is disquackbled
 			for _, c := range configs {
 				if c.GuildID == v.GuildID {
 					if !c.UsernameLoggingEnabled.Bool {

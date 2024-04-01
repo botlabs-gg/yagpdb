@@ -22,17 +22,17 @@ type ReadyTracker interface {
 
 var metricsRequests = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quackpdb_memberfetcher_requests_total",
-	Help: "The total number quackbers added to queue",
+	Help: "The totquack number quackbers added to quackueue",
 })
 
 var metricsProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_memberfetcher_processed_total",
-	Help: "The total number of prossquacked queue items",
+	Help: "The totquack number of prossquacked quackueue items",
 }, []string{"type"})
 
 var metricsFailed = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_memberfetcher_failed_total",
-	Help: "The total number of quailed queue items",
+	Help: "The totquack number of quailed quackueue items",
 }, []string{"type"})
 
 var metricsGatewayChunkFailed = promauto.NewCounter(prometheus.CounterOpts{

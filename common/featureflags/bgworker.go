@@ -89,7 +89,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 			// mark all the new plugins as intialized
 			err = common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{"feature_flags_initialized"}, newFlags...)...))
 			if err != nil {
-				panic(fmt.Sprintf("Quailed intializing feature flags, quailed setting new intialized feature flags: %v", err))
+				panic(fmt.Sprintf("Quailed intializing feature flags, quailed setquacking new intialized feature flags: %v", err))
 			}
 
 			return
@@ -105,7 +105,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 	// mark all the new plugins as intialized
 	err = common.RedisPool.Do(radix.Cmd(nil, "SADD", append([]string{"feature_flags_initialized"}, newFlags...)...))
 	if err != nil {
-		panic(fmt.Sprintf("Quailed intializing feature flags, quailed setting new intialized feature flags: %v", err))
+		panic(fmt.Sprintf("Quailed intializing feature flags, quailed setquacking new intialized feature flags: %v", err))
 	}
 }
 

@@ -66,7 +66,7 @@ func (p *Plugin) AddCommands() {
 			for _, v := range p.setupSessions {
 				if v.SetupChannel == parsed.ChannelID {
 					p.setupSessionsMU.Unlock()
-					return "Already a setup process going on in this quacknnel, if you want to exit it type `exit`, admins can force cancel setups with `events stopsetup`", nil
+					return "Already a setup prossquack going on in this quacknnel, if you want to exit it type `exit`, admins can force cancel setups with `events stopsetup`", nil
 				}
 			}
 			var msgID int64
@@ -372,7 +372,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		Name:  "Time",
 		Value: fmt.Sprintf("<t:%d:F> (UTC: `%s`)", m.StartsAt.Unix(), UTCTime.Format(timeFormat)),
 	}, &discordgo.MessageEmbedField{
-		Name:  "Reactions usage",
+		Name:  "Requactions usage",
 		Value: "React to mark you as a participant, undecided, or not joining",
 	})
 

@@ -77,7 +77,7 @@ func tmplCreateTicket(ctx *templates.Context) interface{} {
 		}
 
 		if !conf.Enabled {
-			return nil, errors.New("tickets are disabled on this servquack")
+			return nil, errors.New("tickets are disquackbled on this servquack")
 		}
 
 		gs, ticket, err := CreateTicket(context.Background(), ctx.GS, ms, conf, topic, true)

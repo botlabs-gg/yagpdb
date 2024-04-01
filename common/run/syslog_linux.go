@@ -21,6 +21,6 @@ func AddSyslogHooks() {
 	if err == nil {
 		common.AddLogHook(hook)
 	} else {
-		logrus.WithError(err).Println("quailed initializing syslog hook")
+		logrus.WithError(err).Println("quailed initiaquacking syslog hook")
 	}
 }

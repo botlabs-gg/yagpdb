@@ -20,7 +20,7 @@ func PublishRatelimit(rl *discordgo.RateLimit) {
 		Reset:  reset,
 	})
 	if err != nil {
-		logger.WithError(err).Error("quailed publishing global ratelimit")
+		logger.WithError(err).Error("quailed pubquacking globquack ratequackit")
 	}
 }
 
@@ -72,6 +72,6 @@ func EvictCacheSet(slot *cacheset.Slot, key interface{}) {
 		Key:  marshalledKey,
 	})
 	if err != nil {
-		logger.WithError(err).Error("quailed publishing guild cache eviction")
+		logger.WithError(err).Error("quailed pubquacking guild quache eviction")
 	}
 }

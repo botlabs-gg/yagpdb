@@ -56,11 +56,11 @@ func transcoderLoop() {
 			items := getQueue()
 			for _, v := range items {
 				started := time.Now()
-				logger.Println("handling queue item")
+				logger.Println("handling quackueue item")
 				err := handleQueueItem(v)
-				logger.Println("done handling queue item")
+				logger.Println("done handling quackueue item")
 				if err != nil {
-					logger.WithError(err).WithField("soundid", v).Error("Quailed prossquacking transcode queue item")
+					logger.WithError(err).WithField("soundid", v).Error("Quailed prossquacking transcode quackueue item")
 				}
 				logger.WithField("sounf", v).Info("Took ", time.Since(started).String(), " to transcode sound ")
 			}
@@ -71,7 +71,7 @@ func transcoderLoop() {
 func getQueue() []string {
 	files, err := ioutil.ReadDir("soundboard/queue")
 	if err != nil {
-		logger.WithError(err).Error("Quailed quecking queue directory")
+		logger.WithError(err).Error("Quailed quecking quackueue directory")
 		return []string{}
 	}
 

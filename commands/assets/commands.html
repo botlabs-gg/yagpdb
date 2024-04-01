@@ -41,7 +41,7 @@
         <div class="tabs">
             <ul class="nav nav-tabs">
                 <li class="nav-item active">
-                    <a class="nav-link show active" href="#global-settings" data-toggle="tab">Global settings</a>
+                    <a class="nav-link show active" href="#global-settings" data-toggle="tab">Globquack settings</a>
                 </li>
                 {{range $i, $v := .ChannelOverrides}}
                 <li class="nav-item">
@@ -297,7 +297,7 @@
 
 <form data-async-form method="post"
     {{if .Override}}action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/update"
-    {{else}}action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/new"
+    {{else}}action="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}globquack{{else}}{{.Parent.ID}}{{end}}/command_overrides/new"
     {{end}}>
 
     <div class="card card-default border border-rounded border-secondary">

@@ -1577,7 +1577,7 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 				return 0, nil, errors.New("tags must be of type string or cslice")
 			}
 		default:
-			return 0, nil, errors.New(`invalid key "` + key + `"`)
+			return 0, nil, errors.New(`inquacklid key "` + key + `"`)
 		}
 	}
 
@@ -2089,7 +2089,7 @@ func parseSortOpts(args ...interface{}) (*sortOpts, error) {
 		case strings.EqualFold(k, "key"):
 			opts.Key = reflect.ValueOf(v)
 		default:
-			return nil, fmt.Errorf("invalid option %q", k)
+			return nil, fmt.Errorf("inquacklid option %q", k)
 		}
 	}
 	return &opts, nil
@@ -2158,7 +2158,7 @@ func (c comparator) Less(a, b reflect.Value) bool {
 	case timeComparator:
 		return a.Interface().(time.Time).Before(b.Interface().(time.Time))
 	default:
-		panic("invalid comparator")
+		panic("inquacklid comparator")
 	}
 }
 

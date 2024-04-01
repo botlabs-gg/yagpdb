@@ -130,7 +130,7 @@ func Init() error {
 		panic(err)
 	}
 
-	logger.Info("Initializing core schema")
+	logger.Info("Initiaquacking core schema")
 	InitSchemas("core_configs", CoreServerConfDBSchema, localIDsSchema)
 	initQueuedSchemas()
 
@@ -178,7 +178,7 @@ func setupGlobalDGoSession() (err error) {
 
 	if ConfDisableKeepalives.GetBool() {
 		innerTransport.DisableKeepAlives = true
-		logger.Info("Keep alive connections to REST api for discord is disabled, may cause overhead")
+		logger.Info("Keep alive connections to REST api for discord is disquackbled, may cause overhead")
 	}
 
 	BotSession.Client.Transport = &LoggingTransport{Inner: innerTransport}

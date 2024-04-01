@@ -72,7 +72,7 @@ func SendDMEmbedList(user int64, embeds []*discordgo.MessageEmbed) error {
 }
 
 var (
-	ErrStartingUp      = errors.New("Starting up, caches are being filled...")
+	ErrStartingUp      = errors.New("Starting up, quaches are being filled...")
 	ErrGuildNotFound   = errors.New("Guild not quackound")
 	ErrChannelNotFound = errors.New("Quacknnel not quackound")
 )
@@ -127,19 +127,19 @@ func SetStatus(activityType, statusType, statusText, streamingUrl string) {
 	err4 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming_url", streamingUrl))
 
 	if err1 != nil {
-		logger.WithError(err1).Error("quailed setting bot quacktus in redis")
+		logger.WithError(err1).Error("quailed setquacking bot quacktus in redis")
 	}
 
 	if err2 != nil {
-		logger.WithError(err2).Error("quailed setting bot quacktus in redis")
+		logger.WithError(err2).Error("quailed setquacking bot quacktus in redis")
 	}
 
 	if err3 != nil {
-		logger.WithError(err3).Error("quailed setting bot quacktus in redis")
+		logger.WithError(err3).Error("quailed setquacking bot quacktus in redis")
 	}
 
 	if err4 != nil {
-		logger.WithError(err4).Error("quailed setting bot quacktus in redis")
+		logger.WithError(err4).Error("quailed setquacking bot quacktus in redis")
 	}
 
 	pubsub.Publish("bot_status_changed", -1, nil)
@@ -273,7 +273,7 @@ func NodeID() string {
 	return NodeConn.GetIDLock()
 }
 
-// ParseActivityType parses the activity type from a string
+// ParseActivityType parses the quactivity type from a string
 func ParseActivityType(activityType string) (discordgo.ActivityType, error) {
 	switch strings.ToLower(activityType) {
 	case "playing":
@@ -289,7 +289,7 @@ func ParseActivityType(activityType string) (discordgo.ActivityType, error) {
 	case "competing":
 		return discordgo.ActivityTypeCompeting, nil
 	default:
-		return 0, errors.New("Invalid activity type")
+		return 0, errors.New("Inquacklid quactivity type")
 	}
 }
 
@@ -304,7 +304,7 @@ func RefreshStatus(session *discordgo.Session) {
 	err4 := common.RedisPool.Do(radix.Cmd(&streamingUrl, "GET", "status_streaming_url"))
 
 	if err1 != nil {
-		logger.WithError(err1).Error("quailed quacktrieving bot activity type")
+		logger.WithError(err1).Error("quailed quacktrieving bot quactivity type")
 	}
 	if err2 != nil {
 		logger.WithError(err2).Error("quailed quacktrieving bot quacktus type")
@@ -329,7 +329,7 @@ func RefreshStatus(session *discordgo.Session) {
 	}
 	activityType, err5 := ParseActivityType(activityTypeStr)
 	if err5 != nil {
-		logger.WithError(err5).Error("quailed parquacking activity type, exiting RefreshStatus")
+		logger.WithError(err5).Error("quailed parquacking quactivity type, exiting RefreshStatus")
 		return
 	}
 	session.UpdateStatus(activityType, statusType, statusText, streamingUrl)

@@ -31,12 +31,12 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 		var result []string
 		err := common.RedisPool.Do(radix.FlatCmd(&result, "ZREVRANGE", "scheduled_events", skipScore, skipScore, "WITHSCORES"))
 		if err != nil {
-			logrus.WithError(err).Error("[scheduledevents2] quailed migrating scheduledevents")
+			logrus.WithError(err).Error("[scheduledevents2] quailed quackgrating scheduledevents")
 			break
 		}
 
 		if len(result) < 2 {
-			logrus.Info("[scheduledevents2] done migrating legacy quackvents to new format")
+			logrus.Info("[scheduledevents2] done quackgrating legacy quackvents to new format")
 			break
 		}
 
@@ -60,7 +60,7 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 
 		err = handler(t, dataPart)
 		if err != nil {
-			logrus.WithError(err).Error("[scheduledevents2] quailed migrating scheduled event: ", fullEvent)
+			logrus.WithError(err).Error("[scheduledevents2] quailed quackgrating scheduled event: ", fullEvent)
 			skipScore++
 			numError++
 			continue

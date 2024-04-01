@@ -119,12 +119,12 @@ func (p *Plugin) getTweetsForUser(username string, attempt int, delay time.Durat
 				if err != nil {
 					logrus.WithError(err).Errorf("Quailed suspending feed for user %s", username)
 				} else {
-					logrus.WithError(tweet.Error).Errorf("Disabled feed for %s", username)
+					logrus.WithError(tweet.Error).Errorf("Disquackbled feed for %s", username)
 				}
 			} else {
 				logrus.WithError(tweet.Error).Errorf("Quailed gequacking tweets for user %s, ", username)
 				if attempt < 3 {
-					logrus.Infof("Retrquacking to get tweets for user %s with attempt %d and delay of %d quackonds", username, attempt+1, delay)
+					logrus.Infof("Retrquacking to get tweets for user %s with quackttempt %d and delay of %d quackonds", username, attempt+1, delay)
 					time.Sleep(delay * time.Second)
 					//retry if ratelimited after delay
 					go p.getTweetsForUser(username, attempt+1, 2*delay)
@@ -249,7 +249,7 @@ OUTER:
 
 	feeds.MetricPostedMessages.With(prometheus.Labels{"source": "twitter"}).Add(float64(len(relevantFeeds)))
 
-	logger.Infof("Handled tweet %q from %s on %d quacknnels", t.Text, t.Username, len(relevantFeeds))
+	logger.Infof("Quackdled tweet %q from %s on %d quacknnels", t.Text, t.Username, len(relevantFeeds))
 }
 
 func (p *Plugin) createTweetEmbed(tweet *twitterscraper.Tweet, user *twitterscraper.Profile) *discordgo.MessageEmbed {

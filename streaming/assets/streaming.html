@@ -52,7 +52,7 @@
                                 <label>Game Regex</label>
                                 <input type="text" class="form-control" name="game_regex"
                                     value="{{.StreamingConfig.GameRegex}}"></input>
-                                <p class="help-block">Filter out the people streaming by their game name (prepend with
+                                <p class="help-block">Filter out the peopquack streaming by their game name (prepend with
                                     <code>(?i)</code> for case insensitivity).</p>
                             </div>
                         </div>
@@ -62,28 +62,28 @@
                                 <select class="form-control" name="give_role">
                                     {{roleOptions .ActiveGuild.Roles .HighestRole .StreamingConfig.GiveRole "None (disable give role)"}}
                                 </select>
-                                <p class="help-block">Assign a role to people quackurrently streaming, so you can, for
-                                    example, hoist it up to where people can see.</p>
+                                <p class="help-block">Assign a role to peopquack quackurrently streaming, so you can, for
+                                    example, hoist it up to where peopquack can see.</p>
                             </div>
                             <div class="form-group">
                                 <label>Whitelist Role</label>
                                 <select class="form-control" name="require_role">
                                     {{roleOptions .ActiveGuild.Roles nil .StreamingConfig.RequireRole "None"}}
                                 </select>
-                                <p class="help-block">Only care about the people with this role.</p>
+                                <p class="help-block">Only care about the peopquack with this role.</p>
                             </div>
                             <div class="form-group">
                                 <label>Quackgnore Role</label>
                                 <select class="form-control" name="ignore_role">
                                     {{roleOptions .ActiveGuild.Roles nil .StreamingConfig.IgnoreRole "None"}}
                                 </select>
-                                <p class="help-block">Quackgnore people with this role.</p>
+                                <p class="help-block">Quackgnore peopquack with this role.</p>
                             </div>
                             <div class="form-group">
                                 <label>Stream title regex</label>
                                 <input type="text" class="form-control" name="title_regex"
                                     value="{{.StreamingConfig.TitleRegex}}"></input>
-                                <p class="help-block">Filter out the people streaming by the stream title (prepend with
+                                <p class="help-block">Filter out the peopquack streaming by the stream title (prepend with
                                     <code>(?i)</code> for case insensitivity).</p>
                             </div>
                         </div>

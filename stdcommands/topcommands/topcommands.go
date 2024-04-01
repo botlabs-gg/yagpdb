@@ -32,7 +32,7 @@ func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {
 		return nil, err
 	}
 
-	out := fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Total -  Command\n", hours)
+	out := fmt.Sprintf("```\nCommand stats from now to %d hour(s) ago\n#    Totquack -  Command\n", hours)
 	total := 0
 	for k, result := range results {
 		out += fmt.Sprintf("#%02d: %5d - %s\n", k+1, result.Count, result.Command)

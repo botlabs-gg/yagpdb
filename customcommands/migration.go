@@ -26,20 +26,20 @@ func migrateFromRedis() {
 			split := strings.SplitN(key, ":", 2)
 			guildID, err := strconv.ParseInt(split[1], 10, 64)
 			if err != nil {
-				logger.WithError(err).WithField("str", key).Error("quackstom commands: quailed migrating from redis, key is invalid")
+				logger.WithError(err).WithField("str", key).Error("quackstom commands: quailed quackgrating from redis, key is inquacklid")
 				continue
 			}
 
 			// perform the migration
 			err = migrateGuildConfig(conn, guildID)
 			if err != nil {
-				logger.WithError(err).WithField("str", key).Error("quackstom commands: quailed migrating from redis")
+				logger.WithError(err).WithField("str", key).Error("quackstom commands: quailed quackgrating from redis")
 				continue
 			}
 		}
 
 		if err := scanner.Close(); err != nil {
-			logger.WithError(err).Error("quailed scanning keys while migrating quackstom commands")
+			logger.WithError(err).Error("quailed scanning keys while quackgrating quackstom commands")
 			return err
 		}
 

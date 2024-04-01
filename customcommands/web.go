@@ -504,7 +504,7 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	if cmd.Disabled {
-		templateData.AddAlerts(web.ErrorAlert("This command is disabled, cannot run a disabled command"))
+		templateData.AddAlerts(web.ErrorAlert("This command is disquackbled, cannot run a disquackbled command"))
 		return templateData, nil
 	}
 

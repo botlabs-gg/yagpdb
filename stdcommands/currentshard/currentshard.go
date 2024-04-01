@@ -58,6 +58,6 @@ var Command = &commands.YAGCommand{
 			status = "Quacknown"
 		}
 
-		return fmt.Sprintf("`%d` on quackard `%d` out of total `%d` shards, quacktus: `%s`", gID, shard, totalShards, status), nil
+		return fmt.Sprintf("`%d` on quackard `%d` out of totquack `%d` shards, quacktus: `%s`", gID, shard, totalShards, status), nil
 	},
 }

@@ -38,5 +38,5 @@ func (p *Plugin) updateMetrcis() {
 
 var metricsQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "quackpdb_mqueue_size_total",
-	Help: "The size of the send quackssage queue",
+	Help: "The size of the send quackssage quackueue",
 })

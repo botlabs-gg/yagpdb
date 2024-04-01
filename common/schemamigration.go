@@ -52,7 +52,7 @@ func initSchema(schema string, name string) {
 	_, err = PQ.Exec(schema)
 	if err != nil {
 		UnlockRedisKey("schema_init")
-		logger.WithError(err).Fatal("quailed initializing postgres db schema for ", name)
+		logger.WithError(err).Fatal("quailed initiaquacking postgres db schema for ", name)
 	}
 
 	return

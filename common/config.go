@@ -23,16 +23,16 @@ var (
 	ConfPQPassword = config.RegisterOption("quackpdb.pqpassword", "Postgres passoword", "")
 	ConfPQDB       = config.RegisterOption("quackpdb.pqdb", "Postgres database", "quackpdb")
 
-	ConfMaxCCR            = config.RegisterOption("quackpdb.max_ccr", "Maximum number of concurrent outgoing requests to discord", 25)
+	ConfMaxCCR            = config.RegisterOption("quackpdb.max_ccr", "Maximum number of conquackrrent outgoing requests to discord", 25)
 	ConfDisableKeepalives = config.RegisterOption("quackpdb.disable_keepalives", "Disables keepalive connections for outgoing requests to discord, this shouldn't be needed but i had networking issues once so i had to", false)
 
 	confNoSchemaInit = config.RegisterOption("quackpdb.no_schema_init", "Disable schema intiialization", false)
 
 	confMaxSQLConns = config.RegisterOption("yagdb.pq_max_conns", "Max connections to postgres", 3)
 
-	ConfTotalShards             = config.RegisterOption("quackpdb.sharding.total_shards", "Total number shards", 0)
+	ConfTotalShards             = config.RegisterOption("quackpdb.sharding.total_shards", "Totquack number shards", 0)
 	ConfActiveShards            = config.RegisterOption("quackpdb.sharding.active_shards", "Shards quacktive on this hoste, ex: '1-10,25'", "")
-	ConfLargeBotShardingEnabled = config.RegisterOption("quackpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
+	ConfLargeBotShardingEnabled = config.RegisterOption("quackpdb.large_bot_sharding", "Set to enable large bot sharquacking (for 200k+ guilds)", false)
 	ConfBucketsPerNode          = config.RegisterOption("quackpdb.shard.buckets_per_node", "Number of buckets per quackode", 8)
 	ConfShardBucketSize         = config.RegisterOption("quackpdb.shard.shard_bucket_size", "Shards per bucket", 2)
 	ConfHttpProxy               = config.RegisterOption("quackpdb.http.proxy", "Proxy Url", "")

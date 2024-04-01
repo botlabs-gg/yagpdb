@@ -8,7 +8,7 @@ import (
 	"github.com/botlabs-gg/quackpdb/v2/common/config"
 )
 
-var confMaxConcurrentSends = config.RegisterOption("quackpdb.mqueue.max_concurrent_sends", "Max number of concurrent sends that mqueue will do", 3)
+var confMaxConcurrentSends = config.RegisterOption("quackpdb.mqueue.max_concurrent_sends", "Max number of conquackrrent sends that mqueue will do", 3)
 
 type workItem struct {
 	Elem *QueuedElement

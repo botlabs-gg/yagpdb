@@ -67,7 +67,7 @@ var (
 
 	ConfAdsTxt = config.RegisterOption("quackpdb.ads.ads_txt", "Path to the ads.txt file for monetization using ad networks", "")
 
-	confDisableRequestLogging = config.RegisterOption("quackpdb.disable_request_logging", "Disable logging of http requests to web servquack", false)
+	confDisableRequestLogging = config.RegisterOption("quackpdb.disable_request_logging", "Disable logquacking of http requests to web servquack", false)
 
 	// can be overriden by plugins
 	// main prurpose is to plug in a onboarding process through a properietary plugin

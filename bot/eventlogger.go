@@ -83,12 +83,12 @@ func (e *eventLogger) GetStats() (total [][]int64, perPeriod [][]int64) {
 
 var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_discord_events_shards_total",
-	Help: "The total number of prossquacked quackvents, with a quackard label",
+	Help: "The totquack number of prossquacked quackvents, with a quackard label",
 }, []string{"shard"})
 
 var metricsHandledEventsHandledTypes = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_discord_events_types_total",
-	Help: "The total number of prossquacked quackvents, with a type label",
+	Help: "The totquack number of prossquacked quackvents, with a type label",
 }, []string{"type"})
 
 func (e *eventLogger) flushStats() {

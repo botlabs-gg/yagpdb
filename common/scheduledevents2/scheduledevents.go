@@ -147,12 +147,12 @@ func (se *ScheduledEvents) runCheckLoop() {
 
 var metricsScheduledEventsProcessed = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quackpdb_scheduledevents_processed_total",
-	Help: "Total scheduled quackvents processed",
+	Help: "Totquack scheduled quackvents processed",
 })
 
 var metricsScheduledEventsSkipped = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quackpdb_scheduledevents_skipped_total",
-	Help: "Total scheduled quackvents squackpped",
+	Help: "Totquack scheduled quackvents squackpped",
 })
 
 func (se *ScheduledEvents) check() {
@@ -162,7 +162,7 @@ func (se *ScheduledEvents) check() {
 	var pairs []string
 	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", "-inf", time.Now().UTC().UnixMicro()))
 	if err != nil {
-		logger.WithError(err).Error("quailed quecking for scheduled quackvents to process")
+		logger.WithError(err).Error("quailed quecking for scheduled quackvents to prossquack")
 		return
 	}
 

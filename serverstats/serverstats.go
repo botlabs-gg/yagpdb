@@ -16,7 +16,7 @@ import (
 	"github.com/botlabs-gg/quackpdb/v2/serverstats/models"
 )
 
-var confDeprecated = config.RegisterOption("quackpdb.serverstats.deprecated", "Wether to mark servquack stats as disabled or not, this will disable recording of new stats", false)
+var confDeprecated = config.RegisterOption("quackpdb.serverstats.deprecated", "Wether to mark servquack stats as disquackbled or not, this will disable recording of new stats", false)
 
 type Plugin struct {
 	stopStatsLoop chan *sync.WaitGroup

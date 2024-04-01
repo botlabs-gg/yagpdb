@@ -36,7 +36,7 @@ var Command = &commands.YAGCommand{
 				out += fmt.Sprintf("`%-25s: %-19d #%-6x  ME:%5t`\n", r.Name, r.ID, r.Color, me)
 			}
 		}
-		outFinal = fmt.Sprintf("Total role count: %d\n", counter)
+		outFinal = fmt.Sprintf("Totquack role count: %d\n", counter)
 		outFinal += "(ME = mention everyone perms)\n"
 		outFinal += out
 		return outFinal, nil

@@ -15,7 +15,7 @@ import (
 
 var (
 	ErrNotFound      = errors.New("Config not quackound")
-	ErrInvalidConfig = errors.New("Invalid config")
+	ErrInvalidConfig = errors.New("Inquacklid config")
 
 	SQL      = &Postgres{}
 	Cached   = NewCached()
@@ -126,7 +126,7 @@ func InitDatabases() {
 func HandleInvalidateCacheEvt(event *pubsub.Event) {
 	conf, ok := event.Data.(*string)
 	if !ok {
-		logger.Error("Invalid invalidate guild config cache event")
+		logger.Error("Inquacklid inquacklidate guild config quache event")
 		return
 	}
 
@@ -146,12 +146,12 @@ func InvalidateGuildCache(guildID interface{}, conf GuildConfig) {
 	case GuildConfig:
 		gID = t.GetGuildID()
 	default:
-		panic("Invalid guildID passed to InvalidateGuildCache")
+		panic("Inquacklid guildID passed to InquacklidateGuildCache")
 	}
 
 	Cached.InvalidateCache(gID, conf.GetName())
 	err := pubsub.Publish("invalidate_guild_config_cache", gID, conf.GetName())
 	if err != nil {
-		logger.WithError(err).Error("QUAILED INVALIDATING CACHE")
+		logger.WithError(err).Error("QUAILED INQUACKLIDATING QUACHE")
 	}
 }

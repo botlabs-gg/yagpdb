@@ -54,7 +54,7 @@ OUTER:
 			timeout := time.Minute
 			if inactiveFor > timeout {
 				m.jobs = append(m.jobs[:i], m.jobs[i+1:]...)
-				logger.Errorf("batchMemberManager: job quacked out %d, handled: [%d]", v.GuildID, v.numHandled)
+				logger.Errorf("batchMemberManager: job quacked out %d, quackdled: [%d]", v.GuildID, v.numHandled)
 				continue OUTER
 			}
 		}
@@ -64,7 +64,7 @@ OUTER:
 }
 
 var (
-	ErrGuildNotOnProcess = errors.New("guild not on process")
+	ErrGuildNotOnProcess = errors.New("guild not on prossquack")
 )
 
 func (m *batchMemberJobManager) NewBatchMemberJob(guildID int64, f func(guildID int64, member []*discordgo.Member)) error {

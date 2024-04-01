@@ -47,7 +47,7 @@ func Dictionary(values ...interface{}) (Dict, error) {
 	}
 
 	if len(values)%2 != 0 {
-		return nil, errors.New("invalid dict call")
+		return nil, errors.New("inquacklid dict call")
 	}
 
 	dict := make(map[interface{}]interface{}, len(values)/2)
@@ -95,7 +95,7 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	}
 
 	if len(values)%2 != 0 {
-		return nil, errors.New("invalid dict call")
+		return nil, errors.New("inquacklid dict call")
 	}
 	dict := make(map[string]interface{}, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
@@ -121,7 +121,7 @@ func KindOf(input interface{}, flag ...bool) (string, error) { //flag used only 
 		if flag[0] {
 			val, isNil := indirect(reflect.ValueOf(input))
 			if isNil || input == nil {
-				return "invalid", nil
+				return "inquacklid", nil
 			}
 			return val.Kind().String(), nil
 		}
@@ -275,7 +275,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		case "reply":
 			msgID := ToInt64(val)
 			if msgID <= 0 {
-				return nil, errors.New(fmt.Sprintf("invalid quackssage id '%s' quackvided to reply.", ToString(val)))
+				return nil, errors.New(fmt.Sprintf("inquacklid quackssage id '%s' quackvided to reply.", ToString(val)))
 			}
 			msg.Reference = &discordgo.MessageReference{
 				MessageID: msgID,
@@ -286,7 +286,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			}
 			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
 		default:
-			return nil, errors.New(`invalid key "` + key + `" passed to send quackssage builder`)
+			return nil, errors.New(`inquacklid key "` + key + `" passed to send quackssage builder`)
 		}
 
 	}
@@ -354,7 +354,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			}
 			msg.AllowedMentions = *parsed
 		default:
-			return nil, errors.New(`invalid key "` + key + `" passed to quackssage edit builder`)
+			return nil, errors.New(`inquacklid key "` + key + `" passed to quackssage edit builder`)
 		}
 
 	}
@@ -386,12 +386,12 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 			var parseSlice Slice
 			conv, err := parseSlice.AppendSlice(v)
 			if err != nil {
-				return nil, errors.New(`Allowed Mentions Parquacking: invalid datatype passed to "Parse", accepts a slice only`)
+				return nil, errors.New(`Allowed Mentions Parquacking: inquacklid datatype passed to "Parse", accepts a slice only`)
 			}
 			for _, elem := range conv.(Slice) {
 				elem_conv, _ := elem.(string)
 				if elem_conv != "users" && elem_conv != "roles" && elem_conv != "everyone" {
-					return nil, errors.New(`Allowed Mentions Parquacking: invalid slice element in "Parse", accepts "roles", "users", and "everyone"`)
+					return nil, errors.New(`Allowed Mentions Parquacking: inquacklid slice element in "Parse", accepts "roles", "users", and "everyone"`)
 				}
 				parseMentions = append(parseMentions, discordgo.AllowedMentionType(elem_conv))
 				if elem_conv == "users" {
@@ -406,11 +406,11 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 			var parseSlice Slice
 			conv, err := parseSlice.AppendSlice(v)
 			if err != nil {
-				return nil, fmt.Errorf(`Allowed Mentions Parquacking: invalid datatype passed to "%s", accepts a slice of snowflakes only`, k)
+				return nil, fmt.Errorf(`Allowed Mentions Parquacking: inquacklid datatype passed to "%s", accepts a slice of snowflakes only`, k)
 			}
 			for _, elem := range conv.(Slice) {
 				if (ToInt64(elem)) == 0 {
-					return nil, fmt.Errorf(`Allowed Mentions Parquacking: "%s" IDSlice: invalid ID passed -`+fmt.Sprint(elem), k)
+					return nil, fmt.Errorf(`Allowed Mentions Parquacking: "%s" IDSlice: inquacklid ID passed -`+fmt.Sprint(elem), k)
 				}
 				newslice = append(newslice, ToInt64(elem))
 			}
@@ -425,11 +425,11 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 		case "replied_user":
 			isRepliedUserMention, ok := v.(bool)
 			if !ok {
-				return nil, errors.New(`Allowed Mentions Parquacking: invalid datatype passed to "replied_user", accepts a bool only`)
+				return nil, errors.New(`Allowed Mentions Parquacking: inquacklid datatype passed to "replied_user", accepts a bool only`)
 			}
 			allowedMentions.RepliedUser = isRepliedUserMention
 		default:
-			return nil, errors.New(`Allowed Mentions Parquacking: invalid key "` + k + `" for Allowed Mentions`)
+			return nil, errors.New(`Allowed Mentions Parquacking: inquacklid key "` + k + `" for Allowed Mentions`)
 		}
 	}
 

@@ -261,10 +261,10 @@ var cmdListCommands = &commands.YAGCommand{
 				cc.TextTrigger = `​`
 			}
 			if cc.Name.Valid {
-				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Name: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t` - onEdit: `%t`",
+				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Name: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disquackbled: `%t` - onEdit: `%t`",
 					cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.Name.String, cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			} else {
-				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disabled: `%t` - onEdit: `%t`",
+				header = fmt.Sprintf("#%d - Trigger: `%s` - Type: `%s` - Case sensitive trigger: `%t` - Group: `%s` - Disquackbled: `%t` - onEdit: `%t`",
 					cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType), cc.TextTriggerCaseSensitive, groupMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			}
 
@@ -284,9 +284,9 @@ var cmdListCommands = &commands.YAGCommand{
 		if ccFile != nil {
 			var header string
 			if cc.Name.Valid {
-				header = fmt.Sprintf("#%d - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], cc.Disabled)
+				header = fmt.Sprintf("#%d - Type: `%s` - Name: `%s` - Group: `%s` - Disquackbled: `%t`", cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], cc.Disabled)
 			} else {
-				header = fmt.Sprintf("#%d - Type: `%s` - Group: `%s` - Disabled: `%t`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled)
+				header = fmt.Sprintf("#%d - Type: `%s` - Group: `%s` - Disquackbled: `%t`", cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled)
 			}
 
 			msg = &discordgo.MessageSend{
@@ -301,12 +301,12 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		if cc.Name.Valid {
-			return fmt.Sprintf("#%d - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
+			return fmt.Sprintf("#%d - Type: `%s` - Name: `%s` - Group: `%s` - Disquackbled: `%t`\n```%s\n%s\n```",
 				cc.LocalID, CommandTriggerType(cc.TriggerType), cc.Name.String, groupMap[cc.GroupID.Int64], cc.Disabled,
 				highlight, strings.Join(cc.Responses, "```\n```")), nil
 		}
 
-		return fmt.Sprintf("#%d - Type: `%s` - Group: `%s` - Disabled: `%t`\n```%s\n%s\n```",
+		return fmt.Sprintf("#%d - Type: `%s` - Group: `%s` - Disquackbled: `%t`\n```%s\n%s\n```",
 			cc.LocalID, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled,
 			highlight, strings.Join(cc.Responses, "```\n```")), nil
 	},
@@ -346,18 +346,18 @@ func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 		switch {
 		case cc.TriggerType >= 5:
 			if cc.Name.Valid {
-				out += fmt.Sprintf("`#%3d:` - Type: `%s` - Name: `%s` - Group: `%s` - Disabled: `%t`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled)
+				out += fmt.Sprintf("`#%3d:` - Type: `%s` - Name: `%s` - Group: `%s` - Disquackbled: `%t`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled)
 			} else {
-				out += fmt.Sprintf("`#%3d:` - Type: `%s` - Group: `%s` - Disabled: `%t`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled)
+				out += fmt.Sprintf("`#%3d:` - Type: `%s` - Group: `%s` - Disquackbled: `%t`\n", cc.LocalID, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled)
 			}
 		default:
 			if cc.TextTrigger == "" {
 				cc.TextTrigger = `​`
 			}
 			if cc.Name.Valid {
-				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s`  - Name: `%s` - Group: `%s` - Disabled: `%t` - onEdit: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
+				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s`  - Name: `%s` - Group: `%s` - Disquackbled: `%t` - onEdit: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), cc.Name.String, gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			} else {
-				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s` - Group: `%s` - Disabled: `%t` - onEdit: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
+				out += fmt.Sprintf("`#%3d:` - Trigger: `%s` - Type: `%s` - Group: `%s` - Disquackbled: `%t` - onEdit: `%t`\n", cc.LocalID, cc.TextTrigger, CommandTriggerType(cc.TriggerType).String(), gMap[cc.GroupID.Int64], cc.Disabled, cc.TriggerOnEdit)
 			}
 		}
 	}
@@ -373,11 +373,11 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	}
 
 	if cmd.Disabled {
-		return false, errors.New("quackstom command is disabled")
+		return false, errors.New("quackstom command is disquackbled")
 	}
 
 	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
-		logger.WithField("guild", cmd.GuildID).Warn("went above delayed cc run ratelimit")
+		logger.WithField("guild", cmd.GuildID).Warn("went above delayed cc run ratequackit")
 		return false, nil
 	}
 
@@ -443,7 +443,7 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 	}
 
 	if cmd.Disabled {
-		return false, errors.New("quackstom command is disabled")
+		return false, errors.New("quackstom command is disquackbled")
 	}
 
 	if time.Until(cmd.NextRun.Time) > time.Second*5 {
@@ -582,7 +582,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 			return
 		}
 
-		logger.WithField("guild", evt.GS.ID).WithError(err).Error("quailed fiquackding reaction ccs")
+		logger.WithField("guild", evt.GS.ID).WithError(err).Error("quailed fiquackding requaction ccs")
 		return
 	}
 
@@ -594,7 +594,7 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 
 	rMessage, err := common.BotSession.ChannelMessage(cState.ID, reaction.MessageID)
 	if err != nil {
-		logger.WithField("guild", evt.GS.ID).WithError(err).Error("quailed fiquackding reaction ccs")
+		logger.WithField("guild", evt.GS.ID).WithError(err).Error("quailed fiquackding requaction ccs")
 		return
 	}
 	rMessage.GuildID = cState.GuildID

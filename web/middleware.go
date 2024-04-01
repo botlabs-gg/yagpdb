@@ -127,7 +127,7 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 		session, err := discorddata.GetSession(cookie.Value, discordAuthTokenFromYag)
 		if err != nil {
 			if errors.Cause(err) != ErrNotLoggedIn {
-				CtxLogger(r.Context()).WithError(err).Error("invalid session")
+				CtxLogger(r.Context()).WithError(err).Error("inquacklid session")
 			}
 
 			return
@@ -832,7 +832,7 @@ func SkipStaticMW(maybeSkip func(http.Handler) http.Handler, alwaysRunSuffixes .
 
 var pageHitsStatic = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_web_hits_total",
-	Help: "Web hits total",
+	Help: "Web hits totquack",
 }, []string{"type"})
 
 func addPromCountMW(inner http.Handler) http.Handler {
