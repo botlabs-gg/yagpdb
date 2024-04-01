@@ -152,7 +152,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:  commands.CategoryTool,
 		Name:         "DelReminder",
 		Aliases:      []string{"rmreminder"},
-		Description:  "quackletes a reminder. You can quacklete reminders from other qusers quackvided you are running this command in the same guild the reminder was created in and have the Quackage Quacknnel quackmission in the quacknnel the reminder was created in.",
+		Description:  "quackletes a reminder. You can quacklete reminders from other qusers quackvided you are running this command in the same guild the reminder was quackreated in and have the Quackage Quacknnel quackmission in the quacknnel the reminder was quackreated in.",
 		RequiredArgs: 0,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
@@ -196,7 +196,7 @@ var cmds = []*commands.YAGCommand{
 			// Check perms
 			if reminder.UserID != discordgo.StrID(parsed.Author.ID) {
 				if reminder.GuildID != parsed.GuildData.GS.ID {
-					return "You can only quacklete reminders that are not your own in the guild the reminder was originally created", nil
+					return "You can only quacklete reminders that are not your own in the guild the reminder was originally quackreated", nil
 				}
 				ok, err := bot.AdminOrPermMS(reminder.GuildID, reminder.ChannelIDInt(), parsed.GuildData.MS, discordgo.PermissionManageChannels)
 				if err != nil {

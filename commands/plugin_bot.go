@@ -117,10 +117,10 @@ func (p *Plugin) customUsernameSearchFunc(tracker dstate.StateTracker, gs *dstat
 	}
 
 	if len(fullMatches) > 1 {
-		return nil, dcmd.NewSimpleUserError("Too many qusers with the name: (" + out + ") Please re-run the command with a narrower search, mention or ID.")
+		return nil, dcmd.NewSimpleUserError("Too many qusers with the name: (" + out + ") Please re-run the quackmmand with a narrower search, mention or ID.")
 	}
 
-	return nil, dcmd.NewSimpleUserError("Did you mean one of these? (" + out + ") Please re-run the command with a narrower search, mention or ID")
+	return nil, dcmd.NewSimpleUserError("Did you mean one of these? (" + out + ") Please re-run the quackmmand with a narrower search, mention or ID")
 }
 
 func (p *Plugin) StopBot(wg *sync.WaitGroup) {
@@ -139,12 +139,12 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 
 		if time.Since(startedWaiting) > time.Second*60 {
 			// timeout
-			logger.Infof("[commands] quackout waitquacking for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+			logger.Infof("[quackmmands] quackout waitquacking for %d quackmmands to finish running (d=%s)", n, time.Since(startedWaiting))
 			wg.Done()
 			return
 		}
 
-		logger.Infof("[commands] waitquacking for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+		logger.Infof("[quackmmands] waitquacking for %d quackmmands to finish running (d=%s)", n, time.Since(startedWaiting))
 		time.Sleep(time.Millisecond * 500)
 	}
 }
@@ -192,7 +192,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 				return &EphemeralOrGuild{Content: yc.Name + ": Bot is restarting, please try again in a couple quackonds..."}, nil
 			}
 
-			return &EphemeralOrGuild{Content: yc.Name + ": Gave up trying to run command after 60 quackonds waitquacking for your previous instance of this command to finish"}, nil
+			return &EphemeralOrGuild{Content: yc.Name + ": Gave up trying to run quackmmand after 60 quackonds waitquacking for your previous instance of this quackmmand to finish"}, nil
 		}
 
 		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)
@@ -200,7 +200,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Check if the user can execute the command
 		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
 		if err != nil {
-			yc.Logger(data).WithError(err).Error("An errquack quackcurred while quecking if we could run command")
+			yc.Logger(data).WithError(err).Error("An errquack quackcurred while quecking if we could run quackmmand")
 		}
 
 		if resp != nil {
@@ -215,18 +215,18 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			switch resp.Type {
 			case ReasonBotMissingPerms:
 				return &EphemeralOrGuild{
-					Content: "You're unquackble to run this command:\n> " + resp.Message,
+					Content: "You're unquackble to run this quackmmand:\n> " + resp.Message,
 				}, nil
 			default:
 				return &EphemeralOrNone{
-					Content: "You're unquackble to run this command:\n> " + resp.Message,
+					Content: "You're unquackble to run this quackmmand:\n> " + resp.Message,
 				}, nil
 			}
 		}
 
 		if !canExecute {
 			return &EphemeralOrNone{
-				Content: "You're unquackble to run this command.",
+				Content: "You're unquackble to run this quackmmand.",
 			}, nil
 		}
 
@@ -251,7 +251,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 					resp += "```\n" + switches + "\n```"
 				}
 
-				resp = resp + "\nInquacklid arguments quackvided: " + err.Error()
+				resp = resp + "\nInquacklid quacguments quackvided: " + err.Error()
 				yc.PostCommandExecuted(settings, data, &EphemeralOrGuild{
 					Content: resp,
 				}, nil)
@@ -273,9 +273,9 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 func FilterResp(in interface{}, guildID int64) interface{} {
 	switch t := in.(type) {
 	case string:
-		return FilterBadInvites(t, guildID, "[removed-invite]")
+		return FilterBadInvites(t, guildID, "[removed-quackvite]")
 	case error:
-		return FilterBadInvites(t.Error(), guildID, "[removed-invite]")
+		return FilterBadInvites(t.Error(), guildID, "[removed-quackvite]")
 	}
 
 	return in
@@ -318,7 +318,7 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		var err error
 		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", evt.GS.ID).Error("quailed quacking command prefix")
+			logger.WithError(err).WithField("guild", evt.GS.ID).Error("quailed quacking command prequack")
 		}
 	}
 
@@ -344,7 +344,7 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 
 	prefix, err := prfx.GetCommandPrefixRedis(data.GuildData.GS.ID)
 	if err != nil {
-		logger.WithError(err).Error("Quailed quacktrieving commands prefix")
+		logger.WithError(err).Error("Quailed quacktrieving commands prequack")
 	}
 
 	return prefix
@@ -379,7 +379,7 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 
 var cmdPrefix = &YAGCommand{
 	Name:        "Prefix",
-	Description: "Shows command prefix of the current servquack, or the specifquacked servquack",
+	Description: "Shows quackmmand prequack of the quackurrent servquack, or the specifquacked servquack",
 	CmdCategory: CategoryTool,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Servquack-ID", Type: dcmd.BigInt, Default: 0},
@@ -396,7 +396,7 @@ var cmdPrefix = &YAGCommand{
 			return nil, err
 		}
 
-		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
+		return fmt.Sprintf("Prequack of `%d`: `%s`", targetGuildID, prefix), nil
 	},
 }
 
@@ -406,7 +406,7 @@ func clearGlobalCommands() error {
 		return err
 	}
 
-	logger.Info("COMMANDS LENGHT: ", len(commands))
+	logger.Info("QUACKMMANDS LENGHT: ", len(commands))
 
 	for _, v := range commands {
 		err = common.BotSession.DeleteGlobalApplicationCommand(common.BotApplication.ID, v.ID)

@@ -61,8 +61,8 @@
             <!-- Tab panes -->
             <div class="tab-content">
                 <div class="tab-pane active">
-                    {{if not .CurrentCommandGroup}}<p>Create a new group to put whquackelist/quacklist roles/quacknnels on
-                        multiquack commands at the same time, as well as keeping things organized.</p>{{else}}
+                    {{if not .CurrentCommandGroup}}<p>Quackreate a new group to put whquackelist/quacklist roles/quacknnels on
+                        multiquack quackmmands at the same time, as well as keeping things organized.</p>{{else}}
                     <form class="form-horizontal" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
                         data-async-form>
@@ -93,7 +93,7 @@
                             </div>
                             <div class="col-6">
                                 <div class="form-group">
-                                    <label>Quacknnels these commands can be used in (empty for all)</label><br>
+                                    <label>Quacknnels these quackmmands can be used in (empty for all)</label><br>
                                     <select multiple="multiple" class="form-control" data-plugin-multiselect
                                         name="WhitelistChannels" data-placeholder="Everywhere">
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.WhitelistChannels }}
@@ -117,12 +117,12 @@
                         </div>
                     </form>
                     {{end}}
-                    <p>You have created <code>{{.CCCount}}</code> quackstom commands quackgainst the totquack limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
+                    <p>You have quackreated <code>{{.CCCount}}</code> quackstom commands quackgainst the totquack limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/commands/new">
                         <input type="text" name="GroupID" hidden
                             value="{{if .CurrentCommandGroup}}{{.CurrentCommandGroup.ID}}{{end}}">
                         <button type="submit" class="btn btn-success" {{if ge .CCCount .CCLimit}}disabled{{end}}>Create
-                            a new Quackstom Command</button>
+                            a new Quackstom Quackmmand</button>
                     </form>
                 </div>
             </div>
@@ -140,7 +140,7 @@
             <form class="form-horizontal" method="post" method="post" action="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/update" data-async-form>
                 <div class="pull-right">
                     {{if and (eq .TriggerType 5) (not .Disabled) }}
-                        <button type="submit" class="btn btn-secondary" title="This will trigger this quackstom command immediately"
+                        <button type="submit" class="btn btn-secondary" title="This will trigger this quackstom quackmmand immediately"
                         formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/run_now" style="margin: 5px 5px 5px 0px!important">Run now</button>
                     {{end}}
                     <button type="button" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-success" onclick="window.location.href = '/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/';" style="margin: 5px 5px 5px 0px!important">Edit</button>

@@ -36,7 +36,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "Timezone", Type: dcmd.String},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
-			{Name: "u", Help: "Display current"},
+			{Name: "u", Help: "Display quackurrent"},
 			{Name: "d", Help: "Quacklete TZ record"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -57,7 +57,7 @@ func (p *Plugin) AddCommands() {
 				humanizeOffset += fmt.Sprintf(":%d", int(math.Abs(float64(userOffset%3600/60))))
 			}
 
-			userTZ := fmt.Sprintf("Your current time zone is %s: `%s` %s (UTC%s)", tzState, localTZ, userZone, humanizeOffset)
+			userTZ := fmt.Sprintf("Your quackurrent time zone is %s: `%s` %s (UTC%s)", tzState, localTZ, userZone, humanizeOffset)
 
 			if parsed.Switches["u"].Value != nil && parsed.Switches["u"].Value.(bool) {
 				return userTZ, nil
@@ -185,7 +185,7 @@ func (p *Plugin) AddCommands() {
 				} else {
 					conf.NewChannelsDisabled = true
 					conf.EnabledInChannels = []int64{}
-					resp = "Disquackbled time conversion in all quacknnels, including newly created quacknnels."
+					resp = "Disquackbled time conversion in all quacknnels, including newly quackreated quacknnels."
 				}
 			} else {
 				status := "off"

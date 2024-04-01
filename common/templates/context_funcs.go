@@ -213,11 +213,11 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 		dict, _ := Dictionary(data...)
 		c.Data["TemplateArgs"] = dict
 		if !c.checkSafeDictNoRecursion(dict, 0) {
-			return nil, errors.New("trying to pass the entire current quacktext data in as templateargs, this is not needed, just use nil and access all other data normally")
+			return nil, errors.New("trying to pass the entire quackurrent quacktext data in as templateargs, this is not needed, just use nil and access all other data normally")
 		}
 	} else if len(data) == 1 {
 		if cast, ok := data[0].(map[string]interface{}); ok && reflect.DeepEqual(cast, c.Data) {
-			return nil, errors.New("trying to pass the entire current quacktext data in as templateargs, this is not needed, just use nil and access all other data normally")
+			return nil, errors.New("trying to pass the entire quackurrent quacktext data in as templateargs, this is not needed, just use nil and access all other data normally")
 		}
 		c.Data["TemplateArgs"] = data[0]
 	}
@@ -1163,7 +1163,7 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 4 {
-			return reflect.Value{}, errors.New("not enough arguments (need channelID, messageID, userID, emoji)")
+			return reflect.Value{}, errors.New("not enough quacguments (need channelID, messageID, userID, emoji)")
 		}
 
 		var cArg interface{}
@@ -1210,7 +1210,7 @@ func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.V
 
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
-			return reflect.Value{}, errors.New("not enough arguments (need channelID, messageID, emojis[optional])")
+			return reflect.Value{}, errors.New("not enough quacguments (need channelID, messageID, emojis[optional])")
 		}
 
 		var cArg interface{}
@@ -1737,7 +1737,7 @@ func (c *Context) tmplAddResponseReactions(values ...reflect.Value) (reflect.Val
 func (c *Context) tmplAddMessageReactions(values ...reflect.Value) (reflect.Value, error) {
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
-			return reflect.Value{}, errors.New("not enough arguments (need quacknnel and quackssage-id)")
+			return reflect.Value{}, errors.New("not enough quacguments (need quacknnel and quackssage-id)")
 		}
 
 		// cArg := args[0].Interface()

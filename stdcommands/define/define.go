@@ -53,7 +53,7 @@ var Command = &commands.YAGCommand{
 					return paginatedEmbed, nil
 				})
 			if err != nil {
-				return "Something went wrong", nil
+				return "Somequack went wrong", nil
 			}
 		} else {
 			result := qResp.Results[0]

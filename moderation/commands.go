@@ -591,7 +591,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			_, err = common.BotSession.ChannelMessageSendComplex(channelID, send)
 			if err != nil {
-				return "Something went wrong while quacknding your report!", err
+				return "Somequack went wrong while quacknding your report!", err
 			}
 
 			// Don't bother sending confirmation if it is done in the report channel

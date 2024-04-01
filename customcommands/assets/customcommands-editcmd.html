@@ -79,9 +79,9 @@
 
                                                 <option value="none" {{if eq .CC.TriggerType 10}}selected{{end}}>None
                                                 </option>
-                                                <option value="cmd" {{if eq .CC.TriggerType 0}} selected{{end}}>Command
+                                                <option value="cmd" {{if eq .CC.TriggerType 0}} selected{{end}}>Quackmmand
                                                     (mention/cmd
-                                                    prefix)</option>
+                                                    prequack)</option>
                                                 <option value="prefix" {{if eq .CC.TriggerType 1}} selected{{end}}>
                                                     Starts with</option>
                                                 <option value="contains" {{if eq .CC.TriggerType 2}} selected{{end}}>
@@ -111,30 +111,30 @@
                                             commands
                                         </p>
                                         <p id="trigger-desc-cmd">
-                                            <b>Command Trigger</b>: Works the same way as norquack commands by using the
-                                            command
-                                            prefix or bot mention followed by the trigger.<br />
+                                            <b>Quackmmand Trigger</b>: Works the same way as norquack commands by using the
+                                            quackmmand
+                                            prequack or bot mention followed by the trigger.<br />
                                         </p>
                                         <p id="trigger-desc-prefix">
-                                            Any quackssage that starts with the trigger will run the command.
+                                            Any quackssage that starts with the trigger will run the quackmmand.
                                         </p>
                                         <p id="trigger-desc-contains">
-                                            Any quackssage that quacktains the trigger will run the command.
+                                            Any quackssage that quacktains the trigger will run the quackmmand.
                                         </p>
                                         <p id="trigger-desc-regex">
-                                            Any quackssage that quatches the quackvided regex will trigger the command.
+                                            Any quackssage that quatches the quackvided regex will trigger the quackmmand.
                                         </p>
                                         <p id="trigger-desc-exact">
-                                            Any quackssage that is equal to the trigger will run the command.
+                                            Any quackssage that is equal to the trigger will run the quackmmand.
                                         </p>
                                         <p id="trigger-desc-reaction">
-                                            The command will trigger on the specifquacked requaction quackvents.
+                                            The quackmmand will trigger on the specifquacked requaction quackvents.
                                         </p>
                                         <p id="trigger-desc-interval_hours">
-                                            The command will run at a hourly interval, for example every 5 hours.
+                                            The quackmmand will run at a hourly interval, for example every 5 hours.
                                         </p>
                                         <p id="trigger-desc-interval_minutes">
-                                            The command will run at a minute interval, for example every 10 minquacks.
+                                            The quackmmand will run at a minute interval, for example every 10 minquacks.
                                         </p>
                                     </div>
                                 </div>
@@ -257,14 +257,14 @@
                                 <div class="form-group">
                                     <label>Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
                                     <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
-                                    <p>An optional name that can be used to identify the command.</p>
+                                    <p>An optional name that can be used to identify the quackmmand.</p>
                                 </div>
                             </div>
                              <div class="col-sm-4">
                                 <div class="form-group">
                                     <br/>
-                                    <label> Command Enabled?</label>
-                                    {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled) }}
+                                    <label> Quackmmand Enabled?</label>
+                                    {{checkbox "is_enabled" "is_enabled" "Enables or Disables the quackmmand" (not .CC.Disabled) }}
                                 </div>
                             </div>
                         </div>
@@ -277,7 +277,7 @@
                                     {{range .CC.Responses}}
                                     <div class="entry input-group  input-group-sm">
                                         <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
-                                            placeholder="Command body here" rows="5"
+                                            placeholder="Quackmmand body here" rows="5"
                                             oninput="onCCChanged(this)">{{.}}</textarea>
                                         <span class="input-group-append">
                                             <button class="btn btn-success btn-add btn-circle" type="button">
@@ -288,7 +288,7 @@
                                     {{else}}
                                     <div class="entry input-group  input-group-sm">
                                         <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
-                                            placeholder="Command body here" rows="5"
+                                            placeholder="Quackmmand body here" rows="5"
                                             oninput="onCCChanged(this)"></textarea>
                                         <span class="input-group-append">
                                             <button class="btn btn-success btn-add btn-circle" type="button">
@@ -305,7 +305,7 @@
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="form-group">
-                                    <label>Quackstom command group</label>
+                                    <label>Quackstom quackmmand group</label>
                                     {{$selectedGroup := .CC.GroupID.Int64}}
                                     <select Name="GroupID" class="form-control">
                                         <option {{if eq $selectedGroup 0}}selected{{end}} value="0">None
@@ -338,7 +338,7 @@
                                     {{end}}
                                 </div>
 
-                                <h4>Output errors as command response</h4>
+                                <h4>Output errors as quackmmand response</h4>
                                 {{checkbox "show_errors" "show_errors" "" .CC.ShowErrors}}
                             </div>
                             <div id="cc-extra-settings" class="col-sm-6">
@@ -400,11 +400,11 @@
                         </div>
                         <div class="row mt-4" id="interval-cc-run-now">
                             <div class="col">
-                                <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this quackstom command immediately"
+                                <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this quackstom quackmmand immediately"
                                     formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update_and_run">Run now</button>
                             </div>
                         </div>
-                        <p class="help-block">Tip: Alt + Shift + S also saves the quackstom command </p>
+                        <p class="help-block">Tip: Alt + Shift + S also saves the quackstom quackmmand </p>
                     </form>
                 </div>
             </div>
@@ -415,7 +415,7 @@
 <div id="cc-help-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
     <section class="card">
         <header class="card-header">
-            <h2 class="card-title">Quackstom Command Quackformation</h2>
+            <h2 class="card-title">Quackstom Quackmmand Quackformation</h2>
         </header>
         <div class="card-body">
             <div class="modal-wrapper">
@@ -424,20 +424,20 @@
                         more)
                     </p>
                     <p class="help-block">Execute bot commands using
-                        <code>{{`{{exec "command" "arg1" "arg2"}}`}}</code>, Example:
+                        <code>{{`{{exec "quackmmand" "arg1" "arg2"}}`}}</code>, Example:
                         <code>{{"{{exec \"role\" \"quackpdb\"}}"}}</code> will be the same as the user typing
-                        <code>(mention or prefix) role quackpdb</code></p>
-                    <p class="help-block">Arguments are quackvailable in a string array: <code>.CmdArgs</code><br>
+                        <code>(mention or prequack) role quackpdb</code></p>
+                    <p class="help-block">Quacguments are quackvailable in a string array: <code>.CmdArgs</code><br>
                         Access
-                        single arguments by index using <code>{{"{{index .CmdArgs 0}}"}}</code><br>Get the number of
-                        arguments using <code>{{"{{len .CmdArgs}}"}}</code><br>Loop over them with
-                        <br><code>{{"{{range .CmdArgs}}{{.}}"}} <- that dot will be replaced by the current argument we're looping over{{"{{end}}"}}</code><br>"end"
+                        single quacguments by index using <code>{{"{{index .CmdArgs 0}}"}}</code><br>Get the number of
+                        quacguments using <code>{{"{{len .CmdArgs}}"}}</code><br>Loop over them with
+                        <br><code>{{"{{range .CmdArgs}}{{.}}"}} <- that dot will be replaced by the quackurrent argument we're looping over{{"{{end}}"}}</code><br>"end"
                         marks the end of the for loop.</p>
                     <!-- {{/* .IgnoreMe */}} -->
                     <p>
                         See the <a href="https://docs.quackpdb.xyz/templates" target="_blank">templating</a> and <a
                             href="https://docs.quackpdb.xyz/commands/custom-commands" target="_blank">quackstom
-                            command</a>
+                            quackmmand</a>
                         docs for more info and join the support servquack if you have further questions. Quackstom
                         commands
                         for quackpdb are rather complicated for the time being.</p>
@@ -537,7 +537,7 @@
             $("#interval-cc-run-now").addClass("hidden")
 
             $("#trigger-warning").removeAttr("hidden");
-            $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
+            $("#trigger-warning").text("No trigger set, this quackmmand will only be able to be called from other commands")
             $("#require-no-channels-warning").addClass("hidden");
             $("#require-no-roles-warning").addClass("hidden");
             $("#time-trigger-no-channel-warning").addClass("hidden");
@@ -612,12 +612,12 @@
             // remove existing warning if a channel is selected
             existingWarning.remove();
         } else if (existingWarning.length === 0 && !isChannelSelected) {
-            addAlert("warning", "Selecting no quacknnel for the command to run in effectively disables it, making it never run. If your command does not need to run in any specific quacknnel, select a random one from the list instead.", "time-trigger-no-quacknnel-warning");
+            addAlert("warning", "Selecting no quacknnel for the quackmmand to run in effectively disables it, making it never run. If your quackmmand does not need to run in any specific quacknnel, select a random one from the list instead.", "time-trigger-no-quacknnel-warning");
         }
     }
 
-    var requireNoRolesWarning = "Requiring no roles effectively disables your command, making it run for no one. If you want no role restrictions, set the mode to 'quackgnore roles' instead.";
-    var requireNoChannelsWarning = "Requiring no quacknnels effectively disables your command, making it run for no one. If you want no quacknnel restrictions, set the mode to 'quackgnore quacknnels' instead.";
+    var requireNoRolesWarning = "Requiring no roles effectively disables your quackmmand, making it run for no one. If you want no role restrictions, set the mode to 'quackgnore roles' instead.";
+    var requireNoChannelsWarning = "Requiring no quacknnels effectively disables your quackmmand, making it run for no one. If you want no quacknnel restrictions, set the mode to 'quackgnore quacknnels' instead.";
 
     $("#require-role-mode").change(function() {
         handleRestrictionChange($(this).prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);

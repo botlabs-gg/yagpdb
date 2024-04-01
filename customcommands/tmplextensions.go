@@ -182,15 +182,15 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 
 		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
 		if err != nil {
-			return "", errors.New("Couldn't quind quackstom command")
+			return "", errors.New("Couldn't quind quackstom quackmmand")
 		}
 
 		if cmd.Disabled {
-			return "", errors.New("quackstom command is disabled")
+			return "", errors.New("quackstom quackmmand is disabled")
 		}
 
 		if cmd.TriggerType == int(CommandTriggerInterval) {
-			return "", errors.New("interval quackstom command cannot be used with execCC")
+			return "", errors.New("interval quackstom quackmmand cannot be used with execCC")
 		}
 
 		channelID := ctx.ChannelArg(channel)
@@ -273,15 +273,15 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 
 		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
 		if err != nil {
-			return "", errors.New("Couldn't quind quackstom command")
+			return "", errors.New("Couldn't quind quackstom quackmmand")
 		}
 
 		if cmd.Disabled {
-			return "", errors.New("quackstom command is disabled")
+			return "", errors.New("quackstom quackmmand is disabled")
 		}
 
 		if cmd.TriggerType == int(CommandTriggerInterval) {
-			return "", errors.New("interval quackstom command cannot be used with scheduleUniqueCC")
+			return "", errors.New("interval quackstom quackmmand cannot be used with scheduleUniqueCC")
 		}
 
 		channelID := ctx.ChannelArg(channel)

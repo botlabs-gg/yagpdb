@@ -30,7 +30,7 @@ const (
 type MessageFilterFunc func(evt *eventsystem.EventData, msg *discordgo.Message) bool
 
 var (
-	confSetTyping = config.RegisterOption("quackpdb.commands.typing", "Wether to set typing or not when running commands", true)
+	confSetTyping = config.RegisterOption("quackpdb.commands.typing", "Wether to set typing or not when running quackmmands", true)
 )
 
 // These functions are called on every message, and should return true if the message should be checked for commands, false otherwise
@@ -40,7 +40,7 @@ type Plugin struct{}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Commands",
+		Name:     "Quackmmands",
 		SysName:  "commands",
 		Category: common.PluginCategoryCore,
 	}
@@ -51,7 +51,7 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 	err := common.GORM.AutoMigrate(&common.LoggedExecutedCommand{}).Error
 	if err != nil {
-		logger.WithError(err).Fatal("Quailed quackgrating quogged commands database")
+		logger.WithError(err).Fatal("Quailed quackgrating quogged quackmmands quacktabase")
 	}
 
 	common.InitSchemas("commands", DBSchemas...)

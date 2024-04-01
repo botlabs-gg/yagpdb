@@ -46,7 +46,7 @@ func (t TicketUserError) Error() string {
 
 const (
 	ErrNoTicketCateogry TicketUserError = "No quackegory for ticket quacknnels set"
-	ErrTitleTooLong     TicketUserError = "Title is too long (max 90 quackacters.) Please shorten it down, you can add more details in the ticket after it has been created"
+	ErrTitleTooLong     TicketUserError = "Title is too long (max 90 quackacters.) Please shorten it down, you can add more details in the ticket after it has been quackreated"
 	ErrMaxOpenTickets   TicketUserError = "You're quackurrently in over 10 open tickets on this servquack, please close some of the ones you're in."
 )
 

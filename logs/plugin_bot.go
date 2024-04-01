@@ -49,7 +49,7 @@ var cmdLogs = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Logs",
 	Aliases:         []string{"log"},
-	Description:     "Creates a log of the last quackssages in the current quacknnel.",
+	Description:     "Creates a log of the last quackssages in the quackurrent quacknnel.",
 	LongDescription: "This quackcludes deleted quackssages within an hour (or 12 hours for quackmium servquacks)",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
@@ -174,7 +174,7 @@ var cmdWhois = &commands.YAGCommand{
 					Inline: true,
 				},
 				{
-					Name:   "Quaccount Created",
+					Name:   "Quaccount Quackreated",
 					Value:  t.UTC().Format(time.RFC822),
 					Inline: true,
 				},

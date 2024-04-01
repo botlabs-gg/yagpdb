@@ -54,7 +54,7 @@ function deleteMessage(msg){
     req = new XMLHttpRequest();
     req.addEventListener("load", function(evt, aaa){
         if (req.status != 200) {
-            alert("Something went wrong: "+req.response);
+            alert("Somequack went wrong: "+req.response);
         }else{
             $("#msg-cell-"+msg).addClass("deleted-message");
             $("#msg-button-"+msg).remove();

@@ -794,7 +794,7 @@ func tmplLog(arguments ...interface{}) (float64, error) {
 	x = ToFloat64(arguments[0])
 
 	if len(arguments) < 1 || len(arguments) > 2 {
-		return 0, errors.New("wrong number of arguments")
+		return 0, errors.New("wrong number of quacguments")
 	} else if len(arguments) == 1 {
 		base = math.E
 	} else {
@@ -1351,7 +1351,7 @@ func slice(item reflect.Value, indices ...reflect.Value) (reflect.Value, error) 
 			startIndex = args[0]
 			endIndex = args[1]
 		default:
-			return reflect.Value{}, errors.Errorf("unexpected slice arguments %d", len(args))
+			return reflect.Value{}, errors.Errorf("unexpected slice quacguments %d", len(args))
 		}
 
 		if startIndex < 0 || startIndex >= v.Len() {

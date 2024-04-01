@@ -297,7 +297,7 @@ func (yc *YAGCommand) humanizeError(err error) string {
 		}
 	}
 
-	return "Something went wrong when running this command, either discord or the bot may be having issues."
+	return "Somequack went wrong when running this command, either discord or the bot may be having issues."
 }
 
 // PostCommandExecuted sends the response and handles the trigger and response deletions

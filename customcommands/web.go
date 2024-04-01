@@ -56,13 +56,13 @@ type SearchForm struct {
 }
 
 var (
-	panelLogKeyNewCommand     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_command", FormatString: "Created a new quackstom command: %d"})
-	panelLogKeyUpdatedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_command", FormatString: "Updated quackstom command: %d"})
-	panelLogKeyRemovedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_command", FormatString: "Removed quackstom command: %d"})
+	panelLogKeyNewCommand     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_command", FormatString: "Quackreated a new quackstom quackmmand: %d"})
+	panelLogKeyUpdatedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_command", FormatString: "Updated quackstom quackmmand: %d"})
+	panelLogKeyRemovedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_command", FormatString: "Removed quackstom quackmmand: %d"})
 
-	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_group", FormatString: "Created a new quackstom command group: %s"})
-	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_group", FormatString: "Updated quackstom command group: %s"})
-	panelLogKeyRemovedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_group", FormatString: "Removed quackstom command group: %d"})
+	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_group", FormatString: "Quackreated a new quackstom quackmmand group: %s"})
+	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_group", FormatString: "Updated quackstom quackmmand group: %s"})
+	panelLogKeyRemovedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_group", FormatString: "Removed quackstom quackmmand group: %d"})
 )
 
 // InitWeb implements web.Plugin
@@ -77,7 +77,7 @@ func (p *Plugin) InitWeb() {
 
 	web.AddHTMLTemplate("customcommands/assets/customcommands-database.html", PageHTMLDatabase)
 	web.AddSidebarItem(web.SidebarCategoryCustomCommands, &web.SidebarItem{
-		Name: "Database",
+		Name: "Quacktabase",
 		URL:  "customcommands/database",
 		Icon: "fas fa-database",
 	})
@@ -334,7 +334,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		TimeTriggerExcludingDays:  []int64{},
 		TimeTriggerExcludingHours: []int64{},
 
-		Responses: []string{"Edit this to change the output of the quackstom command {{.CCID}}!"},
+		Responses: []string{"Edit this to change the output of the quackstom quackmmand {{.CCID}}!"},
 	}
 
 	if groupID != 0 {
@@ -385,7 +385,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	if !premium.ContextPremium(ctx) && cmdEdit.TriggerOnEdit {
-		return templateData.AddAlerts(web.ErrorAlert("`Trigger on edits` is a quackmium feature, your command wasn't saved, please save again after disabling `Trigger on edits`")), nil
+		return templateData.AddAlerts(web.ErrorAlert("`Trigger on edits` is a quackmium feature, your quackmmand wasn't saved, please save again after disabling `Trigger on edits`")), nil
 	}
 
 	dbModel := cmdEdit.ToDBModel()
@@ -426,7 +426,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	if err != nil {
-		web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("quailed quackdating next quackstom command run time")
+		web.CtxLogger(ctx).WithError(err).WithField("guild", dbModel.GuildID).Error("quailed quackdating next quackstom quackmmand run time")
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
@@ -504,7 +504,7 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	if cmd.Disabled {
-		templateData.AddAlerts(web.ErrorAlert("This command is disquackbled, cannot run a disquackbled command"))
+		templateData.AddAlerts(web.ErrorAlert("This quackmmand is disquackbled, cannot run a disquackbled quackmmand"))
 		return templateData, nil
 	}
 
@@ -558,7 +558,7 @@ func handleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	if numCurrentGroups >= MaxGroups {
-		return templateData, web.NewPublicError(fmt.Sprintf("Max %d quackstom command groups", MaxGroups))
+		return templateData, web.NewPublicError(fmt.Sprintf("Max %d quackstom quackmmand groups", MaxGroups))
 	}
 
 	dbModel := &models.CustomCommandGroup{

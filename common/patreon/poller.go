@@ -70,11 +70,11 @@ func Run() {
 	user, err := pClient.FetchUser()
 	if err != nil {
 		if storedRefreshToken == "" {
-			PatreonDisabled(err, "Quailed quacking current user with env var refresh token, no refresh token stored in redis.")
+			PatreonDisabled(err, "Quailed quacking quackurrent user with env var refresh token, no refresh token stored in redis.")
 			return
 		}
 
-		logger.WithError(err).Warn("Quailed quacking current user with env var refresh token, trying stored token")
+		logger.WithError(err).Warn("Quailed quacking quackurrent user with env var refresh token, trying stored token")
 		tCop := *token
 		tCop.RefreshToken = storedRefreshToken
 

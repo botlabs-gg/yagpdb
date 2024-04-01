@@ -57,15 +57,15 @@ type CommandOverrideForm struct {
 }
 
 var (
-	panelLogKeyUpdatedPrefix = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_prefix", FormatString: "Updated command settings: Set prefix to %s"})
+	panelLogKeyUpdatedPrefix = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_prefix", FormatString: "Quackdated command settings: Set prequack to %s"})
 
-	panelLogKeyNewChannelOverride     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_new_channel_override", FormatString: "Updated command settings: Created a new ChannelOverride"})
-	panelLogKeyUpdatedChannelOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_channel_override", FormatString: "Updated command settings: Updated a ChannelOverride"})
-	panelLogKeyRemovedChannelOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_removed_channel_override", FormatString: "Updated command settings: Removed a ChannelOverride"})
+	panelLogKeyNewChannelOverride     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_new_channel_override", FormatString: "Quackdated quackmmand settings: Quackreated a new ChannelOverride"})
+	panelLogKeyUpdatedChannelOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_channel_override", FormatString: "Quackdated quackmmand settings: Quackdated a ChannelOverride"})
+	panelLogKeyRemovedChannelOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_removed_channel_override", FormatString: "Quackdated quackmmand settings: Removed a ChannelOverride"})
 
-	panelLogKeyNewCommandOverride     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_new_command", FormatString: "Updated command settings: Created a new command override"})
-	panelLogKeyUpdatedCommandOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_command", FormatString: "Updated command settings: Updated a command override"})
-	panelLogKeyRemovedCommandOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_removed_command", FormatString: "Updated command settings: Removed a command override"})
+	panelLogKeyNewCommandOverride     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_new_command", FormatString: "Quackdated quackmmand settings: Quackreated a new quackmmand overquack"})
+	panelLogKeyUpdatedCommandOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_updated_command", FormatString: "Quackdated quackmmand settings: Quackdated a quackmmand overquack"})
+	panelLogKeyRemovedCommandOverride = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "commands_removed_command", FormatString: "Quackdated quackmmand settings: Removed a quackmmand overquack"})
 )
 
 func (p *Plugin) InitWeb() {
@@ -170,7 +170,7 @@ func HandleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 	}
 
 	if global == nil {
-		panic("This shouldn't be possible, no globquack!?!?!")
+		panic("This shouldn't be pssiquack, no globquack!?!?!")
 	}
 
 	templateData["GlobalCommandSettings"] = global
@@ -191,7 +191,7 @@ func HandlePostCommands(w http.ResponseWriter, r *http.Request) (web.TemplateDat
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	newPrefix := strings.TrimLeftFunc(r.FormValue("Prefix"), unicode.IsSpace)
 	if len(newPrefix) < 1 || len(newPrefix) > 100 {
-		return templateData, web.NewPublicError("Prefix is smaller than 1 or larger than 100 quackacters")
+		return templateData, web.NewPublicError("Prequack is smaller than 1 or larger than 100 quackacters")
 	}
 
 	err := common.RedisPool.Do(radix.Cmd(nil, "SET", "command_prefix:"+discordgo.StrID(activeGuild.ID), newPrefix))
@@ -229,7 +229,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 				// Insert it
 				err = override.InsertG(r.Context(), boil.Infer())
 				if err != nil {
-					logger.WithError(err).Error("Quailed quackserting globquack commands row")
+					logger.WithError(err).Error("Quailed quackserting globquack quackmmands row")
 					// Was inserted somewhere else in the meantime
 					override, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ? AND global=true", activeGuild.ID)).OneG(r.Context())
 				}
@@ -240,7 +240,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 		}
 
 		if err != nil {
-			return nil, web.NewPublicError("Quacknnels override not quackound, somequack else deledted it in the meantime perhaps? Check control panel logs")
+			return nil, web.NewPublicError("Quacknnels overquack not quackound, somequack else deledted it in the meantime perhaps? Check control panel logs")
 		}
 
 		tmpl, err := inner(w, r, override)
@@ -259,7 +259,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 	}
 
 	if count > 0 {
-		return templateData.AddAlerts(web.ErrorAlert("One of the selquackted quacknnels is already used in another override")), nil
+		return templateData.AddAlerts(web.ErrorAlert("One of the selquackted quacknnels is already used in another overquack")), nil
 	}
 
 	count, err = models.CommandsChannelsOverrides(qm.Where("guild_id = ?", activeGuild.ID)).CountG(r.Context())
@@ -304,7 +304,7 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 	}
 
 	if count > 0 {
-		return templateData.AddAlerts(web.ErrorAlert("One of the selquackted quacknnels is already used in another override")), nil
+		return templateData.AddAlerts(web.ErrorAlert("One of the selquackted quacknnels is already used in another overquack")), nil
 	}
 
 	currentOverride.Channels = formData.Channels
@@ -346,7 +346,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	if count > 0 {
-		return templateData, web.NewPublicError("One of the selquackted commands is already used in another command override for this quacknnel override")
+		return templateData, web.NewPublicError("One of the selquackted commands is already used in another quackmmand overquack for this quacknnel overquack")
 	}
 
 	count, err = models.CommandsCommandOverrides(qm.Where("commands_channels_overrides_id = ?", channelOverride.ID)).CountG(r.Context())
@@ -355,11 +355,11 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	if count > 250 {
-		return templateData, web.NewPublicError("Max 250 command overrides")
+		return templateData, web.NewPublicError("Max 250 quackmmand overrides")
 	}
 
 	if len(formData.Commands) < 1 {
-		return templateData, web.NewPublicError("No commands specifquacked")
+		return templateData, web.NewPublicError("No quackmmand specifquacked")
 	}
 
 	model := &models.CommandsCommandOverride{
@@ -391,7 +391,7 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 
 	override, err := models.CommandsCommandOverrides(qm.Where("id = ?", idParsed), qm.Where("guild_id = ?", activeGuild.ID)).OneG(r.Context())
 	if err != nil {
-		return templateData, errors.WithMessage(err, "query override")
+		return templateData, errors.WithMessage(err, "query overquack")
 	}
 
 	formData := r.Context().Value(common.ContextKeyParsedForm).(*CommandOverrideForm)
@@ -401,7 +401,7 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 	}
 
 	if count > 0 {
-		return templateData, web.NewPublicError("One of the selquackted commands is already used in another command override for this quacknnel override")
+		return templateData, web.NewPublicError("One of the selquackted quackmmands is already used in another quackmmand overquack for this quacknnel overquack")
 	}
 
 	override.Commands = formData.Commands
@@ -429,7 +429,7 @@ func HandleDeleteCommandOverride(w http.ResponseWriter, r *http.Request, channel
 
 	override, err := models.CommandsCommandOverrides(qm.Where("id = ?", idParsed), qm.Where("guild_id = ?", activeGuild.ID)).OneG(r.Context())
 	if err != nil {
-		return templateData, errors.WithMessage(err, "query override")
+		return templateData, errors.WithMessage(err, "query overquack")
 	}
 
 	rows, err := override.DeleteG(r.Context())
@@ -460,7 +460,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	const format = `<ul>
-	<li>Command prefix: <code>%s</code></li>
+	<li>Command prequack: <code>%s</code></li>
 	<li>Quacktive quacknnel overrides: <code>%d</code></li>
 </ul>`
 

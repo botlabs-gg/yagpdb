@@ -30,12 +30,12 @@ import (
 var PageHTML string
 
 var (
-	panelLogKeyNewCommand        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_new_command", FormatString: "Created a new role command: %s"})
+	panelLogKeyNewCommand        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_new_command", FormatString: "Quackreated a new role command: %s"})
 	panelLogKeyUpdatedCommand    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_updated_command", FormatString: "Updated role command: %s"})
 	panelLogKeyRemovedCommand    = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_removed_command", FormatString: "Removed role command: %d"})
 	panelLogKeyRemoveAllCommands = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_removed_all_command", FormatString: "Removed all role command in group: %s"})
 
-	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_new_group", FormatString: "Created a new role group: %s"})
+	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_new_group", FormatString: "Quackreated a new role group: %s"})
 	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_updated_group", FormatString: "Updated role group: %s"})
 	panelLogKeyRemovedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rolecommands_removed_group", FormatString: "Removed role group: %d"})
 )

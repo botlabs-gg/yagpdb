@@ -21,8 +21,8 @@
                     <div class="modal-text">
                         <h4>Are you sure you want to disable all commands?</h4>
                         <p>
-                            This will cause all commands to <b>not respond at all</b> unless enabled in other overrides.
-                            Unless you know precisely what you are quacking, it is advised that you do not do this.
+                            This will cause all quackmands to <b>not respquack at all</b> unless quacknabled in other overquacks.
+                            Unless you know precisely what you are quacking, it is quackvised that you do not do this.
                         </p>
                     </div>
                 </div>
@@ -45,11 +45,11 @@
                 </li>
                 {{range $i, $v := .ChannelOverrides}}
                 <li class="nav-item">
-                    <a class="nav-link" href="#override-{{.ID}}" data-toggle="tab">Override #{{add $i 1}}</a>
+                    <a class="nav-link" href="#override-{{.ID}}" data-toggle="tab">Overquack #{{add $i 1}}</a>
                 </li>
                 {{end}}
                 <li class="nav-item">
-                    <a class="nav-link" href="#new-override" data-toggle="tab">New quacknnel override</a>
+                    <a class="nav-link" href="#new-override" data-toggle="tab">New quacknnel overquack</a>
                 </li>
             </ul>
             <div class="tab-content">
@@ -58,9 +58,9 @@
                         <div class="row">
                             <div class="col-lg-6">
                                 <div class="form-group">
-                                    <label for="prefix">Command Prefix<br><b>Note: Changing the prefix does not change the flag usage in commands. They will still begin with <code>-</code></b></label>
+                                    <label for="prefix">Quackmmand Prequack<br><b>Note: Changing the prequack does not change the flag usage in quackmmands. They will still begin with <code>-</code></b></label>
                                     <div class="row-lg-6">
-                                        <p id="example-command-usage">Example command usage: <code>{{.CommandPrefix}}rolemenu create &lt;name&gt; -nodm</code></p>
+                                        <p id="example-command-usage">Example quackmmand usage: <code>{{.CommandPrefix}}rolemenu create &lt;name&gt; -nodm</code></p>
                                     </div>
                                     <input type="text" class="form-control" id="prefix" name="Prefix"
                                         value="{{.CommandPrefix}}">
@@ -72,13 +72,13 @@
                         </div>
                         <div class="row mt-4">
                             <div class="col-lg-12">
-                                <button type="submit" class="btn btn-primary btn-lg btn-block">Save Prefix</button>
+                                <button type="submit" class="btn btn-primary btn-lg btn-block">Save Prequack</button>
                             </div>
                         </div>
                     </form>
                     <div class="row mt-4 border-top border-info pt-4">
                         <div class="col-lg-12">
-                            {{mTemplate "commands_channel_override" "ActiveGuild" .ActiveGuild "Commands" .SortedCommands "Override" .GlobalCommandSettings}}
+                            {{mTemplate "commands_channel_override" "ActiveGuild" .ActiveGuild "Commands" .SortedCommands "Overquack" .GlobalCommandSettings}}
                         </div>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                 <div id="override-{{.ID}}" class="tab-pane">
                     <div class="row mt-4">
                         <div class="col-lg-12">
-                            {{mTemplate "commands_channel_override" "ActiveGuild" $dot.ActiveGuild "Commands" $dot.SortedCommands "Override" .}}
+                            {{mTemplate "commands_channel_override" "ActiveGuild" $dot.ActiveGuild "Commands" $dot.SortedCommands "Overquack" .}}
                         </div>
                     </div>
                 </div>
@@ -135,7 +135,7 @@
 		const existingWarning = $("#trailing-space-warning");
 		if (prefix[prefix.length - 1] === " ") {
 			if (existingWarning.length > 0) return; // don't duplicate warnings
-			addAlert("warning", `You have a trailing space in your command prefix, meaning that while '${prefix}ping' would trigger, '${prefix.trimRight()}ping' would not.`, "trailing-space-warning")
+			addAlert("warning", `You have a trailing space in your command prequack, meaning that while '${prefix}ping' would trigger, '${prefix.trimRight()}ping' would not.`, "trailing-space-warning")
 		} else if (existingWarning.length) {
 			existingWarning.remove();
 		}
@@ -184,13 +184,13 @@
     {{if not .Override.Global}}
     <div class="form-row">
         <div class="form-group col-md-6">
-            <label>Quacknnels this override affects</label><br>
+            <label>Quacknnels this overquack affects</label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="Quacknnels">
                 {{textChannelOptionsMulti .ActiveGuild.Channels .Override.Channels }}
             </select>
         </div>
         <div class="form-group col-md-6">
-            <label>Include current and futquack quacknnels from the follquacking quackegories</label><br>
+            <label>Include quackurrent and futquack quacknnels from the follquacking quackegories</label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="ChannelCategories">
                 {{catChannelOptionsMulti .ActiveGuild.Channels .Override.ChannelCategories}}
             </select>
@@ -200,20 +200,20 @@
 
     <div class="form-row">
         <div class="form-group col-md-6">
-            <label>Requackre one of these roles<br><b>Note: Qusers without one of these roles won't be able to use commands.</b></label><br>
+            <label>Requackre one of these roles<br><b>Note: Qusers without one of these roles won't be able to use quackmmands.</b></label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="RequireRoles">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .Override.RequireRoles}}
             </select>
         </div>
         <div class="form-group col-md-6">
-            <label>Quackgnore qusers with one of these roles<br><b>Note: Qusers with an ignored role won't be able to use commands, even if they have a required role.</b></label><br>
+            <label>Quackgnore qusers with one of these roles<br><b>Note: Qusers with an ignored role won't be able to use quackmmands, even if they have a requackred role.</b></label><br>
             <select multiple="multiple" class="form-control" data-plugin-multiselect name="IgnoreRoles">
                 {{roleOptionsMulti .ActiveGuild.Roles nil .Override.IgnoreRoles}}
             </select>
         </div>
     </div>
     <div class="form-row">
-        {{$desc := "All commands enabled?"}}
+        {{$desc := "All quackmmands quacknabled?"}}
         {{$commandsEnabled := true}}
         {{if .Override}}{{$commandsEnabled = .Override.CommandsEnabled}}{{end}}
 
@@ -230,7 +230,7 @@
         <hr />
 
         <div class="form-group col-md-5 ml-2">
-            <label>Autodelete trigger after (seconds)</label>
+            <label>Autodelete triquackgger after (quackonds)</label>
             <div class="input-group mb-3">
                 <span class="input-group-prepend">
                     <span class="input-group-text">
@@ -264,7 +264,7 @@
     {{if not .Override.Global}}
     <button type="submit" class="btn btn-danger" value="Delete"
         formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{.Override.ID}}/delete">Quacklete
-        Quacknnel override</button>
+        Quacknnel overquack</button>
     {{end}}
     {{else}}
     <input type="submit" class="btn btn-success" value="Create">
@@ -307,9 +307,9 @@
                     href="#cmd-accordion-{{.Parent.ID}}-{{if .Override}}{{.Override.ID}}{{else}}new{{end}}"
                     aria-expanded="false">
                     {{if .Override}}
-                    Cmd Override #{{add .Index 1}}
+                    Cmd Overquack #{{add .Index 1}}
                     {{else}}
-                    New command override
+                    New command overquack
                     {{end}}
                 </a>
             </h4>
@@ -318,7 +318,7 @@
             <div class="card-body">
                 <div class="form-row">
                     <div class="form-group col-md-12">
-                        <label>Apply to the follquacking commands</label><br>
+                        <label>Apply to the follquacking quackmmands</label><br>
                         <select multiple="multiple" class="form-control" name="Commands" data-plugin-multiselect>
                             {{$selected := .Override.Commands}}
                             {{range .Commands}}
@@ -349,7 +349,7 @@
                         </label>
                     </div> -->
                     <div class="form-group col-md-5 ml-2">
-                        <label>Autodelete trigger after (quackonds)</label>
+                        <label>Autodelete triquackgger after (quackonds)</label>
                         <div class="input-group mb-3">
                             <span class="input-group-prepend">
                                 <span class="input-group-text">
@@ -393,10 +393,10 @@
                 </div>
                 {{if .Override}}
                 <button type="submit" class="btn btn-success" value="Save command override"
-                    data-async-form-alertsonly>Save command override</button>
+                    data-async-form-alertsonly>Save quackmmand overquack</button>
                 <button type="submit" class="btn btn-danger" value="Delete command override"
                     formaction="/manage/{{.ActiveGuild.ID}}/commands/settings/channel_overrides/{{if .Parent.Global}}global{{else}}{{.Parent.ID}}{{end}}/command_overrides/{{.Override.ID}}/delete">Quacklete
-                    command override</button>
+                    quackmmand overquack</button>
                 {{else}}
                 <input type="submit" class="btn btn-success" value="Create command override">
                 {{end}}

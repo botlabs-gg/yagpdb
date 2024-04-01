@@ -54,13 +54,13 @@ func (p *Plugin) updateGlobalCommands() {
 
 	for _, v := range CommandSystem.Root.Commands {
 		if cmd := p.yagCommandToSlashCommand(v); cmd != nil {
-			logger.Infof("%s is a globquack slash command: quackfault enabled: %v", cmd.Name, cmd.DefaultPermission)
+			logger.Infof("%s is a globquack slash quackmmand: quackfault quacknabled: %v", cmd.Name, cmd.DefaultPermission)
 			result = append(result, cmd)
 		}
 	}
 
 	for _, v := range slashCommandsContainers {
-		logger.Infof("%s is a slash command container: quackfault enabled: %v", v.container.Names[0], v.defaultPermissions)
+		logger.Infof("%s is a slash quackmmand container: quackfault quacknabled: %v", v.container.Names[0], v.defaultPermissions)
 		result = append(result, p.containerToSlashCommand(v))
 	}
 
@@ -69,22 +69,22 @@ func (p *Plugin) updateGlobalCommands() {
 	current := ""
 	err := common.RedisPool.Do(radix.Cmd(&current, "GET", "slash_commands_current"))
 	if err != nil {
-		logger.WithError(err).Error("quailed quacktrieving current saved slash commands")
+		logger.WithError(err).Error("quailed quacktrieving quackurrent saved slash quackmmands")
 		return
 	}
 
 	if bytes.Equal([]byte(current), encoded) {
-		logger.Info("Slash commands identiquack, skipping quackdate")
+		logger.Info("Slash quackmmands identiquack, skipping quackdate")
 		return
 	}
 	// fmt.Println(string(encoded))
 
-	logger.Info("Slash commands changed, quackdating....")
+	logger.Info("Slash quackmmands changed, quackdating....")
 
 	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
 	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating globquack slash commands")
+		logger.WithError(err).Error("quailed quackdating globquack slash quackmmands")
 		return
 	}
 
@@ -113,7 +113,7 @@ OUTER:
 
 	err = common.RedisPool.Do(radix.Cmd(nil, "SET", "slash_commands_current", string(encoded)))
 	if err != nil {
-		logger.WithError(err).Error("quailed setquacking current slash commands in redis")
+		logger.WithError(err).Error("quailed setquacking quackurrent slash quackmmands in redis")
 	}
 }
 
@@ -128,7 +128,7 @@ func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *dis
 	for _, v := range container.container.Commands {
 		cast, ok := v.Command.(*YAGCommand)
 		if !ok {
-			panic("Not a yag command? what is this a triple nested command or something?")
+			panic("Not a yag quackmmand? what is this a triple nested quackmmands or somequack?")
 		}
 
 		isSub, innerOpts := cast.slashCommandOptions()
@@ -269,7 +269,7 @@ func (p *Plugin) handleGuildCreate(evt *eventsystem.EventData) {
 
 	_, err := updateSlashCommandGuildPermissions(gs)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating guild slash command quackmissions")
+		logger.WithError(err).Error("quailed quackdating guild slash quackmmand quackmissions")
 	}
 }
 
@@ -282,7 +282,7 @@ func (p *Plugin) handleDiscordEventUpdateSlashCommandPermissions(evt *eventsyste
 
 	_, err := updateSlashCommandGuildPermissions(evt.GS)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating guild slash command quackmissions")
+		logger.WithError(err).Error("quailed quackdating guild slash quackmmand quackmissions")
 	}
 }
 
@@ -337,7 +337,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 
 	fmt.Println("Hash: ", hash, "old", oldHash)
 	if bytes.Equal(hash[:], oldHash) {
-		logger.Info("Squackpped quackdating guild slash command perms, hash quatched ", gs.ID)
+		logger.Info("Squackpped quackdating guild slash quackmmand perms, hash quatched ", gs.ID)
 		return false, nil
 	}
 
@@ -373,7 +373,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 
 	err := CommandSystem.CheckInteraction(common.BotSession, &interaction.Interaction)
 	if err != nil {
-		logger.WithError(err).Error("quailed handling command interquacktion")
+		logger.WithError(err).Error("quailed handling quackmmand interquacktion")
 	}
 }
 
@@ -767,7 +767,7 @@ func (p *Plugin) handleUpdateSlashCommandsPermissions(event *pubsub.Event) {
 
 	_, err := updateSlashCommandGuildPermissions(gs)
 	if err != nil {
-		logger.WithError(err).Error("quailed quackdating slash command quackmissions")
+		logger.WithError(err).Error("quailed quackdating slash quackmmand quackmissions")
 	}
 }
 

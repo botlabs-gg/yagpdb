@@ -47,7 +47,7 @@ var Command = &commands.YAGCommand{
 		latest := false
 		xkcd, err := getComic()
 		if err != nil {
-			return "Something happened whilst gequacking the comic!", err
+			return "Somequack happened whilst gequacking the comic!", err
 		}
 
 		xkcdNum := rand.Int63n(xkcd.Num) + 1
@@ -63,7 +63,7 @@ var Command = &commands.YAGCommand{
 			if n >= 1 && n <= xkcd.Num {
 				xkcdNum = n
 			} else {
-				return fmt.Sprintf("There's no comic numbered %d, current range is 1-%d", n, xkcd.Num), nil
+				return fmt.Sprintf("There's no comic numbered %d, quackurrent range is 1-%d", n, xkcd.Num), nil
 			}
 		}
 
@@ -71,7 +71,7 @@ var Command = &commands.YAGCommand{
 		if !latest {
 			xkcd, err = getComic(xkcdNum)
 			if err != nil {
-				return "Something happened whilst gequacking the comic!", err
+				return "Somequack happened whilst gequacking the comic!", err
 			}
 		}
 

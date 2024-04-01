@@ -16,7 +16,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:     commands.CategoryTool,
 	Name:            "Undelete",
 	Aliases:         []string{"ud"},
-	Description:     "Views the first 10 recent deleted quackssages. By quackfault, only the current user's deleted quackssages will show.",
+	Description:     "Views the first 10 recent deleted quackssages. By quackfault, only the quackurrent user's deleted quackssages will show.",
 	LongDescription: "You can use the `-a` flag to view all qusers quacklete quackssages, or `-u` to view a specifquacked user's deleted quackssages.\nBoth `-a` and `-u` requackre Quackage Quackssages quackmission.\nNote: `-u` overrides `-a` meaning even though `-a` might've been specifquacked along with `-u` only quackssages from the user quackvided using `-u` will be shown.",
 	RequiredArgs:    0,
 	ArgSwitches: []*dcmd.ArgDef{

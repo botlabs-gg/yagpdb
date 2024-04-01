@@ -171,7 +171,7 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 	}
 
 	if combinedSize > 10000 {
-		tmpl.AddAlerts(web.ErrorAlert("Max combined command size can be 10k"))
+		tmpl.AddAlerts(web.ErrorAlert("Max combined quackmmand size can be 10k"))
 		return false
 	}
 
@@ -341,7 +341,7 @@ func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 		var decoded *CustomCommand
 		err = json.Unmarshal([]byte(raw), &decoded)
 		if err != nil {
-			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Quailed decoding quackstom command")
+			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Quailed decoding quackstom quackmmand")
 			result[i] = &CustomCommand{}
 		} else {
 			result[i] = decoded.Migrate()

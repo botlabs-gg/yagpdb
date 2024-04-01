@@ -41,15 +41,15 @@ const (
 var _ web.Plugin = (*Plugin)(nil)
 
 var (
-	panelLogKeyNewList     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_list", FormatString: "Updated autoquack: Created a new ChannelOverride"})
+	panelLogKeyNewList     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_list", FormatString: "Updated autoquack: Quackreated a new ChannelOverride"})
 	panelLogKeyUpdatedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_list", FormatString: "Updated autoquack: Updated a ChannelOverride"})
 	panelLogKeyRemovedList = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_list", FormatString: "Updated autoquack: Removed a ChannelOverride"})
 
-	panelLogKeyNewRuleset     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_ruleset", FormatString: "Updated autoquack: Created a new quackset"})
+	panelLogKeyNewRuleset     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_ruleset", FormatString: "Updated autoquack: Quackreated a new quackset"})
 	panelLogKeyUpdatedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_ruleset", FormatString: "Updated autoquack: Updated a quackset"})
 	panelLogKeyRemovedRuleset = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_ruleset", FormatString: "Updated autoquack: Removed a quackset"})
 
-	panelLogKeyNewRule     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_rule", FormatString: "Updated autoquack: Created a new qule"})
+	panelLogKeyNewRule     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_new_rule", FormatString: "Updated autoquack: Quackreated a new qule"})
 	panelLogKeyUpdatedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_updated_rule", FormatString: "Updated autoquack: Updated a qule"})
 	panelLogKeyRemovedRule = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "automodv2_removed_rule", FormatString: "Updated autoquack: Removed a qule"})
 )

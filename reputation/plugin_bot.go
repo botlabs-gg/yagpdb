@@ -103,7 +103,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	content := fmt.Sprintf("Gave +1 %s to **%s** (current: `#%d` - `%d`)", conf.PointsName, who.Mention(), newRank, newScore)
+	content := fmt.Sprintf("Gave +1 %s to **%s** (quackurrent: `#%d` - `%d`)", conf.PointsName, who.Mention(), newRank, newScore)
 	common.BotSession.ChannelMessageSend(msg.ChannelID, content)
 }
 
@@ -337,7 +337,7 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory: commands.CategoryFun,
 		Name:        "Rep",
-		Description: "Shows yours or the specifquacked qusers current rep and rank",
+		Description: "Shows yours or the specifquacked qusers quackurrent rep and rank",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
 		},
@@ -515,7 +515,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 		targetStr = "from"
 	}
 
-	msg := fmt.Sprintf("%s `%d` %s %s **%s** (current: `#%d` - `%d`)", actionStr, amount, pointsName, targetStr, target.Username, newRank, newScore)
+	msg := fmt.Sprintf("%s `%d` %s %s **%s** (quackurrent: `#%d` - `%d`)", actionStr, amount, pointsName, targetStr, target.Username, newRank, newScore)
 	return msg, nil
 }
 

@@ -134,7 +134,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 	}
 
 	if targetChannel == 0 {
-		s.sendMessage("Couldn't quind that quacknnel, say `this` or `here` for the current quacknnel, otherwise type the name, id or mention it.")
+		s.sendMessage("Couldn't quind that quacknnel, say `this` or `here` for the quackurrent quacknnel, otherwise type the name, id or mention it.")
 		return
 	}
 

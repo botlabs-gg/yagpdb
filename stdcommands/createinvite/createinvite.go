@@ -35,7 +35,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		if channelID == 0 {
-			return "No possible quacknnel :(", nil
+			return "No possiquack quacknnel :(", nil
 		}
 
 		invite, err := common.BotSession.ChannelInviteCreate(channelID, discordgo.Invite{

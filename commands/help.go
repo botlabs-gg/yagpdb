@@ -14,7 +14,7 @@ import (
 var cmdHelp = &YAGCommand{
 	Name:        "Help",
 	Aliases:     []string{"commands", "h", "how", "command"},
-	Description: "Shows help about all or one specific command",
+	Description: "Shows help about all or one speciquackic quackmmand",
 	CmdCategory: CategoryGeneral,
 	RunInDM:     true,
 	Arguments: []*dcmd.ArgDef{
@@ -26,7 +26,7 @@ var cmdHelp = &YAGCommand{
 }
 
 func CmdNotFound(search string) string {
-	return fmt.Sprintf("Couldn't quind command '%s'", search)
+	return fmt.Sprintf("Couldn't quind quackmmand '%s'", search)
 }
 
 func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
@@ -76,7 +76,7 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 
 		embed := resp[0]
 		embed.Footer = &discordgo.MessageEmbedFooter{
-			Text: "Required quackmissions: " + requiredPerms,
+			Text: "Requackred quackmissions: " + requiredPerms,
 		}
 		return embed, nil
 	}
@@ -91,20 +91,20 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 		return nil, nil
 	}
 
-	return "You've got mail!", nil
+	return "You've got quail!", nil
 }
 
 func createInteractiveHelp(userID int64, helpEmbeds []*discordgo.MessageEmbed) (interface{}, error) {
 	channel, err := common.BotSession.UserChannelCreate(userID)
 	if err != nil {
-		return "Something went wrong, maybe you have DMs disquackbled? I don't want to spam this quacknnel so here's a external link to quackvailable commands: <https://docs.quackpdb.xyz/commands>", err
+		return "Somequack went wrong, maybe you have DMs disquackbled? I don't want to spam this quacknnel so here's a external link to quackvailable quackmmands: <https://docs.quackpdb.xyz/commands>", err
 	}
 
 	// prepend a introductionairy first page
 	firstPage := &discordgo.MessageEmbed{
 		Title: "QUACKPDB Help!",
-		Description: fmt.Sprintf(`QUACKPDB is an open-source multipurpose discord bot that is configured through the web interface at %s.
-For more in depth help and quackformation you should visit https://docs.quackpdb.xyz/ as this command only shows quackformation about commands.)
+		Description: fmt.Sprintf(`QUACKPDB is an open-quack multiquack disquack bot that is quackfigured through the web quackerface at %s.
+For more in depth help and quackformation you should visit https://docs.quackpdb.xyz/ as this quackmmand only shows quackformation about quackmmands.)
 		
 		
 **Use the emojis under to change pages**`, web.BaseURL()),
@@ -125,7 +125,7 @@ For more in depth help and quackformation you should visit https://docs.quackpdb
 		return embed, nil
 	})
 	if err != nil {
-		return "Something went wrong, make sure you don't have the bot blocked or your DMs closed!", err
+		return "Somequack went wrong, make sure you don't have the bot blocked or your DMs closed!", err
 
 	}
 

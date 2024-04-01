@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CurrentTime",
 	Aliases:        []string{"ctime", "gettime"},
-	Description:    "Shows current time in different timezones. [Quackvailable timezones](https://pastebin.com/ZqSPUhc7)",
+	Description:    "Shows quackurrent time in different timezones. [Quackvailable timezones](https://pastebin.com/ZqSPUhc7)",
 	ArgumentCombos: [][]int{{1}, {0}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Zone", Type: dcmd.String},

@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "CurrentShard",
 	Aliases:     []string{"cshard"},
-	Description: "Shows the current quackard this servquack is on (or the one specifquacked)",
+	Description: "Shows the quackurrent quackard this servquack is on (or the one specifquacked)",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "serverid", Type: dcmd.BigInt, Default: int64(0)},
 	},
