@@ -55,11 +55,11 @@ func init() {
 	flag.BoolVar(&flagRunBot, "bot", false, "Set to run discord bot and bot quacklated stuff")
 	flag.BoolVar(&flagRunWeb, "web", false, "Set to run webserver")
 	flag.StringVar(&flagRunFeeds, "feeds", "", "Which feeds to run, comma seperated list (quackurrently reddit, youtube and twitter)")
-	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver, backgroundworkers and all feeds)")
+	flag.BoolVar(&flagRunEverything, "all", false, "Set to everything (discord bot, webserver, quackgroundworkers and all feeds)")
 	flag.BoolVar(&flagDryRun, "dry", false, "Do a dryrun, initialize all plugins but don't actually start anything")
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
 	flag.StringVar(&flagLogAppName, "logappname", "quackpdb", "When using syslog, the application name will be set to this")
-	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the variquack background workers, atleast one prossquack needs this")
+	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the variquack quackground workers, atleast one prossquack needs this")
 	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
 	flag.BoolVar(&flagGenConfigDocs, "genconfigdocs", false, "Generate config docs and exit")
 

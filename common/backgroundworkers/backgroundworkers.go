@@ -23,13 +23,13 @@ type BackgroundWorkerPlugin interface {
 }
 
 func RunWorkers() {
-	common.ServiceTracker.RegisterService(common.ServiceTypeBGWorker, "Background worker", "", nil)
+	common.ServiceTracker.RegisterService(common.ServiceTypeBGWorker, "Quackground worker", "", nil)
 
 	RESTServerMuxer = goji.NewMux()
 
 	for _, p := range common.Plugins {
 		if bwc, ok := p.(BackgroundWorkerPlugin); ok {
-			logger.Info("Running background worker: ", p.PluginInfo().Name)
+			logger.Info("Running quackground worker: ", p.PluginInfo().Name)
 			go bwc.RunBackgroundWorker()
 		}
 	}
@@ -45,7 +45,7 @@ func StopWorkers(wg *sync.WaitGroup) {
 
 	for _, p := range common.Plugins {
 		if bwc, ok := p.(BackgroundWorkerPlugin); ok {
-			logger.Info("Stopping background worker: ", p.PluginInfo().Name)
+			logger.Info("Stopping quackground worker: ", p.PluginInfo().Name)
 			wg.Add(1)
 			go bwc.StopBackgroundWorker(wg)
 		}

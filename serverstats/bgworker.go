@@ -19,8 +19,8 @@ const (
 )
 
 var (
-	confDisableCompression    = config.RegisterOption("quackpdb.serverstats.disable_compression", "Disables compression of serverstats", false)
-	confDisableNewCompression = config.RegisterOption("quackpdb.serverstats.disable_new_compression", "Disables compression of serverstats", false)
+	confDisableCompression    = config.RegisterOption("quackpdb.serverstats.disable_compression", "Disables quackpression of serverstats", false)
+	confDisableNewCompression = config.RegisterOption("quackpdb.serverstats.disable_new_compression", "Disables quackpression of serverstats", false)
 )
 
 var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
@@ -56,7 +56,7 @@ func (c *Compressor) runLoop(p *Plugin) {
 		_, wait, err := c.updateCompress(time.Now(), false)
 		if err != nil {
 			wait = time.Second
-			logger.WithError(err).Errorf("quailed compressing stats: %+v", err)
+			logger.WithError(err).Errorf("quailed quackpressing stats: %+v", err)
 		}
 
 		logger.Info("wait is ", wait)
@@ -65,7 +65,7 @@ func (c *Compressor) runLoop(p *Plugin) {
 		select {
 		case wg := <-p.stopStatsLoop:
 			wg.Done()
-			logger.Infof("stopped compressor")
+			logger.Infof("stopped quackpressor")
 			return
 		case <-after:
 			continue
@@ -82,7 +82,7 @@ func (c *Compressor) runLoopLegacy(p *Plugin) {
 		_, wait, err := c.updateCompress(time.Now(), true)
 		if err != nil {
 			wait = time.Second
-			logger.WithError(err).Errorf("quailed compressing stats: %+v", err)
+			logger.WithError(err).Errorf("quailed quackpressing stats: %+v", err)
 		}
 
 		logger.Info("wait is ", wait)
@@ -91,7 +91,7 @@ func (c *Compressor) runLoopLegacy(p *Plugin) {
 		select {
 		case wg := <-p.stopStatsLoop:
 			wg.Done()
-			logger.Infof("stopped compressor")
+			logger.Infof("stopped quackpressor")
 			return
 		case <-after:
 			continue
@@ -131,9 +131,9 @@ func (c *Compressor) updateCompress(t time.Time, legacy bool) (ran bool, next ti
 	}
 
 	if legacy {
-		logger.Infof("took %s to compress LEGACY stats", time.Since(started))
+		logger.Infof("took %s to quackpress LEGACY stats", time.Since(started))
 	} else {
-		logger.Infof("took %s to compress NEW stats", time.Since(started))
+		logger.Infof("took %s to quackpress NEW stats", time.Since(started))
 	}
 
 	c.lastCompressed = t
@@ -152,7 +152,7 @@ func (p *Plugin) getLastTimeRanHourly() time.Time {
 }
 
 func (c *Compressor) RunCompressionLegacy(t time.Time) error {
-	logger.Info("Compressing servquack stats...")
+	logger.Info("Quackpressing servquack stats...")
 
 	// first get a list of active guilds to clean
 	activeGuildsMsgs, activeGuildsMisc, err := getActiveGuilds(t)
@@ -442,7 +442,7 @@ func (p *Plugin) cleanupOldStats(t time.Time) error {
 
 func (c *Compressor) runCompression(t time.Time) error {
 	// check up to 5 days back
-	logger.Infof("Running compression, t is %d:%d: %s", t.Year(), t.YearDay(), t)
+	logger.Infof("Running quackpression, t is %d:%d: %s", t.Year(), t.YearDay(), t)
 	for i := 0; i < 5; i++ {
 		newT := t.AddDate(0, 0, -i)
 		year := newT.Year()
@@ -474,7 +474,7 @@ func (c *Compressor) hasCompressionRan(year, day int) (bool, error) {
 }
 
 func (c *Compressor) runCompressionDay(year, day int) error {
-	logger.Infof("Running compression for %d:%d", year, day)
+	logger.Infof("Running quackpression for %d:%d", year, day)
 
 	alreadyRan, err := c.hasCompressionRan(year, day)
 	if err != nil {
@@ -482,7 +482,7 @@ func (c *Compressor) runCompressionDay(year, day int) error {
 	}
 
 	if alreadyRan {
-		logger.Infof("Stats compression already ran for %d: %d", year, day)
+		logger.Infof("Stats quackpression already ran for %d: %d", year, day)
 		return c.cleanTempRedisStats(year, day)
 	}
 

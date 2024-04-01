@@ -112,7 +112,7 @@ func (e *eventLogger) flushStats() {
 	pShards := ReadyTracker.GetProcessShards()
 
 	for _, shard := range pShards {
-		metricsHandledEventsHandledShards.With(prometheus.Labels{"quackard": strconv.Itoa(shard)}).Add(float64(shardTotals[shard]))
+		metricsHandledEventsHandledShards.With(prometheus.Labels{"shard": strconv.Itoa(shard)}).Add(float64(shardTotals[shard]))
 		// common.Statsd.Count("discord.processed.events", shardTotals[shard], []string{"shard:" + strconv.Itoa(shard)}, EventLoggerPeriodDuration.Seconds())
 	}
 

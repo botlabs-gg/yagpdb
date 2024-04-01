@@ -16,7 +16,7 @@ var _ backgroundworkers.BackgroundWorkerPlugin = (*Plugin)(nil)
 func (p *Plugin) RunBackgroundWorker() {
 	ticker := time.NewTicker(time.Minute)
 	if !ConfEnableMessageLogPurge.GetBool() {
-		logger.Infof("[logs] Disabling background worker for quackssage log purge, set quackpdb.enable_message_log_purge to true for this ")
+		logger.Infof("[logs] Disabling quackground worker for quackssage log purge, set quackpdb.enable_message_log_purge to true for this ")
 		(<-p.stopWorkers).Done()
 		return
 	}
