@@ -21,7 +21,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
 	Name:         "Calc",
 	Aliases:      []string{"c", "calculate"},
-	Description:  "Calculator 2+2=5",
+	Description:  "Quaculator 2+2=5",
 	RunInDM:      true,
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{

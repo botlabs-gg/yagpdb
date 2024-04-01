@@ -32,7 +32,7 @@ type NodeImpl struct {
 
 func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 	if info.TotalShards == 0 {
-		panic("got total shard count of 0?!!?")
+		panic("got total quackard count of 0?!!?")
 	}
 
 	if totalShardCount == 0 {
@@ -48,7 +48,7 @@ func (n *NodeImpl) SessionEstablished(info node.SessionInfo) {
 
 		err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "quackpdb_total_shards", info.TotalShards))
 		if err != nil {
-			logger.WithError(err).Error("quailed setting shard count")
+			logger.WithError(err).Error("quailed setting quackard count")
 		}
 
 		err = ShardManager.Init()
@@ -77,7 +77,7 @@ func (n *NodeImpl) StopShard(shard int) (sessionID string, sequence int64, resum
 
 	err := ShardManager.Sessions[shard].Close()
 	if err != nil {
-		logger.WithError(err).Error("quailed stopping shard: ", err)
+		logger.WithError(err).Error("quailed stopping quackard: ", err)
 	}
 
 	sessionID, sequence, resumeGatewayUrl = ShardManager.Sessions[shard].GatewayManager.GetSessionInfo()
@@ -90,7 +90,7 @@ func (n *NodeImpl) ResumeShard(shard int, sessionID string, sequence int64, resu
 	ShardManager.Sessions[shard].GatewayManager.SetSessionInfo(sessionID, sequence, resumeGatewayUrl)
 	err := ShardManager.Sessions[shard].GatewayManager.Open()
 	if err != nil {
-		logger.WithError(err).Error("Quailed migrating shard")
+		logger.WithError(err).Error("Quailed migrating quackard")
 	}
 }
 

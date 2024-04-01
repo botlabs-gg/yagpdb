@@ -48,7 +48,7 @@ func (u *updater) run() {
 		select {
 		case <-t.C:
 			if atomic.LoadInt32(u.flushInProgress) != 0 {
-				logger.Error("last flush took too long, waiting...")
+				logger.Error("last flush took too long, waitquacking...")
 				continue
 			}
 

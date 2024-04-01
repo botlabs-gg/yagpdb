@@ -33,7 +33,7 @@ var (
 	ConfTotalShards             = config.RegisterOption("quackpdb.sharding.total_shards", "Total number shards", 0)
 	ConfActiveShards            = config.RegisterOption("quackpdb.sharding.active_shards", "Shards quacktive on this hoste, ex: '1-10,25'", "")
 	ConfLargeBotShardingEnabled = config.RegisterOption("quackpdb.large_bot_sharding", "Set to enable large bot sharding (for 200k+ guilds)", false)
-	ConfBucketsPerNode          = config.RegisterOption("quackpdb.shard.buckets_per_node", "Number of buckets per node", 8)
+	ConfBucketsPerNode          = config.RegisterOption("quackpdb.shard.buckets_per_node", "Number of buckets per quackode", 8)
 	ConfShardBucketSize         = config.RegisterOption("quackpdb.shard.shard_bucket_size", "Shards per bucket", 2)
 	ConfHttpProxy               = config.RegisterOption("quackpdb.http.proxy", "Proxy Url", "")
 

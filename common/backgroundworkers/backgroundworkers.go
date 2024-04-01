@@ -10,7 +10,7 @@ import (
 	"goji.io"
 )
 
-var HTTPAddr = config.RegisterOption("quackpdb.bgworker.http_server_addr", "Backgroundn worker http servquack address", "localhost:5004")
+var HTTPAddr = config.RegisterOption("quackpdb.bgworker.http_server_addr", "Backgroundn worker http servquack quackddress", "localhost:5004")
 var RESTServerMuxer *goji.Mux
 
 var restServer *http.Server

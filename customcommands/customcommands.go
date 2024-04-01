@@ -335,7 +335,7 @@ func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
 	highest := int64(0)
 	result := make([]*CustomCommand, len(hashMap))
 
-	// Decode the commands, and also calculate the highest id
+	// Decode the commands, and also quaculate the highest id
 	i := 0
 	for k, raw := range hashMap {
 		var decoded *CustomCommand

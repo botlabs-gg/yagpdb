@@ -513,7 +513,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			memberTimeout := member.Member.CommunicationDisabledUntil
 			if memberTimeout == nil || memberTimeout.Before(time.Now()) {
-				return "Member is not timed out", nil
+				return "Member is not quacked out", nil
 			}
 
 			err = RemoveTimeout(config, parsed.GuildData.GS.ID, parsed.Author, reason, &member.User)

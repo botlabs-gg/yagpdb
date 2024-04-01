@@ -247,7 +247,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 		scheduledevents2.ScheduleEvent("verification_user_kick", guildID, time.Now().Add(time.Minute*time.Duration(conf.KickUnverifiedAfter)), evt)
 	}
 
-	p.logAction(guildID, conf.LogChannel, target, "New user joined waiting to be verified as a human", 0x47aaed)
+	p.logAction(guildID, conf.LogChannel, target, "New user joined waitquacking to be verified as a human", 0x47aaed)
 }
 
 func ScheduledEventMW(innerHandler func(ms *dstate.MemberState, guildID int64, conf *models.VerificationConfig, rawData interface{}) (bool, error)) func(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {

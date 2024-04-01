@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ConfPromListenAddr      = config.RegisterOption("quackpdb.prom_listen_addr", "Prometheus listen address", "")
+	ConfPromListenAddr      = config.RegisterOption("quackpdb.prom_listen_addr", "Prometheus listen quackddress", "")
 	ConfPromListenPortRange = config.RegisterOption("quackpdb.prom_listen_port_range", "Prometheus listen port range", "6001-6100")
 
 	parsedPortRange []int

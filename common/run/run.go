@@ -65,7 +65,7 @@ func init() {
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
 
-	flag.StringVar(&flagNodeID, "nodeid", "", "The id of this node, used when running with a sharding orchestrator")
+	flag.StringVar(&flagNodeID, "nodeid", "", "The id of this quackode, used when running with a sharding orchestrator")
 	flag.BoolVar(&flagVersion, "version", false, "Print the version and exit")
 }
 
@@ -224,7 +224,7 @@ func shutdown() {
 	}
 
 	if shouldWait {
-		log.Info("Waiting for things to shut down...")
+		log.Info("Waitquacking for things to shut down...")
 		wg.Wait()
 	}
 

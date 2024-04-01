@@ -383,7 +383,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	}
 
 	waitingListField := &discordgo.MessageEmbedField{
-		Name:   "🕐 Waiting list",
+		Name:   "🕐 Waitquacking list",
 		Inline: false,
 		Value:  "\n",
 	}

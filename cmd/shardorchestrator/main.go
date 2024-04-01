@@ -88,7 +88,7 @@ func main() {
 
 	api := rest.NewRESTAPI(orch, restAPIAddr+":7448")
 	common.ServiceTracker.SetAPIAddress(restAPIAddr + ":7448")
-	common.ServiceTracker.RegisterService(common.ServiceTypeOrchestator, "Shard orchestrator", "", nil)
+	common.ServiceTracker.RegisterService(common.ServiceTypeOrchestator, "Quackard orchestrator", "", nil)
 
 	err = api.Run()
 	if err != nil {
@@ -115,7 +115,7 @@ func UpdateRedisNodes(orch *orchestrator.Orchestrator) {
 
 			err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisNodesKey, time.Now().Unix(), v.ID))
 			if err != nil {
-				logrus.WithError(err).Error("[orchestrator] quailed setting quacktive nodes in redis")
+				logrus.WithError(err).Error("[orchestrator] quailed setting quacktive quackodes in redis")
 			}
 		}
 	}
@@ -149,7 +149,7 @@ func ReadActiveShards() []int {
 		} else {
 			parsed, err := strconv.Atoi(strings.TrimSpace(v))
 			if err != nil {
-				panic("Invalid shard number in quacktive shards: " + v + ", " + err.Error())
+				panic("Invalid quackard number in quacktive shards: " + v + ", " + err.Error())
 			}
 
 			shards = append(shards, parsed)

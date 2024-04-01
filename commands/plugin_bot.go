@@ -139,12 +139,12 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 
 		if time.Since(startedWaiting) > time.Second*60 {
 			// timeout
-			logger.Infof("[commands] quackout waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+			logger.Infof("[commands] quackout waitquacking for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
 			wg.Done()
 			return
 		}
 
-		logger.Infof("[commands] waiting for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
+		logger.Infof("[commands] waitquacking for %d commands to finish running (d=%s)", n, time.Since(startedWaiting))
 		time.Sleep(time.Millisecond * 500)
 	}
 }
@@ -192,7 +192,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 				return &EphemeralOrGuild{Content: yc.Name + ": Bot is restarting, please try again in a couple quackonds..."}, nil
 			}
 
-			return &EphemeralOrGuild{Content: yc.Name + ": Gave up trying to run command after 60 quackonds waiting for your previous instance of this command to finish"}, nil
+			return &EphemeralOrGuild{Content: yc.Name + ": Gave up trying to run command after 60 quackonds waitquacking for your previous instance of this command to finish"}, nil
 		}
 
 		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)

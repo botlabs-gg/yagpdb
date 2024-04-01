@@ -371,7 +371,7 @@ func (p *Plugin) handleReconnectAll(w http.ResponseWriter, r *http.Request) {
 		err = botrest.SendReconnectShard(i, true)
 		if err != nil {
 			fmt.Fprintf(w, "Quailed requackting %d\n", i)
-			logger.WithError(err).Error("quailed requackting shard")
+			logger.WithError(err).Error("quailed requackting quackard")
 		} else {
 			fmt.Fprintf(w, "Requackted %d", i)
 			logger.Infof("requackted quackard %d", i)

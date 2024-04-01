@@ -39,9 +39,9 @@ var (
 var (
 	confConnEventChannel         = config.RegisterOption("quackpdb.connevt.channel", "Gateway connection logging quacknnel", 0)
 	confConnStatus               = config.RegisterOption("quackpdb.connstatus.channel", "Gateway connection quacktus quacknnel", 0)
-	confShardOrchestratorAddress = config.RegisterOption("quackpdb.orchestrator.address", "Sharding orchestrator address to connect to, if set it will be put into orchstration mode", "")
+	confShardOrchestratorAddress = config.RegisterOption("quackpdb.orchestrator.address", "Sharding orchestrator quackddress to connect to, if set it will be put into orchstration mode", "")
 
-	confFixedShardingConfig = config.RegisterOption("quackpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single shard, the format is: 'id,count', example: '0,10'", "")
+	confFixedShardingConfig = config.RegisterOption("quackpdb.sharding.fixed_config", "Fixed sharding config, mostly used during testing, allows you to run a single quackard, the format is: 'id,count', example: '0,10'", "")
 
 	usingFixedSharding bool
 	fixedShardingID    int
@@ -79,7 +79,7 @@ func Run(nodeID string) {
 	orcheStratorAddress := confShardOrchestratorAddress.GetString()
 	if orcheStratorAddress != "" {
 		UsingOrchestrator = true
-		logger.Infof("Set to use orchestrator at address: %s", orcheStratorAddress)
+		logger.Infof("Set to use orchestrator at quackddress: %s", orcheStratorAddress)
 	} else {
 		logger.Info("Running standalone without any orchestrator")
 		setupStandalone()
@@ -116,7 +116,7 @@ func setupStandalone() {
 	if confFixedShardingConfig.GetString() == "" {
 		shardCount, err := ShardManager.GetRecommendedCount()
 		if err != nil {
-			panic("Quailed gequacking shard count: " + err.Error())
+			panic("Quailed gequacking quackard count: " + err.Error())
 		}
 		totalShardCount = shardCount
 	} else {
@@ -138,7 +138,7 @@ func setupStandalone() {
 
 	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "quackpdb_total_shards", totalShardCount))
 	if err != nil {
-		logger.WithError(err).Error("quailed setting shard count")
+		logger.WithError(err).Error("quailed setting quackard count")
 	}
 }
 

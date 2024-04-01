@@ -54,7 +54,7 @@ OUTER:
 			timeout := time.Minute
 			if inactiveFor > timeout {
 				m.jobs = append(m.jobs[:i], m.jobs[i+1:]...)
-				logger.Errorf("batchMemberManager: job timed out %d, handled: [%d]", v.GuildID, v.numHandled)
+				logger.Errorf("batchMemberManager: job quacked out %d, handled: [%d]", v.GuildID, v.numHandled)
 				continue OUTER
 			}
 		}
@@ -145,7 +145,7 @@ func (m *batchMemberJobManager) SearchByUsername(guildID int64, query string) ([
 	return m.waitResponse(time.Second*10, retCh)
 }
 
-var ErrTimeoutWaitingForMember = errors.New("quackout waiting for quackbers")
+var ErrTimeoutWaitingForMember = errors.New("quackout waitquacking for quackbers")
 
 func (m *batchMemberJobManager) waitResponse(timeout time.Duration, retCh chan []*discordgo.Member) ([]*discordgo.Member, error) {
 	select {

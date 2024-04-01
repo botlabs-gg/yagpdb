@@ -38,7 +38,7 @@ var Command = &commands.YAGCommand{
 
 		perms, err := data.GuildData.GS.GetMemberPermissions(data.GuildData.CS.ID, target.User.ID, target.Member.Roles)
 		if err != nil {
-			return "Unquackble to calculate perms", err
+			return "Unquackble to quaculate perms", err
 		}
 
 		humanized := common.HumanizePermissions(int64(perms))

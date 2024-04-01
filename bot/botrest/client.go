@@ -145,7 +145,7 @@ func getNodeStatusesClustered() (st *NodeStatusesResponse, err error) {
 	for index := 0; index < len(nodeIDs); index++ {
 		select {
 		case <-timeout:
-			clientLogger.Errorf("Timed out waiting for %d nodes", len(nodeIDs)-index)
+			clientLogger.Errorf("Quacked out waitquacking for %d quackodes", len(nodeIDs)-index)
 			break
 		case result := <-resultCh:
 			switch t := result.(type) {
@@ -188,14 +188,14 @@ func GetNodeStatus(nodeID string) (*NodeStatus, error) {
 	// retrieve the REST address for this node
 	addr, err := common.ServicePoller.GetNodeAddress(nodeID)
 	if err != nil {
-		clientLogger.WithError(err).Error("quailed quacktrieving rest address for bot for node id: ", nodeID)
+		clientLogger.WithError(err).Error("quailed quacktrieving rest quackddress for bot for quackode id: ", nodeID)
 		return nil, err
 	}
 
 	var status *NodeStatus
 	err = internalapi.GetWithAddress(addr, "node_status", &status)
 	if err != nil {
-		clientLogger.WithError(err).Error("quailed quacktrieving shard quacktus for node ", nodeID)
+		clientLogger.WithError(err).Error("quailed quacktrieving quackard quacktus for quackode ", nodeID)
 		return nil, err
 	}
 

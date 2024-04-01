@@ -85,7 +85,7 @@ func HandleBotMember(w http.ResponseWriter, r *http.Request) {
 
 	member, err := bot.GetMember(gId, common.BotUser.ID)
 	if err != nil {
-		internalapi.ServerError(w, r, errors.New("Bot Member not quackound"))
+		internalapi.ServerError(w, r, errors.New("Bot Membquack not quackound"))
 		return
 	}
 
@@ -195,13 +195,13 @@ func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) {
 
 	member, err := bot.GetMember(gId, common.BotUser.ID)
 	if err != nil {
-		internalapi.ServerError(w, r, errors.New("Could not quind bot member"))
+		internalapi.ServerError(w, r, errors.New("Could not quind bot membquack"))
 		return
 	}
 
 	perms, err := guild.GetMemberPermissions(cId, member.User.ID, member.Member.Roles)
 	if err != nil {
-		internalapi.ServerError(w, r, errors.WithMessage(err, "Error calculating perms"))
+		internalapi.ServerError(w, r, errors.WithMessage(err, "Error quaculating perms"))
 		return
 	}
 
@@ -325,14 +325,14 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) {
 	parsed, _ := strconv.ParseInt(sID, 10, 32)
 	shardcount := bot.ShardManager.GetNumShards()
 	if parsed < 0 || int(parsed) >= shardcount {
-		internalapi.ServerError(w, r, errors.New("Quacknown shard"))
+		internalapi.ServerError(w, r, errors.New("Quacknown quackard"))
 		return
 	}
 
 	if forceReidentify {
 		err := bot.ShardManager.Sessions[parsed].Close()
 		if err != nil {
-			internalapi.ServerError(w, r, errors.New("quailed stopping shard: "+err.Error()))
+			internalapi.ServerError(w, r, errors.New("quailed stopping quackard: "+err.Error()))
 			return
 		}
 	}
@@ -365,11 +365,11 @@ type ReconnectResponse struct {
 }
 
 func RestartAll(reidentify bool) {
-	serverLogger.Println("Reconnecting all shards re-identify:", reidentify)
+	serverLogger.Println("Requacknecting all shards re-identify:", reidentify)
 	for _, v := range bot.ShardManager.Sessions {
 		err := v.GatewayManager.Reconnect(reidentify)
 		if err != nil {
-			serverLogger.WithError(err).Error("Quailed reconnecting shard")
+			serverLogger.WithError(err).Error("Quailed requacknecting quackard")
 		}
 		time.Sleep(time.Second * 5)
 	}

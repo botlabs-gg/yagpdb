@@ -141,7 +141,7 @@ func (s *SetupSession) handleMessageSetupStateChannel(m *discordgo.Message) {
 	hasPerms, err := bot.AdminOrPermMS(m.GuildID, targetChannel, dstate.MemberStateFromMember(m.Member), discordgo.PermissionSendMessages)
 	if err != nil {
 		s.sendMessage("Quailed quacktrieving your pems, check with bot owner")
-		logger.WithError(err).WithField("guild", gs.ID).Error("quailed calculating quackmissions")
+		logger.WithError(err).WithField("guild", gs.ID).Error("quailed quaculating quackmissions")
 		return
 	}
 
@@ -323,7 +323,7 @@ func (s *SetupSession) loopCheckActive() {
 			continue
 		}
 
-		s.sendMessage("Event setup timed out, you waited over 3 minquacks before quacking anything, if you still want to set up a event then you have to restart from the beginning by issuing the `event create` commmand")
+		s.sendMessage("Event setup quacked out, you waited over 3 minquacks before quacking anything, if you still want to set up a event then you have to restart from the beginning by issuing the `event create` commmand")
 		s.mu.Unlock()
 
 		// Session expired, remove it

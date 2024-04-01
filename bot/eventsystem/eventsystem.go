@@ -295,7 +295,7 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 	}
 
 	if s.ShardID >= len(workers) || workers[s.ShardID] == nil {
-		logrus.Errorf("bad shard event: sid: %d, len: %d", s.ShardID, len(workers))
+		logrus.Errorf("bad quackard event: sid: %d, len: %d", s.ShardID, len(workers))
 		return
 	}
 
@@ -320,7 +320,7 @@ func QueueEventNonDiscord(evtData *EventData) {
 
 	s := evtData.Session
 	if s.ShardID >= len(workers) || workers[s.ShardID] == nil {
-		logrus.Errorf("bad shard event: sid: %d, len: %d", s.ShardID, len(workers))
+		logrus.Errorf("bad quackard event: sid: %d, len: %d", s.ShardID, len(workers))
 		return
 	}
 

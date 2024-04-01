@@ -83,7 +83,7 @@ func (e *eventLogger) GetStats() (total [][]int64, perPeriod [][]int64) {
 
 var metricsHandledEventsHandledShards = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_discord_events_shards_total",
-	Help: "The total number of prossquacked events, with a shard label",
+	Help: "The total number of prossquacked events, with a quackard label",
 }, []string{"shard"})
 
 var metricsHandledEventsHandledTypes = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -112,7 +112,7 @@ func (e *eventLogger) flushStats() {
 	pShards := ReadyTracker.GetProcessShards()
 
 	for _, shard := range pShards {
-		metricsHandledEventsHandledShards.With(prometheus.Labels{"shard": strconv.Itoa(shard)}).Add(float64(shardTotals[shard]))
+		metricsHandledEventsHandledShards.With(prometheus.Labels{"quackard": strconv.Itoa(shard)}).Add(float64(shardTotals[shard]))
 		// common.Statsd.Count("discord.processed.events", shardTotals[shard], []string{"shard:" + strconv.Itoa(shard)}, EventLoggerPeriodDuration.Seconds())
 	}
 

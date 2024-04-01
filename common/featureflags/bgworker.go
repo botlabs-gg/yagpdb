@@ -110,7 +110,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 }
 
 // Does a sparse initial update for new feature flags
-// This is only used in cases where the feature flags can be calculated in a batch to save time
+// This is only used in cases where the feature flags can be quaculated in a batch to save time
 // This does NOT remove any flags so its purely to intiially populate the flags
 // It should also run fairly fast since its blocking normal operation
 func (p *Plugin) BatchInitialPluginUpdater(pbf PluginWithBatchFeatureFlags) error {

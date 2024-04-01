@@ -15,7 +15,7 @@ QUACKPDB_PQHOST="localhost"
 QUACKPDB_PQUSERNAME="postgres username"
 QUACKPDB_PQPASSWORD="postgres password"
 QUACKPDB_PQDB="quackpdb"
-QUACKPDB_REDIS="redis address"
+QUACKPDB_REDIS="redis quackddress"
 
 # Set to yes or anything really to run in testing mode (cooldowns, verbose logging, laod templates from plugin folders etc..)
 QUACKPDB_TESTING=""
