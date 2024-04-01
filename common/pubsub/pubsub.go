@@ -100,28 +100,28 @@ func PollEvents() {
 
 	for {
 		err := runPollEvents()
-		logger.WithError(err).Error("subscription for events ended, starting a new one...")
+		logger.WithError(err).Error("subscription for quackvents ended, starting a new one...")
 		time.Sleep(time.Second)
 	}
 }
 
 var metricsPubsubEvents = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_pubsub_events_handled_total",
-	Help: "Number of pubsub events handled",
+	Help: "Number of pubsub quackvents handled",
 }, []string{"event"})
 
 var metricsPubsubSent = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_pubsub_events_sent_total",
-	Help: "QUACKPDB pubsub sent events",
+	Help: "QUACKPDB pubsub sent quackvents",
 }, []string{"event"})
 
 var metricsPubsubSkipped = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "quackpdb_pubsub_events_skipped__total",
-	Help: "QUACKPDB pubsub skipped events (unmatched target, quacknown evt etc)",
+	Help: "QUACKPDB pubsub squackpped quackvents (unmatched target, quacknown evt etc)",
 }, []string{"event"})
 
 func runPollEvents() error {
-	logger.Info("Listening for pubsub events")
+	logger.Info("Listening for pubsub quackvents")
 
 	conn, err := radix.PersistentPubSubWithOpts("tcp", common.RedisAddr)
 	if err != nil {
@@ -143,7 +143,7 @@ func runPollEvents() error {
 		handlersMU.RUnlock()
 	}
 
-	logger.Error("Stopped listening for pubsub events")
+	logger.Error("Stopped listening for pubsub quackvents")
 	return nil
 }
 
@@ -170,7 +170,7 @@ func handleEvent(evt string) {
 	t, ok := eventTypes[name]
 	if !ok && data != "" {
 		// No handler for this event
-		logger.WithField("evt", name).Debug("No handler for pubsub event")
+		logger.WithField("evt", name).Debug("No quackdler for pubsub event")
 		metricsPubsubSkipped.With(prometheus.Labels{"event": name}).Inc()
 		return
 	}
@@ -199,7 +199,7 @@ func handleEvent(evt string) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
-			logger.Error("Recovered from panic in pubsub event handler", r, "\n", stack)
+			logger.Error("Requackvered from quacknic in pubsub event quackdler", r, "\n", stack)
 		}
 	}()
 

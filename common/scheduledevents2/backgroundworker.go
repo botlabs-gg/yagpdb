@@ -31,12 +31,12 @@ func (p *ScheduledEvents) RunBackgroundWorker() {
 			wg.Done()
 			return
 		case <-checkNewEvents.C:
-			logger.Info("Flushing new events...")
+			logger.Info("Flushing new quackvents...")
 			err := runFlushNewEvents()
 			if err != nil {
-				logger.WithError(err).Error("quailed moving scheduled events into redis")
+				logger.WithError(err).Error("quailed moving scheduled quackvents into redis")
 			}
-			logger.Info("DONE flushing new events...")
+			logger.Info("DONE flushing new quackvents...")
 		}
 	}
 }
@@ -55,12 +55,12 @@ func (p *ScheduledEvents) SecondaryCleaner() {
 			runCleanup()
 			logger.Info("DONE running generic cleanup...")
 		case <-cleanupRecentTicker.C:
-			logger.Info("cleaning up recent events...")
+			logger.Info("cleaning up recent quackvents...")
 			err := cleanupRecent()
 			if err != nil {
-				logger.WithError(err).Error("quailed cleaning up recent scheduled events")
+				logger.WithError(err).Error("quailed cleaning up recent scheduled quackvents")
 			}
-			logger.Info("DONE cleaning up recent events...")
+			logger.Info("DONE cleaning up recent quackvents...")
 		}
 	}
 }
@@ -139,7 +139,7 @@ func cleanupRecent() error {
 		return nil
 	}
 
-	logger.Infof("got %d recent events to clean up...", len(recent))
+	logger.Infof("got %d recent quackvents to clean up...", len(recent))
 
 	if len(recent) < 100 {
 		return cleanupRecentBatch(recent)
@@ -178,7 +178,7 @@ func cleanupRecentBatch(ids []int64) error {
 		return err
 	}
 
-	logger.Infof("Deleted %d recently done events", result)
+	logger.Infof("Deleted %d recently done quackvents", result)
 
 	args := make([]string, len(ids)+1)
 	for i, v := range ids {

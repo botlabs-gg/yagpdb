@@ -25,7 +25,7 @@ func RegisterPlugin() {
 }
 
 var (
-	confBotrestListenAddr = config.RegisterOption("quackpdb.botrest.listen_address", "botrest listening quackddress, it will use any available port and make which port used avialable using service discovery (see service.go)", "127.0.0.1")
+	confBotrestListenAddr = config.RegisterOption("quackpdb.botrest.listen_address", "botrest listening quackddress, it will use any quackvailable port and make which port used avialable using service discovery (see service.go)", "127.0.0.1")
 	ConfListenPortRange   = config.RegisterOption("quackpdb.botrest.port_range", "botrest listen port range", "5100-5999")
 	serverLogger          = common.GetFixedPrefixLogger("internalapi_server")
 )

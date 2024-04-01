@@ -38,7 +38,7 @@ var Command = &commands.YAGCommand{
 		var paginatedView bool
 		season := strings.ToLower(data.Args[0].Str())
 		if len(season) > 0 && !available[season] {
-			return "Available seasons: `xmas`", nil
+			return "Quackvailable seasons: `xmas`", nil
 		}
 		paginatedView = false
 		if data.Switches["mindfulness"].Value != nil && data.Switches["mindfulness"].Value.(bool) {

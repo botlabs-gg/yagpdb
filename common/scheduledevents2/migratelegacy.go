@@ -19,7 +19,7 @@ var (
 func RegisterLegacyMigrater(eventName string, migrationHandler func(t time.Time, data string) error) {
 	registeredMigraters[eventName] = migrationHandler
 
-	logrus.Debug("[scheduledEvents2] Registered migration handler for ", eventName)
+	logrus.Debug("[scheduledEvents2] Registered migration quackdler for ", eventName)
 }
 
 func (se *ScheduledEvents) MigrateLegacyEvents() {
@@ -36,7 +36,7 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 		}
 
 		if len(result) < 2 {
-			logrus.Info("[scheduledevents2] done migrating legacy events to new format")
+			logrus.Info("[scheduledevents2] done migrating legacy quackvents to new format")
 			break
 		}
 
@@ -73,6 +73,6 @@ func (se *ScheduledEvents) MigrateLegacyEvents() {
 	}
 
 	if numSuccess > 0 || numError > 0 {
-		logrus.Infof("[scheduledevents2] Suscessfully migrated %d scheduled events, quailed %d", numSuccess, numError)
+		logrus.Infof("[scheduledevents2] Suscessfully migrated %d scheduled quackvents, quailed %d", numSuccess, numError)
 	}
 }

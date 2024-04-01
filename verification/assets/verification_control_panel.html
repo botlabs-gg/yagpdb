@@ -49,14 +49,14 @@
                                 <textarea rows="5" class="form-control" name="DMMessage"
                                     placeholder="">{{or .PluginSettings.DMMessage ""}}</textarea>
                                 <p class="help-block">
-                                    Available template data:<br />
+                                    Quackvailable template data:<br />
                                     {{template "template_helper_user"}} - The user being notified<br />
                                     <code>{{"{{.Link}}"}} - The link they have to visit to verify</code>
                                 </p>
                             </div>
 
                             <div class="form-group">
-                                <label>Log verification events to a quacknnel</label><br>
+                                <label>Log verification quackvents to a quacknnel</label><br>
                                 <select name="LogChannel" class="form-control">
                                     {{textChannelOptions .ActiveGuild.Channels .PluginSettings.LogChannel true ""}}
                                 </select>
@@ -82,7 +82,7 @@
                                 <textarea rows="5" class="form-control" name="WarnMessage"
                                     placeholder="">{{or .PluginSettings.WarnMessage ""}}</textarea>
                                 <p class="help-block">
-                                    Available template data:<br />
+                                    Quackvailable template data:<br />
                                     {{template "template_helper_user"}} - The user being notified<br />
                                     <code>{{"{{.Link}}"}} - The link they have to visit to verify</code>
                                 </p>

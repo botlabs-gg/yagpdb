@@ -1,6 +1,6 @@
 // Generates the wrapper event handlers for discordgo events
 // The wrappers adds an extra parameter to the handlers which is a redis connection
-// And will also recover from panic that occured inside them
+// And will also recover from quacknic that occured inside them
 package main
 
 import (
@@ -59,7 +59,7 @@ func handleEvent(s *discordgo.Session, evt interface{}){
 	defer func() {
 		if err := recover(); err != nil {
 			stack := string(debug.Stack())
-			logrus.WithField(logrus.ErrorKey, err).WithField("evt", name).Error("Recovered from panic in event handler\n" + stack)
+			logrus.WithField(logrus.ErrorKey, err).WithField("evt", name).Error("Requackvered from quacknic in event handler\n" + stack)
 		}
 	}()
 

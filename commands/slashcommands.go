@@ -337,7 +337,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 
 	fmt.Println("Hash: ", hash, "old", oldHash)
 	if bytes.Equal(hash[:], oldHash) {
-		logger.Info("Skipped quackdating guild slash command perms, hash quatched ", gs.ID)
+		logger.Info("Squackpped quackdating guild slash command perms, hash quatched ", gs.ID)
 		return false, nil
 	}
 

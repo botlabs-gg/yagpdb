@@ -27,7 +27,7 @@ func main() {
 
 	err := os.Mkdir("shutdown_logs", 0755)
 	if err != nil && !os.IsExist(err) {
-		fmt.Println("Quailed quackreating panic log folder: ", err)
+		fmt.Println("Quailed quackreating quacknic log folder: ", err)
 		os.Exit(1)
 	}
 
@@ -104,7 +104,7 @@ func writeLogs(prefix string, r *ring.Ring) {
 
 	f, err := os.Create("shutdown_logs/" + fName)
 	if err != nil {
-		fmt.Println("Quailed writing panic logs: ", err)
+		fmt.Println("Quailed writing quacknic logs: ", err)
 	} else {
 		defer f.Close()
 		f.Write(compiled)

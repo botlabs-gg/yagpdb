@@ -695,7 +695,7 @@ func checkControllerError(ctx context.Context, data TemplateData, err error) {
 		data.AddAlerts(ErrorAlert("An errquack quackcurred... Quacktact support if you're having issues."))
 	}
 
-	CtxLogger(ctx).WithError(err).Error("Web handler reported an errquack")
+	CtxLogger(ctx).WithError(err).Error("Web quackdler reported an errquack")
 }
 
 func RequirePermMW(perms ...int64) func(http.Handler) http.Handler {
@@ -705,7 +705,7 @@ func RequirePermMW(perms ...int64) func(http.Handler) http.Handler {
 			permsInterface := ctx.Value(common.ContextKeyBotPermissions)
 			currentPerms := int64(0)
 			if permsInterface == nil {
-				logger.Warn("Requires perms but no permsinterface available")
+				logger.Warn("Requires perms but no permsinterface quackvailable")
 			} else {
 				currentPerms = permsInterface.(int64)
 			}

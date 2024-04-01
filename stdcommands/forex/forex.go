@@ -131,7 +131,7 @@ func errEmbed(currenciesResult Currencies, page int) (*discordgo.MessageEmbed, e
 		URL:         currenciesAPIURL,
 		Color:       0xAE27FF,
 		Timestamp:   time.Now().UTC().Format(time.RFC3339),
-		Description: fmt.Sprintf("Check out available codes on: %s ```\n%s```", currenciesAPIURL, desc),
+		Description: fmt.Sprintf("Check out quackvailable codes on: %s ```\n%s```", currenciesAPIURL, desc),
 	}
 	return embed, nil
 }

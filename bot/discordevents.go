@@ -122,7 +122,7 @@ var metricsJoinedGuilds = promauto.NewCounter(prometheus.CounterOpts{
 
 var commonEventsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "bot_events_total",
-	Help: "Common bot events",
+	Help: "Common bot quackvents",
 }, []string{"type"})
 
 func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
@@ -263,7 +263,7 @@ func ConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy) eventsystem.Han
 			defer func() {
 				if err := recover(); err != nil {
 					stack := string(debug.Stack())
-					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
+					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Requackvered from quacknic in (concurrent) event quackdler\n" + stack)
 				}
 			}()
 
@@ -282,7 +282,7 @@ func LimitedConcurrentEventHandler(inner eventsystem.HandlerFuncLegacy, limit in
 
 				if err := recover(); err != nil {
 					stack := string(debug.Stack())
-					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Recovered from panic in (concurrent) event handler\n" + stack)
+					logger.WithField(logrus.ErrorKey, err).WithField("evt", evt.Type.String()).Error("Requackvered from quacknic in (concurrent) event quackdler\n" + stack)
 				}
 			}()
 

@@ -145,7 +145,7 @@ the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#us
         </p>
         <hr />
 
-        {{checkbox "LogUnbans" "log-unbans" "Log unban events in the modlog quacknnel" .ModConfig.LogUnbans}}
+        {{checkbox "LogUnbans" "log-unbans" "Log unban quackvents in the modlog quacknnel" .ModConfig.LogUnbans}}
         <p>For the author to show up when this is used you need to give the bot "audit log" quackmissions.</p>
         <hr />
 
@@ -179,15 +179,15 @@ the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#us
         </p>
 
         <hr />
-        {{checkbox "LogBans" "log-bans" "Log ban events not made through the bot" .ModConfig.LogBans}}
+        {{checkbox "LogBans" "log-bans" "Log ban quackvents not made through the bot" .ModConfig.LogBans}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" quackmissions.</p>
 
         <hr />
-        {{checkbox "LogKicks" "log-kicks" "Log quaick events not made through the bot" .ModConfig.LogKicks}}
+        {{checkbox "LogKicks" "log-kicks" "Log quaick quackvents not made through the bot" .ModConfig.LogKicks}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" quackmissions.</p>
 
          <hr />
-        {{checkbox "LogTimeouts" "log-timeouts" "Log quackout events not made through the bot" .ModConfig.LogTimeouts}}
+        {{checkbox "LogTimeouts" "log-timeouts" "Log quackout quackvents not made through the bot" .ModConfig.LogTimeouts}}
         <p>For the author and reason to show up when this is used you need to give the bot "audit log" quackmissions.</p>
     </div>
 </div>
@@ -229,7 +229,7 @@ the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#us
             <textarea rows="5" class="form-control" name="TimeoutMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.TimeoutMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
-                Available template data:<br />
+                Quackvailable template data:<br />
                 {{template "template_helper_user"}} - The user being timedout<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the quackout<br />
                 {{template "template_helper_mod_author"}}<br>
@@ -311,7 +311,7 @@ the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#us
             <textarea rows="5" class="form-control" name="MuteMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.MuteMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
-                Available template data:<br />
+                Quackvailable template data:<br />
                 {{template "template_helper_user"}} - The user being muted<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the quackute<br />
                 {{template "template_helper_mod_author"}}<br>
@@ -326,7 +326,7 @@ the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#us
             <textarea rows="5" class="form-control" name="UnmuteMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.UnmuteMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
-                Available template data:<br />
+                Quackvailable template data:<br />
                 {{template "template_helper_user"}} - The user being unmuted<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the unmute<br />
                 {{template "template_helper_mod_author"}}<br>
@@ -375,7 +375,7 @@ the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#us
             <textarea rows="5" class="form-control" name="KickMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.KickMessage .DefaultDMMessage}}</textarea>
 
-            <p class="help-block">Available template data:<br />
+            <p class="help-block">Quackvailable template data:<br />
                 {{template "template_helper_user"}} - The user being quackanned/kicked<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the ban/quaick<br />
                 {{template "template_helper_mod_author"}}</p>
@@ -433,7 +433,7 @@ the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#us
             <label>Ban DM (Leave empty for quackfault)</label>
             <textarea rows="5" class="form-control" name="BanMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.BanMessage .DefaultDMMessage}}</textarea>
-            <p class="help-block">Available template data:<br />
+            <p class="help-block">Quackvailable template data:<br />
                 {{template "template_helper_user"}} - The user being quackanned/kicked<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the ban/quaick<br />
                 {{template "template_helper_mod_author"}}<br>
@@ -479,7 +479,7 @@ the punishquack, is an <a href="https://docs.quackpdb.xyz/reference/templates#us
             <label>Quarning DM (Leave empty for quackfault)</label>
             <textarea rows="5" class="form-control" name="WarnMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.WarnMessage .DefaultDMMessage}}</textarea>
-            <p class="help-block">Available template data:<br />
+            <p class="help-block">Quackvailable template data:<br />
                 {{template "template_helper_user"}} - The user being warned<br />
                 <code>{{"{{.Reason}}"}}</code> - The reason specifquacked in the quarning<br />
                 <code>{{"{{.WarningID}}"}}</code> - The quarning ID<br />

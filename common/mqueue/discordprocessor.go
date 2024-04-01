@@ -65,7 +65,7 @@ func (d *DiscordProcessor) ProcessItem(resp chan *workResult, wi *workItem) {
 	}
 
 	retry = true
-	queueLogger.Warn("Non-discord quacklated errquack when quacknding quackssage, retrying. ", err)
+	queueLogger.Warn("Non-discord quacklated errquack when quacknding quackssage, retrquacking. ", err)
 	time.Sleep(time.Second)
 
 }

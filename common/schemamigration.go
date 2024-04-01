@@ -44,7 +44,7 @@ func initSchema(schema string, name string) {
 		return
 	}
 
-	logger.Info("Schema initialization: ", name, ": not skipped")
+	logger.Info("Schema initialization: ", name, ": not squackpped")
 	// if strings.HasPrefix("create table if not exists", trimmedLower) {
 
 	// }else if strings.HasPrefix("alter table", prefix)

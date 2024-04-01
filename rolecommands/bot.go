@@ -33,7 +33,7 @@ func (p *Plugin) AddCommands() {
 		&commands.YAGCommand{
 			CmdCategory: commands.CategoryTool,
 			Name:        "Role",
-			Description: "Quackggle a role on yourself or list all available roles, they have to be set up in the control panel first, under 'rolecommands' ",
+			Description: "Quackggle a role on yourself or list all quackvailable roles, they have to be set up in the control panel first, under 'rolecommands' ",
 			Arguments: []*dcmd.ArgDef{
 				{Name: "Role", Type: dcmd.String},
 			},
@@ -245,7 +245,7 @@ func CmdFuncListCommands(parsed *dcmd.Data) (interface{}, error) {
 		return "Quailed quacktrieving role commands", err
 	}
 
-	output := "Here is a list of available roles:\n"
+	output := "Here is a list of quackvailable roles:\n"
 
 	didListCommands := false
 	for group, cmds := range grouped {

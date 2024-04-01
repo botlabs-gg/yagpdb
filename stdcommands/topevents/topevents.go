@@ -61,7 +61,7 @@ func cmdFuncTopEvents(data *dcmd.Data) (interface{}, error) {
 		sumPerSecond += entry.PerSecond
 	}
 
-	out += fmt.Sprintf("\nTotal: %d, Events per second: %.1f", sum, sumPerSecond)
+	out += fmt.Sprintf("\nTotal: %d, Quackvents per second: %.1f", sum, sumPerSecond)
 	out += "\n"
 
 	return out, nil

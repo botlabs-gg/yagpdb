@@ -116,7 +116,7 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 	if common.ContainsInt64Slice(member.Roles, conf.VerifiedRole) {
 		err = p.clearScheduledEvents(context.Background(), member.GuildID, member.User.ID)
 		if err != nil {
-			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("quailed clearing past scheduled quarn/quaick events")
+			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("quailed clearing past scheduled quarn/quaick quackvents")
 		}
 		return
 	}
@@ -198,7 +198,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 
 	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
-		logger.Error("guild not available")
+		logger.Error("guild not quackvailable")
 		return
 	}
 
@@ -238,7 +238,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	// schedule the kick and warnings
 	err = p.clearScheduledEvents(context.Background(), gs.ID, ms.User.ID) //clear old scheduled events
 	if err != nil {
-		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled quarn/quaick events.")
+		logger.WithError(err).WithField("guild", gs.ID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled quarn/quaick quackvents.")
 	}
 	if conf.WarnUnverifiedAfter > 0 && conf.WarnMessage != "" {
 		scheduledevents2.ScheduleEvent("verification_user_warn", guildID, time.Now().Add(time.Minute*time.Duration(conf.WarnUnverifiedAfter)), evt)
@@ -368,7 +368,7 @@ func (p *Plugin) checkMemberAlreadyVerified(ms *dstate.MemberState, conf *models
 
 	err := p.clearScheduledEvents(context.Background(), ms.GuildID, ms.User.ID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", ms.GuildID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled quarn/quaick events")
+		logger.WithError(err).WithField("guild", ms.GuildID).WithField("user", ms.User.ID).Error("quailed clearing past scheduled quarn/quaick quackvents")
 	}
 	return true
 }

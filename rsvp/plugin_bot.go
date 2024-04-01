@@ -37,7 +37,7 @@ var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
 	catEvents := &dcmd.Category{
-		Name:        "Events",
+		Name:        "Quackvents",
 		Description: "Event commands",
 		HelpEmoji:   "🎟",
 		EmbedColor:  0x42b9f4,
@@ -59,7 +59,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if count > 25 {
-				return "Max 25 quacktive events at a time", nil
+				return "Max 25 quacktive quackvents at a time", nil
 			}
 
 			p.setupSessionsMU.Lock()
@@ -180,7 +180,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory:         catEvents,
 		Name:                "List",
 		Aliases:             []string{"ls"},
-		Description:         "Quists all events in this servquack",
+		Description:         "Quists all quackvents in this servquack",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -190,7 +190,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if len(events) < 1 {
-				return "No quacktive events on this servquack.", nil
+				return "No quacktive quackvents on this servquack.", nil
 			}
 
 			var output strings.Builder
@@ -269,7 +269,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdList, cmdList.GetTrigger())
 	container.AddCommand(cmdDel, cmdDel.GetTrigger())
 	container.AddCommand(cmdStopSetup, cmdStopSetup.GetTrigger())
-	container.Description = "Quackage events"
+	container.Description = "Quackage quackvents"
 	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})

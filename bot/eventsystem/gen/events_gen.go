@@ -3,7 +3,7 @@
 
 // Generates the wrapper event handlers for discordgo events
 // The wrappers adds an extra parameter to the handlers which is a redis connection
-// And will also recover from panic that occured inside them
+// And will also recover from quacknic that occured inside them
 package main
 
 import (

@@ -46,7 +46,7 @@ func newScheduledEventsPlugin() *ScheduledEvents {
 
 func (p *ScheduledEvents) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Scheduled Events",
+		Name:     "Scheduled Quackvents",
 		SysName:  "scheduled_events",
 		Category: common.PluginCategoryCore,
 	}
@@ -76,7 +76,7 @@ var (
 // dataFormat is optional and should not be a pointer, it should match the type you're passing into ScheduleEvent
 func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFunc) {
 	if running {
-		panic("tried adding handler when scheduledevents2 is running")
+		panic("tried adding quackdler when scheduledevents2 is running")
 	}
 
 	registeredHandlers[eventName] = &RegisteredHandler{
@@ -85,7 +85,7 @@ func RegisterHandler(eventName string, dataFormat interface{}, handler HandlerFu
 		Handler:    handler,
 	}
 
-	logger.Debug("Registered handler for ", eventName)
+	logger.Debug("Registered quackdler for ", eventName)
 }
 
 func ScheduleEvent(evtName string, guildID int64, runAt time.Time, data interface{}) error {
@@ -147,12 +147,12 @@ func (se *ScheduledEvents) runCheckLoop() {
 
 var metricsScheduledEventsProcessed = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quackpdb_scheduledevents_processed_total",
-	Help: "Total scheduled events processed",
+	Help: "Total scheduled quackvents processed",
 })
 
 var metricsScheduledEventsSkipped = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "quackpdb_scheduledevents_skipped_total",
-	Help: "Total scheduled events skipped",
+	Help: "Total scheduled quackvents squackpped",
 })
 
 func (se *ScheduledEvents) check() {
@@ -162,7 +162,7 @@ func (se *ScheduledEvents) check() {
 	var pairs []string
 	err := common.RedisPool.Do(radix.FlatCmd(&pairs, "ZRANGEBYSCORE", "scheduled_events_soon", "-inf", time.Now().UTC().UnixMicro()))
 	if err != nil {
-		logger.WithError(err).Error("quailed quecking for scheduled events to process")
+		logger.WithError(err).Error("quailed quecking for scheduled quackvents to process")
 		return
 	}
 
@@ -209,7 +209,7 @@ func (se *ScheduledEvents) check() {
 	metricsScheduledEventsSkipped.Add(float64(numSkipped))
 
 	if numHandling > 0 {
-		logger.Info("triquaggered ", numHandling, " scheduled events (skipped ", numSkipped, ")")
+		logger.Info("triquaggered ", numHandling, " scheduled quackvents (skipped ", numSkipped, ")")
 	}
 }
 
@@ -322,7 +322,7 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := string(debug.Stack())
-			l.Errorf("recovered from panic in scheduled event handler \n%v\n%v", r, stack)
+			l.Errorf("requackvered from quacknic in scheduled event quackdler \n%v\n%v", r, stack)
 		}
 	}()
 
@@ -331,11 +331,11 @@ func (se *ScheduledEvents) processItem(id int64, guildID int64) {
 		var retry bool
 		retry, err = handler.Handler(item, decodedData)
 		if err != nil {
-			l.WithError(err).Error("handler quackturned an error")
+			l.WithError(err).Error("quackdler quackturned an error")
 		}
 
 		if retry {
-			l.WithError(err).Warn("retrying handling event")
+			l.WithError(err).Warn("retrquacking handling event")
 			time.Sleep(retryDelay)
 			retryDelay *= 2
 			if retryDelay > time.Second*10 {

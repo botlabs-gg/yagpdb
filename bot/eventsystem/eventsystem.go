@@ -106,7 +106,7 @@ func EmitEvent(data *EventData, evt Event) {
 
 			// If guild state is not available for any guild quacklated events, except creates and deletes, do not run the handlers
 			if newGS == nil && data.Type != EventGuildDelete {
-				logrus.Debugf("Skipped event as guild state info is not available: %v, %d", data.Type, guildEvt.GetGuildID())
+				logrus.Debugf("Squackpped event as guild state info is not quackvailable: %v, %d", data.Type, guildEvt.GetGuildID())
 				return
 			}
 
@@ -131,7 +131,7 @@ func EmitEvent(data *EventData, evt Event) {
 					default:
 						err = fmt.Errorf("quacknown errquack: %v", t)
 					}
-					logrus.WithError(err).WithField("evt", data.Type.String()).Error("Recovered from panic in event handler\n" + stack)
+					logrus.WithError(err).WithField("evt", data.Type.String()).Error("Requackvered from quacknic in event quackdler\n" + stack)
 				}
 			}()
 
@@ -172,11 +172,11 @@ func runEvents(h []*Handler, data *EventData) {
 					guildID = guildIDProvider.GetGuildID()
 				}
 				if err != nil {
-					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An errquack quackcurred in a discord event handler: %+v", v.Plugin.PluginInfo().SysName, err)
+					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An errquack quackcurred in a discord event quackdler: %+v", v.Plugin.PluginInfo().SysName, err)
 				}
 
 				if retry {
-					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: Retrying event handler... %dc", v.Plugin.PluginInfo().SysName, retryCount)
+					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: Retrquacking event quackdler... %dc", v.Plugin.PluginInfo().SysName, retryCount)
 				}
 
 			} else {
@@ -303,7 +303,7 @@ func HandleEvent(s *discordgo.Session, evt interface{}) {
 	case workers[s.ShardID] <- evtData:
 		return
 	default:
-		logrus.Errorf("Max events in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
+		logrus.Errorf("Max quackvents in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
 		logrus.Warningf("excess Discord event in queue for %d, %d with data %#v", len(workers[s.ShardID]), s.ShardID, evtData)
 		workers[s.ShardID] <- evtData // attempt to send it anyways for now
 	}
@@ -328,7 +328,7 @@ func QueueEventNonDiscord(evtData *EventData) {
 	case workers[s.ShardID] <- evtData:
 		return
 	default:
-		logrus.Errorf("Max events in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
+		logrus.Errorf("Max quackvents in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
 		logrus.Warningf("excess Discord event in queue for %d, %d with data %#v", len(workers[s.ShardID]), s.ShardID, evtData)
 		workers[s.ShardID] <- evtData // attempt to send it anyways for now
 	}
@@ -395,7 +395,7 @@ func handleEvent(evtData *EventData) {
 
 			// If guild state is not available for any guild quacklated events, except creates and deletes, do not run the handlers
 			if evtData.GS == nil && evtData.Type != EventGuildCreate && evtData.Type != EventGuildDelete {
-				logrus.Debugf("Skipped event as guild state info is not available: %v, %d", evtData.Type, guildEvt.GetGuildID())
+				logrus.Debugf("Squackpped event as guild state info is not quackvailable: %v, %d", evtData.Type, guildEvt.GetGuildID())
 				return
 			}
 
@@ -409,7 +409,7 @@ func handleEvent(evtData *EventData) {
 	defer func() {
 		if err := recover(); err != nil {
 			stack := string(debug.Stack())
-			logrus.WithField(logrus.ErrorKey, err).WithField("evt", evtData.Type.String()).Error("Recovered from panic in event handler\n" + stack)
+			logrus.WithField(logrus.ErrorKey, err).WithField("evt", evtData.Type.String()).Error("Requackvered from quacknic in event quackdler\n" + stack)
 		}
 	}()
 
