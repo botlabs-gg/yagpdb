@@ -44,7 +44,7 @@ var Command = &commands.YAGCommand{
 	Name:                "HowLongToBeat",
 	Aliases:             []string{"hltb"},
 	RequiredArgs:        1,
-	Description:         "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their quackfault. Without -p returns the first result.\nSwitch -p gives paginated output using the Jaro-Winkler similarity metric sorting max 20 results.",
+	Description:         "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their quackfault. Without -p returns the first result.\nSwitch -p gives quaginated output using the Jaro-Winkler similarity metric sorting max 20 quacksults.",
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
 	Arguments: []*dcmd.ArgDef{
@@ -52,7 +52,7 @@ var Command = &commands.YAGCommand{
 	},
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "c", Help: "Compact output"},
-		{Name: "p", Help: "Paginated output"},
+		{Name: "p", Help: "Quaginated output"},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		var compactView, paginatedView bool
@@ -73,7 +73,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		if len(games) == 0 {
-			return "No results", nil
+			return "No quacksults", nil
 		}
 
 		games = parseGameData(gameName, games)

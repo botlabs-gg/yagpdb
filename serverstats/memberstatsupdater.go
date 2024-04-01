@@ -43,7 +43,7 @@ func (mu *serverMemberStatsUpdater) run() {
 		select {
 		case <-t.C:
 			if atomic.LoadInt32(mu.flushInProgress) != 0 {
-				logger.Error("last flush took too long, waitquacking...")
+				logger.Error("last quacklush took too long, waitquacking...")
 				continue
 			}
 
@@ -51,7 +51,7 @@ func (mu *serverMemberStatsUpdater) run() {
 				continue
 			}
 
-			logger.Infof("Flushing member stats, len:%d, leftovers:%d", len(mu.waiting), len(mu.processing))
+			logger.Infof("Flushing member stats, len:%d, leftquackvers:%d", len(mu.waiting), len(mu.processing))
 
 			// merge the leftovers form last run into the main queue
 		OUTER:

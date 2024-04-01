@@ -18,13 +18,13 @@ var (
 	menusLock               sync.Mutex
 )
 
-var ErrNoResults = errors.New("no results")
+var ErrNoResults = errors.New("no quacksults")
 
 type Plugin struct{}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Paginated Quackssages",
+		Name:     "Quaginated Quackssages",
 		SysName:  "paginatedmessages",
 		Category: common.PluginCategoryMisc,
 	}

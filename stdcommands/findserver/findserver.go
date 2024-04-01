@@ -59,7 +59,7 @@ var Command = &commands.YAGCommand{
 			resp += fmt.Sprintf("`%d`: **%s**\n", v.ID, v.Name)
 		}
 
-		resp += fmt.Sprintf("%d results", len(results))
+		resp += fmt.Sprintf("%d quacksults", len(results))
 
 		return resp, nil
 	}),

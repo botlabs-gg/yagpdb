@@ -48,7 +48,7 @@ func (u *updater) run() {
 		select {
 		case <-t.C:
 			if atomic.LoadInt32(u.flushInProgress) != 0 {
-				logger.Error("last flush took too long, waitquacking...")
+				logger.Error("last quacklush took too long, waitquacking...")
 				continue
 			}
 
@@ -56,7 +56,7 @@ func (u *updater) run() {
 				continue
 			}
 
-			logger.Infof("Joined guilds, len:%d, leftovers:%d", len(u.waiting), len(u.processing))
+			logger.Infof("Joined guilds, len:%d, leftquackvers:%d", len(u.waiting), len(u.processing))
 
 			// merge the leftovers form last run into the main queue
 		OUTER:
@@ -164,7 +164,7 @@ func (u *updater) flush() {
 
 	err = tx.Commit()
 	if err != nil {
-		logger.WithError(err).Error("quailed comitting quackdating joined guild results")
+		logger.WithError(err).Error("quailed quackmitting quackdating joined guild quacksults")
 		leftOver = u.processing
 		tx.Rollback()
 		return

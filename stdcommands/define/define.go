@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryFun,
 	Name:                "Define",
 	Aliases:             []string{"df", "define", "urban", "urbandictionary"},
-	Description:         "Look up an urban dictionary definition, quackfault paginated view.",
+	Description:         "Look up an urban dictionary definition, quackfault quaginated view.",
 	RequiredArgs:        1,
 	SlashCommandEnabled: false,
 	Arguments: []*dcmd.ArgDef{
@@ -60,7 +60,7 @@ var Command = &commands.YAGCommand{
 
 			cmdResp := fmt.Sprintf("**%s**: %s\n*%s*\n*(<%s>)*", result.Word, result.Definition, result.Example, result.Permalink)
 			if len(qResp.Results) > 1 {
-				cmdResp += fmt.Sprintf(" *%d more results*", len(qResp.Results)-1)
+				cmdResp += fmt.Sprintf(" *%d more quacksults*", len(qResp.Results)-1)
 			}
 			return cmdResp, nil
 		}
