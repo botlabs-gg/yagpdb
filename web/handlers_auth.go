@@ -225,14 +225,6 @@ func GetUserAccessLevel(userID int64, g *common.GuildWithConnected, config *mode
 		return false, false
 	}
 
-	if config.AllowNonMembersReadOnly {
-		// everyone is allowed read access
-		hasRead = true
-	} else if userID != 0 && config.AllowAllMembersReadOnly {
-		// logged in and a member of the guild
-		hasRead = true
-	}
-
 	if len(config.AllowedWriteRoles) < 1 && len(config.AllowedReadOnlyRoles) < 1 {
 		// no need to check the roles, nothing set up
 		return
@@ -258,7 +250,7 @@ func GetUserAccessLevel(userID int64, g *common.GuildWithConnected, config *mode
 	return
 }
 
-// HasAccesstoGuildSettings retrusn true if the specified user (or 0 if not logged in or not on the server) has access
+// HasAccesstoGuildSettings retruns true if the specified user (or 0 if not logged in or not on the server) has access
 func HasAccesstoGuildSettings(userID int64, g *common.GuildWithConnected, config *models.CoreConfig, roleProvider func(guildID, userID int64) []int64, write bool) bool {
 	hasRead, hasWrite := GetUserAccessLevel(userID, g, config, roleProvider)
 	if hasWrite {

@@ -370,7 +370,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 	return HandleStatusHTML(w, r)
 }
 
-func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) interface{} {
 	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)
@@ -451,10 +451,8 @@ func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http
 	const format = `<ul>
 	<li>Read-only roles: <code>%d</code></li>
 	<li>Write roles: <code>%d</code></li>
-	<li>All members read-only: %s</li>
-	<li>Allow absolutely everyone read-only access: %s</li>
 </ul>`
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles), EnabledDisabledSpanStatus(config.AllowAllMembersReadOnly), EnabledDisabledSpanStatus(config.AllowNonMembersReadOnly)))
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles)))
 
 	return templateData, nil
 }
@@ -464,10 +462,8 @@ func (p *ControlPanelPlugin) ServerHomeWidgetOrder() int {
 }
 
 type CoreConfigPostForm struct {
-	AllowedReadOnlyRoles    []int64 `valid:"role,true"`
-	AllowedWriteRoles       []int64 `valid:"role,true"`
-	AllowAllMembersReadOnly bool
-	AllowNonMembersReadOnly bool
+	AllowedReadOnlyRoles []int64 `valid:"role,true"`
+	AllowedWriteRoles    []int64 `valid:"role,true"`
 }
 
 func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
@@ -479,9 +475,6 @@ func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateDat
 		GuildID:              g.ID,
 		AllowedReadOnlyRoles: form.AllowedReadOnlyRoles,
 		AllowedWriteRoles:    form.AllowedWriteRoles,
-
-		AllowAllMembersReadOnly: form.AllowAllMembersReadOnly,
-		AllowNonMembersReadOnly: form.AllowNonMembersReadOnly,
 	}
 
 	err := common.CoreConfigSave(r.Context(), m)
