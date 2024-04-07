@@ -121,6 +121,7 @@ type CustomCommand struct {
 	ID            int64    `json:"id"`
 	Name          string   `json:"name" schema:"name" valid:",0,100"`
 	IsEnabled     bool     `json:"is_enabled" schema:"is_enabled"`
+	Public        bool     `json:"public" schema:"public"`
 
 	ContextChannel int64 `schema:"context_channel" valid:"channel,true"`
 
@@ -193,6 +194,7 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		TriggerType:              int(cc.TriggerType),
 		TextTrigger:              cc.Trigger,
 		TextTriggerCaseSensitive: cc.CaseSensitive,
+		Public:                   cc.Public,
 
 		Channels:              cc.Channels,
 		ChannelsWhitelistMode: cc.RequireChannels,

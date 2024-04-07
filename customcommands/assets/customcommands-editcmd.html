@@ -15,9 +15,14 @@
 <!-- Nav -->
 <div class="row">
     <div class="col">
+        {{$publicAccess := .PublicAccess}}
+        {{$publicDisabled := ""}}
+        {{if $publicAccess}}
+            {{$publicDisabled = "disabled"}}
+        {{end}}
         <!-- Nav tabs -->
         <div class="tabs">
-            <ul class="nav nav-tabs">
+            <ul class="nav nav-tabs public-hidden">
                 <li class="nav-item {{if and (not .CurrentCommandGroup)}}active{{end}}">
                     <a data-partial-load="true" class="nav-link show {{if not .CurrentCommandGroup}}active{{end}}"
                         href="/manage/{{.ActiveGuild.ID}}/customcommands/">Ungrouped</a>
@@ -74,7 +79,7 @@
                                     <div class="col">
                                         <div class="form-group">
                                             <label>Trigger type</label>
-                                            <select class="form-control" id="trigger-type-dropdown" name="type"
+                                            <select class="form-control public-disabled" id="trigger-type-dropdown" name="type"
                                                 onchange="triggerTypeChanged(this)">
 
                                                 <option value="none" {{if eq .CC.TriggerType 10}}selected{{end}}>None
@@ -148,12 +153,14 @@
                                                 <div class="input-group-prepend" id="command-trigger-prepended-prefix">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
                                                 </div>
-                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
+                                                <input id="trigger" type="text" class="form-control public-disabled" name="trigger" placeholder="fun"
                                                     value="{{.CC.TextTrigger}}">
                                             </div>
-                                            {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
+                                            {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?"
+                                            .CC.TextTriggerCaseSensitive $publicDisabled}}
                                             {{$disabledClass := ""}}
-                                            {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
+                                            {{if or (not .IsGuildPremium) $publicAccess}}{{$disabledClass =
+                                            "disabled"}}{{end}}
                                             {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
                                         </div>
                                     </div>
@@ -163,7 +170,7 @@
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                            <input class="form-check-input public-disabled" type="radio" name="reaction_trigger_mode"
                                                 id="reaction-mode-both-{{.CC.LocalID}}" value="0"
                                                 {{if eq .CC.ReactionTriggerMode 0}}checked{{end}}>
                                             <label class="form-check-label" for="reaction-mode-both-{{.CC.LocalID}}">
@@ -171,7 +178,7 @@
                                             </label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                            <input class="form-check-input public-disabled" type="radio" name="reaction_trigger_mode"
                                                 id="reaction-mode-added-{{.CC.LocalID}}" value="1"
                                                 {{if eq .CC.ReactionTriggerMode 1}}checked{{end}}>
                                             <label class="form-check-label" for="reaction-mode-added-{{.CC.LocalID}}">
@@ -179,7 +186,7 @@
                                             </label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                            <input class="form-check-input public-disabled" type="radio" name="reaction_trigger_mode"
                                                 id="reaction-mode-removed-{{.CC.LocalID}}" value="2"
                                                 {{if eq .CC.ReactionTriggerMode 2}}checked{{end}}>
                                             <label class="form-check-label" for="reaction-mode-removed-{{.CC.LocalID}}">
@@ -194,14 +201,14 @@
                                     <div class="col-sm-4">
                                         <div class="form-group">
                                             <label>Interval</label>
-                                            <input type="number" min="0" class="form-control" name="time_trigger_interval"
+                                            <input type="number" min="0" class="form-control public-disabled" name="time_trigger_interval"
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                                         </div>
                                     </div>
                                     <div class="col-sm-8">
                                         <div class="form-group">
                                             <label>Channel</label>
-                                            <select id="time-trigger-channel" name="context_channel" class="form-control">
+                                            <select id="time-trigger-channel" name="context_channel" class="form-control public-disabled">
                                                 {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
                                             </select>
                                         </div>
@@ -211,7 +218,7 @@
                                     <div class="col-sm-6">
                                         <div class="form-group">
                                             <label for="trigger">Excluding hours (UTC)</label><br>
-                                            <select name="time_trigger_excluding_hours" class="multiselect form-control"
+                                            <select name="time_trigger_excluding_hours" class="multiselect form-control public-disabled"
                                                 multiple="multiple" data-plugin-multiselect>
                                                 {{$selectedExclHours := .CC.TimeTriggerExcludingHours}}
                                                 {{range seq 0 24}}<option value="{{.}}"
@@ -223,7 +230,7 @@
                                     <div class="col-sm-6">
                                         <div class="form-group">
                                             <label for="trigger">Excluding weekdays (UTC)</label><br>
-                                            <select name="time_trigger_excluding_days" class="multiselect form-control"
+                                            <select name="time_trigger_excluding_days" class="multiselect form-control public-disabled"
                                                 multiple="multiple" data-plugin-multiselect>
                                                 <option value="1"
                                                     {{if in .CC.TimeTriggerExcludingDays 1}}selected{{end}}>
@@ -256,15 +263,19 @@
                             <div class="col-sm-4">
                                 <div class="form-group">
                                     <label>Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
-                                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
+                                    <input type="text" class="form-control public-disabled" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
                                     <p>An optional name that can be used to identify the command.</p>
                                 </div>
                             </div>
-                             <div class="col-sm-4">
+                             <div class="col-sm-4 public-hidden">
                                 <div class="form-group">
                                     <br/>
                                     <label> Command Enabled?</label>
-                                    {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled) }}
+                                    {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled)}}
+                                    <label> Public?</label>
+                                    {{checkbox "public" "public" "Allows non-members to view the CC with a link" .CC.Public}}
+                                    <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-md"
+                                        href="#cc-share-modal">Share this Command</a>
                                 </div>
                             </div>
                         </div>
@@ -274,19 +285,31 @@
                                     <label for="responses">Response (<span
                                             class="cc-length-counter">x</span>/10000)</label>
                                     <!-- Use .btn-add for simplicity and let the page loader adjust. -->
-                                    {{range .CC.Responses}}
+                                    {{range $i, $r := .CC.Responses}}
+                                    <button id="copy-response-{{$i}}-button" class="btn btn-quaternary">Copy Text</button>
+                                    <script>
+                                        document.getElementById("copy-response-{{$i}}-button").addEventListener("click", function() {
+                                            copyField("response-{{$i}}", "copy-response-{{$i}}-button");
+                                        }, false);
+                                    </script>
                                     <div class="entry input-group  input-group-sm">
-                                        <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
+                                        <textarea id="response-{{$i}}" class="form-control response-text-area
+                                        tab-textbox cc-editor public-hidden" name="responses"
                                             placeholder="Command body here" rows="5"
-                                            oninput="onCCChanged(this)">{{.}}</textarea>
-                                        <span class="input-group-append">
+                                            oninput="onCCChanged(this)">{{$r}}</textarea>
+                                        <span class="input-group-append public-hidden">
                                             <button class="btn btn-success btn-add btn-circle" type="button">
                                                 <i class="fas fa-plus"></i>
                                             </button>
                                         </span>
+                                        {{if $publicAccess}}
+                                        <pre class="m-0"><div class="code
+                                        gotmplmd">{{$r}}</div></pre>
+                                        {{end}}
                                     </div>
                                     {{else}}
                                     <div class="entry input-group  input-group-sm">
+                                        {{if not $publicAccess}}
                                         <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
                                             placeholder="Command body here" rows="5"
                                             oninput="onCCChanged(this)"></textarea>
@@ -295,14 +318,17 @@
                                                 <i class="fas fa-plus"></i>
                                             </button>
                                         </span>
+                                        {{else}}
+                                        <p>This command has no responses.</p>
+                                        {{end}}
                                     </div>
                                     {{end}}
-                                    <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm"
+                                    <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm public-hidden"
                                         href="#cc-help-modal">Info</a>
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row public-hidden">
                             <div class="col-sm-6">
                                 <div class="form-group">
                                     <label>Custom command group</label>
@@ -385,7 +411,7 @@
                             </div>
                         </div>
 
-                        <div class="row mt-4">
+                        <div class="row mt-4 public-hidden">
                             <div class="col">
                                 <button type="submit" class="btn btn-success btn-block"
                                     formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update"
@@ -398,13 +424,13 @@
                                     formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/delete">Delete</button>
                             </div>
                         </div>
-                        <div class="row mt-4" id="interval-cc-run-now">
+                        <div class="row mt-4 public-hidden" id="interval-cc-run-now">
                             <div class="col">
                                 <button type="submit" class="btn btn-secondary btn-block" title="This will trigger this custom command immediately"
                                     formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update_and_run">Run now</button>
                             </div>
                         </div>
-                        <p class="help-block">Tip: Alt + Shift + S also saves the custom command </p>
+                        <p class="help-block public-hidden">Tip: Alt + Shift + S also saves the custom command </p>
                     </form>
                 </div>
             </div>
@@ -457,6 +483,37 @@
     </section>
 </div>
 
+<div id="cc-share-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
+    <section class="card">
+        <header class="card-header">
+            <h2 class="card-title">Share Custom Command</h2>
+        </header>
+        <div class="card-body">
+            <div class="modal-wrapper">
+                <div class="modal-text">
+                    <p class="help-block">To share custom command #<code>{{.CC.LocalID}}</code>, copy the link below.
+                    </p>
+                    <br>
+                    <input type="text" id="public-link" class="form-control" name="Public Link" value="{{.PublicLink}}" readonly>
+                    <button id="copy-link-button" class="btn btn-quaternary">Copy Text</button>
+                    <script>
+                        document.getElementById("copy-link-button").addEventListener("click", function() {
+                            copyField("public-link", "copy-link-button");
+                        }, false);
+                    </script>
+                </div>
+            </div>
+        </div>
+        <footer class="card-footer">
+            <div class="row">
+                <div class="col-md-12 text-right">
+                    <button class="btn btn-info modal-dismiss">OK</button>
+                </div>
+            </div>
+        </footer>
+    </section>
+</div>
+
 <script src="/static/vendorr/tln/tln.min.js"></script>
 <link rel="stylesheet" href="/static/vendorr/tln/tln.min.css">
 <style>
@@ -464,6 +521,10 @@
         background: #191c21;
     }
 </style>
+
+<script src="/static/vendorr/highlightjs/highlight.pack.js"></script>
+<script src="/static/vendorr/highlightjs/line-numbers.js"></script>
+<link rel="stylesheet" href="/static/vendorr/highlightjs/atom-one-dark.css">
 
 <script type="text/javascript">
     function isTextTrigger(t) {
@@ -515,7 +576,7 @@
             $("#cc-text-trigger-details").removeClass("hidden");
             $("#cc-extra-settings").removeClass("hidden");
 
-            $("#cc-reaction-trigger-details").addClass("hidden")
+            $("#cc-reaction-trigger-details").addClass("hidden");
             $("#cc-time-trigger-details").addClass("hidden");
 
             $("#interval-cc-run-now").addClass("hidden")
@@ -558,6 +619,7 @@
         handleRestrictionChange($("#require-role-mode").prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
         handleRestrictionChange($("#require-channel-mode").prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
         triggerTypeChanged();
+        publicAccessClasses();
     })
 
     $("#trigger").keyup(function() {
@@ -663,6 +725,87 @@
         }
       } 
     });
+                    
+    function copyField(fieldID, buttonID) {
+                            var copyText = document.getElementById(fieldID);
+                            copyText.select();
+                            copyText.setSelectionRange(0, 99999); // For mobile devices
+                        
+                            navigator.clipboard.writeText(copyText.value);
+                        
+                            var button = document.getElementById(buttonID);
+                            button.innerHTML = "Copied";
+                            button.disabled = true;
+                            setTimeout(() => { button.innerHTML = "Copy Text"; }, 3000);
+                            setTimeout(() => { button.disabled = false; }, 3000);
+                        };
+
+    function publicAccessClasses() {
+        if ({{.PublicAccess}}) {
+            var hideElements = document.getElementsByClassName("public-hidden");
+            for (var i = 0, len = hideElements.length; i < len; i++) {
+                hideElements[i].hidden = true;
+            };
+            var disableElements = document.getElementsByClassName("public-disabled");
+            for (var i = 0, len = disableElements.length; i < len; i++) {
+                disableElements[i].disabled = true;
+            };
+        };
+
+        // Register the custom language for readonly mode
+        // its based off markdown with custom stuff in tags
+        hljs.registerLanguage("gotmplmd", function (hljs) {
+            var KEYWORDS = {
+                keyword:
+                    'for range if else template end',
+                literal:
+                    'true false nil',
+                "built-in":
+                    'gt lt len index{{.HLJSBuiltins}}'
+            };
+
+            return {
+                aliases: ['gomd'],
+                case_insensitive: true,
+                subLanguage: 'markdown',
+                contains: [
+                    hljs.COMMENT(/\{\{\s?\/\*/, /\*\/\s?\}\}/),
+                    {
+                        // open block statement
+                        className: 'template-tag',
+                        begin: /\{\{/, end: /\}\}/,
+                        keywords: KEYWORDS,
+                        contains: [
+                            {
+                                className: 'string',
+                                variants: [
+                                    hljs.QUOTE_STRING_MODE,
+                                    { begin: '\'', end: '[^\\\\]\'' },
+                                    { begin: '`', end: '`' },
+                                ]
+                            },
+                            {
+                                className: 'number',
+                                variants: [
+                                    { begin: hljs.C_NUMBER_RE + '[i]', relevance: 1 },
+                                    hljs.C_NUMBER_MODE
+                                ]
+                            },
+                            {
+                                className: 'name',
+                                begin: /(\.|\$)\w+/,
+                            }
+                        ],
+                    },
+                ]
+            };
+        })
+
+        document.querySelectorAll('div.code').forEach((block) => {
+            hljs.highlightBlock(block);
+            hljs.lineNumbersBlock(block);
+        });
+    };
 </script>
 
 

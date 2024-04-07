@@ -129,6 +129,9 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(handleUpdateGroup, getGroupHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/delete"), web.ControllerPostHandler(handleDeleteGroup, getHandler, nil))
+
+	web.ServerPublicMux.Handle(pat.Get("/customcommands/commands/:cmd"), PublicCommandMW(getCmdHandler))
+	web.ServerPublicMux.Handle(pat.Get("/customcommands/commands/:cmd/"), PublicCommandMW(getCmdHandler))
 }
 
 func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -235,6 +238,7 @@ func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	templateData["CC"] = cc
 	templateData["Commands"] = true
 	templateData["IsGuildPremium"] = premium.ContextPremium(r.Context())
+	templateData["PublicLink"] = fmt.Sprintf("%s/public/%d/customcommands/commands/%d", web.BaseURL(), activeGuild.ID, cc.LocalID)
 
 	return serveGroupSelected(r, templateData, cc.GroupID.Int64, activeGuild.ID)
 }
@@ -716,4 +720,48 @@ func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx c
 		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with YAGPDB premium)", MaxCommandsPremium)
 	}
 	templateData["AdditionalMessage"] = additionalMessage
+}
+
+func PublicCommandMW(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		activeGuild, templateData := web.GetBaseCPContextData(ctx)
+		ccID, err := strconv.ParseInt(pat.Param(r, "cmd"), 10, 64)
+		if err != nil {
+			logger.Error(errors.WithStackIf(err))
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		}
+
+		cc, err := models.CustomCommands(
+			models.CustomCommandWhere.GuildID.EQ(activeGuild.ID),
+			models.CustomCommandWhere.LocalID.EQ(ccID)).OneG(r.Context())
+		if err != nil {
+			logger.Error(errors.WithStackIf(err))
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		}
+
+		if read, _ := web.IsAdminRequest(ctx, r); read {
+			http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands/commands/%d/", activeGuild.ID, cc.LocalID), http.StatusSeeOther)
+		} else {
+			if cc.Public {
+				templateData["PublicAccess"] = true
+
+				strTriggerTypes := map[int]string{}
+				for k, v := range triggerStrings {
+					strTriggerTypes[int(k)] = v
+				}
+				templateData["CCTriggerTypes"] = strTriggerTypes
+				templateData["CommandPrefix"], _ = prfx.GetCommandPrefixRedis(activeGuild.ID)
+
+				defer func() { inner.ServeHTTP(w, r) }()
+			} else {
+				http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
+			}
+		}
+		r = r.WithContext(context.WithValue(ctx, common.ContextKeyTemplateData, templateData))
+	}
+
+	return http.HandlerFunc(mw)
 }

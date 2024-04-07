@@ -50,6 +50,7 @@ type CustomCommand struct {
 	Disabled                  bool              `boil:"disabled" json:"disabled" toml:"disabled" yaml:"disabled"`
 	Name                      null.String       `boil:"name" json:"name,omitempty" toml:"name" yaml:"name,omitempty"`
 	TriggerOnEdit             bool              `boil:"trigger_on_edit" json:"trigger_on_edit" toml:"trigger_on_edit" yaml:"trigger_on_edit"`
+	Public                    bool              `boil:"public" json:"public" toml:"public" yaml:"public"`
 
 	R *customCommandR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L customCommandL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -81,6 +82,7 @@ var CustomCommandColumns = struct {
 	Disabled                  string
 	Name                      string
 	TriggerOnEdit             string
+	Public                    string
 }{
 	LocalID:                   "local_id",
 	GuildID:                   "guild_id",
@@ -107,6 +109,7 @@ var CustomCommandColumns = struct {
 	Disabled:                  "disabled",
 	Name:                      "name",
 	TriggerOnEdit:             "trigger_on_edit",
+	Public:                    "public",
 }
 
 // Generated where
@@ -268,6 +271,7 @@ var CustomCommandWhere = struct {
 	Disabled                  whereHelperbool
 	Name                      whereHelpernull_String
 	TriggerOnEdit             whereHelperbool
+	Public                    whereHelperbool
 }{
 	LocalID:                   whereHelperint64{field: "\"custom_commands\".\"local_id\""},
 	GuildID:                   whereHelperint64{field: "\"custom_commands\".\"guild_id\""},
@@ -294,6 +298,7 @@ var CustomCommandWhere = struct {
 	Disabled:                  whereHelperbool{field: "\"custom_commands\".\"disabled\""},
 	Name:                      whereHelpernull_String{field: "\"custom_commands\".\"name\""},
 	TriggerOnEdit:             whereHelperbool{field: "\"custom_commands\".\"trigger_on_edit\""},
+	Public:                    whereHelperbool{field: "\"custom_commands\".\"public\""},
 }
 
 // CustomCommandRels is where relationship names are stored.
@@ -317,9 +322,9 @@ func (*customCommandR) NewStruct() *customCommandR {
 type customCommandL struct{}
 
 var (
-	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "name", "trigger_on_edit"}
+	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "name", "trigger_on_edit", "public"}
 	customCommandColumnsWithoutDefault = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "last_error_time", "name"}
-	customCommandColumnsWithDefault    = []string{"context_channel", "reaction_trigger_mode", "last_error", "run_count", "show_errors", "disabled", "trigger_on_edit"}
+	customCommandColumnsWithDefault    = []string{"context_channel", "reaction_trigger_mode", "last_error", "run_count", "show_errors", "disabled", "trigger_on_edit", "public"}
 	customCommandPrimaryKeyColumns     = []string{"guild_id", "local_id"}
 )
 

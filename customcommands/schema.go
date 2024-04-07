@@ -84,4 +84,6 @@ CREATE INDEX IF NOT EXISTS templates_user_database_combined_idx ON templates_use
 CREATE INDEX IF NOT EXISTS templates_user_database_expires_idx ON templates_user_database (expires_at);
 `, `
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS name TEXT;
+`, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS public BOOLEAN NOT NULL DEFAULT false;
 `}
