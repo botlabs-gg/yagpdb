@@ -90,6 +90,7 @@ func (p *Plugin) updateGlobalCommands() {
 		logger.WithError(err).Error("failed updating global slash commands")
 		return
 	}
+	logger.Infof("%#v", ret)
 
 	// assign the id's
 OUTER:
@@ -295,7 +296,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 		return false, err
 	}
 
-	result := make([]*discordgo.GuildApplicationCommandPermissions, 0)
+	commandPerms := make([]*discordgo.GuildApplicationCommandPermissions, 0)
 
 	// Start with root commands
 	for _, v := range CommandSystem.Root.Commands {
@@ -305,7 +306,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 				if err != nil {
 					return false, err
 				}
-				result = append(result, &discordgo.GuildApplicationCommandPermissions{
+				commandPerms = append(commandPerms, &discordgo.GuildApplicationCommandPermissions{
 					ID:            cast.slashCommandID,
 					ApplicationID: common.BotApplication.ID,
 					GuildID:       gs.ID,
@@ -321,7 +322,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 		if err != nil {
 			return false, err
 		}
-		result = append(result, &discordgo.GuildApplicationCommandPermissions{
+		commandPerms = append(commandPerms, &discordgo.GuildApplicationCommandPermissions{
 			ID:            v.slashCommandID,
 			ApplicationID: common.BotApplication.ID,
 			GuildID:       gs.ID,
@@ -329,7 +330,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 		})
 	}
 
-	serialized, _ := json.MarshalIndent(result, ">", "  ")
+	serialized, _ := json.MarshalIndent(commandPerms, ">", "  ")
 	fmt.Println(string(serialized))
 	hash := sha256.Sum256(serialized)
 	oldHash := []byte{}
@@ -344,18 +345,19 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 		return false, nil
 	}
 
-	ret, err := common.BotSession.BatchEditGuildApplicationCommandsPermissions(common.BotApplication.ID, gs.ID, result)
-	if err != nil {
-		return false, err
+	for _, commandPerm := range commandPerms {
+		ret, err := common.BotSession.EditGuildApplicationCommandPermissions(common.BotApplication.ID, gs.ID, commandPerm.ID, commandPerm.Permissions)
+		if err != nil {
+			logger.WithError(err).Errorf("Failed to update slash command permissions for %d and guild %d", commandPerm.ID, commandPerm.GuildID)
+			return false, err
+		}
+		logger.Infof("%#v \n", ret)
 	}
 
 	err = common.RedisPool.Do(radix.FlatCmd(nil, "SET", fmt.Sprintf("slash_cmd_perms_sum:%d", gs.ID), hash[:]))
 	if err != nil {
 		return false, err
 	}
-
-	serialized, _ = json.MarshalIndent(ret, "perms<", "  ")
-	fmt.Println(string(serialized))
 
 	return true, nil
 }

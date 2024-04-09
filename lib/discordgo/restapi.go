@@ -3015,14 +3015,14 @@ func (s *Session) GetGuildApplicationCommandPermissions(applicationID int64, gui
 // EditGuildApplicationCommandPermissions Edits command permissions for a specific command for your application in a guild.
 // PUT /applications/{application.id}/guilds/{guild.id}/commands/{command.id}/permissions
 // TODO: what does this return? docs dosn't say
-func (s *Session) EditGuildApplicationCommandPermissions(applicationID int64, guildID int64, cmdID int64, permissions []*ApplicationCommandPermissions) (err error) {
+func (s *Session) EditGuildApplicationCommandPermissions(applicationID int64, guildID int64, cmdID int64, permissions []*ApplicationCommandPermissions) (res interface{}, err error) {
 	data := struct {
 		Permissions []*ApplicationCommandPermissions `json:"permissions"`
 	}{
 		permissions,
 	}
 
-	_, err = s.RequestWithBucketID("PUT", EndpointApplicationGuildCommandPermissions(applicationID, guildID, cmdID), data, nil, EndpointApplicationGuildCommandPermissions(0, guildID, 0))
+	res, err = s.RequestWithBucketID("PUT", EndpointApplicationGuildCommandPermissions(applicationID, guildID, cmdID), data, nil, EndpointApplicationGuildCommandPermissions(0, guildID, 0))
 	return
 }
 
