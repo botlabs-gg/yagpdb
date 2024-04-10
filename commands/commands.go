@@ -14,7 +14,7 @@ import (
 	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})

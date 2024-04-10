@@ -7,7 +7,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 // contains stuff for migrating from redis to postgres based configs

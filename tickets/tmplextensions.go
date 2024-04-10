@@ -12,7 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 )
 
 func init() {

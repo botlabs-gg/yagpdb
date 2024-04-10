@@ -9,9 +9,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
 	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // CalcNextRunTime calculates the next run time for a custom command using the last ran time

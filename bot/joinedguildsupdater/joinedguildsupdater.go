@@ -9,7 +9,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/bot/models"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var logger = common.GetFixedPrefixLogger("joinedguildsupdater")
