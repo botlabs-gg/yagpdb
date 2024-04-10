@@ -18,7 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/logs"
 	"github.com/jinzhu/gorm"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type Punishment int

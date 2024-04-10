@@ -18,7 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/rsvp/models"
 	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 type SetupState int

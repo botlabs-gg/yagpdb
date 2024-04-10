@@ -19,7 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/reputation/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
