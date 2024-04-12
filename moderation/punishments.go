@@ -368,7 +368,13 @@ func RemoveTimeout(config *Config, guildID int64, author *discordgo.User, reason
 	}
 	action := MATimeoutRemoved
 
-	err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, nil, reason)
+	// Prepends the author's name, if unban wasn't triggered automatically.
+	fullReason := reason
+	if author.ID != common.BotUser.ID {
+		fullReason = author.String() + ": " + reason
+	}
+
+	err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, nil, fullReason)
 	if err != nil {
 		return err
 	}
