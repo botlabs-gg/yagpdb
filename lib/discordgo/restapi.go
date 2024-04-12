@@ -758,6 +758,22 @@ func (s *Session) GuildBanDelete(guildID, userID int64) (err error) {
 	return
 }
 
+// GuildBanDeleteWithReason removes the given user from the guild bans,
+// including sending an audit log reason.
+// guildID    : The ID of a Guild
+// userID     : The ID of a User
+// reason     : The reason for removing the ban
+func (s *Session) GuildBanDeleteWithReason(guildID, userID int64, reason string) (err error) {
+
+	headers := make(map[string]string)
+	if reason != "" {
+		headers["X-Audit-Log-Reason"] = url.PathEscape(reason)
+	}
+
+	_, err = s.RequestWithBucketID("DELETE", EndpointGuildBan(guildID, userID), nil, headers, EndpointGuildBan(guildID, 0))
+	return
+}
+
 // GuildMembers returns a list of members for a guild.
 //
 //	guildID  : The ID of a Guild.
