@@ -754,8 +754,7 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID int64, reason string,
 // userID    : The ID of a User
 func (s *Session) GuildBanDelete(guildID, userID int64) (err error) {
 
-	_, err = s.RequestWithBucketID("DELETE", EndpointGuildBan(guildID, userID), nil, nil, EndpointGuildBan(guildID, 0))
-	return
+	return s.GuildBanDeleteWithReason(guildID, userID, "")
 }
 
 // GuildBanDeleteWithReason removes the given user from the guild bans,
