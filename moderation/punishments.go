@@ -331,7 +331,13 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	// Set a key in redis that marks that this user has appeared in the modlog already
 	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))
 
-	err = common.BotSession.GuildBanDeleteWithReason(guildID, user.ID, reason)
+	// Prepends the author's name, if unban wasn't triggered automatically.
+	fullReason := reason
+	if author.ID != common.BotUser.ID {
+		fullReason = author.String() + ": " + reason
+	}
+
+	err = common.BotSession.GuildBanDeleteWithReason(guildID, user.ID, fullReason)
 	if err != nil {
 		notbanned, err := isNotFound(err)
 		return notbanned, err
