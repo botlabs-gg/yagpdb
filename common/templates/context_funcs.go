@@ -1419,6 +1419,8 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 			default:
 				return nil, errors.New("createThread 'invitable' must be a boolean")
 			}
+		default:
+			return nil, errors.New("createThread: Too many arguments")
 		}
 	}
 
