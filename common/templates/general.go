@@ -155,10 +155,7 @@ func StructToSdict(value interface{}) (SDict, error) {
 
 func CreateSlice(values ...interface{}) (Slice, error) {
 	slice := make([]interface{}, len(values))
-	for i := 0; i < len(values); i++ {
-		slice[i] = values[i]
-	}
-
+	copy(slice, values)
 	return Slice(slice), nil
 }
 
@@ -406,11 +403,11 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 			var parseSlice Slice
 			conv, err := parseSlice.AppendSlice(v)
 			if err != nil {
-				return nil, fmt.Errorf(`Allowed Mentions Parsing: invalid datatype passed to "%s", accepts a slice of snowflakes only`, k)
+				return nil, fmt.Errorf(`allowed Mentions Parsing: invalid datatype passed to "%s", accepts a slice of snowflakes only`, k)
 			}
 			for _, elem := range conv.(Slice) {
 				if (ToInt64(elem)) == 0 {
-					return nil, fmt.Errorf(`Allowed Mentions Parsing: "%s" IDSlice: invalid ID passed -`+fmt.Sprint(elem), k)
+					return nil, fmt.Errorf(`allowed Mentions Parsing: "%s" IDSlice: invalid ID passed -`+fmt.Sprint(elem), k)
 				}
 				newslice = append(newslice, ToInt64(elem))
 			}
