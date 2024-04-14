@@ -55,10 +55,6 @@ type GroupForm struct {
 	BlacklistRoles []int64 `valid:"role,true"`
 }
 
-type ImportGuild struct {
-	GuildID int64
-}
-
 type SearchForm struct {
 	Query string
 	Type  string
@@ -907,10 +903,6 @@ func PublicCommandMW(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		_, templateData := web.GetBaseCPContextData(ctx)
 		publicID := pat.Param(r, "cmd")
-		if _, err := strconv.ParseInt(publicID, 10, 64); err == nil {
-			// trying to parse a CC local ID
-			return
-		}
 		cc, err := models.CustomCommands(
 			models.CustomCommandWhere.PublicID.EQ(publicID)).OneG(r.Context())
 		if err != nil {
