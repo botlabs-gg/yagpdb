@@ -833,6 +833,22 @@ type MessageActivity struct {
 	PartyID string `json:"party_id"`
 }
 
+// MemberFlags represent flags of a guild member.
+// https://discord.com/developers/docs/resources/guild#guild-member-object-guild-member-flags
+type MemberFlags int
+
+// Block containing known MemberFlags values.
+const (
+	// MemberFlagDidRejoin indicates whether the Member has left and rejoined the guild.
+	MemberFlagDidRejoin MemberFlags = 1 << 0
+	// MemberFlagCompletedOnboarding indicates whether the Member has completed onboarding.
+	MemberFlagCompletedOnboarding MemberFlags = 1 << 1
+	// MemberFlagBypassesVerification indicates whether the Member is exempt from guild verification requirements.
+	MemberFlagBypassesVerification MemberFlags = 1 << 2
+	// MemberFlagStartedOnboarding indicates whether the Member has started onboarding.
+	MemberFlagStartedOnboarding MemberFlags = 1 << 3
+)
+
 // A Member stores user information for Guild members. A guild
 // member represents a certain user's presence in a guild.
 type Member struct {
@@ -859,6 +875,13 @@ type Member struct {
 
 	// A list of IDs of the roles which are possessed by the member.
 	Roles IDSlice `json:"roles,string"`
+
+	// When the user used their Nitro boost on the server
+	PremiumSince *time.Time `json:"premium_since"`
+
+	// The flags of this member. This is a combination of bit masks; the presence of a certain
+	// flag can be checked by performing a bitwise AND between this int and the flag.
+	Flags MemberFlags `json:"flags"`
 
 	// Whether the user has not yet passed the guild's Membership Screening requirements
 	Pending bool `json:"pending"`
