@@ -55,6 +55,10 @@ type GroupForm struct {
 	BlacklistRoles []int64 `valid:"role,true"`
 }
 
+type ImportGuild struct {
+	GuildID int64
+}
+
 type SearchForm struct {
 	Query string
 	Type  string
@@ -131,6 +135,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/commands/:cmd/run_now"), web.ControllerPostHandler(handleRunCommandNow, getCmdHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/update_and_run"), web.ControllerPostHandler(handleUpdateAndRunNow, getCmdHandler, CustomCommand{}))
 	subMux.Handle(pat.Post("/commands/:cmd/update_and_share"), web.ControllerPostHandler(handleUpdateAndShare, getCmdHandler, CustomCommand{}))
+	subMux.Handle(pat.Post("/commands/import/:cmd"), PublicCommandMW(newCommandHandler))
 
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(handleUpdateGroup, getGroupHandler, GroupForm{}))
@@ -391,9 +396,37 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		dbModel.GroupID = null.Int64From(groupID)
 	}
 
+	var importCC *models.CustomCommand
+	_, importingPublicCC := templateData["PublicAccess"]
+	if importingPublicCC {
+		// this is an import
+		importID := pat.Param(r, "cmd")
+		importCC, err = models.CustomCommands(
+			models.CustomCommandWhere.PublicID.EQ(importID)).OneG(r.Context())
+		if err != nil {
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return templateData, err
+		}
+		dbModel.Name = importCC.Name
+		dbModel.ReactionTriggerMode = importCC.ReactionTriggerMode
+		dbModel.Responses = importCC.Responses
+		dbModel.TextTrigger = importCC.TextTrigger
+		dbModel.TextTriggerCaseSensitive = importCC.TextTriggerCaseSensitive
+		dbModel.TimeTriggerExcludingDays = importCC.TimeTriggerExcludingDays
+		dbModel.TimeTriggerExcludingHours = importCC.TimeTriggerExcludingHours
+		dbModel.TimeTriggerInterval = importCC.TimeTriggerInterval
+		dbModel.TriggerOnEdit = importCC.TriggerOnEdit && premium.ContextPremium(ctx)
+		dbModel.TriggerType = importCC.TriggerType
+		templateData.AddAlerts(web.WarningAlert("It is recommended you scan your CC for hardcoded IDs or other server-specific arguments you may want to update"))
+	}
+
 	err = dbModel.InsertG(ctx, boil.Infer())
 	if err != nil {
 		return templateData, err
+	}
+
+	if importingPublicCC {
+		UpdateImportCount(importCC)
 	}
 
 	featureflags.MarkGuildDirty(activeGuild.ID)
@@ -891,6 +924,10 @@ func PublicCommandMW(inner http.Handler) http.Handler {
 		ctx := r.Context()
 		_, templateData := web.GetBaseCPContextData(ctx)
 		publicID := pat.Param(r, "cmd")
+		if _, err := strconv.ParseInt(publicID, 10, 64); err == nil {
+			// trying to parse a CC local ID
+			return
+		}
 		cc, err := models.CustomCommands(
 			models.CustomCommandWhere.PublicID.EQ(publicID)).OneG(r.Context())
 		if err != nil {
@@ -899,19 +936,26 @@ func PublicCommandMW(inner http.Handler) http.Handler {
 			return
 		}
 
-		if read, _ := web.IsAdminRequest(ctx, r); read {
-			http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands/commands/%d/", cc.GuildID, cc.LocalID), http.StatusSeeOther)
+		if cc.Public {
+			templateData["PublicAccess"] = true
+
+			guilds, _ := web.GetUserGuilds(r.Context())
+			templateData["UserGuilds"] = guilds
+			// retrieve the cc's page
+			defer func() { inner.ServeHTTP(w, r) }()
 		} else {
-			if cc.Public {
-				templateData["PublicAccess"] = true
-				// retrieve the cc's page
-				defer func() { inner.ServeHTTP(w, r) }()
-			} else {
-				http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
-			}
+			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
 		}
 		r = r.WithContext(context.WithValue(ctx, common.ContextKeyTemplateData, templateData))
 	}
 
 	return http.HandlerFunc(mw)
+}
+
+func UpdateImportCount(cmd *models.CustomCommand) {
+	_, err := common.PQ.Exec("UPDATE custom_commands SET import_count = import_count + 1 WHERE public_id=$1", cmd.PublicID)
+
+	if err != nil {
+		logger.WithError(err).WithField("guild", cmd.GuildID).Error("failed running post command imported query")
+	}
 }
