@@ -1371,7 +1371,7 @@ func (c *Context) AddThreadToGuildSet(t *dstate.ChannelState) {
 	c.GS = &gsCopy
 }
 
-func (c *Context) tmplCreateThread(channel, msgID, name interface{}, private ...interface{}) (*CtxChannel, error) {
+func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals ...interface{}) (*CtxChannel, error) {
 
 	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 1) {
 		return nil, ErrTooManyCalls
@@ -1387,27 +1387,45 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, private ...
 		return nil, errors.New("channel not in state")
 	}
 
+	start := &discordgo.ThreadStart{
+		Name:                ToString(name),
+		Type:                discordgo.ChannelTypeGuildPublicThread,
+		AutoArchiveDuration: 10080, // 7 days
+		Invitable:           false,
+	}
 	mID := ToInt64(msgID)
-
-	threadType := discordgo.ChannelTypeGuildPublicThread
-	if len(private) > 0 {
-		switch v := private[0].(type) {
-		case bool:
-			if v {
-				threadType = discordgo.ChannelTypeGuildPrivateThread
+	for index, opt := range optionals {
+		switch index {
+		case 0:
+			switch opt := opt.(type) {
+			case bool:
+				if opt {
+					start.Type = discordgo.ChannelTypeGuildPrivateThread
+				}
+			default:
+				return nil, errors.New("createThread 'private' must be a boolean")
 			}
+		case 1:
+			duration := tmplToInt(opt)
+			if duration < 60 || duration > 10080 {
+				return nil, errors.New("createThread 'auto_archive_duration' must be and integer between 60 and 10080")
+			}
+		case 2:
+			switch opt := opt.(type) {
+			case bool:
+				if opt {
+					start.Invitable = true
+				}
+			default:
+				return nil, errors.New("createThread 'invitable' must be a boolean")
+			}
+		default:
+			return nil, errors.New("createThread: Too many arguments")
 		}
 	}
 
-	start := &discordgo.ThreadStart{
-		Name: ToString(name),
-		//AutoArchiveDuration: 10080, // 7 days
-		Type:      threadType,
-		Invitable: false,
-	}
-
 	var ctxThread *discordgo.Channel
-	var err error = nil
+	var err error
 	if mID > 0 {
 		ctxThread, err = common.BotSession.MessageThreadStartComplex(cID, mID, start)
 	} else {
@@ -1513,7 +1531,7 @@ func ConvertTagNameToId(c *dstate.ChannelState, tagName string) int64 {
 
 func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{}) (int, []int64, error) {
 
-	if values == nil || len(values) == 0 {
+	if len(values) == 0 {
 		return c.DefaultThreadRateLimitPerUser, nil, nil
 	}
 
