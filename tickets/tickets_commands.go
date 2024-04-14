@@ -20,8 +20,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.PermissionReadMessages | discordgo.PermissionSendMessages | discordgo.PermissionEmbedLinks | discordgo.PermissionAttachFiles
@@ -441,7 +441,7 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 			// download attachments
 		OUTER:
 			for _, att := range msg.Attachments {
-				msg.Content += fmt.Sprintf("(attatchment: %s)", att.Filename)
+				msg.Content += fmt.Sprintf("(attachment: %s)", att.Filename)
 
 				totalAttachmentSize += att.Size
 				if totalAttachmentSize > 500000000 {

@@ -12,7 +12,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"goji.io/pat"
 )
 

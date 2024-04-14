@@ -18,7 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/logs"
 	"github.com/jinzhu/gorm"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type Punishment int
@@ -331,7 +331,13 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	// Set a key in redis that marks that this user has appeared in the modlog already
 	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, user.ID), 30, 2))
 
-	err = common.BotSession.GuildBanDelete(guildID, user.ID)
+	// Prepends the author's name, if unban wasn't triggered automatically.
+	fullReason := reason
+	if author.ID != common.BotUser.ID {
+		fullReason = author.String() + ": " + reason
+	}
+
+	err = common.BotSession.GuildBanDeleteWithReason(guildID, user.ID, fullReason)
 	if err != nil {
 		notbanned, err := isNotFound(err)
 		return notbanned, err
@@ -362,7 +368,13 @@ func RemoveTimeout(config *Config, guildID int64, author *discordgo.User, reason
 	}
 	action := MATimeoutRemoved
 
-	err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, nil, reason)
+	// Prepends the author's name, if unban wasn't triggered automatically.
+	fullReason := reason
+	if author.ID != common.BotUser.ID {
+		fullReason = author.String() + ": " + reason
+	}
+
+	err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, nil, fullReason)
 	if err != nil {
 		return err
 	}

@@ -754,7 +754,22 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID int64, reason string,
 // userID    : The ID of a User
 func (s *Session) GuildBanDelete(guildID, userID int64) (err error) {
 
-	_, err = s.RequestWithBucketID("DELETE", EndpointGuildBan(guildID, userID), nil, nil, EndpointGuildBan(guildID, 0))
+	return s.GuildBanDeleteWithReason(guildID, userID, "")
+}
+
+// GuildBanDeleteWithReason removes the given user from the guild bans,
+// including sending an audit log reason.
+// guildID    : The ID of a Guild
+// userID     : The ID of a User
+// reason     : The reason for removing the ban
+func (s *Session) GuildBanDeleteWithReason(guildID, userID int64, reason string) (err error) {
+
+	headers := make(map[string]string)
+	if reason != "" {
+		headers["X-Audit-Log-Reason"] = url.PathEscape(reason)
+	}
+
+	_, err = s.RequestWithBucketID("DELETE", EndpointGuildBan(guildID, userID), nil, headers, EndpointGuildBan(guildID, 0))
 	return
 }
 
@@ -846,12 +861,12 @@ func (s *Session) GuildMemberDelete(guildID, userID int64) (err error) {
 // reason    : The reason for the kick
 func (s *Session) GuildMemberDeleteWithReason(guildID, userID int64, reason string) (err error) {
 
-	uri := EndpointGuildMember(guildID, userID)
+	headers := make(map[string]string)
 	if reason != "" {
-		uri += "?reason=" + url.QueryEscape(reason)
+		headers["X-Audit-Log-Reason"] = url.PathEscape(reason)
 	}
 
-	_, err = s.RequestWithBucketID("DELETE", uri, nil, nil, EndpointGuildMember(guildID, 0))
+	_, err = s.RequestWithBucketID("DELETE", EndpointGuildMember(guildID, userID), nil, headers, EndpointGuildMember(guildID, 0))
 	return
 }
 

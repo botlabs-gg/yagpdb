@@ -20,7 +20,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"golang.org/x/oauth2"
 )
 

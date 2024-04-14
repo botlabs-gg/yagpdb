@@ -27,9 +27,10 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -411,7 +412,14 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	cmdEdit := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
 	cmdSaved, err := models.FindCustomCommandG(context.Background(), activeGuild.ID, int64(cmdEdit.ID))
-	if cmdSaved.Disabled == true && cmdEdit.ToDBModel().Disabled == false {
+	if err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"guild_id": activeGuild.ID,
+			"cmd_id":   cmdEdit.ID,
+		}).Error("Error in fetching command")
+		return templateData, err
+	}
+	if cmdSaved.Disabled && !cmdEdit.ToDBModel().Disabled {
 		c, err := models.CustomCommands(qm.Where("guild_id = ? and disabled = false", activeGuild.ID)).CountG(ctx)
 		if err != nil {
 			return templateData, err

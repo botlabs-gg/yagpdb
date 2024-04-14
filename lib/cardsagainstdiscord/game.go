@@ -1092,7 +1092,7 @@ func (g *Game) HandleMessageCreate(ic *discordgo.InteractionCreate) {
 	player.FilingBlankCard = false
 }
 
-const zeroWidthSpace = "​"
+const zeroWidthSpace = "\u200b"
 
 var (
 	mentionReplacer = strings.NewReplacer("@here", "@"+zeroWidthSpace+"here", "@everyone", "@"+zeroWidthSpace+"everyone")
