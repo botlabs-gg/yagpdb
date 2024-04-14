@@ -54,16 +54,19 @@
 
 
                     {{$guild := .ActiveGuild.ID}}
+                    {{if .PublicAccess}}
+                        {{$guild = 0}}
+                    {{end}}
                     {{$g := .ActiveGuild}}
                     {{$dot := .}}
-                    <form class="form-horizontal" method="post"
+                    <form id="main-form" class="form-horizontal" method="post"
                         action="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update" data-async-form>
                         <button type="submit" class="hidden"
                             formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update"
                             data-async-form-alertsonly></button>
 
                         <h2 class="card-title">
-                            #{{.CC.LocalID}} -
+                            {{if not .PublicAccess}}#{{.CC.LocalID}} -{{end}}
                             {{index .CCTriggerTypes .CC.TriggerType}}{{if and (ne .CC.TriggerType 5) (ne .CC.TriggerType 6)}}:
                             <span
                                 class="cc-text-trigger-span">{{.CC.TextTrigger}}</span>{{else if ne .CC.TriggerType 6}}:
@@ -205,14 +208,16 @@
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                                         </div>
                                     </div>
-                                    <div class="col-sm-8">
+                                    {{if not .PublicAccess}}
+                                    <div class="col-sm-8 public-hidden">
                                         <div class="form-group">
                                             <label>Channel</label>
-                                            <select id="time-trigger-channel" name="context_channel" class="form-control public-disabled">
+                                            <select id="time-trigger-channel" name="context_channel" class="form-control">
                                                 {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
                                             </select>
                                         </div>
                                     </div>
+                                    {{end}}
                                 </div>
                                 <div class="row">
                                     <div class="col-sm-6">
@@ -267,17 +272,29 @@
                                     <p>An optional name that can be used to identify the command.</p>
                                 </div>
                             </div>
+                            {{if not .PublicAccess}}
                              <div class="col-sm-4 public-hidden">
                                 <div class="form-group">
                                     <br/>
                                     <label> Command Enabled?</label>
                                     {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled)}}
-                                    <label> Public?</label>
-                                    {{checkbox "public" "public" "Allows non-members to view the CC with a link" .CC.Public}}
-                                    <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-md"
-                                        href="#cc-share-modal">Share this Command</a>
+                                    <label> Allow Imports?</label>
+                                    {{checkbox "public" "public" "Anyone with an import link can copy this custom command into their server." .CC.Public}}
+                                    {{if eq .PublicLink ""}}
+                                    <button type="submit" class="btn btn-tertriary btn-md" title="This will trigger this custom command immediately"
+                                    form="main-form" formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update_and_share">Create
+                                    import link</button>
+                                    {{else}}
+                                    <a class="mb-1 mt-1 mr-1 modal-basic btn btn-quaternary btn-md"
+                                        href="#cc-share-modal">Copy Import Link</a>
+                                        <div class="col-auto">
+                                            <h4>Import count</h4>
+                                            <p><code>{{.CC.ImportCount}}</code></p>
+                                        </div>
+                                    {{end}}
                                 </div>
                             </div>
+                            {{end}}
                         </div>
                         <div class="row mb-2">
                             <div class="col-lg-12">
@@ -328,6 +345,7 @@
                                 </div>
                             </div>
                         </div>
+                        {{if not .PublicAccess}}
                         <div class="row public-hidden">
                             <div class="col-sm-6">
                                 <div class="form-group">
@@ -410,6 +428,7 @@
                                 </select>
                             </div>
                         </div>
+                        {{end}}
 
                         <div class="row mt-4 public-hidden">
                             <div class="col">
@@ -486,12 +505,13 @@
 <div id="cc-share-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
     <section class="card">
         <header class="card-header">
-            <h2 class="card-title">Share Custom Command</h2>
+            <h2 class="card-title">Copy Import Link</h2>
         </header>
         <div class="card-body">
             <div class="modal-wrapper">
                 <div class="modal-text">
-                    <p class="help-block">To share custom command #<code>{{.CC.LocalID}}</code>, copy the link below.
+                    <p class="help-block">To share custom command #<code>{{.CC.LocalID}}</code>, and allow users to
+                    import it, copy the link below.
                     </p>
                     <br>
                     <input type="text" id="public-link" class="form-control" name="Public Link" value="{{.PublicLink}}" readonly>
