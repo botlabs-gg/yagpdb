@@ -259,8 +259,8 @@ var cmdListCommands = &commands.YAGCommand{
 		ccIDMaybeWithLink := strconv.FormatInt(cc.LocalID, 10)
 
 		// Add public link to the CC if it is public
-		if cc.Public {
-			ccIDMaybeWithLink = fmt.Sprintf("[%[1]d](%[2]s/public/%[3]d/customcommands/commands/%[1]d/)", cc.LocalID, web.BaseURL(), data.GuildData.GS.ID)
+		if cc.Public && cc.PublicID != "" {
+			ccIDMaybeWithLink = fmt.Sprintf("[%d](%s/cc/%s)", cc.LocalID, web.BaseURL(), cc.PublicID)
 		}
 
 		// Add link to the cc on dashboard if member has read access
