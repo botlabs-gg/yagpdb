@@ -61,9 +61,12 @@ type SearchForm struct {
 }
 
 var (
-	panelLogKeyNewCommand     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_command", FormatString: "Created a new custom command: %d"})
-	panelLogKeyUpdatedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_command", FormatString: "Updated custom command: %d"})
-	panelLogKeyRemovedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_command", FormatString: "Removed custom command: %d"})
+	panelLogKeyNewCommand             = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_command", FormatString: "Created a new custom command: %d"})
+	panelLogKeyUpdatedCommand         = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_command", FormatString: "Updated custom command: %d"})
+	panelLogKeyRemovedCommand         = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_command", FormatString: "Removed custom command: %d"})
+	panelLogKeyEnabledSharingCommand  = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_enabled_sharing_command", FormatString: "Enabled a sharable link for command: %d"})
+	panelLogKeyDisabledSharingCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_disabled_sharing_command", FormatString: "Disabled a sharable link for command: %d"})
+	panelLogKeyImportedCommand        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_imported_command", FormatString: "Imported command: %d from another server"})
 
 	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_group", FormatString: "Created a new custom command group: %s"})
 	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_group", FormatString: "Updated custom command group: %s"})
@@ -429,7 +432,11 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands/commands/%d/", activeGuild.ID, localID), http.StatusSeeOther)
 
-	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	if !importingPublicCC {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	} else {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyImportedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	}
 
 	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
 	return templateData, nil
@@ -530,6 +537,11 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	if dbModel.Public && !cmdSaved.Public {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyEnabledSharingCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	} else if !dbModel.Public && cmdSaved.Public {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDisabledSharingCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	}
 
 	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
 	return templateData, err
@@ -636,7 +648,7 @@ func handleUpdateAndShare(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	_, templateData := web.GetBaseCPContextData(ctx)
 	templateData["CreateLink"] = true
 	r = r.WithContext(context.WithValue(ctx, common.ContextKeyTemplateData, templateData))
-	
+
 	return handleUpdateCommand(w, r)
 }
 
