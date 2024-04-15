@@ -274,7 +274,7 @@
                                 </div>
                             </div>
                             {{if not .PublicAccess}}
-                             <div class="col-sm-4 public-hidden">
+                            <div class="col-sm-4 public-hidden">
                                 <div class="form-group">
                                     <br/>
                                     <label> Command Enabled?</label>
@@ -282,13 +282,13 @@
                                     <label> Allow Imports?</label>
                                     {{checkbox "public" "public" "Anyone with an import link can copy this custom command into their server." .CC.Public}}
                                     {{if eq .PublicLink ""}}
-                                    <button type="submit" class="btn btn-tertriary btn-md" title="This will trigger this custom command immediately"
+                                    <button type="submit" class="btn btn-secondary btn-sm" title="This will create the sharable link to this CC"
                                     form="main-form" formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update_and_share">Create
                                     import link</button>
                                     {{else}}
-                                    <a class="mb-1 mt-1 mr-1 modal-basic btn btn-quaternary btn-md"
+                                    <a class="modal-basic btn btn-quaternary btn-sm"
                                         href="#cc-share-modal">Copy Import Link</a>
-                                        <div class="col-auto">
+                                        <div>
                                             <h4>Import count</h4>
                                             <p><code>{{.CC.ImportCount}}</code></p>
                                         </div>
@@ -296,11 +296,10 @@
                                 </div>
                             </div>
                             {{end}}
-                        </div>
-                        {{if .PublicAccess}}
-                        {{if .User}}
+                            {{if .PublicAccess}}
                             <div class="form-group">
                                 <label>Import this CC into a server</label>
+                                {{if .User}}
                                 <select name="GuildID" class="form-control" id="import-guild" onchange="updateImportModal()">
                                     <option value="0" selected>None</option>
 
@@ -309,16 +308,14 @@
                                     </option>
                                     {{end}}{{end}}
                                 </select>
+                                <button id="import-button" class="mb-1 mt-1 mr-1 modal-basic btn btn-danger btn-block"
+                                        href="#cc-import-modal" disabled>Import CC</button>
+                                {{else}}
+                                <a href="/login?goto={{urlquery .RequestURI}}">Log in to import this CC into your server.</a>
+                                {{end}}
                             </div>
-                            <br>
-                            <button id="import-button" class="mb-1 mt-1 mr-1 modal-basic btn btn-danger btn-md"
-                                    href="#cc-import-modal" disabled>Import CC</button>
-                        {{else}}
-                        <div class="row">
-                                <p>Sign in to import this CC into your server.</p>
+                            {{end}}
                         </div>
-                        {{end}}
-                        {{end}}
                         <div class="row mb-2">
                             <div class="col-lg-12">
                                 <div class="form-group">
