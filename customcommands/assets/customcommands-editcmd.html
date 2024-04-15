@@ -280,7 +280,7 @@
                                     <label> Command Enabled?</label>
                                     {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled)}}
                                     <label> Allow Imports?</label>
-                                    {{checkbox "public" "public" "Anyone with an import link can copy this custom command into their server." .CC.Public}}
+                                    {{checkbox "public" "public" "Allow anyone to view and copy this command" .CC.Public}}
                                     {{if eq .PublicLink ""}}
                                     <button type="submit" class="btn btn-secondary btn-sm" title="This will create the sharable link to this CC"
                                     form="main-form" formaction="/manage/{{$guild}}/customcommands/commands/{{.CC.LocalID}}/update_and_share">Create
@@ -311,7 +311,9 @@
                                 <button id="import-button" class="mb-1 mt-1 mr-1 modal-basic btn btn-danger btn-block"
                                         href="#cc-import-modal" disabled>Import CC</button>
                                 {{else}}
-                                <a href="/login?goto={{urlquery .RequestURI}}">Log in to import this CC into your server.</a>
+                                <div>
+                                    <a href="/login?goto={{urlquery .RequestURI}}">Log in to import this CC into your server.</a>
+                                </div>
                                 {{end}}
                             </div>
                             {{end}}
@@ -533,7 +535,6 @@
                     <p class="help-block">To share custom command #<code>{{.CC.LocalID}}</code>, and allow users to
                     import it, copy the link below.
                     </p>
-                    <br>
                     <input type="text" id="public-link" class="form-control" name="Public Link" value="{{.PublicLink}}" readonly>
                     <button id="copy-link-button" class="btn btn-quaternary">Copy Text</button>
                     <script>
