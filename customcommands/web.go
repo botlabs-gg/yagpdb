@@ -855,8 +855,10 @@ func PublicCommandMW(inner http.Handler) http.Handler {
 		if cc.Public {
 			templateData["PublicAccess"] = true
 
-			guilds, _ := web.GetUserGuilds(r.Context())
-			templateData["UserGuilds"] = guilds
+			if _, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User); ok {
+				guilds, _ := web.GetUserGuilds(r.Context())
+				templateData["UserGuilds"] = guilds
+			}
 			// retrieve the cc's page
 			defer func() { inner.ServeHTTP(w, r) }()
 		} else {
