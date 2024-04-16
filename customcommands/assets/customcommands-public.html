@@ -338,6 +338,7 @@
 
     let submitButton = document.getElementById("import-submit");
     submitButton.formAction = "/manage/" + guildID + "/customcommands/commands/import/{{.CC.PublicID}}";
+    submitButton.formMethod = "POST";
 
     let confirmation = document.getElementById("guild-confirmation");
     confirmation.innerHTML = "Import to " + guildName + "?";
