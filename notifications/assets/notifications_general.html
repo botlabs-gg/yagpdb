@@ -66,6 +66,11 @@
                                 <p class="help-block">Available template data is {{template "template_helper_user"}} and
                                     {{template "template_helper_guild"}}. YAGPDB will pick one message at random from
                                     all configured.</p>
+                                <div class="row mt-4">
+                                    <div class="col">
+                                        {{checkbox "send_after_onboarding" "gnotifs-after-onboarding" "Send a message after finishing the welcome screen" .NotifyConfig.SendAfterOnboard}}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
