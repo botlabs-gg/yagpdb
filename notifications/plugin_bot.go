@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"fmt"
+	"strconv"
 	"math/rand"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -21,6 +23,28 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandlerFirst(p, HandleChannelUpdate, eventsystem.EventChannelUpdate)
+	eventsystem.AddHandlerAsyncLast(p, handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
+}
+
+func JoinMsgPendingMembersKey(gID int64) string {
+	return "joinmsg_pending_members:" + strconv.FormatInt(gID, 10)
+}
+
+// Function to check if member is present in join message pending set, and add if not present
+func addMemberToJoinMsgPendingSet(guildID int64, userID int64) {
+	var memberScore int
+	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", JoinMsgPendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
+	if err != nil {
+		logger.WithError(err).Error("Failed fetching member from the join msg pending set")
+	}
+	if memberScore != 0 {
+		// Member is already in the set
+		return
+	}
+	err = common.RedisPool.Do(radix.Cmd(nil, "ZADD", JoinMsgPendingMembersKey(guildID), "1", strconv.FormatInt(userID, 10)))
+	if err != nil {
+		logger.WithError(err).Error("Failed adding member to the join msg pending set")
+	}
 }
 
 func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error) {
@@ -73,6 +97,10 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 		if channel == nil {
 			return
 		}
+		if(config.SendAfterOnboard) {
+			addMemberToJoinMsgPendingSet(evt.GuildID, ms.User.ID)
+			return false, nil
+		}
 
 		go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_dm")
 
@@ -117,6 +145,56 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 		return true, nil
 	}
 
+	return false, nil
+}
+
+func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
+	update := evt.GuildMemberUpdate()
+
+	gs := evt.GS
+	ms := dstate.MemberStateFromMember(update.Member)
+	ms.GuildID = update.GuildID
+
+	config, err := GetConfig(update.GuildID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	if !config.SendAfterOnboard {
+		return
+	}
+
+	if update.Pending {
+		addMemberToJoinMsgPendingSet(update.GuildID, update.User.ID)
+		return
+	}
+
+	var memberScore int
+	// Check for this member in the join msg pending set
+	err = common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", JoinMsgPendingMembersKey(update.GuildID), strconv.FormatInt(update.User.ID, 10)))
+	if err != nil {
+		logger.WithError(err).Error("Failed fetching member from the join msg pending set")
+	}
+
+	if memberScore != 0 {
+		// Member was found in the join msg pending set, remove from the set and send a message
+		err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", JoinMsgPendingMembersKey(update.GuildID), strconv.FormatInt(update.User.ID, 10)))
+		if err != nil {
+			logger.WithError(err).Error("Failed removing member from the join msg pending set")
+		}
+
+		channel := gs.GetChannel(config.JoinServerChannelInt())
+		if channel == nil {
+			return false, nil
+		}
+
+		go analytics.RecordActiveUnit(gs.ID, &Plugin{}, "posted_join_server_dm")
+
+		chanMsg := config.JoinServerMsgs[rand.Intn(len(config.JoinServerMsgs))]
+		if sendTemplate(gs, channel, chanMsg, ms, "join server msg", config.CensorInvites, templates.ExecutedFromJoin) {
+			return true, nil
+		}
+	}
 	return false, nil
 }
 
