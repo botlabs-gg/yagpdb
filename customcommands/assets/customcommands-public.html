@@ -1,0 +1,370 @@
+{{define "cp_custom_commands_public"}}
+{{template "cp_head" .}}
+<header class="page-header">
+  <h2>Custom commands</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<!-- Nav -->
+<div class="row">
+  <div class="col">
+    <!-- Nav tabs -->
+    <div class="tabs">
+      <!-- Tab panes -->
+      <div class="tab-content">
+        <div class="tab-pane active">
+
+          <ul id="cc-feedback-top">
+            <li class="text-danger" hidden id="trigger-warning"></li>
+          </ul>
+          {{$dot := .}}
+          <form id="main-form" class="form-horizontal">
+            <h2 class="card-title">
+              {{index .CCTriggerTypes .CC.TriggerType}}{{if and (ne .CC.TriggerType 5) (ne .CC.TriggerType 6)}}:
+              <span class="cc-text-trigger-span">{{.CC.TextTrigger}}</span>{{else if ne .CC.TriggerType 6}}:
+              Every
+              {{call .GetCCInterval .CC}}
+              {{if eq (call .GetCCIntervalType .CC) 1}}hour(s){{else}}minute(s){{end}}{{end}}
+            </h2>
+            <div class="row mt-4">
+              <!-- Trigger -->
+              <div class="col-lg-4">
+                <div class="row">
+                  <div class="col">
+                    <div class="form-group">
+                      <label>Trigger type</label>
+                      <input class="form-control" id="trigger-type-dropdown" name="type" readonly disabled
+                        value="{{if (eq .CC.TriggerType 5)}} {{if eq (call .GetCCIntervalType .CC) 1}} Hourly{{else}}Minute{{end}}{{end}} {{index .CCTriggerTypes .CC.TriggerType}}" />
+                      <div class="row">
+                        <div class="col" id="trigger-help">
+                          {{ if eq .CC.TriggerType 10}}
+                          <p id="trigger-desc-none" class="text-danger">
+                            No trigger: can only be triggered manually by other custom
+                            commands
+                          </p>
+                          {{else if eq .CC.TriggerType 0}}
+                          <p id="trigger-desc-cmd">
+                            <b>Command Trigger</b>: Works the same way as normal commands by using the
+                            command
+                            prefix or bot mention followed by the trigger.<br />
+                          </p>
+                          {{else if eq .CC.TriggerType 1}}
+                          <p id="trigger-desc-prefix">
+                            Any message that starts with the trigger will run the command.
+                          </p>
+                          {{else if eq .CC.TriggerType 2}}
+                          <p id="trigger-desc-contains">
+                            Any message that contains the trigger will run the command.
+                          </p>
+                          {{else if eq .CC.TriggerType 3}}
+                          <p id="trigger-desc-regex">
+                            Any message that matches the provided regex will trigger the command.
+                          </p>
+                          {{else if eq .CC.TriggerType 4}}
+                          <p id="trigger-desc-exact">
+                            Any message that is equal to the trigger will run the command.
+                          </p>
+                          {{else if eq .CC.TriggerType 5}}
+                          {{if eq (call .GetCCIntervalType .CC) 1}}
+                          <p id="trigger-desc-interval_hours">
+                            The command will run at a hourly interval, for example every 5 hours.
+                          </p>
+                          {{else}}
+                          <p id="trigger-desc-interval_minutes">
+                            The command will run at a minute interval, for example every 10 minutes.
+                          </p>
+                          {{end}}
+                          {{else if eq .CC.TriggerType 6}}
+                          <p id="trigger-desc-reaction">
+                            The command will trigger on the specified reaction events.
+                          </p>
+                          {{end}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {{if eq .CC.TriggerType 0 1 2 3 4}}
+              <div id="cc-text-trigger-details" class="col-lg-8">
+                <div class="row">
+                  <div class="col-lg-12">
+                    <div class="form-group">
+                      <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                      <div class="input-group mb-2">
+                        <div class="input-group-prepend" id="command-trigger-prepended-prefix">
+                          <div class="input-group-text">{{.CommandPrefix}}</div>
+                        </div>
+                        <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
+                          value="{{.CC.TextTrigger}}" disabled>
+                      </div>
+                      <div class="row">
+                        <div class="col-lg-6">
+                          {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?"
+                          .CC.TextTriggerCaseSensitive "disabled"}}
+                        </div>
+                        <div class="col-lg-6">
+                          {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)"
+                          .CC.TriggerOnEdit "disabled"}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {{else if eq .CC.TriggerType 6}}
+              <div id="cc-reaction-trigger-details" class="col-lg-8">
+                <div class="row">
+                  <div class="col-lg-12">
+                    <div class="form-check">
+                      <input class="form-check-input" disabled type="radio" name="reaction_trigger_mode"
+                        id="reaction-mode-both-{{.CC.PublicID}}" value="0" {{if eq .CC.ReactionTriggerMode
+                        0}}checked{{end}}>
+                      <label class="form-check-label" for="reaction-mode-both-{{.CC.PublicID}}">
+                        Added + Removed reactions
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" disabled type="radio" name="reaction_trigger_mode"
+                        id="reaction-mode-added-{{.CC.PublicID}}" value="1" {{if eq .CC.ReactionTriggerMode
+                        1}}checked{{end}}>
+                      <label class="form-check-label" for="reaction-mode-added-{{.CC.PublicID}}">
+                        Added reactions only
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" disabled type="radio" name="reaction_trigger_mode"
+                        id="reaction-mode-removed-{{.CC.PublicID}}" value="2" {{if eq .CC.ReactionTriggerMode
+                        2}}checked{{end}}>
+                      <label class="form-check-label" for="reaction-mode-removed-{{.CC.PublicID}}">
+                        Removed reactions only
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {{else if eq .CC.TriggerType 5}}
+              <div id="cc-time-trigger-details" class="col-lg-8">
+                <div class="row">
+                    <div class="form-group col-lg-6">
+                      <label>Interval</label>
+                      <input type="number" min="0" class="form-control" disabled name="time_trigger_interval"
+                        placeholder="" value="{{call $dot.GetCCInterval .CC}}">
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="form-group col-lg-3">
+                      <label for="trigger">Excluding hours (UTC)</label><br>
+                      <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple"
+                        disabled data-plugin-multiselect>
+                        {{$selectedExclHours := .CC.TimeTriggerExcludingHours}}
+                        {{range seq 0 24}}<option value="{{.}}" {{if in $selectedExclHours .}}selected{{end}}>{{.}}
+                        </option>
+                        {{end}}
+                      </select>
+                    </div>
+                    <div class="form-group col-lg-3">
+                      <label for="trigger">Excluding weekdays (UTC)</label><br>
+                      <select name="time_trigger_excluding_days" class="multiselect form-control" multiple="multiple"
+                        disabled data-plugin-multiselect>
+                        <option value="1" {{if in .CC.TimeTriggerExcludingDays 1}}selected{{end}}>
+                          Monday</option>
+                        <option value="2" {{if in .CC.TimeTriggerExcludingDays 2}}selected{{end}}>
+                          Tuesday</option>
+                        <option value="3" {{if in .CC.TimeTriggerExcludingDays 3}}selected{{end}}>
+                          Wednesday</option>
+                        <option value="4" {{if in .CC.TimeTriggerExcludingDays 4}}selected{{end}}>
+                          Thursday</option>
+                        <option value="5" {{if in .CC.TimeTriggerExcludingDays 5}}selected{{end}}>
+                          Friday</option>
+                        <option value="6" {{if in .CC.TimeTriggerExcludingDays 6}}selected{{end}}>
+                          Saturday</option>
+                        <option value="0" {{if in .CC.TimeTriggerExcludingDays 0}}selected{{end}}>
+                          Sunday</option>
+                      </select>
+                  </div>
+                </div>
+              </div>
+              {{end}}
+            </div>
+            <div class="row mt-3">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label>Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
+                  <input type="text" class="form-control" disabled id="name" name="name" placeholder="Enter a name"
+                    value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
+                  <p>An optional name that can be used to identify the command.</p>
+                </div>
+              </div>
+              <div class="form-group col-lg-4">
+                <label>Import this Custom Command in your server</label>
+                {{if .User}}
+                <select name="GuildID" class="form-control" id="import-guild" onchange="updateImportModal()">
+                  <option value="0" selected>None</option>
+
+                  {{range $dot.UserGuilds}}{{if .Connected}}
+                  <option value="{{.ID}}">{{.Name}}
+                  </option>
+                  {{end}}{{end}}
+                </select>
+                <button id="import-button" class="mb-1 mt-1 mr-1 modal-basic btn btn-success btn-block"
+                  href="#cc-import-modal" disabled>Import CC</button>
+                {{else}}
+                <div>
+                  <a href="/login?goto={{urlquery .RequestURI}}">Log in to import this CC into your server.</a>
+                </div>
+                {{end}}
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <label for="responses">Response (<span class="cc-length-counter">x</span>/10000)</label>
+                  {{range $i, $r := .CC.Responses}}
+                  <div id="cc-responses" class="entry input-group  input-group-sm">
+                    <textarea id="response-{{$i}}" class="form-control response-text-area tab-textbox cc-editor" id=""
+                      name="responses" placeholder="Command body here" rows="5" disabled>{{$r}}</textarea>
+                    <span class="input-group-append">
+                      <button class="btn btn-gray btn-copy btn-circle" id="copy-response-{{$i}}-button" type="button">
+                        <i class="fas fa-copy"></i>
+                      </button>
+                    </span>
+                  </div>
+                  <script>
+                    document.getElementById("copy-response-{{$i}}-button").addEventListener("click", function () {
+                      let copyText = document.getElementById("response-{{$i}}");
+                      copyText.select();
+                      copyText.setSelectionRange(0, 99999); // For mobile devices
+                      navigator.clipboard.writeText(copyText.value);
+                      copyText.setSelectionRange(0, 0);
+                      this.innerHTML = `<i class="fas fa-check"> </i>`;
+                      setTimeout(() => {
+                        this.innerHTML = `<i class="fas fa-copy"> </i>`;
+                      }, 2000);
+                    }, false);
+                  </script>
+                  {{end}}
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="cc-import-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
+  <section class="card">
+    <header class="card-header bg-danger">
+      <h2 class="card-title">WARNING: IMPORTING A CUSTOM COMMAND</h2>
+    </header>
+    <div class="card-body">
+      <div class="modal-wrapper">
+        <div class="modal-text">
+          <p class="help-block">You are about to import a CC created by another user, which is <em>not vetted by
+              YAGPDB or its staff</em>.
+          </p>
+          <p class="help-block">CCs may exploit YAGPDB's functionality for malicious purposes. Ensure you
+            fully understand the custom command code before deploying it on your server.
+          </p>
+          <p class="help-block">YAGPDB is not responsible for any potential damage caused by importing the CC.
+          </p>
+          <p id="guild-confirmation" class="help-block">Import to ?
+          </p>
+          <div class="row mt-4">
+            <div class="col">
+              <button class="btn btn-quaternary btn-block modal-dismiss">Cancel</button>
+            </div>
+            <div class="col">
+              <button id="import-submit" type="submit" class="btn btn-success btn-block"
+                form="main-form">Import</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="/static/vendorr/tln/tln.min.js"></script>
+<link rel="stylesheet" href="/static/vendorr/tln/tln.min.css">
+<script src="/static/vendorr/highlightjs/highlight.pack.js"></script>
+<script src="/static/vendorr/highlightjs/line-numbers.js"></script>
+<link rel="stylesheet" href="/static/vendorr/highlightjs/atom-one-dark.css">
+<style>
+  html.dark .input-group-prepend>.input-group-text {
+    background: #191c21;
+  }
+</style>
+
+<script type="text/javascript">
+  $(function () {
+    calcCCLength();
+    calcTriggerLength();
+    calcNameLength();
+  })
+  function calcTriggerLength() {
+    let triggerLength = $('#trigger-length')
+    let trigger = $('#trigger')
+    if (triggerLength && trigger && trigger.val()) {
+      triggerLength.text(trigger.val().length).toggleClass("text-danger", trigger.val().length > 1000);
+    }
+  }
+
+  function calcNameLength() {
+    let nameLength = $('#name-length')
+    let name = $('#name')
+    if (nameLength && name && name.val()) {
+      nameLength.text(name.val().length).toggleClass("text-danger", name.val().length > 100);
+    }
+  }
+
+  function calcCCLength() {
+    var textAreas = document.querySelectorAll("#cc-responses > textarea")
+    var combinedLength = 0;
+    textAreas.forEach(function (elem) {
+      combinedLength += elem.value.length;
+      // The data received on the backend contains "\r\n" while it is simply "\n" on the JS side.
+      // Adjust for this discrepancy by double-counting newline characters.
+      const newlines = elem.value.match(/\n/g);
+      if (newlines) combinedLength += newlines.length;
+    })
+
+    var display = document.querySelector(".cc-length-counter")
+    display.textContent = combinedLength
+
+    if (combinedLength > 10000) {
+      display.classList.add("text-danger");
+    } else {
+      display.classList.remove("text-danger");
+    }
+  }
+  function isTextTrigger(t) {
+    return t === "cmd" ||
+      t === "prefix" ||
+      t === "contains" ||
+      t === "regex" ||
+      t === "exact";
+  }
+  function updateImportModal() {
+    let guildMenu = document.getElementById("import-guild");
+    let guildID = guildMenu.value;
+    let guildName = guildMenu.options[guildMenu.selectedIndex].innerHTML;
+
+    let button = document.getElementById("import-button");
+    button.disabled = guildID === "0"
+
+    let submitButton = document.getElementById("import-submit");
+    submitButton.formAction = "/manage/" + guildID + "/customcommands/commands/import/{{.CC.PublicID}}";
+    submitButton.formMethod = "POST";
+
+    let confirmation = document.getElementById("guild-confirmation");
+    confirmation.innerHTML = "Import to " + guildName + "?";
+  }
+</script>
+
+
+{{template "cp_footer" .}}
+
+{{end}}

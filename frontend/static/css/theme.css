@@ -14279,7 +14279,6 @@ p.drop-caps.drop-caps-style-2:first-letter {
 /* Userbox */
 .userbox {
 	display: inline-block;
-	margin: 3px 17px 0 0;
 	position: relative;
 	vertical-align: middle;
 }

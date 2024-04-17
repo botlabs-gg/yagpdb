@@ -44,6 +44,9 @@ var PageHTMLMain string
 //go:embed assets/customcommands-database.html
 var PageHTMLDatabase string
 
+//go:embed assets/customcommands-public.html
+var PageHTMLPublicCmd string
+
 // GroupForm is the form bindings used when creating or updating groups
 type GroupForm struct {
 	ID                int64
@@ -77,6 +80,7 @@ var (
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("customcommands/assets/customcommands.html", PageHTMLMain)
 	web.AddHTMLTemplate("customcommands/assets/customcommands-editcmd.html", PageHTMLEditCmd)
+	web.AddHTMLTemplate("customcommands/assets/customcommands-public.html", PageHTMLPublicCmd)
 	web.AddSidebarItem(web.SidebarCategoryCustomCommands, &web.SidebarItem{
 		Name: "Commands",
 		URL:  "customcommands",
@@ -92,6 +96,7 @@ func (p *Plugin) InitWeb() {
 
 	getHandler := web.ControllerHandler(handleCommands, "cp_custom_commands")
 	getCmdHandler := web.ControllerHandler(handleGetCommand, "cp_custom_commands_edit_cmd")
+	getPublicCmdHandler := web.ControllerHandler(handleGetPublicCommand, "cp_custom_commands_public")
 	getGroupHandler := web.ControllerHandler(handleGetCommandsGroup, "cp_custom_commands")
 	getDBHandler := web.ControllerHandler(handleGetDatabase, "cp_custom_commands_database")
 
@@ -133,7 +138,6 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(handleDeleteCommand, getHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/run_now"), web.ControllerPostHandler(handleRunCommandNow, getCmdHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/update_and_run"), web.ControllerPostHandler(handleUpdateAndRunNow, getCmdHandler, CustomCommand{}))
-	subMux.Handle(pat.Post("/commands/:cmd/update_and_share"), web.ControllerPostHandler(handleUpdateAndShare, getCmdHandler, CustomCommand{}))
 	subMux.Handle(pat.Post("/commands/import/:cmd"), PublicCommandMW(newCommandHandler))
 
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}))
@@ -159,8 +163,8 @@ func (p *Plugin) InitWeb() {
 		return http.HandlerFunc(h)
 	})
 
-	shortlinkSubMux.Handle(pat.Get("/:cmd"), PublicCommandMW(getCmdHandler))
-	shortlinkSubMux.Handle(pat.Get("/:cmd/"), PublicCommandMW(getCmdHandler))
+	shortlinkSubMux.Handle(pat.Get("/:cmd"), PublicCommandMW(getPublicCmdHandler))
+	shortlinkSubMux.Handle(pat.Get("/:cmd/"), PublicCommandMW(getPublicCmdHandler))
 }
 
 func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -223,6 +227,15 @@ func handleDeleteDatabaseEntry(w http.ResponseWriter, r *http.Request) (web.Temp
 	return templateData.AddAlerts(), nil
 }
 
+func getLangBuiltInFuncs() string {
+	var langBuiltins strings.Builder
+	for k := range yagtemplate.StandardFuncMap {
+		langBuiltins.WriteString(" " + k)
+	}
+
+	return langBuiltins.String()
+}
+
 func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
@@ -232,18 +245,12 @@ func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 		groupID = v.(int64)
 	}
 
-	var langBuiltins strings.Builder
-	for k := range yagtemplate.StandardFuncMap {
-		langBuiltins.WriteString(" " + k)
-	}
-
-	templateData["HLJSBuiltins"] = langBuiltins.String()
-
 	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
 	if err != nil {
 		return templateData, err
 	}
 
+	templateData["HLJSBuiltins"] = getLangBuiltInFuncs()
 	updateTemplateWithCountData(int(count), templateData, ctx)
 
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
@@ -256,30 +263,40 @@ func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	var err error
 	cmdParam := pat.Param(r, "cmd")
 	// when accessed via control panel, activeGuild != nil
-	if activeGuild != nil {
-		ccID, err := strconv.ParseInt(cmdParam, 10, 64)
-		if err != nil {
-			return templateData, errors.WithStackIf(err)
-		}
-		cc, err = models.CustomCommands(
-			models.CustomCommandWhere.GuildID.EQ(activeGuild.ID),
-			models.CustomCommandWhere.LocalID.EQ(ccID)).OneG(r.Context())
-		if err != nil {
-			return templateData, errors.WithStackIf(err)
-		}
-	} else {
-		// accessed via shortlink, interpret as public ID instead
-		cc, err = models.CustomCommands(
-			models.CustomCommandWhere.PublicID.EQ(cmdParam)).OneG(r.Context())
-		if err != nil {
-			templateData.AddAlerts(web.ErrorAlert("Command couldn't be found via shortlink"))
-			return templateData, errors.WithStackIf(err)
-		}
+	ccID, err := strconv.ParseInt(cmdParam, 10, 64)
+	if err != nil {
+		return templateData, errors.WithStackIf(err)
 	}
-
+	cc, err = models.CustomCommands(
+		models.CustomCommandWhere.GuildID.EQ(activeGuild.ID),
+		models.CustomCommandWhere.LocalID.EQ(ccID)).OneG(r.Context())
+	if err != nil {
+		return templateData, errors.WithStackIf(err)
+	}
 	templateData["CC"] = cc
 	templateData["Commands"] = true
 	templateData["IsGuildPremium"] = premium.ContextPremium(r.Context())
+	templateData["PublicLink"] = getPublicLink(cc)
+
+	return serveGroupSelected(r, templateData, cc.GroupID.Int64, cc.GuildID)
+}
+
+func handleGetPublicCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	_, templateData := web.GetBaseCPContextData(r.Context())
+
+	var cc *models.CustomCommand
+	var err error
+	cmdParam := pat.Param(r, "cmd")
+	// accessed via shortlink, interpret as public ID instead
+	cc, err = models.CustomCommands(
+		models.CustomCommandWhere.PublicID.EQ(cmdParam)).OneG(r.Context())
+	if err != nil {
+		templateData.AddAlerts(web.ErrorAlert("Command couldn't be found via shortlink"))
+		return templateData, errors.WithStackIf(err)
+	}
+	templateData["CC"] = cc
+	templateData["Commands"] = true
+	templateData["PublicID"] = cc.PublicID
 	templateData["PublicLink"] = getPublicLink(cc)
 
 	return serveGroupSelected(r, templateData, cc.GroupID.Int64, cc.GuildID)
@@ -501,8 +518,8 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	blacklistColumns := []string{"last_run", "next_run", "local_id", "guild_id", "last_error", "last_error_time", "run_count", "import_count"}
-	_, createLink := templateData["CreateLink"]
-	if cmdSaved.PublicID == "" && createLink {
+
+	if cmdEdit.Public && cmdSaved.PublicID == "" {
 		hash := sha1.New()
 		io.WriteString(hash, strconv.FormatInt(activeGuild.ID, 10))
 		io.WriteString(hash, strconv.FormatInt(time.Now().Unix(), 10))
@@ -641,15 +658,6 @@ func handleUpdateAndRunNow(w http.ResponseWriter, r *http.Request) (web.Template
 		return updateData, err
 	}
 	return handleRunCommandNow(w, r)
-}
-
-func handleUpdateAndShare(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	ctx := r.Context()
-	_, templateData := web.GetBaseCPContextData(ctx)
-	templateData["CreateLink"] = true
-	r = r.WithContext(context.WithValue(ctx, common.ContextKeyTemplateData, templateData))
-
-	return handleUpdateCommand(w, r)
 }
 
 // allow for max 5 triggers with intervals of less than 10 minutes
