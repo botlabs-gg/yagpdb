@@ -495,42 +495,12 @@ func HandleGetManagedGuilds(w http.ResponseWriter, r *http.Request) (TemplateDat
 	ctx := r.Context()
 	_, templateData := GetBaseCPContextData(ctx)
 
-	user := ContextUser(ctx)
-
-	// retrieve guilds this user is part of
-	// i really wish there was a easy to to invalidate this cache, but since there's not it just expires after 10 seconds
-	wrapped, err := GetUserGuilds(ctx)
+	managedGuilds, err := GetUserManagedGuilds(ctx)
 	if err != nil {
 		return templateData, err
 	}
 
-	nilled := make([]*common.GuildWithConnected, len(wrapped))
-	var wg sync.WaitGroup
-	wg.Add(len(wrapped))
-
-	// the servers the user is on and the user has manage server perms
-	for i, g := range wrapped {
-		go func(j int, gwc *common.GuildWithConnected) {
-			conf := common.GetCoreServerConfCached(gwc.ID)
-			if HasAccesstoGuildSettings(user.ID, gwc, conf, basicRoleProvider, false) {
-				nilled[j] = gwc
-			}
-
-			wg.Done()
-		}(i, g)
-	}
-
-	wg.Wait()
-
-	accessibleGuilds := make([]*common.GuildWithConnected, 0, len(wrapped))
-	for _, v := range nilled {
-		if v != nil {
-			accessibleGuilds = append(accessibleGuilds, v)
-		}
-	}
-
-	templateData["ManagedGuilds"] = accessibleGuilds
-
+	templateData["ManagedGuilds"] = managedGuilds
 	return templateData, nil
 }
 
@@ -548,6 +518,37 @@ func basicRoleProvider(guildID, userID int64) []int64 {
 	}
 
 	return members[0].Roles
+}
+
+func GetUserManagedGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
+	guilds, err := GetUserGuilds(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	user := ContextUser(ctx)
+	nilled := make([]*common.GuildWithConnected, len(guilds))
+	var wg sync.WaitGroup
+	wg.Add(len(guilds))
+	// the servers the user is on and the user has manage server perms
+	for i, g := range guilds {
+		go func(j int, gwc *common.GuildWithConnected) {
+			conf := common.GetCoreServerConfCached(gwc.ID)
+			if HasAccesstoGuildSettings(user.ID, gwc, conf, basicRoleProvider, false) {
+				nilled[j] = gwc
+			}
+			wg.Done()
+		}(i, g)
+	}
+
+	wg.Wait()
+	accessibleGuilds := make([]*common.GuildWithConnected, 0, len(guilds))
+	for _, v := range nilled {
+		if v != nil {
+			accessibleGuilds = append(accessibleGuilds, v)
+		}
+	}
+	return accessibleGuilds, nil
 }
 
 func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {
