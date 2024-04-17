@@ -29,13 +29,13 @@
             </h2>
             <div class="row mt-4">
               <!-- Trigger -->
-              <div class="col-sm-4">
+              <div class="col-lg-4">
                 <div class="row">
                   <div class="col">
                     <div class="form-group">
                       <label>Trigger type</label>
                       <input class="form-control" id="trigger-type-dropdown" name="type" readonly disabled
-                        value="{{index .CCTriggerTypes .CC.TriggerType}}" />
+                        value="{{if (eq .CC.TriggerType 5)}} {{if eq (call .GetCCIntervalType .CC) 1}} Hourly{{else}}Minute{{end}}{{end}} {{index .CCTriggerTypes .CC.TriggerType}}" />
                       <div class="row">
                         <div class="col" id="trigger-help">
                           {{ if eq .CC.TriggerType 10}}
@@ -74,7 +74,7 @@
                           <p id="trigger-desc-interval_minutes">
                             The command will run at a minute interval, for example every 10 minutes.
                           </p>
-                          {{end}}>
+                          {{end}}
                           {{else if eq .CC.TriggerType 6}}
                           <p id="trigger-desc-reaction">
                             The command will trigger on the specified reaction events.
@@ -87,9 +87,9 @@
                 </div>
               </div>
               {{if eq .CC.TriggerType 0 1 2 3 4}}
-              <div id="cc-text-trigger-details" class="col-sm-8">
+              <div id="cc-text-trigger-details" class="col-lg-8">
                 <div class="row">
-                  <div class="col-sm-12">
+                  <div class="col-lg-12">
                     <div class="form-group">
                       <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                       <div class="input-group mb-2">
@@ -99,18 +99,24 @@
                         <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
                           value="{{.CC.TextTrigger}}" disabled>
                       </div>
-                      {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?"
-                      .CC.TextTriggerCaseSensitive "disabled"}}
-                      {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)"
-                      .CC.TriggerOnEdit "disabled"}}
+                      <div class="row">
+                        <div class="col-lg-6">
+                          {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?"
+                          .CC.TextTriggerCaseSensitive "disabled"}}
+                        </div>
+                        <div class="col-lg-6">
+                          {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)"
+                          .CC.TriggerOnEdit "disabled"}}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
               {{else if eq .CC.TriggerType 6}}
-              <div id="cc-reaction-trigger-details" class="col-sm-8">
+              <div id="cc-reaction-trigger-details" class="col-lg-8">
                 <div class="row">
-                  <div class="col-sm-12">
+                  <div class="col-lg-12">
                     <div class="form-check">
                       <input class="form-check-input" disabled type="radio" name="reaction_trigger_mode"
                         id="reaction-mode-both-{{.CC.PublicID}}" value="0" {{if eq .CC.ReactionTriggerMode
@@ -139,19 +145,16 @@
                 </div>
               </div>
               {{else if eq .CC.TriggerType 5}}
-              <div id="cc-time-trigger-details" class="col-sm-8">
+              <div id="cc-time-trigger-details" class="col-lg-8">
                 <div class="row">
-                  <div class="col-sm-4">
-                    <div class="form-group">
+                    <div class="form-group col-lg-6">
                       <label>Interval</label>
                       <input type="number" min="0" class="form-control" disabled name="time_trigger_interval"
                         placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                     </div>
-                  </div>
                 </div>
-                <div class="row">
-                  <div class="col-sm-6">
-                    <div class="form-group">
+                <div class="row mt-3">
+                    <div class="form-group col-lg-3">
                       <label for="trigger">Excluding hours (UTC)</label><br>
                       <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple"
                         disabled data-plugin-multiselect>
@@ -161,9 +164,7 @@
                         {{end}}
                       </select>
                     </div>
-                  </div>
-                  <div class="col-sm-6">
-                    <div class="form-group">
+                    <div class="form-group col-lg-3">
                       <label for="trigger">Excluding weekdays (UTC)</label><br>
                       <select name="time_trigger_excluding_days" class="multiselect form-control" multiple="multiple"
                         disabled data-plugin-multiselect>
@@ -182,14 +183,13 @@
                         <option value="0" {{if in .CC.TimeTriggerExcludingDays 0}}selected{{end}}>
                           Sunday</option>
                       </select>
-                    </div>
                   </div>
                 </div>
               </div>
               {{end}}
             </div>
-            <div class="row">
-              <div class="col-sm-4">
+            <div class="row mt-3">
+              <div class="col-lg-4">
                 <div class="form-group">
                   <label>Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
                   <input type="text" class="form-control" disabled id="name" name="name" placeholder="Enter a name"
@@ -197,7 +197,7 @@
                   <p>An optional name that can be used to identify the command.</p>
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group col-lg-4">
                 <label>Import this Custom Command in your server</label>
                 {{if .User}}
                 <select name="GuildID" class="form-control" id="import-guild" onchange="updateImportModal()">
@@ -256,7 +256,7 @@
 </div>
 <div id="cc-import-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
   <section class="card">
-    <header class="card-header">
+    <header class="card-header bg-danger">
       <h2 class="card-title">WARNING: IMPORTING A CUSTOM COMMAND</h2>
     </header>
     <div class="card-body">
@@ -277,7 +277,8 @@
               <button class="btn btn-quaternary btn-block modal-dismiss">Cancel</button>
             </div>
             <div class="col">
-              <button id="import-submit" type="submit" class="btn btn-success btn-block" form="main-form">Import</button>
+              <button id="import-submit" type="submit" class="btn btn-success btn-block"
+                form="main-form">Import</button>
             </div>
           </div>
         </div>
@@ -300,7 +301,25 @@
 <script type="text/javascript">
   $(function () {
     calcCCLength();
-  })  
+    calcTriggerLength();
+    calcNameLength();
+  })
+  function calcTriggerLength() {
+    let triggerLength = $('#trigger-length')
+    let trigger = $('#trigger')
+    if (triggerLength && trigger && trigger.val()) {
+      triggerLength.text(trigger.val().length).toggleClass("text-danger", trigger.val().length > 1000);
+    }
+  }
+
+  function calcNameLength() {
+    let nameLength = $('#name-length')
+    let name = $('#name')
+    if (nameLength && name && name.val()) {
+      nameLength.text(name.val().length).toggleClass("text-danger", name.val().length > 100);
+    }
+  }
+
   function calcCCLength() {
     var textAreas = document.querySelectorAll("#cc-responses > textarea")
     var combinedLength = 0;

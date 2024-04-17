@@ -69,7 +69,7 @@
                         <input type="text" class="hidden form-control" name="id" value="{{.CC.LocalID}}">
                         <div class="row">
                             <!-- Trigger -->
-                            <div class="col-sm-4">
+                            <div class="col-lg-4">
                                 <div class="row">
                                     <div class="col">
                                         <div class="form-group">
@@ -139,9 +139,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="cc-text-trigger-details" class="hidden col-sm-8">
+                            <div id="cc-text-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
-                                    <div class="col-sm-12">
+                                    <div class="col-lg-12">
                                         <div class="form-group">
                                             <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <div class="input-group mb-2">
@@ -152,8 +152,8 @@
                                                     value="{{.CC.TextTrigger}}">
                                             </div>
                                             <div class="row">
-                                              <div class="col-sm-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
-                                              <div class="col-sm-6">
+                                              <div class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
+                                              <div class="col-lg-6">
                                                 {{$disabledClass := ""}}
                                                 {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
                                                 {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
@@ -163,9 +163,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="cc-reaction-trigger-details" class="hidden col-sm-8">
+                            <div id="cc-reaction-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
-                                    <div class="col-sm-12">
+                                    <div class="col-lg-12">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="reaction_trigger_mode"
                                                 id="reaction-mode-both-{{.CC.LocalID}}" value="0"
@@ -193,16 +193,16 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="cc-time-trigger-details" class="hidden col-sm-8">
+                            <div id="cc-time-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
-                                    <div class="col-sm-4">
+                                    <div class="col-lg-4">
                                         <div class="form-group">
                                             <label>Interval</label>
                                             <input type="number" min="0" class="form-control" name="time_trigger_interval"
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                                         </div>
                                     </div>
-                                    <div class="col-sm-8">
+                                    <div class="col-lg-8">
                                         <div class="form-group">
                                             <label>Channel</label>
                                             <select id="time-trigger-channel" name="context_channel" class="form-control">
@@ -211,9 +211,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
+                                <div class="row mt-3">
+                                        <div class="form-group col-lg-3">
                                             <label for="trigger">Excluding hours (UTC)</label><br>
                                             <select name="time_trigger_excluding_hours" class="multiselect form-control"
                                                 multiple="multiple" data-plugin-multiselect>
@@ -223,9 +222,7 @@
                                                 {{end}}
                                             </select>
                                         </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
+                                        <div class="form-group col-lg-3">
                                             <label for="trigger">Excluding weekdays (UTC)</label><br>
                                             <select name="time_trigger_excluding_days" class="multiselect form-control"
                                                 multiple="multiple" data-plugin-multiselect>
@@ -251,26 +248,25 @@
                                                     {{if in .CC.TimeTriggerExcludingDays 0}}selected{{end}}>
                                                     Sunday</option>
                                             </select>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="row mt-3">
-                            <div class="col-sm-4">
+                            <div class="col-lg-4">
                                 <div class="form-group">
                                     <label>Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
                                     <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
                                     <p>An optional name that can be used to identify the command.</p>
                                 </div>
                             </div>
-                             <div class="col-sm-4">
+                             <div class="col-lg-4">
                                 <div class="form-group">
                                     <label> Command Enabled?</label>
                                     {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled) }}
                                 </div>
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-lg-4">
                                 <div class="form-group">
                                   <label> Allow Public Imports?</label>
                                     {{checkbox "public" "public" "Allow anyone to view and copy this command" .CC.Public}}
@@ -316,7 +312,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm-6">
+                            <div class="col-lg-6">
                                 <div class="form-group">
                                     <label>Custom command group</label>
                                     {{$selectedGroup := .CC.GroupID.Int64}}
@@ -354,7 +350,7 @@
                                 <h4>Output errors as command response</h4>
                                 {{checkbox "show_errors" "show_errors" "" .CC.ShowErrors}}
                             </div>
-                            <div id="cc-extra-settings" class="col-sm-6">
+                            <div id="cc-extra-settings" class="col-lg-6">
                                 <h3>Channel/User role restrictions</h3>
                                 <div class="radio">
                                     <label>
@@ -622,20 +618,32 @@
         handleRestrictionChange($("#require-channel-mode").prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
         triggerTypeChanged();
         calcCCLength();
+        calcTriggerLength();
+        calcNameLength();
     })
 
+    function calcTriggerLength() {
+      let triggerLength = $('#trigger-length')
+      let trigger = $('#trigger')
+      if (triggerLength && trigger && trigger.val()) {
+        triggerLength.text(trigger.val().length).toggleClass("text-danger", trigger.val().length > 1000);
+      }
+    }
+  
+    function calcNameLength() {
+      let nameLength = $('#name-length')
+      let name = $('#name')
+      if (nameLength && name && name.val()) {
+        nameLength.text(name.val().length).toggleClass("text-danger", name.val().length > 100);
+      }
+    }
+
     $("#trigger").keyup(function() {
-        const trigger = $(this).val();
-        $("#trigger-length")
-            .text(trigger.length)
-            .toggleClass("text-danger", trigger.length > 1000);
+      calcTriggerLength();
     });
 
     $("#name").keyup(function(){
-      const name = $(this).val();
-        $("#name-length")
-            .text(name.length)
-            .toggleClass("text-danger", name.length > 100);
+      calcNameLength(); 
     });
 
     function calcCCLength() {
