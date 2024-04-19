@@ -277,7 +277,7 @@
                             <div class="col-lg-12">
                                 <div class="form-group">
                                     <label for="responses">Response (<span
-                                            class="cc-length-counter">x</span>/10000)</label>
+                                            class="cc-length-counter">x</span>/{{.MaxCCLength}})</label>
                                     <!-- Use .btn-add for simplicity and let the page loader adjust. -->
                                     {{range .CC.Responses}}
                                     <div id="cc-responses" class="entry input-group  input-group-sm">
@@ -659,8 +659,8 @@
   
       var display = document.querySelector(".cc-length-counter")
       display.textContent = combinedLength
-  
-      if (combinedLength > 10000) {
+      
+      if (combinedLength > {{.MaxCCLength}}) {
         display.classList.add("text-danger");
       } else {
         display.classList.remove("text-danger");

@@ -43,7 +43,7 @@ import (
 )
 
 type CustomValidator interface {
-	Validate(tmplData TemplateData) (ok bool)
+	Validate(tmplData TemplateData, guild int64) (ok bool)
 }
 
 type ValidationTag struct {
@@ -210,7 +210,7 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 	}
 
 	if validator, okc := form.(CustomValidator); okc {
-		ok2 := validator.Validate(tmpl)
+		ok2 := validator.Validate(tmpl, guild.ID)
 		if !ok2 {
 			ok = false
 		}

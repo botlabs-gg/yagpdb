@@ -220,7 +220,7 @@
             <div class="row mb-2">
               <div class="col-lg-12">
                 <div class="form-group">
-                  <label for="responses">Response (<span class="cc-length-counter">x</span>/10000)</label>
+                  <label for="responses">Total Response Length: <span class="cc-length-counter">x</span> <br/><span id="premium-only-import"><span></label>
                   {{range $i, $r := .CC.Responses}}
                   <div id="cc-responses" class="entry input-group  input-group-sm">
                     <textarea id="response-{{$i}}" class="form-control response-text-area tab-textbox cc-editor" id=""
@@ -334,10 +334,10 @@
     var display = document.querySelector(".cc-length-counter")
     display.textContent = combinedLength
 
+    var premiumOnlyImport = document.querySelector("#premium-only-import")
     if (combinedLength > 10000) {
-      display.classList.add("text-danger");
-    } else {
-      display.classList.remove("text-danger");
+      premiumOnlyImport.textContent = "This CC can only be imported to Premium servers, as it exceeds Free server limits.";
+      premiumOnlyImport.classList.add("text-danger");
     }
   }
   function isTextTrigger(t) {

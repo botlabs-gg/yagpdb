@@ -561,6 +561,10 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 		return errors.WrapIf(err, "Failed disabling trigger on edits on premium removal")
 	}
 
+	_, err = models.CustomCommands(qm.Where("guild_id = ? AND length(regexp_replace(array_to_string(responses, ''), E'\\r', '', 'g')) > ?", GuildID, MaxCCResponsesLength)).UpdateAllG(context.Background(), models.M{"disabled": true})
+	if err != nil {
+		return errors.WrapIf(err, "Failed disabling long customs commands on premium removal")
+	}
 	return nil
 }
 
@@ -654,7 +658,7 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 	mu := evt.MessageUpdate()
 	cs := evt.CSOrThread()
 
-	if isPremium, _ := premium.IsGuildPremiumCached(mu.GuildID); !isPremium {
+	if isPremium, _ := premium.IsGuildPremium(mu.GuildID); !isPremium {
 		return
 	}
 
@@ -769,7 +773,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 	sortTriggeredCCs(matched)
 
 	limit := CCMessageExecLimitNormal
-	if isPremium, _ := premium.IsGuildPremiumCached(msg.GuildID); isPremium {
+	if isPremium, _ := premium.IsGuildPremium(msg.GuildID); isPremium {
 		limit = CCMessageExecLimitPremium
 	}
 
@@ -827,7 +831,7 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 	sortTriggeredCCs(filtered)
 
 	limit := CCMessageExecLimitNormal
-	if isPremium, _ := premium.IsGuildPremiumCached(cs.GuildID); isPremium {
+	if isPremium, _ := premium.IsGuildPremium(cs.GuildID); isPremium {
 		limit = CCMessageExecLimitPremium
 	}
 
@@ -1128,13 +1132,6 @@ func updatePostCommandRan(cmd *models.CustomCommand, runErr error) {
 	if err != nil {
 		logger.WithError(err).WithField("guild", cmd.GuildID).Error("failed running post command executed query")
 	}
-
-	// if runErr != nil {
-	// 	err := pubsub.Publish("custom_commands_clear_cache", cmd.GuildID, nil)
-	// 	if err != nil {
-	// 		logger.WithError(err).Error("failed creating cache eviction pubsub event in updatePostCommandRan")
-	// 	}
-	// }
 }
 
 // CheckMatch returns true if the given cmd matches, as well as the arguments
