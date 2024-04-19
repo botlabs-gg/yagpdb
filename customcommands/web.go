@@ -273,9 +273,14 @@ func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	if err != nil {
 		return templateData, errors.WithStackIf(err)
 	}
+	allowedCCLength := MaxCCResponsesLength
+	if premium.ContextPremium(r.Context()) {
+		allowedCCLength = MaxCCResponsesLengthPremium
+	}
 	templateData["CC"] = cc
 	templateData["Commands"] = true
 	templateData["IsGuildPremium"] = premium.ContextPremium(r.Context())
+	templateData["MaxCCLength"] = allowedCCLength
 	templateData["PublicLink"] = getPublicLink(cc)
 
 	return serveGroupSelected(r, templateData, cc.GroupID.Int64, cc.GuildID)
@@ -294,9 +299,9 @@ func handleGetPublicCommand(w http.ResponseWriter, r *http.Request) (web.Templat
 		templateData.AddAlerts(web.ErrorAlert("Command couldn't be found via shortlink"))
 		return templateData, errors.WithStackIf(err)
 	}
+
 	templateData["CC"] = cc
 	templateData["Commands"] = true
-	templateData["PublicID"] = cc.PublicID
 	templateData["PublicLink"] = getPublicLink(cc)
 
 	return serveGroupSelected(r, templateData, cc.GroupID.Int64, cc.GuildID)
@@ -387,7 +392,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	if int(c) >= MaxCommandsForContext(ctx) {
-		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))), nil
 	}
 
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
@@ -420,8 +425,13 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		importCC, err = models.CustomCommands(
 			models.CustomCommandWhere.PublicID.EQ(importID)).OneG(r.Context())
 		if err != nil {
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-			return templateData, err
+			http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
+			return templateData, nil
+		}
+		isValidCCLength := validateCCResponseLength(importCC.Responses, activeGuild.ID)
+		if !isValidCCLength {
+			http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
+			return templateData, nil
 		}
 		dbModel.Name = importCC.Name
 		dbModel.ReactionTriggerMode = importCC.ReactionTriggerMode
@@ -464,6 +474,11 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	cmdEdit := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
+	isCmdValid := cmdEdit.Validate(templateData, activeGuild.ID)
+	if !isCmdValid {
+		return templateData, nil
+	}
+
 	cmdSaved, err := models.FindCustomCommandG(context.Background(), activeGuild.ID, int64(cmdEdit.ID))
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
@@ -472,6 +487,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}).Error("Error in fetching command")
 		return templateData, err
 	}
+
 	if cmdSaved.Disabled && !cmdEdit.ToDBModel().Disabled {
 		c, err := models.CustomCommands(qm.Where("guild_id = ? and disabled = false", activeGuild.ID)).CountG(ctx)
 		if err != nil {
@@ -862,7 +878,6 @@ func PublicCommandMW(inner http.Handler) http.Handler {
 
 		if cc.Public {
 			templateData["PublicAccess"] = true
-
 			if _, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User); ok {
 				guilds, _ := web.GetUserManagedGuilds(r.Context())
 				templateData["UserGuilds"] = guilds

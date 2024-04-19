@@ -139,11 +139,6 @@ func IsGuildPremium(guildID int64) (bool, error) {
 	return featureflags.GuildHasFlag(guildID, FeatureFlagPremiumPlus)
 }
 
-// This function is deprecated and is exactly the same as calling IsguildPremium
-func IsGuildPremiumCached(guildID int64) (bool, error) {
-	return IsGuildPremium(guildID)
-}
-
 func PremiumProvidedBy(guildID int64) (int64, error) {
 	if confAllGuildsPremium.GetBool() {
 		return int64(common.BotUser.ID), nil

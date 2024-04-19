@@ -626,7 +626,7 @@ func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, us
 		return
 	}
 
-	isPremium, err := premium.IsGuildPremiumCached(rm.GuildID)
+	isPremium, err := premium.IsGuildPremium(rm.GuildID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", rm.GuildID).Error("Failed checking if guild is premium")
 		return

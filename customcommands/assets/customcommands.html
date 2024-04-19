@@ -180,6 +180,13 @@
 <link rel="stylesheet" href="/static/vendorr/highlightjs/atom-one-dark.css">
 
 <script>
+  $(function () {
+    let search = new URLSearchParams(window.location.search);
+    if (search.has('import_err') && search.get('import_err') == 'true') {
+      alert('Failed to import command, please check the url or the command itself.');
+      window.location.search = '';
+    }
+  })
 
     // Register the custom language
     // its based off markdown with custom stuff in tags
