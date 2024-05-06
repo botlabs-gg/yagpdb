@@ -245,7 +245,7 @@ func (sys *System) FillDataInteraction(s *discordgo.Session, interaction *discor
 
 	var gs *dstate.GuildSet
 	var cs *dstate.ChannelState
-	var isUserInstalledGuild = (interaction.IntegrationOwners["0"] == nil && interaction.IntegrationOwners["1"] != nil)
+	var isUserInstalledGuild = (interaction.IntegrationOwners["0"] == "" && interaction.IntegrationOwners["1"] != "")
 
 	if interaction.GuildID != 0 && !isUserInstalledGuild {
 		gs = sys.State.GetGuild(interaction.GuildID)
