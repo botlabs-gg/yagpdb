@@ -178,7 +178,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			response := discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 			}
-			if yc.IsResponseEphemeral {
+			if yc.IsResponseEphemeral || data.SlashCommandTriggerData.Interaction.Channel.Type == discordgo.ChannelTypeDM {
 				response.Data = &discordgo.InteractionResponseData{Flags: 64}
 			}
 			err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &response)
