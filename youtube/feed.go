@@ -22,7 +22,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -68,7 +67,7 @@ func (p *Plugin) deleteOldVideos() {
 				videoCacheDays = 1
 			}
 			common.RedisPool.Do(radix.FlatCmd(&expiring, "ZREMRANGEBYSCORE", RedisKeyPublishedVideoList, "-inf", time.Now().AddDate(0, 0, -1*videoCacheDays).Unix()))
-			logrus.Infof("Removed %d old videos", expiring)
+			logger.Infof("Removed %d old videos", expiring)
 		}
 	}
 }
