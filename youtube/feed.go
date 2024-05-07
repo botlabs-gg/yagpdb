@@ -29,7 +29,6 @@ import (
 
 const (
 	WebSubCheckInterval = time.Second * 10
-	// PollInterval = time.Second * 5 // <- used for debug purposes
 )
 
 func (p *Plugin) StartFeed() {
@@ -64,7 +63,11 @@ func (p *Plugin) deleteOldVideos() {
 		select {
 		case <-ticker.C:
 			var expiring int64
-			common.RedisPool.Do(radix.FlatCmd(&expiring, "ZREMRANGEBYSCORE", RedisKeyPublishedVideoList, "-inf", time.Now().AddDate(0, 0, -1).Unix()))
+			videoCacheDays := confYoutubeVideoCacheDays.GetInt()
+			if videoCacheDays < 1 {
+				videoCacheDays = 1
+			}
+			common.RedisPool.Do(radix.FlatCmd(&expiring, "ZREMRANGEBYSCORE", RedisKeyPublishedVideoList, "-inf", time.Now().AddDate(0, 0, -1*videoCacheDays).Unix()))
 			logrus.Infof("Removed %d old videos", expiring)
 		}
 	}
@@ -574,8 +577,12 @@ func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
 		return err
 	}
 
-	if time.Since(parsedPublishedTime) > time.Hour*24 {
-		// don't post videos older than 24 hours
+	videoCacheDays := confYoutubeVideoCacheDays.GetInt()
+	if videoCacheDays < 1 {
+		videoCacheDays = 1
+	}
+	if time.Since(parsedPublishedTime) > time.Hour*24*time.Duration(videoCacheDays) {
+		// don't post videos older than videoCacheDays
 		logger.Infof("Skipped Stale video for youtube channel %s: video_id: %s", channelID, videoID)
 		return nil
 	}
