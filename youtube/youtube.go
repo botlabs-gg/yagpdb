@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	RedisChannelsLockKey = "youtube_subbed_channel_lock"
-
-	RedisKeyWebSubChannels = "youtube_registered_websub_channels"
-	GoogleWebsubHub        = "https://pubsubhubbub.appspot.com/subscribe"
+	RedisChannelsLockKey       = "youtube_subbed_channel_lock"
+	RedisKeyPublishedVideoList = "youtube_published_videos"
+	RedisKeyWebSubChannels     = "youtube_registered_websub_channels"
+	GoogleWebsubHub            = "https://pubsubhubbub.appspot.com/subscribe"
 )
 
 var (
