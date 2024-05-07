@@ -54,7 +54,7 @@ var cmds = []*commands.YAGCommand{
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			currentReminders, _ := GetUserReminders(parsed.Author.ID)
 			if len(currentReminders) >= 25 {
-				return "You can have a maximum of 25 active reminders, list your reminders with the `reminders` command", nil
+				return "You can have a maximum of 25 active reminders, list all your reminders with the `reminders` command in DM, doing it in a server will only show reminders set in the server", nil
 			}
 
 			if parsed.Author.Bot {
@@ -96,21 +96,33 @@ var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "Reminders",
-		Description:         "Lists your active reminders",
+		Description:         "Lists your active reminders in the server, use in DM to see all your reminders",
 		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
+		RunInDM:             true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			currentReminders, err := GetUserReminders(parsed.Author.ID)
+
+			var currentReminders []*Reminder
+			var err error
+			//command was used in DM
+			inServerString := ""
+			if parsed.GuildData == nil {
+				currentReminders, err = GetUserReminders(parsed.Author.ID)
+			} else {
+				inServerString = " in this server"
+				currentReminders, err = GetGuildUserReminder(parsed.Author.ID, parsed.GuildData.GS.ID)
+			}
+
 			if err != nil {
 				return nil, err
 			}
 
 			if len(currentReminders) == 0 {
-				return "You have no reminders. Create reminders with the `remindme` command.", nil
+				return fmt.Sprintf("You have no reminders%s. Create reminders with the `remindme` command.", inServerString), nil
 			}
 
-			out := "Your reminders:\n"
+			out := fmt.Sprintf("Your reminders%s:\n", inServerString)
 			out += stringReminders(currentReminders, false)
 			out += "\nRemove a reminder with `delreminder/rmreminder (id)` where id is the first number for each reminder above.\nTo clear all reminders, use `delreminder` with the `-a` switch."
 			return out, nil
@@ -154,6 +166,7 @@ var cmds = []*commands.YAGCommand{
 		Aliases:      []string{"rmreminder"},
 		Description:  "Deletes a reminder. You can delete reminders from other users provided you are running this command in the same guild the reminder was created in and have the Manage Channel permission in the channel the reminder was created in.",
 		RequiredArgs: 0,
+		RunInDM:      true,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
 		},
