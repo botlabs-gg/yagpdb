@@ -17,16 +17,17 @@ import (
 )
 
 const (
-	RedisChannelsLockKey = "youtube_subbed_channel_lock"
-
-	RedisKeyWebSubChannels = "youtube_registered_websub_channels"
-	GoogleWebsubHub        = "https://pubsubhubbub.appspot.com/subscribe"
+	RedisChannelsLockKey       = "youtube_subbed_channel_lock"
+	RedisKeyPublishedVideoList = "youtube_published_videos"
+	RedisKeyWebSubChannels     = "youtube_registered_websub_channels"
+	GoogleWebsubHub            = "https://pubsubhubbub.appspot.com/subscribe"
 )
 
 var (
-	confWebsubVerifytoken = config.RegisterOption("yagpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
-	confResubBatchSize    = config.RegisterOption("yagpdb.youtube.resub_batch_size", "Number of Websubs to resubscribe to concurrently", 1)
-	logger                = common.GetPluginLogger(&Plugin{})
+	confWebsubVerifytoken     = config.RegisterOption("yagpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
+	confResubBatchSize        = config.RegisterOption("yagpdb.youtube.resub_batch_size", "Number of Websubs to resubscribe to concurrently", 1)
+	confYoutubeVideoCacheDays = config.RegisterOption("yagpdb.youtube.video_cache_duration", "Duration in days to cache youtube video data", 1)
+	logger                    = common.GetPluginLogger(&Plugin{})
 )
 
 func KeyLastVidTime(channel string) string { return "youtube_last_video_time:" + channel }
