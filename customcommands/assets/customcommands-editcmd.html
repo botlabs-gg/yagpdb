@@ -42,12 +42,6 @@
             <!-- Tab panes -->
             <div class="tab-content">
                 <div class="tab-pane active">
-
-                    <ul id="cc-feedback-top">
-                        <li class="text-danger" hidden id="trigger-warning"></li>
-                    </ul>
-
-
                     {{$guild := .ActiveGuild.ID}}
                     {{$g := .ActiveGuild}}
                     {{$dot := .}}
@@ -525,219 +519,191 @@
 </style>
 
 <script type="text/javascript">
-    function isTextTrigger(t) {
-        return t === "cmd" ||
-            t === "prefix" ||
-            t === "contains" ||
-            t === "regex" ||
-            t === "exact";
-    }
-
-    function triggerTypeChanged() {
-        var dropdown = $("#trigger-type-dropdown")
-        if (dropdown.val() === "interval_hours" || dropdown.val() === "interval_minutes") {
-            // Interval triggers
-
-            $("#interval-cc-run-now").removeClass("hidden")
-            $("#cc-time-trigger-details").removeClass("hidden");
-
-            $("#cc-text-trigger-details").addClass("hidden");
-            $("#cc-extra-settings").addClass("hidden");
-            $("#cc-reaction-trigger-details").addClass("hidden")
-
-            $("#trigger-warning").attr("hidden", true);
-
-            handleTimeTriggerChannelChange();
-            $("#require-no-channels-warning").addClass("hidden");
-            $("#require-no-roles-warning").addClass("hidden");
-            $("#time-trigger-no-channel-warning").removeClass("hidden");
-
-        } else if (dropdown.val() === "reaction") {
-            // Reaction triggers
-
-            $("#cc-reaction-trigger-details").removeClass("hidden")
-            $("#cc-extra-settings").removeClass("hidden");
-
-            $("#cc-time-trigger-details").addClass("hidden");
-            $("#cc-text-trigger-details").addClass("hidden");
-
-            $("#interval-cc-run-now").addClass("hidden")
-
-            $("#trigger-warning").attr("hidden", true);
-            $("#require-no-channels-warning").removeClass("hidden");
-            $("#require-no-roles-warning").removeClass("hidden");
-            $("#time-trigger-no-channel-warning").addClass("hidden");
-
-        } else if (isTextTrigger(dropdown.val())) {
-            // Other message triggers
-
-            $("#cc-text-trigger-details").removeClass("hidden");
-            $("#cc-extra-settings").removeClass("hidden");
-
-            $("#cc-reaction-trigger-details").addClass("hidden")
-            $("#cc-time-trigger-details").addClass("hidden");
-
-            $("#interval-cc-run-now").addClass("hidden")
-
-            $("#trigger-warning").attr("hidden", true);
-            $("#require-no-channels-warning").removeClass("hidden");
-            $("#require-no-roles-warning").removeClass("hidden");
-            // $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
-            $("#time-trigger-no-channel-warning").addClass("hidden");
-
-        } else {
-            // No automatic trigger
-
-            $("#cc-text-trigger-details").addClass("hidden");
-            $("#cc-extra-settings").addClass("hidden");
-            $("#cc-reaction-trigger-details").addClass("hidden")
-            $("#cc-time-trigger-details").addClass("hidden");
-
-            $("#interval-cc-run-now").addClass("hidden")
-
-            $("#trigger-warning").removeAttr("hidden");
-            $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
-            $("#require-no-channels-warning").addClass("hidden");
-            $("#require-no-roles-warning").addClass("hidden");
-            $("#time-trigger-no-channel-warning").addClass("hidden");
-        };
-
-        if (dropdown.val() === "cmd") $("#command-trigger-prepended-prefix").show();
-        else $("#command-trigger-prepended-prefix").hide();
-
-        $("#trigger-help").children().each(function (i, v) {
-            $(v).attr("hidden", true);
-        });
-
-        $("#trigger-desc-" + dropdown.val()).removeAttr("hidden");
-    }
+    // support Alt + Shift + S shortcut to save custom command 
+    $(document).on('keydown', (e) => {
+        const event = e.originalEvent;
+        if (event.altKey && event.shiftKey && event.code === 'KeyS') {
+            const saveButton = document.getElementById('save-custom-command');
+            if (saveButton) {
+                saveButton.click();
+                return false;
+            }
+        } 
+    });
 
     $(function () {
-        handleTimeTriggerChannelChange();
-        handleRestrictionChange($("#require-role-mode").prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
-        handleRestrictionChange($("#require-channel-mode").prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
         triggerTypeChanged();
-        calcCCLength();
-        calcTriggerLength();
-        calcNameLength();
-    })
 
-    function calcTriggerLength() {
-      let triggerLength = $('#trigger-length')
-      let trigger = $('#trigger')
-      if (triggerLength && trigger && trigger.val()) {
-        triggerLength.text(trigger.val().length).toggleClass("text-danger", trigger.val().length > 1000);
-      }
-    }
-  
-    function calcNameLength() {
-      let nameLength = $('#name-length')
-      let name = $('#name')
-      if (nameLength && name && name.val()) {
-        nameLength.text(name.val().length).toggleClass("text-danger", name.val().length > 100);
-      }
-    }
-
-    $("#trigger").keyup(function() {
-      calcTriggerLength();
+        updateCCLength();
+        updateTriggerLength();
+        updateNameLength();
     });
 
-    $("#name").keyup(function(){
-      calcNameLength(); 
-    });
+    const intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details'];
+    const textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings'];
 
-    function calcCCLength() {
-      var textAreas = document.querySelectorAll("#cc-responses > textarea")
-      var combinedLength = 0;
-      textAreas.forEach(function (elem) {
-        combinedLength += elem.value.length;
-        // The data received on the backend contains "\r\n" while it is simply "\n" on the JS side.
-        // Adjust for this discrepancy by double-counting newline characters.
-        const newlines = elem.value.match(/\n/g);
-        if (newlines) combinedLength += newlines.length;
-      })
-  
-      var display = document.querySelector(".cc-length-counter")
-      display.textContent = combinedLength
-      
-      if (combinedLength > {{.MaxCCLength}}) {
-        display.classList.add("text-danger");
-      } else {
-        display.classList.remove("text-danger");
-      }
+    // html elements that should be shown for specific trigger types and hidden otherwise
+    const triggerTypeEls = {
+        interval_hours: [...intervalTriggerEls, '#trigger-desc-interval_hours'],
+        interval_minutes: [...intervalTriggerEls, '#trigger-desc-interval_minutes'],
+        reaction: ['#cc-reaction-trigger-details', '#cc-extra-settings', '#trigger-desc-reaction'],
+        cmd: [...textTriggerEls, '#command-trigger-prepended-prefix', '#trigger-desc-cmd'],
+        prefix: [...textTriggerEls, '#trigger-desc-prefix'],
+        contains: [...textTriggerEls, '#trigger-desc-contains'],
+        regex: [...textTriggerEls, '#trigger-desc-regex'],
+        exact: [...textTriggerEls, '#trigger-desc-exact'],
+        none: ['#trigger-desc-none'],
+    };
+
+    function triggerTypeChanged() {
+        const curTriggerType = $('#trigger-type-dropdown').val();
+
+        const elsToHide = [];
+        const elsToShow = [];
+        for (const [t, els] of Object.entries(triggerTypeEls)) {
+            if (t === curTriggerType) elsToShow.push(...els);
+            else elsToHide.push(...els);
+        }
+
+        // Order of operations is important: if we first show elements
+        // applicable to the current trigger type, then hide elements applicable
+        // to other trigger types, we may end up momentarily showing a relevant
+        // element then hiding it. To avoid this undesirable behavior, first
+        // hide elements from other trigger types and only then show elements
+        // for the current trigger type.
+        for (const el of elsToHide) $(el).addClass('hidden');
+        for (const el of elsToShow) $(el).removeClass('hidden');
+
+        refreshWarnings();
     }
 
+    // issue warnings for common configurations that are indicative of user
+    // error (but are not hard errors, since can be intended)
+    function refreshWarnings() {
+        const allChecks = [checkNoEmptyRequiredRoles, checkNoEmptyRequiredChannels, checkMissingIntervalTriggerChannel];
+
+        const triggerType = $('#trigger-type-dropdown').val();
+        for (const c of allChecks) {
+            if (c.applicableTriggerTypes.includes(triggerType)) {
+                c.run();
+            } else {
+                c.removeWarning();
+            }
+        }
+    }
+
+    function addWarningIfNotExists(id, text) {
+        if (!document.getElementById(id)) {
+            addAlert('warning', text, id);
+        }
+    }
+
+    // 'require roles' mode with no required roles
+    const checkNoEmptyRequiredRoles = {
+        applicableTriggerTypes: ['reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
+        warningId: 'require-no-roles-warning',
+        run() {
+            const isRequireMode = $('#require-role-mode').prop('checked');
+            const commandRolesMenu = $('#command-roles');
+            if (isRequireMode && commandRolesMenu.val().length === 0) {
+                addWarningIfNotExists(this.warningId,
+                    "Requiring no roles effectively disables your command, meaning it will never run."
+                    + " If your command has no role restrictions, set the mode to 'ignore roles' instead.",
+                );
+            } else {
+                this.removeWarning();
+            }
+        },
+        removeWarning() {
+            $(`#${this.warningId}`).remove();
+        },
+    };
+    $('#require-role-mode').change(() => checkNoEmptyRequiredRoles.run());
+    $('#ignore-role-mode').change(() => checkNoEmptyRequiredRoles.run());
+    $('#command-roles').change(() => checkNoEmptyRequiredRoles.run());
+
+    const checkNoEmptyRequiredChannels = {
+        applicableTriggerTypes: ['reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
+        warningId: 'require-no-channels-warning',
+        run() {
+            const isRequireMode = $('#require-channel-mode').prop('checked');
+            const commandChannelsMenu = $('#command-channels');
+            if (isRequireMode && commandChannelsMenu.val().length === 0) {
+                addWarningIfNotExists(this.warningId,
+                    "Requiring no channels effectively disables your command, meaning it will never run."
+                    + " If your command has no channel restrictions, set the mode to 'ignore channels' instead.",
+                );
+            } else {
+                this.removeWarning();
+            }
+        },
+        removeWarning() {
+            $(`#${this.warningId}`).remove();
+        },
+    };
+    $('#require-channel-mode').change(() => checkNoEmptyRequiredChannels.run());
+    $('#ignore-channel-mode').change(() => checkNoEmptyRequiredChannels.run());
+    $('#command-channels').change(() => checkNoEmptyRequiredChannels.run());
+
+    const checkMissingIntervalTriggerChannel = {
+        applicableTriggerTypes: ['interval_hours', 'interval_minutes'],
+        warningId: 'time-trigger-no-channel-warning',
+        run() {
+            const selectedChannel = $('#time-trigger-channel').val();
+            console.log(selectedChannel);
+            if (!selectedChannel) {
+                addWarningIfNotExists(this.warningId,
+                    "Selecting no channel for an interval command effectively disables your command, meaning it will never run."
+                    + " If your command does not need to run in a specific channel, select a arbitrary one from the list instead.",
+                );
+            } else {
+                this.removeWarning();
+            }
+        },
+        removeWarning() {
+            $(`#${this.warningId}`).remove();
+        },
+    };
+    $('#time-trigger-channel').change(() => checkMissingIntervalTriggerChannel.run());
+
+    function updateTriggerLength() {
+        const triggerLength = $('#trigger-length');
+        const trigger = $('#trigger');
+        if (triggerLength > 0 && trigger && trigger.val()) {
+            triggerLength
+                .text(trigger.val().length)
+                .toggleClass('text-danger', trigger.val().length > 1000);
+        }
+    }
+    $('#trigger').keyup(updateTriggerLength);
+  
+    function updateNameLength() {
+        const nameLength = $('#name-length');
+        const name = $('#name');
+        if (nameLength && name && name.val()) {
+            nameLength
+                .text(name.val().length)
+                .toggleClass('text-danger', name.val().length > 100);
+        }
+    }
+    $('#name').keyup(updateNameLength);
+
+    function updateCCLength() {
+        const textAreas = document.querySelectorAll('#cc-responses > textarea');
+        const totalLength = Array.from(textAreas).reduce((len, el) => {
+            // The data received on the backend contains "\r\n" while it is simply "\n" on the JS side.
+            // Adjust for this discrepancy by double-counting newline characters.
+            const newlines = el.value.match(/\n/g);
+            return len + el.value.length + (newlines ? newlines.length : 0);
+        }, 0);
+
+        $('.cc-length-counter')
+            .text(totalLength)
+            .toggleClass('text-danger', totalLength > {{.MaxCCLength}});
+    }
     function onCCChanged(textArea) {
-       calcCCLength();
+       updateCCLength();
     }
-
-    var idGen = 0
-
-    $("#time-trigger-channel").change(handleTimeTriggerChannelChange);
-    function handleTimeTriggerChannelChange() {
-        const triggerType = $("#trigger-type-dropdown").val();
-        if (triggerType !== "interval_hours" && triggerType !== "interval_minutes") return;
-    
-        // if no channel is selected for an interval trigger, the command is
-        // effectively disabled as it has nowhere to run
-        const isChannelSelected = Boolean($("#time-trigger-channel").val());
-        
-        const existingWarning = $("#time-trigger-no-channel-warning");
-        if (existingWarning.length > 0 && isChannelSelected) {
-            // remove existing warning if a channel is selected
-            existingWarning.remove();
-        } else if (existingWarning.length === 0 && !isChannelSelected) {
-            addAlert("warning", "Selecting no channel for the command to run in effectively disables it, making it never run. If your command does not need to run in any specific channel, select a random one from the list instead.", "time-trigger-no-channel-warning");
-        }
-    }
-
-    var requireNoRolesWarning = "Requiring no roles effectively disables your command, making it run for no one. If you want no role restrictions, set the mode to 'ignore roles' instead.";
-    var requireNoChannelsWarning = "Requiring no channels effectively disables your command, making it run for no one. If you want no channel restrictions, set the mode to 'ignore channels' instead.";
-
-    $("#require-role-mode").change(function() {
-        handleRestrictionChange($(this).prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
-    });
-    $("#ignore-role-mode").change(function() {
-        handleRestrictionChange(!$(this).prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
-    });
-    $("#command-roles").change(function() {
-        handleRestrictionChange($("#require-role-mode").prop("checked"), $(this), "require-no-roles-warning", requireNoRolesWarning);
-    });
-
-    $("#require-channel-mode").change(function() {
-        handleRestrictionChange($(this).prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
-    });
-    $("#ignore-channel-mode").change(function() {
-        handleRestrictionChange(!$(this).prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
-    });
-    $("#command-channels").change(function() {
-        handleRestrictionChange($("#require-channel-mode").prop("checked"), $(this), "require-no-channels-warning", requireNoChannelsWarning); 
-    });
-
-    function handleRestrictionChange(modeIsRequire, selectMenu, warningID, warningText) {
-        // requiring no roles/channels results in the command not being able to
-        // run anywhere, this is typically a mistake
-        const doWarn = modeIsRequire && selectMenu.val().length === 0; 
-        
-        const existingWarning = $(`#${warningID}`);
-        if (existingWarning.length > 0 && !doWarn) {
-            // remove existing warning if there's no need for it anymore
-            existingWarning.remove();
-        } else if (existingWarning.length === 0 && doWarn) {
-            // warning does not exist, so add it
-            addAlert("warning", warningText, warningID);
-        }
-    }
-    $(document).bind('keydown', (e) => {
-      let event = e.originalEvent;
-      if(event.altKey && event.shiftKey && event.code === 'KeyS'){
-        const saveCCbutton = document.querySelector("#save-custom-command");
-        if(saveCCbutton){
-         saveCCbutton.click();
-         return false;
-        }
-      } 
-    });
 </script>
 
 
