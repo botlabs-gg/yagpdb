@@ -2146,6 +2146,21 @@ func indexContainer(container, key reflect.Value) (reflect.Value, error) {
 			}
 			return v, nil
 		}
+
+	case reflect.Struct:
+		if key.Kind() != reflect.String {
+			return reflect.Value{}, fmt.Errorf("cannot index struct with non-string key")
+		}
+
+		s := key.String()
+		ft, ok := container.Type().FieldByName(s)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("no field named %q in %s struct", s, container.Type())
+		}
+		if !ft.IsExported() {
+			return reflect.Value{}, fmt.Errorf("field %q of %s struct is not exported", s, container.Type())
+		}
+		return container.FieldByName(s), nil
 	}
 
 	return reflect.Value{}, fmt.Errorf("cannot index value of type %s", container.Type())
