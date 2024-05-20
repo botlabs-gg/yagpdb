@@ -15,9 +15,12 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "ViewPerms",
-	Description: "Shows you or the target's permissions in this channel",
+	Description: "Shows you or the target's permissions in a given channel (default current channel)",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "target", Type: dcmd.UserID, Default: int64(0)},
+	},
+	ArgSwitches: []*dcmd.ArgDef{
+		{Name: "channel", Type: dcmd.Channel},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		var target *dstate.MemberState
@@ -36,12 +39,17 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		perms, err := data.GuildData.GS.GetMemberPermissions(data.GuildData.CS.ID, target.User.ID, target.Member.Roles)
+		cid := data.ChannelID
+		if c := data.Switch("channel"); c.Value != nil {
+			cid = c.Value.(*dstate.ChannelState).ID
+		}
+
+		perms, err := data.GuildData.GS.GetMemberPermissions(cid, target.User.ID, target.Member.Roles)
 		if err != nil {
 			return "Unable to calculate perms", err
 		}
 
 		humanized := common.HumanizePermissions(int64(perms))
-		return fmt.Sprintf("Perms of %s in this channel\n`%d`\n%s", target.User.Username, perms, strings.Join(humanized, ", ")), nil
+		return fmt.Sprintf("Perms of %s in <#%d>\n`%d`\n%s", target.User.Username, cid, perms, strings.Join(humanized, ", ")), nil
 	},
 }
