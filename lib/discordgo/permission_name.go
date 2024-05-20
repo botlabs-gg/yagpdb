@@ -11,6 +11,8 @@ func PermissionName(p int64) string {
 		return "ManageGuild"
 	case PermissionViewGuildInsights:
 		return "ViewGuildInsights"
+	case PermissionViewCreatorMonetizationAnalytics:
+		return "ViewCreatorMonetizationAnalytics"
 	case PermissionViewChannel:
 		return "ViewChannel"
 	case PermissionSendMessages:
@@ -35,6 +37,14 @@ func PermissionName(p int64) string {
 		return "UseApplicationCommands"
 	case PermissionUseEmbeddedActivities:
 		return "UseEmbeddedActivities"
+	case PermissionUseSoundboard:
+		return "UseSoundboard"
+	case PermissionUseExternalSounds:
+		return "UseExternalSounds"
+	case PermissionSendVoiceMessages:
+		return "SendVoiceMessages"
+	case PermissionSendPolls:
+		return "SendPolls"
 	case PermissionVoiceConnect:
 		return "VoiceConnect"
 	case PermissionVoiceSpeak:
@@ -75,6 +85,10 @@ func PermissionName(p int64) string {
 		return "ManageChannels"
 	case PermissionManageEvents:
 		return "ManageEvents"
+	case PermissionCreateGuildExpressions:
+		return "CreateGuildExpressions"
+	case PermissionCreateEvents:
+		return "CreateEvents"
 	case PermissionManageThreads:
 		return "ManageThreads"
 	case PermissionUsePublicThreads:

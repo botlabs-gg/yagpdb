@@ -42,6 +42,13 @@ const (
 	PermissionSendMessagesInThreads            int64 = 1 << 38 // Allows for sending messages in threads	T
 	PermissionUseEmbeddedActivities            int64 = 1 << 39 // Allows for using Activities (applications with the EMBEDDED flag) in a voice channel	V
 	PermissionModerateMembers                  int64 = 1 << 40 // Allows for timing out users to prevent them from sending or reacting to messages in chat and threads, and from speaking in voice and stage channels
+	PermissionViewCreatorMonetizationAnalytics int64 = 1 << 41 // Allows for viewing role subscription insights
+	PermissionUseSoundboard                    int64 = 1 << 42 // Allows for using soundboard in a voice channel 	V
+	PermissionCreateGuildExpressions           int64 = 1 << 43 // Allows for creating emojis, stickers, and soundboard sounds, and editing and deleting those created by the current user
+	PermissionCreateEvents                     int64 = 1 << 44 // Allows for creating scheduled events, and editing and deleting those created by the current user
+	PermissionUseExternalSounds                int64 = 1 << 45 // Allows the usage of custom soundboard sounds from other servers 	V
+	PermissionSendVoiceMessages                int64 = 1 << 46 // Allows sending voice messages 	T, V, S
+	PermissionSendPolls                        int64 = 1 << 49 // Allows sending polls 	T, V, S
 )
 
 // all bits set except the leftmost to avoid using negative numbers in case discord doesn't handle it
@@ -52,6 +59,7 @@ var AllPermissions = []int64{
 	PermissionAdministrator,
 	PermissionManageGuild,
 	PermissionViewGuildInsights,
+	PermissionViewCreatorMonetizationAnalytics,
 
 	PermissionViewChannel,
 	PermissionSendMessages,
@@ -65,6 +73,10 @@ var AllPermissions = []int64{
 	PermissionUseExternalStickers,
 	PermissionUseApplicationCommands,
 	PermissionUseEmbeddedActivities,
+	PermissionUseSoundboard,
+	PermissionUseExternalSounds,
+	PermissionSendVoiceMessages,
+	PermissionSendPolls,
 
 	PermissionVoiceConnect,
 	PermissionVoiceSpeak,
@@ -88,6 +100,8 @@ var AllPermissions = []int64{
 	PermissionBanMembers,
 	PermissionManageChannels,
 	PermissionManageEvents,
+	PermissionCreateGuildExpressions,
+	PermissionCreateEvents,
 
 	PermissionManageThreads,
 	PermissionUsePublicThreads,
