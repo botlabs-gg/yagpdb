@@ -275,7 +275,7 @@ func (c *Context) setupBaseData() {
 
 	// permissions
 	c.Data["Permissions"] = map[string]int64{
-		"ReadMessages":       discordgo.PermissionReadMessages,
+		"ReadMessages":       discordgo.PermissionViewChannel,
 		"SendMessages":       discordgo.PermissionSendMessages,
 		"SendTTSMessages":    discordgo.PermissionSendTTSMessages,
 		"ManageMessages":     discordgo.PermissionManageMessages,
@@ -296,16 +296,16 @@ func (c *Context) setupBaseData() {
 		"ManageNicknames": discordgo.PermissionManageNicknames,
 		"ManageRoles":     discordgo.PermissionManageRoles,
 		"ManageWebhooks":  discordgo.PermissionManageWebhooks,
-		"ManageEmojis":    discordgo.PermissionManageEmojis,
+		"ManageEmojis":    discordgo.PermissionManageEmojisAndStickers,
 
 		"CreateInstantInvite": discordgo.PermissionCreateInstantInvite,
 		"KickMembers":         discordgo.PermissionKickMembers,
 		"BanMembers":          discordgo.PermissionBanMembers,
 		"Administrator":       discordgo.PermissionAdministrator,
 		"ManageChannels":      discordgo.PermissionManageChannels,
-		"ManageServer":        discordgo.PermissionManageServer,
+		"ManageServer":        discordgo.PermissionManageGuild,
 		"AddReactions":        discordgo.PermissionAddReactions,
-		"ViewAuditLogs":       discordgo.PermissionViewAuditLogs,
+		"ViewAuditLogs":       discordgo.PermissionViewAuditLog,
 	}
 }
 

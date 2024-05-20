@@ -140,7 +140,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 			}
 		}
 
-		adminOrPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.GuildData.CS.ID, data.GuildData.MS, discordgo.PermissionManageServer)
+		adminOrPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.GuildData.CS.ID, data.GuildData.MS, discordgo.PermissionManageGuild)
 		if err != nil {
 			return nil, err
 		}

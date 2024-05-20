@@ -431,7 +431,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 		guild := data.GuildData.GS
 
 		if data.TriggerType != dcmd.TriggerTypeSlashCommands {
-			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages); !hasPerms {
+			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionViewChannel|discordgo.PermissionSendMessages); !hasPerms {
 				return false, nil, nil, nil
 			}
 		}

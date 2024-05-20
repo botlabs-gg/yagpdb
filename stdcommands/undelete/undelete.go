@@ -33,7 +33,7 @@ var Command = &commands.YAGCommand{
 		if data.Switch("channel").Value != nil {
 			channel = data.Switch("channel").Value.(*dstate.ChannelState)
 
-			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, channel.ID, data.GuildData.MS, discordgo.PermissionReadMessages)
+			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, channel.ID, data.GuildData.MS, discordgo.PermissionViewChannel)
 			if err != nil {
 				return nil, err
 			} else if !ok {

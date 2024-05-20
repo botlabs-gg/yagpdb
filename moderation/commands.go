@@ -159,8 +159,8 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "ddays", Help: "Number of days of messages to delete", Type: dcmd.Int},
 		},
-		RequiredDiscordPermsHelp: "BanMembers or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionBanMembers}},
+		RequiredDiscordPermsHelp: "BanMembers or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionBanMembers}},
 		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
@@ -215,8 +215,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "BanMembers or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionBanMembers}},
+		RequiredDiscordPermsHelp: "BanMembers or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionBanMembers}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
@@ -264,11 +264,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "KickMembers or ManageServer",
+		RequiredDiscordPermsHelp: "KickMembers or ManageGuild",
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "cl", Help: "Messages to delete", Type: &dcmd.IntArg{Min: 1, Max: 100}},
 		},
-		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionKickMembers}},
+		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionKickMembers}},
 		SlashCommandEnabled: true,
 		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -325,8 +325,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Duration", Type: &commands.DurationArg{}},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "KickMembers or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
+		RequiredDiscordPermsHelp: "KickMembers or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionManageRoles}},
 		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
@@ -385,8 +385,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "KickMembers or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
+		RequiredDiscordPermsHelp: "KickMembers or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionManageRoles}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
@@ -434,8 +434,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Duration", Type: &commands.DurationArg{}},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "TimeoutMembers/ModerateMembers or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionModerateMembers}},
+		RequiredDiscordPermsHelp: "TimeoutMembers/ModerateMembers or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionModerateMembers}},
 		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
@@ -489,8 +489,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "TimeoutMember/ModerateMember or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionModerateMembers}},
+		RequiredDiscordPermsHelp: "TimeoutMember/ModerateMember or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionModerateMembers}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
@@ -625,8 +625,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
 			{Name: "from", Help: "Start at this msg ID", Type: dcmd.BigInt},
 		},
-		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageMessages}},
+		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionManageMessages}},
 		ArgumentCombos:           [][]int{{0}, {0, 1}, {1, 0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
@@ -708,7 +708,6 @@ var ModerationCommands = []*commands.YAGCommand{
 				toID = parsed.Switches["to"].Int64()
 			}
 
-
 			// Check if set to break at a certain ID
 			fromID := int64(0)
 			if parsed.Switches["from"].Value != nil {
@@ -716,7 +715,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				fromID = parsed.Switches["from"].Int64()
 			}
 
-			if(toID > 0 && fromID > 0 && fromID < toID){
+			if toID > 0 && fromID > 0 && fromID < toID {
 				return errors.New("from messageID cannot be less than to messageID"), nil
 			}
 
@@ -767,7 +766,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Message-ID", Type: dcmd.BigInt},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "KickMembers or ManageServer",
+		RequiredDiscordPermsHelp: "KickMembers or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -818,7 +817,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
+		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
@@ -863,7 +862,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "id", Help: "Warning ID", Type: dcmd.Int},
 		},
-		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
+		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -915,7 +914,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Id", Type: dcmd.Int},
 			{Name: "NewMessage", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
+		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -950,7 +949,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Id", Type: dcmd.Int},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
+		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -983,7 +982,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Reason", Type: dcmd.String},
 		},
-		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
+		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -1020,7 +1019,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "id", Help: "List userIDs"},
 		},
-		RequiredDiscordPermsHelp: "ManageMessages or ManageServer",
+		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
@@ -1090,8 +1089,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "Role", Type: &commands.RoleArg{}},
 			{Name: "Duration", Type: &commands.DurationArg{}, Default: time.Duration(0)},
 		},
-		RequiredDiscordPermsHelp: "ManageRoles or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
+		RequiredDiscordPermsHelp: "ManageRoles or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionManageRoles}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -1166,8 +1165,8 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Role", Type: &commands.RoleArg{}},
 		},
-		RequiredDiscordPermsHelp: "ManageRoles or ManageServer",
-		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageServer}, {discordgo.PermissionManageRoles}},
+		RequiredDiscordPermsHelp: "ManageRoles or ManageGuild",
+		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageGuild}, {discordgo.PermissionManageRoles}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -1289,7 +1288,7 @@ func AdvancedDeleteMessages(guildID, channelID int64, triggerID int64, filterUse
 
 		// Continue only if current msg ID is > fromID
 		if fromID > 0 && fromID < msgs[i].ID {
-			continue;
+			continue
 		}
 
 		// Continue only if current msg ID is < toID
@@ -1385,7 +1384,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 					entry_formatted = common.CutStringShort(entry_formatted, 900)
 				}
 				entry_formatted += "\n"
-				purgedWarnLogs := logs.ConfEnableMessageLogPurge.GetBool() && entry.CreatedAt.Before(time.Now().AddDate(0,0,-30))
+				purgedWarnLogs := logs.ConfEnableMessageLogPurge.GetBool() && entry.CreatedAt.Before(time.Now().AddDate(0, 0, -30))
 				if entry.LogsLink != "" && !purgedWarnLogs {
 					entry_formatted += fmt.Sprintf("> logs: [`link`](%s)\n", entry.LogsLink)
 				}

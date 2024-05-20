@@ -69,7 +69,7 @@ func (p *Plugin) InitWeb() {
 
 	// All handlers here require guild channels present
 	muxer.Use(web.RequireBotMemberMW)
-	muxer.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageServer, discordgo.PermissionModerateMembers))
+	muxer.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageGuild, discordgo.PermissionModerateMembers))
 
 	getIndexHandler := web.ControllerHandler(p.handleGetAutomodIndex, "automod_index")
 

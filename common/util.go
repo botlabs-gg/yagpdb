@@ -295,7 +295,7 @@ func RemoveRoleDS(ms *dstate.MemberState, role int64) error {
 }
 
 var StringPerms = map[int64]string{
-	discordgo.PermissionReadMessages:       "Read Messages",
+	discordgo.PermissionViewChannel:        "View Channel",
 	discordgo.PermissionSendMessages:       "Send Messages",
 	discordgo.PermissionSendTTSMessages:    "Send TTS Messages",
 	discordgo.PermissionManageMessages:     "Manage Messages",
@@ -315,7 +315,7 @@ var StringPerms = map[int64]string{
 	discordgo.PermissionBanMembers:          "Ban Members",
 	discordgo.PermissionManageRoles:         "Manage Roles",
 	discordgo.PermissionManageChannels:      "Manage Channels",
-	discordgo.PermissionManageServer:        "Manage Server",
+	discordgo.PermissionManageGuild:         "Manage Guild",
 	discordgo.PermissionManageWebhooks:      "Manage Webhooks",
 	discordgo.PermissionModerateMembers:     "Moderate Members / Timeout Members",
 }
@@ -380,15 +380,15 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator {
 		res = append(res, "Administrator")
 	}
-	if perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
-		res = append(res, "ManageServer")
+	if perms&discordgo.PermissionManageGuild == discordgo.PermissionManageGuild {
+		res = append(res, "ManageServer") // ManageServer not ManageGuild for back compat
 	}
 	if perms&discordgo.PermissionViewGuildInsights == discordgo.PermissionViewGuildInsights {
 		res = append(res, "ViewGuildInsights")
 	}
 
-	if perms&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
-		res = append(res, "ReadMessages")
+	if perms&discordgo.PermissionViewChannel == discordgo.PermissionViewChannel {
+		res = append(res, "ReadMessages") // ReadMessages not ViewChannel for back compat
 	}
 	if perms&discordgo.PermissionSendMessages == discordgo.PermissionSendMessages {
 		res = append(res, "SendMessages")
@@ -503,8 +503,8 @@ func HumanizePermissions(perms int64) (res []string) {
 	if perms&discordgo.PermissionAddReactions == discordgo.PermissionAddReactions {
 		res = append(res, "AddReactions")
 	}
-	if perms&discordgo.PermissionViewAuditLogs == discordgo.PermissionViewAuditLogs {
-		res = append(res, "ViewAuditLogs")
+	if perms&discordgo.PermissionViewAuditLog == discordgo.PermissionViewAuditLog {
+		res = append(res, "ViewAuditLogs") // ViewAuditLogs not ViewAuditLog for back compat
 	}
 	return
 }

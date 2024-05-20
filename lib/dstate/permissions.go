@@ -8,9 +8,9 @@ const AllPermissions int64 = discordgo.PermissionAll
 // discord performs no server side validation so this is needed
 // as to not run into some really weird situations
 const ChannelPermsMask = ^(discordgo.PermissionAdministrator |
-	discordgo.PermissionManageServer |
+	discordgo.PermissionManageGuild |
 	discordgo.PermissionChangeNickname |
-	discordgo.PermissionManageServer |
+	discordgo.PermissionManageGuild |
 	discordgo.PermissionManageRoles |
 	discordgo.PermissionKickMembers |
 	discordgo.PermissionBanMembers)
