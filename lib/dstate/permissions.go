@@ -10,7 +10,6 @@ const AllPermissions int64 = discordgo.PermissionAll
 const ChannelPermsMask = ^(discordgo.PermissionAdministrator |
 	discordgo.PermissionManageGuild |
 	discordgo.PermissionChangeNickname |
-	discordgo.PermissionManageGuild |
 	discordgo.PermissionManageRoles |
 	discordgo.PermissionKickMembers |
 	discordgo.PermissionBanMembers)
