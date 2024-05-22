@@ -164,12 +164,12 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 	}
 	t := true
 
-	integrationtypes := []int{0}
-	contexts := []int{0}
+	integrationtypes := []discordgo.IntegrationType{discordgo.GuildInstall}
+	contexts := []discordgo.IntegrationContext{discordgo.GuildContext}
 
 	if cast.RunInDM {
-		integrationtypes = append(integrationtypes, 1) // USER_INSTALL
-		contexts = append(contexts, 1, 2)              // BOT_DM, PRIVATE_CHANNEL
+		integrationtypes = append(integrationtypes, discordgo.UserInstall)
+		contexts = append(contexts, discordgo.BotDMContext, discordgo.PrivateChannelContext)
 	}
 
 	_, opts := cast.slashCommandOptions()

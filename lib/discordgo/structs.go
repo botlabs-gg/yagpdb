@@ -1407,6 +1407,21 @@ const (
 	ErrCodeReactionBlocked = 90001
 )
 
+type IntegrationType int
+
+const (
+	GuildInstall IntegrationType = 0
+	UserInstall  IntegrationType = 1
+)
+
+type IntegrationContext int
+
+const (
+	GuildContext          IntegrationContext = 0
+	BotDMContext          IntegrationContext = 1
+	PrivateChannelContext IntegrationContext = 2
+)
+
 // InviteUser is a partial user obejct from the invite event(s)
 type InviteUser struct {
 	ID            int64  `json:"id,string"`
@@ -1421,8 +1436,8 @@ type CreateApplicationCommandRequest struct {
 	Options           []*ApplicationCommandOption `json:"options"`                      // the parameters for the command
 	DefaultPermission *bool                       `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
 	NSFW              bool                        `json:"nsfw,omitempty"`               // marks a command as age-restricted
-	IntegrationTypes  []int                       `json:"integration_types"`            // Defines the integration types a command supports https://discord.com/developers/docs/resources/application#application-object-application-integration-types
-	Contexts          []int                       `json:"contexts"`                     // Defines the interaction contexts supported https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-context-types
+	IntegrationTypes  []IntegrationType           `json:"integration_types"`            // Defines the integration types a command supports https://discord.com/developers/docs/resources/application#application-object-application-integration-types
+	Contexts          []IntegrationContext        `json:"contexts"`                     // Defines the interaction contexts supported https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-context-types
 }
 
 func (a *ApplicationCommandInteractionDataResolved) UnmarshalJSON(b []byte) error {
