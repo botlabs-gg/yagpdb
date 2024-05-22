@@ -12,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate sqlboiler --no-hooks --add-soft-deletes psql
+
 type Plugin struct{}
 
 func RegisterPlugin() {
