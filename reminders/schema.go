@@ -18,8 +18,12 @@ CREATE TABLE IF NOT EXISTS reminders (
 CREATE INDEX IF NOT EXISTS idx_reminders_deleted_at ON reminders(deleted_at);
 `, `
 -- Previous versions of the reputation module used gorm instead of sqlboiler,
--- which does not add NOT NULL constraints by default. Therefore, ensure these constraints
--- are present in existing tables as well.
+-- which does not add NOT NULL constraints by default. Therefore, ensure the
+-- NOT NULL constraints are present in existing tables as well.
+
+-- The first few columns below have always been set since the reminders plugin was
+-- added, so barring the presence of invalid entries, we can safely add NOT NULL
+-- constraints without error.
 
 ALTER TABLE reminders ALTER COLUMN created_at SET NOT NULL;
 `, `
@@ -29,30 +33,25 @@ ALTER TABLE reminders ALTER COLUMN user_id SET NOT NULL;
 `, `
 ALTER TABLE reminders ALTER COLUMN channel_id SET NOT NULL;
 `, `
-ALTER TABLE reminders ALTER COLUMN guild_id SET NOT NULL;
-`, `
 ALTER TABLE reminders ALTER COLUMN message SET NOT NULL;
 `, `
 ALTER TABLE reminders ALTER COLUMN "when" SET NOT NULL;
+`, `
+DO $$
+BEGIN
+
+-- The guild_id column is more annoying to deal with. When the reminders plugin
+-- was first created, the reminders table did not have a guild_id column -- it
+-- was added later, in October 2018 (9f5ef28). So reminders before then could
+-- plausibly have guild_id = NULL, meaning directly adding the NOT NULL
+-- constraint would fail. But since the maximum offset of a reminder is 1 year,
+-- all such reminders have now expired and so we can just delete them before
+-- adding the constraint.
+
+-- Only run if we haven't added the NOT NULL constraint yet.
+IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='reminders' AND column_name='guild_id' AND is_nullable='YES') THEN
+	DELETE FROM reminders WHERE guild_id IS NULL;
+	ALTER TABLE reminders ALTER COLUMN guild_id SET NOT NULL;
+END IF;
+END $$;
 `}
-
-/*
-TBD: Should we execute the following query automatically (by including it in
-DBSchemas above) before adding NOT NULL constraints to relevant columns?
-
-Jonas includes a similar query when migrating soundboard away from gorm:
-https://github.com/botlabs-gg/yagpdb/commit/628ea9a228ab11dcc327ad0d017c5654312025af
-but reminders are much more widely used, and running this query on every startup (requiring
-a full table scan) is potentially costly. We could instead tell self-hosters to manually
-run this query before updating to the new version.
-
--- Delete invalid data (should not exist, but just to be sure.)
-DELETE FROM reminders
-WHERE created_at IS NULL
-	OR updated_at IS NULL
-	OR user_id IS NULL
-	OR channel_id IS NULL
-	OR guild_id IS NULL
-	OR message IS NULL
-	OR "when" IS NULL;
-*/
