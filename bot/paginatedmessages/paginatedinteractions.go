@@ -1,7 +1,6 @@
 package paginatedmessages
 
 import (
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -102,7 +101,7 @@ func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pa
 
 	var interaction = &discordgo.Interaction{ID: 0}
 
-	if len(data) >= 1 && !reflect.ValueOf(data[0].SlashCommandTriggerData).IsNil() {
+	if len(data) >= 1 && data[0].SlashCommandTriggerData != nil {
 		interaction = data[0].SlashCommandTriggerData.Interaction
 	}
 
