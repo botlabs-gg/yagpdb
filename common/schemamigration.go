@@ -8,9 +8,10 @@ import (
 )
 
 var (
-	createTableRegex         = regexp.MustCompile(`(?i)create table if not exists ([0-9a-z_]*) *\(`)
-	alterTableAddColumnRegex = regexp.MustCompile(`(?i)alter table ([0-9a-z_]*) add column if not exists ([0-9a-z_]*)`)
-	addIndexRegex            = regexp.MustCompile(`(?i)create (unique )?index if not exists ([0-9a-z_]*) on ([0-9a-z_]*)`)
+	createTableRegex          = regexp.MustCompile(`(?i)create table if not exists ([0-9a-z_]*) *\(`)
+	alterTableAddColumnRegex  = regexp.MustCompile(`(?i)alter table ([0-9a-z_]*) add column if not exists "?([0-9a-z_]*)"?`)
+	addIndexRegex             = regexp.MustCompile(`(?i)create (unique )?index if not exists ([0-9a-z_]*) on ([0-9a-z_]*)`)
+	addNotNullConstraintRegex = regexp.MustCompile(`(?i)alter table ([0-9a-z_]*) alter column "?([0-9a-z_]+)"? set not null`)
 )
 
 type DBSchema struct {
@@ -35,7 +36,7 @@ func initSchema(schema string, name string) {
 		return
 	}
 
-	skip, err := checkSkipSchemaInit(schema, name)
+	skip, err := checkSkipSchemaInit(schema)
 	if err != nil {
 		logger.WithError(err).Error("Failed checking if we should skip schema: ", schema)
 	}
@@ -45,20 +46,15 @@ func initSchema(schema string, name string) {
 	}
 
 	logger.Info("Schema initialization: ", name, ": not skipped")
-	// if strings.HasPrefix("create table if not exists", trimmedLower) {
-
-	// }else if strings.HasPrefix("alter table", prefix)
 
 	_, err = PQ.Exec(schema)
 	if err != nil {
 		UnlockRedisKey("schema_init")
 		logger.WithError(err).Fatal("failed initializing postgres db schema for ", name)
 	}
-
-	return
 }
 
-func checkSkipSchemaInit(schema string, name string) (exists bool, err error) {
+func checkSkipSchemaInit(schema string) (exists bool, err error) {
 	trimmed := strings.TrimSpace(schema)
 
 	if matches := createTableRegex.FindAllStringSubmatch(trimmed, -1); len(matches) > 0 {
@@ -71,6 +67,10 @@ func checkSkipSchemaInit(schema string, name string) (exists bool, err error) {
 
 	if matches := alterTableAddColumnRegex.FindAllStringSubmatch(trimmed, -1); len(matches) > 0 {
 		return checkColumnExists(matches[0][1], matches[0][2])
+	}
+
+	if matches := addNotNullConstraintRegex.FindAllStringSubmatch(trimmed, -1); len(matches) > 0 {
+		return checkNotNullConstraintExists(matches[0][1], matches[0][2])
 	}
 
 	return false, nil
@@ -127,6 +127,19 @@ WHERE table_name=$1 and column_name=$2
 	return b, err
 }
 
+func checkNotNullConstraintExists(table, column string) (bool, error) {
+	const query = `
+SELECT is_nullable
+FROM information_schema.columns
+WHERE table_name=$1 AND column_name=$2;	
+`
+	var isNullable string
+	if err := PQ.QueryRow(query, table, column).Scan(&isNullable); err != nil {
+		return false, err
+	}
+	return isNullable == "NO", nil
+}
+
 func InitSchemas(name string, schemas ...string) {
 	if err := BlockingLockRedisKey("schema_init", time.Minute*10, 60*60); err != nil {
 		panic(err)
@@ -138,6 +151,4 @@ func InitSchemas(name string, schemas ...string) {
 		actualName := fmt.Sprintf("%s[%d]", name, i)
 		initSchema(v, actualName)
 	}
-
-	return
 }
