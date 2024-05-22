@@ -11,7 +11,7 @@ var (
 	createTableRegex          = regexp.MustCompile(`(?i)create table if not exists ([0-9a-z_]*) *\(`)
 	alterTableAddColumnRegex  = regexp.MustCompile(`(?i)alter table ([0-9a-z_]*) add column if not exists "?([0-9a-z_]*)"?`)
 	addIndexRegex             = regexp.MustCompile(`(?i)create (unique )?index if not exists ([0-9a-z_]*) on ([0-9a-z_]*)`)
-	addNotNullConstraintRegex = regexp.MustCompile(`(?i)alter table ([0-9a-z_]*) alter column "?([0-9a-z_]+)"? set not null`)
+	addNotNullConstraintRegex = regexp.MustCompile(`(?i)alter table ([0-9a-z_]*) alter column "?([0-9a-z_]*)"? set not null`)
 )
 
 type DBSchema struct {
