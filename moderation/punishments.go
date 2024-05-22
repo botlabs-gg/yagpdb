@@ -53,7 +53,7 @@ func getMemberWithFallback(gs *dstate.GuildSet, user *discordgo.User) (ms *dstat
 // Kick or bans someone, uploading a hasebin log, and sending the report message in the action channel
 func punish(config *Config, p Punishment, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, user *discordgo.User, duration time.Duration, variadicBanDeleteDays ...int) error {
 
-	config, err := getConfigIfNotSet(guildID, config)
+	config, err := GetConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
@@ -210,7 +210,7 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 }
 
 func KickUser(config *Config, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, user *discordgo.User, del int) error {
-	config, err := getConfigIfNotSet(guildID, config)
+	config, err := GetConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
@@ -307,7 +307,7 @@ func BanUser(config *Config, guildID int64, channel *dstate.ChannelState, messag
 }
 
 func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason string, user *discordgo.User) (bool, error) {
-	config, err := getConfigIfNotSet(guildID, config)
+	config, err := GetConfigIfNotSet(guildID, config)
 	if err != nil {
 		return false, common.ErrWithCaller(err)
 	}
@@ -362,7 +362,7 @@ func TimeoutUser(config *Config, guildID int64, channel *dstate.ChannelState, me
 }
 
 func RemoveTimeout(config *Config, guildID int64, author *discordgo.User, reason string, user *discordgo.User) error {
-	config, err := getConfigIfNotSet(guildID, config)
+	config, err := GetConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
@@ -403,7 +403,7 @@ const (
 // Unmut or mute a user, ignore duration if unmuting
 // TODO: i don't think we need to track mutes in its own database anymore now with the new scheduled event system
 func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, member *dstate.MemberState, duration int) error {
-	config, err := getConfigIfNotSet(guildID, config)
+	config, err := GetConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}
@@ -618,7 +618,7 @@ func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *
 		channelID = channel.ID
 	}
 
-	config, err := getConfigIfNotSet(guildID, config)
+	config, err := GetConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)
 	}

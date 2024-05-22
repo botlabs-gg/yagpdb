@@ -19,6 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/jinzhu/gorm"
+	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -43,8 +44,6 @@ func (p *Plugin) AddCommands() {
 }
 
 func (p *Plugin) BotInit() {
-	// scheduledevents.RegisterEventHandler("unmute", handleUnMuteLegacy)
-	// scheduledevents.RegisterEventHandler("mod_unban", handleUnbanLegacy)
 	scheduledevents2.RegisterHandler("moderation_unmute", ScheduledUnmuteData{}, handleScheduledUnmute)
 	scheduledevents2.RegisterHandler("moderation_unban", ScheduledUnbanData{}, handleScheduledUnban)
 	scheduledevents2.RegisterLegacyMigrater("unmute", handleMigrateScheduledUnmute)
@@ -59,8 +58,77 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)
 
+	pubsub.AddHandler("invalidate_moderation_config_cache", handleInvalidateConfigCache, nil)
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
 	pubsub.AddHandler("mod_refresh_mute_override_create_role", HandleRefreshMuteOverridesCreateRole, nil)
+}
+
+func GetConfigIfNotSet(guildID int64, config *Config) (*Config, error) {
+	if config == nil {
+		var err error
+		config, err = GetCachedConfigOrDefault(guildID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return config, nil
+}
+
+var configCache = ccache.New(ccache.Configure().MaxSize(15000))
+
+func GetCachedConfigOrDefault(guildID int64) (*Config, error) {
+	const cacheDuration = 10 * time.Minute
+
+	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (interface{}, error) {
+		return GetConfig(guildID)
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return &Config{}, nil
+		}
+		return nil, err
+	}
+	return item.Value().(*Config), nil
+}
+
+func handleInvalidateConfigCache(evt *pubsub.Event) {
+	configCache.Delete(cacheKey(evt.TargetGuildInt))
+}
+
+func cacheKey(guildID int64) string {
+	return discordgo.StrID(guildID)
+}
+
+func GetConfig(guildID int64) (*Config, error) {
+	const maxRetries = 1000
+
+	currentRetries := 0
+	var conf Config
+	for {
+		err := common.GORM.Where("guild_id = ?", guildID).First(&conf).Error
+		if err == nil {
+			if currentRetries > 1 {
+				logger.Info("Fetched config after ", currentRetries, " retries")
+			}
+			return &conf, nil
+		}
+
+		if err == gorm.ErrRecordNotFound {
+			return nil, err
+		}
+
+		if strings.Contains(err.Error(), "sorry, too many clients already") {
+			time.Sleep(time.Millisecond * 10 * time.Duration(rand.Intn(10)))
+			currentRetries++
+			if currentRetries > maxRetries {
+				return nil, err
+			}
+			continue
+		}
+
+		return nil, err
+	}
 }
 
 type ScheduledUnmuteData struct {
@@ -118,7 +186,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 		return // nothing to do
 	}
 
-	config, err := GetConfig(guildID)
+	config, err := GetCachedConfigOrDefault(guildID)
 	if err != nil {
 		return
 	}
@@ -202,7 +270,7 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err erro
 		return false, nil
 	}
 
-	config, err := GetConfig(channel.GuildID)
+	config, err := GetCachedConfigOrDefault(channel.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -274,7 +342,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 		return false, nil
 	}
 
-	config, err := GetConfig(data.GuildID)
+	config, err := GetCachedConfigOrDefault(data.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -358,7 +426,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	config, err := GetConfig(guildID)
+	config, err := GetCachedConfigOrDefault(guildID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("Failed retrieving config")
 		return
@@ -407,7 +475,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
 	data := evt.GuildMemberRemove()
 
-	config, err := GetConfig(data.GuildID)
+	config, err := GetCachedConfigOrDefault(data.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -490,7 +558,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 func HandleMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	c := evt.GuildMemberAdd()
 
-	config, err := GetConfig(c.GuildID)
+	config, err := GetCachedConfigOrDefault(c.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -515,7 +583,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
-	config, err := GetConfig(c.GuildID)
+	config, err := GetCachedConfigOrDefault(c.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}

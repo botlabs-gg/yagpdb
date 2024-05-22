@@ -506,7 +506,7 @@ func (p *Plugin) handlePostAutomodUpdateRule(w http.ResponseWriter, r *http.Requ
 		}
 	}
 	if anyMute {
-		conf, err := moderation.GetConfig(g.ID)
+		conf, err := moderation.GetCachedConfigOrDefault(g.ID)
 		if err != nil || conf.MuteRole == "" {
 			tx.Rollback()
 			tmpl.AddAlerts(web.ErrorAlert("No mute role set, please configure one."))

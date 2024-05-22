@@ -3,10 +3,8 @@ package moderation
 import (
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -48,32 +46,9 @@ func RedisKeyLockedMute(guildID, userID int64) string {
 
 func RegisterPlugin() {
 	plugin := &Plugin{}
-
 	common.RegisterPlugin(plugin)
 
-	configstore.RegisterConfig(&Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{}, &MuteModel{})
-}
-
-func getConfigIfNotSet(guildID int64, config *Config) (*Config, error) {
-	if config == nil {
-		var err error
-		config, err = GetConfig(guildID)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return config, nil
-}
-
-func GetConfig(guildID int64) (*Config, error) {
-	var config Config
-	err := configstore.Cached.GetGuildConfig(context.Background(), guildID, &config)
-	if err == configstore.ErrNotFound {
-		err = nil
-	}
-	return &config, err
 }
 
 var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
@@ -84,7 +59,7 @@ const (
 )
 
 func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
-	config, err := GetConfig(guildID)
+	config, err := GetCachedConfigOrDefault(guildID)
 	if err != nil {
 		return nil, errors.WithStackIf(err)
 	}
