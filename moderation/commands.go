@@ -24,7 +24,7 @@ import (
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
-	config, err = GetConfig(cmdData.GuildData.GS.ID)
+	config, err = GetCachedConfigOrDefault(cmdData.GuildData.GS.ID)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetConfig")
 	}
@@ -708,7 +708,6 @@ var ModerationCommands = []*commands.YAGCommand{
 				toID = parsed.Switches["to"].Int64()
 			}
 
-
 			// Check if set to break at a certain ID
 			fromID := int64(0)
 			if parsed.Switches["from"].Value != nil {
@@ -716,7 +715,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				fromID = parsed.Switches["from"].Int64()
 			}
 
-			if(toID > 0 && fromID > 0 && fromID < toID){
+			if toID > 0 && fromID > 0 && fromID < toID {
 				return errors.New("from messageID cannot be less than to messageID"), nil
 			}
 
@@ -1289,7 +1288,7 @@ func AdvancedDeleteMessages(guildID, channelID int64, triggerID int64, filterUse
 
 		// Continue only if current msg ID is > fromID
 		if fromID > 0 && fromID < msgs[i].ID {
-			continue;
+			continue
 		}
 
 		// Continue only if current msg ID is < toID
@@ -1385,7 +1384,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 					entry_formatted = common.CutStringShort(entry_formatted, 900)
 				}
 				entry_formatted += "\n"
-				purgedWarnLogs := logs.ConfEnableMessageLogPurge.GetBool() && entry.CreatedAt.Before(time.Now().AddDate(0,0,-30))
+				purgedWarnLogs := logs.ConfEnableMessageLogPurge.GetBool() && entry.CreatedAt.Before(time.Now().AddDate(0, 0, -30))
 				if entry.LogsLink != "" && !purgedWarnLogs {
 					entry_formatted += fmt.Sprintf("> logs: [`link`](%s)\n", entry.LogsLink)
 				}

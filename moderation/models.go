@@ -1,20 +1,20 @@
 package moderation
 
 import (
-	"context"
 	"database/sql"
 	"strconv"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/lib/pq"
 )
 
 type Config struct {
-	configstore.GuildConfigModel
+	GuildID   int64 `gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
 	// Kick command
 	KickEnabled          bool
@@ -95,20 +95,17 @@ func (c *Config) IntErrorChannel() (r int64) {
 	return
 }
 
-func (c *Config) GetName() string {
-	return "moderation"
-}
-
 func (c *Config) TableName() string {
 	return "moderation_configs"
 }
 
 func (c *Config) Save(guildID int64) error {
 	c.GuildID = guildID
-	err := configstore.SQL.SetGuildConfig(context.Background(), c)
+	err := common.GORM.Save(c).Error
 	if err != nil {
 		return err
 	}
+	pubsub.Publish("invalidate_moderation_config_cache", guildID, nil)
 
 	if err = featureflags.UpdatePluginFeatureFlags(guildID, &Plugin{}); err != nil {
 		return err
