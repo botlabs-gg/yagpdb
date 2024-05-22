@@ -42,8 +42,6 @@ func (p *Postgres) GetGuildConfig(ctx context.Context, guildID int64, conf Guild
 
 		return err
 	}
-
-	return nil
 }
 
 // conf is requried to be a pointer value
@@ -53,18 +51,6 @@ func (p *Postgres) SetGuildConfig(ctx context.Context, conf GuildConfig) error {
 		return err
 	}
 
-	InvalidateGuildCache(conf, conf)
+	InvalidateGuildCache(conf)
 	return nil
-}
-
-func (p *Postgres) SetIfLatest(ctx context.Context, conf GuildConfig) (updated bool, err error) {
-	result := common.GORM.Where("updated_at = ?", conf.GetUpdatedAt()).Save(conf)
-	updated = result.RowsAffected > 0
-	err = result.Error
-
-	if err == nil {
-		InvalidateGuildCache(conf, conf)
-	}
-
-	return
 }

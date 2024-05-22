@@ -24,8 +24,7 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 
 	common.GORM.AutoMigrate(&Config{})
-	configstore.RegisterConfig(configstore.SQL, &Config{})
-
+	configstore.RegisterConfig(&Config{})
 }
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {

@@ -51,7 +51,7 @@ func RegisterPlugin() {
 
 	common.RegisterPlugin(plugin)
 
-	configstore.RegisterConfig(configstore.SQL, &Config{})
+	configstore.RegisterConfig(&Config{})
 	common.GORM.AutoMigrate(&Config{}, &WarningModel{}, &MuteModel{})
 }
 
