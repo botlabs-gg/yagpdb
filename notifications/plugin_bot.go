@@ -4,15 +4,19 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/jinzhu/gorm"
+	"github.com/karlseguin/ccache"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -21,12 +25,73 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberAdd, eventsystem.EventGuildMemberAdd)
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberRemove, eventsystem.EventGuildMemberRemove)
 	eventsystem.AddHandlerFirst(p, HandleChannelUpdate, eventsystem.EventChannelUpdate)
+
+	pubsub.AddHandler("invalidate_notifications_config_cache", handleInvalidateConfigCache, nil)
+}
+
+var configCache = ccache.New(ccache.Configure().MaxSize(15000))
+
+func GetCachedConfigOrDefault(guildID int64) (*Config, error) {
+	const cacheDuration = 10 * time.Minute
+
+	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (interface{}, error) {
+		return GetConfig(guildID)
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return &Config{
+				JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},
+				LeaveMsgs:      []string{"**{{.User.Username}}** Left... :'("},
+			}, nil
+		}
+		return nil, err
+	}
+	return item.Value().(*Config), nil
+}
+
+func handleInvalidateConfigCache(evt *pubsub.Event) {
+	configCache.Delete(cacheKey(evt.TargetGuildInt))
+}
+
+func cacheKey(guildID int64) string {
+	return discordgo.StrID(guildID)
+}
+
+func GetConfig(guildID int64) (*Config, error) {
+	const maxRetries = 1000
+
+	currentRetries := 0
+	var conf Config
+	for {
+		err := common.GORM.Where("guild_id = ?", guildID).First(&conf).Error
+		if err == nil {
+			if currentRetries > 1 {
+				logger.Info("Fetched config after ", currentRetries, " retries")
+			}
+			return &conf, nil
+		}
+
+		if err == gorm.ErrRecordNotFound {
+			return nil, err
+		}
+
+		if strings.Contains(err.Error(), "sorry, too many clients already") {
+			time.Sleep(time.Millisecond * 10 * time.Duration(rand.Intn(10)))
+			currentRetries++
+			if currentRetries > maxRetries {
+				return nil, err
+			}
+			continue
+		}
+
+		return nil, err
+	}
 }
 
 func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error) {
 	evt := evtData.GuildMemberAdd()
 
-	config, err := GetConfig(evt.GuildID)
+	config, err := GetCachedConfigOrDefault(evt.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -88,7 +153,7 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
 	memberRemove := evt.GuildMemberRemove()
 
-	config, err := GetConfig(memberRemove.GuildID)
+	config, err := GetCachedConfigOrDefault(memberRemove.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -230,7 +295,7 @@ func HandleChannelUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 		return
 	}
 
-	config, err := GetConfig(cu.GuildID)
+	config, err := GetCachedConfigOrDefault(cu.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}

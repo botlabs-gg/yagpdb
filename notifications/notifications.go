@@ -3,11 +3,9 @@ package notifications
 import (
 	"strconv"
 	"strings"
+	"time"
 
-	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -24,7 +22,6 @@ func RegisterPlugin() {
 	common.RegisterPlugin(plugin)
 
 	common.GORM.AutoMigrate(&Config{})
-	configstore.RegisterConfig(&Config{})
 }
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
@@ -36,7 +33,10 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 type Config struct {
-	configstore.GuildConfigModel
+	GuildID   int64 `gorm:"primary_key"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
 	JoinServerEnabled bool   `json:"join_server_enabled" schema:"join_server_enabled"`
 	JoinServerChannel string `json:"join_server_channel" schema:"join_server_channel" valid:"channel,true"`
 
@@ -82,10 +82,6 @@ func (c *Config) LeaveChannelInt() (i int64) {
 func (c *Config) TopicChannelInt() (i int64) {
 	i, _ = strconv.ParseInt(c.TopicChannel, 10, 64)
 	return
-}
-
-func (c *Config) GetName() string {
-	return "general_notifications"
 }
 
 func (c *Config) TableName() string {
@@ -141,26 +137,4 @@ func (c *Config) AfterFind() (err error) {
 	}
 
 	return nil
-}
-
-var DefaultConfig = &Config{}
-
-func GetConfig(guildID int64) (*Config, error) {
-	var conf Config
-	err := configstore.Cached.GetGuildConfig(context.Background(), guildID, &conf)
-	if err == nil {
-		return &conf, nil
-	}
-
-	if err == configstore.ErrNotFound {
-		// if err != configstore.ErrNotFound {
-		// 	log.WithError(err).Error("Failed retrieving config")
-		// }
-		return &Config{
-			JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},
-			LeaveMsgs:      []string{"**{{.User.Username}}** Left... :'("},
-		}, nil
-	}
-
-	return nil, errors.WithStackIf(err)
 }

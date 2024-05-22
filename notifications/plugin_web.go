@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io/pat"
@@ -45,7 +45,7 @@ func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} 
 	if ok {
 		templateData["NotifyConfig"] = formConfig
 	} else {
-		conf, err := GetConfig(activeGuild.ID)
+		conf, err := GetCachedConfigOrDefault(activeGuild.ID)
 		if err != nil {
 			web.CtxLogger(r.Context()).WithError(err).Error("failed retrieving config")
 		}
@@ -64,11 +64,11 @@ func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.Templa
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 
 	newConfig.GuildID = activeGuild.ID
-
-	err := configstore.SQL.SetGuildConfig(ctx, newConfig)
+	err := common.GORM.Save(newConfig).Error
 	if err != nil {
 		return templateData, nil
 	}
+	pubsub.Publish("invalidate_notifications_config_cache", activeGuild.ID, nil)
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
@@ -83,7 +83,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetTitle"] = "General notifications"
 	templateData["SettingsPath"] = "/notifications/general"
 
-	config, err := GetConfig(ag.ID)
+	config, err := GetCachedConfigOrDefault(ag.ID)
 	if err != nil {
 		return templateData, err
 	}
