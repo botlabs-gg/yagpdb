@@ -1,0 +1,27 @@
+add-global-variants = true
+no-hooks = true
+no-tests = true
+
+[psql]
+dbname = "yagpdb"
+host = "localhost"
+user = "postgres"
+pass = "pass"
+sslmode = "disable"
+whitelist = ["moderation_configs", "moderation_warnings", "muted_users"]
+
+[auto-columns]
+created = "created_at"
+updated = "updated_at"
+
+# sqlboiler column name inference capitalizes CMD, so, for instance,
+# kick_cmd_roles becomes KickCMDRoles; override this undesirable behavior
+[aliases.tables.moderation_configs.columns]
+kick_cmd_roles = "KickCmdRoles"
+ban_cmd_roles = "BanCmdRoles"
+timeout_cmd_roles = "TimeoutCmdRoles"
+mute_cmd_roles = "MuteCmdRoles"
+warn_cmd_roles = "WarnCmdRoles"
+give_role_cmd_enabled = "GiveRoleCmdEnabled"
+give_role_cmd_modlog = "GiveRoleCmdModlog"
+give_role_cmd_roles = "GiveRoleCmdRoles"
