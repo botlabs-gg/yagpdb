@@ -50,7 +50,7 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
 
-	common.GORM.AutoMigrate(&Config{}, &WarningModel{}, &MuteModel{})
+	common.InitSchemas("moderation", DBSchemas...)
 }
 
 var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
@@ -67,11 +67,11 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 	}
 
 	var flags []string
-	if config.MuteRole != "" && config.MuteManageRole {
+	if config.MuteRole != 0 && config.MuteManageRole {
 		flags = append(flags, featureFlagMuteRoleManaged)
 	}
 
-	if config.MuteRole != "" {
+	if config.MuteRole != 0 {
 		flags = append(flags, featureFlagMuteEnabled)
 	}
 
