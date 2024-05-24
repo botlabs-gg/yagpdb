@@ -40,6 +40,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/lib/pq"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 type CustomValidator interface {
@@ -170,6 +171,14 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 			}
 
 			vField.Set(reflect.ValueOf(pq.Int64Array(newSlice)))
+		case types.Int64Array:
+			newSlice, e := ValidateIntSliceField(cv, validationTag, guild)
+			if e != nil {
+				err = e
+				break
+			}
+
+			vField.Set(reflect.ValueOf(types.Int64Array(newSlice)))
 		default:
 			// Recurse if it's another struct
 			switch tField.Type.Kind() {
