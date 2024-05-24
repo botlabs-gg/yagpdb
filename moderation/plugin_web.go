@@ -9,6 +9,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io"
 	"goji.io/pat"
@@ -67,7 +68,7 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	return templateData, nil
 }
 
-// HandlePostModeration update the settings
+// HandlePostModeration updates the settings
 func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
@@ -79,7 +80,8 @@ func HandlePostModeration(w http.ResponseWriter, r *http.Request) (web.TemplateD
 	newConfig.DefaultBanDeleteDays.Valid = true
 	templateData["ModConfig"] = newConfig
 
-	err := newConfig.Save(activeGuild.ID)
+	newConfig.GuildID = activeGuild.ID
+	err := UpsertConfig(newConfig)
 
 	templateData["DefaultDMMessage"] = DefaultDMMessage
 
@@ -96,12 +98,12 @@ func HandleClearServerWarnings(w http.ResponseWriter, r *http.Request) (web.Temp
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/moderation/"
 
-	rows := common.GORM.Where("guild_id = ?", activeGuild.ID).Delete(WarningModel{}).RowsAffected
-	templateData.AddAlerts(web.SucessAlert("Deleted ", rows, " warnings!"))
+	numDeleted, _ := models.ModerationWarnings(models.ModerationConfigWhere.GuildID.EQ(activeGuild.ID)).DeleteAllG(r.Context())
+	templateData.AddAlerts(web.SucessAlert("Deleted ", numDeleted, " warnings!"))
 	templateData["DefaultDMMessage"] = DefaultDMMessage
 
-	if rows > 0 {
-		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyClearWarnings, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: rows}))
+	if numDeleted > 0 {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyClearWarnings, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: numDeleted}))
 	}
 
 	return templateData, nil
@@ -131,7 +133,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	<li>Warning commands: %s</li>
 </ul>`
 
-	if config.ReportEnabled || config.CleanEnabled || config.GiveRoleCmdEnabled || config.ActionChannel != "" ||
+	if config.ReportEnabled || config.CleanEnabled || config.GiveRoleCmdEnabled || config.ActionChannel != 0 ||
 		config.MuteEnabled || config.KickEnabled || config.BanEnabled || config.WarnCommandsEnabled || config.TimeoutEnabled {
 		templateData["WidgetEnabled"] = true
 	} else {

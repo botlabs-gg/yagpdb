@@ -1,6 +1,8 @@
 package moderation
 
 import (
+	"context"
+	"database/sql"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -18,9 +20,10 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/jinzhu/gorm"
+	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -63,6 +66,20 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("mod_refresh_mute_override_create_role", HandleRefreshMuteOverridesCreateRole, nil)
 }
 
+func UpsertConfig(config *Config) error {
+	err := config.ToModel().UpsertG(context.Background(), true, []string{"guild_id"}, boil.Infer(), boil.Infer())
+	if err != nil {
+		return err
+	}
+	pubsub.Publish("invalidate_moderation_config_cache", config.GuildID, nil)
+
+	if err = featureflags.UpdatePluginFeatureFlags(config.GuildID, &Plugin{}); err != nil {
+		return err
+	}
+	pubsub.Publish("mod_refresh_mute_override", config.GuildID, nil)
+	return nil
+}
+
 func GetConfigIfNotSet(guildID int64, config *Config) (*Config, error) {
 	if config == nil {
 		var err error
@@ -84,8 +101,8 @@ func GetCachedConfigOrDefault(guildID int64) (*Config, error) {
 		return GetConfig(guildID)
 	})
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return &Config{}, nil
+		if err == sql.ErrNoRows {
+			return &Config{GuildID: guildID}, nil
 		}
 		return nil, err
 	}
@@ -104,17 +121,16 @@ func GetConfig(guildID int64) (*Config, error) {
 	const maxRetries = 1000
 
 	currentRetries := 0
-	var conf Config
 	for {
-		err := common.GORM.Where("guild_id = ?", guildID).First(&conf).Error
+		conf, err := models.FindModerationConfigG(context.Background(), guildID)
 		if err == nil {
 			if currentRetries > 1 {
 				logger.Info("Fetched config after ", currentRetries, " retries")
 			}
-			return &conf, nil
+			return configFromModel(conf), nil
 		}
 
-		if err == gorm.ErrRecordNotFound {
+		if err == sql.ErrNoRows {
 			return nil, err
 		}
 
@@ -199,7 +215,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 		return
 	}
 
-	if config.MuteRole == "" || config.MuteRole == "0" {
+	if config.MuteRole == 0 {
 		if createRole {
 			_, err := createMuteRole(config, guildID)
 			if err != nil {
@@ -217,7 +233,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 		return // Still starting up and haven't received the guild yet
 	}
 
-	if guild.GetRole(config.IntMuteRole()) == nil {
+	if guild.GetRole(config.MuteRole) == nil {
 		return
 	}
 
@@ -243,8 +259,8 @@ func createMuteRole(config *Config, guildID int64) (int64, error) {
 		return 0, err
 	}
 
-	config.MuteRole = strconv.FormatInt(r.ID, 10)
-	err = config.Save(guildID)
+	config.MuteRole = r.ID
+	err = UpsertConfig(config)
 	if err != nil {
 		// failed saving config, attempt to delete the role
 		common.BotSession.GuildRoleDelete(guildID, r.ID)
@@ -275,7 +291,7 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err erro
 		return true, errors.WithStackIf(err)
 	}
 
-	if config.MuteRole == "" || !config.MuteManageRole {
+	if config.MuteRole == 0 || !config.MuteManageRole {
 		return false, nil
 	}
 
@@ -298,7 +314,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 
 	// Check for existing override
 	for _, v := range channel.PermissionOverwrites {
-		if v.Type == discordgo.PermissionOverwriteTypeRole && v.ID == config.IntMuteRole() {
+		if v.Type == discordgo.PermissionOverwriteTypeRole && v.ID == config.MuteRole {
 			override = &v
 			break
 		}
@@ -331,7 +347,7 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 	}
 
 	if changed {
-		common.BotSession.ChannelPermissionSet(channel.ID, config.IntMuteRole(), discordgo.PermissionOverwriteTypeRole, allows, denies)
+		common.BotSession.ChannelPermissionSet(channel.ID, config.MuteRole, discordgo.PermissionOverwriteTypeRole, allows, denies)
 	}
 }
 
@@ -348,7 +364,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 	}
 
 	// no modlog channel setup
-	if config.IntActionChannel() == 0 {
+	if config.ActionChannel == 0 {
 		return false, nil
 	}
 	// If we poll the audit log too fast then there sometimes wont be a audit log entry
@@ -432,7 +448,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	if config.IntActionChannel() == 0 {
+	if config.ActionChannel == 0 {
 		return
 	}
 
@@ -480,7 +496,7 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 		return true, errors.WithStackIf(err)
 	}
 
-	if config.IntActionChannel() == 0 {
+	if config.ActionChannel == 0 {
 		return false, nil
 	}
 
@@ -536,10 +552,12 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 
 		guildID := evt.GS.ID
 
-		var currentMute MuteModel
-		err = common.GORM.Where(MuteModel{UserID: userID, GuildID: guildID}).First(&currentMute).Error
+		currentMute, err := models.MutedUsers(
+			models.MutedUserWhere.UserID.EQ(userID),
+			models.MutedUserWhere.GuildID.EQ(guildID),
+		).OneG(evt.Context())
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if err == sql.ErrNoRows {
 				return false, nil
 			}
 
@@ -547,7 +565,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 		}
 
 		// Don't bother doing anything if this mute is almost up
-		if !currentMute.ExpiresAt.IsZero() && currentMute.ExpiresAt.Sub(time.Now()) < 5*time.Second {
+		if !currentMute.ExpiresAt.Time.IsZero() && time.Until(currentMute.ExpiresAt.Time) < 5*time.Second {
 			return false, nil
 		}
 
@@ -563,11 +581,11 @@ func HandleMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 		return true, errors.WithStackIf(err)
 	}
 
-	if config.MuteRole == "" {
+	if config.MuteRole == 0 {
 		return false, nil
 	}
 
-	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.IntMuteRole())
+	err = common.BotSession.GuildMemberRoleAdd(c.GuildID, c.User.ID, config.MuteRole)
 	if err != nil {
 		return bot.CheckDiscordErrRetry(err), errors.WithStackIf(err)
 	}
@@ -588,7 +606,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return true, errors.WithStackIf(err)
 	}
 
-	if config.MuteRole == "" {
+	if config.MuteRole == 0 {
 		return false, nil
 	}
 
@@ -598,7 +616,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 
 	guild := evt.GS
 
-	role := guild.GetRole(config.IntMuteRole())
+	role := guild.GetRole(config.MuteRole)
 	if role == nil {
 		return false, nil // Probably deleted the mute role, do nothing then
 	}

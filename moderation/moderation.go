@@ -9,6 +9,10 @@ import (
 
 //go:generate sqlboiler --no-hooks psql
 
+// IMPORTANT: When editing the database schema, remember not only to run
+// sqlboiler but also update the Config struct in config.go (and associated
+// conversion functions) as needed.
+
 const (
 	ActionMuted    = "Muted"
 	ActionUnMuted  = "Unmuted"
@@ -50,7 +54,7 @@ func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
 
-	common.GORM.AutoMigrate(&Config{}, &WarningModel{}, &MuteModel{})
+	common.InitSchemas("moderation", DBSchemas...)
 }
 
 var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
@@ -67,11 +71,11 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 	}
 
 	var flags []string
-	if config.MuteRole != "" && config.MuteManageRole {
+	if config.MuteRole != 0 && config.MuteManageRole {
 		flags = append(flags, featureFlagMuteRoleManaged)
 	}
 
-	if config.MuteRole != "" {
+	if config.MuteRole != 0 {
 		flags = append(flags, featureFlagMuteEnabled)
 	}
 
