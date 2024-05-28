@@ -386,17 +386,12 @@ var commandsRanToday = new(int64)
 func pollCommandsRan() {
 	t := time.NewTicker(time.Minute)
 	for {
-		var result struct {
-			Count int64
-		}
-
 		within := time.Now().Add(-24 * time.Hour)
-
-		err := common.GORM.Table(common.LoggedExecutedCommand{}.TableName()).Select("COUNT(*)").Where("created_at > ?", within).Scan(&result).Error
+		count, err := models.ExecutedCommands(models.ExecutedCommandWhere.CreatedAt.GT(within)).CountG(context.Background())
 		if err != nil {
 			logger.WithError(err).Error("failed counting commands ran today")
 		} else {
-			atomic.StoreInt64(commandsRanToday, result.Count)
+			atomic.StoreInt64(commandsRanToday, count)
 		}
 
 		<-t.C

@@ -49,10 +49,6 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 func RegisterPlugin() {
 	plugin := &Plugin{}
 	common.RegisterPlugin(plugin)
-	err := common.GORM.AutoMigrate(&common.LoggedExecutedCommand{}).Error
-	if err != nil {
-		logger.WithError(err).Fatal("Failed migrating logged commands database")
-	}
 
 	common.InitSchemas("commands", DBSchemas...)
 }
