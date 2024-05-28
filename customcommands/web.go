@@ -282,6 +282,7 @@ func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	templateData["IsGuildPremium"] = premium.ContextPremium(r.Context())
 	templateData["MaxCCLength"] = allowedCCLength
 	templateData["PublicLink"] = getPublicLink(cc)
+	templateData["CodeMirrorBuiltins"] = getLangBuiltInFuncs()
 
 	return serveGroupSelected(r, templateData, cc.GroupID.Int64, cc.GuildID)
 }

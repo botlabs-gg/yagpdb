@@ -740,6 +740,146 @@
     });
 </script>
 
+<link rel="stylesheet" href="/static/vendorr/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="/static/vendorr/codemirror/theme/ayu-mirage.css">
+<script src="/static/vendorr/codemirror/lib/codemirror.js"></script>
+<script src="/static/vendorr/codemirror/mode/markdown/markdown.js"></script>
+<script src="/static/vendorr/codemirror/addon/mode/multiplex.js"></script>
+<script src="/static/vendorr/codemirror/addon/display/placeholder.js"></script>
+<style>
+    .CodeMirror {
+        width: 100% !important;
+        max-width: 95% !important;
+    }
+</style>
+<script type="text/javascript">
+    let keywords = ["for", "range", "if", "else", "template", "end", "true", "false", "nil", "gt", "lt", "len", "index"];
+    keywords = keywords.concat("{{.CodeMirrorBuiltins}}".split(" "));
+
+    CodeMirror.defineMIME("text/x-gotmplmd", "gotmplmd");
+    CodeMirror.defineMode("gotmplmd", function () {
+    return {
+        startState: function () {
+            return {
+                inString: false,
+                stringType: "",
+                inComment: false,
+                inTag: false
+            };
+        },
+        token: function (stream, state) {
+            if (state.inString) {
+                if (stream.match(state.stringType)) {
+                    state.inString = false;
+                } else {
+                    stream.next();
+                }
+                return "string";
+            } else if (state.inComment) {
+                if (stream.match({{"*/}}"}})) {
+                    state.inComment = false;
+                } else {
+                    stream.next();
+                }
+                return "comment";
+            } else if (state.inTag) {
+                if (stream.match("}}")) {
+                    state.inTag = false;
+                } else if (stream.match(/'[^\\]*'/) || stream.match(/"[^\\]*"/) || stream.match(/`[^\\]*`/)) {
+                    return "string";
+                } else if (stream.match(/(\.|\$)\w+/)) {
+                    return "variable";
+                } else if (stream.match(`/${keywords.join("|")}`)) {
+                    return "keyword";
+                } else {
+                    stream.next();
+                }
+                return "tag";
+            } else {
+                if (stream.match({{"{{/*"}})) {
+                    state.inComment = true;
+                    return "comment";
+                } else if (stream.match({{"{{"}})) {
+                    state.inTag = true;
+                    return "tag";
+                } else {
+                    stream.next();
+                }
+            }
+        }
+    };
+});
+
+    function setupCodeMirrorInstance(textAreaElement) {
+        const newInstance = CodeMirror.fromTextArea(textAreaElement, {
+            lineNumbers: true,
+            mode: 'gotmplmd',
+            theme: 'ayu-mirage',
+            lineWrapping: true,
+            placeholder: 'Command body here',
+            viewportMargin: Infinity,
+            extraKeys: {
+                'Ctrl-Space': 'autocomplete',
+                'Alt-F': 'findPersistent',
+            },
+        });
+        return newInstance;
+    }
+
+    const initialTextAreas = document.querySelectorAll('.cc-editor');
+    initialTextAreas.forEach((initialTextArea) => {
+        const codeMirror = setupCodeMirrorInstance(initialTextArea);
+        codeMirror.on('change', (cm) => {
+            cm.save();
+            onCCChanged(cm.getTextArea());
+        });
+    });
+
+    // we need to reinitialize the codemirror instance for each new textarea, the script above is the old implementation coming from the spongebob.js file
+    document.body.addEventListener('click', function(e) {
+    if (e.target.classList.contains('btn-add')) {
+        e.preventDefault();
+
+        var currentEntry = e.target.parentNode.parentNode;
+        var newEntry = currentEntry.cloneNode(true);
+
+        // remove cloned CodeMirror elements
+        newEntry.querySelectorAll(".CodeMirror").forEach(function (el) {
+            el.remove();
+        });
+
+        currentEntry.parentNode.insertBefore(newEntry, currentEntry.nextSibling);
+
+        newEntry.querySelectorAll('input, textarea').forEach(function(input) {
+            input.value = '';
+            const codeMirror = setupCodeMirrorInstance(input);
+            codeMirror.on('change', (cm) => {
+                cm.save();
+                onCCChanged(cm.getTextArea());
+            });
+        });
+
+        var lastEntry = newEntry.parentNode.querySelector('.entry:not(:last-of-type) .btn-add');
+        if (lastEntry) {
+            lastEntry.classList.remove('btn-add');
+            lastEntry.classList.add('btn-remove');
+            lastEntry.classList.remove('btn-success');
+            lastEntry.classList.add('btn-danger');
+            lastEntry.innerHTML = '<i class="fas fa-minus"></i>';
+        }
+    } else if (e.target.classList.contains('btn-remove')) {
+        e.preventDefault();
+
+        var entry = e.target;
+        while (entry && !entry.classList.contains('entry')) {
+            entry = entry.parentNode;
+        }
+        if (entry) {
+            entry.parentNode.removeChild(entry);
+        }
+    }
+});
+</script>
 
 {{template "cp_footer" .}}
 
