@@ -131,6 +131,10 @@ func Init() error {
 
 	logger.Info("Initializing core schema")
 	InitSchemas("core_configs", CoreServerConfDBSchema, localIDsSchema)
+
+	logger.Info("Initializing executed command log schema")
+	InitSchemas("executed_commands", ExecutedCommandDBSchemas...)
+
 	initQueuedSchemas()
 
 	return err
