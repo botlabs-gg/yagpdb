@@ -1,0 +1,15 @@
+add-global-variants = true
+no-hooks = true
+no-tests = true
+
+[psql]
+dbname = "yagpdb"
+host = "localhost"
+user = "postgres"
+pass = "pass"
+sslmode = "disable"
+whitelist = ["reminders"]
+
+[auto-columns]
+created = "created_at"
+updated = "updated_at"
