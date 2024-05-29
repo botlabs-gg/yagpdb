@@ -780,49 +780,26 @@
     });
 
     // we need to reinitialize the codemirror instance for each new textarea, the script below is the old implementation coming from the spongebob.js file
-    document.body.addEventListener('click', function(e) {
-    if (e.target.classList.contains('btn-add')) {
-        e.preventDefault();
+    $(document).on('click', '.btn-add', function (e) {
+		e.preventDefault();
 
-        var currentEntry = e.target.parentNode.parentNode;
-        var newEntry = currentEntry.cloneNode(true);
+		var currentEntry = $(this).parent().parent(),
+			newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
+        newEntry.find('.CodeMirror').remove();
+		newEntry.find('input, textarea').val('');
+        const codeMirror = setupCodeMirrorInstance(newEntry.find('textarea')[0]);
+        
 
-        // remove cloned CodeMirror elements
-        newEntry.querySelectorAll(".CodeMirror").forEach(function (el) {
-            el.remove();
-        });
+		newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
+			.removeClass('btn-add').addClass('btn-remove')
+			.removeClass('btn-success').addClass('btn-danger')
+			.html('<i class="fas fa-minus"></i>');
+	}).on('click', '.btn-remove', function (e) {
+		$(this).parents('.entry:first').remove();
 
-        currentEntry.parentNode.insertBefore(newEntry, currentEntry.nextSibling);
-
-        newEntry.querySelectorAll('input, textarea').forEach(function(input) {
-            input.value = '';
-            const codeMirror = setupCodeMirrorInstance(input);
-            codeMirror.on('change', (cm) => {
-                cm.save();
-                onCCChanged(cm.getTextArea());
-            });
-        });
-
-        var lastEntry = newEntry.parentNode.querySelector('.entry:not(:last-of-type) .btn-add');
-        if (lastEntry) {
-            lastEntry.classList.remove('btn-add');
-            lastEntry.classList.add('btn-remove');
-            lastEntry.classList.remove('btn-success');
-            lastEntry.classList.add('btn-danger');
-            lastEntry.innerHTML = '<i class="fas fa-minus"></i>';
-        }
-    } else if (e.target.classList.contains('btn-remove')) {
-        e.preventDefault();
-
-        var entry = e.target;
-        while (entry && !entry.classList.contains('entry')) {
-            entry = entry.parentNode;
-        }
-        if (entry) {
-            entry.parentNode.removeChild(entry);
-        }
-    }
-});
+		e.preventDefault();
+		return false;
+	});
 </script>
 
 {{template "cp_footer" .}}
