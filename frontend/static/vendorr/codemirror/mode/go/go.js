@@ -15,24 +15,18 @@ CodeMirror.defineMode("go", function(config) {
   var indentUnit = config.indentUnit;
 
   var keywords = {
-    "break":true, "case":true, "chan":true, "const":true, "continue":true,
-    "default":true, "defer":true, "else":true, "fallthrough":true, "for":true,
-    "func":true, "go":true, "goto":true, "if":true, "import":true,
-    "interface":true, "map":true, "package":true, "range":true, "return":true,
-    "select":true, "struct":true, "switch":true, "type":true, "var":true,
-    "bool":true, "byte":true, "complex64":true, "complex128":true,
-    "float32":true, "float64":true, "int8":true, "int16":true, "int32":true,
-    "int64":true, "string":true, "uint8":true, "uint16":true, "uint32":true,
-    "uint64":true, "int":true, "uint":true, "uintptr":true, "error": true,
-    "rune":true
+    "block":true, "break":true, "catch":true, "continue":true, "define":true, "else":true, "end":true,
+    "if":true,"range":true, "return":true, "template":true, "try":true, "while":true, "with":true
   };
 
   var atoms = {
-    "true":true, "false":true, "iota":true, "nil":true, "append":true,
-    "cap":true, "close":true, "complex":true, "copy":true, "delete":true, "imag":true,
-    "len":true, "make":true, "new":true, "panic":true, "print":true,
-    "println":true, "real":true, "recover":true
+    "true":true, "false":true, "nil":true,
+    "print":true, "printf":true, "println":true,
+    "and":true, "call":true, "html":true, "index":true, "js":true,
+    "len":true, "not":true, "or":true,"urlquery":true, "eq":true, "ne":true,
+    "lt":true, "le":true, "gt":true, "ge":true
   };
+
 
   var isOperatorChar = /[+\-*&^%:=<>!|\/]/;
 
@@ -79,6 +73,7 @@ CodeMirror.defineMode("go", function(config) {
       return "keyword";
     }
     if (atoms.propertyIsEnumerable(cur)) return "atom";
+    if (joelFuncs.propertyIsEnumerable(cur)) return "variable-2";
     return "variable";
   }
 
