@@ -8,6 +8,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 )
 
+//go:generate sqlboiler --no-hooks psql
+
 const (
 	RecordSeparator = "\x1e"
 	MaxUserMessages = 10
