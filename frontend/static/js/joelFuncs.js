@@ -1,5 +1,5 @@
 // https://github.com/jo3-l/yagfuncdata
-var joelFuncs = {
+var yagFuncs = {
   editMessage: true,
   editMessageNoEscape: true,
   pinMessage: true,
