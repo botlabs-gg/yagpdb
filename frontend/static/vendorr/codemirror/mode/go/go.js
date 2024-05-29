@@ -73,7 +73,7 @@ CodeMirror.defineMode("go", function(config) {
       return "keyword";
     }
     if (atoms.propertyIsEnumerable(cur)) return "atom";
-    if (joelFuncs.propertyIsEnumerable(cur)) return "variable-2";
+    if (yagFuncs.propertyIsEnumerable(cur)) return "variable-2";
     return "variable";
   }
 
