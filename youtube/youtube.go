@@ -16,6 +16,8 @@ import (
 	"google.golang.org/api/youtube/v3"
 )
 
+//go:generate sqlboiler --no-hooks psql
+
 const (
 	RedisChannelsLockKey       = "youtube_subbed_channel_lock"
 	RedisKeyPublishedVideoList = "youtube_published_videos"
