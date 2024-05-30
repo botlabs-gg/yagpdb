@@ -250,7 +250,7 @@ func CheckCanAccessLogs(w http.ResponseWriter, r *http.Request, config *models.G
 	guild := web.ContextGuild(ctx)
 
 	// if access mode is everyone or the user is the owner or they have administrator/manage server perms, then they can access the logs
-	if (config.AccessMode == 1) || (member.User.ID == guild.OwnerID) || (memberPermissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator) || (memberPermissions&discordgo.PermissionManageServer == discordgo.PermissionManageServer) {
+	if (config.AccessMode == 1) || (member.User.ID == guild.OwnerID) || (memberPermissions&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator) || (memberPermissions&discordgo.PermissionManageGuild == discordgo.PermissionManageGuild) {
 		return true
 	}
 

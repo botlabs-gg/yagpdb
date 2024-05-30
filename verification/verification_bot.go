@@ -29,7 +29,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionReadMessages
+const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionViewChannel
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 

@@ -66,7 +66,7 @@ var cmdLogs = &commands.YAGCommand{
 		if cmd.Switch("channel").Value != nil {
 			cID = cmd.Switch("channel").Value.(*dstate.ChannelState).ID
 
-			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionReadMessageHistory)
+			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel|discordgo.PermissionReadMessageHistory)
 			if err != nil {
 				return "Failed checking permissions, please try again or join the support server.", err
 			}

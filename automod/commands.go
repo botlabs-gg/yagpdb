@@ -29,7 +29,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "Ruleset-Name", Type: dcmd.String},
 		},
 		Description:         "Toggles a ruleset on/off",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			rulesetName := data.Args[0].Str()
 			ruleset, err := models.AutomodRulesets(qm.Where("guild_id = ? AND name ILIKE ?", data.GuildData.GS.ID, rulesetName)).OneG(data.Context())
@@ -61,7 +61,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"r", "list", "l"},
 		CmdCategory:         commands.CategoryModeration,
 		Description:         "Lists all rulesets and their status",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("id asc")).AllG(data.Context())
 			if err != nil {
@@ -99,7 +99,7 @@ func (p *Plugin) AddCommands() {
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "user", Type: dcmd.UserID},
 		},
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(data *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			skip := (page - 1) * 15
 			userID := data.Switch("user").Int64()
@@ -156,7 +156,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "ma", Help: "Max Violation Age", Default: time.Duration(0), Type: &commands.DurationArg{}},
 			{Name: "skip", Help: "Amount Skipped", Type: dcmd.Int, Default: 0},
 		},
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			userID := parsed.Args[0].Int64()
 			order := "id desc"
@@ -227,7 +227,7 @@ func (p *Plugin) AddCommands() {
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "old", Help: "Oldest First"},
 		},
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers, discordgo.PermissionKickMembers, discordgo.PermissionManageMessages},
 		RunFunc: paginatedmessages.PaginatedCommand(1, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			skip := (page - 1) * 15
 			userID := parsed.Args[0].Int64()
@@ -278,7 +278,7 @@ func (p *Plugin) AddCommands() {
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
 		},
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			ID := parsed.Args[0].Int()
 			rows, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, ID)).DeleteAll(context.Background(), common.PQ)
@@ -312,7 +312,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "skip", Help: "Amount Skipped", Default: 0, Type: dcmd.Int},
 		},
 		ArgumentCombos:      [][]int{{0, 1}, {0}, {1}, {}},
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionAdministrator, discordgo.PermissionBanMembers},
 		GuildScopeCooldown:  5,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			UserID := parsed.Args[0].Int64()

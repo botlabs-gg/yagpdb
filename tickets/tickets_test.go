@@ -62,7 +62,7 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 				{
 					Type: discordgo.PermissionOverwriteTypeRole,
 					ID:   3,
-					Deny: discordgo.PermissionReadMessages,
+					Deny: discordgo.PermissionViewChannel,
 				},
 			},
 			InputOverwrites: []*discordgo.PermissionOverwrite{
@@ -91,7 +91,7 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 				{
 					Type: discordgo.PermissionOverwriteTypeRole,
 					ID:   3,
-					Deny: discordgo.PermissionReadMessages,
+					Deny: discordgo.PermissionViewChannel,
 				},
 			},
 		},
@@ -100,7 +100,7 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 				{
 					Type: discordgo.PermissionOverwriteTypeRole,
 					ID:   2,
-					Deny: discordgo.PermissionReadMessages,
+					Deny: discordgo.PermissionViewChannel,
 				},
 			},
 			InputOverwrites: []*discordgo.PermissionOverwrite{
@@ -133,12 +133,12 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 				{
 					Type: discordgo.PermissionOverwriteTypeRole,
 					ID:   2,
-					Deny: discordgo.PermissionReadMessages,
+					Deny: discordgo.PermissionViewChannel,
 				},
 				{
 					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    3,
-					Allow: discordgo.PermissionReadMessages,
+					Allow: discordgo.PermissionViewChannel,
 				},
 			},
 			InputOverwrites: []*discordgo.PermissionOverwrite{
@@ -167,7 +167,7 @@ func TestInheritPermissionsFromCategory(t *testing.T) {
 				{
 					Type:  discordgo.PermissionOverwriteTypeRole,
 					ID:    3,
-					Allow: discordgo.PermissionReadMessages,
+					Allow: discordgo.PermissionViewChannel,
 				},
 			},
 		},
