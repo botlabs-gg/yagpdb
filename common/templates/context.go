@@ -643,7 +643,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getChannel", c.tmplGetChannel)
 	c.addContextFunc("getChannelPins", c.tmplGetChannelPins(false))
 	c.addContextFunc("getChannelOrThread", c.tmplGetChannelOrThread)
-	c.addContextFunc("getPinCount", c.tmplGetChannelPinCount)
+	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
 	c.addContextFunc("addReactions", c.tmplAddReactions)
 	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
 	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
