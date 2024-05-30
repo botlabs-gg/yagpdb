@@ -19,8 +19,10 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
-var ErrTooManyCalls = errors.New("too many calls to this function")
-var ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
+var (
+	ErrTooManyCalls    = errors.New("too many calls to this function")
+	ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
+)
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
 	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.ExecutedFrom == ExecutedFromLeave {
@@ -417,13 +419,13 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			msgEdit.Embeds = typedMsg
 		case *discordgo.MessageEdit:
 			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
-			//If there are no Embeds and string are explicitly set as null, give an error message.
+			// If there are no Embeds and string are explicitly set as null, give an error message.
 			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
 				if len(typedMsg.Embeds) == 0 {
 					return "", errors.New("both content and embed cannot be null")
 				}
 
-				//only keep valid embeds
+				// only keep valid embeds
 				for _, e := range typedMsg.Embeds {
 					if e != nil && !e.GetMarshalNil() {
 						embeds = append(typedMsg.Embeds, e)
@@ -448,7 +450,6 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 		}
 
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
-
 		if err != nil {
 			return "", err
 		}
@@ -787,7 +788,6 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 // needs channelID, messageID, userID, list of emojis - up to twenty
 // can be run once per CC.
 func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value, error) {
-
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 4 {
 			return reflect.Value{}, errors.New("not enough arguments (need channelID, messageID, userID, emoji)")
@@ -834,7 +834,6 @@ func (c *Context) tmplDelMessageReaction(values ...reflect.Value) (reflect.Value
 }
 
 func (c *Context) tmplDelAllMessageReactions(values ...reflect.Value) (reflect.Value, error) {
-
 	f := func(args []reflect.Value) (reflect.Value, error) {
 		if len(args) < 2 {
 			return reflect.Value{}, errors.New("not enough arguments (need channelID, messageID, emojis[optional])")
@@ -917,14 +916,13 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 }
 
 func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
-
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
 	}
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil // dont send an error , a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetChannel(cID)
@@ -937,14 +935,13 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 }
 
 func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
-
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
 	}
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil // dont send an error , a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetThread(cID)
@@ -968,14 +965,13 @@ func (c *Context) AddThreadToGuildSet(t *dstate.ChannelState) {
 }
 
 func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals ...interface{}) (*CtxChannel, error) {
-
 	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 1) {
 		return nil, ErrTooManyCalls
 	}
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return nil, nil // dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetChannel(cID)
@@ -1029,7 +1025,7 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 	}
 
 	if err != nil {
-		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return nil, nil // dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
 	tstate := dstate.ChannelStateFromDgo(ctxThread)
@@ -1040,19 +1036,18 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 
 // This function can delete both basic threads and forum threads
 func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
-
 	if c.IncreaseCheckCallCounterPremium("delete_thread", 1, 1) {
 		return "", ErrTooManyCalls
 	}
 
 	cID := c.ChannelArg(thread)
 	if cID == 0 {
-		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return "", nil // dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetThread(cID)
 	if cstate == nil {
-		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return "", nil // dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
 	common.BotSession.ChannelDelete(cID)
@@ -1060,7 +1055,6 @@ func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
 }
 
 func (c *Context) tmplThreadMemberAdd(threadID, memberID interface{}) string {
-
 	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
@@ -1085,7 +1079,6 @@ func (c *Context) tmplThreadMemberAdd(threadID, memberID interface{}) string {
 }
 
 func (c *Context) tmplThreadMemberRemove(threadID, memberID interface{}) string {
-
 	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
@@ -1110,7 +1103,6 @@ func (c *Context) tmplThreadMemberRemove(threadID, memberID interface{}) string 
 }
 
 func ConvertTagNameToId(c *dstate.ChannelState, tagName string) int64 {
-
 	if c.AvailableTags == nil {
 		return 0
 	}
@@ -1126,7 +1118,6 @@ func ConvertTagNameToId(c *dstate.ChannelState, tagName string) int64 {
 }
 
 func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{}) (int, []int64, error) {
-
 	if len(values) == 0 {
 		return c.DefaultThreadRateLimitPerUser, nil, nil
 	}
@@ -1199,7 +1190,6 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 }
 
 func (c *Context) tmplCreateForumPost(channel, name, content interface{}, optional ...interface{}) (*CtxChannel, error) {
-
 	// shares same counter as create thread
 	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 1) {
 		return nil, ErrTooManyCalls
@@ -1211,7 +1201,7 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error, a nil output would indicate invalid/unknown channel
+		return nil, nil // dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetChannel(cID)
@@ -1264,14 +1254,13 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 }
 
 func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, error) {
-
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
 	}
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
-		return nil, nil //dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, nil // dont send an error , a nil output would indicate invalid/unknown channel
 	}
 
 	cstate := c.GS.GetChannelOrThread(cID)
@@ -1590,7 +1579,6 @@ func (c *Context) tmplOnlineCountBots() (int, error) {
 }
 
 func (c *Context) tmplEditNickname(Nickname string) (string, error) {
-
 	if c.IncreaseCheckCallCounter("edit_nick", 2) {
 		return "", ErrTooManyCalls
 	}
@@ -1600,9 +1588,7 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 	}
 
 	if strings.Compare(c.MS.Member.Nick, Nickname) == 0 {
-
 		return "", nil
-
 	}
 
 	err := common.BotSession.GuildMemberNickname(c.GS.ID, c.MS.User.ID, Nickname)
@@ -1821,14 +1807,15 @@ func (c *Context) FindRole(role interface{}) *discordgo.Role {
 			return c.GS.GetRole(parsed)
 		}
 
-		if strings.HasPrefix(t, "<@&") && strings.HasSuffix(t, ">") && (len(t) > 4) {
+		if len(t) > 4 && strings.HasPrefix(t, "<@&") && strings.HasSuffix(t, ">") {
 			parsedMention, err := strconv.ParseInt(t[3:len(t)-1], 10, 64)
 			if err == nil {
 				return c.GS.GetRole(parsedMention)
 			}
 		}
 
-		if t == "@everyone" { // If it's the everyone role, we just use the guild ID
+		// If it's the everyone role, we just use the guild ID
+		if t == "@everyone" {
 			return c.GS.GetRole(c.GS.ID)
 		}
 
@@ -1848,12 +1835,12 @@ func (c *Context) FindRole(role interface{}) *discordgo.Role {
 	}
 }
 
-func (c *Context) getRole(r interface{}) (*discordgo.Role, error) {
+func (c *Context) getRole(roleInput interface{}) (*discordgo.Role, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyCalls
 	}
 
-	return c.FindRole(r), nil
+	return c.FindRole(roleInput), nil
 }
 
 func (c *Context) tmplGetRole(roleInput interface{}) (*discordgo.Role, error) {
@@ -1868,62 +1855,62 @@ func (c *Context) tmplGetRoleName(roleName string) (*discordgo.Role, error) {
 	return c.getRole(roleName)
 }
 
-func (c *Context) mentionRole(roleInput interface{}) (string, error) {
+func (c *Context) mentionRole(roleInput interface{}) string {
 	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyCalls
+		return ""
 	}
 
 	role := c.FindRole(roleInput)
 	if role == nil {
-		return "", errors.New("role not found")
+		return ""
 	}
 
 	if common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, role.ID) {
-		return role.Mention(), nil
+		return role.Mention()
 	}
 
 	c.CurrentFrame.MentionRoles = append(c.CurrentFrame.MentionRoles, role.ID)
-	return role.Mention(), nil
+	return role.Mention()
 }
 
-func (c *Context) tmplMentionRole(roleInput interface{}) (string, error) {
+func (c *Context) tmplMentionRole(roleInput interface{}) string {
 	return c.mentionRole(roleInput)
 }
 
-func (c *Context) tmplMentionRoleID(roleID interface{}) (string, error) {
+func (c *Context) tmplMentionRoleID(roleID interface{}) string {
 	return c.mentionRole(roleID)
 }
 
-func (c *Context) tmplMentionRoleName(roleName string) (string, error) {
+func (c *Context) tmplMentionRoleName(roleName string) string {
 	return c.mentionRole(roleName)
 }
 
-func (c *Context) hasRole(roleInput interface{}) (bool, error) {
+func (c *Context) hasRole(roleInput interface{}) bool {
 	if c.IncreaseCheckGenericAPICall() {
-		return false, ErrTooManyCalls
+		return false
 	}
 
 	if c.MS == nil || c.MS.Member == nil {
-		return false, errors.New("member is nil")
+		return false
 	}
 
 	role := c.FindRole(roleInput)
 	if role == nil {
-		return false, fmt.Errorf("role %v not found", roleInput)
+		return false
 	}
 
-	return common.ContainsInt64Slice(c.MS.Member.Roles, role.ID), nil
+	return common.ContainsInt64Slice(c.MS.Member.Roles, role.ID)
 }
 
-func (c *Context) tmplHasRole(roleInput interface{}) (bool, error) {
+func (c *Context) tmplHasRole(roleInput interface{}) bool {
 	return c.hasRole(roleInput)
 }
 
-func (c *Context) tmplHasRoleID(roleID interface{}) (bool, error) {
+func (c *Context) tmplHasRoleID(roleID interface{}) bool {
 	return c.hasRole(roleID)
 }
 
-func (c *Context) tmplHasRoleName(roleName string) (bool, error) {
+func (c *Context) tmplHasRoleName(roleName string) bool {
 	return c.hasRole(roleName)
 }
 
@@ -1966,9 +1953,9 @@ func (c *Context) tmplTargetHasRoleName(target interface{}, roleName string) (bo
 	return c.targetHasRole(target, roleName)
 }
 
-func (c *Context) giveRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+func (c *Context) giveRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) string {
 	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
+		return ""
 	}
 
 	var delay time.Duration
@@ -1978,18 +1965,18 @@ func (c *Context) giveRole(target interface{}, roleInput interface{}, optionalAr
 
 	targetID := TargetUserID(target)
 	if targetID == 0 {
-		return "", fmt.Errorf("target %v not found", target)
+		return ""
 	}
 
 	role := c.FindRole(roleInput)
 	if role == nil {
-		return "", fmt.Errorf("role %v not found", roleInput)
+		return ""
 	}
 
 	if delay > time.Second {
 		err := scheduledevents2.ScheduleAddRole(context.Background(), c.GS.ID, targetID, role.ID, time.Now().Add(delay))
 		if err != nil {
-			return "", err
+			return ""
 		}
 	} else {
 		ms, err := bot.GetMember(c.GS.ID, targetID)
@@ -2000,27 +1987,27 @@ func (c *Context) giveRole(target interface{}, roleInput interface{}, optionalAr
 
 		if hasRole {
 			// User already has this role, nothing to be done
-			return "", nil
+			return ""
 		}
 
 		err = common.BotSession.GuildMemberRoleAdd(c.GS.ID, targetID, role.ID)
 		if err != nil {
-			return "", err
+			return ""
 		}
 	}
 
-	return "", nil
+	return ""
 }
 
-func (c *Context) tmplGiveRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+func (c *Context) tmplGiveRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) string {
 	return c.giveRole(target, roleInput, optionalArgs...)
 }
 
-func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) (string, error) {
+func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
 	return c.giveRole(target, roleID, optionalArgs...)
 }
 
-func (c *Context) tmplGiveRoleName(target interface{}, roleName string, optionalArgs ...interface{}) (string, error) {
+func (c *Context) tmplGiveRoleName(target interface{}, roleName string, optionalArgs ...interface{}) string {
 	return c.giveRole(target, roleName, optionalArgs...)
 }
 
@@ -2070,9 +2057,9 @@ func (c *Context) tmplAddRoleName(roleName string, optionalArgs ...interface{}) 
 	return c.addRole(roleName, optionalArgs...)
 }
 
-func (c *Context) takeRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+func (c *Context) takeRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) string {
 	if c.IncreaseCheckGenericAPICall() {
-		return "", ErrTooManyAPICalls
+		return ""
 	}
 
 	var delay time.Duration
@@ -2082,18 +2069,18 @@ func (c *Context) takeRole(target interface{}, roleInput interface{}, optionalAr
 
 	targetID := TargetUserID(target)
 	if targetID == 0 {
-		return "", fmt.Errorf("target %v not found", target)
+		return ""
 	}
 
 	role := c.FindRole(roleInput)
 	if role == nil {
-		return "", fmt.Errorf("role %v not found", roleInput)
+		return ""
 	}
 
 	if delay > time.Second {
 		err := scheduledevents2.ScheduleRemoveRole(context.Background(), c.GS.ID, targetID, role.ID, time.Now().Add(delay))
 		if err != nil {
-			return "", err
+			return ""
 		}
 	} else {
 		ms, err := bot.GetMember(c.GS.ID, targetID)
@@ -2103,28 +2090,27 @@ func (c *Context) takeRole(target interface{}, roleInput interface{}, optionalAr
 		}
 
 		if !hasRole {
-			// User does not have the role, nothing to be done
-			return "", nil
+			return ""
 		}
 
 		err = common.BotSession.GuildMemberRoleRemove(c.GS.ID, targetID, role.ID)
 		if err != nil {
-			return "", err
+			return ""
 		}
 	}
 
-	return "", nil
+	return ""
 }
 
-func (c *Context) tmplTakeRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+func (c *Context) tmplTakeRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) string {
 	return c.takeRole(target, roleInput, optionalArgs...)
 }
 
-func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) (string, error) {
+func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
 	return c.takeRole(target, roleID, optionalArgs...)
 }
 
-func (c *Context) tmplTakeRoleName(target interface{}, roleName string, optionalArgs ...interface{}) (string, error) {
+func (c *Context) tmplTakeRoleName(target interface{}, roleName string, optionalArgs ...interface{}) string {
 	return c.takeRole(target, roleName, optionalArgs...)
 }
 
