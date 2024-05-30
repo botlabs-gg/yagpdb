@@ -706,6 +706,67 @@
     }
 </script>
 
+<link rel="stylesheet" href="/static/vendorr/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="/static/vendorr/codemirror/theme/ayu-mirage.css">
+<script src="/static/vendorr/codemirror/lib/codemirror.js"></script>
+<script src="/static/vendorr/codemirror/addon/display/placeholder.js"></script>
+<script src="/static/vendorr/codemirror/mode/go/go.js"></script>
+<script src="/static/js/yagFuncs.js"></script>
+<style>
+    .CodeMirror {
+        width: 100% !important;
+        max-width: 95% !important;
+        resize: vertical;
+    }
+</style>
+<script type="text/javascript">
+    function setupCodeMirrorInstance(textAreaElement) {
+        const newInstance = CodeMirror.fromTextArea(textAreaElement, {
+            lineNumbers: true,
+            mode: 'text/x-go',
+            theme: 'ayu-mirage',
+            lineWrapping: true,
+            placeholder: 'Command body here',
+            viewportMargin: Infinity,
+            extraKeys: {
+                'Ctrl-Space': 'autocomplete',
+                'Alt-F': 'findPersistent',
+            },
+        });
+        return newInstance;
+    }
+
+    const initialTextAreas = document.querySelectorAll('.cc-editor');
+    initialTextAreas.forEach((initialTextArea) => {
+        const codeMirror = setupCodeMirrorInstance(initialTextArea);
+        codeMirror.on('change', (cm) => {
+            cm.save();
+            onCCChanged(cm.getTextArea());
+        });
+    });
+
+    // we need to reinitialize the codemirror instance for each new textarea, the script below is the old implementation coming from the spongebob.js file
+    $(document).on('click', '.btn-add', function (e) {
+		e.preventDefault();
+
+		var currentEntry = $(this).parent().parent(),
+			newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
+        newEntry.find('.CodeMirror').remove();
+		newEntry.find('input, textarea').val('');
+        const codeMirror = setupCodeMirrorInstance(newEntry.find('textarea')[0]);
+        
+
+		newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
+			.removeClass('btn-add').addClass('btn-remove')
+			.removeClass('btn-success').addClass('btn-danger')
+			.html('<i class="fas fa-minus"></i>');
+	}).on('click', '.btn-remove', function (e) {
+		$(this).parents('.entry:first').remove();
+
+		e.preventDefault();
+		return false;
+	});
+</script>
 
 {{template "cp_footer" .}}
 
