@@ -8,7 +8,6 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io/pat"
@@ -64,11 +63,10 @@ func HandleNotificationsPost(w http.ResponseWriter, r *http.Request) (web.Templa
 	newConfig := ctx.Value(common.ContextKeyParsedForm).(*Config)
 
 	newConfig.GuildID = activeGuild.ID
-	err := common.GORM.Save(newConfig).Error
+	err := SaveConfig(newConfig)
 	if err != nil {
 		return templateData, nil
 	}
-	pubsub.Publish("invalidate_notifications_config_cache", activeGuild.ID, nil)
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 
