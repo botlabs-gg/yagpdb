@@ -498,7 +498,7 @@ function formSubmissionEvents() {
 		// console.log("aaaaa", evt, evt.preventDefault);
 		if (!confirm("Are you sure you want to do this?")) {
 			evt.preventDefault(true);
-			evt.stopPropagation();
+			evt.stopImmediatePropagation();
 		}
 		// alert("aaa")
 	}
@@ -545,13 +545,13 @@ function formSubmissionEvents() {
 			if (title !== undefined) {
 				if (!confirm("Deleting " + title + ". Are you sure you want to do this?")) {
 					event.preventDefault(true);
-					event.stopPropagation();
+					event.stopImmediatePropagation();
 					return;
 				}
 			} else {
 				if (!confirm("Are you sure you want to do this?")) {
 					event.preventDefault(true);
-					event.stopPropagation();
+					event.stopImmediatePropagation();
 					return;
 				}
 			}
