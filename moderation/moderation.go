@@ -7,6 +7,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
+//go:generate sqlboiler --no-hooks psql
+
 const (
 	ActionMuted    = "Muted"
 	ActionUnMuted  = "Unmuted"
