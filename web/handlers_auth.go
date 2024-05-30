@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/models"
-	"github.com/botlabs-gg/yagpdb/web/discorddata"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 	"github.com/mediocregopher/radix/v3"
 	"golang.org/x/oauth2"
 )
@@ -52,7 +52,8 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
-	url += "&prompt=none"
+	// disabled prompt to see if the multiple requests are still happening when user expliclity consents to login
+	// url += "&prompt=none"
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -64,7 +65,7 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			CtxLogger(ctx).WithError(err).Error("Failed validating CSRF token")
 		} else {
-			CtxLogger(ctx).Info("Invalid oauth state", state)
+			CtxLogger(ctx).Infof("Invalid oauth state %s ", state)
 		}
 		http.Redirect(w, r, "/?error=bad-csrf", http.StatusTemporaryRedirect)
 		return
@@ -121,7 +122,7 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 // CreateCSRFToken creates a csrf token and adds it the list
 func CreateCSRFToken() (string, error) {
 	str := RandBase64(32)
-
+	logger.Infof("generated new CSRF Token %s", str)
 	err := common.MultipleCmds(
 		radix.Cmd(nil, "LPUSH", "csrf", str),
 		radix.Cmd(nil, "LTRIM", "csrf", "0", "999"), // Store only 1000 crsf tokens, might need to be increased later
@@ -137,6 +138,7 @@ func CheckCSRFToken(token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	logger.Infof("%s in csrf token list removed with count %d", token, num)
 	return num > 0, nil
 }
 
@@ -216,19 +218,11 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 
 func GetUserAccessLevel(userID int64, g *common.GuildWithConnected, config *models.CoreConfig, roleProvider func(guildID, userID int64) []int64) (hasRead bool, hasWrite bool) {
 	// if they are the owner or they have manage server perms, then they have full access
-	if g.Owner || g.Permissions&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
+	if g.Owner || g.Permissions&discordgo.PermissionManageGuild == discordgo.PermissionManageGuild {
 		return true, true
 	} else if !g.Connected {
 		// otherwise if the bot is not on the guild then there's no config so no extra access control settings
 		return false, false
-	}
-
-	if config.AllowNonMembersReadOnly {
-		// everyone is allowed read access
-		hasRead = true
-	} else if userID != 0 && config.AllowAllMembersReadOnly {
-		// logged in and a member of the guild
-		hasRead = true
 	}
 
 	if len(config.AllowedWriteRoles) < 1 && len(config.AllowedReadOnlyRoles) < 1 {
@@ -256,7 +250,7 @@ func GetUserAccessLevel(userID int64, g *common.GuildWithConnected, config *mode
 	return
 }
 
-// HasAccesstoGuildSettings retrusn true if the specified user (or 0 if not logged in or not on the server) has access
+// HasAccesstoGuildSettings retruns true if the specified user (or 0 if not logged in or not on the server) has access
 func HasAccesstoGuildSettings(userID int64, g *common.GuildWithConnected, config *models.CoreConfig, roleProvider func(guildID, userID int64) []int64, write bool) bool {
 	hasRead, hasWrite := GetUserAccessLevel(userID, g, config, roleProvider)
 	if hasWrite {

@@ -1,0 +1,17 @@
+FROM golang:1.22.2-alpine
+# Dependencies: ca-certificates for client TLS, tzdata for timezone and ffmpeg for soundboard support
+RUN apk --no-cache add ca-certificates ffmpeg tzdata
+RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
+
+WORKDIR /app/yagpdb
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+WORKDIR /app/yagpdb/cmd/yagpdb
+
+VOLUME ["/app/soundboard", "/app/cert"]
+EXPOSE 5000 4000
+EXPOSE 5100-5999
+CMD [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=yagpdb", "--",  "-all", "-https=false" ]

@@ -4,21 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/logs/models"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/logs/models"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
@@ -27,7 +26,11 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdClearNames)
+	if confEnableUsernameTracking.GetBool() {
+		commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdClearNames)
+	} else {
+		commands.AddRootCommands(p, cmdLogs, cmdWhois)
+	}
 }
 
 func (p *Plugin) BotInit() {
@@ -63,7 +66,7 @@ var cmdLogs = &commands.YAGCommand{
 		if cmd.Switch("channel").Value != nil {
 			cID = cmd.Switch("channel").Value.(*dstate.ChannelState).ID
 
-			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionReadMessageHistory)
+			hasPerms, err := bot.AdminOrPermMS(cmd.GuildData.CS.GuildID, cID, cmd.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel|discordgo.PermissionReadMessageHistory)
 			if err != nil {
 				return "Failed checking permissions, please try again or join the support server.", err
 			}
@@ -158,7 +161,7 @@ var cmdWhois = &commands.YAGCommand{
 		}
 
 		embed := &discordgo.MessageEmbed{
-			Title: fmt.Sprintf("%s#%s%s", member.User.Username, member.User.Discriminator, nick),
+			Title: fmt.Sprintf("%s %s", member.User.String(), nick),
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "ID",
@@ -167,7 +170,7 @@ var cmdWhois = &commands.YAGCommand{
 				},
 				{
 					Name:   "Avatar",
-					Value:  "[Link](" + discordgo.EndpointUserAvatar(member.User.ID, member.User.Avatar) + ")",
+					Value:  "[Link](" + member.User.AvatarURL("256") + ")",
 					Inline: true,
 				},
 				{
@@ -197,61 +200,62 @@ var cmdWhois = &commands.YAGCommand{
 				},
 			},
 			Thumbnail: &discordgo.MessageEmbedThumbnail{
-				URL: discordgo.EndpointUserAvatar(member.User.ID, member.User.Avatar),
+				URL: member.User.AvatarURL("256"),
 			},
 		}
 
-		if config.UsernameLoggingEnabled.Bool {
-			usernames, err := GetUsernames(parsed.Context(), member.User.ID, 5, 0)
-			if err != nil {
-				return err, err
-			}
-
-			usernamesStr := "```\n"
-			for _, v := range usernames {
-				usernamesStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
-			}
-			usernamesStr += "```"
-
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "5 last usernames",
-				Value: usernamesStr,
-			})
-		} else {
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "Usernames",
-				Value: "Username tracking disabled",
-			})
-		}
-
-		if config.NicknameLoggingEnabled.Bool {
-
-			nicknames, err := GetNicknames(parsed.Context(), member.User.ID, parsed.GuildData.GS.ID, 5, 0)
-			if err != nil {
-				return err, err
-			}
-
-			nicknameStr := "```\n"
-			if len(nicknames) < 1 {
-				nicknameStr += "No nicknames tracked"
-			} else {
-				for _, v := range nicknames {
-					nicknameStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
+		if confEnableUsernameTracking.GetBool() {
+			if config.UsernameLoggingEnabled.Bool {
+				usernames, err := GetUsernames(parsed.Context(), member.User.ID, 5, 0)
+				if err != nil {
+					return err, err
 				}
+
+				usernamesStr := "```\n"
+				for _, v := range usernames {
+					usernamesStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
+				}
+				usernamesStr += "```"
+
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "5 last usernames",
+					Value: usernamesStr,
+				})
+			} else {
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "Usernames",
+					Value: "Username tracking disabled",
+				})
 			}
-			nicknameStr += "```"
 
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "5 last nicknames",
-				Value: nicknameStr,
-			})
-		} else {
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name:  "Nicknames",
-				Value: "Nickname tracking disabled",
-			})
+			if config.NicknameLoggingEnabled.Bool {
+
+				nicknames, err := GetNicknames(parsed.Context(), member.User.ID, parsed.GuildData.GS.ID, 5, 0)
+				if err != nil {
+					return err, err
+				}
+
+				nicknameStr := "```\n"
+				if len(nicknames) < 1 {
+					nicknameStr += "No nicknames tracked"
+				} else {
+					for _, v := range nicknames {
+						nicknameStr += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
+					}
+				}
+				nicknameStr += "```"
+
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "5 last nicknames",
+					Value: nicknameStr,
+				})
+			} else {
+				embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+					Name:  "Nicknames",
+					Value: "Nickname tracking disabled",
+				})
+			}
 		}
-
 		return embed, nil
 	},
 }
@@ -296,7 +300,7 @@ var cmdUsernames = &commands.YAGCommand{
 				return nil, paginatedmessages.ErrNoResults
 			}
 
-			out := fmt.Sprintf("Past username of **%s#%s** ```\n", target.Username, target.Discriminator)
+			out := fmt.Sprintf("Past username of **%s** ```\n", target.String())
 			for _, v := range usernames {
 				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Username.String)
 			}
@@ -308,7 +312,7 @@ var cmdUsernames = &commands.YAGCommand{
 
 			embed := &discordgo.MessageEmbed{
 				Color:       0x277ee3,
-				Title:       "Usernames of " + target.Username + "#" + target.Discriminator,
+				Title:       "Usernames of " + target.String(),
 				Description: out,
 			}
 
@@ -356,7 +360,7 @@ var cmdNicknames = &commands.YAGCommand{
 				return nil, paginatedmessages.ErrNoResults
 			}
 
-			out := fmt.Sprintf("Past nicknames of **%s#%s** ```\n", target.Username, target.Discriminator)
+			out := fmt.Sprintf("Past nicknames of **%s** ```\n", target.String())
 			for _, v := range nicknames {
 				out += fmt.Sprintf("%20s: %s\n", v.CreatedAt.Time.UTC().Format(time.RFC822), v.Nickname.String)
 			}
@@ -368,7 +372,7 @@ var cmdNicknames = &commands.YAGCommand{
 
 			embed := &discordgo.MessageEmbed{
 				Color:       0x277ee3,
-				Title:       "Nicknames of " + target.Username + "#" + target.Discriminator,
+				Title:       "Nicknames of " + target.String(),
 				Description: out,
 			}
 
@@ -453,7 +457,7 @@ func HandleQueueEvt(evt *eventsystem.EventData) {
 }
 
 func queueEvt(evt interface{}) {
-	if os.Getenv("YAGPDB_LOGS_DISABLE_USERNAME_TRACKING") != "" {
+	if !confEnableUsernameTracking.GetBool() {
 		return
 	}
 
@@ -474,19 +478,6 @@ func HandleGC(evt *eventsystem.EventData) {
 		Members: gc.Members,
 	}
 }
-
-// type UsernameListing struct {
-// 	gorm.Model
-// 	UserID   int64 `gorm:"index"`
-// 	Username string
-// }
-
-// type NicknameListing struct {
-// 	gorm.Model
-// 	UserID   int64 `gorm:"index"`
-// 	GuildID  string
-// 	Nickname string
-// }
 
 func CheckUsername(exec boil.ContextExecutor, ctx context.Context, usernameStmt *sql.Stmt, user *discordgo.User) error {
 	var lastUsername string
@@ -548,130 +539,6 @@ func CheckNickname(exec boil.ContextExecutor, ctx context.Context, nicknameStmt 
 
 	return err
 }
-
-// func CheckNicknameBulk(gDB *gorm.DB, guildID int64, members []*discordgo.Member) {
-
-// 	ids := make([]int64, 0, len(members))
-// 	for _, v := range members {
-// 		ids = append(ids, v.User.ID)
-// 	}
-
-// 	rows, err := gDB.CommonDB().Query(
-// 		"select distinct on(user_id) nickname,user_id from nickname_listings where user_id = ANY ($1) AND guild_id=$2 order by user_id,id desc;", pq.Int64Array(ids), guildID)
-// 	if err != nil {
-// 		logger.WithError(err).Error("Failed querying current nicknames")
-// 	}
-
-// 	// Value is wether the nickname was identical
-// 	queriedUsers := make(map[int64]bool)
-
-// 	for rows.Next() {
-// 		var nickname string
-// 		var userID int64
-// 		err = rows.Scan(&nickname, &userID)
-// 		if err != nil {
-// 			logger.WithError(err).Error("Error while scanning")
-// 			continue
-// 		}
-
-// 		for _, member := range members {
-// 			if member.User.ID == userID {
-// 				if member.Nick == nickname {
-// 					// Already have the last username tracked
-// 					queriedUsers[userID] = true
-// 				} else {
-// 					queriedUsers[userID] = false
-// 					logger.Debug("CHANGED Nick: ", nickname, " : ", member.Nick)
-// 				}
-
-// 				break
-// 			}
-// 		}
-// 	}
-// 	rows.Close()
-
-// 	for _, member := range members {
-// 		unchanged, queried := queriedUsers[member.User.ID]
-// 		if queried && unchanged {
-// 			continue
-// 		}
-
-// 		if !queried && member.Nick == "" {
-// 			// don't need to be putting this in the database as the first record for the user
-// 			continue
-// 		}
-
-// 		logger.Debug("User changed nickname, new: ", member.Nick)
-
-// 		listing := NicknameListing{
-// 			UserID:   member.User.ID,
-// 			GuildID:  discordgo.StrID(guildID),
-// 			Nickname: member.Nick,
-// 		}
-
-// 		err = gDB.Create(&listing).Error
-// 		if err != nil {
-// 			logger.WithError(err).Error("Failed setting nickname")
-// 		}
-// 	}
-
-// }
-// func CheckUsernameBulk(gDB *gorm.DB, users []*discordgo.User) {
-
-// 	ids := make([]int64, 0, len(users))
-// 	for _, v := range users {
-// 		ids = append(ids, v.ID)
-// 	}
-
-// 	rows, err := gDB.CommonDB().Query(
-// 		"select distinct on(user_id) username,user_id from username_listings where user_id = ANY ($1) order by user_id,id desc;", pq.Int64Array(ids))
-// 	if err != nil {
-// 		logger.WithError(err).Error("Failed querying current usernames")
-// 	}
-
-// 	unchangedUsers := make(map[int64]bool)
-
-// 	for rows.Next() {
-// 		var username string
-// 		var userID int64
-// 		err = rows.Scan(&username, &userID)
-// 		if err != nil {
-// 			logger.WithError(err).Error("Error while scanning")
-// 			continue
-// 		}
-
-// 		// var foundUser *discordgo.User
-// 		for _, user := range users {
-// 			if user.ID == userID {
-// 				if user.Username == username {
-// 					// Already have the last username tracked
-// 					unchangedUsers[userID] = true
-// 				}
-
-// 				break
-// 			}
-// 		}
-// 	}
-// 	rows.Close()
-
-// 	for _, user := range users {
-// 		if unchanged, ok := unchangedUsers[user.ID]; ok && unchanged {
-// 			continue
-// 		}
-
-// 		logger.Debug("User changed username, new: ", user.Username)
-
-// 		listing := UsernameListing{
-// 			UserID:   user.ID,
-// 			Username: user.Username,
-// 		}
-
-// 		err = gDB.Create(&listing).Error
-// 		if err != nil {
-// 			logger.WithError(err).Error("Failed setting username")
-// 		}
-// 	}
-// }
 
 var (
 	evtChan   = make(chan interface{}, 1000)
@@ -845,43 +712,6 @@ type LightGC struct {
 func EvtProcesserGCs() {
 	for {
 		<-evtChanGC
-
-		// tx := common.GORM.Begin()
-
-		// conf, err := GetConfig(gc.GuildID)
-		// if err != nil {
-		// 	logger.WithError(err).Error("Failed fetching config")
-		// 	continue
-		// }
-
-		// started := time.Now()
-
-		// users := make([]*discordgo.User, len(gc.Members))
-		// for i, m := range gc.Members {
-		// 	users[i] = m.User
-		// }
-
-		// if conf.NicknameLoggingEnabled {
-		// 	CheckNicknameBulk(tx, gc.GuildID, gc.Members)
-		// }
-
-		// if conf.UsernameLoggingEnabled {
-		// 	CheckUsernameBulk(tx, users)
-		// }
-
-		// err = tx.Commit().Error
-		// if err != nil {
-		// 	logger.WithError(err).Error("Failed committing transaction")
-		// 	continue
-		// }
-
-		// if len(gc.Members) > 100 {
-		// 	logger.Infof("Checked %d members in %s", len(gc.Members), time.Since(started).String())
-		// 	// Make sure this dosen't use all our resources
-		// 	time.Sleep(time.Second * 25)
-		// } else {
-		// 	time.Sleep(time.Second * 15)
-		// }
 	}
 }
 

@@ -3,19 +3,20 @@ package stateinfo
 import (
 	"fmt"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 var Command = &commands.YAGCommand{
 	Cooldown:     2,
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "stateinfo",
-	Description:  "Responds with state debug info",
+	Description:  "Responds with state debug info, Bot Owner only",
 	HideFromHelp: true,
-	RunFunc:      cmdFuncStateInfo,
+	RunFunc:      util.RequireOwner(cmdFuncStateInfo),
 }
 
 func cmdFuncStateInfo(data *dcmd.Data) (interface{}, error) {

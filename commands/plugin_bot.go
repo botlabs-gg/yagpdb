@@ -10,12 +10,13 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var (
@@ -171,6 +172,37 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			guildID = data.GuildData.GS.ID
 		}
 
+		if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
+			// Acknowledge the interaction
+			response := discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+			}
+			if yc.IsResponseEphemeral {
+				response.Data = &discordgo.InteractionResponseData{Flags: 64}
+			}
+			err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &response)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Check if the user can execute the command
+		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
+		if err != nil {
+			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+		}
+
+		parseErr := dcmd.ParseCmdArgs(data)
+		// Stop here if it's autocomplete; we don't need to block it
+		if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type == discordgo.InteractionApplicationCommandAutocomplete {
+			if parseErr != nil {
+				return nil, parseErr
+			}
+			choices, err := inner(data)
+			yc.PostCommandExecuted(settings, data, choices, err)
+			return nil, nil
+		}
+
 		// Lock the command for execution
 		if !BlockingAddRunningCommand(guildID, data.ChannelID, data.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
@@ -181,12 +213,6 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		}
 
 		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)
-
-		// Check if the user can execute the command
-		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
-		if err != nil {
-			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
-		}
 
 		if resp != nil {
 
@@ -221,9 +247,8 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 		data = data.WithContext(context.WithValue(data.Context(), CtxKeyCmdSettings, settings))
 
-		err = dcmd.ParseCmdArgs(data)
-		if err != nil {
-			if dcmd.IsUserError(err) {
+		if parseErr != nil {
+			if dcmd.IsUserError(parseErr) {
 
 				args := helpFormatter.ArgDefs(data.Cmd, data)
 				switches := helpFormatter.Switches(data.Cmd.Command)
@@ -236,14 +261,14 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 					resp += "```\n" + switches + "\n```"
 				}
 
-				resp = resp + "\nInvalid arguments provided: " + err.Error()
+				resp = resp + "\nInvalid arguments provided: " + parseErr.Error()
 				yc.PostCommandExecuted(settings, data, &EphemeralOrGuild{
 					Content: resp,
 				}, nil)
 				return nil, nil
 			}
 
-			return nil, err
+			return nil, parseErr
 		}
 
 		innerResp, err := inner(data)
@@ -298,10 +323,10 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	prefix := defaultCommandPrefix()
+	prefix := prfx.DefaultCommandPrefix()
 	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
 		var err error
-		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		if err != nil {
 			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed fetching command prefix")
 		}
@@ -312,10 +337,10 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 }
 
 func GetCommandPrefixBotEvt(evt *eventsystem.EventData) (string, error) {
-	prefix := defaultCommandPrefix()
+	prefix := prfx.DefaultCommandPrefix()
 	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
 		var err error
-		prefix, err = GetCommandPrefixRedis(evt.GS.ID)
+		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
 		return prefix, err
 	}
 
@@ -327,7 +352,7 @@ func (p *Plugin) Prefix(data *dcmd.Data) string {
 		return "-"
 	}
 
-	prefix, err := GetCommandPrefixRedis(data.GuildData.GS.ID)
+	prefix, err := prfx.GetCommandPrefixRedis(data.GuildData.GS.ID)
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving commands prefix")
 	}
@@ -348,7 +373,7 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 
 	currentField := firstField
 	for _, v := range lines {
-		if utf8.RuneCountInString(currentField.Value)+utf8.RuneCountInString(v) >= 2000 {
+		if utf8.RuneCountInString(currentField.Value)+utf8.RuneCountInString(v) >= 1024 {
 			currentField = &discordgo.MessageEmbedField{
 				Name:  "...",
 				Value: v + "\n",
@@ -360,15 +385,6 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 	}
 
 	embed.Description = firstField.Value
-}
-
-func defaultCommandPrefix() string {
-	defaultPrefix := "-"
-	if common.Testing {
-		defaultPrefix = "("
-	}
-
-	return defaultPrefix
 }
 
 var cmdPrefix = &YAGCommand{
@@ -385,7 +401,7 @@ var cmdPrefix = &YAGCommand{
 			targetGuildID = data.GuildData.GS.ID
 		}
 
-		prefix, err := GetCommandPrefixRedis(targetGuildID)
+		prefix, err := prfx.GetCommandPrefixRedis(targetGuildID)
 		if err != nil {
 			return nil, err
 		}

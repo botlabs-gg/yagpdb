@@ -12,18 +12,19 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/automod/models"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/moderation"
-	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/fatih/structs"
 	"github.com/gorilla/schema"
-	"github.com/jonas747/dstate/v4"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -55,8 +56,8 @@ var (
 
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("automod/assets/automod.html", PageHTML)
-	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
-		Name: "Automoderator v2",
+	web.AddSidebarItem(web.SidebarCategoryModeration, &web.SidebarItem{
+		Name: "Advanced Automoderator",
 		URL:  "automod",
 		Icon: "fas fa-robot",
 	})
@@ -65,6 +66,10 @@ func (p *Plugin) InitWeb() {
 
 	web.CPMux.Handle(pat.New("/automod"), muxer)
 	web.CPMux.Handle(pat.New("/automod/*"), muxer)
+
+	// All handlers here require guild channels present
+	muxer.Use(web.RequireBotMemberMW)
+	muxer.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageGuild, discordgo.PermissionModerateMembers))
 
 	getIndexHandler := web.ControllerHandler(p.handleGetAutomodIndex, "automod_index")
 
@@ -814,7 +819,7 @@ var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
 
 func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	g, templateData := web.GetBaseCPContextData(r.Context())
-	templateData["WidgetTitle"] = "Automod v2"
+	templateData["WidgetTitle"] = "Advanced Automoderator"
 	templateData["SettingsPath"] = "/automod"
 
 	rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", g.ID), qm.Where("enabled = true")).CountG(r.Context())

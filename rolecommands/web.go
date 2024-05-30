@@ -1,6 +1,7 @@
 package rolecommands
 
 import (
+	"database/sql"
 	_ "embed"
 	"fmt"
 	"html/template"
@@ -10,15 +11,14 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	schEvtsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/rolecommands/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	schEvtsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
-	v3_qm "github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
@@ -189,8 +189,13 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return tmpl, nil
 	}
 
-	if c, _ := models.RoleCommands(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID), qm.Where(models.RoleCommandColumns.Name+" ILIKE ?", form.Name)).CountG(r.Context()); c > 0 {
-		tmpl.AddAlerts(web.ErrorAlert("Already a role command with that name"))
+	if existing, err := models.RoleCommands(qm.Where(models.RoleCommandColumns.GuildID+"=?", g.ID), qm.Where(models.RoleCommandColumns.Name+" ILIKE ?", form.Name),
+		qm.Load(models.RoleCommandRels.RoleGroup)).OneG(r.Context()); err == nil {
+		if existing.R.RoleGroup == nil {
+			tmpl.AddAlerts(web.ErrorAlert("Already a role command with that name in the ungrouped section; delete it or use a different name"))
+		} else {
+			tmpl.AddAlerts(web.ErrorAlert(`Already a role command with that name in the "` + existing.R.RoleGroup.Name + `" group; delete it or use a different name`))
+		}
 		return tmpl, nil
 	}
 
@@ -210,6 +215,19 @@ func HandleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		}
 
 		model.RoleGroupID = null.Int64From(group.ID)
+	}
+
+	const q = `
+		SELECT max(position)
+		FROM role_commands
+		WHERE $1::bigint IS NULL AND role_group_id IS NULL
+			OR role_group_ID = $1::bigint
+	`
+	var maxExistingPos sql.NullInt64
+	if err := common.PQ.QueryRow(q, model.RoleGroupID).Scan(&maxExistingPos); err != nil {
+		return tmpl, err
+	} else if maxExistingPos.Valid {
+		model.Position = maxExistingPos.Int64 + 1 // place new role command last
 	}
 
 	err := model.InsertG(r.Context(), boil.Infer())
@@ -470,7 +488,7 @@ func HandleUpdateGroup(w http.ResponseWriter, r *http.Request) (tmpl web.Templat
 	sendEvictMenuCachePubSub(g.ID)
 
 	if group.TemporaryRoleDuration < 1 {
-		_, err = schEvtsModels.ScheduledEvents(v3_qm.Where("event_name='remove_member_role' AND guild_id = ? AND (data->>'group_id')::bigint = ?", g.ID, group.ID)).DeleteAll(r.Context(), common.PQ)
+		_, err = schEvtsModels.ScheduledEvents(qm.Where("event_name='remove_member_role' AND guild_id = ? AND (data->>'group_id')::bigint = ?", g.ID, group.ID)).DeleteAll(r.Context(), common.PQ)
 	}
 
 	return

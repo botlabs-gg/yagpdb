@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 var Command = &commands.YAGCommand{
@@ -18,7 +19,7 @@ var Command = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "hours", Type: dcmd.Int, Default: 1},
 	},
-	RunFunc: cmdFuncTopCommands,
+	RunFunc: util.RequireBotAdmin(cmdFuncTopCommands),
 }
 
 func cmdFuncTopCommands(data *dcmd.Data) (interface{}, error) {

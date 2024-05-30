@@ -4,21 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sort"
+	"time"
 
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/automod/models"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/automod/models"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/mediocregopher/radix/v3"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func (p *Plugin) BotInit() {
@@ -28,6 +31,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMsgUpdate, eventsystem.EventMessageUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleGuildMemberJoin, eventsystem.EventGuildMemberAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleAutomodExecution, eventsystem.EventAutoModerationActionExecution)
 
 	scheduledevents2.RegisterHandler("amod2_reset_channel_ratelimit", ResetChannelRatelimitData{}, handleResetChannelRatelimit)
 }
@@ -194,6 +198,10 @@ func (p *Plugin) checkViolationTriggers(ctxData *TriggeredRuleData, violationNam
 
 func (p *Plugin) handleGuildMemberUpdate(evt *eventsystem.EventData) {
 	evtData := evt.GuildMemberUpdate()
+	member := evtData.Member
+	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
+		return
+	}
 
 	ms := dstate.MemberStateFromMember(evtData.Member)
 	if ms.Member.Nick == "" {
@@ -257,6 +265,56 @@ func (p *Plugin) checkJoin(ms *dstate.MemberState) {
 		}
 
 		return cast.CheckJoin(&TriggerContext{GS: gs, MS: ms, Data: trig.ParsedSettings})
+	})
+}
+
+func (p *Plugin) handleAutomodExecution(evt *eventsystem.EventData) {
+	eventData := evt.AutoModerationActionExecution()
+
+	if !evt.HasFeatureFlag(featureFlagEnabled) || evt.GS.ID == 0 {
+		return
+	}
+
+	cs := evt.GS.GetChannelOrThread(eventData.ChannelID)
+	if cs == nil {
+		return
+	}
+
+	redisKey := fmt.Sprintf("automodv2_rule_execution_%d", eventData.MessageID)
+
+	var exists string
+
+	if err := common.RedisPool.Do(radix.Cmd(&exists, "GET", redisKey)); err != nil {
+		return
+	}
+	if exists == "1" {
+		return
+	}
+
+	// Expires a temporary value after 5 seconds
+	if err := common.RedisPool.Do(radix.Cmd(nil, "SET", redisKey, "1", "EX", "5")); err != nil {
+		return
+	}
+
+	ms, err := bot.GetMember(evt.GS.ID, eventData.UserID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", eventData.GuildID).Error("failed getting guild member")
+		return
+	}
+
+	message, _ := common.BotSession.ChannelMessage(eventData.ChannelID, eventData.MessageID)
+
+	p.CheckTriggers(nil, evt.GS, ms, message, cs, func(trig *ParsedPart) (activated bool, err error) {
+		cast, ok := trig.Part.(AutomodListener)
+		if !ok {
+			return false, nil
+		}
+
+		return cast.CheckRuleID(&TriggerContext{
+			GS:   evt.GS,
+			MS:   ms,
+			Data: trig.ParsedSettings,
+		}, eventData.RuleID)
 	})
 }
 
@@ -459,7 +517,7 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 			RuleName:      rule.Model.Name,
 			RulesetName:   rule.Model.R.Ruleset.Name,
 			UserID:        ctxData.MS.User.ID,
-			UserName:      ctxData.MS.User.Username + "#" + ctxData.MS.User.Discriminator,
+			UserName:      ctxData.MS.User.String(),
 			Extradata:     serializedExtraData,
 		}
 	}
@@ -482,6 +540,13 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 	err = tx.Commit()
 	if err != nil {
 		logger.WithError(err).Error("failed committing logging transaction")
+	}
+
+	// Limit AutomodTriggeredRules to 200 rows per guild
+	_, err = models.AutomodTriggeredRules(qm.SQL("DELETE FROM automod_triggered_rules WHERE id IN (SELECT id FROM automod_triggered_rules WHERE guild_id = $1 ORDER BY created_at DESC OFFSET 200 ROWS);", ctxData.GS.ID)).DeleteAll(context.Background(), common.PQ)
+	if err != nil {
+		logger.WithError(err).Error("failed deleting older automod triggered rules")
+		return
 	}
 }
 

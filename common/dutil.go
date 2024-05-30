@@ -1,14 +1,24 @@
 package common
 
 import (
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
-// IsRoleAbove returns wether role a is above b, checking positions first, and if they're the same
+// IsRoleAbove returns whether role a is above b,
+// checking positions first,
+// and if they're the same
 // (both being 1, new roles always have 1 as position)
-// then it checjs by lower id
+// then it checks by lower id
 func IsRoleAbove(a, b *discordgo.Role) bool {
+	if a == nil {
+		return false
+	}
+
+	if b == nil {
+		return true
+	}
+
 	if a.Position != b.Position {
 		return a.Position > b.Position
 	}

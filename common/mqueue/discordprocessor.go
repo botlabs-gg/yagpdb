@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -74,7 +74,8 @@ var disableOnError = []int{
 	discordgo.ErrCodeUnknownChannel,
 	discordgo.ErrCodeMissingAccess,
 	discordgo.ErrCodeMissingPermissions,
-	30007, // max number of webhooks
+	30007,  // max number of webhooks
+	220001, // webhook points to a forum channel
 }
 
 func maybeDisableFeed(source PluginWithSourceDisabler, elem *QueuedElement, err *discordgo.RESTError) {
@@ -96,17 +97,28 @@ func maybeDisableFeed(source PluginWithSourceDisabler, elem *QueuedElement, err 
 }
 
 func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
-	if elem.MessageStr != "" {
-		_, err = common.BotSession.ChannelMessageSendComplex(elem.ChannelID, &discordgo.MessageSend{
-			Content:         elem.MessageStr,
-			AllowedMentions: elem.AllowedMentions,
-		})
-	} else if elem.MessageEmbed != nil {
-		_, err = common.BotSession.ChannelMessageSendEmbed(elem.ChannelID, elem.MessageEmbed)
-	} else {
+	if elem.MessageStr == "" && elem.MessageEmbed == nil {
 		l.Error("Both MessageEmbed and MessageStr empty")
+		return
 	}
 
+	var msg = &discordgo.MessageSend{}
+	if elem.MessageStr != "" {
+		msg.Content = elem.MessageStr
+		msg.AllowedMentions = elem.AllowedMentions
+	}
+	if elem.MessageEmbed != nil {
+		msg.Embeds = []*discordgo.MessageEmbed{elem.MessageEmbed}
+	}
+	m, err := common.BotSession.ChannelMessageSendComplex(elem.ChannelID, msg)
+	if err != nil {
+		logrus.WithError(err).Error("Failed sending mqueue message")
+		return
+	}
+
+	if elem.PublishAnnouncement {
+		_, err = common.BotSession.ChannelMessageCrosspost(elem.ChannelID, m.ID)
+	}
 	return
 }
 

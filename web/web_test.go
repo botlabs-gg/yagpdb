@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/models"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 func createUserGuild(connected bool, owner bool, manageServer bool) *common.GuildWithConnected {
 	perms := int64(0)
 	if manageServer {
-		perms = discordgo.PermissionManageServer
+		perms = discordgo.PermissionManageGuild
 	}
 
 	if owner {
-		perms |= discordgo.PermissionManageServer | discordgo.PermissionAll
+		perms |= discordgo.PermissionManageGuild | discordgo.PermissionAll
 	}
 
 	return &common.GuildWithConnected{
@@ -134,167 +134,6 @@ func TestHasAccesstoGuildSettings(t *testing.T) {
 
 			ShouldHaveAcces: true,
 		},
-
-		////////////////////////////////////
-		//   AllowNonMembersROAccess tests
-		////////////////////////////////////
-
-		// all users ro - normal user access
-		{
-			Name: "all users ro-normal user access (ro)",
-			Conf: &models.CoreConfig{
-				AllowNonMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, false),
-			Roles:    nil,
-			IsMember: false,
-			ReadOnly: true,
-
-			ShouldHaveAcces: true,
-		},
-		{
-			Name: "all users ro-normal user access",
-			Conf: &models.CoreConfig{
-				AllowNonMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, false),
-			Roles:    nil,
-			IsMember: false,
-			ReadOnly: false,
-
-			ShouldHaveAcces: false,
-		},
-		// all users ro - member access
-		{
-			Name: "all users ro-member access (ro)",
-			Conf: &models.CoreConfig{
-				AllowNonMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, false),
-			Roles:    nil,
-			IsMember: true,
-			ReadOnly: true,
-
-			ShouldHaveAcces: true,
-		},
-		{
-			Name: "all users ro-member access",
-			Conf: &models.CoreConfig{
-				AllowNonMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, false),
-			Roles:    nil,
-			IsMember: true,
-			ReadOnly: false,
-
-			ShouldHaveAcces: false,
-		},
-		// all users ro - admin access
-		{
-			Name: "all users ro-admin access (ro)",
-			Conf: &models.CoreConfig{
-				AllowNonMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, true),
-			Roles:    nil,
-			IsMember: true,
-			ReadOnly: true,
-
-			ShouldHaveAcces: true,
-		},
-		{
-			Name: "all users ro-admin access",
-			Conf: &models.CoreConfig{
-				AllowNonMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, true),
-			Roles:    nil,
-			IsMember: true,
-			ReadOnly: false,
-
-			ShouldHaveAcces: true,
-		},
-
-		////////////////////////////////////
-		//   AllMembersRO tests
-		////////////////////////////////////
-
-		// all members ro - normal user access
-		{
-			Name: "all members ro-normal user access (ro)",
-			Conf: &models.CoreConfig{
-				AllowAllMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, false),
-			Roles:    nil,
-			IsMember: false,
-			ReadOnly: true,
-
-			ShouldHaveAcces: false,
-		},
-		{
-			Name: "all members ro-normal user access",
-			Conf: &models.CoreConfig{
-				AllowAllMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, false),
-			Roles:    nil,
-			IsMember: false,
-			ReadOnly: false,
-
-			ShouldHaveAcces: false,
-		},
-		// all members ro - member access
-		{
-			Name: "all members ro-member access (ro)",
-			Conf: &models.CoreConfig{
-				AllowAllMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, false),
-			Roles:    nil,
-			IsMember: true,
-			ReadOnly: true,
-
-			ShouldHaveAcces: true,
-		},
-		{
-			Name: "all members ro-member access",
-			Conf: &models.CoreConfig{
-				AllowAllMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, false),
-			Roles:    nil,
-			IsMember: true,
-			ReadOnly: false,
-
-			ShouldHaveAcces: false,
-		},
-		// all members ro - admin access
-		{
-			Name: "all members ro-admin access (ro)",
-			Conf: &models.CoreConfig{
-				AllowAllMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, true),
-			Roles:    nil,
-			IsMember: true,
-			ReadOnly: true,
-
-			ShouldHaveAcces: true,
-		},
-		{
-			Name: "all members ro-admin access",
-			Conf: &models.CoreConfig{
-				AllowAllMembersReadOnly: true,
-			},
-			GWC:      createUserGuild(true, false, true),
-			Roles:    nil,
-			IsMember: true,
-			ReadOnly: false,
-
-			ShouldHaveAcces: true,
-		},
-
 		////////////////////////////////////
 		//   Read only roles
 		////////////////////////////////////

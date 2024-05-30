@@ -29,7 +29,7 @@
     <meta property="og:title" content="YAGPDB" />
     <meta property="og:description" content="Yet Another General Purpose Discord Bot" />
 
-    <title>YAGPDB - Control panel</title>
+    <title>YAGPDB - Control Panel{{if .ActiveGuild}} | {{.ActiveGuild.Name}}{{end}}</title>
     <meta name="keywords" content="YAGPDB Discord bot control panel" />
     <meta name="description" content="YAGPDB - Yet Another General Purpose Discord Bot">
     <meta name="author" content="jonas747">
@@ -141,6 +141,15 @@
     {{template "googleAnalytics" .}}
 </body>
 
+<script>
+    var observer = new MutationObserver(function(mutations) {
+        $("a").filter(function(){
+            return this.host !== location.host
+        }).attr("target","_blank");
+    });
+    observer.observe(document.querySelector("body"), { childList: true, subtree: true });
+</script>
+
 </html>
 {{end}}{{end}}
 
@@ -152,10 +161,51 @@ $(function(){
     $.getJSON("https://srhpyqt94yxb.statuspage.io/api/v2/incidents/unresolved.json", function(data) {
         if (data.incidents) {
             data.incidents.forEach(function(incident) {
-                addAlert("warning", "Discord's " + incident.status + " an incident: " + incident.name + ". Functionality may be limited.");
+                const incidentLink = `<a href="${incident.shortlink}" target="_blank">${incident.name}</a>`
+                addAlertHTML("warning", `Discord's ${incident.status} an incident: ${incidentLink}. Functionality may be limited.`);
             })
         }
     });
+
+    {{if .ActiveGuild}}
+        async function runShardOfflineChecker() {
+            let wasOffline = await checkShardOffline();
+            setInterval(async () => {
+                const currentlyOffline = await checkShardOffline();
+
+                // To prevent spurious warnings during routine shard reconnections,
+                // only show an alert if a shard appears to be offline for two
+                // checks in a row.
+                if (wasOffline && currentlyOffline) {
+                    upsertAlert(
+                        "The shard the bot is on for your server is currently offline; some functionality may not work as expected. \
+                        Join the support server for more information if this issue persists."
+                    );
+                } else {
+                    $("#shard-problems-warning").remove();
+                }
+
+                wasOffline = currentlyOffline;
+            }, 15_000);
+        }
+
+        async function checkShardOffline() {
+            const data = await fetch("/status.json").then((resp) => resp.json());
+            const shardId = Number(BigInt("{{.ActiveGuild.ID}}") >> BigInt(22)) % data.total_shards;
+            return data.offline_shards && data.offline_shards.includes(shardId);
+        }
+
+        function upsertAlert(msg) {
+            if ($("#shard-problems-warning").length) {
+                $("#shard-problems-warning alert").text(msg);
+            } else {
+                addAlert("warning", msg, "shard-problems-warning");
+            }
+        }
+
+        // Computing the shard number requires BigInt support.
+        if (typeof BigInt !== "undefined") runShardOfflineChecker();
+    {{end}}
 })
 </script>
 <div id="alerts">

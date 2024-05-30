@@ -10,17 +10,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/config"
-	"github.com/botlabs-gg/yagpdb/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/feeds"
-	"github.com/botlabs-gg/yagpdb/reddit/models"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/go-reddit"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/feeds"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/go-reddit"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"golang.org/x/oauth2"
 )
 
@@ -125,9 +125,9 @@ func (p *PostHandlerImpl) HandleRedditPosts(links []*reddit.Link) {
 			continue
 		}
 
-		// since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
-		// logger.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
-		p.handlePost(v, 0)
+		since := time.Since(time.Unix(int64(v.CreatedUtc), 0))
+		logger.Debugf("[%5.2fs %6s] /r/%-20s: %s", since.Seconds(), v.ID, v.Subreddit, v.Title)
+		go p.handlePost(v, 0)
 	}
 }
 
@@ -162,8 +162,8 @@ func (p *PostHandlerImpl) getConfigs(subreddit string) ([]*models.RedditFeed, er
 
 func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error {
 
-	// createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
-	// logger.Printf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
+	createdSince := time.Since(time.Unix(int64(post.CreatedUtc), 0))
+	logger.Debugf("[%5.1fs] /r/%-15s: %s, %s", createdSince.Seconds(), post.Subreddit, post.Title, post.ID)
 
 	config, err := p.getConfigs(strings.ToLower(post.Subreddit))
 	if err != nil {
@@ -195,12 +195,14 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 		"subreddit":    post.Subreddit,
 	}).Debug("Found matched reddit post")
 
-	message, embed := CreatePostMessage(post)
+	// Create messages with and without spoilers
+	messageSpoilersEnabled, embedSpoilersEnabled := p.createPostMessage(post, true)
+	messageSpoilersDisabled, embedSpoilersDisabled := p.createPostMessage(post, false)
 
 	for _, item := range filteredItems {
 		idStr := strconv.FormatInt(item.ID, 10)
 
-		webhookUsername := "r/" + post.Subreddit + " • YAGPDB"
+		webhookUsername := "Reddit • YAGPDB"
 
 		qm := &mqueue.QueuedElement{
 			GuildID:         item.GuildID,
@@ -212,6 +214,11 @@ func (p *PostHandlerImpl) handlePost(post *reddit.Link, filterGuild int64) error
 			AllowedMentions: discordgo.AllowedMentions{
 				Parse: []discordgo.AllowedMentionType{},
 			},
+		}
+
+		message, embed := messageSpoilersDisabled, embedSpoilersDisabled
+		if item.SpoilersEnabled {
+			message, embed = messageSpoilersEnabled, embedSpoilersEnabled
 		}
 
 		if item.UseEmbeds {
@@ -272,7 +279,7 @@ OUTER:
 	return filteredItems
 }
 
-func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
+func (p *PostHandlerImpl) createPostMessage(post *reddit.Link, allowSpoilers bool) (string, *discordgo.MessageEmbed) {
 	plainMessage := fmt.Sprintf("**%s**\n*by %s (<%s>)*\n",
 		html.UnescapeString(post.Title), post.Author, "https://redd.it/"+post.ID)
 
@@ -298,10 +305,18 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		plainBody = post.URL
 	}
 
-	if post.Spoiler || parentSpoiler {
+	if (post.Spoiler || parentSpoiler) && allowSpoilers {
 		plainMessage += "|| " + plainBody + " ||"
 	} else {
 		plainMessage += plainBody
+	}
+
+	footer := &discordgo.MessageEmbedFooter{
+		Text: fmt.Sprintf("Fast feed from r/%s", post.Subreddit),
+	}
+
+	if p.Slow {
+		footer.Text = fmt.Sprintf("Slow feed from r/%s • %d ⬆ %d ⬇", post.Subreddit, post.Ups, post.Downs)
 	}
 
 	embed := &discordgo.MessageEmbed{
@@ -314,13 +329,14 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 			URL:  "https://reddit.com",
 		},
 		Description: "**" + html.UnescapeString(post.Title) + "**\n",
+		Timestamp:   time.Unix(int64(post.CreatedUtc), 0).Format(time.RFC3339),
+		Footer:      footer,
 	}
 	embed.URL = "https://redd.it/" + post.ID
-
 	if post.IsSelf {
 		//  Handle Self posts
 		embed.Title = "New self post"
-		if post.Spoiler {
+		if post.Spoiler && allowSpoilers {
 			embed.Description += "|| " + common.CutStringShort(html.UnescapeString(post.Selftext), 250) + " ||"
 		} else {
 			embed.Description += common.CutStringShort(html.UnescapeString(post.Selftext), 250)
@@ -336,7 +352,7 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		if parent.IsSelf {
 			// Cropsspost was a self post
 			embed.Color = 0xc3fc7e
-			if parent.Spoiler {
+			if parent.Spoiler && allowSpoilers {
 				embed.Description += "|| " + common.CutStringShort(html.UnescapeString(parent.Selftext), 250) + " ||"
 			} else {
 				embed.Description += common.CutStringShort(html.UnescapeString(parent.Selftext), 250)
@@ -364,11 +380,10 @@ func CreatePostMessage(post *reddit.Link) (string, *discordgo.MessageEmbed) {
 		}
 	}
 
-	if post.Spoiler {
+	if post.Spoiler && allowSpoilers {
 		embed.Title += " [spoiler]"
 	}
 
-	plainMessage = plainMessage
 	return plainMessage, embed
 }
 

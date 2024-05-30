@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/premium/models"
-	"github.com/botlabs-gg/yagpdb/web"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/premium/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -176,6 +176,9 @@ func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 }
 
 func ContextPremium(ctx context.Context) bool {
+	if confAllGuildsPremium.GetBool() {
+		return true
+	}
 	if v := ctx.Value(CtxKeyIsPremium); v != nil {
 		return v.(bool)
 	}
@@ -184,6 +187,10 @@ func ContextPremium(ctx context.Context) bool {
 }
 
 func ContextPremiumTier(ctx context.Context) PremiumTier {
+	if confAllGuildsPremium.GetBool() {
+		return PremiumTierPlus
+	}
+
 	if v := ctx.Value(CtxKeyPremiumTier); v != nil {
 		return v.(PremiumTier)
 	}
@@ -217,7 +224,6 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 			if _, ok := v.(*SlotGuildPremiumSource); ok {
 				// special handling for this since i was a bit lazy
 				username := ""
-				discrim := ""
 
 				premiumBy, err := PremiumProvidedBy(ag.ID)
 				if err != nil {
@@ -226,15 +232,14 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 				user, err := common.BotSession.User(premiumBy)
 				if err == nil {
-					username = user.Username
-					discrim = user.Discriminator
+					username = user.String()
 				}
 
 				detForm := fmt.Sprintf(`<form data-async-form action="/manage/%d/premium/detach">
 			<button type="submit" class="btn btn-danger">Detach premium slot</button>
 		</form>`, ag.ID)
 
-				body.WriteString(fmt.Sprintf("<p>Premium tier <b>%s</b> active and provided by user <code>%s#%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), html.EscapeString(discrim), premiumBy, detForm))
+				body.WriteString(fmt.Sprintf("<p>Premium tier <b>%s</b> active and provided by user <code>%s (%d)</p></code>\n\n%s", tier.String(), html.EscapeString(username), premiumBy, detForm))
 			} else {
 				body.WriteString(fmt.Sprintf("<p class=\"mt-3\">Premium tier <b>%s</b> active and provided by %s: %s</p>", tier.String(), v.Name(), status))
 			}

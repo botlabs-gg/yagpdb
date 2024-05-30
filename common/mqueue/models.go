@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 // QueuedElement represents a queued message
@@ -31,6 +31,9 @@ type QueuedElement struct {
 	WebhookUsername string
 
 	AllowedMentions discordgo.AllowedMentions `json:"allowed_mentions"`
+
+	// Publish the message if the channel is an announcement channel
+	PublishAnnouncement bool
 
 	// When the queue grows, the feeds with the highest priority gets sent first
 	Priority int

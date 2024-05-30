@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/reddit/models"
-	"github.com/botlabs-gg/yagpdb/stdcommands/util"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var _ bot.RemoveGuildHandler = (*Plugin)(nil)
@@ -26,12 +27,30 @@ func (p *Plugin) RemoveGuild(g int64) error {
 	return nil
 }
 
+func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
+	logger.WithField("guild_id", guildID).Infof("Removed Excess Reddit Feeds")
+	feeds, err := models.RedditFeeds(qm.Where("guild_id = ? and disabled = ?", guildID, false), qm.Offset(GuildMaxFeedsNormal)).AllG(context.Background())
+
+	if err != nil {
+		return errors.WrapIf(err, "failed getting reddit feeds")
+	}
+
+	if len(feeds) > 0 {
+		_, err = feeds.UpdateAllG(context.Background(), models.M{"disabled": true})
+		if err != nil {
+			return errors.WrapIf(err, "failed disabling reddit feeds on premium removal")
+		}
+	}
+
+	return nil
+}
+
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(p, &commands.YAGCommand{
 		CmdCategory:          commands.CategoryDebug,
 		HideFromCommandsPage: true,
 		Name:                 "testreddit",
-		Description:          "Tests the reddit feeds in this server by checking the specified post",
+		Description:          "Tests the reddit feeds in this server by checking the specified post. Bot Owner Only",
 		HideFromHelp:         true,
 		RequiredArgs:         1,
 		Arguments: []*dcmd.ArgDef{
@@ -70,61 +89,12 @@ func (p *Plugin) AddCommands() {
 	})
 }
 
-// func (p *Plugin) Status() (string, string) {
-// 	subs := 0
-// 	channels := 0
-// 	cursor := "0"
+func (p *Plugin) Status() (string, string) {
+	feeds, err := models.RedditFeeds(models.RedditFeedWhere.Disabled.EQ(false)).CountG(context.Background())
+	if err != nil {
+		logger.WithError(err).Error("Failed Checking Reddit feeds")
+		return "Total Feeds", "error"
+	}
 
-// 	common.
-
-// 	for {
-// 		reply := client.Cmd("SCAN", cursor, "MATCH", "global_subreddit_watch:*")
-// 		if reply.Err != nil {
-// 			logrus.WithError(reply.Err).Error("Error scanning")
-// 			break
-// 		}
-
-// 		elems, err := reply.Array()
-// 		if err != nil {
-// 			logrus.WithError(err).Error("Error reading reply")
-// 			break
-// 		}
-
-// 		if len(elems) < 2 {
-// 			logrus.Error("Invalid scan")
-// 			break
-// 		}
-
-// 		newCursor, err := elems[0].Str()
-// 		if err != nil {
-// 			logrus.WithError(err).Error("Failed retrieving new cursor")
-// 			break
-// 		}
-// 		cursor = newCursor
-
-// 		list, err := elems[1].List()
-// 		if err != nil {
-// 			logrus.WithError(err).Error("Failed retrieving list")
-// 			break
-// 		}
-
-// 		for _, key := range list {
-// 			config, err := GetConfig(key)
-// 			if err != nil {
-// 				logrus.WithError(err).Error("Failed reading global config")
-// 				continue
-// 			}
-// 			if len(config) < 1 {
-// 				continue
-// 			}
-// 			subs++
-// 			channels += len(config)
-// 		}
-
-// 		if cursor == "" || cursor == "0" {
-// 			break
-// 		}
-// 	}
-
-// 	return "Subs/Channels", fmt.Sprintf("%d/%d", subs, channels)
-// }
+	return "Total Feeds", fmt.Sprintf("%d", feeds)
+}

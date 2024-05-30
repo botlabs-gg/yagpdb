@@ -11,28 +11,75 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/config"
-	"github.com/botlabs-gg/yagpdb/premium"
-	"github.com/botlabs-gg/yagpdb/rolecommands/models"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/lib/jarowinkler"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-var recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
+var (
+	recentMenusTracker = NewRecentMenusTracker(time.Minute * 10)
+)
+
+func roleGroupAutocomplete(parsed *dcmd.Data, arg *dcmd.ParsedArg) ([]*discordgo.ApplicationCommandOptionChoice, error) {
+	name := arg.Str()
+
+	groups, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Load("RoleCommands"), qm.OrderBy("name asc")).AllG(parsed.Context())
+	if err != nil {
+		return nil, err
+	}
+
+	choices := make([]*discordgo.ApplicationCommandOptionChoice, 0, len(groups))
+	for _, v := range groups {
+		if jarowinkler.Similarity([]rune(strings.ToLower(v.Name)), []rune(strings.ToLower(name))) > 0.6 || strings.Contains(strings.ToLower(v.Name), strings.ToLower(name)) {
+			choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
+				Name:  v.Name,
+				Value: v.Name,
+			})
+		}
+	}
+	/*sort.Slice(choices, func(i, j int) bool {
+		return choices[i].Name < choices[j].Name
+	})*/
+
+	return choices, nil
+}
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
-	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", parsed.Args[0].Str()), qm.Load("RoleCommands")).OneG(parsed.Context())
+	name := parsed.Args[0].Str()
+	panelURL := fmt.Sprintf("%s/rolecommands/", web.ManageServerURL(parsed.GuildData))
+	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
-			return "Did not find the role command group specified, make sure you typed it right, if you haven't set one up yet you can do so in the control panel.", nil
+			genericHelpMessage := fmt.Sprintf("Did not find the role command group specified. Make sure it's spelled correctly, or set one up at <%s>.", panelURL)
+
+			groups, err := models.RoleGroups(models.RoleGroupWhere.GuildID.EQ(parsed.GuildData.GS.ID), qm.Select(models.RoleGroupColumns.Name)).AllG(parsed.Context())
+			if err != nil {
+				return genericHelpMessage, nil
+			}
+
+			names := make([]string, len(groups))
+			for i, group := range groups {
+				names[i] = group.Name
+			}
+
+			suggestions := jarowinkler.Select(names, name, jarowinkler.WithLimit(3))
+			if len(suggestions) == 0 {
+				return genericHelpMessage, nil
+			}
+
+			return fmt.Sprintf("Did not find a role group with the name `%s`; did you mean %s?", name, common.FormatList(suggestions, "or")), nil
 		}
 
 		return nil, err
@@ -42,7 +89,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 
 	cmdsLen := len(group.R.RoleCommands)
 	if cmdsLen < 1 {
-		return "No commands in this group, set them up in the control panel.", nil
+		return fmt.Sprintf("No commands in this group. Set them up at <%sgroup/%d>.", panelURL, group.ID), nil
 	}
 
 	model := &models.RoleMenu{
@@ -119,7 +166,7 @@ func cmdFuncRoleMenuUpdate(parsed *dcmd.Data) (interface{}, error) {
 
 func UpdateMenu(parsed *dcmd.Data, menu *models.RoleMenu) (interface{}, error) {
 	if menu.State == RoleMenuStateSettingUp {
-		return "Already setting this menu up", nil
+		return "Already setting this menu up, use `rolemenu complete ...` to complete the setup.", nil
 	}
 
 	if parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool) {
@@ -256,7 +303,7 @@ func UpdateRoleMenuMessage(ctx context.Context, rm *models.RoleMenu) error {
 func updateCustomMessage(ctx context.Context, rm *models.RoleMenu) error {
 	edit := discordgo.MessageEdit{
 		ID:              rm.MessageID,
-		AllowedMentions: &discordgo.AllowedMentions{},
+		AllowedMentions: discordgo.AllowedMentions{},
 		Channel:         rm.ChannelID,
 	}
 
@@ -275,7 +322,7 @@ func updateCustomMessage(ctx context.Context, rm *models.RoleMenu) error {
 		if err != nil {
 			logger.WithError(err).WithField("message_id", rm.MessageID).Error("failed decoding rolemenu embed")
 		} else {
-			edit.Embed = &decoded
+			edit.Embeds = []*discordgo.MessageEmbed{&decoded}
 		}
 	}
 
@@ -579,7 +626,7 @@ func removeOtherReactions(rm *models.RoleMenu, option *models.RoleMenuOption, us
 		return
 	}
 
-	isPremium, err := premium.IsGuildPremiumCached(rm.GuildID)
+	isPremium, err := premium.IsGuildPremium(rm.GuildID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", rm.GuildID).Error("Failed checking if guild is premium")
 		return
@@ -739,7 +786,7 @@ func cmdFuncRoleMenuEditOption(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if menu.State != RoleMenuStateDone {
-		return "This menu isn't 'done' (still being edited, or made)", nil
+		return "This menu isn't 'done' (still being edited, or made), use `rolemenu complete ...` to complete the setup.", nil
 	}
 
 	menu.State = RoleMenuStateEditingOptionSelecting
@@ -768,7 +815,7 @@ func cmdFuncRoleMenuComplete(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if !menu.RoleGroupID.Valid {
-		return "Uh oh i haven't added editing of standalone menus yet. (will be added very soon)", nil
+		return "Uh oh, I haven't added editing of standalone menus yet. (will be added very soon)", nil
 	}
 
 	menu.State = RoleMenuStateDone

@@ -9,18 +9,18 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands/models"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type ContextKey int
@@ -111,12 +111,13 @@ type YAGCommand struct {
 	RunInDM      bool // Set to enable this commmand in DM's
 	HideFromHelp bool // Set to hide from help
 
-	RequireDiscordPerms []int64   // Require users to have one of these permission sets to run the command
-	RequireBotPerms     [][]int64 // Discord permissions that the bot needs to run the command, (([0][0] && [0][1] && [0][2]) || ([1][0] && [1][1]...))
+	RequireDiscordPerms      []int64   // Require users to have one of these permission sets to run the command
+	RequiredDiscordPermsHelp string    // Optional message that shows up when users run the help command that documents user permission requirements for the command
+	RequireBotPerms          [][]int64 // Discord permissions that the bot needs to run the command, (([0][0] && [0][1] && [0][2]) || ([1][0] && [1][1]...))
 
 	Middlewares []dcmd.MiddleWareFunc
 
-	// Run is ran the the command has sucessfully been parsed
+	// Run is ran when the command has sucessfully been parsed
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
 	RunFunc dcmd.RunFunc
@@ -143,6 +144,9 @@ type YAGCommand struct {
 	RolesRunFunc RolesRunFunc
 
 	slashCommandID int64
+
+	IsResponseEphemeral bool
+	NSFW                bool
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation
@@ -168,8 +172,30 @@ var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"name", "trigger_type"})
 
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
+	if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type == discordgo.InteractionApplicationCommandAutocomplete {
+		for _, v := range data.SlashCommandTriggerData.Options {
+			if !v.Focused {
+				continue
+			}
+
+			for _, arg := range data.Args {
+				if strings.EqualFold(arg.Def.Name, v.Name) {
+					return arg.Def.AutocompleteFunc(data, arg)
+				}
+			}
+		}
+		return []*discordgo.ApplicationCommandOptionChoice{}, nil // fallback in case something goes wrong so the user doesn't see failed
+	}
+
 	if !yc.RunInDM && data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
+	}
+
+	if yc.NSFW {
+		channel := data.GuildData.GS.GetChannelOrThread(data.ChannelID)
+		if !channel.NSFW {
+			return "This command can be used only in age-restricted channels", nil
+		}
 	}
 
 	// Send typing to indicate the bot's working
@@ -276,7 +302,9 @@ func (yc *YAGCommand) humanizeError(err error) string {
 		return "Unable to run the command: " + t.Error()
 	case *discordgo.RESTError:
 		if t.Message != nil && t.Message.Message != "" {
-			if t.Response != nil && t.Response.StatusCode == 403 {
+			if t.Message.Message == "Unknown Message" {
+				return "The bot was not able to perform the action, Discord responded with: " + t.Message.Message + ". Please be sure you ran the command in the same channel as the message."
+			} else if t.Response != nil && t.Response.StatusCode == 403 {
 				return "The bot permissions has been incorrectly set up on this server for it to run this command: " + t.Message.Message
 			}
 
@@ -403,12 +431,20 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 		guild := data.GuildData.GS
 
 		if data.TriggerType != dcmd.TriggerTypeSlashCommands {
-			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages); !hasPerms {
+			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionViewChannel|discordgo.PermissionSendMessages); !hasPerms {
 				return false, nil, nil, nil
 			}
 		}
+		channel_id := data.GuildData.CS.ID
+		parent_id := data.GuildData.CS.ParentID
+		// in case the channel is a thread, get the parent channel from parent id and check for the overrides
+		if data.GuildData.CS.Type.IsThread() {
+			channel := data.GuildData.GS.GetChannel(parent_id)
+			channel_id = channel.ID
+			parent_id = channel.ParentID
+		}
 
-		settings, err = yc.GetSettings(data.ContainerChain, data.GuildData.CS.ID, data.GuildData.CS.ParentID, guild.ID)
+		settings, err = yc.GetSettings(data.ContainerChain, channel_id, parent_id, guild.ID)
 		if err != nil {
 			resp = &CanExecuteError{
 				Type:    ReasonError,

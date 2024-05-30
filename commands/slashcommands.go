@@ -10,14 +10,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/commands/models"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands/models"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -132,15 +132,15 @@ func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *dis
 		}
 
 		isSub, innerOpts := cast.slashCommandOptions()
-		kind := discordgo.CommandOptionTypeSubCommand
+		kind := discordgo.ApplicationCommandOptionSubCommand
 		if isSub {
-			kind = discordgo.CommandOptionTypeSubCommandGroup
+			kind = discordgo.ApplicationCommandOptionSubCommandGroup
 		}
 
 		opt := &discordgo.ApplicationCommandOption{
 			Name:        strings.ToLower(cast.Name),
 			Description: common.CutStringShort(cast.Description, 100),
-			Kind:        kind,
+			Type:        kind,
 			Options:     innerOpts,
 		}
 
@@ -170,6 +170,7 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		Description:       common.CutStringShort(cast.Description, 100),
 		DefaultPermission: &t,
 		Options:           opts,
+		NSFW:              cast.NSFW,
 	}
 }
 
@@ -187,7 +188,7 @@ func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result 
 		if len(opts) > 1 && i == 0 {
 			// turn this command into a container
 			turnedIntoSubCommands = true
-			kind := discordgo.CommandOptionTypeSubCommand
+			kind := discordgo.ApplicationCommandOptionSubCommand
 
 			for _, opt := range opts {
 				if i < yc.RequiredArgs {
@@ -195,7 +196,7 @@ func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result 
 				}
 
 				subCommands = append(subCommands, &discordgo.ApplicationCommandOption{
-					Kind:        kind,
+					Type:        kind,
 					Name:        "by-" + opt.Name,
 					Description: common.CutStringShort(yc.Description, 100),
 					Options: []*discordgo.ApplicationCommandOption{
@@ -234,7 +235,7 @@ func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result 
 
 	for _, v := range yc.ArgSwitches {
 		if v.Type == nil {
-			adding := v.StandardSlashCommandOption(discordgo.CommandOptionTypeBoolean)
+			adding := v.StandardSlashCommandOption(discordgo.ApplicationCommandOptionBoolean)
 			adding.Name = strings.ToLower(adding.Name)
 			sortedResult = append(sortedResult, adding)
 		} else {
@@ -358,6 +359,9 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 
 func handleInteractionCreate(evt *eventsystem.EventData) {
 	interaction := evt.InteractionCreate()
+	if interaction.Type != discordgo.InteractionApplicationCommand && interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
+		return
+	}
 	if interaction.DataCommand == nil {
 		logger.Warn("Interaction had no data")
 		return
@@ -464,7 +468,7 @@ func toApplicationCommandPermissions(gs *dstate.GuildSet, defaultEnabeld bool, a
 		if !defaultEnabeld {
 			result = append(result, &discordgo.ApplicationCommandPermissions{
 				ID:         gs.ID,
-				Kind:       discordgo.CommandPermissionTypeRole,
+				Type:       discordgo.ApplicationCommandPermissionTypeRole,
 				Permission: true,
 			})
 		}
@@ -484,7 +488,7 @@ func toApplicationCommandPermissions(gs *dstate.GuildSet, defaultEnabeld bool, a
 
 			result = append(result, &discordgo.ApplicationCommandPermissions{
 				ID:         gs.ID,
-				Kind:       discordgo.CommandPermissionTypeRole,
+				Type:       discordgo.ApplicationCommandPermissionTypeRole,
 				Permission: false,
 			})
 		}
@@ -601,7 +605,7 @@ OUTER:
 	for _, r := range gs.Roles {
 		perms := int64(r.Permissions)
 		for _, rp := range requiredPerms {
-			if perms&rp == rp || perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator || perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
+			if perms&rp == rp || perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator || perms&discordgo.PermissionManageGuild == discordgo.PermissionManageGuild {
 				// this role can run the command
 				if !defaultEnabled {
 					result = append(result, r.ID)

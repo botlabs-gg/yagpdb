@@ -1,7 +1,7 @@
 {{define "automod_index"}}
 {{template "cp_head" .}}
 <header class="page-header">
-    <h2>Automoderator v2</h2>
+    <h2>Advanced Automoderator</h2>
 </header>
 
 {{template "cp_alerts" .}}
@@ -13,6 +13,10 @@
     padding-bottom: 5px;
     margin-top: 5px;
     margin-bottom: 5px;
+}
+
+.automod-options-column > div {
+   margin-top: 5px;
 }
 
 @media(min-width: 1024px) {
@@ -32,6 +36,14 @@
 
     .automod-options-column{
         width: calc(100% - 15em);
+    }
+    .automod-options-column > div {
+        margin-bottom: 2em;
+    }
+
+    .form-check{
+      min-height: 1em;
+      margin-bottom: 1em;
     }
 }
 
@@ -131,7 +143,7 @@ table{
                     {{else if  not .InLogs}}
                     <div class="row mb-3">
                         <div class="col-lg-12">
-                            <p>Automoderator (v2) is a completely new automoderator system made with the goal to be the most flexible, configurable system you could get for a chat bot (within reason).<br>
+                            <p>Advanced Automoderator (also known as Automoderator V2 or AMV2 ) is a completely new automoderator system made with the goal to be the most flexible, configurable system you could get for a chat bot (within reason).<br>
                                 You start by creating a ruleset, then creating rules inside said ruleset.<br>
                                 Rules consist of one or more triggers, conditions, and effects, you can also apply general conditions on the ruleset itself.<br>
                                 Visit the <a href="https://docs.yagpdb.xyz/tools-and-utilities/automoderator-v2" target="_blank">documentation</a> for more information on how to build rules and some examples.</p>
@@ -206,7 +218,7 @@ table{
 {{range $i, $rule := .CurrentRuleset.R.RulesetAutomodRules}}
 <div class="row">
     <div class="col">
-        <form action="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/update" method="post" data-async-form>
+        <form action="/manage/{{$dot.ActiveGuild.ID}}/automod/ruleset/{{$dot.CurrentRuleset.ID}}/rule/{{.ID}}/update" method="post" data-async-form data-async-form-alertsonly>
             <!-- Pressing enter uses the first button for some reason -->
             <button class="hidden" type="submit"></button>
 
@@ -325,6 +337,9 @@ table{
     <select id="automod-channel-multi-template" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>
         {{textChannelOptionsMulti .ActiveGuild.Channels nil}}
     </select>
+    <select id="automod-channel-single-template" class="form-control">
+        {{textChannelOptions .ActiveGuild.Channels nil true "None"}}
+    </select>
     <select id="automod-list-selection-template" class="form-control">
         {{range .AutomodLists}}
         <option value="{{.ID}}">{{.Name}}</option>
@@ -349,7 +364,6 @@ $(function(){
         options: JSON.parse({{json .UserSettings}})
     }
     {{end}}
-    console.log(partMap)
 
     function namePrefixFromKind(kind){
         namePrefix = "Triggers."
@@ -370,7 +384,6 @@ $(function(){
         var rowIndex = tbody.children().length;
         var row = createPartRow(kind, rowIndex)
 
-        console.log("Creating new: ", kind, rowIndex)
         tbody.append(row);
     })
 
@@ -492,6 +505,10 @@ $(function(){
                 input.attr("value", opt.Default)
             }
 
+            if(opt.Placeholder){
+                input.attr("placeholder", opt.Placeholder)
+            }
+
             column.append(input)
             break;
         case "string":
@@ -506,6 +523,10 @@ $(function(){
 
             if(opt.Default){
                 input.attr("value", opt.Default)
+            }
+
+            if(opt.Placeholder){
+                input.attr("placeholder", opt.Placeholder)
             }
 
             column.append(input)
@@ -528,6 +549,9 @@ $(function(){
             break;
         case "role":
             cloneDropdown(column, "#automod-roledropdown-single-template", key, true);
+            break;
+        case "channel":
+            cloneDropdown(column, "#automod-channel-single-template", key, true);
             break;
         case "multi_channel":
             cloneDropdown(column, "#automod-channel-multi-template", key, true);
@@ -602,6 +626,10 @@ $(function(){
                     {{else if eq .Kind "role"}}
                     <select name="{{$name}}" class="form-control" >
                         {{roleOptions $dot.dot.ActiveGuild.Roles nil (index $dot.settings .Key)}}
+                    </select>
+                    {{else if eq .Kind "channel"}}
+                    <select name="{{$name}}" class="form-control">
+                        {{textChannelOptions $dot.dot.ActiveGuild.Channels (index $dot.settings .Key) true "None"}}
                     </select>
                     {{else if eq .Kind "multi_channel"}}
                     <select name="{{$name}}" class="multiselect form-control" multiple="multiple" data-plugin-multiselect>

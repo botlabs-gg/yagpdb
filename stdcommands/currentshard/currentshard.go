@@ -3,11 +3,11 @@ package currentshard
 import (
 	"fmt"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/botrest"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 )
 
 var Command = &commands.YAGCommand{
@@ -16,7 +16,7 @@ var Command = &commands.YAGCommand{
 	Aliases:     []string{"cshard"},
 	Description: "Shows the current shard this server is on (or the one specified)",
 	Arguments: []*dcmd.ArgDef{
-		&dcmd.ArgDef{Name: "serverid", Type: dcmd.BigInt, Default: int64(0)},
+		{Name: "serverid", Type: dcmd.BigInt, Default: int64(0)},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		gID := data.GuildData.GS.ID

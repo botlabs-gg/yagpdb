@@ -10,11 +10,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/sirupsen/logrus"
 	"goji.io/pattern"
 )
@@ -187,11 +187,10 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool) {
 
 	isReadOnlyReq := strings.EqualFold(r.Method, "GET") || strings.EqualFold(r.Method, "OPTIONS")
-
-	if v := ctx.Value(common.ContextKeyCurrentGuild); v != nil {
+	v := ctx.Value(common.ContextKeyCurrentGuild)
+	g := v.(*dstate.GuildSet)
+	if v != nil {
 		// accessing a server page
-		g := v.(*dstate.GuildSet)
-
 		gWithConnected := &common.GuildWithConnected{
 			UserGuild: &discordgo.UserGuild{
 				ID: g.ID,
@@ -232,8 +231,9 @@ func IsAdminRequest(ctx context.Context, r *http.Request) (read bool, write bool
 		}
 
 		if isReadOnlyReq {
-			// allow special read only acces for GET and OPTIONS requests, simple and works well
-			if hasAcces, err := bot.HasReadOnlyAccess(cast.ID); hasAcces && err == nil {
+			logrus.Infof("%s (%d) tried to access server %d with Global Read Only Permissions", cast.Username, cast.ID, g.ID)
+			// allow special read only access for GET and OPTIONS requests, simple and works well
+			if hasAccess, err := bot.HasReadOnlyAccess(cast.ID); hasAccess && err == nil {
 				return true, false
 			}
 		}
@@ -263,7 +263,7 @@ func HasPermissionCTX(ctx context.Context, aperms int64) bool {
 	perms := ContextMemberPerms(ctx)
 	// Require manageserver, ownership of guild or ownership of bot
 	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator ||
-		perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer || perms&aperms == aperms {
+		perms&discordgo.PermissionManageGuild == discordgo.PermissionManageGuild || perms&aperms == aperms {
 		return true
 	}
 

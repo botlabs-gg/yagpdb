@@ -1,76 +1,19 @@
-# YouTube Feeds
+# Twitter feeds
 
-The feed plugin is complicated because we use the user's `uploads` playlist, and that is sorted by actual upload date instead of publish date.
+Twitter feeds use a scraper because elonmusk closed access to the API. 
 
-So say you have this channels videos:
+It is advised to use a proxy for it if you're going to use it for anything more than 10 accounts
+otherwise you might get ratelimited from twitter. 
 
- 0. vid2 - uploaded 10pm - published 10pm
- 1. vid1 - uploaded 6pm - published 6pm
-
-Then a video was published (but uploaded a long time ago):
-
- 0. vid2 - uploaded 10pm - published 10pm
- 1. vid1 - uploaded 6pm - published 6pm
- 2. vid3 - uploaded 5pm - published 11pm
-
-vid3 was published after the latest vidoe but still appears at the bottom. this causes issues as we have no idea when to stop looking now. Currently YAGPDB handles this fine as long as it's not uploaded longer than 50 videos ago, in which case it may or may not catch it.
-
-In the future I'll do a hybrid mode with search. Those super late published videos however will show up in Discord super late. I cannot use search for 100% either because it costs 100 times for api quota to use, meaning it could be up to hours behind.
-
-The feed plugin is complicated because we use the user's `uploads` playlist, and that is sorted by actual upload date instead of publish date
-
-so say you have this channels videos:
-
- 0. vid2 - uploaded 10pm - published 10pm
- 1. vid1 - uploaded 6pm - published 6pm
-
-Then a video was published (but uploaded a long time ago)
-
- 0. vid2 - uploaded 10pm - published 10pm
- 1. vid1 - uploaded 6pm - published 6pm
- 2. vid3 - uploaded 5pm - published 11pm
-
-vid3 was published after the latest vidoe but still appears at the bottom. this causes issues as we have no idea when to stop looking now. Currently YAGPDB handles this fine as long as its not uploaded longer than 50 videos ago, in which case it may or may not catch it.
-
-In the future i'll do a hybrid mode with search, those super late published videos however will show up in Discord super late, i cannot use search for 100% either because it costs 100 times for api quota to use, meaning it could be up to hours behind.
-
-### Storage layout:
-
-Postgres tables:
-youtube_guild_subs - postgres
-    - guild_id
-    - channel_id
-    - youtube_channel
-
-youtube_playlist_ids
-    - channel_name PRIMARY
-    - playlist_id
-
-Redis keys:
-
-`youtube_subbed_channels` - sorted set
-
-key is the channel name
-score is unix time in seconds when it was last checked
-
-`youtube_registered_websub_channels` - sorted set
-
-key is the channel name
-score is unix time in seconds when it expires
-
-At the start of a poll, it uses zrange/zrevrange to grab an amount of entries to process and if they do get processed it updates the score to the current unix time.
+There is some optional configuration, but the twitter feed should otherwise work without any added config due to defaults set in code. 
 
 
-`youtube_last_video_time:{channel}` - string
+ ##  Optional configuration 
 
-Holds the time of the last video in that channel we processed, all videos before this will be ignored.
+`YAGPDB_TWITTER_PROXY` accepts an http(s) or a sock proxy url, and all requests are sent through it instead of directly hitting twitter, this helps in preventing twitter from blocking your ip. If this isn't set, all requests are direct requests. 
 
-`youtube_last_video_id:{channel}` - string
+`YAGPDB_TWITTER_BATCH_SIZE` , this is the batch size to split querying to twitter, if you have 100 twitter feeds added, and set this value to 3, then the bot will check for 3 accounts per request. 
 
-Holds the last video id for a channel, it will stop processing videos when it hits this video.
+`YAGPDB_TWITTER_POLL_FREQUENCY`, Since YAGPDB users scraping, this is the frequency between the total number of records. If you have 100 feeds, and a batch of 3, after all the feeds are polled once, the amount given here in **Minutes** will be awaited, before restarting polling. 
 
-`youtube_push_registrations` - sorted set
-
-Key is the channel id, value is the time it expires
-
-`youtube_currently_adding:{channelid}` - set, set when this channel is being added
+`YAGPDB_TWITTER_BATCH_DELAY`, this is the delay in **Seconds** between each batch. 

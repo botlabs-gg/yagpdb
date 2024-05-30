@@ -1,0 +1,165 @@
+{{define "cp_custom_commands_database"}}
+{{template "cp_head" .}}
+
+<style>
+    .db-footer,
+    .db-header,
+    .db-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .db-footer::after {
+        content: none !important;
+    }
+</style>
+
+<header class="page-header">
+    <h2>Custom Commands Database</h2>
+</header>
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-6">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Search</h2>
+            </header>
+            <div class="card-body">
+                <p>
+                    This page lets you view your database entries and delete them if needed.
+                </p>
+                <p>
+                    <strong>Warning:</strong> Deleting a database entry is permanent and cannot be undone.
+                </p>
+                <form>
+                    <div class="form-row">
+                        <div class="form-group col">
+                            <label>Search By</label>
+                            <select class="form-control" id="filter-type-dropdown" name="type" >
+                                <option value="key" {{if eq .QueryType "key"}} selected="selected" {{end}}>Key</option>
+                                <option value="user_id" {{if eq .QueryType "user_id"}} selected="selected" {{end}}>User ID</option>
+                                <option value="id" {{if eq .QueryType "id"}} selected="selected" {{end}}>ID</option>
+                            </select>
+                        </div>
+                        <div class="from-group col">
+                            <label>Search For</label>
+                            <input type="text" name="query" class="form-control" placeholder="Enter search term..." value="{{.Query}}"/>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" data-async-form>Search</button>
+                </form>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-6">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title">Info</h2>
+            </header>
+            <div class="card-body">
+                <p>
+                    To search select a filter type and enter a value to search for. The search will return all entries
+                    that match the filter type and value.
+                </p>
+                <p>
+                    <strong>Filter Types:</strong>
+                <ul>
+                    <li>ID: The unique ID of the entry.</li>
+                    <li>User ID: The ID of the user associated with the entry.</li>
+                    <li>
+                        Key: The key of the entry. This supports PostgreSQL patterns (<code>%</code> and<code>_</code>).
+                    </li>
+                </ul>
+                </p>
+            </div>
+        </section>
+    </div>
+</div>
+<section class="card">
+    <header class="card-header db-header">
+        <div>
+            <h2 class="card-title">Database Entries</h2>
+        </div>
+        <div class="db-navigation ml-auto btn-group-sm">
+            <span class="mr-3">Showing Page {{.Page}} of {{.TotalPages}}</span>
+            {{if not (eq .Page 1)}}
+            <button onclick="getPage({{sub .Page 1}})" class="btn btn-sm btn-primary mr-1">Previous</button>
+            {{end}}
+            {{if not (eq .Page .TotalPages) }}
+            <button onclick="getPage({{add .Page 1}})" class="btn btn-sm btn-primary">Next</button>
+            {{end}}
+        </div>
+    </header>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped table-responsive-md" id="db-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Created At (UTC)</th>
+                        <th>Updated At (UTC)</th>
+                        <th>Expires At (UTC)</th>
+                        <th>User ID</th>
+                        <th>Key</th>
+                        <th>Value</th>
+                        <th>Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .DBEntries}}
+                    <tr>
+                        <td>{{.ID}}</td>
+                        <td>{{.CreatedAt.UTC.Format "2006-01-02 15:04:05"}}</td>
+                        <td>{{.UpdatedAt.UTC.Format "2006-01-02 15:04:05"}}</td>
+                        <td>{{if .ExpiresAt.IsZero}}never{{else}}{{.ExpiresAt.UTC.Format "2006-01-02 15:04:05"}}{{end}}
+                        </td>
+                        <td>{{.UserID}}</td>
+                        <td>{{.Key}}</td>
+                        <td>{{.Value}}</td>
+                        <td>{{.ValueSize}}</td>
+                        {{ if $.IsAdmin }}
+                        <td>
+                            <form method="post" data-async-form>
+                                <input class="hidden" type="text" name="id" value="{{.ID}}" />
+                                <button type="submit"
+                                    formaction="/manage/{{$.ActiveGuild.ID}}/customcommands/database/delete/{{.ID}}"
+                                    class="btn btn-sm btn-danger" value="Delete" data-async-form>Delete</button>
+                            </form>
+                        </td>
+                        {{end}}
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer db-footer">
+         <div class="db-navigation ml-auto btn-group-sm">
+            <span class="mr-3">Showing Page {{.Page}} of {{.TotalPages}}</span>
+            {{if not (eq .Page 1)}}
+            <button onclick="getPage({{sub .Page 1}})" class="btn btn-sm btn-primary mr-1">Previous</button>
+            {{end}}
+            {{if not (eq .Page .TotalPages) }}
+            <button onclick="getPage({{add .Page 1}})" class="btn btn-sm btn-primary">Next</button>
+            {{end}}
+        </div>
+    </div>
+</section>
+</div>
+</div>
+<script>
+  function getPage(page){
+    if(!page){
+      return
+    }
+    let url = new URL(window.location.href)
+    url.searchParams.set("page", page)
+    window.location = url.toString();
+  }
+  
+</script>
+
+{{template "cp_footer" .}}
+{{end}}

@@ -10,26 +10,26 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	eventModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/rsvp/models"
-	"github.com/botlabs-gg/yagpdb/timezonecompanion"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	eventModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/rsvp/models"
+	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMessageCreate, eventsystem.EventMessageCreate)
-	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMessageReactionAdd, eventsystem.EventMessageReactionAdd)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
 	scheduledevents2.RegisterHandler("rsvp_update_session", int64(0), p.handleScheduledUpdate)
 }
 
@@ -104,7 +104,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Edit",
 		Description:         "Edits an event",
 		Plugin:              p,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageMessages},
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
 		},
@@ -181,7 +181,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "List",
 		Aliases:             []string{"ls"},
 		Description:         "Lists all events in this server",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageMessages},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			events, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID), qm.OrderBy("starts_at asc")).AllG(parsed.Context())
@@ -211,7 +211,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Delete",
 		Aliases:             []string{"rm", "del"},
 		Description:         "Deletes an event, specify the event ID of the event you wanna delete",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageMessages},
 		RequiredArgs:        1,
 		Plugin:              p,
 		Arguments: []*dcmd.ArgDef{
@@ -246,7 +246,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "StopSetup",
 		Aliases:             []string{"cancelsetup"},
 		Description:         "Force cancels the current setup session in this channel",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 
@@ -291,6 +291,34 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 			go v.handleMessage(m.Message)
 			break
 		}
+	}
+}
+
+func createInteractionButtons() []discordgo.MessageComponent {
+	return []discordgo.MessageComponent{
+		discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					Label:    EmojiJoining,
+					Style:    discordgo.SuccessButton,
+					CustomID: EventAccepted,
+				}, discordgo.Button{
+					Label:    EmojiNotJoining,
+					Style:    discordgo.DangerButton,
+					CustomID: EventRejected,
+				},
+				discordgo.Button{
+					Label:    EmojiWaitlist,
+					Style:    discordgo.PrimaryButton,
+					CustomID: EventWaitlist,
+				},
+				discordgo.Button{
+					Label:    EmojiMaybe,
+					Style:    discordgo.PrimaryButton,
+					CustomID: EventUndecided,
+				},
+			},
+		},
 	}
 }
 
@@ -341,9 +369,8 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	embed.Description = timeUntilStr
 
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-		Name: "Times",
-		Value: fmt.Sprintf("UTC: `%s`\nLook at the bottom of this message to see when the event starts in your local time.",
-			UTCTime.Format(timeFormat)),
+		Name:  "Time",
+		Value: fmt.Sprintf("<t:%d:F> (UTC: `%s`)", m.StartsAt.Unix(), UTCTime.Format(timeFormat)),
 	}, &discordgo.MessageEmbedField{
 		Name:  "Reactions usage",
 		Value: "React to mark you as a participant, undecided, or not joining",
@@ -352,13 +379,13 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	participantsEmbed := &discordgo.MessageEmbedField{
 		Name:   "Participants",
 		Inline: false,
-		Value:  "```\n",
+		Value:  "\n",
 	}
 
 	waitingListField := &discordgo.MessageEmbedField{
 		Name:   "🕐 Waiting list",
 		Inline: false,
-		Value:  "```\n",
+		Value:  "\n",
 	}
 
 	addedParticipants := 0
@@ -380,7 +407,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 			if !waitingListHitMax {
 
 				// we hit the max limit so add them to the waiting list instead
-				toAdd := user.Username + "#" + user.Discriminator + "\n"
+				toAdd := user.Mention() + "\n"
 				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(waitingListField.Value) >= 990 {
 					waitingListHitMax = true
 				} else {
@@ -394,7 +421,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		}
 
 		if !participantsHitMax {
-			toAdd := user.Username + "#" + user.Discriminator + "\n"
+			toAdd := user.Mention() + "\n"
 			if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(participantsEmbed.Value) > 990 {
 				participantsHitMax = true
 			} else {
@@ -407,21 +434,21 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	}
 
 	// Finalize the participants field
-	if participantsEmbed.Value == "```\n" {
+	if participantsEmbed.Value == "\n" {
 		participantsEmbed.Value += "None"
 	} else if participantsHitMax {
 		participantsEmbed.Value += fmt.Sprintf("+ %d users", addedParticipants-numParticipantsShown)
 	}
-	participantsEmbed.Value += "```"
+	participantsEmbed.Value += "\n"
 
 	// Finalize the waiting list field
 	waitingListField.Name += " (" + strconv.Itoa(numWaitingList) + ")"
-	if waitingListField.Value == "```\n" {
+	if waitingListField.Value == "\n" {
 		waitingListField.Value += "None"
 	} else if waitingListHitMax {
 		waitingListField.Value += fmt.Sprintf("+ %d users", numWaitingList-numWaitingListShown)
 	}
-	waitingListField.Value += "```"
+	waitingListField.Value += "\n"
 
 	if m.MaxParticipants > 0 {
 		participantsEmbed.Name += fmt.Sprintf(" (%d / %d)", addedParticipants, m.MaxParticipants)
@@ -440,7 +467,18 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 	}
 	embed.Fields = append(embed.Fields, undecidedField)
 
-	_, err := common.BotSession.ChannelMessageEditEmbed(m.ChannelID, m.MessageID, embed)
+	editMessage := discordgo.MessageEdit{
+		ID:      m.MessageID,
+		Channel: m.ChannelID,
+		Embeds:  []*discordgo.MessageEmbed{embed},
+	}
+
+	if m.StartsAt.Before(time.Now()) {
+		// Remove the buttons if event has started
+		editMessage.Components = []discordgo.MessageComponent{}
+	}
+
+	_, err := common.BotSession.ChannelMessageEditComplex(&editMessage)
 	return err
 }
 
@@ -462,7 +500,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 	field := &discordgo.MessageEmbedField{
 		Name:   name,
 		Inline: true,
-		Value:  "```\n",
+		Value:  "\n",
 	}
 
 	count := 0
@@ -474,7 +512,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 
 		if v.JoinState == int16(state) {
 			if !reachedMax {
-				toAdd := user.Username + "#" + user.Discriminator + "\n"
+				toAdd := user.Mention() + "\n"
 				if utf8.RuneCountInString(toAdd)+utf8.RuneCountInString(field.Value) >= 100 {
 					reachedMax = true
 				} else {
@@ -495,7 +533,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 		}
 	}
 
-	field.Value += "```"
+	field.Value += "\n"
 
 	return field
 }
@@ -563,7 +601,6 @@ func (p *Plugin) startEvent(m *models.RSVPSession) error {
 
 	p.sendReminders(m, "Event starting now!", "The event you signed up for: **"+m.Title+"** is starting now!")
 
-	common.BotSession.MessageReactionsRemoveAll(m.ChannelID, m.MessageID)
 	_, err := m.DeleteG(context.Background())
 	return err
 }
@@ -582,13 +619,14 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 			continue
 		}
 
-		err := bot.SendDMEmbed(v.UserID, &discordgo.MessageEmbed{
-			Title:       title,
-			Description: desc,
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: "From the server: " + serverName,
-			},
-		})
+		err := bot.SendDMEmbed(v.UserID,
+			&discordgo.MessageEmbed{
+				Title:       title,
+				Description: desc,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: "From the server: " + serverName,
+				},
+			})
 
 		if err != nil {
 			logger.WithError(err).WithField("guild", m.GuildID).Error("failed sending reminder")
@@ -597,33 +635,42 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 
 }
 
-func (p *Plugin) handleMessageReactionAdd(evt *eventsystem.EventData) {
-	ra := evt.MessageReactionAdd()
-	if ra.UserID == common.BotUser.ID {
+func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
+	ic := evt.InteractionCreate()
+	if ic.Type != discordgo.InteractionMessageComponent || ic.GuildID == 0 || ic.Member == nil || ic.Member.User.ID == common.BotUser.ID {
 		return
 	}
 
-	joining := ra.Emoji.Name == EmojiJoining
-	notJoining := ra.Emoji.Name == EmojiNotJoining
-	maybe := ra.Emoji.Name == EmojiMaybe
-	waitlist := ra.Emoji.Name == EmojiWaitlist
+	eventResponse := ic.MessageComponentData().CustomID
+	joining := eventResponse == EventAccepted
+	notJoining := eventResponse == EventRejected
+	maybe := eventResponse == EventUndecided
+	waitlist := eventResponse == EventWaitlist
 	if !joining && !notJoining && !maybe && !waitlist {
 		return
 	}
 
-	m, err := models.RSVPSessions(models.RSVPSessionWhere.MessageID.EQ(ra.MessageID), qm.Load("RSVPSessionsMessageRSVPParticipants", qm.OrderBy("marked_as_participating_at asc"))).OneG(context.Background())
+	// Pong the interaction
+	err := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredMessageUpdate,
+	})
+	if err != nil {
+		return
+	}
+
+	m, err := models.RSVPSessions(models.RSVPSessionWhere.MessageID.EQ(ic.Message.ID), qm.Load("RSVPSessionsMessageRSVPParticipants", qm.OrderBy("marked_as_participating_at asc"))).OneG(context.Background())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return
 		}
-		logger.WithError(err).WithField("guild", ra.GuildID).Error("failed retrieving RSVP session")
+		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed retrieving RSVP session")
 		return
 	}
 
 	foundExisting := false
 	var participant *models.RSVPParticipant
 	for _, v := range m.R.RSVPSessionsMessageRSVPParticipants {
-		if v.UserID == ra.UserID {
+		if v.UserID == ic.Member.User.ID {
 			participant = v
 			foundExisting = true
 			break
@@ -633,12 +680,10 @@ func (p *Plugin) handleMessageReactionAdd(evt *eventsystem.EventData) {
 	if !foundExisting {
 		participant = &models.RSVPParticipant{
 			RSVPSessionsMessageID: m.MessageID,
-			UserID:                ra.UserID,
-			GuildID:               ra.GuildID,
+			UserID:                ic.Member.User.ID,
+			GuildID:               ic.GuildID,
 		}
 	}
-
-	// common.BotSession.MessageReactionRemove(ra.ChannelID, ra.MessageID, ra.Emoji.APIName(), ra.UserID)
 
 	if joining {
 		if participant.JoinState == int16(ParticipantStateJoining) {
@@ -675,24 +720,8 @@ func (p *Plugin) handleMessageReactionAdd(evt *eventsystem.EventData) {
 	}
 
 	if err != nil {
-		logger.WithError(err).WithField("guild", ra.GuildID).Error("failed updating rsvp participant")
+		logger.WithError(err).WithField("guild", ic.GuildID).Error("failed updating rsvp participant")
 	}
-
-	reactionsToRemove := []string{}
-	if !joining {
-		reactionsToRemove = append(reactionsToRemove, EmojiJoining)
-	}
-	if !notJoining {
-		reactionsToRemove = append(reactionsToRemove, EmojiNotJoining)
-	}
-	if !maybe {
-		reactionsToRemove = append(reactionsToRemove, EmojiMaybe)
-	}
-	if !waitlist {
-		reactionsToRemove = append(reactionsToRemove, EmojiWaitlist)
-	}
-
-	go removeReactions(ra.ChannelID, ra.MessageID, ra.UserID, reactionsToRemove...)
 
 	updatingSessiosMU.Lock()
 	for _, v := range updatingSessionEmbeds {
@@ -712,15 +741,6 @@ func (p *Plugin) handleMessageReactionAdd(evt *eventsystem.EventData) {
 	go s.run()
 	updatingSessiosMU.Unlock()
 
-}
-
-func removeReactions(channelID, messageID, userID int64, emojis ...string) {
-	for _, v := range emojis {
-		err := common.BotSession.MessageReactionRemove(channelID, messageID, v, userID)
-		if err != nil {
-			logger.WithError(err).Error("failed removing reaction")
-		}
-	}
 }
 
 var (

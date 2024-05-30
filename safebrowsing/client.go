@@ -1,13 +1,14 @@
 package safebrowsing
 
 import (
-	"emperror.dev/errors"
 	"encoding/json"
-	"github.com/botlabs-gg/yagpdb/common/backgroundworkers"
-	"github.com/google/safebrowsing"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
+	"github.com/google/safebrowsing"
 )
 
 // CheckString checks a string against google safebrowsing for threats

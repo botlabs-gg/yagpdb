@@ -110,7 +110,7 @@
                         class="rounded-circle" data-lock-picture="img/!logged-user.jpg" />{{end}}
                 </figure>
                 <div class="profile-info" data-lock-name="{{.User.Username}}" data-lock-email="">
-                    <span class="name">{{.User.Username}}</span>
+                    <span class="name">{{or .User.Globalname .User.Username}}</span>
                     <span class="role">{{adjective | title}}</span>
                 </div>
 
@@ -185,6 +185,28 @@
                         </a>
                         <ul class="nav nav-children">
                             {{range (index .SidebarItems "Core")}}
+                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
+                            {{end}}
+                        </ul>
+                    </li>
+                     <li class="nav-parent">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-closed-captioning" aria-hidden="true"></i>
+                            <span>Custom Commands</span>
+                        </a>
+                        <ul class="nav nav-children">
+                            {{range (index .SidebarItems "CustomCommands")}}
+                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
+                            {{end}}
+                        </ul>
+                    </li>
+                    <li class="nav-parent">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-user-shield" aria-hidden="true"></i>
+                            <span>Moderation</span>
+                        </a>
+                        <ul class="nav nav-children">
+                            {{range (index .SidebarItems "Moderation")}}
                             {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
                             {{end}}
                         </ul>
@@ -315,7 +337,7 @@
         {{range $index, $element := .ManagedGuilds -}}{{if not $element.Connected -}}
         <li>
             <a
-                href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=applications.commands%20bot&permissions=2146827775&guild_id={{$element.ID}}&response_type=code&redirect_uri={{joinStr "" $baseURL "/manage"}}"><i
+                href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=applications.commands%20bot&permissions=1516122532343&guild_id={{$element.ID}}&response_type=code&redirect_uri={{joinStr "" $baseURL "/manage"}}"><i
                     class="fas fa-plus"></i>{{$element.Name}}</a>
         </li>
         {{end}}{{end}}

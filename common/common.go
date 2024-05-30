@@ -15,17 +15,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/common/cacheset"
+	"github.com/botlabs-gg/yagpdb/v2/common/cacheset"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
-	"github.com/jonas747/discordgo/v2"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	boilv4 "github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -105,7 +104,8 @@ func Init() error {
 	logger.Info("Retrieving bot info....")
 	BotUser, err = BotSession.UserMe()
 	if err != nil {
-		panic(fmt.Sprintf("%#+v", err))
+		logrus.WithError(err).Error("Failed getting bot info")
+		panic(err)
 	}
 
 	if !BotUser.Bot {
@@ -118,7 +118,8 @@ func Init() error {
 
 	app, err := BotSession.ApplicationMe()
 	if err != nil {
-		panic(fmt.Sprintf("%#+v", err))
+		logrus.WithError(err).Error("Failed getting bot application")
+		panic(err)
 	}
 
 	BotApplication = app
@@ -278,7 +279,6 @@ func connectDB(host, user, pass, dbName string, maxConns int) error {
 	PQ = db.DB()
 	SQLX = sqlx.NewDb(PQ, "postgres")
 	boil.SetDB(PQ)
-	boilv4.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(maxConns)
 		PQ.SetMaxIdleConns(maxConns)

@@ -150,6 +150,7 @@ function showAlerts(alertsJson) {
 		if (alert.Style === "success") {
 			notice = new PNotify({
 				title: alert.Message,
+				text: "(Click to dismiss)",
 				type: 'success',
 				addclass: 'stack-bar-top click-2-close',
 				stack: stack_bar_top,
@@ -163,7 +164,7 @@ function showAlerts(alertsJson) {
 		} else if (alert.Style === "danger") {
 			notice = new PNotify({
 				title: alert.Message,
-				text: "Read the docs and contact support if you don't know what went wrong.",
+				text: "Read the docs and contact support if you don't know what went wrong.\n(Click to dismiss)",
 				type: 'error',
 				addclass: 'stack-bar-top click-2-close',
 				stack: stack_bar_top,
@@ -241,6 +242,16 @@ function addAlert(kind, msg, id) {
 	).appendTo("#alerts");
 }
 
+function addAlertHTML(kind, msg, id) {
+	const alert = $(`<div/>`);
+	if (id !== undefined) alert.prop("id", id)
+	alert.addClass("row").append(
+		$("<div/>").addClass("col-lg-12").append(
+			$("<div/>").addClass("alert alert-" + kind).html(msg)
+		)
+	).appendTo("#alerts");
+}
+
 function clearAlerts() {
 	$("#alerts").empty();
 }
@@ -279,25 +290,6 @@ function addListeners() {
 
 		navigateToAnchor($.attr(this, "href"));
 	})
-
-
-	$(document).on('click', '.btn-add', function (e) {
-		e.preventDefault();
-
-		var currentEntry = $(this).parent().parent(),
-			newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
-
-		newEntry.find('input, textarea').val('');
-		newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
-			.removeClass('btn-add').addClass('btn-remove')
-			.removeClass('btn-success').addClass('btn-danger')
-			.html('<i class="fas fa-minus"></i>');
-	}).on('click', '.btn-remove', function (e) {
-		$(this).parents('.entry:first').remove();
-
-		e.preventDefault();
-		return false;
-	});
 
 	$(document).on('click', '.modal-dismiss', function (e) {
 		e.preventDefault();
@@ -487,7 +479,7 @@ function formSubmissionEvents() {
 		// console.log("aaaaa", evt, evt.preventDefault);
 		if (!confirm("Are you sure you want to do this?")) {
 			evt.preventDefault(true);
-			evt.stopPropagation();
+			evt.stopImmediatePropagation();
 		}
 		// alert("aaa")
 	}
@@ -534,13 +526,13 @@ function formSubmissionEvents() {
 			if (title !== undefined) {
 				if (!confirm("Deleting " + title + ". Are you sure you want to do this?")) {
 					event.preventDefault(true);
-					event.stopPropagation();
+					event.stopImmediatePropagation();
 					return;
 				}
 			} else {
 				if (!confirm("Are you sure you want to do this?")) {
 					event.preventDefault(true);
-					event.stopPropagation();
+					event.stopImmediatePropagation();
 					return;
 				}
 			}
@@ -585,6 +577,7 @@ function submitForm(form, url, alertsOnly) {
 	}
 
 	navigate(url, "POST", serialized, false, true, alertsOnly, function () {
+		hideUnsavedChangesPopup($(form)[0])
 		if (currentTab) {
 			$(".tabs a[href='" + currentTab + "']").tab("show");
 		}

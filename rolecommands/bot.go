@@ -4,17 +4,17 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	schEvtsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/rolecommands/models"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEvtsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -48,10 +48,10 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"c"},
 		Description:         "Set up a role menu.",
 		LongDescription:     "Specify a message with -m to use an existing message instead of having the bot make one\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Group", Type: dcmd.String},
+			{Name: "Group", Help: "The role command group", Type: dcmd.String, AutocompleteFunc: roleGroupAutocomplete},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},
@@ -68,7 +68,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"rm"},
 		Description:         "Removes a rolemenu from a message.",
 		LongDescription:     "The message won't be deleted and the bot will not do anything with reactions on that message\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -82,7 +82,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"u"},
 		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
 		LongDescription:     "\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -100,7 +100,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"reset"},
 		Description:         "Removes all reactions on the specified menu message and re-adds them.",
 		LongDescription:     "Can be used to fix the order after updating it.\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -114,7 +114,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"edit"},
 		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards.",
 		LongDescription:     "\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -128,7 +128,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"finish"},
 		Description:         "Marks the menu as done.",
 		LongDescription:     "\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -137,16 +137,15 @@ func (p *Plugin) AddCommands() {
 	}
 
 	cmdListGroups := &commands.YAGCommand{
-		Name: "Listgroups",
-		CmdCategory: categoryRoleMenu,
-		Aliases: []string{"list", "groups"},
-		Description: "Lists all role groups",
+		Name:                "Listgroups",
+		CmdCategory:         categoryRoleMenu,
+		Aliases:             []string{"list", "groups"},
+		Description:         "Lists all role groups",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
-		RunFunc: cmdFuncRoleMenuListGroups,
+		RunFunc:             cmdFuncRoleMenuListGroups,
 	}
 
-	menuContainer, t := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
-	t.SetEnabledInThreads(false)
+	menuContainer, _ := commands.CommandSystem.Root.Sub("RoleMenu", "rmenu")
 	menuContainer.Description = "Command for managing role menus"
 
 	const notFoundMessage = "Unknown rolemenu command, if you've used this before it was recently revamped.\nTry almost the same command but `rolemenu create ...` and `rolemenu update ...` instead (replace '...' with the rest of the command).\nSee `help rolemenu` for all rolemenu commands."
@@ -226,6 +225,7 @@ func HumanizeAssignError(guild *dstate.GuildSet, err error) (string, error) {
 	}
 
 	if code, msg := common.DiscordError(err); code != 0 {
+		logger.Infof("FAILED assigning role WITH CODE %d", code)
 		if code == discordgo.ErrCodeMissingPermissions {
 			return "The bot is below the role, contact the server admin", err
 		} else if code == discordgo.ErrCodeMissingAccess {

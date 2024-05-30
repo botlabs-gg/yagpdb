@@ -17,7 +17,7 @@ YAGPDB_PQPASSWORD="postgres password"
 YAGPDB_PQDB="yagpdb"
 YAGPDB_REDIS="redis address"
 
-# Set to yes or anything really to run in testing mode (cooldowns, verbose logging, laod templates from plugin folders etc..)
+# Set to yes or anything really to run in testing mode (cooldowns, verbose logging, load templates from plugin folders etc..)
 YAGPDB_TESTING=""
 
 # This is the max amount of concurrent requests the bot can send to discord
@@ -70,6 +70,9 @@ YAGPDB_DISABLE_REQUEST_LOGGING=""
 # Aylien
 YAGPDB_AYLIENAPPID="aylien app id here"
 YAGPDB_AYLIENAPPKEY="aylien app key here"
+
+# Owlbot
+YAGPDB_OWLBOT_TOKEN=
 
 # Reddit
 # You'll need to get a permanent refresh token using a script or something, i should probably make a easy way to do it but eh...

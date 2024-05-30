@@ -2,7 +2,7 @@
 
 {{template "cp_head" .}}
 <header class="page-header">
-    <h2>Core bot settings</h2>
+    <h2>Control panel access</h2>
 </header>
 
 
@@ -18,17 +18,14 @@
                 <div class="card-body">
                     <div class="form-group">
                         <label>Allow people with the following roles <code>read</code> access the control panel
-                            <b>(beta)</b></label><br>
-                        <select class="multiselect" name="AllowedReadOnlyRoles" data-plugin-multiselect
+                            </label><br>
+                            <select class="multiselect" name="AllowedReadOnlyRoles" data-plugin-multiselect
                             multiple="multiple">
                             {{roleOptionsMulti .ActiveGuild.Roles nil .CoreConfig.AllowedReadOnlyRoles}}
                         </select>
                         <p class="help-block">Members with <code>Manage Server</code> perms can always access the
                             control panel</p>
                     </div>
-
-                    {{checkbox "AllowAllMembersReadOnly" "AllowAllMembersReadOnly" "Allow all members of your server read only access" .CoreConfig.AllowAllMembersReadOnly}}
-                    {{checkbox "AllowNonMembersReadOnly" "AllowNonMembersReadOnly" "Allow users not part of your server, including users not logged in, read only access" .CoreConfig.AllowNonMembersReadOnly}}
 
                     <hr />
 

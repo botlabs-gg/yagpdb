@@ -10,49 +10,58 @@
 <form method="post" action="/manage/{{.ActiveGuild.ID}}/autorole" data-async-form>
     <div class="row">
         <div class="col-lg-12">
-            <div class="card {{if ne .Autorole.Role 0}} card-featured card-featured-success{{end}}">
-                <div class="card-body">
-                    <p><b>Changes may take up to a minute before they have any effect</b></p>
-                    <div class="form-group">
-                        <label for="autorole-role">Automatically assign members this role</label>
-                        <select id="autorole-role" class="form-control" name="Role">
-                            {{roleOptions .ActiveGuild.Roles .HighestRole .Autorole.Role "None (disabled)"}}
-                        </select>
+            <fieldset {{if .FullScanActive}}disabled{{end}}>
+                <div class="card {{if ne .Autorole.Role 0}} card-featured card-featured-success{{end}}">
+                    <div class="card-body">
+                        {{if .FullScanActive}}<p class="text-danger">Form is disabled because full scan is running. To update the Autorole config, cancel the Full scan.</p>{{end}}
+                        <p><b>Changes may take up to a minute before they have any effect</b></p>
+                        <div class="form-group">
+                            <label for="autorole-role">Automatically assign members this role</label>
+                            <select id="autorole-role" class="form-control" name="Role">
+                                {{roleOptions .ActiveGuild.Roles .HighestRole .Autorole.Role "None (disabled)"}}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="autorole-duration">Minutes of membership required for role (<b>Disclaimer:</b> Will
+                                not work if you have it set to only give roles on join)</label>
+                            <input type="number" min="0" class="form-control" id="autorole-duration" name="RequiredDuration"
+                                placeholder="" value="{{if .Autorole.OnlyOnJoin}}0{{else}}{{.Autorole.RequiredDuration}}{{end}}" {{if .Autorole.OnlyOnJoin}}disabled{{end}}>
+                        </div>
+                        <div class="form-group">
+                            <label>Require one of these roles to be present on the member</label><br />
+                            <select name="RequiredRoles" class="multiselect form-control" multiple="multiple"
+                                id="require-roles" data-plugin-multiselect>
+                                {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.RequiredRoles}}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ignore people with the following roles</label><br />
+                            <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple"
+                                id="ignore-roles" data-plugin-multiselect>
+                                {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.IgnoreRoles}}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <h4>Notice:</h4>
+                            <p>
+                            Automatically adding any role on join bypasses Discord's protections such as
+                            <a
+                                href="https://support.discord.com/hc/en-us/articles/216679607-What-are-Verification-levels-" target="_blank"><b>Verification Levels</b></a>
+                            and <a href="https://support.discord.com/hc/en-us/articles/1500000466882-Rules-Screening-FAQ" target="_blank"><b>Rule Screening</b></a>.
+                            </p>
+                            {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards. (<b>Note:</b> Above mentioned conditions will be checked before assigning the role)` .Autorole.OnlyOnJoin `onchange="toggleOnlyOnJoin(this)"`}}
+                        </div>
+                        <div class="form-group">
+                            {{checkbox "AssignRoleAfterScreening" "AssignRoleAfterScreening" `Only assign the role after a member has completed Discord's Membership Screening` .Autorole.AssignRoleAfterScreening}}
+                        </div>
+                        <div class="form-group">
+                            {{checkbox "IgnoreBots" "IgnoreBots" `Ignore bots` .Autorole.IgnoreBots}}
+                        <div>
+                        <br/>
+                        <button type="submit" class="btn btn-success btn-lg btn-block">Save</button>
                     </div>
-                    <div class="form-group">
-                        <label for="autorole-duration">Minutes of membership required for role (<b>Disclaimer:</b> Will
-                            not work if you have it set to only give roles on join)</label>
-                        <input type="number" min="0" class="form-control" id="autorole-duration" name="RequiredDuration"
-                            placeholder="" value="{{if .Autorole.OnlyOnJoin}}0{{else}}{{.Autorole.RequiredDuration}}{{end}}" {{if .Autorole.OnlyOnJoin}}disabled{{end}}>
-                    </div>
-                    <div class="form-group">
-                        <label>Require one of these roles to be present on the member</label><br />
-                        <select name="RequiredRoles" class="multiselect form-control" multiple="multiple"
-                            id="require-roles" data-plugin-multiselect>
-                            {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.RequiredRoles}}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Ignore people with the following roles</label><br />
-                        <select name="IgnoreRoles" class="multiselect form-control" multiple="multiple"
-                            id="ignore-roles" data-plugin-multiselect>
-                            {{roleOptionsMulti .ActiveGuild.Roles nil .Autorole.IgnoreRoles}}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        {{checkbox "OnlyOnJoin" "OnlyOnJoin" `Only assign the role when they join, do not give it back if it's removed from them afterwards. (<b>Note:</b> Above mentioned conditions will be checked before assigning the role)` .Autorole.OnlyOnJoin `onchange="toggleOnlyOnJoin(this)"`}}
-                    </div>
-                    <div class="form-group">
-                        {{checkbox "AssignRoleAfterScreening" "AssignRoleAfterScreening" `Only assign the role after a member has completed Discord's Membership Screening` .Autorole.AssignRoleAfterScreening}}
-                    </div>
-
-                    <p>Currently assigning role to <code>{{.Processing}}</code> members. ETA:
-                        <code>{{.ProcessingETA}}</code> minutes (May take up to a minute before the bot starts assigning
-                        roles).<br>
-                        <b>To stop, set the role to "None".</b></p>
-                    <button type="submit" class="btn btn-success btn-lg btn-block">Save</button>
                 </div>
-            </div>
+            </fieldset>
             <!-- /.panel -->
         </div>
         <!-- /.col-lg-12 -->
@@ -68,16 +77,26 @@
                     <h4 class="card-title">Perform a retro-active full scan</h4>
                 </header>
                 <div class="card-body">
-                    <p>YAGPDB already performs a scan of your server every minute, but this only includes online/cached
-                        members, it would take up too many resources to keep absolutely all members in the state.</p>
-                    <p>Therefore you can use this to perform a full scan of your server, this may become an automatic
-                        premium option at some point.</p>
-                    <p>You will have to wait a couple minutes in-between each completed scan, to cancel this you can set
-                        the role to "None" and it should stop within a minute.</p>
-                    {{if .FullScanActive}}<p class="text-danger">Already performing a full scan</p>
+                    <p>This feature scans the server completely, and assigns the autorole to the eligible members (if they don't have the role already).</p>
+                    <p>This is a resource intensive process, and the time taken is directly proportional to the number of members in the server.</p>
+                    <p>The form above to update the Autorole configuration will be disabled when the full scan is active.{{if .FullScanActive}} To cancel active full scan, use the button shown below (Cancelling full scan may take upto 2 minutes).{{end}}</p>
+                    {{if .FullScanActive}}
+                        <div class="text-danger"><b>Already performing a full scan</b></div>
+                        <p>
+                            <span>Current Status: {{.FullScanStatus}}</span>
+                            {{if .AssignedRoles}}
+                                <span style="margin-left: 1rem;">Assigned roles to <code>{{.AssignedRoles}} members</code></span>
+                            {{end}}
+                        </p>
+                        {{if ne .FullScanStatus "Cancelled"}}
+                            <button type="submit" class="btn btn-danger btn-lg btn-block"
+                                formaction="/manage/{{.ActiveGuild.ID}}/autorole/fullscan/cancel">Cancel currently active full scan</button>
+                        {{end}}
                     {{else if eq .Autorole.Role 0}}<p class="text-danger">No active autorole role set</p>
-                    {{else}}<button type="submit" class="btn btn-warning btn-lg btn-block"
-                        data-async-form-alertsonly>Perform full scan.</button>{{end}}
+                    {{else}}
+                        <button type="submit" class="btn btn-warning btn-lg btn-block"
+                            data-async-form-alertsonly>Perform full scan</button>
+                    {{end}}
                 </div>
             </div>
             <!-- /.panel -->

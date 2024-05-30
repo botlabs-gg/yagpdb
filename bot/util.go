@@ -8,11 +8,11 @@ import (
 
 	"emperror.dev/errors"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/bwmarrin/snowflake"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
 )
@@ -62,6 +62,15 @@ func SendDMEmbed(user int64, embed *discordgo.MessageEmbed) error {
 	return err
 }
 
+func SendDMEmbedList(user int64, embeds []*discordgo.MessageEmbed) error {
+	channel, err := common.BotSession.UserChannelCreate(user)
+	if err != nil {
+		return err
+	}
+	_, err = common.BotSession.ChannelMessageSendEmbedList(channel.ID, embeds)
+	return err
+}
+
 var (
 	ErrStartingUp      = errors.New("Starting up, caches are being filled...")
 	ErrGuildNotFound   = errors.New("Guild not found")
@@ -95,7 +104,7 @@ func AdminOrPermMS(guildID int64, channelID int64, ms *dstate.MemberState, neede
 		return true, nil
 	}
 
-	if perms&discordgo.PermissionManageServer != 0 || perms&discordgo.PermissionAdministrator != 0 {
+	if perms&discordgo.PermissionManageGuild != 0 || perms&discordgo.PermissionAdministrator != 0 {
 		return true, nil
 	}
 
@@ -108,19 +117,29 @@ func SnowflakeToTime(i int64) time.Time {
 	return t
 }
 
-func SetStatus(streaming, status string) {
-	if status == "" {
-		status = "v" + common.VERSION + " :)"
+func SetStatus(activityType, statusType, statusText, streamingUrl string) {
+	if statusText == "" {
+		statusText = common.VERSION + " :)"
 	}
+	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_activity_type", activityType))
+	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_type", statusType))
+	err3 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_text", statusText))
+	err4 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming_url", streamingUrl))
 
-	err1 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_streaming", streaming))
-	err2 := common.RedisPool.Do(radix.Cmd(nil, "SET", "status_name", status))
 	if err1 != nil {
 		logger.WithError(err1).Error("failed setting bot status in redis")
 	}
 
 	if err2 != nil {
 		logger.WithError(err2).Error("failed setting bot status in redis")
+	}
+
+	if err3 != nil {
+		logger.WithError(err3).Error("failed setting bot status in redis")
+	}
+
+	if err4 != nil {
+		logger.WithError(err4).Error("failed setting bot status in redis")
 	}
 
 	pubsub.Publish("bot_status_changed", -1, nil)
@@ -189,7 +208,7 @@ func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
 }
 
 func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
-	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel)
 	if !hasPerms {
 		return false, nil, err
 	}
@@ -200,7 +219,7 @@ func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp
 }
 
 func SendMessageGS(gs *dstate.GuildSet, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
-	hasPerms, err := BotHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages)
+	hasPerms, err := BotHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel)
 	if !hasPerms {
 		return false, nil, err
 	}
@@ -208,25 +227,24 @@ func SendMessageGS(gs *dstate.GuildSet, channelID int64, msg string) (permsOK bo
 	resp, err = common.BotSession.ChannelMessageSend(channelID, msg)
 	return true, resp, err
 }
-
-func SendMessageEmbed(guildID int64, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
-	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks)
+func SendMessageEmbed(guildID int64, channelID int64, embed *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
+	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel|discordgo.PermissionEmbedLinks)
 	if !hasPerms {
 		return false, nil, err
 	}
 
-	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, msg)
+	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, embed)
 	permsOK = true
 	return
 }
 
-func SendMessageEmbedGS(gs *dstate.GuildSet, channelID int64, msg *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
-	hasPerms, err := BotHasPermissionGS(gs, channelID, discordgo.PermissionSendMessages|discordgo.PermissionReadMessages|discordgo.PermissionEmbedLinks)
+func SendMessageEmbedList(guildID int64, channelID int64, embeds []*discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
+	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel|discordgo.PermissionEmbedLinks)
 	if !hasPerms {
 		return false, nil, err
 	}
 
-	resp, err = common.BotSession.ChannelMessageSendEmbed(channelID, msg)
+	resp, err = common.BotSession.ChannelMessageSendEmbedList(channelID, embeds)
 	permsOK = true
 	return
 }
@@ -255,28 +273,69 @@ func NodeID() string {
 	return NodeConn.GetIDLock()
 }
 
-// RefreshStatus updates the provided sessions status according to the current status set
-func RefreshStatus(session *discordgo.Session) {
-	var streamingURL string
-	var status string
-	err1 := common.RedisPool.Do(radix.Cmd(&streamingURL, "GET", "status_streaming"))
-	err2 := common.RedisPool.Do(radix.Cmd(&status, "GET", "status_name"))
-	if err1 != nil {
-		logger.WithError(err1).Error("failed retrieiving bot streaming status")
+// ParseActivityType parses the activity type from a string
+func ParseActivityType(activityType string) (discordgo.ActivityType, error) {
+	switch strings.ToLower(activityType) {
+	case "playing":
+		return discordgo.ActivityTypePlaying, nil
+	case "streaming":
+		return discordgo.ActivityTypeStreaming, nil
+	case "listening":
+		return discordgo.ActivityTypeListening, nil
+	case "watching":
+		return discordgo.ActivityTypeWatching, nil
+	case "custom":
+		return discordgo.ActivityTypeCustom, nil
+	case "competing":
+		return discordgo.ActivityTypeCompeting, nil
+	default:
+		return 0, errors.New("Invalid activity type")
 	}
-	if err2 != nil {
-		logger.WithError(err2).Error("failed retrieiving bot status")
-	}
-
-	if streamingURL != "" {
-		session.UpdateStreamingStatus(0, status, streamingURL)
-	} else {
-		session.UpdateStatus(0, status)
-	}
-
 }
 
-// IsMemberAbove returns wether ms1 is above ms2 in terms of roles (e.g the highest role of ms1 is higher than the highest role of ms2)
+// RefreshStatus updates the provided sessions status according to the current status set
+func RefreshStatus(session *discordgo.Session) {
+	var activityTypeStr, statusTypeStr, statusText, streamingUrl string
+	//var activityType discordgo.ActivityType
+	var statusType discordgo.Status
+	err1 := common.RedisPool.Do(radix.Cmd(&activityTypeStr, "GET", "status_activity_type"))
+	err2 := common.RedisPool.Do(radix.Cmd(&statusTypeStr, "GET", "status_type"))
+	err3 := common.RedisPool.Do(radix.Cmd(&statusText, "GET", "status_text"))
+	err4 := common.RedisPool.Do(radix.Cmd(&streamingUrl, "GET", "status_streaming_url"))
+
+	if err1 != nil {
+		logger.WithError(err1).Error("failed retrieving bot activity type")
+	}
+	if err2 != nil {
+		logger.WithError(err2).Error("failed retrieving bot status type")
+	}
+	if err3 != nil {
+		logger.WithError(err3).Error("failed retrieving bot status text")
+	}
+	if err4 != nil {
+		logger.WithError(err4).Error("failed retrieving bot streaming url")
+	}
+	switch statusTypeStr {
+	case "online":
+		statusType = discordgo.StatusOnline
+	case "idle":
+		statusType = discordgo.StatusIdle
+	case "dnd":
+		statusType = discordgo.StatusDoNotDisturb
+	case "offline":
+		statusType = discordgo.StatusInvisible
+	default:
+		statusType = discordgo.StatusOnline
+	}
+	activityType, err5 := ParseActivityType(activityTypeStr)
+	if err5 != nil {
+		logger.WithError(err5).Error("failed parsing activity type, exiting RefreshStatus")
+		return
+	}
+	session.UpdateStatus(activityType, statusType, statusText, streamingUrl)
+}
+
+// IsMemberAbove returns whether ms1 is above ms2 in terms of roles (e.g the highest role of ms1 is higher than the highest role of ms2)
 // assumes gs is locked, otherwise race conditions will occur
 func IsMemberAbove(gs *dstate.GuildSet, ms1 *dstate.MemberState, ms2 *dstate.MemberState) bool {
 	if ms1.User.ID == gs.OwnerID {

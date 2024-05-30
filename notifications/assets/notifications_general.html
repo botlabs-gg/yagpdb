@@ -42,11 +42,11 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Message</label>
+                                <label for="responses">Message (<span class="cc-length-counter">x</span>/5000)</label>
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .NotifyConfig.JoinServerMsgs}}
                                 <div class="entry input-group input-group-sm">
-                                    <textarea rows="5" class="form-control" name="join_server_msgs">{{.}}</textarea>
+                                    <textarea rows="5" class="form-control" name="join_server_msgs" oninput="onCCChanged(this)">{{.}}</textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -55,7 +55,7 @@
                                 </div>
                                 {{else}}
                                 <div class="entry input-group input-group-sm">
-                                    <textarea rows="5" class="form-control" name="join_server_msgs"></textarea>
+                                    <textarea rows="5" class="form-control" name="join_server_msgs" oninput="onCCChanged(this)"></textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -83,11 +83,11 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Message</label>
+                                <label for="responses">Message (<span class="cc-length-counter">x</span>/5000)</label>
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .NotifyConfig.LeaveMsgs}}
                                 <div class="entry input-group input-group-sm">
-                                    <textarea rows="5" class="form-control" name="leave_msgs">{{.}}</textarea>
+                                    <textarea rows="5" class="form-control" name="leave_msgs" oninput="onCCChanged(this)">{{.}}</textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -96,7 +96,7 @@
                                 </div>
                                 {{else}}
                                 <div class="entry input-group input-group-sm">
-                                    <textarea rows="5" class="form-control" name="leave_msgs"></textarea>
+                                    <textarea rows="5" class="form-control" name="leave_msgs" oninput="onCCChanged(this)"></textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -121,13 +121,13 @@
                         </header>
                         <div class="card-body">
                             <div class="form-group">
-                                <label>Message</label>
+                                <label for="responses">Message (<span class="cc-length-counter">x</span>/5000)</label>
                                 <textarea rows="5" class="form-control"
-                                    name="join_dm_msg">{{.NotifyConfig.JoinDMMsg}}</textarea>
+                                    name="join_dm_msg" oninput="onCCChanged(this)">{{.NotifyConfig.JoinDMMsg}}</textarea>
                                 <p class="help-block">Available template data is {{template "template_helper_user"}} and
-                                    {{template "template_helper_guild"}}</p>
-                            </div>
+                                {{template "template_helper_guild"}}</p>
                         </div>
+                    </div>
                     </section>
                 </div>
                 <div class="col-lg-6">
@@ -159,6 +159,31 @@
     <!-- /.row -->
 
 </form>
+
+<script type="text/javascript">
+    function onCCChanged(textArea) {
+        var textAreas = textArea.parentElement.parentElement.querySelectorAll("textarea")
+
+        var combinedLength = 0;
+        textAreas.forEach(function (elem) {
+            combinedLength += elem.value.length;
+            // The data received on the backend contains "\r\n" while it is simply "\n" on the JS side.
+            // Adjust for this discrepancy by double-counting newline characters.
+            const newlines = elem.value.match(/\n/g);
+            if (newlines) combinedLength += newlines.length;
+        })
+
+        var display = textArea.parentElement.parentElement.querySelector(".cc-length-counter")
+        display.textContent = combinedLength
+
+        if (combinedLength > 5000) {
+            display.classList.add("text-danger");
+        } else {
+            display.classList.remove("text-danger");
+        }
+    }
+    
+</script>
 
 {{template "cp_footer" .}}
 

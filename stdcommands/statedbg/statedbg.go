@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/stdcommands/util"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 )
 
 func Commands() *dcmd.Container {
 	container, _ := commands.CommandSystem.Root.Sub("state")
-	container.Description = "utilities for debugging state stuff"
+	container.Description = "utilities for debugging state stuff. Bot Admin Only"
 	container.AddMidlewares(util.RequireBotAdmin)
 	container.AddCommand(getGuild, getGuild.GetTrigger())
 	container.AddCommand(getMember, getMember.GetTrigger())
@@ -27,9 +27,9 @@ func Commands() *dcmd.Container {
 var getGuild = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "guild",
-	Description:  "Responds with state debug info",
+	Description:  "Responds with state debug info. Bot Owner Only",
 	HideFromHelp: true,
-	RunFunc:      cmdFuncGetGuild,
+	RunFunc:      util.RequireOwner(cmdFuncGetGuild),
 }
 
 func cmdFuncGetGuild(data *dcmd.Data) (interface{}, error) {
@@ -52,7 +52,7 @@ func cmdFuncGetGuild(data *dcmd.Data) (interface{}, error) {
 var getMember = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "member",
-	Description: "Responds with state debug info",
+	Description: "Responds with state debug info. Bot Owner Only",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Target", Type: dcmd.BigInt},
 	},
@@ -61,7 +61,7 @@ var getMember = &commands.YAGCommand{
 	},
 	RequiredArgs: 1,
 	HideFromHelp: true,
-	RunFunc:      cmdFuncGetMember,
+	RunFunc:     util.RequireOwner(cmdFuncGetMember),
 }
 
 func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
@@ -93,9 +93,9 @@ func cmdFuncGetMember(data *dcmd.Data) (interface{}, error) {
 var botMember = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "botmember",
-	Description:  "Responds with state debug info",
+	Description:  "Responds with state debug info. Bot Owner Only",
 	HideFromHelp: true,
-	RunFunc:      cmdFuncBotMember,
+	RunFunc:      util.RequireOwner(cmdFuncBotMember),
 }
 
 func cmdFuncBotMember(data *dcmd.Data) (interface{}, error) {

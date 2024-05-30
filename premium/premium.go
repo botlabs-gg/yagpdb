@@ -4,12 +4,12 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/config"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	schEventsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -137,11 +137,6 @@ func IsGuildPremium(guildID int64) (bool, error) {
 	}
 
 	return featureflags.GuildHasFlag(guildID, FeatureFlagPremiumPlus)
-}
-
-// This function is deprecated and is exactly the same as calling IsguildPremium
-func IsGuildPremiumCached(guildID int64) (bool, error) {
-	return IsGuildPremium(guildID)
 }
 
 func PremiumProvidedBy(guildID int64) (int64, error) {

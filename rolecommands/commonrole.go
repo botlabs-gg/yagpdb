@@ -4,18 +4,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	schEvtsModels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/rolecommands/models"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	schEvtsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
 	"github.com/tidwall/buntdb"
-	v3_qm "github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // CommonRoleSettings helps the bot logic by abstracting away the type of the role settings
-// Right now its only abstracting away wether its a menu connected to a rolegroup or a standalone menu
+// Right now it's only abstracting away whether its a menu connected to a rolegroup or a standalone menu
 type CommonRoleSettings struct {
 	// Either the menu or group is provided, we use the settings from one of them
 	ParentMenu  *models.RoleMenu
@@ -252,7 +252,7 @@ func (c *CommonRoleSettings) ParentCanRole(ctx context.Context, ms *dstate.Membe
 
 // AssignRole attempts to assign the given role command, returns an error if the role does not exists
 // or is unable to receie said role
-/// It also calls c.CanRole to check if we can assign it beforehand
+// It also calls c.CanRole to check if we can assign it beforehand
 func (c *CommonRoleSettings) CheckToggleRole(ctx context.Context, ms *dstate.MemberState) (gaveRole bool, err error) {
 	if can, err := c.CanRole(ctx, ms); !can {
 		return false, err
@@ -340,7 +340,7 @@ func (c *CommonRoleSettings) MaybeScheduleRoleRemoval(ctx context.Context, ms *d
 	}
 
 	// remove existing role removal events for this role
-	_, err := schEvtsModels.ScheduledEvents(v3_qm.Where("event_name='remove_member_role' AND  guild_id = ? AND (data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ?", ms.GuildID, ms.User.ID, c.RoleId)).DeleteAll(ctx, common.PQ)
+	_, err := schEvtsModels.ScheduledEvents(qm.Where("event_name='remove_member_role' AND  guild_id = ? AND (data->>'user_id')::bigint = ? AND (data->>'role_id')::bigint = ?", ms.GuildID, ms.User.ID, c.RoleId)).DeleteAll(ctx, common.PQ)
 	if err != nil {
 		return err
 	}

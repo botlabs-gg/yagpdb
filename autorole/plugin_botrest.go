@@ -5,9 +5,10 @@ import (
 	"strconv"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/internalapi"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/internalapi"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 	"goji.io"
 	"goji.io/pat"
@@ -31,14 +32,20 @@ func botRestHandleScanFullServer(w http.ResponseWriter, r *http.Request) {
 
 	logger.WithField("guild", parsedGID).Info("autorole doing a full scan")
 	session := bot.ShardManager.SessionForGuild(parsedGID)
-	session.GatewayManager.RequestGuildMembers(parsedGID, "", 0)
+	query := ""
+	session.GatewayManager.RequestGuildMembersComplex(&discordgo.RequestGuildMembersData{
+		GuildID: parsedGID,
+		Nonce:   strconv.Itoa(int(parsedGID)),
+		Limit:   0,
+		Query:   &query,
+	})
 
 	internalapi.ServeJson(w, r, "ok")
 }
 
 func botRestPostFullScan(guildID int64) error {
 	var resp string
-	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", RedisKeyGuildChunkProecssing(guildID), "1", "EX", "10", "NX"))
+	err := common.RedisPool.Do(radix.Cmd(&resp, "SET", RedisKeyFullScanStatus(guildID), strconv.Itoa(FullScanStarted), "EX", "10", "NX"))
 	if err != nil {
 		return errors.WithMessage(err, "r.SET")
 	}

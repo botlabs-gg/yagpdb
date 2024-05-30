@@ -3,11 +3,11 @@ package cah
 import (
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/jonas747/cardsagainstdiscord/v2"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/lib/cardsagainstdiscord"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,14 +32,14 @@ func (p *Plugin) AddCommands() {
 			_, err := p.Manager.CreateGame(data.GuildData.GS.ID, data.GuildData.CS.ID, data.Author.ID, data.Author.Username, voteMode, packs...)
 			if err == nil {
 				logrus.Info("[cah] Created a new game in ", data.GuildData.CS.ID, ":", data.GuildData.GS.ID)
-				return "", nil
+				return nil, nil
 			}
 
 			if cahErr := cardsagainstdiscord.HumanizeError(err); cahErr != "" {
 				return cahErr, nil
 			}
 
-			return "", err
+			return nil, err
 		},
 	}
 
@@ -107,7 +107,7 @@ func (p *Plugin) AddCommands() {
 
 	container, _ := commands.CommandSystem.Root.Sub("cah")
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
-	container.Description = "Playt cards against humanity!"
+	container.Description = "Play cards against humanity!"
 
 	container.AddCommand(cmdCreate, cmdCreate.GetTrigger())
 	container.AddCommand(cmdEnd, cmdEnd.GetTrigger())

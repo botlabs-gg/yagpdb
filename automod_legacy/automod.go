@@ -2,10 +2,10 @@ package automod_legacy
 
 import (
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})
@@ -29,13 +29,13 @@ func RegisterPlugin() {
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Basic Automod",
+		Name:     "Basic Automoderator",
 		SysName:  "legacy_automod",
 		Category: common.PluginCategoryModeration,
 	}
 }
 
-func (p *Plugin) Name() string    { return "Basic Automod" }
+func (p *Plugin) Name() string    { return "Basic Automoderator" }
 func (p *Plugin) SysName() string { return "legacy_automod" }
 
 type Config struct {

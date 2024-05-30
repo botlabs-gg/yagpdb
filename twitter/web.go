@@ -8,26 +8,20 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/premium"
-	"github.com/botlabs-gg/yagpdb/twitter/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/go-twitter/twitter"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
 
 //go:embed assets/twitter.html
 var PageHTML string
-
-type CtxKey int
-
-const (
-	CurrentConfig CtxKey = iota
-)
 
 type Form struct {
 	TwitterUser    string `valid:",1,256"`
@@ -39,6 +33,7 @@ type EditForm struct {
 	DiscordChannel  int64 `valid:"channel,false"`
 	IncludeReplies  bool
 	IncludeRetweets bool
+	Enabled         bool
 }
 
 var (
@@ -57,6 +52,8 @@ func (p *Plugin) InitWeb() {
 	})
 
 	mux := goji.SubMux()
+	mux.Use(web.RequireBotMemberMW)
+	mux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	web.CPMux.Handle(pat.New("/twitter/*"), mux)
 	web.CPMux.Handle(pat.New("/twitter"), mux)
 
@@ -106,47 +103,29 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData.AddAlerts(web.ErrorAlert("Max 25 feeds per server")), nil
 	}
 
-	globalCount, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(activeGuild.ID)).CountG(ctx)
-	if err != nil {
-		return templateData, err
-	}
-
-	if globalCount >= 4000 {
-		return templateData.AddAlerts(web.ErrorAlert("Bot hit max feeds, contact bot owner")), nil
-	}
-
 	form := ctx.Value(common.ContextKeyParsedForm).(*Form)
 
 	// search up the ID
-	users, _, err := p.twitterAPI.Users.Lookup(&twitter.UserLookupParams{
-		ScreenName: []string{form.TwitterUser},
-	})
+	user, err := p.twitterScraper.GetProfile(form.TwitterUser)
 	if err != nil {
-		if cast, ok := err.(twitter.APIError); ok {
-			if cast.Errors[0].Code == 17 {
-				return templateData.AddAlerts(web.ErrorAlert("User not found")), nil
-			}
-		}
-		return templateData, err
-	}
-
-	if len(users) < 1 {
 		return templateData.AddAlerts(web.ErrorAlert("User not found")), nil
 	}
 
-	user := users[0]
-
+	userId, err := strconv.ParseInt(user.UserID, 10, 64)
+	if err != nil {
+		return templateData.AddAlerts(web.ErrorAlert("Failed getting user id")), nil
+	}
 	m := &models.TwitterFeed{
 		GuildID:         activeGuild.ID,
-		TwitterUsername: user.ScreenName,
-		TwitterUserID:   user.ID,
+		TwitterUsername: user.Username,
+		TwitterUserID:   userId,
 		ChannelID:       form.DiscordChannel,
 		Enabled:         true,
 	}
 
 	err = m.InsertG(ctx, boil.Infer())
 	if err == nil {
-		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.ScreenName}))
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: user.Username}))
 	}
 	return templateData, err
 }
@@ -192,7 +171,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 	data := ctx.Value(common.ContextKeyParsedForm).(*EditForm)
 
 	sub.ChannelID = data.DiscordChannel
-	sub.Enabled = true
+	sub.Enabled = data.Enabled
 	sub.IncludeRT = data.IncludeRetweets
 	sub.IncludeReplies = data.IncludeReplies
 

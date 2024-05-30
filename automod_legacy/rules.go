@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/antiphishing"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/safebrowsing"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/antiphishing"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -78,7 +78,9 @@ func (r BaseRule) PushViolation(key string) (p Punishment, err error) {
 		return
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire))
+	if r.ViolationsExpire > 0 {
+		common.RedisPool.Do(radix.FlatCmd(nil, "EXPIRE", key, r.ViolationsExpire*60))
+	}
 
 	mute := r.MuteAfter > 0 && violations >= r.MuteAfter
 	kick := r.KickAfter > 0 && violations >= r.KickAfter
@@ -186,16 +188,63 @@ func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del
 	return
 }
 
-type CachedInvite struct {
-	CreatedAt time.Time
-	Invite    string // we only store the invite code, no need to waste memory on the entire invite data
+type GuildInvites struct {
+	createdAt time.Time
+	invites   map[string]bool
 }
 
-var InvitesCache = struct {
+type cachedGuildInvites struct {
 	sync.RWMutex
+	guilds map[int64]GuildInvites
+}
 
-	CacheMap map[int64][]CachedInvite
-}{CacheMap: make(map[int64][]CachedInvite)}
+func (c *cachedGuildInvites) gc(d time.Duration) {
+	ticker := time.NewTicker(d)
+	for range ticker.C {
+		c.tick(d)
+	}
+}
+
+func (c *cachedGuildInvites) tick(d time.Duration) {
+	logger.Info("Starting invites cache GC")
+
+	t1 := time.Now()
+	var counter int
+
+	invitesCache.Lock()
+	for guild := range c.guilds {
+		if time.Since(c.guilds[guild].createdAt) > d {
+			delete(c.guilds, guild)
+			counter++
+		}
+	}
+
+	invitesCache.Unlock()
+	logger.Infof("Finished clearing invites cache in %v. %d guilds removed.", time.Since(t1), counter)
+}
+
+func (c *cachedGuildInvites) get(guildId int64) (GuildInvites, bool) {
+	c.RLock()
+	defer c.RUnlock()
+	guildInvite, ok := c.guilds[guildId]
+	return guildInvite, ok
+}
+
+func (c *cachedGuildInvites) set(guildID int64, invites map[string]bool) {
+	c.Lock()
+	defer c.Unlock()
+	c.guilds[guildID] = GuildInvites{time.Now(), invites}
+}
+
+var invitesCache cachedGuildInvites
+
+func init() {
+	invitesCache = cachedGuildInvites{guilds: make(map[int64]GuildInvites)}
+	go invitesCache.gc(invitesCacheDuration * time.Minute)
+}
+
+// invitesCacheDuration is the period between ticks for the invitesCache gc in minutes
+const invitesCacheDuration = 60
 
 func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bool) {
 	// check third party sites
@@ -208,139 +257,85 @@ func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bo
 		return false
 	}
 
-	// Only check each invite id once
-	checked := make([]string, 0, len(matches))
+	guildInvites, ok := invitesCache.get(guildID)
+	if !ok { // we do not have a cache for this guild yet, create it
+		invites, err := common.BotSession.GuildInvites(guildID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
+			return true // assume bad since discord...
+		}
 
-OUTER:
+		// if there are no invites for this guild
+		// assume it is a bad invite.
+		if len(invites) == 0 {
+			return true
+		}
+
+		// add invites to the cache
+		inviteMap := make(map[string]bool)
+		for _, invite := range invites {
+			inviteMap[invite.Code] = true
+		}
+		guild := bot.State.GetGuild(guildID)
+		if guild != nil && len(guild.VanityURLCode) > 0 {
+			inviteMap[guild.VanityURLCode] = true
+		}
+
+		invitesCache.set(guildID, inviteMap)
+
+		// overwrite the empty invite map
+		// with the one just returned by discord
+		guildInvites = GuildInvites{
+			invites: inviteMap,
+		}
+	}
+
+	// Only check each invite id once,
+	// in case it repeats in the message multiple times.
+	checked := make(map[string]bool, len(matches))
+
 	for _, v := range matches {
 		if len(v) < 3 {
 			continue
 		}
 
 		id := v[2]
-
 		// only check each link once
-		for _, c := range checked {
-			if id == c {
-				continue OUTER
-			}
+		if checked[id] {
+			continue
+		} else {
+			checked[id] = true
 		}
 
-		checked = append(checked, id)
+		// Safe guard the map look up using the invite mutex.
+		// This is a extremely rare, but possible race condition.
+		invitesCache.RLock()
+		isInviteOk := guildInvites.invites[id]
+		invitesCache.RUnlock()
 
-		InvitesCache.RLock()
-		if len(InvitesCache.CacheMap) == 0 {
-			go inviteCacheGC()
-		}
-
-		for guild, cache := range InvitesCache.CacheMap {
-			for _, cachedInvite := range cache {
-				if cachedInvite.Invite == id {
-					InvitesCache.RUnlock()
-					if guild == guildID {
-						// Ignore invites to this server
-						continue OUTER
-					}
-					// If the invite is present on our cache, we return true even if it is not valid anymore
-					// This is to prevent making API Calls about invites which have a restrict rate limit
-					// Because otherwise we would most likely hit those limits
-					return true
-				}
-			}
-		}
-		InvitesCache.RUnlock()
-
-		// Check to see if its a valid id, and if so check if its to the same server were on
-		invite, err := common.BotSession.Invite(id)
-		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Failed checking invite ", invite)
-			return true // assume bad since discord...
-		}
-
-		if invite == nil || invite.Guild == nil {
+		if isInviteOk {
+			// ignore invites to this guild
 			continue
 		}
 
-		InvitesCache.RLock()
-		var found bool
-		for _, cached := range InvitesCache.CacheMap[invite.Guild.ID] {
-			if cached.Invite == invite.Code {
-				found = true
-				break
-			}
-		}
-		InvitesCache.RUnlock()
-
-		if !found {
-			InvitesCache.Lock()
-			// This invite was not found on our cache, so let's add it
-			InvitesCache.CacheMap[invite.Guild.ID] = append(InvitesCache.CacheMap[invite.Guild.ID], CachedInvite{
-				CreatedAt: time.Now(),
-				Invite:    invite.Code,
-			})
-			InvitesCache.Unlock()
-		}
-
-		// Ignore invites to this server
-		if invite.Guild.ID == guildID {
-			continue
-		}
-
+		// invite to another guild found
+		//
+		// PS: we were getting a lot of rate
+		// limits issues from discord by
+		// validating each individual invite.
+		//
+		// Thus, we now return true for
+		// all possible invites, even if
+		// the invite is not valid.
+		//
+		// Reason being it is much easier
+		// to get an actual invite than
+		// just a fake one.
 		return true
 	}
 
-	// If we got here then there's no bad invites
+	// If we got here then there are no bad invites
 	return false
-}
-
-// Ticker duration for the InvitesCacheGC in minutes
-const InvitesCacheDuration = 60
-
-func inviteCacheGC() {
-	// Called right now, so we can sleep before starting
-	time.Sleep((InvitesCacheDuration * time.Minute) + (10 * time.Second))
-
-	ticker := time.NewTicker(InvitesCacheDuration * time.Minute)
-	for {
-		logger.Info("Starting invites cache GC")
-
-		start := time.Now()
-		var counter int
-
-		InvitesCache.Lock()
-
-		for guild, cache := range InvitesCache.CacheMap {
-			for i, cached := range cache {
-				if time.Since(cached.CreatedAt) > (InvitesCacheDuration * time.Minute) {
-					InvitesCache.CacheMap[guild] = removeFromSlice(cache, i)
-					counter++
-				}
-			}
-
-			if len(InvitesCache.CacheMap[guild]) == 0 {
-				// there are no more cached invites for this guild, so we can delete the entry
-				delete(InvitesCache.CacheMap, guild)
-			}
-		}
-
-		if len(InvitesCache.CacheMap) == 0 {
-			InvitesCache.Unlock()
-			// there are no more cached invites, so we can break the loop
-			logger.Info("No more invites cached. Breaking the Invite's GC loop now")
-			break
-		}
-
-		InvitesCache.Unlock()
-
-		logger.Infof("Finished clearing invites cache in %v. %d invites removed.", time.Since(start), counter)
-
-		<-ticker.C
-	}
-}
-
-func removeFromSlice(s []CachedInvite, i int) []CachedInvite {
-	s[i] = s[len(s)-1]
-	return s[:len(s)-1]
 }
 
 type MentionRule struct {

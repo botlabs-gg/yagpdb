@@ -3,8 +3,8 @@ package automod
 import (
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
 )
 
 type Condition interface {
@@ -17,7 +17,8 @@ type Condition interface {
 /////////////////////////////////////////////////////////////////
 
 type MemberRolesConditionData struct {
-	Roles []int64
+	Roles           []int64
+	RequireAllRoles bool
 }
 
 var _ Condition = (*MemberRolesCondition)(nil)
@@ -44,34 +45,52 @@ func (mrc *MemberRolesCondition) Name() string {
 
 func (mrc *MemberRolesCondition) Description() string {
 	if mrc.Blacklist {
-		return "Ignore users with atleast one of these roles from this rule"
+		return "Ignore users with at least one of these roles from this rule"
 	}
 
-	return "Require atleast one of these roles on the user"
+	return "Require at least one of these roles on the user"
 }
 
 func (mrc *MemberRolesCondition) UserSettings() []*SettingDef {
-	return []*SettingDef{
-		&SettingDef{
+	settings := []*SettingDef{
+		{
 			Name: "Roles",
 			Key:  "Roles",
 			Kind: SettingTypeMultiRole,
 		},
 	}
+	if !mrc.Blacklist {
+		settings = append(settings, &SettingDef{
+			Name:    "Require all selected roles",
+			Key:     "RequireAllRoles",
+			Kind:    SettingTypeBool,
+			Default: false,
+		})
+	}
+	return settings
 }
 
 func (mrc *MemberRolesCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	settingsCast := settings.(*MemberRolesConditionData)
+	allRolesPresent := false
 	for _, r := range settingsCast.Roles {
 		if common.ContainsInt64Slice(data.MS.Member.Roles, r) {
 			if mrc.Blacklist {
 				// Had a blacklist role, this condition is not met
 				return false, nil
-			} else {
+			} else if !settingsCast.RequireAllRoles {
 				// Had a whitelist role, this condition is met
 				return true, nil
 			}
+			allRolesPresent = true
+		} else if settingsCast.RequireAllRoles {
+			// One of the required roles is not present for the member
+			return false, nil
 		}
+	}
+
+	if allRolesPresent {
+		return true, nil
 	}
 
 	if mrc.Blacklist {
@@ -141,7 +160,7 @@ func (cd *ChannelsCondition) Description() string {
 
 func (cd *ChannelsCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Channels",
 			Key:  "Channels",
 			Kind: SettingTypeMultiChannel,
@@ -232,7 +251,7 @@ func (cd *ChannelCategoriesCondition) Description() string {
 
 func (cd *ChannelCategoriesCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Categories",
 			Key:  "Categories",
 			Kind: SettingTypeMultiChannelCategories,
@@ -254,7 +273,7 @@ func (cd *ChannelCategoriesCondition) IsMet(data *TriggeredRuleData, settings in
 			return false, nil
 		}
 
-		parentID = threadParent.ID
+		parentID = threadParent.ParentID
 	}
 
 	if common.ContainsInt64Slice(settingsCast.Categories, parentID) {
@@ -334,7 +353,7 @@ func (ac *AccountAgeCondition) Description() string {
 
 func (ac *AccountAgeCondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Age in minutes",
 			Key:  "Treshold",
 			Kind: SettingTypeInt,
@@ -406,7 +425,7 @@ func (mc *MemberAgecondition) Description() string {
 
 func (mc *MemberAgecondition) UserSettings() []*SettingDef {
 	return []*SettingDef{
-		&SettingDef{
+		{
 			Name: "Age in minutes",
 			Key:  "Treshold",
 			Kind: SettingTypeInt,
@@ -529,7 +548,7 @@ func (mc *MessageEditedCondition) Name() string {
 
 func (mc *MessageEditedCondition) Description() string {
 	if mc.NewMessage {
-		return "Ignore edited messages"
+		return "Only examine new messages"
 	}
 	return "Only examine edited messages"
 }
@@ -560,4 +579,57 @@ func (mc *MessageEditedCondition) IsMet(data *TriggeredRuleData, settings interf
 
 func (mc *MessageEditedCondition) MergeDuplicates(data []interface{}) interface{} {
 	return data[0] // no point in having duplicates of this
+}
+
+/////////////////////////////////////////////////////////////////
+
+var _ Condition = (*ThreadCondition)(nil)
+
+type ThreadCondition struct {
+	Threads bool
+}
+
+func (bc *ThreadCondition) Kind() RulePartType {
+	return RulePartCondition
+}
+
+func (bc *ThreadCondition) DataType() interface{} {
+	return nil
+}
+
+func (bc *ThreadCondition) Name() string {
+	if !bc.Threads {
+		return "Ignore threads"
+	}
+
+	return "Active in threads"
+}
+
+func (bc *ThreadCondition) Description() string {
+	if !bc.Threads {
+		return "Ignores messages in threads"
+	}
+
+	return "Only match messages in threads"
+}
+
+func (bc *ThreadCondition) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (bc *ThreadCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+	//Channel won't be present in case the trigger is on member update event like nick update
+	if data.CS == nil {
+		return true, nil
+	}
+
+	if !bc.Threads {
+		return !data.CS.Type.IsThread(), nil
+	}
+
+	return data.CS.Type.IsThread(), nil
+}
+
+func (bc *ThreadCondition) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
 }

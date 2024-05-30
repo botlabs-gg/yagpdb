@@ -3,25 +3,26 @@ package topservers
 import (
 	"fmt"
 
-	"github.com/botlabs-gg/yagpdb/bot/models"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/botlabs-gg/yagpdb/v2/bot/models"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var Command = &commands.YAGCommand{
 	Cooldown:    5,
-	CmdCategory: commands.CategoryFun,
+	CmdCategory: commands.CategoryDebug,
 	Name:        "TopServers",
-	Description: "Responds with the top 20 servers I'm on",
+	Description: "Responds with the top 20 servers I'm on. *Bot admin only.",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int, Default: 0},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "id", Type: dcmd.BigInt},
 	},
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: util.RequireBotAdmin(func(data *dcmd.Data) (interface{}, error) {
 		skip := data.Args[0].Int()
 
 		if data.Switches["id"].Value != nil {
@@ -48,5 +49,5 @@ var Command = &commands.YAGCommand{
 			out += fmt.Sprintf("\n#%-2d: %-25s (%d members)", k+skip+1, v.Name, v.MemberCount)
 		}
 		return "Top servers the bot is on:\n" + out + "\n```", nil
-	},
+	}),
 }

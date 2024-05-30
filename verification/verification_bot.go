@@ -5,29 +5,31 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	seventsmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/common/templates"
-	"github.com/botlabs-gg/yagpdb/moderation"
-	"github.com/botlabs-gg/yagpdb/verification/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	seventsmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/verification/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/mediocregopher/radix/v3"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionReadMessages
+const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionViewChannel
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 
@@ -38,7 +40,7 @@ type VerificationEventData struct {
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMemberJoin, eventsystem.EventGuildMemberAdd)
-	eventsystem.AddHandlerFirstLegacy(p, p.handleMemberUpdate, eventsystem.EventGuildMemberUpdate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleMemberUpdate, eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleBanAdd, eventsystem.EventGuildBanAdd)
 	scheduledevents2.RegisterHandler("verification_user_verified", int64(0), ScheduledEventMW(p.handleUserVerifiedScheduledEvent))
 	scheduledevents2.RegisterHandler("verification_user_warn", VerificationEventData{}, ScheduledEventMW(p.handleWarnUserVerification))
@@ -48,6 +50,32 @@ func (p *Plugin) BotInit() {
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func VerificationPendingMembersKey(gID int64) string {
+	return "verification_pending_members:" + strconv.FormatInt(gID, 10)
+}
+
+func memberPresentInVerificationPendingSet(guildID int64, userID int64) bool {
+	var memberScore int
+	err := common.RedisPool.Do(radix.Cmd(&memberScore, "ZSCORE", VerificationPendingMembersKey(guildID), strconv.FormatInt(userID, 10)))
+	if err != nil {
+		logger.WithError(err).Error("Failed fetching member from the verification pending set")
+	}
+	return memberScore != 0
+}
+
+// Function to check if member is present in verification pending set, and add if not present
+func addMemberToVerificationPendingSet(guildID int64, userID int64) {
+	if memberPresentInVerificationPendingSet(guildID, userID) {
+		// Member is already in the set
+		return
+	}
+
+	err := common.RedisPool.Do(radix.Cmd(nil, "ZADD", VerificationPendingMembersKey(guildID), "1", strconv.FormatInt(userID, 10)))
+	if err != nil {
+		logger.WithError(err).Error("Failed adding member to the verification pending set")
+	}
+}
 
 func RandStringRunes(n int) string {
 	b := make([]rune, n)
@@ -66,8 +94,30 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 		// either no config or an error occured
 		return
 	}
-
 	if !conf.Enabled {
+		return
+	}
+	gs := bot.State.GetGuild(member.GuildID)
+	roleInvalid := true
+	for _, role := range gs.Roles {
+		if role.ID == conf.VerifiedRole {
+			roleInvalid = false
+			break
+		}
+	}
+	if roleInvalid {
+		cop := *conf
+		cop.Enabled = false
+		cop.UpdateG(context.Background(), boil.Whitelist("enabled"))
+		return
+	}
+
+	// Check if member is already verified, if yes then remove any scheduled events
+	if common.ContainsInt64Slice(member.Roles, conf.VerifiedRole) {
+		err = p.clearScheduledEvents(context.Background(), member.GuildID, member.User.ID)
+		if err != nil {
+			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("failed clearing past scheduled warn/kick events")
+		}
 		return
 	}
 
@@ -79,7 +129,12 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
 	addEvt := evt.GuildMemberAdd()
 
-	if addEvt.User.Bot || addEvt.Pending {
+	if addEvt.User.Bot {
+		return
+	}
+	if addEvt.Pending {
+		// Membership screening is pending for this member, add to pending set and return
+		addMemberToVerificationPendingSet(addEvt.GuildID, addEvt.User.ID)
 		return
 	}
 
@@ -89,16 +144,21 @@ func (p *Plugin) handleMemberJoin(evt *eventsystem.EventData) {
 func (p *Plugin) handleMemberUpdate(evt *eventsystem.EventData) {
 	updateEvt := evt.GuildMemberUpdate()
 
-	if updateEvt.User.Bot || updateEvt.Pending {
+	if updateEvt.User.Bot {
+		return
+	}
+	if updateEvt.Pending {
+		// Membership screening is pending for this member, add to pending set and return
+		addMemberToVerificationPendingSet(updateEvt.GuildID, updateEvt.User.ID)
 		return
 	}
 
-	memberState, err := bot.GetMember(updateEvt.GuildID, updateEvt.User.ID)
-	if err != nil {
-		logger.WithError(err).Error("Failed to fetch member")
-		return
-	}
-	if memberState != nil && memberState.Member.Pending && !updateEvt.Pending {
+	if memberPresentInVerificationPendingSet(updateEvt.GuildID, updateEvt.User.ID) {
+		// Member was found in the verification pending set, remove from the set and assign role to the member
+		err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", VerificationPendingMembersKey(updateEvt.GuildID), strconv.FormatInt(updateEvt.User.ID, 10)))
+		if err != nil {
+			logger.WithError(err).Error("Failed removing member from the verification pending set")
+		}
 		p.handleVerificationAfterScreening(updateEvt.Member)
 	}
 }
@@ -146,7 +206,6 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	if strings.TrimSpace(msg) == "" {
 		msg = DefaultDMMessage
 	}
-	msg = "DM sent from server **" + gs.Name + "**(ID: " + discordgo.StrID(gs.ID) + ")\n" + msg
 
 	ms, err := bot.GetMember(guildID, target.ID)
 	if err != nil {
@@ -163,7 +222,7 @@ func (p *Plugin) startVerificationProcess(conf *models.VerificationConfig, guild
 	cs := dstate.ChannelStateFromDgo(channel)
 
 	tmplCTX := templates.NewContext(gs, &cs, ms)
-	tmplCTX.Name = "dm_veification_message"
+	tmplCTX.Name = "dm_verification_message"
 	tmplCTX.Data["Link"] = fmt.Sprintf("%s/public/%d/verify/%d/%s", web.BaseURL(), guildID, target.ID, token)
 
 	err = tmplCTX.ExecuteAndSendWithErrors(msg, channel.ID)
@@ -280,8 +339,8 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 			return scheduledevents2.CheckDiscordErrRetry(err), err
 		}
 
-		p.logAction(guildID, conf.LogChannel, &ms.User, fmt.Sprintf("User banned for sharing IP with banned user %s#%s (%d)\nReason: %s",
-			ban.User.Username, ban.User.Discriminator, ban.User.ID, ban.Reason), 0xef4640)
+		p.logAction(guildID, conf.LogChannel, &ms.User, fmt.Sprintf("User banned for sharing IP with banned user %s (%d)\nReason: %s",
+			ban.User.String(), ban.User.ID, ban.Reason), 0xef4640)
 
 		return false, nil
 	}
@@ -291,7 +350,7 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 	builder.WriteString("User verified but verified with the same IP as the following users: \n")
 
 	for i, v := range conflicts {
-		builder.WriteString(fmt.Sprintf("\n%s#%s (%d)", v.Username, v.Discriminator, v.ID))
+		builder.WriteString(fmt.Sprintf("\n%s (%d)", v.String(), v.ID))
 		if i >= 20 && len(conflicts) > 21 {
 			builder.WriteString(fmt.Sprintf("\n\nAnd %d other users...", len(conflicts)-21))
 			break
@@ -462,7 +521,7 @@ func (p *Plugin) logAction(guildID int64, channelID int64, author *discordgo.Use
 	_, err := common.BotSession.ChannelMessageSendEmbed(channelID, &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			IconURL: author.AvatarURL("128"),
-			Name:    fmt.Sprintf("%s#%s (%d)", author.Username, author.Discriminator, author.ID),
+			Name:    fmt.Sprintf("%s (%d)", author.String(), author.ID),
 		},
 		Description: action,
 		Color:       color,
@@ -613,7 +672,7 @@ func (p *Plugin) banAlts(ban *discordgo.GuildBanAdd, alts []*discordgo.User) {
 			if cast.Response.StatusCode == 404 {
 				// not banned
 				logger.WithField("guild", ban.GuildID).WithField("user", v.ID).WithField("dupe-of", ban.User.ID).Info("banning alt account")
-				reason := fmt.Sprintf("Alt of banned user (%s#%s (%d))", ban.User.Username, ban.User.Discriminator, ban.User.ID)
+				reason := fmt.Sprintf("Alt of banned user (%s (%d))", ban.User.String(), ban.User.ID)
 				markRecentlyBannedByVerification(ban.GuildID, v.ID)
 				moderation.BanUser(nil, ban.GuildID, nil, nil, common.BotUser, reason, v)
 				continue

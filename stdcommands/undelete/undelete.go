@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
 var Command = &commands.YAGCommand{
@@ -33,7 +33,7 @@ var Command = &commands.YAGCommand{
 		if data.Switch("channel").Value != nil {
 			channel = data.Switch("channel").Value.(*dstate.ChannelState)
 
-			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, channel.ID, data.GuildData.MS, discordgo.PermissionReadMessages)
+			ok, err := bot.AdminOrPermMS(data.GuildData.GS.ID, channel.ID, data.GuildData.MS, discordgo.PermissionViewChannel)
 			if err != nil {
 				return nil, err
 			} else if !ok {
@@ -80,7 +80,7 @@ var Command = &commands.YAGCommand{
 			// Match found!
 			timeSince := common.HumanizeDuration(precision, time.Since(msg.ParsedCreatedAt))
 
-			resp += fmt.Sprintf("`%s ago (%s)` **%s**#%s (ID %d): %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.Username, msg.Author.Discriminator, msg.Author.ID, msg.ContentWithMentionsReplaced())
+			resp += fmt.Sprintf("`%s ago (%s)` **%s** (ID %d): %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.String(), msg.Author.ID, msg.ContentWithMentionsReplaced())
 			numFound++
 		}
 

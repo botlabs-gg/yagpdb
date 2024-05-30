@@ -10,16 +10,16 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/botrest"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/reputation/models"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/reputation/models"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})
@@ -45,11 +45,12 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 
 func DefaultConfig(guildID int64) *models.ReputationConfig {
 	return &models.ReputationConfig{
-		GuildID:       guildID,
-		PointsName:    "Rep",
-		Enabled:       false,
-		Cooldown:      120,
-		MaxGiveAmount: 1,
+		GuildID:         guildID,
+		PointsName:      "Rep",
+		Enabled:         false,
+		Cooldown:        120,
+		MaxGiveAmount:   1,
+		MaxRemoveAmount: 1,
 	}
 }
 
@@ -178,8 +179,8 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return
 	}
 
-	receiverUsername := receiver.User.Username + "#" + receiver.User.Discriminator
-	senderUsername := sender.User.Username + "#" + sender.User.Discriminator
+	receiverUsername := receiver.User.String()
+	senderUsername := sender.User.String()
 
 	// Add the log element
 	entry := &models.ReputationLog{
@@ -243,7 +244,7 @@ func IsAdmin(gs *dstate.GuildSet, member *dstate.MemberState, config *models.Rep
 
 	memberPerms, _ := gs.GetMemberPermissions(0, member.User.ID, member.Member.Roles)
 
-	if memberPerms&discordgo.PermissionManageServer != 0 {
+	if memberPerms&discordgo.PermissionManageGuild != 0 {
 		return true
 	}
 
@@ -361,7 +362,7 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 
 		for _, m := range members {
 			if m.User.ID == userIDs[i] {
-				lEntry.Username = m.User.Username + "#" + m.User.Discriminator
+				lEntry.Username = m.User.String()
 				lEntry.Avatar = m.User.AvatarURL("256")
 				lEntry.Bot = m.User.Bot
 				break

@@ -8,13 +8,15 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/logs/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/logs/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -22,12 +24,14 @@ import (
 )
 
 var (
-	ErrChannelBlacklisted = errors.New("Channel blacklisted from creating message logs")
-
-	logger = common.GetPluginLogger(&Plugin{})
+	ErrChannelBlacklisted     = errors.New("Channel blacklisted from creating message logs")
+	ConfEnableMessageLogPurge = config.RegisterOption("yagpdb.enable_message_log_purge", "If enabled message logs older than 30 days will be deleted", false)
+	logger                    = common.GetPluginLogger(&Plugin{})
 )
 
-type Plugin struct{}
+type Plugin struct {
+	stopWorkers chan *sync.WaitGroup
+}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
@@ -40,7 +44,9 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 func RegisterPlugin() {
 	common.InitSchemas("logs", DBSchemas...)
 
-	p := &Plugin{}
+	p := &Plugin{
+		stopWorkers: make(chan *sync.WaitGroup),
+	}
 	common.RegisterPlugin(p)
 }
 
@@ -73,18 +79,6 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		}
 	}
 
-	// note: since the blacklisted channels column is just a TEXT type with a comma seperator...
-	// i was not a smart person back then
-	strCID := strconv.FormatInt(channelID, 10)
-	split := strings.Split(config.BlacklistedChannels.String, ",")
-	if common.ContainsStringSlice(split, strCID) {
-		return nil, ErrChannelBlacklisted
-	}
-
-	if count > 300 {
-		count = 300
-	}
-
 	gs := bot.State.GetGuild(guildID)
 	if gs == nil {
 		return nil, bot.ErrGuildNotFound
@@ -94,6 +88,25 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 	channel := gs.GetChannelOrThread(channelID)
 	if channel == nil {
 		return nil, errors.New("Unknown channel")
+	}
+
+	// note: since the blacklisted channels column is just a TEXT type with a comma separator...
+	// i was not a smart person back then
+	blacklist := strings.Split(config.BlacklistedChannels.String, ",")
+	if channel.Type.IsThread() {
+		parentIDStr := strconv.FormatInt(channel.ParentID, 10)
+		if common.ContainsStringSlice(blacklist, parentIDStr) {
+			return nil, ErrChannelBlacklisted
+		}
+	} else {
+		idStr := strconv.FormatInt(channel.ID, 10)
+		if common.ContainsStringSlice(blacklist, idStr) {
+			return nil, ErrChannelBlacklisted
+		}
+	}
+
+	if count > 300 {
+		count = 300
 	}
 
 	msgs, err := bot.GetMessages(guildID, channel.ID, count, true)
@@ -135,7 +148,7 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 			CreatedAt: v.ParsedCreatedAt,
 			UpdatedAt: v.ParsedCreatedAt,
 
-			AuthorUsername: v.Author.Username + "#" + v.Author.Discriminator,
+			AuthorUsername: v.Author.String(),
 			AuthorID:       v.Author.ID,
 			Deleted:        v.Deleted,
 		}

@@ -9,15 +9,15 @@ import (
 
 	"emperror.dev/errors"
 
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/common/templates"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -147,7 +147,6 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 	}
 
 	if ms.User.Bot {
-		logger.WithField("isBot", m.User.Bot).Info("Ignoring Bots")
 		return false, nil
 	}
 
@@ -284,9 +283,9 @@ func CheckPresenceSparse(client radix.Client, config *Config, p *discordgo.Prese
 	return nil
 }
 
-func retrieveMainActivity(p *discordgo.Presence) *discordgo.Game {
+func retrieveMainActivity(p *discordgo.Presence) *discordgo.Activity {
 	for _, v := range p.Activities {
-		if v.Type == discordgo.GameTypeStreaming {
+		if v.Type == discordgo.ActivityTypeStreaming {
 			return v
 		}
 	}
@@ -418,9 +417,11 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 
 	// make sure the channel exists
 	foundChannel := false
+	var channel *dstate.ChannelState
 	for _, v := range guild.Channels {
 		if v.ID == config.AnnounceChannel {
 			foundChannel = true
+			channel = guild.GetChannel(config.AnnounceChannel)
 		}
 	}
 
@@ -435,13 +436,7 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 
 	go analytics.RecordActiveUnit(guild.ID, &Plugin{}, "sent_streaming_announcement")
 
-	ctx := templates.NewContext(guild, nil, ms)
-	// ctx.Data["URL"] = ms.PresenceGame.URL
-	// ctx.Data["url"] = ms.PresenceGame.URL
-	// ctx.Data["Game"] = ms.PresenceGame.State
-	// ctx.Data["StreamTitle"] = ms.PresenceGame.Details
-	// ctx.Data["StreamPlatform"] = ms.PresenceGame.Name
-
+	ctx := templates.NewContext(guild, channel, ms)
 	ctx.Data["URL"] = url
 	ctx.Data["url"] = url
 	ctx.Data["Game"] = gameName
@@ -455,8 +450,15 @@ func SendStreamingAnnouncement(config *Config, guild *dstate.GuildSet, ms *dstat
 	}
 
 	m, err := common.BotSession.ChannelMessageSendComplex(config.AnnounceChannel, ctx.MessageSend(out))
-	if err == nil && ctx.CurrentFrame.DelResponse {
+	if err != nil {
+		return
+	}
+	if ctx.CurrentFrame.DelResponse {
 		templates.MaybeScheduledDeleteMessage(guild.ID, config.AnnounceChannel, m.ID, ctx.CurrentFrame.DelResponseDelay)
+	}
+
+	if ctx.CurrentFrame.PublishResponse {
+		common.BotSession.ChannelMessageCrosspost(config.AnnounceChannel, m.ID)
 	}
 }
 

@@ -35,15 +35,15 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/templates"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/lib/pq"
 )
 
 type CustomValidator interface {
-	Validate(tmplData TemplateData) (ok bool)
+	Validate(tmplData TemplateData, guild int64) (ok bool)
 }
 
 type ValidationTag struct {
@@ -210,7 +210,7 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 	}
 
 	if validator, okc := form.(CustomValidator); okc {
-		ok2 := validator.Validate(tmpl)
+		ok2 := validator.Validate(tmpl, guild.ID)
 		if !ok2 {
 			ok = false
 		}
@@ -286,8 +286,11 @@ func ValidateIntField(i int64, tags *ValidationTag, guild *dstate.GuildSet, forc
 
 func ValidateIntMinMaxField(i int64, min, max int64, onlyMin bool) error {
 
-	if onlyMin && i < min {
-		return fmt.Errorf("should be at least %d", min)
+	if onlyMin {
+		if i < min {
+			return fmt.Errorf("should be at least %d", min)
+		}
+		return nil
 	}
 
 	if min != max && (i < min || i > max) {
@@ -299,8 +302,11 @@ func ValidateIntMinMaxField(i int64, min, max int64, onlyMin bool) error {
 
 func ValidateFloatField(f float64, min, max float64, onlyMin bool) error {
 
-	if onlyMin && f < min {
-		return fmt.Errorf("should be at least %f", min)
+	if onlyMin {
+		if f < min {
+			return fmt.Errorf("should be at least %f", min)
+		}
+		return nil
 	}
 
 	if min != max && (f < min || f > max) {

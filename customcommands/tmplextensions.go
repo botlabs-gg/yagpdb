@@ -7,21 +7,21 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/bot"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/scheduledevents2"
-	scheduledmodels "github.com/botlabs-gg/yagpdb/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/common/templates"
-	"github.com/botlabs-gg/yagpdb/customcommands/models"
-	"github.com/botlabs-gg/yagpdb/premium"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	scheduledmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/vmihailenco/msgpack"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func init() {
@@ -73,7 +73,7 @@ func tmplCArg(typ string, name string, opts ...interface{}) (*dcmd.ArgDef, error
 	case "string":
 		def.Type = dcmd.String
 	case "user":
-		def.Type = dcmd.UserReqMention
+		def.Type = dcmd.User
 	case "userid":
 		def.Type = dcmd.UserID
 	case "channel":
@@ -185,6 +185,14 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", errors.New("Couldn't find custom command")
 		}
 
+		if cmd.Disabled {
+			return "", errors.New("custom command is disabled")
+		}
+
+		if cmd.TriggerType == int(CommandTriggerInterval) {
+			return "", errors.New("interval custom command cannot be used with execCC")
+		}
+
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
 			return "", errors.New("Unknown channel")
@@ -214,7 +222,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			}
 			newCtx.Data["ExecData"] = data
 			newCtx.Data["StackDepth"] = currentStackDepth + 1
-			newCtx.IsExecedByLeaveMessage = ctx.IsExecedByLeaveMessage
+			newCtx.ExecutedFrom = ctx.ExecutedFrom
 
 			go ExecuteCustomCommand(cmd, newCtx)
 			return "", nil
@@ -227,7 +235,7 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			Member:  ctx.MS,
 			Message: ctx.Msg,
 
-			IsExecedByLeaveMessage: ctx.IsExecedByLeaveMessage,
+			ExecutedFrom: ctx.ExecutedFrom,
 		}
 
 		// embed data using msgpack to include type information
@@ -238,6 +246,9 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			}
 
 			m.UserData = encoded
+			if len(m.UserData) > CCMaxDataLimit {
+				return "", errors.New("ExecData is too big")
+			}
 		}
 
 		err = scheduledevents2.ScheduleEvent("cc_delayed_run", ctx.GS.ID, time.Now().Add(time.Second*time.Duration(actualDelay)), m)
@@ -265,6 +276,14 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", errors.New("Couldn't find custom command")
 		}
 
+		if cmd.Disabled {
+			return "", errors.New("custom command is disabled")
+		}
+
+		if cmd.TriggerType == int(CommandTriggerInterval) {
+			return "", errors.New("interval custom command cannot be used with scheduleUniqueCC")
+		}
+
 		channelID := ctx.ChannelArg(channel)
 		if channelID == 0 {
 			return "", errors.New("Unknown channel")
@@ -290,7 +309,7 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			Message: ctx.Msg,
 			UserKey: stringedKey,
 
-			IsExecedByLeaveMessage: ctx.IsExecedByLeaveMessage,
+			ExecutedFrom: ctx.ExecutedFrom,
 		}
 
 		// embed data using msgpack to include type information
@@ -487,7 +506,9 @@ func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
 
 		amount := int(templates.ToInt64(iAmount))
 		skip := int(templates.ToInt64(iSkip))
-		if amount > 100 {
+		// LIMIT 0 essentially means LIMIT ALL, or no limit at all.
+		// Make sure we actually cap it at the max documented limit.
+		if amount > 100 || amount <= 0 {
 			amount = 100
 		}
 
@@ -550,6 +571,12 @@ func tmplDBDelMultiple(ctx *templates.Context) interface{} {
 		if amount > 100 {
 			amount = 100
 		}
+		// LIMIT 0 essentially means LIMIT ALL, or no limit at all.
+		// Make sure we actually cap it at the max documented limit.
+		if amount == 0 {
+			amount = 100
+		}
+
 		skip := int(templates.ToInt64(iSkip))
 		orderby := "value_num DESC, id DESC"
 		if q.Reverse {
@@ -724,7 +751,9 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 
 		amount := int(templates.ToInt64(iAmount))
 		skip := int(templates.ToInt64(iSkip))
-		if amount > 100 {
+		// LIMIT 0 essentially means LIMIT ALL, or no limit at all.
+		// Make sure we actually cap it at the max documented limit.
+		if amount > 100 || amount <= 0 {
 			amount = 100
 		}
 
@@ -812,6 +841,8 @@ type LightDBEntry struct {
 	Key   string
 	Value interface{}
 
+	ValueSize int
+
 	User discordgo.User
 
 	ExpiresAt time.Time
@@ -840,6 +871,8 @@ func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 
 		Key:   m.Key,
 		Value: decodedValue,
+
+		ValueSize: len(m.ValueRaw),
 
 		ExpiresAt: m.ExpiresAt.Time,
 	}

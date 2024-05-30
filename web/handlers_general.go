@@ -15,15 +15,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/bot/botrest"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/models"
-	"github.com/botlabs-gg/yagpdb/common/patreon"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/web/discordblog"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/models"
+	"github.com/botlabs-gg/yagpdb/v2/common/patreon"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/web/discordblog"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
 	"goji.io/pat"
@@ -370,7 +370,7 @@ func HandleReconnectShard(w http.ResponseWriter, r *http.Request) (TemplateData,
 	return HandleStatusHTML(w, r)
 }
 
-func HandleChanenlPermissions(w http.ResponseWriter, r *http.Request) interface{} {
+func HandleChannelPermissions(w http.ResponseWriter, r *http.Request) interface{} {
 	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
 	c, _ := strconv.ParseInt(pat.Param(r, "channel"), 10, 64)
 	perms, err := botrest.GetChannelPermissions(g.ID, c)
@@ -451,10 +451,8 @@ func (p *ControlPanelPlugin) LoadServerHomeWidget(w http.ResponseWriter, r *http
 	const format = `<ul>
 	<li>Read-only roles: <code>%d</code></li>
 	<li>Write roles: <code>%d</code></li>
-	<li>All members read-only: %s</li>
-	<li>Allow absolutely everyone read-only access: %s</li>
 </ul>`
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles), EnabledDisabledSpanStatus(config.AllowAllMembersReadOnly), EnabledDisabledSpanStatus(config.AllowNonMembersReadOnly)))
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, len(config.AllowedReadOnlyRoles), len(config.AllowedWriteRoles)))
 
 	return templateData, nil
 }
@@ -464,10 +462,8 @@ func (p *ControlPanelPlugin) ServerHomeWidgetOrder() int {
 }
 
 type CoreConfigPostForm struct {
-	AllowedReadOnlyRoles    []int64 `valid:"role,true"`
-	AllowedWriteRoles       []int64 `valid:"role,true"`
-	AllowAllMembersReadOnly bool
-	AllowNonMembersReadOnly bool
+	AllowedReadOnlyRoles []int64 `valid:"role,true"`
+	AllowedWriteRoles    []int64 `valid:"role,true"`
 }
 
 func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateData, error) {
@@ -479,9 +475,6 @@ func HandlePostCoreSettings(w http.ResponseWriter, r *http.Request) (TemplateDat
 		GuildID:              g.ID,
 		AllowedReadOnlyRoles: form.AllowedReadOnlyRoles,
 		AllowedWriteRoles:    form.AllowedWriteRoles,
-
-		AllowAllMembersReadOnly: form.AllowAllMembersReadOnly,
-		AllowNonMembersReadOnly: form.AllowNonMembersReadOnly,
 	}
 
 	err := common.CoreConfigSave(r.Context(), m)
@@ -502,42 +495,12 @@ func HandleGetManagedGuilds(w http.ResponseWriter, r *http.Request) (TemplateDat
 	ctx := r.Context()
 	_, templateData := GetBaseCPContextData(ctx)
 
-	user := ContextUser(ctx)
-
-	// retrieve guilds this user is part of
-	// i really wish there was a easy to to invalidate this cache, but since there's not it just expires after 10 seconds
-	wrapped, err := GetUserGuilds(ctx)
+	managedGuilds, err := GetUserAccessibleGuilds(ctx, false)
 	if err != nil {
 		return templateData, err
 	}
 
-	nilled := make([]*common.GuildWithConnected, len(wrapped))
-	var wg sync.WaitGroup
-	wg.Add(len(wrapped))
-
-	// the servers the user is on and the user has manage server perms
-	for i, g := range wrapped {
-		go func(j int, gwc *common.GuildWithConnected) {
-			conf := common.GetCoreServerConfCached(gwc.ID)
-			if HasAccesstoGuildSettings(user.ID, gwc, conf, basicRoleProvider, false) {
-				nilled[j] = gwc
-			}
-
-			wg.Done()
-		}(i, g)
-	}
-
-	wg.Wait()
-
-	accessibleGuilds := make([]*common.GuildWithConnected, 0, len(wrapped))
-	for _, v := range nilled {
-		if v != nil {
-			accessibleGuilds = append(accessibleGuilds, v)
-		}
-	}
-
-	templateData["ManagedGuilds"] = accessibleGuilds
-
+	templateData["ManagedGuilds"] = managedGuilds
 	return templateData, nil
 }
 
@@ -555,6 +518,37 @@ func basicRoleProvider(guildID, userID int64) []int64 {
 	}
 
 	return members[0].Roles
+}
+
+func GetUserAccessibleGuilds(ctx context.Context, writeOnly bool) ([]*common.GuildWithConnected, error) {
+	guilds, err := GetUserGuilds(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	user := ContextUser(ctx)
+	nilled := make([]*common.GuildWithConnected, len(guilds))
+	var wg sync.WaitGroup
+	wg.Add(len(guilds))
+	// the servers the user is on and the user has manage server perms
+	for i, g := range guilds {
+		go func(j int, gwc *common.GuildWithConnected) {
+			conf := common.GetCoreServerConfCached(gwc.ID)
+			if HasAccesstoGuildSettings(user.ID, gwc, conf, basicRoleProvider, writeOnly) {
+				nilled[j] = gwc
+			}
+			wg.Done()
+		}(i, g)
+	}
+
+	wg.Wait()
+	accessibleGuilds := make([]*common.GuildWithConnected, 0, len(guilds))
+	for _, v := range nilled {
+		if v != nil {
+			accessibleGuilds = append(accessibleGuilds, v)
+		}
+	}
+	return accessibleGuilds, nil
 }
 
 func GetUserGuilds(ctx context.Context) ([]*common.GuildWithConnected, error) {

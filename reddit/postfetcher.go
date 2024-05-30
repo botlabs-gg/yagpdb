@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	greddit "github.com/jonas747/go-reddit"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	greddit "github.com/botlabs-gg/yagpdb/v2/lib/go-reddit"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -75,7 +75,7 @@ func (p *PostFetcher) Run() {
 
 		links, err := p.GetNewPosts()
 		if err != nil {
-			p.log.WithError(err).Error("error fetchind new links")
+			p.log.WithError(err).Error("error fetching new links")
 			continue
 		}
 

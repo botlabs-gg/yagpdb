@@ -6,22 +6,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"math"
 	"strings"
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/customcommands/models"
-	"github.com/botlabs-gg/yagpdb/premium"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var (
@@ -35,6 +34,8 @@ const (
 	MinIntervalTriggerDurationHours   = 1
 	MaxIntervalTriggerDurationHours   = 744
 	MaxIntervalTriggerDurationMinutes = 44640
+
+	dbPageMaxDisplayLength = 64
 )
 
 func KeyCommands(guildID int64) string { return "custom_commands:" + discordgo.StrID(guildID) }
@@ -69,9 +70,8 @@ const (
 	CommandTriggerContains   CommandTriggerType = 2
 	CommandTriggerRegex      CommandTriggerType = 3
 	CommandTriggerExact      CommandTriggerType = 4
+	CommandTriggerInterval   CommandTriggerType = 5
 	CommandTriggerReaction   CommandTriggerType = 6
-
-	CommandTriggerInterval CommandTriggerType = 5
 )
 
 var (
@@ -83,6 +83,7 @@ var (
 		CommandTriggerExact,
 		CommandTriggerInterval,
 		CommandTriggerReaction,
+		CommandTriggerNone,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
@@ -93,6 +94,7 @@ var (
 		CommandTriggerExact:      "Exact",
 		CommandTriggerInterval:   "Interval",
 		CommandTriggerReaction:   "Reaction",
+		CommandTriggerNone:       "None",
 	}
 )
 
@@ -110,11 +112,13 @@ type CustomCommand struct {
 	TriggerType     CommandTriggerType `json:"trigger_type"`
 	TriggerTypeForm string             `json:"-" schema:"type"`
 	Trigger         string             `json:"trigger" schema:"trigger" valid:",0,1000"`
-	// TODO: Retire the legacy Response field.
-	Response      string   `json:"response,omitempty" schema:"response" valid:"template,10000"`
-	Responses     []string `json:"responses" schema:"responses" valid:"template,10000"`
-	CaseSensitive bool     `json:"case_sensitive" schema:"case_sensitive"`
-	ID            int64    `json:"id"`
+	Responses       []string           `json:"responses" schema:"responses" valid:"template,20000"`
+	CaseSensitive   bool               `json:"case_sensitive" schema:"case_sensitive"`
+	ID              int64              `json:"id"`
+	Name            string             `json:"name" schema:"name" valid:",0,100"`
+	IsEnabled       bool               `json:"is_enabled" schema:"is_enabled"`
+	Public          bool               `json:"public" schema:"public"`
+	PublicID        string             `json:"public_id" schema:"public_id"`
 
 	ContextChannel int64 `schema:"context_channel" valid:"channel,true"`
 
@@ -129,8 +133,9 @@ type CustomCommand struct {
 	Channels        []int64 `json:"channels" schema:"channels"`
 
 	// If set, then one of the following channels are required, otherwise they are ignored
-	RequireRoles bool    `json:"require_roles" schema:"require_roles"`
-	Roles        []int64 `json:"roles" schema:"roles"`
+	RequireRoles  bool    `json:"require_roles" schema:"require_roles"`
+	Roles         []int64 `json:"roles" schema:"roles"`
+	TriggerOnEdit bool    `json:"trigger_on_edit" schema:"trigger_on_edit"`
 
 	GroupID int64
 
@@ -139,7 +144,22 @@ type CustomCommand struct {
 
 var _ web.CustomValidator = (*CustomCommand)(nil)
 
-func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
+func validateCCResponseLength(responses []string, guild_id int64) bool {
+	combinedSize := 0
+	for _, v := range responses {
+		combinedSize += utf8.RuneCountInString(v)
+	}
+
+	ccMaxLength := MaxCCResponsesLength
+	isGuildPremium, _ := premium.IsGuildPremium(guild_id)
+	if isGuildPremium {
+		ccMaxLength = MaxCCResponsesLengthPremium
+	}
+
+	return combinedSize <= ccMaxLength
+}
+
+func (cc *CustomCommand) Validate(tmpl web.TemplateData, guild_id int64) (ok bool) {
 	if len(cc.Responses) > MaxUserMessages {
 		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Too many responses, max %d", MaxUserMessages)))
 		return false
@@ -158,13 +178,10 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData) (ok bool) {
 		return false
 	}
 
-	combinedSize := 0
-	for _, v := range cc.Responses {
-		combinedSize += utf8.RuneCountInString(v)
-	}
+	isValidCCLength := validateCCResponseLength(cc.Responses, guild_id)
 
-	if combinedSize > 10000 {
-		tmpl.AddAlerts(web.ErrorAlert("Max combined command size can be 10k"))
+	if cc.IsEnabled && !isValidCCLength {
+		tmpl.AddAlerts(web.ErrorAlert("Max combined command size can be 10k for free servers, and 20k for premium servers"))
 		return false
 	}
 
@@ -186,6 +203,8 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		TriggerType:              int(cc.TriggerType),
 		TextTrigger:              cc.Trigger,
 		TextTriggerCaseSensitive: cc.CaseSensitive,
+		Public:                   cc.Public,
+		PublicID:                 cc.PublicID,
 
 		Channels:              cc.Channels,
 		ChannelsWhitelistMode: cc.RequireChannels,
@@ -201,7 +220,9 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 
 		Responses: cc.Responses,
 
-		ShowErrors: cc.ShowErrors,
+		ShowErrors:    cc.ShowErrors,
+		Disabled:      !cc.IsEnabled,
+		TriggerOnEdit: cc.TriggerOnEdit,
 	}
 
 	if cc.TimeTriggerExcludingDays == nil {
@@ -214,6 +235,12 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 
 	if cc.GroupID != 0 {
 		pqCommand.GroupID = null.Int64From(cc.GroupID)
+	}
+
+	if cc.Name != "" {
+		pqCommand.Name = null.StringFrom(cc.Name)
+	} else {
+		pqCommand.Name = null.NewString("", false)
 	}
 
 	if cc.TriggerTypeForm == "interval_hours" {
@@ -240,22 +267,12 @@ func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
 	// check command specifc restrictions
 	for _, v := range cc.Channels {
 		if v == channel {
-			if cc.ChannelsWhitelistMode {
-				return true
-			}
-
-			// Ignore the channel
-			return false
+			return cc.ChannelsWhitelistMode
 		}
 	}
 
 	// Not found
-	if cc.ChannelsWhitelistMode {
-		return false
-	}
-
-	// Not in ignore list
-	return true
+	return !cc.ChannelsWhitelistMode
 }
 
 func CmdRunsForUser(cc *models.CustomCommand, ms *dstate.MemberState) bool {
@@ -273,74 +290,17 @@ func CmdRunsForUser(cc *models.CustomCommand, ms *dstate.MemberState) bool {
 	// check command specific restrictions
 	if len(cc.Roles) == 0 {
 		// Fast path
-		if cc.RolesWhitelistMode {
-			return false
-		}
-
-		return true
+		return !cc.RolesWhitelistMode
 	}
 
 	for _, v := range cc.Roles {
 		if common.ContainsInt64Slice(ms.Member.Roles, v) {
-			if cc.RolesWhitelistMode {
-				return true
-			}
-
-			return false
+			return cc.RolesWhitelistMode
 		}
 	}
 
 	// Not found
-	if cc.RolesWhitelistMode {
-		return false
-	}
-
-	return true
-}
-
-// Migrate modifies a CustomCommand to remove legacy fields.
-func (cc *CustomCommand) Migrate() *CustomCommand {
-	cc.Responses = filterEmptyResponses(cc.Response, cc.Responses...)
-	cc.Response = ""
-	if len(cc.Responses) > MaxUserMessages {
-		cc.Responses = cc.Responses[:MaxUserMessages]
-	}
-
-	return cc
-}
-
-func LegacyGetCommands(guild int64) ([]*CustomCommand, int64, error) {
-	var hashMap map[string]string
-
-	err := common.RedisPool.Do(radix.Cmd(&hashMap, "HGETALL", KeyCommands(guild)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	highest := int64(0)
-	result := make([]*CustomCommand, len(hashMap))
-
-	// Decode the commands, and also calculate the highest id
-	i := 0
-	for k, raw := range hashMap {
-		var decoded *CustomCommand
-		err = json.Unmarshal([]byte(raw), &decoded)
-		if err != nil {
-			logger.WithError(err).WithField("guild", guild).WithField("custom_command", k).Error("Failed decoding custom command")
-			result[i] = &CustomCommand{}
-		} else {
-			result[i] = decoded.Migrate()
-			if decoded.ID > highest {
-				highest = decoded.ID
-			}
-		}
-		i++
-	}
-
-	// Sort by id
-	sort.Sort(CustomCommandSlice(result))
-
-	return result, highest, nil
+	return !cc.RolesWhitelistMode
 }
 
 type CustomCommandSlice []*CustomCommand
@@ -379,10 +339,12 @@ func filterEmptyResponses(s string, ss ...string) []string {
 }
 
 const (
-	MaxCommands        = 100
-	MaxCommandsPremium = 250
-	MaxUserMessages    = 20
-	MaxGroups          = 50
+	MaxCommands                 = 100
+	MaxCommandsPremium          = 250
+	MaxCCResponsesLength        = 10000
+	MaxCCResponsesLengthPremium = 20000
+	MaxUserMessages             = 20
+	MaxGroups                   = 50
 )
 
 func MaxCommandsForContext(ctx context.Context) int {
@@ -418,4 +380,55 @@ func (p *Plugin) AllFeatureFlags() []string {
 	return []string{
 		featureFlagHasCommands, // set if this server has any custom commands at all
 	}
+}
+
+func getDatabaseEntries(ctx context.Context, guildID int64, page int, queryType, query string, limit int) (models.TemplatesUserDatabaseSlice, int64, error) {
+	qms := []qm.QueryMod{
+		models.TemplatesUserDatabaseWhere.GuildID.EQ(guildID),
+	}
+
+	if len(query) > 0 {
+		switch queryType {
+		case "id":
+			qms = append(qms, qm.Where("id = ?", query))
+		case "user_id":
+			qms = append(qms, qm.Where("user_id = ?", query))
+		case "key":
+			qms = append(qms, qm.Where("key ILIKE ?", query))
+		}
+	}
+
+	count, err := models.TemplatesUserDatabases(qms...).CountG(ctx)
+	if int64(page) > (count / 100) {
+		page = int(math.Ceil(float64(count) / 100))
+	}
+	if page > 1 {
+		qms = append(qms, qm.Offset((limit * (page - 1))))
+	}
+	qms = append(qms, qm.OrderBy("id desc"), qm.Limit(limit))
+	entries, err := models.TemplatesUserDatabases(qms...).AllG(ctx)
+	return entries, count, err
+}
+
+func convertEntries(result models.TemplatesUserDatabaseSlice) []*LightDBEntry {
+	entries := make([]*LightDBEntry, 0, len(result))
+	for _, v := range result {
+		converted, err := ToLightDBEntry(v)
+		if err != nil {
+			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
+			continue
+		}
+
+		b, err := json.Marshal(converted.Value)
+		if err != nil {
+			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
+			continue
+		}
+
+		converted.Value = common.CutStringShort(string(b), dbPageMaxDisplayLength)
+
+		entries = append(entries, converted)
+	}
+
+	return entries
 }

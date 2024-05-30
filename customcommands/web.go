@@ -2,27 +2,35 @@ package customcommands
 
 import (
 	"context"
+	"crypto/sha1"
 	_ "embed"
+	"encoding/base64"
 	"fmt"
 	"html/template"
+	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/common/pubsub"
-	yagtemplate "github.com/botlabs-gg/yagpdb/common/templates"
-	"github.com/botlabs-gg/yagpdb/customcommands/models"
-	"github.com/botlabs-gg/yagpdb/web"
-	"github.com/jonas747/discordgo/v2"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
+	yagtemplate "github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
+	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
 	"goji.io/pat"
 )
@@ -32,6 +40,12 @@ var PageHTMLEditCmd string
 
 //go:embed assets/customcommands.html
 var PageHTMLMain string
+
+//go:embed assets/customcommands-database.html
+var PageHTMLDatabase string
+
+//go:embed assets/customcommands-public.html
+var PageHTMLPublicCmd string
 
 // GroupForm is the form bindings used when creating or updating groups
 type GroupForm struct {
@@ -44,10 +58,18 @@ type GroupForm struct {
 	BlacklistRoles []int64 `valid:"role,true"`
 }
 
+type SearchForm struct {
+	Query string
+	Type  string
+}
+
 var (
-	panelLogKeyNewCommand     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_command", FormatString: "Created a new custom command: %d"})
-	panelLogKeyUpdatedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_command", FormatString: "Updated custom command: %d"})
-	panelLogKeyRemovedCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_command", FormatString: "Removed custom command: %d"})
+	panelLogKeyNewCommand             = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_command", FormatString: "Created a new custom command: %d"})
+	panelLogKeyUpdatedCommand         = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_command", FormatString: "Updated custom command: %d"})
+	panelLogKeyRemovedCommand         = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_removed_command", FormatString: "Removed custom command: %d"})
+	panelLogKeyEnabledSharingCommand  = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_enabled_sharing_command", FormatString: "Enabled a sharable link for command: %d"})
+	panelLogKeyDisabledSharingCommand = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_disabled_sharing_command", FormatString: "Disabled a sharable link for command: %d"})
+	panelLogKeyImportedCommand        = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_imported_command", FormatString: "Imported command: %d from another server"})
 
 	panelLogKeyNewGroup     = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_new_group", FormatString: "Created a new custom command group: %s"})
 	panelLogKeyUpdatedGroup = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "customcommands_updated_group", FormatString: "Updated custom command group: %s"})
@@ -58,28 +80,40 @@ var (
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("customcommands/assets/customcommands.html", PageHTMLMain)
 	web.AddHTMLTemplate("customcommands/assets/customcommands-editcmd.html", PageHTMLEditCmd)
-	web.AddSidebarItem(web.SidebarCategoryCore, &web.SidebarItem{
-		Name: "Custom commands",
+	web.AddHTMLTemplate("customcommands/assets/customcommands-public.html", PageHTMLPublicCmd)
+	web.AddSidebarItem(web.SidebarCategoryCustomCommands, &web.SidebarItem{
+		Name: "Commands",
 		URL:  "customcommands",
-		Icon: "fas fa-closed-captioning",
+		Icon: "fas fa-code",
+	})
+
+	web.AddHTMLTemplate("customcommands/assets/customcommands-database.html", PageHTMLDatabase)
+	web.AddSidebarItem(web.SidebarCategoryCustomCommands, &web.SidebarItem{
+		Name: "Database",
+		URL:  "customcommands/database",
+		Icon: "fas fa-database",
 	})
 
 	getHandler := web.ControllerHandler(handleCommands, "cp_custom_commands")
 	getCmdHandler := web.ControllerHandler(handleGetCommand, "cp_custom_commands_edit_cmd")
+	getPublicCmdHandler := web.ControllerHandler(handleGetPublicCommand, "cp_custom_commands_public")
 	getGroupHandler := web.ControllerHandler(handleGetCommandsGroup, "cp_custom_commands")
+	getDBHandler := web.ControllerHandler(handleGetDatabase, "cp_custom_commands_database")
 
 	subMux := goji.SubMux()
 	web.CPMux.Handle(pat.New("/customcommands"), subMux)
 	web.CPMux.Handle(pat.New("/customcommands/*"), subMux)
+	web.CPMux.Handle(pat.New("/customcommands/database"), subMux)
 
 	subMux.Use(func(inner http.Handler) http.Handler {
 		h := func(w http.ResponseWriter, r *http.Request) {
-			_, templateData := web.GetBaseCPContextData(r.Context())
+			g, templateData := web.GetBaseCPContextData(r.Context())
 			strTriggerTypes := map[int]string{}
 			for k, v := range triggerStrings {
 				strTriggerTypes[int(k)] = v
 			}
 			templateData["CCTriggerTypes"] = strTriggerTypes
+			templateData["CommandPrefix"], _ = prfx.GetCommandPrefixRedis(g.ID)
 
 			inner.ServeHTTP(w, r)
 		}
@@ -88,6 +122,10 @@ func (p *Plugin) InitWeb() {
 
 	subMux.Handle(pat.Get(""), getHandler)
 	subMux.Handle(pat.Get("/"), getHandler)
+
+	subMux.Handle(pat.Get("/database"), getDBHandler)
+	subMux.Handle(pat.Get("/database/"), getDBHandler)
+	subMux.Handle(pat.Post("/database/delete/:id"), web.ControllerPostHandler(handleDeleteDatabaseEntry, getDBHandler, nil))
 
 	subMux.Handle(pat.Get("/commands/:cmd/"), getCmdHandler)
 
@@ -100,26 +138,120 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/commands/:cmd/delete"), web.ControllerPostHandler(handleDeleteCommand, getHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/run_now"), web.ControllerPostHandler(handleRunCommandNow, getCmdHandler, nil))
 	subMux.Handle(pat.Post("/commands/:cmd/update_and_run"), web.ControllerPostHandler(handleUpdateAndRunNow, getCmdHandler, CustomCommand{}))
+	subMux.Handle(pat.Post("/commands/import/:cmd"), PublicCommandMW(newCommandHandler))
 
 	subMux.Handle(pat.Post("/creategroup"), web.ControllerPostHandler(handleNewGroup, getHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/update"), web.ControllerPostHandler(handleUpdateGroup, getGroupHandler, GroupForm{}))
 	subMux.Handle(pat.Post("/groups/:group/delete"), web.ControllerPostHandler(handleDeleteGroup, getHandler, nil))
+
+	// shortlink-specific mux
+	shortlinkSubMux := goji.SubMux()
+	web.RootMux.Handle(pat.New("/cc/*"), shortlinkSubMux)
+
+	shortlinkSubMux.Use(func(inner http.Handler) http.Handler {
+		h := func(w http.ResponseWriter, r *http.Request) {
+			_, templateData := web.GetBaseCPContextData(r.Context())
+			strTriggerTypes := map[int]string{}
+			for k, v := range triggerStrings {
+				strTriggerTypes[int(k)] = v
+			}
+			templateData["CCTriggerTypes"] = strTriggerTypes
+			templateData["CommandPrefix"] = prfx.DefaultCommandPrefix()
+
+			inner.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(h)
+	})
+
+	shortlinkSubMux.Handle(pat.Get("/:cmd"), PublicCommandMW(getPublicCmdHandler))
+	shortlinkSubMux.Handle(pat.Get("/:cmd/"), PublicCommandMW(getPublicCmdHandler))
+}
+
+func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	var err error
+
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+
+	page := 0
+	pageStr := r.URL.Query().Get("page")
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil {
+			templateData.AddAlerts(web.ErrorAlert("Failed parsing Page"))
+		}
+	}
+
+	if page < 1 {
+		page = 1
+	}
+
+	queryType := r.URL.Query().Get("type")
+	query := r.URL.Query().Get("query")
+	if len(query) > 0 {
+		templateData["Query"] = query
+		templateData["QueryType"] = queryType
+	}
+
+	result, total, err := getDatabaseEntries(ctx, activeGuild.ID, page, queryType, query, 100)
+	if err != nil {
+		return templateData, err
+	}
+	totalPages := int(math.Ceil((float64(total) / 100)))
+	if page > totalPages {
+		page = totalPages
+	}
+
+	entries := convertEntries(result)
+	templateData["DBEntries"] = entries
+	templateData["TotalPages"] = totalPages
+	templateData["Page"] = page
+
+	return templateData, nil
+}
+
+func handleDeleteDatabaseEntry(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
+
+	id, err := strconv.ParseInt(pat.Param(r, "id"), 10, 64)
+	if err != nil {
+		return templateData, err
+	}
+
+	_, err = models.TemplatesUserDatabases(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, id)).DeleteAll(ctx, common.PQ)
+	if err != nil {
+		return templateData, err
+	}
+
+	return templateData.AddAlerts(), nil
+}
+
+func getLangBuiltInFuncs() string {
+	var langBuiltins strings.Builder
+	for k := range yagtemplate.StandardFuncMap {
+		langBuiltins.WriteString(" " + k)
+	}
+
+	return langBuiltins.String()
 }
 
 func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
 	groupID := int64(0)
 	if v, ok := templateData["CurrentGroupID"]; ok {
 		groupID = v.(int64)
 	}
 
-	var langBuiltins strings.Builder
-	for k := range yagtemplate.StandardFuncMap {
-		langBuiltins.WriteString(" " + k)
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return templateData, err
 	}
 
-	templateData["HLJSBuiltins"] = langBuiltins.String()
+	templateData["HLJSBuiltins"] = getLangBuiltInFuncs()
+	updateTemplateWithCountData(int(count), templateData, ctx)
 
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
@@ -127,27 +259,74 @@ func handleCommands(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 func handleGetCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
-	ccID, err := strconv.ParseInt(pat.Param(r, "cmd"), 10, 64)
+	var cc *models.CustomCommand
+	var err error
+	cmdParam := pat.Param(r, "cmd")
+	// when accessed via control panel, activeGuild != nil
+	ccID, err := strconv.ParseInt(cmdParam, 10, 64)
 	if err != nil {
 		return templateData, errors.WithStackIf(err)
 	}
-
-	cc, err := models.CustomCommands(
+	cc, err = models.CustomCommands(
 		models.CustomCommandWhere.GuildID.EQ(activeGuild.ID),
 		models.CustomCommandWhere.LocalID.EQ(ccID)).OneG(r.Context())
 	if err != nil {
 		return templateData, errors.WithStackIf(err)
 	}
+	allowedCCLength := MaxCCResponsesLength
+	if premium.ContextPremium(r.Context()) {
+		allowedCCLength = MaxCCResponsesLengthPremium
+	}
+	templateData["CC"] = cc
+	templateData["Commands"] = true
+	templateData["IsGuildPremium"] = premium.ContextPremium(r.Context())
+	templateData["MaxCCLength"] = allowedCCLength
+	templateData["PublicLink"] = getPublicLink(cc)
+	
+	return serveGroupSelected(r, templateData, cc.GroupID.Int64, cc.GuildID)
+}
+
+func handleGetPublicCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	_, templateData := web.GetBaseCPContextData(r.Context())
+
+	var cc *models.CustomCommand
+	var err error
+	cmdParam := pat.Param(r, "cmd")
+	// accessed via shortlink, interpret as public ID instead
+	cc, err = models.CustomCommands(
+		models.CustomCommandWhere.PublicID.EQ(cmdParam)).OneG(r.Context())
+	if err != nil {
+		templateData.AddAlerts(web.ErrorAlert("Command couldn't be found via shortlink"))
+		return templateData, errors.WithStackIf(err)
+	}
 
 	templateData["CC"] = cc
 	templateData["Commands"] = true
+	templateData["PublicLink"] = getPublicLink(cc)
 
-	return serveGroupSelected(r, templateData, cc.GroupID.Int64, activeGuild.ID)
+	return serveGroupSelected(r, templateData, cc.GroupID.Int64, cc.GuildID)
+}
+
+func getPublicLink(cc *models.CustomCommand) string {
+	if cc.PublicID == "" {
+		return ""
+	} else {
+		return fmt.Sprintf("%s/cc/%s", web.BaseURL(), cc.PublicID)
+	}
 }
 
 func handleGetCommandsGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	ctx := r.Context()
+	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	groupID, _ := strconv.ParseInt(pat.Param(r, "group"), 10, 64)
+
+	count, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	if err != nil {
+		return templateData, err
+	}
+
+	updateTemplateWithCountData(int(count), templateData, ctx)
+
 	return serveGroupSelected(r, templateData, groupID, activeGuild.ID)
 }
 
@@ -213,7 +392,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	}
 
 	if int(c) >= MaxCommandsForContext(ctx) {
-		return templateData, web.NewPublicError(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))), nil
 	}
 
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
@@ -225,7 +404,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		GuildID: activeGuild.ID,
 		LocalID: localID,
 
-		Disabled:   true,
+		Disabled:   false,
 		ShowErrors: true,
 
 		TimeTriggerExcludingDays:  []int64{},
@@ -238,16 +417,53 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		dbModel.GroupID = null.Int64From(groupID)
 	}
 
+	var importCC *models.CustomCommand
+	_, importingPublicCC := templateData["PublicAccess"]
+	if importingPublicCC {
+		// this is an import
+		importID := pat.Param(r, "cmd")
+		importCC, err = models.CustomCommands(
+			models.CustomCommandWhere.PublicID.EQ(importID)).OneG(r.Context())
+		if err != nil {
+			http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
+			return templateData, nil
+		}
+		isValidCCLength := validateCCResponseLength(importCC.Responses, activeGuild.ID)
+		if !isValidCCLength {
+			http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
+			return templateData, nil
+		}
+		dbModel.Name = importCC.Name
+		dbModel.ReactionTriggerMode = importCC.ReactionTriggerMode
+		dbModel.Responses = importCC.Responses
+		dbModel.TextTrigger = importCC.TextTrigger
+		dbModel.TextTriggerCaseSensitive = importCC.TextTriggerCaseSensitive
+		dbModel.TimeTriggerExcludingDays = importCC.TimeTriggerExcludingDays
+		dbModel.TimeTriggerExcludingHours = importCC.TimeTriggerExcludingHours
+		dbModel.TimeTriggerInterval = importCC.TimeTriggerInterval
+		dbModel.TriggerOnEdit = importCC.TriggerOnEdit && premium.ContextPremium(ctx)
+		dbModel.TriggerType = importCC.TriggerType
+		templateData.AddAlerts(web.WarningAlert("It is recommended you scan your CC for hardcoded IDs or other server-specific arguments you may want to update"))
+	}
+
 	err = dbModel.InsertG(ctx, boil.Infer())
 	if err != nil {
 		return templateData, err
+	}
+
+	if importingPublicCC {
+		UpdateImportCount(importCC)
 	}
 
 	featureflags.MarkGuildDirty(activeGuild.ID)
 
 	http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands/commands/%d/", activeGuild.ID, localID), http.StatusSeeOther)
 
-	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	if !importingPublicCC {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	} else {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyImportedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	}
 
 	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
 	return templateData, nil
@@ -257,11 +473,34 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	cmd := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
+	cmdEdit := ctx.Value(common.ContextKeyParsedForm).(*CustomCommand)
+	isCmdValid := cmdEdit.Validate(templateData, activeGuild.ID)
+	if !isCmdValid {
+		return templateData, nil
+	}
+
+	cmdSaved, err := models.FindCustomCommandG(context.Background(), activeGuild.ID, int64(cmdEdit.ID))
+	if err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"guild_id": activeGuild.ID,
+			"cmd_id":   cmdEdit.ID,
+		}).Error("Error in fetching command")
+		return templateData, err
+	}
+
+	if cmdSaved.Disabled && !cmdEdit.ToDBModel().Disabled {
+		c, err := models.CustomCommands(qm.Where("guild_id = ? and disabled = false", activeGuild.ID)).CountG(ctx)
+		if err != nil {
+			return templateData, err
+		}
+		if int(c) >= MaxCommandsForContext(ctx) {
+			return templateData, web.NewPublicError(fmt.Sprintf("Max %d enabled custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))
+		}
+	}
 
 	// ensure that the group specified is owned by this guild
-	if cmd.GroupID != 0 {
-		c, err := models.CustomCommandGroups(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, cmd.GroupID)).CountG(ctx)
+	if cmdEdit.GroupID != 0 {
+		c, err := models.CustomCommandGroups(qm.Where("guild_id = ? AND id = ?", activeGuild.ID, cmdEdit.GroupID)).CountG(ctx)
 		if err != nil {
 			return templateData, err
 		}
@@ -271,14 +510,17 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}
 	}
 
-	dbModel := cmd.ToDBModel()
+	if !premium.ContextPremium(ctx) && cmdEdit.TriggerOnEdit {
+		return templateData.AddAlerts(web.ErrorAlert("`Trigger on edits` is a premium feature, your command wasn't saved, please save again after disabling `Trigger on edits`")), nil
+	}
+
+	dbModel := cmdEdit.ToDBModel()
 
 	templateData["CurrentGroupID"] = dbModel.GroupID.Int64
 
 	dbModel.GuildID = activeGuild.ID
-	dbModel.LocalID = cmd.ID
-	dbModel.TriggerType = int(triggerTypeFromForm(cmd.TriggerTypeForm))
-
+	dbModel.LocalID = cmdEdit.ID
+	dbModel.TriggerType = int(triggerTypeFromForm(cmdEdit.TriggerTypeForm))
 	// check low interval limits
 	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval <= 10 {
 		if dbModel.TimeTriggerInterval < 5 {
@@ -291,7 +533,21 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		}
 	}
 
-	_, err := dbModel.UpdateG(ctx, boil.Blacklist("last_run", "next_run", "local_id", "guild_id", "last_error", "last_error_time", "run_count"))
+	blacklistColumns := []string{"last_run", "next_run", "local_id", "guild_id", "last_error", "last_error_time", "run_count", "import_count"}
+
+	if cmdEdit.Public && cmdSaved.PublicID == "" {
+		hash := sha1.New()
+		io.WriteString(hash, strconv.FormatInt(activeGuild.ID, 10))
+		io.WriteString(hash, strconv.FormatInt(time.Now().Unix(), 10))
+		fullHash := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+		dbModel.PublicID = fullHash[:10]
+		dbModel.Public = true
+		templateData["PublicLink"] = getPublicLink(dbModel)
+	} else {
+		blacklistColumns = append(blacklistColumns, "public_id")
+	}
+
+	_, err = dbModel.UpdateG(ctx, boil.Blacklist(blacklistColumns...))
 	if err != nil {
 		return templateData, nil
 	}
@@ -314,6 +570,11 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	if dbModel.Public && !cmdSaved.Public {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyEnabledSharingCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	} else if !dbModel.Public && cmdSaved.Public {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDisabledSharingCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
+	}
 
 	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
 	return templateData, err
@@ -385,6 +646,11 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ? AND trigger_type = 5", activeGuild.ID, cmdID)).OneG(context.Background())
 	if err != nil {
 		return templateData, err
+	}
+
+	if cmd.Disabled {
+		templateData.AddAlerts(web.ErrorAlert("This command is disabled, cannot run a disabled command"))
+		return templateData, nil
 	}
 
 	ok, err := checkSetCooldown(activeGuild.ID, member.User.ID)
@@ -583,4 +849,54 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	}
 
 	return templateData, err
+}
+
+func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx context.Context) {
+	maxCommands := MaxCommandsForContext(ctx)
+	templateData["CCCount"] = count
+	templateData["CCLimit"] = maxCommands
+
+	additionalMessage := ""
+	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
+		additionalMessage = fmt.Sprintf("(You may increase the limit upto %d with YAGPDB premium)", MaxCommandsPremium)
+	}
+	templateData["AdditionalMessage"] = additionalMessage
+}
+
+func PublicCommandMW(inner http.Handler) http.Handler {
+	mw := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		_, templateData := web.GetBaseCPContextData(ctx)
+		publicID := pat.Param(r, "cmd")
+		cc, err := models.CustomCommands(
+			models.CustomCommandWhere.PublicID.EQ(publicID)).OneG(r.Context())
+		if err != nil {
+			logger.Error(errors.WithStackIf(err))
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+			return
+		}
+
+		if cc.Public {
+			templateData["PublicAccess"] = true
+			if _, ok := ctx.Value(common.ContextKeyUser).(*discordgo.User); ok {
+				guilds, _ := web.GetUserAccessibleGuilds(r.Context(), true)
+				templateData["UserGuilds"] = guilds
+			}
+			// retrieve the cc's page
+			defer func() { inner.ServeHTTP(w, r) }()
+		} else {
+			http.Redirect(w, r, "/?err=noaccess", http.StatusTemporaryRedirect)
+		}
+		r = r.WithContext(context.WithValue(ctx, common.ContextKeyTemplateData, templateData))
+	}
+
+	return http.HandlerFunc(mw)
+}
+
+func UpdateImportCount(cmd *models.CustomCommand) {
+	_, err := common.PQ.Exec("UPDATE custom_commands SET import_count = import_count + 1 WHERE public_id=$1", cmd.PublicID)
+
+	if err != nil {
+		logger.WithError(err).WithField("guild", cmd.GuildID).Error("failed running post command imported query")
+	}
 }

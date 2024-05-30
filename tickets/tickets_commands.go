@@ -12,20 +12,25 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/analytics"
-	"github.com/botlabs-gg/yagpdb/commands"
-	"github.com/botlabs-gg/yagpdb/common"
-	"github.com/botlabs-gg/yagpdb/tickets/models"
-	"github.com/jonas747/dcmd/v4"
-	"github.com/jonas747/discordgo/v2"
-	"github.com/jonas747/dstate/v4"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/botlabs-gg/yagpdb/v2/analytics"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
+	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.PermissionReadMessages | discordgo.PermissionSendMessages | discordgo.PermissionEmbedLinks | discordgo.PermissionAttachFiles
+const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.PermissionViewChannel | discordgo.PermissionSendMessages | discordgo.PermissionEmbedLinks | discordgo.PermissionAttachFiles
 
 var _ commands.CommandProvider = (*Plugin)(nil)
+
+func createTicketsDisabledError(guild *dcmd.GuildContextData) string {
+	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guild))
+}
 
 func (p *Plugin) AddCommands() {
 
@@ -48,7 +53,7 @@ func (p *Plugin) AddCommands() {
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			if !conf.Enabled {
-				return "Ticket system is disabled in this server, the server admins can enable it in the control panel.", nil
+				return createTicketsDisabledError(parsed.GuildData), nil
 			}
 
 			_, ticket, err := CreateTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str(), true)
@@ -98,7 +103,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Added %s#%s to the ticket", target.User.Username, target.User.Discriminator), nil
+			return fmt.Sprintf("Added %s to the ticket", target.User.String()), nil
 		},
 	}
 
@@ -130,7 +135,7 @@ func (p *Plugin) AddCommands() {
 			}
 
 			if !foundUser {
-				return fmt.Sprintf("%s#%s is already not (explicitly) part of this ticket", target.User.Username, target.User.Discriminator), nil
+				return fmt.Sprintf("%s is already not (explicitly) part of this ticket", target.User.String()), nil
 			}
 
 			err := common.BotSession.ChannelPermissionDelete(currentTicket.Ticket.ChannelID, target.User.ID)
@@ -138,7 +143,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Removed %s#%s from the ticket", target.User.Username, target.User.Discriminator), nil
+			return fmt.Sprintf("Removed %s from the ticket", target.User.String()), nil
 		},
 	}
 
@@ -345,7 +350,7 @@ func (p *Plugin) AddCommands() {
 
 				// no ticket commands have any effect then
 				if activeTicket == nil && !conf.Enabled {
-					return "Ticket system is disabled on this server, admins can enable it in the control panel.", nil
+					return createTicketsDisabledError(data.GuildData), nil
 				}
 
 				ctx := context.WithValue(data.Context(), CtxKeyConfig, conf)
@@ -436,7 +441,7 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 			// download attachments
 		OUTER:
 			for _, att := range msg.Attachments {
-				msg.Content += fmt.Sprintf("(attatchment: %s)", att.Filename)
+				msg.Content += fmt.Sprintf("(attachment: %s)", att.Filename)
 
 				totalAttachmentSize += att.Size
 				if totalAttachmentSize > 500000000 {
@@ -570,7 +575,7 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 
 		// serialize mesasge content
 		ts, _ := m.Timestamp.Parse()
-		buf.WriteString(fmt.Sprintf("[%s] %s#%s (%d): ", ts.UTC().Format(TicketTXTDateFormat), m.Author.Username, m.Author.Discriminator, m.Author.ID))
+		buf.WriteString(fmt.Sprintf("[%s] %s (%d): ", ts.UTC().Format(TicketTXTDateFormat), m.Author.String(), m.Author.ID))
 		if m.Content != "" {
 			buf.WriteString(m.Content)
 			if len(m.Embeds) > 0 {

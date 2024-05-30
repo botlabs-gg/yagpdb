@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -24,7 +24,8 @@ func RegisterPlugin() {
 	var err error
 	parsedPortRange, err = parseRange(ConfPromListenPortRange.GetString())
 	if err != nil {
-		panic(fmt.Sprintf("%+v", err))
+		logrus.WithError(err).Error("Error registering prometheous, failed parsing port list.")
+		panic(err)
 	}
 
 	logrus.Infof("Using port range %v", parsedPortRange)
