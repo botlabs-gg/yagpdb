@@ -43,7 +43,7 @@ import (
 )
 
 var (
-	CCExecLock        = keylock.NewKeyLock()
+	CCExecLock        = keylock.NewKeyLock[CCExecKey]()
 	DelayedCCRunLimit = multiratelimit.NewMultiRatelimiter(0.1, 10)
 	CCMaxDataLimit    = 1000000 // 1 MB max
 )
