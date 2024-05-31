@@ -6,7 +6,7 @@ import (
 )
 
 func TestKeyLock(t *testing.T) {
-	locker := NewKeyLock()
+	locker := NewKeyLock[int]()
 
 	h := locker.Lock(1, time.Second, time.Minute)
 
@@ -25,7 +25,7 @@ func TestKeyLock(t *testing.T) {
 }
 
 func BenchmarkKeyLock(b *testing.B) {
-	locker := NewKeyLock()
+	locker := NewKeyLock[int]()
 
 	for i := 0; i < b.N; i++ {
 		h := locker.Lock(1, time.Minute, time.Minute)
