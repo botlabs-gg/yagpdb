@@ -143,6 +143,7 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 
 func init() {
 	RegisterSetupFunc(baseContextFuncs)
+	RegisterSetupFunc(interactionContextFuncs)
 
 	msgpack.RegisterExt(1, (*SDict)(nil))
 	msgpack.RegisterExt(2, (*Dict)(nil))
@@ -737,19 +738,6 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
 
 	c.addContextFunc("sort", c.tmplSort)
-
-	// interaction functions
-	c.addContextFunc("editResponse", c.tmplEditInteractionResponse(true))
-	c.addContextFunc("editResponseNoEscape", c.tmplEditInteractionResponse(false))
-	c.addContextFunc("ephemeralResponse", c.tmplEphemeralResponse)
-	c.addContextFunc("getResponse", c.tmplGetResponse)
-	c.addContextFunc("sendModal", c.tmplSendModal)
-	c.addContextFunc("sendResponse", c.tmplSendInteractionResponse(true, false))
-	c.addContextFunc("sendResponseNoEscape", c.tmplSendInteractionResponse(false, false))
-	c.addContextFunc("sendResponseNoEscapeRetID", c.tmplSendInteractionResponse(false, true))
-	c.addContextFunc("sendResponseRetID", c.tmplSendInteractionResponse(true, true))
-	c.addContextFunc("updateMessage", c.tmplUpdateMessage(true))
-	c.addContextFunc("updateMessageNoEscape", c.tmplUpdateMessage(false))
 }
 
 type limitedWriter struct {
