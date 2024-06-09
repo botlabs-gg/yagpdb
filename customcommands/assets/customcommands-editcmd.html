@@ -556,12 +556,12 @@
     const intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details'];
     const textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings'];
     const messageTriggerEls = [...textTriggerEls, '#cc-message-trigger-label', '#cc-message-trigger-details'];
-    const customIDTriggerEls = [...textTriggerEls, '#cc-customid-trigger-label'];
+    const interactionTriggerEls = [...textTriggerEls, '#cc-customid-trigger-label'];
 
     // html elements that should be shown for specific trigger types and hidden otherwise
     const triggerTypeEls = {
-        modal: [...customIDTriggerEls, '#trigger-desc-modal'],
-        component: [...customIDTriggerEls, '#trigger-desc-component'],
+        modal: [...interactionTriggerEls, '#trigger-desc-modal'],
+        component: [...interactionTriggerEls, '#trigger-desc-component'],
         interval_hours: [...intervalTriggerEls, '#trigger-desc-interval_hours'],
         interval_minutes: [...intervalTriggerEls, '#trigger-desc-interval_minutes'],
         reaction: ['#cc-reaction-trigger-details', '#cc-extra-settings', '#trigger-desc-reaction'],
