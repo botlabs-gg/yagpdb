@@ -1,6 +1,8 @@
 package inmemorytracker
 
 import (
+	"container/list"
+
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
@@ -139,14 +141,37 @@ func (tracker *InMemoryTracker) GetMessages(guildID int64, channelID int64, quer
 	shard.mu.RLock()
 	defer shard.mu.RUnlock()
 
-	messages := shard.messages[channelID]
-	if messages == nil {
-		return nil
+	var messageList *list.List
+	var getMsg func(messageView) *dstate.MessageState
+
+	if channelID == 0 {
+		messageList = shard.guildMessageLists[guildID]
+		getMsg = func(mview messageView) *dstate.MessageState {
+			if messages, ok := shard.messages[mview.channelID]; ok {
+				m, _ := messages[mview.messageID]
+				return m
+			}
+
+			return nil
+		}
+	} else {
+		mlist, ok1 := shard.messageLists[channelID]
+		messages, ok2 := shard.messages[channelID]
+
+		if !ok1 || !ok2 {
+			return nil
+		}
+
+		messageList = mlist
+		getMsg = func(mview messageView) *dstate.MessageState {
+			m, _ := messages[mview.messageID]
+			return m
+		}
 	}
 
 	limit := query.Limit
 	if limit < 1 {
-		limit = messages.Len()
+		limit = messageList.Len()
 	}
 
 	buf := query.Buf
@@ -157,8 +182,13 @@ func (tracker *InMemoryTracker) GetMessages(guildID int64, channelID int64, quer
 	}
 
 	i := 0
-	for e := messages.Back(); e != nil; e = e.Prev() {
-		cast := e.Value.(*dstate.MessageState)
+	for e := messageList.Back(); e != nil; e = e.Prev() {
+		mview := e.Value.(messageView)
+		cast := getMsg(mview)
+		if cast == nil {
+			continue
+		}
+
 		include, cont := checkMessage(query, cast)
 		if include {
 			buf[i] = cast

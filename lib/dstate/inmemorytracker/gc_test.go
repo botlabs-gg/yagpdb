@@ -59,19 +59,21 @@ func TestGCMessages(t *testing.T) {
 func verifyMessages(t *testing.T, state *InMemoryTracker, channelID int64, expectedResult []int64) {
 	shard := state.getShard(0)
 
-	messages, ok := shard.messages[channelID]
-	if !ok {
+	messageViews, ok1 := shard.messageLists[channelID]
+	messages, ok2 := shard.messages[channelID]
+
+	if !ok1 || !ok2 {
 		t.Fatal("emessages slice not present")
 	}
 
-	if messages.Len() != len(expectedResult) {
-		t.Fatalf("mismatched lengths, got: %d, expected: %d", messages.Len(), len(expectedResult))
+	if messageViews.Len() != len(expectedResult) {
+		t.Fatalf("mismatched lengths, got: %d, expected: %d", messageViews.Len(), len(expectedResult))
 	}
 
 	i := 0
-	for e := messages.Front(); e != nil; e = e.Next() {
-
-		cast := e.Value.(*dstate.MessageState)
+	for e := messageViews.Front(); e != nil; e = e.Next() {
+		mview := e.Value.(messageView)
+		cast := messages[mview.messageID]
 		if cast.ID != expectedResult[i] {
 			t.Fatalf("mismatched result at index [%d]: %d, expected %d", i, cast.ID, expectedResult[i])
 		}

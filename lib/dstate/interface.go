@@ -30,6 +30,7 @@ type StateTracker interface {
 	// GetMessages returns the messages of the channel, up to limit, you may pass in a pre-allocated buffer to save allocations.
 	// If cap(buf) is less than the needed then a new one will be created and returned
 	// if len(buf) is greater than needed, it will be sliced to the proper length
+	// If channelID is 0, it will attempt to return the most recent messages from the guild or nil
 	GetMessages(guildID int64, channelID int64, query *MessagesQuery) []*MessageState
 
 	// Calls f on all members, return true to continue or false to stop
