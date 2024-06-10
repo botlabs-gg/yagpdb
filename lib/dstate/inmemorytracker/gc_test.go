@@ -59,7 +59,7 @@ func TestGCMessages(t *testing.T) {
 func verifyMessages(t *testing.T, state *InMemoryTracker, channelID int64, expectedResult []int64) {
 	shard := state.getShard(0)
 
-	messageViews, ok1 := shard.messageLists[channelID]
+	messageViews, ok1 := shard.channelMessageLists[channelID]
 	messages, ok2 := shard.messages[channelID]
 
 	if !ok1 || !ok2 {
@@ -72,8 +72,8 @@ func verifyMessages(t *testing.T, state *InMemoryTracker, channelID int64, expec
 
 	i := 0
 	for e := messageViews.Front(); e != nil; e = e.Next() {
-		mview := e.Value.(messageView)
-		cast := messages[mview.messageID]
+		mview := e.Value.(MessageView)
+		cast := messages[mview.MessageID]
 		if cast.ID != expectedResult[i] {
 			t.Fatalf("mismatched result at index [%d]: %d, expected %d", i, cast.ID, expectedResult[i])
 		}

@@ -142,20 +142,20 @@ func (tracker *InMemoryTracker) GetMessages(guildID int64, channelID int64, quer
 	defer shard.mu.RUnlock()
 
 	var messageList *list.List
-	var getMsg func(messageView) *dstate.MessageState
+	var getMsg func(MessageView) *dstate.MessageState
 
 	if channelID == 0 {
 		messageList = shard.guildMessageLists[guildID]
-		getMsg = func(mview messageView) *dstate.MessageState {
-			if messages, ok := shard.messages[mview.channelID]; ok {
-				m, _ := messages[mview.messageID]
+		getMsg = func(mview MessageView) *dstate.MessageState {
+			if messages, ok := shard.messages[mview.ChannelID]; ok {
+				m, _ := messages[mview.MessageID]
 				return m
 			}
 
 			return nil
 		}
 	} else {
-		mlist, ok1 := shard.messageLists[channelID]
+		mlist, ok1 := shard.channelMessageLists[channelID]
 		messages, ok2 := shard.messages[channelID]
 
 		if !ok1 || !ok2 {
@@ -163,8 +163,8 @@ func (tracker *InMemoryTracker) GetMessages(guildID int64, channelID int64, quer
 		}
 
 		messageList = mlist
-		getMsg = func(mview messageView) *dstate.MessageState {
-			m, _ := messages[mview.messageID]
+		getMsg = func(mview MessageView) *dstate.MessageState {
+			m, _ := messages[mview.MessageID]
 			return m
 		}
 	}
@@ -183,7 +183,7 @@ func (tracker *InMemoryTracker) GetMessages(guildID int64, channelID int64, quer
 
 	i := 0
 	for e := messageList.Back(); e != nil; e = e.Prev() {
-		mview := e.Value.(messageView)
+		mview := e.Value.(MessageView)
 		cast := getMsg(mview)
 		if cast == nil {
 			continue
