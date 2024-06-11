@@ -147,11 +147,6 @@ type WrappedMember struct {
 	dstate.MemberState
 }
 
-type MessageView struct {
-	ChannelID int64
-	MessageID int64
-}
-
 type ShardTracker struct {
 	mu sync.RWMutex
 
@@ -161,27 +156,25 @@ type ShardTracker struct {
 	guilds  map[int64]*SparseGuildState
 	members map[int64]map[int64]*WrappedMember
 
-	// Outer key is ChannelID, inner key is MessageID
-	messages map[int64]map[int64]*dstate.MessageState
-
 	// Key is ChannelID
-	channelMessageLists map[int64]*list.List
+	channelMessages map[int64]*list.List
 
 	// Key is GuildID
-	guildMessageLists map[int64]*list.List
+	// Maintains snapshot of most recent messages in the guild
+	// from any channel
+	guildMessages map[int64]*list.List
 
 	conf TrackerConfig
 }
 
 func newShard(conf TrackerConfig, id int) *ShardTracker {
 	return &ShardTracker{
-		shardID:             id,
-		guilds:              make(map[int64]*SparseGuildState),
-		members:             make(map[int64]map[int64]*WrappedMember),
-		messages:            make(map[int64]map[int64]*dstate.MessageState),
-		channelMessageLists: make(map[int64]*list.List),
-		guildMessageLists:   make(map[int64]*list.List),
-		conf:                conf,
+		shardID:         id,
+		guilds:          make(map[int64]*SparseGuildState),
+		members:         make(map[int64]map[int64]*WrappedMember),
+		channelMessages: make(map[int64]*list.List),
+		guildMessages:   make(map[int64]*list.List),
+		conf:            conf,
 	}
 }
 
@@ -315,7 +308,7 @@ func (shard *ShardTracker) handleGuildCreate(gc *discordgo.GuildCreate) {
 	}
 
 	shard.guilds[gc.ID] = guildState
-	shard.guildMessageLists[gc.ID] = list.New()
+	shard.guildMessages[gc.ID] = list.New()
 
 	for _, v := range gc.Members {
 		// problem: the presences in guild does not include a full user object
@@ -372,12 +365,11 @@ func (shard *ShardTracker) handleGuildDelete(gd *discordgo.GuildDelete) {
 	} else {
 		if existing, ok := shard.guilds[gd.ID]; ok {
 			for _, v := range existing.Channels {
-				delete(shard.messages, v.ID)
-				delete(shard.channelMessageLists, v.ID)
+				delete(shard.channelMessages, v.ID)
 			}
 		}
 
-		delete(shard.guildMessageLists, gd.ID)
+		delete(shard.guildMessages, gd.ID)
 		delete(shard.members, gd.ID)
 		delete(shard.guilds, gd.ID)
 	}
@@ -443,8 +435,7 @@ func (shard *ShardTracker) handleChannelDelete(c *discordgo.ChannelDelete) {
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
 
-	delete(shard.messages, c.ID)
-	delete(shard.channelMessageLists, c.ID)
+	delete(shard.channelMessages, c.ID)
 
 	gs, ok := shard.guilds[c.GuildID]
 	if !ok {
@@ -642,26 +633,19 @@ func (shard *ShardTracker) handleMessageCreate(m *discordgo.MessageCreate) {
 		return
 	}
 
-	mview := MessageView{
-		ChannelID: m.ChannelID,
-		MessageID: m.ID,
-	}
+	var elem *list.Element
 
-	shard.guildMessageLists[m.GuildID].PushBack(mview)
-
-	if cl, ok := shard.messages[m.ChannelID]; ok {
-		cl[m.ID] = dstate.MessageStateFromDgo(m.Message)
-		shard.channelMessageLists[m.ChannelID].PushBack(mview)
+	if cl, ok := shard.channelMessages[m.ChannelID]; ok {
+		elem = cl.PushBack(dstate.MessageStateFromDgo(m.Message))
 	} else {
-		cl := make(map[int64]*dstate.MessageState)
-		ml := list.New()
-
-		cl[m.ID] = dstate.MessageStateFromDgo(m.Message)
-		ml.PushBack(mview)
-
-		shard.messages[m.ChannelID] = cl
-		shard.channelMessageLists[m.ChannelID] = ml
+		cl := list.New()
+		elem = cl.PushBack(dstate.MessageStateFromDgo(m.Message))
+		shard.channelMessages[m.ChannelID] = cl
 	}
+
+	// Insert *list.Element.Value into guildMessages so that we only need to perform
+	// state changes for the channel lists
+	shard.guildMessages[m.GuildID].PushBack(&elem.Value)
 }
 
 func (shard *ShardTracker) handleMessageUpdate(m *discordgo.MessageUpdate) {
@@ -672,44 +656,50 @@ func (shard *ShardTracker) handleMessageUpdate(m *discordgo.MessageUpdate) {
 		return
 	}
 
-	if cl, ok := shard.messages[m.ChannelID]; ok {
-		if cast, ok := cl[m.ID]; ok {
-			// Update the message
-			cop := *cast
+	if cl, ok := shard.channelMessages[m.ChannelID]; ok {
+		for e := cl.Back(); e != nil; e = e.Prev() {
+			// do something with e.Value
+			cast := e.Value.(*dstate.MessageState)
+			if cast.ID == m.ID {
+				// Update the message
+				cop := *cast
 
-			if m.Content != "" {
-				cop.Content = m.Content
-			}
-
-			if m.Mentions != nil {
-				cop.Mentions = make([]discordgo.User, len(m.Mentions))
-				for i, v := range m.Mentions {
-					cop.Mentions[i] = *v
+				if m.Content != "" {
+					cop.Content = m.Content
 				}
-			}
-			if m.Embeds != nil {
-				cop.Embeds = make([]discordgo.MessageEmbed, len(m.Embeds))
-				for i, v := range m.Embeds {
-					cop.Embeds[i] = *v
+
+				if m.Mentions != nil {
+					cop.Mentions = make([]discordgo.User, len(m.Mentions))
+					for i, v := range m.Mentions {
+						cop.Mentions[i] = *v
+					}
 				}
-			}
-
-			if m.Attachments != nil {
-				cop.Attachments = make([]discordgo.MessageAttachment, len(m.Attachments))
-				for i, v := range m.Attachments {
-					cop.Attachments[i] = *v
+				if m.Embeds != nil {
+					cop.Embeds = make([]discordgo.MessageEmbed, len(m.Embeds))
+					for i, v := range m.Embeds {
+						cop.Embeds[i] = *v
+					}
 				}
-			}
 
-			if m.Author != nil {
-				cop.Author = *m.Author
-			}
+				if m.Attachments != nil {
+					cop.Attachments = make([]discordgo.MessageAttachment, len(m.Attachments))
+					for i, v := range m.Attachments {
+						cop.Attachments[i] = *v
+					}
+				}
 
-			if m.MentionRoles != nil {
-				cop.MentionRoles = m.MentionRoles
-			}
+				if m.Author != nil {
+					cop.Author = *m.Author
+				}
 
-			cl[m.ID] = &cop
+				if m.MentionRoles != nil {
+					cop.MentionRoles = m.MentionRoles
+				}
+
+				e.Value = &cop
+				return
+				// m.parseTimes(msg.Timestamp, msg.EditedTimestamp)
+			}
 		}
 	}
 }
@@ -722,11 +712,16 @@ func (shard *ShardTracker) handleMessageDelete(m *discordgo.MessageDelete) {
 		return
 	}
 
-	if cl, ok := shard.messages[m.ChannelID]; ok {
-		if cast, ok := cl[m.ID]; ok {
-			cop := *cast
-			cop.Deleted = true
-			cl[m.ID] = &cop
+	if cl, ok := shard.channelMessages[m.ChannelID]; ok {
+		for e := cl.Back(); e != nil; e = e.Prev() {
+			cast := e.Value.(*dstate.MessageState)
+
+			if cast.ID == m.ID {
+				cop := *cast
+				cop.Deleted = true
+				e.Value = &cop
+				return
+			}
 		}
 	}
 }
@@ -739,12 +734,17 @@ func (shard *ShardTracker) handleMessageDeleteBulk(m *discordgo.MessageDeleteBul
 		return
 	}
 
-	if cl, ok := shard.messages[m.ChannelID]; ok {
-		for _, delID := range m.Messages {
-			if cast, ok := cl[delID]; ok {
-				cop := *cast
-				cop.Deleted = true
-				cl[delID] = &cop
+	if cl, ok := shard.channelMessages[m.ChannelID]; ok {
+		for e := cl.Back(); e != nil; e = e.Prev() {
+			cast := e.Value.(*dstate.MessageState)
+
+			for _, delID := range m.Messages {
+				if delID == cast.ID {
+					cop := *cast
+					cop.Deleted = true
+					e.Value = &cop
+					break
+				}
 			}
 		}
 	}
@@ -867,9 +867,8 @@ func (shard *ShardTracker) handleEmojis(e *discordgo.GuildEmojisUpdate) {
 func (shard *ShardTracker) reset() {
 	shard.guilds = make(map[int64]*SparseGuildState)
 	shard.members = make(map[int64]map[int64]*WrappedMember)
-	shard.messages = make(map[int64]map[int64]*dstate.MessageState)
-	shard.channelMessageLists = make(map[int64]*list.List)
-	shard.guildMessageLists = make(map[int64]*list.List)
+	shard.channelMessages = make(map[int64]*list.List)
+	shard.guildMessages = make(map[int64]*list.List)
 }
 
 ///////////////////
@@ -915,8 +914,7 @@ func (shard *ShardTracker) handleThreadDelete(td *discordgo.ThreadDelete) {
 }
 
 func (shard *ShardTracker) removeThread(guildID int64, threadID int64) {
-	delete(shard.messages, threadID)
-	delete(shard.channelMessageLists, threadID)
+	delete(shard.channelMessages, threadID)
 
 	gs, ok := shard.guilds[guildID]
 	if !ok {

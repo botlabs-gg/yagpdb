@@ -1,6 +1,7 @@
 package inmemorytracker
 
 import (
+	"container/list"
 	"testing"
 	"time"
 
@@ -35,45 +36,67 @@ func TestGCMessages(t *testing.T) {
 	})
 
 	// verify the contents now
-	verifyMessages(t, state, initialTestChannelID, []int64{10000, 10001})
+	verifyChannelMessages(t, state, initialTestChannelID, []int64{10000, 10001})
+	verifyGuildMessages(t, state, initialTestGuildID, []int64{10000, 10001})
 
 	// add another message that will be GC'd soon
 	state.HandleEvent(testSession, &discordgo.MessageCreate{
 		Message: createTestMessage(10002, time.Date(2021, 5, 20, 10, 0, 4, 0, time.UTC)),
 	})
-	verifyMessages(t, state, initialTestChannelID, []int64{10000, 10001, 10002})
+	verifyChannelMessages(t, state, initialTestChannelID, []int64{10000, 10001, 10002})
+	verifyGuildMessages(t, state, initialTestGuildID, []int64{10000, 10001, 10002})
 
 	// run a gc, verifying max len works
 	shard.gcTick(time.Date(2021, 5, 20, 10, 0, 2, 0, time.UTC), nil)
-	verifyMessages(t, state, initialTestChannelID, []int64{10001, 10002})
+	verifyChannelMessages(t, state, initialTestChannelID, []int64{10001, 10002})
+	verifyGuildMessages(t, state, initialTestGuildID, []int64{10001, 10002})
 
 	// run a gc verifying max age
 	shard.gcTick(time.Date(2021, 5, 20, 11, 0, 3, 0, time.UTC), nil)
-	verifyMessages(t, state, initialTestChannelID, []int64{10002})
+	verifyChannelMessages(t, state, initialTestChannelID, []int64{10002})
+	verifyGuildMessages(t, state, initialTestGuildID, []int64{10002})
 
 	// run yet another one because why not
 	shard.gcTick(time.Date(2021, 5, 20, 12, 0, 3, 0, time.UTC), nil)
-	verifyMessages(t, state, initialTestChannelID, []int64{})
+	verifyChannelMessages(t, state, initialTestChannelID, []int64{})
+	verifyGuildMessages(t, state, initialTestGuildID, []int64{})
 }
 
-func verifyMessages(t *testing.T, state *InMemoryTracker, channelID int64, expectedResult []int64) {
+func verifyChannelMessages(t *testing.T, state *InMemoryTracker, channelID int64, expectedResult []int64) {
 	shard := state.getShard(0)
 
-	messageViews, ok1 := shard.channelMessageLists[channelID]
-	messages, ok2 := shard.messages[channelID]
-
-	if !ok1 || !ok2 {
+	messages, ok := shard.channelMessages[channelID]
+	if !ok {
 		t.Fatal("emessages slice not present")
 	}
 
-	if messageViews.Len() != len(expectedResult) {
-		t.Fatalf("mismatched lengths, got: %d, expected: %d", messageViews.Len(), len(expectedResult))
+	verifyMessages(t, state, messages, expectedResult, func(e *list.Element) *dstate.MessageState {
+		return e.Value.(*dstate.MessageState)
+	})
+}
+
+func verifyGuildMessages(t *testing.T, state *InMemoryTracker, guildID int64, expectedResult []int64) {
+	shard := state.getShard(0)
+
+	messages, ok := shard.guildMessages[guildID]
+	if !ok {
+		t.Fatal("guild messages slice not present")
+	}
+
+	verifyMessages(t, state, messages, expectedResult, func(e *list.Element) *dstate.MessageState {
+		return (*e.Value.(*any)).(*dstate.MessageState)
+	})
+}
+
+func verifyMessages(t *testing.T, state *InMemoryTracker, messages *list.List, expectedResult []int64, convert func(*list.Element) *dstate.MessageState) {
+	if messages.Len() != len(expectedResult) {
+		t.Fatalf("mismatched lengths, got: %d, expected: %d", messages.Len(), len(expectedResult))
 	}
 
 	i := 0
-	for e := messageViews.Front(); e != nil; e = e.Next() {
-		mview := e.Value.(MessageView)
-		cast := messages[mview.MessageID]
+	for e := messages.Front(); e != nil; e = e.Next() {
+
+		cast := convert(e)
 		if cast.ID != expectedResult[i] {
 			t.Fatalf("mismatched result at index [%d]: %d, expected %d", i, cast.ID, expectedResult[i])
 		}
