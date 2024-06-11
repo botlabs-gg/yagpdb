@@ -581,6 +581,55 @@ func (mc *MessageEditedCondition) MergeDuplicates(data []interface{}) interface{
 	return data[0] // no point in having duplicates of this
 }
 
+var _ Condition = (*MessageAttachmentCondition)(nil)
+
+type MessageAttachmentCondition struct {
+	HasAttachments bool // If true we are only matching on messages with attachments
+}
+
+func (mc *MessageAttachmentCondition) Kind() RulePartType {
+	return RulePartCondition
+}
+
+func (mc *MessageAttachmentCondition) DataType() interface{} {
+	return nil
+}
+
+func (mc *MessageAttachmentCondition) Name() string {
+	if mc.HasAttachments {
+		return "Message with attachments"
+	}
+	return "Message without attachments"
+}
+
+func (mc *MessageAttachmentCondition) Description() string {
+	if mc.HasAttachments {
+		return "Only examine messages that have attachments"
+	}
+	return "Only examine messages that don't have attachments"
+}
+
+func (mc *MessageAttachmentCondition) UserSettings() []*SettingDef {
+	return []*SettingDef{}
+}
+
+func (mc *MessageAttachmentCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
+	if data.Message == nil {
+		// pass the condition if no message is found
+		return true, nil
+	}
+
+	if contains := len(data.Message.Attachments) > 0; mc.HasAttachments {
+		return contains, nil
+	} else {
+		return !contains, nil
+	}
+}
+
+func (mc *MessageAttachmentCondition) MergeDuplicates(data []interface{}) interface{} {
+	return data[0]
+}
+
 /////////////////////////////////////////////////////////////////
 
 var _ Condition = (*ThreadCondition)(nil)
