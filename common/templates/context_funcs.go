@@ -1360,7 +1360,7 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 	return CtxChannelFromCS(cstate), nil
 }
 
-func (c *Context) AddThreadToGuildSet(t *dstate.ChannelState) {
+func (c *Context) addThreadToGuildSet(t *dstate.ChannelState) {
 	// Perform a copy so we don't mutate global array
 	gsCopy := *c.GS
 	gsCopy.Threads = make([]dstate.ChannelState, len(c.GS.Threads), len(c.GS.Threads)+1)
@@ -1437,7 +1437,7 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 	}
 
 	tstate := dstate.ChannelStateFromDgo(ctxThread)
-	c.AddThreadToGuildSet(&tstate)
+	c.addThreadToGuildSet(&tstate)
 
 	return CtxChannelFromCS(&tstate), nil
 }
@@ -1513,7 +1513,7 @@ func (c *Context) tmplThreadMemberRemove(threadID, memberID interface{}) string 
 	return ""
 }
 
-func ConvertTagNameToId(c *dstate.ChannelState, tagName string) int64 {
+func tagIDFromName(c *dstate.ChannelState, tagName string) int64 {
 
 	if c.AvailableTags == nil {
 		return 0
@@ -1529,37 +1529,55 @@ func ConvertTagNameToId(c *dstate.ChannelState, tagName string) int64 {
 	return 0
 }
 
-func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{}) (int, []int64, error) {
+type partialThread struct {
+	RateLimitPerUser    *int
+	AppliedTags         *[]int64
+	AutoArchiveDuration *int
+	Invitable           *bool
+}
+
+// Accepts a parent channel and key-value pair arguments. Returns a partial
+// channel object with values set according to passed values.
+func processThreadArgs(newThread bool, parent *dstate.ChannelState, values ...interface{}) (*partialThread, error) {
+
+	c := &partialThread{}
+	if newThread {
+		c = &partialThread{
+			RateLimitPerUser: &parent.DefaultThreadRateLimitPerUser,
+			AppliedTags:      &[]int64{},
+		}
+	}
 
 	if len(values) == 0 {
-		return c.DefaultThreadRateLimitPerUser, nil, nil
+		return c, nil
 	}
 
 	threadSdict, err := StringKeyDictionary(values...)
 	if err != nil {
-		return 0, nil, err
+		return c, err
 	}
 
-	rateLimit := c.DefaultThreadRateLimitPerUser
-	var tags []int64 = nil
 	for key, val := range threadSdict {
 
 		key = strings.ToLower(key)
 		switch key {
 		case "slowmode":
-			rateLimit = tmplToInt(val)
+			ratelimit := tmplToInt(val)
+			c.RateLimitPerUser = &ratelimit
 		case "tags":
-			if c.AvailableTags == nil {
+			if parent.AvailableTags == nil {
 				break
 			}
 
+			var tags []int64
 			v, _ := indirect(reflect.ValueOf(val))
 			const maxTags = 5 // discord limit
 			if v.Kind() == reflect.String {
-				tag := ConvertTagNameToId(c, ToString(val))
+				tag := tagIDFromName(parent, ToString(val))
 				// ensure supplied id is valid
 				if tag > 0 {
 					tags = []int64{tag}
+					c.AppliedTags = &tags
 				}
 			} else if v.Kind() == reflect.Slice {
 				// used to get rid of any duplicate tags the user might have sent
@@ -1582,7 +1600,7 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 					}
 
 					// try to convert and check if the id is valid
-					tag := ConvertTagNameToId(c, name)
+					tag := tagIDFromName(parent, name)
 					if tag == 0 {
 						continue
 					}
@@ -1590,16 +1608,33 @@ func ProcessOptionalForumPostArgs(c *dstate.ChannelState, values ...interface{})
 					seen[name] = struct{}{}
 					tags = append(tags, tag)
 				}
+				c.AppliedTags = &tags
 
 			} else {
-				return 0, nil, errors.New("tags must be of type string or cslice")
+				return c, errors.New("`tags` must be of type string or cslice")
 			}
+		case "auto_archive_duration":
+			duration := tmplToInt(val)
+			if duration < 60 || duration > 10080 {
+				return c, errors.New("'auto_archive_duration' must be and integer between 60 and 10080")
+			}
+			c.AutoArchiveDuration = &duration
+		case "invitable":
+			val, ok := val.(bool)
+			if ok {
+				if val {
+					invitable := val
+					c.Invitable = &invitable
+				}
+				continue
+			}
+			return c, errors.New("'invitable' must be a boolean")
 		default:
-			return 0, nil, errors.New(`invalid key "` + key + `"`)
+			return c, errors.New(`invalid key "` + key + `"`)
 		}
 	}
 
-	return rateLimit, tags, nil
+	return c, nil
 }
 
 func (c *Context) tmplCreateForumPost(channel, name, content interface{}, optional ...interface{}) (*CtxChannel, error) {
@@ -1623,11 +1658,11 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 		return nil, errors.New("channel not in state")
 	}
 
-	if !cstate.Type.IsForum() {
+	if cstate.Type != discordgo.ChannelTypeGuildForum {
 		return nil, errors.New("must specify a forum channel")
 	}
 
-	rateLimit, tags, err := ProcessOptionalForumPostArgs(cstate, optional...)
+	partialThreaad, err := processThreadArgs(true, cstate, optional...)
 	if err != nil {
 		return nil, err
 	}
@@ -1636,8 +1671,8 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 		Name:             ToString(name),
 		Type:             discordgo.ChannelTypeGuildPublicThread,
 		Invitable:        false,
-		RateLimitPerUser: rateLimit,
-		AppliedTags:      tags,
+		RateLimitPerUser: *partialThreaad.RateLimitPerUser,
+		AppliedTags:      *partialThreaad.AppliedTags,
 	}
 
 	var msgData *discordgo.MessageSend
@@ -1661,10 +1696,196 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 	}
 
 	tstate := dstate.ChannelStateFromDgo(thread)
-	tstate.AppliedTags = tags
-	c.AddThreadToGuildSet(&tstate)
+	tstate.AppliedTags = *partialThreaad.AppliedTags
+	c.addThreadToGuildSet(&tstate)
 
 	return CtxChannelFromCS(&tstate), nil
+}
+
+func (c *Context) tmplCloseThread(channel interface{}, flags ...bool) (string, error) {
+
+	if c.IncreaseCheckCallCounter("edit_channel", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+	}
+
+	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+		return "", ErrTooManyCalls
+	}
+
+	cstate := c.GS.GetChannelOrThread(cID)
+	if cstate == nil {
+		return "", errors.New("thread not in state")
+	}
+
+	if !cstate.Type.IsThread() {
+		return "", errors.New("must specify a thread")
+	}
+
+	edit := &discordgo.ChannelEdit{}
+	switch len(flags) {
+	case 0:
+		archived := true
+		edit.Archived = &archived
+	case 1:
+		locked := true
+		edit.Locked = &locked
+	default:
+		return "", errors.New("too many flags")
+	}
+
+	_, err := common.BotSession.ChannelEditComplex(cID, edit)
+	if err != nil {
+		return "", errors.New("unable to edit thread")
+	}
+
+	return "", nil
+}
+
+func (c *Context) tmplEditThread(channel interface{}, args ...interface{}) (string, error) {
+
+	if c.IncreaseCheckCallCounter("edit_channel", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+	}
+
+	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+		return "", ErrTooManyCalls
+	}
+
+	cstate := c.GS.GetChannelOrThread(cID)
+	if cstate == nil {
+		return "", errors.New("thread not in state")
+	}
+
+	if !cstate.Type.IsThread() {
+		return "", errors.New("must specify a thread")
+	}
+
+	partialThread, err := processThreadArgs(false, cstate, args...)
+	if err != nil {
+		return "", err
+	}
+
+	edit := &discordgo.ChannelEdit{}
+	if partialThread.RateLimitPerUser != nil {
+		edit.RateLimitPerUser = partialThread.RateLimitPerUser
+	}
+	if partialThread.AppliedTags != nil {
+		edit.AppliedTags = *partialThread.AppliedTags
+	}
+	if partialThread.AutoArchiveDuration != nil {
+		edit.AutoArchiveDuration = *partialThread.AutoArchiveDuration
+	}
+	if partialThread.Invitable != nil {
+		edit.Invitable = partialThread.Invitable
+	}
+
+	_, err = common.BotSession.ChannelEditComplex(cID, edit)
+	if err != nil {
+		return "", errors.New("unable to edit thread")
+	}
+
+	return "", nil
+}
+
+func (c *Context) tmplOpenThread(channel interface{}) (string, error) {
+
+	if c.IncreaseCheckCallCounter("edit_channel", 10) {
+		return "", ErrTooManyCalls
+	}
+
+	cID := c.ChannelArg(channel)
+	if cID == 0 {
+		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+	}
+
+	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+		return "", ErrTooManyCalls
+	}
+
+	cstate := c.GS.GetChannelOrThread(cID)
+	if cstate == nil {
+		return "", errors.New("thread not in state")
+	}
+
+	if !cstate.Type.IsThread() {
+		return "", errors.New("must specify a thread")
+	}
+
+	falseVar := false
+	edit := &discordgo.ChannelEdit{
+		Archived: &falseVar,
+		Locked:   &falseVar,
+	}
+
+	_, err := common.BotSession.ChannelEditComplex(cID, edit)
+	if err != nil {
+		return "", errors.New("unable to edit thread")
+	}
+
+	return "", nil
+}
+
+func (c *Context) tmplPinForumPost(unpin bool) func(channel interface{}) (string, error) {
+	return func(channel interface{}) (string, error) {
+
+		if c.IncreaseCheckCallCounter("edit_channel", 10) {
+			return "", ErrTooManyCalls
+		}
+
+		cID := c.ChannelArg(channel)
+		if cID == 0 {
+			return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
+		}
+
+		if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+			return "", ErrTooManyCalls
+		}
+
+		cstate := c.GS.GetChannelOrThread(cID)
+		if cstate == nil {
+			return "", errors.New("forum post not in state")
+		}
+
+		if !cstate.Type.IsThread() {
+			return "", errors.New("must specify a forum post")
+		}
+
+		parentCState := c.GS.GetChannel(cstate.ParentID)
+		if parentCState == nil {
+			return "", errors.New("parent channel not in state")
+		}
+
+		if parentCState.Type != discordgo.ChannelTypeGuildForum {
+			return "", errors.New("must specify a forum post")
+		}
+
+		edit := &discordgo.ChannelEdit{}
+
+		flags := cstate.Flags
+		if unpin {
+			flags = flags &^ discordgo.ChannelFlagsPinned
+		} else {
+			flags |= discordgo.ChannelFlagsPinned
+		}
+		edit.Flags = &flags
+
+		_, err := common.BotSession.ChannelEditComplex(cID, edit)
+		if err != nil {
+			return "", errors.New("unable to edit forum post")
+		}
+
+		return "", nil
+	}
 }
 
 func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, error) {

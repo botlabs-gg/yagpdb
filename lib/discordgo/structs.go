@@ -200,10 +200,6 @@ func (t ChannelType) IsThread() bool {
 	return t == ChannelTypeGuildPrivateThread || t == ChannelTypeGuildPublicThread
 }
 
-func (t ChannelType) IsForum() bool {
-	return t == ChannelTypeGuildForum
-}
-
 // A Channel holds all data related to an individual Discord channel.
 type Channel struct {
 	// The ID of the channel.
@@ -264,6 +260,9 @@ type Channel struct {
 	// Thread specific fields
 	ThreadMetadata *ThreadMetadata `json:"thread_metadata"`
 
+	// ChannelFlags combined as a bitfield.
+	Flags ChannelFlags `json:"flags"`
+
 	// The set of tags that can be used in a forum channel.
 	AvailableTags []ForumTag `json:"available_tags"`
 
@@ -284,6 +283,18 @@ type Channel struct {
 	// The default forum layout view used to display posts in forum channels.
 	// Defaults to ForumLayoutNotSet, which indicates a layout view has not been set by a channel admin.
 	DefaultForumLayout ForumLayout `json:"default_forum_layout"`
+
+	// whether the thread is archived
+	Archived bool `json:"archived"`
+
+	// the thread will stop showing in the channel list after auto_archive_duration minutes of inactivity, can be set to: 60, 1440, 4320, 10080
+	AutoArchiveDuration int `json:"auto_archive_duration,omitempty"`
+
+	// whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it
+	Locked bool `json:"locked"`
+
+	// whether non-moderators can add other non-moderators to a thread; only available on private threads
+	Invitable bool `json:"invitable"`
 }
 
 func (c *Channel) GetChannelID() int64 {
@@ -299,7 +310,21 @@ func (c *Channel) Mention() string {
 	return fmt.Sprintf("<#%d>", c.ID)
 }
 
-// A ChannelEdit holds Channel Feild data for a channel edit.
+// ChannelFlags is the flags of "channel" (see ChannelFlags* consts)
+// https://discord.com/developers/docs/resources/channel#message-object-message-flags
+type ChannelFlags int
+
+// Valid ChannelFlags values
+const (
+	// ChannelFlagsPinned this thread is pinned to the top of its parent GUILD_FORUM or GUILD_MEDIA channel.
+	ChannelFlagsPinned ChannelFlags = 1 << 1
+	// ChannelFlagsRequireTag whether a tag is required to be specified when creating a thread in a GUILD_FORUM or a GUILD_MEDIA channel. Tags are specified in the applied_tags field.
+	ChannelFlagsRequireTag ChannelFlags = 1 << 4
+	// ChannelFlagsHideMediaDownloadOptions when set hides the embedded media download options. Available only for media channels.
+	ChannelFlagsHideMediaDownloadOptions ChannelFlags = 1 << 15
+)
+
+// A ChannelEdit holds Channel Field data for a channel edit.
 type ChannelEdit struct {
 	Name                 string                 `json:"name,omitempty"`
 	Topic                string                 `json:"topic,omitempty"`
@@ -309,7 +334,17 @@ type ChannelEdit struct {
 	UserLimit            int                    `json:"user_limit,omitempty"`
 	PermissionOverwrites []*PermissionOverwrite `json:"permission_overwrites,omitempty"`
 	ParentID             *null.String           `json:"parent_id,omitempty"`
+	Flags                *ChannelFlags          `json:"flags,omitempty"`
 	RateLimitPerUser     *int                   `json:"rate_limit_per_user,omitempty"`
+
+	// Threads only
+	Archived            *bool `json:"archived,omitempty"`
+	AutoArchiveDuration int   `json:"auto_archive_duration,omitempty"`
+	Locked              *bool `json:"locked,omitempty"`
+	Invitable           *bool `json:"invitable,omitempty"`
+
+	// NOTE: forum threads only - these are IDs
+	AppliedTags IDSlice `json:"applied_tags,string,omitempty"`
 }
 
 type RoleCreate struct {
