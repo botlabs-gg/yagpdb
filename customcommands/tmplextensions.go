@@ -220,6 +220,10 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 				newCtx.Msg = ctx.Msg
 				newCtx.Data["Message"] = ctx.Msg
 			}
+			if ctx.CurrentFrame.Interaction != nil {
+				newCtx.CurrentFrame.Interaction = ctx.CurrentFrame.Interaction
+				newCtx.Data["Interaction"] = ctx.CurrentFrame.Interaction
+			}
 			newCtx.Data["ExecData"] = data
 			newCtx.Data["StackDepth"] = currentStackDepth + 1
 			newCtx.ExecutedFrom = ctx.ExecutedFrom
