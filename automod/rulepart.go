@@ -69,6 +69,8 @@ var RulePartMap = map[int]RulePart{
 	214: &MessageEditedCondition{NewMessage: false},
 	215: &ThreadCondition{true},
 	216: &ThreadCondition{false},
+	217: &MessageAttachmentCondition{true},
+	218: &MessageAttachmentCondition{false},
 
 	// Effects 3xx
 	300: &DeleteMessageEffect{},
