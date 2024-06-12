@@ -152,7 +152,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv", "ttc"},
 		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, toggle all channels by giving it `all`",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageGuild},
 		Arguments: []*dcmd.ArgDef{
 			{Name: "flags", Type: dcmd.String},
 		},

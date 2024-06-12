@@ -11,23 +11,28 @@ type bucket struct {
 }
 
 // KeyLock is a simple implementation of key based locks with ttl's on them
-type KeyLock struct {
-	locks   map[interface{}]*bucket
-	locksMU sync.Mutex
-	c       int64
+type KeyLock[K comparable] struct {
+	locks map[K]*bucket
+	mu    sync.Mutex
+	c     int64
 }
 
-func NewKeyLock() *KeyLock {
-	return &KeyLock{
-		locks: make(map[interface{}]*bucket),
+func NewKeyLock[K comparable]() *KeyLock[K] {
+	return &KeyLock[K]{
+		locks: make(map[K]*bucket),
 	}
 }
 
-// Lock attempts to lock the specified key for the specified duration, expiring after ttl
-// if it fails to grab the key after timeout it will return -1,
-// it will return a lock handle otherwise that you use to unlock it with.
-// this is to protect against you unlocking it after the ttl expired when something else is holding it
-func (kl *KeyLock) Lock(key interface{}, timeout time.Duration, ttl time.Duration) int64 {
+// Lock attempts to lock the key for the given duration ttl, blocking until it succeeds
+// or the timeout passes.
+//
+// Specifically, if the key is currently locked by another caller and cannot be
+// obtained within timeout, Lock returns -1. Otherwise, Lock returns a
+// non-negative handle that can be passed to KeyLock.Lock to unlock the key
+// before the ttl expires. (The lock handle guards against the case where
+// callers attempt to unlock keys that have already expired and have since been
+// re-locked by a different caller.)
+func (kl *KeyLock[K]) Lock(key K, timeout time.Duration, ttl time.Duration) (handle int64) {
 	started := time.Now()
 
 	for {
@@ -43,11 +48,11 @@ func (kl *KeyLock) Lock(key interface{}, timeout time.Duration, ttl time.Duratio
 	}
 }
 
-func (kl *KeyLock) tryLock(key interface{}, ttl time.Duration) int64 {
-	kl.locksMU.Lock()
+func (kl *KeyLock[K]) tryLock(key K, ttl time.Duration) int64 {
+	kl.mu.Lock()
 	now := time.Now()
 
-	// if there is no lock, or were past the expiry of it
+	// if there is no lock, or the bucket has expired
 	if b, ok := kl.locks[key]; !ok || (b == nil || now.After(b.expires)) {
 		// then we can sucessfully lock it
 		kl.c++
@@ -57,19 +62,19 @@ func (kl *KeyLock) tryLock(key interface{}, ttl time.Duration) int64 {
 			expires: now.Add(ttl),
 		}
 
-		kl.locksMU.Unlock()
+		kl.mu.Unlock()
 		return handle
 	}
 
-	kl.locksMU.Unlock()
+	kl.mu.Unlock()
 	return -1
 }
 
-func (kl *KeyLock) Unlock(key interface{}, handle int64) {
-	kl.locksMU.Lock()
+func (kl *KeyLock[K]) Unlock(key K, handle int64) {
+	kl.mu.Lock()
 	if b, ok := kl.locks[key]; ok && b != nil && b.handle == handle {
-		// only delete it if the caller is the one holding the lock
+		// only delete if the caller is the one holding the lock
 		delete(kl.locks, key)
 	}
-	kl.locksMU.Unlock()
+	kl.mu.Unlock()
 }

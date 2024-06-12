@@ -263,7 +263,7 @@ func HasPermissionCTX(ctx context.Context, aperms int64) bool {
 	perms := ContextMemberPerms(ctx)
 	// Require manageserver, ownership of guild or ownership of bot
 	if perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator ||
-		perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer || perms&aperms == aperms {
+		perms&discordgo.PermissionManageGuild == discordgo.PermissionManageGuild || perms&aperms == aperms {
 		return true
 	}
 

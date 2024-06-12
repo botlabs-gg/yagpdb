@@ -244,7 +244,7 @@ func IsAdmin(gs *dstate.GuildSet, member *dstate.MemberState, config *models.Rep
 
 	memberPerms, _ := gs.GetMemberPermissions(0, member.User.ID, member.Member.Roles)
 
-	if memberPerms&discordgo.PermissionManageServer != 0 {
+	if memberPerms&discordgo.PermissionManageGuild != 0 {
 		return true
 	}
 

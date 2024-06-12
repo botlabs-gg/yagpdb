@@ -273,40 +273,18 @@ func (c *Context) setupBaseData() {
 	c.Data["TimeSecond"] = time.Second
 	c.Data["UnixEpoch"] = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	// permissions
-	c.Data["Permissions"] = map[string]int64{
-		"ReadMessages":       discordgo.PermissionReadMessages,
-		"SendMessages":       discordgo.PermissionSendMessages,
-		"SendTTSMessages":    discordgo.PermissionSendTTSMessages,
-		"ManageMessages":     discordgo.PermissionManageMessages,
-		"EmbedLinks":         discordgo.PermissionEmbedLinks,
-		"AttachFiles":        discordgo.PermissionAttachFiles,
-		"ReadMessageHistory": discordgo.PermissionReadMessageHistory,
-		"MentionEveryone":    discordgo.PermissionMentionEveryone,
-		"UseExternalEmojis":  discordgo.PermissionUseExternalEmojis,
-
-		"VoiceConnect":       discordgo.PermissionVoiceConnect,
-		"VoiceSpeak":         discordgo.PermissionVoiceSpeak,
-		"VoiceMuteMembers":   discordgo.PermissionVoiceMuteMembers,
-		"VoiceDeafenMembers": discordgo.PermissionVoiceDeafenMembers,
-		"VoiceMoveMembers":   discordgo.PermissionVoiceMoveMembers,
-		"VoiceUseVAD":        discordgo.PermissionVoiceUseVAD,
-
-		"ChangeNickname":  discordgo.PermissionChangeNickname,
-		"ManageNicknames": discordgo.PermissionManageNicknames,
-		"ManageRoles":     discordgo.PermissionManageRoles,
-		"ManageWebhooks":  discordgo.PermissionManageWebhooks,
-		"ManageEmojis":    discordgo.PermissionManageEmojis,
-
-		"CreateInstantInvite": discordgo.PermissionCreateInstantInvite,
-		"KickMembers":         discordgo.PermissionKickMembers,
-		"BanMembers":          discordgo.PermissionBanMembers,
-		"Administrator":       discordgo.PermissionAdministrator,
-		"ManageChannels":      discordgo.PermissionManageChannels,
-		"ManageServer":        discordgo.PermissionManageServer,
-		"AddReactions":        discordgo.PermissionAddReactions,
-		"ViewAuditLogs":       discordgo.PermissionViewAuditLogs,
+	permNameToBit := make(map[string]int64)
+	for _, p := range discordgo.AllPermissions {
+		permNameToBit[discordgo.PermissionName(p)] = p
 	}
+
+	// for backward compatibility with previous versions
+	permNameToBit["ReadMessages"] = discordgo.PermissionViewChannel
+	permNameToBit["ManageEmojis"] = discordgo.PermissionManageEmojisAndStickers
+	permNameToBit["ManageServer"] = discordgo.PermissionManageGuild
+	permNameToBit["ViewAuditLogs"] = discordgo.PermissionViewAuditLog
+
+	c.Data["Permissions"] = permNameToBit
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
@@ -613,28 +591,41 @@ func baseContextFuncs(c *Context) {
 	// Mentions
 	c.addContextFunc("mentionEveryone", c.tmplMentionEveryone)
 	c.addContextFunc("mentionHere", c.tmplMentionHere)
+	c.addContextFunc("mentionRole", c.tmplMentionRole)
+	c.addContextFunc("mentionRoleName", c.tmplMentionRoleName)
 	c.addContextFunc("mentionRoleID", c.tmplMentionRoleID)
 	c.addContextFunc("mentionRoleName", c.tmplMentionRoleName)
 
 	// Role functions
+	c.addContextFunc("getRole", c.tmplGetRole)
+	c.addContextFunc("getRoleID", c.tmplGetRoleID)
+	c.addContextFunc("getRoleName", c.tmplGetRoleName)
+
+	c.addContextFunc("hasRole", c.tmplHasRole)
 	c.addContextFunc("hasRoleID", c.tmplHasRoleID)
 	c.addContextFunc("hasRoleName", c.tmplHasRoleName)
 
-	c.addContextFunc("addRoleID", c.tmplAddRoleID)
-	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
+	c.addContextFunc("targetHasRole", c.tmplTargetHasRole)
+	c.addContextFunc("targetHasRoleID", c.tmplTargetHasRoleID)
+	c.addContextFunc("targetHasRoleName", c.tmplTargetHasRoleName)
 
-	c.addContextFunc("setRoles", c.tmplSetRoles)
-	c.addContextFunc("addRoleName", c.tmplAddRoleName)
-	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
-
+	c.addContextFunc("giveRole", c.tmplGiveRole)
 	c.addContextFunc("giveRoleID", c.tmplGiveRoleID)
 	c.addContextFunc("giveRoleName", c.tmplGiveRoleName)
 
+	c.addContextFunc("addRole", c.tmplAddRole)
+	c.addContextFunc("addRoleID", c.tmplAddRoleID)
+	c.addContextFunc("addRoleName", c.tmplAddRoleName)
+
+	c.addContextFunc("takeRole", c.tmplTakeRole)
 	c.addContextFunc("takeRoleID", c.tmplTakeRoleID)
 	c.addContextFunc("takeRoleName", c.tmplTakeRoleName)
 
-	c.addContextFunc("targetHasRoleID", c.tmplTargetHasRoleID)
-	c.addContextFunc("targetHasRoleName", c.tmplTargetHasRoleName)
+	c.addContextFunc("removeRole", c.tmplRemoveRole)
+	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
+	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
+
+	c.addContextFunc("setRoles", c.tmplSetRoles)
 
 	// permission funcs
 	c.addContextFunc("hasPermissions", c.tmplHasPermissions)
@@ -652,6 +643,10 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getChannel", c.tmplGetChannel)
 	c.addContextFunc("getChannelPins", c.tmplGetChannelPins(false))
 	c.addContextFunc("getChannelOrThread", c.tmplGetChannelOrThread)
+	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
+	c.addContextFunc("addReactions", c.tmplAddReactions)
+	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
+	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))

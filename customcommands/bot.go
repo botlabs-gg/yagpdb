@@ -43,7 +43,7 @@ import (
 )
 
 var (
-	CCExecLock        = keylock.NewKeyLock()
+	CCExecLock        = keylock.NewKeyLock[CCExecKey]()
 	DelayedCCRunLimit = multiratelimit.NewMultiRatelimiter(0.1, 10)
 	CCMaxDataLimit    = 1000000 // 1 MB max
 )
@@ -140,7 +140,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 			}
 		}
 
-		adminOrPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.GuildData.CS.ID, data.GuildData.MS, discordgo.PermissionManageServer)
+		adminOrPerms, err := bot.AdminOrPermMS(data.GuildData.GS.ID, data.GuildData.CS.ID, data.GuildData.MS, discordgo.PermissionManageGuild)
 		if err != nil {
 			return nil, err
 		}

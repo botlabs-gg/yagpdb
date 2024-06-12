@@ -12,11 +12,11 @@ import (
 func createUserGuild(connected bool, owner bool, manageServer bool) *common.GuildWithConnected {
 	perms := int64(0)
 	if manageServer {
-		perms = discordgo.PermissionManageServer
+		perms = discordgo.PermissionManageGuild
 	}
 
 	if owner {
-		perms |= discordgo.PermissionManageServer | discordgo.PermissionAll
+		perms |= discordgo.PermissionManageGuild | discordgo.PermissionAll
 	}
 
 	return &common.GuildWithConnected{
