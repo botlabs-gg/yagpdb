@@ -57,89 +57,60 @@ func (shard *ShardTracker) gcGuild(t time.Time, gs *SparseGuildState) {
 		shard.gcGuildChannel(t, gs, v.ID, limitLen, limitAge)
 	}
 
-	shard.gcNilMessages(gs)
+	shard.gcMessageList(t, gs, limitLen, limitAge, shard.guildMessages[gs.Guild.ID], func(elem *list.Element) *dstate.MessageState {
+		return (*elem.Value.(*any)).(*dstate.MessageState)
+	})
 
 	if shard.conf.RemoveOfflineMembersAfter > 0 {
 		shard.gcMembers(t, gs, shard.conf.RemoveOfflineMembersAfter)
 	}
 }
 
-func gcGetMessage(messages map[int64]*dstate.MessageState, elem *list.Element) *dstate.MessageState {
-	m, _ := messages[elem.Value.(MessageView).MessageID]
-	return m
-}
-
-func gcDeleteMessage(messages map[int64]*dstate.MessageState, messagesList *list.List, elem *list.Element) {
-	mview := elem.Value.(MessageView)
-	delete(messages, mview.MessageID)
-	messagesList.Remove(elem)
-}
-
 func (shard *ShardTracker) gcGuildChannel(t time.Time, gs *SparseGuildState, channel int64, maxLen int, maxAge time.Duration) {
-	if messages, ok := shard.messages[channel]; ok {
-		if messagesView, ok := shard.channelMessageLists[channel]; ok {
-			if maxLen > 0 {
-				overflow := messagesView.Len() - maxLen
-				for i := overflow; i > 0; i-- {
-					gcDeleteMessage(messages, messagesView, messagesView.Front())
-				}
-			}
+	if messages, ok := shard.channelMessages[channel]; ok {
+		shard.gcMessageList(t, gs, maxLen, maxAge, messages, func(elem *list.Element) *dstate.MessageState {
+			return elem.Value.(*dstate.MessageState)
+		})
+	}
+}
 
-			if maxAge > 0 {
-				if oldest := messagesView.Front(); oldest != nil {
-					v := gcGetMessage(messages, oldest)
-					age := t.Sub(v.ParsedCreatedAt)
+func (shard *ShardTracker) gcMessageList(t time.Time, gs *SparseGuildState, maxLen int, maxAge time.Duration, messages *list.List, convert func(*list.Element) *dstate.MessageState) {
+	if messages == nil {
+		return
+	}
 
-					if age > maxAge {
-						shard.gcMessagesAge(t, gs, channel, maxAge, messages, messagesView)
-					}
-				}
+	if maxLen > 0 {
+		overflow := messages.Len() - maxLen
+		for i := overflow; i > 0; i-- {
+			messages.Remove(messages.Front())
+		}
+	}
+
+	if maxAge > 0 {
+		if oldest := messages.Front(); oldest != nil {
+			v := convert(oldest)
+			age := t.Sub(v.ParsedCreatedAt)
+
+			if age > maxAge {
+				shard.gcMessagesAge(t, gs, maxAge, messages, convert)
 			}
 		}
 	}
 }
 
-func (shard *ShardTracker) gcMessagesAge(t time.Time, gs *SparseGuildState, channel int64, maxAge time.Duration, messages map[int64]*dstate.MessageState, messagesView *list.List) {
+func (shard *ShardTracker) gcMessagesAge(t time.Time, gs *SparseGuildState, maxAge time.Duration, messages *list.List, convert func(*list.Element) *dstate.MessageState) {
 	toDel := make([]*list.Element, 0, 100)
-	for e := messagesView.Front(); e != nil; e = e.Next() {
-		v := gcGetMessage(messages, e)
-		if v != nil {
-			age := t.Sub(v.ParsedCreatedAt)
+	for e := messages.Front(); e != nil; e = e.Next() {
+		v := convert(e)
+		age := t.Sub(v.ParsedCreatedAt)
 
-			if age > maxAge {
-				toDel = append(toDel, e)
-			}
-		} else {
+		if age > maxAge {
 			toDel = append(toDel, e)
 		}
 	}
 
 	for _, v := range toDel {
-		gcDeleteMessage(messages, messagesView, v)
-	}
-}
-
-// Clear any messages that are no longer present after channel gc
-func (shard *ShardTracker) gcNilMessages(gs *SparseGuildState) {
-	messages := shard.guildMessageLists[gs.Guild.ID]
-	for e := messages.Front(); e != nil; {
-		mview := e.Value.(MessageView)
-		remove := false
-
-		if cl, ok := shard.messages[mview.ChannelID]; ok {
-			if _, ok := cl[mview.MessageID]; !ok {
-				remove = true
-			}
-		} else {
-			remove = true
-		}
-
-		tmp := e
-		e = e.Next()
-
-		if remove {
-			messages.Remove(tmp)
-		}
+		messages.Remove(v)
 	}
 }
 
