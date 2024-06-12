@@ -1820,10 +1820,8 @@ func processThreadArgs(newThread bool, parent *dstate.ChannelState, values ...in
 		case "invitable":
 			val, ok := val.(bool)
 			if ok {
-				if val {
-					invitable := val
-					c.Invitable = &invitable
-				}
+				invitable := val
+				c.Invitable = &invitable
 				continue
 			}
 			return c, errors.New("'invitable' must be a boolean")
