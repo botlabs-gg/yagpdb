@@ -1143,7 +1143,7 @@ func ExecuteCustomCommandFromComponent(cc *models.CustomCommand, gs *dstate.Guil
 	switch interaction.MessageComponentData().ComponentType {
 	case discordgo.ButtonComponent:
 		tmplCtx.Data["IsButton"] = true
-	case discordgo.TextInputComponent, discordgo.UserSelectMenuComponent, discordgo.RoleSelectMenuComponent, discordgo.MentionableSelectMenuComponent, discordgo.ChannelSelectMenuComponent:
+	case discordgo.SelectMenuComponent, discordgo.UserSelectMenuComponent, discordgo.RoleSelectMenuComponent, discordgo.MentionableSelectMenuComponent, discordgo.ChannelSelectMenuComponent:
 		tmplCtx.Data["IsMenu"] = true
 		switch interaction.MessageComponentData().ComponentType {
 		case discordgo.SelectMenuComponent:
