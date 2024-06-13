@@ -1139,9 +1139,12 @@ func ExecuteCustomCommandFromComponent(cc *models.CustomCommand, gs *dstate.Guil
 	}
 	tmplCtx.Data["StrippedID"] = stripped
 	tmplCtx.Data["StrippedMsg"] = stripped
-	tmplCtx.Data["IsButton"] = interaction.MessageComponentData().ComponentType == discordgo.ButtonComponent
-	tmplCtx.Data["IsMenu"] = interaction.MessageComponentData().ComponentType == discordgo.SelectMenuComponent
-	if tmplCtx.Data["IsMenu"] == true {
+
+	switch interaction.MessageComponentData().ComponentType {
+	case discordgo.ButtonComponent:
+		tmplCtx.Data["IsButton"] = true
+	case discordgo.TextInputComponent, discordgo.UserSelectMenuComponent, discordgo.RoleSelectMenuComponent, discordgo.MentionableSelectMenuComponent, discordgo.ChannelSelectMenuComponent:
+		tmplCtx.Data["IsMenu"] = true
 		switch interaction.MessageComponentData().ComponentType {
 		case discordgo.SelectMenuComponent:
 			tmplCtx.Data["MenuType"] = "string"
