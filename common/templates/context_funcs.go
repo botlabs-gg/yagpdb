@@ -42,13 +42,13 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 		msgSend.Embeds = t
 	case *discordgo.MessageSend:
 		msgSend = t
-		if (len(msgSend.Embeds) == 0 && strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) {
+		if (len(msgSend.Embeds) == 0 && strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) && (len(msgSend.Components) == 0) {
 			return ""
 		}
 	default:
 		msgSend.Content = fmt.Sprint(s...)
 	}
-	msgSend.Components = []discordgo.MessageComponent{
+	serverInfo := []discordgo.MessageComponent{
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
 				discordgo.Button{
@@ -60,6 +60,10 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 			},
 		},
 	}
+	if len(msgSend.Components) >= 5 {
+		msgSend.Components = msgSend.Components[:4]
+	}
+	msgSend.Components = append(serverInfo, msgSend.Components...)
 
 	channel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
 	if err != nil {
@@ -368,7 +372,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		if sendType == sendMessageDM {
-			msgSend.Components = []discordgo.MessageComponent{
+			serverInfo := []discordgo.MessageComponent{
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
 						discordgo.Button{
@@ -380,6 +384,10 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 					},
 				},
 			}
+			if len(msgSend.Components) >= 5 {
+				msgSend.Components = msgSend.Components[:4]
+			}
+			msgSend.Components = append(serverInfo, msgSend.Components...)
 		}
 
 		m, err = common.BotSession.ChannelMessageSendComplex(cid, msgSend)
