@@ -556,7 +556,6 @@ function formSubmissionEvents() {
 		}
 
 		event.preventDefault();
-		console.log("Should submit using " + target.attr("formaction"), event, parentForm);
 		submitForm(parentForm, target.attr("formaction"), alertsOnly);
 
 	});
