@@ -617,7 +617,7 @@
     }
 
     // 'require roles' mode with no required roles
-    const checkNoEmptyRequiredRoles = {
+    var checkNoEmptyRequiredRoles = {
         applicableTriggerTypes: ['modal', 'component', 'reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
         warningId: 'require-no-roles-warning',
         run() {
@@ -640,7 +640,7 @@
     $('#ignore-role-mode').change(() => checkNoEmptyRequiredRoles.run());
     $('#command-roles').change(() => checkNoEmptyRequiredRoles.run());
 
-    const checkNoEmptyRequiredChannels = {
+    var checkNoEmptyRequiredChannels = {
         applicableTriggerTypes: ['modal', 'component', 'reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
         warningId: 'require-no-channels-warning',
         run() {
@@ -663,7 +663,7 @@
     $('#ignore-channel-mode').change(() => checkNoEmptyRequiredChannels.run());
     $('#command-channels').change(() => checkNoEmptyRequiredChannels.run());
 
-    const checkMissingIntervalTriggerChannel = {
+    var checkMissingIntervalTriggerChannel = {
         applicableTriggerTypes: ['interval_hours', 'interval_minutes'],
         warningId: 'time-trigger-no-channel-warning',
         run() {
