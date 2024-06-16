@@ -94,6 +94,10 @@
                                                     {{if eq (call .GetCCIntervalType .CC) 0}}selected{{end}}>
                                                     Minute interval
                                                 </option>
+                                                <option value="component" {{if eq .CC.TriggerType 7}} selected{{end}}>
+                                                    Message Component (BETA)</option>
+                                                <option value="modal" {{if eq .CC.TriggerType 8}} selected{{end}}>
+                                                    Modal Submission (BETA)</option>
                                             </select>
                                         </div>
                                     </div>
@@ -130,6 +134,13 @@
                                         <p id="trigger-desc-interval_minutes">
                                             The command will run at a minute interval, for example every 10 minutes.
                                         </p>
+                                        <p id="trigger-desc-component">
+                                            The command will run when a component (a button or a select menu) whose
+                                            custom ID matches the given regex is used. BETA FEATURE.
+                                        </p>
+                                        <p id="trigger-desc-modal">
+                                            The command will run when a modal whose custom ID matches the given regex is submitted. BETA FEATURE.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -137,7 +148,8 @@
                                 <div class="row">
                                     <div class="col-lg-12">
                                         <div class="form-group">
-                                            <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="cc-message-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <div class="input-group mb-2">
                                                 <div class="input-group-prepend" id="command-trigger-prepended-prefix">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
@@ -148,9 +160,11 @@
                                             <div class="row">
                                               <div class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
                                               <div class="col-lg-6">
-                                                {{$disabledClass := ""}}
-                                                {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
-                                                {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
+                                                <div id="cc-message-trigger-details">
+                                                    {{$disabledClass := ""}}
+                                                    {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
+                                                    {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
+                                                </div>
                                               </div>
                                             </div>
                                           </div>
@@ -541,17 +555,21 @@
 
     const intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details'];
     const textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings'];
+    const messageTriggerEls = [...textTriggerEls, '#cc-message-trigger-label', '#cc-message-trigger-details'];
+    const interactionTriggerEls = [...textTriggerEls, '#cc-customid-trigger-label'];
 
     // html elements that should be shown for specific trigger types and hidden otherwise
     const triggerTypeEls = {
+        modal: [...interactionTriggerEls, '#trigger-desc-modal'],
+        component: [...interactionTriggerEls, '#trigger-desc-component'],
         interval_hours: [...intervalTriggerEls, '#trigger-desc-interval_hours'],
         interval_minutes: [...intervalTriggerEls, '#trigger-desc-interval_minutes'],
         reaction: ['#cc-reaction-trigger-details', '#cc-extra-settings', '#trigger-desc-reaction'],
-        cmd: [...textTriggerEls, '#command-trigger-prepended-prefix', '#trigger-desc-cmd'],
-        prefix: [...textTriggerEls, '#trigger-desc-prefix'],
-        contains: [...textTriggerEls, '#trigger-desc-contains'],
-        regex: [...textTriggerEls, '#trigger-desc-regex'],
-        exact: [...textTriggerEls, '#trigger-desc-exact'],
+        cmd: [...messageTriggerEls, '#command-trigger-prepended-prefix', '#trigger-desc-cmd'],
+        prefix: [...messageTriggerEls, '#trigger-desc-prefix'],
+        contains: [...messageTriggerEls, '#trigger-desc-contains'],
+        regex: [...messageTriggerEls, '#trigger-desc-regex'],
+        exact: [...messageTriggerEls, '#trigger-desc-exact'],
         none: ['#trigger-desc-none'],
     };
 
@@ -600,7 +618,7 @@
 
     // 'require roles' mode with no required roles
     const checkNoEmptyRequiredRoles = {
-        applicableTriggerTypes: ['reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
+        applicableTriggerTypes: ['modal', 'component', 'reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
         warningId: 'require-no-roles-warning',
         run() {
             const isRequireMode = $('#require-role-mode').prop('checked');
@@ -623,7 +641,7 @@
     $('#command-roles').change(() => checkNoEmptyRequiredRoles.run());
 
     const checkNoEmptyRequiredChannels = {
-        applicableTriggerTypes: ['reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
+        applicableTriggerTypes: ['modal', 'component', 'reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
         warningId: 'require-no-channels-warning',
         run() {
             const isRequireMode = $('#require-channel-mode').prop('checked');
