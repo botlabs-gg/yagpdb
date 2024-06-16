@@ -1166,7 +1166,7 @@ func (c *Context) tmplEditThread(channel interface{}, args ...interface{}) (stri
 		return "", errors.New("must specify a thread")
 	}
 
-	parentCS := c.GS.GetChannelOrThread(cID)
+	parentCS := c.GS.GetChannel(cstate.ParentID)
 	if parentCS == nil {
 		return "", errors.New("parent not in state")
 	}
