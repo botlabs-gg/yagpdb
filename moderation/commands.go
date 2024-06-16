@@ -1,6 +1,8 @@
 package moderation
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -19,12 +21,13 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/logs"
+	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/jinzhu/gorm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
-	config, err = GetConfig(cmdData.GuildData.GS.ID)
+	config, err = GetCachedConfigOrDefault(cmdData.GuildData.GS.ID)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetConfig")
 	}
@@ -337,7 +340,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			if config.MuteRole == "" {
+			if config.MuteRole == 0 {
 				return fmt.Sprintf("No mute role selected. Select one at <%s/moderation>", web.ManageServerURL(parsed.GuildData)), nil
 			}
 
@@ -396,7 +399,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			if config.MuteRole == "" {
+			if config.MuteRole == 0 {
 				return "No mute role set up, assign a mute role in the control panel", nil
 			}
 
@@ -562,7 +565,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			logLink := CreateLogs(parsed.GuildData.GS.ID, parsed.GuildData.CS.ID, parsed.Author)
 
-			channelID := config.IntReportChannel()
+			channelID := config.ReportChannel
 			if channelID == 0 {
 				return "No report channel set up", nil
 			}
@@ -708,7 +711,6 @@ var ModerationCommands = []*commands.YAGCommand{
 				toID = parsed.Switches["to"].Int64()
 			}
 
-
 			// Check if set to break at a certain ID
 			fromID := int64(0)
 			if parsed.Switches["from"].Value != nil {
@@ -716,7 +718,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				fromID = parsed.Switches["from"].Int64()
 			}
 
-			if(toID > 0 && fromID > 0 && fromID < toID){
+			if toID > 0 && fromID > 0 && fromID < toID {
 				return errors.New("from messageID cannot be less than to messageID"), nil
 			}
 
@@ -781,11 +783,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			if config.ActionChannel == "" {
+			if config.ActionChannel == 0 {
 				return "No mod log channel set up", nil
 			}
 
-			msg, err := common.BotSession.ChannelMessage(config.IntActionChannel(), parsed.Args[0].Int64())
+			msg, err := common.BotSession.ChannelMessage(config.ActionChannel, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
 			}
@@ -800,7 +802,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			embed := msg.Embeds[0]
 			updateEmbedReason(parsed.Author, parsed.Args[1].Str(), embed)
-			_, err = common.BotSession.ChannelMessageEditEmbed(config.IntActionChannel(), msg.ID, embed)
+			_, err = common.BotSession.ChannelMessageEditEmbed(config.ActionChannel, msg.ID, embed)
 			if err != nil {
 				return nil, err
 			}
@@ -879,19 +881,23 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if parsed.Switches["id"].Value != nil {
-				var warn []*WarningModel
-				err = common.GORM.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Switches["id"].Int()).First(&warn).Error
-				if err != nil && err != gorm.ErrRecordNotFound {
+				id := parsed.Switches["id"].Int()
+				warning, err := models.ModerationWarnings(
+					models.ModerationWarningWhere.ID.EQ(id),
+					// don't display warnings from other servers, even if ID is correct
+					models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID),
+				).OneG(parsed.Context())
+				if err != nil {
+					if err == sql.ErrNoRows {
+						return fmt.Sprintf("Could not find warning with ID `%d`", id), nil
+					}
 					return nil, err
-				}
-				if len(warn) == 0 {
-					return fmt.Sprintf("Warning with given id : `%d` does not exist.", parsed.Switches["id"].Int()), nil
 				}
 
 				return &discordgo.MessageEmbed{
-					Title:       fmt.Sprintf("Warning#%d - User : %s", warn[0].ID, warn[0].UserID),
-					Description: fmt.Sprintf("<t:%d:f> - **Reason** : %s", warn[0].CreatedAt.Unix(), warn[0].Message),
-					Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("By: %s (%13s)", warn[0].AuthorUsernameDiscrim, warn[0].AuthorID)},
+					Title:       fmt.Sprintf("Warning#%d - User : %s", warning.ID, warning.UserID),
+					Description: fmt.Sprintf("<t:%d:f> - **Reason** : %s", warning.CreatedAt.Unix(), warning.Message),
+					Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("By: %s (%13s)", warning.AuthorUsernameDiscrim, warning.AuthorID)},
 				}, nil
 			}
 			page := parsed.Args[1].Int()
@@ -929,11 +935,18 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			rows := common.GORM.Model(WarningModel{}).Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Update(
-				"message", fmt.Sprintf("%s (updated by %s (%d))", parsed.Args[1].Str(), parsed.Author.String(), parsed.Author.ID)).RowsAffected
-
-			if rows < 1 {
-				return "Failed updating, most likely couldn't find the warning", nil
+			warningID := parsed.Args[0].Int()
+			updatedMessage := fmt.Sprintf("%s (updated by %s (%d))", parsed.Args[1].Str(), parsed.Author.String(), parsed.Author.ID)
+			numUpdated, err := models.ModerationWarnings(
+				models.ModerationWarningWhere.ID.EQ(warningID),
+				// don't edit warnings from other servers, even if ID is correct
+				models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID),
+			).UpdateAllG(parsed.Context(), models.M{"message": updatedMessage})
+			if err != nil {
+				return "Failed editing warning", err
+			}
+			if numUpdated == 0 {
+				return fmt.Sprintf("Could not find warning with ID `%d`", warningID), nil
 			}
 
 			return "👌", nil
@@ -964,9 +977,17 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			rows := common.GORM.Where("guild_id = ? AND id = ?", parsed.GuildData.GS.ID, parsed.Args[0].Int()).Delete(WarningModel{}).RowsAffected
-			if rows < 1 {
-				return "Failed deleting, most likely couldn't find the warning", nil
+			warningID := parsed.Args[0].Int()
+			numDeleted, err := models.ModerationWarnings(
+				models.ModerationWarningWhere.ID.EQ(warningID),
+				// don't delete warnings from other servers, even if ID is correct
+				models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID),
+			).DeleteAllG(parsed.Context())
+			if err != nil {
+				return "Failed deleting warning", err
+			}
+			if numDeleted == 0 {
+				return fmt.Sprintf("Could not find warning with ID `%d`", warningID), nil
 			}
 
 			return "👌", nil
@@ -998,15 +1019,21 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			rows := common.GORM.Where("guild_id = ? AND user_id = ?", parsed.GuildData.GS.ID, target.ID).Delete(WarningModel{}).RowsAffected
+			numDeleted, err := models.ModerationWarnings(
+				models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID),
+				models.ModerationWarningWhere.UserID.EQ(discordgo.StrID(target.ID)),
+			).DeleteAllG(parsed.Context())
+			if err != nil {
+				return "Failed deleting warnings", err
+			}
 
 			reason := parsed.Args[1].Str()
 			err = CreateModlogEmbed(config, parsed.Author, MAClearWarnings, target, reason, "")
 			if err != nil {
-				return "failed sending modlog", err
+				return "Failed sending modlog", err
 			}
 
-			return fmt.Sprintf("Deleted %d warnings.", rows), nil
+			return fmt.Sprintf("Deleted %d warnings.", numDeleted), nil
 		},
 	},
 	{
@@ -1066,8 +1093,11 @@ var ModerationCommands = []*commands.YAGCommand{
 					out += fmt.Sprintf("#%02d: %4d - %d\n", v.Rank, v.WarnCount, v.UserID)
 				}
 			}
-			var count int
-			common.GORM.Table("moderation_warnings").Where("guild_id = ?", parsed.GuildData.GS.ID).Count(&count)
+
+			count, err := models.ModerationWarnings(models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID)).CountG(context.Background())
+			if err != nil {
+				return nil, err
+			}
 
 			out += "```\n" + fmt.Sprintf("Total Server Warnings: `%d`", count)
 
@@ -1144,7 +1174,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			action := MAGiveRole
 			action.Prefix = "Gave the role " + role.Name + " to "
-			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
+			if config.GiveRoleCmdModlog && config.ActionChannel != 0 {
 				if dur > 0 {
 					action.Footer = "Duration: " + common.HumanizeDuration(common.DurationPrecisionMinutes, dur)
 				}
@@ -1205,7 +1235,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			action := MARemoveRole
 			action.Prefix = "Removed the role " + role.Name + " from "
-			if config.GiveRoleCmdModlog && config.IntActionChannel() != 0 {
+			if config.GiveRoleCmdModlog && config.ActionChannel != 0 {
 				CreateModlogEmbed(config, parsed.Author, action, target, "", "")
 			}
 
@@ -1289,7 +1319,7 @@ func AdvancedDeleteMessages(guildID, channelID int64, triggerID int64, filterUse
 
 		// Continue only if current msg ID is > fromID
 		if fromID > 0 && fromID < msgs[i].ID {
-			continue;
+			continue
 		}
 
 		// Continue only if current msg ID is < toID
@@ -1346,7 +1376,6 @@ func FindRole(gs *dstate.GuildSet, roleS string) *discordgo.Role {
 }
 
 func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-
 	return func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
 		var err error
@@ -1354,14 +1383,24 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 		userID := parsed.Args[0].Int64()
 		limit := 6
 
-		var result []*WarningModel
-		var count int
-		err = common.GORM.Table("moderation_warnings").Where("user_id = ? AND guild_id = ?", userID, parsed.GuildData.GS.ID).Count(&count).Error
-		if err != nil && err != gorm.ErrRecordNotFound {
+		userIDStr := discordgo.StrID(userID)
+		count, err := models.ModerationWarnings(
+			models.ModerationWarningWhere.UserID.EQ(userIDStr),
+			models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID),
+		).CountG(parsed.Context())
+		if err != nil {
 			return nil, err
 		}
-		err = common.GORM.Where("user_id = ? AND guild_id = ?", userID, parsed.GuildData.GS.ID).Order("id desc").Offset(skip).Limit(limit).Find(&result).Error
-		if err != nil && err != gorm.ErrRecordNotFound {
+
+		result, err := models.ModerationWarnings(
+			models.ModerationWarningWhere.UserID.EQ(userIDStr),
+			models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID),
+
+			qm.OrderBy("id desc"),
+			qm.Offset(skip),
+			qm.Limit(limit),
+		).AllG(parsed.Context())
+		if err != nil {
 			return nil, err
 		}
 
@@ -1385,9 +1424,9 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 					entry_formatted = common.CutStringShort(entry_formatted, 900)
 				}
 				entry_formatted += "\n"
-				purgedWarnLogs := logs.ConfEnableMessageLogPurge.GetBool() && entry.CreatedAt.Before(time.Now().AddDate(0,0,-30))
-				if entry.LogsLink != "" && !purgedWarnLogs {
-					entry_formatted += fmt.Sprintf("> logs: [`link`](%s)\n", entry.LogsLink)
+				purgedWarnLogs := logs.ConfEnableMessageLogPurge.GetBool() && entry.CreatedAt.Before(time.Now().AddDate(0, 0, -30))
+				if entry.LogsLink.String != "" && !purgedWarnLogs {
+					entry_formatted += fmt.Sprintf("> logs: [`link`](%s)\n", entry.LogsLink.String)
 				}
 				if len([]rune(currentField.Value+entry_formatted)) > 1023 {
 					currentField = &discordgo.MessageEmbedField{
