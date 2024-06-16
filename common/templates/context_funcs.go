@@ -1016,15 +1016,21 @@ func (c *Context) tmplCloseThread(channel interface{}, flags ...bool) (string, e
 	}
 
 	edit := &discordgo.ChannelEdit{}
+	var lock bool
 	switch len(flags) {
 	case 0:
-		archived := true
-		edit.Archived = &archived
+		lock = false
 	case 1:
-		locked := true
-		edit.Locked = &locked
+		lock = flags[0]
 	default:
 		return "", errors.New("too many flags")
+	}
+
+	if lock {
+		edit.Locked = &lock
+	} else {
+		archived := true
+		edit.Archived = &archived
 	}
 
 	_, err := common.BotSession.ChannelEditComplex(cID, edit)
@@ -1160,7 +1166,12 @@ func (c *Context) tmplEditThread(channel interface{}, args ...interface{}) (stri
 		return "", errors.New("must specify a thread")
 	}
 
-	partialThread, err := processThreadArgs(false, cstate, args...)
+	parentCS := c.GS.GetChannel(cstate.ParentID)
+	if parentCS == nil {
+		return "", errors.New("parent not in state")
+	}
+
+	partialThread, err := processThreadArgs(false, parentCS, args...)
 	if err != nil {
 		return "", err
 	}
@@ -1322,7 +1333,7 @@ func tagIDFromName(c *dstate.ChannelState, tagName string) int64 {
 
 	// walk available tags list and see if there's a match
 	for _, tag := range c.AvailableTags {
-		if tag.Name == tagName {
+		if tag.Name == tagName || strconv.FormatInt(tag.ID, 10) == tagName {
 			return tag.ID
 		}
 	}
