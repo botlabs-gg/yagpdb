@@ -996,9 +996,10 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 /////////////////////////////////////////////////////////////
 
 type SpamTriggerData struct {
-	Treshold     int
-	TimeLimit    int
-	SanitizeText bool
+	Treshold          int
+	TimeLimit         int
+	SanitizeText      bool
+	CrossChannelMatch bool
 }
 
 var _ MessageTrigger = (*SpamTrigger)(nil)
@@ -1045,6 +1046,12 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 			Kind:    SettingTypeBool,
 			Default: false,
 		},
+		{
+			Name:    "Match duplicates across channels",
+			Key:     "CrossChannelMatch",
+			Kind:    SettingTypeBool,
+			Default: false,
+		},
 	}
 }
 
@@ -1058,7 +1065,12 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 
 	timeLimit := time.Now().Add(-time.Second * time.Duration(settingsCast.TimeLimit))
 
-	messages := bot.State.GetMessages(cs.GuildID, cs.ID, &dstate.MessagesQuery{
+	var channelID int64 = 0
+	if !settingsCast.CrossChannelMatch {
+		channelID = cs.ID
+	}
+
+	messages := bot.State.GetMessages(cs.GuildID, channelID, &dstate.MessagesQuery{
 		Limit: 1000,
 	})
 
