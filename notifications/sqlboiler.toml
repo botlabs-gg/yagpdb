@@ -1,0 +1,22 @@
+add-global-variants = true
+no-hooks = true
+no-tests = true
+
+[psql]
+dbname = "yagpdb"
+host = "localhost"
+user = "postgres"
+pass = "pass"
+sslmode = "disable"
+whitelist = ["general_notification_configs"]
+
+[auto-columns]
+created = "created_at"
+updated = "updated_at"
+
+# sqlboiler column name inference capitalizes MSG and MSGS so, for instance,
+# leave_msgs becomes LeaveMSGS; manually override the names
+[aliases.tables.general_notification_configs.columns]
+join_server_msgs = "JoinServerMsgs"
+join_dm_msg = "JoinDMMsg"
+leave_msgs = "LeaveMsgs"
