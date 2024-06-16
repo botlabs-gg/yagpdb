@@ -645,7 +645,14 @@ func (shard *ShardTracker) handleMessageCreate(m *discordgo.MessageCreate) {
 
 	// Insert *list.Element.Value into guildMessages so that we only need to perform
 	// state changes for the channel lists
-	shard.guildMessages[m.GuildID].PushBack(&elem.Value)
+	// Ensure that the guildMessages list is created as guildCreate events could be missed
+	if gc, ok := shard.guildMessages[m.GuildID]; ok {
+		gc.PushBack(&elem.Value)
+	} else {
+		gc := list.New()
+		gc.PushBack(&elem.Value)
+		shard.guildMessages[m.GuildID] = gc
+	}
 }
 
 func (shard *ShardTracker) handleMessageUpdate(m *discordgo.MessageUpdate) {
