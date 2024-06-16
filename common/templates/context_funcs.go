@@ -1016,15 +1016,21 @@ func (c *Context) tmplCloseThread(channel interface{}, flags ...bool) (string, e
 	}
 
 	edit := &discordgo.ChannelEdit{}
+	var lock bool
 	switch len(flags) {
 	case 0:
-		archived := true
-		edit.Archived = &archived
+		lock = false
 	case 1:
-		locked := flags[0]
-		edit.Locked = &locked
+		lock = flags[0]
 	default:
 		return "", errors.New("too many flags")
+	}
+
+	if lock {
+		edit.Locked = &lock
+	} else {
+		archived := true
+		edit.Archived = &archived
 	}
 
 	_, err := common.BotSession.ChannelEditComplex(cID, edit)
