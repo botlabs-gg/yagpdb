@@ -17,7 +17,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
-	"github.com/botlabs-gg/yagpdb/v2/common/configstore"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/common/sentryhook"
@@ -113,9 +112,6 @@ func Init() {
 	if err != nil {
 		log.WithError(err).Fatal("Failed intializing")
 	}
-
-	log.Info("Initiliazing generic config store")
-	configstore.InitDatabases()
 
 	log.Info("Starting plugins")
 }
