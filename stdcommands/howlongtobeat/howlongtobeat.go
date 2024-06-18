@@ -38,7 +38,7 @@ var (
 	hltbHostPath = "api/search"
 )
 
-//Command var needs a comment for lint :)
+// Command var needs a comment for lint :)
 var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryFun,
 	Name:                "HowLongToBeat",
