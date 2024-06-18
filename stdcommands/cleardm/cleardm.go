@@ -16,7 +16,7 @@ var Command = &commands.YAGCommand{
 	CmdCategory:          commands.CategoryDebug,
 	HideFromCommandsPage: true,
 	Name:                 "cleardm",
-	Description:          "clears the DM chat with a user, owner only command.",
+	Description:          "clears the DM chat with a user, bot owner only command.",
 	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
