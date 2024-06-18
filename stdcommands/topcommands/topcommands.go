@@ -14,7 +14,7 @@ var Command = &commands.YAGCommand{
 	Cooldown:     2,
 	CmdCategory:  commands.CategoryDebug,
 	Name:         "topcommands",
-	Description:  "Shows command usage stats",
+	Description:  "Shows command usage stats. Bot Admin Only.",
 	HideFromHelp: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "hours", Type: dcmd.Int, Default: 1},
