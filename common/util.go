@@ -235,12 +235,6 @@ func CutStringShort(s string, l int) string {
 	return mainBuf.String() + latestBuf.String()
 }
 
-type SmallModel struct {
-	ID        uint `gorm:"primary_key"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
 func MustParseInt(s string) int64 {
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
