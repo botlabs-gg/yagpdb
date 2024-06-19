@@ -26,10 +26,8 @@ func PaginatedCommand(pageArgIndex int, cb PaginatedCommandFunc) dcmd.RunFunc {
 			return cb(data, nil, page)
 		}
 
-		_, err := CreatePaginatedMessage(data.GuildData.GS.ID, data.GuildData.CS.ID, page, 0, func(p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		return NewPaginatedResponse(data.GuildData.GS.ID, data.GuildData.CS.ID, page, 0, func(p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			return cb(data, p, page)
-		})
-
-		return nil, err
+		}), nil
 	}
 }

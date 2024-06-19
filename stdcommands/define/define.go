@@ -45,27 +45,20 @@ var Command = &commands.YAGCommand{
 		}
 
 		if paginatedView {
-			_, err := paginatedmessages.CreatePaginatedMessage(
-				data.GuildData.GS.ID, data.ChannelID, 1, len(qResp.Results), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-					i := page - 1
+			return paginatedmessages.NewPaginatedResponse(data.GuildData.GS.ID, data.ChannelID, 1, len(qResp.Results), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+				i := page - 1
 
-					paginatedEmbed := embedCreator(qResp.Results, i)
-					return paginatedEmbed, nil
-				})
-			if err != nil {
-				return "Something went wrong", nil
-			}
-		} else {
-			result := qResp.Results[0]
-
-			cmdResp := fmt.Sprintf("**%s**: %s\n*%s*\n*(<%s>)*", result.Word, result.Definition, result.Example, result.Permalink)
-			if len(qResp.Results) > 1 {
-				cmdResp += fmt.Sprintf(" *%d more results*", len(qResp.Results)-1)
-			}
-			return cmdResp, nil
+				paginatedEmbed := embedCreator(qResp.Results, i)
+				return paginatedEmbed, nil
+			}), nil
 		}
 
-		return nil, nil
+		result := qResp.Results[0]
+		cmdResp := fmt.Sprintf("**%s**: %s\n*%s*\n*(<%s>)*", result.Word, result.Definition, result.Example, result.Permalink)
+		if len(qResp.Results) > 1 {
+			cmdResp += fmt.Sprintf(" *%d more results*", len(qResp.Results)-1)
+		}
+		return cmdResp, nil
 	},
 }
 
