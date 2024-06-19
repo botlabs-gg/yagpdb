@@ -62,6 +62,19 @@ func (t *TemporaryResponse) Send(data *Data) ([]*discordgo.Message, error) {
 	return msgs, nil
 }
 
+// ManualResponse is a marker indicating that the command responses have
+// already sent manually; dcmd need not do anything.
+type ManualResponse struct {
+	Messages []*discordgo.Message
+}
+
+// MarkManualResponse indicates to dcmd that the command has already responded
+// to the command manually with the given messages, and that dcmd need not do
+// anything further.
+func MarkManualResponse(responses []*discordgo.Message) ManualResponse {
+	return ManualResponse{responses}
+}
+
 // SplitSendMessage uses SplitString to make sure each message is within 2k characters and splits at last newline before that (if possible)
 func SplitSendMessage(data *Data, contents string, allowedMentions discordgo.AllowedMentions) ([]*discordgo.Message, error) {
 	result := make([]*discordgo.Message, 0, 1)

@@ -87,6 +87,8 @@ func (d *Data) SendFollowupMessage(reply interface{}, allowedMentions discordgo.
 	switch t := reply.(type) {
 	case Response:
 		return t.Send(d)
+	case ManualResponse:
+		return t.Messages, nil
 	case string:
 		if t != "" {
 			return SplitSendMessage(d, t, allowedMentions)
