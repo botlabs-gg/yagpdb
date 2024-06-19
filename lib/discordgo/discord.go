@@ -34,15 +34,16 @@ var ErrMFA = errors.New("account has 2FA enabled")
 // tasks if given enough information to do so.  Currently you can pass zero
 // arguments and it will return an empty Discord session.
 // There are 3 ways to call New:
-//     With a single auth token - All requests will use the token blindly,
-//         no verification of the token will be done and requests may fail.
-//         IF THE TOKEN IS FOR A BOT, IT MUST BE PREFIXED WITH `BOT `
-//         eg: `"Bot <token>"`
-//     With an email and password - Discord will sign in with the provided
-//         credentials.
-//     With an email, password and auth token - Discord will verify the auth
-//         token, if it is invalid it will sign in with the provided
-//         credentials. This is the Discord recommended way to sign in.
+//
+//	With a single auth token - All requests will use the token blindly,
+//	    no verification of the token will be done and requests may fail.
+//	    IF THE TOKEN IS FOR A BOT, IT MUST BE PREFIXED WITH `BOT `
+//	    eg: `"Bot <token>"`
+//	With an email and password - Discord will sign in with the provided
+//	    credentials.
+//	With an email, password and auth token - Discord will verify the auth
+//	    token, if it is invalid it will sign in with the provided
+//	    credentials. This is the Discord recommended way to sign in.
 //
 // NOTE: While email/pass authentication is supported by DiscordGo it is
 // HIGHLY DISCOURAGED by Discord. Please only use email/pass to obtain a token
@@ -152,4 +153,8 @@ func CheckRetry(_ context.Context, resp *http.Response, err error) (bool, error)
 
 func StrID(id int64) string {
 	return strconv.FormatInt(id, 10)
+}
+
+func ParseID(s string) (int64, error) {
+	return strconv.ParseInt(s, 10, 64)
 }
