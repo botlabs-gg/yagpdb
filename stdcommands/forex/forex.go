@@ -58,18 +58,14 @@ var Command = &commands.YAGCommand{
 
 		// If the currency isn't supported by API.
 		if !toExist || !fromExist {
-			_, err = paginatedmessages.CreatePaginatedMessage(
+			return paginatedmessages.NewPaginatedResponse(
 				data.GuildData.GS.ID, data.ChannelID, 1, maxPages, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					embed, err := errEmbed(currenciesResult, page)
 					if err != nil {
 						return nil, err
 					}
 					return embed, nil
-				})
-			if err != nil {
-				return nil, err
-			}
-			return nil, nil
+				}), nil
 		}
 
 		err = requestAPI(fmt.Sprintf("https://api.frankfurter.app/latest?amount=%.3f&from=%s&to=%s", amount, from, to), &exchangeRateResult)

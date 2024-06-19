@@ -38,7 +38,7 @@ var (
 	hltbHostPath = "api/search"
 )
 
-//Command var needs a comment for lint :)
+// Command var needs a comment for lint :)
 var Command = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryFun,
 	Name:                "HowLongToBeat",
@@ -91,7 +91,7 @@ var Command = &commands.YAGCommand{
 		hltbEmbed := embedCreator(games, 0, paginatedView)
 
 		if paginatedView {
-			_, err := paginatedmessages.CreatePaginatedMessage(
+			return paginatedmessages.NewPaginatedResponse(
 				data.GuildData.GS.ID, data.ChannelID, 1, len(games), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					i := page - 1
 					sort.SliceStable(games, func(i, j int) bool {
@@ -99,15 +99,10 @@ var Command = &commands.YAGCommand{
 					})
 					paginatedEmbed := embedCreator(games, i, paginatedView)
 					return paginatedEmbed, nil
-				})
-			if err != nil {
-				return "Something went wrong", nil
-			}
-		} else {
-			return hltbEmbed, nil
+				}), nil
 		}
 
-		return nil, nil
+		return hltbEmbed, nil
 	},
 }
 

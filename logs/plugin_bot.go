@@ -284,7 +284,7 @@ var cmdUsernames = &commands.YAGCommand{
 			gID = parsed.GuildData.GS.ID
 		}
 
-		_, err := paginatedmessages.CreatePaginatedMessage(gID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		return paginatedmessages.NewPaginatedResponse(gID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 			target := parsed.Author
 			if parsed.Args[0].Value != nil {
 				target = parsed.Args[0].Value.(*discordgo.User)
@@ -317,9 +317,7 @@ var cmdUsernames = &commands.YAGCommand{
 			}
 
 			return embed, nil
-		})
-
-		return nil, err
+		}), nil
 	},
 }
 
@@ -347,7 +345,7 @@ var cmdNicknames = &commands.YAGCommand{
 			return "Nickname logging is disabled on this server", nil
 		}
 
-		_, err = paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+		return paginatedmessages.NewPaginatedResponse(parsed.GuildData.GS.ID, parsed.ChannelID, 1, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 
 			offset := (page - 1) * 15
 
@@ -377,9 +375,7 @@ var cmdNicknames = &commands.YAGCommand{
 			}
 
 			return embed, nil
-		})
-
-		return nil, err
+		}), nil
 	},
 }
 
