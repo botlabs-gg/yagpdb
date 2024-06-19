@@ -81,5 +81,5 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 	for i := range options {
 		common.BotSession.MessageReactionAdd(pollMsg.ChannelID, pollMsg.ID, pollReactions[i])
 	}
-	return nil, nil
+	return dcmd.MarkManualResponse([]*discordgo.Message{pollMsg}), nil
 }
