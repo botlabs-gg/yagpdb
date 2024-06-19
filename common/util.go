@@ -235,12 +235,6 @@ func CutStringShort(s string, l int) string {
 	return mainBuf.String() + latestBuf.String()
 }
 
-type SmallModel struct {
-	ID        uint `gorm:"primary_key"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
 func MustParseInt(s string) int64 {
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
@@ -352,28 +346,6 @@ func IsDiscordErr(err error, codes ...int) bool {
 	}
 
 	return false
-}
-
-type LoggedExecutedCommand struct {
-	SmallModel
-
-	UserID    string
-	ChannelID string
-	GuildID   string
-
-	// Name of command that was triggered
-	Command string
-	// Raw command with arguments passed
-	RawCommand string
-	// If command returned any error this will be no-empty
-	Error string
-
-	TimeStamp    time.Time
-	ResponseTime int64
-}
-
-func (l LoggedExecutedCommand) TableName() string {
-	return "executed_commands"
 }
 
 // for backward compatibility with previous implementations of HumanizePermissions

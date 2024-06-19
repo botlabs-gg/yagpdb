@@ -25,7 +25,6 @@ package web
 //
 // if the struct also implements CustomValidator then that will also be ran
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
@@ -40,6 +39,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/lib/pq"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 type CustomValidator interface {
@@ -122,12 +123,11 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 			if err == nil && !keep {
 				vField.SetInt(0)
 			}
-		case sql.NullInt64:
+		case null.Int64:
 			var keep bool
-			var newNullInt sql.NullInt64
 			keep, err = ValidateIntField(cv.Int64, validationTag, guild, false)
 			if err == nil && !keep {
-				vField.Set(reflect.ValueOf(newNullInt))
+				vField.Set(reflect.ValueOf(null.Int64{}))
 			}
 		case float64:
 			min, max, onlyMin := readMinMax(validationTag)
@@ -171,6 +171,14 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 			}
 
 			vField.Set(reflect.ValueOf(pq.Int64Array(newSlice)))
+		case types.Int64Array:
+			newSlice, e := ValidateIntSliceField(cv, validationTag, guild)
+			if e != nil {
+				err = e
+				break
+			}
+
+			vField.Set(reflect.ValueOf(types.Int64Array(newSlice)))
 		default:
 			// Recurse if it's another struct
 			switch tField.Type.Kind() {

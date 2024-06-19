@@ -20,7 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+
+	commonmodels "github.com/botlabs-gg/yagpdb/v2/common/models"
 )
 
 type ContextKey int
@@ -233,7 +236,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Set up log entry for later use
-	logEntry := &common.LoggedExecutedCommand{
+	logEntry := &commonmodels.ExecutedCommand{
 		UserID:    discordgo.StrID(data.Author.ID),
 		ChannelID: discordgo.StrID(data.ChannelID),
 
@@ -243,8 +246,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if data.GuildData != nil {
-		logEntry.GuildID = discordgo.StrID(data.GuildData.GS.ID)
-
+		logEntry.GuildID.SetValid(discordgo.StrID(data.GuildData.GS.ID))
 	}
 
 	metricsExcecutedCommands.With(prometheus.Labels{"name": "(other)", "trigger_type": triggerType}).Inc()
@@ -284,7 +286,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Create command log entry
-	err := common.GORM.Create(logEntry).Error
+	err := logEntry.InsertG(data.Context(), boil.Infer())
 	if err != nil {
 		logger.WithError(err).Error("Failed creating command execution log")
 	}

@@ -137,13 +137,6 @@ func DiscordGatewayLogger(shardID int, connectionID int, msgL int, msgf string, 
 	}
 }
 
-type GORMLogger struct {
-}
-
-func (g *GORMLogger) Print(v ...interface{}) {
-	logrus.WithField("stck", "...").Error(v...)
-}
-
 type LoggingTransport struct {
 	Inner http.RoundTripper
 }
