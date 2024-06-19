@@ -173,6 +173,7 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 
 	// Execute and send the DM message template
 	ctx := templates.NewContext(gs, channel, member)
+	ctx.ExecutedFrom = templates.ExecutedFromModerationDM
 	ctx.Data["Reason"] = reason
 	if duration > 0 {
 		ctx.Data["Duration"] = duration

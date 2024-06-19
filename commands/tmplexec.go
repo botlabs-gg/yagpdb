@@ -205,6 +205,13 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	data = data.WithContext(context.WithValue(data.Context(), paginatedmessages.CtxKeyNoPagination, true))
 	data = data.WithContext(context.WithValue(data.Context(), CtxKeyExecutedByCC, true))
 
+	switch tmplCtx.ExecutedFrom {
+	case templates.ExecutedFromCommandTemplate:
+		data = data.WithContext(context.WithValue(data.Context(), CtxKeyExecutedByCommandTemplate, true))
+	case templates.ExecutedFromNestedCommandTemplate:
+		data = data.WithContext(context.WithValue(data.Context(), CtxKeyExecutedByNestedCommandTemplate, true))
+	}
+
 	cast := foundCmd.Command.(*YAGCommand)
 
 	err = dcmd.ParseCmdArgs(data)
