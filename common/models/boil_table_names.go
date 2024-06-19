@@ -4,7 +4,9 @@
 package models
 
 var TableNames = struct {
-	CoreConfigs string
+	CoreConfigs      string
+	ExecutedCommands string
 }{
-	CoreConfigs: "core_configs",
+	CoreConfigs:      "core_configs",
+	ExecutedCommands: "executed_commands",
 }
