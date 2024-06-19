@@ -93,9 +93,9 @@ func (p *Plugin) AddCommands() {
 					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
 						return paginatedTimezones(zones)(nil, 1)
 					}
-					_, err := paginatedmessages.CreatePaginatedMessage(
+					resp := paginatedmessages.NewPaginatedResponse(
 						parsed.GuildData.GS.ID, parsed.ChannelID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
-					return nil, err
+					return resp, nil
 				}
 
 				matches := ""
@@ -109,7 +109,7 @@ func (p *Plugin) AddCommands() {
 				// Check whether the requested zone has an exact match in zones
 				found := false
 				for n, candidate := range zones {
-					if strings.ToLower(candidate) == strings.ToLower(parsed.Args[0].Str()) {
+					if strings.EqualFold(candidate, parsed.Args[0].Str()) {
 						found = true
 						// Select matching zone
 						zone = zones[n]
