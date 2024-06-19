@@ -54,11 +54,7 @@ var Command = &commands.YAGCommand{
 		}
 
 		common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇦")
-		err = common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇧")
-		if err != nil {
-			return nil, err
-		}
-
-		return nil, nil
+		common.BotSession.MessageReactionAdd(data.ChannelID, msg.ID, "🇧")
+		return dcmd.MarkManualResponse([]*discordgo.Message{msg}), nil
 	},
 }
