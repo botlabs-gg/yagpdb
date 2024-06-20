@@ -52,7 +52,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "subject", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
 			}
 
