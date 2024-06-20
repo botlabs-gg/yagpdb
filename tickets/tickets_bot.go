@@ -121,6 +121,8 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	tmplCTX := templates.NewContext(gs, &cs, ms)
 	if executedByCommandTemplate {
 		tmplCTX.ExecutedFrom = templates.ExecutedFromNestedCommandTemplate
+	} else {
+		tmplCTX.ExecutedFrom = templates.ExecutedFromCommandTemplate
 	}
 	tmplCTX.Name = "ticket open message"
 	tmplCTX.Data["Reason"] = topic
