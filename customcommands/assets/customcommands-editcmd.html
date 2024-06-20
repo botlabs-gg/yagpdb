@@ -737,8 +737,8 @@
     }
 </style>
 <script type="text/javascript">
-    function setupCodeMirrorInstance(textAreaElement) {
-        const newInstance = CodeMirror.fromTextArea(textAreaElement, {
+    function setupCodeMirrorEditor(textArea) {
+        const codeMirror = CodeMirror.fromTextArea(textArea, {
             lineNumbers: true,
             mode: 'text/x-go',
             theme: 'ayu-mirage',
@@ -751,17 +751,15 @@
                 'Alt-F': 'findPersistent',
             },
         });
-        return newInstance;
-    }
 
-    var initialTextAreas = document.querySelectorAll('.cc-editor');
-    initialTextAreas.forEach((initialTextArea) => {
-        const codeMirror = setupCodeMirrorInstance(initialTextArea);
         codeMirror.on('change', (cm) => {
             cm.save();
             onCCChanged(cm.getTextArea());
         });
-    });
+    }
+
+    var initialTextAreas = document.querySelectorAll('.cc-editor');
+    initialTextAreas.forEach((textArea) => setupCodeMirrorEditor(textArea));
 
     // we need to reinitialize the codemirror instance for each new textarea, the script below is the old implementation coming from the spongebob.js file
     $(document).on('click', '.btn-add', function (e) {
@@ -771,8 +769,7 @@
 			newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
         newEntry.find('.CodeMirror').remove();
 		newEntry.find('input, textarea').val('');
-        const codeMirror = setupCodeMirrorInstance(newEntry.find('textarea')[0]);
-        
+        setupCodeMirrorEditor(newEntry.find('textarea')[0]);
 
 		newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
 			.removeClass('btn-add').addClass('btn-remove')
