@@ -175,6 +175,8 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 	ctx := templates.NewContext(gs, channel, member)
 	if executedFromCommandTemplate {
 		ctx.ExecutedFrom = templates.ExecutedFromNestedCommandTemplate
+	} else {
+		ctx.ExecutedFrom = templates.ExecutedFromCommandTemplate
 	}
 	ctx.Data["Reason"] = reason
 	if duration > 0 {
