@@ -460,7 +460,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
 			}
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
@@ -840,7 +840,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
 			}
 
