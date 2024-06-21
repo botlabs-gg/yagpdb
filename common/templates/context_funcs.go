@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"crypto/sha256"
+	"encoding/base64"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -2421,4 +2423,25 @@ func (c *Context) validateDurationDelay(in interface{}) time.Duration {
 	default:
 		return ToDuration(t)
 	}
+}
+
+func (c *Context) tmplDecodeBase64(str string) (string, error) {
+	raw, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return "", err
+	}
+	return string(raw), nil
+}
+
+func (c *Context) tmplEncodeBase64(str string) string {
+	return base64.StdEncoding.EncodeToString([]byte(str))
+}
+
+func (c *Context) tmplSha256(str string) string {
+    hash := sha256.New()
+    hash.Write([]byte(str))
+
+    sha256 := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+
+	return sha256
 }

@@ -743,6 +743,10 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
 
 	c.addContextFunc("sort", c.tmplSort)
+
+	c.addContextFunc("encodeBase64", c.tmplEncodeBase64)
+	c.addContextFunc("decodeBase64", c.tmplDecodeBase64)
+	c.addContextFunc("sha256", c.tmplSha256)
 }
 
 type limitedWriter struct {
