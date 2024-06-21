@@ -154,10 +154,9 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 	return func(data *dcmd.Data) (interface{}, error) {
 		// Only show stuff if atleast 1 of the commands in the container is enabled
 		if data.GuildData != nil {
-			cParentID := data.GuildData.CS.ParentID
 			ms := data.GuildData.MS
 
-			channelOverrides, err := GetOverridesForChannel(data.ChannelID, cParentID, data.GuildData.GS.ID)
+			channelOverrides, err := GetOverridesForChannel(data.GuildData.CS, data.GuildData.GS)
 			if err != nil {
 				logger.WithError(err).WithField("guild", data.GuildData.GS.ID).Error("failed retrieving command overrides")
 				return nil, nil
