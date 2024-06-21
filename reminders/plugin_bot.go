@@ -76,15 +76,37 @@ var cmds = []*commands.YAGCommand{
 
 			id := parsed.ChannelID
 			if c := parsed.Switch("channel"); c.Value != nil {
-				id = c.Value.(*dstate.ChannelState).ID
+				cs := c.Value.(*dstate.ChannelState)
+				mention, _ := cs.Mention()
 
-				hasPerms, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, id, parsed.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel)
+				hasPerms, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, cs.ID, parsed.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel)
 				if err != nil {
 					return "Failed checking permissions; please try again or join the support server.", err
 				}
 
 				if !hasPerms {
-					return "You do not have permissions to send messages there", nil
+					return fmt.Sprintf("You do not have permissions to send messages in %s", mention), nil
+				}
+
+				// Ensure the member can run the `remindme` command in the
+				// target channel according to the configured command and
+				// channel overrides, if any.
+				yc := parsed.Cmd.Command.(*commands.YAGCommand)
+				settings, err := yc.GetSettings(parsed.ContainerChain, cs, parsed.GuildData.GS)
+				if err != nil {
+					return "Failed fetching command settings", err
+				}
+
+				if !settings.Enabled {
+					return fmt.Sprintf("The `remindme` command is disabled in %s", mention), nil
+				}
+
+				ms := parsed.GuildData.MS
+				// If there are no required roles set, the member should be allowed to run the command.
+				hasRequiredRoles := len(settings.RequiredRoles) == 0 || memberHasAnyRole(ms, settings.RequiredRoles)
+				hasIgnoredRoles := memberHasAnyRole(ms, settings.IgnoreRoles)
+				if !hasRequiredRoles || hasIgnoredRoles {
+					return fmt.Sprintf("You cannot use the `remindme` command in %s", mention), nil
 				}
 			}
 
@@ -228,6 +250,15 @@ var cmds = []*commands.YAGCommand{
 			return fmt.Sprintf("Deleted reminder **#%d**: '%s'", reminder.ID, CutReminderShort(reminder.Message)), nil
 		},
 	},
+}
+
+func memberHasAnyRole(ms *dstate.MemberState, roles []int64) bool {
+	for _, r := range ms.Member.Roles {
+		if common.ContainsInt64Slice(roles, r) {
+			return true
+		}
+	}
+	return false
 }
 
 func checkUserScheduledEvent(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
