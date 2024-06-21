@@ -176,6 +176,10 @@ func (pa *ParsedArgs) IsSet(index int) interface{} {
 // or schedules a custom command to be run in the future sometime with the provided data placed in .ExecData
 func tmplRunCC(ctx *templates.Context) interface{} {
 	return func(ccID int, channel interface{}, delaySeconds interface{}, data interface{}) (string, error) {
+		if ctx.ExecutedFrom == templates.ExecutedFromCommandTemplate || ctx.ExecutedFrom == templates.ExecutedFromNestedCommandTemplate {
+			return "", nil
+		}
+
 		if ctx.IncreaseCheckCallCounterPremium("runcc", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
