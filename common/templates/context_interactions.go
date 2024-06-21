@@ -273,7 +273,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 		case "title":
 			modal.Title = ToString(val)
 		case "custom_id":
-			modal.CustomID = modal.CustomID + ToString(val)
+			modal.CustomID = "templates-" + ToString(val)
 		case "fields":
 			if val == nil {
 				continue
