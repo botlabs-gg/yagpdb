@@ -399,18 +399,13 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	if err != nil {
 		return false, errors.WrapIf(err, "find_command")
 	}
-
-	groups, err := getDisabledGroups(context.Background(), evt.GuildID)
-	if err != nil {
+	
+	if cmd.GroupID.Int64 != 0 && cmd.R.Group.Disabled {
 		return false, errors.WrapIf(err, "Failed retrieving custom command groups")
 	}
 
 	if cmd.Disabled {
 		return false, errors.New("custom command is disabled")
-	}
-
-	if groups[cmd.GroupID.Int64] {
-		return false, errors.New("custom command group is disabled")
 	}
 
 	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
@@ -479,17 +474,12 @@ func handleNextRunScheduledEVent(evt *schEventsModels.ScheduledEvent, data inter
 		return false, errors.WrapIf(err, "find_command")
 	}
 
-	groups, err := getDisabledGroups(context.Background(), evt.GuildID)
-	if err != nil {
+	if cmd.GroupID.Int64 != 0 && cmd.R.Group.Disabled {
 		return false, errors.WrapIf(err, "Failed retrieving custom command groups")
 	}
-	
+
 	if cmd.Disabled {
 		return false, errors.New("custom command is disabled")
-	}
-
-	if groups[cmd.GroupID.Int64] {
-		return false, errors.New("custom command group is disabled")
 	}
 
 	if time.Until(cmd.NextRun.Time) > time.Second*5 {
@@ -846,21 +836,6 @@ type TriggeredCC struct {
 	Args     []string
 }
 
-func getDisabledGroups(ctx context.Context, guildID int64) (map[int64]bool, error) {
-	gr, err := models.CustomCommandGroups(qm.Where("guild_id=?", guildID)).AllG(ctx)
-	if err != nil {
-		return nil, err
-	}
-	groups := make(map[int64]bool)
-
-	for _, group := range gr {
-		if group.Disabled {
-			groups[int64(group.ID)] = true
-		}
-	}
-	return groups, nil
-}
-
 func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, ms *dstate.MemberState, evt *eventsystem.EventData, msg *discordgo.Message) (matches []*TriggeredCC, err error) {
 	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.GuildID, ctx)
 	if err != nil {
@@ -872,18 +847,14 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 		return nil, errors.WrapIf(err, "GetCommandPrefix")
 	}
 
-	groups, err := getDisabledGroups(ctx, cs.GuildID)
-	if err != nil {
-		return nil, errors.WrapIf(err, "Failed retrieving custom command groups")
-	}
-
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) || groups[cmd.GroupID.Int64] {
+		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) || cmd.GroupID.Int64 != 0 && cmd.R.Group.Disabled {
 			continue
 		}
 
 		if didMatch, stripped, args := CheckMatch(prefix, cmd, msg.Content); didMatch {
+
 			matched = append(matched, &TriggeredCC{
 				CC:       cmd,
 				Args:     args,
@@ -912,14 +883,9 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 		return nil, nil, errors.WrapIf(err, "BotCachedGetCommandsWithReactionTriggers")
 	}
 
-	groups, err := getDisabledGroups(ctx, cs.GuildID)
-	if err != nil {
-		return nil, nil, errors.WrapIf(err, "Failed retrieving custom command groups")
-	}
-
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || groups[cmd.GroupID.Int64] {
+		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || cmd.GroupID.Int64 != 0 && cmd.R.Group.Disabled {
 			continue
 		}
 
@@ -975,14 +941,9 @@ func findComponentOrModalTriggerCustomCommands(ctx context.Context, cs *dstate.C
 		return nil, errors.WrapIf(err, "BotCachedGetCommandsWithComponentTriggers")
 	}
 
-	groups, err := getDisabledGroups(ctx, cs.GuildID)
-	if err != nil {
-		return nil, errors.WrapIf(err, "Failed retrieving custom command groups")
-	}
-
 	var matched []*TriggeredCC
 	for _, cmd := range cmds {
-		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || groups[cmd.GroupID.Int64] {
+		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || cmd.GroupID.Int64 != 0 && cmd.R.Group.Disabled {
 			continue
 		}
 
