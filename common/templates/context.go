@@ -113,6 +113,9 @@ var (
 
 		"shuffle": shuffle,
 		"verb":    common.RandomVerb,
+		"hash":    tmplSha256,
+		"decodeBase64": tmplDecodeBase64,
+		"encodeBase64": tmplEncodeBase64,
 
 		// time functions
 		"currentTime":     tmplCurrentTime,
@@ -745,10 +748,6 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
 
 	c.addContextFunc("sort", c.tmplSort)
-
-	c.addContextFunc("encodeBase64", c.tmplEncodeBase64)
-	c.addContextFunc("decodeBase64", c.tmplDecodeBase64)
-	c.addContextFunc("sha256", c.tmplSha256)
 }
 
 type limitedWriter struct {
