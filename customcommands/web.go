@@ -56,6 +56,7 @@ type GroupForm struct {
 
 	WhitelistRoles []int64 `valid:"role,true"`
 	BlacklistRoles []int64 `valid:"role,true"`
+	Disabled       bool
 }
 
 type SearchForm struct {
@@ -648,6 +649,17 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		return templateData, err
 	}
 
+	groups, err := getDisabledGroups(context.Background(), activeGuild.ID)
+	if err != nil {
+		templateData.AddAlerts(web.ErrorAlert("Failed retrieving custom command groups"))
+		return templateData, nil
+	}
+
+	if groups[cmd.GroupID.Int64] {
+		templateData.AddAlerts(web.ErrorAlert("This command group is disabled, cannot run a command from disabled group."))
+		return templateData, nil
+	}
+
 	if cmd.Disabled {
 		templateData.AddAlerts(web.ErrorAlert("This command is disabled, cannot run a disabled command"))
 		return templateData, nil
@@ -741,6 +753,7 @@ func handleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	model.WhitelistRoles = groupForm.WhitelistRoles
 	model.IgnoreRoles = groupForm.BlacklistRoles
 	model.Name = groupForm.Name
+	model.Disabled = groupForm.Disabled
 
 	_, err = model.UpdateG(ctx, boil.Infer())
 	if err == nil {
