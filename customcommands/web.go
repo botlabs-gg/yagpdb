@@ -644,18 +644,12 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	// only interval commands can be ran from the dashboard currently
-	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ? AND trigger_type = 5", activeGuild.ID, cmdID)).OneG(context.Background())
+	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ? AND trigger_type = 5", activeGuild.ID, cmdID), qm.Load("Group")).OneG(context.Background())
 	if err != nil {
 		return templateData, err
 	}
 
-	groups, err := getDisabledGroups(context.Background(), activeGuild.ID)
-	if err != nil {
-		templateData.AddAlerts(web.ErrorAlert("Failed retrieving custom command groups"))
-		return templateData, nil
-	}
-
-	if groups[cmd.GroupID.Int64] {
+	if cmd.GroupID.Int64 != 0 && cmd.R.Group.Disabled {
 		templateData.AddAlerts(web.ErrorAlert("This command group is disabled, cannot run a command from disabled group."))
 		return templateData, nil
 	}
