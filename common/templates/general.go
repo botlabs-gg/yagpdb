@@ -1703,10 +1703,10 @@ func tmplEncodeBase64(str string) string {
 }
 
 func tmplSha256(str string) string {
-    hash := sha256.New()
-    hash.Write([]byte(str))
-
-    sha256 := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+	hash := sha256.New()
+	hash.Write([]byte(str))
+	
+	sha256 := base64.URLEncoding.EncodeToString(hash.Sum(nil))
 
 	return sha256
 }
