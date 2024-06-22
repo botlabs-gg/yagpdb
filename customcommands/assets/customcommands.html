@@ -47,7 +47,7 @@
                     class="nav-item {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}">
                     <a data-partial-load="true"
                         class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}"
-                        href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}</a>
+                        href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}{{if .Disabled}} <code>Disabled</code>{{end}}</a>
                 </li>
                 {{end}}
                 <li class="nav-item">
@@ -105,6 +105,10 @@
                                         name="BlacklistChannels">
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Group disabled</label><br>
+                                    {{checkbox "disabled" "disabled" "Enables or Disables the group" .CurrentCommandGroup.Disabled }}
                                 </div>
                                 <div class="form-group">
                                     <button type="submit"
