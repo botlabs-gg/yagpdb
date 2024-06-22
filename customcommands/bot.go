@@ -45,14 +45,9 @@ import (
 
 var (
 	CCExecLock        = keylock.NewKeyLock[CCExecKey]()
-	DelayedCCRunLimit = multiratelimit.NewMultiRatelimiter[DelayedRunLimitKey](0.1, 10)
-	CCMaxDataLimit    = 1000000 // 1 MB max
+	DelayedCCRunLimit = multiratelimit.NewMultiRatelimiter[int64](5, 25) // key is guild ID
+	CCMaxDataLimit    = 1000000                                          // 1 MB max
 )
-
-type DelayedRunLimitKey struct {
-	GuildID   int64
-	ChannelID int64
-}
 
 type CCExecKey struct {
 	GuildID int64
@@ -404,7 +399,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		return false, errors.New("custom command is disabled")
 	}
 
-	if !DelayedCCRunLimit.Allow(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}) {
+	if !DelayedCCRunLimit.Allow(evt.GuildID) {
 		logger.WithField("guild", cmd.GuildID).Warn("went above delayed cc run ratelimit")
 		return false, nil
 	}
