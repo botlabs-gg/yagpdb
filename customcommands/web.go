@@ -649,7 +649,7 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		return templateData, err
 	}
 
-	if cmd.GroupID.Int64 != 0 && cmd.R.Group.Disabled {
+	if cmd.R.Group != nil && cmd.R.Group.Disabled {
 		templateData.AddAlerts(web.ErrorAlert("This command group is disabled, cannot run a command from disabled group."))
 		return templateData, nil
 	}
