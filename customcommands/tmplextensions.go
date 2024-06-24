@@ -180,11 +180,6 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		// cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
-		// if err != nil {
-		// 	return "", errors.New("Couldn't find custom command")
-		// }
-
 		cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", ctx.GS.ID, ccID), qm.Load("Group")).OneG(context.Background())
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
@@ -283,11 +278,6 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 		if ctx.IncreaseCheckCallCounterPremium("runcc", 1, 10) {
 			return "", templates.ErrTooManyCalls
 		}
-
-		// cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
-		// if err != nil {
-		// 	return "", errors.New("Couldn't find custom command")
-		// }
 
 		cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", ctx.GS.ID, ccID), qm.Load("Group")).OneG(context.Background())
 		if err != nil {
