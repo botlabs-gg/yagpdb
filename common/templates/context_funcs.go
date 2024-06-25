@@ -1075,8 +1075,8 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 				return nil, errors.New("createThread 'private' must be a boolean")
 			}
 		case 1:
-			duration := tmplToInt(opt)
-			if duration < 60 || duration > 10080 {
+			start.AutoArchiveDuration = tmplToInt(opt)
+			if start.AutoArchiveDuration < 60 || start.AutoArchiveDuration > 10080 {
 				return nil, errors.New("createThread 'auto_archive_duration' must be and integer between 60 and 10080")
 			}
 		case 2:
