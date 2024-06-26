@@ -1093,6 +1093,10 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 		}
 	}
 
+	if cstate.Type == discordgo.ChannelTypeGuildNews {
+		start.Type = discordgo.ChannelTypeGuildNewsThread
+	}
+
 	var ctxThread *discordgo.Channel
 	var err error
 	if mID > 0 {
