@@ -155,9 +155,6 @@ type Invite struct {
 	ApproximateMemberCount   int `json:"approximate_member_count"`
 }
 
-// ChannelType is the type of a Channel
-type ChannelType int
-
 // ForumSortOrderType represents sort order of a forum channel.
 type ForumSortOrderType int
 
@@ -179,6 +176,20 @@ const (
 	// ForumLayoutGalleryView displays forum posts as a collection of tiles.
 	ForumLayoutGalleryView ForumLayout = 2
 )
+
+// the thread will stop showing in the channel list after auto_archive_duration minutes of inactivity, can be set to:
+// 60, 1440, 4320, 10080
+type AutoArchiveDuration int
+
+const (
+	AutoArchiveDurationOneHour   AutoArchiveDuration = 60
+	AutoArchiveDurationOneDay    AutoArchiveDuration = 1440
+	AutoArchiveDurationThreeDays AutoArchiveDuration = 4320
+	AutoArchiveDurationOneWeek   AutoArchiveDuration = 10080
+)
+
+// ChannelType is the type of a Channel
+type ChannelType int
 
 // Block contains known ChannelType values
 const (
@@ -288,7 +299,7 @@ type Channel struct {
 	Archived bool `json:"archived"`
 
 	// the thread will stop showing in the channel list after auto_archive_duration minutes of inactivity, can be set to: 60, 1440, 4320, 10080
-	AutoArchiveDuration int `json:"auto_archive_duration,omitempty"`
+	AutoArchiveDuration AutoArchiveDuration `json:"auto_archive_duration,omitempty"`
 
 	// whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it
 	Locked bool `json:"locked"`
@@ -338,10 +349,10 @@ type ChannelEdit struct {
 	RateLimitPerUser     *int                   `json:"rate_limit_per_user,omitempty"`
 
 	// Threads only
-	Archived            *bool `json:"archived,omitempty"`
-	AutoArchiveDuration int   `json:"auto_archive_duration,omitempty"`
-	Locked              *bool `json:"locked,omitempty"`
-	Invitable           *bool `json:"invitable,omitempty"`
+	Archived            *bool               `json:"archived,omitempty"`
+	AutoArchiveDuration AutoArchiveDuration `json:"auto_archive_duration,omitempty"`
+	Locked              *bool               `json:"locked,omitempty"`
+	Invitable           *bool               `json:"invitable,omitempty"`
 
 	// NOTE: forum threads only - these are IDs
 	AppliedTags IDSlice `json:"applied_tags,string,omitempty"`
@@ -372,11 +383,11 @@ const (
 
 // ThreadStart stores all parameters you can use with MessageThreadStartComplex or ThreadStartComplex
 type ThreadStart struct {
-	Name                string      `json:"name"`
-	AutoArchiveDuration int         `json:"auto_archive_duration,omitempty"`
-	Type                ChannelType `json:"type,omitempty"`
-	Invitable           bool        `json:"invitable"`
-	RateLimitPerUser    int         `json:"rate_limit_per_user,omitempty"`
+	Name                string              `json:"name"`
+	AutoArchiveDuration AutoArchiveDuration `json:"auto_archive_duration,omitempty"`
+	Type                ChannelType         `json:"type,omitempty"`
+	Invitable           bool                `json:"invitable"`
+	RateLimitPerUser    int                 `json:"rate_limit_per_user,omitempty"`
 
 	// NOTE: forum threads only - these are IDs
 	AppliedTags IDSlice `json:"applied_tags,string,omitempty"`
@@ -1595,11 +1606,11 @@ type InteractionApplicationCommandCallbackData struct {
 }
 
 type ThreadMetadata struct {
-	Archived            bool   `json:"archived"`              // whether the thread is archived
-	AutoArchiveDuration int    `json:"auto_archive_duration"` // duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080
-	ArchiveTimestamp    string `json:"archive_timestamp"`     // timestamp when the thread's archive status was last changed, used for calculating recent activity
-	Locked              bool   `json:"locked"`                // whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it
-	Invitable           bool   `json:"invitable"`             // Whether non-moderators can add other non-moderators to a thread; only available on private threads
+	Archived            bool                `json:"archived"`              // whether the thread is archived
+	AutoArchiveDuration AutoArchiveDuration `json:"auto_archive_duration"` // duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080
+	ArchiveTimestamp    string              `json:"archive_timestamp"`     // timestamp when the thread's archive status was last changed, used for calculating recent activity
+	Locked              bool                `json:"locked"`                // whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it
+	Invitable           bool                `json:"invitable"`             // Whether non-moderators can add other non-moderators to a thread; only available on private threads
 }
 
 // A thread member is used to indicate whether a user has joined a thread or not.

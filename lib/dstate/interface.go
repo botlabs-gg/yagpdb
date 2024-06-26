@@ -266,12 +266,12 @@ type ChannelState struct {
 
 	PermissionOverwrites []discordgo.PermissionOverwrite `json:"permission_overwrites"`
 
-	AvailableTags       []discordgo.ForumTag `json:"available_tags"`
-	AppliedTags         []int64              `json:"applied_tags"`
-	Archived            bool                 `json:"archived"`
-	AutoArchiveDuration int                  `json:"auto_archive_duration,omitempty"`
-	Locked              bool                 `json:"locked"`
-	Invitable           bool                 `json:"invitable"`
+	AvailableTags       []discordgo.ForumTag          `json:"available_tags"`
+	AppliedTags         []int64                       `json:"applied_tags"`
+	Archived            bool                          `json:"archived"`
+	AutoArchiveDuration discordgo.AutoArchiveDuration `json:"auto_archive_duration,omitempty"`
+	Locked              bool                          `json:"locked"`
+	Invitable           bool                          `json:"invitable"`
 
 	DefaultReactionEmoji          discordgo.ForumDefaultReaction `json:"default_reaction_emoji"`
 	DefaultThreadRateLimitPerUser int                            `json:"default_thread_rate_limit_per_user"`

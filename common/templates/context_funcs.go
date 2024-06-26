@@ -1075,9 +1075,9 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 				return nil, errors.New("createThread 'private' must be a boolean")
 			}
 		case 1:
-			duration := tmplToInt(opt)
+			duration := discordgo.AutoArchiveDuration(tmplToInt(opt))
 			switch duration {
-			case 60, 1440, 4320, 10080:
+			case discordgo.AutoArchiveDurationOneHour, discordgo.AutoArchiveDurationOneDay, discordgo.AutoArchiveDurationThreeDays, discordgo.AutoArchiveDurationOneWeek:
 				start.AutoArchiveDuration = duration
 			default:
 				return nil, errors.New("createThread 'auto_archive_duration' must be 60, 1440, 4320, or 10080")
@@ -1351,7 +1351,7 @@ func tagIDFromName(c *dstate.ChannelState, tagName string) int64 {
 type partialThread struct {
 	RateLimitPerUser    *int
 	AppliedTags         *[]int64
-	AutoArchiveDuration *int
+	AutoArchiveDuration *discordgo.AutoArchiveDuration
 	Invitable           *bool
 }
 
@@ -1433,9 +1433,9 @@ func processThreadArgs(newThread bool, parent *dstate.ChannelState, values ...in
 				return c, errors.New("`tags` must be of type string or cslice")
 			}
 		case "auto_archive_duration":
-			duration := tmplToInt(val)
+			duration := discordgo.AutoArchiveDuration(tmplToInt(val))
 			switch duration {
-			case 60, 1440, 4320, 10080:
+			case discordgo.AutoArchiveDurationOneHour, discordgo.AutoArchiveDurationOneDay, discordgo.AutoArchiveDurationThreeDays, discordgo.AutoArchiveDurationOneWeek:
 				c.AutoArchiveDuration = &duration
 			default:
 				return nil, errors.New("'auto_archive_duration' must be 60, 1440, 4320, or 10080")
