@@ -24,7 +24,7 @@ var Command = &commands.YAGCommand{
 		{Name: "message", Help: "Optional message ID to edit", Type: dcmd.BigInt},
 		{Name: "content", Help: "Text content for the message", Type: dcmd.String},
 
-		{Name: "title", Type: dcmd.String, Default: ""},
+		{Name: "title", Type: dcmd.String},
 		{Name: "desc", Type: dcmd.String, Help: "Text in the 'description' field"},
 		{Name: "color", Help: "Either hex code or name", Type: dcmd.String},
 		{Name: "url", Help: "Url of this embed", Type: dcmd.String},
