@@ -1075,9 +1075,12 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 				return nil, errors.New("createThread 'private' must be a boolean")
 			}
 		case 1:
-			start.AutoArchiveDuration = tmplToInt(opt)
-			if start.AutoArchiveDuration < 60 || start.AutoArchiveDuration > 10080 {
-				return nil, errors.New("createThread 'auto_archive_duration' must be an integer between 60 and 10080")
+			duration := tmplToInt(opt)
+			switch duration {
+			case 60, 1440, 4320, 10080:
+				start.AutoArchiveDuration = duration
+			default:
+				return nil, errors.New("createThread 'auto_archive_duration' must be 60, 1440, 4320, or 10080")
 			}
 		case 2:
 			switch opt := opt.(type) {
@@ -1431,10 +1434,12 @@ func processThreadArgs(newThread bool, parent *dstate.ChannelState, values ...in
 			}
 		case "auto_archive_duration":
 			duration := tmplToInt(val)
-			if duration < 60 || duration > 10080 {
-				return c, errors.New("'auto_archive_duration' must be an integer between 60 and 10080")
+			switch duration {
+			case 60, 1440, 4320, 10080:
+				c.AutoArchiveDuration = &duration
+			default:
+				return nil, errors.New("'auto_archive_duration' must be 60, 1440, 4320, or 10080")
 			}
-			c.AutoArchiveDuration = &duration
 		case "invitable":
 			val, ok := val.(bool)
 			if ok {
