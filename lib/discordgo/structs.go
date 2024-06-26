@@ -197,7 +197,7 @@ const (
 )
 
 func (t ChannelType) IsThread() bool {
-	return t == ChannelTypeGuildPrivateThread || t == ChannelTypeGuildPublicThread
+	return t == ChannelTypeGuildPrivateThread || t == ChannelTypeGuildPublicThread || t == ChannelTypeGuildNewsThread
 }
 
 // A Channel holds all data related to an individual Discord channel.
