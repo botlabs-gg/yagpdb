@@ -553,10 +553,10 @@
 
     $(function () {
         triggerTypeChanged();
-
         updateCCLength();
         updateTriggerLength();
         updateNameLength();
+        setCMCheckbox();
     });
 
     var intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details'];
@@ -578,6 +578,14 @@
         exact: [...messageTriggerEls, '#trigger-desc-exact'],
         none: ['#trigger-desc-none'],
     };
+
+    function setCMCheckbox() {
+      if(localStorage.getItem('cm-editor') === 'false'){
+        $("#toggle-code-mirror").prop( "checked", false );
+      } else {
+        $("#toggle-code-mirror").prop( "checked", true );
+      }
+    }
 
     function triggerTypeChanged() {
         const curTriggerType = $('#trigger-type-dropdown').val();
@@ -744,6 +752,7 @@
     }
 </style>
 <script type="text/javascript">
+
     function setupCodeMirrorEditor(textArea) {
         var isCMEditor = localStorage.getItem('cm-editor')
         if(isCMEditor === 'false') return
