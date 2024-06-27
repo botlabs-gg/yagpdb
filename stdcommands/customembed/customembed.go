@@ -1,13 +1,11 @@
 package customembed
 
 import (
-	"encoding/json"
-
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 )
 
 var Command = &commands.YAGCommand{
@@ -23,22 +21,18 @@ var Command = &commands.YAGCommand{
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		j := common.ParseCodeblock(data.Args[0].Str())
-		var parsed *discordgo.MessageEmbed
+		var parsed discordgo.MessageEmbed
 
-		// attempt to parse as YAML first.
-		// We don't care about the error here, as we're going to try parsing it as JSON anyway.
+		// yaml.Unmarshal also works with JSON, as that is a subset of YAML.
 		err := yaml.Unmarshal([]byte(j), &parsed)
 		if err != nil {
-			// Maybe it is JSON instead?
-			err = json.Unmarshal([]byte(j), &parsed)
-			if err != nil {
-				return "Failed parsing as YAML or JSON", err
-			}
+			return err, err
 		}
 
-		if discordgo.IsEmbedEmpty(parsed) {
+		if discordgo.IsEmbedEmpty(&parsed) {
 			return "Cannot send an empty embed", nil
 		}
-		return parsed, nil
+
+		return &parsed, nil
 	},
 }
