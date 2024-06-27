@@ -1075,9 +1075,12 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 				return nil, errors.New("createThread 'private' must be a boolean")
 			}
 		case 1:
-			duration := tmplToInt(opt)
-			if duration < 60 || duration > 10080 {
-				return nil, errors.New("createThread 'auto_archive_duration' must be and integer between 60 and 10080")
+			duration := discordgo.AutoArchiveDuration(tmplToInt(opt))
+			switch duration {
+			case discordgo.AutoArchiveDurationOneHour, discordgo.AutoArchiveDurationOneDay, discordgo.AutoArchiveDurationThreeDays, discordgo.AutoArchiveDurationOneWeek:
+				start.AutoArchiveDuration = duration
+			default:
+				return nil, errors.New("createThread 'auto_archive_duration' must be 60, 1440, 4320, or 10080")
 			}
 		case 2:
 			switch opt := opt.(type) {
@@ -1091,6 +1094,10 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 		default:
 			return nil, errors.New("createThread: Too many arguments")
 		}
+	}
+
+	if cstate.Type == discordgo.ChannelTypeGuildNews {
+		start.Type = discordgo.ChannelTypeGuildNewsThread
 	}
 
 	var ctxThread *discordgo.Channel
@@ -1344,7 +1351,7 @@ func tagIDFromName(c *dstate.ChannelState, tagName string) int64 {
 type partialThread struct {
 	RateLimitPerUser    *int
 	AppliedTags         *[]int64
-	AutoArchiveDuration *int
+	AutoArchiveDuration *discordgo.AutoArchiveDuration
 	Invitable           *bool
 }
 
@@ -1426,11 +1433,13 @@ func processThreadArgs(newThread bool, parent *dstate.ChannelState, values ...in
 				return c, errors.New("`tags` must be of type string or cslice")
 			}
 		case "auto_archive_duration":
-			duration := tmplToInt(val)
-			if duration < 60 || duration > 10080 {
-				return c, errors.New("'auto_archive_duration' must be and integer between 60 and 10080")
+			duration := discordgo.AutoArchiveDuration(tmplToInt(val))
+			switch duration {
+			case discordgo.AutoArchiveDurationOneHour, discordgo.AutoArchiveDurationOneDay, discordgo.AutoArchiveDurationThreeDays, discordgo.AutoArchiveDurationOneWeek:
+				c.AutoArchiveDuration = &duration
+			default:
+				return nil, errors.New("'auto_archive_duration' must be 60, 1440, 4320, or 10080")
 			}
-			c.AutoArchiveDuration = &duration
 		case "invitable":
 			val, ok := val.(bool)
 			if ok {
