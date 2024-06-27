@@ -56,6 +56,7 @@ type GroupForm struct {
 
 	WhitelistRoles []int64 `valid:"role,true"`
 	BlacklistRoles []int64 `valid:"role,true"`
+	Disabled       bool
 }
 
 type SearchForm struct {
@@ -643,9 +644,14 @@ func handleRunCommandNow(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	// only interval commands can be ran from the dashboard currently
-	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ? AND trigger_type = 5", activeGuild.ID, cmdID)).OneG(context.Background())
+	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ? AND trigger_type = 5", activeGuild.ID, cmdID), qm.Load("Group")).OneG(context.Background())
 	if err != nil {
 		return templateData, err
+	}
+
+	if cmd.R.Group != nil && cmd.R.Group.Disabled {
+		templateData.AddAlerts(web.ErrorAlert("This command group is disabled, cannot run a command from disabled group."))
+		return templateData, nil
 	}
 
 	if cmd.Disabled {
@@ -741,6 +747,7 @@ func handleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	model.WhitelistRoles = groupForm.WhitelistRoles
 	model.IgnoreRoles = groupForm.BlacklistRoles
 	model.Name = groupForm.Name
+	model.Disabled = groupForm.Disabled
 
 	_, err = model.UpdateG(ctx, boil.Infer())
 	if err == nil {

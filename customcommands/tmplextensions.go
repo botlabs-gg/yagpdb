@@ -184,9 +184,13 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", ctx.GS.ID, ccID), qm.Load("Group")).OneG(context.Background())
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
+		}
+
+		if cmd.R.Group != nil && cmd.R.Group.Disabled {
+			return "", errors.New("custom command group is disabled")
 		}
 
 		if cmd.Disabled {
@@ -279,9 +283,13 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", ctx.GS.ID, ccID), qm.Load("Group")).OneG(context.Background())
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
+		}
+
+		if cmd.R.Group != nil && cmd.R.Group.Disabled {
+			return "", errors.New("custom command group is disabled")
 		}
 
 		if cmd.Disabled {
