@@ -284,8 +284,13 @@
                         <div class="row mb-2">
                             <div class="col-lg-12">
                                 <div class="form-group">
+
                                     <label for="responses">Response (<span
                                             class="cc-length-counter">x</span>/{{.MaxCCLength}})</label>
+                                    <span style="float: right">
+                                      <input type="checkbox" class="toggle-code-mirror" checked="true" id="toggle-code-mirror">
+                                      <label for="toggle-code-mirror">Show CodeMirror Editor</label>
+                                    </span>
                                     <!-- Use .btn-add for simplicity and let the page loader adjust. -->
                                     {{range .CC.Responses}}
                                     <div id="cc-responses" class="entry input-group  input-group-sm">
@@ -309,6 +314,7 @@
                                             </button>
                                         </span>
                                     </div>
+
                                     {{end}}
                                     <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm"
                                         href="#cc-help-modal">Info</a>
@@ -681,6 +687,7 @@
             $(`#${this.warningId}`).remove();
         },
     };
+
     $('#time-trigger-channel').change(() => checkMissingIntervalTriggerChannel.run());
 
     function updateTriggerLength() {
@@ -738,6 +745,8 @@
 </style>
 <script type="text/javascript">
     function setupCodeMirrorEditor(textArea) {
+        var isCMEditor = localStorage.getItem('cm-editor')
+        if(isCMEditor === 'false') return
         const codeMirror = CodeMirror.fromTextArea(textArea, {
             lineNumbers: true,
             mode: 'text/x-go',
@@ -758,9 +767,25 @@
         });
     }
 
+    function removeCodeMirrorEditor(editor){
+        editor.CodeMirror.toTextArea();
+    }
+
     var initialTextAreas = document.querySelectorAll('.cc-editor');
     initialTextAreas.forEach((textArea) => setupCodeMirrorEditor(textArea));
 
+    $("#toggle-code-mirror").change( value => {
+        if(value.target.checked){
+            localStorage.setItem('cm-editor', 'true')
+            var textAreas = document.querySelectorAll('.cc-editor');
+            textAreas.forEach((textArea) => setupCodeMirrorEditor(textArea));
+        } else {
+            localStorage.setItem('cm-editor', 'false')
+            document.querySelectorAll('.CodeMirror').forEach((editor) => {
+                removeCodeMirrorEditor(editor)
+            });
+        }
+    })
     // we need to reinitialize the codemirror instance for each new textarea, the script below is the old implementation coming from the spongebob.js file
     $(document).on('click', '.btn-add', function (e) {
 		e.preventDefault();
