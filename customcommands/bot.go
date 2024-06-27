@@ -45,14 +45,9 @@ import (
 
 var (
 	CCExecLock        = keylock.NewKeyLock[CCExecKey]()
-	DelayedCCRunLimit = multiratelimit.NewMultiRatelimiter(0.1, 10)
-	CCMaxDataLimit    = 1000000 // 1 MB max
+	DelayedCCRunLimit = multiratelimit.NewMultiRatelimiter[int64](5, 25) // key is guild ID
+	CCMaxDataLimit    = 1000000                                          // 1 MB max
 )
-
-type DelayedRunLimitKey struct {
-	GuildID   int64
-	ChannelID int64
-}
 
 type CCExecKey struct {
 	GuildID int64
@@ -393,6 +388,8 @@ func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
 	return out
 }
 
+const maxThrottleDelay = 10 * time.Second
+
 func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	dataCast := data.(*DelayedRunCCData)
 	cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", evt.GuildID, dataCast.CmdID)).OneG(context.Background())
@@ -404,9 +401,18 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 		return false, errors.New("custom command is disabled")
 	}
 
-	if !DelayedCCRunLimit.AllowN(DelayedRunLimitKey{GuildID: evt.GuildID, ChannelID: dataCast.ChannelID}, time.Now(), 1) {
-		logger.WithField("guild", cmd.GuildID).Warn("went above delayed cc run ratelimit")
-		return false, nil
+	r := DelayedCCRunLimit.Reserve(evt.GuildID)
+	if !r.OK() {
+		delay := r.Delay()
+		if delay > maxThrottleDelay {
+			logger.WithField("guild", cmd.GuildID).Warn("went above delayed cc run ratelimit; skipping event")
+			r.Cancel()
+			return false, nil
+		}
+
+		// If the delay before the ratelimit expires is sufficiently short, just wait it out.
+		logger.WithField("guild", cmd.GuildID).WithField("delay", delay).Warn("went above delayed cc run ratelimit; throttling...")
+		time.Sleep(delay)
 	}
 
 	gs := bot.State.GetGuild(evt.GuildID)
