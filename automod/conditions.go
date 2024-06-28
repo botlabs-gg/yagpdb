@@ -513,10 +513,10 @@ func (bc *BotCondition) UserSettings() []*SettingDef {
 
 func (bc *BotCondition) IsMet(data *TriggeredRuleData, settings interface{}) (bool, error) {
 	if bc.Ignore {
-		return !data.MS.User.Bot, nil
+		return !(data.Message.WebhookID != 0 && data.Message.Member != nil || data.MS.User.Bot), nil
 	}
 
-	return data.MS.User.Bot, nil
+	return data.Message.WebhookID != 0 && data.Message.Member != nil || data.MS.User.Bot, nil
 }
 
 func (bc *BotCondition) MergeDuplicates(data []interface{}) interface{} {
