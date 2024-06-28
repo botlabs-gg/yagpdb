@@ -158,6 +158,8 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	err = CreateModlogEmbed(config, author, action, user, reason, logLink)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("Failed creating mod log embed")
+	} else {
+		logger.WithError(err).WithField("guild", gs.ID).Error("Successfully created mod log embed")
 	}
 	return err
 }
