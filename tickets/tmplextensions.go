@@ -25,10 +25,6 @@ func init() {
 // or schedules a custom command to be run in the future sometime with the provided data placed in .ExecData
 func tmplCreateTicket(ctx *templates.Context) interface{} {
 	return func(author interface{}, topic string) (*TemplateTicket, error) {
-		if ctx.ExecutedFrom == templates.ExecutedFromNestedCommandTemplate {
-			return nil, errors.New("cannot nest exec/execAdmin/ticket creation")
-		}
-
 		if ctx.IncreaseCheckCallCounterPremium("ticket", 1, 1) {
 			return nil, templates.ErrTooManyCalls
 		}
@@ -84,7 +80,7 @@ func tmplCreateTicket(ctx *templates.Context) interface{} {
 			return nil, errors.New("tickets are disabled on this server")
 		}
 
-		gs, ticket, err := CreateTicket(context.Background(), ctx.GS, ms, conf, topic, true, ctx.ExecutedFrom == templates.ExecutedFromCommandTemplate)
+		gs, ticket, err := CreateTicket(context.Background(), ctx.GS, ms, conf, topic, true)
 		ctx.GS = gs
 
 		if err != nil {

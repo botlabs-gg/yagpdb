@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -52,16 +51,12 @@ func (p *Plugin) AddCommands() {
 			{Name: "subject", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
-				return nil, errors.New("cannot nest exec/execAdmin calls")
-			}
-
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			if !conf.Enabled {
 				return createTicketsDisabledError(parsed.GuildData), nil
 			}
 
-			_, ticket, err := CreateTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str(), true, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
+			_, ticket, err := CreateTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str(), true)
 			if err != nil {
 				switch t := err.(type) {
 				case TicketUserError:

@@ -169,10 +169,6 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
-				return nil, errors.New("cannot nest exec/execAdmin calls")
-			}
-
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
@@ -203,7 +199,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = BanUserWithDuration(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, banDuration, ddays, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
+			err = BanUserWithDuration(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, banDuration, ddays)
 			if err != nil {
 				return nil, err
 			}
@@ -279,10 +275,6 @@ var ModerationCommands = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
-				return nil, errors.New("cannot nest exec/execAdmin calls")
-			}
-
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
@@ -318,7 +310,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				msg = parsed.TraditionalTriggerData.Message
 			}
 
-			err = KickUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, toDel, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
+			err = KickUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, toDel)
 			if err != nil {
 				return nil, err
 			}
@@ -343,10 +335,6 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
-				return nil, errors.New("cannot nest exec/execAdmin calls")
-			}
-
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
@@ -381,7 +369,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = MuteUnmuteUser(config, true, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, int(d.Minutes()), parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
+			err = MuteUnmuteUser(config, true, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, int(d.Minutes()))
 			if err != nil {
 				return nil, err
 			}
@@ -406,10 +394,6 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
-				return nil, errors.New("cannot nest exec/execAdmin calls")
-			}
-
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
@@ -434,7 +418,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = MuteUnmuteUser(config, false, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, 0, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
+			err = MuteUnmuteUser(config, false, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, 0)
 			if err != nil {
 				return nil, err
 			}
@@ -460,9 +444,6 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
-				return nil, errors.New("cannot nest exec/execAdmin calls")
-			}
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
@@ -493,7 +474,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = TimeoutUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, &member.User, d, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
+			err = TimeoutUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, &member.User, d)
 			if err != nil {
 				return nil, err
 			}
@@ -840,10 +821,6 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
-				return nil, errors.New("cannot nest exec/execAdmin calls")
-			}
-
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
@@ -862,7 +839,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = WarnUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, target, parsed.Args[1].Str(), parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
+			err = WarnUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, target, parsed.Args[1].Str())
 			if err != nil {
 				return nil, err
 			}
