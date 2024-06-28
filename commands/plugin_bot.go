@@ -307,7 +307,9 @@ func AddRootCommandsWithMiddlewares(p common.Plugin, middlewares []dcmd.MiddleWa
 
 func handleMsgCreate(evt *eventsystem.EventData) {
 	m := evt.MessageCreate()
-	if !bot.IsNormalUserMessage(m.Message) {
+	msg := m.Message
+	 
+	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.Author.Discriminator == "0000" || (msg.Member == nil && msg.GuildID != 0) {
 		// Pls no panicerinos or banerinos self, also ignore webhooks
 		return
 	}
