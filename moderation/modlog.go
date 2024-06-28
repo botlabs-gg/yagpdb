@@ -41,8 +41,6 @@ var (
 )
 
 func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogAction, target *discordgo.User, reason, logLink string) error {
-	logger.Infof("%#v", config)
-	logger.Infof("Creating modlog embed for guild_id %d, action_channel %d", config.GuildID, config.ActionChannel)
 	channelID := config.ActionChannel
 	if channelID == 0 {
 		return nil

@@ -125,9 +125,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	}
 
 	logger.WithField("guild_id", guildID).Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
-
 	if memberNotFound {
-		logger.WithField("guild_id", guildID).Infof("MODERATION: MEMBER NOT FOUND: %d %s", user.ID, user.Username)
 		// Wait a tiny bit to make sure the audit log is updated
 		time.Sleep(time.Second * 3)
 
@@ -158,9 +156,8 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 	err = CreateModlogEmbed(config, author, action, user, reason, logLink)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Error("Failed creating mod log embed")
-	} else {
-		logger.WithError(err).WithField("guild", gs.ID).Error("Successfully created mod log embed")
 	}
+
 	return err
 }
 
