@@ -240,7 +240,10 @@ func KickUser(config *Config, guildID int64, channel *dstate.ChannelState, messa
 		del = 100
 	}
 
-	_, err = DeleteMessages(guildID, channel.ID, user.ID, del, del)
+	if channel != nil {
+		_, err = DeleteMessages(guildID, channel.ID, user.ID, del, del)
+	}
+
 	return err
 }
 
