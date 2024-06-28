@@ -473,7 +473,7 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Cha
 	}
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
-	err = sub.InsertG(context.Background(), boil.Whitelist("guild_id", "channel_id", "mention_everyone", "mention_roles", "publish_livestream", "publish_shorts", "enabled"))
+	err = sub.InsertG(context.Background(), boil.Infer())
 	if err != nil {
 		return nil, err
 	}
