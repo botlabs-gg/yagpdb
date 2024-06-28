@@ -19,14 +19,11 @@ CREATE TABLE IF NOT EXISTS general_notification_configs (
 	-- This column should be a TEXT[]. But for legacy reasons, it is instead a single
 	-- TEXT column containing all template responses joined together and delimited by
 	-- the character U+001E (INFORMATION SEPARATOR TWO.)
-	join_server_msgs TEXT,
 	join_dm_enabled BOOLEAN,
 	join_dm_msg TEXT,
 
 	leave_enabled BOOLEAN,
 	leave_channel TEXT,
-	-- Same deal as join_server_msgs.
-	leave_msgs TEXT,
 	
 	topic_enabled BOOLEAN,
 	topic_channel TEXT,
@@ -42,6 +39,11 @@ CREATE TABLE IF NOT EXISTS general_notification_configs (
 ALTER TABLE general_notification_configs ALTER COLUMN created_at SET NOT NULL;
 `, `
 ALTER TABLE general_notification_configs ALTER COLUMN updated_at SET NOT NULL;
+`,
+	`
+ALTER TABLE general_notification_configs ADD COLUMN IF NOT EXISTS join_server_msgs TEXT;
+`, `
+ALTER TABLE general_notification_configs ADD COLUMN IF NOT EXISTS leave_msgs TEXT;
 `, `
 
 -- Now the more complicated migration. For legacy reasons, the general_notification_configs
@@ -64,7 +66,8 @@ DO $$
 BEGIN
 
 -- only run if general_notifcation_configs.join_server_msg (indicative of legacy table) exists
-IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='general_notification_configs' AND column_name='join_server_msg') THEN
+IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='general_notification_configs' AND column_name='join_server_msgs')
+AND EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='general_notification_configs' AND column_name='join_server_msg') THEN
 	UPDATE general_notification_configs SET join_server_msgs_ = join_server_msg WHERE join_server_msg != '';
 	UPDATE general_notification_configs SET leave_msgs_ = leave_msg WHERE leave_msg != '';
 

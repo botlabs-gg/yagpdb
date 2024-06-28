@@ -70,33 +70,16 @@ func cacheKey(guildID int64) string {
 }
 
 func GetConfig(guildID int64) (*Config, error) {
-	const maxRetries = 1000
+	conf, err := models.FindGeneralNotificationConfigG(context.Background(), guildID)
+	if err == nil {
+		return configFromModel(conf), nil
+	}
 
-	currentRetries := 0
-	for {
-		conf, err := models.FindGeneralNotificationConfigG(context.Background(), guildID)
-		if err == nil {
-			if currentRetries > 1 {
-				logger.Info("Fetched config after ", currentRetries, " retries")
-			}
-			return configFromModel(conf), nil
-		}
-
-		if err == sql.ErrNoRows {
-			return nil, err
-		}
-
-		if strings.Contains(err.Error(), "sorry, too many clients already") {
-			time.Sleep(time.Millisecond * 10 * time.Duration(rand.Intn(10)))
-			currentRetries++
-			if currentRetries > maxRetries {
-				return nil, err
-			}
-			continue
-		}
-
+	if err == sql.ErrNoRows {
 		return nil, err
 	}
+
+	return nil, err
 }
 
 func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error) {
