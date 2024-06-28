@@ -219,6 +219,11 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 }
 
 func KickUser(config *Config, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, user *discordgo.User, del int) error {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Infof("Recovered from panic: %#v", r)
+		}
+	}()
 	config, err := GetConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)
