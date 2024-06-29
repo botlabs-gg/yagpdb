@@ -118,7 +118,7 @@ type PaginatedResponse struct {
 
 var _ dcmd.Response = (*PaginatedResponse)(nil)
 
-func (p *PaginatedResponse) Send(*dcmd.Data) ([]*discordgo.Message, error) {
+func (p *PaginatedResponse) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 	pm := &PaginatedMessage{
 		GuildID:        p.guildID,
 		ChannelID:      p.channelID,
@@ -144,11 +144,20 @@ func (p *PaginatedResponse) Send(*dcmd.Data) ([]*discordgo.Message, error) {
 		Text: footer,
 	}
 	embed.Timestamp = time.Now().Format(time.RFC3339)
+	msg := &discordgo.Message{}
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		msg, err = common.BotSession.CreateFollowupMessage(data.SlashCommandTriggerData.Interaction.ApplicationID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.WebhookParams{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: createNavigationButtons(true, nextButtonDisabled),
+		})
+	default:
+		msg, err = common.BotSession.ChannelMessageSendComplex(p.channelID, &discordgo.MessageSend{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: createNavigationButtons(true, nextButtonDisabled),
+		})
+	}
 
-	msg, err := common.BotSession.ChannelMessageSendComplex(p.channelID, &discordgo.MessageSend{
-		Embeds:     []*discordgo.MessageEmbed{embed},
-		Components: createNavigationButtons(true, nextButtonDisabled),
-	})
 	if err != nil {
 		return nil, err
 	}

@@ -1385,7 +1385,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 		count, err := models.ModerationWarnings(
 			models.ModerationWarningWhere.UserID.EQ(userIDStr),
 			models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID),
-		).CountG(parsed.Context())
+		).CountG(context.Background())
 		if err != nil {
 			return nil, err
 		}
@@ -1397,7 +1397,7 @@ func PaginateWarnings(parsed *dcmd.Data) func(p *paginatedmessages.PaginatedMess
 			qm.OrderBy("id desc"),
 			qm.Offset(skip),
 			qm.Limit(limit),
-		).AllG(parsed.Context())
+		).AllG(context.Background())
 		if err != nil {
 			return nil, err
 		}
