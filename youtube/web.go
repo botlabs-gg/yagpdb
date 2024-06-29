@@ -219,7 +219,7 @@ func BaseEditHandler(inner web.ControllerHandlerFunc) web.ControllerHandlerFunc 
 			return templateData.AddAlerts(web.ErrorAlert("This appears to belong somewhere else...")), nil
 		}
 
-		ctx = context.WithValue(ctx, ContextKeySub, &sub)
+		ctx = context.WithValue(ctx, ContextKeySub, sub)
 		return inner(w, r.WithContext(ctx))
 	}
 }
