@@ -58,7 +58,7 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	templateData["DefaultTimeoutDuration"] = int(DefaultTimeoutDuration.Minutes())
 
 	if _, ok := templateData["ModConfig"]; !ok {
-		config, err := GetCachedConfigOrDefault(activeGuild.ID)
+		config, err := GetConfigOrDefault(activeGuild.ID)
 		if err != nil {
 			return templateData, err
 		}
@@ -114,7 +114,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetTitle"] = "Moderation"
 	templateData["SettingsPath"] = "/moderation"
 
-	config, err := GetCachedConfigOrDefault(activeGuild.ID)
+	config, err := GetConfigOrDefault(activeGuild.ID)
 	if err != nil {
 		return templateData, err
 	}

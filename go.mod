@@ -60,11 +60,11 @@ require (
 	github.com/volatiletech/strmangle v0.0.6
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.21.0
-	golang.org/x/image v0.10.0
+	golang.org/x/image v0.18.0
 	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.16.0
 	golang.org/x/time v0.3.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/api v0.131.0

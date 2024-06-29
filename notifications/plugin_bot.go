@@ -47,15 +47,9 @@ func GetCachedConfigOrDefault(guildID int64) (*Config, error) {
 	const cacheDuration = 10 * time.Minute
 
 	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (interface{}, error) {
-		return GetConfig(guildID)
+		return GetConfigOrDefault(guildID)
 	})
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return &Config{
-				JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},
-				LeaveMsgs:      []string{"**{{.User.Username}}** Left... :'("},
-			}, nil
-		}
 		return nil, err
 	}
 	return item.Value().(*Config), nil
@@ -69,14 +63,17 @@ func cacheKey(guildID int64) string {
 	return discordgo.StrID(guildID)
 }
 
-func GetConfig(guildID int64) (*Config, error) {
+func GetConfigOrDefault(guildID int64) (*Config, error) {
 	conf, err := models.FindGeneralNotificationConfigG(context.Background(), guildID)
 	if err == nil {
 		return configFromModel(conf), nil
 	}
 
 	if err == sql.ErrNoRows {
-		return nil, err
+		return &Config{
+			JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},
+			LeaveMsgs:      []string{"**{{.User.Username}}** Left... :'("},
+		}, nil
 	}
 
 	return nil, err

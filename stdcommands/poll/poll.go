@@ -74,7 +74,20 @@ func createPoll(data *dcmd.Data) (interface{}, error) {
 		common.BotSession.ChannelMessageDelete(data.ChannelID, data.TraditionalTriggerData.Message.ID)
 	}
 
-	pollMsg, err := common.BotSession.ChannelMessageSendEmbed(data.ChannelID, &response)
+	pollMsg := &discordgo.Message{}
+	var err error
+
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		pollMsg, err = common.BotSession.CreateFollowupMessage(data.SlashCommandTriggerData.Interaction.ApplicationID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.WebhookParams{
+			Embeds: []*discordgo.MessageEmbed{&response},
+		})
+	default:
+		pollMsg, err = common.BotSession.ChannelMessageSendComplex(data.ChannelID, &discordgo.MessageSend{
+			Embeds: []*discordgo.MessageEmbed{&response},
+		})
+	}
+
 	if err != nil {
 		return nil, errors.WrapIf(err, "failed to add poll description")
 	}
