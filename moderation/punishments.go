@@ -138,6 +138,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		auditLog, err := common.BotSession.GuildAuditLog(gs.ID, common.BotUser.ID, 0, auditLogType, 10)
 		if err != nil {
 			logger.WithError(err).WithField("guild", gs.ID).Error("Failed retrieving audit log")
+			return err
 		}
 		for _, v := range auditLog.Users {
 			if v.ID == user.ID {
