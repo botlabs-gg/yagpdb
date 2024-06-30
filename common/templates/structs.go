@@ -27,11 +27,10 @@ type CtxChannel struct {
 	ParentID             int64                            `json:"parent_id"`
 	OwnerID              int64                            `json:"owner_id"`
 
-	AvailableTags []discordgo.ForumTag   `json:"available_tags"`
-	AppliedTags   []int64                `json:"applied_tags"`
-	Flags         discordgo.ChannelFlags `json:"flags"`
-	Archived      bool                   `json:"archived"`
-	Locked        bool                   `json:"locked"`
+	AvailableTags  []discordgo.ForumTag      `json:"available_tags"`
+	AppliedTags    []int64                   `json:"applied_tags"`
+	Flags          discordgo.ChannelFlags    `json:"flags"`
+	ThreadMetadata *discordgo.ThreadMetadata `json:"thread_metadata,omitempty"`
 }
 
 func (c *CtxChannel) Mention() (string, error) {
@@ -66,8 +65,7 @@ func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
 		AvailableTags:        cs.AvailableTags,
 		AppliedTags:          cs.AppliedTags,
 		Flags:                cs.Flags,
-		Archived:             cs.Archived,
-		Locked:               cs.Locked,
+		ThreadMetadata:       cs.ThreadMetadata,
 	}
 
 	return ctxChannel

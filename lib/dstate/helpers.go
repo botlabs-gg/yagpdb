@@ -169,10 +169,7 @@ func ChannelStateFromDgo(c *discordgo.Channel) ChannelState {
 		DefaultThreadRateLimitPerUser: c.DefaultThreadRateLimitPerUser,
 		DefaultSortOrder:              c.DefaultSortOrder,
 		DefaultForumLayout:            c.DefaultForumLayout,
-		Archived:                      c.Archived,
-		AutoArchiveDuration:           c.AutoArchiveDuration,
-		Locked:                        c.Locked,
-		Invitable:                     c.Invitable,
+		ThreadMetadata:                c.ThreadMetadata,
 	}
 }
 
