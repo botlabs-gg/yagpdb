@@ -59,12 +59,9 @@ func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message
 		return true
 	}
 
-	ms := &dstate.MemberState{
-		GuildID: msg.GuildID,
-		Member:  bot.MemberToMemberFields(msg.Member),
-		User:    *msg.Author,
-	}
-
+	ms := dstate.MemberStateFromMember(msg.Member)
+	ms.User = *msg.Author
+	
 	stripped := ""
 	return !p.CheckTriggers(nil, evt.GS, ms, msg, cs, func(trig *ParsedPart) (activated bool, err error) {
 		if stripped == "" {
