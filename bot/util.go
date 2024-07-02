@@ -457,16 +457,3 @@ func IsNormalUserMessage(msg *discordgo.Message) bool {
 
 	return true
 }
-
-func MemberToMemberFields(member *discordgo.Member) *dstate.MemberFields {
-	return &dstate.MemberFields{
-		JoinedAt:                   member.JoinedAt,
-		Roles:                      member.Roles,
-		Nick:                       member.Nick,
-		Avatar:                     member.Avatar,
-		Pending:                    member.Pending,
-		PremiumSince:               member.PremiumSince,
-		Flags:                      member.Flags,
-		CommunicationDisabledUntil: member.CommunicationDisabledUntil,
-	}
-}
