@@ -795,6 +795,8 @@
             });
         }
     })
+
+    $(document).off('click', '.btn-add').off('click', '.btn-remove');
     // we need to reinitialize the codemirror instance for each new textarea, the script below is the old implementation coming from the spongebob.js file
     $(document).on('click', '.btn-add', function (e) {
 		e.preventDefault();
