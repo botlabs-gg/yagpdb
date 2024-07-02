@@ -182,7 +182,7 @@
             display.classList.remove("text-danger");
         }
     }
-    
+    $(document).off('click', '.btn-add').off('click', '.btn-remove');
     $(document).on('click', '.btn-add', function (e) {
       e.preventDefault();
 
