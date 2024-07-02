@@ -46,10 +46,10 @@ func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
 
 // called on new messages and edits
 func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message) bool {
-	if !bot.IsNormalUserMessage(msg) {
+	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.Author.Discriminator == "0000" || (msg.Member == nil && msg.GuildID != 0) {
 		return false
 	}
-
+	
 	if !evt.HasFeatureFlag(featureFlagEnabled) || msg.GuildID == 0 {
 		return true
 	}
@@ -60,7 +60,8 @@ func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message
 	}
 
 	ms := dstate.MemberStateFromMember(msg.Member)
-
+	ms.User = *msg.Author
+	
 	stripped := ""
 	return !p.CheckTriggers(nil, evt.GS, ms, msg, cs, func(trig *ParsedPart) (activated bool, err error) {
 		if stripped == "" {
