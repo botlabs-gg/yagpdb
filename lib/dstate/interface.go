@@ -262,16 +262,12 @@ type ChannelState struct {
 	RateLimitPerUser int                       `json:"rate_limit_per_user"`
 	Flags            discordgo.ChannelFlags    `json:"flags"`
 	OwnerID          int64                     `json:"owner_id,string"`
-	ThreadMetadata   *discordgo.ThreadMetadata `json:"thread_metadata"`
+	ThreadMetadata   *discordgo.ThreadMetadata `json:"thread_metadata,omitempty"`
 
 	PermissionOverwrites []discordgo.PermissionOverwrite `json:"permission_overwrites"`
 
-	AvailableTags       []discordgo.ForumTag          `json:"available_tags"`
-	AppliedTags         []int64                       `json:"applied_tags"`
-	Archived            bool                          `json:"archived"`
-	AutoArchiveDuration discordgo.AutoArchiveDuration `json:"auto_archive_duration,omitempty"`
-	Locked              bool                          `json:"locked"`
-	Invitable           bool                          `json:"invitable"`
+	AvailableTags []discordgo.ForumTag `json:"available_tags"`
+	AppliedTags   []int64              `json:"applied_tags"`
 
 	DefaultReactionEmoji          discordgo.ForumDefaultReaction `json:"default_reaction_emoji"`
 	DefaultThreadRateLimitPerUser int                            `json:"default_thread_rate_limit_per_user"`
