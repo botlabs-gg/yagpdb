@@ -24,7 +24,7 @@ func SaveConfig(config *Config) error {
 	return nil
 }
 
-func GetConfigOrDefault(guildID int64) (*Config, error) {
+func FetchConfig(guildID int64) (*Config, error) {
 	conf, err := models.FindGeneralNotificationConfigG(context.Background(), guildID)
 	if err == nil {
 		return configFromModel(conf), nil

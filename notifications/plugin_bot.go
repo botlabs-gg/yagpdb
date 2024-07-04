@@ -34,7 +34,7 @@ func BotCachedGetConfig(guildID int64) (*Config, error) {
 	const cacheDuration = 10 * time.Minute
 
 	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (interface{}, error) {
-		return GetConfigOrDefault(guildID)
+		return FetchConfig(guildID)
 	})
 	if err != nil {
 		return nil, err
