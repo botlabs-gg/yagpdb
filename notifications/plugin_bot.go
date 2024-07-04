@@ -1,8 +1,6 @@
 package notifications
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -17,9 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/v2/notifications/models"
 	"github.com/karlseguin/ccache"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -33,15 +29,6 @@ func (p *Plugin) BotInit() {
 }
 
 var configCache = ccache.New(ccache.Configure().MaxSize(15000))
-
-func SaveConfig(config *Config) error {
-	err := config.ToModel().UpsertG(context.Background(), true, []string{"guild_id"}, boil.Infer(), boil.Infer())
-	if err != nil {
-		return err
-	}
-	pubsub.Publish("invalidate_notifications_config_cache", config.GuildID, nil)
-	return nil
-}
 
 func BotCachedGetConfig(guildID int64) (*Config, error) {
 	const cacheDuration = 10 * time.Minute
@@ -61,22 +48,6 @@ func handleInvalidateConfigCache(evt *pubsub.Event) {
 
 func cacheKey(guildID int64) string {
 	return discordgo.StrID(guildID)
-}
-
-func GetConfigOrDefault(guildID int64) (*Config, error) {
-	conf, err := models.FindGeneralNotificationConfigG(context.Background(), guildID)
-	if err == nil {
-		return configFromModel(conf), nil
-	}
-
-	if err == sql.ErrNoRows {
-		return &Config{
-			JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},
-			LeaveMsgs:      []string{"**{{.User.Username}}** Left... :'("},
-		}, nil
-	}
-
-	return nil, err
 }
 
 func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error) {

@@ -1,15 +1,44 @@
 package notifications
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/notifications/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
+
+func SaveConfig(config *Config) error {
+	err := config.ToModel().UpsertG(context.Background(), true, []string{"guild_id"}, boil.Infer(), boil.Infer())
+	if err != nil {
+		return err
+	}
+	pubsub.Publish("invalidate_notifications_config_cache", config.GuildID, nil)
+	return nil
+}
+
+func GetConfigOrDefault(guildID int64) (*Config, error) {
+	conf, err := models.FindGeneralNotificationConfigG(context.Background(), guildID)
+	if err == nil {
+		return configFromModel(conf), nil
+	}
+
+	if err == sql.ErrNoRows {
+		return &Config{
+			JoinServerMsgs: []string{"<@{{.User.ID}}> Joined!"},
+			LeaveMsgs:      []string{"**{{.User.Username}}** Left... :'("},
+		}, nil
+	}
+
+	return nil, err
+}
 
 // For legacy reasons, many columns in the database schema are marked as
 // nullable when they should really be non-nullable, meaning working with
