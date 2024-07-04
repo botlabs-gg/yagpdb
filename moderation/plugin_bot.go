@@ -1,7 +1,6 @@
 package moderation
 
 import (
-	"context"
 	"database/sql"
 	"math/rand"
 	"strconv"
@@ -23,7 +22,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -66,20 +64,6 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("mod_refresh_mute_override_create_role", HandleRefreshMuteOverridesCreateRole, nil)
 }
 
-func SaveConfig(config *Config) error {
-	err := config.ToModel().UpsertG(context.Background(), true, []string{"guild_id"}, boil.Infer(), boil.Infer())
-	if err != nil {
-		return err
-	}
-	pubsub.Publish("invalidate_moderation_config_cache", config.GuildID, nil)
-
-	if err := featureflags.UpdatePluginFeatureFlags(config.GuildID, &Plugin{}); err != nil {
-		return err
-	}
-	pubsub.Publish("mod_refresh_mute_override", config.GuildID, nil)
-	return nil
-}
-
 func BotCachedGetConfigIfNotSet(guildID int64, config *Config) (*Config, error) {
 	if config == nil {
 		var err error
@@ -112,19 +96,6 @@ func handleInvalidateConfigCache(evt *pubsub.Event) {
 
 func cacheKey(guildID int64) string {
 	return discordgo.StrID(guildID)
-}
-
-func GetConfigOrDefault(guildID int64) (*Config, error) {
-	conf, err := models.FindModerationConfigG(context.Background(), guildID)
-	if err == nil {
-		return configFromModel(conf), nil
-	}
-
-	if err == sql.ErrNoRows {
-		return &Config{GuildID: guildID}, nil
-	}
-
-	return nil, err
 }
 
 type ScheduledUnmuteData struct {

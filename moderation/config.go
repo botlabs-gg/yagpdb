@@ -1,13 +1,45 @@
 package moderation
 
 import (
+	"context"
+	"database/sql"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
 )
+
+func SaveConfig(config *Config) error {
+	err := config.ToModel().UpsertG(context.Background(), true, []string{"guild_id"}, boil.Infer(), boil.Infer())
+	if err != nil {
+		return err
+	}
+	pubsub.Publish("invalidate_moderation_config_cache", config.GuildID, nil)
+
+	if err := featureflags.UpdatePluginFeatureFlags(config.GuildID, &Plugin{}); err != nil {
+		return err
+	}
+	pubsub.Publish("mod_refresh_mute_override", config.GuildID, nil)
+	return nil
+}
+
+func GetConfigOrDefault(guildID int64) (*Config, error) {
+	conf, err := models.FindModerationConfigG(context.Background(), guildID)
+	if err == nil {
+		return configFromModel(conf), nil
+	}
+
+	if err == sql.ErrNoRows {
+		return &Config{GuildID: guildID}, nil
+	}
+
+	return nil, err
+}
 
 // For legacy reasons, many columns in the database schema are marked as
 // nullable when they should really be non-nullable, meaning working with
