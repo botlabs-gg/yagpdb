@@ -1088,13 +1088,13 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	lockHandle := CCExecLock.Lock(lockKey, time.Minute, time.Minute*10)
 	if lockHandle == -1 {
 		f.Warn("Exceeded max lock attempts for cc")
-		chn := tmplCtx.CurrentFrame.CS.ID
+		errChannel := tmplCtx.CurrentFrame.CS.ID
 		if cmd.RedirectErrorsChannel != 0 {
-			chn = cmd.RedirectErrorsChannel
+			errChannel = cmd.RedirectErrorsChannel
 		}
 
 		if cmd.ShowErrors {
-			common.BotSession.ChannelMessageSend(chn, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
+			common.BotSession.ChannelMessageSend(errChannel, fmt.Sprintf("Gave up trying to execute custom command #%d after 1 minute because there is already one or more instances of it being executed.", cmd.LocalID))
 		}
 		updatePostCommandRan(cmd, errors.New("Gave up trying to execute, already an existing instance executing"))
 		return nil
@@ -1123,16 +1123,16 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	if err != nil {
 		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
 		
-		chn := tmplCtx.CurrentFrame.CS.ID
+		errChannel := tmplCtx.CurrentFrame.CS.ID
 		if cmd.RedirectErrorsChannel != 0 {
-			chn = cmd.RedirectErrorsChannel
+			errChannel = cmd.RedirectErrorsChannel
 		}
 
 		if cmd.ShowErrors {
 			out += "\nAn error caused the execution of the custom command template to stop:\n"
 			out += formatCustomCommandRunErr(chanMsg, err)
 
-			common.BotSession.ChannelMessageSend(chn, out)
+			common.BotSession.ChannelMessageSend(errChannel, out)
 			return nil
 		}
 	}
@@ -1370,16 +1370,16 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 
 	l.Error("Error executing custom command")
 
-	chn := tmplCtx.CurrentFrame.CS.ID
+	errChannel := tmplCtx.CurrentFrame.CS.ID
 	if cmd.RedirectErrorsChannel != 0 {
-		chn = cmd.RedirectErrorsChannel
+		errChannel = cmd.RedirectErrorsChannel
 	}
 
 	if cmd.ShowErrors {
 		out := "\nAn error caused the execution of the custom command template to stop:\n"
 		out += "`" + err.Error() + "`"
 
-		common.BotSession.ChannelMessageSend(chn, out)
+		common.BotSession.ChannelMessageSend(errChannel, out)
 	}
 
 	updatePostCommandRan(cmd, err)
