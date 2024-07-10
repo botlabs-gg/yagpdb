@@ -27,7 +27,7 @@ import (
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {
-	config, err = GetConfigOrDefault(cmdData.GuildData.GS.ID)
+	config, err = FetchConfig(cmdData.GuildData.GS.ID)
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "GetConfig")
 	}

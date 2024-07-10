@@ -1,7 +1,6 @@
 package moderation
 
 import (
-	"context"
 	"database/sql"
 	"math/rand"
 	"strconv"
@@ -23,7 +22,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/karlseguin/ccache"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
@@ -66,24 +64,10 @@ func (p *Plugin) BotInit() {
 	pubsub.AddHandler("mod_refresh_mute_override_create_role", HandleRefreshMuteOverridesCreateRole, nil)
 }
 
-func SaveConfig(config *Config) error {
-	err := config.ToModel().UpsertG(context.Background(), true, []string{"guild_id"}, boil.Infer(), boil.Infer())
-	if err != nil {
-		return err
-	}
-	pubsub.Publish("invalidate_moderation_config_cache", config.GuildID, nil)
-
-	if err := featureflags.UpdatePluginFeatureFlags(config.GuildID, &Plugin{}); err != nil {
-		return err
-	}
-	pubsub.Publish("mod_refresh_mute_override", config.GuildID, nil)
-	return nil
-}
-
-func GetConfigIfNotSet(guildID int64, config *Config) (*Config, error) {
+func BotCachedGetConfigIfNotSet(guildID int64, config *Config) (*Config, error) {
 	if config == nil {
 		var err error
-		config, err = GetCachedConfigOrDefault(guildID)
+		config, err = BotCachedGetConfig(guildID)
 		if err != nil {
 			return nil, err
 		}
@@ -94,11 +78,11 @@ func GetConfigIfNotSet(guildID int64, config *Config) (*Config, error) {
 
 var configCache = ccache.New(ccache.Configure().MaxSize(15000))
 
-func GetCachedConfigOrDefault(guildID int64) (*Config, error) {
+func BotCachedGetConfig(guildID int64) (*Config, error) {
 	const cacheDuration = 10 * time.Minute
 
 	item, err := configCache.Fetch(cacheKey(guildID), cacheDuration, func() (interface{}, error) {
-		return GetConfigOrDefault(guildID)
+		return FetchConfig(guildID)
 	})
 	if err != nil {
 		return nil, err
@@ -112,19 +96,6 @@ func handleInvalidateConfigCache(evt *pubsub.Event) {
 
 func cacheKey(guildID int64) string {
 	return discordgo.StrID(guildID)
-}
-
-func GetConfigOrDefault(guildID int64) (*Config, error) {
-	conf, err := models.FindModerationConfigG(context.Background(), guildID)
-	if err == nil {
-		return configFromModel(conf), nil
-	}
-
-	if err == sql.ErrNoRows {
-		return &Config{GuildID: guildID}, nil
-	}
-
-	return nil, err
 }
 
 type ScheduledUnmuteData struct {
@@ -182,7 +153,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 		return // nothing to do
 	}
 
-	config, err := GetCachedConfigOrDefault(guildID)
+	config, err := BotCachedGetConfig(guildID)
 	if err != nil {
 		return
 	}
@@ -266,7 +237,7 @@ func HandleChannelCreateUpdate(evt *eventsystem.EventData) (retry bool, err erro
 		return false, nil
 	}
 
-	config, err := GetCachedConfigOrDefault(channel.GuildID)
+	config, err := BotCachedGetConfig(channel.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -338,7 +309,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 		return false, nil
 	}
 
-	config, err := GetCachedConfigOrDefault(data.GuildID)
+	config, err := BotCachedGetConfig(data.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -422,7 +393,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 		return
 	}
 
-	config, err := GetCachedConfigOrDefault(guildID)
+	config, err := BotCachedGetConfig(guildID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("Failed retrieving config")
 		return
@@ -471,7 +442,7 @@ func HandleGuildBanAddRemove(evt *eventsystem.EventData) {
 func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error) {
 	data := evt.GuildMemberRemove()
 
-	config, err := GetCachedConfigOrDefault(data.GuildID)
+	config, err := BotCachedGetConfig(data.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -556,7 +527,7 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 func HandleMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	c := evt.GuildMemberAdd()
 
-	config, err := GetCachedConfigOrDefault(c.GuildID)
+	config, err := BotCachedGetConfig(c.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -581,7 +552,7 @@ func HandleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
-	config, err := GetCachedConfigOrDefault(c.GuildID)
+	config, err := BotCachedGetConfig(c.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}

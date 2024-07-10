@@ -61,7 +61,7 @@ const (
 )
 
 func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
-	config, err := GetCachedConfigOrDefault(guildID)
+	config, err := BotCachedGetConfig(guildID)
 	if err != nil {
 		return nil, errors.WithStackIf(err)
 	}
