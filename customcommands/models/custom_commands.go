@@ -53,6 +53,7 @@ type CustomCommand struct {
 	ImportCount               int               `boil:"import_count" json:"import_count" toml:"import_count" yaml:"import_count"`
 	Name                      null.String       `boil:"name" json:"name,omitempty" toml:"name" yaml:"name,omitempty"`
 	Public                    bool              `boil:"public" json:"public" toml:"public" yaml:"public"`
+	RedirectErrorsChannel     int64             `boil:"redirect_errors_channel" json:"redirect_errors_channel" toml:"redirect_errors_channel" yaml:"redirect_errors_channel"`
 
 	R *customCommandR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L customCommandL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -87,6 +88,7 @@ var CustomCommandColumns = struct {
 	ImportCount               string
 	Name                      string
 	Public                    string
+	RedirectErrorsChannel     string
 }{
 	LocalID:                   "local_id",
 	GuildID:                   "guild_id",
@@ -116,6 +118,7 @@ var CustomCommandColumns = struct {
 	ImportCount:               "import_count",
 	Name:                      "name",
 	Public:                    "public",
+	RedirectErrorsChannel:     "redirect_errors_channel",
 }
 
 var CustomCommandTableColumns = struct {
@@ -147,6 +150,7 @@ var CustomCommandTableColumns = struct {
 	ImportCount               string
 	Name                      string
 	Public                    string
+	RedirectErrorsChannel     string
 }{
 	LocalID:                   "custom_commands.local_id",
 	GuildID:                   "custom_commands.guild_id",
@@ -176,6 +180,7 @@ var CustomCommandTableColumns = struct {
 	ImportCount:               "custom_commands.import_count",
 	Name:                      "custom_commands.name",
 	Public:                    "custom_commands.public",
+	RedirectErrorsChannel:     "custom_commands.redirect_errors_channel",
 }
 
 // Generated where
@@ -388,6 +393,7 @@ var CustomCommandWhere = struct {
 	ImportCount               whereHelperint
 	Name                      whereHelpernull_String
 	Public                    whereHelperbool
+	RedirectErrorsChannel     whereHelperint64
 }{
 	LocalID:                   whereHelperint64{field: "\"custom_commands\".\"local_id\""},
 	GuildID:                   whereHelperint64{field: "\"custom_commands\".\"guild_id\""},
@@ -417,6 +423,7 @@ var CustomCommandWhere = struct {
 	ImportCount:               whereHelperint{field: "\"custom_commands\".\"import_count\""},
 	Name:                      whereHelpernull_String{field: "\"custom_commands\".\"name\""},
 	Public:                    whereHelperbool{field: "\"custom_commands\".\"public\""},
+	RedirectErrorsChannel:     whereHelperint64{field: "\"custom_commands\".\"redirect_errors_channel\""},
 }
 
 // CustomCommandRels is where relationship names are stored.
@@ -447,9 +454,9 @@ func (r *customCommandR) GetGroup() *CustomCommandGroup {
 type customCommandL struct{}
 
 var (
-	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "trigger_on_edit", "public_id", "import_count", "name", "public"}
+	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "trigger_on_edit", "public_id", "import_count", "name", "public", "redirect_errors_channel"}
 	customCommandColumnsWithoutDefault = []string{"local_id", "guild_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "responses", "channels_whitelist_mode", "roles_whitelist_mode"}
-	customCommandColumnsWithDefault    = []string{"group_id", "last_run", "next_run", "channels", "roles", "context_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "trigger_on_edit", "public_id", "import_count", "name", "public"}
+	customCommandColumnsWithDefault    = []string{"group_id", "last_run", "next_run", "channels", "roles", "context_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "trigger_on_edit", "public_id", "import_count", "name", "public", "redirect_errors_channel"}
 	customCommandPrimaryKeyColumns     = []string{"guild_id", "local_id"}
 	customCommandGeneratedColumns      = []string{}
 )

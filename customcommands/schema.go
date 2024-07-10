@@ -46,6 +46,8 @@ CREATE INDEX IF NOT EXISTS custom_commands_guild_idx ON custom_commands(guild_id
 CREATE INDEX IF NOT EXISTS custom_commands_next_run_idx ON custom_commands(next_run);
 `, ` 
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS context_channel BIGINT NOT NULL DEFAULT 0;
+`,` 
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS redirect_errors_channel BIGINT NOT NULL DEFAULT 0;
 `, `
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS reaction_trigger_mode SMALLINT NOT NULL DEFAULT 0;
 `, `
