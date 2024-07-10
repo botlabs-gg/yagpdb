@@ -363,6 +363,11 @@
 
                                 <h4>Output errors as command response</h4>
                                 {{checkbox "show_errors" "show_errors" "" .CC.ShowErrors}}
+
+                                <h4>Redirect errors to selected channel</h4>
+                                <select class="form-control" name="redirect_errors_channel" data-requireperms-send>
+                                    {{textChannelOptions $g.Channels .CC.RedirectErrorsChannel true "None"}}
+                                </select>
                             </div>
                             <div id="cc-extra-settings" class="col-lg-6">
                                 <h3>Channel/User role restrictions</h3>

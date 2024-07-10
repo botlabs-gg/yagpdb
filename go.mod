@@ -22,7 +22,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/safebrowsing v0.0.0-20190624211811-bbf0d20d26b3
-	github.com/gorilla/schema v1.2.0
+	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/jedib0t/go-pretty v4.3.0+incompatible

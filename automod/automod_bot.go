@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"sort"
 	"time"
 
@@ -471,6 +472,13 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 		for _, effect := range rule.Effects {
 			go func(fx *ParsedPart, ctx *TriggeredRuleData) {
+				defer func() {
+					if r := recover(); r != nil {
+						stack := string(debug.Stack())
+						logger.Errorf("recovered from panic applying automod effect\n%v\n%v", r, stack)
+					}
+				}()
+
 				err := fx.Part.(Effect).Apply(ctx, fx.ParsedSettings)
 				if err != nil {
 					logger.WithError(err).WithField("guild", ruleset.RSModel.GuildID).WithField("part", fx.Part.Name()).Error("failed applying automod effect")

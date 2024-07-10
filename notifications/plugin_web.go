@@ -44,7 +44,7 @@ func HandleNotificationsGet(w http.ResponseWriter, r *http.Request) interface{} 
 	if ok {
 		templateData["NotifyConfig"] = formConfig
 	} else {
-		conf, err := GetConfigOrDefault(activeGuild.ID)
+		conf, err := FetchConfig(activeGuild.ID)
 		if err != nil {
 			web.CtxLogger(r.Context()).WithError(err).Error("failed retrieving config")
 		}
@@ -81,7 +81,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetTitle"] = "General notifications"
 	templateData["SettingsPath"] = "/notifications/general"
 
-	config, err := GetConfigOrDefault(ag.ID)
+	config, err := FetchConfig(ag.ID)
 	if err != nil {
 		return templateData, err
 	}

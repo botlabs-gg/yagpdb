@@ -1,6 +1,7 @@
 package automod_legacy
 
 import (
+	"runtime/debug"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
@@ -150,6 +151,13 @@ func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
 	}
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				stack := string(debug.Stack())
+				logger.Errorf("recovered from panic applying basic automod punishment\n%v\n%v", r, stack)
+			}
+		}()
+
 		switch highestPunish {
 		case PunishNone:
 			err = moderation.WarnUser(nil, cs.GuildID, cs, m, common.BotUser, &member.User, "Automoderator: "+punishMsg)
