@@ -98,7 +98,7 @@ type PubSubSubredditEventData struct {
 
 const (
 	// Max feeds per guild
-	GuildMaxFeedsNormal  = 100
+	GuildMaxFeedsNormal  = 20
 	GuildMaxFeedsPremium = 1000
 )
 

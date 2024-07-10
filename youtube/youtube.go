@@ -170,7 +170,7 @@ type LinkEntry struct {
 }
 
 const (
-	GuildMaxFeeds        = 50
+	GuildMaxFeeds        = 10
 	GuildMaxFeedsPremium = 250
 )
 
