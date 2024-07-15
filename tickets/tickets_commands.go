@@ -223,7 +223,7 @@ func (p *Plugin) AddCommands() {
 			// create the logs, download the attachments
 			err := createLogs(parsed.GuildData.GS, conf, currentTicket.Ticket, isAdminsOnly)
 			if err != nil {
-				return nil, err
+				return "Cannot send transcript to ticket logs channel, refusing to close ticket.", err
 			}
 
 			TicketLog(conf, parsed.GuildData.GS.ID, parsed.Author, &discordgo.MessageEmbed{
