@@ -377,6 +377,8 @@ func (ms *MemberState) DgoMember() *discordgo.Member {
 		Roles:                      ms.Member.Roles,
 		User:                       &ms.User,
 		Pending:                    ms.Member.Pending,
+		PremiumSince:               ms.Member.PremiumSince,
+		Flags:                      ms.Member.Flags,
 		CommunicationDisabledUntil: ms.Member.CommunicationDisabledUntil,
 	}
 
