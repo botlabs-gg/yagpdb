@@ -23,6 +23,10 @@
     .cc-disabled {
       background-color: #6c757d !important ;
     }
+    .cc-group-disabled {
+      text-decoration: line-through;
+      color: #d2322d !important;
+    }
 </style>
 
 <header class="page-header">
@@ -46,8 +50,8 @@
                 <li
                     class="nav-item {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}">
                     <a data-partial-load="true"
-                        class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}"
-                        href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}{{if .Disabled}} <code>Disabled</code>{{end}}</a>
+                        class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}} {{if .Disabled}}cc-group-disabled{{end}}"
+                        href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}</a>
                 </li>
                 {{end}}
                 <li class="nav-item">
@@ -107,8 +111,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Group disabled</label><br>
-                                    {{checkbox "disabled" "disabled" "Enables or Disables the group" .CurrentCommandGroup.Disabled}}
+                                    <label>Group Enabled?</label><br>
+                                      {{checkbox "IsEnabled" "IsEnabled" "Enables or Disables the Group" (not .CurrentCommandGroup.Disabled) }}
                                 </div>
                                 <div class="form-group">
                                     <button type="submit"
