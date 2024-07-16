@@ -1205,15 +1205,10 @@ func (c *Context) tmplEditThread(channel interface{}, args ...interface{}) (stri
 	return "", nil
 }
 
-func (c *Context) tmplOpenThread(channel interface{}) (string, error) {
+func (c *Context) tmplOpenThread(cID int64) (string, error) {
 
 	if c.IncreaseCheckCallCounter("edit_channel", 10) {
 		return "", ErrTooManyCalls
-	}
-
-	cID := c.ChannelArg(channel)
-	if cID == 0 {
-		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
 	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
