@@ -1220,13 +1220,13 @@ func (c *Context) tmplOpenThread(channel interface{}) (string, error) {
 		return "", ErrTooManyCalls
 	}
 
-	cstate := c.GS.GetChannelOrThread(cID)
-	if cstate == nil {
-		return "", errors.New("thread not in state")
+	thread, err := common.BotSession.Channel(cID)
+	if err != nil || thread == nil {
+		return "", errors.New("unable to get thread")
 	}
 
-	if !cstate.Type.IsThread() {
-		return "", errors.New("must specify a thread")
+	if !thread.Type.IsThread() {
+		return "", errors.New("not a thread")
 	}
 
 	falseVar := false
@@ -1235,7 +1235,7 @@ func (c *Context) tmplOpenThread(channel interface{}) (string, error) {
 		Locked:   &falseVar,
 	}
 
-	_, err := common.BotSession.ChannelEditComplex(cID, edit)
+	_, err = common.BotSession.ChannelEditComplex(cID, edit)
 	if err != nil {
 		return "", errors.New("unable to edit thread")
 	}
