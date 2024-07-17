@@ -1220,8 +1220,8 @@ func (c *Context) tmplOpenThread(cID int64) (string, error) {
 		return "", errors.New("unable to get thread")
 	}
 
-	if !thread.Type.IsThread() {
-		return "", errors.New("not a thread")
+	if thread.GuildID != c.GS.ID || !thread.Type.IsThread() {
+		return "", errors.New("not a valid thread")
 	}
 
 	falseVar := false
