@@ -111,9 +111,9 @@ var (
 		"roleAbove":   roleIsAbove,
 		"seq":         sequence,
 
-		"shuffle": shuffle,
-		"verb":    common.RandomVerb,
-		"hash":    tmplSha256,
+		"shuffle":      shuffle,
+		"verb":         common.RandomVerb,
+		"hash":         tmplSha256,
 		"decodeBase64": tmplDecodeBase64,
 		"encodeBase64": tmplEncodeBase64,
 
@@ -955,6 +955,16 @@ func (s Slice) Append(item interface{}) (interface{}, error) {
 		result := reflect.Append(reflect.ValueOf(&s).Elem(), reflect.ValueOf(v))
 		return result.Interface(), nil
 	}
+}
+
+func (s Slice) Del(index int) (interface{}, error) {
+	if index >= len(s) {
+		return nil, errors.New("Index out of bounds.")
+	}
+
+	result := reflect.ValueOf(&s).Elem()
+	result = reflect.AppendSlice(result.Slice(0, index), result.Slice(index+1, result.Len()))
+	return result.Interface(), nil
 }
 
 func (s Slice) Set(index int, item interface{}) (string, error) {
