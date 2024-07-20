@@ -170,6 +170,10 @@ $(function(){
     {{if .ActiveGuild}}
         async function runShardOfflineChecker() {
             let wasOffline = await checkShardOffline();
+            let shardCheckerRunning = sessionStorage.getItem('isShardOfflineCheckerRunning');
+            if (shardCheckerRunning === 'true') {
+              return;
+            }
             setInterval(async () => {
                 const currentlyOffline = await checkShardOffline();
 
@@ -204,7 +208,7 @@ $(function(){
         }
 
         // Computing the shard number requires BigInt support.
-        if (typeof BigInt !== "undefined") runShardOfflineChecker();
+        if (typeof BigInt !== "undefined" ) runShardOfflineChecker();
     {{end}}
 })
 </script>
