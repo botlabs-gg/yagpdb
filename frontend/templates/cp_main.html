@@ -168,14 +168,13 @@ $(function(){
     });
 
     {{if .ActiveGuild}}
-        async function runShardOfflineChecker() {
-            let wasOnline = await checkGuildShardOnline();
-            let shardCheckerRunning = sessionStorage.getItem('isShardOfflineCheckerRunning');
-            if (shardCheckerRunning === 'true') {
-              return;
+        async function startShardOfflineChecker() {
+            if (typeof window.offlineShardCheckerInterval !== 'undefined') {
+                clearInterval(window.offlineShardCheckerInterval);
             }
-            sessionStorage.setItem('isShardOfflineCheckerRunning', 'true');
-            setInterval(async () => {
+
+            let wasOnline = await checkGuildShardOnline();
+            window.offlineShardCheckerInterval = setInterval(async () => {
                 const currentlyOnline = await checkGuildShardOnline();
 
                 // To prevent spurious warnings during routine shard reconnections,
@@ -207,7 +206,7 @@ $(function(){
             }
         }
 
-        runShardOfflineChecker();
+        startShardOfflineChecker();
     {{end}}
 })
 </script>
