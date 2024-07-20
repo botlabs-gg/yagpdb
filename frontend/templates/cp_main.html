@@ -174,6 +174,7 @@ $(function(){
             if (shardCheckerRunning === 'true') {
               return;
             }
+            sessionStorage.setItem('isShardOfflineCheckerRunning', 'true');
             setInterval(async () => {
                 const currentlyOffline = await checkShardOffline();
 
@@ -208,7 +209,7 @@ $(function(){
         }
 
         // Computing the shard number requires BigInt support.
-        if (typeof BigInt !== "undefined" ) runShardOfflineChecker();
+        if (typeof BigInt !== "undefined") runShardOfflineChecker();
     {{end}}
 })
 </script>
