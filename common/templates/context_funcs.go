@@ -938,7 +938,7 @@ func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {
 		return nil, nil // dont send an error , a nil output would indicate invalid/unknown channel
 	}
 
-	cstate := c.GS.GetChannel(cID)
+	cstate := c.GS.GetChannelOrThread(cID)
 
 	if cstate == nil {
 		return nil, errors.New("channel not in state")
