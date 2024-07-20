@@ -170,6 +170,11 @@ $(function(){
     {{if .ActiveGuild}}
         async function runShardOfflineChecker() {
             let wasOffline = await checkShardOffline();
+            let shardCheckerRunning = sessionStorage.getItem('isShardOfflineCheckerRunning');
+            if (shardCheckerRunning === 'true') {
+              return;
+            }
+            sessionStorage.setItem('isShardOfflineCheckerRunning', 'true');
             setInterval(async () => {
                 const currentlyOffline = await checkShardOffline();
 
