@@ -399,7 +399,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	if err != nil {
 		return false, errors.WrapIf(err, "find_command")
 	}
-	
+
 	if cmd.R.Group != nil && cmd.R.Group.Disabled {
 		return false, errors.New("custom command group is disabled")
 	}
@@ -685,6 +685,10 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	// Ephemeral messages always have guild_id = 0 even if created in a guild channel; see
+	// https://github.com/discord/discord-api-docs/issues/4557. But exec/execAdmin rely
+	// on the guild ID of the message to fill guild data, so patch it here.
+	interaction.Message.GuildID = evt.GS.ID
 	interaction.Member.GuildID = evt.GS.ID
 
 	switch interaction.Type {
@@ -1122,7 +1126,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	// deal with the results
 	if err != nil {
 		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
-		
+
 		errChannel := tmplCtx.CurrentFrame.CS.ID
 		if cmd.RedirectErrorsChannel != 0 {
 			errChannel = cmd.RedirectErrorsChannel
