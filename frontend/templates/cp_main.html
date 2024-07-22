@@ -168,20 +168,19 @@ $(function(){
     });
 
     {{if .ActiveGuild}}
-        async function runShardOfflineChecker() {
-            let wasOffline = await checkShardOffline();
-            let shardCheckerRunning = sessionStorage.getItem('isShardOfflineCheckerRunning');
-            if (shardCheckerRunning === 'true') {
-              return;
+        async function startShardOfflineChecker() {
+            if (typeof window.offlineShardCheckerInterval !== 'undefined') {
+                clearInterval(window.offlineShardCheckerInterval);
             }
-            sessionStorage.setItem('isShardOfflineCheckerRunning', 'true');
-            setInterval(async () => {
-                const currentlyOffline = await checkShardOffline();
+
+            let wasOnline = await checkGuildShardOnline();
+            window.offlineShardCheckerInterval = setInterval(async () => {
+                const currentlyOnline = await checkGuildShardOnline();
 
                 // To prevent spurious warnings during routine shard reconnections,
                 // only show an alert if a shard appears to be offline for two
                 // checks in a row.
-                if (wasOffline && currentlyOffline) {
+                if (!wasOnline && !currentlyOnline) {
                     upsertAlert(
                         "The shard the bot is on for your server is currently offline; some functionality may not work as expected. \
                         Join the support server for more information if this issue persists."
@@ -190,14 +189,13 @@ $(function(){
                     $("#shard-problems-warning").remove();
                 }
 
-                wasOffline = currentlyOffline;
+                wasOnline = currentlyOnline;
             }, 15_000);
         }
 
-        async function checkShardOffline() {
-            const data = await fetch("/status.json").then((resp) => resp.json());
-            const shardId = Number(BigInt("{{.ActiveGuild.ID}}") >> BigInt(22)) % data.total_shards;
-            return data.offline_shards && data.offline_shards.includes(shardId);
+        async function checkGuildShardOnline() {
+            const status = await fetch("/api/{{.ActiveGuild.ID}}/status.json").then((resp) => resp.json());
+            return status.shard_online;
         }
 
         function upsertAlert(msg) {
@@ -208,8 +206,7 @@ $(function(){
             }
         }
 
-        // Computing the shard number requires BigInt support.
-        if (typeof BigInt !== "undefined") runShardOfflineChecker();
+        startShardOfflineChecker();
     {{end}}
 })
 </script>

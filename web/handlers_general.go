@@ -289,6 +289,23 @@ func HandleStatusJSON(w http.ResponseWriter, r *http.Request) interface{} {
 	return status
 }
 
+type GuildStatus struct {
+	ShardOnline bool `json:"shard_online"`
+}
+
+// HandleGuildStatusJSON handles GET /api/:server/status.json
+func HandleGuildStatusJSON(w http.ResponseWriter, r *http.Request) interface{} {
+	g := r.Context().Value(common.ContextKeyCurrentGuild).(*dstate.GuildSet)
+	status, err := getFullBotStatus()
+	if err != nil {
+		return err
+	}
+
+	shard := int(g.ID>>22) % status.TotalShards
+	isOffline := common.ContainsIntSlice(status.OfflineShards, shard)
+	return GuildStatus{ShardOnline: !isOffline}
+}
+
 type HostStatus struct {
 	Name string
 
