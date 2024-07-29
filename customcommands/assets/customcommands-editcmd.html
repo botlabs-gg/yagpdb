@@ -731,17 +731,25 @@
 
     function updateCCLength() {
         const textAreas = document.querySelectorAll('#cc-responses > textarea');
-        const totalLength = Array.from(textAreas).reduce((len, el) => {
+        const totalLength = Array.from(textAreas).reduce((acc, el) => {
+            let len = countCodePoints(el.value);
             // The data received on the backend contains "\r\n" while it is simply "\n" on the JS side.
             // Adjust for this discrepancy by double-counting newline characters.
             const newlines = el.value.match(/\n/g);
-            return len + el.value.length + (newlines ? newlines.length : 0);
+            if (newlines) len += newlines.length;
+
+            return acc + len;
         }, 0);
 
         $('.cc-length-counter')
             .text(totalLength)
             .toggleClass('text-danger', totalLength > {{.MaxCCLength}});
     }
+
+    function countCodePoints(str) {
+        return [...str].length;
+    }
+
     function onCCChanged(textArea) {
        updateCCLength();
     }
