@@ -877,7 +877,9 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 		}
 	}
 
-	sortTriggeredCCs(matched)
+	sort.Slice(matched, func(i, j int) bool {
+		return hasHigherPriority(matched[i].CC, matched[j].CC)
+	})
 
 	limit := CCActionExecLimit(msg.GuildID)
 	if len(matched) > limit {
@@ -931,7 +933,9 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 		filtered = append(filtered, v)
 	}
 
-	sortTriggeredCCs(filtered)
+	sort.Slice(filtered, func(i, j int) bool {
+		return hasHigherPriority(filtered[i].CC, filtered[j].CC)
+	})
 
 	limit := CCActionExecLimit(cs.GuildID)
 	if len(filtered) > limit {
@@ -998,7 +1002,9 @@ func findComponentOrModalTriggerCustomCommands(ctx context.Context, cs *dstate.C
 		filtered = append(filtered, v)
 	}
 
-	sortTriggeredCCs(filtered)
+	sort.Slice(filtered, func(i, j int) bool {
+		return hasHigherPriority(filtered[i].CC, filtered[j].CC)
+	})
 
 	limit := CCActionExecLimit(cs.GuildID)
 	if len(filtered) > limit {
@@ -1008,25 +1014,21 @@ func findComponentOrModalTriggerCustomCommands(ctx context.Context, cs *dstate.C
 	return filtered, nil
 }
 
-func sortTriggeredCCs(ccs []*TriggeredCC) {
-	sort.Slice(ccs, func(i, j int) bool {
-		a := ccs[i]
-		b := ccs[j]
+// hasHigherPriority reports whether custom command a should be executed in preference to custom
+// command b. Regex custom commands always have lowest priority, with ties broken by ID (smaller ID
+// has priority.)
+func hasHigherPriority(a *models.CustomCommand, b *models.CustomCommand) bool {
+	aIsRegex := a.TriggerType == int(CommandTriggerRegex)
+	bIsRegex := b.TriggerType == int(CommandTriggerRegex)
 
-		if a.CC.TriggerType == b.CC.TriggerType {
-			return a.CC.LocalID < b.CC.LocalID
-		}
-
-		if a.CC.TriggerType == int(CommandTriggerRegex) {
+	switch {
+	case !aIsRegex && bIsRegex:
+		return true
+	case aIsRegex && !bIsRegex:
 			return false
-		}
-
-		if b.CC.TriggerType == int(CommandTriggerRegex) {
-			return true
-		}
-
-		return a.CC.LocalID < b.CC.LocalID
-	})
+	default:
+		return a.LocalID < b.LocalID
+	}
 }
 
 func ExecuteCustomCommandFromMessage(gs *dstate.GuildSet, cmd *models.CustomCommand, member *dstate.MemberState, cs *dstate.ChannelState, cmdArgs []string, stripped string, m *discordgo.Message, isEdit bool) error {
