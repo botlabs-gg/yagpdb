@@ -553,10 +553,20 @@ func shouldIgnoreChannel(msg *discordgo.Message, gs *dstate.GuildSet, cState *ds
 	return false
 }
 
+// Limit the number of custom commands that can be executed on a single action (messages, reactions,
+// component uses, and so on).
+
 const (
-	CCMessageExecLimitNormal  = 3
-	CCMessageExecLimitPremium = 5
+	CCActionExecLimitNormal  = 3
+	CCActionExecLimitPremium = 5
 )
+
+func CCActionExecLimit(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return CCActionExecLimitPremium
+	}
+	return CCActionExecLimitNormal
+}
 
 func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 	commands, err := models.CustomCommands(qm.Where("guild_id = ?", GuildID), qm.Offset(MaxCommands)).AllG(context.Background())
@@ -869,11 +879,7 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 
 	sortTriggeredCCs(matched)
 
-	limit := CCMessageExecLimitNormal
-	if isPremium, _ := premium.IsGuildPremium(msg.GuildID); isPremium {
-		limit = CCMessageExecLimitPremium
-	}
-
+	limit := CCActionExecLimit(msg.GuildID)
 	if len(matched) > limit {
 		matched = matched[:limit]
 	}
@@ -927,11 +933,7 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 
 	sortTriggeredCCs(filtered)
 
-	limit := CCMessageExecLimitNormal
-	if isPremium, _ := premium.IsGuildPremium(cs.GuildID); isPremium {
-		limit = CCMessageExecLimitPremium
-	}
-
+	limit := CCActionExecLimit(cs.GuildID)
 	if len(filtered) > limit {
 		filtered = filtered[:limit]
 	}
@@ -998,11 +1000,7 @@ func findComponentOrModalTriggerCustomCommands(ctx context.Context, cs *dstate.C
 
 	sortTriggeredCCs(filtered)
 
-	limit := CCMessageExecLimitNormal
-	if isPremium, _ := premium.IsGuildPremium(cs.GuildID); isPremium {
-		limit = CCMessageExecLimitPremium
-	}
-
+	limit := CCActionExecLimit(cs.GuildID)
 	if len(filtered) > limit {
 		filtered = filtered[:limit]
 	}
