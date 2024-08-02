@@ -17,7 +17,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/patreon"
 	yagtmpl "github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/frontend"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/web/discordblog"
 	"github.com/natefinch/lumberjack"
@@ -134,8 +133,8 @@ func BaseURL() string {
 	return "http://" + common.ConfHost.GetString()
 }
 
-func ManageServerURL(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("%s/manage/%d", BaseURL(), guild.GS.ID)
+func ManageServerURL(guildID int64) string {
+	return fmt.Sprintf("%s/manage/%d", BaseURL(), guildID)
 }
 
 func Run() {

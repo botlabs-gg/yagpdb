@@ -285,7 +285,7 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 
 		if hasRead, _ := web.GetUserAccessLevel(data.Author.ID, gWithConnected, common.GetCoreServerConfCached(data.GuildData.GS.ID), web.StaticRoleProvider(roles)); hasRead {
-			ccIDMaybeWithLink = fmt.Sprintf("[%[1]d](%[2]s/customcommands/commands/%[1]d/)", cc.LocalID, web.ManageServerURL(data.GuildData))
+			ccIDMaybeWithLink = fmt.Sprintf("[%d](%s)", cc.LocalID, cmdControlPanelLink(cc))
 		}
 
 		// Every message content-based custom command trigger has a numerical value less than 5
@@ -338,6 +338,10 @@ var cmdListCommands = &commands.YAGCommand{
 		}
 		return msg, nil
 	},
+}
+
+func cmdControlPanelLink(cmd *models.CustomCommand) string {
+	return fmt.Sprintf("%s/customcommands/commands/%d/", web.ManageServerURL(cmd.GuildID), cmd.LocalID)
 }
 
 func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*models.CustomCommand, provided bool) {
