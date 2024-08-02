@@ -28,6 +28,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/common/keylock"
 	"github.com/botlabs-gg/yagpdb/v2/common/multiratelimit"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
 	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
@@ -63,7 +64,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands, cmdEvalCommand)
+	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands, cmdEvalCommand, cmdDiagnoseCCTriggers)
 }
 
 func (p *Plugin) BotInit() {
@@ -183,6 +184,116 @@ var cmdEvalCommand = &commands.YAGCommand{
 		}
 
 		return out, nil
+	},
+}
+
+type cmdDiagnosisResult int
+
+const (
+	cmdOK cmdDiagnosisResult = iota
+	cmdExceedsTriggerLimits
+	cmdDisabled
+	cmdUnmetRestrictions
+)
+
+type triggeredCmdDiagnosis struct {
+	CC     *models.CustomCommand
+	Result cmdDiagnosisResult
+}
+
+func (diag triggeredCmdDiagnosis) WriteTo(out *strings.Builder) {
+	switch diag.Result {
+	case cmdOK:
+		out.WriteString(":white_check_mark: ")
+	case cmdExceedsTriggerLimits:
+		out.WriteString(":warning: ")
+	}
+
+	fmt.Fprintf(out, "[**CC #%d**](%s): %s `%s`\n", diag.CC.LocalID, cmdControlPanelLink(diag.CC),
+		CommandTriggerType(diag.CC.TriggerType), diag.CC.TextTrigger)
+	switch diag.Result {
+	case cmdOK:
+		out.WriteString("- will execute")
+	case cmdExceedsTriggerLimits:
+		out.WriteString("- would otherwise execute, but **exceeds limit on commands executed per message**")
+	case cmdDisabled:
+		out.WriteString("- triggers on input, but **is disabled**")
+	case cmdUnmetRestrictions:
+		out.WriteString("- triggers on input, but **has unmet role/channel restrictions**")
+	}
+}
+
+var cmdDiagnoseCCTriggers = &commands.YAGCommand{
+	CmdCategory: commands.CategoryDebug,
+	Name:        "DiagnoseCCTriggers",
+	Aliases:     []string{"diagnosetriggers", "debugtriggers"},
+	Description: "List all custom commands that would trigger on the input and identify potential issues",
+	Arguments: []*dcmd.ArgDef{
+		{Name: "input", Type: dcmd.String},
+	},
+	RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
+	SlashCommandEnabled: false,
+	DefaultEnabled:      true,
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		cmds, err := BotCachedGetCommandsWithMessageTriggers(data.GuildData.GS.ID, data.Context())
+		if err != nil {
+			return "Failed fetching custom commands", err
+		}
+
+		prefix, err := prfx.GetCommandPrefixRedis(data.GuildData.GS.ID)
+		if err != nil {
+			return "Failed fetching command prefix", err
+		}
+
+		// Use the raw input, not dcmd's interpretation of it (which may drop characters.)
+		input := data.TraditionalTriggerData.MessageStrippedPrefix
+
+		var triggered []*models.CustomCommand
+		for _, cmd := range cmds {
+			if matches, _, _ := CheckMatch(prefix, cmd, input); matches {
+				triggered = append(triggered, cmd)
+			}
+		}
+		if len(triggered) == 0 {
+			return "No commands trigger on the input", nil
+		}
+
+		sort.Slice(triggered, func(i, j int) bool { return hasHigherPriority(triggered[i], triggered[j]) })
+
+		limit := CCActionExecLimit(data.GuildData.GS.ID)
+		executed, skipped := 0, 0
+
+		diagnoses := make([]triggeredCmdDiagnosis, 0, len(triggered))
+		for _, cmd := range triggered {
+			switch {
+			case cmd.Disabled || (cmd.R.Group != nil && cmd.R.Group.Disabled):
+				diagnoses = append(diagnoses, triggeredCmdDiagnosis{cmd, cmdDisabled})
+			case !CmdRunsForUser(cmd, data.GuildData.MS):
+				diagnoses = append(diagnoses, triggeredCmdDiagnosis{cmd, cmdUnmetRestrictions})
+			case !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(data.GuildData.CS)):
+				diagnoses = append(diagnoses, triggeredCmdDiagnosis{cmd, cmdUnmetRestrictions})
+			case executed >= limit:
+				skipped++
+				diagnoses = append(diagnoses, triggeredCmdDiagnosis{cmd, cmdExceedsTriggerLimits})
+			default:
+				executed++
+				diagnoses = append(diagnoses, triggeredCmdDiagnosis{cmd, cmdOK})
+			}
+		}
+
+		var out strings.Builder
+		if skipped > 0 {
+			fmt.Fprintf(&out, `> ### Potential issue detected
+> Not all custom commands triggering on the input will actually be executed.
+> Note that at most %d custom commands can be executed by a single message.`, limit)
+			out.WriteByte('\n')
+		}
+		out.WriteString("## Commands triggering on input\n")
+		for _, diagnosis := range diagnoses {
+			diagnosis.WriteTo(&out)
+			out.WriteByte('\n')
+		}
+		return out.String(), nil
 	},
 }
 
@@ -403,7 +514,7 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	if err != nil {
 		return false, errors.WrapIf(err, "find_command")
 	}
-	
+
 	if cmd.R.Group != nil && cmd.R.Group.Disabled {
 		return false, errors.New("custom command group is disabled")
 	}
@@ -1025,7 +1136,7 @@ func hasHigherPriority(a *models.CustomCommand, b *models.CustomCommand) bool {
 	case !aIsRegex && bIsRegex:
 		return true
 	case aIsRegex && !bIsRegex:
-			return false
+		return false
 	default:
 		return a.LocalID < b.LocalID
 	}
@@ -1126,7 +1237,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 	// deal with the results
 	if err != nil {
 		logger.WithField("guild", tmplCtx.GS.ID).WithError(err).Error("Error executing custom command")
-		
+
 		errChannel := tmplCtx.CurrentFrame.CS.ID
 		if cmd.RedirectErrorsChannel != 0 {
 			errChannel = cmd.RedirectErrorsChannel
