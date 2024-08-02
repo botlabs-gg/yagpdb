@@ -97,25 +97,28 @@
                         <label>YouTube Announcement Message (<span class="yt-announcement-length-counter"> {{toRune .Announcement.Message|len}}</span>/5000)</label>
 
                         <textarea class="form-control" rows="10" id="yt-announcement-msg" name="Message" oninput="OnAnnouncementChange(this)">{{.Announcement.Message}}</textarea>
-                      
-                        <p class="help-block">
-                          Additional template data is
-                          <code>{{"{{.ChannelID}}"}}</code>,
-                          <code>{{"{{.ChannelName}}"}}</code>,
-                          <code>{{"{{.IsLiveStream}}"}}</code>,
-                          <code>{{"{{.IsUpcoming}}"}}</code>,
-                          <code>{{"{{.VideoID}}"}}</code>,
-                          <code>{{"{{.VideoTitle}}"}}</code>,
-                          <code>{{"{{.VideoThumbnail}}"}}</code>,
-                          <code>{{"{{.VideoDescription}}"}}</code>,
-                          <code>{{"{{.VideoDurationSeconds}}"}}</code>,
-                          <code>{{"{{.Video}}"}}</code>,
-                          <code>{{"{{.URL}}"}}</code>
-                          See <a href="https://docs.yagpdb.xyz/commands/custom-commands" target="_blank">Custom Commands Documentation </a> to learn more advanced actions.
-                        </p>
-                        <span style="display: inline-block;vertical-align: middle;">
+                        <span style="display: block;">
                           <button type="submit" id="yt-save-announcement-btn" class="btn btn-sm btn-success btn-block" data-async-form-alertsonly>Save</button>
                         </span>
+                        <p class="help-block">
+                          <b>Note: using Custom Announcement will override the default announcement message mention settings, you will have to do mentions like they are done in <a href="https://help.yagpdb.xyz/docs/reference/templates/functions/#mentions" target="_blank">custom commands</a> </b> 
+                        </p>
+                        <p class="help-block">
+                          In addition to the full <a href="https://help.yagpdb.xyz/docs/custom-commands/" target="_blank">Custom Command syntax </a>, the following templates are also supported:</br>
+                          <ul style="list-style-type: none; margin: 0; padding: 0;">
+                            <li><code>{{"{{.ChannelID}}"}}</code> -  ID of the Youtube Channel. </li>
+                            <li><code>{{"{{.ChannelName}}"}}</code> - Name of the Youtube Channel.</li>
+                            <li><code>{{"{{.IsLiveStream}}"}}</code> - True, if the notification is for a livestream else False.</li>
+                            <li><code>{{"{{.IsUpcoming}}"}}</code> - True, if the notification is for a scheduled release else False.</li>
+                            <li><code>{{"{{.VideoID}}"}}</code> - ID of the video.</li>
+                            <li> <code>{{"{{.VideoTitle}}"}}</code> - Title of the video.</li>
+                            <li> <code>{{"{{.VideoThumbnail}}"}}</code> - Thumbnail image url of the video. </li>
+                            <li> <code>{{"{{.VideoDescription}}"}}</code> - Description of the video. </li>
+                            <li> <code>{{"{{.VideoDurationSeconds}}"}}</code> - Duration of video in seconds. </li>
+                            <li> <code>{{"{{.Video}}"}}</code> - Data of the video as available in the youtube API.</li>
+                            <li> <code>{{"{{.URL}}"}}</code> - Video url.</li>
+                          </ul>
+                        </p>
                     </div>
                 </form>
             </div>

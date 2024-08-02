@@ -21,7 +21,7 @@ YAGPDB is a multifunctional, modular Discord bot. It is modular in the sense tha
 
 * [Homepage](https://yagpdb.xyz)
 * [Support Server](https://discord.gg/4udtcA5)
-* [Documentation](https://docs.yagpdb.xyz)
+* [Help Center](https://help.yagpdb.xyz)
 
 ## Selfhosting
 
