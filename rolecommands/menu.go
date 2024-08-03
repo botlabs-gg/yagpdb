@@ -58,7 +58,7 @@ func roleGroupAutocomplete(parsed *dcmd.Data, arg *dcmd.ParsedArg) ([]*discordgo
 
 func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 	name := parsed.Args[0].Str()
-	panelURL := fmt.Sprintf("%s/rolecommands/", web.ManageServerURL(parsed.GuildData))
+	panelURL := fmt.Sprintf("%s/rolecommands/", web.ManageServerURL(parsed.GuildData.GS.ID))
 	group, err := models.RoleGroups(qm.Where("guild_id=?", parsed.GuildData.GS.ID), qm.Where("name ILIKE ?", name), qm.Load("RoleCommands")).OneG(parsed.Context())
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
