@@ -24,7 +24,10 @@ import (
 )
 
 //go:embed assets/premium.html
-var PageHTML string
+var PremiumHTML string
+
+//go:embed assets/premium-perks.html
+var PremiumPerksHTML string
 
 type CtxKey int
 
@@ -36,7 +39,8 @@ var (
 var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
-	web.AddHTMLTemplate("premium/assets/premium.html", PageHTML)
+	web.AddHTMLTemplate("premium/assets/premium.html", PremiumHTML)
+	web.AddHTMLTemplate("premium/assets/premium-perks.html", PremiumPerksHTML)
 
 	web.CPMux.Use(PremiumGuildMW)
 	web.ServerPublicMux.Use(PremiumGuildMW)
@@ -44,6 +48,8 @@ func (p *Plugin) InitWeb() {
 	submux := goji.SubMux()
 	web.RootMux.Handle(pat.New("/premium"), submux)
 	web.RootMux.Handle(pat.New("/premium/*"), submux)
+	web.RootMux.Handle(pat.New("/premium-perks"), web.RenderHandler(nil, "premium_perks"))
+	web.RootMux.Handle(pat.New("/premium-perks/*"), web.ControllerHandler(nil, "premium_perks"))
 
 	submux.Use(web.RequireSessionMiddleware)
 
