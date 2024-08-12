@@ -226,7 +226,7 @@ func (diag triggeredCmdDiagnosis) WriteTo(out *strings.Builder) {
 var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
 	Name:        "DiagnoseCCTriggers",
-	Aliases:     []string{"diagnosetriggers", "debugtriggers"},
+	Aliases:     []string{"debugcctriggers", "diagnosetriggers", "debugtriggers", "dcct"},
 	Description: "List all custom commands that would trigger on the input and identify potential issues",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "input", Type: dcmd.String},
@@ -293,7 +293,11 @@ var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 			diagnosis.WriteTo(&out)
 			out.WriteByte('\n')
 		}
-		return out.String(), nil
+		msg := &discordgo.MessageSend{
+			Flags:   discordgo.MessageFlagsSuppressEmbeds,
+			Content: out.String(),
+		}
+		return msg, nil
 	},
 }
 
@@ -359,7 +363,7 @@ var cmdListCommands = &commands.YAGCommand{
 		msg := &discordgo.MessageSend{Flags: discordgo.MessageFlagsSuppressEmbeds}
 
 		responses := fmt.Sprintf("```\n%s\n```", strings.Join(cc.Responses, "```\n```"))
-		if data.Switches["file"].Value != nil || len(responses) >= 2000 && data.Switches["raw"].Value == nil {
+		if data.Switches["file"].Value != nil || len(responses) > 1500 && data.Switches["raw"].Value == nil {
 			var buf bytes.Buffer
 			buf.WriteString(strings.Join(cc.Responses, "\nAdditional response:\n"))
 
