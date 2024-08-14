@@ -1,12 +1,14 @@
 package paginatedmessages
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
@@ -93,41 +95,69 @@ func createNavigationButtons(prevDisabled bool, nextDisabled bool) []discordgo.M
 	}
 }
 
-func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pagerFunc PagerFunc) (*PaginatedMessage, error) {
+func NewPaginatedResponse(guildID, channelID int64, initPage, maxPages int, pagerFunc PagerFunc) *PaginatedResponse {
 	if initPage < 1 {
 		initPage = 1
 	}
 
+	return &PaginatedResponse{
+		guildID:   guildID,
+		channelID: channelID,
+		initPage:  initPage,
+		maxPages:  maxPages,
+		pagerFunc: pagerFunc,
+	}
+}
+
+type PaginatedResponse struct {
+	guildID            int64
+	channelID          int64
+	initPage, maxPages int
+	pagerFunc          PagerFunc
+}
+
+var _ dcmd.Response = (*PaginatedResponse)(nil)
+
+func (p *PaginatedResponse) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 	pm := &PaginatedMessage{
-		GuildID:        guildID,
-		ChannelID:      channelID,
-		CurrentPage:    initPage,
-		MaxPage:        maxPages,
+		GuildID:        p.guildID,
+		ChannelID:      p.channelID,
+		CurrentPage:    p.initPage,
+		MaxPage:        p.maxPages,
 		lastUpdateTime: time.Now(),
 		stopCh:         make(chan bool),
-		Navigate:       pagerFunc,
+		Navigate:       p.pagerFunc,
 	}
 
-	embed, err := pagerFunc(pm, initPage)
+	embed, err := p.pagerFunc(pm, p.initPage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("generating first page of paginated response: %s", err)
 	}
 
-	footer := "Page " + strconv.Itoa(initPage)
+	footer := "Page " + strconv.Itoa(p.initPage)
 	nextButtonDisabled := false
 	if pm.MaxPage > 0 {
 		footer += "/" + strconv.Itoa(pm.MaxPage)
-		nextButtonDisabled = initPage >= pm.MaxPage
+		nextButtonDisabled = p.initPage >= pm.MaxPage
 	}
 	embed.Footer = &discordgo.MessageEmbedFooter{
 		Text: footer,
 	}
 	embed.Timestamp = time.Now().Format(time.RFC3339)
+	msg := &discordgo.Message{}
+	switch data.TriggerType {
+	case dcmd.TriggerTypeSlashCommands:
+		msg, err = common.BotSession.CreateFollowupMessage(data.SlashCommandTriggerData.Interaction.ApplicationID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.WebhookParams{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: createNavigationButtons(true, nextButtonDisabled),
+		})
+	default:
+		msg, err = common.BotSession.ChannelMessageSendComplex(p.channelID, &discordgo.MessageSend{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: createNavigationButtons(true, nextButtonDisabled),
+		})
+	}
 
-	msg, err := common.BotSession.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
-		Embeds:     []*discordgo.MessageEmbed{embed},
-		Components: createNavigationButtons(true, nextButtonDisabled),
-	})
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +170,7 @@ func CreatePaginatedMessage(guildID, channelID int64, initPage, maxPages int, pa
 	menusLock.Unlock()
 
 	go pm.paginationTicker()
-	return pm, nil
+	return []*discordgo.Message{msg}, nil
 }
 
 func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate, pageMod int) {

@@ -17,21 +17,17 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/common/cacheset"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/jmoiron/sqlx"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/boil"
-	boilv4 "github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (
 	VERSION = "unknown"
 
-	GORM *gorm.DB
 	PQ   *sql.DB
 	SQLX *sqlx.DB
 
@@ -132,6 +128,10 @@ func Init() error {
 
 	logger.Info("Initializing core schema")
 	InitSchemas("core_configs", CoreServerConfDBSchema, localIDsSchema)
+
+	logger.Info("Initializing executed command log schema")
+	InitSchemas("executed_commands", ExecutedCommandDBSchemas...)
+
 	initQueuedSchemas()
 
 	return err
@@ -275,18 +275,15 @@ func connectDB(host, user, pass, dbName string, maxConns int) error {
 		passwordPart = " password='" + pass + "'"
 	}
 
-	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable%s", host, user, dbName, passwordPart))
-	GORM = db
-	PQ = db.DB()
+	db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable%s", host, user, dbName, passwordPart))
+	PQ = db
 	SQLX = sqlx.NewDb(PQ, "postgres")
 	boil.SetDB(PQ)
-	boilv4.SetDB(PQ)
 	if err == nil {
 		PQ.SetMaxOpenConns(maxConns)
 		PQ.SetMaxIdleConns(maxConns)
 		logger.Infof("Set max PG connections to %d", maxConns)
 	}
-	GORM.SetLogger(&GORMLogger{})
 
 	return err
 }

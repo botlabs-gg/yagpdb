@@ -48,10 +48,10 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"c"},
 		Description:         "Set up a role menu.",
 		LongDescription:     "Specify a message with -m to use an existing message instead of having the bot make one\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Group", Type: dcmd.String},
+			{Name: "Group", Help: "The role command group", Type: dcmd.String, AutocompleteFunc: roleGroupAutocomplete},
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},
@@ -68,7 +68,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"rm"},
 		Description:         "Removes a rolemenu from a message.",
 		LongDescription:     "The message won't be deleted and the bot will not do anything with reactions on that message\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -82,7 +82,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"u"},
 		Description:         "Updates a rolemenu, toggling the provided flags and adding missing options, aswell as updating the order.",
 		LongDescription:     "\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -100,7 +100,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"reset"},
 		Description:         "Removes all reactions on the specified menu message and re-adds them.",
 		LongDescription:     "Can be used to fix the order after updating it.\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -114,7 +114,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"edit"},
 		Description:         "Allows you to reassign the emoji of an option, tip: use ResetReactions afterwards.",
 		LongDescription:     "\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},
@@ -128,7 +128,7 @@ func (p *Plugin) AddCommands() {
 		Aliases:             []string{"finish"},
 		Description:         "Marks the menu as done.",
 		LongDescription:     "\n\n" + msgIDDocs,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Message-ID", Type: dcmd.BigInt},

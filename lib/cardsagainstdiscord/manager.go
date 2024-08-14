@@ -34,7 +34,7 @@ func (gm *GameManager) CreateGame(guildID int64, channelID int64, userID int64, 
 		p, ok := Packs[v]
 		if !ok {
 			validPacks := make([]string, 0, len(Packs))
-			for k, _ := range Packs {
+			for k := range Packs {
 				validPacks = append(validPacks, k)
 			}
 			return nil, &ErrUnknownPack{
@@ -56,7 +56,7 @@ func (gm *GameManager) CreateGame(guildID int64, channelID int64, userID int64, 
 
 	if allPacks {
 		packs = make([]string, 0, len(Packs))
-		for k, _ := range Packs {
+		for k := range Packs {
 			packs = append(packs, k)
 		}
 	}

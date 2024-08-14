@@ -21,8 +21,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/rsvp/models"
 	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -104,7 +104,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Edit",
 		Description:         "Edits an event",
 		Plugin:              p,
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageMessages},
 		Arguments: []*dcmd.ArgDef{
 			{Name: "ID", Type: dcmd.Int},
 		},
@@ -181,7 +181,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "List",
 		Aliases:             []string{"ls"},
 		Description:         "Lists all events in this server",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageMessages},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			events, err := models.RSVPSessions(models.RSVPSessionWhere.GuildID.EQ(parsed.GuildData.GS.ID), qm.OrderBy("starts_at asc")).AllG(parsed.Context())
@@ -211,7 +211,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "Delete",
 		Aliases:             []string{"rm", "del"},
 		Description:         "Deletes an event, specify the event ID of the event you wanna delete",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer, discordgo.PermissionManageMessages},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild, discordgo.PermissionManageMessages},
 		RequiredArgs:        1,
 		Plugin:              p,
 		Arguments: []*dcmd.ArgDef{
@@ -246,7 +246,7 @@ func (p *Plugin) AddCommands() {
 		Name:                "StopSetup",
 		Aliases:             []string{"cancelsetup"},
 		Description:         "Force cancels the current setup session in this channel",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		Plugin:              p,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 

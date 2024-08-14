@@ -57,37 +57,51 @@ func (shard *ShardTracker) gcGuild(t time.Time, gs *SparseGuildState) {
 		shard.gcGuildChannel(t, gs, v.ID, limitLen, limitAge)
 	}
 
+	shard.gcMessageList(t, gs, limitLen, limitAge, shard.guildMessages[gs.Guild.ID], func(elem *list.Element) *dstate.MessageState {
+		return (*elem.Value.(*any)).(*dstate.MessageState)
+	})
+
 	if shard.conf.RemoveOfflineMembersAfter > 0 {
 		shard.gcMembers(t, gs, shard.conf.RemoveOfflineMembersAfter)
 	}
 }
 
 func (shard *ShardTracker) gcGuildChannel(t time.Time, gs *SparseGuildState, channel int64, maxLen int, maxAge time.Duration) {
-	if messages, ok := shard.messages[channel]; ok {
-		if maxLen > 0 {
-			overflow := messages.Len() - maxLen
-			for i := overflow; i > 0; i-- {
-				messages.Remove(messages.Front())
-			}
+	if messages, ok := shard.channelMessages[channel]; ok {
+		shard.gcMessageList(t, gs, maxLen, maxAge, messages, func(elem *list.Element) *dstate.MessageState {
+			return elem.Value.(*dstate.MessageState)
+		})
+	}
+}
+
+func (shard *ShardTracker) gcMessageList(t time.Time, gs *SparseGuildState, maxLen int, maxAge time.Duration, messages *list.List, convert func(*list.Element) *dstate.MessageState) {
+	if messages == nil {
+		return
+	}
+
+	if maxLen > 0 {
+		overflow := messages.Len() - maxLen
+		for i := overflow; i > 0; i-- {
+			messages.Remove(messages.Front())
 		}
+	}
 
-		if maxAge > 0 {
-			if oldest := messages.Front(); oldest != nil {
-				v := oldest.Value.(*dstate.MessageState)
-				age := t.Sub(v.ParsedCreatedAt)
+	if maxAge > 0 {
+		if oldest := messages.Front(); oldest != nil {
+			v := convert(oldest)
+			age := t.Sub(v.ParsedCreatedAt)
 
-				if age > maxAge {
-					shard.gcMessagesAge(t, gs, channel, maxAge, messages)
-				}
+			if age > maxAge {
+				shard.gcMessagesAge(t, gs, maxAge, messages, convert)
 			}
 		}
 	}
 }
 
-func (shard *ShardTracker) gcMessagesAge(t time.Time, gs *SparseGuildState, channel int64, maxAge time.Duration, messages *list.List) {
+func (shard *ShardTracker) gcMessagesAge(t time.Time, gs *SparseGuildState, maxAge time.Duration, messages *list.List, convert func(*list.Element) *dstate.MessageState) {
 	toDel := make([]*list.Element, 0, 100)
 	for e := messages.Front(); e != nil; e = e.Next() {
-		v := e.Value.(*dstate.MessageState)
+		v := convert(e)
 		age := t.Sub(v.ParsedCreatedAt)
 
 		if age > maxAge {

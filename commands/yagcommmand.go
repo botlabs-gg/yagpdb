@@ -20,7 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+
+	commonmodels "github.com/botlabs-gg/yagpdb/v2/common/models"
 )
 
 type ContextKey int
@@ -117,7 +120,7 @@ type YAGCommand struct {
 
 	Middlewares []dcmd.MiddleWareFunc
 
-	// Run is ran the the command has sucessfully been parsed
+	// Run is ran when the command has sucessfully been parsed
 	// It returns a reply and an error
 	// the reply can have a type of string, *MessageEmbed or error
 	RunFunc dcmd.RunFunc
@@ -172,6 +175,21 @@ var metricsExcecutedCommands = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"name", "trigger_type"})
 
 func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
+	if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type == discordgo.InteractionApplicationCommandAutocomplete {
+		for _, v := range data.SlashCommandTriggerData.Options {
+			if !v.Focused {
+				continue
+			}
+
+			for _, arg := range data.Args {
+				if strings.EqualFold(arg.Def.Name, v.Name) {
+					return arg.Def.AutocompleteFunc(data, arg)
+				}
+			}
+		}
+		return []*discordgo.ApplicationCommandOptionChoice{}, nil // fallback in case something goes wrong so the user doesn't see failed
+	}
+
 	if !yc.RunInDM && data.Source == dcmd.TriggerSourceDM {
 		return nil, nil
 	}
@@ -218,7 +236,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Set up log entry for later use
-	logEntry := &common.LoggedExecutedCommand{
+	logEntry := &commonmodels.ExecutedCommand{
 		UserID:    discordgo.StrID(data.Author.ID),
 		ChannelID: discordgo.StrID(data.ChannelID),
 
@@ -228,8 +246,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	if data.GuildData != nil {
-		logEntry.GuildID = discordgo.StrID(data.GuildData.GS.ID)
-
+		logEntry.GuildID.SetValid(discordgo.StrID(data.GuildData.GS.ID))
 	}
 
 	metricsExcecutedCommands.With(prometheus.Labels{"name": "(other)", "trigger_type": triggerType}).Inc()
@@ -269,7 +286,7 @@ func (yc *YAGCommand) Run(data *dcmd.Data) (interface{}, error) {
 	}
 
 	// Create command log entry
-	err := common.GORM.Create(logEntry).Error
+	err := logEntry.InsertG(data.Context(), boil.Infer())
 	if err != nil {
 		logger.WithError(err).Error("Failed creating command execution log")
 	}
@@ -416,20 +433,12 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 		guild := data.GuildData.GS
 
 		if data.TriggerType != dcmd.TriggerTypeSlashCommands {
-			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionReadMessages|discordgo.PermissionSendMessages); !hasPerms {
+			if hasPerms, _ := bot.BotHasPermissionGS(guild, data.ChannelID, discordgo.PermissionViewChannel|discordgo.PermissionSendMessages); !hasPerms {
 				return false, nil, nil, nil
 			}
 		}
-		channel_id := data.GuildData.CS.ID
-		parent_id := data.GuildData.CS.ParentID
-		// in case the channel is a thread, get the parent channel from parent id and check for the overrides
-		if data.GuildData.CS.Type.IsThread() {
-			channel := data.GuildData.GS.GetChannel(parent_id)
-			channel_id = channel.ID
-			parent_id = channel.ParentID
-		}
 
-		settings, err = yc.GetSettings(data.ContainerChain, channel_id, parent_id, guild.ID)
+		settings, err = yc.GetSettings(data.ContainerChain, data.GuildData.CS, guild)
 		if err != nil {
 			resp = &CanExecuteError{
 				Type:    ReasonError,
@@ -704,9 +713,14 @@ type CommandSettings struct {
 	IgnoreRoles   []int64
 }
 
-func GetOverridesForChannel(channelID, channelParentID, guildID int64) ([]*models.CommandsChannelsOverride, error) {
+func GetOverridesForChannel(cs *dstate.ChannelState, guild *dstate.GuildSet) ([]*models.CommandsChannelsOverride, error) {
+	if cs.Type.IsThread() {
+		// Look for overrides from the parent channel, not the thread.
+		cs = guild.GetChannel(cs.ParentID)
+	}
+
 	// Fetch the overrides from the database, we treat the global settings as an override for simplicity
-	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("(? = ANY (channels) OR global=true OR ? = ANY (channel_categories)) AND guild_id=?", channelID, channelParentID, guildID), qm.Load("CommandsCommandOverrides")).AllG(context.Background())
+	channelOverrides, err := models.CommandsChannelsOverrides(qm.Where("(? = ANY (channels) OR global=true OR ? = ANY (channel_categories)) AND guild_id=?", cs.ID, cs.ParentID, guild.ID), qm.Load("CommandsCommandOverrides")).AllG(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -715,23 +729,23 @@ func GetOverridesForChannel(channelID, channelParentID, guildID int64) ([]*model
 }
 
 // GetSettings returns the settings from the command, generated from the servers channel and command overrides
-func (cs *YAGCommand) GetSettings(containerChain []*dcmd.Container, channelID, channelParentID, guildID int64) (settings *CommandSettings, err error) {
+func (yc *YAGCommand) GetSettings(containerChain []*dcmd.Container, cs *dstate.ChannelState, guild *dstate.GuildSet) (settings *CommandSettings, err error) {
 
 	// Fetch the overrides from the database, we treat the global settings as an override for simplicity
-	channelOverrides, err := GetOverridesForChannel(channelID, channelParentID, guildID)
+	channelOverrides, err := GetOverridesForChannel(cs, guild)
 	if err != nil {
 		err = errors.WithMessage(err, "GetOverridesForChannel")
 		return
 	}
 
-	return cs.GetSettingsWithLoadedOverrides(containerChain, guildID, channelOverrides)
+	return yc.GetSettingsWithLoadedOverrides(containerChain, guild.ID, channelOverrides)
 }
 
-func (cs *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Container, guildID int64, channelOverrides []*models.CommandsChannelsOverride) (settings *CommandSettings, err error) {
+func (yc *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Container, guildID int64, channelOverrides []*models.CommandsChannelsOverride) (settings *CommandSettings, err error) {
 	settings = &CommandSettings{}
 
 	// Some commands have custom places to toggle their enabled status
-	ce, err := cs.customEnabled(guildID)
+	ce, err := yc.customEnabled(guildID)
 	if err != nil {
 		err = errors.WithMessage(err, "customEnabled")
 		return
@@ -741,7 +755,7 @@ func (cs *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Cont
 		return
 	}
 
-	if cs.HideFromCommandsPage {
+	if yc.HideFromCommandsPage {
 		settings.Enabled = true
 		return
 	}
@@ -763,7 +777,7 @@ func (cs *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Cont
 		}
 	}
 
-	cmdFullName := cs.Name
+	cmdFullName := yc.Name
 	if len(containerChain) > 1 {
 		lastContainer := containerChain[len(containerChain)-1]
 		cmdFullName = lastContainer.Names[0] + " " + cmdFullName
@@ -771,12 +785,12 @@ func (cs *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Cont
 
 	// Assign the global settings, if existing
 	if global != nil {
-		cs.fillSettings(cmdFullName, global, settings)
+		yc.fillSettings(cmdFullName, global, settings)
 	}
 
 	// Assign the channel override, if existing
 	if channelOverride != nil {
-		cs.fillSettings(cmdFullName, channelOverride, settings)
+		yc.fillSettings(cmdFullName, channelOverride, settings)
 	}
 
 	return

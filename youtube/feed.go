@@ -2,6 +2,7 @@ package youtube
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"math"
@@ -19,21 +20,23 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/feeds"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
-	"github.com/jinzhu/gorm"
+	"github.com/botlabs-gg/yagpdb/v2/youtube/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
 
 const (
 	WebSubCheckInterval = time.Second * 10
-	// PollInterval = time.Second * 5 // <- used for debug purposes
 )
 
 func (p *Plugin) StartFeed() {
 	p.Stop = make(chan *sync.WaitGroup)
-	p.runWebsubChecker()
+	go p.runWebsubChecker()
+	go p.autoSyncWebsubs()
+	go p.deleteOldVideos()
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
@@ -54,18 +57,45 @@ func (p *Plugin) SetupClient() error {
 	return nil
 }
 
+func (p *Plugin) deleteOldVideos() {
+	ticker := time.NewTicker(time.Minute * 1)
+	// Remove videos older than 24 hours
+	for {
+		select {
+		case <-ticker.C:
+			var expiring int64
+			videoCacheDays := confYoutubeVideoCacheDays.GetInt()
+			if videoCacheDays < 1 {
+				videoCacheDays = 1
+			}
+			common.RedisPool.Do(radix.FlatCmd(&expiring, "ZREMRANGEBYSCORE", RedisKeyPublishedVideoList, "-inf", time.Now().AddDate(0, 0, -1*videoCacheDays).Unix()))
+			logger.Infof("Removed %d old videos", expiring)
+		}
+	}
+}
+
+func (p *Plugin) autoSyncWebsubs() {
+	// force syncs all websubs from db every 24 hours in case of outages or missed updates
+	ticker := time.NewTicker(time.Hour * 24)
+	for {
+		select {
+		case <-ticker.C:
+			go p.syncWebSubs()
+		}
+	}
+}
+
 // keeps the subscriptions up to date by updating the ones soon to be expiring
 func (p *Plugin) runWebsubChecker() {
 	go p.syncWebSubs()
-
-	websubTicker := time.NewTicker(WebSubCheckInterval)
+	ticker := time.NewTicker(WebSubCheckInterval)
 	for {
 		select {
 		case wg := <-p.Stop:
 			wg.Done()
 			return
-		case <-websubTicker.C:
-			p.checkExpiringWebsubs()
+		case <-ticker.C:
+			go p.checkExpiringWebsubs()
 		}
 	}
 }
@@ -157,11 +187,10 @@ func (p *Plugin) syncWebSubs() {
 	}))
 }
 
-func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Video) {
+func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video *youtube.Video) {
 	parsedChannel, _ := strconv.ParseInt(sub.ChannelID, 10, 64)
 	parsedGuild, _ := strconv.ParseInt(sub.GuildID, 10, 64)
 	videoUrl := "https://www.youtube.com/watch?v=" + video.Id
-	var announcement YoutubeAnnouncements
 
 	var content string
 	switch video.Snippet.LiveBroadcastContent {
@@ -176,11 +205,11 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 	}
 
 	parseMentions := []discordgo.AllowedMentionType{}
-	err := common.GORM.Model(&YoutubeAnnouncements{}).Where("guild_id = ?", parsedGuild).First(&announcement).Error
+	announcement, err := models.FindYoutubeAnnouncementG(context.Background(), parsedGuild)
 	hasCustomAnnouncement := true
 	if err != nil {
 		hasCustomAnnouncement = false
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if err == sql.ErrNoRows {
 			logger.WithError(err).Debugf("Custom announcement doesn't exist for guild_id %d", parsedGuild)
 		} else {
 			logger.WithError(err).Errorf("Failed fetching custom announcement for guild_id %d", parsedGuild)
@@ -189,7 +218,7 @@ func (p *Plugin) sendNewVidMessage(sub *ChannelSubscription, video *youtube.Vide
 
 	var publishAnnouncement bool
 
-	if hasCustomAnnouncement && *announcement.Enabled && len(announcement.Message) > 0 {
+	if hasCustomAnnouncement && announcement.Enabled && len(announcement.Message) > 0 {
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
 			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
@@ -273,9 +302,10 @@ var (
 	ErrIDNotFound = errors.New("ID not found")
 )
 
-func SubsForChannel(channel string) (result []*ChannelSubscription, err error) {
-	err = common.GORM.Where("youtube_channel_id = ?", channel).Find(&result).Error
-	return
+func SubsForChannel(channel string) (models.YoutubeChannelSubscriptionSlice, error) {
+	return models.YoutubeChannelSubscriptions(
+		models.YoutubeChannelSubscriptionWhere.YoutubeChannelID.EQ(channel),
+	).AllG(context.Background())
 }
 
 var (
@@ -419,19 +449,19 @@ func (p *Plugin) parseYtVideoID(parse string) (id ytChannelID, err error) {
 	}
 }
 
-func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*ChannelSubscription, error) {
+func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Channel, mentionEveryone bool, publishLivestream bool, publishShorts bool, mentionRoles []int64) (*models.YoutubeChannelSubscription, error) {
 	if mentionEveryone && len(mentionRoles) > 0 {
 		mentionRoles = make([]int64, 0)
 	}
 
-	sub := &ChannelSubscription{
+	sub := &models.YoutubeChannelSubscription{
 		GuildID:           discordgo.StrID(guildID),
 		ChannelID:         discordgo.StrID(discordChannelID),
 		MentionEveryone:   mentionEveryone,
 		MentionRoles:      mentionRoles,
-		PublishLivestream: &publishLivestream,
-		PublishShorts:     &publishShorts,
-		Enabled:           common.BoolToPointer(true),
+		PublishLivestream: publishLivestream,
+		PublishShorts:     publishShorts,
+		Enabled:           true,
 	}
 
 	sub.YoutubeChannelName = ytChannel.Snippet.Title
@@ -443,7 +473,7 @@ func (p *Plugin) AddFeed(guildID, discordChannelID int64, ytChannel *youtube.Cha
 	}
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
-	err = common.GORM.Create(sub).Error
+	err = sub.InsertG(context.Background(), boil.Infer())
 	if err != nil {
 		return nil, err
 	}
@@ -460,8 +490,9 @@ func (p *Plugin) MaybeRemoveChannelWatch(channel string) {
 	}
 	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
-	var count int
-	err = common.GORM.Model(&ChannelSubscription{}).Where("youtube_channel_id = ?", channel).Count(&count).Error
+	count, err := models.YoutubeChannelSubscriptions(
+		models.YoutubeChannelSubscriptionWhere.YoutubeChannelID.EQ(channel),
+	).CountG(context.Background())
 	if err != nil || count > 0 {
 		if err != nil {
 			logger.WithError(err).WithField("yt_channel", channel).Error("Failed getting sub count")
@@ -548,18 +579,21 @@ func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
 		return err
 	}
 
-	lastVid, lastVidTime, err := p.getLastVidTimes(channelID)
-	if err != nil {
-		return err
+	videoCacheDays := confYoutubeVideoCacheDays.GetInt()
+	if videoCacheDays < 1 {
+		videoCacheDays = 1
 	}
-
-	if lastVidTime.After(parsedPublishedTime) {
-		// wasn't a new vid
+	if time.Since(parsedPublishedTime) > time.Hour*24*time.Duration(videoCacheDays) {
+		// don't post videos older than videoCacheDays
+		logger.Infof("Skipped Stale video for youtube channel %s: video_id: %s", channelID, videoID)
 		return nil
 	}
 
-	if lastVid == videoID {
-		// the video was already posted and was probably just edited
+	mn := radix.MaybeNil{}
+	common.RedisPool.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyPublishedVideoList, videoID))
+	if !mn.Nil {
+		// video was already published, maybe just an update on it?
+		logger.Infof("Skipped Already Published video for youtube channel %s: video_id: %s", channelID, videoID)
 		return nil
 	}
 
@@ -619,20 +653,15 @@ func (p *Plugin) isShortsRedirect(videoId string) bool {
 	return resp.StatusCode == 200
 }
 
-func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, video *youtube.Video, channelID string) error {
-	err := common.MultipleCmds(
-		radix.FlatCmd(nil, "SET", KeyLastVidTime(channelID), publishedAt.Unix()),
-		radix.FlatCmd(nil, "SET", KeyLastVidID(channelID), video.Id),
-	)
+func (p *Plugin) postVideo(subs models.YoutubeChannelSubscriptionSlice, publishedAt time.Time, video *youtube.Video, channelID string) error {
+	// add video to list of published videos
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisKeyPublishedVideoList, publishedAt.Unix(), video.Id))
 	if err != nil {
 		return err
 	}
 
 	contentType := video.Snippet.LiveBroadcastContent
 	logger.Infof("Got a new video for channel %s (%s) with videoid %s (%s), of type %s and publishing to %d subscriptions", channelID, video.Snippet.ChannelTitle, video.Id, video.Snippet.Title, contentType, len(subs))
-	if contentType != "live" && contentType != "none" {
-		return nil
-	}
 
 	isLivestream := contentType == "live"
 	isUpcoming := contentType == "upcoming"
@@ -640,13 +669,13 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 	isShorts := false
 
 	for _, sub := range subs {
-		if *sub.Enabled {
-			if (isLivestream || isUpcoming) && !*sub.PublishLivestream {
+		if sub.Enabled {
+			if (isLivestream || isUpcoming) && !sub.PublishLivestream {
 				continue
 			}
 
 			//no need to check for shorts for a livestream
-			if !(isLivestream || isUpcoming) && !*sub.PublishShorts {
+			if !(isLivestream || isUpcoming) && !sub.PublishShorts {
 				//check if a video is a short only when seeing the first shorts disabled subscription
 				//and cache in "isShorts" to reduce requests to youtube to check for shorts.
 				if !isShortsCheckDone {
@@ -665,9 +694,10 @@ func (p *Plugin) postVideo(subs []*ChannelSubscription, publishedAt time.Time, v
 	return nil
 }
 
-func (p *Plugin) getRemoveSubs(channelID string) ([]*ChannelSubscription, error) {
-	var subs []*ChannelSubscription
-	err := common.GORM.Where("youtube_channel_id = ?", channelID).Find(&subs).Error
+func (p *Plugin) getRemoveSubs(channelID string) (models.YoutubeChannelSubscriptionSlice, error) {
+	subs, err := models.YoutubeChannelSubscriptions(
+		models.YoutubeChannelSubscriptionWhere.YoutubeChannelID.EQ(channelID),
+	).AllG(context.Background())
 	if err != nil {
 		return subs, err
 	}
@@ -680,21 +710,4 @@ func (p *Plugin) getRemoveSubs(channelID string) ([]*ChannelSubscription, error)
 	}
 
 	return subs, nil
-}
-
-func (p *Plugin) getLastVidTimes(channelID string) (lastVid string, lastVidTime time.Time, err error) {
-	// Find the last video time for this channel
-	var unixSeconds int64
-	err = common.RedisPool.Do(radix.Cmd(&unixSeconds, "GET", KeyLastVidTime(channelID)))
-
-	var lastProcessedVidTime time.Time
-	if err != nil || unixSeconds == 0 {
-		lastProcessedVidTime = time.Time{}
-	} else {
-		lastProcessedVidTime = time.Unix(unixSeconds, 0)
-	}
-
-	var lastVidID string
-	err = common.RedisPool.Do(radix.Cmd(&lastVidID, "GET", KeyLastVidID(channelID)))
-	return lastVidID, lastProcessedVidTime, err
 }

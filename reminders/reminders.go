@@ -1,28 +1,30 @@
 package reminders
 
 import (
-	"strconv"
+	"context"
+	"fmt"
 	"strings"
 	"time"
 
+	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/jinzhu/gorm"
+	"github.com/botlabs-gg/yagpdb/v2/reminders/models"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
+
+//go:generate sqlboiler --no-hooks --add-soft-deletes psql
 
 type Plugin struct{}
 
 func RegisterPlugin() {
-	err := common.GORM.AutoMigrate(&Reminder{}).Error
-	if err != nil {
-		panic(err)
-	}
-
 	p := &Plugin{}
 	common.RegisterPlugin(p)
+
+	common.InitSchemas("reminders", DBSchemas...)
 }
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
@@ -33,31 +35,8 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 	}
 }
 
-type Reminder struct {
-	gorm.Model
-	UserID    string
-	ChannelID string
-	GuildID   int64
-	Message   string
-	When      int64
-}
-
-func (r *Reminder) UserIDInt() (i int64) {
-	i, _ = strconv.ParseInt(r.UserID, 10, 64)
-	return
-}
-
-func (r *Reminder) ChannelIDInt() (i int64) {
-	i, _ = strconv.ParseInt(r.ChannelID, 10, 64)
-	return
-}
-
-func (r *Reminder) Trigger() error {
-	// remove the actual reminder
-	rows := common.GORM.Delete(r).RowsAffected
-	if rows < 1 {
-		logger.Info("Tried to execute multiple reminders at once")
-	}
+func TriggerReminder(r *models.Reminder) error {
+	r.DeleteG(context.Background(), false /* hardDelete */)
 
 	logger.WithFields(logrus.Fields{"channel": r.ChannelID, "user": r.UserID, "message": r.Message, "id": r.ID}).Info("Triggered reminder")
 	embed := &discordgo.MessageEmbed{
@@ -65,82 +44,76 @@ func (r *Reminder) Trigger() error {
 		Description: common.ReplaceServerInvites(r.Message, r.GuildID, "(removed-invite)"),
 	}
 
-	mqueue.QueueMessage(&mqueue.QueuedElement{
+	channelID, _ := discordgo.ParseID(r.ChannelID)
+	userID, _ := discordgo.ParseID(r.UserID)
+	return mqueue.QueueMessage(&mqueue.QueuedElement{
 		Source:       "reminder",
 		SourceItemID: "",
 
 		GuildID:      r.GuildID,
-		ChannelID:    r.ChannelIDInt(),
+		ChannelID:    channelID,
 		MessageEmbed: embed,
 		MessageStr:   "**Reminder** for <@" + r.UserID + ">",
 		AllowedMentions: discordgo.AllowedMentions{
-			Users: []int64{r.UserIDInt()},
+			Users: []int64{userID},
 		},
 		Priority: 10, // above all feeds
 	})
-	return nil
 }
 
-func GetUserReminders(userID int64) (results []*Reminder, err error) {
-	err = common.GORM.Where(&Reminder{UserID: discordgo.StrID(userID)}).Find(&results).Error
-	if err == gorm.ErrRecordNotFound {
-		err = nil
-	}
-	return
-}
-
-func GetChannelReminders(channel int64) (results []*Reminder, err error) {
-	err = common.GORM.Where(&Reminder{ChannelID: discordgo.StrID(channel)}).Find(&results).Error
-	if err == gorm.ErrRecordNotFound {
-		err = nil
-	}
-	return
-}
-
-func NewReminder(userID int64, guildID int64, channelID int64, message string, when time.Time) (*Reminder, error) {
-	whenUnix := when.Unix()
-	reminder := &Reminder{
+func NewReminder(userID int64, guildID int64, channelID int64, message string, when time.Time) (*models.Reminder, error) {
+	reminder := &models.Reminder{
 		UserID:    discordgo.StrID(userID),
 		ChannelID: discordgo.StrID(channelID),
 		Message:   message,
-		When:      whenUnix,
+		When:      when.Unix(),
 		GuildID:   guildID,
 	}
 
-	err := common.GORM.Create(reminder).Error
+	err := reminder.InsertG(context.Background(), boil.Infer())
 	if err != nil {
 		return nil, err
 	}
 
 	err = scheduledevents2.ScheduleEvent("reminders_check_user", guildID, when, userID)
-	// err = scheduledevents.ScheduleEvent("reminders_check_user:"+strconv.FormatInt(whenUnix, 10), discordgo.StrID(userID), when)
 	return reminder, err
 }
 
-func checkUserEvtHandlerLegacy(evt string) error {
-	split := strings.Split(evt, ":")
-	if len(split) < 2 {
-		logger.Error("Handled invalid check user scheduled event: ", evt)
-		return nil
-	}
+type DisplayRemindersMode int
 
-	parsed, _ := strconv.ParseInt(split[1], 10, 64)
-	reminders, err := GetUserReminders(parsed)
-	if err != nil {
-		return err
-	}
+const (
+	ModeDisplayChannelReminders DisplayRemindersMode = iota
+	ModeDisplayUserReminders
+)
 
-	now := time.Now()
-	nowUnix := now.Unix()
-	for _, v := range reminders {
-		if v.When <= nowUnix {
-			err := v.Trigger()
-			if err != nil {
-				// Try again
-				return err
+func DisplayReminders(reminders models.ReminderSlice, mode DisplayRemindersMode) string {
+	var out strings.Builder
+	for _, r := range reminders {
+		t := time.Unix(r.When, 0)
+		timeFromNow := common.HumanizeTime(common.DurationPrecisionMinutes, t)
+
+		switch mode {
+		case ModeDisplayChannelReminders:
+			// don't show the channel; do show the user
+			uid, _ := discordgo.ParseID(r.UserID)
+			member, _ := bot.GetMember(r.GuildID, uid)
+			username := "Unknown user"
+			if member != nil {
+				username = member.User.Username
 			}
+
+			fmt.Fprintf(&out, "**%d**: %s: '%s' - %s from now (<t:%d:f>)\n", r.ID, username, CutReminderShort(r.Message), timeFromNow, t.Unix())
+
+		case ModeDisplayUserReminders:
+			// do show the channel; don't show the user
+			channel := "<#" + r.ChannelID + ">"
+			fmt.Fprintf(&out, "**%d**: %s: '%s' - %s from now (<t:%d:f>)\n", r.ID, channel, CutReminderShort(r.Message), timeFromNow, t.Unix())
 		}
 	}
 
-	return nil
+	return out.String()
+}
+
+func CutReminderShort(msg string) string {
+	return common.CutStringShort(msg, 50)
 }

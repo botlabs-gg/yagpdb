@@ -19,9 +19,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/vmihailenco/msgpack"
-	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func init() {
@@ -180,9 +180,13 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", ctx.GS.ID, ccID), qm.Load("Group")).OneG(context.Background())
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
+		}
+
+		if cmd.R.Group != nil && cmd.R.Group.Disabled {
+			return "", errors.New("custom command group is disabled")
 		}
 
 		if cmd.Disabled {
@@ -219,6 +223,10 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			if ctx.Msg != nil {
 				newCtx.Msg = ctx.Msg
 				newCtx.Data["Message"] = ctx.Msg
+			}
+			if ctx.CurrentFrame.Interaction != nil {
+				newCtx.CurrentFrame.Interaction = ctx.CurrentFrame.Interaction
+				newCtx.Data["Interaction"] = ctx.CurrentFrame.Interaction
 			}
 			newCtx.Data["ExecData"] = data
 			newCtx.Data["StackDepth"] = currentStackDepth + 1
@@ -271,9 +279,13 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", templates.ErrTooManyCalls
 		}
 
-		cmd, err := models.FindCustomCommandG(context.Background(), ctx.GS.ID, int64(ccID))
+		cmd, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", ctx.GS.ID, ccID), qm.Load("Group")).OneG(context.Background())
 		if err != nil {
 			return "", errors.New("Couldn't find custom command")
+		}
+
+		if cmd.R.Group != nil && cmd.R.Group.Disabled {
+			return "", errors.New("custom command group is disabled")
 		}
 
 		if cmd.Disabled {

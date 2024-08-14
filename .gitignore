@@ -21,3 +21,6 @@ cmd/shardorchestrator/shardorchestrator
 *.agent
 *.exe
 cmd/shardorchestrator/capturepanics
+__debug_bin*
+app.env
+.scannerwork

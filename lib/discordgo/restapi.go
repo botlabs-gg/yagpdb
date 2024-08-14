@@ -754,7 +754,22 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID int64, reason string,
 // userID    : The ID of a User
 func (s *Session) GuildBanDelete(guildID, userID int64) (err error) {
 
-	_, err = s.RequestWithBucketID("DELETE", EndpointGuildBan(guildID, userID), nil, nil, EndpointGuildBan(guildID, 0))
+	return s.GuildBanDeleteWithReason(guildID, userID, "")
+}
+
+// GuildBanDeleteWithReason removes the given user from the guild bans,
+// including sending an audit log reason.
+// guildID    : The ID of a Guild
+// userID     : The ID of a User
+// reason     : The reason for removing the ban
+func (s *Session) GuildBanDeleteWithReason(guildID, userID int64, reason string) (err error) {
+
+	headers := make(map[string]string)
+	if reason != "" {
+		headers["X-Audit-Log-Reason"] = url.PathEscape(reason)
+	}
+
+	_, err = s.RequestWithBucketID("DELETE", EndpointGuildBan(guildID, userID), nil, headers, EndpointGuildBan(guildID, 0))
 	return
 }
 
@@ -846,12 +861,12 @@ func (s *Session) GuildMemberDelete(guildID, userID int64) (err error) {
 // reason    : The reason for the kick
 func (s *Session) GuildMemberDeleteWithReason(guildID, userID int64, reason string) (err error) {
 
-	uri := EndpointGuildMember(guildID, userID)
+	headers := make(map[string]string)
 	if reason != "" {
-		uri += "?reason=" + url.QueryEscape(reason)
+		headers["X-Audit-Log-Reason"] = url.PathEscape(reason)
 	}
 
-	_, err = s.RequestWithBucketID("DELETE", uri, nil, nil, EndpointGuildMember(guildID, 0))
+	_, err = s.RequestWithBucketID("DELETE", EndpointGuildMember(guildID, userID), nil, headers, EndpointGuildMember(guildID, 0))
 	return
 }
 
@@ -2312,6 +2327,23 @@ func (s *Session) WebhookExecuteComplex(webhookID int64, token string, wait bool
 	// return
 }
 
+// WebhookMessage gets a webhook message.
+// webhookID : The ID of a webhook
+// token     : The auth token for the webhook
+// messageID : The ID of message to get
+func (s *Session) WebhookMessage(webhookID int64, token string, messageID int64) (message *Message, err error) {
+	uri := EndpointWebhookMessage(webhookID, token, strconv.FormatInt(messageID, 10))
+
+	body, err := s.RequestWithBucketID("GET", uri, nil, nil, EndpointWebhookToken(0, ""))
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(body, &message)
+
+	return
+}
+
 // MessageReactionAdd creates an emoji reaction to a message.
 // channelID : The channel ID.
 // messageID : The message ID.
@@ -2429,7 +2461,7 @@ func (s *Session) MessageThreadStartComplex(channelID, messageID int64, data *Th
 // messageID       : Message to start thread from
 // name            : Name of the thread
 // archiveDuration : Auto archive duration (in minutes)
-func (s *Session) MessageThreadStart(channelID, messageID int64, name string, archiveDuration int) (ch *Channel, err error) {
+func (s *Session) MessageThreadStart(channelID, messageID int64, name string, archiveDuration AutoArchiveDuration) (ch *Channel, err error) {
 	return s.MessageThreadStartComplex(channelID, messageID, &ThreadStart{
 		Name:                name,
 		Invitable:           false,
@@ -2456,7 +2488,7 @@ func (s *Session) ThreadStartComplex(channelID int64, data *ThreadStart) (ch *Ch
 // channelID       : Channel to create thread in
 // name            : Name of the thread
 // archiveDuration : Auto archive duration (in minutes)
-func (s *Session) ThreadStart(channelID int64, name string, typ ChannelType, archiveDuration int) (ch *Channel, err error) {
+func (s *Session) ThreadStart(channelID int64, name string, typ ChannelType, archiveDuration AutoArchiveDuration) (ch *Channel, err error) {
 	return s.ThreadStartComplex(channelID, &ThreadStart{
 		Name:                name,
 		Type:                typ,
@@ -2528,7 +2560,7 @@ func (s *Session) ForumThreadStartComplex(channelID int64, threadData *ThreadSta
 // name            : Name of the thread.
 // archiveDuration : Auto archive duration.
 // content         : Content of the starting message.
-func (s *Session) ForumThreadStart(channelID int64, name string, archiveDuration int, content string) (th *Channel, err error) {
+func (s *Session) ForumThreadStart(channelID int64, name string, archiveDuration AutoArchiveDuration, content string) (th *Channel, err error) {
 	return s.ForumThreadStartComplex(channelID, &ThreadStart{
 		Name:                name,
 		AutoArchiveDuration: archiveDuration,
@@ -2540,7 +2572,7 @@ func (s *Session) ForumThreadStart(channelID int64, name string, archiveDuration
 // name            : Name of the thread.
 // archiveDuration : Auto archive duration.
 // embed           : Embed data of the starting message.
-func (s *Session) ForumThreadStartEmbed(channelID int64, name string, archiveDuration int, embed *MessageEmbed) (th *Channel, err error) {
+func (s *Session) ForumThreadStartEmbed(channelID int64, name string, archiveDuration AutoArchiveDuration, embed *MessageEmbed) (th *Channel, err error) {
 	return s.ForumThreadStartComplex(channelID, &ThreadStart{
 		Name:                name,
 		AutoArchiveDuration: archiveDuration,
@@ -2552,7 +2584,7 @@ func (s *Session) ForumThreadStartEmbed(channelID int64, name string, archiveDur
 // name            : Name of the thread.
 // archiveDuration : Auto archive duration.
 // embeds          : Embeds data of the starting message.
-func (s *Session) ForumThreadStartEmbeds(channelID int64, name string, archiveDuration int, embeds []*MessageEmbed) (th *Channel, err error) {
+func (s *Session) ForumThreadStartEmbeds(channelID int64, name string, archiveDuration AutoArchiveDuration, embeds []*MessageEmbed) (th *Channel, err error) {
 	return s.ForumThreadStartComplex(channelID, &ThreadStart{
 		Name:                name,
 		AutoArchiveDuration: archiveDuration,
@@ -3039,6 +3071,16 @@ func (s *Session) BatchEditGuildApplicationCommandsPermissions(applicationID int
 // CreateInteractionResponse Create a response to an Interaction from the gateway. Takes an Interaction response.
 // POST /interactions/{interaction.id}/{interaction.token}/callback
 func (s *Session) CreateInteractionResponse(interactionID int64, token string, data *InteractionResponse) (err error) {
+	if data.Data != nil && len(data.Data.Files) > 0 {
+		contentType, body, err := MultipartBodyWithJSON(data, data.Data.Files)
+		if err != nil {
+			return err
+		}
+
+		_, err = s.request("POST", EndpointInteractionCallback(interactionID, token), contentType, body, nil, EndpointInteractionCallback(0, ""))
+		return err
+	}
+
 	_, err = s.RequestWithBucketID("POST", EndpointInteractionCallback(interactionID, token), data, nil, EndpointInteractionCallback(0, ""))
 	return
 }

@@ -1,6 +1,8 @@
 package inmemorytracker
 
 import (
+	"container/list"
+
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
@@ -139,7 +141,21 @@ func (tracker *InMemoryTracker) GetMessages(guildID int64, channelID int64, quer
 	shard.mu.RLock()
 	defer shard.mu.RUnlock()
 
-	messages := shard.messages[channelID]
+	var messages *list.List
+	var convert func(*list.Element) *dstate.MessageState
+
+	if channelID == 0 {
+		messages = shard.guildMessages[guildID]
+		convert = func(e *list.Element) *dstate.MessageState {
+			return (*e.Value.(*any)).(*dstate.MessageState)
+		}
+	} else {
+		messages = shard.channelMessages[channelID]
+		convert = func(e *list.Element) *dstate.MessageState {
+			return e.Value.(*dstate.MessageState)
+		}
+	}
+
 	if messages == nil {
 		return nil
 	}
@@ -158,7 +174,7 @@ func (tracker *InMemoryTracker) GetMessages(guildID int64, channelID int64, quer
 
 	i := 0
 	for e := messages.Back(); e != nil; e = e.Prev() {
-		cast := e.Value.(*dstate.MessageState)
+		cast := convert(e)
 		include, cont := checkMessage(query, cast)
 		if include {
 			buf[i] = cast

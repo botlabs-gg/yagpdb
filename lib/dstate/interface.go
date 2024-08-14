@@ -30,6 +30,7 @@ type StateTracker interface {
 	// GetMessages returns the messages of the channel, up to limit, you may pass in a pre-allocated buffer to save allocations.
 	// If cap(buf) is less than the needed then a new one will be created and returned
 	// if len(buf) is greater than needed, it will be sliced to the proper length
+	// If channelID is 0, it will attempt to return the most recent messages from the guild or nil
 	GetMessages(guildID int64, channelID int64, query *MessagesQuery) []*MessageState
 
 	// Calls f on all members, return true to continue or false to stop
@@ -259,8 +260,9 @@ type ChannelState struct {
 	UserLimit        int                       `json:"user_limit"`
 	ParentID         int64                     `json:"parent_id,string"`
 	RateLimitPerUser int                       `json:"rate_limit_per_user"`
+	Flags            discordgo.ChannelFlags    `json:"flags"`
 	OwnerID          int64                     `json:"owner_id,string"`
-	ThreadMetadata   *discordgo.ThreadMetadata `json:"thread_metadata"`
+	ThreadMetadata   *discordgo.ThreadMetadata `json:"thread_metadata,omitempty"`
 
 	PermissionOverwrites []discordgo.PermissionOverwrite `json:"permission_overwrites"`
 
@@ -305,6 +307,8 @@ type MemberFields struct {
 	Nick                       string
 	Avatar                     string
 	Pending                    bool
+	PremiumSince               *time.Time
+	Flags                      discordgo.MemberFlags
 	CommunicationDisabledUntil *time.Time
 }
 
@@ -350,6 +354,8 @@ func MemberStateFromMember(member *discordgo.Member) *MemberState {
 			Nick:                       member.Nick,
 			Avatar:                     member.Avatar,
 			Pending:                    member.Pending,
+			PremiumSince:               member.PremiumSince,
+			Flags:                      member.Flags,
 			CommunicationDisabledUntil: member.CommunicationDisabledUntil,
 		},
 		Presence: nil,
@@ -371,6 +377,8 @@ func (ms *MemberState) DgoMember() *discordgo.Member {
 		Roles:                      ms.Member.Roles,
 		User:                       &ms.User,
 		Pending:                    ms.Member.Pending,
+		PremiumSince:               ms.Member.PremiumSince,
+		Flags:                      ms.Member.Flags,
 		CommunicationDisabledUntil: ms.Member.CommunicationDisabledUntil,
 	}
 

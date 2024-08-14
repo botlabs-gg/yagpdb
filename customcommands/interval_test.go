@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 )
 
 func TestNextRunTimeBasic(t *testing.T) {

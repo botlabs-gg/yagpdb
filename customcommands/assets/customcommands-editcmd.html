@@ -8,7 +8,11 @@
 
 <style>
     .cc-editor {
-        font-family: Consolas, monospace;
+      font-family: Consolas, monospace;
+    }
+    .cc-group-disabled {
+      text-decoration: line-through;
+      color: #d2322d !important;
     }
 </style>
 
@@ -27,7 +31,7 @@
                 <li
                     class="nav-item {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}">
                     <a data-partial-load="true"
-                        class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}}"
+                        class="nav-link show {{if $dot.CurrentCommandGroup}}{{if eq $dot.CurrentCommandGroup.ID .ID}}active{{end}}{{end}} {{if .Disabled}}cc-group-disabled{{end}}"
                         href="/manage/{{$dot.ActiveGuild.ID}}/customcommands/groups/{{.ID}}">{{.Name}}</a>
                 </li>
                 {{end}}
@@ -42,12 +46,6 @@
             <!-- Tab panes -->
             <div class="tab-content">
                 <div class="tab-pane active">
-
-                    <ul id="cc-feedback-top">
-                        <li class="text-danger" hidden id="trigger-warning"></li>
-                    </ul>
-
-
                     {{$guild := .ActiveGuild.ID}}
                     {{$g := .ActiveGuild}}
                     {{$dot := .}}
@@ -69,7 +67,7 @@
                         <input type="text" class="hidden form-control" name="id" value="{{.CC.LocalID}}">
                         <div class="row">
                             <!-- Trigger -->
-                            <div class="col-sm-4">
+                            <div class="col-lg-4">
                                 <div class="row">
                                     <div class="col">
                                         <div class="form-group">
@@ -100,6 +98,10 @@
                                                     {{if eq (call .GetCCIntervalType .CC) 0}}selected{{end}}>
                                                     Minute interval
                                                 </option>
+                                                <option value="component" {{if eq .CC.TriggerType 7}} selected{{end}}>
+                                                    Message Component</option>
+                                                <option value="modal" {{if eq .CC.TriggerType 8}} selected{{end}}>
+                                                    Modal Submission</option>
                                             </select>
                                         </div>
                                     </div>
@@ -136,14 +138,22 @@
                                         <p id="trigger-desc-interval_minutes">
                                             The command will run at a minute interval, for example every 10 minutes.
                                         </p>
+                                        <p id="trigger-desc-component">
+                                            The command will run when a component (a button or a select menu) whose
+                                            custom ID matches the given regex is used. BETA FEATURE.
+                                        </p>
+                                        <p id="trigger-desc-modal">
+                                            The command will run when a modal whose custom ID matches the given regex is submitted. BETA FEATURE.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
-                            <div id="cc-text-trigger-details" class="hidden col-sm-8">
+                            <div id="cc-text-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
-                                    <div class="col-sm-12">
+                                    <div class="col-lg-12">
                                         <div class="form-group">
-                                            <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="cc-message-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <div class="input-group mb-2">
                                                 <div class="input-group-prepend" id="command-trigger-prepended-prefix">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
@@ -151,17 +161,23 @@
                                                 <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
                                                     value="{{.CC.TextTrigger}}">
                                             </div>
-                                            {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}
-                                            {{$disabledClass := ""}}
-                                            {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
-                                            {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
-                                        </div>
+                                            <div class="row">
+                                              <div class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
+                                              <div class="col-lg-6">
+                                                <div id="cc-message-trigger-details">
+                                                    {{$disabledClass := ""}}
+                                                    {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
+                                                    {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)" .CC.TriggerOnEdit $disabledClass}}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
                                     </div>
                                 </div>
                             </div>
-                            <div id="cc-reaction-trigger-details" class="hidden col-sm-8">
+                            <div id="cc-reaction-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
-                                    <div class="col-sm-12">
+                                    <div class="col-lg-12">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="reaction_trigger_mode"
                                                 id="reaction-mode-both-{{.CC.LocalID}}" value="0"
@@ -189,16 +205,16 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="cc-time-trigger-details" class="hidden col-sm-8">
+                            <div id="cc-time-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
-                                    <div class="col-sm-4">
+                                    <div class="col-lg-4">
                                         <div class="form-group">
                                             <label>Interval</label>
                                             <input type="number" min="0" class="form-control" name="time_trigger_interval"
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                                         </div>
                                     </div>
-                                    <div class="col-sm-8">
+                                    <div class="col-lg-8">
                                         <div class="form-group">
                                             <label>Channel</label>
                                             <select id="time-trigger-channel" name="context_channel" class="form-control">
@@ -207,9 +223,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
+                                <div class="row mt-3">
+                                        <div class="form-group col-lg-3">
                                             <label for="trigger">Excluding hours (UTC)</label><br>
                                             <select name="time_trigger_excluding_hours" class="multiselect form-control"
                                                 multiple="multiple" data-plugin-multiselect>
@@ -219,9 +234,7 @@
                                                 {{end}}
                                             </select>
                                         </div>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <div class="form-group">
+                                        <div class="form-group col-lg-3">
                                             <label for="trigger">Excluding weekdays (UTC)</label><br>
                                             <select name="time_trigger_excluding_days" class="multiselect form-control"
                                                 multiple="multiple" data-plugin-multiselect>
@@ -247,35 +260,44 @@
                                                     {{if in .CC.TimeTriggerExcludingDays 0}}selected{{end}}>
                                                     Sunday</option>
                                             </select>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-sm-4">
+                        <div class="row mt-3">
+                            <div class="col-lg-4">
                                 <div class="form-group">
                                     <label>Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
                                     <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
                                     <p>An optional name that can be used to identify the command.</p>
                                 </div>
                             </div>
-                             <div class="col-sm-4">
+                             <div class="col-lg-4">
                                 <div class="form-group">
-                                    <br/>
                                     <label> Command Enabled?</label>
                                     {{checkbox "is_enabled" "is_enabled" "Enables or Disables the command" (not .CC.Disabled) }}
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                  <label> Allow Public Imports?</label>
+                                    {{checkbox "public" "public" "Allow anyone to view and copy this command" .CC.Public}}
                                 </div>
                             </div>
                         </div>
                         <div class="row mb-2">
                             <div class="col-lg-12">
                                 <div class="form-group">
+
                                     <label for="responses">Response (<span
-                                            class="cc-length-counter">x</span>/10000)</label>
+                                            class="cc-length-counter">x</span>/{{.MaxCCLength}})</label>
+                                    <span style="float: right">
+                                      <input type="checkbox" class="toggle-code-mirror" checked="true" id="toggle-code-mirror">
+                                      <label for="toggle-code-mirror">Show CodeMirror Editor</label>
+                                    </span>
                                     <!-- Use .btn-add for simplicity and let the page loader adjust. -->
                                     {{range .CC.Responses}}
-                                    <div class="entry input-group  input-group-sm">
+                                    <div id="cc-responses" class="entry input-group  input-group-sm">
                                         <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
                                             placeholder="Command body here" rows="5"
                                             oninput="onCCChanged(this)">{{.}}</textarea>
@@ -286,7 +308,7 @@
                                         </span>
                                     </div>
                                     {{else}}
-                                    <div class="entry input-group  input-group-sm">
+                                    <div id="cc-responses" class="entry input-group  input-group-sm">
                                         <textarea class="form-control response-text-area tab-textbox cc-editor" name="responses"
                                             placeholder="Command body here" rows="5"
                                             oninput="onCCChanged(this)"></textarea>
@@ -296,14 +318,19 @@
                                             </button>
                                         </span>
                                     </div>
+
                                     {{end}}
                                     <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm"
                                         href="#cc-help-modal">Info</a>
+                                    {{if .CC.Public}}
+                                    <a class="mb-1 mt-1 mr-1 modal-basic btn btn-info btn-sm"
+                                        href="#cc-share-modal">Share</a>
+                                    {{end}}
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm-6">
+                            <div class="col-lg-6">
                                 <div class="form-group">
                                     <label>Custom command group</label>
                                     {{$selectedGroup := .CC.GroupID.Int64}}
@@ -340,8 +367,13 @@
 
                                 <h4>Output errors as command response</h4>
                                 {{checkbox "show_errors" "show_errors" "" .CC.ShowErrors}}
+
+                                <h4>Redirect errors to selected channel</h4>
+                                <select class="form-control" name="redirect_errors_channel" data-requireperms-send>
+                                    {{textChannelOptions $g.Channels .CC.RedirectErrorsChannel true "None"}}
+                                </select>
                             </div>
-                            <div id="cc-extra-settings" class="col-sm-6">
+                            <div id="cc-extra-settings" class="col-lg-6">
                                 <h3>Channel/User role restrictions</h3>
                                 <div class="radio">
                                     <label>
@@ -412,6 +444,56 @@
     </div>
 </div>
 
+{{if .CC.Public}}
+<div id="cc-share-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
+  <section class="card">
+      <header class="card-header">
+          <h2 class="card-title">Copy Import Link</h2>
+      </header>
+      <div class="card-body">
+          <div class="modal-wrapper">
+              <div class="modal-text">
+                  <p class="help-block">To share custom command #<code>{{.CC.LocalID}}</code>, and allow users to
+                  import it, copy the link below.
+                  </p>
+                  <div class="row no-gutters">
+                    <div class="col-md-9">
+                      <input type="text" style="border-radius: 0% !important;" id="public-link" class="form-control" name="Public Link" value="{{.PublicLink}}" readonly>
+                    </div>
+                    <div class="col-md-3">
+                      <button id="copy-link-button" style="border-radius: 0% !important;" class="btn btn-quaternary"><i class="fas fa-copy p-1"> </i>Copy</button>
+                    </div>
+                  </div>
+                  <script>
+                      document.getElementById("copy-link-button").addEventListener("click", function() {
+                        let copyText = document.getElementById("public-link");
+                        copyText.select();
+                        copyText.setSelectionRange(0, 99999); // For mobile devices
+                        navigator.clipboard.writeText(copyText.value);
+                        copyText.setSelectionRange(0, 0);
+                        this.textContent = "Copied!";
+                        setTimeout(() => {
+                          this.innerHTML =`<i class="fas fa-copy p-1"> </i>Copy`;
+                        }, 2000);
+                      }, false);
+                  </script>
+              </div>
+          </div>
+      </div>
+      <footer class="card-footer">
+          <div class="row">
+              <div class="col-md-8">
+                <p>Total Imports: <code>{{.CC.ImportCount}}</code></p>
+              </div>
+              <div class="col-md-4 text-right">
+                  <button class="btn btn-info modal-dismiss">Close</button>
+              </div>
+          </div>
+      </footer>
+  </section>
+</div>
+{{end}}
+
 <div id="cc-help-modal" class="modal-block modal-header-color modal-block-info mfp-hide">
     <section class="card">
         <header class="card-header">
@@ -435,8 +517,8 @@
                         marks the end of the for loop.</p>
                     <!-- {{/* .IgnoreMe */}} -->
                     <p>
-                        See the <a href="https://docs.yagpdb.xyz/templates" target="_blank">templating</a> and <a
-                            href="https://docs.yagpdb.xyz/commands/custom-commands" target="_blank">custom
+                        See the <a href="https://help.yagpdb.xyz/docs/reference/templates/" target="_blank">templating</a> and <a
+                            href="https://help.yagpdb.xyz/docs/custom-commands/" target="_blank">custom
                             command</a>
                         docs for more info and join the support server if you have further questions. Custom
                         commands
@@ -466,205 +548,293 @@
 </style>
 
 <script type="text/javascript">
-    function isTextTrigger(t) {
-        return t === "cmd" ||
-            t === "prefix" ||
-            t === "contains" ||
-            t === "regex" ||
-            t === "exact";
+    // support Alt + Shift + S shortcut to save custom command 
+    $(document).on('keydown', (e) => {
+        const event = e.originalEvent;
+        if (event.altKey && event.shiftKey && event.code === 'KeyS') {
+            const saveButton = document.getElementById('save-custom-command');
+            if (saveButton) {
+                saveButton.click();
+                return false;
+            }
+        } 
+    });
+
+    $(function () {
+        triggerTypeChanged();
+        updateCCLength();
+        updateTriggerLength();
+        updateNameLength();
+        setCMCheckbox();
+    });
+
+    var intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details'];
+    var textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings'];
+    var messageTriggerEls = [...textTriggerEls, '#cc-message-trigger-label', '#cc-message-trigger-details'];
+    var interactionTriggerEls = [...textTriggerEls, '#cc-customid-trigger-label'];
+
+    // html elements that should be shown for specific trigger types and hidden otherwise
+    var triggerTypeEls = {
+        modal: [...interactionTriggerEls, '#trigger-desc-modal'],
+        component: [...interactionTriggerEls, '#trigger-desc-component'],
+        interval_hours: [...intervalTriggerEls, '#trigger-desc-interval_hours'],
+        interval_minutes: [...intervalTriggerEls, '#trigger-desc-interval_minutes'],
+        reaction: ['#cc-reaction-trigger-details', '#cc-extra-settings', '#trigger-desc-reaction'],
+        cmd: [...messageTriggerEls, '#command-trigger-prepended-prefix', '#trigger-desc-cmd'],
+        prefix: [...messageTriggerEls, '#trigger-desc-prefix'],
+        contains: [...messageTriggerEls, '#trigger-desc-contains'],
+        regex: [...messageTriggerEls, '#trigger-desc-regex'],
+        exact: [...messageTriggerEls, '#trigger-desc-exact'],
+        none: ['#trigger-desc-none'],
+    };
+
+    function setCMCheckbox() {
+      if(localStorage.getItem('cm-editor') === 'false'){
+        $("#toggle-code-mirror").prop( "checked", false );
+      } else {
+        $("#toggle-code-mirror").prop( "checked", true );
+      }
     }
 
     function triggerTypeChanged() {
-        var dropdown = $("#trigger-type-dropdown")
-        if (dropdown.val() === "interval_hours" || dropdown.val() === "interval_minutes") {
-            // Interval triggers
+        const curTriggerType = $('#trigger-type-dropdown').val();
 
-            $("#interval-cc-run-now").removeClass("hidden")
-            $("#cc-time-trigger-details").removeClass("hidden");
+        const elsToHide = [];
+        const elsToShow = [];
+        for (const [t, els] of Object.entries(triggerTypeEls)) {
+            if (t === curTriggerType) elsToShow.push(...els);
+            else elsToHide.push(...els);
+        }
 
-            $("#cc-text-trigger-details").addClass("hidden");
-            $("#cc-extra-settings").addClass("hidden");
-            $("#cc-reaction-trigger-details").addClass("hidden")
+        // Order of operations is important: if we first show elements
+        // applicable to the current trigger type, then hide elements applicable
+        // to other trigger types, we may end up momentarily showing a relevant
+        // element then hiding it. To avoid this undesirable behavior, first
+        // hide elements from other trigger types and only then show elements
+        // for the current trigger type.
+        for (const el of elsToHide) $(el).addClass('hidden');
+        for (const el of elsToShow) $(el).removeClass('hidden');
 
-            $("#trigger-warning").attr("hidden", true);
-
-            handleTimeTriggerChannelChange();
-            $("#require-no-channels-warning").addClass("hidden");
-            $("#require-no-roles-warning").addClass("hidden");
-            $("#time-trigger-no-channel-warning").removeClass("hidden");
-
-        } else if (dropdown.val() === "reaction") {
-            // Reaction triggers
-
-            $("#cc-reaction-trigger-details").removeClass("hidden")
-            $("#cc-extra-settings").removeClass("hidden");
-
-            $("#cc-time-trigger-details").addClass("hidden");
-            $("#cc-text-trigger-details").addClass("hidden");
-
-            $("#interval-cc-run-now").addClass("hidden")
-
-            $("#trigger-warning").attr("hidden", true);
-            $("#require-no-channels-warning").removeClass("hidden");
-            $("#require-no-roles-warning").removeClass("hidden");
-            $("#time-trigger-no-channel-warning").addClass("hidden");
-
-        } else if (isTextTrigger(dropdown.val())) {
-            // Other message triggers
-
-            $("#cc-text-trigger-details").removeClass("hidden");
-            $("#cc-extra-settings").removeClass("hidden");
-
-            $("#cc-reaction-trigger-details").addClass("hidden")
-            $("#cc-time-trigger-details").addClass("hidden");
-
-            $("#interval-cc-run-now").addClass("hidden")
-
-            $("#trigger-warning").attr("hidden", true);
-            $("#require-no-channels-warning").removeClass("hidden");
-            $("#require-no-roles-warning").removeClass("hidden");
-            // $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
-            $("#time-trigger-no-channel-warning").addClass("hidden");
-
-        } else {
-            // No automatic trigger
-
-            $("#cc-text-trigger-details").addClass("hidden");
-            $("#cc-extra-settings").addClass("hidden");
-            $("#cc-reaction-trigger-details").addClass("hidden")
-            $("#cc-time-trigger-details").addClass("hidden");
-
-            $("#interval-cc-run-now").addClass("hidden")
-
-            $("#trigger-warning").removeAttr("hidden");
-            $("#trigger-warning").text("No trigger set, this command will only be able to be called from other commands")
-            $("#require-no-channels-warning").addClass("hidden");
-            $("#require-no-roles-warning").addClass("hidden");
-            $("#time-trigger-no-channel-warning").addClass("hidden");
-        };
-
-        if (dropdown.val() === "cmd") $("#command-trigger-prepended-prefix").show();
-        else $("#command-trigger-prepended-prefix").hide();
-
-        $("#trigger-help").children().each(function (i, v) {
-            $(v).attr("hidden", true);
-        });
-
-        $("#trigger-desc-" + dropdown.val()).removeAttr("hidden");
+        refreshWarnings();
     }
 
-    $(function () {
-        handleTimeTriggerChannelChange();
-        handleRestrictionChange($("#require-role-mode").prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
-        handleRestrictionChange($("#require-channel-mode").prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
-        triggerTypeChanged();
-    })
+    // issue warnings for common configurations that are indicative of user
+    // error (but are not hard errors, since can be intended)
+    function refreshWarnings() {
+        const allChecks = [checkNoEmptyRequiredRoles, checkNoEmptyRequiredChannels, checkMissingIntervalTriggerChannel];
 
-    $("#trigger").keyup(function() {
-        const trigger = $(this).val();
-        $("#trigger-length")
-            .text(trigger.length)
-            .toggleClass("text-danger", trigger.length > 1000);
-    });
+        const triggerType = $('#trigger-type-dropdown').val();
+        for (const c of allChecks) {
+            if (c.applicableTriggerTypes.includes(triggerType)) {
+                c.run();
+            } else {
+                c.removeWarning();
+            }
+        }
+    }
 
-    $("#name").keyup(function(){
-      const name = $(this).val();
-        $("#name-length")
-            .text(name.length)
-            .toggleClass("text-danger", name.length > 100);
-    });
+    function addWarningIfNotExists(id, text) {
+        if (!document.getElementById(id)) {
+            addAlert('warning', text, id);
+        }
+    }
 
-    function onCCChanged(textArea) {
-        var textAreas = textArea.parentElement.parentElement.querySelectorAll("textarea")
+    // 'require roles' mode with no required roles
+    var checkNoEmptyRequiredRoles = {
+        applicableTriggerTypes: ['modal', 'component', 'reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
+        warningId: 'require-no-roles-warning',
+        run() {
+            const isRequireMode = $('#require-role-mode').prop('checked');
+            const commandRolesMenu = $('#command-roles');
+            if (isRequireMode && commandRolesMenu.val().length === 0) {
+                addWarningIfNotExists(this.warningId,
+                    "Requiring no roles effectively disables your command, meaning it will never run."
+                    + " If your command has no role restrictions, set the mode to 'ignore roles' instead.",
+                );
+            } else {
+                this.removeWarning();
+            }
+        },
+        removeWarning() {
+            $(`#${this.warningId}`).remove();
+        },
+    };
+    $('#require-role-mode').change(() => checkNoEmptyRequiredRoles.run());
+    $('#ignore-role-mode').change(() => checkNoEmptyRequiredRoles.run());
+    $('#command-roles').change(() => checkNoEmptyRequiredRoles.run());
 
-        var combinedLength = 0;
-        textAreas.forEach(function (elem) {
-            combinedLength += elem.value.length;
+    var checkNoEmptyRequiredChannels = {
+        applicableTriggerTypes: ['modal', 'component', 'reaction', 'cmd', 'prefix', 'contains', 'regex', 'exact'],
+        warningId: 'require-no-channels-warning',
+        run() {
+            const isRequireMode = $('#require-channel-mode').prop('checked');
+            const commandChannelsMenu = $('#command-channels');
+            if (isRequireMode && commandChannelsMenu.val().length === 0) {
+                addWarningIfNotExists(this.warningId,
+                    "Requiring no channels effectively disables your command, meaning it will never run."
+                    + " If your command has no channel restrictions, set the mode to 'ignore channels' instead.",
+                );
+            } else {
+                this.removeWarning();
+            }
+        },
+        removeWarning() {
+            $(`#${this.warningId}`).remove();
+        },
+    };
+    $('#require-channel-mode').change(() => checkNoEmptyRequiredChannels.run());
+    $('#ignore-channel-mode').change(() => checkNoEmptyRequiredChannels.run());
+    $('#command-channels').change(() => checkNoEmptyRequiredChannels.run());
+
+    var checkMissingIntervalTriggerChannel = {
+        applicableTriggerTypes: ['interval_hours', 'interval_minutes'],
+        warningId: 'time-trigger-no-channel-warning',
+        run() {
+            const selectedChannel = $('#time-trigger-channel').val();
+            if (!selectedChannel) {
+                addWarningIfNotExists(this.warningId,
+                    "Selecting no channel for an interval command effectively disables your command, meaning it will never run."
+                    + " If your command does not need to run in a specific channel, select a arbitrary one from the list instead.",
+                );
+            } else {
+                this.removeWarning();
+            }
+        },
+        removeWarning() {
+            $(`#${this.warningId}`).remove();
+        },
+    };
+
+    $('#time-trigger-channel').change(() => checkMissingIntervalTriggerChannel.run());
+
+    function updateTriggerLength() {
+        const triggerLength = $('#trigger-length');
+        const trigger = $('#trigger');
+        if (triggerLength > 0 && trigger && trigger.val()) {
+            triggerLength
+                .text(trigger.val().length)
+                .toggleClass('text-danger', trigger.val().length > 1000);
+        }
+    }
+    $('#trigger').keyup(updateTriggerLength);
+  
+    function updateNameLength() {
+        const nameLength = $('#name-length');
+        const name = $('#name');
+        if (nameLength && name && name.val()) {
+            nameLength
+                .text(name.val().length)
+                .toggleClass('text-danger', name.val().length > 100);
+        }
+    }
+    $('#name').keyup(updateNameLength);
+
+    function updateCCLength() {
+        const textAreas = document.querySelectorAll('#cc-responses > textarea');
+        const totalLength = Array.from(textAreas).reduce((acc, el) => {
+            let len = countCodePoints(el.value);
             // The data received on the backend contains "\r\n" while it is simply "\n" on the JS side.
             // Adjust for this discrepancy by double-counting newline characters.
-            const newlines = elem.value.match(/\n/g);
-            if (newlines) combinedLength += newlines.length;
-        })
+            const newlines = el.value.match(/\n/g);
+            if (newlines) len += newlines.length;
 
-        var display = textArea.parentElement.parentElement.querySelector(".cc-length-counter")
-        display.textContent = combinedLength
+            return acc + len;
+        }, 0);
 
-        if (combinedLength > 10000) {
-            display.classList.add("text-danger");
-        } else {
-            display.classList.remove("text-danger");
-        }
+        $('.cc-length-counter')
+            .text(totalLength)
+            .toggleClass('text-danger', totalLength > {{.MaxCCLength}});
     }
 
-    var idGen = 0
-
-    $("#time-trigger-channel").change(handleTimeTriggerChannelChange);
-    function handleTimeTriggerChannelChange() {
-        const triggerType = $("#trigger-type-dropdown").val();
-        if (triggerType !== "interval_hours" && triggerType !== "interval_minutes") return;
-    
-        // if no channel is selected for an interval trigger, the command is
-        // effectively disabled as it has nowhere to run
-        const isChannelSelected = Boolean($("#time-trigger-channel").val());
-        
-        const existingWarning = $("#time-trigger-no-channel-warning");
-        if (existingWarning.length > 0 && isChannelSelected) {
-            // remove existing warning if a channel is selected
-            existingWarning.remove();
-        } else if (existingWarning.length === 0 && !isChannelSelected) {
-            addAlert("warning", "Selecting no channel for the command to run in effectively disables it, making it never run. If your command does not need to run in any specific channel, select a random one from the list instead.", "time-trigger-no-channel-warning");
-        }
+    function countCodePoints(str) {
+        return [...str].length;
     }
 
-    var requireNoRolesWarning = "Requiring no roles effectively disables your command, making it run for no one. If you want no role restrictions, set the mode to 'ignore roles' instead.";
-    var requireNoChannelsWarning = "Requiring no channels effectively disables your command, making it run for no one. If you want no channel restrictions, set the mode to 'ignore channels' instead.";
-
-    $("#require-role-mode").change(function() {
-        handleRestrictionChange($(this).prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
-    });
-    $("#ignore-role-mode").change(function() {
-        handleRestrictionChange(!$(this).prop("checked"), $("#command-roles"), "require-no-roles-warning", requireNoRolesWarning);
-    });
-    $("#command-roles").change(function() {
-        handleRestrictionChange($("#require-role-mode").prop("checked"), $(this), "require-no-roles-warning", requireNoRolesWarning);
-    });
-
-    $("#require-channel-mode").change(function() {
-        handleRestrictionChange($(this).prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
-    });
-    $("#ignore-channel-mode").change(function() {
-        handleRestrictionChange(!$(this).prop("checked"), $("#command-channels"), "require-no-channels-warning", requireNoChannelsWarning);
-    });
-    $("#command-channels").change(function() {
-        handleRestrictionChange($("#require-channel-mode").prop("checked"), $(this), "require-no-channels-warning", requireNoChannelsWarning); 
-    });
-
-    function handleRestrictionChange(modeIsRequire, selectMenu, warningID, warningText) {
-        // requiring no roles/channels results in the command not being able to
-        // run anywhere, this is typically a mistake
-        const doWarn = modeIsRequire && selectMenu.val().length === 0; 
-        
-        const existingWarning = $(`#${warningID}`);
-        if (existingWarning.length > 0 && !doWarn) {
-            // remove existing warning if there's no need for it anymore
-            existingWarning.remove();
-        } else if (existingWarning.length === 0 && doWarn) {
-            // warning does not exist, so add it
-            addAlert("warning", warningText, warningID);
-        }
+    function onCCChanged(textArea) {
+       updateCCLength();
     }
-    $(document).bind('keydown', (e) => {
-      let event = e.originalEvent;
-      if(event.altKey && event.shiftKey && event.code === 'KeyS'){
-        const saveCCbutton = document.querySelector("#save-custom-command");
-        if(saveCCbutton){
-         saveCCbutton.click();
-         return false;
-        }
-      } 
-    });
 </script>
 
+<link rel="stylesheet" href="/static/vendorr/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="/static/vendorr/codemirror/theme/ayu-mirage.css">
+<script src="/static/vendorr/codemirror/lib/codemirror.js"></script>
+<script src="/static/vendorr/codemirror/addon/display/placeholder.js"></script>
+<script src="/static/vendorr/codemirror/mode/go/go.js"></script>
+<script src="/static/js/yagFuncs.js"></script>
+<style>
+    .CodeMirror {
+        width: 100% !important;
+        max-width: 95% !important;
+        resize: vertical;
+    }
+</style>
+<script type="text/javascript">
+
+    function setupCodeMirrorEditor(textArea) {
+        var isCMEditor = localStorage.getItem('cm-editor')
+        if(isCMEditor === 'false') return
+        const codeMirror = CodeMirror.fromTextArea(textArea, {
+            lineNumbers: true,
+            mode: 'text/x-go',
+            theme: 'ayu-mirage',
+            lineWrapping: true,
+            placeholder: 'Command body here',
+            viewportMargin: Infinity,
+            electricChars: false,
+            extraKeys: {
+                'Ctrl-Space': 'autocomplete',
+                'Alt-F': 'findPersistent',
+            },
+        });
+
+        codeMirror.on('change', (cm) => {
+            cm.save();
+            onCCChanged(cm.getTextArea());
+        });
+    }
+
+    function removeCodeMirrorEditor(editor){
+        editor.CodeMirror.toTextArea();
+    }
+
+    var initialTextAreas = document.querySelectorAll('.cc-editor');
+    initialTextAreas.forEach((textArea) => setupCodeMirrorEditor(textArea));
+
+    $("#toggle-code-mirror").change( value => {
+        if(value.target.checked){
+            localStorage.setItem('cm-editor', 'true')
+            var textAreas = document.querySelectorAll('.cc-editor');
+            textAreas.forEach((textArea) => setupCodeMirrorEditor(textArea));
+        } else {
+            localStorage.setItem('cm-editor', 'false')
+            document.querySelectorAll('.CodeMirror').forEach((editor) => {
+                removeCodeMirrorEditor(editor)
+            });
+        }
+    })
+
+    $(document).off('click', '.btn-add').off('click', '.btn-remove');
+    // we need to reinitialize the codemirror instance for each new textarea, the script below is the old implementation coming from the spongebob.js file
+    $(document).on('click', '.btn-add', function (e) {
+		e.preventDefault();
+
+		var currentEntry = $(this).parent().parent(),
+			newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
+        newEntry.find('.CodeMirror').remove();
+		newEntry.find('input, textarea').val('');
+        setupCodeMirrorEditor(newEntry.find('textarea')[0]);
+
+		newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
+			.removeClass('btn-add').addClass('btn-remove')
+			.removeClass('btn-success').addClass('btn-danger')
+			.html('<i class="fas fa-minus"></i>');
+	}).on('click', '.btn-remove', function (e) {
+		$(this).parents('.entry:first').remove();
+
+		e.preventDefault();
+		return false;
+	});
+</script>
 
 {{template "cp_footer" .}}
 

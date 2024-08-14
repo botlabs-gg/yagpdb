@@ -20,16 +20,16 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.PermissionReadMessages | discordgo.PermissionSendMessages | discordgo.PermissionEmbedLinks | discordgo.PermissionAttachFiles
+const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.PermissionViewChannel | discordgo.PermissionSendMessages | discordgo.PermissionEmbedLinks | discordgo.PermissionAttachFiles
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 
-func createTicketsDisabledError(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guild))
+func createTicketsDisabledError(g *dcmd.GuildContextData) string {
+	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(g.GS.ID))
 }
 
 func (p *Plugin) AddCommands() {
@@ -223,7 +223,7 @@ func (p *Plugin) AddCommands() {
 			// create the logs, download the attachments
 			err := createLogs(parsed.GuildData.GS, conf, currentTicket.Ticket, isAdminsOnly)
 			if err != nil {
-				return nil, err
+				return "Cannot send transcript to ticket logs channel, refusing to close ticket.", err
 			}
 
 			TicketLog(conf, parsed.GuildData.GS.ID, parsed.Author, &discordgo.MessageEmbed{
@@ -441,7 +441,7 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 			// download attachments
 		OUTER:
 			for _, att := range msg.Attachments {
-				msg.Content += fmt.Sprintf("(attatchment: %s)", att.Filename)
+				msg.Content += fmt.Sprintf("(attachment: %s)", att.Filename)
 
 				totalAttachmentSize += att.Size
 				if totalAttachmentSize > 500000000 {

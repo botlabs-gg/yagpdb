@@ -172,7 +172,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			guildID = data.GuildData.GS.ID
 		}
 
-		if data.TriggerType == dcmd.TriggerTypeSlashCommands {
+		if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
 			// Acknowledge the interaction
 			response := discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
@@ -186,6 +186,23 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			}
 		}
 
+		// Check if the user can execute the command
+		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
+		if err != nil {
+			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+		}
+
+		parseErr := dcmd.ParseCmdArgs(data)
+		// Stop here if it's autocomplete; we don't need to block it
+		if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type == discordgo.InteractionApplicationCommandAutocomplete {
+			if parseErr != nil {
+				return nil, parseErr
+			}
+			choices, err := inner(data)
+			yc.PostCommandExecuted(settings, data, choices, err)
+			return nil, nil
+		}
+
 		// Lock the command for execution
 		if !BlockingAddRunningCommand(guildID, data.ChannelID, data.Author.ID, yc, time.Second*60) {
 			if atomic.LoadInt32(shuttingDown) == 1 {
@@ -196,12 +213,6 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		}
 
 		defer removeRunningCommand(guildID, data.ChannelID, data.Author.ID, yc)
-
-		// Check if the user can execute the command
-		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
-		if err != nil {
-			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
-		}
 
 		if resp != nil {
 
@@ -236,9 +247,8 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 
 		data = data.WithContext(context.WithValue(data.Context(), CtxKeyCmdSettings, settings))
 
-		err = dcmd.ParseCmdArgs(data)
-		if err != nil {
-			if dcmd.IsUserError(err) {
+		if parseErr != nil {
+			if dcmd.IsUserError(parseErr) {
 
 				args := helpFormatter.ArgDefs(data.Cmd, data)
 				switches := helpFormatter.Switches(data.Cmd.Command)
@@ -251,14 +261,14 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 					resp += "```\n" + switches + "\n```"
 				}
 
-				resp = resp + "\nInvalid arguments provided: " + err.Error()
+				resp = resp + "\nInvalid arguments provided: " + parseErr.Error()
 				yc.PostCommandExecuted(settings, data, &EphemeralOrGuild{
 					Content: resp,
 				}, nil)
 				return nil, nil
 			}
 
-			return nil, err
+			return nil, parseErr
 		}
 
 		innerResp, err := inner(data)

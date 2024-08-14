@@ -39,7 +39,7 @@ func (p *Plugin) InitWeb() {
 
 	// All handlers here require guild channels present
 	autmodMux.Use(web.RequireBotMemberMW)
-	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageServer, discordgo.PermissionModerateMembers))
+	autmodMux.Use(web.RequirePermMW(discordgo.PermissionManageRoles, discordgo.PermissionKickMembers, discordgo.PermissionBanMembers, discordgo.PermissionManageMessages, discordgo.PermissionManageGuild, discordgo.PermissionModerateMembers))
 
 	getHandler := web.RenderHandler(HandleAutomod, "cp_automod_legacy")
 

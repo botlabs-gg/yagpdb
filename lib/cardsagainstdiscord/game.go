@@ -792,7 +792,7 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 		}
 	}
 
-	voteOptions := []*discordgo.SelectMenuOption{}
+	voteOptions := []discordgo.SelectMenuOption{}
 	for i := 0; i < len(g.Responses); i++ {
 		selections := g.Responses[i].Selections
 		chosenOption := selections[0]
@@ -801,7 +801,7 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 				chosenOption += ", " + selections[j]
 			}
 		}
-		option := &discordgo.SelectMenuOption{
+		option := discordgo.SelectMenuOption{
 			Label: string(chosenOption),
 			Value: CardSelectionEmojis[i],
 		}
@@ -1092,7 +1092,7 @@ func (g *Game) HandleMessageCreate(ic *discordgo.InteractionCreate) {
 	player.FilingBlankCard = false
 }
 
-const zeroWidthSpace = "​"
+const zeroWidthSpace = "\u200b"
 
 var (
 	mentionReplacer = strings.NewReplacer("@here", "@"+zeroWidthSpace+"here", "@everyone", "@"+zeroWidthSpace+"everyone")
@@ -1374,11 +1374,11 @@ func (p *Player) PresentBoard(session *discordgo.Session, currentPrompt *PromptC
 		Description: currentPrompt.PlaceHolder(),
 	}
 
-	options := []*discordgo.SelectMenuOption{}
+	options := []discordgo.SelectMenuOption{}
 
 	for i, v := range p.Cards {
 		cardValue := string(v)
-		selectMenuOption := &discordgo.SelectMenuOption{
+		selectMenuOption := discordgo.SelectMenuOption{
 			Value: CardSelectionEmojis[i],
 		}
 		if len(cardValue) > 100 {

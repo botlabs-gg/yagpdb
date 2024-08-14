@@ -8,14 +8,14 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var Command = &commands.YAGCommand{
 	Cooldown:    5,
-	CmdCategory: commands.CategoryFun,
+	CmdCategory: commands.CategoryDebug,
 	Name:        "TopServers",
-	Description: "Responds with the top 20 servers I'm on",
+	Description: "Responds with the top 20 servers I'm on. *Bot admin only.",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Skip", Help: "Entries to skip", Type: dcmd.Int, Default: 0},
 	},

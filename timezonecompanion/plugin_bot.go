@@ -16,7 +16,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion/models"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -93,9 +93,9 @@ func (p *Plugin) AddCommands() {
 					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
 						return paginatedTimezones(zones)(nil, 1)
 					}
-					_, err := paginatedmessages.CreatePaginatedMessage(
+					resp := paginatedmessages.NewPaginatedResponse(
 						parsed.GuildData.GS.ID, parsed.ChannelID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
-					return nil, err
+					return resp, nil
 				}
 
 				matches := ""
@@ -109,7 +109,7 @@ func (p *Plugin) AddCommands() {
 				// Check whether the requested zone has an exact match in zones
 				found := false
 				for n, candidate := range zones {
-					if strings.ToLower(candidate) == strings.ToLower(parsed.Args[0].Str()) {
+					if strings.EqualFold(candidate, parsed.Args[0].Str()) {
 						found = true
 						// Select matching zone
 						zone = zones[n]
@@ -152,9 +152,9 @@ func (p *Plugin) AddCommands() {
 		Name:                "ToggleTimeConversion",
 		Aliases:             []string{"toggletconv", "ttc"},
 		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, toggle all channels by giving it `all`",
-		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageServer},
+		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageGuild},
 		Arguments: []*dcmd.ArgDef{
-			&dcmd.ArgDef{Name: "flags", Type: dcmd.String},
+			{Name: "flags", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			allStr := parsed.Args[0].Str()

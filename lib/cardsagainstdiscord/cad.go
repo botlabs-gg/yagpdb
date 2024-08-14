@@ -65,7 +65,6 @@ func (p *PromptCard) WithCards(cards interface{}) string {
 	}
 
 	s := fmt.Sprintf(p.Prompt, args...)
-	// s = EscaperReplacer.Replace(s)
 	return s
 }
 

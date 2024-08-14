@@ -359,7 +359,7 @@ func updateSlashCommandGuildPermissions(gs *dstate.GuildSet) (updated bool, err 
 
 func handleInteractionCreate(evt *eventsystem.EventData) {
 	interaction := evt.InteractionCreate()
-	if interaction.Type != discordgo.InteractionApplicationCommand {
+	if interaction.Type != discordgo.InteractionApplicationCommand && interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
 		return
 	}
 	if interaction.DataCommand == nil {
@@ -605,7 +605,7 @@ OUTER:
 	for _, r := range gs.Roles {
 		perms := int64(r.Permissions)
 		for _, rp := range requiredPerms {
-			if perms&rp == rp || perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator || perms&discordgo.PermissionManageServer == discordgo.PermissionManageServer {
+			if perms&rp == rp || perms&discordgo.PermissionAdministrator == discordgo.PermissionAdministrator || perms&discordgo.PermissionManageGuild == discordgo.PermissionManageGuild {
 				// this role can run the command
 				if !defaultEnabled {
 					result = append(result, r.ID)

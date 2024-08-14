@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS custom_command_groups (
 	whitelist_channels BIGINT[]
 );
 `, `
+ALTER TABLE custom_command_groups ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT false;
+`, `
 CREATE TABLE IF NOT EXISTS custom_commands (
 	local_id BIGINT NOT NULL,
 	guild_id BIGINT NOT NULL,
@@ -46,6 +48,8 @@ CREATE INDEX IF NOT EXISTS custom_commands_guild_idx ON custom_commands(guild_id
 CREATE INDEX IF NOT EXISTS custom_commands_next_run_idx ON custom_commands(next_run);
 `, ` 
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS context_channel BIGINT NOT NULL DEFAULT 0;
+`, ` 
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS redirect_errors_channel BIGINT NOT NULL DEFAULT 0;
 `, `
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS reaction_trigger_mode SMALLINT NOT NULL DEFAULT 0;
 `, `
@@ -60,6 +64,16 @@ ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS show_errors BOOLEAN NOT NUL
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT false;
 `, `
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS trigger_on_edit BOOLEAN NOT NULL DEFAULT false;
+`, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS public_id TEXT NOT NULL DEFAULT '';
+`, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS name TEXT;
+`, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS public BOOLEAN NOT NULL DEFAULT false;
+`, `
+CREATE INDEX IF NOT EXISTS custom_commands_public_id_idx ON custom_commands(public_id);
+`, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS import_count INT NOT NULL DEFAULT 0;
 `, `
 CREATE TABLE IF NOT EXISTS templates_user_database (
 	id BIGSERIAL PRIMARY KEY,
@@ -82,6 +96,4 @@ CREATE TABLE IF NOT EXISTS templates_user_database (
 CREATE INDEX IF NOT EXISTS templates_user_database_combined_idx ON templates_user_database (guild_id, user_id, key, value_num);
 `, `
 CREATE INDEX IF NOT EXISTS templates_user_database_expires_idx ON templates_user_database (expires_at);
-`, `
-ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS name TEXT;
 `}

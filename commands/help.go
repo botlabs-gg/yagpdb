@@ -97,14 +97,14 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 func createInteractiveHelp(userID int64, helpEmbeds []*discordgo.MessageEmbed) (interface{}, error) {
 	channel, err := common.BotSession.UserChannelCreate(userID)
 	if err != nil {
-		return "Something went wrong, maybe you have DMs disabled? I don't want to spam this channel so here's a external link to available commands: <https://docs.yagpdb.xyz/commands>", err
+		return "Something went wrong, maybe you have DMs disabled? I don't want to spam this channel so here's a external link to available commands: <https://help.yagpdb.xyz/docs/core/all-commands/>", err
 	}
 
 	// prepend a introductionairy first page
 	firstPage := &discordgo.MessageEmbed{
 		Title: "YAGPDB Help!",
 		Description: fmt.Sprintf(`YAGPDB is an open-source multipurpose discord bot that is configured through the web interface at %s.
-For more in depth help and information you should visit https://docs.yagpdb.xyz/ as this command only shows information about commands.)
+For more in depth help and information you should visit https://help.yagpdb.xyz/ as this command only shows information about commands.)
 		
 		
 **Use the emojis under to change pages**`, web.BaseURL()),
@@ -119,15 +119,8 @@ For more in depth help and information you should visit https://docs.yagpdb.xyz/
 	}
 
 	helpEmbeds = append([]*discordgo.MessageEmbed{firstPage}, helpEmbeds...)
-
-	_, err = paginatedmessages.CreatePaginatedMessage(0, channel.ID, 1, len(helpEmbeds), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+	return paginatedmessages.NewPaginatedResponse(0, channel.ID, 1, len(helpEmbeds), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 		embed := helpEmbeds[page-1]
 		return embed, nil
-	})
-	if err != nil {
-		return "Something went wrong, make sure you don't have the bot blocked or your DMs closed!", err
-
-	}
-
-	return nil, nil
+	}), nil
 }

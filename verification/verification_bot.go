@@ -25,11 +25,11 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/verification/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionReadMessages
+const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionViewChannel
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
 

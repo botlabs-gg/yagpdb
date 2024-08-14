@@ -93,6 +93,9 @@ var (
 		"sdict":              StringKeyDictionary,
 		"structToSdict":      StructToSdict,
 		"cembed":             CreateEmbed,
+		"cbutton":            CreateButton,
+		"cmenu":              CreateSelectMenu,
+		"cmodal":             CreateModal,
 		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
 		"complexMessageEdit": CreateMessageEdit,
@@ -110,6 +113,9 @@ var (
 
 		"shuffle": shuffle,
 		"verb":    common.RandomVerb,
+		"hash":    tmplSha256,
+		"decodeBase64": tmplDecodeBase64,
+		"encodeBase64": tmplEncodeBase64,
 
 		// time functions
 		"currentTime":     tmplCurrentTime,
@@ -140,6 +146,7 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 
 func init() {
 	RegisterSetupFunc(baseContextFuncs)
+	RegisterSetupFunc(interactionContextFuncs)
 
 	msgpack.RegisterExt(1, (*SDict)(nil))
 	msgpack.RegisterExt(2, (*Dict)(nil))
@@ -193,8 +200,9 @@ type ContextFrame struct {
 	MentionHere     bool
 	MentionRoles    []int64
 
-	DelResponse     bool
-	PublishResponse bool
+	DelResponse       bool
+	PublishResponse   bool
+	EphemeralResponse bool
 
 	DelResponseDelay         int
 	EmbedsToSend             []*discordgo.MessageEmbed
@@ -203,6 +211,13 @@ type ContextFrame struct {
 	isNestedTemplate bool
 	parsedTemplate   *template.Template
 	SendResponseInDM bool
+
+	Interaction *CustomCommandInteraction
+}
+
+type CustomCommandInteraction struct {
+	*discordgo.Interaction
+	RespondedTo bool
 }
 
 func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -273,40 +288,18 @@ func (c *Context) setupBaseData() {
 	c.Data["TimeSecond"] = time.Second
 	c.Data["UnixEpoch"] = time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	// permissions
-	c.Data["Permissions"] = map[string]int64{
-		"ReadMessages":       discordgo.PermissionReadMessages,
-		"SendMessages":       discordgo.PermissionSendMessages,
-		"SendTTSMessages":    discordgo.PermissionSendTTSMessages,
-		"ManageMessages":     discordgo.PermissionManageMessages,
-		"EmbedLinks":         discordgo.PermissionEmbedLinks,
-		"AttachFiles":        discordgo.PermissionAttachFiles,
-		"ReadMessageHistory": discordgo.PermissionReadMessageHistory,
-		"MentionEveryone":    discordgo.PermissionMentionEveryone,
-		"UseExternalEmojis":  discordgo.PermissionUseExternalEmojis,
-
-		"VoiceConnect":       discordgo.PermissionVoiceConnect,
-		"VoiceSpeak":         discordgo.PermissionVoiceSpeak,
-		"VoiceMuteMembers":   discordgo.PermissionVoiceMuteMembers,
-		"VoiceDeafenMembers": discordgo.PermissionVoiceDeafenMembers,
-		"VoiceMoveMembers":   discordgo.PermissionVoiceMoveMembers,
-		"VoiceUseVAD":        discordgo.PermissionVoiceUseVAD,
-
-		"ChangeNickname":  discordgo.PermissionChangeNickname,
-		"ManageNicknames": discordgo.PermissionManageNicknames,
-		"ManageRoles":     discordgo.PermissionManageRoles,
-		"ManageWebhooks":  discordgo.PermissionManageWebhooks,
-		"ManageEmojis":    discordgo.PermissionManageEmojis,
-
-		"CreateInstantInvite": discordgo.PermissionCreateInstantInvite,
-		"KickMembers":         discordgo.PermissionKickMembers,
-		"BanMembers":          discordgo.PermissionBanMembers,
-		"Administrator":       discordgo.PermissionAdministrator,
-		"ManageChannels":      discordgo.PermissionManageChannels,
-		"ManageServer":        discordgo.PermissionManageServer,
-		"AddReactions":        discordgo.PermissionAddReactions,
-		"ViewAuditLogs":       discordgo.PermissionViewAuditLogs,
+	permNameToBit := make(map[string]int64)
+	for _, p := range discordgo.AllPermissions {
+		permNameToBit[discordgo.PermissionName(p)] = p
 	}
+
+	// for backward compatibility with previous versions
+	permNameToBit["ReadMessages"] = discordgo.PermissionViewChannel
+	permNameToBit["ManageEmojis"] = discordgo.PermissionManageEmojisAndStickers
+	permNameToBit["ManageServer"] = discordgo.PermissionManageGuild
+	permNameToBit["ViewAuditLogs"] = discordgo.PermissionViewAuditLog
+
+	c.Data["Permissions"] = permNameToBit
 }
 
 func (c *Context) Parse(source string) (*template.Template, error) {
@@ -460,10 +453,28 @@ func (c *Context) MessageSend(content string) *discordgo.MessageSend {
 }
 
 // SendResponse sends the response and handles reactions and the like
-func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
+func (c *Context) SendResponse(content string) (m *discordgo.Message, err error) {
 	channelID := int64(0)
 
-	if !c.CurrentFrame.SendResponseInDM {
+	sendType := sendMessageGuildChannel
+	if c.CurrentFrame.Interaction != nil {
+		if c.CurrentFrame.Interaction.RespondedTo {
+			sendType = sendMessageInteractionFollowup
+		} else {
+			sendType = sendMessageInteractionResponse
+		}
+	} else if c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate()) {
+		sendType = sendMessageDM
+		if c.CurrentFrame.CS != nil && c.CurrentFrame.CS.Type == discordgo.ChannelTypeDM {
+			channelID = c.CurrentFrame.CS.ID
+		} else {
+			privChannel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
+			if err != nil {
+				return nil, err
+			}
+			channelID = privChannel.ID
+		}
+	} else {
 		if c.CurrentFrame.CS == nil {
 			return nil, nil
 		}
@@ -474,19 +485,8 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		}
 
 		channelID = c.CurrentFrame.CS.ID
-	} else {
-		if c.CurrentFrame.CS != nil && c.CurrentFrame.CS.Type == discordgo.ChannelTypeDM {
-			channelID = c.CurrentFrame.CS.ID
-		} else {
-			privChannel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
-			if err != nil {
-				return nil, err
-			}
-			channelID = privChannel.ID
-		}
 	}
 
-	isDM := c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate())
 	msgSend := c.MessageSend("")
 	var embeds []*discordgo.MessageEmbed
 	embeds = append(embeds, c.CurrentFrame.EmbedsToSend...)
@@ -496,7 +496,7 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		// no point in sending the response if it gets deleted immedietely
 		return nil, nil
 	}
-	if isDM {
+	if sendType == sendMessageDM {
 		msgSend.Components = []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
@@ -510,10 +510,40 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 			},
 		}
 	}
-	m, err := common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
+	if c.CurrentFrame.EphemeralResponse {
+		msgSend.Flags |= discordgo.MessageFlagsEphemeral
+	}
+	var getErr error
+	switch sendType {
+	case sendMessageInteractionResponse:
+		err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content:         msgSend.Content,
+				Embeds:          msgSend.Embeds,
+				AllowedMentions: &msgSend.AllowedMentions,
+				Flags:           msgSend.Flags,
+			},
+		})
+		if err == nil {
+			c.CurrentFrame.Interaction.RespondedTo = true
+			m, getErr = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, c.CurrentFrame.Interaction.Token)
+		}
+	case sendMessageInteractionFollowup:
+		m, err = common.BotSession.CreateFollowupMessage(common.BotApplication.ID, c.CurrentFrame.Interaction.Token, &discordgo.WebhookParams{
+			Content:         msgSend.Content,
+			Embeds:          msgSend.Embeds,
+			AllowedMentions: &msgSend.AllowedMentions,
+			Flags:           int64(msgSend.Flags),
+		})
+	default:
+		m, err = common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
+	}
 	if err != nil {
 		logger.WithError(err).Error("Failed sending message")
-	} else {
+	} else if getErr != nil {
+		logger.WithError(getErr).Error("Failed getting interaction response")
+	} else if !c.CurrentFrame.EphemeralResponse {
 		if c.CurrentFrame.DelResponse {
 			MaybeScheduledDeleteMessage(c.GS.ID, channelID, m.ID, c.CurrentFrame.DelResponseDelay)
 		}
@@ -531,8 +561,17 @@ func (c *Context) SendResponse(content string) (*discordgo.Message, error) {
 		}
 	}
 
-	return m, nil
+	return
 }
+
+type sendMessageType uint
+
+const (
+	sendMessageGuildChannel        sendMessageType = 0
+	sendMessageDM                  sendMessageType = 1
+	sendMessageInteractionResponse sendMessageType = 2
+	sendMessageInteractionFollowup sendMessageType = 3
+)
 
 // IncreaseCheckCallCounter Returns true if key is above the limit
 func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
@@ -613,28 +652,41 @@ func baseContextFuncs(c *Context) {
 	// Mentions
 	c.addContextFunc("mentionEveryone", c.tmplMentionEveryone)
 	c.addContextFunc("mentionHere", c.tmplMentionHere)
+	c.addContextFunc("mentionRole", c.tmplMentionRole)
+	c.addContextFunc("mentionRoleName", c.tmplMentionRoleName)
 	c.addContextFunc("mentionRoleID", c.tmplMentionRoleID)
 	c.addContextFunc("mentionRoleName", c.tmplMentionRoleName)
 
 	// Role functions
+	c.addContextFunc("getRole", c.tmplGetRole)
+	c.addContextFunc("getRoleID", c.tmplGetRoleID)
+	c.addContextFunc("getRoleName", c.tmplGetRoleName)
+
+	c.addContextFunc("hasRole", c.tmplHasRole)
 	c.addContextFunc("hasRoleID", c.tmplHasRoleID)
 	c.addContextFunc("hasRoleName", c.tmplHasRoleName)
 
-	c.addContextFunc("addRoleID", c.tmplAddRoleID)
-	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
+	c.addContextFunc("targetHasRole", c.tmplTargetHasRole)
+	c.addContextFunc("targetHasRoleID", c.tmplTargetHasRoleID)
+	c.addContextFunc("targetHasRoleName", c.tmplTargetHasRoleName)
 
-	c.addContextFunc("setRoles", c.tmplSetRoles)
-	c.addContextFunc("addRoleName", c.tmplAddRoleName)
-	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
-
+	c.addContextFunc("giveRole", c.tmplGiveRole)
 	c.addContextFunc("giveRoleID", c.tmplGiveRoleID)
 	c.addContextFunc("giveRoleName", c.tmplGiveRoleName)
 
+	c.addContextFunc("addRole", c.tmplAddRole)
+	c.addContextFunc("addRoleID", c.tmplAddRoleID)
+	c.addContextFunc("addRoleName", c.tmplAddRoleName)
+
+	c.addContextFunc("takeRole", c.tmplTakeRole)
 	c.addContextFunc("takeRoleID", c.tmplTakeRoleID)
 	c.addContextFunc("takeRoleName", c.tmplTakeRoleName)
 
-	c.addContextFunc("targetHasRoleID", c.tmplTargetHasRoleID)
-	c.addContextFunc("targetHasRoleName", c.tmplTargetHasRoleName)
+	c.addContextFunc("removeRole", c.tmplRemoveRole)
+	c.addContextFunc("removeRoleID", c.tmplRemoveRoleID)
+	c.addContextFunc("removeRoleName", c.tmplRemoveRoleName)
+
+	c.addContextFunc("setRoles", c.tmplSetRoles)
 
 	// permission funcs
 	c.addContextFunc("hasPermissions", c.tmplHasPermissions)
@@ -652,6 +704,10 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getChannel", c.tmplGetChannel)
 	c.addContextFunc("getChannelPins", c.tmplGetChannelPins(false))
 	c.addContextFunc("getChannelOrThread", c.tmplGetChannelOrThread)
+	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
+	c.addContextFunc("addReactions", c.tmplAddReactions)
+	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
+	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
@@ -659,14 +715,19 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getThread", c.tmplGetThread)
 
 	// thread functions
+	c.addContextFunc("addThreadMember", c.tmplThreadMemberAdd)
+	c.addContextFunc("closeThread", c.tmplCloseThread)
 	c.addContextFunc("createThread", c.tmplCreateThread)
 	c.addContextFunc("deleteThread", c.tmplDeleteThread)
-	c.addContextFunc("addThreadMember", c.tmplThreadMemberAdd)
+	c.addContextFunc("editThread", c.tmplEditThread)
+	c.addContextFunc("openThread", c.tmplOpenThread)
 	c.addContextFunc("removeThreadMember", c.tmplThreadMemberRemove)
 
 	// forum functions
 	c.addContextFunc("createForumPost", c.tmplCreateForumPost)
 	c.addContextFunc("deleteForumPost", c.tmplDeleteThread)
+	c.addContextFunc("pinForumPost", c.tmplPinForumPost(false))
+	c.addContextFunc("unpinForumPost", c.tmplPinForumPost(true))
 
 	c.addContextFunc("currentUserAgeHuman", c.tmplCurrentUserAgeHuman)
 	c.addContextFunc("currentUserAgeMinutes", c.tmplCurrentUserAgeMinutes)

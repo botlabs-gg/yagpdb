@@ -22,7 +22,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/gojay"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
+	"github.com/volatiletech/null/v8"
 )
 
 // A Session represents a connection to the Discord API.
@@ -155,9 +155,6 @@ type Invite struct {
 	ApproximateMemberCount   int `json:"approximate_member_count"`
 }
 
-// ChannelType is the type of a Channel
-type ChannelType int
-
 // ForumSortOrderType represents sort order of a forum channel.
 type ForumSortOrderType int
 
@@ -180,6 +177,20 @@ const (
 	ForumLayoutGalleryView ForumLayout = 2
 )
 
+// the thread will stop showing in the channel list after auto_archive_duration minutes of inactivity, can be set to:
+// 60, 1440, 4320, 10080
+type AutoArchiveDuration int
+
+const (
+	AutoArchiveDurationOneHour   AutoArchiveDuration = 60
+	AutoArchiveDurationOneDay    AutoArchiveDuration = 1440
+	AutoArchiveDurationThreeDays AutoArchiveDuration = 4320
+	AutoArchiveDurationOneWeek   AutoArchiveDuration = 10080
+)
+
+// ChannelType is the type of a Channel
+type ChannelType int
+
 // Block contains known ChannelType values
 const (
 	ChannelTypeGuildText          ChannelType = 0  // a text channel within a server
@@ -197,11 +208,7 @@ const (
 )
 
 func (t ChannelType) IsThread() bool {
-	return t == ChannelTypeGuildPrivateThread || t == ChannelTypeGuildPublicThread
-}
-
-func (t ChannelType) IsForum() bool {
-	return t == ChannelTypeGuildForum
+	return t == ChannelTypeGuildPrivateThread || t == ChannelTypeGuildPublicThread || t == ChannelTypeGuildNewsThread
 }
 
 // A Channel holds all data related to an individual Discord channel.
@@ -264,6 +271,9 @@ type Channel struct {
 	// Thread specific fields
 	ThreadMetadata *ThreadMetadata `json:"thread_metadata"`
 
+	// ChannelFlags combined as a bitfield.
+	Flags ChannelFlags `json:"flags"`
+
 	// The set of tags that can be used in a forum channel.
 	AvailableTags []ForumTag `json:"available_tags"`
 
@@ -299,7 +309,21 @@ func (c *Channel) Mention() string {
 	return fmt.Sprintf("<#%d>", c.ID)
 }
 
-// A ChannelEdit holds Channel Feild data for a channel edit.
+// ChannelFlags is the flags of "channel" (see ChannelFlags* consts)
+// https://discord.com/developers/docs/resources/channel#message-object-message-flags
+type ChannelFlags int
+
+// Valid ChannelFlags values
+const (
+	// ChannelFlagsPinned this thread is pinned to the top of its parent GUILD_FORUM or GUILD_MEDIA channel.
+	ChannelFlagsPinned ChannelFlags = 1 << 1
+	// ChannelFlagsRequireTag whether a tag is required to be specified when creating a thread in a GUILD_FORUM or a GUILD_MEDIA channel. Tags are specified in the applied_tags field.
+	ChannelFlagsRequireTag ChannelFlags = 1 << 4
+	// ChannelFlagsHideMediaDownloadOptions when set hides the embedded media download options. Available only for media channels.
+	ChannelFlagsHideMediaDownloadOptions ChannelFlags = 1 << 15
+)
+
+// A ChannelEdit holds Channel Field data for a channel edit.
 type ChannelEdit struct {
 	Name                 string                 `json:"name,omitempty"`
 	Topic                string                 `json:"topic,omitempty"`
@@ -309,7 +333,17 @@ type ChannelEdit struct {
 	UserLimit            int                    `json:"user_limit,omitempty"`
 	PermissionOverwrites []*PermissionOverwrite `json:"permission_overwrites,omitempty"`
 	ParentID             *null.String           `json:"parent_id,omitempty"`
+	Flags                *ChannelFlags          `json:"flags,omitempty"`
 	RateLimitPerUser     *int                   `json:"rate_limit_per_user,omitempty"`
+
+	// Threads only
+	Archived            *bool               `json:"archived,omitempty"`
+	AutoArchiveDuration AutoArchiveDuration `json:"auto_archive_duration,omitempty"`
+	Locked              *bool               `json:"locked,omitempty"`
+	Invitable           *bool               `json:"invitable,omitempty"`
+
+	// NOTE: forum threads only - these are IDs
+	AppliedTags IDSlice `json:"applied_tags,string,omitempty"`
 }
 
 type RoleCreate struct {
@@ -337,11 +371,11 @@ const (
 
 // ThreadStart stores all parameters you can use with MessageThreadStartComplex or ThreadStartComplex
 type ThreadStart struct {
-	Name                string      `json:"name"`
-	AutoArchiveDuration int         `json:"auto_archive_duration,omitempty"`
-	Type                ChannelType `json:"type,omitempty"`
-	Invitable           bool        `json:"invitable"`
-	RateLimitPerUser    int         `json:"rate_limit_per_user,omitempty"`
+	Name                string              `json:"name"`
+	AutoArchiveDuration AutoArchiveDuration `json:"auto_archive_duration,omitempty"`
+	Type                ChannelType         `json:"type,omitempty"`
+	Invitable           bool                `json:"invitable"`
+	RateLimitPerUser    int                 `json:"rate_limit_per_user,omitempty"`
 
 	// NOTE: forum threads only - these are IDs
 	AppliedTags IDSlice `json:"applied_tags,string,omitempty"`
@@ -833,6 +867,22 @@ type MessageActivity struct {
 	PartyID string `json:"party_id"`
 }
 
+// MemberFlags represent flags of a guild member.
+// https://discord.com/developers/docs/resources/guild#guild-member-object-guild-member-flags
+type MemberFlags int
+
+// Block containing known MemberFlags values.
+const (
+	// MemberFlagDidRejoin indicates whether the Member has left and rejoined the guild.
+	MemberFlagDidRejoin MemberFlags = 1 << 0
+	// MemberFlagCompletedOnboarding indicates whether the Member has completed onboarding.
+	MemberFlagCompletedOnboarding MemberFlags = 1 << 1
+	// MemberFlagBypassesVerification indicates whether the Member is exempt from guild verification requirements.
+	MemberFlagBypassesVerification MemberFlags = 1 << 2
+	// MemberFlagStartedOnboarding indicates whether the Member has started onboarding.
+	MemberFlagStartedOnboarding MemberFlags = 1 << 3
+)
+
 // A Member stores user information for Guild members. A guild
 // member represents a certain user's presence in a guild.
 type Member struct {
@@ -859,6 +909,13 @@ type Member struct {
 
 	// A list of IDs of the roles which are possessed by the member.
 	Roles IDSlice `json:"roles,string"`
+
+	// When the user used their Nitro boost on the server
+	PremiumSince *time.Time `json:"premium_since"`
+
+	// The flags of this member. This is a combination of bit masks; the presence of a certain
+	// flag can be checked by performing a bitwise AND between this int and the flag.
+	Flags MemberFlags `json:"flags"`
 
 	// Whether the user has not yet passed the guild's Membership Screening requirements
 	Pending bool `json:"pending"`
@@ -1484,6 +1541,7 @@ type applicationCommandInteractionDataOptionTemporary struct {
 	Type    ApplicationCommandOptionType               `json:"type"`    // value of ApplicationCommandOptionType
 	Value   json.RawMessage                            `json:"value"`   // the value of the pair
 	Options []*ApplicationCommandInteractionDataOption `json:"options"` // present if this option is a group or subcommand
+	Focused bool                                       `json:"focused"` // present if this option is currently focused (in autocomplete)
 }
 
 func (a *ApplicationCommandInteractionDataOption) UnmarshalJSON(b []byte) error {
@@ -1497,6 +1555,7 @@ func (a *ApplicationCommandInteractionDataOption) UnmarshalJSON(b []byte) error 
 		Name:    temp.Name,
 		Type:    temp.Type,
 		Options: temp.Options,
+		Focused: temp.Focused,
 	}
 
 	switch temp.Type {
@@ -1535,11 +1594,11 @@ type InteractionApplicationCommandCallbackData struct {
 }
 
 type ThreadMetadata struct {
-	Archived            bool   `json:"archived"`              // whether the thread is archived
-	AutoArchiveDuration int    `json:"auto_archive_duration"` // duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080
-	ArchiveTimestamp    string `json:"archive_timestamp"`     // timestamp when the thread's archive status was last changed, used for calculating recent activity
-	Locked              bool   `json:"locked"`                // whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it
-	Invitable           bool   `json:"invitable"`             // Whether non-moderators can add other non-moderators to a thread; only available on private threads
+	Archived            bool                `json:"archived"`              // whether the thread is archived
+	AutoArchiveDuration AutoArchiveDuration `json:"auto_archive_duration"` // duration in minutes to automatically archive the thread after recent activity, can be set to: 60, 1440, 4320, 10080
+	ArchiveTimestamp    string              `json:"archive_timestamp"`     // timestamp when the thread's archive status was last changed, used for calculating recent activity
+	Locked              bool                `json:"locked"`                // whether the thread is locked; when a thread is locked, only users with MANAGE_THREADS can unarchive it
+	Invitable           bool                `json:"invitable"`             // Whether non-moderators can add other non-moderators to a thread; only available on private threads
 }
 
 // A thread member is used to indicate whether a user has joined a thread or not.

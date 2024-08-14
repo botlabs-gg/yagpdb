@@ -19,7 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/reputation/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -35,8 +35,8 @@ func (p *Plugin) BotInit() {
 
 var thanksRegex = regexp.MustCompile(`(?i)(\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
 
-func createRepDisabledError(guild *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The reputation system is disabled for this server.** Enable it at: <%s/reputation>.", web.ManageServerURL(guild))
+func createRepDisabledError(g *dcmd.GuildContextData) string {
+	return fmt.Sprintf("**The reputation system is disabled for this server.** Enable it at: <%s/reputation>.", web.ManageServerURL(g.GS.ID))
 }
 
 func handleMessageCreate(evt *eventsystem.EventData) {
@@ -63,7 +63,17 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !isThanksDetectionAllowedInChannel(conf, msg.ChannelID) {
+	cState := evt.CSOrThread()
+	if cState == nil {
+		return // No channel state, ignore
+	}
+
+	channelID := msg.ChannelID
+	// Check if thanks detection is allowed in the parent channel
+	if cState.Type.IsThread() {
+		channelID = cState.ParentID
+	}
+	if !isThanksDetectionAllowedInChannel(conf, channelID) {
 		return
 	}
 
@@ -433,11 +443,9 @@ var cmds = []*commands.YAGCommand{
 				return topRepPager(parsed.GuildData.GS.ID, nil, page)
 			}
 
-			_, err := paginatedmessages.CreatePaginatedMessage(parsed.GuildData.GS.ID, parsed.ChannelID, page, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			return paginatedmessages.NewPaginatedResponse(parsed.GuildData.GS.ID, parsed.ChannelID, page, 0, func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 				return topRepPager(parsed.GuildData.GS.ID, p, page)
-			})
-
-			return nil, err
+			}), nil
 		},
 	},
 }
