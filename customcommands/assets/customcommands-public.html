@@ -19,7 +19,7 @@
             <li class="text-danger" hidden id="trigger-warning"></li>
           </ul>
           {{$dot := .}}
-          <form id="main-form" class="form-horizontal">
+          <form id="main-form" class="form-horizontal no-unsaved-popup">
             <h2 class="card-title">
               {{index .CCTriggerTypes .CC.TriggerType}}{{if and (ne .CC.TriggerType 5) (ne .CC.TriggerType 6)}}:
               <span class="cc-text-trigger-span">{{.CC.TextTrigger}}</span>{{else if ne .CC.TriggerType 6}}:
