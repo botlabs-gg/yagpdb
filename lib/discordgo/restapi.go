@@ -847,6 +847,18 @@ func (s *Session) GuildMemberAdd(accessToken string, guildID, userID int64, nick
 	return err
 }
 
+func (s *Session) GuildMemberVoiceState(guildID, userID int64) (voiceState *VoiceState, err error) {
+	vs, err := s.RequestWithBucketID("GET", EndpointGuildMemberVoiceState(guildID, userID), nil, nil, EndpointGuildMemberVoiceState(guildID, 0))
+	if err != nil {
+		return nil, err
+	}
+	err = unmarshal(vs, &voiceState)
+	if err != nil {
+		return nil, err
+	}
+	return voiceState, nil
+}
+
 // GuildMemberDelete removes the given user from the given guild.
 // guildID   : The ID of a Guild.
 // userID    : The ID of a User

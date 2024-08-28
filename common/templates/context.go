@@ -709,6 +709,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
 	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
 	c.addContextFunc("getMember", c.tmplGetMember)
+	c.addContextFunc("getMemberVoiceState", c.tmplGetMemberVoiceState)
 	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
 	c.addContextFunc("getRole", c.tmplGetRole)

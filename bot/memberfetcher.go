@@ -1,8 +1,11 @@
 package bot
 
 import (
+	"fmt"
+
 	"github.com/botlabs-gg/yagpdb/v2/bot/shardmemberfetcher"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 )
 
@@ -27,6 +30,23 @@ func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 	}
 
 	return dstate.MemberStateFromMember(member), nil
+}
+
+func GetMemberVoiceState(guildID, userID int64) (*discordgo.VoiceState, error) {
+	gs := State.GetGuild(guildID)
+	if gs == nil {
+		return nil, fmt.Errorf("guild not in state")
+	}
+	vs := gs.GetVoiceState(userID)
+	if vs != nil {
+		return vs, nil
+	}
+
+	vs, err := common.BotSession.GuildMemberVoiceState(guildID, userID)
+	if err != nil {
+		return nil, err
+	}
+	return vs, nil
 }
 
 // GetMembers is the same as GetMember but with multiple members
