@@ -334,7 +334,7 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 			banReason = string(r) + "..."
 		}
 
-		err := moderation.BanUser(nil, guildID, nil, nil, common.BotUser, banReason, &ms.User)
+		err := moderation.BanUser(nil, guildID, nil, nil, common.BotUser, banReason, &ms.User, false)
 		if err != nil {
 			return scheduledevents2.CheckDiscordErrRetry(err), err
 		}
@@ -674,7 +674,7 @@ func (p *Plugin) banAlts(ban *discordgo.GuildBanAdd, alts []*discordgo.User) {
 				logger.WithField("guild", ban.GuildID).WithField("user", v.ID).WithField("dupe-of", ban.User.ID).Info("banning alt account")
 				reason := fmt.Sprintf("Alt of banned user (%s (%d))", ban.User.String(), ban.User.ID)
 				markRecentlyBannedByVerification(ban.GuildID, v.ID)
-				moderation.BanUser(nil, ban.GuildID, nil, nil, common.BotUser, reason, v)
+				moderation.BanUser(nil, ban.GuildID, nil, nil, common.BotUser, reason, v, false)
 				continue
 			}
 		}
