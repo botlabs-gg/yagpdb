@@ -81,6 +81,7 @@ var (
 	EndpointGuildMemberAvatar         = func(gID, uID int64, aID string) string { return "" }
 	EndpointGuildMemberAvatarAnimated = func(gID, uID int64, aID string) string { return "" }
 	EndpointGuildMemberMe             = func(gID int64) string { return "" }
+	EndpointGuildMemberVoiceState     = func(gID, uID int64) string { return "" }
 	EndpointGuildMemberRole           = func(gID, uID, rID int64) string {
 		return ""
 	}
@@ -270,6 +271,7 @@ func CreateEndpoints(base string) {
 		return EndpointCDNGuilds + StrID(gID) + "/users/" + StrID(uID) + "/avatars/" + aID + ".gif"
 	}
 	EndpointGuildMemberMe = func(gID int64) string { return EndpointGuilds + StrID(gID) + "/members/@me" }
+	EndpointGuildMemberVoiceState = func(gID, uID int64) string { return EndpointGuilds + StrID(gID) + "/voice-states/" + StrID(uID) }
 	EndpointGuildMemberRole = func(gID, uID, rID int64) string {
 		return EndpointGuilds + StrID(gID) + "/members/" + StrID(uID) + "/roles/" + StrID(rID)
 	}
