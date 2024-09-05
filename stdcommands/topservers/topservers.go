@@ -46,7 +46,7 @@ var Command = &commands.YAGCommand{
 			shard = data.Switch("shard").Int()
 		}
 		if totalShards > 0 && shard >= 0 && shard < totalShards {
-			query = append(query, qm.Where("id >> 22 % ? = ?", totalShards, shard))
+			query = append(query, qm.Where("(id >> 22) % ? = ?", totalShards, shard))
 		}
 		query = append(query, qm.Where("left_at is null"), qm.OrderBy("member_count desc"), qm.Limit(10), qm.Offset(skip))
 		results, err := models.JoinedGuilds(query...).AllG(data.Context())
