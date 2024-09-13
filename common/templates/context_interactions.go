@@ -395,42 +395,45 @@ func CreateBasicButton(label, customID interface{}, buttonStyle ...interface{}) 
 	return CreateButton(button)
 }
 
-func CreateBasicSelectMenu(customID interface{}, options reflect.Value) (*discordgo.SelectMenu, error) {
+func CreateBasicSelectMenu(customID interface{}, optionInput interface{}) (*discordgo.SelectMenu, error) {
 	menu := make(map[string]interface{})
 
 	menu["custom_id"] = ToString(customID)
 
 	var menuOptions []discordgo.SelectMenuOption
 
+	options, _ := indirect(reflect.ValueOf(optionInput))
+	switch options.Kind() {
+	case reflect.Slice, reflect.Array:
+		// ok
+	default:
+		return nil, errors.New("options was not a slice")
+	}
+
 	if options.Len() < 1 {
 		return nil, errors.New("select menu must have options")
 	}
 
 	const maxOptions = 25 // Discord limitation
-	v, _ := indirect(reflect.ValueOf(options.Index(0).Interface()))
-	if v.Kind() == reflect.Slice {
-		// slice within a slice. user is defining their own action row
-		// layout; treat each slice as an action row
-		for i := 0; i < options.Len() && i < maxOptions; i++ {
-			option := discordgo.SelectMenuOption{}
-			optionText := ToString(v.Index(i).Interface())
-			optionText, emoji, ok, err := extractComponentEmojiFromString(optionText)
-			if err != nil {
-				return nil, err
-			} else if ok {
-				option.Emoji = emoji
-			}
-			option.Label = optionText
-			option.Value = optionText
-			menuOptions = append(menuOptions, option)
+	for i := 0; i < options.Len() && i < maxOptions; i++ {
+		option := discordgo.SelectMenuOption{}
+		optionText := ToString(options.Index(i).Interface())
+		optionText, emoji, ok, err := extractComponentEmojiFromString(optionText)
+		if err != nil {
+			return nil, err
+		} else if ok {
+			option.Emoji = emoji
 		}
+		option.Label = optionText
+		option.Value = optionText
+		menuOptions = append(menuOptions, option)
 	}
 
 	menu["options"] = menuOptions
 	return CreateSelectMenu(menu)
 }
 
-func CreateBasicModal(title, customID interface{}, fields reflect.Value) (*discordgo.InteractionResponse, error) {
+func CreateBasicModal(title, customID interface{}, feildInput interface{}) (*discordgo.InteractionResponse, error) {
 	modal := make(map[string]interface{})
 
 	modal["title"] = ToString(title)
@@ -438,22 +441,25 @@ func CreateBasicModal(title, customID interface{}, fields reflect.Value) (*disco
 
 	var modalFields []discordgo.TextInput
 
+	fields, _ := indirect(reflect.ValueOf(feildInput))
+	switch fields.Kind() {
+	case reflect.Slice, reflect.Array:
+		// ok
+	default:
+		return nil, errors.New("fields was not a slice")
+	}
+
 	if fields.Len() < 1 {
 		return nil, errors.New("modal must have fields")
 	}
 
-	const maxFields = 25 // Discord limitation
-	v, _ := indirect(reflect.ValueOf(fields.Index(0).Interface()))
-	if v.Kind() == reflect.Slice {
-		// slice within a slice. user is defining their own action row
-		// layout; treat each slice as an action row
-		for i := 0; i < fields.Len() && i < maxFields; i++ {
-			field := discordgo.TextInput{}
-			fieldText := ToString(v.Index(i).Interface())
-			field.Label = fieldText
-			field.Required = true
-			modalFields = append(modalFields, field)
-		}
+	const maxFields = 5 // Discord limitation
+	for i := 0; i < fields.Len() && i < maxFields; i++ {
+		field := discordgo.TextInput{}
+		fieldText := ToString(fields.Index(i).Interface())
+		field.Label = fieldText
+		field.Required = true
+		modalFields = append(modalFields, field)
 	}
 
 	modal["fields"] = modalFields
