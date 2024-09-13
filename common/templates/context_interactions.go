@@ -395,10 +395,10 @@ func CreateBasicButton(label, customID interface{}, buttonStyle ...interface{}) 
 	return CreateButton(button)
 }
 
-func CreateBasicSelectMenu(customID string, options reflect.Value) (*discordgo.SelectMenu, error) {
+func CreateBasicSelectMenu(customID interface{}, options reflect.Value) (*discordgo.SelectMenu, error) {
 	menu := make(map[string]interface{})
 
-	menu["custom_id"] = customID
+	menu["custom_id"] = ToString(customID)
 
 	var menuOptions []discordgo.SelectMenuOption
 
@@ -430,11 +430,11 @@ func CreateBasicSelectMenu(customID string, options reflect.Value) (*discordgo.S
 	return CreateSelectMenu(menu)
 }
 
-func CreateBasicModal(title, customID string, fields reflect.Value) (*discordgo.SelectMenu, error) {
+func CreateBasicModal(title, customID interface{}, fields reflect.Value) (*discordgo.InteractionResponse, error) {
 	modal := make(map[string]interface{})
 
-	modal["title"] = title
-	modal["custom_id"] = customID
+	modal["title"] = ToString(title)
+	modal["custom_id"] = ToString(customID)
 
 	var modalFields []discordgo.TextInput
 
@@ -457,7 +457,7 @@ func CreateBasicModal(title, customID string, fields reflect.Value) (*discordgo.
 	}
 
 	modal["fields"] = modalFields
-	return CreateSelectMenu(modal)
+	return CreateModal(modal)
 }
 
 func distributeComponents(components reflect.Value) (returnComponents []discordgo.MessageComponent, err error) {
