@@ -324,9 +324,9 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 }
 
 // extracts the prefixed emoji in the string into a component emoji, returns
-// the string without the emoji, the marshalled emoji, whether one was found,
-// and any error
-func extractComponentEmojiFromString(label string) (string, string, bool, error) {
+// the string without the emoji, the emoji, whether one was found, and any
+// error
+func extractComponentEmojiFromString(label string) (string, *discordgo.ComponentEmoji, bool, error) {
 	emojiRegex := regexp.MustCompile(`\A((<a?:[\w~]{2,32}:\d{17,19}>)|[\x{1f1e6}-\x{1f1ff}]{2}|\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?(\x{200D}\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?)*|[#\d*]\x{FE0F}?\x{20E3})\s*`)
 	if emoji := strings.TrimSpace(emojiRegex.FindString(label)); emoji != "" {
 		label = emojiRegex.ReplaceAllLiteralString(label, "")
@@ -346,13 +346,9 @@ func extractComponentEmojiFromString(label string) (string, string, bool, error)
 			emoji = strings.ReplaceAll(emoji, ":", "")
 			compEmoji.Name = emoji
 		}
-		emojiMarshalled, err := json.Marshal(compEmoji)
-		if err != nil {
-			return "", "", false, err
-		}
-		return label, string(emojiMarshalled), true, nil
+		return label, compEmoji, true, nil
 	}
-	return label, "", false, nil
+	return label, nil, false, nil
 }
 
 func CreateBasicButton(label, customID interface{}, buttonStyle ...interface{}) (*discordgo.Button, error) {
@@ -364,7 +360,7 @@ func CreateBasicButton(label, customID interface{}, buttonStyle ...interface{}) 
 
 	var err error
 	var ok bool
-	var emoji string
+	var emoji *discordgo.ComponentEmoji
 	button["label"], emoji, ok, err = extractComponentEmojiFromString(bLabel)
 	if err != nil {
 		return nil, err
@@ -404,7 +400,7 @@ func CreateBasicSelectMenu(customID string, options reflect.Value) (*discordgo.S
 
 	menu["custom_id"] = customID
 
-	var menuOptions []map[string]interface{}
+	var menuOptions []discordgo.SelectMenuOption
 
 	if options.Len() < 1 {
 		return nil, errors.New("select menu must have options")
@@ -416,16 +412,16 @@ func CreateBasicSelectMenu(customID string, options reflect.Value) (*discordgo.S
 		// slice within a slice. user is defining their own action row
 		// layout; treat each slice as an action row
 		for i := 0; i < options.Len() && i < maxOptions; i++ {
-			option := make(map[string]interface{})
+			option := discordgo.SelectMenuOption{}
 			optionText := ToString(v.Index(i).Interface())
 			optionText, emoji, ok, err := extractComponentEmojiFromString(optionText)
 			if err != nil {
 				return nil, err
 			} else if ok {
-				option["emoji"] = emoji
+				option.Emoji = emoji
 			}
-			option["label"] = optionText
-			option["value"] = optionText
+			option.Label = optionText
+			option.Value = optionText
 			menuOptions = append(menuOptions, option)
 		}
 	}
@@ -440,7 +436,7 @@ func CreateBasicModal(title, customID string, fields reflect.Value) (*discordgo.
 	modal["title"] = title
 	modal["custom_id"] = customID
 
-	var modalFields []map[string]interface{}
+	var modalFields []discordgo.TextInput
 
 	if fields.Len() < 1 {
 		return nil, errors.New("modal must have fields")
@@ -452,10 +448,10 @@ func CreateBasicModal(title, customID string, fields reflect.Value) (*discordgo.
 		// slice within a slice. user is defining their own action row
 		// layout; treat each slice as an action row
 		for i := 0; i < fields.Len() && i < maxFields; i++ {
-			field := make(map[string]interface{})
+			field := discordgo.TextInput{}
 			fieldText := ToString(v.Index(i).Interface())
-			field["label"] = fieldText
-			field["required"] = true
+			field.Label = fieldText
+			field.Required = true
 			modalFields = append(modalFields, field)
 		}
 	}
