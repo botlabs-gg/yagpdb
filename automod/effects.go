@@ -865,7 +865,7 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 		return err
 	}
 	if settingsCast.Duration > 0 && message != nil {
-		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, logChannel, message.ID, settingsCast.Duration)
+		templates.MaybeScheduledDeleteMessage(ctxData.GS.ID, logChannel, message.ID, settingsCast.Duration, "")
 	}
 	return nil
 }

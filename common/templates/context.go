@@ -512,10 +512,13 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 			},
 		}
 	}
+
 	if c.CurrentFrame.EphemeralResponse {
 		msgSend.Flags |= discordgo.MessageFlagsEphemeral
 	}
+
 	var getErr error
+
 	switch sendType {
 	case sendMessageInteractionResponse:
 		err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
@@ -541,25 +544,31 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 	default:
 		m, err = common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
 	}
+
 	if err != nil {
 		logger.WithError(err).Error("Failed sending message")
 	} else if getErr != nil {
 		logger.WithError(getErr).Error("Failed getting interaction response")
-	} else if !c.CurrentFrame.EphemeralResponse {
+	} else {
 		if c.CurrentFrame.DelResponse {
-			MaybeScheduledDeleteMessage(c.GS.ID, channelID, m.ID, c.CurrentFrame.DelResponseDelay)
+			var maybeToken string
+			if c.CurrentFrame.Interaction != nil {
+				maybeToken = c.CurrentFrame.Interaction.Token
+			}
+			MaybeScheduledDeleteMessage(c.GS.ID, channelID, m.ID, c.CurrentFrame.DelResponseDelay, maybeToken)
 		}
+		if !c.CurrentFrame.EphemeralResponse {
+			if len(c.CurrentFrame.AddResponseReactionNames) > 0 {
+				go func(frame *ContextFrame) {
+					for _, v := range frame.AddResponseReactionNames {
+						common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
+					}
+				}(c.CurrentFrame)
+			}
 
-		if len(c.CurrentFrame.AddResponseReactionNames) > 0 {
-			go func(frame *ContextFrame) {
-				for _, v := range frame.AddResponseReactionNames {
-					common.BotSession.MessageReactionAdd(m.ChannelID, m.ID, v)
-				}
-			}(c.CurrentFrame)
-		}
-
-		if c.CurrentFrame.PublishResponse && c.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
-			common.BotSession.ChannelMessageCrosspost(m.ChannelID, m.ID)
+			if c.CurrentFrame.PublishResponse && c.CurrentFrame.CS.Type == discordgo.ChannelTypeGuildNews {
+				common.BotSession.ChannelMessageCrosspost(m.ChannelID, m.ID)
+			}
 		}
 	}
 
@@ -779,18 +788,29 @@ func LimitWriter(w io.Writer, n int64) io.Writer {
 	return &limitedWriter{W: w, N: n}
 }
 
-func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySeconds int) {
-	if delaySeconds > 10 {
+func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySeconds int, token string) {
+	if delaySeconds > 10 && token == "" {
 		err := scheduledevents2.ScheduleDeleteMessages(guildID, channelID, time.Now().Add(time.Second*time.Duration(delaySeconds)), messageID)
 		if err != nil {
 			logger.WithError(err).Error("failed scheduling message deletion")
 		}
 	} else {
+		if delaySeconds > 10 {
+			delaySeconds = 10
+		}
 		go func() {
 			if delaySeconds > 0 {
 				time.Sleep(time.Duration(delaySeconds) * time.Second)
 			}
 
+			if token != "" {
+				if messageID != 0 {
+					common.BotSession.DeleteFollowupMessage(common.BotApplication.ID, token, messageID)
+				} else {
+					common.BotSession.DeleteInteractionResponse(common.BotApplication.ID, token)
+				}
+				return
+			}
 			bot.MessageDeleteQueue.DeleteMessages(guildID, channelID, messageID)
 		}()
 	}
