@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -320,6 +321,146 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 		Type: discordgo.InteractionResponseModal,
 		Data: modal,
 	}, nil
+}
+
+// extracts the prefixed emoji in the string into a component emoji, returns
+// the string without the emoji, the marshalled emoji, whether one was found,
+// and any error
+func extractComponentEmojiFromString(label string) (string, string, bool, error) {
+	emojiRegex := regexp.MustCompile(`\A((<a?:[\w~]{2,32}:\d{17,19}>)|[\x{1f1e6}-\x{1f1ff}]{2}|\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?(\x{200D}\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?)*|[#\d*]\x{FE0F}?\x{20E3})\s*`)
+	if emoji := strings.TrimSpace(emojiRegex.FindString(label)); emoji != "" {
+		label = emojiRegex.ReplaceAllLiteralString(label, "")
+		emojiParts := strings.Split(emoji, ":")
+
+		var emojiID int64
+
+		if len(emojiParts) > 2 {
+			numberRegex := regexp.MustCompile(`\d+`)
+			emojiID = ToInt64(numberRegex.FindString(emojiParts[len(emojiParts)-1]))
+		}
+
+		compEmoji := &discordgo.ComponentEmoji{}
+		if emojiID != 0 {
+			compEmoji.ID = emojiID
+		} else {
+			emoji = strings.ReplaceAll(emoji, ":", "")
+			compEmoji.Name = emoji
+		}
+		emojiMarshalled, err := json.Marshal(compEmoji)
+		if err != nil {
+			return "", "", false, err
+		}
+		return label, string(emojiMarshalled), true, nil
+	}
+	return label, "", false, nil
+}
+
+func CreateBasicButton(label, customID interface{}, buttonStyle ...interface{}) (*discordgo.Button, error) {
+	button := make(map[string]interface{})
+
+	bLabel := ToString(label)
+	button["label"] = bLabel
+	button["custom_id"] = ToString(customID)
+
+	var err error
+	var ok bool
+	var emoji string
+	button["label"], emoji, ok, err = extractComponentEmojiFromString(bLabel)
+	if err != nil {
+		return nil, err
+	} else if ok {
+		button["emoji"] = emoji
+	}
+
+	if len(buttonStyle) > 0 {
+		buttonTypeIndexed := buttonStyle[0]
+		switch t := buttonTypeIndexed.(type) {
+		case string:
+			if strings.ToLower(t) == "disabled" {
+				button["disabled"] = true
+			} else if strings.ToLower(t) == "link" {
+				button["url"] = button["custom_id"]
+				button["custom_id"] = ""
+			} else {
+				button["style"] = t
+			}
+		case int:
+			button["style"] = strconv.Itoa(t)
+		case discordgo.ButtonStyle:
+			button["style"] = strconv.Itoa(int(t))
+		case *discordgo.ButtonStyle:
+			button["style"] = strconv.Itoa(int(*t))
+		default:
+			return nil, errors.New("button style must be a string or int value")
+		}
+	}
+
+	return CreateButton(button)
+}
+
+func CreateBasicSelectMenu(customID string, options reflect.Value) (*discordgo.SelectMenu, error) {
+	menu := make(map[string]interface{})
+
+	menu["custom_id"] = customID
+
+	var menuOptions []map[string]interface{}
+
+	if options.Len() < 1 {
+		return nil, errors.New("select menu must have options")
+	}
+
+	const maxOptions = 25 // Discord limitation
+	v, _ := indirect(reflect.ValueOf(options.Index(0).Interface()))
+	if v.Kind() == reflect.Slice {
+		// slice within a slice. user is defining their own action row
+		// layout; treat each slice as an action row
+		for i := 0; i < options.Len() && i < maxOptions; i++ {
+			option := make(map[string]interface{})
+			optionText := ToString(v.Index(i).Interface())
+			optionText, emoji, ok, err := extractComponentEmojiFromString(optionText)
+			if err != nil {
+				return nil, err
+			} else if ok {
+				option["emoji"] = emoji
+			}
+			option["label"] = optionText
+			option["value"] = optionText
+			menuOptions = append(menuOptions, option)
+		}
+	}
+
+	menu["options"] = menuOptions
+	return CreateSelectMenu(menu)
+}
+
+func CreateBasicModal(title, customID string, fields reflect.Value) (*discordgo.SelectMenu, error) {
+	modal := make(map[string]interface{})
+
+	modal["title"] = title
+	modal["custom_id"] = customID
+
+	var modalFields []map[string]interface{}
+
+	if fields.Len() < 1 {
+		return nil, errors.New("modal must have fields")
+	}
+
+	const maxFields = 25 // Discord limitation
+	v, _ := indirect(reflect.ValueOf(fields.Index(0).Interface()))
+	if v.Kind() == reflect.Slice {
+		// slice within a slice. user is defining their own action row
+		// layout; treat each slice as an action row
+		for i := 0; i < fields.Len() && i < maxFields; i++ {
+			field := make(map[string]interface{})
+			fieldText := ToString(v.Index(i).Interface())
+			field["label"] = fieldText
+			field["required"] = true
+			modalFields = append(modalFields, field)
+		}
+	}
+
+	modal["fields"] = modalFields
+	return CreateSelectMenu(modal)
 }
 
 func distributeComponents(components reflect.Value) (returnComponents []discordgo.MessageComponent, err error) {
