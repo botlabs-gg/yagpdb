@@ -13,6 +13,7 @@ import (
 )
 
 func interactionContextFuncs(c *Context) {
+	c.addContextFunc("deleteResponse", c.tmplDeleteInteractionResponse)
 	c.addContextFunc("editResponse", c.tmplEditInteractionResponse(true))
 	c.addContextFunc("editResponseNoEscape", c.tmplEditInteractionResponse(false))
 	c.addContextFunc("ephemeralResponse", c.tmplEphemeralResponse)
@@ -463,6 +464,32 @@ func validateActionRowsCustomIDs(rows *[]discordgo.MessageComponent) error {
 	}
 	*rows = newComponents
 	return nil
+}
+
+func (c *Context) tmplDeleteInteractionResponse() func(interactionToken, msgID interface{}, delaySeconds ...interface{}) (interface{}, error) {
+	return func(interactionToken, msgID interface{}, delaySeconds ...interface{}) (interface{}, error) {
+		if c.IncreaseCheckGenericAPICall() {
+			return "", ErrTooManyAPICalls
+		}
+
+		_, token := c.tokenArg(interactionToken)
+		if token == "" {
+			return "", errors.New("invalid interaction token")
+		}
+
+		dur := 10
+		if len(delaySeconds) > 0 {
+			dur = int(ToInt64(delaySeconds[0]))
+		}
+
+		// MaybeScheduledDeleteMessage limits delete delays for interaction
+		// responses/followups to 10 seconds, so no need to do it here too
+
+		// guild/channel IDs irrelevant when deleting responses or followups
+		MaybeScheduledDeleteMessage(0, 0, ToInt64(msgID), dur, token)
+
+		return "", nil
+	}
 }
 
 func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(interactionToken, msgID, msg interface{}) (interface{}, error) {
