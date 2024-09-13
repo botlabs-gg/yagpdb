@@ -242,6 +242,11 @@ func CreateSelectMenu(values ...interface{}) (*discordgo.SelectMenu, error) {
 			}
 			checked = append(checked, o.Value)
 		}
+		for _, opt := range menu.Options {
+			if opt.Label == "" {
+				return nil, errors.New("each option must have a label")
+			}
+		}
 	}
 	return &menu, err
 }
@@ -418,12 +423,15 @@ func CreateBasicSelectMenu(customID, optionInput interface{}) (*discordgo.Select
 	for i := 0; i < options.Len() && i < maxOptions; i++ {
 		option := make(map[string]interface{})
 		optionText := ToString(options.Index(i).Interface())
-		optionText, emoji, ok, err := extractComponentEmojiFromString(optionText)
+		newOptionText, emoji, ok, err := extractComponentEmojiFromString(optionText)
 		if err != nil {
 			return nil, err
-		} else if ok {
+		} else if ok && newOptionText != "" {
+			// only move the text to the emoji if there will be text remaining after
 			option["emoji"] = emoji
+			optionText = newOptionText
 		}
+
 		option["label"] = optionText
 		option["value"] = optionText
 		menuOptions = append(menuOptions, option)
