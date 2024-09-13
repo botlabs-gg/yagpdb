@@ -395,12 +395,12 @@ func CreateBasicButton(label, customID interface{}, buttonStyle ...interface{}) 
 	return CreateButton(button)
 }
 
-func CreateBasicSelectMenu(customID interface{}, optionInput interface{}) (*discordgo.SelectMenu, error) {
+func CreateBasicSelectMenu(customID, optionInput interface{}) (*discordgo.SelectMenu, error) {
 	menu := make(map[string]interface{})
 
 	menu["custom_id"] = ToString(customID)
 
-	var menuOptions []discordgo.SelectMenuOption
+	var menuOptions []map[string]interface{}
 
 	options, _ := indirect(reflect.ValueOf(optionInput))
 	switch options.Kind() {
@@ -416,16 +416,16 @@ func CreateBasicSelectMenu(customID interface{}, optionInput interface{}) (*disc
 
 	const maxOptions = 25 // Discord limitation
 	for i := 0; i < options.Len() && i < maxOptions; i++ {
-		option := discordgo.SelectMenuOption{}
+		option := make(map[string]interface{})
 		optionText := ToString(options.Index(i).Interface())
 		optionText, emoji, ok, err := extractComponentEmojiFromString(optionText)
 		if err != nil {
 			return nil, err
 		} else if ok {
-			option.Emoji = emoji
+			option["emoji"] = emoji
 		}
-		option.Label = optionText
-		option.Value = optionText
+		option["label"] = optionText
+		option["value"] = optionText
 		menuOptions = append(menuOptions, option)
 	}
 
@@ -433,13 +433,13 @@ func CreateBasicSelectMenu(customID interface{}, optionInput interface{}) (*disc
 	return CreateSelectMenu(menu)
 }
 
-func CreateBasicModal(title, customID interface{}, feildInput interface{}) (*discordgo.InteractionResponse, error) {
+func CreateBasicModal(title, customID, feildInput interface{}) (*discordgo.InteractionResponse, error) {
 	modal := make(map[string]interface{})
 
 	modal["title"] = ToString(title)
 	modal["custom_id"] = ToString(customID)
 
-	var modalFields []discordgo.TextInput
+	var modalFields []map[string]interface{}
 
 	fields, _ := indirect(reflect.ValueOf(feildInput))
 	switch fields.Kind() {
@@ -455,10 +455,10 @@ func CreateBasicModal(title, customID interface{}, feildInput interface{}) (*dis
 
 	const maxFields = 5 // Discord limitation
 	for i := 0; i < fields.Len() && i < maxFields; i++ {
-		field := discordgo.TextInput{}
+		field := make(map[string]interface{})
 		fieldText := ToString(fields.Index(i).Interface())
-		field.Label = fieldText
-		field.Required = true
+		field["label"] = fieldText
+		field["required"] = true
 		modalFields = append(modalFields, field)
 	}
 
