@@ -13,7 +13,7 @@ import (
 )
 
 func interactionContextFuncs(c *Context) {
-	c.addContextFunc("deleteResponse", c.tmplDeleteInteractionResponse)
+	c.addContextFunc("deleteInteractionResponse", c.tmplDeleteInteractionResponse)
 	c.addContextFunc("editResponse", c.tmplEditInteractionResponse(true))
 	c.addContextFunc("editResponseNoEscape", c.tmplEditInteractionResponse(false))
 	c.addContextFunc("ephemeralResponse", c.tmplEphemeralResponse)
