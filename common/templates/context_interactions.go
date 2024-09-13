@@ -378,10 +378,11 @@ func CreateBasicButton(label, customID interface{}, buttonStyle ...interface{}) 
 		case string:
 			if strings.ToLower(t) == "disabled" {
 				button["disabled"] = true
-			} else if strings.ToLower(t) == "link" {
-				button["url"] = button["custom_id"]
-				button["custom_id"] = ""
 			} else {
+				if strings.ToLower(t) == "link" {
+					button["url"] = button["custom_id"]
+					button["custom_id"] = ""
+				}
 				button["style"] = t
 			}
 		case int:
