@@ -327,7 +327,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 // the string without the emoji, the emoji, whether one was found, and any
 // error
 func extractComponentEmojiFromString(label string) (string, *discordgo.ComponentEmoji, bool, error) {
-	emojiRegex := regexp.MustCompile(`\A((<a?:[\w~]{2,32}:\d*>)|[\x{1f1e6}-\x{1f1ff}]{2}|\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?(\x{200D}\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?)*|[#\d*]\x{FE0F}?\x{20E3})\s*`)
+	emojiRegex := regexp.MustCompile(`\A((<a?:[\w~]{2,32}:\d{17,19}>)|[\x{1f1e6}-\x{1f1ff}]{2}|\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?(\x{200D}\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?)*|[#\d*]\x{FE0F}?\x{20E3})\s*`)
 	if emoji := strings.TrimSpace(emojiRegex.FindString(label)); emoji != "" {
 		label = emojiRegex.ReplaceAllLiteralString(label, "")
 		emojiParts := strings.Split(emoji, ":")
