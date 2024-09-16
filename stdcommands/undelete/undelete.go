@@ -2,11 +2,9 @@ package undelete
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
@@ -69,18 +67,10 @@ var Command = &commands.YAGCommand{
 				continue
 			}
 
-			precision := common.DurationPrecisionHours
-			if time.Since(msg.ParsedCreatedAt) < time.Hour {
-				precision = common.DurationPrecisionMinutes
-				if time.Since(msg.ParsedCreatedAt) < time.Minute {
-					precision = common.DurationPrecisionSeconds
-				}
-			}
+			parsedTime := fmt.Sprintf("<t:%s:f>", fmt.Sprint(msg.ParsedCreatedAt.UTC().Unix()))
+			relativeTime := fmt.Sprintf("<t:%s:R>", fmt.Sprint(msg.ParsedCreatedAt.UTC().Unix()))
 
-			// Match found!
-			timeSince := common.HumanizeDuration(precision, time.Since(msg.ParsedCreatedAt))
-
-			resp += fmt.Sprintf("`%s ago (%s)` **%s** (ID %d): %s\n\n", timeSince, msg.ParsedCreatedAt.UTC().Format(time.ANSIC), msg.Author.String(), msg.Author.ID, msg.ContentWithMentionsReplaced())
+			resp += fmt.Sprintf("%s (%s) **%s** (ID %d): %s\n\n", parsedTime, relativeTime, msg.Author.String(), msg.Author.ID, msg.ContentWithMentionsReplaced())
 			numFound++
 		}
 
