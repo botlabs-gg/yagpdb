@@ -72,7 +72,7 @@ docker-compose -f yagpdb/yagpdb_docker/docker-compose.dev.yml up
 
 #### Hosting with an external Nginx Proxy Manager
 
-Visit [Documentation for NGM Hosting](ngm_guide-md)
+Visit [Documentation for NGM Hosting](ngm_guide.md)
 
 ### Hosting Standalone
 
