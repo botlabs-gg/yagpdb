@@ -804,7 +804,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 
 	evt.GS = bot.State.GetGuild(interaction.GuildID)
 	if evt.GS == nil {
-		logrus.WithField("guild_id", interaction.GuildID).Errorf("Couldn't get Guild from state for interaction create")
+		logrus.WithField("guild_id", interaction.GuildID).Error("Couldn't get Guild from state for interaction create")
 		return
 	}
 
