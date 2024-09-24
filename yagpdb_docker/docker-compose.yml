@@ -1,6 +1,4 @@
-version: '3'
-
-volumes:
+#volumes:
   db:
   redis:
   cert_cache:
@@ -15,8 +13,11 @@ services:
     #  - teyker/yagpdb (https://hub.docker.com/r/teyker/yagpdb)
     #
     # Note that we do not take responsibility for anything that happens as a result of using
-    # the image above.
-    image: PUT_YOUR_OWN_IMAGE_HERE
+    # the image above. uncomment the below line in case your want to put your own image.
+    #image: PUT_YOUR_OWN_IMAGE_HERE
+    build:
+      context: ../
+      dockerfile: yagpdb_docker/Dockerfile
     restart: unless-stopped
     command:
       # - "/app/yagpdb"

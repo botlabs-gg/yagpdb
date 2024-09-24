@@ -980,7 +980,7 @@ func TestJSEscaping(t *testing.T) {
 		{`'foo`, `\'foo`},
 		{`Go "jump" \`, `Go \"jump\" \\`},
 		{`Yukihiro says "今日は世界"`, `Yukihiro says \"今日は世界\"`},
-		{"unprintable \uFDFF", `unprintable \uFDFF`},
+		{"unprintable ﷿", `unprintable ﷿`},
 		{`<html>`, `\x3Chtml\x3E`},
 	}
 	for _, tc := range testCases {

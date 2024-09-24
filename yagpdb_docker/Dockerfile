@@ -1,4 +1,4 @@
-FROM golang:1.23.1 as builder
+FROM golang:1.23.1 AS builder
 
 WORKDIR /appbuild/yagpdb
 COPY go.mod go.sum ./
