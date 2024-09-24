@@ -1,5 +1,3 @@
-version: '3'
-
 volumes:
   db:
   redis:
@@ -14,12 +12,10 @@ networks:
 
 services:
   app:
-    # We don't provide an official image, but there is a community-made image you can try:
-    #  - teyker/yagpdb (https://hub.docker.com/r/teyker/yagpdb)
-    #
-    # Note that we do not take responsibility for anything that happens as a result of using
-    # the image above.
-    image: PUT_YOUR_OWN_IMAGE_HERE
+    #image: PUT_YOUR_OWN_IMAGE_HERE
+    build:
+      context: ../
+      dockerfile: yagpdb_docker/Dockerfile
     restart: unless-stopped
     command:
       # - "/app/yagpdb"
