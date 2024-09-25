@@ -116,6 +116,13 @@ func EmitEvent(data *EventData, evt Event) {
 		}
 	}
 
+	if messageUpdate, ok := data.EvtInterface.(*discordgo.MessageUpdate); ok {
+		if messageUpdate.EditedTimestamp == "" {
+			logrus.Debugf("Skipped event as message update wasn't really an edit: %v, %#v", data.Type, messageUpdate)
+			return
+		}
+	}
+
 	if len(h[2]) > 0 {
 		go func() {
 			defer func() {
