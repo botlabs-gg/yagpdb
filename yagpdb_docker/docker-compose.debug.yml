@@ -34,7 +34,7 @@ services:
       - "seccomp:unconfined"
 
   redis:
-    image: redis
+    image: docker.io/redis
     restart: unless-stopped
     networks:
       - default
@@ -42,7 +42,7 @@ services:
       - redis:/data
 
   db:
-    image: postgres:11
+    image: docker.io/postgres:11
     restart: unless-stopped
     volumes:
       - db:/var/lib/postgresql/data
