@@ -170,14 +170,14 @@ type LinkEntry struct {
 }
 
 const (
-	GuildMaxFeeds        = 10
-	GuildMaxFeedsPremium = 250
+	GuildMaxFeeds               = 300
+	GuildMaxEnabledFeeds        = 10
+	GuildMaxEnabledFeedsPremium = 250
 )
 
-func MaxFeedsForContext(ctx context.Context) int {
+func MaxFeedsEnabledForContext(ctx context.Context) int {
 	if premium.ContextPremium(ctx) {
-		return GuildMaxFeedsPremium
+		return GuildMaxEnabledFeedsPremium
 	}
-
-	return GuildMaxFeeds
+	return GuildMaxEnabledFeeds
 }

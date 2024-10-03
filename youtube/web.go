@@ -101,6 +101,7 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 
 	subs, err := models.YoutubeChannelSubscriptions(
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(activeGuild.ID)),
+		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),
 		qm.OrderBy("id DESC"),
 	).AllG(ctx)
 	if err != nil && err != sql.ErrNoRows {
@@ -147,11 +148,21 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 
-	count, _ := models.YoutubeChannelSubscriptions(
+	totalFeeds, _ := models.YoutubeChannelSubscriptions(
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(activeGuild.ID)),
 	).CountG(ctx)
-	if int(count) >= MaxFeedsForContext(ctx) {
-		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
+
+	if int(totalFeeds) >= GuildMaxFeeds {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max allowed %d youtube feeds allowed", GuildMaxFeeds))), nil
+	}
+
+	totalEnabled, _ := models.YoutubeChannelSubscriptions(
+		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(activeGuild.ID)),
+		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),
+	).CountG(ctx)
+
+	if int(totalEnabled) >= MaxFeedsEnabledForContext(ctx) {
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max Enabled %d youtube feeds allowed (%d for premium servers)", GuildMaxEnabledFeeds, GuildMaxEnabledFeedsPremium))), nil
 	}
 
 	data := ctx.Value(common.ContextKeyParsedForm).(*YoutubeFeedForm)
@@ -242,13 +253,13 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (templateDat
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(activeGuild.ID)),
 		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),
 	).CountG(ctx)
-	if int(numEnabled) >= MaxFeedsForContext(ctx) {
+	if int(numEnabled) >= MaxFeedsEnabledForContext(ctx) {
 		curSub, err := models.FindYoutubeChannelSubscriptionG(ctx, updatedSub.ID)
 		if err != nil {
 			logger.WithError(err).Errorf("Failed getting feed %d", updatedSub.ID)
 		}
 		if !curSub.Enabled && updatedSub.Enabled {
-			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d enabled youtube feeds allowed (%d for premium servers)", GuildMaxFeeds, GuildMaxFeedsPremium))), nil
+			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d enabled youtube feeds allowed (%d for premium servers)", GuildMaxEnabledFeeds, GuildMaxEnabledFeedsPremium))), nil
 		}
 	}
 
@@ -365,6 +376,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	numFeeds, err := models.YoutubeChannelSubscriptions(
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(activeGuild.ID)),
+		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),
 	).CountG(r.Context())
 	if numFeeds > 0 {
 		templateData["WidgetEnabled"] = true
