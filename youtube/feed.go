@@ -302,12 +302,6 @@ var (
 	ErrIDNotFound = errors.New("ID not found")
 )
 
-func SubsForChannel(channel string) (models.YoutubeChannelSubscriptionSlice, error) {
-	return models.YoutubeChannelSubscriptions(
-		models.YoutubeChannelSubscriptionWhere.YoutubeChannelID.EQ(channel),
-	).AllG(context.Background())
-}
-
 var (
 	ErrNoChannel              = errors.New("no channel with that id found")
 	ErrMaxCustomMessageLength = errors.New("max length of custom message can be 500 chars")

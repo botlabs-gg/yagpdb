@@ -25,7 +25,7 @@ func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(guildID)),
 		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),
 
-		qm.Offset(GuildMaxFeeds),
+		qm.Offset(GuildMaxEnabledFeeds),
 		qm.OrderBy("id DESC"),
 	).UpdateAllG(context.Background(), models.M{"enabled": false})
 
