@@ -12,7 +12,7 @@ networks:
 
 services:
   proxy:
-    image: jwilder/nginx-proxy
+    image: docker.io/jwilder/nginx-proxy
     restart: unless-stopped
     ports:
       - "80:80"
@@ -31,7 +31,7 @@ services:
       - proxy-tier
 
   letsencrypt-companion:
-    image: jrcs/letsencrypt-nginx-proxy-companion
+    image: docker.io/jrcs/letsencrypt-nginx-proxy-companion
     restart: unless-stopped
     volumes:
       - proxy_certs:/etc/nginx/certs
