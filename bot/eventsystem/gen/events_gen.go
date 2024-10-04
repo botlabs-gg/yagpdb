@@ -81,17 +81,17 @@ type Event struct {
 }
 
 var NonStandardEvents = []Event{
-	Event{"NewGuild", false},
-	Event{"All", false},
-	Event{"AllPre", false},
-	Event{"AllPost", false},
-	Event{"MemberFetched", false},
+	{"NewGuild", false},
+	{"All", false},
+	{"AllPre", false},
+	{"AllPost", false},
+	{"MemberFetched", false},
 	// Sent once a shard either resumes or readies for the first time, signifying that its now ready
-	Event{"YagShardReady", false},
+	{"YagShardReady", false},
 	// Sent one or more shards is either migrated to this node or added freshly
-	Event{"YagShardsAdded", false},
+	{"YagShardsAdded", false},
 	// Sent once a shard has been either migrated away or removeotherwise
-	Event{"YagShardRemoved", false},
+	{"YagShardRemoved", false},
 }
 
 var (
@@ -139,7 +139,7 @@ func main() {
 	}
 
 	names := []string{}
-	for name, _ := range parsedFile.Scope.Objects {
+	for name := range parsedFile.Scope.Objects {
 		names = append(names, name)
 	}
 	sort.Strings(names)

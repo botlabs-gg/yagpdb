@@ -211,6 +211,8 @@ type Interaction struct {
 	Version int    `json:"version"`
 
 	DataCommand *ApplicationCommandInteractionData
+
+	Entitlements []*Entitlement `json:"entitlements"`
 }
 
 type interaction Interaction

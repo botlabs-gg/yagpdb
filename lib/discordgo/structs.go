@@ -1703,3 +1703,182 @@ type AutoModerationAction struct {
 	Type     AutoModerationActionType      `json:"type"`
 	Metadata *AutoModerationActionMetadata `json:"metadata,omitempty"`
 }
+
+type SKUType int
+
+// Valid SKUType values
+const (
+	SKUTypeDurable           SKUType = 2
+	SKUTypeConsumable        SKUType = 3
+	SKUTypeSubscription      SKUType = 5
+	SKUTypeSubscriptionGroup SKUType = 6
+)
+
+type SKUFlags int
+
+const (
+	// SKUFlagAvailable indicates that the SKU is available for purchase.
+	SKUFlagAvailable SKUFlags = 1 << 2
+	// SKUFlagGuildSubscription indicates that the SKU is a guild subscription.
+	SKUFlagGuildSubscription SKUFlags = 1 << 7
+	// SKUFlagUserSubscription indicates that the SKU is a user subscription.
+	SKUFlagUserSubscription SKUFlags = 1 << 8
+)
+
+// SKU represents a purchasable item in the Discord store.
+type SKU struct {
+	// The ID of the SKU
+	ID int64 `json:"id,string"`
+
+	// The Type of the SKU
+	Type SKUType `json:"type"`
+
+	// The ID of the parent application
+	ApplicationID int64 `json:"application_id,string"`
+
+	// Customer-facing name of the SKU.
+	Name string `json:"name"`
+
+	// System-generated URL slug based on the SKU's name.
+	Slug string `json:"slug"`
+
+	// SKUFlags combined as a bitfield. The presence of a certain flag can be checked
+	// by performing a bitwise AND operation between this int and the flag.
+	Flags SKUFlags `json:"flags"`
+}
+
+// EntitlementType is the type of entitlement
+// https://discord.com/developers/docs/monetization/entitlements#entitlement-object-entitlement-types
+type EntitlementType int
+
+// Valid EntitlementType values
+const (
+	EntitlementTypePurchase                = 1
+	EntitlementTypePremiumSubscription     = 2
+	EntitlementTypeDeveloperGift           = 3
+	EntitlementTypeTestModePurchase        = 4
+	EntitlementTypeFreePurchase            = 5
+	EntitlementTypeUserGift                = 6
+	EntitlementTypePremiumPurchase         = 7
+	EntitlementTypeApplicationSubscription = 8
+)
+
+// Entitlement represents that a user or guild has access to a premium offering
+// in your application.
+type Entitlement struct {
+	// The ID of the entitlement
+	ID int64 `json:"id,string"`
+
+	// The ID of the SKU
+	SKUID int64 `json:"sku_id,string"`
+
+	// The ID of the parent application
+	ApplicationID int64 `json:"application_id,string"`
+
+	// The ID of the user that is granted access to the entitlement's sku
+	// Only available for user subscriptions.
+	UserID int64 `json:"user_id,string,omitempty"`
+
+	// The type of the entitlement
+	Type EntitlementType `json:"type"`
+
+	// The entitlement was deleted
+	Deleted bool `json:"deleted"`
+
+	// The start date at which the entitlement is valid.
+	// Not present when using test entitlements.
+	StartsAt *time.Time `json:"starts_at,omitempty"`
+
+	// The date at which the entitlement is no longer valid.
+	// Not present when using test entitlements.
+	EndsAt *time.Time `json:"ends_at,omitempty"`
+
+	// The ID of the guild that is granted access to the entitlement's sku.
+	// Only available for guild subscriptions.
+	GuildID int64 `json:"guild_id,string,omitempty"`
+
+	// Whether or not the entitlement has been consumed.
+	// Only available for consumable items.
+	Consumed bool `json:"consumed,omitempty"`
+}
+
+// EntitlementOwnerType is the type of entitlement (see EntitlementOwnerType* consts)
+type EntitlementOwnerType int
+
+// Valid EntitlementOwnerType values
+const (
+	EntitlementOwnerTypeGuildSubscription EntitlementOwnerType = 1
+	EntitlementOwnerTypeUserSubscription  EntitlementOwnerType = 2
+)
+
+// EntitlementTest is used to test granting an entitlement to a user or guild
+type EntitlementTest struct {
+	// The ID of the SKU to grant the entitlement to
+	SKUID int64 `json:"sku_id,string"`
+
+	// The ID of the guild or user to grant the entitlement to
+	OwnerID int64 `json:"owner_id,string"`
+
+	// OwnerType is the type of which the entitlement should be created
+	OwnerType EntitlementOwnerType `json:"owner_type"`
+}
+
+// EntitlementFilterOptions are the options for filtering Entitlements
+type EntitlementFilterOptions struct {
+	// Optional user ID to look up for.
+	UserID int64
+
+	// Optional array of SKU IDs to check for.
+	SkuIDs []int64
+
+	// Optional timestamp (snowflake) to retrieve Entitlements before this time.
+	BeforeID int64
+
+	// Optional timestamp (snowflake) to retrieve Entitlements after this time.
+	AfterID int64
+
+	// Optional maximum number of entitlements to return (1-100, default 100).
+	Limit int
+
+	// Optional guild ID to look up for.
+	GuildID int64
+
+	// Optional whether or not ended entitlements should be omitted.
+	ExcludeEnded bool
+}
+
+// Tells the status of a subscription
+type SubscriptionStatus int
+
+const (
+	//Subscription is Active and scheduled to renew
+	SubscriptionStatusActive SubscriptionStatus = 1
+	//Subscription is Active but scheduled to end and not be renewed
+	SubscriptionStatusEnding SubscriptionStatus = 2
+	//Subscription is Inactive and not being charged
+	SubscriptionStatusInactive SubscriptionStatus = 3
+)
+
+type Subscription struct {
+	ID     int64 `json:"id,string"`
+	UserID int64 `json:"user_id,string"`
+	//list of SKUs the user has subscribed to
+	SKUIDS []int64 `json:"sku_ids"`
+	//list of entitlements granted
+	EntitlementIDs []int64 `json:"entitlement_ids"`
+	//start of the current subscription period, this is updated when the subscription is renewed, not to be confused with the start of a subscription
+	CurrentPeriodStart time.Time `json:"current_period_start"`
+	//end of the current subscription period
+	CurrentPeriodEnd time.Time          `json:"current_period_end"`
+	Status           SubscriptionStatus `json:"status"`
+	// Only present if the subscription status is Ending or Inactive, represents the time when the subscription was cancelled
+	CancelledAt time.Time `json:"cancelled_at,omitempty"`
+}
+
+// SubscriptionFilterOptions are the options for filtering Subscriptions for list subscriptions API
+type SubscriptionFilterOptions struct {
+	BeforeID int64
+	AfterID  int64
+	Limit    int
+	UserId   int64
+}

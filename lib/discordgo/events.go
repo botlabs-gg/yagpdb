@@ -579,3 +579,27 @@ type GuildJoinRequestUpdate struct{}
 type GuildJoinRequestDelete struct{}
 type VoiceChannelStatusUpdate struct{}
 type ChannelTopicUpdate struct{}
+
+// Monetization events
+type EntitlementCreate struct {
+	*Entitlement
+}
+type EntitlementUpdate struct {
+	*Entitlement
+}
+
+// EntitlementDelete is the data for an EntitlementDelete event.
+// NOTE: Entitlements are not deleted when they expire.
+type EntitlementDelete struct {
+	*Entitlement
+}
+
+type SubscriptionCreate struct {
+	*Subscription
+}
+type SubscriptionUpdate struct {
+	*Subscription
+}
+type SubscriptionDelete struct {
+	*Subscription
+}

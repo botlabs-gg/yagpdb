@@ -253,8 +253,8 @@ func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {
 
 // RemovePremiumSlots removes the specifues premium slots and attempts to migrate to other permanent available ones
 // THIS SHOULD BE USED INSIDE A TRANSACTION ONLY, AS OTHERWISE RACE CONDITIONS BE UPON THEE
-func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID int64, slotsToRemove []int64) error {
-	userSlots, err := models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc"), qm.For("UPDATE")).All(ctx, exec)
+func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID int64, source string, slotsToRemove []int64) error {
+	userSlots, err := models.PremiumSlots(qm.Where("user_id = ?", userID), qm.Where("source = ?", source), qm.OrderBy("id desc"), qm.For("UPDATE")).All(ctx, exec)
 	if err != nil {
 		return errors.WithMessage(err, "models.PremiumSlots")
 	}
