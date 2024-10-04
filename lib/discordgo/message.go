@@ -172,7 +172,7 @@ type MessageSnapshot struct {
 func (m *Message) GetMessageContents() []string {
 	contents := []string{m.Content}
 	for _, s := range m.MessageSnapshots {
-		if s.Message != nil {
+		if s.Message != nil && len(s.Message.Content) > 0 {
 			contents = append(contents, s.Message.Content)
 		}
 	}
