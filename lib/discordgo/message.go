@@ -142,12 +142,16 @@ type Message struct {
 	// To generate a reference to this message, use (*Message).Reference().
 	MessageReference *MessageReference `json:"message_reference"`
 
-	// The message associated with the message_reference
+	// The message associated with the message_reference when message_reference type is DEFAULT
 	// NOTE: This field is only returned for messages with a type of 19 (REPLY) or 21 (THREAD_STARTER_MESSAGE).
 	// If the message is a reply but the referenced_message field is not present,
 	// the backend did not attempt to fetch the message that was being replied to, so its state is unknown.
 	// If the field exists but is null, the referenced message was deleted.
 	ReferencedMessage *Message `json:"referenced_message"`
+
+	// The messages associated with the message_reference when message_reference type is FORWARD
+	// NOTE: This field is only returned for messages with a type of
+	MessageSnapshots []*Message `json:"message_snapshots"`
 
 	// Is sent when the message is a response to an Interaction, without an existing message.
 	// This means responses to message component interactions do not include this property,
@@ -160,6 +164,14 @@ type Message struct {
 	Flags MessageFlags `json:"flags"`
 
 	Activity *MessageActivity `json:"activity"`
+}
+
+func (m *Message) GetMessageContents() []string {
+	contents := []string{m.Content}
+	for _, s := range m.MessageSnapshots {
+		contents = append(contents, s.Content)
+	}
+	return contents
 }
 
 func (m *Message) GetGuildID() int64 {
@@ -495,19 +507,28 @@ type AllowedMentions struct {
 	RepliedUser bool `json:"replied_user"`
 }
 
+type MessageReferenceType int
+
+const (
+	MessageReferenceTypeDefault MessageReferenceType = iota
+	MessageReferenceTypeForward
+)
+
 // MessageReference contains reference data sent with crossposted messages
 type MessageReference struct {
-	MessageID int64 `json:"message_id,string"`
-	ChannelID int64 `json:"channel_id,string"`
-	GuildID   int64 `json:"guild_id,string,omitempty"`
+	Type      MessageReferenceType `json:"type,omitempty"`
+	MessageID int64                `json:"message_id,string"`
+	ChannelID int64                `json:"channel_id,string"`
+	GuildID   int64                `json:"guild_id,string,omitempty"`
 }
 
 // Reference returns MessageReference of given message
 func (m *Message) Reference() *MessageReference {
 	return &MessageReference{
-		GuildID:   m.GuildID,
-		ChannelID: m.ChannelID,
-		MessageID: m.ID,
+		Type:      m.MessageReference.Type,
+		GuildID:   m.MessageReference.GuildID,
+		ChannelID: m.MessageReference.ChannelID,
+		MessageID: m.MessageReference.MessageID,
 	}
 }
 

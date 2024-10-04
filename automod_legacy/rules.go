@@ -173,7 +173,7 @@ type InviteRule struct {
 }
 
 func (i *InviteRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
-	if !CheckMessageForBadInvites(evt.ContentWithMentionsReplaced(), cs.GuildID) {
+	if !CheckMessageForBadInvites(evt) {
 		return
 	}
 
@@ -246,92 +246,95 @@ func init() {
 // invitesCacheDuration is the period between ticks for the invitesCache gc in minutes
 const invitesCacheDuration = 60
 
-func CheckMessageForBadInvites(msg string, guildID int64) (containsBadInvites bool) {
-	// check third party sites
-	if common.ContainsInvite(msg, false, true) != nil {
-		return true
-	}
-
-	matches := common.DiscordInviteSource.Regex.FindAllStringSubmatch(msg, -1)
-	if len(matches) < 1 {
-		return false
-	}
-
-	guildInvites, ok := invitesCache.get(guildID)
-	if !ok { // we do not have a cache for this guild yet, create it
-		invites, err := common.BotSession.GuildInvites(guildID)
-		if err != nil {
-			logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
-			return true // assume bad since discord...
-		}
-
-		// if there are no invites for this guild
-		// assume it is a bad invite.
-		if len(invites) == 0 {
+func CheckMessageForBadInvites(msg *discordgo.Message) (containsBadInvites bool) {
+	guildID := msg.GuildID
+	for _, content := range msg.GetMessageContents() {
+		// check third party sites
+		if common.ContainsInvite(content, false, true) != nil {
 			return true
 		}
 
-		// add invites to the cache
-		inviteMap := make(map[string]bool)
-		for _, invite := range invites {
-			inviteMap[invite.Code] = true
-		}
-		guild := bot.State.GetGuild(guildID)
-		if guild != nil && len(guild.VanityURLCode) > 0 {
-			inviteMap[guild.VanityURLCode] = true
-		}
-
-		invitesCache.set(guildID, inviteMap)
-
-		// overwrite the empty invite map
-		// with the one just returned by discord
-		guildInvites = GuildInvites{
-			invites: inviteMap,
-		}
-	}
-
-	// Only check each invite id once,
-	// in case it repeats in the message multiple times.
-	checked := make(map[string]bool, len(matches))
-
-	for _, v := range matches {
-		if len(v) < 3 {
+		matches := common.DiscordInviteSource.Regex.FindAllStringSubmatch(content, -1)
+		if len(matches) < 1 {
 			continue
 		}
 
-		id := v[2]
-		// only check each link once
-		if checked[id] {
-			continue
-		} else {
-			checked[id] = true
+		guildInvites, ok := invitesCache.get(guildID)
+		if !ok { // we do not have a cache for this guild yet, create it
+			invites, err := common.BotSession.GuildInvites(guildID)
+			if err != nil {
+				logger.WithError(err).WithField("guild", guildID).Error("Failed fetching invites", invites)
+				return true // assume bad since discord...
+			}
+
+			// if there are no invites for this guild
+			// assume it is a bad invite.
+			if len(invites) == 0 {
+				return true
+			}
+
+			// add invites to the cache
+			inviteMap := make(map[string]bool)
+			for _, invite := range invites {
+				inviteMap[invite.Code] = true
+			}
+			guild := bot.State.GetGuild(guildID)
+			if guild != nil && len(guild.VanityURLCode) > 0 {
+				inviteMap[guild.VanityURLCode] = true
+			}
+
+			invitesCache.set(guildID, inviteMap)
+
+			// overwrite the empty invite map
+			// with the one just returned by discord
+			guildInvites = GuildInvites{
+				invites: inviteMap,
+			}
 		}
 
-		// Safe guard the map look up using the invite mutex.
-		// This is a extremely rare, but possible race condition.
-		invitesCache.RLock()
-		isInviteOk := guildInvites.invites[id]
-		invitesCache.RUnlock()
+		// Only check each invite id once,
+		// in case it repeats in the message multiple times.
+		checked := make(map[string]bool, len(matches))
 
-		if isInviteOk {
-			// ignore invites to this guild
-			continue
+		for _, v := range matches {
+			if len(v) < 3 {
+				continue
+			}
+
+			id := v[2]
+			// only check each link once
+			if checked[id] {
+				continue
+			} else {
+				checked[id] = true
+			}
+
+			// Safe guard the map look up using the invite mutex.
+			// This is a extremely rare, but possible race condition.
+			invitesCache.RLock()
+			isInviteOk := guildInvites.invites[id]
+			invitesCache.RUnlock()
+
+			if isInviteOk {
+				// ignore invites to this guild
+				continue
+			}
+
+			// invite to another guild found
+			//
+			// PS: we were getting a lot of rate
+			// limits issues from discord by
+			// validating each individual invite.
+			//
+			// Thus, we now return true for
+			// all possible invites, even if
+			// the invite is not valid.
+			//
+			// Reason being it is much easier
+			// to get an actual invite than
+			// just a fake one.
+			return true
 		}
-
-		// invite to another guild found
-		//
-		// PS: we were getting a lot of rate
-		// limits issues from discord by
-		// validating each individual invite.
-		//
-		// Thus, we now return true for
-		// all possible invites, even if
-		// the invite is not valid.
-		//
-		// Reason being it is much easier
-		// to get an actual invite than
-		// just a fake one.
-		return true
 	}
 
 	// If we got here then there are no bad invites
@@ -463,7 +466,7 @@ func (w *SitesRule) GetCompiled() []string {
 }
 
 func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
-	banned, item, threatList := s.checkMessage(forwardSlashReplacer.Replace(evt.Content))
+	banned, item, threatList := s.checkMessage(evt)
 	if !banned {
 		return
 	}
@@ -479,43 +482,45 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 	return
 }
 
-func (s *SitesRule) checkMessage(message string) (banned bool, item string, threatList string) {
-	matches := common.LinkRegex.FindAllString(message, -1)
+func (s *SitesRule) checkMessage(message *discordgo.Message) (banned bool, item string, threatList string) {
+	for _, content := range message.GetMessageContents() {
+		matches := common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(content), -1)
+		for _, v := range matches {
 
-	for _, v := range matches {
+			if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") && !strings.HasPrefix(v, "steam://") {
+				v = "http://" + v
+			}
 
-		if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") && !strings.HasPrefix(v, "steam://") {
-			v = "http://" + v
+			parsed, err := url.ParseRequestURI(v)
+			if err != nil {
+				logger.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
+			} else {
+				if banned, item := s.isBanned(parsed.Host); banned {
+					return true, item, ""
+				}
+			}
 		}
 
-		parsed, err := url.ParseRequestURI(v)
-		if err != nil {
-			logger.WithError(err).WithField("url", v).Error("Failed parsing request url matched with regex")
-		} else {
-			if banned, item := s.isBanned(parsed.Host); banned {
-				return true, item, ""
+		if s.ScamLinkProtection {
+			scamLink, err := antiphishing.CheckMessageForPhishingDomains(common.ForwardSlashReplacer.Replace(content))
+			if err != nil {
+				logger.WithError(err).Error("Failed checking urls against antiphishing APIs")
+			} else if scamLink != "" {
+				return true, scamLink, ""
+			}
+		}
+
+		// Check safebrowsing
+		if s.GoogleSafeBrowsingEnabled {
+			threat, err := safebrowsing.CheckString(common.ForwardSlashReplacer.Replace(content))
+			if err != nil {
+				logger.WithError(err).Error("Failed checking urls against google safebrowser")
+			} else if threat != nil {
+				return true, threat.Pattern, threat.ThreatType.String()
 			}
 		}
 	}
 
-	if s.ScamLinkProtection {
-		scamLink, err := antiphishing.CheckMessageForPhishingDomains(message)
-		if err != nil {
-			logger.WithError(err).Error("Failed checking urls against antiphishing APIs")
-		} else if scamLink != "" {
-			return true, scamLink, ""
-		}
-	}
-
-	// Check safebrowsing
-	if s.GoogleSafeBrowsingEnabled {
-		threat, err := safebrowsing.CheckString(message)
-		if err != nil {
-			logger.WithError(err).Error("Failed checking urls against google safebrowser")
-		} else if threat != nil {
-			return true, threat.Pattern, threat.ThreatType.String()
-		}
-	}
 	return false, "", ""
 }
 
