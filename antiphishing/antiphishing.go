@@ -254,6 +254,5 @@ func CheckMessageForPhishingDomains(input string) (string, error) {
 	if len(matches) < 1 {
 		return "", nil
 	}
-
 	return queryPhishingLinks(matches)
 }

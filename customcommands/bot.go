@@ -992,9 +992,17 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) || cmd.R.Group != nil && cmd.R.Group.Disabled {
 			continue
 		}
-
-		if didMatch, stripped, args := CheckMatch(prefix, cmd, msg.Content); didMatch {
-
+		if cmd.TriggerType == int(CommandTriggerContains) || cmd.TriggerType == int(CommandTriggerRegex) {
+			for _, content := range msg.GetMessageContents() {
+				if didMatch, stripped, args := CheckMatch(prefix, cmd, content); didMatch {
+					matched = append(matched, &TriggeredCC{
+						CC:       cmd,
+						Args:     args,
+						Stripped: stripped,
+					})
+				}
+			}
+		} else if didMatch, stripped, args := CheckMatch(prefix, cmd, msg.Content); didMatch {
 			matched = append(matched, &TriggeredCC{
 				CC:       cmd,
 				Args:     args,
