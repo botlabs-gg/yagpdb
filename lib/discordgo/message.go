@@ -217,8 +217,6 @@ const (
 	MessageFlagsIsCrossPosted MessageFlags = 1 << 1
 	// MessageFlagsSuppressEmbeds do not include any embeds when serializing this message.
 	MessageFlagsSuppressEmbeds MessageFlags = 1 << 2
-	// TODO: deprecated, remove when compatibility is not needed
-	MessageFlagsSupressEmbeds MessageFlags = 1 << 2
 	// MessageFlagsSourceMessageDeleted the source message for this crosspost has been deleted (via Channel Following).
 	MessageFlagsSourceMessageDeleted MessageFlags = 1 << 3
 	// MessageFlagsUrgent this message came from the urgent message system.
@@ -516,7 +514,7 @@ const (
 
 // MessageReference contains reference data sent with crossposted messages
 type MessageReference struct {
-	Type      MessageReferenceType `json:"type,omitempty"`
+	Type      MessageReferenceType `json:"type"`
 	MessageID int64                `json:"message_id,string"`
 	ChannelID int64                `json:"channel_id,string"`
 	GuildID   int64                `json:"guild_id,string,omitempty"`
