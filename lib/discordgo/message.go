@@ -150,8 +150,7 @@ type Message struct {
 	ReferencedMessage *Message `json:"referenced_message"`
 
 	// The messages associated with the message_reference when message_reference type is FORWARD
-	// NOTE: This field is only returned for messages with a type of
-	MessageSnapshots []*Message `json:"message_snapshots"`
+	MessageSnapshots []*MessageSnapshot `json:"message_snapshots"`
 
 	// Is sent when the message is a response to an Interaction, without an existing message.
 	// This means responses to message component interactions do not include this property,
@@ -166,10 +165,16 @@ type Message struct {
 	Activity *MessageActivity `json:"activity"`
 }
 
+type MessageSnapshot struct {
+	Message *Message `json:"message"`
+}
+
 func (m *Message) GetMessageContents() []string {
 	contents := []string{m.Content}
 	for _, s := range m.MessageSnapshots {
-		contents = append(contents, s.Content)
+		if s.Message != nil && len(s.Message.Content) > 0 {
+			contents = append(contents, s.Message.Content)
+		}
 	}
 	return contents
 }
