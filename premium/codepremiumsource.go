@@ -30,7 +30,7 @@ var (
 
 func init() {
 	RegisterPremiumSource(&CodePremiumSource{})
-	go expiredSlotsRemover()
+	go expiredSlotsWorker()
 }
 
 type CodePremiumSource struct{}
@@ -40,7 +40,8 @@ func (ps *CodePremiumSource) Names() (human string, idname string) {
 	return "Redeemed code", "code"
 }
 
-func expiredSlotsRemover() {
+func expiredSlotsWorker() {
+	removeExpiredSlots()
 	ticker := time.NewTicker(time.Hour)
 	for {
 		<-ticker.C

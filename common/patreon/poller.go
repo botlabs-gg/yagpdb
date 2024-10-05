@@ -144,8 +144,6 @@ func (p *Poller) Poll() {
 			return
 		}
 
-		// logger.Println("num results: ", len(membersResponse.Data))
-
 		// Get all the users in an easy-to-lookup way
 		users := make(map[string]*patreonapi.UserAttributes)
 		for _, item := range membersResponse.Included {
@@ -174,11 +172,8 @@ func (p *Poller) Poll() {
 
 			// Skip if the next charge date is in the past
 			if attributes.NextChargeDate != nil && attributes.NextChargeDate.Before(time.Now()) {
-				logger.Printf("Next charge date is in the past for %s, skipping", user.FullName)
 				continue
 			}
-
-			// logger.Println(attributes.PatronStatus + " --- " + user.FirstName + ":" + user.LastName + ":" + user.Vanity)
 
 			patron := &Patron{
 				AmountCents: attributes.CurrentEntitledAmountCents,
@@ -197,18 +192,15 @@ func (p *Poller) Poll() {
 			}
 
 			patrons = append(patrons, patron)
-			// logger.Printf("%s is pledging %d cents, Discord: %d\n", patron.Name, patron.AmountCents, patron.DiscordID)
 		}
 
 		// Get the link to the next page of pledges
 		nextCursor := membersResponse.Meta.Pagination.Cursors.Next
 		if nextCursor == "" {
-			// logger.Println("No nextlink ", page)
 			break
 		}
 
 		cursor = nextCursor
-		// logger.Println("nextlink: ", page, ": ", cursor, ", current len: ", len(patrons))
 		page++
 		time.Sleep(time.Second)
 	}
