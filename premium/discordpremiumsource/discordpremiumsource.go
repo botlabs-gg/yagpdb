@@ -108,8 +108,9 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		}
 
 		if slotsForPledge > len(userSlots) {
+			totalSlots := slotsForPledge - len(userSlots)
 			// Need to create more slots
-			for i := 0; i < slotsForPledge-len(userSlots); i++ {
+			for i := 0; i < totalSlots; i++ {
 				title := fmt.Sprintf("Discord Slot #%d", 1+i+len(userSlots))
 				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is Active on Discord", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
@@ -118,7 +119,9 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				}
 				logger.Info("Created discord premium slot #", slot.ID, slot.UserID)
 			}
-			go premium.SendPremiumDM(userID, premium.PremiumSourceTypeDiscord, slotsForPledge-len(userSlots))
+			if totalSlots > 0 {
+				go premium.SendPremiumDM(userID, premium.PremiumSourceTypeDiscord, totalSlots)
+			}
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
 			slotsToRemove := make([]int64, 0)
@@ -155,7 +158,9 @@ OUTER:
 			}
 			logger.Info("Created new discord premium slot #", slot.ID, slot.ID)
 		}
-		go premium.SendPremiumDM(v.UserID, premium.PremiumSourceTypeDiscord, 1)
+		if slots > 0 {
+			go premium.SendPremiumDM(v.UserID, premium.PremiumSourceTypeDiscord, 1)
+		}
 	}
 	err = tx.Commit()
 	return errors.WithMessage(err, "Commit")

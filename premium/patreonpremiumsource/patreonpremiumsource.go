@@ -105,8 +105,9 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		}
 
 		if slotsForPledge > len(userSlots) {
+			totalSlots := slotsForPledge - len(userSlots)
 			// Need to create more slots
-			for i := 0; i < slotsForPledge-len(userSlots); i++ {
+			for i := 0; i < totalSlots; i++ {
 				title := fmt.Sprintf("Patreon Slot #%d", 1+i+len(userSlots))
 				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, premium.PremiumSourceTypePatreon, title, "Slot is available for as long as the pledge is active on patreon", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
@@ -115,7 +116,9 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				}
 				logger.Info("Created patreon premium slot #", slot.ID, slot.UserID)
 			}
-			go premium.SendPremiumDM(userID, premium.PremiumSourceTypePatreon, slotsForPledge-len(userSlots))
+			if totalSlots > 0 {
+				go premium.SendPremiumDM(userID, premium.PremiumSourceTypePatreon, slotsForPledge-len(userSlots))
+			}
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
 			slotsToRemove := make([]int64, 0)
@@ -159,7 +162,9 @@ OUTER:
 
 			logger.Info("Created new patreon premium slot #", slot.ID, slot.ID)
 		}
-		go premium.SendPremiumDM(v.DiscordID, premium.PremiumSourceTypePatreon, slots)
+		if slots > 0 {
+			go premium.SendPremiumDM(v.DiscordID, premium.PremiumSourceTypePatreon, slots)
+		}
 	}
 
 	err = tx.Commit()

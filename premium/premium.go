@@ -324,7 +324,7 @@ func SendPremiumDM(userID int64, source PremiumSourceType, numSlots int) {
 	}
 	embed := &discordgo.MessageEmbed{}
 	embed.Title = "You have new Premium Slots!"
-	embed.Description = fmt.Sprintf("You have received %d new premium slots from a %s subscription! [Assign them to a server here.](https://%s/premium)", numSlots, string(source), common.ConfHost.GetString())
+	embed.Description = fmt.Sprintf("You have received %d new premium slots from a %s subscription!\n\n[Assign them to a server here.](https://%s/premium)", numSlots, string(source), common.ConfHost.GetString())
 	err := bot.SendDMEmbed(userID, embed)
 	if err != nil {
 		logger.WithError(err).Error("Failed sending premium DM")
