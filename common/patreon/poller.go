@@ -165,11 +165,16 @@ func (p *Poller) Poll() {
 			}
 
 			if attributes.LastChargeStatus != patreonapi.ChargeStatusPaid && attributes.LastChargeStatus != patreonapi.ChargeStatusPending {
-				// logger.Println("Not paid: ", attributes.FullName)
 				continue
 			}
 
 			if attributes.PatronStatus != "active_patron" {
+				continue
+			}
+
+			// Skip if the next charge date is in the past
+			if attributes.NextChargeDate != nil && attributes.NextChargeDate.Before(time.Now()) {
+				logger.Printf("Next charge date is in the past for %s, skipping", user.FullName)
 				continue
 			}
 

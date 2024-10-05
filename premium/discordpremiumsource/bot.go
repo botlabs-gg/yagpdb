@@ -89,7 +89,7 @@ func HandleEntitlementUpdate(evt *eventsystem.EventData) {
 		tx.Rollback()
 		return
 	}
-	slots, err := models.PremiumSlots(qm.Where("source='discord'"), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
+	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
 	if err != nil {
 		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementUpdate"))
 		tx.Rollback()
@@ -128,7 +128,7 @@ func HandleEntitlementDelete(evt *eventsystem.EventData) {
 		return
 	}
 
-	slots, err := models.PremiumSlots(qm.Where("source='discord'"), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
+	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
 	if err != nil {
 		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementDelete"))
 		tx.Rollback()

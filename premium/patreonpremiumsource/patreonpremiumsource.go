@@ -70,7 +70,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		return errors.WithMessage(err, "BeginTX")
 	}
 
-	slots, err := models.PremiumSlots(qm.Where("source='patreon'"), qm.OrderBy("id desc")).All(ctx, tx)
+	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypePatreon)), qm.OrderBy("id desc")).All(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return errors.WithMessage(err, "PremiumSlots")
