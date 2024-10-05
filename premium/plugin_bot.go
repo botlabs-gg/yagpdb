@@ -36,34 +36,34 @@ func init() {
 var cmdPremiumStatus = &commands.YAGCommand{
 	CmdCategory:         commands.CategoryGeneral,
 	Name:                "premiumstatus",
-	Aliases:             []string{"gpc"},
-	Description:         "Generates premium codes. Bot Owner Only",
+	Aliases:             []string{"premiumcheck"},
+	Description:         "Lets you check premium status of yourself or a specific user.",
 	RequiredArgs:        0,
 	RunInDM:             true,
 	SlashCommandEnabled: true,
 	ArgSwitches: []*dcmd.ArgDef{
-		{Name: "User", Type: dcmd.UserID, Help: "Optional User to check premium status for", Default: 0},
+		{Name: "user", Type: dcmd.UserID, Help: "Optional User to check premium status for, Owner only", Default: 0},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		userID := int64(data.Switches["User"].Int())
-		if userID == 0 {
+		userID := int64(data.Switches["user"].Int())
+		if userID != 0 && !common.IsOwner(data.Author.ID) {
 			userID = data.Author.ID
 		}
 		if confAllGuildsPremium.GetBool() {
-			return "All guilds are premium, have fun!", nil
+			return "All server are Premium, have fun!", nil
 		}
-		premiumSlots, err := models.PremiumSlots(qm.Where("user_id=?", userID)).AllG(data.Context())
+		premiumSlots, err := models.PremiumSlots(qm.Where("user_id=?", userID)).CountG(data.Context())
 		if err != nil {
 			return "Failed Fetching Premium Slots ", err
 		}
 		embed := &discordgo.MessageEmbed{}
-		if len(premiumSlots) < 1 {
+		if premiumSlots == 0 {
 			embed.Title = "No Premium Slots Found"
-			embed.Description = fmt.Sprintf("<@%d> doesn have any premium slots! [Learn how to get premium](https://%s/premium-perks)", userID, common.ConfHost.GetString())
+			embed.Description = fmt.Sprintf("<@%d> does not have Premium! [Learn how to get Premium](https://%s/premium-perks)", userID, common.ConfHost.GetString())
 			return embed, nil
 		}
-		embed.Title = fmt.Sprintf("User has %d Premium Slots!", len(premiumSlots))
-		embed.Description = fmt.Sprintf("<@%d> has %d premium slots! [Manage your premium slots](https://%s/premium)", userID, len(premiumSlots), common.ConfHost.GetString())
+		embed.Title = fmt.Sprintf("User has %d Premium Slot(s)!", premiumSlots)
+		embed.Description = fmt.Sprintf("<@%d> has %d Premium Slot(s)! [Assign them to a server here](https://%s/premium)", userID, premiumSlots, common.ConfHost.GetString())
 		return embed, nil
 	},
 }

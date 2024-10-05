@@ -119,7 +119,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				}
 				logger.Info("Created discord premium slot #", slot.ID, slot.UserID)
 			}
-			go bot.SendDM(userID, fmt.Sprintf("You have received %d new premium slots via Discord Subscription, [Assign them to a server here](https://%s/premium)", slotsForPledge-len(userSlots), common.ConfHost.GetString()))
+			go bot.SendDM(userID, fmt.Sprintf("You have received %d new Premium Slot(s) via Discord Subscription, [Assign them to a server here](https://%s/premium)", slotsForPledge-len(userSlots), common.ConfHost.GetString()))
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
 			slotsToRemove := make([]int64, 0)
@@ -156,7 +156,7 @@ OUTER:
 			}
 			logger.Info("Created new discord premium slot #", slot.ID, slot.ID)
 		}
-		go bot.SendDM(v.UserID, fmt.Sprintf("You have received %d new premium slots via Discord Subscription, [Assign them to a server here](https://%s/premium)", 1, common.ConfHost.GetString()))
+		go bot.SendDM(v.UserID, fmt.Sprintf("You have received %d new Premium Slot(s) via Discord Subscription, [Assign them to a server here](https://%s/premium)", 1, common.ConfHost.GetString()))
 	}
 	err = tx.Commit()
 	return errors.WithMessage(err, "Commit")
