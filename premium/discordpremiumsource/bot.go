@@ -101,7 +101,7 @@ func HandleEntitlementUpdate(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = premium.RemovePremiumSlots(ctx, tx, entitlement.UserID, "discord", []int64{slots[0].ID})
+	err = premium.RemovePremiumSlots(ctx, tx, entitlement.UserID, []int64{slots[0].ID})
 	if err != nil {
 		logger.WithError(err).Error("Failed Removing PremiumSlot for EntitlementUpdate Event")
 		tx.Rollback()
@@ -140,7 +140,7 @@ func HandleEntitlementDelete(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = premium.RemovePremiumSlots(ctx, tx, entitlement.UserID, "discord", []int64{slots[0].ID})
+	err = premium.RemovePremiumSlots(ctx, tx, entitlement.UserID, []int64{slots[0].ID})
 	if err != nil {
 		logger.WithError(err).Error("Failed Removing PremiumSlot for EntitlementDelete Event")
 		tx.Rollback()

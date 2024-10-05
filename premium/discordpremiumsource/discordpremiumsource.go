@@ -130,7 +130,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				slotsToRemove = append(slotsToRemove, slot.ID)
 				logger.Info("Marked discord slot for deletion #", slot.ID, slot.UserID)
 			}
-			err = premium.RemovePremiumSlots(ctx, tx, userID, premium.PremiumSourceTypeDiscord, slotsToRemove)
+			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "RemovePremiumSlots")

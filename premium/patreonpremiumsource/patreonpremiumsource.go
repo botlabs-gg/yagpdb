@@ -129,7 +129,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				logger.Info("Marked patreon slot for deletion #", slot.ID, slot.UserID)
 			}
 
-			err = premium.RemovePremiumSlots(ctx, tx, userID, premium.PremiumSourceTypePatreon, slotsToRemove)
+			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "RemovePremiumSlots")

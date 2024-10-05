@@ -30,7 +30,6 @@ var (
 
 func init() {
 	RegisterPremiumSource(&CodePremiumSource{})
-	go expiredSlotsWorker()
 }
 
 type CodePremiumSource struct{}
@@ -38,46 +37,6 @@ type CodePremiumSource struct{}
 func (ps *CodePremiumSource) Init() {}
 func (ps *CodePremiumSource) Names() (human string, idname string) {
 	return "Redeemed code", "code"
-}
-
-func expiredSlotsWorker() {
-	removeExpiredSlots()
-	ticker := time.NewTicker(time.Hour)
-	for {
-		<-ticker.C
-		err := removeExpiredSlots()
-		if err != nil {
-			logger.WithError(err).Error("Failed Removing Expired slots for code")
-		}
-	}
-}
-
-func removeExpiredSlots() error {
-	logger.Infof("Removing expired code slots")
-	tx, _ := common.PQ.BeginTx(context.Background(), nil)
-	slots, err := models.PremiumSlots(qm.Where("source = ?", string(PremiumSourceTypeCode)), qm.Where("duration_remaining < 0"), qm.Where("permanent = false")).AllG(context.Background())
-	if err != nil {
-		logger.WithError(err).Error("Failed getting expired codes")
-		return err
-	}
-	for _, slot := range slots {
-		err := DetachSlotFromGuild(context.Background(), slot.ID, slot.UserID)
-		if err != nil {
-			logger.WithError(err).Error("Failed detaching expired code")
-			tx.Rollback()
-			return err
-		}
-		_, err = slot.Delete(context.Background(), tx)
-		if err != nil {
-			logger.WithError(err).Error("Failed deleting expired code")
-			tx.Rollback()
-			return err
-		}
-		logger.Infof("Deleted expired code slot for user_id: %d and slot_id: %d", slot.UserID, slot.ID)
-	}
-	logger.Infof("Removed %d expired code slots", len(slots))
-	tx.Commit()
-	return nil
 }
 
 func RedeemCode(ctx context.Context, code string, userID int64) error {
