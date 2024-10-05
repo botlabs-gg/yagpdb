@@ -116,7 +116,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				}
 				logger.Info("Created patreon premium slot #", slot.ID, slot.UserID)
 			}
-			go bot.SendDM(userID, fmt.Sprintf("You have received %d new Premium Slot(s) via Patreon Subscription, [Assign them to a server here](https://%s/premium)", 1, common.ConfHost.GetString()))
+			go bot.SendDM(userID, fmt.Sprintf("You have received %d new Premium Slot(s) via Patreon Subscription! [Assign them to a server here.](https://%s/premium)", 1, common.ConfHost.GetString()))
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
 			slotsToRemove := make([]int64, 0)

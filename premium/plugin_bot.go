@@ -45,10 +45,13 @@ var cmdPremiumStatus = &commands.YAGCommand{
 		{Name: "user", Type: dcmd.UserID, Help: "Optional User to check premium status for, Owner only", Default: 0},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		userID := int64(data.Switches["user"].Int())
-		if userID != 0 && !common.IsOwner(data.Author.ID) {
+		var userID int64
+		if common.IsOwner(data.Author.ID) && data.Switches["user"].Int() != 0 {
+			userID = int64(data.Switches["user"].Int())
+		} else {
 			userID = data.Author.ID
 		}
+
 		if confAllGuildsPremium.GetBool() {
 			return "All server are Premium, have fun!", nil
 		}
@@ -59,11 +62,11 @@ var cmdPremiumStatus = &commands.YAGCommand{
 		embed := &discordgo.MessageEmbed{}
 		if premiumSlots == 0 {
 			embed.Title = "No Premium Slots Found"
-			embed.Description = fmt.Sprintf("<@%d> does not have Premium! [Learn how to get Premium](https://%s/premium-perks)", userID, common.ConfHost.GetString())
+			embed.Description = fmt.Sprintf("<@%d> does not have Premium!\n\n[Learn how to get Premium.](https://%s/premium-perks)", userID, common.ConfHost.GetString())
 			return embed, nil
 		}
 		embed.Title = fmt.Sprintf("User has %d Premium Slot(s)!", premiumSlots)
-		embed.Description = fmt.Sprintf("<@%d> has %d Premium Slot(s)! [Assign them to a server here](https://%s/premium)", userID, premiumSlots, common.ConfHost.GetString())
+		embed.Description = fmt.Sprintf("<@%d> has %d Premium Slot(s)!\n\n[Assign them to a server here.](https://%s/premium)", userID, premiumSlots, common.ConfHost.GetString())
 		return embed, nil
 	},
 }

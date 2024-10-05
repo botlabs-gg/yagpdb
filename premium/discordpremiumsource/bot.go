@@ -65,7 +65,7 @@ func HandleEntitlementCreate(evt *eventsystem.EventData) {
 		return
 	}
 	err = tx.Commit()
-	go bot.SendDM(entitlement.UserID, fmt.Sprintf("You have received %d new Premium Slot(s) via Discord Subscription, [Assign them to a server here](https://%s/premium)", 1, common.ConfHost.GetString()))
+	go bot.SendDM(entitlement.UserID, fmt.Sprintf("You have received %d new Premium Slot(s) via Discord Subscription! [Assign them to a server here.](https://%s/premium)", 1, common.ConfHost.GetString()))
 	if err != nil {
 		logger.WithError(err).Error("Failed committing transaction for EntitlementCreate Event")
 	}
