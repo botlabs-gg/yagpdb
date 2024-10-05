@@ -55,7 +55,7 @@ func ExpiredSlotsRemover() {
 
 func RemoveExpiredSlots() error {
 	tx, _ := common.PQ.BeginTx(context.Background(), nil)
-	slots, err := models.PremiumCodes(qm.Where("source = ?"), qm.Where("duration_remaining < 0"), qm.Where("permanent = false")).AllG(context.Background())
+	slots, err := models.PremiumCodes(qm.Where("source = 'code'"), qm.Where("duration_remaining < 0"), qm.Where("permanent = false")).AllG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("Failed getting expired codes")
 		return err
