@@ -44,7 +44,8 @@ func (p PremiumTier) String() string {
 }
 
 var (
-	confAllGuildsPremium = config.RegisterOption("yagpdb.premium.all_guilds_premium", "All servers have premium", false)
+	confAllGuildsPremium    = config.RegisterOption("yagpdb.premium.all_guilds_premium", "All servers have premium", false)
+	confDiscordPremiumSKUID = config.RegisterOption("yagpdb.discord.premium.sku_id", "SKU_ID for Discord Premium", nil)
 )
 
 var logger = common.GetPluginLogger(&Plugin{})

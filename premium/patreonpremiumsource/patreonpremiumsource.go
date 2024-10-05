@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/patreon"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
@@ -113,9 +114,9 @@ func UpdatePremiumSlots(ctx context.Context) error {
 					tx.Rollback()
 					return errors.WithMessage(err, "CreatePremiumSlot")
 				}
-
 				logger.Info("Created patreon premium slot #", slot.ID, slot.UserID)
 			}
+			go bot.SendDM(userID, fmt.Sprintf("You have received %d new premium slots via Patreon Subscription, [Assign them to a server here](https://%s/premium)", 1, common.ConfHost.GetString()))
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
 			slotsToRemove := make([]int64, 0)
@@ -126,7 +127,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				logger.Info("Marked patreon slot for deletion #", slot.ID, slot.UserID)
 			}
 
-			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
+			err = premium.RemovePremiumSlots(ctx, tx, userID, "patreon", slotsToRemove)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "RemovePremiumSlots")
@@ -159,6 +160,7 @@ OUTER:
 
 			logger.Info("Created new patreon premium slot #", slot.ID, slot.ID)
 		}
+		go bot.SendDM(v.DiscordID, fmt.Sprintf("You have received %d new premium slots via Patreon Subscription, [Assign them to a server here](https://%s/premium)", 1, common.ConfHost.GetString()))
 	}
 
 	err = tx.Commit()
