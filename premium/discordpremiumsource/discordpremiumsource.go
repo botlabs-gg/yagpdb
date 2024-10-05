@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/premium/models"
@@ -74,7 +73,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		return errors.WithMessage(err, "BeginTX")
 	}
 
-	slots, err := models.PremiumSlots(qm.Where("source='discord'"), qm.OrderBy("id desc")).All(ctx, tx)
+	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.OrderBy("id desc")).All(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return errors.WithMessage(err, "PremiumSlots")
@@ -112,14 +111,14 @@ func UpdatePremiumSlots(ctx context.Context) error {
 			// Need to create more slots
 			for i := 0; i < slotsForPledge-len(userSlots); i++ {
 				title := fmt.Sprintf("Discord Slot #%d", 1+i+len(userSlots))
-				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, "discord", title, "Slot is available as long as subscription is Active on Discord", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
+				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is Active on Discord", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
 					tx.Rollback()
 					return errors.WithMessage(err, "CreatePremiumSlot")
 				}
 				logger.Info("Created discord premium slot #", slot.ID, slot.UserID)
 			}
-			go bot.SendDM(userID, fmt.Sprintf("You have received %d new Premium Slot(s) via Discord Subscription! [Assign them to a server here.](https://%s/premium)", slotsForPledge-len(userSlots), common.ConfHost.GetString()))
+			go premium.SendPremiumDM(userID, premium.PremiumSourceTypeDiscord, slotsForPledge-len(userSlots))
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
 			slotsToRemove := make([]int64, 0)
@@ -128,7 +127,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				slotsToRemove = append(slotsToRemove, slot.ID)
 				logger.Info("Marked discord slot for deletion #", slot.ID, slot.UserID)
 			}
-			err = premium.RemovePremiumSlots(ctx, tx, userID, "discord", slotsToRemove)
+			err = premium.RemovePremiumSlots(ctx, tx, userID, premium.PremiumSourceTypeDiscord, slotsToRemove)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "RemovePremiumSlots")
@@ -149,14 +148,14 @@ OUTER:
 		slots := 1
 		for i := 0; i < slots; i++ {
 			title := fmt.Sprintf("Discord Premium Slot #%d", i+1)
-			slot, err := premium.CreatePremiumSlot(ctx, tx, v.UserID, "discord", title, "Slot is available as long as subscription is Active on Discord", int64(i+1), -1, premium.PremiumTierPremium)
+			slot, err := premium.CreatePremiumSlot(ctx, tx, v.UserID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is active on Discord", int64(i+1), -1, premium.PremiumTierPremium)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "new CreatePremiumSlot")
 			}
 			logger.Info("Created new discord premium slot #", slot.ID, slot.ID)
 		}
-		go bot.SendDM(v.UserID, fmt.Sprintf("You have received %d new Premium Slot(s) via Discord Subscription! [Assign them to a server here.](https://%s/premium)", 1, common.ConfHost.GetString()))
+		go premium.SendPremiumDM(v.UserID, premium.PremiumSourceTypeDiscord, 1)
 	}
 	err = tx.Commit()
 	return errors.WithMessage(err, "Commit")

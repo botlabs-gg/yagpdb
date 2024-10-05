@@ -47,7 +47,7 @@ func HandleEntitlementCreate(evt *eventsystem.EventData) {
 		tx.Rollback()
 		return
 	}
-	slots, err := models.PremiumSlots(qm.Where("source='discord'"), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
+	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
 	if err != nil {
 		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementCreate"))
 		tx.Rollback()
@@ -58,14 +58,14 @@ func HandleEntitlementCreate(evt *eventsystem.EventData) {
 		tx.Rollback()
 		return
 	}
-	_, err = premium.CreatePremiumSlot(ctx, tx, entitlement.UserID, "discord", "Discord Slot #1", "Slot is available as long as subscription is Active on Discord", 1, -1, premium.PremiumTierPremium)
+	_, err = premium.CreatePremiumSlot(ctx, tx, entitlement.UserID, premium.PremiumSourceTypeDiscord, "Discord Slot #1", "Slot is available as long as subscription is active on Discord", 1, -1, premium.PremiumTierPremium)
 	if err != nil {
 		logger.WithError(err).Error("Failed creating PremiumSlot for EntitlementCreate Event")
 		tx.Rollback()
 		return
 	}
 	err = tx.Commit()
-	go bot.SendDM(entitlement.UserID, fmt.Sprintf("You have received %d new Premium Slot(s) via Discord Subscription! [Assign them to a server here.](https://%s/premium)", 1, common.ConfHost.GetString()))
+	go premium.SendPremiumDM(entitlement.UserID, premium.PremiumSourceTypeDiscord, 1)
 	if err != nil {
 		logger.WithError(err).Error("Failed committing transaction for EntitlementCreate Event")
 	}

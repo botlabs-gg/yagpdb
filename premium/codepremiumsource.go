@@ -55,7 +55,7 @@ func ExpiredSlotsRemover() {
 
 func RemoveExpiredSlots() error {
 	tx, _ := common.PQ.BeginTx(context.Background(), nil)
-	slots, err := models.PremiumCodes(qm.Where("source = 'code'"), qm.Where("duration_remaining < 0"), qm.Where("permanent = false")).AllG(context.Background())
+	slots, err := models.PremiumCodes(qm.Where("source = ?", string(PremiumSourceTypeCode)), qm.Where("duration_remaining < 0"), qm.Where("permanent = false")).AllG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("Failed getting expired codes")
 		return err
@@ -93,7 +93,7 @@ func RedeemCode(ctx context.Context, code string, userID int64) error {
 	}
 
 	// model found, with no user attached, create the slot for it
-	slot, err := CreatePremiumSlot(ctx, tx, userID, "code", "Redeemed code", c.Message, c.ID, time.Duration(c.Duration), PremiumTierPremium)
+	slot, err := CreatePremiumSlot(ctx, tx, userID, PremiumSourceTypeCode, "Redeemed code", c.Message, c.ID, time.Duration(c.Duration), PremiumTierPremium)
 	if err != nil {
 		tx.Rollback()
 		return errors.WithMessage(err, "CreatePremiumSlot")
