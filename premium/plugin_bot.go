@@ -10,7 +10,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/premium/models"
-	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -45,7 +44,7 @@ var cmdPremiumStatus = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.UserID, Help: "Optional User to check premium status for", Default: 0},
 	},
-	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		userID := int64(data.Switches["User"].Int())
 		if userID == 0 {
 			userID = data.Author.ID
@@ -66,7 +65,7 @@ var cmdPremiumStatus = &commands.YAGCommand{
 		embed.Title = fmt.Sprintf("User has %d Premium Slots!", len(premiumSlots))
 		embed.Description = fmt.Sprintf("<@%d> has %d premium slots! [Manage your premium slots](https://%s/premium)", userID, len(premiumSlots), common.ConfHost.GetString())
 		return embed, nil
-	}),
+	},
 }
 
 func (p *Plugin) BotInit() {

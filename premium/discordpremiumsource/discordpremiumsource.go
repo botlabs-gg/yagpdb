@@ -58,7 +58,7 @@ func (p *Plugin) InitWeb() {
 }
 
 func RunPoller() {
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Minute * 30)
 	for {
 		<-ticker.C
 		err := UpdatePremiumSlots(context.Background())
