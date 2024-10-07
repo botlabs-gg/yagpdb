@@ -79,7 +79,7 @@ func (c *Client) FetchMembers(campaign string, count int, cursor string) (r *Mem
 	uri := "/campaigns/" + campaign + "/members?"
 
 	v := url.Values(make(map[string][]string))
-	v.Set("fields[member]", "full_name,is_follower,last_charge_date,last_charge_status,lifetime_support_cents,currently_entitled_amount_cents,patron_status")
+	v.Set("fields[member]", "full_name,is_follower,last_charge_date,last_charge_status,next_charge_date,lifetime_support_cents,currently_entitled_amount_cents,patron_status")
 	v.Set("fields[user]", "about,created,first_name,full_name,image_url,last_name,social_connections,thumb_url,url,vanity")
 	v.Set("include", "user")
 

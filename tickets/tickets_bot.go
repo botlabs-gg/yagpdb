@@ -50,7 +50,7 @@ const (
 	ErrMaxOpenTickets   TicketUserError = "You're currently in over 10 open tickets on this server, please close some of the ones you're in."
 )
 
-func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState, conf *models.TicketConfig, topic string, checkMaxTickets bool) (*dstate.GuildSet, *models.Ticket, error) {
+func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState, conf *models.TicketConfig, topic string, checkMaxTickets, executedByCommandTemplate bool) (*dstate.GuildSet, *models.Ticket, error) {
 	if gs.GetChannel(conf.TicketsChannelCategory) == nil {
 		return gs, nil, ErrNoTicketCateogry
 	}
@@ -119,6 +119,11 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	gs.Channels = append(gs.Channels, cs)
 
 	tmplCTX := templates.NewContext(gs, &cs, ms)
+	if executedByCommandTemplate {
+		tmplCTX.ExecutedFrom = templates.ExecutedFromNestedCommandTemplate
+	} else {
+		tmplCTX.ExecutedFrom = templates.ExecutedFromCommandTemplate
+	}
 	tmplCTX.Name = "ticket open message"
 	tmplCTX.Data["Reason"] = topic
 	ticketOpenMsg := conf.TicketOpenMSG

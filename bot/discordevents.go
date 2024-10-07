@@ -404,7 +404,6 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 		if !IsNormalUserMessage(edit.Message) {
 			return
 		}
-
 		edit.Member.User = edit.Author
 		edit.Member.GuildID = edit.GuildID
 	}

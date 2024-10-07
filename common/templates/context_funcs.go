@@ -792,7 +792,7 @@ func (c *Context) tmplDelMessage(channel, msgID interface{}, args ...interface{}
 		dur = 86400
 	}
 
-	MaybeScheduledDeleteMessage(c.GS.ID, cID, mID, dur)
+	MaybeScheduledDeleteMessage(c.GS.ID, cID, mID, dur, "")
 
 	return ""
 }
@@ -926,6 +926,24 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	}
 
 	return member.DgoMember(), nil
+}
+
+func (c *Context) tmplGetMemberVoiceState(target interface{}) (*discordgo.VoiceState, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+
+	mID := TargetUserID(target)
+	if mID == 0 {
+		return nil, nil
+	}
+
+	vs, _ := bot.GetMemberVoiceState(c.GS.ID, mID)
+	if vs == nil {
+		return nil, nil
+	}
+
+	return vs, nil
 }
 
 func (c *Context) tmplGetChannel(channel interface{}) (*CtxChannel, error) {

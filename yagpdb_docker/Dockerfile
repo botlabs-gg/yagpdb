@@ -1,4 +1,4 @@
-FROM golang:1.20.6 as builder
+FROM docker.io/golang:1.23.1 AS builder
 
 WORKDIR /appbuild/yagpdb
 COPY go.mod go.sum ./
@@ -11,7 +11,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -v -ldflags "-X github.com/botlabs-gg/yagp
 
 
 
-FROM alpine:latest
+FROM docker.io/alpine:latest
 
 WORKDIR /app
 VOLUME ["/app/soundboard", "/app/cert"]

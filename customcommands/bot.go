@@ -795,7 +795,7 @@ func ExecuteCustomCommandFromReaction(cc *models.CustomCommand, gs *dstate.Guild
 
 func handleInteractionCreate(evt *eventsystem.EventData) {
 	i := evt.EvtInterface.(*discordgo.InteractionCreate).Interaction
-	interaction := templates.CustomCommandInteraction{&i, false}
+	interaction := templates.CustomCommandInteraction{Interaction: &i, RespondedTo: false}
 
 	if interaction.GuildID == 0 {
 		// ignore dm interactions
@@ -803,8 +803,12 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 	}
 
 	evt.GS = bot.State.GetGuild(interaction.GuildID)
-	evt.GuildFeatureFlags, _ = featureflags.RetryGetGuildFlags(evt.GS.ID)
+	if evt.GS == nil {
+		logrus.WithField("guild_id", interaction.GuildID).Error("Couldn't get Guild from state for interaction create")
+		return
+	}
 
+	evt.GuildFeatureFlags, _ = featureflags.RetryGetGuildFlags(evt.GS.ID)
 	if !evt.HasFeatureFlag(featureFlagHasCommands) {
 		return
 	}
@@ -817,6 +821,9 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 	// Ephemeral messages always have guild_id = 0 even if created in a guild channel; see
 	// https://github.com/discord/discord-api-docs/issues/4557. But exec/execAdmin rely
 	// on the guild ID of the message to fill guild data, so patch it here.
+	if interaction.Message == nil || interaction.Member == nil {
+		return
+	}
 	interaction.Message.GuildID = evt.GS.ID
 	interaction.Member.GuildID = evt.GS.ID
 
@@ -985,9 +992,17 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) || cmd.R.Group != nil && cmd.R.Group.Disabled {
 			continue
 		}
-
-		if didMatch, stripped, args := CheckMatch(prefix, cmd, msg.Content); didMatch {
-
+		if cmd.TriggerType == int(CommandTriggerContains) || cmd.TriggerType == int(CommandTriggerRegex) {
+			for _, content := range msg.GetMessageContents() {
+				if didMatch, stripped, args := CheckMatch(prefix, cmd, content); didMatch {
+					matched = append(matched, &TriggeredCC{
+						CC:       cmd,
+						Args:     args,
+						Stripped: stripped,
+					})
+				}
+			}
+		} else if didMatch, stripped, args := CheckMatch(prefix, cmd, msg.Content); didMatch {
 			matched = append(matched, &TriggeredCC{
 				CC:       cmd,
 				Args:     args,

@@ -847,6 +847,18 @@ func (s *Session) GuildMemberAdd(accessToken string, guildID, userID int64, nick
 	return err
 }
 
+func (s *Session) GuildMemberVoiceState(guildID, userID int64) (voiceState *VoiceState, err error) {
+	vs, err := s.RequestWithBucketID("GET", EndpointGuildMemberVoiceState(guildID, userID), nil, nil, EndpointGuildMemberVoiceState(guildID, 0))
+	if err != nil {
+		return nil, err
+	}
+	err = unmarshal(vs, &voiceState)
+	if err != nil {
+		return nil, err
+	}
+	return voiceState, nil
+}
+
 // GuildMemberDelete removes the given user from the given guild.
 // guildID   : The ID of a Guild.
 // userID    : The ID of a User
@@ -3139,5 +3151,121 @@ func (s *Session) EditFollowupMessage(applicationID int64, token string, message
 // DELETE /webhooks/{application.id}/{interaction.token}/messages/{message.id}
 func (s *Session) DeleteFollowupMessage(applicationID int64, token string, messageID int64) (err error) {
 	_, err = s.RequestWithBucketID("DELETE", EndpointInteractionFollowupMessage(applicationID, token, messageID), nil, nil, EndpointInteractionFollowupMessage(0, "", 0))
+	return
+}
+
+// ----------------------------------------------------------------------
+// Monetization Functions
+// ----------------------------------------------------------------------
+
+// SKUs returns all SKUs for a given application.
+// appID : The ID of the application.
+func (s *Session) SKUs(applicationID int64) (skus []*SKU, err error) {
+	body, err := s.RequestWithBucketID("GET", EndpointSKUs(applicationID), nil, nil, EndpointSKUs(applicationID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &skus)
+	return
+}
+
+// Entitlements returns all antitlements for a given app, active and expired.
+// appID			: The ID of the application.
+// filterOptions	: Optional filter options; otherwise set it to nil.
+func (s *Session) Entitlements(applicationID int64, filterOptions *EntitlementFilterOptions) (entitlements []*Entitlement, err error) {
+	endpoint := EndpointEntitlements(applicationID)
+	queryParams := url.Values{}
+	if filterOptions != nil {
+		if filterOptions.UserID != 0 {
+			queryParams.Set("user_id", StrID(filterOptions.UserID))
+		}
+		if len(filterOptions.SkuIDs) > 0 {
+			stringSkuIDs := make([]string, 0, len(filterOptions.SkuIDs))
+			for _, skuID := range filterOptions.SkuIDs {
+				stringSkuIDs = append(stringSkuIDs, StrID(skuID))
+			}
+			queryParams.Set("sku_ids", strings.Join(stringSkuIDs, ","))
+		}
+		if filterOptions.BeforeID != 0 {
+			queryParams.Set("before", StrID(filterOptions.BeforeID))
+		}
+		if filterOptions.AfterID != 0 {
+			queryParams.Set("after", StrID(filterOptions.AfterID))
+		}
+		if filterOptions.Limit > 0 {
+			queryParams.Set("limit", strconv.Itoa(filterOptions.Limit))
+		}
+		if filterOptions.GuildID != 0 {
+			queryParams.Set("guild_id", StrID(filterOptions.GuildID))
+		}
+		if filterOptions.ExcludeEnded {
+			queryParams.Set("exclude_ended", "true")
+		}
+	}
+	uri := endpoint
+	uri = fmt.Sprintf("%s?%s", uri, queryParams.Encode())
+	body, err := s.RequestWithBucketID("GET", uri, nil, nil, endpoint)
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &entitlements)
+	return
+}
+
+// EntitlementConsume marks a given One-Time Purchase for the user as consumed.
+func (s *Session) EntitlementConsume(appID, entitlementID int64) (err error) {
+	_, err = s.RequestWithBucketID("POST", EndpointEntitlementConsume(appID, entitlementID), nil, nil, EndpointEntitlementConsume(appID, 0))
+	return
+}
+
+// EntitlementTestCreate creates a test entitlement to a given SKU for a given guild or user.
+// Discord will act as though that user or guild has entitlement to your premium offering.
+func (s *Session) EntitlementTestCreate(appID int64, data *EntitlementTest) (err error) {
+	endpoint := EndpointEntitlements(appID)
+	_, err = s.RequestWithBucketID("POST", endpoint, data, nil, endpoint)
+	return
+}
+
+// EntitlementTestDelete deletes a currently-active test entitlement. Discord will act as though
+// that user or guild no longer has entitlement to your premium offering.
+func (s *Session) EntitlementTestDelete(appID, entitlementID int64) (err error) {
+	_, err = s.RequestWithBucketID("DELETE", EndpointEntitlement(appID, entitlementID), nil, nil, EndpointEntitlement(appID, 0))
+	return
+}
+
+func (s *Session) GetSKUSubscriptions(skuID int64, filterOptions *SubscriptionFilterOptions) (subscriptions []*Subscription, err error) {
+	endpoint := EndpointSKUSubscriptions(skuID)
+	queryParams := url.Values{}
+	if filterOptions.UserId != 0 {
+		queryParams.Set("user_id", StrID(filterOptions.UserId))
+	}
+	if filterOptions.AfterID != 0 {
+		queryParams.Set("after", StrID(filterOptions.AfterID))
+	}
+	if filterOptions.BeforeID != 0 {
+		queryParams.Set("before", StrID(filterOptions.BeforeID))
+	}
+	if filterOptions.Limit != 0 {
+		queryParams.Set("limit", strconv.Itoa(filterOptions.Limit))
+	}
+	uri := endpoint
+	uri = fmt.Sprintf("%s?%s", uri, queryParams.Encode())
+	body, err := s.RequestWithBucketID("GET", uri, nil, nil, endpoint)
+	if err != nil {
+		return
+	}
+	err = unmarshal(body, &subscriptions)
+	return
+}
+
+func (s *Session) GetSKUSubscription(skuID, subscriptionID int64) (subscription *Subscription, err error) {
+	endpoint := EndpointSKUSubscription(skuID, subscriptionID)
+	body, err := s.RequestWithBucketID("GET", endpoint, nil, nil, endpoint)
+	if err != nil {
+		return
+	}
+	err = unmarshal(body, &subscription)
 	return
 }

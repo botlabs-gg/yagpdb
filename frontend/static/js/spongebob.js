@@ -600,6 +600,7 @@ function serializeForm(form) {
 function yagInitUnsavedForms(selectorPrefix) {
 	let unsavedForms = $(selectorPrefix + "form")
 	unsavedForms.each(function (i, rawElem) {
+		if (rawElem.classList.contains("no-unsaved-popup")) return;
 		trackForm(rawElem);
 	});
 }

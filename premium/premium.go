@@ -1,15 +1,18 @@
 package premium
 
 import (
+	"fmt"
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
 	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -28,6 +31,14 @@ const (
 	PremiumTierNone    PremiumTier = 0
 	PremiumTierPremium PremiumTier = 1
 	PremiumTierPlus    PremiumTier = 2
+)
+
+type PremiumSourceType string
+
+const (
+	PremiumSourceTypeDiscord PremiumSourceType = "discord"
+	PremiumSourceTypePatreon PremiumSourceType = "patreon"
+	PremiumSourceTypeCode    PremiumSourceType = "code"
 )
 
 func (p PremiumTier) String() string {
@@ -303,4 +314,19 @@ func tierFlags(tier PremiumTier) []string {
 	}
 
 	return nil
+}
+
+func SendPremiumDM(userID int64, source PremiumSourceType, numSlots int) {
+	logger.Infof("Sending premium DM to user: %d for %d slots via %s subscription", userID, numSlots, string(source))
+	confSendPatreonPremiumDM := config.RegisterOption("yagpdb.premium.send_patreon_dm", "Send DMs to users when they receive premium slots", false)
+	if !confSendPatreonPremiumDM.GetBool() && source == PremiumSourceTypePatreon {
+		return
+	}
+	embed := &discordgo.MessageEmbed{}
+	embed.Title = "You have new Premium Slots!"
+	embed.Description = fmt.Sprintf("You have received %d new premium slots from a %s subscription!\n\n[Assign them to a server here.](https://%s/premium)", numSlots, string(source), common.ConfHost.GetString())
+	err := bot.SendDMEmbed(userID, embed)
+	if err != nil {
+		logger.WithError(err).Error("Failed sending premium DM")
+	}
 }

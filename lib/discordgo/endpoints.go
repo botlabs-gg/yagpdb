@@ -81,6 +81,7 @@ var (
 	EndpointGuildMemberAvatar         = func(gID, uID int64, aID string) string { return "" }
 	EndpointGuildMemberAvatarAnimated = func(gID, uID int64, aID string) string { return "" }
 	EndpointGuildMemberMe             = func(gID int64) string { return "" }
+	EndpointGuildMemberVoiceState     = func(gID, uID int64) string { return "" }
 	EndpointGuildMemberRole           = func(gID, uID, rID int64) string {
 		return ""
 	}
@@ -200,6 +201,24 @@ var (
 	EndpointInteractionFollowupMessage = func(applicationID int64, token string, messageID int64) string {
 		return ""
 	}
+	EndpointSKUs = func(applicationID int64) string {
+		return ""
+	}
+	EndpointEntitlements = func(applicationID int64) string {
+		return ""
+	}
+	EndpointEntitlement = func(applicationID, entitlementID int64) string {
+		return ""
+	}
+	EndpointEntitlementConsume = func(applicationID, entitlementID int64) string {
+		return ""
+	}
+	EndpointSKUSubscriptions = func(skuID int64) string {
+		return ""
+	}
+	EndpointSKUSubscription = func(skuID, subscriptionID int64) string {
+		return ""
+	}
 )
 
 func CreateEndpoints(base string) {
@@ -270,6 +289,7 @@ func CreateEndpoints(base string) {
 		return EndpointCDNGuilds + StrID(gID) + "/users/" + StrID(uID) + "/avatars/" + aID + ".gif"
 	}
 	EndpointGuildMemberMe = func(gID int64) string { return EndpointGuilds + StrID(gID) + "/members/@me" }
+	EndpointGuildMemberVoiceState = func(gID, uID int64) string { return EndpointGuilds + StrID(gID) + "/voice-states/" + StrID(uID) }
 	EndpointGuildMemberRole = func(gID, uID, rID int64) string {
 		return EndpointGuilds + StrID(gID) + "/members/" + StrID(uID) + "/roles/" + StrID(rID)
 	}
@@ -380,6 +400,25 @@ func CreateEndpoints(base string) {
 
 	EndpointApplicationGuildCommandPermissions = func(aID int64, gID int64, cmdID int64) string {
 		return EndpointApplicationGuildCommand(aID, gID, cmdID) + "/permissions"
+	}
+
+	EndpointSKUs = func(applicationID int64) string {
+		return EndpointApplicationNonOauth2(applicationID) + "/skus"
+	}
+	EndpointEntitlements = func(applicationID int64) string {
+		return EndpointApplicationNonOauth2(applicationID) + "/entitlements"
+	}
+	EndpointEntitlement = func(applicationID, entitlementID int64) string {
+		return EndpointApplicationNonOauth2(applicationID) + "/entitlements/" + StrID(entitlementID)
+	}
+	EndpointEntitlementConsume = func(applicationID, entitlementID int64) string {
+		return EndpointApplicationNonOauth2(applicationID) + "/entitlements/" + StrID(entitlementID) + "/consume"
+	}
+	EndpointSKUSubscriptions = func(skuID int64) string {
+		return EndpointAPI + "skus/" + StrID(skuID) + "/subscriptions"
+	}
+	EndpointSKUSubscription = func(skuID, subscriptionID int64) string {
+		return EndpointAPI + "skus/" + StrID(skuID) + "/subscriptions/" + StrID(subscriptionID)
 	}
 
 	EndpointInteractions = EndpointAPI + "interactions"

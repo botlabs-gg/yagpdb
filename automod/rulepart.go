@@ -231,7 +231,7 @@ type TriggerContext struct {
 type MessageTrigger interface {
 	RulePart
 
-	CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message, mdStripped string) (isAffected bool, err error)
+	CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (isAffected bool, err error)
 }
 
 // ViolationListener is a trigger that gets triggered on a violation

@@ -35,61 +35,67 @@ const (
 	EventChannelUpdate                       Event = 20
 	EventConnect                             Event = 21
 	EventDisconnect                          Event = 22
-	EventGuildAuditLogEntryCreate            Event = 23
-	EventGuildBanAdd                         Event = 24
-	EventGuildBanRemove                      Event = 25
-	EventGuildCreate                         Event = 26
-	EventGuildDelete                         Event = 27
-	EventGuildEmojisUpdate                   Event = 28
-	EventGuildIntegrationsUpdate             Event = 29
-	EventGuildJoinRequestDelete              Event = 30
-	EventGuildJoinRequestUpdate              Event = 31
-	EventGuildMemberAdd                      Event = 32
-	EventGuildMemberRemove                   Event = 33
-	EventGuildMemberUpdate                   Event = 34
-	EventGuildMembersChunk                   Event = 35
-	EventGuildRoleCreate                     Event = 36
-	EventGuildRoleDelete                     Event = 37
-	EventGuildRoleUpdate                     Event = 38
-	EventGuildStickersUpdate                 Event = 39
-	EventGuildUpdate                         Event = 40
-	EventInteractionCreate                   Event = 41
-	EventInviteCreate                        Event = 42
-	EventInviteDelete                        Event = 43
-	EventMessageAck                          Event = 44
-	EventMessageCreate                       Event = 45
-	EventMessageDelete                       Event = 46
-	EventMessageDeleteBulk                   Event = 47
-	EventMessageReactionAdd                  Event = 48
-	EventMessageReactionRemove               Event = 49
-	EventMessageReactionRemoveAll            Event = 50
-	EventMessageReactionRemoveEmoji          Event = 51
-	EventMessageUpdate                       Event = 52
-	EventPresenceUpdate                      Event = 53
-	EventPresencesReplace                    Event = 54
-	EventRateLimit                           Event = 55
-	EventReady                               Event = 56
-	EventRelationshipAdd                     Event = 57
-	EventRelationshipRemove                  Event = 58
-	EventResumed                             Event = 59
-	EventStageInstanceCreate                 Event = 60
-	EventStageInstanceDelete                 Event = 61
-	EventStageInstanceUpdate                 Event = 62
-	EventThreadCreate                        Event = 63
-	EventThreadDelete                        Event = 64
-	EventThreadListSync                      Event = 65
-	EventThreadMemberUpdate                  Event = 66
-	EventThreadMembersUpdate                 Event = 67
-	EventThreadUpdate                        Event = 68
-	EventTypingStart                         Event = 69
-	EventUserGuildSettingsUpdate             Event = 70
-	EventUserNoteUpdate                      Event = 71
-	EventUserSettingsUpdate                  Event = 72
-	EventUserUpdate                          Event = 73
-	EventVoiceChannelStatusUpdate            Event = 74
-	EventVoiceServerUpdate                   Event = 75
-	EventVoiceStateUpdate                    Event = 76
-	EventWebhooksUpdate                      Event = 77
+	EventEntitlementCreate                   Event = 23
+	EventEntitlementDelete                   Event = 24
+	EventEntitlementUpdate                   Event = 25
+	EventGuildAuditLogEntryCreate            Event = 26
+	EventGuildBanAdd                         Event = 27
+	EventGuildBanRemove                      Event = 28
+	EventGuildCreate                         Event = 29
+	EventGuildDelete                         Event = 30
+	EventGuildEmojisUpdate                   Event = 31
+	EventGuildIntegrationsUpdate             Event = 32
+	EventGuildJoinRequestDelete              Event = 33
+	EventGuildJoinRequestUpdate              Event = 34
+	EventGuildMemberAdd                      Event = 35
+	EventGuildMemberRemove                   Event = 36
+	EventGuildMemberUpdate                   Event = 37
+	EventGuildMembersChunk                   Event = 38
+	EventGuildRoleCreate                     Event = 39
+	EventGuildRoleDelete                     Event = 40
+	EventGuildRoleUpdate                     Event = 41
+	EventGuildStickersUpdate                 Event = 42
+	EventGuildUpdate                         Event = 43
+	EventInteractionCreate                   Event = 44
+	EventInviteCreate                        Event = 45
+	EventInviteDelete                        Event = 46
+	EventMessageAck                          Event = 47
+	EventMessageCreate                       Event = 48
+	EventMessageDelete                       Event = 49
+	EventMessageDeleteBulk                   Event = 50
+	EventMessageReactionAdd                  Event = 51
+	EventMessageReactionRemove               Event = 52
+	EventMessageReactionRemoveAll            Event = 53
+	EventMessageReactionRemoveEmoji          Event = 54
+	EventMessageUpdate                       Event = 55
+	EventPresenceUpdate                      Event = 56
+	EventPresencesReplace                    Event = 57
+	EventRateLimit                           Event = 58
+	EventReady                               Event = 59
+	EventRelationshipAdd                     Event = 60
+	EventRelationshipRemove                  Event = 61
+	EventResumed                             Event = 62
+	EventStageInstanceCreate                 Event = 63
+	EventStageInstanceDelete                 Event = 64
+	EventStageInstanceUpdate                 Event = 65
+	EventSubscriptionCreate                  Event = 66
+	EventSubscriptionDelete                  Event = 67
+	EventSubscriptionUpdate                  Event = 68
+	EventThreadCreate                        Event = 69
+	EventThreadDelete                        Event = 70
+	EventThreadListSync                      Event = 71
+	EventThreadMemberUpdate                  Event = 72
+	EventThreadMembersUpdate                 Event = 73
+	EventThreadUpdate                        Event = 74
+	EventTypingStart                         Event = 75
+	EventUserGuildSettingsUpdate             Event = 76
+	EventUserNoteUpdate                      Event = 77
+	EventUserSettingsUpdate                  Event = 78
+	EventUserUpdate                          Event = 79
+	EventVoiceChannelStatusUpdate            Event = 80
+	EventVoiceServerUpdate                   Event = 81
+	EventVoiceStateUpdate                    Event = 82
+	EventWebhooksUpdate                      Event = 83
 )
 
 var EventNames = []string{
@@ -116,6 +122,9 @@ var EventNames = []string{
 	"ChannelUpdate",
 	"Connect",
 	"Disconnect",
+	"EntitlementCreate",
+	"EntitlementDelete",
+	"EntitlementUpdate",
 	"GuildAuditLogEntryCreate",
 	"GuildBanAdd",
 	"GuildBanRemove",
@@ -156,6 +165,9 @@ var EventNames = []string{
 	"StageInstanceCreate",
 	"StageInstanceDelete",
 	"StageInstanceUpdate",
+	"SubscriptionCreate",
+	"SubscriptionDelete",
+	"SubscriptionUpdate",
 	"ThreadCreate",
 	"ThreadDelete",
 	"ThreadListSync",
@@ -193,6 +205,9 @@ var AllDiscordEvents = []Event{
 	EventChannelUpdate,
 	EventConnect,
 	EventDisconnect,
+	EventEntitlementCreate,
+	EventEntitlementDelete,
+	EventEntitlementUpdate,
 	EventGuildAuditLogEntryCreate,
 	EventGuildBanAdd,
 	EventGuildBanRemove,
@@ -233,6 +248,9 @@ var AllDiscordEvents = []Event{
 	EventStageInstanceCreate,
 	EventStageInstanceDelete,
 	EventStageInstanceUpdate,
+	EventSubscriptionCreate,
+	EventSubscriptionDelete,
+	EventSubscriptionUpdate,
 	EventThreadCreate,
 	EventThreadDelete,
 	EventThreadListSync,
@@ -274,6 +292,9 @@ var AllEvents = []Event{
 	EventChannelUpdate,
 	EventConnect,
 	EventDisconnect,
+	EventEntitlementCreate,
+	EventEntitlementDelete,
+	EventEntitlementUpdate,
 	EventGuildAuditLogEntryCreate,
 	EventGuildBanAdd,
 	EventGuildBanRemove,
@@ -314,6 +335,9 @@ var AllEvents = []Event{
 	EventStageInstanceCreate,
 	EventStageInstanceDelete,
 	EventStageInstanceUpdate,
+	EventSubscriptionCreate,
+	EventSubscriptionDelete,
+	EventSubscriptionUpdate,
 	EventThreadCreate,
 	EventThreadDelete,
 	EventThreadListSync,
@@ -331,7 +355,7 @@ var AllEvents = []Event{
 	EventWebhooksUpdate,
 }
 
-var handlers = make([][][]*Handler, 78)
+var handlers = make([][][]*Handler, 84)
 
 func (data *EventData) ApplicationCommandCreate() *discordgo.ApplicationCommandCreate {
 	return data.EvtInterface.(*discordgo.ApplicationCommandCreate)
@@ -377,6 +401,15 @@ func (data *EventData) Connect() *discordgo.Connect {
 }
 func (data *EventData) Disconnect() *discordgo.Disconnect {
 	return data.EvtInterface.(*discordgo.Disconnect)
+}
+func (data *EventData) EntitlementCreate() *discordgo.EntitlementCreate {
+	return data.EvtInterface.(*discordgo.EntitlementCreate)
+}
+func (data *EventData) EntitlementDelete() *discordgo.EntitlementDelete {
+	return data.EvtInterface.(*discordgo.EntitlementDelete)
+}
+func (data *EventData) EntitlementUpdate() *discordgo.EntitlementUpdate {
+	return data.EvtInterface.(*discordgo.EntitlementUpdate)
 }
 func (data *EventData) GuildAuditLogEntryCreate() *discordgo.GuildAuditLogEntryCreate {
 	return data.EvtInterface.(*discordgo.GuildAuditLogEntryCreate)
@@ -498,6 +531,15 @@ func (data *EventData) StageInstanceDelete() *discordgo.StageInstanceDelete {
 func (data *EventData) StageInstanceUpdate() *discordgo.StageInstanceUpdate {
 	return data.EvtInterface.(*discordgo.StageInstanceUpdate)
 }
+func (data *EventData) SubscriptionCreate() *discordgo.SubscriptionCreate {
+	return data.EvtInterface.(*discordgo.SubscriptionCreate)
+}
+func (data *EventData) SubscriptionDelete() *discordgo.SubscriptionDelete {
+	return data.EvtInterface.(*discordgo.SubscriptionDelete)
+}
+func (data *EventData) SubscriptionUpdate() *discordgo.SubscriptionUpdate {
+	return data.EvtInterface.(*discordgo.SubscriptionUpdate)
+}
 func (data *EventData) ThreadCreate() *discordgo.ThreadCreate {
 	return data.EvtInterface.(*discordgo.ThreadCreate)
 }
@@ -577,116 +619,128 @@ func fillEvent(evtData *EventData) {
 		evtData.Type = Event(21)
 	case *discordgo.Disconnect:
 		evtData.Type = Event(22)
-	case *discordgo.GuildAuditLogEntryCreate:
+	case *discordgo.EntitlementCreate:
 		evtData.Type = Event(23)
-	case *discordgo.GuildBanAdd:
+	case *discordgo.EntitlementDelete:
 		evtData.Type = Event(24)
-	case *discordgo.GuildBanRemove:
+	case *discordgo.EntitlementUpdate:
 		evtData.Type = Event(25)
-	case *discordgo.GuildCreate:
+	case *discordgo.GuildAuditLogEntryCreate:
 		evtData.Type = Event(26)
-	case *discordgo.GuildDelete:
+	case *discordgo.GuildBanAdd:
 		evtData.Type = Event(27)
-	case *discordgo.GuildEmojisUpdate:
+	case *discordgo.GuildBanRemove:
 		evtData.Type = Event(28)
-	case *discordgo.GuildIntegrationsUpdate:
+	case *discordgo.GuildCreate:
 		evtData.Type = Event(29)
-	case *discordgo.GuildJoinRequestDelete:
+	case *discordgo.GuildDelete:
 		evtData.Type = Event(30)
-	case *discordgo.GuildJoinRequestUpdate:
+	case *discordgo.GuildEmojisUpdate:
 		evtData.Type = Event(31)
-	case *discordgo.GuildMemberAdd:
+	case *discordgo.GuildIntegrationsUpdate:
 		evtData.Type = Event(32)
-	case *discordgo.GuildMemberRemove:
+	case *discordgo.GuildJoinRequestDelete:
 		evtData.Type = Event(33)
-	case *discordgo.GuildMemberUpdate:
+	case *discordgo.GuildJoinRequestUpdate:
 		evtData.Type = Event(34)
-	case *discordgo.GuildMembersChunk:
+	case *discordgo.GuildMemberAdd:
 		evtData.Type = Event(35)
-	case *discordgo.GuildRoleCreate:
+	case *discordgo.GuildMemberRemove:
 		evtData.Type = Event(36)
-	case *discordgo.GuildRoleDelete:
+	case *discordgo.GuildMemberUpdate:
 		evtData.Type = Event(37)
-	case *discordgo.GuildRoleUpdate:
+	case *discordgo.GuildMembersChunk:
 		evtData.Type = Event(38)
-	case *discordgo.GuildStickersUpdate:
+	case *discordgo.GuildRoleCreate:
 		evtData.Type = Event(39)
-	case *discordgo.GuildUpdate:
+	case *discordgo.GuildRoleDelete:
 		evtData.Type = Event(40)
-	case *discordgo.InteractionCreate:
+	case *discordgo.GuildRoleUpdate:
 		evtData.Type = Event(41)
-	case *discordgo.InviteCreate:
+	case *discordgo.GuildStickersUpdate:
 		evtData.Type = Event(42)
-	case *discordgo.InviteDelete:
+	case *discordgo.GuildUpdate:
 		evtData.Type = Event(43)
-	case *discordgo.MessageAck:
+	case *discordgo.InteractionCreate:
 		evtData.Type = Event(44)
-	case *discordgo.MessageCreate:
+	case *discordgo.InviteCreate:
 		evtData.Type = Event(45)
-	case *discordgo.MessageDelete:
+	case *discordgo.InviteDelete:
 		evtData.Type = Event(46)
-	case *discordgo.MessageDeleteBulk:
+	case *discordgo.MessageAck:
 		evtData.Type = Event(47)
-	case *discordgo.MessageReactionAdd:
+	case *discordgo.MessageCreate:
 		evtData.Type = Event(48)
-	case *discordgo.MessageReactionRemove:
+	case *discordgo.MessageDelete:
 		evtData.Type = Event(49)
-	case *discordgo.MessageReactionRemoveAll:
+	case *discordgo.MessageDeleteBulk:
 		evtData.Type = Event(50)
-	case *discordgo.MessageReactionRemoveEmoji:
+	case *discordgo.MessageReactionAdd:
 		evtData.Type = Event(51)
-	case *discordgo.MessageUpdate:
+	case *discordgo.MessageReactionRemove:
 		evtData.Type = Event(52)
-	case *discordgo.PresenceUpdate:
+	case *discordgo.MessageReactionRemoveAll:
 		evtData.Type = Event(53)
-	case *discordgo.PresencesReplace:
+	case *discordgo.MessageReactionRemoveEmoji:
 		evtData.Type = Event(54)
-	case *discordgo.RateLimit:
+	case *discordgo.MessageUpdate:
 		evtData.Type = Event(55)
-	case *discordgo.Ready:
+	case *discordgo.PresenceUpdate:
 		evtData.Type = Event(56)
-	case *discordgo.RelationshipAdd:
+	case *discordgo.PresencesReplace:
 		evtData.Type = Event(57)
-	case *discordgo.RelationshipRemove:
+	case *discordgo.RateLimit:
 		evtData.Type = Event(58)
-	case *discordgo.Resumed:
+	case *discordgo.Ready:
 		evtData.Type = Event(59)
-	case *discordgo.StageInstanceCreate:
+	case *discordgo.RelationshipAdd:
 		evtData.Type = Event(60)
-	case *discordgo.StageInstanceDelete:
+	case *discordgo.RelationshipRemove:
 		evtData.Type = Event(61)
-	case *discordgo.StageInstanceUpdate:
+	case *discordgo.Resumed:
 		evtData.Type = Event(62)
-	case *discordgo.ThreadCreate:
+	case *discordgo.StageInstanceCreate:
 		evtData.Type = Event(63)
-	case *discordgo.ThreadDelete:
+	case *discordgo.StageInstanceDelete:
 		evtData.Type = Event(64)
-	case *discordgo.ThreadListSync:
+	case *discordgo.StageInstanceUpdate:
 		evtData.Type = Event(65)
-	case *discordgo.ThreadMemberUpdate:
+	case *discordgo.SubscriptionCreate:
 		evtData.Type = Event(66)
-	case *discordgo.ThreadMembersUpdate:
+	case *discordgo.SubscriptionDelete:
 		evtData.Type = Event(67)
-	case *discordgo.ThreadUpdate:
+	case *discordgo.SubscriptionUpdate:
 		evtData.Type = Event(68)
-	case *discordgo.TypingStart:
+	case *discordgo.ThreadCreate:
 		evtData.Type = Event(69)
-	case *discordgo.UserGuildSettingsUpdate:
+	case *discordgo.ThreadDelete:
 		evtData.Type = Event(70)
-	case *discordgo.UserNoteUpdate:
+	case *discordgo.ThreadListSync:
 		evtData.Type = Event(71)
-	case *discordgo.UserSettingsUpdate:
+	case *discordgo.ThreadMemberUpdate:
 		evtData.Type = Event(72)
-	case *discordgo.UserUpdate:
+	case *discordgo.ThreadMembersUpdate:
 		evtData.Type = Event(73)
-	case *discordgo.VoiceChannelStatusUpdate:
+	case *discordgo.ThreadUpdate:
 		evtData.Type = Event(74)
-	case *discordgo.VoiceServerUpdate:
+	case *discordgo.TypingStart:
 		evtData.Type = Event(75)
-	case *discordgo.VoiceStateUpdate:
+	case *discordgo.UserGuildSettingsUpdate:
 		evtData.Type = Event(76)
-	case *discordgo.WebhooksUpdate:
+	case *discordgo.UserNoteUpdate:
 		evtData.Type = Event(77)
+	case *discordgo.UserSettingsUpdate:
+		evtData.Type = Event(78)
+	case *discordgo.UserUpdate:
+		evtData.Type = Event(79)
+	case *discordgo.VoiceChannelStatusUpdate:
+		evtData.Type = Event(80)
+	case *discordgo.VoiceServerUpdate:
+		evtData.Type = Event(81)
+	case *discordgo.VoiceStateUpdate:
+		evtData.Type = Event(82)
+	case *discordgo.WebhooksUpdate:
+		evtData.Type = Event(83)
 	default:
 		return
 	}

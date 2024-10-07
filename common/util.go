@@ -29,6 +29,7 @@ func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.Str
 var LinkRegex = regexp.MustCompile(`(?i)([a-z\d]+://)([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])`)
 var DomainFinderRegex = regexp.MustCompile(`(?i)(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,61}[a-z\d]`)
 var UGCHtmlPolicy = bluemonday.NewPolicy().AllowElements("h1", "h2", "h3", "h4", "h5", "h6", "p", "ol", "ul", "li", "dl", "dd", "dt", "blockquote", "table", "thead", "th", "tr", "td", "tbody", "del", "i", "b")
+var ForwardSlashReplacer = strings.NewReplacer("\\", "")
 
 type GuildWithConnected struct {
 	*discordgo.UserGuild

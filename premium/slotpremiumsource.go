@@ -316,10 +316,10 @@ func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID i
 	return nil
 }
 
-func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID int64, source, title, message string, sourceSlotID int64, duration time.Duration, tier PremiumTier) (*models.PremiumSlot, error) {
+func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID int64, source PremiumSourceType, title, message string, sourceSlotID int64, duration time.Duration, tier PremiumTier) (*models.PremiumSlot, error) {
 	slot := &models.PremiumSlot{
 		UserID:   userID,
-		Source:   source,
+		Source:   string(source),
 		SourceID: sourceSlotID,
 
 		Title:   title,

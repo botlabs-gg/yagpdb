@@ -62,18 +62,13 @@ func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message
 
 	ms := dstate.MemberStateFromMember(msg.Member)
 
-	stripped := ""
 	return !p.CheckTriggers(nil, evt.GS, ms, msg, cs, func(trig *ParsedPart) (activated bool, err error) {
-		if stripped == "" {
-			stripped = PrepareMessageForWordCheck(msg.Content)
-		}
-
 		cast, ok := trig.Part.(MessageTrigger)
 		if !ok {
 			return
 		}
 
-		return cast.CheckMessage(&TriggerContext{GS: evt.GS, MS: ms, Data: trig.ParsedSettings}, cs, msg, stripped)
+		return cast.CheckMessage(&TriggerContext{GS: evt.GS, MS: ms, Data: trig.ParsedSettings}, cs, msg)
 	})
 }
 

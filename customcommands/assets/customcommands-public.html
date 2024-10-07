@@ -19,7 +19,7 @@
             <li class="text-danger" hidden id="trigger-warning"></li>
           </ul>
           {{$dot := .}}
-          <form id="main-form" class="form-horizontal">
+          <form id="main-form" class="form-horizontal no-unsaved-popup">
             <h2 class="card-title">
               {{index .CCTriggerTypes .CC.TriggerType}}{{if and (ne .CC.TriggerType 5) (ne .CC.TriggerType 6)}}:
               <span class="cc-text-trigger-span">{{.CC.TextTrigger}}</span>{{else if ne .CC.TriggerType 6}}:
@@ -79,6 +79,15 @@
                           <p id="trigger-desc-reaction">
                             The command will trigger on the specified reaction events.
                           </p>
+                          {{else if eq .CC.TriggerType 7}}
+                          <p id="trigger-desc-component">
+                              The command will run when a component (a button or a select menu) whose
+                              custom ID matches the given regex is used. BETA FEATURE.
+                          </p>
+                          {{else if eq .CC.TriggerType 8}}
+                          <p id="trigger-desc-modal">
+                              The command will run when a modal whose custom ID matches the given regex is submitted. BETA FEATURE.
+                          </p>
                           {{end}}
                         </div>
                       </div>
@@ -86,12 +95,16 @@
                   </div>
                 </div>
               </div>
-              {{if eq .CC.TriggerType 0 1 2 3 4}}
+              {{if eq .CC.TriggerType 0 1 2 3 4 7 8}}
               <div id="cc-text-trigger-details" class="col-lg-8">
                 <div class="row">
                   <div class="col-lg-12">
                     <div class="form-group">
-                      <label>Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                      {{if eq .CC.TriggerType 0 1 2 3 4}}
+                      <label id="cc-message-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                      {{else}}
+                      <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                      {{end}}
                       <div class="input-group mb-2">
                         <div class="input-group-prepend" id="command-trigger-prepended-prefix">
                           <div class="input-group-text">{{.CommandPrefix}}</div>

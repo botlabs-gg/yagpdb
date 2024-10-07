@@ -1,4 +1,4 @@
-package patreonpremiumsource
+package discordpremiumsource
 
 import (
 	"context"
@@ -7,37 +7,36 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/patreon"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/premium/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-type PremiumSource struct{}
+type DiscordPremiumSource struct{}
+
+var ActiveDiscordPremiumPoller *DiscordPremiumPoller
 
 func RegisterPlugin() {
-	logger.Info("Registered patreon premium source")
-	premium.RegisterPremiumSource(&PremiumSource{})
+	logger.Info("Registered discord premium source")
+	premium.RegisterPremiumSource(&DiscordPremiumSource{})
 	common.RegisterPlugin(&Plugin{})
 }
 
-func (ps *PremiumSource) Init() {}
+func (ps *DiscordPremiumSource) Init() {}
 
-func (ps *PremiumSource) Names() (human string, idname string) {
-	return "Patreon", "patreon"
+func (ps *DiscordPremiumSource) Names() (human string, idname string) {
+	return "Discord", "discord"
 }
 
 var logger = common.GetPluginLogger(&Plugin{})
 
-// Since we keep the patrons loaded on the webserver, we also do the updating of the patreon premium slots on the webserver
-// in the future this should be cleaned up (maybe keep patrons in redis)
 type Plugin struct{}
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
 	return &common.PluginInfo{
-		Name:     "Patreon premium source",
-		SysName:  "patreon_premium_source",
+		Name:     "Discord premium source",
+		SysName:  "discord_premium_source",
 		Category: common.PluginCategoryCore,
 	}
 }
@@ -45,21 +44,25 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
-	if patreon.ActivePoller == nil {
+	if confDiscordPremiumSKUID.GetInt() == 0 {
+		logger.Warn("No discord premium SKU ID set, not starting poller")
 		return
 	}
-
+	ActiveDiscordPremiumPoller = InitPoller()
+	if ActiveDiscordPremiumPoller == nil {
+		logger.Warn("Failed initializing discord premium poller")
+		return
+	}
 	go RunPoller()
 }
 
 func RunPoller() {
-	ticker := time.NewTicker(time.Minute)
-
+	ticker := time.NewTicker(time.Minute * 30)
 	for {
 		<-ticker.C
 		err := UpdatePremiumSlots(context.Background())
 		if err != nil {
-			logger.WithError(err).Error("Failed updating premium slots for patrons")
+			logger.WithError(err).Error("Failed updating premium slots for discord")
 		}
 	}
 }
@@ -70,21 +73,20 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		return errors.WithMessage(err, "BeginTX")
 	}
 
-	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypePatreon)), qm.OrderBy("id desc")).All(ctx, tx)
+	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.OrderBy("id desc")).All(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return errors.WithMessage(err, "PremiumSlots")
 	}
 
-	patrons := patreon.ActivePoller.GetPatrons()
-	if len(patrons) == 0 {
+	entitlements := ActiveDiscordPremiumPoller.GetEntitlements()
+	if len(entitlements) == 0 {
 		tx.Rollback()
 		return nil
 	}
 
 	// Sort the slots into a map of users -> slots
 	sorted := make(map[int64][]*models.PremiumSlot)
-
 	for _, slot := range slots {
 		sorted[slot.UserID] = append(sorted[slot.UserID], slot)
 	}
@@ -92,9 +94,10 @@ func UpdatePremiumSlots(ctx context.Context) error {
 	// Update already tracked slots
 	for userID, userSlots := range sorted {
 		slotsForPledge := 0
-		for _, patron := range patrons {
-			if patron.DiscordID == userID {
-				slotsForPledge = CalcSlotsForPledge(patron.AmountCents)
+		for _, entitlement := range entitlements {
+			if entitlement.UserID == userID {
+				//TODO: Add Support for multiple slots via discord
+				slotsForPledge = 1
 				break
 			}
 		}
@@ -108,27 +111,25 @@ func UpdatePremiumSlots(ctx context.Context) error {
 			totalSlots := slotsForPledge - len(userSlots)
 			// Need to create more slots
 			for i := 0; i < totalSlots; i++ {
-				title := fmt.Sprintf("Patreon Slot #%d", 1+i+len(userSlots))
-				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, premium.PremiumSourceTypePatreon, title, "Slot is available for as long as the pledge is active on patreon", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
+				title := fmt.Sprintf("Discord Slot #%d", 1+i+len(userSlots))
+				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is Active on Discord", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
 					tx.Rollback()
 					return errors.WithMessage(err, "CreatePremiumSlot")
 				}
-				logger.Info("Created patreon premium slot #", slot.ID, slot.UserID)
+				logger.Info("Created discord premium slot #", slot.ID, slot.UserID)
 			}
 			if totalSlots > 0 {
-				go premium.SendPremiumDM(userID, premium.PremiumSourceTypePatreon, slotsForPledge-len(userSlots))
+				go premium.SendPremiumDM(userID, premium.PremiumSourceTypeDiscord, totalSlots)
 			}
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
 			slotsToRemove := make([]int64, 0)
-
 			for i := 0; i < len(userSlots)-slotsForPledge; i++ {
 				slot := userSlots[i]
 				slotsToRemove = append(slotsToRemove, slot.ID)
-				logger.Info("Marked patreon slot for deletion #", slot.ID, slot.UserID)
+				logger.Info("Marked discord slot for deletion #", slot.ID, slot.UserID)
 			}
-
 			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
 			if err != nil {
 				tx.Rollback()
@@ -139,53 +140,28 @@ func UpdatePremiumSlots(ctx context.Context) error {
 
 	// Add completely new premium slots
 OUTER:
-	for _, v := range patrons {
-		if v.DiscordID == 0 {
-			continue
-		}
-
+	for _, v := range entitlements {
 		for userID := range sorted {
-			if userID == v.DiscordID {
+			if userID == v.UserID {
 				continue OUTER
 			}
 		}
 
 		// If we got here then that means this is a new user
-		slots := CalcSlotsForPledge(v.AmountCents)
+		slots := 1
 		for i := 0; i < slots; i++ {
-			title := fmt.Sprintf("Patreon Slot #%d", i+1)
-			slot, err := premium.CreatePremiumSlot(ctx, tx, v.DiscordID, premium.PremiumSourceTypePatreon, title, "Slot is available for as long as the pledge is active on patreon", int64(i+1), -1, premium.PremiumTierPremium)
+			title := fmt.Sprintf("Discord Premium Slot #%d", i+1)
+			slot, err := premium.CreatePremiumSlot(ctx, tx, v.UserID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is active on Discord", int64(i+1), -1, premium.PremiumTierPremium)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "new CreatePremiumSlot")
 			}
-
-			logger.Info("Created new patreon premium slot #", slot.ID, slot.ID)
+			logger.Info("Created new discord premium slot #", slot.ID, slot.ID)
 		}
 		if slots > 0 {
-			go premium.SendPremiumDM(v.DiscordID, premium.PremiumSourceTypePatreon, slots)
+			go premium.SendPremiumDM(v.UserID, premium.PremiumSourceTypeDiscord, 1)
 		}
 	}
-
 	err = tx.Commit()
 	return errors.WithMessage(err, "Commit")
-}
-
-func CalcSlotsForPledge(cents int) (slots int) {
-	if cents < 300 {
-		return 0
-	}
-
-	// 3$ for one slot
-	if cents >= 300 && cents < 500 {
-		return 1
-	}
-
-	// 2.5$ per slot up until before 10$
-	if cents < 1000 {
-		return cents / 250
-	}
-
-	// 2$ per slot from and including 10$
-	return cents / 200
 }

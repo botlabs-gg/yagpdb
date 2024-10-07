@@ -55,7 +55,7 @@ func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *d
 
 }
 
-func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, neededPerm int64, additionalPermRoles []int64, enabled bool) (oreason string, err error) {
+func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, neededPerm int64, additionalPermRoles []int64, enabled, additionalPermRolesAvailable bool) (oreason string, err error) {
 	cmdName := cmdData.Cmd.Trigger.Names[0]
 	oreason = reason
 	if !enabled {
@@ -88,7 +88,11 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		// Fallback to legacy permissions
 		hasPerms, err := bot.AdminOrPermMS(cmdData.GuildData.GS.ID, cmdData.ChannelID, member, neededPerm)
 		if err != nil || !hasPerms {
-			return oreason, commands.NewUserErrorf("The **%s** command requires the **%s** permission in this channel or additional roles set up by admins, you don't have it. (if you do contact bot support)", cmdName, common.StringPerms[neededPerm])
+			userError := fmt.Sprintf("The **%s** command requires the **%s** permission in this channel", cmdName, common.StringPerms[neededPerm])
+			if additionalPermRolesAvailable {
+				userError += "or additional roles set up by admins"
+			}
+			return oreason, commands.NewUserError(userError, ", you don't have it. (if you do contact bot support)")
 		}
 
 		permsMet = true
@@ -169,13 +173,17 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
+				return nil, errors.New("cannot nest exec/execAdmin calls")
+			}
+
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
 			}
 
 			reason := SafeArgString(parsed, 2)
-			reason, err = MBaseCmdSecond(parsed, reason, config.BanReasonOptional, discordgo.PermissionBanMembers, config.BanCmdRoles, config.BanEnabled)
+			reason, err = MBaseCmdSecond(parsed, reason, config.BanReasonOptional, discordgo.PermissionBanMembers, config.BanCmdRoles, config.BanEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -199,7 +207,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = BanUserWithDuration(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, banDuration, ddays)
+			err = BanUserWithDuration(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, banDuration, ddays, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
 			if err != nil {
 				return nil, err
 			}
@@ -230,7 +238,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			reason := SafeArgString(parsed, 1)
-			reason, err = MBaseCmdSecond(parsed, reason, config.BanReasonOptional, discordgo.PermissionBanMembers, config.BanCmdRoles, config.BanEnabled)
+			reason, err = MBaseCmdSecond(parsed, reason, config.BanReasonOptional, discordgo.PermissionBanMembers, config.BanCmdRoles, config.BanEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -275,13 +283,17 @@ var ModerationCommands = []*commands.YAGCommand{
 		SlashCommandEnabled: true,
 		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
+				return nil, errors.New("cannot nest exec/execAdmin calls")
+			}
+
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
 			}
 
 			reason := SafeArgString(parsed, 1)
-			reason, err = MBaseCmdSecond(parsed, reason, config.KickReasonOptional, discordgo.PermissionKickMembers, config.KickCmdRoles, config.KickEnabled)
+			reason, err = MBaseCmdSecond(parsed, reason, config.KickReasonOptional, discordgo.PermissionKickMembers, config.KickCmdRoles, config.KickEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -310,7 +322,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				msg = parsed.TraditionalTriggerData.Message
 			}
 
-			err = KickUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, toDel)
+			err = KickUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, target, toDel, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
 			if err != nil {
 				return nil, err
 			}
@@ -335,6 +347,10 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
+				return nil, errors.New("cannot nest exec/execAdmin calls")
+			}
+
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
@@ -345,7 +361,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			reason := parsed.Args[2].Str()
-			reason, err = MBaseCmdSecond(parsed, reason, config.MuteReasonOptional, discordgo.PermissionKickMembers, config.MuteCmdRoles, config.MuteEnabled)
+			reason, err = MBaseCmdSecond(parsed, reason, config.MuteReasonOptional, discordgo.PermissionKickMembers, config.MuteCmdRoles, config.MuteEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -369,7 +385,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = MuteUnmuteUser(config, true, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, int(d.Minutes()))
+			err = MuteUnmuteUser(config, true, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, int(d.Minutes()), parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
 			if err != nil {
 				return nil, err
 			}
@@ -394,6 +410,10 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
+				return nil, errors.New("cannot nest exec/execAdmin calls")
+			}
+
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
@@ -404,7 +424,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			reason := parsed.Args[1].Str()
-			reason, err = MBaseCmdSecond(parsed, reason, config.UnmuteReasonOptional, discordgo.PermissionKickMembers, config.MuteCmdRoles, config.MuteEnabled)
+			reason, err = MBaseCmdSecond(parsed, reason, config.UnmuteReasonOptional, discordgo.PermissionKickMembers, config.MuteCmdRoles, config.MuteEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -418,7 +438,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = MuteUnmuteUser(config, false, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, 0)
+			err = MuteUnmuteUser(config, false, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, member, 0, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
 			if err != nil {
 				return nil, err
 			}
@@ -444,13 +464,16 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
+				return nil, errors.New("cannot nest exec/execAdmin calls")
+			}
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
 			}
 
 			reason := parsed.Args[2].Str()
-			reason, err = MBaseCmdSecond(parsed, reason, config.TimeoutReasonOptional, discordgo.PermissionModerateMembers, config.TimeoutCmdRoles, config.TimeoutEnabled)
+			reason, err = MBaseCmdSecond(parsed, reason, config.TimeoutReasonOptional, discordgo.PermissionModerateMembers, config.TimeoutCmdRoles, config.TimeoutEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -474,7 +497,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = TimeoutUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, &member.User, d)
+			err = TimeoutUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, reason, &member.User, d, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
 			if err != nil {
 				return nil, err
 			}
@@ -504,7 +527,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			reason := parsed.Args[1].Str()
-			reason, err = MBaseCmdSecond(parsed, reason, config.TimeoutReasonOptional, discordgo.PermissionModerateMembers, config.TimeoutCmdRoles, config.TimeoutEnabled)
+			reason, err = MBaseCmdSecond(parsed, reason, config.TimeoutReasonOptional, discordgo.PermissionModerateMembers, config.TimeoutCmdRoles, config.TimeoutEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -547,7 +570,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, 0, nil, config.ReportEnabled)
+			_, err = MBaseCmdSecond(parsed, "", true, 0, nil, config.ReportEnabled, false)
 			if err != nil {
 				return nil, err
 			}
@@ -640,7 +663,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, nil, config.CleanEnabled)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, nil, config.CleanEnabled, false)
 			if err != nil {
 				return nil, err
 			}
@@ -774,7 +797,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionKickMembers, nil, true)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionKickMembers, nil, true, false)
 			if err != nil {
 				return nil, err
 			}
@@ -821,11 +844,15 @@ var ModerationCommands = []*commands.YAGCommand{
 		DefaultEnabled:           false,
 		IsResponseEphemeral:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
+				return nil, errors.New("cannot nest exec/execAdmin calls")
+			}
+
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
 				return nil, err
 			}
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -839,7 +866,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = WarnUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, target, parsed.Args[1].Str())
+			err = WarnUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, target, parsed.Args[1].Str(), parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
 			if err != nil {
 				return nil, err
 			}
@@ -871,7 +898,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true, true)
 			if err != nil {
 				return nil, err
 			}
@@ -926,7 +953,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -968,7 +995,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -1010,7 +1037,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -1054,7 +1081,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, true, true)
 			if err != nil {
 				return nil, err
 			}
@@ -1126,7 +1153,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageRoles, config.GiveRoleCmdRoles, config.GiveRoleCmdEnabled)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageRoles, config.GiveRoleCmdRoles, config.GiveRoleCmdEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -1202,7 +1229,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageRoles, config.GiveRoleCmdRoles, config.GiveRoleCmdEnabled)
+			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageRoles, config.GiveRoleCmdRoles, config.GiveRoleCmdEnabled, true)
 			if err != nil {
 				return nil, err
 			}

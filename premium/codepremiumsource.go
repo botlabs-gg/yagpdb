@@ -34,9 +34,7 @@ func init() {
 
 type CodePremiumSource struct{}
 
-func (ps *CodePremiumSource) Init() {
-}
-
+func (ps *CodePremiumSource) Init() {}
 func (ps *CodePremiumSource) Names() (human string, idname string) {
 	return "Redeemed code", "code"
 }
@@ -55,7 +53,7 @@ func RedeemCode(ctx context.Context, code string, userID int64) error {
 	}
 
 	// model found, with no user attached, create the slot for it
-	slot, err := CreatePremiumSlot(ctx, tx, userID, "code", "Redeemed code", c.Message, c.ID, time.Duration(c.Duration), PremiumTierPremium)
+	slot, err := CreatePremiumSlot(ctx, tx, userID, PremiumSourceTypeCode, "Redeemed code", c.Message, c.ID, time.Duration(c.Duration), PremiumTierPremium)
 	if err != nil {
 		tx.Rollback()
 		return errors.WithMessage(err, "CreatePremiumSlot")
