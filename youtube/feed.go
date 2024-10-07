@@ -75,8 +75,8 @@ func (p *Plugin) deleteOldVideos() {
 }
 
 func (p *Plugin) autoSyncWebsubs() {
-	// force syncs all websubs from db every 24 hours in case of outages or missed updates
-	ticker := time.NewTicker(time.Hour * 24)
+	// force syncs all websubs from db every hour in case of outages or missed updates
+	ticker := time.NewTicker(time.Hour * 1)
 	for {
 		select {
 		case <-ticker.C:
@@ -176,7 +176,8 @@ func (p *Plugin) syncWebSubs() {
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
 				if mn.Nil {
 					// Channel not added to redis, resubscribe and add to redis
-					go p.WebSubSubscribe(channel)
+					p.WebSubSubscribe(channel)
+					time.Sleep(time.Second)
 				}
 			}
 		}
