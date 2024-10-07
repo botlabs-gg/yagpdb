@@ -22,7 +22,7 @@ import (
 const (
 	RedisChannelsLockKey       = "youtube_subbed_channel_lock"
 	RedisKeyPublishedVideoList = "youtube_published_videos"
-	RedisKeyWebSubChannels     = "youtube_registered_websub_channels"
+	RedisKeyWebSubChannels     = "youtube_notifications_subscribed_websub_channels"
 	GoogleWebsubHub            = "https://pubsubhubbub.appspot.com/subscribe"
 )
 
@@ -100,7 +100,7 @@ func (p *Plugin) DisableGuildFeeds(guildID int64) error {
 func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 	values := url.Values{
 		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
-		"hub.topic":        {"https://www.youtube.com/feeds/videos.xml?channel_id=" + ytChannelID},
+		"hub.topic":        {"http://www.youtube.com/feeds/videos.xml?channel_id=" + ytChannelID},
 		"hub.verify":       {"sync"},
 		"hub.mode":         {"subscribe"},
 		"hub.verify_token": {confWebsubVerifytoken.GetString()},
@@ -124,7 +124,7 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 	values := url.Values{
 		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
-		"hub.topic":        {"https://www.youtube.com/feeds/videos.xml?channel_id=" + ytChannelID},
+		"hub.topic":        {"http://www.youtube.com/feeds/videos.xml?channel_id=" + ytChannelID},
 		"hub.verify":       {"sync"},
 		"hub.mode":         {"unsubscribe"},
 		"hub.verify_token": {confWebsubVerifytoken.GetString()},
