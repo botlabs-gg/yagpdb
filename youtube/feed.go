@@ -176,7 +176,7 @@ func (p *Plugin) syncWebSubs() {
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
 				if mn.Nil {
 					// Channel not added to redis, resubscribe and add to redis
-					p.WebSubSubscribe(channel)
+					go p.WebSubSubscribe(channel)
 					time.Sleep(time.Second)
 				}
 			}
