@@ -76,6 +76,7 @@ func (p *Plugin) deleteOldVideos() {
 
 func (p *Plugin) autoSyncWebsubs() {
 	// force syncs all websubs from db every hour in case of outages or missed updates
+	p.syncWebSubs()
 	ticker := time.NewTicker(time.Hour * 1)
 	for {
 		select {
@@ -87,7 +88,6 @@ func (p *Plugin) autoSyncWebsubs() {
 
 // keeps the subscriptions up to date by updating the ones soon to be expiring
 func (p *Plugin) runWebsubChecker() {
-	go p.syncWebSubs()
 	ticker := time.NewTicker(WebSubCheckInterval)
 	for {
 		select {
@@ -177,7 +177,7 @@ func (p *Plugin) syncWebSubs() {
 				if mn.Nil {
 					// Channel not added to redis, resubscribe and add to redis
 					go p.WebSubSubscribe(channel)
-					time.Sleep(time.Second)
+					time.Sleep(time.Millisecond * 500)
 				}
 			}
 		}
