@@ -173,16 +173,20 @@ func (p *Plugin) syncWebSubs() {
 		}
 		for index, chunk := range channelChunks {
 			logger.Infof("Processing chunk %d of %d for %d youtube channels", index+1, len(channelChunks), totalChannels)
+			var didChunkUpdate bool
 			for _, channel := range chunk {
 				mn := radix.MaybeNil{}
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
 				if mn.Nil {
+					didChunkUpdate = true
 					// Channel not added to redis, resubscribe and add to redis
 					go p.WebSubSubscribe(channel)
 				}
 			}
-			// sleep for a second before processing next chunk
-			time.Sleep(time.Second)
+			if didChunkUpdate {
+				// sleep for a second before processing next chunk if the chunk had any updates, otherwise the complete sync takes forever
+				time.Sleep(time.Second)
+			}
 		}
 		if locked {
 			common.UnlockRedisKey(RedisChannelsLockKey)
