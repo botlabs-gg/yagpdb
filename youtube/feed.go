@@ -76,11 +76,11 @@ func (p *Plugin) deleteOldVideos() {
 
 func (p *Plugin) autoSyncWebsubs() {
 	// force syncs all websubs from db every 24 hours in case of outages or missed updates
-	ticker := time.NewTicker(time.Hour * 24)
+	ticker := time.NewTicker(time.Hour * 1)
 	for {
 		select {
 		case <-ticker.C:
-			go p.syncWebSubs()
+			p.syncWebSubs()
 		}
 	}
 }
