@@ -87,7 +87,9 @@ func (p *Plugin) autoSyncWebsubs() {
 
 // keeps the subscriptions up to date by updating the ones soon to be expiring
 func (p *Plugin) runWebsubChecker() {
-	go p.syncWebSubs()
+	// If youtube feed is restarting and the previous run was stopped, we need to unlock the lock
+	common.UnlockRedisKey(RedisChannelsLockKey)
+	p.syncWebSubs()
 	ticker := time.NewTicker(WebSubCheckInterval)
 	for {
 		select {
@@ -95,7 +97,7 @@ func (p *Plugin) runWebsubChecker() {
 			wg.Done()
 			return
 		case <-ticker.C:
-			go p.checkExpiringWebsubs()
+			p.checkExpiringWebsubs()
 		}
 	}
 }
@@ -177,6 +179,7 @@ func (p *Plugin) syncWebSubs() {
 				if mn.Nil {
 					// Channel not added to redis, resubscribe and add to redis
 					go p.WebSubSubscribe(channel)
+					time.Sleep(time.Millisecond * 100)
 				}
 			}
 		}
