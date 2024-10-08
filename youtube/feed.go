@@ -177,7 +177,7 @@ func (p *Plugin) syncWebSubs() {
 				if mn.Nil {
 					// Channel not added to redis, resubscribe and add to redis
 					go p.WebSubSubscribe(channel)
-					time.Sleep(time.Millisecond * 500)
+					time.Sleep(time.Millisecond * 100)
 				}
 			}
 		}
