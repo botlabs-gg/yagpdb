@@ -40,7 +40,6 @@ func (p *Plugin) StartFeed() {
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
-
 	if p.Stop != nil {
 		p.Stop <- wg
 	} else {
@@ -62,6 +61,9 @@ func (p *Plugin) deleteOldVideos() {
 	// Remove videos older than 24 hours
 	for {
 		select {
+		case wg := <-p.Stop:
+			wg.Done()
+			return
 		case <-ticker.C:
 			var expiring int64
 			videoCacheDays := confYoutubeVideoCacheDays.GetInt()
@@ -79,6 +81,9 @@ func (p *Plugin) autoSyncWebsubs() {
 	ticker := time.NewTicker(time.Hour * 1)
 	for {
 		select {
+		case wg := <-p.Stop:
+			wg.Done()
+			return
 		case <-ticker.C:
 			p.syncWebSubs()
 		}
@@ -133,7 +138,7 @@ func (p *Plugin) checkExpiringWebsubs() {
 	for index, chunk := range expiringChunks {
 		logger.Infof("Processing chunk %d of %d for %d expiring youtube subs", index+1, len(expiringChunks), totalExpiring)
 		for _, sub := range chunk {
-			p.WebSubSubscribe(sub)
+			go p.WebSubSubscribe(sub)
 		}
 		// sleep for a second before processing next chunk
 		time.Sleep(time.Second)
@@ -175,9 +180,9 @@ func (p *Plugin) syncWebSubs() {
 			logger.Infof("Processing chunk %d of %d for %d youtube channels", index+1, len(channelChunks), totalChannels)
 			var didChunkUpdate bool
 			for _, channel := range chunk {
-				mn := radix.MaybeNil{}
+				var mn int64
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
-				if mn.Nil {
+				if mn < time.Now().Unix() {
 					didChunkUpdate = true
 					// Channel not added to redis, resubscribe and add to redis
 					go p.WebSubSubscribe(channel)
