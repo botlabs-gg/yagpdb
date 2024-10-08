@@ -179,9 +179,10 @@ func (p *Plugin) syncWebSubs() {
 				if mn.Nil {
 					// Channel not added to redis, resubscribe and add to redis
 					go p.WebSubSubscribe(channel)
-					time.Sleep(time.Millisecond * 100)
 				}
 			}
+			// sleep for a second before processing next chunk
+			time.Sleep(time.Second)
 		}
 		if locked {
 			common.UnlockRedisKey(RedisChannelsLockKey)
