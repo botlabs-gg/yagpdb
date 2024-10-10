@@ -50,7 +50,7 @@ var Command = &commands.YAGCommand{
 				return "You need `Manage Messages` permissions to target a specific user other than yourself.", nil
 			}
 		}
-		count := data.Switch("c").Int()
+		count := data.Switch("count").Int()
 		if count > 10 {
 			count = 10
 		} else if count < 1 {
