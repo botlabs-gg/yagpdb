@@ -20,8 +20,8 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "a", Help: "from all users"},
 		{Name: "u", Help: "from a specific user", Type: dcmd.UserID, Default: 0},
+		{Name: "count", Help: "Number of messages to show, Min: 1, Max 10", Type: dcmd.Int, Default: 10},
 		{Name: "channel", Help: "Optional target channel", Type: dcmd.Channel},
-		{Name: "count", Help: "Number of messages to show, Min: 0, Max 10", Type: dcmd.Int, Default: 10},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		allUsers := data.Switch("a").Value != nil && data.Switch("a").Value.(bool)
@@ -50,14 +50,14 @@ var Command = &commands.YAGCommand{
 				return "You need `Manage Messages` permissions to target a specific user other than yourself.", nil
 			}
 		}
-		count := data.Switch("count").Int()
+		count := data.Switch("c").Int()
 		if count > 10 {
 			count = 10
 		} else if count < 1 {
 			count = 1
 		}
 
-		resp := fmt.Sprintf("last %d deleted messages (last hour or 12 hours for premium): \n\n", count)
+		resp := fmt.Sprintf("Last %d deleted message(s) (last hour or 12 hours for premium): \n\n", count)
 		numFound := 0
 
 		messages := bot.State.GetMessages(data.GuildData.GS.ID, channel.ID, &dstate.MessagesQuery{Limit: 100, IncludeDeleted: true})
