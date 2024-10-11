@@ -569,31 +569,29 @@ func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
 		return nil
 	}
 
+	videoID := parsedVideo.VideoId
+	channelID := parsedVideo.ChannelID
+	logger.Infof("Checking new video request with videoID %s and channelID %s ", videoID, channelID)
+
 	parsedPublishedTime, err := time.Parse(time.RFC3339, parsedVideo.Published)
 	if err != nil {
 		return errors.New("Failed parsing youtube timestamp: " + err.Error() + ": " + parsedVideo.Published)
-	}
-
-	if time.Since(parsedPublishedTime) > time.Hour {
-		return nil
-	}
-
-	videoID := parsedVideo.VideoId
-	channelID := parsedVideo.ChannelID
-	logger.Debugf("Checking video request with videoID %s and channelID %s ", videoID, channelID)
-	subs, err := p.getRemoveSubs(channelID)
-	if err != nil || len(subs) < 1 {
-		return err
 	}
 
 	videoCacheDays := confYoutubeVideoCacheDays.GetInt()
 	if videoCacheDays < 1 {
 		videoCacheDays = 1
 	}
+
 	if time.Since(parsedPublishedTime) > time.Hour*24*time.Duration(videoCacheDays) {
 		// don't post videos older than videoCacheDays
-		logger.Infof("Skipped Stale video for youtube channel %s: video_id: %s", channelID, videoID)
+		logger.Infof("Skipped Stale video (published more than %d days ago) for youtube channel %s: video_id: %s", videoCacheDays, channelID, videoID)
 		return nil
+	}
+
+	subs, err := p.getRemoveSubs(channelID)
+	if err != nil || len(subs) < 1 {
+		return err
 	}
 
 	mn := radix.MaybeNil{}
