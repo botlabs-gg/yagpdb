@@ -122,8 +122,8 @@ func (r BaseRule) ShouldIgnore(cs *dstate.ChannelState, evt *discordgo.Message, 
 type SpamRule struct {
 	BaseRule `valid:"traverse"`
 
-	NumMessages int `valid:"0,1000"`
-	Within      int `valid:"0,100"`
+	NumMessages int `valid:"1,1000"`
+	Within      int `valid:"1,100"`
 }
 
 // Triggers when a certain number of messages is found by the same author within a timeframe
@@ -145,6 +145,9 @@ func (s *SpamRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del b
 }
 
 func (s *SpamRule) FindSpam(evt *discordgo.Message, cs *dstate.ChannelState) bool {
+	if s.Within == 0 {
+		s.Within = 1
+	}
 	within := time.Duration(s.Within) * time.Second
 	now := time.Now()
 
@@ -164,8 +167,11 @@ func (s *SpamRule) FindSpam(evt *discordgo.Message, cs *dstate.ChannelState) boo
 			amount++
 		}
 	}
+	if s.NumMessages < 1 {
+		s.NumMessages = 1
+	}
 
-	return amount >= s.NumMessages && s.NumMessages != 1
+	return amount > s.NumMessages
 }
 
 type InviteRule struct {
@@ -344,10 +350,13 @@ func CheckMessageForBadInvites(msg *discordgo.Message) (containsBadInvites bool)
 type MentionRule struct {
 	BaseRule `valid:"traverse"`
 
-	Treshold int `valid:"0,500"`
+	Treshold int `valid:"1,500"`
 }
 
 func (m *MentionRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
+	if m.Treshold == 0 {
+		m.Treshold = 1
+	}
 	if len(evt.Mentions) < m.Treshold {
 		return
 	}
