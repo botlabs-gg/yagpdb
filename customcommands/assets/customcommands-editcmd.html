@@ -102,6 +102,8 @@
                                                     Message Component</option>
                                                 <option value="modal" {{if eq .CC.TriggerType 8}} selected{{end}}>
                                                     Modal Submission</option>
+                                                <option value="cron" {{ if eq .CC.TriggerType 9}} selected{{end}}>
+                                                    Crontab (ALPHA)</option>
                                             </select>
                                         </div>
                                     </div>
@@ -145,6 +147,9 @@
                                         <p id="trigger-desc-modal">
                                             The command will run when a modal whose custom ID matches the given regex is submitted. BETA FEATURE.
                                         </p>
+                                        <p id="trigger-desc-cron">
+                                            The command will run on a crontab interval, for example <code>45 23 * * 6</code> (23:45 every Saturday).
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -172,6 +177,19 @@
                                               </div>
                                             </div>
                                           </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="cc-cron-trigger-details" class="hidden col-lg-8">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-group">
+                                            <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <div class="input-group mb-2">
+                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="45 23 * * 6"
+                                                    value="{{.CC.TextTrigger}}">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -585,6 +603,7 @@
         contains: [...messageTriggerEls, '#trigger-desc-contains'],
         regex: [...messageTriggerEls, '#trigger-desc-regex'],
         exact: [...messageTriggerEls, '#trigger-desc-exact'],
+        cron: ['#cc-cron-trigger-details'],
         none: ['#trigger-desc-none'],
     };
 

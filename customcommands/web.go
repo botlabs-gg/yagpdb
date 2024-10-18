@@ -803,6 +803,8 @@ func triggerTypeFromForm(str string) CommandTriggerType {
 		return CommandTriggerComponent
 	case "modal":
 		return CommandTriggerModal
+	case "cron":
+		return CommandTriggerCron
 	default:
 		return CommandTriggerCommand
 

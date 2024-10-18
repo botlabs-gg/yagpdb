@@ -97,6 +97,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

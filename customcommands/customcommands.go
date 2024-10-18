@@ -74,6 +74,7 @@ const (
 	CommandTriggerReaction   CommandTriggerType = 6
 	CommandTriggerComponent  CommandTriggerType = 7
 	CommandTriggerModal      CommandTriggerType = 8
+	CommandTriggerCron       CommandTriggerType = 9
 )
 
 var (
@@ -88,6 +89,7 @@ var (
 		CommandTriggerNone,
 		CommandTriggerComponent,
 		CommandTriggerModal,
+		CommandTriggerCron,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
@@ -101,6 +103,7 @@ var (
 		CommandTriggerNone:       "None",
 		CommandTriggerComponent:  "Component",
 		CommandTriggerModal:      "Modal",
+		CommandTriggerCron:       "Crontab",
 	}
 )
 
@@ -126,8 +129,8 @@ type CustomCommand struct {
 	Public          bool               `json:"public" schema:"public"`
 	PublicID        string             `json:"public_id" schema:"public_id"`
 
-	ContextChannel         int64 `schema:"context_channel" valid:"channel,true"`
-	RedirectErrorsChannel  int64 `schema:"redirect_errors_channel" valid:"channel,true"`
+	ContextChannel        int64 `schema:"context_channel" valid:"channel,true"`
+	RedirectErrorsChannel int64 `schema:"redirect_errors_channel" valid:"channel,true"`
 
 	TimeTriggerInterval       int     `schema:"time_trigger_interval"`
 	TimeTriggerExcludingDays  []int64 `schema:"time_trigger_excluding_days"`
