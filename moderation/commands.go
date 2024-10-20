@@ -90,7 +90,7 @@ func MBaseCmdSecond(cmdData *dcmd.Data, reason string, reasonArgOptional bool, n
 		if err != nil || !hasPerms {
 			userError := fmt.Sprintf("The **%s** command requires the **%s** permission in this channel", cmdName, common.StringPerms[neededPerm])
 			if additionalPermRolesAvailable {
-				userError += "or additional roles set up by admins"
+				userError += " or additional roles set up by admins"
 			}
 			return oreason, commands.NewUserError(userError, ", you don't have it. (if you do contact bot support)")
 		}
