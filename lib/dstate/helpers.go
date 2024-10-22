@@ -73,21 +73,34 @@ func MessageStateFromDgo(m *discordgo.Message) *MessageState {
 		parsedE, _ = m.EditedTimestamp.Parse()
 	}
 
-	return &MessageState{
-		ID:        m.ID,
-		GuildID:   m.GuildID,
-		ChannelID: m.ChannelID,
-		Author:    author,
-		Member:    m.Member,
-		Content:   m.Content,
-
-		Embeds:          embeds,
-		Mentions:        mentions,
-		Attachments:     attachments,
-		MentionRoles:    m.MentionRoles,
-		ParsedCreatedAt: parsedC,
-		ParsedEditedAt:  parsedE,
+	ms := &MessageState{
+		ID:               m.ID,
+		GuildID:          m.GuildID,
+		ChannelID:        m.ChannelID,
+		Author:           author,
+		Member:           m.Member,
+		Content:          m.Content,
+		MessageSnapshots: convertMessageSnapshots(m.MessageSnapshots),
+		Embeds:           embeds,
+		Mentions:         mentions,
+		Attachments:      attachments,
+		MentionRoles:     m.MentionRoles,
+		ParsedCreatedAt:  parsedC,
+		ParsedEditedAt:   parsedE,
 	}
+	if m.Reference() != nil {
+		ms.MessageReference = *m.Reference()
+	}
+
+	return ms
+}
+
+func convertMessageSnapshots(snapshots []*discordgo.MessageSnapshot) []discordgo.MessageSnapshot {
+	converted := make([]discordgo.MessageSnapshot, len(snapshots))
+	for i, v := range snapshots {
+		converted[i] = *v
+	}
+	return converted
 }
 
 func MemberStateFromPresence(p *discordgo.PresenceUpdate) *MemberState {
