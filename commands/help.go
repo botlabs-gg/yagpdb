@@ -21,8 +21,7 @@ var cmdHelp = &YAGCommand{
 		{Name: "command", Type: dcmd.String},
 	},
 
-	RunFunc:  cmdFuncHelp,
-	Cooldown: 10,
+	RunFunc: cmdFuncHelp,
 }
 
 func CmdNotFound(search string) string {
