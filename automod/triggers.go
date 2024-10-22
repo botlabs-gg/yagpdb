@@ -804,7 +804,7 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 				amount++
 			}
 		} else if s.Links {
-			contents := m.GetMessageContents()
+			contents := v.GetMessageContents()
 			contentString := strings.Join(contents, "")
 			linksLen := len(common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(contentString), -1))
 			if linksLen < 1 {

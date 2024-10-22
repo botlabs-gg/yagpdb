@@ -11,18 +11,16 @@ type InviteSource struct {
 
 var DiscordInviteSource = &InviteSource{
 	Name:  "Discord",
-	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com\/invite|discord\.com\/invite)(?:\/#)?\/([a-zA-Z0-9-]+)`),
+	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com\/+invite|discord\.com\/+invite)(?:\/+#)?\/+([a-zA-Z0-9-]+)`),
 }
 
 var ThirdpartyDiscordSites = []*InviteSource{
-	{Name: "discord.me", Regex: regexp.MustCompile(`(?i)discord\.me\/.+`)},
-	{Name: "invite.gg", Regex: regexp.MustCompile(`(?i)invite\.gg\/.+`)},
-	{Name: "discord.io", Regex: regexp.MustCompile(`(?i)discord\.io\/.+`)},
-	{Name: "discord.li", Regex: regexp.MustCompile(`(?i)discord\.li\/.+`)},
-	{Name: "disboard.org", Regex: regexp.MustCompile(`(?i)disboard\.org\/server\/join\/.+`)},
-	{Name: "discordy.com", Regex: regexp.MustCompile(`(?i)discordy\.com\/server\.php`)},
-
-	// regexp.MustCompile(`disco\.gg\/.+`), Youc can't actually link to specific servers here can you, so not needed for now?
+	{Name: "discord.me", Regex: regexp.MustCompile(`(?i)discord\.me\/+.+`)},
+	{Name: "invite.gg", Regex: regexp.MustCompile(`(?i)invite\.gg\/+.+`)},
+	{Name: "discord.io", Regex: regexp.MustCompile(`(?i)discord\.io\/+.+`)},
+	{Name: "discord.li", Regex: regexp.MustCompile(`(?i)discord\.li\/+.+`)},
+	{Name: "disboard.org", Regex: regexp.MustCompile(`(?i)disboard\.org\/+server\/+join\/+.+`)},
+	{Name: "discordy.com", Regex: regexp.MustCompile(`(?i)discordy\.com\/+server\+.php`)},
 }
 
 var AllInviteSources = append([]*InviteSource{DiscordInviteSource}, ThirdpartyDiscordSites...)

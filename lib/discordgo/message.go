@@ -139,7 +139,6 @@ type Message struct {
 
 	// MessageReference contains reference data sent with crossposted or reply messages.
 	// This does not contain the reference *to* this message; this is for when *this* message references another.
-	// To generate a reference to this message, use (*Message).Reference().
 	MessageReference *MessageReference `json:"message_reference"`
 
 	// The message associated with the message_reference when message_reference type is DEFAULT
@@ -527,6 +526,10 @@ type MessageReference struct {
 
 // Reference returns MessageReference of given message
 func (m *Message) Reference() *MessageReference {
+	if m.MessageReference == nil {
+		return nil
+	}
+
 	return &MessageReference{
 		Type:      m.MessageReference.Type,
 		GuildID:   m.MessageReference.GuildID,

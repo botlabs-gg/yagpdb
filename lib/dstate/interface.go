@@ -394,19 +394,31 @@ type MessageState struct {
 	GuildID   int64
 	ChannelID int64
 
-	Author  discordgo.User
-	Member  *discordgo.Member
-	Content string
-
-	Embeds       []discordgo.MessageEmbed
-	Mentions     []discordgo.User
-	MentionRoles []int64
-	Attachments  []discordgo.MessageAttachment
+	Author           discordgo.User
+	Member           *discordgo.Member
+	Content          string
+	MessageReference discordgo.MessageReference
+	MessageSnapshots []discordgo.MessageSnapshot
+	Embeds           []discordgo.MessageEmbed
+	Mentions         []discordgo.User
+	MentionRoles     []int64
+	Attachments      []discordgo.MessageAttachment
 
 	ParsedCreatedAt time.Time
 	ParsedEditedAt  time.Time
 
 	Deleted bool
+}
+
+func (m *MessageState) GetMessageContents() []string {
+	contents := []string{m.Content}
+
+	for _, s := range m.MessageSnapshots {
+		if s.Message != nil && len(s.Message.Content) > 0 {
+			contents = append(contents, s.Message.Content)
+		}
+	}
+	return contents
 }
 
 func (m *MessageState) ContentWithMentionsReplaced() string {
