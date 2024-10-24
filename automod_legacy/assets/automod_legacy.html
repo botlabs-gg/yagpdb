@@ -118,13 +118,13 @@
 
     <div class="form-group">
         <label for="NumMessages">Number of messages:</label>
-        <input type="number" min="0" class="form-control" name="Spam.NumMessages"
+        <input type="number" min="1" class="form-control" name="Spam.NumMessages"
             value="{{.AutomodConfig.Spam.NumMessages}}"></input>
         <p class="help-block">Number of messages sent within the time frame below for it to be triggered:</p>
     </div>
     <div class="form-group">
         <label for="Within">Within (seconds):</label>
-        <input type="number" min="0" class="form-control" name="Spam.Within" value="{{.AutomodConfig.Spam.Within}}"></input>
+        <input type="number" min="1" class="form-control" name="Spam.Within" value="{{.AutomodConfig.Spam.Within}}"></input>
         <p class="help-block">The timeframe to check messages from.</p>
     </div>
     <p>Something decent to just protect from raw spam could be five messages within two seconds. Normal users won't come
@@ -139,7 +139,7 @@
 
     <div class="form-group">
         <label for="Treshold">Mention Threshold</label>
-        <input type="number" min="0" class="form-control" name="Mention.Treshold"
+        <input type="number" min="1" class="form-control" name="Mention.Treshold"
             value="{{.AutomodConfig.Mention.Treshold}}"></input>
         <p class="help-block">The number of mentions in a message for it to trigger.<br>
             If it's set to 5, then someone mentioning five people or more would trigger this.</p>

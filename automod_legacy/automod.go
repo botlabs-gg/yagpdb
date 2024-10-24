@@ -52,10 +52,10 @@ func (c Config) Name() string {
 	return "Automoderator"
 }
 
-func NewConfig() *Config {
+func DefaultConfig() *Config {
 	return &Config{
-		Spam:    &SpamRule{},
-		Mention: &MentionRule{},
+		Spam:    &SpamRule{NumMessages: 1, Within: 5},
+		Mention: &MentionRule{Treshold: 1},
 		Invite:  &InviteRule{},
 		Links:   &LinksRule{},
 		Sites:   &SitesRule{},
@@ -64,9 +64,10 @@ func NewConfig() *Config {
 }
 
 func GetConfig(guildID int64) (config *Config, err error) {
-
-	config = NewConfig()
 	err = common.GetRedisJson(KeyConfig(guildID), &config)
+	if config == nil {
+		config = DefaultConfig()
+	}
 	return
 }
 
