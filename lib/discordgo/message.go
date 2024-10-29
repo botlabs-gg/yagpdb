@@ -162,6 +162,8 @@ type Message struct {
 	Flags MessageFlags `json:"flags"`
 
 	Activity *MessageActivity `json:"activity"`
+
+	ApplicationID int64 `json:"application_id,string"`
 }
 
 type MessageSnapshot struct {
