@@ -65,7 +65,7 @@
             <!-- Tab panes -->
             <div class="tab-content">
                 <div class="tab-pane active">
-                    {{if not .CurrentCommandGroup}}<p>Create a new group to put whitelist/blacklist roles/channels on
+                    {{if not .CurrentCommandGroup}}<p>Create a new group to put allowed/denied roles/channels on
                         multiple commands at the same time, as well as keeping things organized.</p>{{else}}
                     <form class="form-horizontal" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
@@ -78,14 +78,14 @@
                                         name="Name" />
                                 </div>
                                 <div class="form-group">
-                                    <label>Whitelist roles for who can use these commands</label><br>
+                                    <label>Allowed roles (who can use these commands)</label><br>
                                     <select name="WhitelistRoles" class="multiselect form-control" multiple="multiple"
                                         id="require-roles-receive" data-placeholder="Everyone" data-plugin-multiselect>
                                         {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.WhitelistRoles}}
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Blacklisted roles</label><br>
+                                    <label>Denied roles (who cannot use these commands)</label><br>
                                     <select name="BlacklistRoles" class="multiselect form-control" multiple="multiple"
                                         id="blacklisted-roles-give" data-plugin-multiselect>
                                         {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.IgnoreRoles}}
@@ -104,7 +104,7 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Channels blacklisted</label><br>
+                                    <label>Channels Ignored</label><br>
                                     <select multiple="multiple" class="form-control" data-plugin-multiselect
                                         name="BlacklistChannels">
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}

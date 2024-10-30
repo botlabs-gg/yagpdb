@@ -324,7 +324,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 
 	const format = `<ul>
 	<li>Public stats: %s</li>
-	<li>Blacklisted channnels: <code>%d</code></li>
+	<li>Disallowed channnels: <code>%d</code></li>
 </ul>`
 
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(config.Public), len(config.ParsedChannels)))
