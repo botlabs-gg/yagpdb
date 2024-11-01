@@ -57,6 +57,11 @@ func RunPoller() {
 
 	for {
 		<-ticker.C
+
+		if !patreon.ActivePoller.IsLastFetchSuccess() {
+			logger.Warn("Last fetch was not successful, skipping update")
+			continue
+		}
 		err := UpdatePremiumSlots(context.Background())
 		if err != nil {
 			logger.WithError(err).Error("Failed updating premium slots for patrons")
@@ -75,7 +80,6 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		tx.Rollback()
 		return errors.WithMessage(err, "PremiumSlots")
 	}
-
 	patrons := patreon.ActivePoller.GetPatrons()
 	if len(patrons) == 0 {
 		tx.Rollback()
