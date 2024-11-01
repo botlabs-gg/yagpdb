@@ -16,12 +16,13 @@ import (
 var logger = common.GetFixedPrefixLogger("patreon")
 
 type Poller struct {
-	mu     sync.RWMutex
-	config *oauth2.Config
-	token  *oauth2.Token
-	client *patreonapi.Client
-
-	activePatrons []*Patron
+	mu                   sync.RWMutex
+	config               *oauth2.Config
+	token                *oauth2.Token
+	client               *patreonapi.Client
+	lastSuccesfulFetchAt time.Time
+	isLastFetchSuccess   bool
+	activePatrons        []*Patron
 }
 
 var (
@@ -118,11 +119,22 @@ func (p *Poller) Run() {
 	}
 }
 
+func (p *Poller) IsLastFetchSuccess() bool {
+	if p.activePatrons == nil || len(p.activePatrons) < 1 {
+		return false
+	}
+	if time.Since(p.lastSuccesfulFetchAt) < time.Minute*5 {
+		return p.isLastFetchSuccess
+	}
+	return false
+}
+
 func (p *Poller) Poll() {
 	// Get your campaign data
 	campaignResponse, err := p.client.FetchCampaigns()
 	if err != nil || len(campaignResponse.Data) < 1 {
 		logger.WithError(err).Error("Failed fetching campaign")
+		p.isLastFetchSuccess = false
 		return
 	}
 
@@ -141,6 +153,7 @@ func (p *Poller) Poll() {
 
 		if err != nil {
 			logger.WithError(err).Error("Failed fetching pledges")
+			p.isLastFetchSuccess = false
 			return
 		}
 
@@ -208,6 +221,8 @@ func (p *Poller) Poll() {
 	// Swap the stored ones, this dosent mutate the existing returned slices so we dont have to do any copying on each request woo
 	p.mu.Lock()
 	p.activePatrons = patrons
+	p.lastSuccesfulFetchAt = time.Now()
+	p.isLastFetchSuccess = true
 	p.mu.Unlock()
 }
 
