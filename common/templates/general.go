@@ -921,7 +921,7 @@ func tmplDiv(args ...interface{}) (interface{}, error) {
 			if i == 0 {
 				continue
 			}
-			if v == 0 {
+			if tmplToInt(v) == 0 {
 				return 0, errors.New("integer divide by zero")
 			}
 
