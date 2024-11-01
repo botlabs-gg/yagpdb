@@ -901,7 +901,7 @@ func tmplMult(args ...interface{}) interface{} {
 
 func tmplDiv(args ...interface{}) (interface{}, error) {
 	if len(args) < 1 {
-		return 0
+		return 0, nil
 	}
 
 	switch args[0].(type) {
