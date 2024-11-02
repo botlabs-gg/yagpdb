@@ -1617,7 +1617,6 @@ var Nouns = []string{
 	"ranker",
 	"ransom",
 	"rap",
-	"rape",
 	"rapport",
 	"rareness",
 	"rascal",
