@@ -62,6 +62,7 @@ type SparseGuildState struct {
 	Threads     []dstate.ChannelState
 	Roles       []discordgo.Role
 	Emojis      []discordgo.Emoji
+	Stickers    []discordgo.Sticker
 	VoiceStates []discordgo.VoiceState
 }
 
@@ -71,6 +72,7 @@ func SparseGuildStateFromDstate(gs *dstate.GuildSet) *SparseGuildState {
 		Channels:    gs.Channels,
 		Roles:       gs.Roles,
 		Emojis:      gs.Emojis,
+		Stickers:    gs.Stickers,
 		VoiceStates: gs.VoiceStates,
 		Threads:     gs.Threads,
 	}
@@ -250,6 +252,8 @@ func (tracker *ShardTracker) HandleEvent(s *discordgo.Session, i interface{}) {
 		tracker.handleReady(evt)
 	case *discordgo.GuildEmojisUpdate:
 		tracker.handleEmojis(evt)
+	case *discordgo.GuildStickersUpdate:
+		tracker.handleStickers(evt)
 	default:
 		return
 	}
@@ -287,6 +291,11 @@ func (shard *ShardTracker) handleGuildCreate(gc *discordgo.GuildCreate) {
 		emojis[i] = *gc.Emojis[i]
 	}
 
+	stickers := make([]discordgo.Sticker,len(gc.Stickers))
+	for i := range gc.Stickers {
+		stickers[i] = *gc.Stickers[i]
+	}
+
 	voiceStates := make([]discordgo.VoiceState, len(gc.VoiceStates))
 	for i := range gc.VoiceStates {
 		voiceStates[i] = *gc.VoiceStates[i]
@@ -303,6 +312,7 @@ func (shard *ShardTracker) handleGuildCreate(gc *discordgo.GuildCreate) {
 		Channels:    channels,
 		Roles:       roles,
 		Emojis:      emojis,
+		Stickers:    stickers,
 		VoiceStates: voiceStates,
 		Threads:     threads,
 	}
@@ -868,6 +878,24 @@ func (shard *ShardTracker) handleEmojis(e *discordgo.GuildEmojisUpdate) {
 	}
 
 	shard.guilds[e.GuildID] = newGS
+}
+
+func (shard *ShardTracker) handleStickers(s *discordgo.GuildStickersUpdate) {
+	shard.mu.Lock()
+	defer shard.mu.Unlock()
+
+	gs, ok := shard.guilds[s.GuildID]
+	if !ok {
+		return
+	}
+
+	newGS := gs.copyGuildSet()
+	newGS.Stickers = make([]discordgo.Sticker, len(s.Stickers))
+	for i := range s.Stickers {
+		newGS.Stickers[i] = *s.Stickers[i]
+	}
+
+	shard.guilds[s.GuildID] = newGS
 }
 
 // assumes state is locked

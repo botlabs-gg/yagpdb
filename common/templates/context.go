@@ -297,7 +297,7 @@ func (c *Context) setupBaseData() {
 
 	// for backward compatibility with previous versions
 	permNameToBit["ReadMessages"] = discordgo.PermissionViewChannel
-	permNameToBit["ManageEmojis"] = discordgo.PermissionManageEmojisAndStickers
+	permNameToBit["ManageEmojis"] = discordgo.PermissionManageGuildExpressions
 	permNameToBit["ManageServer"] = discordgo.PermissionManageGuild
 	permNameToBit["ViewAuditLogs"] = discordgo.PermissionViewAuditLog
 

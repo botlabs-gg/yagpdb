@@ -31,7 +31,7 @@ const (
 	PermissionManageNicknames                  int64 = 1 << 27 // Allows for modification of other users nicknames
 	PermissionManageRoles                      int64 = 1 << 28 // Allows management and editing of roles	T, V, S
 	PermissionManageWebhooks                   int64 = 1 << 29 // Allows management and editing of webhooks	T
-	PermissionManageEmojisAndStickers          int64 = 1 << 30 // Allows management and editing of emojis and stickers
+	PermissionManageGuildExpressions           int64 = 1 << 30 // Allows management and editing of emojis and stickers
 	PermissionUseApplicationCommands           int64 = 1 << 31 // Allows members to use slash commands in text channels	T
 	PermissionRequestToSpeak                   int64 = 1 << 32 // Allows for requesting to speak in stage channels. (This permission is under active development and may be changed or removed.)	S
 	PermissionManageEvents                     int64 = 1 << 33 // Allows for creating, editing, and deleting scheduled events	V, S
@@ -92,7 +92,7 @@ var AllPermissions = []int64{
 	PermissionManageNicknames,
 	PermissionManageRoles,
 	PermissionManageWebhooks,
-	PermissionManageEmojisAndStickers,
+	PermissionManageGuildExpressions,
 
 	PermissionCreateInstantInvite,
 	PermissionModerateMembers,
