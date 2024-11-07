@@ -545,7 +545,7 @@ func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonMissingRole,
-		Message: "You need at least one of the server whitelist roles: " + humanizedRoles.String(),
+		Message: "You need at least one of the server allowed roles: " + humanizedRoles.String(),
 	}
 }
 
@@ -579,7 +579,7 @@ func checkBlacklistRoles(guildRoles map[int64]string, blacklistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonIgnoredRole,
-		Message: "You have one of the server blacklist roles: " + humanizedRole,
+		Message: "You have one of the server denylist roles: " + humanizedRole,
 	}
 }
 

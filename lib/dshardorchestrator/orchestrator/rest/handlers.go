@@ -121,7 +121,7 @@ func (ra *RESTAPI) handlePOSTBlacklistNode(c *gin.Context) {
 	}
 
 	ra.orchestrator.BlacklistNode(node)
-	sendBasicResponse(c, nil, "blacklisted node node")
+	sendBasicResponse(c, nil, "denied node node")
 }
 
 func (ra *RESTAPI) handlePOSTPullVersion(c *gin.Context) {
