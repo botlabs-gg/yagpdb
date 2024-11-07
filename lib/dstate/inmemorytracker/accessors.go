@@ -24,6 +24,7 @@ func (tracker *InMemoryTracker) GetGuild(guildID int64) *dstate.GuildSet {
 		Channels:    set.Channels,
 		Roles:       set.Roles,
 		Emojis:      set.Emojis,
+		Stickers:    set.Stickers,
 		VoiceStates: set.VoiceStates,
 		Threads:     set.Threads,
 	}
@@ -225,6 +226,7 @@ func (tracker *InMemoryTracker) GetShardGuilds(shardID int64) []*dstate.GuildSet
 			Channels:    v.Channels,
 			Roles:       v.Roles,
 			Emojis:      v.Emojis,
+			Stickers:    v.Stickers,
 			VoiceStates: v.VoiceStates,
 			Threads:     v.Threads,
 		})
