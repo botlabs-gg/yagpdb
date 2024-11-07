@@ -79,7 +79,7 @@ var cmdLogs = &commands.YAGCommand{
 		l, err := CreateChannelLog(cmd.Context(), nil, cmd.GuildData.GS.ID, cID, cmd.Author.Username, cmd.Author.ID, num)
 		if err != nil {
 			if err == ErrChannelBlacklisted {
-				return "This channel is blacklisted from creating message logs, this can be changed in the control panel.", nil
+				return "This channel is ignored from creating message logs, this can be changed in the control panel.", nil
 			}
 
 			return "", err

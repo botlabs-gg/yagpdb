@@ -166,6 +166,7 @@ type Message struct {
 
 	// An array of StickerItem objects, is the message contains any.
 	StickerItems []*StickerItem `json:"sticker_items"`
+	ApplicationID int64 `json:"application_id,string"`
 }
 
 type MessageSnapshot struct {
