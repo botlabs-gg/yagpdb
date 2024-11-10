@@ -346,7 +346,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 
 	action := MATimeoutAdded
 	timeoutUntil, err := discordgo.Timestamp(auditLogChange.NewValue.(string)).Parse()
-	if err == nil {
+	if err != nil {
 		duration := timeoutUntil.Sub(time.Now().UTC())
 		action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 	}
