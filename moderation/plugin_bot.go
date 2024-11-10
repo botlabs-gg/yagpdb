@@ -351,7 +351,7 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 		action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 	}
 
-	err = CreateModlogEmbed(config, author, MATimeoutAdded, data.User, entry.Reason, "")
+	err = CreateModlogEmbed(config, author, action, data.User, entry.Reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending timeout log message")
 		return false, errors.WithStackIf(err)
