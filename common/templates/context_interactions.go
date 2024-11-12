@@ -609,6 +609,10 @@ func (c *Context) tmplGetResponse(interactionToken, msgID interface{}) (message 
 }
 
 func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
+	if c.CurrentFrame.Interaction == nil {
+		return "", errors.New("no interaction data in context")
+	}
+
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
 	}
@@ -635,10 +639,6 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 
 	if typedModal.Type != discordgo.InteractionResponseModal {
 		return "", errors.New("invalid modal passed to sendModal")
-	}
-
-	if c.CurrentFrame.Interaction == nil {
-		return "", errors.New("no interaction data in context")
 	}
 
 	err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, typedModal)
@@ -744,6 +744,10 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
 	}
 	return func(msg interface{}) (interface{}, error) {
+		if c.CurrentFrame.Interaction == nil {
+			return "", errors.New("no interaction data in context; consider editMessage or editResponse")
+		}
+
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
 		}
