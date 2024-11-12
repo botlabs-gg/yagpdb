@@ -12,6 +12,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
+var ErrTooManyInteractionResponses = errors.New("cannot respond to an interaction > 1 time; consider using a followup")
+
 func interactionContextFuncs(c *Context) {
 	c.addContextFunc("deleteInteractionResponse", c.tmplDeleteInteractionResponse)
 	c.addContextFunc("editResponse", c.tmplEditInteractionResponse(true))
@@ -607,12 +609,20 @@ func (c *Context) tmplGetResponse(interactionToken, msgID interface{}) (message 
 }
 
 func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
+	if c.CurrentFrame.Interaction == nil {
+		return "", errors.New("no interaction data in context")
+	}
+
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
 	}
 
+	if c.IncreaseCheckCallCounter("modal", 1) {
+		return "", errors.New("cannot send multiple modals to the same interaction")
+	}
+
 	if c.IncreaseCheckCallCounter("interaction_response", 1) {
-		return "", ErrTooManyCalls
+		return "", ErrTooManyInteractionResponses
 	}
 
 	var typedModal *discordgo.InteractionResponse
@@ -633,10 +643,6 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 
 	if typedModal.Type != discordgo.InteractionResponseModal {
 		return "", errors.New("invalid modal passed to sendModal")
-	}
-
-	if c.CurrentFrame.Interaction == nil {
-		return "", errors.New("no interaction data in context")
 	}
 
 	err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, typedModal)
@@ -742,12 +748,16 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
 	}
 	return func(msg interface{}) (interface{}, error) {
+		if c.CurrentFrame.Interaction == nil {
+			return "", errors.New("no interaction data in context; consider editMessage or editResponse")
+		}
+
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
 		}
 
 		if c.IncreaseCheckCallCounter("interaction_response", 1) {
-			return "", ErrTooManyCalls
+			return "", ErrTooManyInteractionResponses
 		}
 
 		msgEdit := &discordgo.InteractionResponseData{
