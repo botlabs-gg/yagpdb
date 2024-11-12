@@ -131,7 +131,13 @@ func (d DurationFormatPrecision) FromSeconds(in int64) int64 {
 	case DurationPrecisionHours:
 		return ((in / 60) / 60) % 24
 	case DurationPrecisionDays:
-		return (((in / 60) / 60) / 24) % 7
+		days := (((in / 60) / 60) / 24)
+		// 365 % 7 == 1, meaning calculating days based on remainder after dividing
+		// into weeks for a year would leave us with 1 extra day. This wouldn't be
+		// a problem if we stopped at weeks, since 365 days == 52 weeks and 1 day,
+		// however the weeks mod out to 0 so that 365 days properly becomes a year.
+		// 52 weeks ≠ 1 year. Resultingly, we need to skip every 365th day.
+                return (days - days / 365) % 7
 	case DurationPrecisionWeeks:
 		// There's 52 weeks + 1 day per year (techically +1.25... but were doing +1)
 		// Make sure 364 days isnt 0 weeks and 0 years
