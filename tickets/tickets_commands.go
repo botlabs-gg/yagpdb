@@ -644,7 +644,7 @@ func createTicketChannel(conf *models.TicketConfig, gs *dstate.GuildSet, authorI
 		{
 			Type:  discordgo.PermissionOverwriteTypeMember,
 			ID:    common.BotUser.ID,
-			Allow: InTicketPerms,
+			Allow: InTicketPerms | PermissionManageChannels,
 		},
 	}
 
