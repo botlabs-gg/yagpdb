@@ -12,6 +12,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
+var ErrTooManyInteractionResponses = errors.New("cannot respond to an interaction > 1 time; consider using a followup")
+
 func interactionContextFuncs(c *Context) {
 	c.addContextFunc("deleteInteractionResponse", c.tmplDeleteInteractionResponse)
 	c.addContextFunc("editResponse", c.tmplEditInteractionResponse(true))
@@ -612,7 +614,7 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 	}
 
 	if c.IncreaseCheckCallCounter("interaction_response", 1) {
-		return "", ErrTooManyCalls
+		return "", ErrTooManyInteractionResponses
 	}
 
 	var typedModal *discordgo.InteractionResponse
@@ -747,7 +749,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 		}
 
 		if c.IncreaseCheckCallCounter("interaction_response", 1) {
-			return "", ErrTooManyCalls
+			return "", ErrTooManyInteractionResponses
 		}
 
 		msgEdit := &discordgo.InteractionResponseData{
