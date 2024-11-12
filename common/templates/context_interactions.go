@@ -617,6 +617,10 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 		return "", ErrTooManyAPICalls
 	}
 
+	if c.IncreaseCheckCallCounter("modal", 1) {
+		return "", errors.New("cannot send multiple modals to the same interaction")
+	}
+
 	if c.IncreaseCheckCallCounter("interaction_response", 1) {
 		return "", ErrTooManyInteractionResponses
 	}
