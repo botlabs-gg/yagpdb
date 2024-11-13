@@ -1058,6 +1058,7 @@ func GetAllOverrides(ctx context.Context, guildID int64) ([]*models.CommandsChan
 	global := &models.CommandsChannelsOverride{
 		Global:          true,
 		CommandsEnabled: true,
+		AlwaysEphemeral: false,
 	}
 	global.R = global.R.NewStruct()
 

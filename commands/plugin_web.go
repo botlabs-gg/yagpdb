@@ -223,6 +223,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 					Global:          true,
 					GuildID:         activeGuild.ID,
 					CommandsEnabled: true,
+					AlwaysEphemeral: false,
 					Channels:        []int64{},
 					RequireRoles:    []int64{},
 					IgnoreRoles:     []int64{},
