@@ -1062,17 +1062,6 @@ func (c *Context) tmplCloseThread(channel interface{}, flags ...bool) (string, e
 	return "", nil
 }
 
-func (c *Context) AddThreadToGuildSet(t *dstate.ChannelState) {
-	// Perform a copy so we don't mutate global array
-	gsCopy := *c.GS
-	gsCopy.Threads = make([]dstate.ChannelState, len(c.GS.Threads), len(c.GS.Threads)+1)
-	copy(gsCopy.Threads, c.GS.Threads)
-
-	// Add new thread to copied guild state
-	gsCopy.Threads = append(gsCopy.Threads, *t)
-	c.GS = &gsCopy
-}
-
 func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals ...interface{}) (*CtxChannel, error) {
 	if c.IncreaseCheckCallCounterPremium("create_thread", 1, 1) {
 		return nil, ErrTooManyCalls
