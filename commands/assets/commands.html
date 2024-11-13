@@ -261,7 +261,7 @@
             {{$alwaysEphemeral := false}}
             {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
             {{if not .Override.Global}}
-                {{checkbox "AlwaysEphemeral" (joinStr "" "always-ephemeral-" .Override.ID) "Slash command responses always ephemeral?" .Override.AlwaysEphemeral}}
+                {{checkbox "AlwaysEphemeral" (joinStr "" "always-ephemeral-" .Override.ID) "Slash command responses always ephemeral?" $alwaysEphemeral}}
             {{else}}
                 <div class="form-group d-flex align-items-center">
                     <input type="checkbox" class="tgl tgl-flat" name="AlwaysEphemeral" id="always-ephemeral-global"
@@ -390,15 +390,13 @@
                                 name="AutodeleteResponseDelay">
                         </div>
                     </div>
-                    <div class="form-group col-md-5">
-                        {{$aeID := ""}}
-                        {{if .Override}}{{$aeID = joinStr "" "cmd-override-always-ephemeral-" .Override.ID}}{{else}}{{$id = joinStr "" "cmd-override-always-ephemeral-" .Parent.ID "-new"}}{{end}}
-    
-                        {{$alwaysEphemeral := false}}
-                        {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
-    
-                        {{checkbox "AlwaysEphemeral" $aeID "Slash command responses always ephemeral?" $alwaysEphemeral}}
-                    </div>
+                    {{$aeID := ""}}
+                    {{if .Override}}{{$aeID = joinStr "" "cmd-override-always-ephemeral-" .Override.ID}}{{else}}{{$id = joinStr "" "cmd-override-always-ephemeral-" .Parent.ID "-new"}}{{end}}
+
+                    {{$alwaysEphemeral := false}}
+                    {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
+
+                    {{checkbox "AlwaysEphemeral" $aeID "Slash command responses always ephemeral?" $alwaysEphemeral}}
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-6">
