@@ -50,5 +50,5 @@ CREATE TABLE IF NOT EXISTS commands_command_overrides (
 `, `
 CREATE INDEX IF NOT EXISTS commands_command_groups_channels_override_idx ON commands_command_overrides(commands_channels_overrides_id);
 `, `
-ALTER TABLE commands_channels_overrides ADD COLUMN IF NOT EXISTS always_ephemeral BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE commands_command_overrides ADD COLUMN IF NOT EXISTS always_ephemeral BOOLEAN NOT NULL DEFAULT false;
 `}
