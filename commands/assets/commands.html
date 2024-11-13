@@ -257,20 +257,18 @@
                     name="AutodeleteResponseDelay">
             </div>
         </div>
-        <div class="form-group col-md-5">
-            {{$alwaysEphemeral := false}}
-            {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
-            {{if not .Override.Global}}
-                {{checkbox "AlwaysEphemeral" (joinStr "" "always-ephemeral-" .Override.ID) "Slash command responses always ephemeral?" $alwaysEphemeral}}
-            {{else}}
-                <div class="form-group d-flex align-items-center">
-                    <input type="checkbox" class="tgl tgl-flat" name="AlwaysEphemeral" id="always-ephemeral-global"
-                        {{if $alwaysEphemeral}} checked{{end}}>
-                    <label for="always-ephemeral-global" class="tgl-btn mb-2"></label>
-                    <span class="ml-2 mb-2">Slash command responses always ephemeral?</span>
-                </div>
-            {{end}}
-        </div>
+        {{$alwaysEphemeral := false}}
+        {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
+        {{if not .Override.Global}}
+            {{checkbox "AlwaysEphemeral" (joinStr "" "always-ephemeral-" .Override.ID) "Slash command responses always ephemeral?" $alwaysEphemeral}}
+        {{else}}
+            <div class="form-group d-flex align-items-center">
+                <input type="checkbox" class="tgl tgl-flat" name="AlwaysEphemeral" id="always-ephemeral-global"
+                    {{if $alwaysEphemeral}} checked{{end}}>
+                <label for="always-ephemeral-global" class="tgl-btn mb-2"></label>
+                <span class="ml-2 mb-2">Slash command responses always ephemeral?</span>
+            </div>
+        {{end}}
     </div>
     {{if .Override}}
     <button type="submit" class="btn btn-success" value="Save" data-async-form-alertsonly>Save channel
