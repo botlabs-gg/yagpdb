@@ -259,7 +259,7 @@
         </div>
         <div class="form-group col-md-5">
             {{$alwaysEphemeral := false}}
-            {{if .Override}}{{$commandsEnabled = .Override.AlwaysEphemeral}}{{end}}
+            {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
             {{if not .Override.Global}}
                 {{checkbox "AlwaysEphemeral" (joinStr "" "always-ephemeral-" .Override.ID) "Slash command responses always ephemeral?" .Override.AlwaysEphemeral}}
             {{else}}
@@ -394,7 +394,7 @@
                         {{$aeID := ""}}
                         {{if .Override}}{{$aeID = joinStr "" "cmd-override-always-ephemeral-" .Override.ID}}{{else}}{{$id = joinStr "" "cmd-override-always-ephemeral-" .Parent.ID "-new"}}{{end}}
     
-                        {{$alwaysEphemeral := true}}
+                        {{$alwaysEphemeral := false}}
                         {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
     
                         {{checkbox "AlwaysEphemeral" $aeID "Slash command responses always ephemeral?" $alwaysEphemeral}}
