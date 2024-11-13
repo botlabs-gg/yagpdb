@@ -29,6 +29,7 @@ type CommandsCommandOverride struct {
 	CommandsChannelsOverridesID int64             `boil:"commands_channels_overrides_id" json:"commands_channels_overrides_id" toml:"commands_channels_overrides_id" yaml:"commands_channels_overrides_id"`
 	Commands                    types.StringArray `boil:"commands" json:"commands" toml:"commands" yaml:"commands"`
 	CommandsEnabled             bool              `boil:"commands_enabled" json:"commands_enabled" toml:"commands_enabled" yaml:"commands_enabled"`
+	AlwaysEphemeral             bool              `boil:"always_ephemeral" json:"always_ephemeral" toml:"always_ephemeral" yaml:"always_ephemeral"`
 	AutodeleteResponse          bool              `boil:"autodelete_response" json:"autodelete_response" toml:"autodelete_response" yaml:"autodelete_response"`
 	AutodeleteTrigger           bool              `boil:"autodelete_trigger" json:"autodelete_trigger" toml:"autodelete_trigger" yaml:"autodelete_trigger"`
 	AutodeleteResponseDelay     int               `boil:"autodelete_response_delay" json:"autodelete_response_delay" toml:"autodelete_response_delay" yaml:"autodelete_response_delay"`
@@ -46,6 +47,7 @@ var CommandsCommandOverrideColumns = struct {
 	CommandsChannelsOverridesID string
 	Commands                    string
 	CommandsEnabled             string
+	AlwaysEphemeral             string
 	AutodeleteResponse          string
 	AutodeleteTrigger           string
 	AutodeleteResponseDelay     string
@@ -58,6 +60,7 @@ var CommandsCommandOverrideColumns = struct {
 	CommandsChannelsOverridesID: "commands_channels_overrides_id",
 	Commands:                    "commands",
 	CommandsEnabled:             "commands_enabled",
+	AlwaysEphemeral:             "always_ephemeral",
 	AutodeleteResponse:          "autodelete_response",
 	AutodeleteTrigger:           "autodelete_trigger",
 	AutodeleteResponseDelay:     "autodelete_response_delay",
@@ -72,6 +75,7 @@ var CommandsCommandOverrideTableColumns = struct {
 	CommandsChannelsOverridesID string
 	Commands                    string
 	CommandsEnabled             string
+	AlwaysEphemeral             string
 	AutodeleteResponse          string
 	AutodeleteTrigger           string
 	AutodeleteResponseDelay     string
@@ -84,6 +88,7 @@ var CommandsCommandOverrideTableColumns = struct {
 	CommandsChannelsOverridesID: "commands_command_overrides.commands_channels_overrides_id",
 	Commands:                    "commands_command_overrides.commands",
 	CommandsEnabled:             "commands_command_overrides.commands_enabled",
+	AlwaysEphemeral:             "commands_command_overrides.always_ephemeral",
 	AutodeleteResponse:          "commands_command_overrides.autodelete_response",
 	AutodeleteTrigger:           "commands_command_overrides.autodelete_trigger",
 	AutodeleteResponseDelay:     "commands_command_overrides.autodelete_response_delay",
@@ -121,6 +126,7 @@ var CommandsCommandOverrideWhere = struct {
 	CommandsChannelsOverridesID whereHelperint64
 	Commands                    whereHelpertypes_StringArray
 	CommandsEnabled             whereHelperbool
+	AlwaysEphemeral             whereHelperbool
 	AutodeleteResponse          whereHelperbool
 	AutodeleteTrigger           whereHelperbool
 	AutodeleteResponseDelay     whereHelperint
@@ -133,6 +139,7 @@ var CommandsCommandOverrideWhere = struct {
 	CommandsChannelsOverridesID: whereHelperint64{field: "\"commands_command_overrides\".\"commands_channels_overrides_id\""},
 	Commands:                    whereHelpertypes_StringArray{field: "\"commands_command_overrides\".\"commands\""},
 	CommandsEnabled:             whereHelperbool{field: "\"commands_command_overrides\".\"commands_enabled\""},
+	AlwaysEphemeral:             whereHelperbool{field: "\"commands_command_overrides\".\"always_ephemeral\""},
 	AutodeleteResponse:          whereHelperbool{field: "\"commands_command_overrides\".\"autodelete_response\""},
 	AutodeleteTrigger:           whereHelperbool{field: "\"commands_command_overrides\".\"autodelete_trigger\""},
 	AutodeleteResponseDelay:     whereHelperint{field: "\"commands_command_overrides\".\"autodelete_response_delay\""},
@@ -169,8 +176,8 @@ func (r *commandsCommandOverrideR) GetCommandsChannelsOverride() *CommandsChanne
 type commandsCommandOverrideL struct{}
 
 var (
-	commandsCommandOverrideAllColumns            = []string{"id", "guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
-	commandsCommandOverrideColumnsWithoutDefault = []string{"guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
+	commandsCommandOverrideAllColumns            = []string{"id", "guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "always_ephemeral", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
+	commandsCommandOverrideColumnsWithoutDefault = []string{"guild_id", "commands_channels_overrides_id", "commands", "commands_enabled", "always_ephemeral", "autodelete_response", "autodelete_trigger", "autodelete_response_delay", "autodelete_trigger_delay", "require_roles", "ignore_roles"}
 	commandsCommandOverrideColumnsWithDefault    = []string{"id"}
 	commandsCommandOverridePrimaryKeyColumns     = []string{"id"}
 	commandsCommandOverrideGeneratedColumns      = []string{}

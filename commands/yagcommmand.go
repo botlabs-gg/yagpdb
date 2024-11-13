@@ -702,7 +702,8 @@ func (cs *YAGCommand) customEnabled(guildID int64) (bool, error) {
 }
 
 type CommandSettings struct {
-	Enabled bool
+	Enabled         bool
+	AlwaysEphemeral bool
 
 	DelTrigger       bool
 	DelResponse      bool

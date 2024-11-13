@@ -37,6 +37,7 @@ type ChannelOverrideForm struct {
 	ChannelCategories       []int64 `valid:"channel,true"`
 	Global                  bool
 	CommandsEnabled         bool
+	AlwaysEphemeral         bool
 	AutodeleteResponse      bool
 	AutodeleteTrigger       bool
 	AutodeleteResponseDelay int     `valid:"0,2678400"`
@@ -48,6 +49,7 @@ type ChannelOverrideForm struct {
 type CommandOverrideForm struct {
 	Commands                []string
 	CommandsEnabled         bool
+	AlwaysEphemeral         bool
 	AutodeleteResponse      bool
 	AutodeleteTrigger       bool
 	AutodeleteResponseDelay int     `valid:"0,2678400"`
