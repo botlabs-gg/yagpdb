@@ -1051,12 +1051,26 @@ func (c *Context) tmplCloseThread(channel interface{}, flags ...bool) (string, e
 		edit.Archived = &archived
 	}
 
-	_, err := common.BotSession.ChannelEditComplex(cID, edit)
+	threadReturn, err := common.BotSession.ChannelEditComplex(cID, edit)
 	if err != nil {
 		return "", errors.New("unable to edit thread")
 	}
 
+	tstate := dstate.ChannelStateFromDgo(threadReturn)
+	c.overwriteThreadInGuildSet(&tstate)
+
 	return "", nil
+}
+
+func (c *Context) AddThreadToGuildSet(t *dstate.ChannelState) {
+	// Perform a copy so we don't mutate global array
+	gsCopy := *c.GS
+	gsCopy.Threads = make([]dstate.ChannelState, len(c.GS.Threads), len(c.GS.Threads)+1)
+	copy(gsCopy.Threads, c.GS.Threads)
+
+	// Add new thread to copied guild state
+	gsCopy.Threads = append(gsCopy.Threads, *t)
+	c.GS = &gsCopy
 }
 
 func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals ...interface{}) (*CtxChannel, error) {
@@ -1147,6 +1161,23 @@ func (c *Context) addThreadToGuildSet(t *dstate.ChannelState) {
 	c.GS = &gsCopy
 }
 
+func (c *Context) overwriteThreadInGuildSet(t *dstate.ChannelState) {
+	// Perform a copy so we don't mutate global array
+	gsCopy := *c.GS
+	gsCopy.Threads = make([]dstate.ChannelState, len(c.GS.Threads))
+
+	for i, thread := range c.GS.Threads {
+		if thread.ID == t.ID {
+			// insert current thread state instead of old one
+			gsCopy.Threads[i] = *t
+		} else {
+			gsCopy.Threads[i] = thread
+		}
+	}
+
+	c.GS = &gsCopy
+}
+
 // This function can delete both basic threads and forum threads
 func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
 	if c.IncreaseCheckCallCounterPremium("delete_thread", 1, 1) {
@@ -1215,10 +1246,13 @@ func (c *Context) tmplEditThread(channel interface{}, args ...interface{}) (stri
 		edit.Invitable = partialThread.Invitable
 	}
 
-	_, err = common.BotSession.ChannelEditComplex(cID, edit)
+	thread, err := common.BotSession.ChannelEditComplex(cID, edit)
 	if err != nil {
 		return "", errors.New("unable to edit thread")
 	}
+
+	tstate := dstate.ChannelStateFromDgo(thread)
+	c.overwriteThreadInGuildSet(&tstate)
 
 	return "", nil
 }
@@ -1248,10 +1282,13 @@ func (c *Context) tmplOpenThread(cID int64) (string, error) {
 		Locked:   &falseVar,
 	}
 
-	_, err = common.BotSession.ChannelEditComplex(cID, edit)
+	threadReturn, err := common.BotSession.ChannelEditComplex(cID, edit)
 	if err != nil {
 		return "", errors.New("unable to edit thread")
 	}
+
+	tstate := dstate.ChannelStateFromDgo(threadReturn)
+	c.overwriteThreadInGuildSet(&tstate)
 
 	return "", nil
 }
