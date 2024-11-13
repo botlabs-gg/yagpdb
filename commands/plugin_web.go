@@ -37,6 +37,7 @@ type ChannelOverrideForm struct {
 	ChannelCategories       []int64 `valid:"channel,true"`
 	Global                  bool
 	CommandsEnabled         bool
+	AlwaysEphemeral         bool
 	AutodeleteResponse      bool
 	AutodeleteTrigger       bool
 	AutodeleteResponseDelay int     `valid:"0,2678400"`
@@ -48,6 +49,7 @@ type ChannelOverrideForm struct {
 type CommandOverrideForm struct {
 	Commands                []string
 	CommandsEnabled         bool
+	AlwaysEphemeral         bool
 	AutodeleteResponse      bool
 	AutodeleteTrigger       bool
 	AutodeleteResponseDelay int     `valid:"0,2678400"`
@@ -221,6 +223,7 @@ func ChannelOverrideMiddleware(inner func(w http.ResponseWriter, r *http.Request
 					Global:          true,
 					GuildID:         activeGuild.ID,
 					CommandsEnabled: true,
+					AlwaysEphemeral: false,
 					Channels:        []int64{},
 					RequireRoles:    []int64{},
 					IgnoreRoles:     []int64{},
@@ -275,6 +278,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 		Channels:                formData.Channels,
 		ChannelCategories:       formData.ChannelCategories,
 		CommandsEnabled:         formData.CommandsEnabled,
+		AlwaysEphemeral:         formData.AlwaysEphemeral,
 		AutodeleteResponse:      formData.AutodeleteResponse,
 		AutodeleteTrigger:       formData.AutodeleteTrigger,
 		AutodeleteResponseDelay: formData.AutodeleteResponseDelay,
@@ -310,6 +314,7 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 	currentOverride.Channels = formData.Channels
 	currentOverride.ChannelCategories = formData.ChannelCategories
 	currentOverride.CommandsEnabled = formData.CommandsEnabled
+	currentOverride.AlwaysEphemeral = formData.AlwaysEphemeral
 	currentOverride.AutodeleteResponse = formData.AutodeleteResponse
 	currentOverride.AutodeleteTrigger = formData.AutodeleteTrigger
 	currentOverride.AutodeleteResponseDelay = formData.AutodeleteResponseDelay
@@ -368,6 +373,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 
 		Commands:                formData.Commands,
 		CommandsEnabled:         formData.CommandsEnabled,
+		AlwaysEphemeral:         formData.AlwaysEphemeral,
 		AutodeleteResponse:      formData.AutodeleteResponse,
 		AutodeleteTrigger:       formData.AutodeleteTrigger,
 		AutodeleteResponseDelay: formData.AutodeleteResponseDelay,
@@ -406,6 +412,7 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 
 	override.Commands = formData.Commands
 	override.CommandsEnabled = formData.CommandsEnabled
+	override.AlwaysEphemeral = formData.AlwaysEphemeral
 	override.AutodeleteResponse = formData.AutodeleteResponse
 	override.AutodeleteTrigger = formData.AutodeleteTrigger
 	override.AutodeleteResponseDelay = formData.AutodeleteResponseDelay

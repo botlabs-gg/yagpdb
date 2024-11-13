@@ -172,24 +172,24 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			guildID = data.GuildData.GS.ID
 		}
 
+		// Check if the user can execute the command
+		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
+		if err != nil {
+			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+		}
+
 		if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {
 			// Acknowledge the interaction
 			response := discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 			}
-			if yc.IsResponseEphemeral {
+			if yc.IsResponseEphemeral || settings.AlwaysEphemeral {
 				response.Data = &discordgo.InteractionResponseData{Flags: 64}
 			}
 			err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &response)
 			if err != nil {
 				return nil, err
 			}
-		}
-
-		// Check if the user can execute the command
-		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
-		if err != nil {
-			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
 		}
 
 		parseErr := dcmd.ParseCmdArgs(data)
