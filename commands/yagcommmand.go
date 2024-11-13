@@ -800,6 +800,7 @@ func (yc *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Cont
 // Fills the command settings from a channel override, and if a matching command override is found, the command override
 func (cs *YAGCommand) fillSettings(cmdFullName string, override *models.CommandsChannelsOverride, settings *CommandSettings) {
 	settings.Enabled = override.CommandsEnabled
+	settings.AlwaysEphemeral = override.AlwaysEphemeral
 
 	settings.IgnoreRoles = override.IgnoreRoles
 	settings.RequiredRoles = override.RequireRoles
@@ -814,6 +815,7 @@ OUTER:
 		for _, cmd := range cmdOverride.Commands {
 			if strings.EqualFold(cmd, cmdFullName) {
 				settings.Enabled = cmdOverride.CommandsEnabled
+				settings.AlwaysEphemeral = cmdOverride.AlwaysEphemeral
 
 				settings.IgnoreRoles = cmdOverride.IgnoreRoles
 				settings.RequiredRoles = cmdOverride.RequireRoles

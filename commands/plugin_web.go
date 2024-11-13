@@ -277,6 +277,7 @@ func HandleCreateChannelsOverride(w http.ResponseWriter, r *http.Request) (web.T
 		Channels:                formData.Channels,
 		ChannelCategories:       formData.ChannelCategories,
 		CommandsEnabled:         formData.CommandsEnabled,
+		AlwaysEphemeral:         formData.AlwaysEphemeral,
 		AutodeleteResponse:      formData.AutodeleteResponse,
 		AutodeleteTrigger:       formData.AutodeleteTrigger,
 		AutodeleteResponseDelay: formData.AutodeleteResponseDelay,
@@ -312,6 +313,7 @@ func HandleUpdateChannelsOverride(w http.ResponseWriter, r *http.Request, curren
 	currentOverride.Channels = formData.Channels
 	currentOverride.ChannelCategories = formData.ChannelCategories
 	currentOverride.CommandsEnabled = formData.CommandsEnabled
+	currentOverride.AlwaysEphemeral = formData.AlwaysEphemeral
 	currentOverride.AutodeleteResponse = formData.AutodeleteResponse
 	currentOverride.AutodeleteTrigger = formData.AutodeleteTrigger
 	currentOverride.AutodeleteResponseDelay = formData.AutodeleteResponseDelay
@@ -370,6 +372,7 @@ func HandleCreateCommandOverride(w http.ResponseWriter, r *http.Request, channel
 
 		Commands:                formData.Commands,
 		CommandsEnabled:         formData.CommandsEnabled,
+		AlwaysEphemeral:         formData.AlwaysEphemeral,
 		AutodeleteResponse:      formData.AutodeleteResponse,
 		AutodeleteTrigger:       formData.AutodeleteTrigger,
 		AutodeleteResponseDelay: formData.AutodeleteResponseDelay,
@@ -408,6 +411,7 @@ func HandleUpdateCommandOVerride(w http.ResponseWriter, r *http.Request, channel
 
 	override.Commands = formData.Commands
 	override.CommandsEnabled = formData.CommandsEnabled
+	override.AlwaysEphemeral = formData.AlwaysEphemeral
 	override.AutodeleteResponse = formData.AutodeleteResponse
 	override.AutodeleteTrigger = formData.AutodeleteTrigger
 	override.AutodeleteResponseDelay = formData.AutodeleteResponseDelay
