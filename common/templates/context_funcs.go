@@ -1288,7 +1288,7 @@ func (c *Context) tmplOpenThread(cID int64) (string, error) {
 	}
 
 	tstate := dstate.ChannelStateFromDgo(threadReturn)
-	c.overwriteThreadInGuildSet(&tstate)
+	c.addThreadToGuildSet(&tstate)
 
 	return "", nil
 }
