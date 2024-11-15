@@ -712,18 +712,15 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("deleteMessageReaction", c.tmplDelMessageReaction)
 	c.addContextFunc("deleteResponse", c.tmplDelResponse)
 	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
+
 	c.addContextFunc("getChannel", c.tmplGetChannel)
 	c.addContextFunc("getChannelPins", c.tmplGetChannelPins(false))
 	c.addContextFunc("getChannelOrThread", c.tmplGetChannelOrThread)
 	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
-	c.addContextFunc("addReactions", c.tmplAddReactions)
-	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
-	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
+	
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getMemberVoiceState", c.tmplGetMemberVoiceState)
 	c.addContextFunc("getMessage", c.tmplGetMessage)
-	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
-	c.addContextFunc("getRole", c.tmplGetRole)
 	c.addContextFunc("getThread", c.tmplGetThread)
 
 	// thread functions
