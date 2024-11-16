@@ -27,7 +27,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -514,12 +513,6 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	if !premium.ContextPremium(ctx) && cmdEdit.TriggerOnEdit {
 		return templateData.AddAlerts(web.ErrorAlert("`Trigger on edits` is a premium feature, your command wasn't saved, please save again after disabling `Trigger on edits`")), nil
-	}
-
-	if cmdEdit.TriggerType == CommandTriggerCron {
-		if _, err := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow).Parse(cmdEdit.Trigger); err != nil {
-			return templateData.AddAlerts(web.ErrorAlert("Error parsing cron spec: ", err.Error())), nil
-		}
 	}
 
 	dbModel := cmdEdit.ToDBModel()

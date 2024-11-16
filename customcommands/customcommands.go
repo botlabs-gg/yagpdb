@@ -19,6 +19,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/karlseguin/ccache"
+	"github.com/robfig/cron/v3"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -203,6 +204,13 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData, guild_id int64) (ok boo
 	if cc.TriggerTypeForm == "interval_hours" && (cc.TimeTriggerInterval < MinIntervalTriggerDurationHours || cc.TimeTriggerInterval > MaxIntervalTriggerDurationHours) {
 		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Hourly interval can be between %v and %v", MinIntervalTriggerDurationHours, MaxIntervalTriggerDurationHours)))
 		return false
+	}
+
+	if cc.TriggerTypeForm == "cron" {
+		if _, err := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow).Parse(cc.Trigger); err != nil {
+			tmpl.AddAlerts(web.ErrorAlert("Error parsing cron spec: ", err.Error()))
+			return false
+		}
 	}
 
 	return true
