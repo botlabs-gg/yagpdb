@@ -66,7 +66,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		maybeNextRun := time.Now().UTC()
 		for i := 0; i < 200; i++ { // set an upper limit on retries
 			maybeNextRun = cronSchedule.Next(maybeNextRun)
-			nextRunBlacklisted := common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(tNext.Weekday())) || common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(tNext.Hour()))
+			nextRunBlacklisted := common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(maybeNextRun.Weekday())) || common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(maybeNextRun.Hour()))
 			if !nextRunBlacklisted {
 				break
 			}
