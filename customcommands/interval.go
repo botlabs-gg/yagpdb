@@ -139,7 +139,7 @@ func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool, clea
 		}
 	}
 
-	if cc.TriggerType != int(CommandTriggerInterval) || cc.TimeTriggerInterval < 1 {
+	if (cc.TriggerType == int(CommandTriggerInterval) && cc.TimeTriggerInterval < 1) || !(cc.TriggerType == int(CommandTriggerInterval) || cc.TriggerType == int(CommandTriggerCron)) {
 		return nil
 	}
 
