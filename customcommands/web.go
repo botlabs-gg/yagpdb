@@ -27,6 +27,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -515,6 +516,12 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		return templateData.AddAlerts(web.ErrorAlert("`Trigger on edits` is a premium feature, your command wasn't saved, please save again after disabling `Trigger on edits`")), nil
 	}
 
+	if cmdEdit.TriggerType == CommandTriggerCron {
+		if _, err := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow).Parse(cmdEdit.Trigger); err != nil {
+			return templateData.AddAlerts(web.ErrorAlert("Error parsing cron spec: ", err.Error())), nil
+		}
+	}
+
 	dbModel := cmdEdit.ToDBModel()
 
 	templateData["CurrentGroupID"] = dbModel.GroupID.Int64
@@ -554,7 +561,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	// create, update or remove the next run time and scheduled event
-	if dbModel.TriggerType == int(CommandTriggerInterval) {
+	if dbModel.TriggerType == int(CommandTriggerInterval) || dbModel.TriggerType == int(CommandTriggerCron) {
 		// need the last run time
 		fullModel, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, dbModel.LocalID)).OneG(ctx)
 		if err != nil {
