@@ -219,16 +219,12 @@
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                                         </div>
                                     </div>
-                                    <div id="cc-cron-trigger-details" class="hidden col-lg-8">
-                                        <div class="row">
-                                            <div class="col-lg-12">
-                                                <div class="form-group">
-                                                    <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
-                                                    <div class="input-group mb-2">
-                                                        <input id="trigger" type="text" class="form-control" name="trigger" placeholder="45 23 * * 6"
-                                                            value="{{.CC.TextTrigger}}">
-                                                    </div>
-                                                </div>
+                                    <div id="cc-cron-trigger-details" class="hidden col-lg-4">
+                                        <div class="form-group">
+                                            <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <div class="input-group mb-2">
+                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="45 23 * * 6"
+                                                    value="{{.CC.TextTrigger}}">
                                             </div>
                                         </div>
                                     </div>
@@ -586,7 +582,7 @@
         setCMCheckbox();
     });
 
-    var intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details'];
+    var intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details', '#cc-interval-trigger-details'];
     var textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings'];
     var messageTriggerEls = [...textTriggerEls, '#cc-message-trigger-label', '#cc-message-trigger-details'];
     var interactionTriggerEls = [...textTriggerEls, '#cc-customid-trigger-label'];
@@ -603,7 +599,7 @@
         contains: [...messageTriggerEls, '#trigger-desc-contains'],
         regex: [...messageTriggerEls, '#trigger-desc-regex'],
         exact: [...messageTriggerEls, '#trigger-desc-exact'],
-        cron: ['#cc-cron-trigger-details', '#cc-time-trigger-details'],
+        cron: ['#cc-time-trigger-details', '#cc-cron-trigger-details'],
         none: ['#trigger-desc-none'],
     };
 
