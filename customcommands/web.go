@@ -10,6 +10,8 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -523,14 +525,54 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	dbModel.LocalID = cmdEdit.ID
 	dbModel.TriggerType = int(triggerTypeFromForm(cmdEdit.TriggerTypeForm))
 	// check low interval limits
-	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval <= 10 {
-		if dbModel.TimeTriggerInterval < 5 {
-			dbModel.TimeTriggerInterval = 5
-		}
+	if dbModel.TriggerType == int(CommandTriggerInterval) || dbModel.TriggerType == int(CommandTriggerCron) {
+		switch CommandTriggerType(dbModel.TriggerType) {
+		case CommandTriggerInterval:
+			if dbModel.TimeTriggerInterval <= 10 {
+				if dbModel.TimeTriggerInterval < 5 {
+					dbModel.TimeTriggerInterval = 5
+				}
 
-		ok, err := checkIntervalLimits(ctx, activeGuild.ID, dbModel.LocalID, templateData)
-		if err != nil || !ok {
-			return templateData, err
+				ok, err := checkIntervalLimits(ctx, activeGuild.ID, dbModel.LocalID, templateData)
+				if err != nil || !ok {
+					return templateData, err
+				}
+			}
+		case CommandTriggerCron:
+			cronSpec := strings.TrimSpace(dbModel.TextTrigger)
+			re := regexp.MustCompile(`\s+`)
+			cronSpec = re.ReplaceAllString(cronSpec, " ")
+			minuteSpec := strings.Split(cronSpec, " ")[0]
+
+			lowCronIntervalError := web.ErrorAlert("Cron must execute with longer than a 10 minute interval at minimum")
+			switch {
+			case minuteSpec == "*":
+				return templateData.AddAlerts(lowCronIntervalError), nil
+			case strings.HasPrefix(minuteSpec, "*/"):
+				interval, _ := strconv.Atoi(strings.TrimPrefix(minuteSpec, "*/"))
+				if interval <= 10 {
+					return templateData.AddAlerts(lowCronIntervalError), nil
+				}
+			case strings.Contains(minuteSpec, ","):
+				var minutesToExecute []int
+				for _, min := range strings.Split(minuteSpec, ",") {
+					newMinute, _ := strconv.Atoi(min)
+					minutesToExecute = append(minutesToExecute, newMinute)
+				}
+				sort.Ints(minutesToExecute)
+				minutesToExecute = append(minutesToExecute, minutesToExecute[0]+60) // add the first triggerable minute of the next hour
+				lastMinute := minutesToExecute[0]
+				for _, sortedMin := range minutesToExecute[1:] {
+					nextMinuteLessThan11MinutesLater := lastMinute >= sortedMin-10
+					if nextMinuteLessThan11MinutesLater {
+						return templateData.AddAlerts(lowCronIntervalError), nil
+					}
+					lastMinute = sortedMin
+				}
+			}
+			// since there's no way we're gonna calculate all that for every cron CC
+			// every time we save one, we're setting a hard lower limit at 11 min
+			// rather than permitting up to x count <= 10 min.
 		}
 	}
 
