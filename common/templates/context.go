@@ -645,28 +645,43 @@ func (c *Context) addContextFunc(name string, f interface{}) {
 }
 
 func baseContextFuncs(c *Context) {
-	// message functions
+	// Message functions
+	c.addContextFunc("deleteMessage", c.tmplDelMessage)
+	c.addContextFunc("deleteResponse", c.tmplDelResponse)
+	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
+
 	c.addContextFunc("editMessage", c.tmplEditMessage(true))
 	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
+	c.addContextFunc("getMessage", c.tmplGetMessage)
 	c.addContextFunc("pinMessage", c.tmplPinMessage(false))
 	c.addContextFunc("publishMessage", c.tmplPublishMessage)
 	c.addContextFunc("publishResponse", c.tmplPublishResponse)
+	c.addContextFunc("unpinMessage", c.tmplPinMessage(true))
+
+	// Message send functions
 	c.addContextFunc("sendDM", c.tmplSendDM)
 	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
 	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
 	c.addContextFunc("sendMessageRetID", c.tmplSendMessage(true, true))
+
 	c.addContextFunc("sendTemplate", c.tmplSendTemplate)
 	c.addContextFunc("sendTemplateDM", c.tmplSendTemplateDM)
-	c.addContextFunc("unpinMessage", c.tmplPinMessage(true))
 
-	// Mentions
+	// Reaction functions
+	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
+	c.addContextFunc("addReactions", c.tmplAddReactions)
+	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
+
+	c.addContextFunc("deleteAllMessageReactions", c.tmplDelAllMessageReactions)
+	c.addContextFunc("deleteMessageReaction", c.tmplDelMessageReaction)
+
+	// Mention functions
 	c.addContextFunc("mentionEveryone", c.tmplMentionEveryone)
 	c.addContextFunc("mentionHere", c.tmplMentionHere)
 	c.addContextFunc("mentionRole", c.tmplMentionRole)
 	c.addContextFunc("mentionRoleName", c.tmplMentionRoleName)
 	c.addContextFunc("mentionRoleID", c.tmplMentionRoleID)
-	c.addContextFunc("mentionRoleName", c.tmplMentionRoleName)
 
 	// Role functions
 	c.addContextFunc("getRole", c.tmplGetRole)
@@ -699,64 +714,58 @@ func baseContextFuncs(c *Context) {
 
 	c.addContextFunc("setRoles", c.tmplSetRoles)
 
-	// permission funcs
+	// Permission functions
 	c.addContextFunc("hasPermissions", c.tmplHasPermissions)
 	c.addContextFunc("targetHasPermissions", c.tmplTargetHasPermissions)
 	c.addContextFunc("getTargetPermissionsIn", c.tmplGetTargetPermissionsIn)
 
-	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
-	c.addContextFunc("addReactions", c.tmplAddReactions)
-	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
-	c.addContextFunc("deleteAllMessageReactions", c.tmplDelAllMessageReactions)
-	c.addContextFunc("deleteMessage", c.tmplDelMessage)
-	c.addContextFunc("deleteMessageReaction", c.tmplDelMessageReaction)
-	c.addContextFunc("deleteResponse", c.tmplDelResponse)
-	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
+	// Channel functions
+	c.addContextFunc("editChannelName", c.tmplEditChannelName)
+	c.addContextFunc("editChannelTopic", c.tmplEditChannelTopic)
+
 	c.addContextFunc("getChannel", c.tmplGetChannel)
 	c.addContextFunc("getChannelPins", c.tmplGetChannelPins(false))
 	c.addContextFunc("getChannelOrThread", c.tmplGetChannelOrThread)
 	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
-	c.addContextFunc("addReactions", c.tmplAddReactions)
-	c.addContextFunc("addResponseReactions", c.tmplAddResponseReactions)
-	c.addContextFunc("addMessageReactions", c.tmplAddMessageReactions)
+
+	// Member functions
 	c.addContextFunc("getMember", c.tmplGetMember)
 	c.addContextFunc("getMemberVoiceState", c.tmplGetMemberVoiceState)
-	c.addContextFunc("getMessage", c.tmplGetMessage)
-	c.addContextFunc("getPinCount", c.tmplGetChannelPins(true))
-	c.addContextFunc("getRole", c.tmplGetRole)
-	c.addContextFunc("getThread", c.tmplGetThread)
+	c.addContextFunc("editNickname", c.tmplEditNickname)
 
-	// thread functions
+	// Thread functions
 	c.addContextFunc("addThreadMember", c.tmplThreadMemberAdd)
 	c.addContextFunc("closeThread", c.tmplCloseThread)
 	c.addContextFunc("createThread", c.tmplCreateThread)
 	c.addContextFunc("deleteThread", c.tmplDeleteThread)
 	c.addContextFunc("editThread", c.tmplEditThread)
+	c.addContextFunc("getThread", c.tmplGetThread)
 	c.addContextFunc("openThread", c.tmplOpenThread)
 	c.addContextFunc("removeThreadMember", c.tmplThreadMemberRemove)
 
-	// forum functions
+	// Forum functions
 	c.addContextFunc("createForumPost", c.tmplCreateForumPost)
 	c.addContextFunc("deleteForumPost", c.tmplDeleteThread)
 	c.addContextFunc("pinForumPost", c.tmplPinForumPost(false))
 	c.addContextFunc("unpinForumPost", c.tmplPinForumPost(true))
 
+	// User functions
 	c.addContextFunc("currentUserAgeHuman", c.tmplCurrentUserAgeHuman)
 	c.addContextFunc("currentUserAgeMinutes", c.tmplCurrentUserAgeMinutes)
 	c.addContextFunc("currentUserCreated", c.tmplCurrentUserCreated)
+
+	// RegEx functions
 	c.addContextFunc("reFind", c.reFind)
 	c.addContextFunc("reFindAll", c.reFindAll)
 	c.addContextFunc("reFindAllSubmatches", c.reFindAllSubmatches)
 	c.addContextFunc("reReplace", c.reReplace)
 	c.addContextFunc("reSplit", c.reSplit)
-	c.addContextFunc("sleep", c.tmplSleep)
 
-	c.addContextFunc("editChannelName", c.tmplEditChannelName)
-	c.addContextFunc("editChannelTopic", c.tmplEditChannelTopic)
-	c.addContextFunc("editNickname", c.tmplEditNickname)
+	// Miscellaneous functions
 	c.addContextFunc("onlineCount", c.tmplOnlineCount)
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
 
+	c.addContextFunc("sleep", c.tmplSleep)
 	c.addContextFunc("sort", c.tmplSort)
 }
 
