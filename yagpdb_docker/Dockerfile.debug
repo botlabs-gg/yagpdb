@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.23.1-alpine
+FROM docker.io/golang:1.23.3-alpine
 # Dependencies: ca-certificates for client TLS, tzdata for timezone and ffmpeg for soundboard support
 RUN apk --no-cache add ca-certificates ffmpeg tzdata
 RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
