@@ -71,8 +71,8 @@ func PermissionName(p int64) string {
 		return "ManageRoles"
 	case PermissionManageWebhooks:
 		return "ManageWebhooks"
-	case PermissionManageEmojisAndStickers:
-		return "ManageEmojisAndStickers"
+	case PermissionManageGuildExpressions:
+		return "ManageGuildExpressions"
 	case PermissionCreateInstantInvite:
 		return "CreateInstantInvite"
 	case PermissionModerateMembers:

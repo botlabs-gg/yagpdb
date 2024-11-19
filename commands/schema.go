@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS commands_channels_overrides (
 	global bool NOT NULL,
 
 	commands_enabled BOOL NOT NULL,
+	always_ephemeral BOOL NOT NULL,
 
 	autodelete_response BOOL NOT NULL,
 	autodelete_trigger BOOL NOT NULL,
@@ -25,6 +26,8 @@ CREATE INDEX IF NOT EXISTS commands_channels_overrides_guild_idx ON commands_cha
 `, `
 CREATE UNIQUE INDEX IF NOT EXISTS commands_channels_overrides_global_uniquex ON commands_channels_overrides (guild_id) WHERE global;
 `, `
+ALTER TABLE commands_channels_overrides ADD COLUMN IF NOT EXISTS always_ephemeral BOOLEAN NOT NULL DEFAULT false;
+`, `
 CREATE TABLE IF NOT EXISTS commands_command_overrides (
 	id BIGSERIAL PRIMARY KEY,
 	guild_id BIGINT NOT NULL,
@@ -33,6 +36,7 @@ CREATE TABLE IF NOT EXISTS commands_command_overrides (
 	commands TEXT[] NOT NULL,
 
 	commands_enabled BOOL NOT NULL,
+	always_ephemeral BOOL NOT NULL,
 
 	autodelete_response BOOL NOT NULL,
 	autodelete_trigger BOOL NOT NULL,
@@ -45,4 +49,6 @@ CREATE TABLE IF NOT EXISTS commands_command_overrides (
 );
 `, `
 CREATE INDEX IF NOT EXISTS commands_command_groups_channels_override_idx ON commands_command_overrides(commands_channels_overrides_id);
+`, `
+ALTER TABLE commands_command_overrides ADD COLUMN IF NOT EXISTS always_ephemeral BOOLEAN NOT NULL DEFAULT false;
 `}

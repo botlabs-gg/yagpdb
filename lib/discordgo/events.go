@@ -518,6 +518,12 @@ type ThreadMembersUpdate struct {
 
 // guild stickers were updated
 type GuildStickersUpdate struct {
+	GuildID  int64      `json:"guild_id,string"`
+	Stickers []*Sticker `json:"stickers"`
+}
+
+func (e *GuildStickersUpdate) GetGuildID() int64 {
+	return e.GuildID
 }
 
 // stage instance was created

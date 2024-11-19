@@ -2,6 +2,7 @@ package automod
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -871,6 +872,120 @@ func (send *SendChannelMessageEffect) Apply(ctxData *TriggeredRuleData, settings
 }
 
 func (send *SendChannelMessageEffect) MergeDuplicates(data []interface{}) interface{} {
+	return data[0] // no user data
+}
+
+/////////////////////////////////////////////////////////////
+
+type SendModeratorAlertMessageData struct {
+	CustomMessage string `valid:",0,280,trimspace"`
+	LogChannel   int64
+}
+
+type SendModeratorAlertMessageEffect struct{}
+
+func (send *SendModeratorAlertMessageEffect) Kind() RulePartType {
+	return RulePartEffect
+}
+
+func (send *SendModeratorAlertMessageEffect) DataType() interface{} {
+	return &SendModeratorAlertMessageData{}
+}
+
+func (send *SendModeratorAlertMessageEffect) Name() (name string) {
+	return "Send Alert"
+}
+
+func (send *SendModeratorAlertMessageEffect) Description() (description string) {
+	return "Sends an embed to the specified channel with info about the triggered rule"
+}
+
+func (send *SendModeratorAlertMessageEffect) UserSettings() []*SettingDef {
+	return []*SettingDef{
+		{
+			Name: "Custom message",
+			Key:  "CustomMessage",
+			Min:  0,
+			Max:  280,
+			Kind: SettingTypeString,
+		},
+		{
+			Name:    "Channel to send alert embed in",
+			Key:     "LogChannel",
+			Kind:    SettingTypeChannel,
+			Default: nil,
+		},
+	}
+}
+
+func (send *SendModeratorAlertMessageEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
+	// Ignore bots
+	if ctxData.MS.User.Bot {
+		return nil
+	}
+
+	settingsCast := settings.(*SendModeratorAlertMessageData)
+
+	// If we dont have any channel data, we can't send a message
+	if ctxData.CS == nil && settingsCast.LogChannel == 0 {
+		return nil
+	}
+
+	msgSend := &discordgo.MessageSend{}
+
+	if ctxData.CS != nil {
+		msgSend.Content = fmt.Sprintf("Automoderator alert triggered in <#%d>:\n", ctxData.CS.ID)
+	} else {
+		msgSend.Content = "Automoderator alert:\n"
+	}
+
+	if settingsCast.CustomMessage != "" {
+		msgSend.Content += settingsCast.CustomMessage
+		msgSend.AllowedMentions = discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeUsers},
+		}
+	}
+
+	msgEmbed := &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name: fmt.Sprintf("%s (ID: %d)", ctxData.MS.User.Username, ctxData.MS.User.ID),
+			IconURL: ctxData.MS.User.AvatarURL("64"),
+		},
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: ctxData.ConstructReason(false),
+		},
+	}
+
+	msgEmbed.Fields = []*discordgo.MessageEmbedField{{
+		Name: "____",
+		Value: ctxData.MS.User.Mention(),
+	}}
+
+	if ctxData.Message != nil {
+		msgEmbed.Description = ctxData.Message.Content
+		existingValue := msgEmbed.Fields[0].Value
+		msgEmbed.Fields[0].Value = fmt.Sprintf("[Jump to Message](%s) • %s", ctxData.Message.Link(), existingValue)
+	}
+
+	msgSend.Embeds = []*discordgo.MessageEmbed{msgEmbed}
+
+	var logChannel int64
+	if settingsCast.LogChannel != 0 {
+		logChannel = settingsCast.LogChannel
+	} else {
+		logChannel = ctxData.CS.ID
+	}
+
+	_, err := common.BotSession.ChannelMessageSendComplex(logChannel, msgSend)
+	if err != nil {
+		logger.WithError(err).Error("Failed to send mod alert for AutomodV2")
+		return err
+	}
+
+	return nil
+}
+
+func (send *SendModeratorAlertMessageEffect) MergeDuplicates(data []interface{}) interface{} {
 	return data[0] // no user data
 }
 

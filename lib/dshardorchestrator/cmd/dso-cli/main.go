@@ -324,7 +324,7 @@ func (s *BlacklistNodeCmd) Run(args []string) int {
 
 	nodeID := args[0]
 
-	fmt.Printf("blacklisting node %s\n", nodeID)
+	fmt.Printf("denied the node %s\n", nodeID)
 
 	msg, err := restClient.BlacklistNode(nodeID)
 	if err != nil {
@@ -337,7 +337,7 @@ func (s *BlacklistNodeCmd) Run(args []string) int {
 }
 
 func (s *BlacklistNodeCmd) Synopsis() string {
-	return "blacklists the specified node from being assigned new shards"
+	return "denies the specified node from being assigned new shards"
 }
 
 func StaticFactory(c cli.Command) cli.CommandFactory {

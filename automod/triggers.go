@@ -171,10 +171,10 @@ func (wl *WordListTrigger) DataType() interface{} {
 
 func (wl *WordListTrigger) Name() (name string) {
 	if wl.Blacklist {
-		return "Word blacklist"
+		return "Word denylist"
 	}
 
-	return "Word whitelist"
+	return "Word allowlist"
 }
 
 func (wl *WordListTrigger) Description() (description string) {
@@ -262,10 +262,10 @@ func (dt *DomainTrigger) DataType() interface{} {
 
 func (dt *DomainTrigger) Name() (name string) {
 	if dt.Blacklist {
-		return "Website blacklist"
+		return "Website denylist"
 	}
 
-	return "Website whitelist"
+	return "Website allowlist"
 }
 
 func (dt *DomainTrigger) Description() (description string) {
@@ -1212,10 +1212,10 @@ func (nwl *NicknameWordlistTrigger) DataType() interface{} {
 
 func (nwl *NicknameWordlistTrigger) Name() (name string) {
 	if nwl.Blacklist {
-		return "Nickname word blacklist"
+		return "Nickname word denylist"
 	}
 
-	return "Nickname word whitelist"
+	return "Nickname word allowlist"
 }
 
 func (nwl *NicknameWordlistTrigger) Description() (description string) {
@@ -1362,10 +1362,10 @@ func (uwl *UsernameWordlistTrigger) DataType() interface{} {
 
 func (uwl *UsernameWordlistTrigger) Name() (name string) {
 	if uwl.Blacklist {
-		return "Join username word blacklist"
+		return "Join username word denylist"
 	}
 
-	return "Join username word whitelist"
+	return "Join username word allowlist"
 }
 
 func (uwl *UsernameWordlistTrigger) Description() (description string) {

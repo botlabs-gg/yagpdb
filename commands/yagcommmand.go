@@ -545,7 +545,7 @@ func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonMissingRole,
-		Message: "You need at least one of the server whitelist roles: " + humanizedRoles.String(),
+		Message: "You need at least one of the server allowed roles: " + humanizedRoles.String(),
 	}
 }
 
@@ -579,7 +579,7 @@ func checkBlacklistRoles(guildRoles map[int64]string, blacklistRoles []int64, da
 
 	return &CanExecuteError{
 		Type:    ReasonIgnoredRole,
-		Message: "You have one of the server blacklist roles: " + humanizedRole,
+		Message: "You have one of the server denylist roles: " + humanizedRole,
 	}
 }
 
@@ -702,7 +702,8 @@ func (cs *YAGCommand) customEnabled(guildID int64) (bool, error) {
 }
 
 type CommandSettings struct {
-	Enabled bool
+	Enabled         bool
+	AlwaysEphemeral bool
 
 	DelTrigger       bool
 	DelResponse      bool
@@ -799,6 +800,7 @@ func (yc *YAGCommand) GetSettingsWithLoadedOverrides(containerChain []*dcmd.Cont
 // Fills the command settings from a channel override, and if a matching command override is found, the command override
 func (cs *YAGCommand) fillSettings(cmdFullName string, override *models.CommandsChannelsOverride, settings *CommandSettings) {
 	settings.Enabled = override.CommandsEnabled
+	settings.AlwaysEphemeral = override.AlwaysEphemeral
 
 	settings.IgnoreRoles = override.IgnoreRoles
 	settings.RequiredRoles = override.RequireRoles
@@ -813,6 +815,7 @@ OUTER:
 		for _, cmd := range cmdOverride.Commands {
 			if strings.EqualFold(cmd, cmdFullName) {
 				settings.Enabled = cmdOverride.CommandsEnabled
+				settings.AlwaysEphemeral = cmdOverride.AlwaysEphemeral
 
 				settings.IgnoreRoles = cmdOverride.IgnoreRoles
 				settings.RequiredRoles = cmdOverride.RequireRoles
@@ -1055,6 +1058,7 @@ func GetAllOverrides(ctx context.Context, guildID int64) ([]*models.CommandsChan
 	global := &models.CommandsChannelsOverride{
 		Global:          true,
 		CommandsEnabled: true,
+		AlwaysEphemeral: false,
 	}
 	global.R = global.R.NewStruct()
 
