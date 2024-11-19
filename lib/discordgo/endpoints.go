@@ -31,6 +31,7 @@ var (
 	EndpointGateway    string
 	EndpointGatewayBot string
 	EndpointWebhooks   string
+	EndpointStickers   string
 
 	EndpointCDN             string
 	EndpointCDNAttachments  string
@@ -108,6 +109,8 @@ var (
 	EndpointGuildBannerAnimated = func(gID int64, hash string) string { return "" }
 	EndpointGuildThreads        = func(gID int64) string { return "" }
 	EndpointGuildActiveThreads  = func(gID int64) string { return "" }
+	EndpointGuildStickers       = func(gID int64) string { return "" }
+	EndpointGuildSticker        = func(gID, sID int64) string { return "" }
 
 	EndpointChannel                             = func(cID int64) string { return "" }
 	EndpointChannelThreads                      = func(cID int64) string { return "" }
@@ -131,6 +134,9 @@ var (
 	EndpointThreadMember                        = func(tID int64, mID string) string { return "" }
 
 	EndpointGroupIcon = func(cID int64, hash string) string { return "" }
+
+	EndpointSticker            = func(sID int64) string { return "" }
+	EndpointNitroStickersPacks string
 
 	EndpointChannelWebhooks = func(cID int64) string { return "" }
 	EndpointWebhook         = func(wID int64) string { return "" }
@@ -235,6 +241,7 @@ func CreateEndpoints(base string) {
 	EndpointGateway = EndpointAPI + "gateway"
 	EndpointGatewayBot = EndpointGateway + "/bot"
 	EndpointWebhooks = EndpointAPI + "webhooks/"
+	EndpointStickers = EndpointAPI + "stickers/"
 
 	EndpointCDN = "https://cdn.discordapp.com/"
 	EndpointCDNAttachments = EndpointCDN + "attachments/"
@@ -316,6 +323,8 @@ func CreateEndpoints(base string) {
 	EndpointGuildBannerAnimated = func(gID int64, hash string) string { return EndpointCDNBanners + StrID(gID) + "/" + hash + ".gif" }
 	EndpointGuildThreads = func(gID int64) string { return EndpointGuild(gID) + "/threads" }
 	EndpointGuildActiveThreads = func(gID int64) string { return EndpointGuildThreads(gID) + "/active" }
+	EndpointGuildStickers = func(gID int64) string { return EndpointGuilds + StrID(gID) + "/stickers" }
+	EndpointGuildSticker = func(gID, sID int64) string { return EndpointGuilds + StrID(gID) + "/stickers/" + StrID(sID) }
 
 	EndpointChannel = func(cID int64) string { return EndpointChannels + StrID(cID) }
 	EndpointChannelThreads = func(cID int64) string { return EndpointChannel(cID) + "/threads" }
@@ -339,6 +348,9 @@ func CreateEndpoints(base string) {
 	EndpointThreadMember = func(tID int64, mID string) string { return EndpointThreadMembers(tID) + "/" + mID }
 
 	EndpointGroupIcon = func(cID int64, hash string) string { return EndpointCDNChannelIcons + StrID(cID) + "/" + hash + ".png" }
+
+	EndpointSticker = func(sID int64) string { return EndpointStickers + StrID(sID) }
+	EndpointNitroStickersPacks = EndpointAPI + "/sticker-packs"
 
 	EndpointChannelWebhooks = func(cID int64) string { return EndpointChannel(cID) + "/webhooks" }
 	EndpointWebhook = func(wID int64) string { return EndpointWebhooks + StrID(wID) }

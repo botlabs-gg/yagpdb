@@ -257,6 +257,18 @@
                     name="AutodeleteResponseDelay">
             </div>
         </div>
+        {{$alwaysEphemeral := false}}
+        {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
+        {{if not .Override.Global}}
+            {{checkbox "AlwaysEphemeral" (joinStr "" "always-ephemeral-" .Override.ID) "Slash command responses always ephemeral?" $alwaysEphemeral}}
+        {{else}}
+            <div class="form-group d-flex align-items-center">
+                <input type="checkbox" class="tgl tgl-flat" name="AlwaysEphemeral" id="always-ephemeral-global"
+                    {{if $alwaysEphemeral}} checked{{end}}>
+                <label for="always-ephemeral-global" class="tgl-btn mb-2"></label>
+                <span class="ml-2 mb-2">Slash command responses always ephemeral?</span>
+            </div>
+        {{end}}
     </div>
     {{if .Override}}
     <button type="submit" class="btn btn-success" value="Save" data-async-form-alertsonly>Save channel
@@ -376,6 +388,13 @@
                                 name="AutodeleteResponseDelay">
                         </div>
                     </div>
+                    {{$aeID := ""}}
+                    {{if .Override}}{{$aeID = joinStr "" "cmd-override-always-ephemeral-" .Override.ID}}{{else}}{{$id = joinStr "" "cmd-override-always-ephemeral-" .Parent.ID "-new"}}{{end}}
+
+                    {{$alwaysEphemeral := false}}
+                    {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
+
+                    {{checkbox "AlwaysEphemeral" $aeID "Slash command responses always ephemeral?" $alwaysEphemeral}}
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-6">

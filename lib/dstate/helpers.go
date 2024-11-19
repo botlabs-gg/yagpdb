@@ -23,6 +23,11 @@ func GuildSetFromGuild(guild *discordgo.Guild) *GuildSet {
 		emojis[i] = *guild.Emojis[i]
 	}
 
+	stickers := make([]discordgo.Sticker, len(guild.Stickers))
+	for i := range guild.Stickers {
+		stickers[i] = *guild.Stickers[i]
+	}
+
 	voiceStates := make([]discordgo.VoiceState, len(guild.Emojis))
 	for i := range guild.VoiceStates {
 		voiceStates[i] = *guild.VoiceStates[i]
@@ -33,6 +38,7 @@ func GuildSetFromGuild(guild *discordgo.Guild) *GuildSet {
 		Channels:    channels,
 		Roles:       roles,
 		Emojis:      emojis,
+		Stickers:    stickers,
 		VoiceStates: voiceStates,
 	}
 }

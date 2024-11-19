@@ -318,6 +318,12 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 	if config.ActionChannel == 0 {
 		return false, nil
 	}
+
+	if !config.LogTimeouts {
+		// User doesn't want us to log timeouts not made through yag
+		return false, nil
+	}
+
 	// If we poll the audit log too fast then there sometimes wont be a audit log entry
 	time.Sleep(time.Second * 3)
 
@@ -327,7 +333,9 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 	}
 	logger.Infof("got timeout event %v", entry)
 
-	if *entry.Changes[0].Key != discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
+	auditLogChange := entry.Changes[0]
+
+	if *auditLogChange.Key != discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
 		return false, nil
 	}
 
@@ -336,12 +344,14 @@ func HandleGuildMemberTimeoutChange(evt *eventsystem.EventData) (retry bool, err
 		return false, nil
 	}
 
-	if !config.LogTimeouts {
-		// User doesn't want us to log timeouts not made through yag
-		return false, nil
+	action := MATimeoutAdded
+	timeoutUntil, err := discordgo.Timestamp(auditLogChange.NewValue.(string)).Parse()
+	if err == nil {
+		duration := timeoutUntil.Sub(bot.SnowflakeToTime(entry.ID))
+		action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 	}
 
-	err = CreateModlogEmbed(config, author, MATimeoutAdded, data.User, entry.Reason, "")
+	err = CreateModlogEmbed(config, author, action, data.User, entry.Reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending timeout log message")
 		return false, errors.WithStackIf(err)

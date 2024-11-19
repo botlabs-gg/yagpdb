@@ -447,6 +447,59 @@ func (e *Emoji) APIName() string {
 	return StrID(e.ID)
 }
 
+// StickerFormat is the file format of the Sticker.
+type StickerFormat int
+
+// Defines all known Sticker types.
+const (
+	StickerFormatTypePNG	StickerFormat = 1
+	StickerFormatTypeAPNG	StickerFormat = 2
+	StickerFormatTypeLottie	StickerFormat = 3
+	StickerFormatTypeGIF	StickerFormat = 4
+)
+
+// StickerType is the type of Sticker.
+type StickerType int
+
+// Defines Sticker types.
+const (
+	StickerTypeStandard	StickerType = 1
+	StickerTypeGuild	StickerType = 2
+)
+
+// Sticker represents a Sticker object that can be sent in a Message.
+type Sticker struct {
+	ID          int64         `json:"id,string"`
+	PackID      int64         `json:"pack_id,string"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Tags        string        `json:"tags"`
+	Type        StickerType   `json:"type"`
+	FormatType  StickerFormat `json:"format_type"`
+	Available   bool          `json:"available"`
+	GuildID     int64         `json:"guild_id,string"`
+	User        *User         `json:"user"`
+	SortValue   int	          `json:"sort_value"`
+}
+
+// StickerItem represents the smallest amount of data required to render a sticker. A partial sticker object.
+type StickerItem struct {
+	ID         int64         `json:"id,string"`
+	Name       string        `json:"name"`
+	FormatType StickerFormat `json:"format_type"`
+}
+
+// StickerPack represents a pack of standard stickers.
+type StickerPack struct {
+	ID             int64     `json:"id,string"`
+	Stickers       []Sticker `json:"stickers"`
+	Name           string    `json:"name"`
+	SKUID          int64     `json:"sku_id,string"`
+	CoverStickerID int64     `json:"cover_sticker_id,string"`
+	Description    string    `json:"description"`
+	BannerAssetID  int64     `json:"banner_asset_id,string"`
+}
+
 // VerificationLevel type definition
 type VerificationLevel int
 
@@ -538,6 +591,9 @@ type Guild struct {
 
 	// A list of the custom emojis present in the guild.
 	Emojis []*Emoji `json:"emojis"`
+
+	// A list of the custom stickers present in the guild.
+	Stickers []*Sticker `json:"stickers"`
 
 	// A list of the members in the guild.
 	// This field is only present in GUILD_CREATE events and websocket

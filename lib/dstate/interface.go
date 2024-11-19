@@ -55,6 +55,7 @@ type GuildSet struct {
 	Threads     []ChannelState
 	Roles       []discordgo.Role
 	Emojis      []discordgo.Emoji
+	Stickers    []discordgo.Sticker
 	VoiceStates []discordgo.VoiceState
 }
 
@@ -125,6 +126,16 @@ func (gs *GuildSet) GetThread(id int64) *ChannelState {
 	for i := range gs.Threads {
 		if gs.Threads[i].ID == id {
 			return &gs.Threads[i]
+		}
+	}
+
+	return nil
+}
+
+func (gs *GuildSet) GetSticker(id int64) *discordgo.Sticker {
+	for i := range gs.Stickers {
+		if gs.Stickers[i].ID == id {
+			return &gs.Stickers[i]
 		}
 	}
 
@@ -403,6 +414,7 @@ type MessageState struct {
 	Mentions         []discordgo.User
 	MentionRoles     []int64
 	Attachments      []discordgo.MessageAttachment
+	Stickers         []discordgo.Sticker
 
 	ParsedCreatedAt time.Time
 	ParsedEditedAt  time.Time
