@@ -465,7 +465,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				}
 			}
 		default:
-			return nil, errors.New(`invalid key "` + key + `" passed to forward`)
+			return nil, errors.New(`invalid key "` + key + `" passed to send message builder.`)
 		}
 
 	}
