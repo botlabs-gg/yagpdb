@@ -426,7 +426,9 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	}
 
 	pathSegments := strings.Split(path, "/")
-	if len(pathSegments) != 2 {
+	// Similarly to handle URLs, other types of channel URL 
+	// may have more than two segments.
+	if len(pathSegments) < 2 {
 		return nil, fmt.Errorf("%q is not a valid path", path)
 	}
 
