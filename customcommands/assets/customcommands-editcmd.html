@@ -159,15 +159,16 @@
                                         <div class="form-group">
                                             <label id="cc-message-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <div class="input-group mb-2">
-                                                <div class="input-group-prepend" id="command-trigger-prepended-prefix">
+                                                <div id="command-trigger-prepended-prefix" class="input-group-prepend">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
                                                 </div>
-                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
+                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="{{if eq .CC.TriggerType 9}}45 23 * * 6{{else}}fun{{end}}"
                                                     value="{{.CC.TextTrigger}}">
                                             </div>
                                             <div class="row">
-                                              <div class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
+                                              <div id="cc-text-trigger-case-sensitivity-toggle" class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
                                               <div class="col-lg-6">
                                                 <div id="cc-message-trigger-details">
                                                     {{$disabledClass := ""}}
@@ -217,15 +218,6 @@
                                             <label>Interval</label>
                                             <input type="number" min="0" class="form-control" name="time_trigger_interval"
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
-                                        </div>
-                                    </div>
-                                    <div id="cc-cron-trigger-details" class="hidden col-lg-4">
-                                        <div class="form-group">
-                                            <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
-                                            <div class="input-group mb-2">
-                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="45 23 * * 6"
-                                                    value="{{.CC.TextTrigger}}">
-                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-lg-8">
@@ -583,7 +575,7 @@
     });
 
     var intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details', '#cc-interval-trigger-details'];
-    var textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings'];
+    var textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings', '#cc-text-trigger-case-sensitivity-toggle'];
     var messageTriggerEls = [...textTriggerEls, '#cc-message-trigger-label', '#cc-message-trigger-details'];
     var interactionTriggerEls = [...textTriggerEls, '#cc-customid-trigger-label'];
 
@@ -599,7 +591,7 @@
         contains: [...messageTriggerEls, '#trigger-desc-contains'],
         regex: [...messageTriggerEls, '#trigger-desc-regex'],
         exact: [...messageTriggerEls, '#trigger-desc-exact'],
-        cron: ['#cc-time-trigger-details', '#cc-cron-trigger-details'],
+        cron: ['#cc-text-trigger-details', '#cc-cron-trigger-label', '#cc-time-trigger-details', '#trigger-desc-cron'],
         none: ['#trigger-desc-none'],
     };
 
