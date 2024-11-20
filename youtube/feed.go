@@ -434,7 +434,7 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		}
 	}
 
-	// Similarly to handle URLs, other types of channel URL 
+	// Similarly to handle URLs, other types of channel URL
 	// may have more than two segments.
 	if len(pathSegments) < 2 {
 		return nil, fmt.Errorf("%q is not a valid path", path)
@@ -641,11 +641,14 @@ func (p *Plugin) isShortsVideo(video *youtube.Video) bool {
 		logger.WithError(err).Errorf("Failed to parse video duration with value %s, assuming it is not a short video", videoDurationString)
 		return false
 	}
-	if videoDuration > time.Minute {
+	// videos below 3 minutes can be shorts
+	// the 10 second is a buffer as youtube is stupid sometimes
+	if videoDuration >= (time.Minute*3 + time.Second*10) {
 		return false
 	}
-
-	return p.isShortsRedirect(video.Id)
+	isShort := p.isShortsRedirect(video.Id)
+	logger.Infof("Video %s is a shorts video?: %t", video.Id, isShort)
+	return isShort
 }
 
 func (p *Plugin) isShortsRedirect(videoId string) bool {
