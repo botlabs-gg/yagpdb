@@ -463,6 +463,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 						return nil, errors.New(fmt.Sprintf("invalid message id '%s' provided to forward.", ToString(val)))
 					}
 				}
+			}
 		case "sticker":
 			if val == nil {
 				continue
