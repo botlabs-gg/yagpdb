@@ -945,9 +945,9 @@ func tmplMult(args ...interface{}) interface{} {
 	}
 }
 
-func tmplDiv(args ...interface{}) interface{} {
+func tmplDiv(args ...interface{}) (interface{}, error) {
 	if len(args) < 1 {
-		return 0
+		return 0, nil
 	}
 
 	switch args[0].(type) {
@@ -960,17 +960,20 @@ func tmplDiv(args ...interface{}) interface{} {
 
 			sumF /= ToFloat64(v)
 		}
-		return sumF
+		return sumF, nil
 	default:
 		sumI := tmplToInt(args[0])
 		for i, v := range args {
 			if i == 0 {
 				continue
 			}
+			if tmplToInt(v) == 0 {
+				return 0, errors.New("integer divide by zero")
+			}
 
 			sumI /= tmplToInt(v)
 		}
-		return sumI
+		return sumI, nil
 	}
 }
 
