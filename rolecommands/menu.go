@@ -100,7 +100,9 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		RoleGroupID:                null.Int64From(group.ID),
 		OwnMessage:                 true,
 		DisableSendDM:              parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool),
-		RemoveRoleOnReactionRemove: true,
+		// `rr` is `true` by default, which is why we want
+		// a `true` value, if `.Value` is `nil`.
+		RemoveRoleOnReactionRemove: parsed.Switches["rr"].Value == nil || !parsed.Switches["rr"].Value.(bool),
 		SkipAmount:                 skipAmount,
 	}
 

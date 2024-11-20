@@ -463,6 +463,18 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 						return nil, errors.New(fmt.Sprintf("invalid message id '%s' provided to forward.", ToString(val)))
 					}
 				}
+		case "sticker":
+			if val == nil {
+				continue
+			}
+			v, _ := indirect(reflect.ValueOf(val))
+			if v.Kind() == reflect.Slice {
+				const maxStickers = 3 // Discord limitation
+				for i := 0; i < v.Len() && i < maxStickers; i++ {
+					msg.StickerIDs = append(msg.StickerIDs, ToInt64(v.Index(i).Interface()))
+				}
+			} else {
+				msg.StickerIDs = append(msg.StickerIDs, ToInt64(val))
 			}
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder.`)
