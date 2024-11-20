@@ -38,7 +38,7 @@ var (
 	flagLogTimestamp bool
 
 	flagSysLog        bool
-	flagGenCmdDocs    bool
+	FlagGenCmdDocs    bool
 	flagGenConfigDocs bool
 
 	flagLogAppName string
@@ -59,7 +59,7 @@ func init() {
 	flag.BoolVar(&flagSysLog, "syslog", false, "Set to log to syslog (only linux)")
 	flag.StringVar(&flagLogAppName, "logappname", "yagpdb", "When using syslog, the application name will be set to this")
 	flag.BoolVar(&flagRunBWC, "backgroundworkers", false, "Run the various background workers, atleast one process needs this")
-	flag.BoolVar(&flagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
+	flag.BoolVar(&FlagGenCmdDocs, "gencmddocs", false, "Generate command docs and exit")
 	flag.BoolVar(&flagGenConfigDocs, "genconfigdocs", false, "Generate config docs and exit")
 
 	flag.BoolVar(&flagLogTimestamp, "ts", false, "Set to include timestamps in log")
@@ -135,7 +135,7 @@ func Run() {
 
 	commands.InitCommands()
 
-	if flagGenCmdDocs {
+	if FlagGenCmdDocs {
 		GenCommandsDocs()
 		return
 	}
