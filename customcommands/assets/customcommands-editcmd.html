@@ -363,7 +363,7 @@
                                         <h4>Last run</h4>
                                         <p>{{if .CC.LastRun.Valid}}{{formatTime .CC.LastRun.Time.UTC}}{{else}}None{{end}}</p>
                                     </div>
-                                    {{if (eq .CC.TriggerType 5)}}
+                                    {{if (eq .CC.TriggerType 5 9)}}
                                     <div class="col-auto">
                                         <h4>Next scheduled run</h4>
                                         <p>{{if .CC.NextRun.Valid}}{{formatTime .CC.NextRun.Time.UTC}}{{else}}None{{end}}</p>
