@@ -10,8 +10,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +27,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -539,37 +538,34 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 				}
 			}
 		case CommandTriggerCron:
-			cronSpec := strings.TrimSpace(dbModel.TextTrigger)
-			re := regexp.MustCompile(`\s+`)
-			cronSpec = re.ReplaceAllString(cronSpec, " ")
-			minuteSpec := strings.Split(cronSpec, " ")[0]
-
-			lowCronIntervalError := web.ErrorAlert("Cron must execute with longer than a 10 minute interval at minimum")
-			switch {
-			case minuteSpec == "*":
-				return templateData.AddAlerts(lowCronIntervalError), nil
-			case strings.HasPrefix(minuteSpec, "*/"):
-				interval, _ := strconv.Atoi(strings.TrimPrefix(minuteSpec, "*/"))
-				if interval <= 10 {
-					return templateData.AddAlerts(lowCronIntervalError), nil
-				}
-			case strings.Contains(minuteSpec, ","):
-				var minutesToExecute []int
-				for _, min := range strings.Split(minuteSpec, ",") {
-					newMinute, _ := strconv.Atoi(min)
-					minutesToExecute = append(minutesToExecute, newMinute)
-				}
-				sort.Ints(minutesToExecute)
-				minutesToExecute = append(minutesToExecute, minutesToExecute[0]+60) // add the first triggerable minute of the next hour
-				lastMinute := minutesToExecute[0]
-				for _, sortedMin := range minutesToExecute[1:] {
-					nextMinuteLessThan11MinutesLater := lastMinute >= sortedMin-10
-					if nextMinuteLessThan11MinutesLater {
-						return templateData.AddAlerts(lowCronIntervalError), nil
+			schedule, _ := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow).Parse(dbModel.TextTrigger)
+			specSchedule := schedule.(*cron.SpecSchedule)
+			var firstScheduledMinute, lastCheckedMinute *int
+			const minutesInAnHour = 60
+			const minIntervalDelayMinutes = 11
+			for minuteOfHour := range minutesInAnHour {
+				minuteOfHourBitVal := uint64(1) << minuteOfHour
+				minutePresentInSchedule := specSchedule.Minute&minuteOfHourBitVal == minuteOfHourBitVal
+				if minutePresentInSchedule {
+					if firstScheduledMinute == nil {
+						firstScheduledMinute = &minuteOfHour
 					}
-					lastMinute = sortedMin
+					if lastCheckedMinute != nil {
+						intervalShorterThanLimit := minuteOfHour-*lastCheckedMinute < minIntervalDelayMinutes
+						if intervalShorterThanLimit {
+							return templateData.AddAlerts(web.ErrorAlert("Cron must execute with longer than a 10 minute interval at minimum")), nil
+						}
+					}
+					lastCheckedMinute = &minuteOfHour
 				}
 			}
+			if firstScheduledMinute != lastCheckedMinute {
+				intervalShorterThanLimit := *firstScheduledMinute+minutesInAnHour-*lastCheckedMinute < minIntervalDelayMinutes
+				if intervalShorterThanLimit {
+					return templateData.AddAlerts(web.ErrorAlert("Cron must execute with longer than a 10 minute interval at minimum")), nil
+				}
+			}
+
 			// since there's no way we're gonna calculate all that for every cron CC
 			// every time we save one, we're setting a hard lower limit at 11 min
 			// rather than permitting up to x count <= 10 min.
