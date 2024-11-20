@@ -390,8 +390,11 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 	// First set of URL types should only have one segment,
 	// so trimming leading forward slash simplifies following operations
 	path := strings.TrimPrefix(channelUrl.Path, "/")
-	host := channelUrl.Host
+	if path == "" {
+		return nil, errors.New("url must feature a path to identify a YouTube channel")
+	}
 
+	host := channelUrl.Host
 	if strings.HasSuffix(host, "youtu.be") {
 		return p.parseYtVideoID(path)
 	} else if !strings.HasSuffix(host, "youtube.com") {
@@ -412,22 +415,33 @@ func (p *Plugin) parseYtUrl(channelUrl *url.URL) (id ytChannelID, err error) {
 		}
 	}
 
+	// As each section of a channel has a second part of the URL,
+	// we need to split the path now to accommodate for this.
+	//
+	// Due to the earlier check, we know `pathSegements` will have
+	// at least one segment, or we would've already returned an error,
+	// but we still only need the first segment for this check.
+	pathSegments := strings.Split(path, "/")
+	first := pathSegments[0]
+
 	// Prefix check allows method to provide a more helpful error message,
 	// when attempting to parse an invalid handle URL.
-	if strings.HasPrefix(path, "@") {
-		if ytHandleRegex.MatchString(path) {
-			return searchChannelID(path), nil
+	if strings.HasPrefix(first, "@") {
+		if ytHandleRegex.MatchString(first) {
+			return searchChannelID(first), nil
 		} else {
 			return nil, fmt.Errorf("%q is not a valid youtube handle", path)
 		}
 	}
 
-	pathSegments := strings.Split(path, "/")
-	if len(pathSegments) != 2 {
+	// Similarly to handle URLs, other types of channel URL 
+	// may have more than two segments.
+	if len(pathSegments) < 2 {
 		return nil, fmt.Errorf("%q is not a valid path", path)
 	}
 
-	first := pathSegments[0]
+	// From now on, all parsed URLs will be based
+	// on the second segment of their path.
 	second := pathSegments[1]
 
 	switch first {
