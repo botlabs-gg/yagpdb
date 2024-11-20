@@ -139,7 +139,9 @@ func UpdateCommandNextRunTime(cc *models.CustomCommand, updateLastRun bool, clea
 		}
 	}
 
-	if (cc.TriggerType == int(CommandTriggerInterval) && cc.TimeTriggerInterval < 1) || !(cc.TriggerType == int(CommandTriggerInterval) || cc.TriggerType == int(CommandTriggerCron)) {
+	isIntervalOrCron := cc.TriggerType == int(CommandTriggerInterval) || cc.TriggerType == int(CommandTriggerCron)
+	invalidInterval := cc.TriggerType == int(CommandTriggerInterval) && cc.TimeTriggerInterval < 1
+	if !isIntervalOrCron || invalidInterval {
 		return nil
 	}
 
