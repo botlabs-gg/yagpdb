@@ -65,6 +65,19 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	}
 	msgSend.Components = append(serverInfo, msgSend.Components...)
 
+	if msgSend.Reference != nil {
+		if msgSend.Reference.Type == discordgo.MessageReferenceTypeForward {
+			if originChannel := c.ChannelArgNoDM(msgSend.Reference.ChannelID); originChannel != 0 {
+				hasPerms, _ := bot.BotHasPermissionGS(c.GS, originChannel, discordgo.PermissionViewChannel|discordgo.PermissionReadMessageHistory)
+				if !hasPerms {
+					msgSend.Reference = &discordgo.MessageReference{}
+				}
+			} else {
+				msgSend.Reference = &discordgo.MessageReference{}
+			}
+		}
+	}
+
 	channel, err := common.BotSession.UserChannelCreate(c.MS.User.ID)
 	if err != nil {
 		return ""
@@ -388,6 +401,19 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 				msgSend.Components = msgSend.Components[:4]
 			}
 			msgSend.Components = append(serverInfo, msgSend.Components...)
+		}
+
+		if msgSend.Reference != nil {
+			if msgSend.Reference.Type == discordgo.MessageReferenceTypeForward {
+				if originChannel := c.ChannelArgNoDM(msgSend.Reference.ChannelID); originChannel != 0 {
+					hasPerms, _ := bot.BotHasPermissionGS(c.GS, originChannel, discordgo.PermissionViewChannel|discordgo.PermissionReadMessageHistory)
+					if !hasPerms {
+						msgSend.Reference = &discordgo.MessageReference{}
+					}
+				} else {
+					msgSend.Reference = &discordgo.MessageReference{}
+				}
+			}
 		}
 
 		m, err = common.BotSession.ChannelMessageSendComplex(cid, msgSend)

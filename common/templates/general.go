@@ -2,6 +2,8 @@ package templates
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -10,9 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"crypto/sha256"
-	"encoding/base64"
-	
+
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -431,6 +431,38 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				}
 				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{menu}})
 			}
+		case "forward":
+			if val == nil {
+				continue
+			}
+			var m map[string]interface{}
+			switch t := val.(type) {
+			case SDict:
+				m = t
+			case *SDict:
+				m = *t
+			case map[string]interface{}:
+				m = t
+			default:
+				return nil, errors.New("invalid value passed to forward; must be an sdict with channel and message")
+			}
+
+			msg.Reference = &discordgo.MessageReference{
+				Type: 1,
+			}
+			for k, v := range m {
+				switch strings.ToLower(k) {
+				case "channel":
+					msg.Reference.ChannelID = ToInt64(v)
+					if msg.Reference.ChannelID <= 0 {
+						return nil, errors.New(fmt.Sprintf("invalid channel id '%s' provided to forward.", ToString(val)))
+					}
+				case "message":
+					msg.Reference.MessageID = ToInt64(v)
+					if msg.Reference.MessageID <= 0 {
+						return nil, errors.New(fmt.Sprintf("invalid message id '%s' provided to forward.", ToString(val)))
+					}
+				}
 		case "sticker":
 			if val == nil {
 				continue
@@ -445,7 +477,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				msg.StickerIDs = append(msg.StickerIDs, ToInt64(val))
 			}
 		default:
-			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
+			return nil, errors.New(`invalid key "` + key + `" passed to send message builder.`)
 		}
 
 	}
@@ -1671,7 +1703,7 @@ func tmplEncodeBase64(str string) string {
 func tmplSha256(str string) string {
 	hash := sha256.New()
 	hash.Write([]byte(str))
-	
+
 	sha256 := base64.URLEncoding.EncodeToString(hash.Sum(nil))
 
 	return sha256
