@@ -260,6 +260,8 @@ func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video
 
 		ctx.Data["URL"] = videoUrl
 		ctx.Data["ChannelName"] = sub.YoutubeChannelName
+		ctx.Data["YoutubeChannelName"] = sub.YoutubeChannelName
+		ctx.Data["YoutubeChannelID"] = sub.YoutubeChannelID
 		ctx.Data["ChannelID"] = sub.ChannelID
 		//should be true for upcoming too as upcoming is also technically a livestream
 		ctx.Data["IsLiveStream"] = (video.Snippet.LiveBroadcastContent == "live" || video.Snippet.LiveBroadcastContent == "upcoming")
