@@ -63,15 +63,32 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 			// somehow this got past validation, can't run
 			return time.Time{}
 		}
-		maybeNextRun := time.Now().UTC()
-		for i := 0; i < 200; i++ { // set an upper limit on retries
-			maybeNextRun = cronSchedule.Next(maybeNextRun)
-			nextRunBlacklisted := common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(maybeNextRun.Weekday())) || common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(maybeNextRun.Hour()))
-			if !nextRunBlacklisted {
-				break
+		specSchedule := cronSchedule.(*cron.SpecSchedule)
+		const hoursInADay = 24
+		const daysInAWeek = 7
+		var newHoursScheduledBitset uint64
+		var newDaysScheduledBitset uint64
+		for hourOfDay := range hoursInADay {
+			hourOfDayBitVal := uint64(1) << hourOfDay
+			hourPresentInSchedule := specSchedule.Hour&hourOfDayBitVal == hourOfDayBitVal
+			if hourPresentInSchedule && !common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(hourOfDay)) {
+				newHoursScheduledBitset = newHoursScheduledBitset | hourOfDayBitVal
 			}
 		}
-		tNext = maybeNextRun
+		for dayOfWeek := range daysInAWeek {
+			dayOfWeekBitVal := uint64(1) << dayOfWeek
+			dayPresentInSchedule := specSchedule.Dow&dayOfWeekBitVal == dayOfWeekBitVal
+			if dayPresentInSchedule && !common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(dayOfWeek)) {
+				newDaysScheduledBitset = newDaysScheduledBitset | dayOfWeekBitVal
+			}
+		}
+		specSchedule.Hour = newHoursScheduledBitset
+		specSchedule.Dow = newDaysScheduledBitset
+		if specSchedule.Hour == 0 || specSchedule.Dow == 0 {
+			// this can never run
+			return time.Time{}
+		}
+		tNext = specSchedule.Next(time.Now().UTC())
 	}
 
 	return tNext
