@@ -112,7 +112,7 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 	if err != nil {
 		announcement = &models.YoutubeAnnouncement{
 			GuildID: activeGuild.ID,
-			Message: "{{.ChannelName}} published a new video! {{.URL}}",
+			Message: "{{.YoutubeChannelName}} published a new video! {{.URL}}",
 			Enabled: false,
 		}
 	}
