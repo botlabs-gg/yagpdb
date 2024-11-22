@@ -65,7 +65,7 @@
                         Total calculated by member count multiplied by 50{{if .IsGuildPremium}}0{{end}} (<code>{{.ActiveGuild.MemberCount}}*50{{if .IsGuildPremium}}0{{end}}</code>).{{if not .IsGuildPremium}} Get 10 times the
                         database space with <a href="/premium">premium</a>!{{end}}
                     </p>
-                    <meter id="database-usage-meter" class="meter" value="{{.TotalDatabaseUsage}}" low="{{mult .TotalDatabaseCapacity 0.75}}" high="{{mult .TotalDatabaseCapacity 0.9}}" title="Entries" 
+                    <meter id="database-usage-meter" class="meter" value="{{.TotalDatabaseUsage}}" low="{{.ThreeQuartersTotalDatabaseCapacity}}" high="{{.NineTenthsTotalDatabaseCapacity}}" title="Entries" 
                         max="{{.TotalDatabaseCapacity}}"></meter>
                     <label for="database-usage-meter">Database usage</label>
                 </div> 
