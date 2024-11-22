@@ -564,3 +564,9 @@ html.dark .feedlink {
   color: #abb4be;
 
 }
+
+.meter {
+  width: 100%;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+}
