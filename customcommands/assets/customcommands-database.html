@@ -27,7 +27,7 @@
         </header>
         <div class="card-body">
             <div class="col-auto">
-                <h4>{{.TotalDatabaseUsage}} Entries used of total {{.TotalDatabaseCapacity}}</h4>
+                <h4>{{.TotalDatabaseUsage}} Entries used of total {{.TotalDatabaseCapacity}}<p>{{sub .TotalDatabaseCapacity .TotalDatabaseUsage}} available</p></h4>
                 <p>
                     Total calculated by member count multiplied by 50{{if .IsGuildPremium}}0{{end}} (<code>{{.ActiveGuild.MemberCount}}*50{{if .IsGuildPremium}}0{{end}}</code>).{{if not .IsGuildPremium}} Get 10 times the
                     database space with <a href="/premium">premium</a>!{{end}}
