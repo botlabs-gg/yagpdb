@@ -219,8 +219,8 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	templateData["IsGuildPremium"] = premium
 	templateData["TotalDatabaseUsage"] = total
 	templateData["TotalDatabaseCapacity"] = limit
-	templateData["ThreeQuartersTotalDatabaseCapacity"] = float64(limit) * 0.75
-	templateData["NineTenthsTotalDatabaseCapacity"] = float64(limit) * 0.9
+	templateData["CapacityWarningCap"] = float64(limit) * 0.75
+	templateData["CapacityDangerCap"] = float64(limit) * 0.9
 	templateData["DatabaseUsagePercent"] = usagePercent
 
 	if usagePercent > 95 {
