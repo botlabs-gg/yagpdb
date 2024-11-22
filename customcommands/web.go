@@ -221,6 +221,7 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	templateData["TotalDatabaseCapacity"] = limit
 	templateData["ThreeQuartersTotalDatabaseCapacity"] = float64(limit) * 0.75
 	templateData["NineTenthsTotalDatabaseCapacity"] = float64(limit) * 0.9
+	templateData["DatabaseUsagePercent"] = usagePercent
 
 	if usagePercent > 95 {
 		templateData.AddAlerts(web.WarningAlert("Database is almost full. Creating new entires will fail if you hit your limit."))
