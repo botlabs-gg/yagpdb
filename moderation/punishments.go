@@ -78,6 +78,10 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		if duration > 0 {
 			action.Footer = "Expires after: " + common.HumanizeDuration(common.DurationPrecisionMinutes, duration)
 		}
+
+		if duration < MinTimeOutDuration || duration > MaxTimeOutDuration {
+			return errors.New(fmt.Sprintf("timeout duration should be between %s and %s minutes", MinTimeOutDuration, MaxTimeOutDuration))
+		}
 	default:
 		return errors.New("invalid punishment type")
 	}
@@ -113,9 +117,6 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		}
 		err = common.BotSession.GuildBanCreateWithReason(guildID, user.ID, fullReason, banDeleteDays)
 	case PunishmentTimeout:
-		if duration < MinTimeOutDuration || duration > MaxTimeOutDuration {
-			return errors.New(fmt.Sprintf("timeout duration should be between %s and %s minutes", MinTimeOutDuration, MaxTimeOutDuration))
-		}
 		expireTime := time.Now().Add(duration)
 		err = common.BotSession.GuildMemberTimeoutWithReason(guildID, user.ID, &expireTime, fullReason)
 	}
