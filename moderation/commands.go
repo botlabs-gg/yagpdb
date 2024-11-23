@@ -381,6 +381,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
+			err = checkHierarchy(parsed, target.ID)
+			if err != nil {
+				return nil, err
+			}
+
 			var msg *discordgo.Message
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
@@ -432,6 +437,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
+			}
+
+			err = checkHierarchy(parsed, target.ID)
+			if err != nil {
+				return nil, err
 			}
 
 			var msg *discordgo.Message
@@ -493,6 +503,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "Member not found", err
 			}
 
+			err = checkHierarchy(parsed, target.ID)
+			if err != nil {
+				return nil, err
+			}
+
 			var msg *discordgo.Message
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
@@ -535,6 +550,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
 			if err != nil || member == nil {
 				return "Member not found", err
+			}
+
+			err = checkHierarchy(parsed, target.ID)
+			if err != nil {
+				return nil, err
 			}
 
 			memberTimeout := member.Member.CommunicationDisabledUntil
