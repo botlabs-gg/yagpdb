@@ -112,6 +112,15 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 
 	member, memberNotFound := getMemberWithFallback(gs, user)
 	if !memberNotFound {
+		// final bot hierarchy check
+		botMember, err := bot.GetMember(guildID, common.BotUser.ID)
+		if err != nil {
+			return errors.New("failed fetching bot member to check hierarchy")
+		}
+		if above := bot.IsMemberAbove(gs, botMember, member); !above {
+			return errors.New("cannot " + actionPresentTense + " a member who is ranked higher than the bot")
+		}
+
 		sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason, -1, executedFromCommandTemplate)
 	}
 
