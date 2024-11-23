@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+	"maps"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
@@ -931,6 +932,14 @@ func (d Dict) HasKey(k interface{}) (ok bool) {
 	return
 }
 
+func (d Dict) Keys() (s Slice) {
+	keys := maps.Keys(d)
+	for k := range keys {
+		s = append(s, k)
+	}
+	return s
+}
+
 func (d Dict) MarshalJSON() ([]byte, error) {
 	md := make(map[string]interface{})
 
@@ -977,6 +986,14 @@ func (d SDict) Del(key string) string {
 func (d SDict) HasKey(k string) (ok bool) {
 	_, ok = d[k]
 	return
+}
+
+func (d SDict) Keys() (s Slice) {
+	keys := maps.Keys(d)
+	for k := range keys {
+		s = append(s, k)
+	}
+	return s
 }
 
 type Slice []interface{}
