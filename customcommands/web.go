@@ -208,6 +208,25 @@ func handleGetDatabase(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	templateData["TotalPages"] = totalPages
 	templateData["Page"] = page
 
+	premium := premium.ContextPremium(r.Context())
+	limitMuliplier := 1
+	if premium {
+		limitMuliplier = 10
+	}
+	limit := activeGuild.MemberCount * 50 * int64(limitMuliplier)
+	usagePercent := int(float64(total) * 100 / float64(limit))
+
+	templateData["IsGuildPremium"] = premium
+	templateData["TotalDatabaseUsage"] = total
+	templateData["TotalDatabaseCapacity"] = limit
+	templateData["CapacityWarningCap"] = float64(limit) * 0.75
+	templateData["CapacityDangerCap"] = float64(limit) * 0.9
+	templateData["DatabaseUsagePercent"] = usagePercent
+
+	if usagePercent > 95 {
+		templateData.AddAlerts(web.WarningAlert("Database is almost full. Creating new entires will fail if you hit your limit."))
+	}
+
 	return templateData, nil
 }
 
