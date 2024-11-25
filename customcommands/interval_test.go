@@ -33,6 +33,7 @@ func TestNextRunTimeBasic(t *testing.T) {
 
 	// cron
 
+	tim = time.Now().UTC()
 	cc.TriggerType = int(CommandTriggerCron)
 	cc.TextTrigger = "5 * * * *"
 
@@ -78,8 +79,11 @@ func TestNextRunTimeImpossible(t *testing.T) {
 
 	// cron
 
-	cc.TriggerType = int(CommandTriggerCron)
-	cc.TextTrigger = "* * * * *"
+	cc = &models.CustomCommand{
+		TriggerType:               int(CommandTriggerCron),
+		TextTrigger:               "* * * * *",
+		TimeTriggerExcludingHours: []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23},
+	}
 
 	next = CalcNextRunTime(cc, time.Now())
 	if !next.IsZero() {
@@ -133,6 +137,7 @@ func TestNextRunTimeExcludingHours(t *testing.T) {
 
 	// cron
 
+	tim = time.Now().UTC()
 	cc.TriggerType = int(CommandTriggerCron)
 	cc.TextTrigger = "5 * * * *"
 
@@ -161,6 +166,7 @@ func TestNextRunTimeExcludingDays(t *testing.T) {
 
 	// cron
 
+	tim = time.Now().UTC()
 	cc.TriggerType = int(CommandTriggerCron)
 	cc.TextTrigger = "5 * * * *"
 
@@ -192,6 +198,7 @@ func TestNextRunTimeExcludingDaysHours(t *testing.T) {
 
 	// cron
 
+	tim = time.Now().UTC()
 	cc.TriggerType = int(CommandTriggerCron)
 	cc.TextTrigger = "5 * * * *"
 
