@@ -33,7 +33,8 @@ func TestNextRunTimeBasic(t *testing.T) {
 
 	// cron
 
-	tim = time.Now().UTC()
+	now := time.Now().UTC()
+	tim = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
 	cc.TriggerType = int(CommandTriggerCron)
 	cc.TextTrigger = "5 * * * *"
 
@@ -131,7 +132,9 @@ func TestNextRunTimeExcludingHours(t *testing.T) {
 
 	// cron
 
-	tim = time.Now().UTC()
+	now := time.Now().UTC()
+	tim = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
+	expected = tim.Add((time.Hour * 2) + (time.Minute * 5))
 	cc.TriggerType = int(CommandTriggerCron)
 	cc.TextTrigger = "5 * * * *"
 
@@ -160,7 +163,9 @@ func TestNextRunTimeExcludingDays(t *testing.T) {
 
 	// cron
 
-	tim = time.Now().UTC()
+	now := time.Now().UTC()
+	tim = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
+	expected = tim.Add(time.Hour * 24)
 	cc.TriggerType = int(CommandTriggerCron)
 	cc.TextTrigger = "5 * * * *"
 
@@ -192,7 +197,9 @@ func TestNextRunTimeExcludingDaysHours(t *testing.T) {
 
 	// cron
 
-	tim = time.Now().UTC()
+	now := time.Now().UTC()
+	tim = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
+	expected = tim.Add(time.Hour * 47)
 	cc.TriggerType = int(CommandTriggerCron)
 	cc.TextTrigger = "5 * * * *"
 
