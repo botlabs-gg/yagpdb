@@ -1,6 +1,7 @@
 package customcommands
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -36,7 +37,12 @@ func TestNextRunTimeBasic(t *testing.T) {
 	now := time.Now().UTC()
 	tim = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
 	cc.TriggerType = int(CommandTriggerCron)
-	cc.TextTrigger = "5 * * * *"
+
+	minute := tim.Minute() + 5
+	if minute > 59 {
+		minute -= 60
+	}
+	cc.TextTrigger = fmt.Sprintf("%d * * * *", minute)
 
 	next = CalcNextRunTime(cc, tim)
 	expected = tim.UTC().Add(time.Minute * 5)
@@ -136,7 +142,18 @@ func TestNextRunTimeExcludingHours(t *testing.T) {
 	tim = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
 	expected = tim.Add((time.Hour * 2) + (time.Minute * 5))
 	cc.TriggerType = int(CommandTriggerCron)
-	cc.TextTrigger = "5 * * * *"
+
+	nextHour := int64(tim.Hour()) + 1
+	if nextHour > 23 {
+		nextHour -= 24
+	}
+	cc.TimeTriggerExcludingHours = []int64{int64(tim.Hour()), nextHour}
+
+	minute := tim.Minute() + 5
+	if minute > 59 {
+		minute -= 60
+	}
+	cc.TextTrigger = fmt.Sprintf("%d * * * *", minute)
 
 	nextRun = CalcNextRunTime(cc, tim)
 
@@ -164,10 +181,21 @@ func TestNextRunTimeExcludingDays(t *testing.T) {
 	// cron
 
 	now := time.Now().UTC()
-	tim = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
-	expected = tim.Add(time.Hour * 24)
+	tim = time.Date(now.Year(), now.Month(), now.Day(), 0, now.Minute(), 0, 0, time.UTC)
+	expected = tim.Add(time.Hour*48 + time.Minute*5)
 	cc.TriggerType = int(CommandTriggerCron)
-	cc.TextTrigger = "5 * * * *"
+
+	nextDay := int64(tim.Weekday()) + 1
+	if nextDay > 6 {
+		nextDay -= 7
+	}
+	cc.TimeTriggerExcludingDays = []int64{int64(tim.Weekday()), nextDay}
+
+	minute := tim.Minute() + 5
+	if minute > 59 {
+		minute -= 60
+	}
+	cc.TextTrigger = fmt.Sprintf("%d * * * *", minute)
 
 	nextRun = CalcNextRunTime(cc, tim)
 
@@ -199,9 +227,23 @@ func TestNextRunTimeExcludingDaysHours(t *testing.T) {
 
 	now := time.Now().UTC()
 	tim = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
-	expected = tim.Add(time.Hour * 47)
+	expected = tim.Add(time.Hour*47 + time.Minute*5)
 	cc.TriggerType = int(CommandTriggerCron)
-	cc.TextTrigger = "5 * * * *"
+
+	cc.TimeTriggerExcludingHours = []int64{}
+	for i := range 24 {
+		if i != tim.Hour()-1 {
+			cc.TimeTriggerExcludingHours = append(cc.TimeTriggerExcludingHours, int64(i))
+		}
+	}
+
+	cc.TimeTriggerExcludingDays = []int64{int64(tim.Weekday()) + 1}
+
+	minute := tim.Minute() + 5
+	if minute > 59 {
+		minute -= 60
+	}
+	cc.TextTrigger = fmt.Sprintf("%d * * * *", minute)
 
 	nextRun = CalcNextRunTime(cc, tim)
 
