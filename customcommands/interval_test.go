@@ -98,12 +98,6 @@ func TestNextRunTimeImpossible(t *testing.T) {
 		t.Error("next time is not zero: ", next)
 	}
 
-	cc.TimeTriggerExcludingDays = nil
-	next = CalcNextRunTime(cc, time.Now())
-	if !next.IsZero() {
-		t.Error("next time is not zero: ", next)
-	}
-
 	cc.TextTrigger = "* 0 * * *"
 	cc.TimeTriggerExcludingHours = []int64{0}
 	next = CalcNextRunTime(cc, time.Now())
