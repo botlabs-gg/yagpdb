@@ -88,6 +88,10 @@
                           <p id="trigger-desc-modal">
                               The command will run when a modal whose custom ID matches the given regex is submitted. BETA FEATURE.
                           </p>
+                          {{else if eq .CC.TriggerType 9}}
+                          <p id="trigger-desc-cron">
+                              The command will run on a crontab interval, for example <code>45 23 * * 6</code> (23:45 every Saturday).
+                          </p>
                           {{end}}
                         </div>
                       </div>
@@ -95,32 +99,40 @@
                   </div>
                 </div>
               </div>
-              {{if eq .CC.TriggerType 0 1 2 3 4 7 8}}
+              {{if eq .CC.TriggerType 0 1 2 3 4 7 8 9}}
               <div id="cc-text-trigger-details" class="col-lg-8">
                 <div class="row">
                   <div class="col-lg-12">
                     <div class="form-group">
                       {{if eq .CC.TriggerType 0 1 2 3 4}}
                       <label id="cc-message-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
-                      {{else}}
+                      {{else if eq .CC.TriggerType 7 8}}
                       <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                      {{else}}
+                      <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                       {{end}}
                       <div class="input-group mb-2">
+                        {{if eq .CC.TriggerType 0}}
                         <div class="input-group-prepend" id="command-trigger-prepended-prefix">
                           <div class="input-group-text">{{.CommandPrefix}}</div>
                         </div>
+                        {{end}}
                         <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
                           value="{{.CC.TextTrigger}}" disabled>
                       </div>
                       <div class="row">
+                        {{if eq .CC.TriggerType 0 1 2 3 4 7 8}}
                         <div class="col-lg-6">
                           {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?"
                           .CC.TextTriggerCaseSensitive "disabled"}}
                         </div>
+                        {{end}}
+                        {{if eq .CC.TriggerType 0 1 2 3 4}}
                         <div class="col-lg-6">
                           {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too? (Premium Only!)"
                           .CC.TriggerOnEdit "disabled"}}
                         </div>
+                        {{end}}
                       </div>
                     </div>
                   </div>
@@ -157,8 +169,10 @@
                   </div>
                 </div>
               </div>
-              {{else if eq .CC.TriggerType 5}}
+              {{end}}
+              {{if eq .CC.TriggerType 5 9}}
               <div id="cc-time-trigger-details" class="col-lg-8">
+                {{if eq .CC.TriggerType 5}}
                 <div class="row">
                     <div class="form-group col-lg-6">
                       <label>Interval</label>
@@ -166,6 +180,7 @@
                         placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                     </div>
                 </div>
+                {{end}}
                 <div class="row mt-3">
                     <div class="form-group col-lg-3">
                       <label for="trigger">Excluding hours (UTC)</label><br>

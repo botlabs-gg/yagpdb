@@ -27,6 +27,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -542,14 +543,51 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	dbModel.LocalID = cmdEdit.ID
 	dbModel.TriggerType = int(triggerTypeFromForm(cmdEdit.TriggerTypeForm))
 	// check low interval limits
-	if dbModel.TriggerType == int(CommandTriggerInterval) && dbModel.TimeTriggerInterval <= 10 {
-		if dbModel.TimeTriggerInterval < 5 {
-			dbModel.TimeTriggerInterval = 5
-		}
+	if dbModel.TriggerType == int(CommandTriggerInterval) || dbModel.TriggerType == int(CommandTriggerCron) {
+		switch CommandTriggerType(dbModel.TriggerType) {
+		case CommandTriggerInterval:
+			if dbModel.TimeTriggerInterval <= 10 {
+				if dbModel.TimeTriggerInterval < 5 {
+					dbModel.TimeTriggerInterval = 5
+				}
 
-		ok, err := checkIntervalLimits(ctx, activeGuild.ID, dbModel.LocalID, templateData)
-		if err != nil || !ok {
-			return templateData, err
+				ok, err := checkIntervalLimits(ctx, activeGuild.ID, dbModel.LocalID, templateData)
+				if err != nil || !ok {
+					return templateData, err
+				}
+			}
+		case CommandTriggerCron:
+			schedule, _ := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow).Parse(dbModel.TextTrigger)
+			specSchedule := schedule.(*cron.SpecSchedule)
+			var firstScheduledMinute, lastCheckedMinute *int
+			const minutesInAnHour = 60
+			const minIntervalDelayMinutes = 11
+			for minuteOfHour := range minutesInAnHour {
+				minuteOfHourBitVal := uint64(1) << minuteOfHour
+				minutePresentInSchedule := specSchedule.Minute&minuteOfHourBitVal == minuteOfHourBitVal
+				if minutePresentInSchedule {
+					if firstScheduledMinute == nil {
+						firstScheduledMinute = &minuteOfHour
+					}
+					if lastCheckedMinute != nil {
+						intervalShorterThanLimit := minuteOfHour-*lastCheckedMinute < minIntervalDelayMinutes
+						if intervalShorterThanLimit {
+							return templateData.AddAlerts(web.ErrorAlert("Cron must execute with longer than a 10 minute interval at minimum")), nil
+						}
+					}
+					lastCheckedMinute = &minuteOfHour
+				}
+			}
+			if firstScheduledMinute != lastCheckedMinute {
+				intervalShorterThanLimit := *firstScheduledMinute+minutesInAnHour-*lastCheckedMinute < minIntervalDelayMinutes
+				if intervalShorterThanLimit {
+					return templateData.AddAlerts(web.ErrorAlert("Cron must execute with longer than a 10 minute interval at minimum")), nil
+				}
+			}
+
+			// since there's no way we're gonna calculate all that for every cron CC
+			// every time we save one, we're setting a hard lower limit at 11 min
+			// rather than permitting up to x count <= 10 min.
 		}
 	}
 
@@ -573,7 +611,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	}
 
 	// create, update or remove the next run time and scheduled event
-	if dbModel.TriggerType == int(CommandTriggerInterval) {
+	if dbModel.TriggerType == int(CommandTriggerInterval) || dbModel.TriggerType == int(CommandTriggerCron) {
 		// need the last run time
 		fullModel, err := models.CustomCommands(qm.Where("guild_id = ? AND local_id = ?", activeGuild.ID, dbModel.LocalID)).OneG(ctx)
 		if err != nil {
@@ -822,6 +860,8 @@ func triggerTypeFromForm(str string) CommandTriggerType {
 		return CommandTriggerComponent
 	case "modal":
 		return CommandTriggerModal
+	case "cron":
+		return CommandTriggerCron
 	default:
 		return CommandTriggerCommand
 

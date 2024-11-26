@@ -162,7 +162,7 @@
                     {{if and (ne .TriggerType 10) (ne .TriggerType 5) (ne .TriggerType 6)}}
                     : <span class="cc-text-trigger-span">{{.TextTrigger}}</span>
                     {{else if and (ne .TriggerType 10) (ne .TriggerType 6)}}
-                    : <span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s)</span>{{else}}minute(s)</span>{{end}} next run: <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
+                    : <span class="cc-text-interval-span">Every {{call $dot.GetCCInterval .}} {{if eq (call $dot.GetCCIntervalType .) 1}}hour(s)</span>{{else}}minute(s)</span>{{end}}{{end}}{{if eq .TriggerType 5 9}} next run: <span class="cc-text-next-run-span">{{.NextRun.Time.UTC.Format "2006-01-02 15:04:05 MST"}}</span>{{end}}
                     {{if .Name.Valid}} 
                       <span style="padding:5px 20px 10px 20px!important" >Name: {{.Name.String}}</span>
                     {{end}}

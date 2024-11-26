@@ -102,6 +102,8 @@
                                                     Message Component</option>
                                                 <option value="modal" {{if eq .CC.TriggerType 8}} selected{{end}}>
                                                     Modal Submission</option>
+                                                <option value="cron" {{ if eq .CC.TriggerType 9}} selected{{end}}>
+                                                    Crontab (ALPHA)</option>
                                             </select>
                                         </div>
                                     </div>
@@ -145,6 +147,9 @@
                                         <p id="trigger-desc-modal">
                                             The command will run when a modal whose custom ID matches the given regex is submitted. BETA FEATURE.
                                         </p>
+                                        <p id="trigger-desc-cron">
+                                            The command will run on a crontab interval, for example <code>45 23 * * 6</code> (23:45 every Saturday).
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -154,15 +159,16 @@
                                         <div class="form-group">
                                             <label id="cc-message-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <div class="input-group mb-2">
-                                                <div class="input-group-prepend" id="command-trigger-prepended-prefix">
+                                                <div id="command-trigger-prepended-prefix" class="input-group-prepend">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
                                                 </div>
-                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="fun"
+                                                <input id="trigger" type="text" class="form-control" name="trigger" placeholder="{{if eq .CC.TriggerType 9}}45 23 * * 6{{else}}fun{{end}}"
                                                     value="{{.CC.TextTrigger}}">
                                             </div>
                                             <div class="row">
-                                              <div class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
+                                              <div id="cc-text-trigger-case-sensitivity-toggle" class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
                                               <div class="col-lg-6">
                                                 <div id="cc-message-trigger-details">
                                                     {{$disabledClass := ""}}
@@ -207,7 +213,7 @@
                             </div>
                             <div id="cc-time-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
-                                    <div class="col-lg-4">
+                                    <div id="cc-interval-trigger-details" class="hidden col-lg-4">
                                         <div class="form-group">
                                             <label>Interval</label>
                                             <input type="number" min="0" class="form-control" name="time_trigger_interval"
@@ -357,7 +363,7 @@
                                         <h4>Last run</h4>
                                         <p>{{if .CC.LastRun.Valid}}{{formatTime .CC.LastRun.Time.UTC}}{{else}}None{{end}}</p>
                                     </div>
-                                    {{if (eq .CC.TriggerType 5)}}
+                                    {{if (eq .CC.TriggerType 5 9)}}
                                     <div class="col-auto">
                                         <h4>Next scheduled run</h4>
                                         <p>{{if .CC.NextRun.Valid}}{{formatTime .CC.NextRun.Time.UTC}}{{else}}None{{end}}</p>
@@ -568,8 +574,8 @@
         setCMCheckbox();
     });
 
-    var intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details'];
-    var textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings'];
+    var intervalTriggerEls = ['#interval-cc-run-now', '#cc-time-trigger-details', '#cc-interval-trigger-details'];
+    var textTriggerEls = ['#cc-text-trigger-details', '#cc-extra-settings', '#cc-text-trigger-case-sensitivity-toggle'];
     var messageTriggerEls = [...textTriggerEls, '#cc-message-trigger-label', '#cc-message-trigger-details'];
     var interactionTriggerEls = [...textTriggerEls, '#cc-customid-trigger-label'];
 
@@ -585,6 +591,7 @@
         contains: [...messageTriggerEls, '#trigger-desc-contains'],
         regex: [...messageTriggerEls, '#trigger-desc-regex'],
         exact: [...messageTriggerEls, '#trigger-desc-exact'],
+        cron: ['#cc-text-trigger-details', '#cc-cron-trigger-label', '#cc-time-trigger-details', '#trigger-desc-cron'],
         none: ['#trigger-desc-none'],
     };
 
@@ -687,7 +694,7 @@
     $('#command-channels').change(() => checkNoEmptyRequiredChannels.run());
 
     var checkMissingIntervalTriggerChannel = {
-        applicableTriggerTypes: ['interval_hours', 'interval_minutes'],
+        applicableTriggerTypes: ['interval_hours', 'interval_minutes', 'cron'],
         warningId: 'time-trigger-no-channel-warning',
         run() {
             const selectedChannel = $('#time-trigger-channel').val();
