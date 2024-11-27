@@ -447,10 +447,8 @@ func CheckDiscordErrRetry(err error) bool {
 	return true
 }
 
-var allowedMsgTypes = []int{int(discordgo.MessageTypeDefault), int(discordgo.MessageTypeReply), int(discordgo.MessageTypeThreadStarterMessage)}
-
-// set strictType to true to only permit default, reply, and thread starter message types
-func IsNormalUserMessage(msg *discordgo.Message, ignoreMsgType bool) bool {
+// verifies message author is a human user
+func IsUserMessage(msg *discordgo.Message) bool {
 	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 || msg.Author.Discriminator == "0000" || (msg.Member == nil && msg.GuildID != 0) {
 		// message edits can have a nil author, those are embed edits
 		// check against a discrim of 0000 to avoid some cases on webhook messages where webhook_id is 0, even tough its a webhook
@@ -458,9 +456,16 @@ func IsNormalUserMessage(msg *discordgo.Message, ignoreMsgType bool) bool {
 		return false
 	}
 
-	if !ignoreMsgType && !common.ContainsIntSlice(allowedMsgTypes, int(msg.Type)) {
+	return true
+}
+
+// similar to IsUserMessage, additionally checks that the message is either
+// Default, Reply, or Thread Opening type
+func IsNormalUserMessage(msg *discordgo.Message) bool {
+	switch msg.Type {
+	case discordgo.MessageTypeDefault, discordgo.MessageTypeReply, discordgo.MessageTypeThreadStarterMessage:
+		return IsUserMessage(msg)
+	default:
 		return false
 	}
-
-	return true
 }

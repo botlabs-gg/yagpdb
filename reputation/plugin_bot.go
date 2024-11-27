@@ -47,7 +47,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !bot.IsNormalUserMessage(msg.Message, false) {
+	if !bot.IsUserMessage(msg.Message) {
 		return
 	}
 

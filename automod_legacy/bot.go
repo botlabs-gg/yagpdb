@@ -68,7 +68,7 @@ func HandleMessageUpdate(evt *eventsystem.EventData) {
 }
 
 func CheckMessage(evt *eventsystem.EventData, m *discordgo.Message) bool {
-	if !bot.IsNormalUserMessage(m, false) {
+	if !bot.IsNormalUserMessage(m) {
 		return false
 	}
 
