@@ -9,11 +9,10 @@ type MembersResponse struct {
 }
 
 type MemberData struct {
-	Type          string        `json:"type"`
-	ID            string        `json:"id"`
-	Relationships Relationships `json:"relationships"`
-
-	Attributes *MemberAttributes `json:"attributes"`
+	Type          string            `json:"type"`
+	ID            string            `json:"id"`
+	Relationships Relationships     `json:"relationships"`
+	Attributes    *MemberAttributes `json:"attributes"`
 }
 
 const (

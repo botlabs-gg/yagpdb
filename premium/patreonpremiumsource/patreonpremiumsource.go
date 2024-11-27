@@ -62,6 +62,7 @@ func RunPoller() {
 			logger.Warn("Last fetch was not successful, skipping update")
 			continue
 		}
+		logger.Info("Last fetch was successful,  Updating premium slots for patrons")
 		err := UpdatePremiumSlots(context.Background())
 		if err != nil {
 			logger.WithError(err).Error("Failed updating premium slots for patrons")
