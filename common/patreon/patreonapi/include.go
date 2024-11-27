@@ -8,6 +8,7 @@ import (
 
 var TypeMap = map[string]interface{}{
 	"user": UserAttributes{},
+	"tier": TierAttributes{},
 }
 
 type Include struct {
@@ -45,11 +46,16 @@ func DecodeInclude(include *Include) (interface{}, error) {
 }
 
 type Relationships struct {
-	User RelationShip `json:"user"`
+	User  RelationShip      `json:"user"`
+	Tiers RelationShipSlice `json:"currently_entitled_tiers"`
 }
 
 type RelationShip struct {
-	Data *RelationshipData `json"data"`
+	Data *RelationshipData `json:"data"`
+}
+
+type RelationShipSlice struct {
+	Data []*RelationshipData `json:"data"`
 }
 
 type RelationshipData struct {

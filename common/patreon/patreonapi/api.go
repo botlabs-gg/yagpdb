@@ -46,8 +46,6 @@ func (c *Client) Get(path string, dataDst interface{}) error {
 			return err
 		}
 
-		// fmt.Println(string(fullbody))
-
 		err = json.Unmarshal(fullbody, dataDst)
 		return err
 	}
@@ -81,7 +79,8 @@ func (c *Client) FetchMembers(campaign string, count int, cursor string) (r *Mem
 	v := url.Values(make(map[string][]string))
 	v.Set("fields[member]", "full_name,is_follower,last_charge_date,last_charge_status,next_charge_date,lifetime_support_cents,currently_entitled_amount_cents,patron_status")
 	v.Set("fields[user]", "about,created,first_name,full_name,image_url,last_name,social_connections,thumb_url,url,vanity")
-	v.Set("include", "user")
+	v.Set("fields[tier]", "amount_cents")
+	v.Set("include", "user,currently_entitled_tiers")
 
 	if cursor != "" {
 		v.Set("page[cursor]", cursor)

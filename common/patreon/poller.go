@@ -131,6 +131,7 @@ func (p *Poller) IsLastFetchSuccess() bool {
 
 func (p *Poller) Poll() {
 	// Get your campaign data
+	logger.Infof("Fetching campaign")
 	campaignResponse, err := p.client.FetchCampaigns()
 	if err != nil || len(campaignResponse.Data) < 1 {
 		logger.WithError(err).Error("Failed fetching campaign")
@@ -139,6 +140,7 @@ func (p *Poller) Poll() {
 	}
 
 	campaignId := campaignResponse.Data[0].ID
+	logger.Infof("Successfully fetched campaign: %s ", campaignId)
 
 	cursor := ""
 	page := 1
@@ -146,10 +148,8 @@ func (p *Poller) Poll() {
 	patrons := make([]*Patron, 0, 30)
 
 	for {
+		logger.Infof("Fetching Patrons, page: %d ", page)
 		membersResponse, err := p.client.FetchMembers(campaignId, 200, cursor)
-		// pledgesResponse, err := p.client.FetchPledges(campaignId,
-		// patreon.WithPageSize(30),
-		// patreon.WithCursor(cursor))
 
 		if err != nil {
 			logger.WithError(err).Error("Failed fetching pledges")
@@ -159,9 +159,13 @@ func (p *Poller) Poll() {
 
 		// Get all the users in an easy-to-lookup way
 		users := make(map[string]*patreonapi.UserAttributes)
+		tiers := make(map[string]*patreonapi.TierAttributes)
 		for _, item := range membersResponse.Included {
 			if u, ok := item.Decoded.(*patreonapi.UserAttributes); ok {
 				users[item.ID] = u
+			}
+			if t, ok := item.Decoded.(*patreonapi.TierAttributes); ok {
+				tiers[item.ID] = t
 			}
 		}
 
@@ -170,16 +174,25 @@ func (p *Poller) Poll() {
 			attributes := memberData.Attributes
 
 			user, ok := users[memberData.Relationships.User.Data.ID]
-			if !ok {
-				// logger.Println("Unknown user: ", memberData.ID)
-				continue
+			tierCents := 0
+			if len(memberData.Relationships.Tiers.Data) > 0 {
+				for _, tier := range memberData.Relationships.Tiers.Data {
+					if t, ok := tiers[tier.ID]; ok && t.AmountCents > tierCents {
+						tierCents = t.AmountCents
+					}
+				}
 			}
 
-			if attributes.LastChargeStatus != patreonapi.ChargeStatusPaid && attributes.LastChargeStatus != patreonapi.ChargeStatusPending {
+			if !ok {
+				logger.Infof("Unknown user: %s", memberData.ID)
 				continue
 			}
 
 			if attributes.PatronStatus != "active_patron" {
+				continue
+			}
+
+			if len(attributes.LastChargeStatus) > 0 && attributes.LastChargeStatus != patreonapi.ChargeStatusPaid && attributes.LastChargeStatus != patreonapi.ChargeStatusPending {
 				continue
 			}
 
@@ -191,6 +204,10 @@ func (p *Poller) Poll() {
 			patron := &Patron{
 				AmountCents: attributes.CurrentEntitledAmountCents,
 				Avatar:      user.ImageURL,
+			}
+
+			if patron.AmountCents == 0 {
+				patron.AmountCents = tierCents
 			}
 
 			if user.Vanity != "" {
@@ -217,7 +234,7 @@ func (p *Poller) Poll() {
 		page++
 		time.Sleep(time.Second)
 	}
-
+	logger.Infof("Got total %d patrons", len(patrons))
 	// Swap the stored ones, this dosent mutate the existing returned slices so we dont have to do any copying on each request woo
 	p.mu.Lock()
 	p.activePatrons = patrons
