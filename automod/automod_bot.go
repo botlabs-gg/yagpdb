@@ -47,7 +47,7 @@ func (p *Plugin) handleMsgUpdate(evt *eventsystem.EventData) {
 
 // called on new messages and edits
 func (p *Plugin) checkMessage(evt *eventsystem.EventData, msg *discordgo.Message) bool {
-	if !bot.IsNormalUserMessage(msg) {
+	if !bot.IsNormalUserMessage(msg, true) {
 		return false
 	}
 

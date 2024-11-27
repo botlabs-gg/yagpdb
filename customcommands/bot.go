@@ -652,7 +652,7 @@ func shouldIgnoreChannel(msg *discordgo.Message, gs *dstate.GuildSet, cState *ds
 		return true
 	}
 
-	if !bot.IsNormalUserMessage(msg) {
+	if !bot.IsNormalUserMessage(msg, true) {
 		return true
 	}
 
