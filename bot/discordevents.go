@@ -390,7 +390,7 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 
 	if evt.Type == eventsystem.EventMessageCreate {
 		msg := evt.MessageCreate()
-		if !IsNormalUserMessage(msg.Message) {
+		if !IsUserMessage(msg.Message) {
 			return
 		}
 
@@ -401,7 +401,7 @@ func HandleMessageCreateUpdateFirst(evt *eventsystem.EventData) {
 
 	} else {
 		edit := evt.MessageUpdate()
-		if !IsNormalUserMessage(edit.Message) {
+		if !IsUserMessage(edit.Message) {
 			return
 		}
 		edit.Member.User = edit.Author

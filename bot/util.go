@@ -447,7 +447,8 @@ func CheckDiscordErrRetry(err error) bool {
 	return true
 }
 
-func IsNormalUserMessage(msg *discordgo.Message) bool {
+// verifies message author is a human user
+func IsUserMessage(msg *discordgo.Message) bool {
 	if msg.Author == nil || msg.Author.ID == common.BotUser.ID || msg.WebhookID != 0 || msg.Author.Discriminator == "0000" || (msg.Member == nil && msg.GuildID != 0) {
 		// message edits can have a nil author, those are embed edits
 		// check against a discrim of 0000 to avoid some cases on webhook messages where webhook_id is 0, even tough its a webhook
@@ -456,4 +457,15 @@ func IsNormalUserMessage(msg *discordgo.Message) bool {
 	}
 
 	return true
+}
+
+// similar to IsUserMessage, additionally checks that the message is either
+// Default, Reply, or Thread Opening type
+func IsNormalUserMessage(msg *discordgo.Message) bool {
+	switch msg.Type {
+	case discordgo.MessageTypeDefault, discordgo.MessageTypeReply, discordgo.MessageTypeThreadStarterMessage:
+		return IsUserMessage(msg)
+	default:
+		return false
+	}
 }
