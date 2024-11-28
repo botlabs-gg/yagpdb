@@ -992,17 +992,12 @@ func findMessageTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSta
 		if cmd.Disabled || !CmdRunsInChannel(cmd, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(cmd, ms) || cmd.R.Group != nil && cmd.R.Group.Disabled {
 			continue
 		}
+		content := msg.Content
 		if cmd.TriggerType == int(CommandTriggerContains) || cmd.TriggerType == int(CommandTriggerRegex) {
-			for _, content := range msg.GetMessageContents() {
-				if didMatch, stripped, args := CheckMatch(prefix, cmd, content); didMatch {
-					matched = append(matched, &TriggeredCC{
-						CC:       cmd,
-						Args:     args,
-						Stripped: stripped,
-					})
-				}
-			}
-		} else if didMatch, stripped, args := CheckMatch(prefix, cmd, msg.Content); didMatch {
+			//for contains and regex match, we need to look at the content of the forwarded message too.
+			content = strings.Join(msg.GetMessageContents(), " ")
+		}
+		if didMatch, stripped, args := CheckMatch(prefix, cmd, content); didMatch {
 			matched = append(matched, &TriggeredCC{
 				CC:       cmd,
 				Args:     args,
