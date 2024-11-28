@@ -88,7 +88,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 			// this can never run
 			return time.Time{}
 		}
-		tNext = specSchedule.Next(time.Now().UTC())
+		tNext = specSchedule.Next(now.UTC())
 	}
 
 	return tNext
