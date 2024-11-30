@@ -416,7 +416,7 @@ func getDatabaseEntries(ctx context.Context, guildID int64, page int, queryType,
 			qms = append(qms, qm.Where("key ILIKE ?", query))
 		}
 	}
-
+	qms = append(qms, qm.Where("(expires_at IS NULL or expires_at > now())"))
 	count, err := models.TemplatesUserDatabases(qms...).CountG(ctx)
 	if int64(page) > (count / 100) {
 		page = int(math.Ceil(float64(count) / 100))
@@ -441,7 +441,7 @@ func convertEntries(result models.TemplatesUserDatabaseSlice) []*LightDBEntry {
 		b, err := json.Marshal(converted.Value)
 		if err != nil {
 			logger.WithError(err).Warn("[cc/web] failed converting to light db entry")
-			continue
+			b = []byte("Failed to convert db entry to a readable format")
 		}
 
 		converted.Value = common.CutStringShort(string(b), dbPageMaxDisplayLength)
