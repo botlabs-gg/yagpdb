@@ -886,13 +886,23 @@ var ModerationCommands = []*commands.YAGCommand{
 			if parsed.TraditionalTriggerData != nil {
 				msg = parsed.TraditionalTriggerData.Message
 			}
-			err = WarnUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, target, parsed.Args[1].Str(), parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
-			if err != nil {
-				return nil, err
-			}
-
-			return GenericCmdResp(MAWarned, target, 0, false, true), nil
-		},
+	       	        // Check for attachments in the message
+	        	attachmentURLs := make([]string, 0)
+	       		for _, att := range msg.Attachments {
+	                	attachmentURLs = append(attachmentURLs, att.URL)
+	        	}
+	      	        // Add attachment URLs to the reason
+			reason := parsed.Args[1].Str()
+	       	        if len(attachmentURLs) > 0 {
+	            		reason = fmt.Sprintf("%s\n\nAttachments: %s", reason, strings.Join(attachmentURLs, ", "))
+	       	        }
+			
+	       	        err = WarnUser(config, parsed.GuildData.GS.ID, parsed.GuildData.CS, msg, parsed.Author, target, reason)
+	                if err != nil {
+	                        return nil, err
+	        }
+	        return GenericCmdResp(MAWarned, target, 0, false, true), nil
+	    },
 	},
 	{
 		CustomEnabled: true,
