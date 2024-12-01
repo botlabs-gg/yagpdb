@@ -2,19 +2,15 @@ package discordpremiumsource
 
 import (
 	"fmt"
-	"time"
 
-	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
-	"github.com/botlabs-gg/yagpdb/v2/premium/models"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)
@@ -35,121 +31,17 @@ func (p *Plugin) AddCommands() {
 
 func HandleEntitlementCreate(evt *eventsystem.EventData) {
 	entitlement := evt.EntitlementCreate()
-	logger.Infof("EntitlementCreate Event Received for User %d and SKUID %d", entitlement.UserID, entitlement.SKUID)
-	if entitlement.SKUID != int64(confDiscordPremiumSKUID.GetInt()) {
-		logger.Errorf("EntitlementCreate recieved for unknown SKUID %d", entitlement.SKUID)
-		return
-	}
-	ctx := evt.Context()
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "BeginTX"))
-		tx.Rollback()
-		return
-	}
-	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementCreate"))
-		tx.Rollback()
-		return
-	}
-	if len(slots) > 0 {
-		logger.Infof("User %d already has PremiumSlots", entitlement.UserID)
-		tx.Rollback()
-		return
-	}
-	_, err = premium.CreatePremiumSlot(ctx, tx, entitlement.UserID, premium.PremiumSourceTypeDiscord, "Discord Slot #1", "Slot is available as long as subscription is active on Discord", 1, -1, premium.PremiumTierPremium)
-	if err != nil {
-		logger.WithError(err).Error("Failed creating PremiumSlot for EntitlementCreate Event")
-		tx.Rollback()
-		return
-	}
-	err = tx.Commit()
-	go premium.SendPremiumDM(entitlement.UserID, premium.PremiumSourceTypeDiscord, 1)
-	if err != nil {
-		logger.WithError(err).Error("Failed committing transaction for EntitlementCreate Event")
-	}
+	pubsub.Publish("entitlement_create", -1, entitlement)
 }
 
 func HandleEntitlementUpdate(evt *eventsystem.EventData) {
 	entitlement := evt.EntitlementUpdate()
-	logger.Infof("EntitlementUpdate Event Received for User %d and SKUID %d", entitlement.UserID, entitlement.SKUID)
-	if entitlement.SKUID != int64(confDiscordPremiumSKUID.GetInt()) {
-		logger.Errorf("EntitlementUpdate recieved for unknown SKUID %d", entitlement.SKUID)
-		return
-	}
-	ctx := evt.Context()
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "BeginTX"))
-		tx.Rollback()
-		return
-	}
-	if entitlement.EndsAt != nil && entitlement.EndsAt.Before(time.Now()) {
-		tx.Rollback()
-		return
-	}
-	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementUpdate"))
-		tx.Rollback()
-		return
-	}
-	if len(slots) == 0 {
-		logger.Infof("User %d has no PremiumSlots", entitlement.UserID)
-		tx.Rollback()
-		return
-	}
-
-	err = premium.RemovePremiumSlots(ctx, tx, entitlement.UserID, []int64{slots[0].ID})
-	if err != nil {
-		logger.WithError(err).Error("Failed Removing PremiumSlot for EntitlementUpdate Event")
-		tx.Rollback()
-		return
-	}
-	err = tx.Commit()
-	if err != nil {
-		logger.WithError(err).Error("Failed committing transaction for EntitlementUpdate Event")
-	}
+	pubsub.Publish("entitlement_update", -1, entitlement)
 }
 
 func HandleEntitlementDelete(evt *eventsystem.EventData) {
 	entitlement := evt.EntitlementDelete()
-	logger.Infof("EntitlementDelete Event Received for User %d and SKUID %d", entitlement.UserID, entitlement.SKUID)
-	if entitlement.SKUID != int64(confDiscordPremiumSKUID.GetInt()) {
-		logger.Errorf("EntitlementDelete recieved for unknown SKUID %d", entitlement.SKUID)
-		return
-	}
-	ctx := evt.Context()
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "BeginTX"))
-		tx.Rollback()
-		return
-	}
-
-	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementDelete"))
-		tx.Rollback()
-		return
-	}
-	if len(slots) == 0 {
-		logger.Infof("User %d has no PremiumSlots", entitlement.UserID)
-		tx.Rollback()
-		return
-	}
-
-	err = premium.RemovePremiumSlots(ctx, tx, entitlement.UserID, []int64{slots[0].ID})
-	if err != nil {
-		logger.WithError(err).Error("Failed Removing PremiumSlot for EntitlementDelete Event")
-		tx.Rollback()
-		return
-	}
-	err = tx.Commit()
-	if err != nil {
-		logger.WithError(err).Error("Failed committing transaction for EntitlementDelete Event")
-	}
+	pubsub.Publish("entitlement_delete", -1, entitlement)
 }
 
 var CmdActivateTestEntitlement = &commands.YAGCommand{
