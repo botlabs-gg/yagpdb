@@ -47,6 +47,8 @@ func HandleEntitlementCreate(evt *eventsystem.EventData) {
 		tx.Rollback()
 		return
 	}
+	// Add entitlement so that it doesn't get removed if the next poll has failed.
+	ActiveDiscordPremiumPoller.activeEntitlements = append(ActiveDiscordPremiumPoller.activeEntitlements, entitlement.Entitlement)
 	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
 	if err != nil {
 		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementCreate"))
