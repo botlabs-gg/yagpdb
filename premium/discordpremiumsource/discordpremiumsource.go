@@ -57,9 +57,13 @@ func (p *Plugin) InitWeb() {
 }
 
 func RunPoller() {
-	ticker := time.NewTicker(time.Minute * 30)
+	ticker := time.NewTicker(time.Minute * 10)
 	for {
 		<-ticker.C
+		if !ActiveDiscordPremiumPoller.IsLastFetchSuccess() {
+			logger.Warn("Last fetch was not successful, skipping update")
+			continue
+		}
 		err := UpdatePremiumSlots(context.Background())
 		if err != nil {
 			logger.WithError(err).Error("Failed updating premium slots for discord")
