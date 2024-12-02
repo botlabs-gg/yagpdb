@@ -674,6 +674,13 @@ function hideUnsavedChangesPopup(form) {
 	updateUnsavedChangesPopup(form)
 }
 
+// onbeforeunload
+function unsavedChangesAlert() {
+    if (unsavedChangesStack.length > 0) {
+        return "You have unsaved changes, are you sure you want to leave?";
+    }
+}
+
 function updateUnsavedChangesPopup() {
 	if (unsavedChangesStack.length == 0) {
 		$("#unsaved-changes-popup").attr("hidden", true)
