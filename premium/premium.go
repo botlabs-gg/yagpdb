@@ -317,11 +317,11 @@ func tierFlags(tier PremiumTier) []string {
 }
 
 func SendPremiumDM(userID int64, source PremiumSourceType, numSlots int) {
-	logger.Infof("Sending premium DM to user: %d for %d slots via %s subscription", userID, numSlots, string(source))
 	confSendPatreonPremiumDM := config.RegisterOption("yagpdb.premium.send_patreon_dm", "Send DMs to users when they receive premium slots", false)
 	if !confSendPatreonPremiumDM.GetBool() && source == PremiumSourceTypePatreon {
 		return
 	}
+	logger.Infof("Sending premium DM to user: %d for %d slots via %s subscription", userID, numSlots, string(source))
 	embed := &discordgo.MessageEmbed{}
 	embed.Title = "You have new Premium Slots!"
 	embed.Description = fmt.Sprintf("You have received %d new premium slots from a %s subscription!\n\n[Assign them to a server here.](https://%s/premium)", numSlots, string(source), common.ConfHost.GetString())

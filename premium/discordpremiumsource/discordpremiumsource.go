@@ -55,10 +55,10 @@ func (p *Plugin) InitWeb() {
 		logger.Warn("Failed initializing discord premium poller")
 		return
 	}
-	pubsub.AddHandler("entitlement_create", handleEntitlementCreate, nil)
-	pubsub.AddHandler("entitlement_update", handleEntitlementUpdate, nil)
-	pubsub.AddHandler("entitlement_delete", handleEntitlementDelete, nil)
 
+	pubsub.AddHandler("entitlement_create", handleEntitlementCreate, discordgo.EntitlementCreate{})
+	pubsub.AddHandler("entitlement_update", handleEntitlementUpdate, discordgo.EntitlementUpdate{})
+	pubsub.AddHandler("entitlement_delete", handleEntitlementDelete, discordgo.EntitlementDelete{})
 	go RunPoller()
 }
 
