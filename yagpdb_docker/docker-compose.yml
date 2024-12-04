@@ -1,4 +1,4 @@
-#volumes:
+volumes:
   db:
   redis:
   cert_cache:
