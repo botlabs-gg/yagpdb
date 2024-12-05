@@ -185,7 +185,9 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData, guild_id int64) (ok boo
 	}
 
 	if !foundOkayResponse {
-		tmpl.AddAlerts(web.ErrorAlert("No response set"))
+		if len(tmpl.Alerts()) == 0 {
+			tmpl.AddAlerts(web.ErrorAlert("No response set"))
+		}
 		return false
 	}
 
