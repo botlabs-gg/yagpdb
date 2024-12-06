@@ -171,7 +171,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
