@@ -862,7 +862,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
