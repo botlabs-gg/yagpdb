@@ -67,7 +67,7 @@ func renderBody(body string) template.HTML {
 func renderMessageEmbeds(msg *discordgo.Message) []*RenderedEmbed {
 	var embeds []*RenderedEmbed
 	for _, embed := range msg.Embeds {
-		var bodyLines[]string
+		var bodyLines []string
 		if embed.Author != nil {
 			authorLine := embed.Author.Name
 			if embed.Author.URL != "" {
@@ -115,7 +115,7 @@ func renderMessageEmbeds(msg *discordgo.Message) []*RenderedEmbed {
 			Content: renderBody(strings.Join(bodyLines, "\n\n")),
 		}
 		if embed.Color != 0 {
-			rendered.ColorHex = fmt.Sprintf("#%x", embed.Color)
+			rendered.ColorHex = fmt.Sprintf("#%06x", embed.Color)
 		}
 		if embed.Image != nil {
 			rendered.ImageURL = embed.Image.URL
