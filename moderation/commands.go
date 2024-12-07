@@ -171,7 +171,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
@@ -230,7 +230,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionBanMembers}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0) //No need to check member role hierarchy as banned members should not be in server
 			if err != nil {
@@ -281,7 +281,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		RequireBotPerms:     [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionKickMembers}},
 		SlashCommandEnabled: true,
-		IsResponseEphemeral: true,
+		IsResponseEphemeral: false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
@@ -345,7 +345,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
@@ -413,7 +413,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageRoles}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
@@ -472,7 +472,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgumentCombos:           [][]int{{0, 1, 2}, {0, 2, 1}, {0, 1}, {0, 2}, {0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
@@ -534,7 +534,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionModerateMembers}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
 			if err != nil {
@@ -583,7 +583,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
-		IsResponseEphemeral: true,
+		IsResponseEphemeral: false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -676,7 +676,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		ArgumentCombos:           [][]int{{0}, {0, 1}, {1, 0}},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -862,7 +862,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
-		IsResponseEphemeral:      true,
+		IsResponseEphemeral:      false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Context().Value(commands.CtxKeyExecutedByNestedCommandTemplate) == true {
 				return nil, errors.New("cannot nest exec/execAdmin calls")
