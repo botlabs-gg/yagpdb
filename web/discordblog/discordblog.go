@@ -127,12 +127,12 @@ func renderMessageEmbeds(msg *discordgo.Message) []*RenderedEmbed {
 	return embeds
 }
 
-func formatAuthorString(msg *discordgo.Message) string {
-	author := msg.Author.Globalname
-	if author == "" {
-		author = msg.Author.String()
+func formatAuthorString(author *discordgo.User) string {
+	authorName := author.Globalname
+	if authorName == "" {
+		authorName = author.String()
 	}
-	return author
+	return authorName
 }
 
 func updatePosts(session *discordgo.Session, channel int64) error {
@@ -147,10 +147,20 @@ func updatePosts(session *discordgo.Session, channel int64) error {
 	for i, v := range messages {
 		ts, _ := v.Timestamp.Parse()
 
+		content := v.Content
+
+		for _, user := range v.Mentions {
+			username := formatAuthorString(user)
+			content = strings.NewReplacer(
+				"<@"+discordgo.StrID(user.ID)+">", "@"+username,
+				"<@!"+discordgo.StrID(user.ID)+">", "@"+username,
+			).Replace(content)
+		}
+
 		p := &Post{
-			AuthorName:      formatAuthorString(v),
+			AuthorName:      formatAuthorString(v.Author),
 			Message:         v,
-			RenderedBody:    renderBody(v.ContentWithMentionsReplaced()),
+			RenderedBody:    renderBody(content),
 			RenderedEmbeds:  renderMessageEmbeds(v),
 			ParsedTimestamp: ts.UTC(),
 		}
