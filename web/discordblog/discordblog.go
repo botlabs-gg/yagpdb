@@ -98,7 +98,7 @@ func renderMessageEmbeds(msg *discordgo.Message) []*RenderedEmbed {
 		}
 		if embed.Timestamp != "" {
 			timestamp, err := discordgo.Timestamp(embed.Timestamp).Parse()
-			if err != nil {
+			if err == nil {
 				timestampString := timestamp.Format(time.RFC1123)
 				if footerLine != "" {
 					footerLine = footerLine + " · " + timestampString
