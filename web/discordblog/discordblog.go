@@ -67,12 +67,13 @@ func renderBody(body string) template.HTML {
 func renderMessageEmbeds(msg *discordgo.Message) []*RenderedEmbed {
 	var embeds []*RenderedEmbed
 	for _, embed := range msg.Embeds {
-		bodyLines := []string{msg.ContentWithMentionsReplaced()}
+		var bodyLines[]string
 		if embed.Author != nil {
 			authorLine := embed.Author.Name
 			if embed.Author.URL != "" {
 				authorLine = fmt.Sprintf("[%s](%s)", authorLine, embed.Author.URL)
 			}
+			authorLine = "#### " + authorLine
 			bodyLines = append(bodyLines, authorLine)
 		}
 		if embed.Title != "" {
