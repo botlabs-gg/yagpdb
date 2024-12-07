@@ -55,8 +55,8 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 		return gs, nil, ErrNoTicketCateogry
 	}
 
-	if hasPerms, _ := bot.BotHasPermissionGS(gs, 0, InTicketPerms); !hasPerms {
-		return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the following permissions: %s", common.HumanizePermissions(InTicketPerms)))
+	if hasPerms, _ := bot.BotHasPermissionGS(gs, conf.TicketsChannelCategory, InTicketPerms); !hasPerms {
+		return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the following permissions on the ticket category: %s", common.HumanizePermissions(InTicketPerms)))
 	}
 
 	if checkMaxTickets {
