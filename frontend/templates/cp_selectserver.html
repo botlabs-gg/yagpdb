@@ -28,11 +28,17 @@
         {{range .Posts}}
         <secton class="card">
             <header class="card-header">
-                <h2 class="card-title float-left"><img class="avatar mr-2" src="{{.Message.Author.AvatarURL "256"}}"></img>{{.Message.Author.Globalname}}</h2>
+                <h2 class="card-title float-left"><img class="avatar mr-2" src="{{.Message.Author.AvatarURL "256"}}"></img>{{.AuthorName}}</h2>
                 <span class="float-right">{{humanizeTimeSinceDays .ParsedTimestamp}} ago ({{.ParsedTimestamp.Format "02 Jan 06 15:04"}})</span>
             </header>
             <div class="card-body">
                 {{.RenderedBody}}
+                {{range .RenderedEmbeds}}
+                <div class="col-auto" style="border-left: 5px solid {{if ne .ColorHex ""}}{{.ColorHex}}{{else}}black{{end}};">
+                    {{.Content}}
+                    {{if ne .ImageURL ""}}<img src="{{.ImageURL}}">{{end}}
+                </div>
+                {{end}}
             </div>
         </secton>
         {{end}}
