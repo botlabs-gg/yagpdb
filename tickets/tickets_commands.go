@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
@@ -264,6 +265,88 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
+	cmdMenuCreate := &commands.YAGCommand{
+		CmdCategory:     categoryTickets,
+		Name:            "MenuCreate",
+		Aliases:         []string{"mc"},
+		Description:     "Creates a menu with buttons to open tickets.",
+		LongDescription: "Creates and sends a message with buttons allowing users to open tickets, optionally with predefined reasons.\n\nInstead of creating a new message, attach it to another message the bot has sent with `-message bot-message-id-here`. This __must__ be a message the bot has sent.\nCreate buttons with up to 9 predefined reasons with `\"-button-1 Reason for button 1\"`, `\"-button-2 Reason for button 2\"`, etc.\nIf using predefined reason buttons, you may optionally disable the custom reason button with `-custom false`.",
+		ArgSwitches: []*dcmd.ArgDef{
+			{Name: "message", Help: "ID to attach menu to", Type: dcmd.BigInt},
+			{Name: "custom", Help: "Enable Cutsom Reason button", Default: true},
+			{Name: "button-1", Help: "Predefined reason for button 1", Type: dcmd.String},
+			{Name: "button-2", Help: "Predefined reason for button 2", Type: dcmd.String},
+			{Name: "button-3", Help: "Predefined reason for button 3", Type: dcmd.String},
+			{Name: "button-4", Help: "Predefined reason for button 4", Type: dcmd.String},
+			{Name: "button-5", Help: "Predefined reason for button 5", Type: dcmd.String},
+			{Name: "button-6", Help: "Predefined reason for button 6", Type: dcmd.String},
+			{Name: "button-7", Help: "Predefined reason for button 7", Type: dcmd.String},
+			{Name: "button-8", Help: "Predefined reason for button 8", Type: dcmd.String},
+			{Name: "button-9", Help: "Predefined reason for button 9", Type: dcmd.String},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			var components []discordgo.MessageComponent
+			for i := 1; i <= 10; i++ {
+				arg := parsed.Switches["button-"+strconv.Itoa(i)]
+				if arg.Value == nil {
+					continue
+				}
+				if len(arg.Str()) > 85 {
+					return fmt.Sprintf("Reason for button %d too long; must be max 85 characters."), nil
+				}
+				label := arg.Str()
+				if len(label) > 80 {
+					label = label[:80]
+				}
+				components = append(components, discordgo.Button{
+					Label:    label,
+					CustomID: "tickets-open-" + arg.Str(),
+				})
+			}
+
+			if len(components) == 0 || parsed.Switches["custom"].Bool() {
+				label := "Create a Ticket"
+				if len(components) > 0 {
+					label = "Custom Reason"
+				}
+				customButton := discordgo.Button{
+					Label:    label,
+					CustomID: "tickets-open-",
+				}
+				components = append([]discordgo.MessageComponent{customButton}, components...)
+			}
+
+			var actionsRows []discordgo.MessageComponent
+			if len(components) > 5 {
+				actionsRows = append(actionsRows, discordgo.ActionsRow{Components: components[:5]})
+				components = components[5:]
+			}
+			actionsRows = append(actionsRows, discordgo.ActionsRow{Components: components})
+
+			var err error
+			if parsed.Switches["message"].Int64() != 0 {
+				message, err := common.BotSession.ChannelMessage(parsed.ChannelID, parsed.Switches["message"].Int64())
+				if err != nil {
+					return nil, err
+				}
+
+				_, err = common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
+					Content:    &message.Content,
+					Components: actionsRows,
+					Embeds:     message.Embeds,
+					ID:         message.ID,
+					Channel:    parsed.ChannelID,
+				})
+			} else {
+				_, err = common.BotSession.ChannelMessageSendComplex(parsed.ChannelID, &discordgo.MessageSend{
+					Content:    "Click below to create a new ticket.",
+					Components: actionsRows,
+				})
+			}
+			return nil, err
+		},
+	}
+
 	container, _ := commands.CommandSystem.Root.Sub("tickets", "ticket")
 	container.Description = "Command to manage the ticket system"
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
@@ -314,6 +397,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdRenameTicket, cmdRenameTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdCloseTicket, cmdCloseTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
+	container.AddCommand(cmdMenuCreate, cmdMenuCreate.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 
 	commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
 }
