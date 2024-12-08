@@ -193,6 +193,8 @@ func openTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState
 var closingTickets = make(map[int64]bool)
 var closingTicketsLock sync.Mutex
 
+const closingTicketMsg = "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big."
+
 func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.ChannelState, conf *models.TicketConfig, member *discordgo.User, reason string, ctx context.Context) (string, error) {
 	// protect again'st calling close multiple times at the sime time
 	closingTicketsLock.Lock()
@@ -209,7 +211,7 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 	}()
 
 	// send a heads up that this can take a while
-	common.BotSession.ChannelMessageSend(currentTicket.Ticket.ChannelID, "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
+	common.BotSession.ChannelMessageSend(currentTicket.Ticket.ChannelID, closingTicketMsg)
 
 	currentTicket.Ticket.ClosedAt.Time = time.Now()
 	currentTicket.Ticket.ClosedAt.Valid = true
@@ -242,7 +244,8 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 	return "", nil
 }
 
-func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageComponentInteractionData, member *discordgo.Member, conf *models.TicketConfig, currentChannel *dstate.ChannelState) (*discordgo.InteractionResponse, error) {
+func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, member *discordgo.Member, conf *models.TicketConfig, currentChannel *dstate.ChannelState) (*discordgo.InteractionResponse, error) {
+	interaction := ic.MessageComponentData()
 	response := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -295,6 +298,13 @@ func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageCompo
 			}
 		}
 
+		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: closingTicketMsg,
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
 		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, "", evt.Context())
 	case "close-reason":
 		response = &discordgo.InteractionResponse{
@@ -318,7 +328,8 @@ func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageCompo
 	return response, err
 }
 
-func handleModal(evt *eventsystem.EventData, interaction discordgo.ModalSubmitInteractionData, member *discordgo.Member, conf *models.TicketConfig, currentChannel *dstate.ChannelState) (*discordgo.InteractionResponse, error) {
+func handleModal(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, member *discordgo.Member, conf *models.TicketConfig, currentChannel *dstate.ChannelState) (*discordgo.InteractionResponse, error) {
+	interaction := ic.ModalSubmitData()
 	response := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -349,6 +360,13 @@ func handleModal(evt *eventsystem.EventData, interaction discordgo.ModalSubmitIn
 			}
 		}
 
+		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: closingTicketMsg,
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
 		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, value, evt.Context())
 	}
 
@@ -419,9 +437,9 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 
 	switch ic.Type {
 	case discordgo.InteractionMessageComponent:
-		response, err = handleButton(evt, ic.MessageComponentData(), ic.Member, conf, currentChannel)
+		response, err = handleButton(evt, ic, ic.Member, conf, currentChannel)
 	case discordgo.InteractionModalSubmit:
-		response, err = handleModal(evt, ic.ModalSubmitData(), ic.Member, conf, currentChannel)
+		response, err = handleModal(evt, ic, ic.Member, conf, currentChannel)
 	}
 	if response != nil {
 		if response.Data.Content == "" {
@@ -431,9 +449,12 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		response = errorResponse
 	}
 
-	respErr := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, response)
-	if err == nil {
-		err = respErr
+	err = common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, response)
+	if err != nil {
+		common.BotSession.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
+			Content: response.Data.Content,
+			Flags:   int64(response.Data.Flags),
+		})
 	}
 	return false, err
 }
