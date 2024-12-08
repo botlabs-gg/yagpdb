@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sync"
-	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
@@ -29,8 +27,8 @@ const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.Permiss
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 
-func createTicketsDisabledError(g *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(g.GS.ID))
+func createTicketsDisabledError(guildID int64) string {
+	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guildID))
 }
 
 func (p *Plugin) AddCommands() {
@@ -58,23 +56,10 @@ func (p *Plugin) AddCommands() {
 
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			if !conf.Enabled {
-				return createTicketsDisabledError(parsed.GuildData), nil
+				return createTicketsDisabledError(parsed.GuildData.GS.ID), nil
 			}
 
-			_, ticket, err := CreateTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str(), true, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
-			if err != nil {
-				switch t := err.(type) {
-				case TicketUserError:
-					return string(t), nil
-				case *TicketUserError:
-					return string(*t), nil
-				}
-
-				return nil, err
-			}
-
-			// Annn done setting up the ticket
-			return fmt.Sprintf("Ticket #%d opened in <#%d>", ticket.LocalID, ticket.ChannelID), nil
+			return openTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str())
 		},
 	}
 
@@ -188,9 +173,6 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	closingTickets := make(map[int64]bool)
-	var closingTicketsLock sync.Mutex
-
 	cmdCloseTicket := &commands.YAGCommand{
 		CmdCategory: categoryTickets,
 		Name:        "Close",
@@ -202,53 +184,7 @@ func (p *Plugin) AddCommands() {
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
-
-			// protect again'st calling close multiple times at the sime time
-			closingTicketsLock.Lock()
-			if _, ok := closingTickets[currentTicket.Ticket.ChannelID]; ok {
-				closingTicketsLock.Unlock()
-				return "Already working on closing this ticket, please wait...", nil
-			}
-			closingTickets[currentTicket.Ticket.ChannelID] = true
-			closingTicketsLock.Unlock()
-			defer func() {
-				closingTicketsLock.Lock()
-				delete(closingTickets, currentTicket.Ticket.ChannelID)
-				closingTicketsLock.Unlock()
-			}()
-
-			// send a heads up that this can take a while
-			common.BotSession.ChannelMessageSend(parsed.ChannelID, "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
-
-			currentTicket.Ticket.ClosedAt.Time = time.Now()
-			currentTicket.Ticket.ClosedAt.Valid = true
-
-			isAdminsOnly := ticketIsAdminOnly(conf, parsed.GuildData.CS)
-
-			// create the logs, download the attachments
-			err := createLogs(parsed.GuildData.GS, conf, currentTicket.Ticket, isAdminsOnly)
-			if err != nil {
-				return "Cannot send transcript to ticket logs channel, refusing to close ticket.", err
-			}
-
-			TicketLog(conf, parsed.GuildData.GS.ID, parsed.Author, &discordgo.MessageEmbed{
-				Title:       fmt.Sprintf("Ticket #%d - '%s' closed", currentTicket.Ticket.LocalID, currentTicket.Ticket.Title),
-				Description: fmt.Sprintf("Reason: %s", parsed.Args[0].Str()),
-				Color:       0xf23c3c,
-			})
-
-			// if everything went well, delete the channel
-			_, err = common.BotSession.ChannelDelete(currentTicket.Ticket.ChannelID)
-			if err != nil {
-				return nil, err
-			}
-
-			_, err = currentTicket.Ticket.UpdateG(parsed.Context(), boil.Whitelist("closed_at"))
-			if err != nil {
-				return nil, err
-			}
-
-			return "", nil
+			return closeTicket(parsed.GuildData.GS, currentTicket, parsed.GuildData.CS, conf, parsed.Author, parsed.Args[0].Str(), parsed.Context())
 		},
 	}
 
@@ -355,7 +291,7 @@ func (p *Plugin) AddCommands() {
 
 				// no ticket commands have any effect then
 				if activeTicket == nil && !conf.Enabled {
-					return createTicketsDisabledError(data.GuildData), nil
+					return createTicketsDisabledError(data.GuildData.GS.ID), nil
 				}
 
 				ctx := context.WithValue(data.Context(), CtxKeyConfig, conf)

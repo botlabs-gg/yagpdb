@@ -2,13 +2,17 @@ package tickets
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -22,6 +26,7 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, p.handleChannelRemoved, eventsystem.EventChannelDelete)
+	eventsystem.AddHandlerAsyncLast(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
 }
 
 func (p *Plugin) handleChannelRemoved(evt *eventsystem.EventData) (retry bool, err error) {
@@ -146,4 +151,268 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	// Annn done setting up the ticket
 	// return fmt.Sprintf("Ticket #%d opened in <#%d>", id, channel.ID), nil
 	return gs, dbModel, nil
+}
+
+func openTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState, conf *models.TicketConfig, reason string) (string, error) {
+	_, ticket, err := CreateTicket(ctx, gs, ms, conf, reason, true, ctx.Value(commands.CtxKeyExecutedByCommandTemplate) == true)
+	if err != nil {
+		switch t := err.(type) {
+		case TicketUserError:
+			return string(t), nil
+		case *TicketUserError:
+			return string(*t), nil
+		}
+
+		return "", err
+	}
+
+	// Annn done setting up the ticket
+	return fmt.Sprintf("Ticket #%d opened in <#%d>", ticket.LocalID, ticket.ChannelID), nil
+}
+
+var closingTickets = make(map[int64]bool)
+var closingTicketsLock sync.Mutex
+
+func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.ChannelState, conf *models.TicketConfig, member *discordgo.User, reason string, ctx context.Context) (string, error) {
+	// protect again'st calling close multiple times at the sime time
+	closingTicketsLock.Lock()
+	if _, ok := closingTickets[currentTicket.Ticket.ChannelID]; ok {
+		closingTicketsLock.Unlock()
+		return "Already working on closing this ticket, please wait...", nil
+	}
+	closingTickets[currentTicket.Ticket.ChannelID] = true
+	closingTicketsLock.Unlock()
+	defer func() {
+		closingTicketsLock.Lock()
+		delete(closingTickets, currentTicket.Ticket.ChannelID)
+		closingTicketsLock.Unlock()
+	}()
+
+	// send a heads up that this can take a while
+	common.BotSession.ChannelMessageSend(currentTicket.Ticket.ChannelID, "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
+
+	currentTicket.Ticket.ClosedAt.Time = time.Now()
+	currentTicket.Ticket.ClosedAt.Valid = true
+
+	isAdminsOnly := ticketIsAdminOnly(conf, ticketCS)
+
+	// create the logs, download the attachments
+	err := createLogs(gs, conf, currentTicket.Ticket, isAdminsOnly)
+	if err != nil {
+		return "Cannot send transcript to ticket logs channel, refusing to close ticket.", err
+	}
+
+	TicketLog(conf, gs.ID, member, &discordgo.MessageEmbed{
+		Title:       fmt.Sprintf("Ticket #%d - '%s' closed", currentTicket.Ticket.LocalID, currentTicket.Ticket.Title),
+		Description: fmt.Sprintf("Reason: %s", reason),
+		Color:       0xf23c3c,
+	})
+
+	// if everything went well, delete the channel
+	_, err = common.BotSession.ChannelDelete(currentTicket.Ticket.ChannelID)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = currentTicket.Ticket.UpdateG(ctx, boil.Whitelist("closed_at"))
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
+
+func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageComponentInteractionData, member *discordgo.Member, conf *models.TicketConfig) (*discordgo.InteractionResponse, error) {
+	response := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	}
+
+	var err error
+	cID := strings.TrimPrefix(interaction.CustomID, "tickets-")
+	if cID, ok := strings.CutPrefix(cID, "open-"); ok {
+		if cID == "" {
+			response = &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseModal,
+				Data: &discordgo.InteractionResponseData{
+					Title:    "Create a Ticket",
+					CustomID: "tickets-open-modal",
+					Components: []discordgo.MessageComponent{discordgo.ActionsRow{
+						Components: []discordgo.MessageComponent{discordgo.TextInput{
+							CustomID:  "reason",
+							Label:     "Reason for opening",
+							Required:  true,
+							MaxLength: 90,
+						}},
+					}},
+				},
+			}
+		} else {
+			response.Data.Content, err = openTicket(evt.Context(), evt.GS, dstate.MemberStateFromMember(member), conf, cID)
+		}
+		return response, err
+	}
+
+	switch cID {
+	case "close":
+		ticketCS := evt.CS()
+		activeTicket, err := models.Tickets(qm.Where("channel_id = ? AND guild_id = ?", ticketCS.ID, evt.GS.ID)).OneG(evt.Context())
+		if err != nil && err != sql.ErrNoRows {
+			return nil, err
+		}
+		if activeTicket == nil {
+			response.Data.Content = "A problem occured, failed to close the ticket."
+			return response, err
+		}
+		var currentTicket *Ticket
+		if activeTicket != nil {
+			participants, _ := models.TicketParticipants(qm.Where("ticket_guild_id = ? AND ticket_local_id = ?", activeTicket.GuildID, activeTicket.LocalID)).AllG(evt.Context())
+			currentTicket = &Ticket{
+				Ticket:       activeTicket,
+				Participants: participants,
+			}
+		}
+
+		response.Data.Content, err = closeTicket(evt.GS, currentTicket, ticketCS, conf, member.User, "", evt.Context())
+	case "close-reason":
+		response = &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseModal,
+			Data: &discordgo.InteractionResponseData{
+				Title:    "Close Ticket",
+				CustomID: "tickets-close-modal",
+				Components: []discordgo.MessageComponent{discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{discordgo.TextInput{
+						CustomID:  "reason",
+						Label:     "Reason for closing",
+						Required:  true,
+						MaxLength: 90,
+					}},
+				}},
+			},
+		}
+	}
+
+	return response, err
+}
+
+func handleModal(evt *eventsystem.EventData, interaction discordgo.ModalSubmitInteractionData, member *discordgo.Member, conf *models.TicketConfig) (*discordgo.InteractionResponse, error) {
+	response := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	}
+	var err error
+	value := interaction.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value
+
+	switch {
+	case strings.Contains(interaction.CustomID, "open"):
+		response.Data.Content, err = openTicket(evt.Context(), evt.GS, dstate.MemberStateFromMember(member), conf, value)
+	case strings.Contains(interaction.CustomID, "close"):
+		ticketCS := evt.CS()
+		activeTicket, err := models.Tickets(qm.Where("channel_id = ? AND guild_id = ?", ticketCS.ID, evt.GS.ID)).OneG(evt.Context())
+		if err != nil && err != sql.ErrNoRows {
+			return nil, err
+		}
+		if activeTicket == nil {
+			response.Data.Content = "A problem occured, failed to close the ticket."
+			return response, err
+		}
+		var currentTicket *Ticket
+		if activeTicket != nil {
+			participants, _ := models.TicketParticipants(qm.Where("ticket_guild_id = ? AND ticket_local_id = ?", activeTicket.GuildID, activeTicket.LocalID)).AllG(evt.Context())
+			currentTicket = &Ticket{
+				Ticket:       activeTicket,
+				Participants: participants,
+			}
+		}
+
+		response.Data.Content, err = closeTicket(evt.GS, currentTicket, ticketCS, conf, member.User, value, evt.Context())
+	}
+
+	return response, err
+}
+
+func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool, err error) {
+	ic := evt.InteractionCreate()
+
+	if ic.GuildID == 0 {
+		// ignore dm interactions
+		return
+	}
+
+	conf, err := models.FindTicketConfigG(evt.Context(), ic.GuildID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return false, err
+		}
+
+		conf = &models.TicketConfig{}
+	}
+
+	var customID string
+	switch ic.Type {
+	case discordgo.InteractionMessageComponent:
+		customID = ic.MessageComponentData().CustomID
+	case discordgo.InteractionModalSubmit:
+		customID = ic.ModalSubmitData().CustomID
+	default:
+		return
+	}
+
+	// continue only if this component is for tickets
+	if ticketCID := strings.HasPrefix(customID, "tickets-"); !ticketCID {
+		return
+	}
+
+	if !conf.Enabled {
+		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: createTicketsDisabledError(ic.GuildID),
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
+	err = common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral,
+		},
+	})
+	if err != nil {
+		return bot.CheckDiscordErrRetry(err), err
+	}
+
+	var response *discordgo.InteractionResponse
+
+	switch ic.Type {
+	case discordgo.InteractionMessageComponent:
+		response, err = handleButton(evt, ic.MessageComponentData(), ic.Member, conf)
+	case discordgo.InteractionModalSubmit:
+		response, err = handleModal(evt, ic.ModalSubmitData(), ic.Member, conf)
+	}
+	if response != nil {
+		if response.Data.Content == "" {
+			response.Data.Content = "Something went wrong when running this command, either discord or the bot may be having issues."
+		}
+	} else {
+		response = &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Something went wrong when running this command, either discord or the bot may be having issues.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		}
+	}
+
+	respErr := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, response)
+	if err == nil {
+		err = respErr
+	}
+	return false, err
 }
