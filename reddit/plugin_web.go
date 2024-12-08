@@ -261,7 +261,7 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
 	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
-		Subreddit: strings.ToLower(strings.TrimSpace(item.Subreddit)),
+		Subreddit: item.Subreddit,
 		Slow:      item.Slow,
 	})
 
