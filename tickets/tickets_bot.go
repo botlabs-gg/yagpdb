@@ -445,10 +445,14 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 
 	respErr := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, response)
 	if respErr != nil {
-		common.BotSession.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
+		// try again as a followup, if that still fails, return the original error
+		_, followupErr := common.BotSession.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
 			Content: response.Data.Content,
 			Flags:   int64(response.Data.Flags),
 		})
+		if followupErr != nil {
+			return bot.CheckDiscordErrRetry(respErr), respErr
+		}
 	}
 	return false, err
 }
