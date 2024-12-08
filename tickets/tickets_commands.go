@@ -286,6 +286,7 @@ func (p *Plugin) AddCommands() {
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var components []discordgo.MessageComponent
+			var usedReasons []string
 			for i := 1; i < 10; i++ {
 				arg := parsed.Switches["button-"+strconv.Itoa(i)]
 				if arg.Value == nil {
@@ -293,6 +294,9 @@ func (p *Plugin) AddCommands() {
 				}
 				if len(arg.Str()) > 85 {
 					return fmt.Sprintf("Reason for button %d too long; must be max 85 characters.", i), nil
+				}
+				if common.ContainsStringSlice(usedReasons, arg.Str()) {
+					return "You may not use the exact same reason on multiple buttons", nil
 				}
 				label := arg.Str()
 				if len(label) > 80 {
@@ -302,6 +306,7 @@ func (p *Plugin) AddCommands() {
 					Label:    label,
 					CustomID: "tickets-open-" + arg.Str(),
 				})
+				usedReasons = append(usedReasons, arg.Str())
 			}
 
 			if len(components) == 0 || parsed.Switches["custom"].Bool() {
