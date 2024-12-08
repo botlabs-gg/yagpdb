@@ -428,12 +428,6 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 	}
 
 	var currentChannel *dstate.ChannelState = evt.GS.GetChannel(ic.ChannelID)
-	if err != nil {
-		respErr := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, errorResponse)
-		if err == nil {
-			err = respErr
-		}
-	}
 
 	switch ic.Type {
 	case discordgo.InteractionMessageComponent:
@@ -449,8 +443,8 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		response = errorResponse
 	}
 
-	err = common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, response)
-	if err != nil {
+	respErr := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, response)
+	if respErr != nil {
 		common.BotSession.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
 			Content: response.Data.Content,
 			Flags:   int64(response.Data.Flags),
