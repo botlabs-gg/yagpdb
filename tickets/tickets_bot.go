@@ -242,7 +242,7 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 	return "", nil
 }
 
-func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageComponentInteractionData, member *discordgo.Member, conf *models.TicketConfig) (*discordgo.InteractionResponse, error) {
+func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageComponentInteractionData, member *discordgo.Member, conf *models.TicketConfig, currentChannel *dstate.ChannelState) (*discordgo.InteractionResponse, error) {
 	response := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -277,8 +277,7 @@ func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageCompo
 
 	switch cID {
 	case "close":
-		ticketCS := evt.CS()
-		activeTicket, err := models.Tickets(qm.Where("channel_id = ? AND guild_id = ?", ticketCS.ID, evt.GS.ID)).OneG(evt.Context())
+		activeTicket, err := models.Tickets(qm.Where("channel_id = ? AND guild_id = ?", currentChannel.ID, evt.GS.ID)).OneG(evt.Context())
 		if err != nil && err != sql.ErrNoRows {
 			return nil, err
 		}
@@ -295,7 +294,7 @@ func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageCompo
 			}
 		}
 
-		response.Data.Content, err = closeTicket(evt.GS, currentTicket, ticketCS, conf, member.User, "", evt.Context())
+		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, "", evt.Context())
 	case "close-reason":
 		response = &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseModal,
@@ -317,7 +316,7 @@ func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageCompo
 	return response, err
 }
 
-func handleModal(evt *eventsystem.EventData, interaction discordgo.ModalSubmitInteractionData, member *discordgo.Member, conf *models.TicketConfig) (*discordgo.InteractionResponse, error) {
+func handleModal(evt *eventsystem.EventData, interaction discordgo.ModalSubmitInteractionData, member *discordgo.Member, conf *models.TicketConfig, currentChannel *dstate.ChannelState) (*discordgo.InteractionResponse, error) {
 	response := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -331,8 +330,7 @@ func handleModal(evt *eventsystem.EventData, interaction discordgo.ModalSubmitIn
 	case strings.Contains(interaction.CustomID, "open"):
 		response.Data.Content, err = openTicket(evt.Context(), evt.GS, dstate.MemberStateFromMember(member), conf, value)
 	case strings.Contains(interaction.CustomID, "close"):
-		ticketCS := evt.CS()
-		activeTicket, err := models.Tickets(qm.Where("channel_id = ? AND guild_id = ?", ticketCS.ID, evt.GS.ID)).OneG(evt.Context())
+		activeTicket, err := models.Tickets(qm.Where("channel_id = ? AND guild_id = ?", currentChannel.ID, evt.GS.ID)).OneG(evt.Context())
 		if err != nil && err != sql.ErrNoRows {
 			return nil, err
 		}
@@ -349,7 +347,7 @@ func handleModal(evt *eventsystem.EventData, interaction discordgo.ModalSubmitIn
 			}
 		}
 
-		response.Data.Content, err = closeTicket(evt.GS, currentTicket, ticketCS, conf, member.User, value, evt.Context())
+		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, value, evt.Context())
 	}
 
 	return response, err
@@ -401,25 +399,34 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 	}
 
 	var response *discordgo.InteractionResponse
+	errorResponse := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: "Something went wrong when running this command, either discord or the bot may be having issues.",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		},
+	}
+
+	var currentChannel *dstate.ChannelState = evt.GS.GetChannel(ic.ChannelID)
+	if err != nil {
+		respErr := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, errorResponse)
+		if err == nil {
+			err = respErr
+		}
+	}
 
 	switch ic.Type {
 	case discordgo.InteractionMessageComponent:
-		response, err = handleButton(evt, ic.MessageComponentData(), ic.Member, conf)
+		response, err = handleButton(evt, ic.MessageComponentData(), ic.Member, conf, currentChannel)
 	case discordgo.InteractionModalSubmit:
-		response, err = handleModal(evt, ic.ModalSubmitData(), ic.Member, conf)
+		response, err = handleModal(evt, ic.ModalSubmitData(), ic.Member, conf, currentChannel)
 	}
 	if response != nil {
 		if response.Data.Content == "" {
 			response.Data.Content = "Something went wrong when running this command, either discord or the bot may be having issues."
 		}
 	} else {
-		response = &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "Something went wrong when running this command, either discord or the bot may be having issues.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		}
+		response = errorResponse
 	}
 
 	respErr := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, response)
