@@ -407,7 +407,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		return
 	}
 
-	if !conf.Enabled {
+	if !conf.Enabled && strings.Contains(customID, "open") {
 		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
