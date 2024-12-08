@@ -55,6 +55,11 @@ const (
 	ErrMaxOpenTickets   TicketUserError = "You're currently in over 10 open tickets on this server, please close some of the ones you're in."
 )
 
+const (
+	AppendButtonsClose           int64 = 1 << 0
+	AppendButtonsCloseWithReason int64 = 1 << 1
+)
+
 func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState, conf *models.TicketConfig, topic string, checkMaxTickets, executedByCommandTemplate bool) (*dstate.GuildSet, *models.Ticket, error) {
 	if gs.GetChannel(conf.TicketsChannelCategory) == nil {
 		return gs, nil, ErrNoTicketCateogry
@@ -134,6 +139,21 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	ticketOpenMsg := conf.TicketOpenMSG
 	if ticketOpenMsg == "" {
 		ticketOpenMsg = DefaultTicketMsg
+	}
+	
+	if conf.AppendButtons & AppendButtonsClose == AppendButtonsClose {
+		tmplCTX.CurrentFrame.ComponentsToSend = append(tmplCTX.CurrentFrame.ComponentsToSend, discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.Button{
+			Label: "Close Ticket",
+			CustomID: "tickets-close",
+			Style: discordgo.DangerButton,
+		}}})
+	}
+	if conf.AppendButtons & AppendButtonsCloseWithReason == AppendButtonsCloseWithReason {
+		tmplCTX.CurrentFrame.ComponentsToSend = append(tmplCTX.CurrentFrame.ComponentsToSend, discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.Button{
+			Label: "Close Ticket with Reason",
+			CustomID: "tickets-close-reason",
+			Style: discordgo.SecondaryButton,
+		}}})
 	}
 
 	err = tmplCTX.ExecuteAndSendWithErrors(ticketOpenMsg, channel.ID)

@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS ticket_configs  (
 `, `
 ALTER TABLE ticket_configs ADD COLUMN IF NOT EXISTS tickets_transcripts_channel_admin_only BIGINT NOT NULL DEFAULT 0;
 `, `
-ALTER TABLE ticket_configs ADD COLUMN IF NOT EXISTS append_buttons INT NOT NULL DEFAULT 0;
+ALTER TABLE ticket_configs ADD COLUMN IF NOT EXISTS append_buttons BIGINT NOT NULL DEFAULT 0;
 `, `
 CREATE TABLE IF NOT EXISTS tickets (
 	guild_id BIGINT NOT NULL,

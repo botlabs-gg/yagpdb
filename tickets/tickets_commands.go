@@ -292,7 +292,7 @@ func (p *Plugin) AddCommands() {
 					continue
 				}
 				if len(arg.Str()) > 85 {
-					return fmt.Sprintf("Reason for button %d too long; must be max 85 characters."), nil
+					return fmt.Sprintf("Reason for button %d too long; must be max 85 characters.", i), nil
 				}
 				label := arg.Str()
 				if len(label) > 80 {

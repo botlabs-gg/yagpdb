@@ -208,6 +208,7 @@ type ContextFrame struct {
 
 	DelResponseDelay         int
 	EmbedsToSend             []*discordgo.MessageEmbed
+	ComponentsToSend         []discordgo.MessageComponent
 	AddResponseReactionNames []string
 
 	isNestedTemplate bool
@@ -510,6 +511,13 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 					},
 				},
 			},
+		}
+	}
+
+	if len(c.CurrentFrame.ComponentsToSend) > 0 {
+		msgSend.Components = append(msgSend.Components, c.CurrentFrame.ComponentsToSend...)
+		if len(msgSend.Components) > 5 {
+			msgSend.Components = msgSend.Components[:5]
 		}
 	}
 
