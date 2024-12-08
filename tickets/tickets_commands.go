@@ -317,6 +317,7 @@ func (p *Plugin) AddCommands() {
 				customButton := discordgo.Button{
 					Label:    label,
 					CustomID: "tickets-open-",
+					Style:    discordgo.SecondaryButton,
 				}
 				components = append([]discordgo.MessageComponent{customButton}, components...)
 			}
@@ -333,6 +334,9 @@ func (p *Plugin) AddCommands() {
 				message, err := common.BotSession.ChannelMessage(parsed.ChannelID, parsed.Switches["message"].Int64())
 				if err != nil {
 					return nil, err
+				}
+				if message.Author.ID != common.BotUser.ID {
+					return "You must select a message that YAGPDB has sent.", nil
 				}
 
 				_, err = common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
