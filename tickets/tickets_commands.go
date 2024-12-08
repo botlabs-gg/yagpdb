@@ -286,9 +286,9 @@ func (p *Plugin) AddCommands() {
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			var components []discordgo.MessageComponent
-			for i := 1; i <= 10; i++ {
+			for i := 1; i < 10; i++ {
 				arg := parsed.Switches["button-"+strconv.Itoa(i)]
-				if arg == nil {
+				if arg.Value == nil {
 					continue
 				}
 				if len(arg.Str()) > 85 {
