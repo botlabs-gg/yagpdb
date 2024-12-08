@@ -436,7 +436,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		response, err = handleModal(evt, ic, ic.Member, conf, currentChannel)
 	}
 	if response != nil {
-		if response.Data.Content == "" {
+		if response.Data.Content == "" && len(response.Data.Components) == 0 {
 			response = errorResponse
 		}
 	} else {
