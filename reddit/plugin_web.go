@@ -136,10 +136,18 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d feeds allowed (or %d for premium servers)", GuildMaxFeedsNormal, GuildMaxFeedsPremium)))
 	}
 
+	subreddit := strings.TrimSpace(newElem.Subreddit)
+	subreddit = strings.ToLower(subreddit)
+	subreddit = strings.TrimPrefix(subreddit, "/")
+
+	for ; strings.HasPrefix(subreddit, "r/"); {
+		subreddit = strings.TrimPrefix(subreddit, "r/")
+	}
+
 	watchItem := &models.RedditFeed{
 		GuildID:         activeGuild.ID,
 		ChannelID:       newElem.Channel,
-		Subreddit:       strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+		Subreddit:       subreddit,
 		UseEmbeds:       newElem.UseEmbeds,
 		FilterNSFW:      newElem.NSFWMode,
 		SpoilersEnabled: newElem.SpoilersEnabled,
@@ -166,7 +174,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: watchItem.Subreddit}))
 	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{
-		Subreddit: strings.ToLower(strings.TrimSpace(newElem.Subreddit)),
+		Subreddit: newElem.Subreddit,
 		Slow:      newElem.Slow,
 	})
 
