@@ -140,19 +140,19 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	if ticketOpenMsg == "" {
 		ticketOpenMsg = DefaultTicketMsg
 	}
-	
-	if conf.AppendButtons & AppendButtonsClose == AppendButtonsClose {
+
+	if conf.AppendButtons&AppendButtonsClose == AppendButtonsClose {
 		tmplCTX.CurrentFrame.ComponentsToSend = append(tmplCTX.CurrentFrame.ComponentsToSend, discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.Button{
-			Label: "Close Ticket",
+			Label:    "Close Ticket",
 			CustomID: "tickets-close",
-			Style: discordgo.DangerButton,
+			Style:    discordgo.DangerButton,
 		}}})
 	}
-	if conf.AppendButtons & AppendButtonsCloseWithReason == AppendButtonsCloseWithReason {
+	if conf.AppendButtons&AppendButtonsCloseWithReason == AppendButtonsCloseWithReason {
 		tmplCTX.CurrentFrame.ComponentsToSend = append(tmplCTX.CurrentFrame.ComponentsToSend, discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.Button{
-			Label: "Close Ticket with Reason",
+			Label:    "Close Ticket with Reason",
 			CustomID: "tickets-close-reason",
-			Style: discordgo.SecondaryButton,
+			Style:    discordgo.SecondaryButton,
 		}}})
 	}
 
@@ -396,16 +396,6 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 			},
 		})
 		return
-	}
-
-	err = common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Flags: discordgo.MessageFlagsEphemeral,
-		},
-	})
-	if err != nil {
-		return bot.CheckDiscordErrRetry(err), err
 	}
 
 	var response *discordgo.InteractionResponse
