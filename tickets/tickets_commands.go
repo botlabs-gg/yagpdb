@@ -288,7 +288,7 @@ func (p *Plugin) AddCommands() {
 			var components []discordgo.MessageComponent
 			for i := 1; i <= 10; i++ {
 				arg := parsed.Switches["button-"+strconv.Itoa(i)]
-				if arg.Value == nil {
+				if arg == nil {
 					continue
 				}
 				if len(arg.Str()) > 85 {
