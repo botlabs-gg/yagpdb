@@ -397,7 +397,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdRenameTicket, cmdRenameTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdCloseTicket, cmdCloseTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
-	container.AddCommand(cmdMenuCreate, cmdMenuCreate.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
+	container.AddCommand(cmdMenuCreate, cmdMenuCreate.GetTrigger().SetMiddlewares(ProhibitActiveTicketMW))
 
 	commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
 }
@@ -423,7 +423,17 @@ func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildSet) ([]int64, error) {
 func RequireActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
 		if data.Context().Value(CtxKeyCurrentTicket) == nil {
-			return "This command can only be ran in a active ticket", nil
+			return "This command can only be run in a active ticket", nil
+		}
+
+		return inner(data)
+	}
+}
+
+func ProhibitActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
+	return func(data *dcmd.Data) (interface{}, error) {
+		if data.Context().Value(CtxKeyCurrentTicket) != nil {
+			return "This command cannot be run in a active ticket", nil
 		}
 
 		return inner(data)
