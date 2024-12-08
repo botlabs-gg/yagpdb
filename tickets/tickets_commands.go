@@ -270,10 +270,10 @@ func (p *Plugin) AddCommands() {
 		Name:            "MenuCreate",
 		Aliases:         []string{"mc"},
 		Description:     "Creates a menu with buttons to open tickets.",
-		LongDescription: "Creates and sends a message with buttons allowing users to open tickets, optionally with predefined reasons.\n\nInstead of creating a new message, attach it to another message the bot has sent with `-message bot-message-id-here`. This __must__ be a message the bot has sent.\nCreate buttons with up to 9 predefined reasons with `-button-1 \"Reason for button 1\"`, `-button-2 \"Reason for button 2\"`, etc.\nIf using predefined reason buttons, you may optionally disable the custom reason button with `-custom false`.",
+		LongDescription: "Creates and sends a message with buttons allowing users to open tickets, optionally with predefined reasons.\n\nInstead of creating a new message, attach it to another message the bot has sent with `-message bot-message-id-here`. This __must__ be a message the bot has sent.\nCreate buttons with up to 9 predefined reasons with `-button-1 \"Reason for button 1\"`, `-button-2 \"Reason for button 2\"`, etc.\nIf using predefined reason buttons, you may optionally disable the custom reason button with `-disable-custom`.",
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "message", Help: "ID to attach menu to", Type: dcmd.BigInt},
-			{Name: "custom", Help: "Enable Cutsom Reason button", Default: true},
+			{Name: "disable-custom", Help: "Disable Cutsom Reason button", Default: false},
 			{Name: "button-1", Help: "Predefined reason for button 1", Type: dcmd.String},
 			{Name: "button-2", Help: "Predefined reason for button 2", Type: dcmd.String},
 			{Name: "button-3", Help: "Predefined reason for button 3", Type: dcmd.String},
@@ -309,7 +309,7 @@ func (p *Plugin) AddCommands() {
 				usedReasons = append(usedReasons, arg.Str())
 			}
 
-			if len(components) == 0 || parsed.Switches["custom"].Bool() {
+			if len(components) == 0 || !parsed.Switches["disable-custom"].Bool() {
 				label := "Create a Ticket"
 				if len(components) > 0 {
 					label = "Custom Reason"
