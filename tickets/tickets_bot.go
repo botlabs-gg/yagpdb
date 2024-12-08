@@ -443,7 +443,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 	}
 	if response != nil {
 		if response.Data.Content == "" {
-			response.Data.Content = "Something went wrong when running this command, either discord or the bot may be having issues."
+			response = errorResponse
 		}
 	} else {
 		response = errorResponse
