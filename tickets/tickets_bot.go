@@ -422,7 +422,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 	errorResponse := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "Something went wrong when running this command, either discord or the bot may be having issues.",
+			Content: "Something went wrong when running this ticket interaction, either discord or the bot may be having issues.",
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	}
