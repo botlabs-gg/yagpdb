@@ -263,6 +263,7 @@ func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageCompo
 						Components: []discordgo.MessageComponent{discordgo.TextInput{
 							CustomID:  "reason",
 							Label:     "Reason for opening",
+							Style:     discordgo.TextInputShort,
 							Required:  true,
 							MaxLength: 90,
 						}},
@@ -305,6 +306,7 @@ func handleButton(evt *eventsystem.EventData, interaction discordgo.MessageCompo
 					Components: []discordgo.MessageComponent{discordgo.TextInput{
 						CustomID:  "reason",
 						Label:     "Reason for closing",
+						Style:     discordgo.TextInputShort,
 						Required:  true,
 						MaxLength: 90,
 					}},
