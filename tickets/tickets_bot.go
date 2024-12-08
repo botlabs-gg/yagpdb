@@ -363,6 +363,8 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		return
 	}
 
+	evt.GS = bot.State.GetGuild(ic.GuildID)
+
 	conf, err := models.FindTicketConfigG(evt.Context(), ic.GuildID)
 	if err != nil {
 		if err != sql.ErrNoRows {
