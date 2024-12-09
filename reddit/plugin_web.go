@@ -139,10 +139,7 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	subreddit := strings.TrimSpace(newElem.Subreddit)
 	subreddit = strings.ToLower(subreddit)
 	subreddit = strings.TrimPrefix(subreddit, "/")
-
-	for ; strings.HasPrefix(subreddit, "r/"); {
-		subreddit = strings.TrimPrefix(subreddit, "r/")
-	}
+	subreddit = strings.TrimPrefix(subreddit, "r/")
 
 	watchItem := &models.RedditFeed{
 		GuildID:         activeGuild.ID,
