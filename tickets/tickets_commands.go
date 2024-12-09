@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
@@ -265,6 +267,8 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
+	const emojiRegex = `\A\s*((<a?:[\w~]{2,32}:\d{17,19}>)|[\x{1f1e6}-\x{1f1ff}]{2}|\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?(\x{200D}\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?)*|[#\d*]\x{FE0F}?\x{20E3})`
+
 	cmdMenuCreate := &commands.YAGCommand{
 		CmdCategory:     categoryTickets,
 		Name:            "MenuCreate",
@@ -292,21 +296,47 @@ func (p *Plugin) AddCommands() {
 				if arg.Value == nil {
 					continue
 				}
-				if len(arg.Str()) > 85 {
-					return fmt.Sprintf("Reason for button %d too long; must be max 85 characters.", i), nil
-				}
-				if common.ContainsStringSlice(usedReasons, arg.Str()) {
+
+				reason := arg.Str()
+				var emoji *discordgo.ComponentEmoji
+				reason = regexp.MustCompile(emojiRegex).ReplaceAllStringFunc(reason, func(match string) string {
+					// <:ye:733037741532643428>
+					customEmojiParts := strings.Split(match, ":")
+					// []string{"<", "ye", "733037741532643428>"}
+					if len(customEmojiParts) == 1 {
+						// not a custom emoji, should be unicode
+						emoji.Name = match
+						return ""
+					}
+					lastPart := customEmojiParts[len(customEmojiParts)-1]
+					// "733037741532643428>"
+					customEmojiID := lastPart[:len(lastPart)-1] // trim off ">"
+					var err error
+					emoji.ID, err = strconv.ParseInt(customEmojiID, 10, 64)
+					if err != nil {
+						// this might not be an emoji after all, leave it untouched
+						return match
+					}
+					return ""
+				})
+
+				if common.ContainsStringSlice(usedReasons, reason) {
 					return "You may not use the exact same reason on multiple buttons", nil
 				}
-				label := arg.Str()
+				label := reason
 				if len(label) > 80 {
 					label = label[:80]
 				}
-				components = append(components, discordgo.Button{
+				button := discordgo.Button{
 					Label:    label,
-					CustomID: "tickets-open-" + arg.Str(),
-				})
-				usedReasons = append(usedReasons, arg.Str())
+					CustomID: "tickets-open-" + reason,
+				}
+
+				if emoji != nil {
+					button.Emoji = emoji
+				}
+				components = append(components, button)
+				usedReasons = append(usedReasons, reason)
 			}
 
 			if len(components) == 0 || !parsed.Switches["disable-custom"].Bool() {
