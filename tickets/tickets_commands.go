@@ -298,7 +298,7 @@ func (p *Plugin) AddCommands() {
 				}
 
 				reason := arg.Str()
-				var emoji *discordgo.ComponentEmoji
+				emoji := &discordgo.ComponentEmoji{}
 				reason = regexp.MustCompile(emojiRegex).ReplaceAllStringFunc(reason, func(match string) string {
 					// <:ye:733037741532643428>
 					customEmojiParts := strings.Split(match, ":")
