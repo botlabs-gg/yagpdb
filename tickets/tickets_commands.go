@@ -319,6 +319,7 @@ func (p *Plugin) AddCommands() {
 					}
 					return ""
 				})
+				reason = strings.TrimSpace(reason)
 
 				if common.ContainsStringSlice(usedReasons, reason) {
 					return "You may not use the exact same reason on multiple buttons", nil
