@@ -27,6 +27,7 @@ var Command = &commands.YAGCommand{
 		embed := &discordgo.MessageEmbed{}
 		embed.Title = fmt.Sprintf(`%s roasted %s`, data.Author.Username, target)
 		embed.Description = html.UnescapeString(randomRoast())
+		embed.Footer = &discordgo.MessageEmbedFooter{Text: "Boom, roasted!"}
 		return embed, nil
 	},
 }
