@@ -94,6 +94,9 @@
                                     {{template "template_helper_user"}} - The user opening the ticket<br />
                                     <code>{{"{{.Reason}}"}}</code> - The reason for opening the ticket<br />
                                 </p>
+                                <p>Append any of the following buttons to the ticket opening message?</p>
+                                {{checkbox "AppendButtonsClose" "tickets-append-buttons-close-box" `Append a button to close the ticket` .PluginSettingsAppendButtons.Close}}
+                                {{checkbox "AppendButtonsCloseWithReason" "tickets-append-buttons-close-with-reason-box" `Append a button to close the ticket and provide a reason` .PluginSettingsAppendButtons.CloseWithReason}}
                             </div>
                         </div>
                     </div>
