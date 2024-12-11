@@ -21,12 +21,14 @@ var Command = &commands.YAGCommand{
 	SlashCommandEnabled: true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		target := "a random person nearby"
+		description := fmt.Sprintf(`## %s`, html.UnescapeString(randomRoast()))
 		if data.Args[0].Value != nil {
 			target = data.Args[0].Value.(*discordgo.User).Username
+			description = fmt.Sprintf(`## Hey %s, %s`, target, html.UnescapeString(randomRoast()))
 		}
 		embed := &discordgo.MessageEmbed{}
 		embed.Title = fmt.Sprintf(`%s roasted %s`, data.Author.Username, target)
-		embed.Description = html.UnescapeString(randomRoast())
+		embed.Description = description
 		embed.Footer = &discordgo.MessageEmbedFooter{Text: "Boom, roasted!"}
 		return embed, nil
 	},
