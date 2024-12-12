@@ -10,8 +10,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sync"
-	"time"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
@@ -29,8 +30,8 @@ const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.Permiss
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 
-func createTicketsDisabledError(g *dcmd.GuildContextData) string {
-	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(g.GS.ID))
+func createTicketsDisabledError(guildID int64) string {
+	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guildID))
 }
 
 func (p *Plugin) AddCommands() {
@@ -58,23 +59,10 @@ func (p *Plugin) AddCommands() {
 
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			if !conf.Enabled {
-				return createTicketsDisabledError(parsed.GuildData), nil
+				return createTicketsDisabledError(parsed.GuildData.GS.ID), nil
 			}
 
-			_, ticket, err := CreateTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str(), true, parsed.Context().Value(commands.CtxKeyExecutedByCommandTemplate) == true)
-			if err != nil {
-				switch t := err.(type) {
-				case TicketUserError:
-					return string(t), nil
-				case *TicketUserError:
-					return string(*t), nil
-				}
-
-				return nil, err
-			}
-
-			// Annn done setting up the ticket
-			return fmt.Sprintf("Ticket #%d opened in <#%d>", ticket.LocalID, ticket.ChannelID), nil
+			return openTicket(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, conf, parsed.Args[0].Str())
 		},
 	}
 
@@ -188,9 +176,6 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
-	closingTickets := make(map[int64]bool)
-	var closingTicketsLock sync.Mutex
-
 	cmdCloseTicket := &commands.YAGCommand{
 		CmdCategory: categoryTickets,
 		Name:        "Close",
@@ -202,53 +187,7 @@ func (p *Plugin) AddCommands() {
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
-
-			// protect again'st calling close multiple times at the sime time
-			closingTicketsLock.Lock()
-			if _, ok := closingTickets[currentTicket.Ticket.ChannelID]; ok {
-				closingTicketsLock.Unlock()
-				return "Already working on closing this ticket, please wait...", nil
-			}
-			closingTickets[currentTicket.Ticket.ChannelID] = true
-			closingTicketsLock.Unlock()
-			defer func() {
-				closingTicketsLock.Lock()
-				delete(closingTickets, currentTicket.Ticket.ChannelID)
-				closingTicketsLock.Unlock()
-			}()
-
-			// send a heads up that this can take a while
-			common.BotSession.ChannelMessageSend(parsed.ChannelID, "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big.")
-
-			currentTicket.Ticket.ClosedAt.Time = time.Now()
-			currentTicket.Ticket.ClosedAt.Valid = true
-
-			isAdminsOnly := ticketIsAdminOnly(conf, parsed.GuildData.CS)
-
-			// create the logs, download the attachments
-			err := createLogs(parsed.GuildData.GS, conf, currentTicket.Ticket, isAdminsOnly)
-			if err != nil {
-				return "Cannot send transcript to ticket logs channel, refusing to close ticket.", err
-			}
-
-			TicketLog(conf, parsed.GuildData.GS.ID, parsed.Author, &discordgo.MessageEmbed{
-				Title:       fmt.Sprintf("Ticket #%d - '%s' closed", currentTicket.Ticket.LocalID, currentTicket.Ticket.Title),
-				Description: fmt.Sprintf("Reason: %s", parsed.Args[0].Str()),
-				Color:       0xf23c3c,
-			})
-
-			// if everything went well, delete the channel
-			_, err = common.BotSession.ChannelDelete(currentTicket.Ticket.ChannelID)
-			if err != nil {
-				return nil, err
-			}
-
-			_, err = currentTicket.Ticket.UpdateG(parsed.Context(), boil.Whitelist("closed_at"))
-			if err != nil {
-				return nil, err
-			}
-
-			return "", nil
+			return closeTicket(parsed.GuildData.GS, currentTicket, parsed.GuildData.CS, conf, parsed.Author, parsed.Args[0].Str(), parsed.Context())
 		},
 	}
 
@@ -328,6 +267,126 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
+	const emojiRegex = `\A\s*((<a?:[\w~]{2,32}:\d{17,19}>)|[\x{1f1e6}-\x{1f1ff}]{2}|\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?(\x{200D}\p{So}\x{fe0f}?[\x{1f3fb}-\x{1f3ff}]?)*|[#\d*]\x{FE0F}?\x{20E3})`
+
+	cmdMenuCreate := &commands.YAGCommand{
+		CmdCategory:     categoryTickets,
+		Name:            "MenuCreate",
+		Aliases:         []string{"mc"},
+		Description:     "Creates a menu with buttons to open tickets.",
+		LongDescription: "Creates and sends a message with buttons allowing users to open tickets, optionally with predefined reasons.\n\nInstead of creating a new message, attach it to another message the bot has sent with `-message bot-message-id-here`. This __must__ be a message the bot has sent.\nCreate buttons with up to 9 predefined reasons with `-button-1 \"Reason for button 1\"`, `-button-2 \"Reason for button 2\"`, etc.\nIf using predefined reason buttons, you may optionally disable the custom reason button with `-disable-custom`.",
+		ArgSwitches: []*dcmd.ArgDef{
+			{Name: "message", Help: "ID to attach menu to", Type: dcmd.BigInt},
+			{Name: "disable-custom", Help: "Disable Cutsom Reason button", Default: false},
+			{Name: "button-1", Help: "Predefined reason for button 1", Type: dcmd.String},
+			{Name: "button-2", Help: "Predefined reason for button 2", Type: dcmd.String},
+			{Name: "button-3", Help: "Predefined reason for button 3", Type: dcmd.String},
+			{Name: "button-4", Help: "Predefined reason for button 4", Type: dcmd.String},
+			{Name: "button-5", Help: "Predefined reason for button 5", Type: dcmd.String},
+			{Name: "button-6", Help: "Predefined reason for button 6", Type: dcmd.String},
+			{Name: "button-7", Help: "Predefined reason for button 7", Type: dcmd.String},
+			{Name: "button-8", Help: "Predefined reason for button 8", Type: dcmd.String},
+			{Name: "button-9", Help: "Predefined reason for button 9", Type: dcmd.String},
+		},
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			var components []discordgo.MessageComponent
+			var usedReasons []string
+			for i := 1; i < 10; i++ {
+				arg := parsed.Switches["button-"+strconv.Itoa(i)]
+				if arg.Value == nil {
+					continue
+				}
+
+				reason := arg.Str()
+				emoji := &discordgo.ComponentEmoji{}
+				reason = regexp.MustCompile(emojiRegex).ReplaceAllStringFunc(reason, func(match string) string {
+					// <:ye:733037741532643428>
+					customEmojiParts := strings.Split(match, ":")
+					// []string{"<", "ye", "733037741532643428>"}
+					if len(customEmojiParts) == 1 {
+						// not a custom emoji, should be unicode
+						emoji.Name = match
+						return ""
+					}
+					lastPart := customEmojiParts[len(customEmojiParts)-1]
+					// "733037741532643428>"
+					customEmojiID := lastPart[:len(lastPart)-1] // trim off ">"
+					var err error
+					emoji.ID, err = strconv.ParseInt(customEmojiID, 10, 64)
+					if err != nil {
+						// this might not be an emoji after all, leave it untouched
+						return match
+					}
+					return ""
+				})
+				reason = strings.TrimSpace(reason)
+
+				if common.ContainsStringSlice(usedReasons, reason) {
+					return "You may not use the exact same reason on multiple buttons", nil
+				}
+				label := reason
+				if len(label) > 80 {
+					label = label[:80]
+				}
+				button := discordgo.Button{
+					Label:    label,
+					CustomID: "tickets-open-" + reason,
+				}
+
+				if emoji != nil {
+					button.Emoji = emoji
+				}
+				components = append(components, button)
+				usedReasons = append(usedReasons, reason)
+			}
+
+			if len(components) == 0 || !parsed.Switches["disable-custom"].Bool() {
+				label := "Create a Ticket"
+				if len(components) > 0 {
+					label = "Custom Reason"
+				}
+				customButton := discordgo.Button{
+					Label:    label,
+					CustomID: "tickets-open-",
+					Style:    discordgo.SecondaryButton,
+				}
+				components = append([]discordgo.MessageComponent{customButton}, components...)
+			}
+
+			var actionsRows []discordgo.MessageComponent
+			if len(components) > 5 {
+				actionsRows = append(actionsRows, discordgo.ActionsRow{Components: components[:5]})
+				components = components[5:]
+			}
+			actionsRows = append(actionsRows, discordgo.ActionsRow{Components: components})
+
+			var err error
+			if parsed.Switches["message"].Int64() != 0 {
+				message, err := common.BotSession.ChannelMessage(parsed.ChannelID, parsed.Switches["message"].Int64())
+				if err != nil {
+					return nil, err
+				}
+				if message.Author.ID != common.BotUser.ID {
+					return "You must select a message that YAGPDB has sent.", nil
+				}
+
+				_, err = common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
+					Content:    &message.Content,
+					Components: actionsRows,
+					Embeds:     message.Embeds,
+					ID:         message.ID,
+					Channel:    parsed.ChannelID,
+				})
+			} else {
+				_, err = common.BotSession.ChannelMessageSendComplex(parsed.ChannelID, &discordgo.MessageSend{
+					Content:    "Click below to create a new ticket.",
+					Components: actionsRows,
+				})
+			}
+			return nil, err
+		},
+	}
+
 	container, _ := commands.CommandSystem.Root.Sub("tickets", "ticket")
 	container.Description = "Command to manage the ticket system"
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
@@ -355,7 +414,7 @@ func (p *Plugin) AddCommands() {
 
 				// no ticket commands have any effect then
 				if activeTicket == nil && !conf.Enabled {
-					return createTicketsDisabledError(data.GuildData), nil
+					return createTicketsDisabledError(data.GuildData.GS.ID), nil
 				}
 
 				ctx := context.WithValue(data.Context(), CtxKeyConfig, conf)
@@ -378,6 +437,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdRenameTicket, cmdRenameTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdCloseTicket, cmdCloseTicket.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
+	container.AddCommand(cmdMenuCreate, cmdMenuCreate.GetTrigger().SetMiddlewares(ProhibitActiveTicketMW))
 
 	commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
 }
@@ -403,7 +463,17 @@ func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildSet) ([]int64, error) {
 func RequireActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {
 		if data.Context().Value(CtxKeyCurrentTicket) == nil {
-			return "This command can only be ran in a active ticket", nil
+			return "This command can only be run in a active ticket", nil
+		}
+
+		return inner(data)
+	}
+}
+
+func ProhibitActiveTicketMW(inner dcmd.RunFunc) dcmd.RunFunc {
+	return func(data *dcmd.Data) (interface{}, error) {
+		if data.Context().Value(CtxKeyCurrentTicket) != nil {
+			return "This command cannot be run in a active ticket", nil
 		}
 
 		return inner(data)
