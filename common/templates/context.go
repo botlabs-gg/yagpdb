@@ -656,8 +656,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("pinMessage", c.tmplPinMessage(false))
 	c.addContextFunc("publishMessage", c.tmplPublishMessage)
 	c.addContextFunc("publishResponse", c.tmplPublishResponse)
-	c.addContextFunc("unpinMessage", c.tmplPinMessage(true))
 	c.addContextFunc("suppressEmbeds", c.tmplSuppressEmbeds(true))
+	c.addContextFunc("unpinMessage", c.tmplPinMessage(true))
 	c.addContextFunc("unsuppressEmbeds", c.tmplSuppressEmbeds(false))
 
 	// Message send functions
