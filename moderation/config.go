@@ -155,8 +155,8 @@ func (c *Config) ToModel() *models.ModerationConfig {
 		WarnCmdRoles:           c.WarnCmdRoles,
 		WarnIncludeChannelLogs: null.BoolFrom(c.WarnIncludeChannelLogs),
 		WarnSendToModlog:       null.BoolFrom(c.WarnSendToModlog),
-		DelwarnSendToModlog:     null.BoolFrom(c.DelwarnSendToModlog),
-		DelwarnIncludeWarnReason: null.BoolFrom(c.DelwarnIncludeWarnReason),
+		DelwarnSendToModlog:     c.DelwarnSendToModlog,
+		DelwarnIncludeWarnReason: c.DelwarnIncludeWarnReason,
 		WarnMessage:            null.StringFrom(c.WarnMessage),
 
 		CleanEnabled:  null.BoolFrom(c.CleanEnabled),
@@ -222,8 +222,8 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		WarnCmdRoles:           model.WarnCmdRoles,
 		WarnIncludeChannelLogs: model.WarnIncludeChannelLogs.Bool,
 		WarnSendToModlog:       model.WarnSendToModlog.Bool,
-		DelwarnSendToModlog:     model.DelwarnSendToModlog.Bool,
-		DelwarnIncludeWarnReason: model.DelwarnIncludeWarnReason.Bool,
+		DelwarnSendToModlog:     model.DelwarnSendToModlog,
+		DelwarnIncludeWarnReason: model.DelwarnIncludeWarnReason,
 		WarnMessage:            model.WarnMessage.String,
 
 		CleanEnabled:  model.CleanEnabled.Bool,
