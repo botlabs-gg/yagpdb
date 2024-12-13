@@ -5,7 +5,7 @@ no-tests="true"
 [psql]
 dbname="yagpdb"
 host="localhost"
-user="ashish"
-pass="yagpdb"
+user="yagpdb"
+pass="ihateducks"
 sslmode="disable"
 whitelist=["server_stats_periods", "server_stats_configs", "server_stats_member_periods"]

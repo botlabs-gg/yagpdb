@@ -5,7 +5,7 @@ no-tests = true
 [psql]
 dbname = "yagpdb"
 host = "localhost"
-user = "postgres"
-pass = "pass"
+user="yagpdb"
+pass="ihateducks"
 sslmode = "disable"
 whitelist = ["core_configs", "executed_commands"]
