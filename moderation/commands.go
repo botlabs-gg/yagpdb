@@ -1015,7 +1015,8 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled, true)
+			reason := SafeArgString(parsed, 1)
+			reason, err = MBaseCmdSecond(parsed, reason, true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled, true)
 			if err != nil {
 				return nil, err
 			}
@@ -1054,12 +1055,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				}
 				user := bot.GetUsers(parsed.GuildData.GS.ID, userid)[0]
 
-				message := parsed.Args[1].Str()
 				if config.DelwarnIncludeWarnReason {
-					message = fmt.Sprintf("%s\n~~%s~~", message, warning.Message)
+					reason = fmt.Sprintf("%s\n~~%s~~", reason, warning.Message)
 				}
 				
-				err = CreateModlogEmbed(config, parsed.Author, MADelwarn, user, message, "")
+				err = CreateModlogEmbed(config, parsed.Author, MADelwarn, user, reason, "")
 				if err != nil {
 					return "Failed sending modlog", err
 				}
