@@ -411,6 +411,7 @@ func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
 		if err != nil {
 			logger.WithError(err).WithField("guild", guildID).Error("failed retrieving user from api")
 			resp = append(resp, &discordgo.User{
+				Discriminator: "0",
 				ID:       id,
 				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",
 			})
