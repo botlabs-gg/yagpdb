@@ -73,8 +73,8 @@ type ModerationConfig struct {
 	GiveRoleCmdEnabled          null.Bool        `boil:"give_role_cmd_enabled" json:"give_role_cmd_enabled,omitempty" toml:"give_role_cmd_enabled" yaml:"give_role_cmd_enabled,omitempty"`
 	GiveRoleCmdModlog           null.Bool        `boil:"give_role_cmd_modlog" json:"give_role_cmd_modlog,omitempty" toml:"give_role_cmd_modlog" yaml:"give_role_cmd_modlog,omitempty"`
 	GiveRoleCmdRoles            types.Int64Array `boil:"give_role_cmd_roles" json:"give_role_cmd_roles,omitempty" toml:"give_role_cmd_roles" yaml:"give_role_cmd_roles,omitempty"`
-	DelwarnSendToModlog         null.Bool        `boil:"delwarn_send_to_modlog" json:"delwarn_send_to_modlog,omitempty" toml:"delwarn_send_to_modlog" yaml:"delwarn_send_to_modlog,omitempty"`
-	DelwarnIncludeWarnReason    null.Bool        `boil:"delwarn_include_warn_reason" json:"delwarn_include_warn_reason,omitempty" toml:"delwarn_include_warn_reason" yaml:"delwarn_include_warn_reason,omitempty"`
+	DelwarnSendToModlog         bool             `boil:"delwarn_send_to_modlog" json:"delwarn_send_to_modlog" toml:"delwarn_send_to_modlog" yaml:"delwarn_send_to_modlog"`
+	DelwarnIncludeWarnReason    bool             `boil:"delwarn_include_warn_reason" json:"delwarn_include_warn_reason" toml:"delwarn_include_warn_reason" yaml:"delwarn_include_warn_reason"`
 
 	R *moderationConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L moderationConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -464,6 +464,15 @@ func (w whereHelpernull_Int64) NIN(slice []int64) qm.QueryMod {
 func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
 func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 var ModerationConfigWhere = struct {
 	GuildID                     whereHelperint64
 	CreatedAt                   whereHelpertime_Time
@@ -513,8 +522,8 @@ var ModerationConfigWhere = struct {
 	GiveRoleCmdEnabled          whereHelpernull_Bool
 	GiveRoleCmdModlog           whereHelpernull_Bool
 	GiveRoleCmdRoles            whereHelpertypes_Int64Array
-	DelwarnSendToModlog         whereHelpernull_Bool
-	DelwarnIncludeWarnReason    whereHelpernull_Bool
+	DelwarnSendToModlog         whereHelperbool
+	DelwarnIncludeWarnReason    whereHelperbool
 }{
 	GuildID:                     whereHelperint64{field: "\"moderation_configs\".\"guild_id\""},
 	CreatedAt:                   whereHelpertime_Time{field: "\"moderation_configs\".\"created_at\""},
@@ -564,8 +573,8 @@ var ModerationConfigWhere = struct {
 	GiveRoleCmdEnabled:          whereHelpernull_Bool{field: "\"moderation_configs\".\"give_role_cmd_enabled\""},
 	GiveRoleCmdModlog:           whereHelpernull_Bool{field: "\"moderation_configs\".\"give_role_cmd_modlog\""},
 	GiveRoleCmdRoles:            whereHelpertypes_Int64Array{field: "\"moderation_configs\".\"give_role_cmd_roles\""},
-	DelwarnSendToModlog:         whereHelpernull_Bool{field: "\"moderation_configs\".\"delwarn_send_to_modlog\""},
-	DelwarnIncludeWarnReason:    whereHelpernull_Bool{field: "\"moderation_configs\".\"delwarn_include_warn_reason\""},
+	DelwarnSendToModlog:         whereHelperbool{field: "\"moderation_configs\".\"delwarn_send_to_modlog\""},
+	DelwarnIncludeWarnReason:    whereHelperbool{field: "\"moderation_configs\".\"delwarn_include_warn_reason\""},
 }
 
 // ModerationConfigRels is where relationship names are stored.
