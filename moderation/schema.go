@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS moderation_configs (
 	warn_include_channel_logs BOOLEAN,
 	warn_send_to_modlog BOOLEAN,
 	warn_message TEXT,
+	unwarn_send_to_modlog BOOLEAN,
+	unwarn_include_warn_reason BOOLEAN,
 
 	clean_enabled BOOLEAN,
 	report_enabled BOOLEAN,

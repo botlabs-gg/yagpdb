@@ -89,11 +89,13 @@ type Config struct {
 	DefaultMuteDuration     null.Int64       `valid:"0,"`
 
 	// Warn
-	WarnCommandsEnabled    bool
-	WarnCmdRoles           types.Int64Array `valid:"role,true"`
-	WarnIncludeChannelLogs bool
-	WarnSendToModlog       bool
-	WarnMessage            string `valid:"template,5000"`
+	WarnCommandsEnabled    	bool
+	WarnCmdRoles           	types.Int64Array `valid:"role,true"`
+	WarnIncludeChannelLogs 	bool
+	WarnSendToModlog       	bool
+	UnwarnSendToModlog     	bool
+	UnwarnIncludeWarnReason bool
+	WarnMessage            	string `valid:"template,5000"`
 
 	// Misc
 	CleanEnabled  bool
@@ -153,6 +155,8 @@ func (c *Config) ToModel() *models.ModerationConfig {
 		WarnCmdRoles:           c.WarnCmdRoles,
 		WarnIncludeChannelLogs: null.BoolFrom(c.WarnIncludeChannelLogs),
 		WarnSendToModlog:       null.BoolFrom(c.WarnSendToModlog),
+		UnwarnSendToModlog:     null.BoolFrom(c.UnwarnSendToModlog),
+		UnwarnIncludeWarnReason: null.BoolFrom(c.UnwarnIncludeWarnReason),
 		WarnMessage:            null.StringFrom(c.WarnMessage),
 
 		CleanEnabled:  null.BoolFrom(c.CleanEnabled),
@@ -218,6 +222,8 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		WarnCmdRoles:           model.WarnCmdRoles,
 		WarnIncludeChannelLogs: model.WarnIncludeChannelLogs.Bool,
 		WarnSendToModlog:       model.WarnSendToModlog.Bool,
+		UnwarnSendToModlog:     model.UnwarnSendToModlog.Bool,
+		UnwarnIncludeWarnReason: model.UnwarnIncludeWarnReason.Bool,
 		WarnMessage:            model.WarnMessage.String,
 
 		CleanEnabled:  model.CleanEnabled.Bool,
