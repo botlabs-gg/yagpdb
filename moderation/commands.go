@@ -1004,7 +1004,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Id", Type: dcmd.Int},
-			{Name: "Reason", Type: dcmd.String, Default: ""},
+			{Name: "Reason", Type: dcmd.String},
 		},
 		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		SlashCommandEnabled:      true,
@@ -1024,7 +1024,7 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			// Using that if we need to send to modlog
 			var warning *models.ModerationWarning
-			if config.UnwarnSendToModlog && config.ActionChannel != 0 {
+			if config.DelwarnSendToModlog && config.ActionChannel != 0 {
 				warning, err = models.ModerationWarnings(
 					models.ModerationWarningWhere.ID.EQ(warningID),
 					// don't get warning from other servers, even if ID is correct
@@ -1047,7 +1047,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				return fmt.Sprintf("Could not find warning with ID `%d`", warningID), nil
 			}
 
-			if config.UnwarnSendToModlog && config.ActionChannel != 0 {
+			if config.DelwarnSendToModlog && config.ActionChannel != 0 {
 				userid, err := strconv.ParseInt(warning.UserID, 10, 64)
 				if err != nil {
 					return "Failed parsing user ID", err
@@ -1055,11 +1055,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				user := bot.GetUsers(parsed.GuildData.GS.ID, userid)[0]
 
 				message := parsed.Args[1].Str()
-				if config.UnwarnIncludeWarnReason {
+				if config.DelwarnIncludeWarnReason {
 					message = fmt.Sprintf("%s\n~~%s~~", message, warning.Message)
 				}
 				
-				err = CreateModlogEmbed(config, parsed.Author, MAUnwarned, user, message, "")
+				err = CreateModlogEmbed(config, parsed.Author, MADelwarn, user, message, "")
 				if err != nil {
 					return "Failed sending modlog", err
 				}

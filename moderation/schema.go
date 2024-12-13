@@ -51,8 +51,6 @@ CREATE TABLE IF NOT EXISTS moderation_configs (
 	warn_include_channel_logs BOOLEAN,
 	warn_send_to_modlog BOOLEAN,
 	warn_message TEXT,
-	unwarn_send_to_modlog BOOLEAN,
-	unwarn_include_warn_reason BOOLEAN,
 
 	clean_enabled BOOLEAN,
 	report_enabled BOOLEAN,
@@ -76,6 +74,9 @@ CREATE TABLE IF NOT EXISTS moderation_configs (
 ALTER TABLE moderation_configs ALTER COLUMN created_at SET NOT NULL;
 `, `
 ALTER TABLE moderation_configs ALTER COLUMN updated_at SET NOT NULL;
+`, `
+ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS delwarn_send_to_modlog BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS delwarn_include_warn_reason BOOLEAN NOT NULL DEFAULT false;
 `, `
 
 CREATE TABLE IF NOT EXISTS moderation_warnings (
