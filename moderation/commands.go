@@ -1043,7 +1043,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			if config.DelwarnSendToModlog && config.ActionChannel != 0 {
 				userid, err := strconv.ParseInt(warning.UserID, 10, 64)
 				if err != nil {
-					return "Failed parsing user ID", err
+					return "Failed parsing user ID, warning deleted", err
 				}
 				user := bot.GetUsers(parsed.GuildData.GS.ID, userid)[0]
 
@@ -1053,7 +1053,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				
 				err = CreateModlogEmbed(config, parsed.Author, MADelwarn, user, reason, "")
 				if err != nil {
-					return "Failed sending modlog", err
+					return "Failed sending modlog, warning deleted", err
 				}
 			}
 
