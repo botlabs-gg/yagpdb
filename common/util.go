@@ -26,7 +26,7 @@ import (
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-var LinkRegex = regexp.MustCompile(`(?i)([a-z\d]+://)([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])`)
+var LinkRegex = regexp.MustCompile(`(?i)([a-z\d]+://)([\w\W_-]+(?:(?:\.[\w\W_-]+)+))([\w\W.,@?^=%&:/~+#-]*[\w\W@?^=%&/~+#-])`)
 var DomainFinderRegex = regexp.MustCompile(`(?i)(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,61}[a-z\d]`)
 var UGCHtmlPolicy = bluemonday.NewPolicy().AllowElements("h1", "h2", "h3", "h4", "h5", "h6", "p", "ol", "ul", "li", "dl", "dd", "dt", "blockquote", "table", "thead", "th", "tr", "td", "tbody", "del", "i", "b")
 var ForwardSlashReplacer = strings.NewReplacer("\\", "")
@@ -137,7 +137,7 @@ func (d DurationFormatPrecision) FromSeconds(in int64) int64 {
 		// a problem if we stopped at weeks, since 365 days == 52 weeks and 1 day,
 		// however the weeks mod out to 0 so that 365 days properly becomes a year.
 		// 52 weeks ≠ 1 year. Resultingly, we need to skip every 365th day.
-                return (days - days / 365) % 7
+		return (days - days/365) % 7
 	case DurationPrecisionWeeks:
 		// There's 52 weeks + 1 day per year (techically +1.25... but were doing +1)
 		// Make sure 364 days isnt 0 weeks and 0 years
