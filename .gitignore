@@ -24,4 +24,3 @@ cmd/shardorchestrator/capturepanics
 __debug_bin*
 app.env
 .scannerwork
-yagpdb_docker/docker-compose.yml
