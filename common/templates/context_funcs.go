@@ -2246,7 +2246,7 @@ func (c *Context) hasRole(roleInput interface{}, accept roleInputType) bool {
 	return common.ContainsInt64Slice(c.MS.Member.Roles, role.ID)
 }
 
-func (c *Context) tmplHasRole(roleInput interface{}, accept roleInputType) bool {
+func (c *Context) tmplHasRole(roleInput interface{}) bool {
 	return c.hasRole(roleInput, acceptAllRoleInput)
 }
 
