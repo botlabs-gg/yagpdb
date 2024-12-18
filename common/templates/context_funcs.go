@@ -518,6 +518,43 @@ func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (s
 	}
 }
 
+func (c *Context) tmplSuppressEmbeds(suppress bool) func(channel, msgID interface{}) (string, error) {
+	return func(channel, msgID interface{}) (string, error) {
+		if c.IncreaseCheckGenericAPICall() {
+			return "", ErrTooManyAPICalls
+		}
+
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return "", errors.New("unknown channel")
+		}
+
+		mID := ToInt64(msgID)
+
+		message, _ := common.BotSession.ChannelMessage(cID, mID)
+		if message == nil {
+			return "", errors.New("unknown message")
+		}
+
+		newFlags := message.Flags | discordgo.MessageFlagsSuppressEmbeds
+		if !suppress {
+			newFlags = newFlags ^ discordgo.MessageFlagsSuppressEmbeds
+		}
+
+		msgEdit := &discordgo.MessageEdit{
+			ID:      mID,
+			Channel: cID,
+			Flags:   newFlags,
+		}
+
+		var err error
+
+		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
+
+		return "", err
+	}
+}
+
 func (c *Context) tmplPublishMessage(channel, msgID interface{}) (string, error) {
 	// Too heavily ratelimited by Discord to allow rapid feeds to publish
 	if c.ExecutedFrom == ExecutedFromLeave || c.ExecutedFrom == ExecutedFromJoin {
