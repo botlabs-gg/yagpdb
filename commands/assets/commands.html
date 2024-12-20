@@ -389,7 +389,7 @@
                         </div>
                     </div>
                     {{$aeID := ""}}
-                    {{if .Override}}{{$aeID = joinStr "" "cmd-override-always-ephemeral-" .Override.ID}}{{else}}{{$id = joinStr "" "cmd-override-always-ephemeral-" .Parent.ID "-new"}}{{end}}
+                    {{if .Override}}{{$aeID = joinStr "" "cmd-override-always-ephemeral-" .Override.ID}}{{else}}{{$aeID = joinStr "" "cmd-override-always-ephemeral-" .Parent.ID "-new"}}{{end}}
 
                     {{$alwaysEphemeral := false}}
                     {{if .Override}}{{$alwaysEphemeral = .Override.AlwaysEphemeral}}{{end}}
