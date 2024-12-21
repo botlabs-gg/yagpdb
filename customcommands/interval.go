@@ -75,27 +75,52 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 				newHoursScheduledBitset = newHoursScheduledBitset | hourOfDayBitVal
 			}
 		}
+		monthOrDomConfigured := specSchedule.Month&(1<<63) == 0 || specSchedule.Dom&(1<<63) == 0
+		dowConfigured := specSchedule.Dow&(1<<63) == 0
+		logger.Info(monthOrDomConfigured, dowConfigured)
+
+		// if month/dom and dow are both configured, cron will process them
+		// using OR. If user didn't want that, they wouldn't set both in
+		// the exppression. but if using day of week blacklist, in the way
+		// we do it here that would configure it, and then cron would use
+		// OR and mess up the user's schedule if they explicitly avoided
+		// this behaviour in their expression. For this reason, we only use
+		// the below method if month/dom aren't configured, or if week is.
+		skipBlacklistCheck := monthOrDomConfigured && !dowConfigured
+		logger.Info(skipBlacklistCheck)
+
 		for dayOfWeek := range daysInAWeek {
 			dayOfWeekBitVal := uint64(1) << dayOfWeek
-			dayPresentInSchedule := specSchedule.Dow&dayOfWeekBitVal == dayOfWeekBitVal
-			if dayPresentInSchedule && !common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(dayOfWeek)) {
+			dayPresentInSchedule := specSchedule.Dow&dayOfWeekBitVal != 0
+			if dayPresentInSchedule && (skipBlacklistCheck || !common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(dayOfWeek))) {
+				logger.Info("adding ", dayOfWeek)
 				newDaysScheduledBitset = newDaysScheduledBitset | dayOfWeekBitVal
 			}
 		}
 
 		if newHoursScheduledBitset != (1<<hoursInADay)-1 { // if all hours set, leave as is to distinguish between "0,1,2...,23" and "*"
-		specSchedule.Hour = newHoursScheduledBitset
+			specSchedule.Hour = newHoursScheduledBitset
 		}
 
 		if newDaysScheduledBitset != (1<<daysInAWeek)-1 { // if all days set, leave as is to distinguish between "0,1,2...,6" and "*"
-		specSchedule.Dow = newDaysScheduledBitset
+			specSchedule.Dow = newDaysScheduledBitset
 		}
 
 		if specSchedule.Hour == 0 || specSchedule.Dow == 0 {
 			// this can never run
 			return time.Time{}
 		}
-		tNext = specSchedule.Next(now.UTC())
+
+		timeNext := specSchedule.Next(now.UTC())
+		logger.Info(timeNext)
+		for common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(timeNext.Weekday())) {
+			// alternative method if month/dom are configured but dow isn't. in
+			// the lucky scenarios where it's calculated right on the first
+			// try, this won't need to loop.
+			timeNext = specSchedule.Next(timeNext)
+			logger.Info(timeNext)
+		}
+		tNext = timeNext
 	}
 
 	return tNext
