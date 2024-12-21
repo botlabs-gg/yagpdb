@@ -66,17 +66,19 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		specSchedule := cronSchedule.(*cron.SpecSchedule)
 		const hoursInADay = 24
 		const daysInAWeek = 7
+		const starIsConfiguredBitset = 1<<63 // top bit set == "*"
 		var newHoursScheduledBitset uint64
 		var newDaysScheduledBitset uint64
 		for hourOfDay := range hoursInADay {
 			hourOfDayBitVal := uint64(1) << hourOfDay
 			hourPresentInSchedule := specSchedule.Hour&hourOfDayBitVal == hourOfDayBitVal
-			if hourPresentInSchedule && !common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(hourOfDay)) {
+			blacklistedHour := common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(hourOfDay))
+			if hourPresentInSchedule && !blacklistedHour {
 				newHoursScheduledBitset = newHoursScheduledBitset | hourOfDayBitVal
 			}
 		}
-		monthOrDomConfigured := specSchedule.Month&(1<<63) == 0 || specSchedule.Dom&(1<<63) == 0
-		dowConfigured := specSchedule.Dow&(1<<63) == 0
+		monthOrDomConfigured := specSchedule.Month&starIsConfiguredBitset == 0 || specSchedule.Dom&starIsConfiguredBitset == 0
+		dowConfigured := specSchedule.Dow&starIsConfiguredBitset == 0
 
 		// if month/dom and dow are both configured, cron will process them
 		// using OR. If user didn't want that, they wouldn't set both in
@@ -90,16 +92,19 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		for dayOfWeek := range daysInAWeek {
 			dayOfWeekBitVal := uint64(1) << dayOfWeek
 			dayPresentInSchedule := specSchedule.Dow&dayOfWeekBitVal != 0
-			if dayPresentInSchedule && (skipBlacklistCheck || !common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(dayOfWeek))) {
+			blacklistedDay := common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(dayOfWeek))
+			if dayPresentInSchedule && (skipBlacklistCheck || !blacklistedDay) {
 				newDaysScheduledBitset = newDaysScheduledBitset | dayOfWeekBitVal
 			}
 		}
 
-		if newHoursScheduledBitset != (1<<hoursInADay)-1 { // if all hours set, leave as is to distinguish between "0,1,2...,23" and "*"
+		const allHoursBitset = (1<<hoursInADay)-1
+		const allDaysBitset = (1<<daysInAWeek)-1
+		if newHoursScheduledBitset != allHoursBitset { // if all hours set, leave as is to distinguish between "0,1,2...,23" and "*"
 			specSchedule.Hour = newHoursScheduledBitset
 		}
 
-		if newDaysScheduledBitset != (1<<daysInAWeek)-1 { // if all days set, leave as is to distinguish between "0,1,2...,6" and "*"
+		if newDaysScheduledBitset != allDaysBitset { // if all days set, leave as is to distinguish between "0,1,2...,6" and "*"
 			specSchedule.Dow = newDaysScheduledBitset
 		}
 
