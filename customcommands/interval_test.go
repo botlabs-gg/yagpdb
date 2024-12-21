@@ -40,7 +40,7 @@ func TestNextRunTimeBasic(t *testing.T) {
 	expected = tim.UTC().Add(time.Minute * 5)
 
 	if next != expected {
-		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+		t.Error("incorrect next run, should be: ", expected, ", got: ", next)
 	}
 }
 
@@ -138,6 +138,31 @@ func TestNextRunTimeExcludingHours(t *testing.T) {
 	if nextRun != expected {
 		t.Error("next run should be now: ", expected, ", got: ", nextRun)
 	}
+
+	cc.TextTrigger = "0 * 2 * *"
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = tim.UTC().Add(time.Hour * 26)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TextTrigger = "0 * * 2 *"
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = time.Date(1, 2, 1, 2, 0, 0, 0, time.UTC)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TextTrigger = "0 * * * 2"
+
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = tim.UTC().Add(time.Hour * 26)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
 }
 
 func TestNextRunTimeExcludingDays(t *testing.T) {
@@ -166,6 +191,34 @@ func TestNextRunTimeExcludingDays(t *testing.T) {
 
 	if nextRun != expected {
 		t.Error("next run should be now: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TimeTriggerExcludingDays = append(cc.TimeTriggerExcludingDays, 2)
+	cc.TextTrigger = "0 * 2,3 * *"
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = tim.UTC().Add(time.Hour * 48)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TimeTriggerExcludingDays = []int64{4}
+	cc.TextTrigger = "0 * 1 2,3,4 *"
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = time.Date(1, 4, 1, 0, 0, 0, 0, time.UTC)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TimeTriggerExcludingDays = []int64{2}
+	cc.TextTrigger = "0 * * * 2,3"
+
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = tim.UTC().Add(time.Hour * 48)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
 	}
 }
 
@@ -198,5 +251,65 @@ func TestNextRunTimeExcludingDaysHours(t *testing.T) {
 
 	if nextRun != expected {
 		t.Errorf("next run should be: %s (w:%d) got %s (w:%d - %d)", expected, expected.Weekday(), nextRun, int(nextRun.Weekday()), nextRun.Hour())
+	}
+
+	cc.TimeTriggerExcludingDays = append(cc.TimeTriggerExcludingDays, 2)
+	cc.TextTrigger = "0 * 1,2,3 * *"
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = tim.UTC().Add(time.Hour * 47)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TimeTriggerExcludingDays = []int64{4}
+	cc.TextTrigger = "0 * 1 1,2,3,4 *"
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = time.Date(1, 4, 1, 1, 0, 0, 0, time.UTC)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TimeTriggerExcludingDays = []int64{2}
+	cc.TextTrigger = "0 * * * 1,2,3"
+
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = tim.UTC().Add(time.Hour * 47)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+}
+
+func TestNextRunTimeSpecific(t *testing.T) {
+	cc := &models.CustomCommand{
+		TriggerType: int(CommandTriggerCron),
+	}
+
+	tim := time.Time{}
+	cc.TextTrigger = "0 * 2 * *"
+	nextRun := CalcNextRunTime(cc, tim)
+	expected := tim.UTC().Add(time.Hour * 24)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TextTrigger = "0 * * 2 *"
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = time.Date(1, 2, 1, 0, 0, 0, 0, time.UTC)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
+	}
+
+	cc.TextTrigger = "0 * * * 2"
+
+	nextRun = CalcNextRunTime(cc, tim)
+	expected = tim.UTC().Add(time.Hour * 24)
+
+	if nextRun != expected {
+		t.Error("incorrect next run, should be: ", expected, ", got: ", nextRun)
 	}
 }
