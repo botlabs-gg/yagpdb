@@ -113,12 +113,16 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 			return time.Time{}
 		}
 
-		timeNext := specSchedule.Next(now.UTC())
-		for common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(timeNext.Weekday())) {
+		timeNext := now.UTC()
+		for i := 0; i < 200; i++ {
 			// alternative method if month/dom are configured but dow isn't. in
 			// the lucky scenarios where it's calculated right on the first
 			// try, this won't need to loop.
 			timeNext = specSchedule.Next(timeNext)
+			timeNextWeekdayIsBlacklisted := common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(timeNext.Weekday()))
+			if !timeNextWeekdayIsBlacklisted {
+				break
+			}
 		}
 		tNext = timeNext
 	}
