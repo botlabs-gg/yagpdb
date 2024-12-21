@@ -82,8 +82,15 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 				newDaysScheduledBitset = newDaysScheduledBitset | dayOfWeekBitVal
 			}
 		}
+
+		if newHoursScheduledBitset != (1<<hoursInADay)-1 { // if all hours set, leave as is to distinguish between "0,1,2...,23" and "*"
 		specSchedule.Hour = newHoursScheduledBitset
+		}
+
+		if newDaysScheduledBitset != (1<<daysInAWeek)-1 { // if all days set, leave as is to distinguish between "0,1,2...,6" and "*"
 		specSchedule.Dow = newDaysScheduledBitset
+		}
+
 		if specSchedule.Hour == 0 || specSchedule.Dow == 0 {
 			// this can never run
 			return time.Time{}
