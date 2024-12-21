@@ -77,7 +77,6 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		}
 		monthOrDomConfigured := specSchedule.Month&(1<<63) == 0 || specSchedule.Dom&(1<<63) == 0
 		dowConfigured := specSchedule.Dow&(1<<63) == 0
-		logger.Info(monthOrDomConfigured, dowConfigured)
 
 		// if month/dom and dow are both configured, cron will process them
 		// using OR. If user didn't want that, they wouldn't set both in
@@ -87,13 +86,11 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		// this behaviour in their expression. For this reason, we only use
 		// the below method if month/dom aren't configured, or if week is.
 		skipBlacklistCheck := monthOrDomConfigured && !dowConfigured
-		logger.Info(skipBlacklistCheck)
 
 		for dayOfWeek := range daysInAWeek {
 			dayOfWeekBitVal := uint64(1) << dayOfWeek
 			dayPresentInSchedule := specSchedule.Dow&dayOfWeekBitVal != 0
 			if dayPresentInSchedule && (skipBlacklistCheck || !common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(dayOfWeek))) {
-				logger.Info("adding ", dayOfWeek)
 				newDaysScheduledBitset = newDaysScheduledBitset | dayOfWeekBitVal
 			}
 		}
@@ -112,13 +109,11 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		}
 
 		timeNext := specSchedule.Next(now.UTC())
-		logger.Info(timeNext)
 		for common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(timeNext.Weekday())) {
 			// alternative method if month/dom are configured but dow isn't. in
 			// the lucky scenarios where it's calculated right on the first
 			// try, this won't need to loop.
 			timeNext = specSchedule.Next(timeNext)
-			logger.Info(timeNext)
 		}
 		tNext = timeNext
 	}
