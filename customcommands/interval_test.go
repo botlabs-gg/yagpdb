@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
+	"github.com/robfig/cron/v3"
 	"github.com/volatiletech/null/v8"
 )
 
@@ -230,7 +231,7 @@ func TestCronNextRunTime(t *testing.T) {
 			Want:    neverRuns()},
 
 		{Name: "exclude hour 0 from cron running on hour 0",
-			Cron:    "* 0 * * * *",
+			Cron:    "* 0 * * *",
 			Exclude: exclude{Hours: []int64{0}},
 			RefTime: now,
 			Want:    neverRuns()},
@@ -316,6 +317,11 @@ func TestCronNextRunTime(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
+			_, err := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow).Parse(tt.Cron)
+			if err != nil {
+				t.Errorf("invalid cron expression %q in test: %s", tt.Cron, err)
+			}
+
 			days := make([]int64, len(tt.Exclude.Days))
 			for i, v := range tt.Exclude.Days {
 				days[i] = int64(v)
@@ -326,6 +332,7 @@ func TestCronNextRunTime(t *testing.T) {
 				TimeTriggerExcludingDays:  days,
 				TimeTriggerExcludingHours: tt.Exclude.Hours,
 			}
+
 			got := CalcNextRunTime(cmd, tt.RefTime).UTC()
 
 			testDesc := fmt.Sprintf("cron %q\n\texclude hours: %v\n\texclude days: %v", tt.Cron, tt.Exclude.Hours, tt.Exclude.Days)
