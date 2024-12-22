@@ -274,9 +274,9 @@ func TestCronNextRunTime(t *testing.T) {
 
 		{Name: "on minute 0 on day 2,3 with exclude days",
 			Cron:    "0 * 2,3 * *",
-			Exclude: exclude{Days: []time.Weekday{time.Sunday, time.Monday}},
+			Exclude: exclude{Days: []time.Weekday{time.Monday, time.Tuesday}},
 			RefTime: zero,
-			Want:    runOnDate(day(2), hour(0), minute(0))},
+			Want:    runOnDate(day(3), hour(0), minute(0))},
 
 		{Name: "on minute 0 of day 1 in feb,mar,apr with exclude days",
 			Cron:    "0 * 1 2,3,4 *",
