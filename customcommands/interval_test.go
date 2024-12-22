@@ -251,7 +251,7 @@ func TestCronNextRunTime(t *testing.T) {
 		{Name: "on minute 0 on 2nd day with exclude hours",
 			Cron:    "0 * 2 * *",
 			Exclude: exclude{Hours: []int64{0, 1}},
-			RefTime: zero.Add(18 * time.Minute),
+			RefTime: zero.Add(15 * time.Minute),
 			Want:    runOnDate(day(2), hour(2), minute(0))},
 
 		{Name: "on minute 0 in february with exclude hours",
