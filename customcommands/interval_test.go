@@ -311,7 +311,7 @@ func TestCronNextRunTime(t *testing.T) {
 			Cron:    "0 * * * 1,2,3",
 			Exclude: exclude{Days: []time.Weekday{time.Tuesday}, Hours: allHoursExcept(1)},
 			RefTime: zero.Add(2 * time.Hour),
-			Want:    runOnDate(day(2), hour(1), minute(0))},
+			Want:    runOnDate(day(3), hour(1), minute(0))},
 	}
 
 	for _, tt := range tests {
