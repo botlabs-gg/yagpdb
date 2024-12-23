@@ -90,4 +90,13 @@ CREATE INDEX IF NOT EXISTS reputation_log_guild_idx ON reputation_log (guild_id)
 CREATE INDEX IF NOT EXISTS reputation_log_sender_idx ON reputation_log (sender_id);
 `, `
 CREATE INDEX IF NOT EXISTS reputation_log_receiver_idx ON reputation_log (receiver_id);	
+`, `
+CREATE TABLE IF NOT EXISTS reputation_roles (
+	id bigserial PRIMARY KEY,
+	guild_id bigint NOT NULL,
+	rep_threshold bigint NOT NULL,
+	role bigint NOT NULL
+);
+`, `
+CREATE INDEX IF NOT EXISTS reputation_roles_guild_idx ON reputation_roles(guild_id);
 `}
