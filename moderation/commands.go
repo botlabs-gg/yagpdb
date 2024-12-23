@@ -1003,7 +1003,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Deletes a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Id", Type: dcmd.Int},
+			{Name: "WarningId", Type: dcmd.Int},
 			{Name: "Reason", Type: dcmd.String},
 		},
 		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
