@@ -137,6 +137,11 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 		return errors.WithStackIf(err)
 	}
 
+	err = CancelScheduledGracePeriodEndEvents(guildID)
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
 	err = featureflags.UpdatePluginFeatureFlags(guildID, &Plugin{})
 	if err != nil {
 		return errors.WithMessage(err, "failed updating plugin feature flags")
@@ -186,6 +191,16 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 	}
 
 	err = scheduledevents2.ScheduleEvent("premium_guild_removed", oldGuildID, time.Now(), nil)
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+
+	// Schedule an event to run when the grace period ends, and ensure there are no duplicates.
+	err = CancelScheduledGracePeriodEndEvents(oldGuildID)
+	if err != nil {
+		return errors.WithStackIf(err)
+	}
+	err = scheduledevents2.ScheduleEvent("premium_guild_grace_period_ended", oldGuildID, time.Now().Add(PremiumGracePeriod), nil)
 	if err != nil {
 		return errors.WithStackIf(err)
 	}

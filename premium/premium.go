@@ -1,6 +1,7 @@
 package premium
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const (
@@ -54,6 +56,8 @@ func (p PremiumTier) String() string {
 	return "unknown"
 }
 
+const PremiumGracePeriod = 3 * 24 * time.Hour
+
 var (
 	confAllGuildsPremium = config.RegisterOption("yagpdb.premium.all_guilds_premium", "All servers have premium", false)
 )
@@ -77,6 +81,7 @@ func RegisterPlugin() {
 
 	scheduledevents2.RegisterHandler("premium_guild_added", nil, handleNewPremiumGuild)
 	scheduledevents2.RegisterHandler("premium_guild_removed", nil, handleRemovedPremiumGuild)
+	scheduledevents2.RegisterHandler("premium_guild_grace_period_ended", nil, handlePremiumGuildGracePeriodEnded)
 
 	for _, v := range PremiumSources {
 		v.Init()
@@ -90,6 +95,10 @@ type NewPremiumGuildListener interface {
 }
 type RemovedPremiumGuildListener interface {
 	OnRemovedPremiumGuild(guildID int64) error
+}
+
+type PremiumGuildGracePeriodEndedListener interface {
+	OnPremiumGuildGracePeriodEnded(guildID int64) error
 }
 
 var (
@@ -227,6 +236,53 @@ func handleRemovedPremiumGuild(evt *schEventsModels.ScheduledEvent, data interfa
 	for _, v := range common.Plugins {
 		if cast, ok := v.(RemovedPremiumGuildListener); ok {
 			err := cast.OnRemovedPremiumGuild(evt.GuildID)
+			if err != nil {
+				return scheduledevents2.CheckDiscordErrRetry(err), err
+			}
+		}
+	}
+
+	return false, nil
+}
+
+func RemainingGracePeriod(guildID int64) (onGracePeriod bool, remaining time.Duration) {
+	if isPrem, _ := IsGuildPremium(guildID); isPrem {
+		// The guild is premium, so is not on a grace period.
+		return false, 0
+	}
+
+	evt, err := schEventsModels.ScheduledEvents(
+		qm.Where("event_name = 'premium_guild_grace_period_ended' AND guild_id = ? AND processed = false", guildID),
+	).OneG(context.Background())
+	if err != nil {
+		// Could be that there's no such scheduled event, or some unknown error occurred.
+		// In either case, assume the guild isn't on a grace period.
+		return false, 0
+	}
+
+	remaining = time.Until(evt.TriggersAt)
+	// Clamp the remaining duration so it's non-negative.
+	return true, max(remaining, 0)
+}
+
+func CancelScheduledGracePeriodEndEvents(guildID int64) error {
+	_, err := schEventsModels.ScheduledEvents(
+		qm.Where("event_name = 'premium_guild_grace_period_ended' AND guild_id = ? AND processed = false", guildID),
+	).DeleteAllG(context.Background())
+	return err
+}
+
+func handlePremiumGuildGracePeriodEnded(evt *schEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
+	// In theory, this scheduled event should have been cancelled if the guild's premium status was
+	// since restored, but check regardless to be safe.
+	if isPrem, _ := IsGuildPremium(evt.GuildID); isPrem {
+		// Guild has premium again, so don't proceed.
+		return false, nil
+	}
+
+	for _, v := range common.Plugins {
+		if cast, ok := v.(PremiumGuildGracePeriodEndedListener); ok {
+			err := cast.OnPremiumGuildGracePeriodEnded(evt.GuildID)
 			if err != nil {
 				return scheduledevents2.CheckDiscordErrRetry(err), err
 			}
