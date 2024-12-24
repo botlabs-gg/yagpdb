@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/twitter/models"
 )
 
@@ -35,7 +36,9 @@ func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	}
 }
 
-func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
+var _ premium.PremiumGuildGracePeriodEndedListener = (*Plugin)(nil)
+
+func (p *Plugin) OnPremiumGuildGracePeriodEnded(guildID int64) error {
 	logger.WithField("guild_id", guildID).Infof("Removed Excess Twitter Feeds")
 	_, err := models.TwitterFeeds(models.TwitterFeedWhere.GuildID.EQ(int64(guildID))).UpdateAllG(context.Background(), models.M{"enabled": false})
 	if err != nil {

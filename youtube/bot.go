@@ -6,6 +6,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/youtube/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -20,7 +21,9 @@ func (p *Plugin) Status() (string, string) {
 	return "Unique/Total", fmt.Sprintf("%d/%d", unique, total)
 }
 
-func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
+var _ premium.PremiumGuildGracePeriodEndedListener = (*Plugin)(nil)
+
+func (p *Plugin) OnPremiumGuildGracePeriodEnded(guildID int64) error {
 	numDisabled, err := models.YoutubeChannelSubscriptions(
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(guildID)),
 		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),

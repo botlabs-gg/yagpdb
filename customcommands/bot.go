@@ -683,7 +683,9 @@ func CCActionExecLimit(guildID int64) int {
 	return CCActionExecLimitNormal
 }
 
-func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
+var _ premium.PremiumGuildGracePeriodEndedListener = (*Plugin)(nil)
+
+func (p *Plugin) OnPremiumGuildGracePeriodEnded(GuildID int64) error {
 	commands, err := models.CustomCommands(qm.Where("guild_id = ?", GuildID), qm.Offset(MaxCommands)).AllG(context.Background())
 	if err != nil {
 		return errors.WrapIf(err, "failed getting custom commands")

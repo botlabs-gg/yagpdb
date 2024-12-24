@@ -9,6 +9,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -27,7 +28,9 @@ func (p *Plugin) RemoveGuild(g int64) error {
 	return nil
 }
 
-func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
+var _ premium.PremiumGuildGracePeriodEndedListener = (*Plugin)(nil)
+
+func (p *Plugin) OnPremiumGuildGracePeriodEnded(guildID int64) error {
 	logger.WithField("guild_id", guildID).Infof("Removed Excess Reddit Feeds")
 	feeds, err := models.RedditFeeds(qm.Where("guild_id = ? and disabled = ?", guildID, false), qm.Offset(GuildMaxFeedsNormal)).AllG(context.Background())
 
