@@ -18,6 +18,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/botlabs-gg/yagpdb/v2/youtube/models"
 	"github.com/mediocregopher/radix/v3"
@@ -76,6 +77,7 @@ func (p *Plugin) InitWeb() {
 	// All handlers here require guild channels present
 	ytMux.Use(web.RequireBotMemberMW)
 	ytMux.Use(web.RequirePermMW(discordgo.PermissionMentionEveryone))
+	ytMux.Use(premium.GracePeriodEndingMiddleware("YouTube feeds exceeding standard limits will be disabled"))
 
 	mainGetHandler := web.ControllerHandler(p.HandleYoutube, "cp_youtube")
 

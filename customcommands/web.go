@@ -103,6 +103,7 @@ func (p *Plugin) InitWeb() {
 	getDBHandler := web.ControllerHandler(handleGetDatabase, "cp_custom_commands_database")
 
 	subMux := goji.SubMux()
+	subMux.Use(premium.GracePeriodEndingMiddleware("custom commands exceeding standard limits will be disabled"))
 	web.CPMux.Handle(pat.New("/customcommands"), subMux)
 	web.CPMux.Handle(pat.New("/customcommands/*"), subMux)
 	web.CPMux.Handle(pat.New("/customcommands/database"), subMux)

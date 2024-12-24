@@ -54,6 +54,7 @@ func (p *Plugin) InitWeb() {
 	mux := goji.SubMux()
 	mux.Use(web.RequireBotMemberMW)
 	mux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
+	mux.Use(premium.GracePeriodEndingMiddleware("all Twitter feeds will be disabled"))
 	web.CPMux.Handle(pat.New("/twitter/*"), mux)
 	web.CPMux.Handle(pat.New("/twitter"), mux)
 

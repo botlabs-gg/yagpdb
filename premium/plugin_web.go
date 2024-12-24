@@ -99,6 +99,22 @@ func PremiumGuildMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(mw)
 }
 
+func GracePeriodEndingMiddleware(additionalInfo string) func(http.Handler) http.Handler {
+	return func(inner http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			guild, templateData := web.GetBaseCPContextData(r.Context())
+			onGracePeriod, remaining := RemainingGracePeriod(guild.ID)
+			if onGracePeriod {
+				msg := fmt.Sprintf("This server will lose premium features in %s; %s. To avoid this, reassign a premium slot before then.",
+					common.HumanizeDuration(common.DurationPrecisionDays, remaining), additionalInfo)
+				templateData.AddAlerts(web.WarningAlert(msg))
+			}
+
+			inner.ServeHTTP(w, r)
+		})
+	}
+}
+
 func HandleGetPremiumMainPage(w http.ResponseWriter, r *http.Request) (tmpl web.TemplateData, err error) {
 	_, tmpl = web.GetCreateTemplateData(r.Context())
 

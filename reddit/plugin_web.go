@@ -14,6 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -74,6 +75,7 @@ func (p *Plugin) InitWeb() {
 	redditMux.Use(web.RequireBotMemberMW)
 	redditMux.Use(web.RequirePermMW(discordgo.PermissionManageWebhooks))
 	redditMux.Use(baseData)
+	redditMux.Use(premium.GracePeriodEndingMiddleware("Reddit feeds exceeding standard limits will be disabled"))
 
 	redditMux.Handle(pat.Get("/"), web.RenderHandler(HandleReddit, "cp_reddit"))
 	redditMux.Handle(pat.Get(""), web.RenderHandler(HandleReddit, "cp_reddit"))
