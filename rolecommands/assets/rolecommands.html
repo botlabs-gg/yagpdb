@@ -58,7 +58,7 @@
                                             <label for="new-role-command-role">Role</label>
                                             <select class="form-control" name="Role" id="new-role-command-role"
                                                 onchange="rolecmdRoleDropdownChanged()">
-                                                {{roleOptions .ActiveGuild.Roles .HighestRole}}
+                                                {{roleOptions .ActiveGuild.Roles .HighestRole 0 "Select a role"}}
                                             </select>
                                         </div>
                                     </div>
