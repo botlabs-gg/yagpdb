@@ -26,7 +26,7 @@ import (
 func KeyGuild(guildID int64) string         { return "guild:" + discordgo.StrID(guildID) }
 func KeyGuildChannels(guildID int64) string { return "channels:" + discordgo.StrID(guildID) }
 
-var LinkRegex = regexp.MustCompile(`(?i)([a-z\d]+://)([\w\W_-]+(?:(?:\.[\w\W_-]+)+))([\w\W.,@?^=%&:/~+#-]*[\w\W@?^=%&/~+#-])`)
+var LinkRegex = regexp.MustCompile(`(?i)([a-z\d]+://)([\w-._~:/?#\[\]@!$&'()*+,;%=]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])`)
 var DomainFinderRegex = regexp.MustCompile(`(?i)(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z\d][a-z\d-]{0,61}[a-z\d]`)
 var UGCHtmlPolicy = bluemonday.NewPolicy().AllowElements("h1", "h2", "h3", "h4", "h5", "h6", "p", "ol", "ul", "li", "dl", "dd", "dt", "blockquote", "table", "thead", "th", "tr", "td", "tbody", "del", "i", "b")
 var ForwardSlashReplacer = strings.NewReplacer("\\", "")
