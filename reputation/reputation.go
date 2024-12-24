@@ -16,6 +16,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/reputation/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -199,6 +200,18 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 	}
 
 	return
+}
+
+const (
+	MaxRepRoles        = 5
+	MaxRepRolesPremium = 25
+)
+
+func GuildMaxRepRoles(guildID int64) int {
+	if isPrem, _ := premium.IsGuildPremium(guildID); isPrem {
+		return MaxRepRolesPremium
+	}
+	return MaxRepRoles
 }
 
 func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int64) (err error) {

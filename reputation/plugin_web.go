@@ -182,16 +182,18 @@ func HandleNewRepRole(w http.ResponseWriter, r *http.Request) (templateData web.
 
 	form := r.Context().Value(common.ContextKeyParsedForm).(*NewRoleForm)
 
-	dupe, err := models.ReputationRoles(
-		models.ReputationRoleWhere.GuildID.EQ(activeGuild.ID),
-		models.ReputationRoleWhere.RepThreshold.EQ(form.Threshold),
-	).ExistsG(r.Context())
+	existing, err := models.ReputationRoles(models.ReputationRoleWhere.GuildID.EQ(activeGuild.ID)).AllG(r.Context())
 	if err != nil {
 		return templateData, err
 	}
 
-	if dupe {
-		return templateData.AddAlerts(web.ErrorAlert("Already exists rep role with that threshold")), nil
+	if lim := GuildMaxRepRoles(activeGuild.ID); len(existing) > lim {
+		return templateData.AddAlerts(web.ErrorAlert("Too many rep roles (max ", lim, ")")), nil
+	}
+	for _, r := range existing {
+		if r.RepThreshold == form.Threshold {
+			return templateData.AddAlerts(web.ErrorAlert("Already exists rep role with that threshold")), nil
+		}
 	}
 
 	repRole := &models.ReputationRole{
