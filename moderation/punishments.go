@@ -440,6 +440,17 @@ const (
 	ErrNoMuteRole = errors.Sentinel("No mute role")
 )
 
+func IsMuted(guildID, userID int64) bool {
+	mute, err := models.MutedUsers(
+		models.MutedUserWhere.UserID.EQ(userID),
+		models.MutedUserWhere.GuildID.EQ(guildID),
+	).OneG(context.Background())
+	if err != nil {
+		return false // assume not muted
+	}
+	return mute.ExpiresAt.IsZero() || mute.ExpiresAt.Time.After(time.Now())
+}
+
 // Unmut or mute a user, ignore duration if unmuting
 // TODO: i don't think we need to track mutes in its own database anymore now with the new scheduled event system
 func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, member *dstate.MemberState, duration int, executedByCommandTemplate bool) error {
