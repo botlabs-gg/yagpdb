@@ -210,6 +210,16 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 
 	closingMsg := "Closing ticket."
 
+	// We only need to build up a more detailed closing msg.
+	// if we're creating logs.
+	if conf.TicketsUseTXTTranscripts || conf.DownloadAttachments {
+		var closingMsgBuilder strings.Builder
+		closingMsgBuilder.WriteString(closingMsg)
+
+		closingMsgBuilder.WriteString("\nThis may take a while, if the ticket is long.")
+		closingMsg = closingMsgBuilder.String()
+	}
+
 	// send a heads up that this can take a while
 	common.BotSession.ChannelMessageSend(currentTicket.Ticket.ChannelID, closingMsg)
 
