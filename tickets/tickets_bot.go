@@ -216,6 +216,10 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 		var closingMsgBuilder strings.Builder
 		closingMsgBuilder.WriteString(closingMsg)
 
+		if conf.TicketsUseTXTTranscripts {
+			closingMsgBuilder.WriteString("\nCreating logs.")
+		}
+
 		closingMsgBuilder.WriteString("\nThis may take a while, if the ticket is long.")
 		closingMsg = closingMsgBuilder.String()
 	}
