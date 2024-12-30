@@ -193,8 +193,6 @@ func openTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState
 var closingTickets = make(map[int64]bool)
 var closingTicketsLock sync.Mutex
 
-const closingTicketMsg = "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big."
-
 func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.ChannelState, conf *models.TicketConfig, member *discordgo.User, reason string, ctx context.Context) (string, error) {
 	// protect again'st calling close multiple times at the sime time
 	closingTicketsLock.Lock()
@@ -210,8 +208,10 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 		closingTicketsLock.Unlock()
 	}()
 
+	closingMsg := "Closing ticket."
+
 	// send a heads up that this can take a while
-	common.BotSession.ChannelMessageSend(currentTicket.Ticket.ChannelID, closingTicketMsg)
+	common.BotSession.ChannelMessageSend(currentTicket.Ticket.ChannelID, closingMsg)
 
 	currentTicket.Ticket.ClosedAt.Time = time.Now()
 	currentTicket.Ticket.ClosedAt.Valid = true
