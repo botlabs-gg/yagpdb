@@ -316,13 +316,6 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 			}
 		}
 
-		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: closingTicketMsg,
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
 		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, "", evt.Context())
 	case "close-reason":
 		response = &discordgo.InteractionResponse{
@@ -378,13 +371,6 @@ func handleModal(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, me
 			}
 		}
 
-		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: closingTicketMsg,
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
 		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, value, evt.Context())
 	}
 
