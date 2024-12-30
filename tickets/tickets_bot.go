@@ -224,7 +224,7 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 			closingMsgBuilder.WriteString("\nDownloading attachments.")
 		}
 
-		closingMsgBuilder.WriteString("\nThis may take a while, if the ticket is long.")
+		closingMsgBuilder.WriteString("\nThis may take a while if the ticket is long.")
 		closingMsg = closingMsgBuilder.String()
 	}
 
