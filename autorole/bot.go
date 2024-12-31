@@ -16,6 +16,7 @@ import (
 	scheduledEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -489,8 +490,9 @@ func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{
 func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error) {
 	update := evt.GuildMemberUpdate()
 	member := update.Member
-	// ignore timedout users
-	if member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now()) {
+	// Ignore timed out and muted users.
+	if (member.CommunicationDisabledUntil != nil && member.CommunicationDisabledUntil.After(time.Now())) ||
+		moderation.IsMuted(member.GuildID, member.User.ID) {
 		return false, nil
 	}
 
