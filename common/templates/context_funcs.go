@@ -2,6 +2,8 @@ package templates
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -2518,4 +2520,34 @@ func (c *Context) validateDurationDelay(in interface{}) time.Duration {
 	default:
 		return ToDuration(t)
 	}
+}
+
+func (c *Context) tmplDecodeBase64(str string) (string, error) {
+	if c.IncreaseCheckCallCounter("decode_base64", 2) {
+		return "", ErrTooManyCalls
+	}
+	raw, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return "", err
+	}
+	return string(raw), nil
+}
+
+func (c *Context) tmplEncodeBase64(str string) (string, error) {
+	if c.IncreaseCheckCallCounter("encode_base64", 2) {
+		return "", ErrTooManyCalls
+	}
+	return base64.StdEncoding.EncodeToString([]byte(str)), nil
+}
+
+func (c *Context) tmplSha256(str string) (string, error) {
+	if c.IncreaseCheckCallCounter("sha256", 2) {
+		return "", ErrTooManyCalls
+	}
+	hash := sha256.New()
+	hash.Write([]byte(str))
+
+	sha256 := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+
+	return sha256, nil
 }
