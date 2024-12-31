@@ -1809,8 +1809,14 @@ func (c *Context) reReplace(r, s, repl string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	return compiled.ReplaceAllString(s, repl), nil
+	if len(s)*len(repl) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
+	ret := compiled.ReplaceAllString(s, repl)
+	if len(ret) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
+	return ret, nil
 }
 
 func (c *Context) reSplit(r, s string, i ...int) ([]string, error) {
@@ -2530,6 +2536,9 @@ func (c *Context) tmplDecodeBase64(str string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if len(raw) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
 	return string(raw), nil
 }
 
@@ -2537,7 +2546,12 @@ func (c *Context) tmplEncodeBase64(str string) (string, error) {
 	if c.IncreaseCheckCallCounter("encode_base64", 2) {
 		return "", ErrTooManyCalls
 	}
-	return base64.StdEncoding.EncodeToString([]byte(str)), nil
+	encoded := base64.StdEncoding.EncodeToString([]byte(str))
+	if len(encoded) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
+
+	return encoded, nil
 }
 
 func (c *Context) tmplSha256(str string) (string, error) {
@@ -2548,6 +2562,9 @@ func (c *Context) tmplSha256(str string) (string, error) {
 	hash.Write([]byte(str))
 
 	sha256 := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+	if len(sha256) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
 
 	return sha256, nil
 }
