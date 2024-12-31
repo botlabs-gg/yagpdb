@@ -2,8 +2,6 @@ package templates
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -1690,25 +1688,4 @@ func tmplHumanizeDurationSeconds(in interface{}) string {
 
 func tmplHumanizeTimeSinceDays(in time.Time) string {
 	return common.HumanizeDuration(common.DurationPrecisionDays, time.Since(in))
-}
-
-func tmplDecodeBase64(str string) (string, error) {
-	raw, err := base64.StdEncoding.DecodeString(str)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
-}
-
-func tmplEncodeBase64(str string) string {
-	return base64.StdEncoding.EncodeToString([]byte(str))
-}
-
-func tmplSha256(str string) string {
-	hash := sha256.New()
-	hash.Write([]byte(str))
-
-	sha256 := base64.URLEncoding.EncodeToString(hash.Sum(nil))
-
-	return sha256
 }
