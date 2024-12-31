@@ -637,3 +637,103 @@ func handleResetChannelRatelimit(evt *schEventsModels.ScheduledEvent, data inter
 
 	return false, nil
 }
+
+func (p *Plugin) ListRulesets(guildID int64) ([]*models.AutomodRuleset, error) {
+	rulesets, err := models.AutomodRulesets(qm.Where("guild_id = ?", guildID)).AllG(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return rulesets, nil
+}
+
+func (p *Plugin) ToggleRuleset(guildID int64, rulesetID int64, enable bool) error {
+	ruleset, err := models.FindAutomodRuleset(context.Background(), common.PQ, rulesetID)
+	if err != nil {
+		return err
+	}
+
+	if ruleset.GuildID != guildID {
+		return errors.New("ruleset does not belong to the specified guild")
+	}
+
+	ruleset.Enabled = enable
+	_, err = ruleset.Update(context.Background(), common.PQ, boil.Whitelist("enabled"))
+	if err != nil {
+		return err
+	}
+
+	cachedRulesets.Delete(guildID)
+	return nil
+}
+
+func (p *Plugin) GetLogs(guildID int64, limit int, offset int) ([]*models.AutomodTriggeredRule, error) {
+	logs, err := models.AutomodTriggeredRules(qm.Where("guild_id = ?", guildID), qm.OrderBy("created_at desc"), qm.Limit(limit), qm.Offset(offset)).AllG(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return logs, nil
+}
+
+func (p *Plugin) ListViolationsCount(guildID int64, userID int64, maxAge time.Duration) (map[string]int, error) {
+	qms := []qm.QueryMod{qm.Where("guild_id = ?", guildID)}
+	if userID != 0 {
+		qms = append(qms, qm.Where("user_id = ?", userID))
+	}
+	if maxAge != 0 {
+		qms = append(qms, qm.Where("created_at > ?", time.Now().Add(-maxAge)))
+	}
+
+	violations, err := models.AutomodViolations(qms...).AllG(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	violationCounts := make(map[string]int)
+	for _, v := range violations {
+		violationCounts[v.Name]++
+	}
+
+	return violationCounts, nil
+}
+
+func (p *Plugin) ListViolations(guildID int64, userID int64, limit int, offset int) ([]*models.AutomodViolation, error) {
+	violations, err := models.AutomodViolations(qm.Where("guild_id = ? AND user_id = ?", guildID, userID), qm.OrderBy("created_at desc"), qm.Limit(limit), qm.Offset(offset)).AllG(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return violations, nil
+}
+
+func (p *Plugin) DeleteViolation(guildID int64, violationID int64) error {
+	_, err := models.AutomodViolations(qm.Where("guild_id = ? AND id = ?", guildID, violationID)).DeleteAll(context.Background(), common.PQ)
+	return err
+}
+
+func (p *Plugin) ClearViolations(guildID int64, userID int64, violationName string, maxAge time.Duration, minAge time.Duration, limit int, offset int) (int64, error) {
+	qms := []qm.QueryMod{qm.Where("guild_id = ?", guildID)}
+	if userID != 0 {
+		qms = append(qms, qm.Where("user_id = ?", userID))
+	}
+	if violationName != "" {
+		qms = append(qms, qm.Where("name = ?", violationName))
+	}
+	if maxAge != 0 {
+		qms = append(qms, qm.Where("created_at > ?", time.Now().Add(-maxAge)))
+	}
+	if minAge != 0 {
+		qms = append(qms, qm.Where("created_at < ?", time.Now().Add(-minAge)))
+	}
+	qms = append(qms, qm.OrderBy("created_at desc"), qm.Limit(limit), qm.Offset(offset))
+
+	violations, err := models.AutomodViolations(qms...).AllG(context.Background())
+	if err != nil {
+		return 0, err
+	}
+
+	deletedCount, err := violations.DeleteAll(context.Background())
+	if err != nil {
+		return 0, err
+	}
+
+	return deletedCount, nil
+}
