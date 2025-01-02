@@ -333,7 +333,7 @@ func (p *Plugin) AddCommands() {
 					CustomID: "tickets-open-" + reason,
 				}
 
-				if emoji != nil {
+				if emoji.ID != 0 || emoji.Name != "" {
 					button.Emoji = emoji
 				}
 				components = append(components, button)
