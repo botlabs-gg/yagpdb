@@ -51,6 +51,7 @@ var (
 		discordgo.GatewayIntentGuilds,
 		discordgo.GatewayIntentGuildMembers,
 		discordgo.GatewayIntentGuildBans,
+		discordgo.GatewayIntentGuildEmojis,
 		discordgo.GatewayIntentGuildVoiceStates,
 		discordgo.GatewayIntentGuildPresences,
 		discordgo.GatewayIntentGuildMessages,
