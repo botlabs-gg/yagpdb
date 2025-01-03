@@ -614,6 +614,10 @@ function trackForm(form) {
 		console.log("Form changed!");
 		checkForUnsavedChanges();
 	})
+	$(`[form="${form.id}"]`).change(function() {
+		console.log("Form changed!");
+		checkForUnsavedChanges()
+	})
 
 	var observer = new MutationObserver(function (mutationList, observer) {
 		if (!document.body.contains(form)) {

@@ -93,7 +93,7 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	err = ModifyRep(evt.Context(), conf, msg.GuildID, sender, target, 1)
+	err = ModifyRep(evt.Context(), conf, evt.GS, sender, target, 1)
 	if err != nil {
 		if err == ErrCooldown {
 			// Ignore this error silently
@@ -198,7 +198,7 @@ var cmds = []*commands.YAGCommand{
 				}
 			}
 
-			err = SetRep(parsed.Context(), parsed.GuildData.GS.ID, parsed.GuildData.MS.User.ID, targetID, int64(parsed.Args[1].Int()))
+			err = SetRep(parsed.Context(), parsed.GuildData.GS, parsed.GuildData.MS, targetMember, int64(parsed.Args[1].Int()))
 			if err != nil {
 				return nil, err
 			}
@@ -232,7 +232,7 @@ var cmds = []*commands.YAGCommand{
 
 			target := parsed.Args[0].Int64()
 
-			err = DelRep(parsed.Context(), parsed.GuildData.GS.ID, target)
+			err = DelRep(parsed.Context(), parsed.GuildData.GS, target)
 			if err != nil {
 				return nil, err
 			}
@@ -497,7 +497,7 @@ func CmdGiveRep(parsed *dcmd.Data) (interface{}, error) {
 
 	amount := parsed.Args[1].Int()
 
-	err = ModifyRep(parsed.Context(), conf, parsed.GuildData.GS.ID, sender, receiver, int64(amount))
+	err = ModifyRep(parsed.Context(), conf, parsed.GuildData.GS, sender, receiver, int64(amount))
 	if err != nil {
 		if cast, ok := err.(UserError); ok {
 			return cast, nil

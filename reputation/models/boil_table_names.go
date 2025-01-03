@@ -6,9 +6,11 @@ package models
 var TableNames = struct {
 	ReputationConfigs string
 	ReputationLog     string
+	ReputationRoles   string
 	ReputationUsers   string
 }{
 	ReputationConfigs: "reputation_configs",
 	ReputationLog:     "reputation_log",
+	ReputationRoles:   "reputation_roles",
 	ReputationUsers:   "reputation_users",
 }
