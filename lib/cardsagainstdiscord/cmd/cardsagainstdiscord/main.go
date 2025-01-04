@@ -25,7 +25,7 @@ func main() {
 	session, err := discordgo.New(os.Getenv("DG_TOKEN"))
 	session.Intents = []discordgo.GatewayIntent{
 		discordgo.GatewayIntentGuilds,
-		discordgo.GatewayIntentGuildEmojis,
+		discordgo.GatewayIntentGuildExpressions,
 		discordgo.GatewayIntentGuildMessages,
 		discordgo.GatewayIntentGuildMessageReactions,
 	}
