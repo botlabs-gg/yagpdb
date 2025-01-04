@@ -32,8 +32,8 @@ func main() {
 	session.Intents = []discordgo.GatewayIntent{
 		discordgo.GatewayIntentGuilds,
 		discordgo.GatewayIntentGuildMembers,
-		discordgo.GatewayIntentGuildBans,
-		discordgo.GatewayIntentGuildEmojis,
+		discordgo.GatewayIntentGuildModeration,
+		discordgo.GatewayIntentGuildExpressions,
 		discordgo.GatewayIntentGuildIntegrations,
 		discordgo.GatewayIntentGuildWebhooks,
 		discordgo.GatewayIntentGuildInvites,

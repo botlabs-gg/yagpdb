@@ -52,21 +52,40 @@ const (
 	// - CHANNEL_UPDATE
 	// - CHANNEL_DELETE
 	// - CHANNEL_PINS_UPDATE
+	// - THREAD_CREATE
+	// - THREAD_UPDATE
+	// - THREAD_DELETE
+	// - THREAD_LIST_SYNC
+	// - THREAD_MEMBER_UPDATE
+	// - THREAD_MEMBERS_UPDATE
+	// - STAGE_INSTANCE_CREATE
+	// - STAGE_INSTANCE_UPDATE
+	// - STAGE_INSTANCE_DELETE
 
 	GatewayIntentGuildMembers GatewayIntent = 1 << 1
 	// - GUILD_MEMBER_ADD
 	// - GUILD_MEMBER_UPDATE
 	// - GUILD_MEMBER_REMOVE
+	// - THREAD_MEMBERS_UPDATE
 
-	GatewayIntentGuildBans GatewayIntent = 1 << 2
+	GatewayIntentGuildModeration GatewayIntent = 1 << 2
+	// - GUILD_AUDIT_LOG_ENTRY_CREATE
 	// - GUILD_BAN_ADD
 	// - GUILD_BAN_REMOVE
 
-	GatewayIntentGuildEmojis GatewayIntent = 1 << 3
+	GatewayIntentGuildExpressions GatewayIntent = 1 << 3
 	// - GUILD_EMOJIS_UPDATE
+	// - GUILD_STICKERS_UPDATE
+	// - GUILD_SOUNDBOARD_SOUND_CREATE
+	// - GUILD_SOUNDBOARD_SOUND_UPDATE
+	// - GUILD_SOUNDBOARD_SOUND_DELETE
+	// - GUILD_SOUNDBOARD_SOUNDS_UPDATE
 
 	GatewayIntentGuildIntegrations GatewayIntent = 1 << 4
 	// - GUILD_INTEGRATIONS_UPDATE
+	// - INTEGRATION_CREATE
+	// - INTEGRATION_UPDATE
+	// - INTEGRATION_DELETE
 
 	GatewayIntentGuildWebhooks GatewayIntent = 1 << 5
 	// - WEBHOOKS_UPDATE
@@ -76,6 +95,7 @@ const (
 	// - INVITE_DELETE
 
 	GatewayIntentGuildVoiceStates GatewayIntent = 1 << 7
+	// - VOICE_CHANNEL_EFFECT_SEND
 	// - VOICE_STATE_UPDATE
 
 	GatewayIntentGuildPresences GatewayIntent = 1 << 8
@@ -111,9 +131,15 @@ const (
 
 	GatewayIntentDirectMessageTyping GatewayIntent = 1 << 14
 	// - TYPING_START
+
 	GatewayIntentMessageContent GatewayIntent = 1 << 15
 
 	GatewayIntentGuildScheduledEvents GatewayIntent = 1 << 16
+	// - GUILD_SCHEDULED_EVENT_CREATE
+	// - GUILD_SCHEDULED_EVENT_UPDATE
+	// - GUILD_SCHEDULED_EVENT_DELETE
+	// - GUILD_SCHEDULED_EVENT_USER_ADD
+	// - GUILD_SCHEDULED_EVENT_USER_REMOVE
 
 	GatewayIntentAutomoderationExecution GatewayIntent = 1 << 21
 	// - AUTO_MODERATION_ACTION_EXECUTION
@@ -122,7 +148,6 @@ const (
 	// - AUTO_MODERATION_RULE_CREATE
 	// - AUTO_MODERATION_RULE_UPDATE
 	// - AUTO_MODERATION_RULE_DELETE
-
 )
 
 // max size of buffers before they're discarded (e.g after a big incmoing event)
