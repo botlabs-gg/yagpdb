@@ -618,12 +618,19 @@ func (p *Plugin) CheckVideo(parsedVideo XMLFeed) error {
 		return nil
 	}
 
-	resp, err := p.YTService.Videos.List([]string{"snippet", "contentDetails"}).Id(videoID).Do()
+	resp, err := p.YTService.Videos.List([]string{"snippet", "contentDetails", "statistics"}).Id(videoID).Do()
 	if err != nil || len(resp.Items) < 1 {
 		return err
 	}
 
 	item := resp.Items[0]
+
+	for _, field := range item.Statistics.NullFields {
+		//skip if ViewCount field is missing from payload, this indicates that the video is a members only video
+		if field == "ViewCount" {
+			return nil
+		}
+	}
 
 	// This is a new video, post it
 	return p.postVideo(subs, parsedPublishedTime, item, channelID)
