@@ -204,6 +204,19 @@ func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.Premiu
 	return
 }
 
+// UserPremiumMarkedDeletedSlots returns all slots marked deleted for a user for a specific source
+func UserPremiumMarkedDeletedSlots(ctx context.Context, userID int64, source PremiumSourceType) ([]int64, error) {
+	slots, err := models.PremiumSlots(qm.Where("user_id = ? AND deletes_at IS NOT NULL AND source = ?", userID, source), qm.OrderBy("id desc")).AllG(ctx)
+	if err == sql.ErrNoRows {
+		return []int64{}, nil
+	}
+	var slotIDs []int64
+	for _, slot := range slots {
+		slotIDs = append(slotIDs, slot.ID)
+	}
+	return slotIDs, err
+}
+
 var (
 	ErrSlotNotFound        = errors.New("premium slot not found")
 	ErrGuildAlreadyPremium = errors.New("guild already assigned premium from another slot")
@@ -333,4 +346,55 @@ func CreatePremiumSlot(ctx context.Context, exec boil.ContextExecutor, userID in
 
 	err := slot.Insert(ctx, exec, boil.Infer())
 	return slot, err
+}
+
+func MarkSlotsForDeletion(ctx context.Context, exec boil.ContextExecutor, userID int64, slotsToRemove []int64) error {
+	userSlots, err := models.PremiumSlots(qm.Where("user_id = ? and deletes_at IS NULL", userID), qm.OrderBy("id desc"), qm.For("UPDATE")).All(ctx, exec)
+	if err != nil {
+		return errors.WithMessage(err, "models.PremiumSlots")
+	}
+	for _, slot := range userSlots {
+		for _, id := range slotsToRemove {
+			if slot.ID == id {
+				slot.DeletesAt = null.TimeFrom(time.Now().Add(3 * 24 * time.Hour))
+				slot.Update(ctx, exec, boil.Whitelist("deletes_at"))
+			}
+		}
+	}
+	return nil
+}
+
+func CancelSlotDeletionForUser(ctx context.Context, exec boil.ContextExecutor, userID int64, slotsToUndelete []int64) error {
+	userSlots, err := models.PremiumSlots(qm.Where("user_id = ? and deletes_at IS NOT NULL", userID), qm.OrderBy("id desc"), qm.For("UPDATE")).All(ctx, exec)
+	if err != nil {
+		return errors.WithMessage(err, "models.PremiumSlots")
+	}
+	for _, slot := range userSlots {
+		for _, id := range slotsToUndelete {
+			if slot.ID == id {
+				slot.DeletesAt = null.Time{}
+				slot.Update(ctx, exec, boil.Whitelist("deletes_at"))
+				logger.Info("Cancelled Deletion for patreon premium slot #", slot.ID, slot.UserID)
+			}
+		}
+	}
+	return nil
+}
+
+func RemoveMarkedDeletedSlots(ctx context.Context, exec boil.ContextExecutor, source PremiumSourceType) error {
+	slots, err := models.PremiumSlots(qm.Where("deletes_at IS NOT NULL AND deletes_at < ? AND source = ? ", time.Now(), source)).All(ctx, exec)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	userSlots := make(map[int64][]int64)
+	for _, slot := range slots {
+		userSlots[slot.UserID] = append(userSlots[slot.UserID], slot.ID)
+	}
+	for userID, slotIDs := range userSlots {
+		err := RemovePremiumSlots(ctx, exec, userID, slotIDs)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

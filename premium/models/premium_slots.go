@@ -37,6 +37,7 @@ type PremiumSlot struct {
 	Permanent         bool       `boil:"permanent" json:"permanent" toml:"permanent" yaml:"permanent"`
 	DurationRemaining int64      `boil:"duration_remaining" json:"duration_remaining" toml:"duration_remaining" yaml:"duration_remaining"`
 	Tier              int        `boil:"tier" json:"tier" toml:"tier" yaml:"tier"`
+	DeletesAt         null.Time  `boil:"deletes_at" json:"deletes_at,omitempty" toml:"deletes_at" yaml:"deletes_at,omitempty"`
 
 	R *premiumSlotR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L premiumSlotL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -56,6 +57,7 @@ var PremiumSlotColumns = struct {
 	Permanent         string
 	DurationRemaining string
 	Tier              string
+	DeletesAt         string
 }{
 	ID:                "id",
 	CreatedAt:         "created_at",
@@ -70,6 +72,7 @@ var PremiumSlotColumns = struct {
 	Permanent:         "permanent",
 	DurationRemaining: "duration_remaining",
 	Tier:              "tier",
+	DeletesAt:         "deletes_at",
 }
 
 var PremiumSlotTableColumns = struct {
@@ -86,6 +89,7 @@ var PremiumSlotTableColumns = struct {
 	Permanent         string
 	DurationRemaining string
 	Tier              string
+	DeletesAt         string
 }{
 	ID:                "premium_slots.id",
 	CreatedAt:         "premium_slots.created_at",
@@ -100,6 +104,7 @@ var PremiumSlotTableColumns = struct {
 	Permanent:         "premium_slots.permanent",
 	DurationRemaining: "premium_slots.duration_remaining",
 	Tier:              "premium_slots.tier",
+	DeletesAt:         "premium_slots.deletes_at",
 }
 
 // Generated where
@@ -141,6 +146,7 @@ var PremiumSlotWhere = struct {
 	Permanent         whereHelperbool
 	DurationRemaining whereHelperint64
 	Tier              whereHelperint
+	DeletesAt         whereHelpernull_Time
 }{
 	ID:                whereHelperint64{field: "\"premium_slots\".\"id\""},
 	CreatedAt:         whereHelpertime_Time{field: "\"premium_slots\".\"created_at\""},
@@ -155,6 +161,7 @@ var PremiumSlotWhere = struct {
 	Permanent:         whereHelperbool{field: "\"premium_slots\".\"permanent\""},
 	DurationRemaining: whereHelperint64{field: "\"premium_slots\".\"duration_remaining\""},
 	Tier:              whereHelperint{field: "\"premium_slots\".\"tier\""},
+	DeletesAt:         whereHelpernull_Time{field: "\"premium_slots\".\"deletes_at\""},
 }
 
 // PremiumSlotRels is where relationship names are stored.
@@ -185,9 +192,9 @@ func (r *premiumSlotR) GetSlotPremiumCodes() PremiumCodeSlice {
 type premiumSlotL struct{}
 
 var (
-	premiumSlotAllColumns            = []string{"id", "created_at", "attached_at", "user_id", "guild_id", "title", "message", "source", "source_id", "full_duration", "permanent", "duration_remaining", "tier"}
+	premiumSlotAllColumns            = []string{"id", "created_at", "attached_at", "user_id", "guild_id", "title", "message", "source", "source_id", "full_duration", "permanent", "duration_remaining", "tier", "deletes_at"}
 	premiumSlotColumnsWithoutDefault = []string{"created_at", "user_id", "title", "message", "source", "source_id", "full_duration", "permanent", "duration_remaining"}
-	premiumSlotColumnsWithDefault    = []string{"id", "attached_at", "guild_id", "tier"}
+	premiumSlotColumnsWithDefault    = []string{"id", "attached_at", "guild_id", "tier", "deletes_at"}
 	premiumSlotPrimaryKeyColumns     = []string{"id"}
 	premiumSlotGeneratedColumns      = []string{}
 )
