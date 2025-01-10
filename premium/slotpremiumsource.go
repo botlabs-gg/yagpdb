@@ -374,6 +374,7 @@ func CancelSlotDeletionForUser(ctx context.Context, exec boil.ContextExecutor, u
 			if slot.ID == id {
 				slot.DeletesAt = null.Time{}
 				slot.Update(ctx, exec, boil.Whitelist("deletes_at"))
+				logger.Info("Cancelled Deletion for patreon premium slot #", slot.ID, slot.UserID)
 			}
 		}
 	}
