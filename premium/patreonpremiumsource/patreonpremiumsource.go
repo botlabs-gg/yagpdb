@@ -57,26 +57,24 @@ func RunPoller() {
 
 	for {
 		<-ticker.C
-
 		if !patreon.ActivePoller.IsLastFetchSuccess() {
 			logger.Warn("Last fetch was not successful, skipping update")
 			continue
 		}
 		logger.Info("Last fetch was successful,  Updating premium slots for patrons")
-		err := UpdatePremiumSlots(context.Background())
+		err := UpdatePatreonPremiumSlots(context.Background())
 		if err != nil {
 			logger.WithError(err).Error("Failed updating premium slots for patrons")
 		}
 	}
 }
 
-func UpdatePremiumSlots(ctx context.Context) error {
+func UpdatePatreonPremiumSlots(ctx context.Context) error {
 	tx, err := common.PQ.BeginTx(ctx, nil)
 	if err != nil {
 		return errors.WithMessage(err, "BeginTX")
 	}
-
-	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypePatreon)), qm.OrderBy("id desc")).All(ctx, tx)
+	slots, err := models.PremiumSlots(qm.Where("source=? and deletes_at IS NULL", string(premium.PremiumSourceTypePatreon)), qm.OrderBy("id desc")).All(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return errors.WithMessage(err, "PremiumSlots")
@@ -85,6 +83,13 @@ func UpdatePremiumSlots(ctx context.Context) error {
 	if len(patrons) == 0 {
 		tx.Rollback()
 		return nil
+	}
+
+	patronMap := make(map[int64]*patreon.Patron)
+	for _, patron := range patrons {
+		if p, ok := patronMap[patron.DiscordID]; !ok || p.AmountCents < patron.AmountCents {
+			patronMap[patron.DiscordID] = patron
+		}
 	}
 
 	// Sort the slots into a map of users -> slots
@@ -97,22 +102,31 @@ func UpdatePremiumSlots(ctx context.Context) error {
 	// Update already tracked slots
 	for userID, userSlots := range sorted {
 		slotsForPledge := 0
-		for _, patron := range patrons {
-			if patron.DiscordID == userID {
-				slotsForPledge = CalcSlotsForPledge(patron.AmountCents)
-				break
-			}
+		if patron, ok := patronMap[userID]; ok {
+			slotsForPledge = CalcSlotsForPledge(patron.AmountCents)
 		}
-
 		if slotsForPledge == len(userSlots) {
 			// Correct number of slots already set up
 			continue
 		}
 
 		if slotsForPledge > len(userSlots) {
-			totalSlots := slotsForPledge - len(userSlots)
+			markedForDeletion, err := premium.UserPremiumMarkedDeletedSlots(ctx, userID, premium.PremiumSourceTypePatreon)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+			newSlots := slotsForPledge - len(userSlots)
+			if len(markedForDeletion) > 0 {
+				err := premium.CancelSlotDeletionForUser(ctx, tx, userID, markedForDeletion)
+				if err != nil {
+					tx.Rollback()
+					return err
+				}
+				newSlots -= len(markedForDeletion)
+			}
 			// Need to create more slots
-			for i := 0; i < totalSlots; i++ {
+			for i := 0; i < newSlots; i++ {
 				title := fmt.Sprintf("Patreon Slot #%d", 1+i+len(userSlots))
 				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, premium.PremiumSourceTypePatreon, title, "Slot is available for as long as the pledge is active on patreon", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
 				if err != nil {
@@ -121,8 +135,8 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				}
 				logger.Info("Created patreon premium slot #", slot.ID, slot.UserID)
 			}
-			if totalSlots > 0 {
-				go premium.SendPremiumDM(userID, premium.PremiumSourceTypePatreon, slotsForPledge-len(userSlots))
+			if newSlots > 0 {
+				go premium.SendPremiumDM(userID, premium.PremiumSourceTypePatreon, newSlots)
 			}
 		} else if slotsForPledge < len(userSlots) {
 			// Need to remove slots
@@ -134,17 +148,22 @@ func UpdatePremiumSlots(ctx context.Context) error {
 				logger.Info("Marked patreon slot for deletion #", slot.ID, slot.UserID)
 			}
 
-			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
+			err = premium.MarkSlotsForDeletion(ctx, tx, userID, slotsToRemove)
 			if err != nil {
 				tx.Rollback()
 				return errors.WithMessage(err, "RemovePremiumSlots")
 			}
 		}
+		err = premium.RemoveMarkedDeletedSlots(ctx, tx, premium.PremiumSourceTypePatreon)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	// Add completely new premium slots
 OUTER:
-	for _, v := range patrons {
+	for _, v := range patronMap {
 		if v.DiscordID == 0 {
 			continue
 		}
@@ -157,6 +176,19 @@ OUTER:
 
 		// If we got here then that means this is a new user
 		slots := CalcSlotsForPledge(v.AmountCents)
+		markedForDeletion, err := premium.UserPremiumMarkedDeletedSlots(ctx, v.DiscordID, premium.PremiumSourceTypePatreon)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		if len(markedForDeletion) > 0 {
+			err := premium.CancelSlotDeletionForUser(ctx, tx, v.DiscordID, markedForDeletion)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+			slots -= len(markedForDeletion)
+		}
 		for i := 0; i < slots; i++ {
 			title := fmt.Sprintf("Patreon Slot #%d", i+1)
 			slot, err := premium.CreatePremiumSlot(ctx, tx, v.DiscordID, premium.PremiumSourceTypePatreon, title, "Slot is available for as long as the pledge is active on patreon", int64(i+1), -1, premium.PremiumTierPremium)
@@ -165,7 +197,7 @@ OUTER:
 				return errors.WithMessage(err, "new CreatePremiumSlot")
 			}
 
-			logger.Info("Created new patreon premium slot #", slot.ID, slot.ID)
+			logger.Info("Created new patreon premium slot #", slot.ID, v.DiscordID)
 		}
 		if slots > 0 {
 			go premium.SendPremiumDM(v.DiscordID, premium.PremiumSourceTypePatreon, slots)
