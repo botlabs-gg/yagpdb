@@ -29,6 +29,7 @@ services:
     volumes:
       - cert_cache:/app/cert
       - soundboard:/app/soundboard
+      - .:/app/source
     ports:
       - '80:80'
       - '443:443'
