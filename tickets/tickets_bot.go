@@ -302,12 +302,10 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 			return response, err
 		}
 		var currentTicket *Ticket
-		if activeTicket != nil {
-			participants, _ := models.TicketParticipants(qm.Where("ticket_guild_id = ? AND ticket_local_id = ?", activeTicket.GuildID, activeTicket.LocalID)).AllG(evt.Context())
-			currentTicket = &Ticket{
-				Ticket:       activeTicket,
-				Participants: participants,
-			}
+		participants, _ := models.TicketParticipants(qm.Where("ticket_guild_id = ? AND ticket_local_id = ?", activeTicket.GuildID, activeTicket.LocalID)).AllG(evt.Context())
+		currentTicket = &Ticket{
+			Ticket:       activeTicket,
+			Participants: participants,
 		}
 
 		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
@@ -364,12 +362,10 @@ func handleModal(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, me
 			return response, err
 		}
 		var currentTicket *Ticket
-		if activeTicket != nil {
-			participants, _ := models.TicketParticipants(qm.Where("ticket_guild_id = ? AND ticket_local_id = ?", activeTicket.GuildID, activeTicket.LocalID)).AllG(evt.Context())
-			currentTicket = &Ticket{
-				Ticket:       activeTicket,
-				Participants: participants,
-			}
+		participants, _ := models.TicketParticipants(qm.Where("ticket_guild_id = ? AND ticket_local_id = ?", activeTicket.GuildID, activeTicket.LocalID)).AllG(evt.Context())
+		currentTicket = &Ticket{
+			Ticket:       activeTicket,
+			Participants: participants,
 		}
 
 		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
@@ -393,17 +389,6 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		return
 	}
 
-	evt.GS = bot.State.GetGuild(ic.GuildID)
-
-	conf, err := models.FindTicketConfigG(evt.Context(), ic.GuildID)
-	if err != nil {
-		if err != sql.ErrNoRows {
-			return false, err
-		}
-
-		conf = &models.TicketConfig{}
-	}
-
 	var customID string
 	switch ic.Type {
 	case discordgo.InteractionMessageComponent:
@@ -417,6 +402,16 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 	// continue only if this component is for tickets
 	if ticketCID := strings.HasPrefix(customID, "tickets-"); !ticketCID {
 		return
+	}
+
+	evt.GS = bot.State.GetGuild(ic.GuildID)
+	conf, err := models.FindTicketConfigG(evt.Context(), ic.GuildID)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return false, err
+		}
+
+		conf = &models.TicketConfig{}
 	}
 
 	if !conf.Enabled && strings.Contains(customID, "open") {
