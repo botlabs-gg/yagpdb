@@ -23,7 +23,8 @@ import (
 
 var (
 	ErrTooManyCalls    = errors.New("too many calls to this function")
-	ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
+	ErrTooManyAPICalls = errors.New("too many potential Discord API calls")
+	ErrRegexCacheLimit = errors.New("too many unique regular expressions (regex)")
 )
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
@@ -1734,7 +1735,7 @@ func (c *Context) compileRegex(r string) (*regexp.Regexp, error) {
 	}
 
 	if len(c.RegexCache) >= 10 {
-		return nil, ErrTooManyAPICalls
+		return nil, ErrRegexCacheLimit
 	}
 
 	compiled, err := regexp.Compile(r)
