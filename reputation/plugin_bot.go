@@ -33,7 +33,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, handleMessageCreate, eventsystem.EventMessageCreate)
 }
 
-var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)(thanks?\pP*|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\n|$)`)
+var thanksRegex = regexp.MustCompile(`(?i)( |\n|^)?(thanks?|danks|ty|thx|\+rep|\+ ?\<\@[0-9]*\>)( |\pP|\n|$)`)
 
 func createRepDisabledError(g *dcmd.GuildContextData) string {
 	return fmt.Sprintf("**The reputation system is disabled for this server.** Enable it at: <%s/reputation>.", web.ManageServerURL(g.GS.ID))
