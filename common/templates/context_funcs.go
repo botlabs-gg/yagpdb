@@ -24,7 +24,7 @@ import (
 var (
 	ErrTooManyCalls    = errors.New("too many calls to this function")
 	ErrTooManyAPICalls = errors.New("too many potential Discord API calls")
-	ErrRegexCacheLimit = errors.New("too many different regular expressions")
+	ErrRegexCacheLimit = errors.New("too many unique RegExes")
 )
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
