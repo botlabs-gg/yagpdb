@@ -129,7 +129,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 			_, dErr := common.DiscordError(err)
 			errStr := "Failed creating the menu message, check the permissions on the channel"
 			if dErr != "" {
-				errStr += ", Discord responded with: " + errStr
+				errStr += ", Discord responded with: " + dErr
 			}
 			return errStr, err
 		}

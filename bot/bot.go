@@ -50,7 +50,8 @@ var (
 	gatewayIntentsUsed = []discordgo.GatewayIntent{
 		discordgo.GatewayIntentGuilds,
 		discordgo.GatewayIntentGuildMembers,
-		discordgo.GatewayIntentGuildBans,
+		discordgo.GatewayIntentGuildModeration,
+		discordgo.GatewayIntentGuildExpressions,
 		discordgo.GatewayIntentGuildVoiceStates,
 		discordgo.GatewayIntentGuildPresences,
 		discordgo.GatewayIntentGuildMessages,

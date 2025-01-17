@@ -5,7 +5,7 @@ no-tests="true"
 [psql]
 dbname="yagpdb"
 host="localhost"
-user="postgres"
-pass="123"
+user="yagpdb"
+pass="ihateducks"
 sslmode="disable"
 whitelist=["automod_rulesets", "automod_rules", "automod_rule_data", "automod_ruleset_conditions", "automod_violations", "automod_lists", "automod_triggered_rules"]

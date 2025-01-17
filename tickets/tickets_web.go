@@ -31,6 +31,8 @@ type FormData struct {
 	ModRoles                           []int64 `valid:"role"`
 	AdminRoles                         []int64 `valid:"role"`
 	TicketOpenMSG                      string  `valid:"template,10000"`
+	AppendButtonsClose                 bool
+	AppendButtonsCloseWithReason       bool
 }
 
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "tickets_updated_settings", FormatString: "Updated ticket settings"})
@@ -67,8 +69,13 @@ func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.
 		settings = &models.TicketConfig{}
 	}
 
+	appendButtons := map[string]bool {}
+	appendButtons["Close"] = settings.AppendButtons & AppendButtonsClose == AppendButtonsClose
+	appendButtons["CloseWithReason"] = settings.AppendButtons & AppendButtonsCloseWithReason == AppendButtonsCloseWithReason
+
 	templateData["DefaultTicketMessage"] = DefaultTicketMsg
 	templateData["PluginSettings"] = settings
+	templateData["PluginSettingsAppendButtons"] = appendButtons
 
 	return templateData, nil
 }
@@ -79,12 +86,21 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 
 	formConfig := ctx.Value(common.ContextKeyParsedForm).(*FormData)
 
+	var appendButtons int64
+	if formConfig.AppendButtonsClose {
+		appendButtons = appendButtons | AppendButtonsClose
+	}
+	if formConfig.AppendButtonsCloseWithReason {
+		appendButtons = appendButtons | AppendButtonsCloseWithReason
+	}
+
 	model := &models.TicketConfig{
 		GuildID:                            activeGuild.ID,
 		Enabled:                            formConfig.Enabled,
 		TicketsChannelCategory:             formConfig.TicketsChannelCategory,
 		TicketsTranscriptsChannel:          formConfig.TicketsTranscriptsChannel,
 		TicketsTranscriptsChannelAdminOnly: formConfig.TicketsTranscriptsChannelAdminOnly,
+		AppendButtons:                      appendButtons,
 		StatusChannel:                      formConfig.StatusChannel,
 		TicketsUseTXTTranscripts:           formConfig.TicketsUseTXTTranscripts,
 		DownloadAttachments:                formConfig.DownloadAttachments,

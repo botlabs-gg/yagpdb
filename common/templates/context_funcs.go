@@ -2,6 +2,8 @@ package templates
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -21,7 +23,8 @@ import (
 
 var (
 	ErrTooManyCalls    = errors.New("too many calls to this function")
-	ErrTooManyAPICalls = errors.New("too many potential discord api calls function")
+	ErrTooManyAPICalls = errors.New("too many potential Discord API calls")
+	ErrRegexCacheLimit = errors.New("too many unique regular expressions (regex)")
 )
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
@@ -1037,17 +1040,13 @@ func (c *Context) tmplThreadMemberAdd(threadID, memberID interface{}) string {
 
 func (c *Context) tmplCloseThread(channel interface{}, flags ...bool) (string, error) {
 
-	if c.IncreaseCheckCallCounter("edit_channel", 10) {
+	if c.IncreaseCheckCallCounter("edit_thread", 10) {
 		return "", ErrTooManyCalls
 	}
 
 	cID := c.ChannelArg(channel)
 	if cID == 0 {
 		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
-	}
-
-	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
-		return "", ErrTooManyCalls
 	}
 
 	cstate := c.GS.GetChannelOrThread(cID)
@@ -1215,7 +1214,7 @@ func (c *Context) tmplDeleteThread(thread interface{}) (string, error) {
 
 func (c *Context) tmplEditThread(channel interface{}, args ...interface{}) (string, error) {
 
-	if c.IncreaseCheckCallCounter("edit_channel", 10) {
+	if c.IncreaseCheckCallCounter("edit_thread", 10) {
 		return "", ErrTooManyCalls
 	}
 
@@ -1224,7 +1223,7 @@ func (c *Context) tmplEditThread(channel interface{}, args ...interface{}) (stri
 		return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
 	}
 
-	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+	if c.IncreaseCheckCallCounter("edit_thread_"+strconv.FormatInt(cID, 10), 2) {
 		return "", ErrTooManyCalls
 	}
 
@@ -1274,11 +1273,7 @@ func (c *Context) tmplEditThread(channel interface{}, args ...interface{}) (stri
 
 func (c *Context) tmplOpenThread(cID int64) (string, error) {
 
-	if c.IncreaseCheckCallCounter("edit_channel", 10) {
-		return "", ErrTooManyCalls
-	}
-
-	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+	if c.IncreaseCheckCallCounter("edit_thread", 10) {
 		return "", ErrTooManyCalls
 	}
 
@@ -1524,17 +1519,13 @@ func processThreadArgs(newThread bool, parent *dstate.ChannelState, values ...in
 func (c *Context) tmplPinForumPost(unpin bool) func(channel interface{}) (string, error) {
 	return func(channel interface{}) (string, error) {
 
-		if c.IncreaseCheckCallCounter("edit_channel", 10) {
+		if c.IncreaseCheckCallCounter("edit_thread", 10) {
 			return "", ErrTooManyCalls
 		}
 
 		cID := c.ChannelArg(channel)
 		if cID == 0 {
 			return "", nil //dont send an error, a nil output would indicate invalid/unknown channel
-		}
-
-		if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
-			return "", ErrTooManyCalls
 		}
 
 		cstate := c.GS.GetChannelOrThread(cID)
@@ -1744,7 +1735,7 @@ func (c *Context) compileRegex(r string) (*regexp.Regexp, error) {
 	}
 
 	if len(c.RegexCache) >= 10 {
-		return nil, ErrTooManyAPICalls
+		return nil, ErrRegexCacheLimit
 	}
 
 	compiled, err := regexp.Compile(r)
@@ -1807,8 +1798,14 @@ func (c *Context) reReplace(r, s, repl string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	return compiled.ReplaceAllString(s, repl), nil
+	if len(s)*len(repl) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
+	ret := compiled.ReplaceAllString(s, repl)
+	if len(ret) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
+	return ret, nil
 }
 
 func (c *Context) reSplit(r, s string, i ...int) ([]string, error) {
@@ -2118,70 +2115,93 @@ func comparatorOf(v reflect.Value) (comparator, error) {
 	}
 }
 
-// c.FindRole accepts all possible role inputs (names, IDs and mentions)
-// and tries to find them on the current context
-func (c *Context) FindRole(role interface{}) *discordgo.Role {
+type roleInputType int
+
+const (
+	acceptRoleID roleInputType = 1 << iota
+	acceptRoleMention
+	acceptRoleName
+	acceptRoleObject
+	acceptAllRoleInput = acceptRoleID | acceptRoleMention | acceptRoleName | acceptRoleObject
+)
+
+// FindRole tries to resolve the argument to a role. `accept` specifies the set of allowed input
+// types, tested in the following order: ID, role mention, role name, role object.
+func (c *Context) FindRole(role interface{}, accept roleInputType) *discordgo.Role {
 	switch t := role.(type) {
 	case string:
-		parsed, err := strconv.ParseInt(t, 10, 64)
-		if err == nil {
-			return c.GS.GetRole(parsed)
-		}
-
-		if len(t) > 4 && strings.HasPrefix(t, "<@&") && strings.HasSuffix(t, ">") {
-			parsedMention, err := strconv.ParseInt(t[3:len(t)-1], 10, 64)
+		if (accept & acceptRoleID) != 0 {
+			parsed, err := strconv.ParseInt(t, 10, 64)
 			if err == nil {
-				return c.GS.GetRole(parsedMention)
+				return c.GS.GetRole(parsed)
 			}
 		}
 
-		// If it's the everyone role, we just use the guild ID
-		if t == "@everyone" {
-			return c.GS.GetRole(c.GS.ID)
+		if (accept & acceptRoleMention) != 0 {
+			if len(t) > 4 && strings.HasPrefix(t, "<@&") && strings.HasSuffix(t, ">") {
+				parsedMention, err := strconv.ParseInt(t[3:len(t)-1], 10, 64)
+				if err == nil {
+					return c.GS.GetRole(parsedMention)
+				}
+			}
 		}
 
-		// It's a name after all
-		return c.findRoleByName(t)
+		if (accept & acceptRoleName) != 0 {
+			// If it's the everyone role, we just use the guild ID
+			if t == "@everyone" {
+				return c.GS.GetRole(c.GS.ID)
+			}
+
+			// It's a name after all
+			return c.findRoleByName(t)
+		}
 	case *discordgo.Role:
-		return t
-	case discordgo.Role:
-		return &t
-	default:
-		int64Role := ToInt64(t)
-		if int64Role == 0 {
-			return nil
+		if (accept & acceptRoleObject) != 0 {
+			return t
 		}
+	case discordgo.Role:
+		if (accept & acceptRoleObject) != 0 {
+			return &t
+		}
+	default:
+		if (accept & acceptRoleID) != 0 {
+			int64Role := ToInt64(t)
+			if int64Role == 0 {
+				return nil
+			}
 
-		return c.GS.GetRole(int64Role)
+			return c.GS.GetRole(int64Role)
+		}
 	}
+	return nil
 }
 
-func (c *Context) getRole(roleInput interface{}) (*discordgo.Role, error) {
+func (c *Context) getRole(roleInput interface{}, accept roleInputType) (*discordgo.Role, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyCalls
 	}
 
-	return c.FindRole(roleInput), nil
+	return c.FindRole(roleInput, accept), nil
 }
 
 func (c *Context) tmplGetRole(roleInput interface{}) (*discordgo.Role, error) {
-	return c.getRole(roleInput)
+	return c.getRole(roleInput, acceptAllRoleInput)
 }
 
 func (c *Context) tmplGetRoleID(roleID interface{}) (*discordgo.Role, error) {
-	return c.getRole(roleID)
+	return c.getRole(roleID, acceptRoleID)
 }
 
 func (c *Context) tmplGetRoleName(roleName string) (*discordgo.Role, error) {
-	return c.getRole(roleName)
+	return c.getRole(roleName, acceptRoleName)
 }
 
-func (c *Context) mentionRole(roleInput interface{}) string {
+func (c *Context) mentionRole(roleInput interface{}, accept roleInputType) string {
 	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
 
-	role := c.FindRole(roleInput)
+	role := c.FindRole(roleInput, accept)
 	if role == nil {
 		return ""
 	}
@@ -2195,18 +2215,18 @@ func (c *Context) mentionRole(roleInput interface{}) string {
 }
 
 func (c *Context) tmplMentionRole(roleInput interface{}) string {
-	return c.mentionRole(roleInput)
+	return c.mentionRole(roleInput, acceptAllRoleInput)
 }
 
 func (c *Context) tmplMentionRoleID(roleID interface{}) string {
-	return c.mentionRole(roleID)
+	return c.mentionRole(roleID, acceptRoleID)
 }
 
 func (c *Context) tmplMentionRoleName(roleName string) string {
-	return c.mentionRole(roleName)
+	return c.mentionRole(roleName, acceptRoleName)
 }
 
-func (c *Context) hasRole(roleInput interface{}) bool {
+func (c *Context) hasRole(roleInput interface{}, accept roleInputType) bool {
 	if c.IncreaseCheckGenericAPICall() {
 		return false
 	}
@@ -2215,7 +2235,7 @@ func (c *Context) hasRole(roleInput interface{}) bool {
 		return false
 	}
 
-	role := c.FindRole(roleInput)
+	role := c.FindRole(roleInput, accept)
 	if role == nil {
 		return false
 	}
@@ -2224,18 +2244,18 @@ func (c *Context) hasRole(roleInput interface{}) bool {
 }
 
 func (c *Context) tmplHasRole(roleInput interface{}) bool {
-	return c.hasRole(roleInput)
+	return c.hasRole(roleInput, acceptAllRoleInput)
 }
 
 func (c *Context) tmplHasRoleID(roleID interface{}) bool {
-	return c.hasRole(roleID)
+	return c.hasRole(roleID, acceptRoleID)
 }
 
 func (c *Context) tmplHasRoleName(roleName string) bool {
-	return c.hasRole(roleName)
+	return c.hasRole(roleName, acceptRoleName)
 }
 
-func (c *Context) targetHasRole(target interface{}, roleInput interface{}) (bool, error) {
+func (c *Context) targetHasRole(target interface{}, roleInput interface{}, accept roleInputType) (bool, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return false, ErrTooManyAPICalls
 	}
@@ -2254,7 +2274,7 @@ func (c *Context) targetHasRole(target interface{}, roleInput interface{}) (bool
 		return false, errors.New("member not found in state")
 	}
 
-	role := c.FindRole(roleInput)
+	role := c.FindRole(roleInput, accept)
 	if role == nil {
 		return false, fmt.Errorf("role %v not found", roleInput)
 	}
@@ -2263,18 +2283,18 @@ func (c *Context) targetHasRole(target interface{}, roleInput interface{}) (bool
 }
 
 func (c *Context) tmplTargetHasRole(target interface{}, roleInput interface{}) (bool, error) {
-	return c.targetHasRole(target, roleInput)
+	return c.targetHasRole(target, roleInput, acceptAllRoleInput)
 }
 
 func (c *Context) tmplTargetHasRoleID(target interface{}, roleID interface{}) (bool, error) {
-	return c.targetHasRole(target, roleID)
+	return c.targetHasRole(target, roleID, acceptRoleID)
 }
 
 func (c *Context) tmplTargetHasRoleName(target interface{}, roleName string) (bool, error) {
-	return c.targetHasRole(target, roleName)
+	return c.targetHasRole(target, roleName, acceptRoleName)
 }
 
-func (c *Context) giveRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) string {
+func (c *Context) giveRole(target interface{}, roleInput interface{}, accept roleInputType, optionalArgs ...interface{}) string {
 	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
@@ -2289,7 +2309,7 @@ func (c *Context) giveRole(target interface{}, roleInput interface{}, optionalAr
 		return ""
 	}
 
-	role := c.FindRole(roleInput)
+	role := c.FindRole(roleInput, accept)
 	if role == nil {
 		return ""
 	}
@@ -2321,18 +2341,18 @@ func (c *Context) giveRole(target interface{}, roleInput interface{}, optionalAr
 }
 
 func (c *Context) tmplGiveRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) string {
-	return c.giveRole(target, roleInput, optionalArgs...)
+	return c.giveRole(target, roleInput, acceptAllRoleInput, optionalArgs...)
 }
 
 func (c *Context) tmplGiveRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
-	return c.giveRole(target, roleID, optionalArgs...)
+	return c.giveRole(target, roleID, acceptRoleID, optionalArgs...)
 }
 
 func (c *Context) tmplGiveRoleName(target interface{}, roleName string, optionalArgs ...interface{}) string {
-	return c.giveRole(target, roleName, optionalArgs...)
+	return c.giveRole(target, roleName, acceptRoleName, optionalArgs...)
 }
 
-func (c *Context) addRole(roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+func (c *Context) addRole(roleInput interface{}, accept roleInputType, optionalArgs ...interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
 	}
@@ -2346,7 +2366,7 @@ func (c *Context) addRole(roleInput interface{}, optionalArgs ...interface{}) (s
 		return "", errors.New("tmplAddRole called on context with nil MemberState")
 	}
 
-	role := c.FindRole(roleInput)
+	role := c.FindRole(roleInput, accept)
 	if role == nil {
 		return "", fmt.Errorf("role %v not found", roleInput)
 	}
@@ -2367,18 +2387,18 @@ func (c *Context) addRole(roleInput interface{}, optionalArgs ...interface{}) (s
 }
 
 func (c *Context) tmplAddRole(roleInput interface{}, optionalArgs ...interface{}) (string, error) {
-	return c.addRole(roleInput, optionalArgs...)
+	return c.addRole(roleInput, acceptAllRoleInput, optionalArgs...)
 }
 
 func (c *Context) tmplAddRoleID(roleID interface{}, optionalArgs ...interface{}) (string, error) {
-	return c.addRole(roleID, optionalArgs...)
+	return c.addRole(roleID, acceptRoleID, optionalArgs...)
 }
 
 func (c *Context) tmplAddRoleName(roleName string, optionalArgs ...interface{}) (string, error) {
-	return c.addRole(roleName, optionalArgs...)
+	return c.addRole(roleName, acceptRoleName, optionalArgs...)
 }
 
-func (c *Context) takeRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) string {
+func (c *Context) takeRole(target interface{}, roleInput interface{}, accept roleInputType, optionalArgs ...interface{}) string {
 	if c.IncreaseCheckGenericAPICall() {
 		return ""
 	}
@@ -2393,7 +2413,7 @@ func (c *Context) takeRole(target interface{}, roleInput interface{}, optionalAr
 		return ""
 	}
 
-	role := c.FindRole(roleInput)
+	role := c.FindRole(roleInput, accept)
 	if role == nil {
 		return ""
 	}
@@ -2424,18 +2444,18 @@ func (c *Context) takeRole(target interface{}, roleInput interface{}, optionalAr
 }
 
 func (c *Context) tmplTakeRole(target interface{}, roleInput interface{}, optionalArgs ...interface{}) string {
-	return c.takeRole(target, roleInput, optionalArgs...)
+	return c.takeRole(target, roleInput, acceptAllRoleInput, optionalArgs...)
 }
 
 func (c *Context) tmplTakeRoleID(target interface{}, roleID interface{}, optionalArgs ...interface{}) string {
-	return c.takeRole(target, roleID, optionalArgs...)
+	return c.takeRole(target, roleID, acceptRoleID, optionalArgs...)
 }
 
 func (c *Context) tmplTakeRoleName(target interface{}, roleName string, optionalArgs ...interface{}) string {
-	return c.takeRole(target, roleName, optionalArgs...)
+	return c.takeRole(target, roleName, acceptRoleName, optionalArgs...)
 }
 
-func (c *Context) removeRole(roleInput interface{}, optionalArgs ...interface{}) (string, error) {
+func (c *Context) removeRole(roleInput interface{}, accept roleInputType, optionalArgs ...interface{}) (string, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return "", ErrTooManyAPICalls
 	}
@@ -2449,7 +2469,7 @@ func (c *Context) removeRole(roleInput interface{}, optionalArgs ...interface{})
 		return "", errors.New("removeRole called on context with nil MemberState")
 	}
 
-	role := c.FindRole(roleInput)
+	role := c.FindRole(roleInput, accept)
 	if role == nil {
 		return "", fmt.Errorf("role %v not found", roleInput)
 	}
@@ -2470,15 +2490,15 @@ func (c *Context) removeRole(roleInput interface{}, optionalArgs ...interface{})
 }
 
 func (c *Context) tmplRemoveRole(roleInput interface{}, optionalArgs ...interface{}) (string, error) {
-	return c.removeRole(roleInput, optionalArgs...)
+	return c.removeRole(roleInput, acceptAllRoleInput, optionalArgs...)
 }
 
 func (c *Context) tmplRemoveRoleID(roleID interface{}, optionalArgs ...interface{}) (string, error) {
-	return c.removeRole(roleID, optionalArgs...)
+	return c.removeRole(roleID, acceptRoleID, optionalArgs...)
 }
 
 func (c *Context) tmplRemoveRoleName(roleName string, optionalArgs ...interface{}) (string, error) {
-	return c.removeRole(roleName, optionalArgs...)
+	return c.removeRole(roleName, acceptRoleName, optionalArgs...)
 }
 
 func (c *Context) validateDurationDelay(in interface{}) time.Duration {
@@ -2495,4 +2515,45 @@ func (c *Context) validateDurationDelay(in interface{}) time.Duration {
 	default:
 		return ToDuration(t)
 	}
+}
+
+func (c *Context) tmplDecodeBase64(str string) (string, error) {
+	if c.IncreaseCheckCallCounter("decode_base64", 2) {
+		return "", ErrTooManyCalls
+	}
+	raw, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return "", err
+	}
+	if len(raw) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
+	return string(raw), nil
+}
+
+func (c *Context) tmplEncodeBase64(str string) (string, error) {
+	if c.IncreaseCheckCallCounter("encode_base64", 2) {
+		return "", ErrTooManyCalls
+	}
+	encoded := base64.StdEncoding.EncodeToString([]byte(str))
+	if len(encoded) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
+
+	return encoded, nil
+}
+
+func (c *Context) tmplSha256(str string) (string, error) {
+	if c.IncreaseCheckCallCounter("sha256", 2) {
+		return "", ErrTooManyCalls
+	}
+	hash := sha256.New()
+	hash.Write([]byte(str))
+
+	sha256 := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+	if len(sha256) > MaxStringLength {
+		return "", ErrStringTooLong
+	}
+
+	return sha256, nil
 }

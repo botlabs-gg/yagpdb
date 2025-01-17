@@ -583,7 +583,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 		SlashCommandEnabled: true,
 		DefaultEnabled:      false,
-		IsResponseEphemeral: false,
+		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			config, _, err := MBaseCmd(parsed, 0)
 			if err != nil {
@@ -961,7 +961,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Edit a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Id", Type: dcmd.Int},
+			{Name: "WarningId", Type: dcmd.Int},
 			{Name: "NewMessage", Type: dcmd.String},
 		},
 		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
@@ -1003,7 +1003,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		Description:   "Deletes a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Id", Type: dcmd.Int},
+			{Name: "WarningId", Type: dcmd.Int},
 			{Name: "Reason", Type: dcmd.String},
 		},
 		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",

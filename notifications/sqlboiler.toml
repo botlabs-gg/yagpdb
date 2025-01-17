@@ -5,8 +5,8 @@ no-tests = true
 [psql]
 dbname = "yagpdb"
 host = "localhost"
-user = "postgres"
-pass = "pass"
+user="yagpdb"
+pass="ihateducks"
 sslmode = "disable"
 whitelist = ["general_notification_configs"]
 
