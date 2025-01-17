@@ -472,7 +472,7 @@ func eq(arg1 reflect.Value, arg2 ...reflect.Value) (bool, error) {
 func ne(arg1 reflect.Value, arg2 ...reflect.Value) (bool, error) {
 	// != is the inverse of ==.
 	equal, err := eq(arg1, arg2...)
-	return !equal, err 
+	return !equal, err
 }
 
 // lt evaluates the comparison a < b.
