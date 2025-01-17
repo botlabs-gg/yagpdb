@@ -121,7 +121,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 			return errors.New("cannot " + actionPresentTense + " a member who is ranked higher than the bot")
 		}
 
-		sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason, -1, executedFromCommandTemplate)
+		go sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason, -1, executedFromCommandTemplate)
 	}
 
 	logLink := ""
@@ -691,10 +691,8 @@ func WarnUser(config *Config, guildID int64, channel *dstate.ChannelState, msg *
 	gs := bot.State.GetGuild(guildID)
 	ms, _ := bot.GetMember(guildID, target.ID)
 	if gs != nil && ms != nil {
-		sendPunishDM(config, config.WarnMessage, MAWarned, gs, channel, msg, author, ms, -1, message, int(warning.ID), executedByCommandTemplate)
+		go sendPunishDM(config, config.WarnMessage, MAWarned, gs, channel, msg, author, ms, -1, message, int(warning.ID), executedByCommandTemplate)
 	}
-
-	// go bot.SendDM(target.ID, fmt.Sprintf("**%s**: You have been warned for: %s", bot.GuildName(guildID), message))
 
 	if config.WarnSendToModlog && config.ActionChannel != 0 {
 		err = CreateModlogEmbed(config, author, MAWarned, target, message, warning.LogsLink.String)
