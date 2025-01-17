@@ -1091,6 +1091,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "id", Help: "List userIDs"},
 		},
 		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
+		RequireDiscordPerms:      []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageGuild},
 		SlashCommandEnabled:      true,
 		DefaultEnabled:           false,
 		RunFunc: paginatedmessages.PaginatedCommand(0, func(parsed *dcmd.Data, p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
