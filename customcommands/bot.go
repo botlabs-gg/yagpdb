@@ -686,7 +686,7 @@ func CCActionExecLimit(guildID int64) int {
 func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 	_, err := models.CustomCommands(qm.Where("guild_id = ? AND length(regexp_replace(array_to_string(responses, ''), E'\\r', '', 'g')) > ?", GuildID, MaxCCResponsesLength)).UpdateAllG(context.Background(), models.M{"disabled": true})
 	if err != nil {
-		return errors.WrapIf(err, "Failed disabling long customs commands on premium removal")
+		return errors.WrapIf(err, "Failed disabling long custom commands on premium removal")
 	}
 
 	commands, err := models.CustomCommands(qm.Where("guild_id = ? AND disabled = false", GuildID), qm.OrderBy("local_id ASC"), qm.Offset(MaxCommands)).AllG(context.Background())
