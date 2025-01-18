@@ -684,7 +684,12 @@ func CCActionExecLimit(guildID int64) int {
 }
 
 func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
-	commands, err := models.CustomCommands(qm.Where("guild_id = ?", GuildID), qm.Offset(MaxCommands)).AllG(context.Background())
+	_, err := models.CustomCommands(qm.Where("guild_id = ? AND length(regexp_replace(array_to_string(responses, ''), E'\\r', '', 'g')) > ?", GuildID, MaxCCResponsesLength)).UpdateAllG(context.Background(), models.M{"disabled": true})
+	if err != nil {
+		return errors.WrapIf(err, "Failed disabling long customs commands on premium removal")
+	}
+
+	commands, err := models.CustomCommands(qm.Where("guild_id = ? AND disabled = false", GuildID), qm.OrderBy("local_id ASC"), qm.Offset(MaxCommands)).AllG(context.Background())
 	if err != nil {
 		return errors.WrapIf(err, "failed getting custom commands")
 	}
@@ -700,10 +705,6 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 		return errors.WrapIf(err, "Failed disabling trigger on edits on premium removal")
 	}
 
-	_, err = models.CustomCommands(qm.Where("guild_id = ? AND length(regexp_replace(array_to_string(responses, ''), E'\\r', '', 'g')) > ?", GuildID, MaxCCResponsesLength)).UpdateAllG(context.Background(), models.M{"disabled": true})
-	if err != nil {
-		return errors.WrapIf(err, "Failed disabling long customs commands on premium removal")
-	}
 	return nil
 }
 
