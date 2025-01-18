@@ -469,9 +469,9 @@ func eq(arg1 reflect.Value, arg2 ...reflect.Value) (bool, error) {
 }
 
 // ne evaluates the comparison a != b.
-func ne(arg1, arg2 reflect.Value) (bool, error) {
+func ne(arg1 reflect.Value, arg2 ...reflect.Value) (bool, error) {
 	// != is the inverse of ==.
-	equal, err := eq(arg1, arg2)
+	equal, err := eq(arg1, arg2...)
 	return !equal, err
 }
 
