@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/reputation/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -140,11 +142,13 @@ var (
 	ErrBlacklistedGive    = UserError("Disallowed from giving points")
 	ErrBlacklistedReceive = UserError("Disallowed from receiving points")
 	ErrCooldown           = UserError("You're still on cooldown")
+
+	ErrUpdatingRepRoles = UserError("Failed updating rep roles for member")
 )
 
-func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64, sender, receiver *dstate.MemberState, amount int64) (err error) {
+func ModifyRep(ctx context.Context, conf *models.ReputationConfig, gs *dstate.GuildSet, sender, receiver *dstate.MemberState, amount int64) (err error) {
 	if conf == nil {
-		conf, err = GetConfig(ctx, guildID)
+		conf, err = GetConfig(ctx, gs.ID)
 		if err != nil {
 			return
 		}
@@ -172,11 +176,16 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 		return
 	}
 
-	err = insertUpdateUserRep(ctx, guildID, receiver.User.ID, amount)
+	newRep, err := insertUpdateUserRep(ctx, gs.ID, receiver.User.ID, amount)
 	if err != nil {
 		// Clear the cooldown since it failed updating the rep
-		ClearCooldown(guildID, sender.User.ID)
+		ClearCooldown(gs.ID, sender.User.ID)
 		return
+	}
+
+	if err := UpdateRepRoles(gs, receiver, newRep); err != nil {
+		logger.WithField("guild_id", gs.ID).Errorf("failed updating rep roles: %s", err)
+		return ErrUpdatingRepRoles
 	}
 
 	receiverUsername := receiver.User.String()
@@ -184,7 +193,7 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 
 	// Add the log element
 	entry := &models.ReputationLog{
-		GuildID:          guildID,
+		GuildID:          gs.ID,
 		SenderID:         sender.User.ID,
 		SenderUsername:   senderUsername,
 		ReceiverID:       receiver.User.ID,
@@ -201,16 +210,114 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, guildID int64
 	return
 }
 
-func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int64) (err error) {
+const (
+	MaxRepRoles        = 5
+	MaxRepRolesPremium = 25
+)
+
+func GuildMaxRepRoles(guildID int64) int {
+	if isPrem, _ := premium.IsGuildPremium(guildID); isPrem {
+		return MaxRepRolesPremium
+	}
+	return MaxRepRoles
+}
+
+func UpdateRepRoles(gs *dstate.GuildSet, ms *dstate.MemberState, rep int64) error {
+	repRoles, err := models.ReputationRoles(models.ReputationRoleWhere.GuildID.EQ(gs.ID)).AllG(context.Background())
+	if err != nil {
+		return err
+	}
+	if len(repRoles) == 0 {
+		return nil // nothing to do
+	}
+
+	botMember, err := bot.GetMember(gs.ID, common.BotUser.ID)
+	if err != nil {
+		return err
+	}
+	botHighestRole := bot.MemberHighestRole(gs, botMember)
+
+	add, remove := computeRoleChanges(ms.Member.Roles, rep, repRoles)
+	add, remove = filterActionable(add, gs, botHighestRole), filterActionable(remove, gs, botHighestRole)
+	if len(add) == 0 && len(remove) == 0 {
+		return nil // nothing to do
+	}
+
+	// Can we edit the member's roles in one go?
+	if common.IsRoleAbove(botHighestRole, bot.MemberHighestRole(gs, ms)) {
+		return bulkEditRoles(ms, add, remove)
+	}
+
+	// Otherwise, we need to add and remove roles one by one to avoid a permissions error.
+	// Issue the API requests sequentially to help avoid ratelimits.
+	for _, r := range add {
+		if err = common.BotSession.GuildMemberRoleAdd(gs.ID, ms.User.ID, r); err != nil {
+			return err
+		}
+	}
+	for _, r := range remove {
+		if err := common.BotSession.GuildMemberRoleRemove(gs.ID, ms.User.ID, r); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func bulkEditRoles(ms *dstate.MemberState, add []int64, remove []int64) error {
+	expectedLen := len(ms.Member.Roles) + len(add) - len(remove)
+	newRoles := make([]string, 0, max(expectedLen, 0))
+	for _, r := range ms.Member.Roles {
+		// O(n) but `remove` should be small so it's OK.
+		if !slices.Contains(remove, r) {
+			newRoles = append(newRoles, discordgo.StrID(r))
+		}
+	}
+	for _, r := range add {
+		newRoles = append(newRoles, discordgo.StrID(r))
+	}
+
+	return common.BotSession.GuildMemberEdit(ms.GuildID, ms.User.ID, newRoles)
+}
+
+func filterActionable(roles []int64, gs *dstate.GuildSet, botHighest *discordgo.Role) []int64 {
+	return slices.DeleteFunc(roles, func(r int64) bool {
+		rr := gs.GetRole(r)
+		return rr == nil || !common.IsRoleAbove(botHighest, rr)
+	})
+}
+
+func computeRoleChanges(memberRoles []int64, rep int64, repRoles models.ReputationRoleSlice) (add []int64, remove []int64) {
+	for _, rr := range repRoles {
+		switch {
+		case rep >= rr.RepThreshold:
+			if !slices.Contains(memberRoles, rr.Role) {
+				add = append(add, rr.Role)
+			}
+		case rep < rr.RepThreshold:
+			if slices.Contains(memberRoles, rr.Role) {
+				remove = append(remove, rr.Role)
+			}
+		}
+	}
+
+	// deduplicate
+	slices.Sort(add)
+	slices.Sort(remove)
+	return slices.Compact(add), slices.Compact(remove)
+}
+
+func insertUpdateUserRep(ctx context.Context, guildID, userID int64, amount int64) (newRep int64, err error) {
 
 	// upsert query which is too advanced for orms
 	const query = `
 INSERT INTO reputation_users (created_at, guild_id, user_id, points)
 VALUES ($1, $2, $3, $4)
 ON CONFLICT (guild_id, user_id)
-DO UPDATE SET points = reputation_users.points + $4;
+DO UPDATE SET points = reputation_users.points + $4
+RETURNING points;
 `
-	_, err = common.PQ.ExecContext(ctx, query, time.Now(), guildID, userID, amount)
+	row := common.PQ.QueryRowContext(ctx, query, time.Now(), guildID, userID, amount)
+	err = row.Scan(&newRep)
 	return
 }
 
@@ -255,10 +362,10 @@ func IsAdmin(gs *dstate.GuildSet, member *dstate.MemberState, config *models.Rep
 	return false
 }
 
-func SetRep(ctx context.Context, gid int64, senderID, userID int64, points int64) error {
+func SetRep(ctx context.Context, gs *dstate.GuildSet, sender, receiver *dstate.MemberState, points int64) error {
 	user := &models.ReputationUser{
-		GuildID: gid,
-		UserID:  userID,
+		GuildID: gs.ID,
+		UserID:  receiver.User.ID,
 		Points:  points,
 	}
 
@@ -267,11 +374,16 @@ func SetRep(ctx context.Context, gid int64, senderID, userID int64, points int64
 		return err
 	}
 
+	if err := UpdateRepRoles(gs, receiver, points); err != nil {
+		logger.WithField("guild_id", gs.ID).Errorf("failed updating rep roles: %s", err)
+		return ErrUpdatingRepRoles
+	}
+
 	// Insert log entry
 	entry := &models.ReputationLog{
-		GuildID:        gid,
-		SenderID:       senderID,
-		ReceiverID:     userID,
+		GuildID:        gs.ID,
+		SenderID:       sender.User.ID,
+		ReceiverID:     receiver.User.ID,
 		SetFixedAmount: true,
 		Amount:         points,
 	}
@@ -280,9 +392,24 @@ func SetRep(ctx context.Context, gid int64, senderID, userID int64, points int64
 	return errors.WithMessage(err, "SetRep log entry.Insert")
 }
 
-func DelRep(ctx context.Context, gid int64, userID int64) error {
-	_, err := models.ReputationUsers(qm.Where("guild_id = ? AND user_id = ?", gid, userID)).DeleteAll(ctx, common.PQ)
-	return err
+func DelRep(ctx context.Context, gs *dstate.GuildSet, userID int64) error {
+	_, err := models.ReputationUsers(qm.Where("guild_id = ? AND user_id = ?", gs.ID, userID)).DeleteAll(ctx, common.PQ)
+	if err != nil {
+		return err
+	}
+
+	// Try to update the ms's rep roles if we can find them.
+	ms, err := bot.GetMember(gs.ID, userID)
+	if err != nil {
+		// Ignore the error; presumably the member isn't in the server anymore.
+		return nil
+	}
+
+	if err := UpdateRepRoles(gs, ms, 0); err != nil {
+		logger.WithField("guild_id", gs.ID).Errorf("failed updating rep roles: %s", err)
+		return ErrUpdatingRepRoles
+	}
+	return nil
 }
 
 // CheckSetCooldown checks and updates the reputation cooldown of a user,

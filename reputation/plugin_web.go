@@ -60,9 +60,22 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 	}
 }
 
+type NewRoleForm struct {
+	Threshold int64 `valid:"1,"`
+	Role      int64 `valid:"role,true"`
+}
+
+type PostRoleForm struct {
+	ID   int64
+	Role int64 `valid:"role,true"`
+}
+
 var (
 	panelLogKeyUpdatedSettings = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reputation_settings_updated", FormatString: "Updated reputation settings"})
 	panelLogKeyResetReputation = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reputation_reset_reputation", FormatString: "Reset reputation"})
+	panelLogKeyNewRepRole      = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reputation_role_added", FormatString: "Reputation role created"})
+	panelLogKeyUpdateRepRole   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reputation_role_updated", FormatString: "Reputation role updated"})
+	panelLogKeyDeleteRepRole   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "reputation_role_deleted", FormatString: "Reputation role deleted"})
 )
 
 func (p *Plugin) InitWeb() {
@@ -79,6 +92,8 @@ func (p *Plugin) InitWeb() {
 	web.CPMux.Handle(pat.New("/reputation"), subMux)
 	web.CPMux.Handle(pat.New("/reputation/*"), subMux)
 
+	subMux.Use(web.RequireBotMemberMW)
+
 	mainGetHandler := web.RenderHandler(HandleGetReputation, "cp_reputation_settings")
 
 	subMux.Handle(pat.Get(""), mainGetHandler)
@@ -87,6 +102,10 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/"), web.ControllerPostHandler(HandlePostReputation, mainGetHandler, PostConfigForm{}))
 	subMux.Handle(pat.Post("/reset_users"), web.ControllerPostHandler(HandleResetReputation, mainGetHandler, nil))
 	subMux.Handle(pat.Get("/logs"), web.APIHandler(HandleLogsJson))
+
+	subMux.Handle(pat.Post("/new_role"), web.ControllerPostHandler(HandleNewRepRole, mainGetHandler, NewRoleForm{}))
+	subMux.Handle(pat.Post("/roles/:id/update"), web.ControllerPostHandler(HandleUpdateRepRole, mainGetHandler, PostRoleForm{}))
+	subMux.Handle(pat.Post("/roles/:id/delete"), web.ControllerPostHandler(HandleDeleteRepRole, mainGetHandler, nil))
 
 	web.ServerPublicMux.Handle(pat.Get("/reputation/leaderboard"), web.RenderHandler(HandleGetReputation, "cp_reputation_leaderboard"))
 	web.ServerPublicAPIMux.Handle(pat.Get("/reputation/leaderboard"), web.APIHandler(HandleLeaderboardJson))
@@ -102,6 +121,13 @@ func HandleGetReputation(w http.ResponseWriter, r *http.Request) interface{} {
 		}
 	}
 
+	repRoles, err := models.ReputationRoles(
+		models.ReputationRoleWhere.GuildID.EQ(activeGuild.ID),
+		qm.OrderBy("rep_threshold ASC"),
+	).AllG(r.Context())
+	if !web.CheckErr(templateData, err, "Failed retrieving reputation roles", web.CtxLogger(r.Context()).Error) {
+		templateData["RepRoles"] = repRoles
+	}
 	return templateData
 }
 
@@ -146,6 +172,83 @@ func HandleResetReputation(w http.ResponseWriter, r *http.Request) (templateData
 	_, err = models.ReputationUsers(qm.Where("guild_id = ?", activeGuild.ID)).DeleteAll(r.Context(), common.PQ)
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyResetReputation))
+	}
+	return templateData, err
+}
+
+func HandleNewRepRole(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reputation"
+
+	form := r.Context().Value(common.ContextKeyParsedForm).(*NewRoleForm)
+
+	existing, err := models.ReputationRoles(models.ReputationRoleWhere.GuildID.EQ(activeGuild.ID)).AllG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	if lim := GuildMaxRepRoles(activeGuild.ID); len(existing) > lim {
+		return templateData.AddAlerts(web.ErrorAlert("Too many rep roles (max ", lim, ")")), nil
+	}
+	for _, r := range existing {
+		if r.RepThreshold == form.Threshold {
+			return templateData.AddAlerts(web.ErrorAlert("Already exists rep role with that threshold")), nil
+		}
+	}
+
+	repRole := &models.ReputationRole{
+		GuildID:      activeGuild.ID,
+		RepThreshold: form.Threshold,
+		Role:         form.Role,
+	}
+	err = repRole.InsertG(r.Context(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyNewRepRole))
+	}
+	return templateData, err
+}
+
+func HandleUpdateRepRole(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reputation"
+
+	form := r.Context().Value(common.ContextKeyParsedForm).(*PostRoleForm)
+
+	repRole, err := models.FindReputationRoleG(r.Context(), form.ID)
+	if err != nil {
+		return templateData, err
+	}
+	if repRole.GuildID != activeGuild.ID {
+		return templateData.AddAlerts(web.ErrorAlert("Cannot edit rep role from other server")), nil
+	}
+
+	repRole.Role = form.Role
+	_, err = repRole.UpdateG(r.Context(), boil.Infer())
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdateRepRole))
+	}
+	return templateData, err
+}
+
+func HandleDeleteRepRole(w http.ResponseWriter, r *http.Request) (templateData web.TemplateData, err error) {
+	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
+	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/reputation"
+
+	id, err := strconv.ParseInt(pat.Param(r, "id"), 10, 64)
+	if err != nil {
+		return templateData.AddAlerts(web.ErrorAlert("Invalid rep role")), nil
+	}
+
+	rowsAff, err := models.ReputationRoles(
+		models.ReputationRoleWhere.GuildID.EQ(activeGuild.ID),
+		models.ReputationRoleWhere.ID.EQ(id),
+	).DeleteAllG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	if rowsAff > 0 {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDeleteRepRole))
 	}
 	return templateData, err
 }
