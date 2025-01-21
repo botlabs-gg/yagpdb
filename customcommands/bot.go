@@ -738,9 +738,16 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 	if cState == nil {
 		return
 	}
+	// if the execution channel is a thread, check for send message in thread perms on the parent channel.
+	permToCheck := discordgo.PermissionSendMessages
+	cID := cState.ID
+	if cState.Type.IsThread() {
+		permToCheck = discordgo.PermissionSendMessagesInThreads
+		cID = cState.ParentID
+	}
 
-	if hasPerms, _ := bot.BotHasPermissionGS(evt.GS, cState.ID, discordgo.PermissionSendMessages); !hasPerms {
-		// don't run in channel we don't have perms in
+	if hasPerms, _ := bot.BotHasPermissionGS(evt.GS, cID, permToCheck); !hasPerms {
+		// don't run in channel or thread we don't have perms in
 		return
 	}
 
