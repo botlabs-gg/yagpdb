@@ -763,7 +763,7 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 }
 
 func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
-	if s.Attachments && len(m.Attachments) < 1 {
+	if s.Attachments && len(m.GetMessageAttachments()) < 1 {
 		return false, nil
 	}
 
@@ -794,12 +794,12 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 		}
 
 		if s.Attachments {
-			if len(v.Attachments) < 1 {
+			if len(v.GetMessageAttachments()) < 1 {
 				continue // we're only checking messages with attachments
 			}
 			if settings.SingleMessageAttachments {
 				// Add the count of all attachments of this message to the amount
-				amount += len(v.Attachments)
+				amount += len(v.GetMessageAttachments())
 			} else {
 				amount++
 			}
@@ -1098,7 +1098,7 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 			break
 		}
 
-		if len(v.Attachments) > 0 {
+		if len(v.GetMessageAttachments()) > 0 {
 			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
 		}
 
@@ -1532,7 +1532,7 @@ func (mat *MessageAttachmentTrigger) UserSettings() []*SettingDef {
 }
 
 func (mat *MessageAttachmentTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
-	contains := len(m.Attachments) > 0
+	contains := len(m.GetMessageAttachments()) > 0
 	if contains && mat.RequiresAttachment {
 		return true, nil
 	} else if !contains && !mat.RequiresAttachment {

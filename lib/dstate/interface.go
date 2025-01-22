@@ -424,13 +424,23 @@ type MessageState struct {
 
 func (m *MessageState) GetMessageContents() []string {
 	contents := []string{m.Content}
-
 	for _, s := range m.MessageSnapshots {
 		if s.Message != nil && len(s.Message.Content) > 0 {
 			contents = append(contents, s.Message.Content)
 		}
 	}
 	return contents
+}
+
+func (m *MessageState) GetMessageAttachments() []discordgo.MessageAttachment {
+	attachments := make([]discordgo.MessageAttachment, 0)
+	attachments = append(attachments, m.Attachments...)
+	for _, s := range m.MessageSnapshots {
+		for _, attachment := range s.Message.Attachments {
+			attachments = append(attachments, *attachment)
+		}
+	}
+	return attachments
 }
 
 func (m *MessageState) ContentWithMentionsReplaced() string {

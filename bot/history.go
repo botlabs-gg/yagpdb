@@ -65,21 +65,3 @@ func GetMessages(guildID int64, channelID int64, limit int, deleted bool) ([]*ds
 
 	return msgBuf, nil
 }
-
-// type DiscordMessages []*dstate.MessageState
-
-// // Len is the number of elements in the collection.
-// func (d DiscordMessages) Len() int { return len(d) }
-
-// // Less reports whether the element with
-// // index i should sort before the element with index j.
-// func (d DiscordMessages) Less(i, j int) bool {
-// 	return d[i].ParsedCreated.Before(d[j].ParsedCreated)
-// }
-
-// Swap swaps the elements with indexes i and j.
-// func (d DiscordMessages) Swap(i, j int) {
-// 	temp := d[i]
-// 	d[i] = d[j]
-// 	d[j] = temp
-// }
