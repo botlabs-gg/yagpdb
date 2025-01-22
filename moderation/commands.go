@@ -1370,7 +1370,7 @@ func (f *IgnorePinnedMessagesFilter) Matches(msg *dstate.MessageState) (delete b
 type MessagesWithAttachmentsFilter struct{}
 
 func (*MessagesWithAttachmentsFilter) Matches(msg *dstate.MessageState) (delete bool) {
-	return len(msg.Attachments) > 0
+	return len(msg.GetMessageAttachments()) > 0
 }
 
 // Only delete messages satisfying ToID<=id<=FromID.
