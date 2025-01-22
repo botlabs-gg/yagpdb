@@ -520,8 +520,8 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 				msg.Content += fmt.Sprintf("(attachment: %s)", att.Filename)
 
 				totalAttachmentSize += att.Size
-				if totalAttachmentSize > 500000000 {
-					// above 500MB, ignore...
+				if totalAttachmentSize > 100000000 {
+					// above 100MB, ignore...
 					break
 				}
 
@@ -532,7 +532,7 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 						combinedSize += a.Size
 					}
 
-					if att.Size+combinedSize > 40000000 {
+					if att.Size+combinedSize > 8000000 {
 						continue
 					}
 
