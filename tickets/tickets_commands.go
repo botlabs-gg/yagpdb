@@ -516,7 +516,7 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 		for _, msg := range m {
 			// download attachments
 		OUTER:
-			for _, att := range msg.Attachments {
+			for _, att := range msg.GetMessageAttachments() {
 				msg.Content += fmt.Sprintf("(attachment: %s)", att.Filename)
 
 				totalAttachmentSize += att.Size
