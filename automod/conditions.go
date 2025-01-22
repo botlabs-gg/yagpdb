@@ -619,8 +619,7 @@ func (mc *MessageAttachmentCondition) IsMet(data *TriggeredRuleData, settings in
 		// pass the condition if no message is found
 		return true, nil
 	}
-	attachments := data.Message.GetMessageAttachments()
-	if contains := len(attachments) > 0; mc.HasAttachments {
+	if contains := len(data.Message.GetMessageAttachments()) > 0; mc.HasAttachments {
 		return contains, nil
 	} else {
 		return !contains, nil
