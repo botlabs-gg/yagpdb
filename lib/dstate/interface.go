@@ -433,6 +433,18 @@ func (m *MessageState) GetMessageContents() []string {
 	return contents
 }
 
+func (m *MessageState) GetMessageAttachments() []discordgo.MessageAttachment {
+	attachments := m.Attachments
+	for _, s := range m.MessageSnapshots {
+		if s.Message != nil && len(s.Message.Attachments) > 0 {
+			for _, a := range s.Message.Attachments {
+				attachments = append(attachments, *a)
+			}
+		}
+	}
+	return attachments
+}
+
 func (m *MessageState) ContentWithMentionsReplaced() string {
 	content := m.Content
 
