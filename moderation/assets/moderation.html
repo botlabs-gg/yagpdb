@@ -469,9 +469,12 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
             </select>
         </div>
         <hr />
-
+        
         {{checkbox "WarnIncludeChannelLogs" "WarnIncludeChannelLogs" "Create message logs in the channel that the command was run in when a user is warned" .ModConfig.WarnIncludeChannelLogs}}
         {{checkbox "WarnSendToModlog" "WarnSendToModlog" "Send warnings to the modlog" .ModConfig.WarnSendToModlog}}
+        <hr />
+        {{checkbox "DelwarnSendToModlog" "DelwarnSendToModlog" "Send warning removal to the modlog" .ModConfig.DelwarnSendToModlog}}
+        {{checkbox "DelwarnIncludeWarnReason" "DelwarnIncludeWarnReason" "Append original warn reason when removing" .ModConfig.DelwarnIncludeWarnReason}}
         <hr />
     </div>
     <div class="col-sm">

@@ -1015,22 +1015,46 @@ var ModerationCommands = []*commands.YAGCommand{
 				return nil, err
 			}
 
-			_, err = MBaseCmdSecond(parsed, "", true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled, true)
+			warningID := parsed.Args[0].Int()
+
+			reason := SafeArgString(parsed, 1)
+			reason, err = MBaseCmdSecond(parsed, reason, true, discordgo.PermissionManageMessages, config.WarnCmdRoles, config.WarnCommandsEnabled, true)
 			if err != nil {
 				return nil, err
 			}
 
-			warningID := parsed.Args[0].Int()
-			numDeleted, err := models.ModerationWarnings(
+			warning, err := models.ModerationWarnings(
 				models.ModerationWarningWhere.ID.EQ(warningID),
-				// don't delete warnings from other servers, even if ID is correct
+				// don't get warning from other servers, even if ID is correct
 				models.ModerationWarningWhere.GuildID.EQ(parsed.GuildData.GS.ID),
-			).DeleteAllG(parsed.Context())
+			).OneG(parsed.Context())
+			if err != nil {
+				return fmt.Sprintf("Could not find warning with ID `%d`", warningID), nil
+			}
+
+			numDeleted, err := warning.DeleteG(parsed.Context())
 			if err != nil {
 				return "Failed deleting warning", err
 			}
 			if numDeleted == 0 {
 				return fmt.Sprintf("Could not find warning with ID `%d`", warningID), nil
+			}
+
+			if config.DelwarnSendToModlog && config.ActionChannel != 0 {
+				userid, err := strconv.ParseInt(warning.UserID, 10, 64)
+				if err != nil {
+					return "Failed parsing user ID, warning deleted", err
+				}
+				user := bot.GetUsers(parsed.GuildData.GS.ID, userid)[0]
+
+				if config.DelwarnIncludeWarnReason {
+					reason = fmt.Sprintf("%s\n~~%s~~", reason, warning.Message)
+				}
+				
+				err = CreateModlogEmbed(config, parsed.Author, MADelwarn, user, reason, "")
+				if err != nil {
+					return "Failed sending modlog, warning deleted", err
+				}
 			}
 
 			return "👌", nil

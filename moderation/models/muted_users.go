@@ -546,13 +546,13 @@ func (o MutedUserSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *MutedUser) UpsertG(ctx context.Context, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns, opts ...UpsertOptionFunc) error {
-	return o.Upsert(ctx, boil.GetContextDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns, opts...)
+func (o *MutedUser) UpsertG(ctx context.Context, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+	return o.Upsert(ctx, boil.GetContextDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *MutedUser) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns, opts ...UpsertOptionFunc) error {
+func (o *MutedUser) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no muted_users provided for upsert")
 	}
@@ -602,7 +602,7 @@ func (o *MutedUser) Upsert(ctx context.Context, exec boil.ContextExecutor, updat
 	var err error
 
 	if !cached {
-		insert, _ := insertColumns.InsertColumnSet(
+		insert, ret := insertColumns.InsertColumnSet(
 			mutedUserAllColumns,
 			mutedUserColumnsWithDefault,
 			mutedUserColumnsWithoutDefault,
@@ -618,18 +618,12 @@ func (o *MutedUser) Upsert(ctx context.Context, exec boil.ContextExecutor, updat
 			return errors.New("models: unable to upsert muted_users, could not build update column list")
 		}
 
-		ret := strmangle.SetComplement(mutedUserAllColumns, strmangle.SetIntersect(insert, update))
-
 		conflict := conflictColumns
-		if len(conflict) == 0 && updateOnConflict && len(update) != 0 {
-			if len(mutedUserPrimaryKeyColumns) == 0 {
-				return errors.New("models: unable to upsert muted_users, could not build conflict column list")
-			}
-
+		if len(conflict) == 0 {
 			conflict = make([]string, len(mutedUserPrimaryKeyColumns))
 			copy(conflict, mutedUserPrimaryKeyColumns)
 		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"muted_users\"", updateOnConflict, ret, update, conflict, insert, opts...)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"muted_users\"", updateOnConflict, ret, update, conflict, insert)
 
 		cache.valueMapping, err = queries.BindMapping(mutedUserType, mutedUserMapping, insert)
 		if err != nil {
