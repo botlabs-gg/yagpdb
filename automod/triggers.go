@@ -763,9 +763,7 @@ func (s *SlowmodeTrigger) UserSettings() []*SettingDef {
 }
 
 func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
-	attachments := m.GetMessageAttachments()
-
-	if s.Attachments && len(attachments) < 1 {
+	if s.Attachments && len(m.GetMessageAttachments()) < 1 {
 		return false, nil
 	}
 
