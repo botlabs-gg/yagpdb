@@ -77,6 +77,7 @@ var cmds = []*commands.YAGCommand{
 			id := parsed.ChannelID
 			if c := parsed.Switch("channel"); c.Value != nil {
 				cs := c.Value.(*dstate.ChannelState)
+				id = cs.ID
 				mention, _ := cs.Mention()
 
 				hasPerms, err := bot.AdminOrPermMS(parsed.GuildData.GS.ID, cs.ID, parsed.GuildData.MS, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel)
