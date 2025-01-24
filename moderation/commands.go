@@ -737,7 +737,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if parsed.Switches["bots"].Bool() {
-				filters = append(filters, &BotMessagesOnly{})
+				filters = append(filters, &BotMessagesFilter{})
 			}
 
 			var triggerID int64
@@ -1401,10 +1401,10 @@ type MessagesWithAttachmentsFilter struct{}
 func (*MessagesWithAttachmentsFilter) Matches(msg *dstate.MessageState) (delete bool) {
 	return len(msg.GetMessageAttachments()) > 0
 }
-// Only delete messages with attachments.
-type BotMessagesOnly struct{}
+// Only delete bot messages.
+type BotMessagesFilter struct{}
 
-func (*BotMessagesOnly) Matches(msg *dstate.MessageState) (delete bool) {
+func (*BotMessagesFilter) Matches(msg *dstate.MessageState) (delete bool) {
 	return msg.Author.Bot
 }
 
