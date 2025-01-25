@@ -65,17 +65,17 @@
                             </select>
                         </div>
                         <div class="form-group col">
-                            {{$id_include_replies := (joinStr "" "feed-" .ID "-replies")}}
+                            {{$id_include_replies := (joinStr "-" "feed" .ID "replies")}}
                             <label for="{{$id_include_replies}}">Include Replies</label>
                             {{checkbox "IncludeReplies" $id_include_replies `` .IncludeReplies}}
                         </div>
                         <div class="form-group col">
-                            {{$id_include_rts := (joinStr "" "feed-" .ID "-rts")}}
+                            {{$id_include_rts := (joinStr "-" "feed" .ID "rts")}}
                             <label for="{{$id_include_rts}}">Include Retweets</label>
                             {{checkbox "IncludeRetweets" $id_include_rts `` .IncludeRT}}
                         </div>
                         <div class="form-group col">
-                            {{$id_enabled := (joinStr "" "feed-" .ID "-enabled")}}
+                            {{$id_enabled := (joinStr "-" "feed" .ID "enabled")}}
                             <label for="{{$id_enabled}}">Enabled</label>
                             {{checkbox "Enabled" $id_enabled `` .Enabled}}
                         </div>
