@@ -54,7 +54,7 @@
           <a class="nav-link" href="/status">Status</a>
         </li>
         <li class="nav-item active">
-          <a class="nav-link" href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=applications.commands%20bot&permissions=1516122532343&response_type=code&redirect_uri={{urlquery (joinStr ""  "https://" .Host "/manage")}}">Add to server</a>
+          <a class="nav-link" href="https://discordapp.com/oauth2/authorize?client_id={{.ClientID}}&scope=applications.commands%20bot&permissions=1516122532343&response_type=code&redirect_uri={{urlquery (print "https://" .Host "/manage")}}">Add to server</a>
         </li>
         <li class="nav-item active">
           <a class="nav-link" href="/premium">Premium</a>
