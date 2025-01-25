@@ -56,6 +56,8 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLast(p, LockMemberMuteMW(HandleGuildMemberUpdate), eventsystem.EventGuildMemberUpdate)
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildMemberTimeoutChange, eventsystem.EventGuildMemberUpdate)
 
+	eventsystem.AddHandlerAsyncLast(p, HandleGuildAuditLogEntryCreate, eventsystem.EventGuildAuditLogEntryCreate)
+
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)
 
@@ -462,6 +464,75 @@ func HandleGuildMemberRemove(evt *eventsystem.EventData) (retry bool, err error)
 	}
 
 	go checkAuditLogMemberRemoved(config, data)
+	return false, nil
+}
+
+func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err error) {
+	data := evt.GuildAuditLogEntryCreate()
+
+	config, err := BotCachedGetConfig(data.GuildID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	if config.ActionChannel == 0 {
+		return false, nil
+	}
+
+	author, err := bot.GetMember(data.GuildID, data.UserID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	if author.User.ID == common.BotUser.ID {
+		// we performed the action, do not duplicate
+		return false, nil
+	}
+
+	target, err := common.BotSession.User(data.TargetID)
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	// setup done, now we get to the actions.
+
+	if config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate {
+		ok := false
+		for _, c := range data.Changes {
+			if *c.Key == discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
+				until, _ := time.Parse("2006-01-02T15:04:05.999999Z07:00", c.NewValue.(string))
+				if until.Before(time.Now()) {
+					break
+				} else {
+					ok = true
+					break
+				}
+			}
+		}
+		if ok {
+			err = CreateModlogEmbed(config, &author.User, MATimeoutAdded, target, data.Reason, "")
+		}
+	}
+
+	if config.LogKicks && *data.ActionType == discordgo.AuditLogActionMemberKick {
+		err = CreateModlogEmbed(config, &author.User, MAKick, target, data.Reason, "")
+		if err != nil {
+			logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
+		}
+	}
+
+	if config.LogBans && *data.ActionType == discordgo.AuditLogActionMemberBanAdd {
+		err = CreateModlogEmbed(config, &author.User, MABanned, target, data.Reason, "")
+	}
+
+	if config.LogUnbans && *data.ActionType == discordgo.AuditLogActionMemberBanRemove {
+		err = CreateModlogEmbed(config, &author.User, MAUnbanned, target, data.Reason, "")
+	}
+
+	if err != nil {
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending mod log entry.")
+	}
+
 	return false, nil
 }
 
