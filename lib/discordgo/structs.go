@@ -1377,6 +1377,7 @@ type AuditLogEntry struct {
 	ActionType *AuditLogAction   `json:"action_type"`
 	Options    *AuditLogOptions  `json:"options"`
 	Reason     string            `json:"reason"`
+	GuildID    int64             `json:"guild_id,string,omitempty"`
 }
 
 // A UserGuildSettingsChannelOverride stores data for a channel override for a users guild settings.
