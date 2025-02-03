@@ -235,18 +235,23 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Warn("Failed executing punishment DM")
 		executed = "Failed executing template."
-
-		if config.ErrorChannel != 0 {
-			_, _, _ = bot.SendMessage(gs.ID, config.ErrorChannel, fmt.Sprintf("Failed executing punishment DM (Action: `%s`).\nError: `%v`", ActionMap[action.Prefix], err))
-		}
+		sendFailedDMError(gs.ID, config.ErrorChannel, fmt.Sprintf("Failed executing punishment DM (Action: `%s`).\nError: `%v`", ActionMap[action.Prefix], err))
 	}
 
 	if strings.TrimSpace(executed) != "" {
 		err = bot.SendDM(member.User.ID, "**"+gs.Name+":** "+executed)
 		if err != nil {
 			logger.WithError(err).Error("failed sending punish DM")
+			sendFailedDMError(gs.ID, config.ErrorChannel, fmt.Sprintf("Failed executing punishment DM (Action: `%s`).\nError: `%v`", ActionMap[action.Prefix], err))
 		}
 	}
+}
+
+func sendFailedDMError(gID, cID int64, errorText string) {
+	if cID == 0 {
+		return
+	}
+	_, _, _ = bot.SendMessage(gID, cID, errorText)
 }
 
 func KickUser(config *Config, guildID int64, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, reason string, user *discordgo.User, del int, executedFromCommandTemplate bool) error {
