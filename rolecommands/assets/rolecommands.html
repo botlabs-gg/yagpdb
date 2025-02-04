@@ -280,8 +280,8 @@
                         <div id="{{.Group.ID}}-group-single-opts" class="col-lg-4 {{if ne .Group.Mode 1}}hidden{{end}}">
                             <p class="help-block">Mode specific settings</p>
 
-                            {{checkbox "SingleRequireOne" (joinStr "" .Group.ID "-single-require-one") "Require 1 role in group at all times (after initial assignment)" .Group.SingleRequireOne}}
-                            {{checkbox "SingleAutoToggleOff" (joinStr "" .Group.ID "-single-auto-toggle") "Remove existing role when assigning another role in group." .Group.SingleAutoToggleOff}}
+                            {{checkbox "SingleRequireOne" (print .Group.ID "-single-require-one") "Require 1 role in group at all times (after initial assignment)" .Group.SingleRequireOne}}
+                            {{checkbox "SingleAutoToggleOff" (print .Group.ID "-single-auto-toggle") "Remove existing role when assigning another role in group." .Group.SingleAutoToggleOff}}
                         </div>
                         <div id="{{.Group.ID}}-group-multi-opts" class="col-lg-4 {{if ne .Group.Mode 2}}hidden{{end}}">
                             <p class="help-block">Mode specific settings</p>

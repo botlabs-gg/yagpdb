@@ -166,7 +166,7 @@
                         </td>
                         <td class="yt-tbl-column custom-announcement-disables">
                             <span class="custom-announcement-popover">
-                            {{checkbox "MentionEveryone" (joinStr "" "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (joinStr "" `form="sub-item-` .ID `"`)}}
+                            {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (print `form="sub-item-` .ID `"`)}}
                             </span>
                         </td>
                         <td class="yt-tbl-column custom-announcement-disables">
@@ -178,13 +178,13 @@
                             </span>
                         </td>
                         <td class="yt-tbl-column">
-                            {{checkbox "PublishLivestream" (joinStr "" "publish-livestream-" .ID) `Publish Livestreams` .PublishLivestream (joinStr "" `form="sub-item-` .ID `"`)}}
+                            {{checkbox "PublishLivestream" (print "publish-livestream-" .ID) `Publish Livestreams` .PublishLivestream (print `form="sub-item-` .ID `"`)}}
                         </td>
                         <td class="yt-tbl-column">
-                            {{checkbox "PublishShorts" (joinStr "" "publish-shorts-" .ID) `Publish Shorts` .PublishShorts (joinStr "" `form="sub-item-` .ID `"`)}}
+                            {{checkbox "PublishShorts" (print "publish-shorts-" .ID) `Publish Shorts` .PublishShorts (print `form="sub-item-` .ID `"`)}}
                         </td>
                         <td class="yt-tbl-column">
-                            {{checkbox "Enabled" (joinStr "" "feed-enabled-" .ID) `` .Enabled (joinStr "" `form="sub-item-` .ID `"`)}}
+                            {{checkbox "Enabled" (print "feed-enabled-" .ID) `` .Enabled (print `form="sub-item-` .ID `"`)}}
                         </td>
                         <td class="yt-tbl-column yt-tbl-actions-column">
                             <button form="sub-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/youtube/{{.ID}}/update" data-async-form-alertsonly>Save</button>
