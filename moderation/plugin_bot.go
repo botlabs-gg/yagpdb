@@ -313,14 +313,14 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 		return false, nil
 	}
 
+	if data.UserID == common.BotUser.ID {
+		// we performed the action, do not duplicate
+		return false, nil
+	}
+
 	author, err := bot.GetMember(data.GuildID, data.UserID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
-	}
-
-	if author.User.ID == common.BotUser.ID {
-		// we performed the action, do not duplicate
-		return false, nil
 	}
 
 	target, err := common.BotSession.User(data.TargetID)
@@ -329,37 +329,23 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 	}
 
 	// setup done, now we get to the actions.
-
-	if config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate {
-		ok := false
+	switch {
+	case config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate:
 		for _, c := range data.Changes {
 			if *c.Key == discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
-				until, _ := time.Parse("2006-01-02T15:04:05.999999Z07:00", c.NewValue.(string))
-				if until.Before(time.Now()) {
-					break
+				if c.NewValue == nil {
+					return false, nil
 				} else {
-					ok = true
 					break
 				}
 			}
 		}
-		if ok {
-			err = CreateModlogEmbed(config, &author.User, MATimeoutAdded, target, data.Reason, "")
-		}
-	}
-
-	if config.LogKicks && *data.ActionType == discordgo.AuditLogActionMemberKick {
+		err = CreateModlogEmbed(config, &author.User, MATimeoutAdded, target, data.Reason, "")
+	case config.LogKicks && *data.ActionType == discordgo.AuditLogActionMemberKick:
 		err = CreateModlogEmbed(config, &author.User, MAKick, target, data.Reason, "")
-		if err != nil {
-			logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending kick log message")
-		}
-	}
-
-	if config.LogBans && *data.ActionType == discordgo.AuditLogActionMemberBanAdd {
+	case config.LogBans && *data.ActionType == discordgo.AuditLogActionMemberBanAdd:
 		err = CreateModlogEmbed(config, &author.User, MABanned, target, data.Reason, "")
-	}
-
-	if config.LogUnbans && *data.ActionType == discordgo.AuditLogActionMemberBanRemove {
+	case config.LogUnbans && *data.ActionType == discordgo.AuditLogActionMemberBanRemove:
 		err = CreateModlogEmbed(config, &author.User, MAUnbanned, target, data.Reason, "")
 	}
 
