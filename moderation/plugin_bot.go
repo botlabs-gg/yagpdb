@@ -21,7 +21,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/karlseguin/ccache"
-	"github.com/mediocregopher/radix/v3"
 )
 
 var (
@@ -314,8 +313,10 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 	}
 
 	if data.UserID == common.BotUser.ID {
-		// we performed the action, do not duplicate
-		return false, nil
+		if *data.ActionType != discordgo.AuditLogActionMemberBanRemove {
+			// we performed the action, do not duplicate
+			return false, nil
+		}
 	}
 
 	author, err := bot.GetMember(data.GuildID, data.UserID)
@@ -556,6 +557,10 @@ func handleScheduledUnmute(evt *seventsmodels.ScheduledEvent, data interface{}) 
 	return false, nil
 }
 
+const (
+	scheduledUnbanReason = "Timed ban expired"
+)
+
 func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (retry bool, err error) {
 	unbanData := data.(*ScheduledUnbanData)
 
@@ -568,9 +573,7 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 		return false, nil
 	}
 
-	common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", RedisKeyUnbannedUser(guildID, userID), 30, 1))
-
-	err = common.BotSession.GuildBanDelete(guildID, userID)
+	err = common.BotSession.GuildBanDeleteWithReason(guildID, userID, scheduledUnbanReason)
 	if err != nil {
 		logger.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
 		return scheduledevents2.CheckDiscordErrRetry(err), err
