@@ -29,7 +29,7 @@ func RegisterPlugin() {
 }
 
 const (
-	DefaultTicketMsg        = "{{$embed := cembed `description` (joinStr `` `Welcome ` .User.Mention `\n\nPlease describe the reasoning for opening this ticket, include any information you think may be relevant such as proof, other third parties and so on.` " + DefaultTicketMsgClose + DefaultTicketMsgAddUser + ")}}\n{{sendMessage nil $embed}}"
+	DefaultTicketMsg        = "{{$embed := cembed \"description\" (print \"Welcome \" .User.Mention `\n\nPlease describe the reasoning for opening this ticket, include any information you think may be relevant such as proof, other third parties and so on.` " + DefaultTicketMsgClose + DefaultTicketMsgAddUser + ")}}\n{{sendMessage nil $embed}}"
 	DefaultTicketMsgClose   = "\n\"\\n\\nuse the following command to close the ticket\\n\"\n\"`-ticket close reason for closing here`\\n\\n\""
 	DefaultTicketMsgAddUser = "\n\"use the following command to add users to the ticket\\n\"\n\"`-ticket adduser @user`\""
 )

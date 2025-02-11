@@ -337,7 +337,7 @@
         {{range $index, $element := .ManagedGuilds -}}{{if not $element.Connected -}}
         <li>
             <a
-                href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=applications.commands%20bot&permissions=1516122532343&guild_id={{$element.ID}}&response_type=code&redirect_uri={{joinStr "" $baseURL "/manage"}}"><i
+                href="https://discordapp.com/oauth2/authorize?client_id={{$clientid}}&scope=applications.commands%20bot&permissions=1516122532343&guild_id={{$element.ID}}&response_type=code&redirect_uri={{print $baseURL "/manage"}}"><i
                     class="fas fa-plus"></i>{{$element.Name}}</a>
         </li>
         {{end}}{{end}}

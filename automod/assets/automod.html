@@ -616,7 +616,7 @@ $(function(){
             <div class='form-group row'>
                 <label class='col-lg-2'>{{.Name}}:</label>
                 <div class='col-lg-10'>
-                    {{$name := joinStr "" $namePrefix "." $dot.partIndex ".Data." .Key}}
+                    {{$name := joinStr "." $namePrefix $dot.partIndex "Data" .Key}}
                     {{if eq .Kind "int"}}
                     <input type='number' class='form-control' name="{{$name}}" {{if or .Min .Max}} min="{{.Min}}" max="{{.Max}}" {{end}} value="{{index $dot.settings .Key}}"></input>
                     {{else if eq .Kind "multi_role"}}

@@ -211,7 +211,7 @@
 {{define "automod_legacy_common_fields"}}
 
 <br />
-{{checkbox (joinStr "" .Name ".Enabled") (joinStr "" .Name ".Enabled") "Enabled" .Rule.Enabled}}
+{{checkbox (print .Name ".Enabled") (print .Name ".Enabled") "Enabled" .Rule.Enabled}}
 <hr />
 <div class="form-group">
     <label for="ViolationsExpire">Violations expire after (minutes):</label>

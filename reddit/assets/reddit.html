@@ -132,15 +132,15 @@
             <div class="form-row">
                 <div class="col d-flex flex-column">
                     <Span class="mb-2">Enable Spoilers</span>
-                    {{checkbox "spoilers_enabled" (joinStr "" "spoiler-toggle-" .ID) `` .SpoilersEnabled}}
+                    {{checkbox "spoilers_enabled" (print "spoiler-toggle-" .ID) `` .SpoilersEnabled}}
                 </div>
                 <div class="col d-flex flex-column">
                     <Span class="mb-2">Use embed</span>
-                    {{checkbox "use_embeds" (joinStr "" "use-embed-" .ID) `` .UseEmbeds}}
+                    {{checkbox "use_embeds" (print "use-embed-" .ID) `` .UseEmbeds}}
                 </div>
                 <div class="col d-flex flex-column">
                     <Span class="mb-2">Enabled</span>
-                    {{checkbox "feed_enabled" (joinStr "" "feed-enabled-" .ID) `` (not .Disabled)}}
+                    {{checkbox "feed_enabled" (print "feed-enabled-" .ID) `` (not .Disabled)}}
                 </div>
 
                 <div class="form-group col">
