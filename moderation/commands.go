@@ -670,6 +670,7 @@ var ModerationCommands = []*commands.YAGCommand{
 			{Name: "a", Help: "Only remove messages with attachments"},
 			{Name: "to", Help: "Stop at this msg ID", Type: dcmd.BigInt},
 			{Name: "from", Help: "Start at this msg ID", Type: dcmd.BigInt},
+			{Name: "bots", Help: "Only remove bot messages"},
 		},
 		RequiredDiscordPermsHelp: "ManageMessages or ManageGuild",
 		RequireBotPerms:          [][]int64{{discordgo.PermissionAdministrator}, {discordgo.PermissionManageMessages}},
@@ -733,6 +734,10 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			if onlyDeleteWithAttachments := parsed.Switches["a"].Bool(); onlyDeleteWithAttachments {
 				filters = append(filters, &MessagesWithAttachmentsFilter{})
+			}
+
+			if parsed.Switches["bots"].Bool() {
+				filters = append(filters, &BotMessagesFilter{})
 			}
 
 			var triggerID int64
@@ -1395,6 +1400,12 @@ type MessagesWithAttachmentsFilter struct{}
 
 func (*MessagesWithAttachmentsFilter) Matches(msg *dstate.MessageState) (delete bool) {
 	return len(msg.GetMessageAttachments()) > 0
+}
+// Only delete bot messages.
+type BotMessagesFilter struct{}
+
+func (*BotMessagesFilter) Matches(msg *dstate.MessageState) (delete bool) {
+	return msg.Author.Bot
 }
 
 // Only delete messages satisfying ToID<=id<=FromID.
