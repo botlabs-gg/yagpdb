@@ -38,10 +38,6 @@ func RedisKeyBannedUser(guildID, userID int64) string {
 	return "moderation_banned_user:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
 }
 
-func RedisKeyUnbannedUser(guildID, userID int64) string {
-	return "moderation_unbanned_user:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
-}
-
 func RedisKeyLockedMute(guildID, userID int64) string {
 	return "moderation_updating_mute:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
 }
