@@ -152,7 +152,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 		return err
 	}
 
-	logger.WithField("guild_id", guildID).Infof("MODERATION: %s %s %s cause %q", author.Username, action.Prefix, user.Username, reason)
+	logger.WithField("guild_id", guildID).Infof("MODERATION: %s %s %s with reason %q", author.Username, action.Prefix, user.Username, reason)
 	if memberNotFound {
 		// Wait a tiny bit to make sure the audit log is updated
 		time.Sleep(time.Second * 3)
@@ -383,6 +383,10 @@ func UnbanUser(config *Config, guildID int64, author *discordgo.User, reason str
 	if err != nil {
 		notbanned, err := isNotFound(err)
 		return notbanned, err
+	}
+
+	if config.LogUnbans {
+		err = CreateModlogEmbed(config, author, action, user, reason, "")
 	}
 
 	logger.Infof("MODERATION: %s %s %s with reason %q", author.Username, action.Prefix, user.Username, reason)
