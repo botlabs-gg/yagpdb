@@ -571,12 +571,6 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 		return false, nil
 	}
 
-	//err = common.BotSession.GuildBanDeleteWithReason(guildID, userID, scheduledUnbanReason)
-	//if err != nil {
-	//	logger.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
-	//	return scheduledevents2.CheckDiscordErrRetry(err), err
-	//}
-
 	config, err := FetchConfig(guildID)
 	if err != nil {
 		return false, err
