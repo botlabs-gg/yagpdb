@@ -313,10 +313,8 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 	}
 
 	if data.UserID == common.BotUser.ID {
-		if *data.ActionType != discordgo.AuditLogActionMemberBanRemove {
-			// we performed the action, do not duplicate
-			return false, nil
-		}
+		// we performed the action, do not duplicate
+		return false, nil
 	}
 
 	author, err := bot.GetMember(data.GuildID, data.UserID)
@@ -573,9 +571,19 @@ func handleScheduledUnban(evt *seventsmodels.ScheduledEvent, data interface{}) (
 		return false, nil
 	}
 
-	err = common.BotSession.GuildBanDeleteWithReason(guildID, userID, scheduledUnbanReason)
+	config, err := FetchConfig(guildID)
 	if err != nil {
-		logger.WithField("guild", guildID).WithError(err).Error("failed unbanning user")
+		return false, err
+	}
+
+	user := &discordgo.User{
+		Username:      "unknown",
+		Discriminator: "????",
+		ID:            userID,
+	}
+
+	_, err = UnbanUser(config, guildID, common.BotUser, scheduledUnbanReason, user)
+	if err != nil {
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
