@@ -800,4 +800,6 @@ var funcs = map[string]interface{}{
 	"userArg":                   func() interface{} { return nil },
 	"verb":                      func() interface{} { return nil },
 	"weekNumber":                func() interface{} { return nil },
+	"suppressEmbeds":            func() interface{} { return nil },
+	"unsuppressEmbeds":          func() interface{} { return nil },
 }
