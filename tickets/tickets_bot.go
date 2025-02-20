@@ -205,8 +205,6 @@ func openTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState
 var closingTickets = make(map[int64]bool)
 var closingTicketsLock sync.Mutex
 
-const closingTicketMsg = "Closing ticket, creating logs, downloading attachments and so on.\nThis may take a while if the ticket is big."
-
 func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.ChannelState, conf *models.TicketConfig, member *discordgo.User, reason string, ctx context.Context) (string, error) {
 	// protect again'st calling close multiple times at the sime time
 	closingTicketsLock.Lock()
@@ -222,8 +220,28 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 		closingTicketsLock.Unlock()
 	}()
 
+	closingMsg := "Closing ticket."
+
+	// We only need to build up a more detailed closing msg.
+	// if we're creating logs.
+	if conf.TicketsUseTXTTranscripts || conf.DownloadAttachments {
+		var closingMsgBuilder strings.Builder
+		closingMsgBuilder.WriteString(closingMsg)
+
+		if conf.TicketsUseTXTTranscripts {
+			closingMsgBuilder.WriteString("\nCreating logs.")
+		}
+
+		if conf.DownloadAttachments {
+			closingMsgBuilder.WriteString("\nDownloading attachments.")
+		}
+
+		closingMsgBuilder.WriteString("\nThis may take a while if the ticket is long.")
+		closingMsg = closingMsgBuilder.String()
+	}
+
 	// send a heads up that this can take a while
-	common.BotSession.ChannelMessageSend(currentTicket.Ticket.ChannelID, closingTicketMsg)
+	common.BotSession.ChannelMessageSend(currentTicket.Ticket.ChannelID, closingMsg)
 
 	currentTicket.Ticket.ClosedAt.Time = time.Now()
 	currentTicket.Ticket.ClosedAt.Valid = true
@@ -308,13 +326,6 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 			Participants: participants,
 		}
 
-		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: closingTicketMsg,
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
 		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, "", evt.Context())
 	case "close-reason":
 		response = &discordgo.InteractionResponse{
@@ -368,13 +379,6 @@ func handleModal(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, me
 			Participants: participants,
 		}
 
-		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: closingTicketMsg,
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
 		response.Data.Content, err = closeTicket(evt.GS, currentTicket, currentChannel, conf, member.User, value, evt.Context())
 	}
 
