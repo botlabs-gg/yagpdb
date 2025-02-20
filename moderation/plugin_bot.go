@@ -330,15 +330,22 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 	// setup done, now we get to the actions.
 	switch {
 	case config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate:
+		var isTimeout bool
 		for _, c := range data.Changes {
 			if *c.Key == discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
 				if c.NewValue == nil {
 					return false, nil
 				} else {
+					isTimeout = true
 					break
 				}
 			}
 		}
+
+		if !isTimeout {
+			return false, nil
+		}
+
 		err = CreateModlogEmbed(config, &author.User, MATimeoutAdded, target, data.Reason, "")
 	case config.LogKicks && *data.ActionType == discordgo.AuditLogActionMemberKick:
 		err = CreateModlogEmbed(config, &author.User, MAKick, target, data.Reason, "")
