@@ -322,6 +322,7 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 		return false, nil
 	}
 
+	var action ModlogAction
 	// setup done, now we get to the actions.
 	switch {
 	case config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate:
@@ -331,22 +332,28 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 		if !isTimeout {
 			return false, nil
 		}
-		return doModlog(config, data, MATimeoutAdded)
+		action = MATimeoutAdded
 	case config.LogKicks && *data.ActionType == discordgo.AuditLogActionMemberKick:
-		return doModlog(config, data, MAKick)
+		action = MAKick
 	case config.LogBans && *data.ActionType == discordgo.AuditLogActionMemberBanAdd:
-		return doModlog(config, data, MABanned)
+		action = MABanned
 	case config.LogUnbans && *data.ActionType == discordgo.AuditLogActionMemberBanRemove:
-		return doModlog(config, data, MAUnbanned)
+		action = MAUnbanned
+	default:
+		return false, nil
 	}
-	return false, nil
-}
 
-func doModlog(config *Config, data *discordgo.GuildAuditLogEntryCreate, action ModlogAction) (retry bool, err error) {
-	author, target, retry, err := getMemberAndUser(data.GuildID, data.UserID, data.TargetID)
+	author, err := bot.GetMember(data.GuildID, data.UserID)
 	if err != nil {
-		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending mod log entry.")
-		return retry, err
+		return false, errors.WithStackIf(err)
+	}
+	target, err := common.BotSession.User(data.TargetID)
+	if err != nil {
+		// TargetID may not be a user ID, 404s are expected
+		if bot.CheckDiscordErrRetry(err) {
+			return true, errors.WithStackIf(err)
+		}
+		return false, err
 	}
 	err = CreateModlogEmbed(config, &author.User, action, target, data.Reason, "")
 	if err != nil {
@@ -354,23 +361,6 @@ func doModlog(config *Config, data *discordgo.GuildAuditLogEntryCreate, action M
 		return false, err
 	}
 	return false, nil
-}
-
-func getMemberAndUser(guildID, authorID, targetID int64) (author *dstate.MemberState, target *discordgo.User, retry bool, err error) {
-	author, err = bot.GetMember(guildID, authorID)
-	if err != nil {
-		return nil, nil, false, errors.WithStackIf(err)
-	}
-
-	target, err = common.BotSession.User(targetID)
-	if err != nil {
-		// TargetID may not be a user ID, 404s are expected
-		if bot.CheckDiscordErrRetry(err) {
-			return nil, nil, true, errors.WithStackIf(err)
-		}
-		return nil, nil, false, err
-	}
-	return author, target, false, nil
 }
 
 // Since updating mutes are now a complex operation with removing roles and whatnot,
