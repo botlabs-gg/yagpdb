@@ -321,6 +321,7 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 		// we performed the action, do not duplicate
 		return false, nil
 	}
+
 	// setup done, now we get to the actions.
 	switch {
 	case config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate:
@@ -341,35 +342,35 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 	return false, nil
 }
 
-func doModlog(config *Config, data *discordgo.GuildAuditLogEntryCreate, action ModlogAction) (isCompleted bool, err error) {
-	author, target, err := getMemberAndUser(data.GuildID, data.UserID, data.TargetID)
+func doModlog(config *Config, data *discordgo.GuildAuditLogEntryCreate, action ModlogAction) (retry bool, err error) {
+	author, target, retry, err := getMemberAndUser(data.GuildID, data.UserID, data.TargetID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending mod log entry.")
-		return false, err
+		return retry, err
 	}
 	err = CreateModlogEmbed(config, &author.User, action, target, data.Reason, "")
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending mod log entry.")
 		return false, err
 	}
-	return true, nil
+	return false, nil
 }
 
-func getMemberAndUser(guildID, authorID, targetID int64) (author *dstate.MemberState, target *discordgo.User, err error) {
+func getMemberAndUser(guildID, authorID, targetID int64) (author *dstate.MemberState, target *discordgo.User, retry bool, err error) {
 	author, err = bot.GetMember(guildID, authorID)
 	if err != nil {
-		return nil, nil, errors.WithStackIf(err)
+		return nil, nil, false, errors.WithStackIf(err)
 	}
 
 	target, err = common.BotSession.User(targetID)
 	if err != nil {
 		// TargetID may not be a user ID, 404s are expected
 		if bot.CheckDiscordErrRetry(err) {
-			return nil, nil, errors.WithStackIf(err)
+			return nil, nil, true, errors.WithStackIf(err)
 		}
-		return nil, nil, err
+		return nil, nil, false, err
 	}
-	return author, target, nil
+	return author, target, false, nil
 }
 
 // Since updating mutes are now a complex operation with removing roles and whatnot,
