@@ -321,46 +321,55 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 		// we performed the action, do not duplicate
 		return false, nil
 	}
-
-	author, err := bot.GetMember(data.GuildID, data.UserID)
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
-
-	target, err := common.BotSession.User(data.TargetID)
-	if err != nil {
-		// TargetID may not be a user ID, 404s are expected
-		if bot.CheckDiscordErrRetry(err) {
-			return true, errors.WithStackIf(err)
-		}
-		return false, nil
-	}
-
 	// setup done, now we get to the actions.
 	switch {
 	case config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate:
 		isTimeout := slices.ContainsFunc(data.Changes, func(c *discordgo.AuditLogChange) bool {
 			return *c.Key == discordgo.AuditLogChangeKeyCommunicationDisabledUntil && c.NewValue != nil
 		})
-
 		if !isTimeout {
 			return false, nil
 		}
-
-		err = CreateModlogEmbed(config, &author.User, MATimeoutAdded, target, data.Reason, "")
+		return doModlog(config, data, MATimeoutAdded)
 	case config.LogKicks && *data.ActionType == discordgo.AuditLogActionMemberKick:
-		err = CreateModlogEmbed(config, &author.User, MAKick, target, data.Reason, "")
+		return doModlog(config, data, MAKick)
 	case config.LogBans && *data.ActionType == discordgo.AuditLogActionMemberBanAdd:
-		err = CreateModlogEmbed(config, &author.User, MABanned, target, data.Reason, "")
+		return doModlog(config, data, MABanned)
 	case config.LogUnbans && *data.ActionType == discordgo.AuditLogActionMemberBanRemove:
-		err = CreateModlogEmbed(config, &author.User, MAUnbanned, target, data.Reason, "")
+		return doModlog(config, data, MAUnbanned)
 	}
+	return false, nil
+}
 
+func doModlog(config *Config, data *discordgo.GuildAuditLogEntryCreate, action ModlogAction) (isCompleted bool, err error) {
+	author, target, err := getMemberAndUser(data.GuildID, data.UserID, data.TargetID)
 	if err != nil {
 		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending mod log entry.")
+		return false, err
+	}
+	err = CreateModlogEmbed(config, &author.User, action, target, data.Reason, "")
+	if err != nil {
+		logger.WithError(err).WithField("guild", data.GuildID).Error("Failed sending mod log entry.")
+		return false, err
+	}
+	return true, nil
+}
+
+func getMemberAndUser(guildID, authorID, targetID int64) (author *dstate.MemberState, target *discordgo.User, err error) {
+	author, err = bot.GetMember(guildID, authorID)
+	if err != nil {
+		return nil, nil, errors.WithStackIf(err)
 	}
 
-	return false, nil
+	target, err = common.BotSession.User(targetID)
+	if err != nil {
+		// TargetID may not be a user ID, 404s are expected
+		if bot.CheckDiscordErrRetry(err) {
+			return nil, nil, errors.WithStackIf(err)
+		}
+		return nil, nil, err
+	}
+	return author, target, nil
 }
 
 // Since updating mutes are now a complex operation with removing roles and whatnot,
