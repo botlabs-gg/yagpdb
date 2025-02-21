@@ -286,6 +286,13 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 				},
 			}
 		} else {
+			common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Flags: discordgo.MessageFlagsEphemeral,
+				},
+			})
+
 			response.Data.Content, err = openTicket(evt.Context(), evt.GS, dstate.MemberStateFromMember(member), conf, cID)
 		}
 		return response, err
@@ -301,6 +308,11 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 			response.Data.Content = "A problem occured, failed to close the ticket."
 			return response, err
 		}
+
+		common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseDeferredMessageUpdate,
+		})
+
 		var currentTicket *Ticket
 		participants, _ := models.TicketParticipants(qm.Where("ticket_guild_id = ? AND ticket_local_id = ?", activeTicket.GuildID, activeTicket.LocalID)).AllG(evt.Context())
 		currentTicket = &Ticket{
