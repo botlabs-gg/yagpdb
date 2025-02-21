@@ -3,6 +3,7 @@ package moderation
 import (
 	"database/sql"
 	"math/rand"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -303,6 +304,10 @@ func RefreshMuteOverrideForChannel(config *Config, channel dstate.ChannelState) 
 func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err error) {
 	data := evt.GuildAuditLogEntryCreate()
 
+	if data.UserID == 0 || data.TargetID == 0 {
+		return false, nil
+	}
+
 	config, err := BotCachedGetConfig(data.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
@@ -324,21 +329,24 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 
 	target, err := common.BotSession.User(data.TargetID)
 	if err != nil {
-		return true, errors.WithStackIf(err)
+		// TargetID may not be a user ID, 404s are expected
+		if bot.CheckDiscordErrRetry(err) {
+			return true, errors.WithStackIf(err)
+		}
+		return false, nil
 	}
 
 	// setup done, now we get to the actions.
 	switch {
 	case config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate:
-		for _, c := range data.Changes {
-			if *c.Key == discordgo.AuditLogChangeKeyCommunicationDisabledUntil {
-				if c.NewValue == nil {
-					return false, nil
-				} else {
-					break
-				}
-			}
+		isTimeout := slices.ContainsFunc(data.Changes, func(c *discordgo.AuditLogChange) bool {
+			return *c.Key == discordgo.AuditLogChangeKeyCommunicationDisabledUntil && c.NewValue != nil
+		})
+
+		if !isTimeout {
+			return false, nil
 		}
+
 		err = CreateModlogEmbed(config, &author.User, MATimeoutAdded, target, data.Reason, "")
 	case config.LogKicks && *data.ActionType == discordgo.AuditLogActionMemberKick:
 		err = CreateModlogEmbed(config, &author.User, MAKick, target, data.Reason, "")
