@@ -167,6 +167,9 @@ type Message struct {
 	// An array of StickerItem objects, is the message contains any.
 	StickerItems  []*StickerItem `json:"sticker_items"`
 	ApplicationID int64          `json:"application_id,string"`
+
+	// Poll object
+	Poll *Poll `json:"poll"`
 }
 
 type MessageSnapshot struct {
@@ -272,6 +275,7 @@ type MessageSend struct {
 	Reference       *MessageReference  `json:"message_reference,omitempty"`
 	Flags           MessageFlags       `json:"flags,omitempty"`
 	StickerIDs      []int64            `json:"sticker_ids"`
+	Poll            *Poll              `json:"poll,omitempty"`
 
 	// TODO: Remove this when compatibility is not required.
 	File *File `json:"-"`
