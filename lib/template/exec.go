@@ -22,6 +22,7 @@ import (
 // recursive template invocations. This limit allows us to return
 // an error instead of triggering a stack overflow.
 var maxExecDepth = initMaxExecDepth()
+var maxStringLength = 1000000
 
 func initMaxExecDepth() int {
 	if runtime.GOARCH == "wasm" {
@@ -72,9 +73,6 @@ func (s *state) pop(mark int) {
 func (s *state) setVar(name string, value reflect.Value) {
 	for i := s.mark() - 1; i >= 0; i-- {
 		if s.vars[i].name == name {
-			if value.Kind() == reflect.String && value.Len() > 1000000 {
-				s.errorf("variable %s exceeds maximum allowed size", name)
-			}
 			s.vars[i].value = value
 			return
 		}
@@ -923,7 +921,11 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 
 	// Special case for builtin execTemplate.
 	if fun == builtinExecTemplate {
-		return s.callExecTemplate(dot, node, argv)
+		v := s.callExecTemplate(dot, node, argv)
+		if v.Kind() == reflect.String && v.Len() > maxStringLength {
+			s.errorf("function response %s exceeds maximum allowed size", name)
+		}
+		return v
 	}
 
 	v, panicked, err := safeCall(fun, argv)
@@ -942,6 +944,9 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 			s.errorf("error calling %s: %v", name, err)
 		}
 		panic(funcCallError{err})
+	}
+	if v.Kind() == reflect.String && v.Len() > maxStringLength {
+		s.errorf("function response %s exceeds maximum allowed size", name)
 	}
 	if v.Type() == reflectValueType {
 		v = v.Interface().(reflect.Value)
