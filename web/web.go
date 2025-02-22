@@ -30,14 +30,17 @@ var (
 	Templates *template.Template
 
 	Debug              = true // Turns on debug mode
-	ListenAddressHTTP  = ":5000"
-	ListenAddressHTTPS = ":5001"
+	ListenAddressHTTP  string
+	ListenAddressHTTPS string
 
 	// Muxers
 	RootMux            *goji.Mux
 	CPMux              *goji.Mux
 	ServerPublicMux    *goji.Mux
 	ServerPublicAPIMux *goji.Mux
+
+	confListenAddressHTTP  = config.RegisterOption("yagpdb.web.http_address", "Port to listen for HTTP requests on. Overriden by the -pa flag", 5000)
+	confListenAddressHTTPS = config.RegisterOption("yagpdb.web.https_address", "Port to listen for HTTPS requests on. Overriden by the -pa flag", 5001)
 
 	properAddresses bool
 
@@ -152,6 +155,9 @@ func Run() {
 	if properAddresses {
 		ListenAddressHTTP = ":80"
 		ListenAddressHTTPS = ":443"
+	} else {
+		ListenAddressHTTP = ":" + confListenAddressHTTP.GetString()
+		ListenAddressHTTPS = ":" + confListenAddressHTTPS.GetString()
 	}
 
 	patreon.Run()
