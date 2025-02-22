@@ -72,6 +72,9 @@ func (s *state) pop(mark int) {
 func (s *state) setVar(name string, value reflect.Value) {
 	for i := s.mark() - 1; i >= 0; i-- {
 		if s.vars[i].name == name {
+			if value.Kind() == reflect.String && value.Len() > 1000000 {
+				s.errorf("variable %s exceeds maximum allowed size", name)
+			}
 			s.vars[i].value = value
 			return
 		}
