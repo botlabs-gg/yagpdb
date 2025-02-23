@@ -587,7 +587,7 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 
 		_, err = common.BotSession.ChannelFileSendWithMessage(channel.ID, fmt.Sprintf("transcript-%d-%s.txt", ticket.LocalID, ticket.Title), fmt.Sprintf("transcript-%d-%s.txt", ticket.LocalID, ticket.Title), formattedTranscript)
 		if err != nil {
-			return
+			return nil
 		}
 	}
 
