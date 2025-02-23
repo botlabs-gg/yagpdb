@@ -578,6 +578,19 @@ func createLogs(gs *dstate.GuildSet, conf *models.TicketConfig, ticket *models.T
 		archiveAttachments(conf, ticket, attachments, adminOnly)
 	}
 
+	if conf.TicketsUseTXTTranscripts && &conf.TicketsUseTXTTranscriptsOwner != nil {
+		formattedTranscript := createTXTTranscript(ticket, msgs)
+		channel, err := common.BotSession.UserChannelCreate(ticket.AuthorID)
+		if err != nil {
+			return err
+		}
+
+		_, err = common.BotSession.ChannelFileSendWithMessage(channel.ID, fmt.Sprintf("transcript-%d-%s.txt", ticket.LocalID, ticket.Title), fmt.Sprintf("transcript-%d-%s.txt", ticket.LocalID, ticket.Title), formattedTranscript)
+		if err != nil {
+			return
+		}
+	}
+
 	return nil
 }
 
