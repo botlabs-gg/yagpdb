@@ -13,12 +13,15 @@ CREATE TABLE IF NOT EXISTS ticket_configs  (
 	tickets_transcripts_channel BIGINT NOT NULL,
 	download_attachments BOOLEAN NOT NULL,
 	tickets_use_txt_transcripts BOOLEAN NOT NULL,
+	tickets_use_txt_transcripts_owner BOOLEAN NOT NULL,
 
 	mod_roles BIGINT[],
 	admin_roles BIGINT[]
 );
 `, `
 ALTER TABLE ticket_configs ADD COLUMN IF NOT EXISTS tickets_transcripts_channel_admin_only BIGINT NOT NULL DEFAULT 0;
+`, `
+ALTER TABLE ticket_configs ADD COLUMN IF NOT EXISTS tickets_use_txt_transcripts_owner BOOLEAN NOT NULL DEFAULT FALSE;
 `, `
 ALTER TABLE ticket_configs ADD COLUMN IF NOT EXISTS append_buttons BIGINT NOT NULL DEFAULT 0;
 `, `

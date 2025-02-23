@@ -27,6 +27,7 @@ type FormData struct {
 	TicketsTranscriptsChannelAdminOnly int64 `valid:"channel,true"`
 	StatusChannel                      int64 `valid:"channel,true"`
 	TicketsUseTXTTranscripts           bool
+	TicketsUseTXTTranscriptsOwner      bool
 	DownloadAttachments                bool
 	ModRoles                           []int64 `valid:"role"`
 	AdminRoles                         []int64 `valid:"role"`
@@ -103,6 +104,7 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 		AppendButtons:                      appendButtons,
 		StatusChannel:                      formConfig.StatusChannel,
 		TicketsUseTXTTranscripts:           formConfig.TicketsUseTXTTranscripts,
+		TicketsUseTXTTranscriptsOwner:      formConfig.TicketsUseTXTTranscriptsOwner,
 		DownloadAttachments:                formConfig.DownloadAttachments,
 		ModRoles:                           formConfig.ModRoles,
 		AdminRoles:                         formConfig.AdminRoles,
