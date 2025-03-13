@@ -779,9 +779,14 @@ func baseContextFuncs(c *Context) {
 type limitedWriter struct {
 	W io.Writer
 	N int64
+	i int64
 }
 
 func (l *limitedWriter) Write(p []byte) (n int, err error) {
+	if l.N == l.i && len(bytes.TrimSpace(p)) < 1 {
+		return 0, nil
+	}
+
 	if l.N <= 0 {
 		return 0, io.ErrShortWrite
 	}
@@ -799,9 +804,9 @@ func (l *limitedWriter) Write(p []byte) (n int, err error) {
 
 // LimitWriter works like io.LimitReader. It writes at most n bytes
 // to the underlying Writer. It returns io.ErrShortWrite if more than n
-// bytes are attempted to be written.
+// bytes are attempted to be written. It will not write leading whitespace.
 func LimitWriter(w io.Writer, n int64) io.Writer {
-	return &limitedWriter{W: w, N: n}
+	return &limitedWriter{W: w, N: n, i: n}
 }
 
 func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySeconds int, token string) {
