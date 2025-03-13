@@ -783,22 +783,28 @@ type limitedWriter struct {
 }
 
 func (l *limitedWriter) Write(p []byte) (n int, err error) {
-	onlyWhitespace := len(bytes.TrimSpace(p)) < 1
-	if l.N == l.i && onlyWhitespace {
-		return 0, nil
-	}
-
-	swErr := io.ErrShortWrite
-	if onlyWhitespace {
-		swErr = nil
+	noWhitespace := bytes.TrimSpace(p)
+	if l.N == l.i {
+		if len(noWhitespace) < 1 {
+			return 0, nil
+		} else {
+			p = noWhitespace
+		}
 	}
 
 	if l.N <= 0 {
+		swErr := io.ErrShortWrite
+		if len(noWhitespace) < 1 {
+			swErr = nil
+		}
 		return 0, swErr
 	}
 	if int64(len(p)) > l.N {
-		p = p[0:l.N]
-		err = swErr
+		var cut []byte
+		p, cut = p[0:l.N], p[l.N:]
+		if len(bytes.TrimSpace(cut)) > 0 {
+			err = io.ErrShortWrite
+		}
 	}
 	n, er := l.W.Write(p)
 	if er != nil {
