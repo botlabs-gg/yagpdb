@@ -783,16 +783,22 @@ type limitedWriter struct {
 }
 
 func (l *limitedWriter) Write(p []byte) (n int, err error) {
-	if l.N == l.i && len(bytes.TrimSpace(p)) < 1 {
+	onlyWhitespace := len(bytes.TrimSpace(p)) < 1
+	if l.N == l.i && onlyWhitespace {
 		return 0, nil
 	}
 
+	swErr := io.ErrShortWrite
+	if onlyWhitespace {
+		swErr = nil
+	}
+
 	if l.N <= 0 {
-		return 0, io.ErrShortWrite
+		return 0, swErr
 	}
 	if int64(len(p)) > l.N {
 		p = p[0:l.N]
-		err = io.ErrShortWrite
+		err = swErr
 	}
 	n, er := l.W.Write(p)
 	if er != nil {
@@ -804,7 +810,9 @@ func (l *limitedWriter) Write(p []byte) (n int, err error) {
 
 // LimitWriter works like io.LimitReader. It writes at most n bytes
 // to the underlying Writer. It returns io.ErrShortWrite if more than n
-// bytes are attempted to be written. It will not write leading whitespace.
+// bytes are attempted to be written, unless those bytes are exclusively
+// whitespace, in which case it will not write them and return without error.
+// It will not write leading whitespace.
 func LimitWriter(w io.Writer, n int64) io.Writer {
 	return &limitedWriter{W: w, N: n, i: n}
 }
