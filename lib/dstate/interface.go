@@ -415,7 +415,7 @@ type MessageState struct {
 	MentionRoles     []int64
 	Attachments      []discordgo.MessageAttachment
 	Stickers         []discordgo.Sticker
-	Poll 			 *discordgo.Poll
+	Poll             *discordgo.Poll
 
 	ParsedCreatedAt time.Time
 	ParsedEditedAt  time.Time
