@@ -779,15 +779,32 @@ func baseContextFuncs(c *Context) {
 type limitedWriter struct {
 	W io.Writer
 	N int64
+	i int64
 }
 
 func (l *limitedWriter) Write(p []byte) (n int, err error) {
+	noWhitespace := bytes.TrimSpace(p)
+	if l.N == l.i {
+		if len(noWhitespace) < 1 {
+			return 0, nil
+		} else {
+			p = noWhitespace
+		}
+	}
+
 	if l.N <= 0 {
-		return 0, io.ErrShortWrite
+		swErr := io.ErrShortWrite
+		if len(noWhitespace) < 1 {
+			swErr = nil
+		}
+		return 0, swErr
 	}
 	if int64(len(p)) > l.N {
-		p = p[0:l.N]
-		err = io.ErrShortWrite
+		var cut []byte
+		p, cut = p[0:l.N], p[l.N:]
+		if len(bytes.TrimSpace(cut)) > 0 {
+			err = io.ErrShortWrite
+		}
 	}
 	n, er := l.W.Write(p)
 	if er != nil {
@@ -799,9 +816,11 @@ func (l *limitedWriter) Write(p []byte) (n int, err error) {
 
 // LimitWriter works like io.LimitReader. It writes at most n bytes
 // to the underlying Writer. It returns io.ErrShortWrite if more than n
-// bytes are attempted to be written.
+// bytes are attempted to be written, unless those bytes are exclusively
+// whitespace, in which case it will not write them and return without error.
+// It will not write leading whitespace.
 func LimitWriter(w io.Writer, n int64) io.Writer {
-	return &limitedWriter{W: w, N: n}
+	return &limitedWriter{W: w, N: n, i: n}
 }
 
 func MaybeScheduledDeleteMessage(guildID, channelID, messageID int64, delaySeconds int, token string) {
