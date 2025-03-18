@@ -37,11 +37,11 @@ var RulePartMap = map[int]RulePart{
 	21: &NicknameWordlistTrigger{Blacklist: true},
 	22: &SlowmodeTrigger{Attachments: true, ChannelBased: false},
 	23: &SlowmodeTrigger{Attachments: true, ChannelBased: true},
-	24: &UsernameWordlistTrigger{Blacklist: false},
-	25: &UsernameWordlistTrigger{Blacklist: true},
-	26: &UsernameRegexTrigger{BaseRegexTrigger{Inverse: false}},
-	27: &UsernameRegexTrigger{BaseRegexTrigger{Inverse: true}},
-	29: &UsernameInviteTrigger{},
+	24: &GlobalnameWordlistTrigger{Blacklist: false},
+	25: &GlobalnameWordlistTrigger{Blacklist: true},
+	26: &GlobalnameRegexTrigger{BaseRegexTrigger{Inverse: false}},
+	27: &GlobalnameRegexTrigger{BaseRegexTrigger{Inverse: true}},
+	29: &GlobalnameInviteTrigger{},
 	30: &MemberJoinTrigger{},
 	31: &MessageAttachmentTrigger{},
 	32: &MessageAttachmentTrigger{RequiresAttachment: true},
@@ -251,11 +251,11 @@ type NicknameListener interface {
 	CheckNickname(triggerCtx *TriggerContext) (isAffected bool, err error)
 }
 
-// UsernameListener is a trigger that gets triggered on a nickname change
-type UsernameListener interface {
+// GlobalnameListener is a trigger that gets triggered when a member joins
+type GlobalnameListener interface {
 	RulePart
 
-	CheckUsername(triggerCtx *TriggerContext) (isAffected bool, err error)
+	CheckGlobalname(triggerCtx *TriggerContext) (isAffected bool, err error)
 }
 
 // JoinListener is triggers that does stuff when members joins
