@@ -8,6 +8,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/google/safebrowsing"
 	"github.com/sirupsen/logrus"
 )
@@ -79,6 +80,7 @@ func handleCheckMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func serverPerformLookup(input string) (threats [][]safebrowsing.URLThreat, err error) {
+	input = confusables.NormalizeQueryEncodedText(input)
 	matches := common.LinkRegex.FindAllString(input, -1)
 	if len(matches) < 1 {
 		return nil, nil
