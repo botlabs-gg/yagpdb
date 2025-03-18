@@ -83,6 +83,7 @@ func MessageStateFromDgo(m *discordgo.Message) *MessageState {
 		ID:               m.ID,
 		GuildID:          m.GuildID,
 		ChannelID:        m.ChannelID,
+		Poll:			  m.Poll,
 		Author:           author,
 		Member:           m.Member,
 		Content:          m.Content,
