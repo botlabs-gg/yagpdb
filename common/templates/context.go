@@ -503,6 +503,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 		return nil, nil
 	}
 	if sendType == sendMessageDM {
+		msgSend.Content = common.ReplaceServerInvites(msgSend.Content, 0, "[removed-server-invite]")
 		msgSend.Components = []discordgo.MessageComponent{
 			discordgo.ActionsRow{
 				Components: []discordgo.MessageComponent{
