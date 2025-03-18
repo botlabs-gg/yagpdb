@@ -2,6 +2,8 @@ package common
 
 import (
 	"regexp"
+
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 )
 
 type InviteSource struct {
@@ -35,6 +37,7 @@ func ReplaceServerInvites(msg string, guildID int64, replacement string) string 
 }
 
 func ContainsInvite(s string, checkDiscordSource, checkThirdPartySources bool) *InviteSource {
+	s = confusables.NormalizeQueryEncodedText(s)
 	for _, source := range AllInviteSources {
 		if source == DiscordInviteSource && !checkDiscordSource {
 			continue
