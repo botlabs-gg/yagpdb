@@ -137,6 +137,7 @@ func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
 
 func (alc *AnyLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
 	for _, content := range m.GetMessageContents() {
+		content = confusables.NormalizeQueryEncodedText(content)
 		if common.LinkRegex.MatchString(common.ForwardSlashReplacer.Replace(content)) {
 			return true, nil
 		}
@@ -296,6 +297,7 @@ func (dt *DomainTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 
 	var matches []string
 	for _, content := range m.GetMessageContents() {
+		content = confusables.NormalizeQueryEncodedText(content)
 		snapshotMatches := common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(content), -1)
 		matches = append(matches, snapshotMatches...)
 	}
@@ -766,8 +768,8 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 	if s.Attachments && len(m.GetMessageAttachments()) < 1 {
 		return false, nil
 	}
-
-	if s.Links && !common.LinkRegex.MatchString(common.ForwardSlashReplacer.Replace(strings.Join(m.GetMessageContents(), ""))) {
+	content := confusables.NormalizeQueryEncodedText(strings.Join(m.GetMessageContents(), ""))
+	if s.Links && !common.LinkRegex.MatchString(common.ForwardSlashReplacer.Replace(content)) {
 		return false, nil
 	}
 
@@ -807,7 +809,7 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 			}
 		} else if s.Links {
 			contents := v.GetMessageContents()
-			contentString := strings.Join(contents, "")
+			contentString := confusables.NormalizeQueryEncodedText(strings.Join(contents, ""))
 			linksLen := len(common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(contentString), -1))
 			if linksLen < 1 {
 				continue // we're only checking messages with links
