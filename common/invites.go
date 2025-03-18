@@ -13,7 +13,7 @@ type InviteSource struct {
 
 var DiscordInviteSource = &InviteSource{
 	Name:  "Discord",
-	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com\/+invite|discord\.com\/+invite)(?:\/+#)?[\/\\]+([a-zA-Z0-9-]+)`),
+	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com[\/\\]+invite|discord\.com[\/\\]+invite)(?:\/+#)?[\/\\]+([a-zA-Z0-9-]+)`),
 }
 
 var ThirdpartyDiscordSites = []*InviteSource{
@@ -30,6 +30,7 @@ var AllInviteSources = append([]*InviteSource{DiscordInviteSource}, ThirdpartyDi
 func ReplaceServerInvites(msg string, guildID int64, replacement string) string {
 
 	for _, s := range AllInviteSources {
+		msg = confusables.NormalizeQueryEncodedText(msg)
 		msg = s.Regex.ReplaceAllString(msg, replacement)
 	}
 

@@ -260,7 +260,7 @@ func CheckMessageForBadInvites(msg *discordgo.Message) (containsBadInvites bool)
 		if common.ContainsInvite(content, false, true) != nil {
 			return true
 		}
-
+		content := confusables.NormalizeQueryEncodedText(content)
 		matches := common.DiscordInviteSource.Regex.FindAllStringSubmatch(content, -1)
 		if len(matches) < 1 {
 			continue
