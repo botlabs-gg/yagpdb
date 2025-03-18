@@ -2,6 +2,8 @@ package common
 
 import (
 	"regexp"
+
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 )
 
 type InviteSource struct {
@@ -11,7 +13,7 @@ type InviteSource struct {
 
 var DiscordInviteSource = &InviteSource{
 	Name:  "Discord",
-	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com\/+invite|discord\.com\/+invite)(?:\/+#)?[\/\\]+([a-zA-Z0-9-]+)`),
+	Regex: regexp.MustCompile(`(?i)(discord\.gg|discordapp\.com[\/\\]+invite|discord\.com[\/\\]+invite)(?:\/+#)?[\/\\]+([a-zA-Z0-9-]+)`),
 }
 
 var ThirdpartyDiscordSites = []*InviteSource{
@@ -28,6 +30,7 @@ var AllInviteSources = append([]*InviteSource{DiscordInviteSource}, ThirdpartyDi
 func ReplaceServerInvites(msg string, guildID int64, replacement string) string {
 
 	for _, s := range AllInviteSources {
+		msg = confusables.NormalizeQueryEncodedText(msg)
 		msg = s.Regex.ReplaceAllString(msg, replacement)
 	}
 
@@ -35,6 +38,7 @@ func ReplaceServerInvites(msg string, guildID int64, replacement string) string 
 }
 
 func ContainsInvite(s string, checkDiscordSource, checkThirdPartySources bool) *InviteSource {
+	s = confusables.NormalizeQueryEncodedText(s)
 	for _, source := range AllInviteSources {
 		if source == DiscordInviteSource && !checkDiscordSource {
 			continue
