@@ -785,18 +785,18 @@ type limitedWriter struct {
 }
 
 func (l *limitedWriter) Write(p []byte) (n int, err error) {
-	moLeadingWhitespace := trimLeftSpace(p)
+	noLeadingWhitespace := trimLeftSpace(p)
 	if l.N == l.i {
-		if len(moLeadingWhitespace) < 1 {
+		if len(noLeadingWhitespace) < 1 {
 			return 0, nil
 		} else {
-			p = moLeadingWhitespace
+			p = noLeadingWhitespace
 		}
 	}
 
 	if l.N <= 0 {
 		swErr := io.ErrShortWrite
-		if len(moLeadingWhitespace) < 1 {
+		if len(noLeadingWhitespace) < 1 {
 			swErr = nil
 		}
 		return 0, swErr
