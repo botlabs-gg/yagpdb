@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"emperror.dev/errors"
@@ -784,18 +785,18 @@ type limitedWriter struct {
 }
 
 func (l *limitedWriter) Write(p []byte) (n int, err error) {
-	noWhitespace := bytes.TrimSpace(p)
+	moLeadingWhitespace := trimLeftSpace(p)
 	if l.N == l.i {
-		if len(noWhitespace) < 1 {
+		if len(moLeadingWhitespace) < 1 {
 			return 0, nil
 		} else {
-			p = noWhitespace
+			p = moLeadingWhitespace
 		}
 	}
 
 	if l.N <= 0 {
 		swErr := io.ErrShortWrite
-		if len(noWhitespace) < 1 {
+		if len(moLeadingWhitespace) < 1 {
 			swErr = nil
 		}
 		return 0, swErr
@@ -813,6 +814,26 @@ func (l *limitedWriter) Write(p []byte) (n int, err error) {
 	}
 	l.N -= int64(n)
 	return n, err
+}
+
+var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
+
+func trimLeftSpace(s []byte) []byte {
+	// Fast path for ASCII: look for the first ASCII non-space byte
+	start := 0
+	for ; start < len(s); start++ {
+		c := s[start]
+		if c >= utf8.RuneSelf {
+			// If we run into a non-ASCII byte, fall back to the
+			// slower unicode-aware method on the remaining bytes
+			return bytes.TrimLeftFunc(s[start:], unicode.IsSpace)
+		}
+		if asciiSpace[c] == 0 {
+			break
+		}
+	}
+
+	return s[start:]
 }
 
 // LimitWriter works like io.LimitReader. It writes at most n bytes
