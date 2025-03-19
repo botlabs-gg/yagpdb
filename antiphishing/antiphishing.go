@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -250,6 +251,7 @@ func queryPhishingLinks(input []string) (string, error) {
 }
 
 func CheckMessageForPhishingDomains(input string) (string, error) {
+	input = confusables.NormalizeQueryEncodedText(input)
 	matches := common.LinkRegex.FindAllString(input, -1)
 	if len(matches) < 1 {
 		return "", nil

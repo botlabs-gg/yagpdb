@@ -11,6 +11,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/antiphishing"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
@@ -259,7 +260,7 @@ func CheckMessageForBadInvites(msg *discordgo.Message) (containsBadInvites bool)
 		if common.ContainsInvite(content, false, true) != nil {
 			return true
 		}
-
+		content := confusables.NormalizeQueryEncodedText(content)
 		matches := common.DiscordInviteSource.Regex.FindAllStringSubmatch(content, -1)
 		if len(matches) < 1 {
 			continue
@@ -377,7 +378,8 @@ type LinksRule struct {
 
 func (l *LinksRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del bool, punishment Punishment, msg string, err error) {
 
-	if !common.LinkRegex.MatchString(forwardSlashReplacer.Replace(evt.Content)) {
+	content := confusables.NormalizeQueryEncodedText(evt.Content)
+	if !common.LinkRegex.MatchString(forwardSlashReplacer.Replace(content)) {
 		return
 	}
 
@@ -493,9 +495,9 @@ func (s *SitesRule) Check(evt *discordgo.Message, cs *dstate.ChannelState) (del 
 
 func (s *SitesRule) checkMessage(message *discordgo.Message) (banned bool, item string, threatList string) {
 	for _, content := range message.GetMessageContents() {
+		content = confusables.NormalizeQueryEncodedText(content)
 		matches := common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(content), -1)
 		for _, v := range matches {
-
 			if !strings.HasPrefix(v, "http://") && !strings.HasPrefix(v, "https://") && !strings.HasPrefix(v, "steam://") {
 				v = "http://" + v
 			}

@@ -2,6 +2,8 @@ package common
 
 import (
 	"testing"
+
+	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
 )
 
 func TestDiscordInviteRegex(t *testing.T) {
@@ -19,6 +21,7 @@ func TestDiscordInviteRegex(t *testing.T) {
 
 	for _, v := range testcases {
 		t.Run("Case "+v.input, func(t *testing.T) {
+			v.input = confusables.NormalizeQueryEncodedText(v.input)
 			matches := DiscordInviteSource.Regex.FindAllStringSubmatch(v.input, -1)
 			if len(matches) < 1 && v.inviteID != "" {
 				t.Error("No matches")

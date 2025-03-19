@@ -137,6 +137,7 @@ func (alc *AnyLinkTrigger) UserSettings() []*SettingDef {
 
 func (alc *AnyLinkTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
 	for _, content := range m.GetMessageContents() {
+		content = confusables.NormalizeQueryEncodedText(content)
 		if common.LinkRegex.MatchString(common.ForwardSlashReplacer.Replace(content)) {
 			return true, nil
 		}
@@ -296,6 +297,7 @@ func (dt *DomainTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 
 	var matches []string
 	for _, content := range m.GetMessageContents() {
+		content = confusables.NormalizeQueryEncodedText(content)
 		snapshotMatches := common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(content), -1)
 		matches = append(matches, snapshotMatches...)
 	}
@@ -766,8 +768,8 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 	if s.Attachments && len(m.GetMessageAttachments()) < 1 {
 		return false, nil
 	}
-
-	if s.Links && !common.LinkRegex.MatchString(common.ForwardSlashReplacer.Replace(strings.Join(m.GetMessageContents(), ""))) {
+	content := confusables.NormalizeQueryEncodedText(strings.Join(m.GetMessageContents(), ""))
+	if s.Links && !common.LinkRegex.MatchString(common.ForwardSlashReplacer.Replace(content)) {
 		return false, nil
 	}
 
@@ -807,7 +809,7 @@ func (s *SlowmodeTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Ch
 			}
 		} else if s.Links {
 			contents := v.GetMessageContents()
-			contentString := strings.Join(contents, "")
+			contentString := confusables.NormalizeQueryEncodedText(strings.Join(contents, ""))
 			linksLen := len(common.LinkRegex.FindAllString(common.ForwardSlashReplacer.Replace(contentString), -1))
 			if linksLen < 1 {
 				continue // we're only checking messages with links
@@ -1283,29 +1285,29 @@ func (nwl *NicknameWordlistTrigger) CheckNickname(t *TriggerContext) (bool, erro
 
 /////////////////////////////////////////////////////////////
 
-var _ UsernameListener = (*UsernameRegexTrigger)(nil)
+var _ GlobalnameListener = (*GlobalnameRegexTrigger)(nil)
 
-type UsernameRegexTrigger struct {
+type GlobalnameRegexTrigger struct {
 	BaseRegexTrigger
 }
 
-func (r *UsernameRegexTrigger) Name() string {
+func (r *GlobalnameRegexTrigger) Name() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Join username not matching regex"
+		return "Join Globalname not matching regex"
 	}
 
-	return "Join username matches regex"
+	return "Join Globalname matches regex"
 }
 
-func (r *UsernameRegexTrigger) Description() string {
+func (r *GlobalnameRegexTrigger) Description() string {
 	if r.BaseRegexTrigger.Inverse {
-		return "Triggers when a member joins with a username that does not match the provided regex"
+		return "Triggers when a member joins with a Globalname that does not match the provided regex"
 	}
 
-	return "Triggers when a member joins with a username that matches the provided regex"
+	return "Triggers when a member joins with a Globalname that matches the provided regex"
 }
 
-func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
+func (r *GlobalnameRegexTrigger) CheckGlobalname(t *TriggerContext) (bool, error) {
 	dataCast := t.Data.(*BaseRegexTriggerData)
 
 	item, err := RegexCache.Fetch(dataCast.Regex, time.Minute*10, func() (interface{}, error) {
@@ -1323,12 +1325,12 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 
 	re := item.Value().(*regexp.Regexp)
 
-	var sanitizedUsername string
+	var sanitizedGlobalname string
 	if dataCast.SanitizeText {
-		sanitizedUsername = confusables.SanitizeText(t.MS.User.Username)
+		sanitizedGlobalname = confusables.SanitizeText(t.MS.User.Globalname)
 	}
 
-	if re.MatchString(t.MS.User.Username) || (dataCast.SanitizeText && re.MatchString(sanitizedUsername)) {
+	if re.MatchString(t.MS.User.Globalname) || (dataCast.SanitizeText && re.MatchString(sanitizedGlobalname)) {
 		if r.BaseRegexTrigger.Inverse {
 			return false, nil
 		}
@@ -1344,41 +1346,41 @@ func (r *UsernameRegexTrigger) CheckUsername(t *TriggerContext) (bool, error) {
 
 /////////////////////////////////////////////////////////////
 
-var _ UsernameListener = (*UsernameWordlistTrigger)(nil)
+var _ GlobalnameListener = (*GlobalnameWordlistTrigger)(nil)
 
-type UsernameWordlistTrigger struct {
+type GlobalnameWordlistTrigger struct {
 	Blacklist bool
 }
-type UsernameWorldlistData struct {
+type GlobalnameWorldlistData struct {
 	ListID       int64
 	SanitizeText bool
 }
 
-func (uwl *UsernameWordlistTrigger) Kind() RulePartType {
+func (gwl *GlobalnameWordlistTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (uwl *UsernameWordlistTrigger) DataType() interface{} {
-	return &UsernameWorldlistData{}
+func (gwl *GlobalnameWordlistTrigger) DataType() interface{} {
+	return &GlobalnameWorldlistData{}
 }
 
-func (uwl *UsernameWordlistTrigger) Name() (name string) {
-	if uwl.Blacklist {
-		return "Join username word denylist"
+func (gwl *GlobalnameWordlistTrigger) Name() (name string) {
+	if gwl.Blacklist {
+		return "Join Globalname word denylist"
 	}
 
-	return "Join username word allowlist"
+	return "Join Globalname word allowlist"
 }
 
-func (uwl *UsernameWordlistTrigger) Description() (description string) {
-	if uwl.Blacklist {
-		return "Triggers when a member joins with a username that contains a word in the specified list"
+func (gwl *GlobalnameWordlistTrigger) Description() (description string) {
+	if gwl.Blacklist {
+		return "Triggers when a member joins with a Globalname that contains a word in the specified list"
 	}
 
-	return "Triggers when a member joins with a username that contains a words not in the specified list"
+	return "Triggers when a member joins with a Globalname that contains a words not in the specified list"
 }
 
-func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
+func (gwl *GlobalnameWordlistTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{
 		{
 			Name: "List",
@@ -1394,17 +1396,17 @@ func (uwl *UsernameWordlistTrigger) UserSettings() []*SettingDef {
 	}
 }
 
-func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, error) {
-	dataCast := t.Data.(*UsernameWorldlistData)
+func (gwl *GlobalnameWordlistTrigger) CheckGlobalname(t *TriggerContext) (bool, error) {
+	dataCast := t.Data.(*GlobalnameWorldlistData)
 
 	list, err := FindFetchGuildList(t.GS.ID, dataCast.ListID)
 	if err != nil {
 		return false, nil
 	}
 
-	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Username))
+	fields := strings.Fields(PrepareMessageForWordCheck(t.MS.User.Globalname))
 	if dataCast.SanitizeText {
-		messageFieldsFixText := strings.Fields(confusables.SanitizeText(PrepareMessageForWordCheck(t.MS.User.Username)))
+		messageFieldsFixText := strings.Fields(confusables.SanitizeText(PrepareMessageForWordCheck(t.MS.User.Globalname)))
 		fields = append(fields, messageFieldsFixText...) // Could be turned into a 1-liner, lmk if I should or not
 	}
 
@@ -1412,7 +1414,7 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 		contained := false
 		for _, w := range list.Content {
 			if strings.EqualFold(mf, w) {
-				if uwl.Blacklist {
+				if gwl.Blacklist {
 					// contains a blacklisted word, trigger
 					return true, nil
 				} else {
@@ -1422,7 +1424,7 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 			}
 		}
 
-		if !uwl.Blacklist && !contained {
+		if !gwl.Blacklist && !contained {
 			// word not whitelisted, trigger
 			return true, nil
 		}
@@ -1433,33 +1435,33 @@ func (uwl *UsernameWordlistTrigger) CheckUsername(t *TriggerContext) (bool, erro
 
 /////////////////////////////////////////////////////////////
 
-var _ UsernameListener = (*UsernameInviteTrigger)(nil)
+var _ GlobalnameListener = (*GlobalnameInviteTrigger)(nil)
 
-type UsernameInviteTrigger struct {
+type GlobalnameInviteTrigger struct {
 }
 
-func (uv *UsernameInviteTrigger) Kind() RulePartType {
+func (gv *GlobalnameInviteTrigger) Kind() RulePartType {
 	return RulePartTrigger
 }
 
-func (uv *UsernameInviteTrigger) DataType() interface{} {
+func (gv *GlobalnameInviteTrigger) DataType() interface{} {
 	return nil
 }
 
-func (uv *UsernameInviteTrigger) Name() (name string) {
-	return "Join username invite"
+func (gv *GlobalnameInviteTrigger) Name() (name string) {
+	return "Join Globalname invite"
 }
 
-func (uv *UsernameInviteTrigger) Description() (description string) {
-	return "Triggers when a member joins with a username that contains a server invite"
+func (gv *GlobalnameInviteTrigger) Description() (description string) {
+	return "Triggers when a member joins with a Globalname that contains a server invite"
 }
 
-func (uv *UsernameInviteTrigger) UserSettings() []*SettingDef {
+func (gv *GlobalnameInviteTrigger) UserSettings() []*SettingDef {
 	return []*SettingDef{}
 }
 
-func (uv *UsernameInviteTrigger) CheckUsername(t *TriggerContext) (bool, error) {
-	if common.ContainsInvite(t.MS.User.Username, true, true) != nil {
+func (gv *GlobalnameInviteTrigger) CheckGlobalname(t *TriggerContext) (bool, error) {
+	if common.ContainsInvite(t.MS.User.Globalname, true, true) != nil {
 		return true, nil
 	}
 

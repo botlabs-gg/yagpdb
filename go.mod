@@ -59,12 +59,12 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.14.2
 	github.com/volatiletech/strmangle v0.0.6
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.31.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/image v0.18.0
-	golang.org/x/net v0.33.0
+	golang.org/x/net v0.36.0
 	golang.org/x/oauth2 v0.10.0
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0
 	golang.org/x/time v0.3.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/api v0.131.0

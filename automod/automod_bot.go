@@ -213,7 +213,7 @@ func (p *Plugin) handleGuildMemberJoin(evt *eventsystem.EventData) {
 	ms := dstate.MemberStateFromMember(evtData.Member)
 
 	p.checkJoin(ms)
-	p.checkUsername(ms)
+	p.checkGlobalname(ms)
 }
 
 func (p *Plugin) checkNickname(ms *dstate.MemberState) {
@@ -232,19 +232,19 @@ func (p *Plugin) checkNickname(ms *dstate.MemberState) {
 	})
 }
 
-func (p *Plugin) checkUsername(ms *dstate.MemberState) {
+func (p *Plugin) checkGlobalname(ms *dstate.MemberState) {
 	gs := bot.State.GetGuild(ms.GuildID)
 	if gs == nil {
 		return
 	}
 
 	p.CheckTriggers(nil, gs, ms, nil, nil, func(trig *ParsedPart) (activated bool, err error) {
-		cast, ok := trig.Part.(UsernameListener)
+		cast, ok := trig.Part.(GlobalnameListener)
 		if !ok {
 			return false, nil
 		}
 
-		return cast.CheckUsername(&TriggerContext{GS: gs, MS: ms, Data: trig.ParsedSettings})
+		return cast.CheckGlobalname(&TriggerContext{GS: gs, MS: ms, Data: trig.ParsedSettings})
 	})
 }
 
