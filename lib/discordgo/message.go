@@ -183,6 +183,16 @@ func (m *Message) GetMessageContents() []string {
 	return contents
 }
 
+func (m *Message) GetMessageEmbeds() []*MessageEmbed {
+	embeds := m.Embeds
+	for _, s := range m.MessageSnapshots {
+		if s.Message != nil && len(s.Message.Embeds) > 0 {
+			embeds = append(embeds, s.Message.Embeds...)
+		}
+	}
+	return embeds
+}
+
 func (m *Message) GetMessageAttachments() []*MessageAttachment {
 	attachments := m.Attachments
 	for _, s := range m.MessageSnapshots {

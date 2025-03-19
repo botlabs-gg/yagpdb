@@ -649,18 +649,23 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 	for i := len(msgs) - 1; i >= 0; i-- {
 		m := msgs[i]
 
-		// serialize mesasge content
+		// serialize message content
 		ts, _ := m.Timestamp.Parse()
 		buf.WriteString(fmt.Sprintf("[%s] %s (%d): ", ts.UTC().Format(TicketTXTDateFormat), m.Author.String(), m.Author.ID))
-		if m.Content != "" {
-			buf.WriteString(m.Content)
-			if len(m.Embeds) > 0 {
+		contents := m.GetMessageContents()
+		if len(contents) > 0 {
+			for _, c := range contents {
+				if c == "" {
+					buf.WriteString(c)
+				}
+			}
+			if len(m.GetMessageEmbeds()) > 0 {
 				buf.WriteString(", ")
 			}
 		}
 
 		// serialize embeds
-		for _, v := range m.Embeds {
+		for _, v := range m.GetMessageEmbeds() {
 			marshalled, err := json.Marshal(v)
 			if err != nil {
 				continue
