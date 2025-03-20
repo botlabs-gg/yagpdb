@@ -296,8 +296,8 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			return "", errors.New("custom command is disabled")
 		}
 
-		if cmd.TriggerType == int(CommandTriggerInterval) {
-			return "", errors.New("interval custom command cannot be used with scheduleUniqueCC")
+		if cmd.TriggerType == int(CommandTriggerInterval) || cmd.TriggerType == int(CommandTriggerCron) {
+			return "", errors.New("interval and cron type custom commands cannot be used with scheduleUniqueCC")
 		}
 
 		channelID := ctx.ChannelArg(channel)
