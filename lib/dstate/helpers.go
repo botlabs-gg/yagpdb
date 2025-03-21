@@ -73,6 +73,11 @@ func MessageStateFromDgo(m *discordgo.Message) *MessageState {
 		author = *m.Author
 	}
 
+	var poll *discordgo.Poll
+	if m.Poll != nil {
+		poll = m.Poll
+	}
+
 	parsedC, _ := m.Timestamp.Parse()
 	var parsedE time.Time
 	if m.EditedTimestamp != "" {
@@ -88,6 +93,7 @@ func MessageStateFromDgo(m *discordgo.Message) *MessageState {
 		Content:          m.Content,
 		MessageSnapshots: convertMessageSnapshots(m.MessageSnapshots),
 		Embeds:           embeds,
+		Poll:             poll,
 		Mentions:         mentions,
 		Attachments:      attachments,
 		MentionRoles:     m.MentionRoles,
