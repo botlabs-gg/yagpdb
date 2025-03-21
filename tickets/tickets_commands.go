@@ -655,7 +655,7 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 		contents := m.GetMessageContents()
 		if len(contents) > 0 {
 			for _, c := range contents {
-				if c == "" {
+				if c != "" {
 					buf.WriteString(c)
 				}
 			}
