@@ -60,6 +60,7 @@ var (
 		"reQuoteMeta": regexp.QuoteMeta,
 
 		// math
+		"abs":        tmplAbs,
 		"add":        add,
 		"cbrt":       tmplCbrt,
 		"div":        tmplDiv,
