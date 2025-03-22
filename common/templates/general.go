@@ -815,6 +815,18 @@ func inFold(l interface{}, v string) bool {
 	return false
 }
 
+func tmplAbs(arg interface{}) interface{} {
+	absF := math.Abs(ToFloat64(arg))
+
+	switch arg.(type) {
+	case float32, float64:
+		return absF
+	default:
+		absI := int(absF)
+		return absI
+	}
+}
+
 func add(args ...interface{}) interface{} {
 	if len(args) < 1 {
 		return 0
