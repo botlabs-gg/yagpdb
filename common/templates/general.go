@@ -822,8 +822,7 @@ func tmplAbs(arg interface{}) interface{} {
 	case float32, float64:
 		return absF
 	default:
-		absI := int(absF)
-		return absI
+		return int(absF)
 	}
 }
 
