@@ -280,8 +280,14 @@ OUTER:
 }
 
 func (p *PostHandlerImpl) createPostMessage(post *reddit.Link, allowSpoilers bool) (string, *discordgo.MessageEmbed) {
-	plainMessage := fmt.Sprintf("**%s**\n*by %s (<%s>)*\n",
-		html.UnescapeString(post.Title), post.Author, "https://redd.it/"+post.ID)
+	plainMessage := fmt.Sprintf("**r/[%s](<%s>): [%s](<%s>)**\n*by %s*",
+		post.Subreddit, "https://reddit.com/r/"+post.Subreddit, html.UnescapeString(post.Title), "https://redd.it/"+post.ID, post.Author)
+
+	if p.Slow {
+		plainMessage = fmt.Sprintf("%s • %d ⬆ %d ⬇",
+			plainMessage, post.Ups, post.Downs)
+	}
+	plainMessage += "\n"
 
 	plainBody := ""
 	parentSpoiler := false
