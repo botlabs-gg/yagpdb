@@ -296,7 +296,7 @@ func (g *channelOptsHTMLGenState) outputChannel(id int64, name string, channelTy
 	switch channelType {
 	case discordgo.ChannelTypeGuildText:
 		prefix = "#"
-	case discordgo.ChannelTypeGuildVoice:
+	case discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildStageVoice:
 		prefix = "🔊"
 	case discordgo.ChannelTypeGuildForum:
 		prefix = "📃"
