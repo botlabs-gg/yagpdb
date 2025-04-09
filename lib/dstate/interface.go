@@ -420,6 +420,8 @@ type MessageState struct {
 	ParsedEditedAt  time.Time
 
 	Deleted bool
+
+	RoleSubscriptionData *discordgo.RoleSubscriptionData
 }
 
 func (m *MessageState) GetMessageContents() []string {

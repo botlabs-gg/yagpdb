@@ -167,6 +167,9 @@ type Message struct {
 	// An array of StickerItem objects, is the message contains any.
 	StickerItems  []*StickerItem `json:"sticker_items"`
 	ApplicationID int64          `json:"application_id,string"`
+
+	// Data of the role subscription purchase or renewal that prompted this role subscription message.
+	RoleSubscriptionData *RoleSubscriptionData `json:"role_subscription_data,omitempty"`
 }
 
 type MessageSnapshot struct {
@@ -573,4 +576,12 @@ type MessageInteraction struct {
 
 	// Member is only present when the interaction is from a guild.
 	Member *Member `json:"member"`
+}
+
+// RoleSubscriptionData contains information about the data that prompted a role subscription purchase message (type 25).
+type RoleSubscriptionData struct {
+	RoleSubscriptionListingID int64  `json:"role_subscription_listing_id"`
+	TierName                  string `json:"tier_name"`
+	TotalMonthsSubscribed     int    `json:"total_months_subscribed"`
+	IsRenewal                 bool   `json:"is_renewal"`
 }
