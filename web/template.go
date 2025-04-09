@@ -126,7 +126,7 @@ func tmplRoleDropdown(roles []discordgo.Role, highestBotRole *discordgo.Role, ar
 }
 
 // Same as tmplRoleDropdown but supports multiple selections
-func tmplRoleDropdownMutli(roles []discordgo.Role, highestBotRole *discordgo.Role, selections []int64) template.HTML {
+func tmplRoleDropdownMulti(roles []discordgo.Role, highestBotRole *discordgo.Role, selections []int64) template.HTML {
 
 	var builder strings.Builder
 
