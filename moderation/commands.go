@@ -614,8 +614,11 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			var topContent string
-			for _, r := range config.ReportMentionRoles {
-				topContent += fmt.Sprintf("<@&%d> ", r)
+			if len(config.ReportMentionRoles) > 0 {
+				for _, r := range config.ReportMentionRoles {
+					topContent += fmt.Sprintf("<@&%d>", r)
+				}
+				topContent += ":\n"
 			}
 			topContent += fmt.Sprintf("%s reported **%s (ID %d)**", parsed.Author.Mention(), target.String(), target.ID)
 
@@ -1059,7 +1062,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				if config.DelwarnIncludeWarnReason {
 					reason = fmt.Sprintf("%s\n~~%s~~", reason, warning.Message)
 				}
-				
+
 				err = CreateModlogEmbed(config, parsed.Author, MADelwarn, user, reason, "")
 				if err != nil {
 					return "Failed sending modlog, warning deleted", err
@@ -1405,6 +1408,7 @@ type MessagesWithAttachmentsFilter struct{}
 func (*MessagesWithAttachmentsFilter) Matches(msg *dstate.MessageState) (delete bool) {
 	return len(msg.GetMessageAttachments()) > 0
 }
+
 // Only delete bot messages.
 type BotMessagesFilter struct{}
 
