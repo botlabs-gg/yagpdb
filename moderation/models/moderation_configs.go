@@ -63,6 +63,7 @@ type ModerationConfig struct {
 	WarnMessage                 null.String      `boil:"warn_message" json:"warn_message,omitempty" toml:"warn_message" yaml:"warn_message,omitempty"`
 	CleanEnabled                null.Bool        `boil:"clean_enabled" json:"clean_enabled,omitempty" toml:"clean_enabled" yaml:"clean_enabled,omitempty"`
 	ReportEnabled               null.Bool        `boil:"report_enabled" json:"report_enabled,omitempty" toml:"report_enabled" yaml:"report_enabled,omitempty"`
+	ReportMentionRoles          types.Int64Array `boil:"report_mention_roles" json:"report_mention_roles,omitempty" toml:"report_mention_roles" yaml:"report_mention_roles,omitempty"`
 	ActionChannel               null.String      `boil:"action_channel" json:"action_channel,omitempty" toml:"action_channel" yaml:"action_channel,omitempty"`
 	ReportChannel               null.String      `boil:"report_channel" json:"report_channel,omitempty" toml:"report_channel" yaml:"report_channel,omitempty"`
 	ErrorChannel                null.String      `boil:"error_channel" json:"error_channel,omitempty" toml:"error_channel" yaml:"error_channel,omitempty"`
@@ -121,6 +122,7 @@ var ModerationConfigColumns = struct {
 	ReportEnabled               string
 	ActionChannel               string
 	ReportChannel               string
+	ReportMentionRoles          string
 	ErrorChannel                string
 	LogUnbans                   string
 	LogBans                     string
@@ -172,6 +174,7 @@ var ModerationConfigColumns = struct {
 	ReportEnabled:               "report_enabled",
 	ActionChannel:               "action_channel",
 	ReportChannel:               "report_channel",
+	ReportMentionRoles:          "report_mention_roles",
 	ErrorChannel:                "error_channel",
 	LogUnbans:                   "log_unbans",
 	LogBans:                     "log_bans",
@@ -225,6 +228,7 @@ var ModerationConfigTableColumns = struct {
 	ReportEnabled               string
 	ActionChannel               string
 	ReportChannel               string
+	ReportMentionRoles          string
 	ErrorChannel                string
 	LogUnbans                   string
 	LogBans                     string
@@ -276,6 +280,7 @@ var ModerationConfigTableColumns = struct {
 	ReportEnabled:               "moderation_configs.report_enabled",
 	ActionChannel:               "moderation_configs.action_channel",
 	ReportChannel:               "moderation_configs.report_channel",
+	ReportMentionRoles:          "moderation_configs.report_mention_roles",
 	ErrorChannel:                "moderation_configs.error_channel",
 	LogUnbans:                   "moderation_configs.log_unbans",
 	LogBans:                     "moderation_configs.log_bans",
@@ -514,6 +519,7 @@ var ModerationConfigWhere = struct {
 	ReportEnabled               whereHelpernull_Bool
 	ActionChannel               whereHelpernull_String
 	ReportChannel               whereHelpernull_String
+	ReportMentionRoles          whereHelpertypes_Int64Array
 	ErrorChannel                whereHelpernull_String
 	LogUnbans                   whereHelpernull_Bool
 	LogBans                     whereHelpernull_Bool
@@ -565,6 +571,7 @@ var ModerationConfigWhere = struct {
 	ReportEnabled:               whereHelpernull_Bool{field: "\"moderation_configs\".\"report_enabled\""},
 	ActionChannel:               whereHelpernull_String{field: "\"moderation_configs\".\"action_channel\""},
 	ReportChannel:               whereHelpernull_String{field: "\"moderation_configs\".\"report_channel\""},
+	ReportMentionRoles:          whereHelpertypes_Int64Array{field: "\"moderation_configs\".\"report_mention_roles\""},
 	ErrorChannel:                whereHelpernull_String{field: "\"moderation_configs\".\"error_channel\""},
 	LogUnbans:                   whereHelpernull_Bool{field: "\"moderation_configs\".\"log_unbans\""},
 	LogBans:                     whereHelpernull_Bool{field: "\"moderation_configs\".\"log_bans\""},
@@ -594,9 +601,9 @@ func (*moderationConfigR) NewStruct() *moderationConfigR {
 type moderationConfigL struct{}
 
 var (
-	moderationConfigAllColumns            = []string{"guild_id", "created_at", "updated_at", "kick_enabled", "kick_cmd_roles", "delete_messages_on_kick", "kick_reason_optional", "kick_message", "ban_enabled", "ban_cmd_roles", "ban_reason_optional", "ban_message", "default_ban_delete_days", "timeout_enabled", "timeout_cmd_roles", "timeout_reason_optional", "timeout_remove_reason_optional", "timeout_message", "default_timeout_duration", "mute_enabled", "mute_cmd_roles", "mute_role", "mute_disallow_reaction_add", "mute_reason_optional", "unmute_reason_optional", "mute_manage_role", "mute_remove_roles", "mute_ignore_channels", "mute_message", "unmute_message", "default_mute_duration", "warn_commands_enabled", "warn_cmd_roles", "warn_include_channel_logs", "warn_send_to_modlog", "warn_message", "clean_enabled", "report_enabled", "action_channel", "report_channel", "error_channel", "log_unbans", "log_bans", "log_kicks", "log_timeouts", "give_role_cmd_enabled", "give_role_cmd_modlog", "give_role_cmd_roles", "delwarn_send_to_modlog", "delwarn_include_warn_reason"}
+	moderationConfigAllColumns            = []string{"guild_id", "created_at", "updated_at", "kick_enabled", "kick_cmd_roles", "delete_messages_on_kick", "kick_reason_optional", "kick_message", "ban_enabled", "ban_cmd_roles", "ban_reason_optional", "ban_message", "default_ban_delete_days", "timeout_enabled", "timeout_cmd_roles", "timeout_reason_optional", "timeout_remove_reason_optional", "timeout_message", "default_timeout_duration", "mute_enabled", "mute_cmd_roles", "mute_role", "mute_disallow_reaction_add", "mute_reason_optional", "unmute_reason_optional", "mute_manage_role", "mute_remove_roles", "mute_ignore_channels", "mute_message", "unmute_message", "default_mute_duration", "warn_commands_enabled", "warn_cmd_roles", "warn_include_channel_logs", "warn_send_to_modlog", "warn_message", "clean_enabled", "report_enabled", "action_channel", "report_channel", "report_mention_roles", "error_channel", "log_unbans", "log_bans", "log_kicks", "log_timeouts", "give_role_cmd_enabled", "give_role_cmd_modlog", "give_role_cmd_roles", "delwarn_send_to_modlog", "delwarn_include_warn_reason"}
 	moderationConfigColumnsWithoutDefault = []string{"guild_id", "created_at", "updated_at"}
-	moderationConfigColumnsWithDefault    = []string{"kick_enabled", "kick_cmd_roles", "delete_messages_on_kick", "kick_reason_optional", "kick_message", "ban_enabled", "ban_cmd_roles", "ban_reason_optional", "ban_message", "default_ban_delete_days", "timeout_enabled", "timeout_cmd_roles", "timeout_reason_optional", "timeout_remove_reason_optional", "timeout_message", "default_timeout_duration", "mute_enabled", "mute_cmd_roles", "mute_role", "mute_disallow_reaction_add", "mute_reason_optional", "unmute_reason_optional", "mute_manage_role", "mute_remove_roles", "mute_ignore_channels", "mute_message", "unmute_message", "default_mute_duration", "warn_commands_enabled", "warn_cmd_roles", "warn_include_channel_logs", "warn_send_to_modlog", "warn_message", "clean_enabled", "report_enabled", "action_channel", "report_channel", "error_channel", "log_unbans", "log_bans", "log_kicks", "log_timeouts", "give_role_cmd_enabled", "give_role_cmd_modlog", "give_role_cmd_roles", "delwarn_send_to_modlog", "delwarn_include_warn_reason"}
+	moderationConfigColumnsWithDefault    = []string{"kick_enabled", "kick_cmd_roles", "delete_messages_on_kick", "kick_reason_optional", "kick_message", "ban_enabled", "ban_cmd_roles", "ban_reason_optional", "ban_message", "default_ban_delete_days", "timeout_enabled", "timeout_cmd_roles", "timeout_reason_optional", "timeout_remove_reason_optional", "timeout_message", "default_timeout_duration", "mute_enabled", "mute_cmd_roles", "mute_role", "mute_disallow_reaction_add", "mute_reason_optional", "unmute_reason_optional", "mute_manage_role", "mute_remove_roles", "mute_ignore_channels", "mute_message", "unmute_message", "default_mute_duration", "warn_commands_enabled", "warn_cmd_roles", "warn_include_channel_logs", "warn_send_to_modlog", "warn_message", "clean_enabled", "report_enabled", "action_channel", "report_channel", "report_mention_roles", "error_channel", "log_unbans", "log_bans", "log_kicks", "log_timeouts", "give_role_cmd_enabled", "give_role_cmd_modlog", "give_role_cmd_roles", "delwarn_send_to_modlog", "delwarn_include_warn_reason"}
 	moderationConfigPrimaryKeyColumns     = []string{"guild_id"}
 	moderationConfigGeneratedColumns      = []string{}
 )

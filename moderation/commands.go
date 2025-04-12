@@ -613,7 +613,11 @@ var ModerationCommands = []*commands.YAGCommand{
 				return "No report channel set up", nil
 			}
 
-			topContent := fmt.Sprintf("%s reported **%s (ID %d)**", parsed.Author.Mention(), target.String(), target.ID)
+			var topContent string
+			for _, r := range config.ReportMentionRoles {
+				topContent += fmt.Sprintf("<@&%d> ", r)
+			}
+			topContent += fmt.Sprintf("%s reported **%s (ID %d)**", parsed.Author.Mention(), target.String(), target.ID)
 
 			embed := &discordgo.MessageEmbed{
 				Author: &discordgo.MessageEmbedAuthor{
@@ -631,7 +635,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				Content: topContent,
 				Embeds:  []*discordgo.MessageEmbed{embed},
 				AllowedMentions: discordgo.AllowedMentions{
-					Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+					Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles},
 				},
 			}
 

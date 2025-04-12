@@ -98,15 +98,16 @@ type Config struct {
 	WarnMessage            	string `valid:"template,5000"`
 
 	// Misc
-	CleanEnabled  bool
-	ReportEnabled bool
-	ActionChannel int64 `valid:"channel,true"`
-	ReportChannel int64 `valid:"channel,true"`
-	ErrorChannel  int64 `valid:"channel,true"`
-	LogUnbans     bool
-	LogBans       bool
-	LogKicks      bool
-	LogTimeouts   bool
+	CleanEnabled       bool
+	ReportEnabled      bool
+	ReportMentionRoles types.Int64Array `valid:"role,true"`
+	ActionChannel      int64            `valid:"channel,true"`
+	ReportChannel      int64            `valid:"channel,true"`
+	ErrorChannel       int64            `valid:"channel,true"`
+	LogUnbans          bool
+	LogBans            bool
+	LogKicks           bool
+	LogTimeouts        bool
 
 	GiveRoleCmdEnabled bool
 	GiveRoleCmdModlog  bool
@@ -159,15 +160,16 @@ func (c *Config) ToModel() *models.ModerationConfig {
 		DelwarnIncludeWarnReason: c.DelwarnIncludeWarnReason,
 		WarnMessage:            null.StringFrom(c.WarnMessage),
 
-		CleanEnabled:  null.BoolFrom(c.CleanEnabled),
-		ReportEnabled: null.BoolFrom(c.ReportEnabled),
-		ActionChannel: null.StringFrom(discordgo.StrID(c.ActionChannel)),
-		ReportChannel: null.StringFrom(discordgo.StrID(c.ReportChannel)),
-		ErrorChannel:  null.StringFrom(discordgo.StrID(c.ErrorChannel)),
-		LogUnbans:     null.BoolFrom(c.LogUnbans),
-		LogBans:       null.BoolFrom(c.LogBans),
-		LogKicks:      null.BoolFrom(c.LogKicks),
-		LogTimeouts:   null.BoolFrom(c.LogTimeouts),
+		CleanEnabled:       null.BoolFrom(c.CleanEnabled),
+		ReportEnabled:      null.BoolFrom(c.ReportEnabled),
+		ReportMentionRoles: c.ReportMentionRoles,
+		ActionChannel:      null.StringFrom(discordgo.StrID(c.ActionChannel)),
+		ReportChannel:      null.StringFrom(discordgo.StrID(c.ReportChannel)),
+		ErrorChannel:       null.StringFrom(discordgo.StrID(c.ErrorChannel)),
+		LogUnbans:          null.BoolFrom(c.LogUnbans),
+		LogBans:            null.BoolFrom(c.LogBans),
+		LogKicks:           null.BoolFrom(c.LogKicks),
+		LogTimeouts:        null.BoolFrom(c.LogTimeouts),
 
 		GiveRoleCmdEnabled: null.BoolFrom(c.GiveRoleCmdEnabled),
 		GiveRoleCmdModlog:  null.BoolFrom(c.GiveRoleCmdModlog),
@@ -226,15 +228,16 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		DelwarnIncludeWarnReason: model.DelwarnIncludeWarnReason,
 		WarnMessage:            model.WarnMessage.String,
 
-		CleanEnabled:  model.CleanEnabled.Bool,
-		ReportEnabled: model.ReportEnabled.Bool,
-		ActionChannel: actionChannel,
-		ReportChannel: reportChannel,
-		ErrorChannel:  errorChannel,
-		LogUnbans:     model.LogUnbans.Bool,
-		LogBans:       model.LogBans.Bool,
-		LogKicks:      model.LogKicks.Bool,
-		LogTimeouts:   model.LogTimeouts.Bool,
+		CleanEnabled:       model.CleanEnabled.Bool,
+		ReportEnabled:      model.ReportEnabled.Bool,
+		ReportMentionRoles: model.ReportMentionRoles,
+		ActionChannel:      actionChannel,
+		ReportChannel:      reportChannel,
+		ErrorChannel:       errorChannel,
+		LogUnbans:          model.LogUnbans.Bool,
+		LogBans:            model.LogBans.Bool,
+		LogKicks:           model.LogKicks.Bool,
+		LogTimeouts:        model.LogTimeouts.Bool,
 
 		GiveRoleCmdEnabled: model.GiveRoleCmdEnabled.Bool,
 		GiveRoleCmdModlog:  model.GiveRoleCmdModlog.Bool,
