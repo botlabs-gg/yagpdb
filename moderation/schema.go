@@ -79,7 +79,7 @@ ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS delwarn_send_to_modlog B
 `, `
 ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS delwarn_include_warn_reason BOOLEAN NOT NULL DEFAULT false;
 `, `
-ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS report_mention_roles BIGINT[] NOT NULL DEFAULT {};
+ALTER TABLE moderation_configs ADD COLUMN IF NOT EXISTS report_mention_roles BIGINT[] NOT NULL DEFAULT '{}';
 `, `
 
 CREATE TABLE IF NOT EXISTS moderation_warnings (

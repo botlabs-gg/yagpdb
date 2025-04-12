@@ -144,7 +144,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
             report channel.
         </p>
         <select id="roles" class="multiselect form-control" multiple="multiple" name="ReportMentionRoles" data-plugin-multiselect>
-            {{roleOptionsMulti .ActiveGuild.Roles nil nil}}
+            {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.ReportMentionRoles}}
         </select>
         <label for="roles">Mention Roles in Reports</label>
         <hr />
