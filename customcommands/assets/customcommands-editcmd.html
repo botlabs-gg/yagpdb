@@ -181,6 +181,36 @@
                                     </div>
                                 </div>
                             </div>
+                            <div id="cc-reaction-trigger-details" class="hidden col-lg-8">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                                id="reaction-mode-both-{{.CC.LocalID}}" value="0"
+                                                {{if eq .CC.ReactionTriggerMode 0}}checked{{end}}>
+                                            <label class="form-check-label" for="reaction-mode-both-{{.CC.LocalID}}">
+                                                Added + Removed reactions
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                                id="reaction-mode-added-{{.CC.LocalID}}" value="1"
+                                                {{if eq .CC.ReactionTriggerMode 1}}checked{{end}}>
+                                            <label class="form-check-label" for="reaction-mode-added-{{.CC.LocalID}}">
+                                                Added reactions only
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="reaction_trigger_mode"
+                                                id="reaction-mode-removed-{{.CC.LocalID}}" value="2"
+                                                {{if eq .CC.ReactionTriggerMode 2}}checked{{end}}>
+                                            <label class="form-check-label" for="reaction-mode-removed-{{.CC.LocalID}}">
+                                                Removed reactions only
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div id="cc-interaction-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
                                     <label for="interaction-defer-radio-{{.CC.LocalID}}">
