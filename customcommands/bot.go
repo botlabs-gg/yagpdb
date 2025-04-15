@@ -861,6 +861,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 			return
 		}
 
+		deferResponseToCCs(&interaction, triggeredCmds)
 		for _, matched := range triggeredCmds {
 			err = ExecuteCustomCommandFromComponent(matched.CC, evt.GS, cState, matched.Args, matched.Stripped, &interaction)
 			if err != nil {
@@ -886,11 +887,41 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 			return
 		}
 
+		deferResponseToCCs(&interaction, triggeredCmds)
 		for _, matched := range triggeredCmds {
 			err = ExecuteCustomCommandFromModal(matched.CC, evt.GS, cState, matched.Args, matched.Stripped, &interaction)
 			if err != nil {
 				logger.WithField("guild", cState.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
 			}
+		}
+	}
+}
+
+func deferResponseToCCs(interaction *templates.CustomCommandInteraction, ccs []*TriggeredCC) {
+	def := &discordgo.InteractionResponse{
+		Data: &discordgo.InteractionResponseData{},
+	}
+
+	for _, c := range ccs {
+		switch c.CC.InteractionDeferMode {
+		case InteractionDeferModeNone:
+			continue
+		case InteractionDeferModeMessage:
+			def.Type = discordgo.InteractionResponseDeferredChannelMessageWithSource
+		case InteractionDeferModeEphemeral:
+			def.Type = discordgo.InteractionResponseDeferredChannelMessageWithSource
+			def.Data.Flags = def.Data.Flags | discordgo.MessageFlagsEphemeral
+		case InteractionDeferModeUpdate:
+			def.Type = discordgo.InteractionResponseDeferredMessageUpdate
+		}
+
+		break
+	}
+
+	if def.Type != 0 {
+		err := common.BotSession.CreateInteractionResponse(interaction.ID, interaction.Token, def)
+		if err != nil {
+			logger.WithField("guild", interaction.GuildID).WithError(err).Error("Error deferring response")
 		}
 	}
 }
