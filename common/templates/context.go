@@ -463,11 +463,11 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 	if c.CurrentFrame.Interaction != nil {
 		if c.CurrentFrame.Interaction.RespondedTo {
 			sendType = sendMessageInteractionFollowup
-		} else {
-			sendType = sendMessageInteractionResponse
 			if c.CurrentFrame.Interaction.Deferred {
 				sendType = sendMessageInteractionDeferred
 			}
+		} else {
+			sendType = sendMessageInteractionResponse
 		}
 	} else if c.CurrentFrame.SendResponseInDM || (c.CurrentFrame.CS != nil && c.CurrentFrame.CS.IsPrivate()) {
 		sendType = sendMessageDM
@@ -559,9 +559,6 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 			AllowedMentions: &msgSend.AllowedMentions,
 			Flags:           int64(msgSend.Flags),
 		})
-		if err == nil {
-			c.CurrentFrame.Interaction.RespondedTo = true
-		}
 	default:
 		m, err = common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
 	}
