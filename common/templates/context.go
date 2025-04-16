@@ -559,7 +559,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 			AllowedMentions: &msgSend.AllowedMentions,
 			Flags:           int64(msgSend.Flags),
 		})
-		if err != nil {
+		if err == nil {
 			c.CurrentFrame.Interaction.Deferred = false
 		}
 	default:
