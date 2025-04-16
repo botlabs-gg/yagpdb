@@ -553,7 +553,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 			Flags:           int64(msgSend.Flags),
 		})
 	case sendMessageInteractionDeferred:
-		m, err = common.BotSession.CreateFollowupMessage(common.BotApplication.ID, c.CurrentFrame.Interaction.Token, &discordgo.WebhookParams{
+		m, err = common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, c.CurrentFrame.Interaction.Token, &discordgo.WebhookParams{
 			Content:         msgSend.Content,
 			Embeds:          msgSend.Embeds,
 			AllowedMentions: &msgSend.AllowedMentions,

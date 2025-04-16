@@ -923,6 +923,7 @@ func deferResponseToCCs(interaction *templates.CustomCommandInteraction, ccs []*
 		if err != nil {
 			logger.WithField("guild", interaction.GuildID).WithError(err).Error("Error deferring response")
 		}
+		interaction.Deferred = true
 	}
 }
 
