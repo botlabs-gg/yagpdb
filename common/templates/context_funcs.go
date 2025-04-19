@@ -1897,7 +1897,7 @@ func (c *Context) tmplOnlineCountBots() (int, error) {
 	return 0, nil
 }
 
-func (c *Context) tmplEditNickname(Nickname string) (string, error) {
+func (c *Context) tmplEditTargetNickname(target interface{}, Nickname string) (string, error) {
 	if c.IncreaseCheckCallCounter("edit_nick", 2) {
 		return "", ErrTooManyCalls
 	}
@@ -1906,16 +1906,25 @@ func (c *Context) tmplEditNickname(Nickname string) (string, error) {
 		return "", nil
 	}
 
-	if strings.Compare(c.MS.Member.Nick, Nickname) == 0 {
+	targetID := TargetUserID(target)
+	if targetID == 0 {
 		return "", nil
 	}
 
-	err := common.BotSession.GuildMemberNickname(c.GS.ID, c.MS.User.ID, Nickname)
+	if targetID == c.MS.User.ID && strings.Compare(c.MS.Member.Nick, Nickname) == 0 {
+		return "", nil
+	}
+
+	err := common.BotSession.GuildMemberNickname(c.GS.ID, targetID, Nickname)
 	if err != nil {
 		return "", err
 	}
 
 	return "", nil
+}
+
+func (c *Context) tmplEditNickname(Nickname string) (string, error) {
+	return c.tmplEditTargetNickname(c.MS.User.ID, Nickname)
 }
 
 func (c *Context) tmplSort(input interface{}, args ...interface{}) (interface{}, error) {
