@@ -145,7 +145,7 @@ func (c *CommonRoleSettings) CanRole(ctx context.Context, ms *dstate.MemberState
 		})
 
 		if onCD {
-			return false, NewSimpleError("You're on cooldown")
+			return false, NewSimpleError("You're changing roles too quickly. Please wait a second and try again.")
 		}
 	}
 
