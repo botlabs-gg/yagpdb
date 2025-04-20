@@ -89,24 +89,25 @@ type Config struct {
 	DefaultMuteDuration     null.Int64       `valid:"0,"`
 
 	// Warn
-	WarnCommandsEnabled    	bool
-	WarnCmdRoles           	types.Int64Array `valid:"role,true"`
-	WarnIncludeChannelLogs 	bool
-	WarnSendToModlog       	bool
-	DelwarnSendToModlog     	bool
+	WarnCommandsEnabled      bool
+	WarnCmdRoles             types.Int64Array `valid:"role,true"`
+	WarnIncludeChannelLogs   bool
+	WarnSendToModlog         bool
+	DelwarnSendToModlog      bool
 	DelwarnIncludeWarnReason bool
-	WarnMessage            	string `valid:"template,5000"`
+	WarnMessage              string `valid:"template,5000"`
 
 	// Misc
-	CleanEnabled  bool
-	ReportEnabled bool
-	ActionChannel int64 `valid:"channel,true"`
-	ReportChannel int64 `valid:"channel,true"`
-	ErrorChannel  int64 `valid:"channel,true"`
-	LogUnbans     bool
-	LogBans       bool
-	LogKicks      bool
-	LogTimeouts   bool
+	CleanEnabled       bool
+	ReportEnabled      bool
+	ReportMentionRoles types.Int64Array `valid:"role,true"`
+	ActionChannel      int64            `valid:"channel,true"`
+	ReportChannel      int64            `valid:"channel,true"`
+	ErrorChannel       int64            `valid:"channel,true"`
+	LogUnbans          bool
+	LogBans            bool
+	LogKicks           bool
+	LogTimeouts        bool
 
 	GiveRoleCmdEnabled bool
 	GiveRoleCmdModlog  bool
@@ -151,23 +152,24 @@ func (c *Config) ToModel() *models.ModerationConfig {
 		UnmuteMessage:           null.StringFrom(c.UnmuteMessage),
 		DefaultMuteDuration:     c.DefaultMuteDuration,
 
-		WarnCommandsEnabled:    null.BoolFrom(c.WarnCommandsEnabled),
-		WarnCmdRoles:           c.WarnCmdRoles,
-		WarnIncludeChannelLogs: null.BoolFrom(c.WarnIncludeChannelLogs),
-		WarnSendToModlog:       null.BoolFrom(c.WarnSendToModlog),
-		DelwarnSendToModlog:     c.DelwarnSendToModlog,
+		WarnCommandsEnabled:      null.BoolFrom(c.WarnCommandsEnabled),
+		WarnCmdRoles:             c.WarnCmdRoles,
+		WarnIncludeChannelLogs:   null.BoolFrom(c.WarnIncludeChannelLogs),
+		WarnSendToModlog:         null.BoolFrom(c.WarnSendToModlog),
+		DelwarnSendToModlog:      c.DelwarnSendToModlog,
 		DelwarnIncludeWarnReason: c.DelwarnIncludeWarnReason,
-		WarnMessage:            null.StringFrom(c.WarnMessage),
+		WarnMessage:              null.StringFrom(c.WarnMessage),
 
-		CleanEnabled:  null.BoolFrom(c.CleanEnabled),
-		ReportEnabled: null.BoolFrom(c.ReportEnabled),
-		ActionChannel: null.StringFrom(discordgo.StrID(c.ActionChannel)),
-		ReportChannel: null.StringFrom(discordgo.StrID(c.ReportChannel)),
-		ErrorChannel:  null.StringFrom(discordgo.StrID(c.ErrorChannel)),
-		LogUnbans:     null.BoolFrom(c.LogUnbans),
-		LogBans:       null.BoolFrom(c.LogBans),
-		LogKicks:      null.BoolFrom(c.LogKicks),
-		LogTimeouts:   null.BoolFrom(c.LogTimeouts),
+		CleanEnabled:       null.BoolFrom(c.CleanEnabled),
+		ReportEnabled:      null.BoolFrom(c.ReportEnabled),
+		ReportMentionRoles: c.ReportMentionRoles,
+		ActionChannel:      null.StringFrom(discordgo.StrID(c.ActionChannel)),
+		ReportChannel:      null.StringFrom(discordgo.StrID(c.ReportChannel)),
+		ErrorChannel:       null.StringFrom(discordgo.StrID(c.ErrorChannel)),
+		LogUnbans:          null.BoolFrom(c.LogUnbans),
+		LogBans:            null.BoolFrom(c.LogBans),
+		LogKicks:           null.BoolFrom(c.LogKicks),
+		LogTimeouts:        null.BoolFrom(c.LogTimeouts),
 
 		GiveRoleCmdEnabled: null.BoolFrom(c.GiveRoleCmdEnabled),
 		GiveRoleCmdModlog:  null.BoolFrom(c.GiveRoleCmdModlog),
@@ -218,23 +220,24 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		UnmuteMessage:           model.UnmuteMessage.String,
 		DefaultMuteDuration:     model.DefaultMuteDuration,
 
-		WarnCommandsEnabled:    model.WarnCommandsEnabled.Bool,
-		WarnCmdRoles:           model.WarnCmdRoles,
-		WarnIncludeChannelLogs: model.WarnIncludeChannelLogs.Bool,
-		WarnSendToModlog:       model.WarnSendToModlog.Bool,
-		DelwarnSendToModlog:     model.DelwarnSendToModlog,
+		WarnCommandsEnabled:      model.WarnCommandsEnabled.Bool,
+		WarnCmdRoles:             model.WarnCmdRoles,
+		WarnIncludeChannelLogs:   model.WarnIncludeChannelLogs.Bool,
+		WarnSendToModlog:         model.WarnSendToModlog.Bool,
+		DelwarnSendToModlog:      model.DelwarnSendToModlog,
 		DelwarnIncludeWarnReason: model.DelwarnIncludeWarnReason,
-		WarnMessage:            model.WarnMessage.String,
+		WarnMessage:              model.WarnMessage.String,
 
-		CleanEnabled:  model.CleanEnabled.Bool,
-		ReportEnabled: model.ReportEnabled.Bool,
-		ActionChannel: actionChannel,
-		ReportChannel: reportChannel,
-		ErrorChannel:  errorChannel,
-		LogUnbans:     model.LogUnbans.Bool,
-		LogBans:       model.LogBans.Bool,
-		LogKicks:      model.LogKicks.Bool,
-		LogTimeouts:   model.LogTimeouts.Bool,
+		CleanEnabled:       model.CleanEnabled.Bool,
+		ReportEnabled:      model.ReportEnabled.Bool,
+		ReportMentionRoles: model.ReportMentionRoles,
+		ActionChannel:      actionChannel,
+		ReportChannel:      reportChannel,
+		ErrorChannel:       errorChannel,
+		LogUnbans:          model.LogUnbans.Bool,
+		LogBans:            model.LogBans.Bool,
+		LogKicks:           model.LogKicks.Bool,
+		LogTimeouts:        model.LogTimeouts.Bool,
 
 		GiveRoleCmdEnabled: model.GiveRoleCmdEnabled.Bool,
 		GiveRoleCmdModlog:  model.GiveRoleCmdModlog.Bool,
