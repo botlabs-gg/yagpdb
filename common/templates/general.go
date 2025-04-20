@@ -475,6 +475,11 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			} else {
 				msg.StickerIDs = append(msg.StickerIDs, ToInt64(val))
 			}
+		case "suppress_embeds":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder.`)
 		}
@@ -631,6 +636,11 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				}
 				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{menu}})
 			}
+		case "suppress_embeds":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
