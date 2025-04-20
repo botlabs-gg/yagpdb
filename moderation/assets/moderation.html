@@ -143,6 +143,10 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
             Report will upload a log of the last 100 messages in the channel and send a message about it in the
             report channel.
         </p>
+        <select id="roles" class="multiselect form-control" multiple="multiple" name="ReportMentionRoles" data-plugin-multiselect>
+            {{roleOptionsMulti .ActiveGuild.Roles nil .ModConfig.ReportMentionRoles}}
+        </select>
+        <label for="roles">Mention Roles in Reports</label>
         <hr />
 
         {{checkbox "LogUnbans" "log-unbans" "Log unban events in the modlog channel" .ModConfig.LogUnbans}}
