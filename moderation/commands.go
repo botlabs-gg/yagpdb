@@ -793,7 +793,8 @@ var ModerationCommands = []*commands.YAGCommand{
 				err = common.BotSession.ChannelMessageDelete(parsed.ChannelID, toDelete[0])
 				resp = "Deleted 1 message! :')"
 			default:
-				err = common.BotSession.ChannelMessagesBulkDelete(parsed.ChannelID, toDelete)
+				reason := fmt.Sprintf("Deleted by %s", parsed.Author.String())
+				err = common.BotSession.ChannelMessagesBulkDeleteWithReason(parsed.ChannelID, toDelete, reason)
 				resp = fmt.Sprintf("Deleted %d messages! :')", numDeleted)
 			}
 
@@ -1055,7 +1056,7 @@ var ModerationCommands = []*commands.YAGCommand{
 				if config.DelwarnIncludeWarnReason {
 					reason = fmt.Sprintf("%s\n~~%s~~", reason, warning.Message)
 				}
-				
+
 				err = CreateModlogEmbed(config, parsed.Author, MADelwarn, user, reason, "")
 				if err != nil {
 					return "Failed sending modlog, warning deleted", err
@@ -1401,6 +1402,7 @@ type MessagesWithAttachmentsFilter struct{}
 func (*MessagesWithAttachmentsFilter) Matches(msg *dstate.MessageState) (delete bool) {
 	return len(msg.GetMessageAttachments()) > 0
 }
+
 // Only delete bot messages.
 type BotMessagesFilter struct{}
 
