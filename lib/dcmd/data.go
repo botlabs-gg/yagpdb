@@ -54,6 +54,9 @@ type SlashCommandTriggerData struct {
 	// The options slice for the command options themselves
 	// This is a helper so you don't have to dig it out yourself in the case of nested subcommands
 	Options []*discordgo.ApplicationCommandInteractionDataOption
+
+	// ID of the user or message targeted by a user or message command
+	TargetID int64
 }
 
 type TraditionalTriggerData struct {

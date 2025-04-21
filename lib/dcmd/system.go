@@ -294,6 +294,10 @@ func (sys *System) FillDataInteraction(s *discordgo.Session, interaction *discor
 		}
 	}
 
+	if interaction.DataCommand != nil {
+		data.SlashCommandTriggerData.TargetID = interaction.DataCommand.TargetID
+	}
+
 	return data, nil
 }
 
