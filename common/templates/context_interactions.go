@@ -230,8 +230,8 @@ func CreateSelectMenu(values ...interface{}) (*discordgo.SelectMenu, error) {
 			return nil, errors.New("invalid number of menu options, must have between 1 and 25")
 		}
 		if menu.MinValues != nil {
-			if *menu.MinValues < 1 || *menu.MinValues > 25 {
-				return nil, errors.New("invalid min values, must be between 1 and 25")
+			if *menu.MinValues < 0 || *menu.MinValues > 25 {
+				return nil, errors.New("invalid min values, must be between 0 and 25")
 			}
 		}
 		if menu.MaxValues > 25 {
