@@ -240,6 +240,14 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 			return errors.New("non top level component passed to message unmarshaller")
 		}
 	}
+
+	if m.Flags&MessageFlagsIsComponentsV2 != 0 {
+		var contents []string
+		for _, c := range m.Components {
+			contents = append(contents, GetTextDisplayContent(c)...)
+		}
+		m.Content = strings.Join(contents, "\n")
+	}
 	return err
 }
 
@@ -271,6 +279,8 @@ const (
 	MessageFlagsSuppressNotifications MessageFlags = 1 << 12
 	// MessageFlagsIsVoiceMessage this message is a voice message.
 	MessageFlagsIsVoiceMessage MessageFlags = 1 << 13
+	// MessageFlagsIsComponentsV2 allows you to create fully component-driven messages
+	MessageFlagsIsComponentsV2 MessageFlags = 1 << 15
 )
 
 // File stores info about files you e.g. send in messages.

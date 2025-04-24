@@ -87,6 +87,34 @@ func CreateComponent(expectedType discordgo.ComponentType, values ...interface{}
 		comp := discordgo.SelectMenu{MenuType: discordgo.ChannelSelectMenu}
 		err = json.Unmarshal(encoded, &comp)
 		component = comp
+	case discordgo.SectionComponent:
+		comp := discordgo.Section{}
+		err = json.Unmarshal(encoded, &comp)
+		component = comp
+	case discordgo.TextDisplayComponent:
+		comp := discordgo.TextDisplay{}
+		err = json.Unmarshal(encoded, &comp)
+		component = comp
+	case discordgo.ThumbnailComponent:
+		comp := discordgo.Thumbnail{}
+		err = json.Unmarshal(encoded, &comp)
+		component = comp
+	case discordgo.MediaGalleryComponent:
+		comp := discordgo.MediaGallery{}
+		err = json.Unmarshal(encoded, &comp)
+		component = comp
+	case discordgo.FileComponent:
+		comp := discordgo.ComponentFile{}
+		err = json.Unmarshal(encoded, &comp)
+		component = comp
+	case discordgo.SeparatorComponent:
+		comp := discordgo.Separator{}
+		err = json.Unmarshal(encoded, &comp)
+		component = comp
+	case discordgo.ContainerComponent:
+		comp := discordgo.Container{}
+		err = json.Unmarshal(encoded, &comp)
+		component = comp
 	}
 
 	if err != nil {
