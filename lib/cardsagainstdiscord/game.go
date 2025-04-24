@@ -125,10 +125,10 @@ type PickedResonse struct {
 	Selections []ResponseCard
 }
 
-func GetCommonCahButtons() []discordgo.MessageComponent {
-	return []discordgo.MessageComponent{
+func GetCommonCahButtons() []discordgo.TopLevelComponent {
+	return []discordgo.TopLevelComponent{
 		discordgo.ActionsRow{
-			Components: []discordgo.MessageComponent{
+			Components: []discordgo.InteractiveComponent{
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: JoinEmoji},
 					Style:    discordgo.SuccessButton,
@@ -811,9 +811,9 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 		voteOptions = append(voteOptions, option)
 	}
 
-	voteOptionsComponent := []discordgo.MessageComponent{
+	voteOptionsComponent := []discordgo.TopLevelComponent{
 		discordgo.ActionsRow{
-			Components: []discordgo.MessageComponent{
+			Components: []discordgo.InteractiveComponent{
 				discordgo.SelectMenu{
 					CustomID: CahCardSelectMenu,
 					Options:  voteOptions,
@@ -821,7 +821,7 @@ func (g *Game) presentPickedResponseCards(edit bool) {
 			},
 		},
 		discordgo.ActionsRow{
-			Components: []discordgo.MessageComponent{
+			Components: []discordgo.InteractiveComponent{
 				discordgo.Button{
 					Emoji:    &discordgo.ComponentEmoji{Name: JoinEmoji},
 					Style:    discordgo.SuccessButton,
@@ -895,7 +895,7 @@ func (g *Game) removeOldInteractions(cID, mID int64) {
 	g.Session.ChannelMessageEditComplex(&discordgo.MessageEdit{
 		Channel:    cID,
 		ID:         mID,
-		Components: []discordgo.MessageComponent{},
+		Components: []discordgo.TopLevelComponent{},
 	})
 }
 
@@ -1285,9 +1285,9 @@ func (g *Game) playerPickedResponseReaction(player *Player, response string, ic 
 			Data: &discordgo.InteractionResponseData{
 				CustomID: CahBlankCardModal,
 				Title:    "Blank Card",
-				Components: []discordgo.MessageComponent{
+				Components: []discordgo.TopLevelComponent{
 					discordgo.ActionsRow{
-						Components: []discordgo.MessageComponent{
+						Components: []discordgo.InteractiveComponent{
 							discordgo.TextInput{
 								CustomID:  CahTextInput,
 								Label:     "Enter your response",
@@ -1396,8 +1396,8 @@ func (p *Player) PresentBoard(session *discordgo.Session, currentPrompt *PromptC
 
 	resp, err := session.ChannelMessageSendComplex(p.Channel, &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{embed},
-		Components: []discordgo.MessageComponent{discordgo.ActionsRow{
-			Components: []discordgo.MessageComponent{discordgo.SelectMenu{
+		Components: []discordgo.TopLevelComponent{discordgo.ActionsRow{
+			Components: []discordgo.InteractiveComponent{discordgo.SelectMenu{
 				Options:  options,
 				CustomID: CahCardSelectMenu,
 			}},

@@ -299,7 +299,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 					if err != nil {
 						return nil, err
 					}
-					modal.Components = append(modal.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{field}})
+					modal.Components = append(modal.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{field}})
 				}
 			} else {
 				f, err := CreateComponent(discordgo.TextInputComponent, val)
@@ -311,7 +311,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 					field.Style = discordgo.TextInputShort
 				}
 				validateCustomID(&field.CustomID, 0, nil)
-				modal.Components = append(modal.Components, discordgo.ActionsRow{[]discordgo.MessageComponent{field}})
+				modal.Components = append(modal.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{field}})
 			}
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
@@ -325,7 +325,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 	}, nil
 }
 
-func distributeComponents(components reflect.Value) (returnComponents []discordgo.MessageComponent, err error) {
+func distributeComponents(components reflect.Value) (returnComponents []discordgo.TopLevelComponent, err error) {
 	if components.Len() < 1 {
 		return
 	}
@@ -340,7 +340,7 @@ func distributeComponents(components reflect.Value) (returnComponents []discordg
 			currentInputRow := reflect.ValueOf(components.Index(rowIdx).Interface())
 			tempRow := discordgo.ActionsRow{}
 			for compIdx := 0; compIdx < currentInputRow.Len() && compIdx < maxComponents; compIdx++ {
-				var component discordgo.MessageComponent
+				var component discordgo.InteractiveComponent
 				switch val := currentInputRow.Index(compIdx).Interface().(type) {
 				case *discordgo.Button:
 					component = val
@@ -361,9 +361,9 @@ func distributeComponents(components reflect.Value) (returnComponents []discordg
 		}
 	} else {
 		// user just slapped a bunch of components into a slice. we need to organize ourselves
-		tempRow := discordgo.ActionsRow{Components: []discordgo.MessageComponent{}}
+		tempRow := discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{}}
 		for i := 0; i < components.Len() && i < maxRows*maxComponents; i++ {
-			var component discordgo.MessageComponent
+			var component discordgo.InteractiveComponent
 			var isMenu bool
 
 			switch val := components.Index(i).Interface().(type) {
@@ -381,13 +381,13 @@ func distributeComponents(components reflect.Value) (returnComponents []discordg
 				tempRow.Components = append(tempRow.Components, component)
 			} else {
 				returnComponents = append(returnComponents, tempRow)
-				tempRow.Components = []discordgo.MessageComponent{component}
+				tempRow.Components = []discordgo.InteractiveComponent{component}
 			}
 
 			// if it's a menu, the row is full now, append and start a new one
 			if isMenu {
 				returnComponents = append(returnComponents, tempRow)
-				tempRow.Components = []discordgo.MessageComponent{}
+				tempRow.Components = []discordgo.InteractiveComponent{}
 			}
 
 			if i == components.Len()-1 && len(tempRow.Components) > 0 { // if we're at the end, append the last row
@@ -431,9 +431,9 @@ func validateCustomID(id *string, componentIndex int, used *[]string) error {
 // validateCustomIDs sets unique custom IDs for any component in the action
 // rows provided in the slice, sets any link buttons' ids to an empty string,
 // and returns an error if duplicate custom ids are used.
-func validateActionRowsCustomIDs(rows *[]discordgo.MessageComponent) error {
+func validateActionRowsCustomIDs(rows *[]discordgo.TopLevelComponent) error {
 	used := []string{}
-	newComponents := []discordgo.MessageComponent{}
+	newComponents := []discordgo.TopLevelComponent{}
 	for rowIdx := 0; rowIdx < len(*rows); rowIdx++ {
 		var row *discordgo.ActionsRow
 		switch r := (*rows)[rowIdx].(type) {

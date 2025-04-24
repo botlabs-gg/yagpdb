@@ -2,6 +2,7 @@ package discordgo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -66,9 +67,21 @@ func MessageComponentFromJSON(b []byte) (MessageComponent, error) {
 	return u.MessageComponent, nil
 }
 
-// ActionsRow is a container for components within one row.
+// TopLevelComponent is an interface for message components which can be used on the top level of a message.
+type TopLevelComponent interface {
+	MessageComponent
+	IsTopLevel() bool
+}
+
+// InteractiveComponent is an interface for message components which can be interacted with.
+type InteractiveComponent interface {
+	MessageComponent
+	IsInteractive() bool
+}
+
+// ActionsRow is a container for interactive components within one row.
 type ActionsRow struct {
-	Components []MessageComponent `json:"components"`
+	Components []InteractiveComponent `json:"components"`
 }
 
 // MarshalJSON is a method for marshaling ActionsRow to a JSON object.
@@ -93,9 +106,14 @@ func (r *ActionsRow) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	r.Components = make([]MessageComponent, len(v.RawComponents))
+	r.Components = make([]InteractiveComponent, len(v.RawComponents))
 	for i, v := range v.RawComponents {
-		r.Components[i] = v.MessageComponent
+		var ok bool
+		comp := v.MessageComponent
+		r.Components[i], ok = comp.(InteractiveComponent)
+		if !ok {
+			return errors.New("non interactive component passed to actions row")
+		}
 	}
 
 	return err
@@ -104,6 +122,11 @@ func (r *ActionsRow) UnmarshalJSON(data []byte) error {
 // Type is a method to get the type of a component.
 func (r ActionsRow) Type() ComponentType {
 	return ActionsRowComponent
+}
+
+// IsTopLevel is a method to assert the component as top level.
+func (ActionsRow) IsTopLevel() bool {
+	return true
 }
 
 // ButtonStyle is style of button.
@@ -162,6 +185,11 @@ func (b Button) MarshalJSON() ([]byte, error) {
 // Type is a method to get the type of a component.
 func (Button) Type() ComponentType {
 	return ButtonComponent
+}
+
+// IsInteractive is a method to assert the component as interactive.
+func (Button) IsInteractive() bool {
+	return true
 }
 
 // SelectMenuOption represents an option for a select menu.
@@ -249,6 +277,11 @@ func (s SelectMenu) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// IsInteractive is a method to assert the component as interactive.
+func (SelectMenu) IsInteractive() bool {
+	return true
+}
+
 // TextInput represents text input component.
 type TextInput struct {
 	CustomID    string         `json:"custom_id"`
@@ -287,3 +320,8 @@ const (
 	TextInputShort     TextInputStyle = 1
 	TextInputParagraph TextInputStyle = 2
 )
+
+// IsInteractive is a method to assert the component as interactive.
+func (TextInput) IsInteractive() bool {
+	return true
+}

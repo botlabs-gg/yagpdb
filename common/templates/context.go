@@ -207,7 +207,7 @@ type ContextFrame struct {
 
 	DelResponseDelay         int
 	EmbedsToSend             []*discordgo.MessageEmbed
-	ComponentsToSend         []discordgo.MessageComponent
+	ComponentsToSend         []discordgo.TopLevelComponent
 	AddResponseReactionNames []string
 
 	isNestedTemplate bool
