@@ -1811,7 +1811,16 @@ func (s *Session) ChannelMessageDelete(channelID, messageID int64) (err error) {
 // channelID : The ID of the channel for the messages to delete.
 // messages  : The IDs of the messages to be deleted. A slice of message IDs. A maximum of 100 messages.
 func (s *Session) ChannelMessagesBulkDelete(channelID int64, messages []int64) (err error) {
+	return s.doChannelMessagesBulkDelete(channelID, messages, "")
+}
 
+// ChannelMessagesBulkDeleteWithReason bulk deletes the messages from the channel for the provided messageIDs, with an additional reason
+// for the X-Audit-Log-Reason header.
+func (s *Session) ChannelMessagesBulkDeleteWithReason(channelID int64, messages []int64, reason string) (err error) {
+	return s.doChannelMessagesBulkDelete(channelID, messages, reason)
+}
+
+func (s *Session) doChannelMessagesBulkDelete(channelID int64, messages []int64, reason string) (err error) {
 	if len(messages) == 0 {
 		return
 	}
@@ -1829,7 +1838,12 @@ func (s *Session) ChannelMessagesBulkDelete(channelID int64, messages []int64) (
 		Messages IDSlice `json:"messages"`
 	}{messages}
 
-	_, err = s.RequestWithBucketID("POST", EndpointChannelMessagesBulkDelete(channelID), data, nil, EndpointChannelMessagesBulkDelete(channelID))
+	headers := make(map[string]string)
+	if reason != "" {
+		headers["X-Audit-Log-Reason"] = url.PathEscape(reason)
+	}
+
+	_, err = s.RequestWithBucketID("POST", EndpointChannelMessagesBulkDelete(channelID), data, headers, EndpointChannelMessagesBulkDelete(channelID))
 	return
 }
 
