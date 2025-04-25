@@ -423,7 +423,7 @@ var cmdListCommands = &commands.YAGCommand{
 			if ccFile != nil {
 				msgContent.Content = header
 				msg.Files = []*discordgo.File{ccFile}
-				msgFile.File.URL = "attachment://" + discordgo.QuoteEscaper.Replace(ccFile.Name)
+				msgFile.File.URL = "attachment://" + ccFile.Name
 				msg.Flags |= discordgo.MessageFlagsIsComponentsV2
 
 				msg.Components = []discordgo.TopLevelComponent{
@@ -448,7 +448,7 @@ var cmdListCommands = &commands.YAGCommand{
 
 			msgContent.Content = header
 			msg.Files = []*discordgo.File{ccFile}
-			msgFile.File.URL = "attachment://" + discordgo.QuoteEscaper.Replace(ccFile.Name)
+			msgFile.File.URL = "attachment://" + ccFile.Name
 			msg.Flags |= discordgo.MessageFlagsIsComponentsV2
 
 			msg.Components = []discordgo.TopLevelComponent{
