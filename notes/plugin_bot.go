@@ -1,8 +1,6 @@
 package notes
 
 import (
-	"errors"
-	"strconv"
 	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
@@ -29,8 +27,12 @@ func (p *Plugin) BotInit() {
 var notPermittedResp = &discordgo.InteractionResponse{
 	Type: discordgo.InteractionResponseChannelMessageWithSource,
 	Data: &discordgo.InteractionResponseData{
-		Content: "You are no longer permitted to use notes on this server. Please contact your server admin.",
-		Flags:   discordgo.MessageFlagsEphemeral,
+		Components: []discordgo.TopLevelComponent{
+			discordgo.TextDisplay{
+				Content: "You are no longer permitted to use notes on this server. Please contact your server admin.",
+			},
+		},
+		Flags: discordgo.MessageFlagsEphemeral | discordgo.MessageFlagsIsComponentsV2,
 	},
 }
 
@@ -95,8 +97,12 @@ func errResponse(err error) *discordgo.InteractionResponse {
 	return &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: err.Error(),
-			Flags:   discordgo.MessageFlagsEphemeral,
+			Components: []discordgo.TopLevelComponent{
+				discordgo.TextDisplay{
+					Content: err.Error(),
+				},
+			},
+			Flags: discordgo.MessageFlagsEphemeral | discordgo.MessageFlagsIsComponentsV2,
 		},
 	}
 }
@@ -127,9 +133,8 @@ func handleNoteButton(evt *eventsystem.EventData, strippedID string) (*discordgo
 		return &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
-				Content:    m.Content,
-				Embeds:     m.Embeds,
 				Components: m.Components,
+				Flags:      m.Flags & discordgo.MessageFlagsIsComponentsV2,
 			},
 		}, nil
 	}
@@ -164,9 +169,8 @@ func handleNoteModal(evt *eventsystem.EventData, strippedID, newVal string) (*di
 	return &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
-			Content:    m.Content,
-			Embeds:     m.Embeds,
 			Components: m.Components,
+			Flags:      m.Flags & discordgo.MessageFlagsIsComponentsV2,
 		},
 	}, nil
 }

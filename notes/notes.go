@@ -212,14 +212,34 @@ func (p *parsedNotes) save(ctx context.Context) error {
 	return model.Upsert(ctx, common.PQ, true, []string{"guild_id", "member_id"}, whitelist, boil.Infer())
 }
 
-const noNotesMsg = "No shared staff notes written for this user."
+const noNotesMsg = "No notes written for this user."
 
+func createNewNoteButton(p *parsedNotes) *discordgo.Button {
+	return &discordgo.Button{
+		Label:    "Create New Note",
+		Style:    discordgo.SuccessButton,
+		CustomID: formatCustomID(p.userID, 0, noteActionTypeNew)}
+}
 
 type indexedNote struct {
 	note  *Note
 	index int
 }
+
+func createMessageContent(p *parsedNotes) *[]discordgo.TopLevelComponent {
 	if len(p.notes) == 0 {
+		return &[]discordgo.TopLevelComponent{
+			discordgo.Section{
+				Components: []discordgo.SectionComponentPart{
+					discordgo.TextDisplay{
+						Content: noNotesMsg,
+					},
+				},
+				Accessory: createNewNoteButton(p),
+			},
+		}
+	}
+
 	var notes []indexedNote
 	for i := range 3 {
 		notes = append(notes, indexedNote{
@@ -241,6 +261,56 @@ type indexedNote struct {
 
 		validNoteCount++
 		selectedNote := notes[i]
+
+		title := discordgo.TextDisplay{
+			Content: fmt.Sprint("### Note #", validNoteCount),
+		}
+		note := discordgo.TextDisplay{
+			Content: strings.Join(selectedNote.note.noteLines, "\n"),
+		}
+		editButton := discordgo.Button{
+			Emoji: &discordgo.ComponentEmoji{
+				Name: "📝",
+			},
+			Style:    discordgo.SecondaryButton,
+			CustomID: formatCustomID(p.userID, selectedNote.index, noteActionTypeEdit),
+		}
+		noteWithEditButton := discordgo.Section{
+			Components: []discordgo.SectionComponentPart{note},
+			Accessory:  editButton,
+		}
+		signature := discordgo.TextDisplay{
+			Content: fmt.Sprintf("<t:%d:F> %s", selectedNote.note.updatedAt.Unix(), "by "+selectedNote.note.signature),
+		}
+		deleteButton := discordgo.Button{
+			Emoji: &discordgo.ComponentEmoji{
+				Name: "🗑️",
+			},
+			Style:    discordgo.DangerButton,
+			CustomID: formatCustomID(p.userID, selectedNote.index, noteActionTypeDelete),
+		}
+		deleteButtonRow := discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{deleteButton}}
+
+		containers = append(containers, &discordgo.Container{
+			Components: []discordgo.TopLevelComponent{
+				title,
+				noteWithEditButton,
+				discordgo.Separator{},
+				signature,
+				deleteButtonRow}})
+	}
+
+	if len(containers) < 1 {
+		return &[]discordgo.TopLevelComponent{
+			discordgo.Section{
+				Components: []discordgo.SectionComponentPart{
+					discordgo.TextDisplay{
+						Content: noNotesMsg,
+					},
+				},
+				Accessory: createNewNoteButton(p),
+			},
+		}
 	}
 
 	name := strconv.FormatInt(p.userID, 10)
@@ -248,8 +318,15 @@ type indexedNote struct {
 	if ms != nil {
 		name = ms.User.String()
 	}
-	msg.Content = "## Shared Staff Notes for " + name
-	return msg
+	title := &discordgo.TextDisplay{
+		Content: "## Shared Staff Notes for " + name,
+	}
+
+	components := append([]discordgo.TopLevelComponent{title}, containers...)
+	if len(containers) < maxNotesPerUser {
+		components = append(components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{createNewNoteButton(p)}})
+	}
+	return &components
 }
 
 type noteActionType int
@@ -306,6 +383,7 @@ func parseCustomID(cID string) (action noteAction) {
 func createMessage(p *parsedNotes) (msg *discordgo.MessageSend) {
 	msg = &discordgo.MessageSend{
 		Components: *createMessageContent(p),
+		Flags:      discordgo.MessageFlagsEphemeral | discordgo.MessageFlagsIsComponentsV2,
 	}
 	return
 }
@@ -326,7 +404,7 @@ func createModal(p *parsedNotes, index *int) (modal *discordgo.InteractionRespon
 		Data: &discordgo.InteractionResponseData{
 			Title:    title,
 			CustomID: formatCustomID(p.userID, safeIndex, notesType),
-			Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.TextInput{
+			Components: []discordgo.TopLevelComponent{discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{discordgo.TextInput{
 				CustomID:  "new",
 				Label:     "Note",
 				Style:     discordgo.TextInputParagraph,
