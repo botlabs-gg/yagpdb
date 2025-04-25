@@ -109,9 +109,16 @@ var (
 )
 
 const (
-	ReactionModeBoth       = 0
-	ReactionModeAddOnly    = 1
-	ReactionModeRemoveOnly = 2
+	ReactionModeBoth = iota
+	ReactionModeAddOnly
+	ReactionModeRemoveOnly
+)
+
+const (
+	InteractionDeferModeNone = iota
+	InteractionDeferModeMessage
+	InteractionDeferModeEphemeral
+	InteractionDeferModeUpdate
 )
 
 func (t CommandTriggerType) String() string {
@@ -137,7 +144,8 @@ type CustomCommand struct {
 	TimeTriggerExcludingDays  []int64 `schema:"time_trigger_excluding_days"`
 	TimeTriggerExcludingHours []int64 `schema:"time_trigger_excluding_hours"`
 
-	ReactionTriggerMode int `schema:"reaction_trigger_mode"`
+	ReactionTriggerMode  int `schema:"reaction_trigger_mode"`
+	InteractionDeferMode int `schema:"interaction_defer_mode"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -237,7 +245,8 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		ContextChannel:            cc.ContextChannel,
 		RedirectErrorsChannel:     cc.RedirectErrorsChannel,
 
-		ReactionTriggerMode: int16(cc.ReactionTriggerMode),
+		ReactionTriggerMode:  int16(cc.ReactionTriggerMode),
+		InteractionDeferMode: int16(cc.InteractionDeferMode),
 
 		Responses: cc.Responses,
 

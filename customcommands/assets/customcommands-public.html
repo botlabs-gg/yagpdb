@@ -137,6 +137,50 @@
                     </div>
                   </div>
                 </div>
+                {{if eq .CC.TriggerType 7 8}}
+                <div id="cc-interaction-trigger-details" class="hidden col-lg-8">
+                  <div class="row">
+                      <label for="interaction-defer-radio-{{.CC.LocalID}}">
+                          Defer a response when triggered
+                      </label>
+                      <div id="interaction-defer-radio-{{.CC.LocalID}}" class="col-lg-12">
+                          <div class="form-check">
+                              <input class="form-check-input" disabled type="radio" name="interaction_defer_mode"
+                                  id="interaction-defer-none-{{.CC.LocalID}}" value="0"
+                                  {{if eq .CC.InteractionDeferMode 0}}checked{{end}}>
+                              <label class="form-check-label" for="interaction-defer-none-{{.CC.LocalID}}">
+                                  None
+                              </label>
+                          </div>
+                          <div class="form-check">
+                              <input class="form-check-input" disabled type="radio" name="interaction_defer_mode"
+                                  id="interaction-defer-message-{{.CC.LocalID}}" value="1"
+                                  {{if eq .CC.InteractionDeferMode 1}}checked{{end}}>
+                              <label class="form-check-label" for="interaction-defer-message-{{.CC.LocalID}}">
+                                  Message Response
+                              </label>
+                          </div>
+                          <div class="form-check">
+                              <input class="form-check-input" type="radio" name="interaction_defer_mode"
+                                  id="interaction-defer-ephemeral-{{.CC.LocalID}}" value="2"
+                                  {{if eq .CC.InteractionDeferMode 2}}checked{{end}}>
+                              <label class="form-check-label" for="interaction-defer-ephemeral-{{.CC.LocalID}}">
+                                  Ephemeral Message Response
+                              </label>
+                          </div>
+                          <div class="form-check">
+                              <input class="form-check-input" disabled type="radio" name="interaction_defer_mode"
+                                  id="interaction-defer-update-{{.CC.LocalID}}" value="3"
+                                  {{if eq .CC.InteractionDeferMode 3}}checked{{end}}>
+                              <label class="form-check-label" for="interaction-defer-update-{{.CC.LocalID}}">
+                                  Update Message Response
+                              </label>
+                          </div>
+                      </div>
+                      <p>Deferring a response becomes the original interaction response. Use <code>editResponse</code> to edit a deferred response.</p>
+                  </div>
+                </div>
+                {{end}}
               </div>
               {{else if eq .CC.TriggerType 6}}
               <div id="cc-reaction-trigger-details" class="col-lg-8">
