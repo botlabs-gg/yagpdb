@@ -636,11 +636,14 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 		}
 
 		mID := ToInt64(msgID)
+		empty := ""
 		msg := &discordgo.MessageEdit{
 			ID:              mID,
 			Channel:         cid,
 			AllowedMentions: discordgo.AllowedMentions{Parse: parseMentions},
 			Flags:           discordgo.MessageFlagsIsComponentsV2,
+			Content:         &empty,
+			Embeds:          []*discordgo.MessageEmbed{},
 		}
 
 		componentArgs := &SKVSlices{}
