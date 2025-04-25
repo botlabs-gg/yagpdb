@@ -403,6 +403,9 @@ var cmdListCommands = &commands.YAGCommand{
 			ccIDMaybeWithLink = fmt.Sprintf("[%d](%s)", cc.LocalID, cmdControlPanelLink(cc))
 		}
 
+		msgContent := discordgo.TextDisplay{}
+		msgFile := discordgo.ComponentFile{}
+
 		// Every message content-based custom command trigger has a numerical value less than 5
 		if cc.TriggerType < 5 || cc.TriggerType == int(CommandTriggerComponent) || cc.TriggerType == int(CommandTriggerModal) {
 			var header string
@@ -418,8 +421,16 @@ var cmdListCommands = &commands.YAGCommand{
 			}
 
 			if ccFile != nil {
-				msg.Content = header
+				msgContent.Content = header
 				msg.Files = []*discordgo.File{ccFile}
+				msgFile.File.URL = "attachment://" + ccFile.Name
+				msg.Flags |= discordgo.MessageFlagsIsComponentsV2
+
+				msg.Components = []discordgo.TopLevelComponent{
+					msgContent,
+					discordgo.Separator{},
+					msgFile,
+				}
 				return msg, nil
 			}
 
@@ -435,9 +446,16 @@ var cmdListCommands = &commands.YAGCommand{
 				header = fmt.Sprintf("#%s - Type: `%s` - Group: `%s` - Disabled: `%t` Public: `%t`", ccIDMaybeWithLink, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled, cc.Public)
 			}
 
-			msg.Content = header
+			msgContent.Content = header
 			msg.Files = []*discordgo.File{ccFile}
+			msgFile.File.URL = "attachment://" + ccFile.Name
+			msg.Flags |= discordgo.MessageFlagsIsComponentsV2
 
+			msg.Components = []discordgo.TopLevelComponent{
+				msgContent,
+				discordgo.Separator{},
+				msgFile,
+			}
 			return msg, nil
 
 		}
@@ -451,6 +469,7 @@ var cmdListCommands = &commands.YAGCommand{
 				ccIDMaybeWithLink, CommandTriggerType(cc.TriggerType), groupMap[cc.GroupID.Int64], cc.Disabled, cc.Public,
 				highlight, strings.Join(cc.Responses, "```\n```"))
 		}
+
 		return msg, nil
 	},
 }
