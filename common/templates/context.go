@@ -94,6 +94,7 @@ var (
 		"dict":               Dictionary,
 		"sdict":              StringKeyDictionary,
 		"structToSdict":      StructToSdict,
+		"skvslices":          StringKeyValueSlices,
 		"cembed":             CreateEmbed,
 		"cbutton":            CreateButton,
 		"cmenu":              CreateSelectMenu,
@@ -672,6 +673,8 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("deleteResponse", c.tmplDelResponse)
 	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
 
+	c.addContextFunc("editComponentMessage", c.tmplEditComponentsMessage(true))
+	c.addContextFunc("editComponentMessageNoEscape", c.tmplEditComponentsMessage(false))
 	c.addContextFunc("editMessage", c.tmplEditMessage(true))
 	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
 	c.addContextFunc("getMessage", c.tmplGetMessage)
@@ -682,6 +685,11 @@ func baseContextFuncs(c *Context) {
 
 	// Message send functions
 	c.addContextFunc("sendDM", c.tmplSendDM)
+	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
+	c.addContextFunc("sendComponentMessage", c.tmplSendComponentsMessage(true, false))
+	c.addContextFunc("sendComponentMessageNoEscape", c.tmplSendComponentsMessage(false, false))
+	c.addContextFunc("sendComponentMessageNoEscapeRetID", c.tmplSendComponentsMessage(false, true))
+	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
 	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
 	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
@@ -1129,6 +1137,72 @@ func (s Slice) StringSlice(flag ...bool) interface{} {
 	}
 
 	return StringSlice
+}
+
+type SKVSlices struct {
+	Keys   []string
+	Values []interface{}
+}
+
+func (s *SKVSlices) Add(key string, value interface{}) (interface{}, error) {
+	if len(s.Keys)+1 > 10000 {
+		return nil, errors.New("resulting slice exceeds slice size limit")
+	}
+
+	s.Keys = append(s.Keys, key)
+	s.Values = append(s.Values, value)
+	return "", nil
+}
+
+func (s *SKVSlices) AddSlice(key string, slice interface{}) (interface{}, error) {
+	val, _ := indirect(reflect.ValueOf(slice))
+	switch val.Kind() {
+	case reflect.Slice, reflect.Array:
+	// this is valid
+
+	default:
+		return nil, errors.New("value passed is not an array or slice")
+	}
+
+	if len(s.Keys)+val.Len() > 10000 {
+		return nil, errors.New("resulting slice exceeds slice size limit")
+	}
+
+	result := reflect.ValueOf(&s.Values).Elem()
+	for i := 0; i < val.Len(); i++ {
+		s.Keys = append(s.Keys, key)
+		switch v := val.Index(i).Interface().(type) {
+		case nil:
+			result = reflect.Append(result, reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
+
+		default:
+			result = reflect.Append(result, reflect.ValueOf(v))
+		}
+	}
+	s.Values = result.Interface().([]interface{})
+
+	return "", nil
+}
+
+func (s *SKVSlices) MergeWith(toMerge *SKVSlices) (interface{}, error) {
+	if len(s.Keys)+len(toMerge.Keys) > 10000 {
+		return nil, errors.New("resulting slice exceeds slice size limit")
+	}
+
+	for i, k := range toMerge.Keys {
+		s.Add(k, toMerge.Values[i])
+	}
+
+	return "", nil
+}
+
+func (s *SKVSlices) Set(index int, item interface{}) (string, error) {
+	if index >= len(s.Keys) {
+		return "", errors.New("Index out of bounds")
+	}
+
+	s.Values[index] = item
+	return "", nil
 }
 
 func withOutputLimit(f func(...interface{}) string, limit int) func(...interface{}) (string, error) {

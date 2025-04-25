@@ -111,11 +111,15 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	return SDict(dict), nil
 }
 
+func createSKVSlices() SKVSlices {
+	return SKVSlices{}
+}
+
 // StringKeyValueSlices parses given input of key-value pairs but returns the
 // keys and the values as separate slices. this is used when you need to have
 // duplicate keys and therefore cannot use a map.
-func StringKeyValueSlices(values ...interface{}) (dictKeys []string, dictValues []interface{}, err error) {
-	dict := make(map[string]interface{})
+func StringKeyValueSlices(values ...interface{}) (skvs *SKVSlices, err error) {
+	skvs = &SKVSlices{}
 
 	if len(values) == 1 {
 		val, isNil := indirect(reflect.ValueOf(values[0]))
@@ -124,8 +128,11 @@ func StringKeyValueSlices(values ...interface{}) (dictKeys []string, dictValues 
 			return
 		}
 
-		if sdict, ok := val.Interface().(SDict); ok {
-			dict = sdict
+		if skvslices, ok := val.Interface().(*SKVSlices); ok {
+			return skvslices, nil
+		}
+		if skvslices, ok := val.Interface().(SKVSlices); ok {
+			return &skvslices, nil
 		}
 
 		switch val.Kind() {
@@ -139,8 +146,8 @@ func StringKeyValueSlices(values ...interface{}) (dictKeys []string, dictValues 
 					return
 				}
 				if key.Kind() == reflect.String {
-					dictKeys = append(dictKeys, key.String())
-					dictValues = append(dictValues, iter.Value().Interface())
+					skvs.Keys = append(skvs.Keys, key.String())
+					skvs.Values = append(skvs.Values, iter.Value().Interface())
 				} else {
 					err = errors.New("map has non string key of type: " + key.Type().String())
 					return
@@ -166,9 +173,8 @@ func StringKeyValueSlices(values ...interface{}) (dictKeys []string, dictValues 
 			return
 		}
 
-		dictKeys = append(dictKeys, s)
-		dictValues = append(dictValues, values[i+1])
-		dict[s] = values[i+1]
+		skvs.Keys = append(skvs.Keys, s)
+		skvs.Values = append(skvs.Values, values[i+1])
 	}
 	return
 }
@@ -267,7 +273,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		return m, nil
 	}
 
-	dictKeys, dictValues, err := StringKeyValueSlices(values...)
+	skvs, err := StringKeyValueSlices(values...)
 	if err != nil {
 		return nil, err
 	}
@@ -280,8 +286,8 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 	// Default filename
 	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
-	for i, key := range dictKeys {
-		val := dictValues[i]
+	for i, key := range skvs.Keys {
+		val := skvs.Values[i]
 
 		switch strings.ToLower(key) {
 		case "content":
@@ -351,7 +357,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			}
 			v, _ := indirect(reflect.ValueOf(val))
 			if v.Kind() == reflect.Slice {
-				msg.Components, err = distributeComponents(v)
+				msg.Components, err = distributeComponentsIntoActionsRows(v)
 				if err != nil {
 					return nil, err
 				}
@@ -365,7 +371,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				default:
 					return nil, errors.New("invalid component passed to send message builder")
 				}
-				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{component}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{component}})
 			}
 		case "ephemeral":
 			if val == nil || val == false {
@@ -387,7 +393,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 					}
 					buttons = append(buttons, button)
 				}
-				comps, err := distributeComponents(reflect.ValueOf(buttons))
+				comps, err := distributeComponentsIntoActionsRows(reflect.ValueOf(buttons))
 				if err != nil {
 					return nil, err
 				}
@@ -400,7 +406,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				if button.Style == discordgo.LinkButton {
 					button.CustomID = ""
 				}
-				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{button}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{button}})
 			}
 		case "menus":
 			if val == nil {
@@ -417,7 +423,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 					}
 					menus = append(menus, menu)
 				}
-				comps, err := distributeComponents(reflect.ValueOf(menus))
+				comps, err := distributeComponentsIntoActionsRows(reflect.ValueOf(menus))
 				if err != nil {
 					return nil, err
 				}
@@ -427,7 +433,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				if err != nil {
 					return nil, err
 				}
-				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{menu}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{menu}})
 			}
 		case "forward":
 			if val == nil {
@@ -491,7 +497,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 	}
 
 	if len(msg.Components) > 0 {
-		err := validateActionRowsCustomIDs(&msg.Components)
+		err := validateTopLevelComponentsCustomIDs(&msg.Components, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -509,14 +515,14 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 		return m, nil
 	}
 
-	dictKeys, dictValues, err := StringKeyValueSlices(values...)
+	skvs, err := StringKeyValueSlices(values...)
 	if err != nil {
 		return nil, err
 	}
 
 	msg := &discordgo.MessageEdit{}
-	for i, key := range dictKeys {
-		val := dictValues[i]
+	for i, key := range skvs.Keys {
+		val := skvs.Values[i]
 		switch strings.ToLower(key) {
 		case "content":
 			temp := fmt.Sprint(val)
@@ -563,7 +569,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			}
 			v, _ := indirect(reflect.ValueOf(val))
 			if v.Kind() == reflect.Slice {
-				msg.Components, err = distributeComponents(v)
+				msg.Components, err = distributeComponentsIntoActionsRows(v)
 				if err != nil {
 					return nil, err
 				}
@@ -577,7 +583,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				default:
 					return nil, errors.New("invalid component passed to send message builder")
 				}
-				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{component}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{component}})
 			}
 		case "buttons":
 			if val == nil {
@@ -594,7 +600,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 					}
 					buttons = append(buttons, button)
 				}
-				comps, err := distributeComponents(reflect.ValueOf(buttons))
+				comps, err := distributeComponentsIntoActionsRows(reflect.ValueOf(buttons))
 				if err != nil {
 					return nil, err
 				}
@@ -607,7 +613,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				if button.Style == discordgo.LinkButton {
 					button.CustomID = ""
 				}
-				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{button}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{button}})
 			}
 		case "menus":
 			if val == nil {
@@ -624,7 +630,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 					}
 					menus = append(menus, menu)
 				}
-				comps, err := distributeComponents(reflect.ValueOf(menus))
+				comps, err := distributeComponentsIntoActionsRows(reflect.ValueOf(menus))
 				if err != nil {
 					return nil, err
 				}
@@ -634,7 +640,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				if err != nil {
 					return nil, err
 				}
-				msg.Components = append(msg.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{menu}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{menu}})
 			}
 		case "suppress_embeds":
 			if val == nil || val == false {
@@ -648,7 +654,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 	}
 
 	if len(msg.Components) > 0 {
-		err := validateActionRowsCustomIDs(&msg.Components)
+		err := validateTopLevelComponentsCustomIDs(&msg.Components, nil)
 		if err != nil {
 			return nil, err
 		}
