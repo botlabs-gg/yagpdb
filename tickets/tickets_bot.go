@@ -154,14 +154,14 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	}
 
 	if conf.AppendButtons&AppendButtonsClose == AppendButtonsClose {
-		tmplCTX.CurrentFrame.ComponentsToSend = append(tmplCTX.CurrentFrame.ComponentsToSend, discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.Button{
+		tmplCTX.CurrentFrame.ComponentsToSend = append(tmplCTX.CurrentFrame.ComponentsToSend, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{discordgo.Button{
 			Label:    "Close Ticket",
 			CustomID: "tickets-close",
 			Style:    discordgo.DangerButton,
 		}}})
 	}
 	if conf.AppendButtons&AppendButtonsCloseWithReason == AppendButtonsCloseWithReason {
-		tmplCTX.CurrentFrame.ComponentsToSend = append(tmplCTX.CurrentFrame.ComponentsToSend, discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.Button{
+		tmplCTX.CurrentFrame.ComponentsToSend = append(tmplCTX.CurrentFrame.ComponentsToSend, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{discordgo.Button{
 			Label:    "Close Ticket with Reason",
 			CustomID: "tickets-close-reason",
 			Style:    discordgo.SecondaryButton,
@@ -274,8 +274,8 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 				Data: &discordgo.InteractionResponseData{
 					Title:    "Create a Ticket",
 					CustomID: "tickets-open-modal",
-					Components: []discordgo.MessageComponent{discordgo.ActionsRow{
-						Components: []discordgo.MessageComponent{discordgo.TextInput{
+					Components: []discordgo.TopLevelComponent{discordgo.ActionsRow{
+						Components: []discordgo.InteractiveComponent{discordgo.TextInput{
 							CustomID:  "reason",
 							Label:     "Reason for opening",
 							Style:     discordgo.TextInputShort,
@@ -334,8 +334,8 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 			Data: &discordgo.InteractionResponseData{
 				Title:    "Close Ticket",
 				CustomID: "tickets-close-modal",
-				Components: []discordgo.MessageComponent{discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{discordgo.TextInput{
+				Components: []discordgo.TopLevelComponent{discordgo.ActionsRow{
+					Components: []discordgo.InteractiveComponent{discordgo.TextInput{
 						CustomID:  "reason",
 						Label:     "Reason for closing",
 						Style:     discordgo.TextInputShort,

@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -340,8 +341,8 @@ func (MessageComponentInteractionData) Type() InteractionType {
 
 // ModalSubmitInteractionData contains the data of modal submit interaction.
 type ModalSubmitInteractionData struct {
-	CustomID   string             `json:"custom_id"`
-	Components []MessageComponent `json:"components"`
+	CustomID   string              `json:"custom_id"`
+	Components []TopLevelComponent `json:"components"`
 }
 
 // Type returns the type of interaction data.
@@ -361,9 +362,14 @@ func (d *ModalSubmitInteractionData) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*d = ModalSubmitInteractionData(v.modalSubmitInteractionData)
-	d.Components = make([]MessageComponent, len(v.RawComponents))
+	d.Components = make([]TopLevelComponent, len(v.RawComponents))
 	for i, v := range v.RawComponents {
-		d.Components[i] = v.MessageComponent
+		var ok bool
+		comp := v.MessageComponent
+		d.Components[i], ok = comp.(TopLevelComponent)
+		if !ok {
+			return errors.New("non top level component passed to modal interaction data unmarshaller")
+		}
 	}
 	return err
 }
@@ -520,13 +526,13 @@ type InteractionResponse struct {
 
 // InteractionResponseData is response data for an interaction.
 type InteractionResponseData struct {
-	TTS             bool               `json:"tts"`
-	Content         string             `json:"content"`
-	Components      []MessageComponent `json:"components"`
-	Embeds          []*MessageEmbed    `json:"embeds"`
-	AllowedMentions *AllowedMentions   `json:"allowed_mentions,omitempty"`
-	Flags           MessageFlags       `json:"flags,omitempty"`
-	Files           []*File            `json:"-"`
+	TTS             bool                `json:"tts"`
+	Content         string              `json:"content"`
+	Components      []TopLevelComponent `json:"components"`
+	Embeds          []*MessageEmbed     `json:"embeds"`
+	AllowedMentions *AllowedMentions    `json:"allowed_mentions,omitempty"`
+	Flags           MessageFlags        `json:"flags,omitempty"`
+	Files           []*File             `json:"-"`
 
 	// NOTE: autocomplete interaction only.
 	Choices []*ApplicationCommandOptionChoice `json:"choices,omitempty"`

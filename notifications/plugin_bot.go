@@ -188,9 +188,9 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	if cs.Type == discordgo.ChannelTypeDM {
 		msg = common.ReplaceServerInvites(msg, 0, "[removed-server-invite]")
 		msgSend := ctx.MessageSend(msg)
-		msgSend.Components = []discordgo.MessageComponent{
+		msgSend.Components = []discordgo.TopLevelComponent{
 			discordgo.ActionsRow{
-				Components: []discordgo.MessageComponent{
+				Components: []discordgo.InteractiveComponent{
 					discordgo.Button{
 						Label:    "Show Server Info",
 						Style:    discordgo.PrimaryButton,
