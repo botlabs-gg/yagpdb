@@ -118,7 +118,7 @@ var cmds = []*commands.YAGCommand{
 			if err != nil {
 				return nil, err
 			}
-			return notes.createMessage(), nil
+			return createMessage(notes), nil
 		},
 	},
 }
@@ -252,23 +252,34 @@ type indexedNote struct {
 	return msg
 }
 
-type notesButtonType int
+type noteActionType int
 
 const (
-	notesButtonTypeNew notesButtonType = iota
-	notesButtonTypeEdit
-	notesButtonTypeDelete
+	noteActionTypeNew noteActionType = iota
+	noteActionTypeEdit
+	noteActionTypeDelete
 )
 
-func (p *parsedNotes) customID(index int, buttonType notesButtonType) string {
-	args := []string{strconv.FormatInt(p.userID, 10)}
+var noteActionMap = map[string]noteActionType{
+	"edit":   noteActionTypeEdit,
+	"delete": noteActionTypeDelete,
+}
+
+type noteAction struct {
+	userID     int64
+	actionType noteActionType
+	index      int // 0 if actionType == new
+}
+
+func formatCustomID(userID int64, index int, buttonType noteActionType) string {
+	args := []string{strconv.FormatInt(userID, 10)}
 	args = append(args, strconv.Itoa(index))
 	switch buttonType {
-	case notesButtonTypeNew:
+	case noteActionTypeNew:
 		args[1] = "new"
-	case notesButtonTypeEdit:
+	case noteActionTypeEdit:
 		args = append(args, "edit")
-	case notesButtonTypeDelete:
+	case noteActionTypeDelete:
 		args = append(args, "delete")
 	}
 
@@ -277,58 +288,36 @@ func (p *parsedNotes) customID(index int, buttonType notesButtonType) string {
 	return id
 }
 
-func (p *parsedNotes) createButtons() (rows []discordgo.MessageComponent) {
-	var createNewNoteButton bool = len(p.notes) < maxNotesPerUser
-	for i, n := range p.notes {
-		if len(n.noteLines) < 1 || n.noteLines[0] == "" {
-			createNewNoteButton = true
-			continue
-		}
+func parseCustomID(cID string) (action noteAction) {
+	args := strings.Split(cID, "-")
 
-		editButton := discordgo.Button{
-			Label:    fmt.Sprintf("Edit Note #%d", i+1),
-			Style:    discordgo.SecondaryButton,
-			CustomID: p.customID(i, notesButtonTypeEdit),
-		}
-		deleteButton := discordgo.Button{
-			Label:    fmt.Sprintf("Delete Note #%d", i+1),
-			Style:    discordgo.DangerButton,
-			CustomID: p.customID(i, notesButtonTypeDelete),
-		}
-
-		rows = append(rows, discordgo.ActionsRow{Components: []discordgo.MessageComponent{editButton, deleteButton}})
+	action.userID, _ = strconv.ParseInt(args[0], 10, 64)
+	index := args[1]
+	action.index, _ = strconv.Atoi(index)
+	if index == "new" {
+		action.actionType = noteActionTypeNew
+		return
 	}
 
-	if createNewNoteButton {
-		rows = append(rows, discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.Button{
-			Label:    "Create New Note",
-			Style:    discordgo.SuccessButton,
-			CustomID: p.customID(0, notesButtonTypeNew),
-		}}})
-	}
-
+	action.actionType = noteActionMap[args[2]]
 	return
 }
 
-func (p *parsedNotes) createMessage() (msg *discordgo.MessageSend) {
-	m := p.createMessageContent()
+func createMessage(p *parsedNotes) (msg *discordgo.MessageSend) {
 	msg = &discordgo.MessageSend{
-		Content:    m.Content,
-		Embeds:     m.Embeds,
-		Components: p.createButtons(),
-		Flags:      discordgo.MessageFlagsEphemeral,
+		Components: *createMessageContent(p),
 	}
 	return
 }
 
-func (p *parsedNotes) createModal(index *int) (modal *discordgo.InteractionResponse) {
+func createModal(p *parsedNotes, index *int) (modal *discordgo.InteractionResponse) {
 	title := "Create New Note"
-	notesType := notesButtonTypeNew
+	notesType := noteActionTypeNew
 	safeIndex := 0
 	fieldContent := ""
 	if index != nil {
 		title = fmt.Sprintf("Edit Note #%d", *index+1)
-		notesType = notesButtonTypeEdit
+		notesType = noteActionTypeEdit
 		safeIndex = *index
 		fieldContent = strings.Join(p.notes[safeIndex].noteLines, "\n")
 	}
@@ -336,7 +325,7 @@ func (p *parsedNotes) createModal(index *int) (modal *discordgo.InteractionRespo
 		Type: discordgo.InteractionResponseModal,
 		Data: &discordgo.InteractionResponseData{
 			Title:    title,
-			CustomID: p.customID(safeIndex, notesType),
+			CustomID: formatCustomID(p.userID, safeIndex, notesType),
 			Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.TextInput{
 				CustomID:  "new",
 				Label:     "Note",

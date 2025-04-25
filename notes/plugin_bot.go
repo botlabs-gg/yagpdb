@@ -102,24 +102,18 @@ func errResponse(err error) *discordgo.InteractionResponse {
 }
 
 func handleNoteButton(evt *eventsystem.EventData, strippedID string) (*discordgo.InteractionResponse, error) {
-	args := strings.Split(strippedID, "-")
-
-	userID, _ := strconv.ParseInt(args[0], 10, 64)
-	notes, err := getNotes(evt.Context(), evt.GS.ID, userID)
+	action := parseCustomID(strippedID)
+	notes, err := getNotes(evt.Context(), evt.GS.ID, action.userID)
 	if err != nil {
 		return nil, err
 	}
-	index := args[1]
-	safeIndex, err := strconv.Atoi(index)
-	if index == "new" {
-		return notes.createModal(nil), nil
-	}
-
-	switch args[2] {
-	case "edit":
-		return notes.createModal(&safeIndex), nil
-	case "delete":
-		err = notes.delete(safeIndex)
+	switch action.actionType {
+	case noteActionTypeNew:
+		return createModal(notes, nil), nil
+	case noteActionTypeEdit:
+		return createModal(notes, &action.index), nil
+	case noteActionTypeDelete:
+		err = notes.delete(action.index)
 		if err != nil {
 			return errResponse(err), nil
 		}
@@ -129,7 +123,7 @@ func handleNoteButton(evt *eventsystem.EventData, strippedID string) (*discordgo
 			return nil, err
 		}
 
-		m := notes.createMessage()
+		m := createMessage(notes)
 		return &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
@@ -138,41 +132,35 @@ func handleNoteButton(evt *eventsystem.EventData, strippedID string) (*discordgo
 				Components: m.Components,
 			},
 		}, nil
-	default:
-		return nil, errors.New("invalid custom ID in notes button")
 	}
+	return nil, nil
 }
 
 func handleNoteModal(evt *eventsystem.EventData, strippedID, newVal string) (*discordgo.InteractionResponse, error) {
 	ic := evt.InteractionCreate()
-	args := strings.Split(strippedID, "-")
-
-	userID, _ := strconv.ParseInt(args[0], 10, 64)
-	notes, err := getNotes(evt.Context(), evt.GS.ID, userID)
+	action := parseCustomID(strippedID)
+	notes, err := getNotes(evt.Context(), evt.GS.ID, action.userID)
 	if err != nil {
 		return nil, err
 	}
-	index := args[1]
-	safeIndex, err := strconv.Atoi(index)
-	if index == "new" {
+	switch action.actionType {
+	case noteActionTypeNew:
 		err = notes.add(newVal, ic.Member.User)
 		if err != nil {
 			return errResponse(err), nil
 		}
-	} else if len(args) >= 3 && args[2] == "edit" {
-		err = notes.edit(safeIndex, newVal, ic.Member.User)
+	case noteActionTypeEdit:
+		err = notes.edit(action.index, newVal, ic.Member.User)
 		if err != nil {
 			return errResponse(err), nil
 		}
-	} else {
-		return nil, errors.New("invalid custom ID in notes modal")
 	}
 
 	err = notes.save(evt.Context())
 	if err != nil {
 		return nil, err
 	}
-	m := notes.createMessage()
+	m := createMessage(notes)
 	return &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
