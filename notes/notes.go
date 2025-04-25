@@ -1,10 +1,12 @@
 package notes
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -212,30 +214,33 @@ func (p *parsedNotes) save(ctx context.Context) error {
 
 const noNotesMsg = "No shared staff notes written for this user."
 
-func (p *parsedNotes) createMessageContent() *discordgo.MessageSend {
-	msg := &discordgo.MessageSend{}
-	if len(p.notes) == 0 {
-		msg.Content = noNotesMsg
-		return msg
-	}
 
+type indexedNote struct {
+	note  *Note
+	index int
+}
+	if len(p.notes) == 0 {
+	var notes []indexedNote
+	for i := range 3 {
+		notes = append(notes, indexedNote{
+			note:  p.notes[i],
+			index: i,
+		})
+	}
+	slices.SortFunc(notes, func(a, b indexedNote) int {
+		return cmp.Compare(a.note.updatedAt.Unix(), b.note.updatedAt.Unix())
+	})
+
+	var containers []discordgo.TopLevelComponent
+
+	validNoteCount := 0
 	for i := range maxNotesPerUser {
-		if !(len(p.notes) > i && len(p.notes[i].noteLines) > 0 && p.notes[i].noteLines[0] != "") {
+		if !(len(notes) > i && len(notes[i].note.noteLines) > 0 && notes[i].note.noteLines[0] != "") {
 			continue
 		}
 
-		selectedNote := p.notes[i]
-		msg.Embeds = append(msg.Embeds, &discordgo.MessageEmbed{
-			Title:       fmt.Sprint("Note #", i+1),
-			Description: strings.Join(selectedNote.noteLines, "\n"),
-			Timestamp:   selectedNote.updatedAt.Format(time.RFC3339),
-			Footer:      &discordgo.MessageEmbedFooter{Text: "by " + selectedNote.signature},
-		})
-	}
-
-	if len(msg.Embeds) < 1 {
-		msg.Content = noNotesMsg
-		return msg
+		validNoteCount++
+		selectedNote := notes[i]
 	}
 
 	name := strconv.FormatInt(p.userID, 10)
