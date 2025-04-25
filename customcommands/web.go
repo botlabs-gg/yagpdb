@@ -456,6 +456,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		}
 		dbModel.Name = importCC.Name
 		dbModel.ReactionTriggerMode = importCC.ReactionTriggerMode
+		dbModel.InteractionDeferMode = importCC.InteractionDeferMode
 		dbModel.Responses = importCC.Responses
 		dbModel.TextTrigger = importCC.TextTrigger
 		dbModel.TextTriggerCaseSensitive = importCC.TextTriggerCaseSensitive
