@@ -518,15 +518,15 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 		return m, nil
 	}
 
-	skvs, err := StringKeyValueSlices(values...)
+	compBuilder, err := CreateComponentBuilder(values...)
 	if err != nil {
 		return nil, err
 	}
 
 	components := []discordgo.TopLevelComponent{}
 
-	for i, key := range skvs.Keys {
-		val := skvs.Values[i]
+	for i, key := range compBuilder.Components {
+		val := compBuilder.Values[i]
 
 		switch strings.ToLower(key) {
 		case "interactive_components":

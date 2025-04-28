@@ -528,7 +528,7 @@ func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID
 			return nil, errors.New("no values passed")
 		}
 
-		skvs, err := StringKeyValueSlices(values...)
+		compBuilder, err := CreateComponentBuilder(values...)
 		if err != nil {
 			return nil, err
 		}
@@ -541,10 +541,10 @@ func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID
 			Flags: discordgo.MessageFlagsIsComponentsV2,
 		}
 
-		componentArgs := &SKVSlices{}
+		componentArgs := &ComponentBuilder{}
 
-		for i, key := range skvs.Keys {
-			val := skvs.Values[i]
+		for i, key := range compBuilder.Components {
+			val := compBuilder.Values[i]
 
 			switch strings.ToLower(key) {
 			case "allowed_mentions":
@@ -587,7 +587,7 @@ func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID
 			}
 		}
 
-		if len(componentArgs.Keys) > 0 {
+		if len(componentArgs.Components) > 0 {
 			components, err := CreateComponentArray(&msg.Files, componentArgs)
 			if err != nil {
 				return nil, err
@@ -630,7 +630,7 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 			return nil, errors.New("no values passed")
 		}
 
-		skvs, err := StringKeyValueSlices(values...)
+		compBuilder, err := CreateComponentBuilder(values...)
 		if err != nil {
 			return nil, err
 		}
@@ -646,10 +646,10 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 			Embeds:          []*discordgo.MessageEmbed{},
 		}
 
-		componentArgs := &SKVSlices{}
+		componentArgs := &ComponentBuilder{}
 
-		for i, key := range skvs.Keys {
-			val := skvs.Values[i]
+		for i, key := range compBuilder.Components {
+			val := compBuilder.Values[i]
 
 			switch strings.ToLower(key) {
 			case "allowed_mentions":
@@ -672,7 +672,7 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 			}
 		}
 
-		if len(componentArgs.Keys) > 0 {
+		if len(componentArgs.Components) > 0 {
 			components, err := CreateComponentArray(nil, componentArgs)
 			if err != nil {
 				return nil, err

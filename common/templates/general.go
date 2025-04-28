@@ -111,15 +111,11 @@ func StringKeyDictionary(values ...interface{}) (SDict, error) {
 	return SDict(dict), nil
 }
 
-func createSKVSlices() SKVSlices {
-	return SKVSlices{}
-}
-
-// StringKeyValueSlices parses given input of key-value pairs but returns the
+// CreateComponentBuilder parses given input of key-value pairs but returns the
 // keys and the values as separate slices. this is used when you need to have
 // duplicate keys and therefore cannot use a map.
-func StringKeyValueSlices(values ...interface{}) (skvs *SKVSlices, err error) {
-	skvs = &SKVSlices{}
+func CreateComponentBuilder(values ...interface{}) (compBuilder *ComponentBuilder, err error) {
+	compBuilder = &ComponentBuilder{}
 
 	if len(values) == 1 {
 		val, isNil := indirect(reflect.ValueOf(values[0]))
@@ -128,11 +124,11 @@ func StringKeyValueSlices(values ...interface{}) (skvs *SKVSlices, err error) {
 			return
 		}
 
-		if skvslices, ok := val.Interface().(*SKVSlices); ok {
-			return skvslices, nil
-		}
-		if skvslices, ok := val.Interface().(SKVSlices); ok {
-			return &skvslices, nil
+		switch typed := val.Interface().(type) {
+		case *ComponentBuilder:
+			return typed, nil
+		case ComponentBuilder:
+			return &typed, nil
 		}
 
 		switch val.Kind() {
@@ -146,8 +142,8 @@ func StringKeyValueSlices(values ...interface{}) (skvs *SKVSlices, err error) {
 					return
 				}
 				if key.Kind() == reflect.String {
-					skvs.Keys = append(skvs.Keys, key.String())
-					skvs.Values = append(skvs.Values, iter.Value().Interface())
+					compBuilder.Components = append(compBuilder.Components, key.String())
+					compBuilder.Values = append(compBuilder.Values, iter.Value().Interface())
 				} else {
 					err = errors.New("map has non string key of type: " + key.Type().String())
 					return
@@ -173,8 +169,8 @@ func StringKeyValueSlices(values ...interface{}) (skvs *SKVSlices, err error) {
 			return
 		}
 
-		skvs.Keys = append(skvs.Keys, s)
-		skvs.Values = append(skvs.Values, values[i+1])
+		compBuilder.Components = append(compBuilder.Components, s)
+		compBuilder.Values = append(compBuilder.Values, values[i+1])
 	}
 	return
 }
@@ -273,7 +269,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 		return m, nil
 	}
 
-	skvs, err := StringKeyValueSlices(values...)
+	compBuilder, err := CreateComponentBuilder(values...)
 	if err != nil {
 		return nil, err
 	}
@@ -286,8 +282,8 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 
 	// Default filename
 	filename := "attachment_" + time.Now().Format("2006-01-02_15-04-05")
-	for i, key := range skvs.Keys {
-		val := skvs.Values[i]
+	for i, key := range compBuilder.Components {
+		val := compBuilder.Values[i]
 
 		switch strings.ToLower(key) {
 		case "content":
@@ -515,14 +511,14 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 		return m, nil
 	}
 
-	skvs, err := StringKeyValueSlices(values...)
+	compBuilder, err := CreateComponentBuilder(values...)
 	if err != nil {
 		return nil, err
 	}
 
 	msg := &discordgo.MessageEdit{}
-	for i, key := range skvs.Keys {
-		val := skvs.Values[i]
+	for i, key := range compBuilder.Components {
+		val := compBuilder.Values[i]
 		switch strings.ToLower(key) {
 		case "content":
 			temp := fmt.Sprint(val)

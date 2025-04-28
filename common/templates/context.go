@@ -94,7 +94,7 @@ var (
 		"dict":               Dictionary,
 		"sdict":              StringKeyDictionary,
 		"structToSdict":      StructToSdict,
-		"skvslices":          StringKeyValueSlices,
+		"componentBuilder":   CreateComponentBuilder,
 		"cembed":             CreateEmbed,
 		"cbutton":            CreateButton,
 		"cmenu":              CreateSelectMenu,
@@ -1139,22 +1139,22 @@ func (s Slice) StringSlice(flag ...bool) interface{} {
 	return StringSlice
 }
 
-type SKVSlices struct {
-	Keys   []string
-	Values []interface{}
+type ComponentBuilder struct {
+	Components []string
+	Values     []interface{}
 }
 
-func (s *SKVSlices) Add(key string, value interface{}) (interface{}, error) {
-	if len(s.Keys)+1 > 10000 {
+func (s *ComponentBuilder) Add(key string, value interface{}) (interface{}, error) {
+	if len(s.Components)+1 > 10000 {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
 
-	s.Keys = append(s.Keys, key)
+	s.Components = append(s.Components, key)
 	s.Values = append(s.Values, value)
 	return "", nil
 }
 
-func (s *SKVSlices) AddSlice(key string, slice interface{}) (interface{}, error) {
+func (s *ComponentBuilder) AddSlice(key string, slice interface{}) (interface{}, error) {
 	val, _ := indirect(reflect.ValueOf(slice))
 	switch val.Kind() {
 	case reflect.Slice, reflect.Array:
@@ -1164,13 +1164,13 @@ func (s *SKVSlices) AddSlice(key string, slice interface{}) (interface{}, error)
 		return nil, errors.New("value passed is not an array or slice")
 	}
 
-	if len(s.Keys)+val.Len() > 10000 {
+	if len(s.Components)+val.Len() > 10000 {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
 
 	result := reflect.ValueOf(&s.Values).Elem()
 	for i := 0; i < val.Len(); i++ {
-		s.Keys = append(s.Keys, key)
+		s.Components = append(s.Components, key)
 		switch v := val.Index(i).Interface().(type) {
 		case nil:
 			result = reflect.Append(result, reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
@@ -1184,20 +1184,20 @@ func (s *SKVSlices) AddSlice(key string, slice interface{}) (interface{}, error)
 	return "", nil
 }
 
-func (s *SKVSlices) MergeWith(toMerge *SKVSlices) (interface{}, error) {
-	if len(s.Keys)+len(toMerge.Keys) > 10000 {
+func (s *ComponentBuilder) MergeWith(toMerge *ComponentBuilder) (interface{}, error) {
+	if len(s.Components)+len(toMerge.Components) > 10000 {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
 
-	for i, k := range toMerge.Keys {
+	for i, k := range toMerge.Components {
 		s.Add(k, toMerge.Values[i])
 	}
 
 	return "", nil
 }
 
-func (s *SKVSlices) Set(index int, item interface{}) (string, error) {
-	if index >= len(s.Keys) {
+func (s *ComponentBuilder) Set(index int, item interface{}) (string, error) {
+	if index >= len(s.Components) {
 		return "", errors.New("Index out of bounds")
 	}
 
