@@ -201,16 +201,20 @@ type triggeredCmdDiagnosis struct {
 	Result cmdDiagnosisResult
 }
 
-func (diag triggeredCmdDiagnosis) WriteTo(out *strings.Builder) {
+func (diag triggeredCmdDiagnosis) WriteTo(out *strings.Builder, includeLink bool) {
 	switch diag.Result {
 	case cmdOK:
-		out.WriteString(":white_check_mark: ")
+		out.WriteString("✅ ")
 	case cmdExceedsTriggerLimits:
-		out.WriteString(":warning: ")
+		out.WriteString("⚠️ ")
 	}
 
-	fmt.Fprintf(out, "[**CC #%d**](%s): %s `%s`\n", diag.CC.LocalID, cmdControlPanelLink(diag.CC),
-		CommandTriggerType(diag.CC.TriggerType), diag.CC.TextTrigger)
+	if includeLink {
+		fmt.Fprintf(out, "[**CC #%d**](%s): %s `%s`\n", diag.CC.LocalID, cmdControlPanelLink(diag.CC),
+			CommandTriggerType(diag.CC.TriggerType), diag.CC.TextTrigger)
+	} else {
+		fmt.Fprintf(out, "CC %d: %s `%s`\n", diag.CC.LocalID, CommandTriggerType(diag.CC.TriggerType), diag.CC.TextTrigger)
+	}
 	switch diag.Result {
 	case cmdOK:
 		out.WriteString("- will execute")
@@ -288,16 +292,29 @@ var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 > Note that at most %d custom commands can be executed by a single message.`, limit)
 			out.WriteByte('\n')
 		}
-		out.WriteString("## Commands triggering on input\n")
-		for _, diagnosis := range diagnoses {
-			diagnosis.WriteTo(&out)
-			out.WriteByte('\n')
+
+		const inlineThreshold = 5 // If there's more than this many diagnostics, output to a file instead.
+		if len(diagnoses) <= inlineThreshold {
+			out.WriteString("## Commands triggering on input\n")
+			for _, diagnosis := range diagnoses {
+				diagnosis.WriteTo(&out, true)
+				out.WriteByte('\n')
+			}
+			return &discordgo.MessageSend{
+				Flags:   discordgo.MessageFlagsSuppressEmbeds,
+				Content: out.String(),
+			}, nil
 		}
-		msg := &discordgo.MessageSend{
-			Flags:   discordgo.MessageFlagsSuppressEmbeds,
+
+		var fileOut strings.Builder
+		for _, diag := range diagnoses {
+			diag.WriteTo(&fileOut, false)
+			fileOut.WriteString("\n\n")
+		}
+		return &discordgo.MessageSend{
 			Content: out.String(),
-		}
-		return msg, nil
+			File:    &discordgo.File{Name: "output.md", Reader: strings.NewReader(fileOut.String())},
+		}, nil
 	},
 }
 
