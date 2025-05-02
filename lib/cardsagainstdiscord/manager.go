@@ -170,7 +170,7 @@ func (p *Player) removeLastMenuReactions(session *discordgo.Session) {
 		session.ChannelMessageEditComplex(&discordgo.MessageEdit{
 			Channel:    p.Channel,
 			ID:         p.LastReactionMenu,
-			Components: []discordgo.TopLevelComponent{},
+			Components: []discordgo.MessageComponent{},
 		})
 	}
 }

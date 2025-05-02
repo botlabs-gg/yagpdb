@@ -51,9 +51,9 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	default:
 		msgSend.Content = common.ReplaceServerInvites(fmt.Sprint(s...), 0, "[removed-server-invite]")
 	}
-	serverInfo := []discordgo.TopLevelComponent{
+	serverInfo := []discordgo.MessageComponent{
 		discordgo.ActionsRow{
-			Components: []discordgo.InteractiveComponent{
+			Components: []discordgo.MessageComponent{
 				discordgo.Button{
 					Label:    "Show Server Info",
 					Style:    discordgo.PrimaryButton,
@@ -389,9 +389,9 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 
 		if sendType == sendMessageDM {
 			msgSend.Content = common.ReplaceServerInvites(ToString(msg), 0, "[removed-server-invite]")
-			serverInfo := []discordgo.TopLevelComponent{
+			serverInfo := []discordgo.MessageComponent{
 				discordgo.ActionsRow{
-					Components: []discordgo.InteractiveComponent{
+					Components: []discordgo.MessageComponent{
 						discordgo.Button{
 							Label:    "Show Server Info",
 							Style:    discordgo.PrimaryButton,
