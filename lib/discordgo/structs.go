@@ -1425,15 +1425,15 @@ type Webhook struct {
 
 // WebhookParams is a struct for webhook params, used in the WebhookExecute command.
 type WebhookParams struct {
-	Content         string              `json:"content,omitempty"`
-	Username        string              `json:"username,omitempty"`
-	AvatarURL       string              `json:"avatar_url,omitempty"`
-	TTS             bool                `json:"tts,omitempty"`
-	File            *File               `json:"-,omitempty"`
-	Components      []TopLevelComponent `json:"components"`
-	Embeds          []*MessageEmbed     `json:"embeds,omitempty"`
-	Flags           int64               `json:"flags,omitempty"`
-	AllowedMentions *AllowedMentions    `json:"allowed_mentions,omitempty"`
+	Content         string             `json:"content,omitempty"`
+	Username        string             `json:"username,omitempty"`
+	AvatarURL       string             `json:"avatar_url,omitempty"`
+	TTS             bool               `json:"tts,omitempty"`
+	File            *File              `json:"-,omitempty"`
+	Components      []MessageComponent `json:"components"`
+	Embeds          []*MessageEmbed    `json:"embeds,omitempty"`
+	Flags           int64              `json:"flags,omitempty"`
+	AllowedMentions *AllowedMentions   `json:"allowed_mentions,omitempty"`
 }
 
 // MessageReaction stores the data for a message reaction.
