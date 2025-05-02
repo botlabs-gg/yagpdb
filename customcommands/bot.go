@@ -125,7 +125,7 @@ type DelayedRunCCData struct {
 var cmdEvalCommand = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
 	Name:         "Evalcc",
-	Description:  "executes custom command code (up to 1k characters)",
+	Description:  "executes custom command code.",
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "code", Type: dcmd.String},
@@ -166,12 +166,6 @@ var cmdEvalCommand = &commands.YAGCommand{
 		// from misinterpreting backslashes and losing spaces in input; see
 		// https://github.com/botlabs-gg/yagpdb/pull/1547
 		code := common.ParseCodeblock(data.TraditionalTriggerData.MessageStrippedPrefix)
-
-		// Encourage only small code snippets being tested with this command
-		maxRunes := 1000
-		if utf8.RuneCountInString(code) > maxRunes {
-			return "Code is too long for in-place evaluation. Please use the control panel.", nil
-		}
 
 		if channel == nil {
 			return "Something weird happened... Contact the support server.", nil
