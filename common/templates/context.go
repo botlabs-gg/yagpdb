@@ -1184,7 +1184,7 @@ func (s *ComponentBuilder) AddSlice(key string, slice interface{}) (interface{},
 	return "", nil
 }
 
-func (s *ComponentBuilder) MergeWith(toMerge *ComponentBuilder) (interface{}, error) {
+func (s *ComponentBuilder) Merge(toMerge *ComponentBuilder) (interface{}, error) {
 	if len(s.Components)+len(toMerge.Components) > 10000 {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
@@ -1196,13 +1196,13 @@ func (s *ComponentBuilder) MergeWith(toMerge *ComponentBuilder) (interface{}, er
 	return "", nil
 }
 
-func (s *ComponentBuilder) Set(index int, item interface{}) (string, error) {
-	if index >= len(s.Components) {
-		return "", errors.New("Index out of bounds")
+func (s *ComponentBuilder) Get(key string) (result []interface{}) {
+	for i, k := range s.Components {
+		if k == key {
+			result = append(result, s.Values[i])
+		}
 	}
-
-	s.Values[index] = item
-	return "", nil
+	return
 }
 
 func withOutputLimit(f func(...interface{}) string, limit int) func(...interface{}) (string, error) {
