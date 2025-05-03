@@ -294,10 +294,10 @@ func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
 	}
 }
 
-func createInteractionButtons() []discordgo.TopLevelComponent {
-	return []discordgo.TopLevelComponent{
+func createInteractionButtons() []discordgo.MessageComponent {
+	return []discordgo.MessageComponent{
 		discordgo.ActionsRow{
-			Components: []discordgo.InteractiveComponent{
+			Components: []discordgo.MessageComponent{
 				discordgo.Button{
 					Label:    EmojiJoining,
 					Style:    discordgo.SuccessButton,
@@ -475,7 +475,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 
 	if m.StartsAt.Before(time.Now()) {
 		// Remove the buttons if event has started
-		editMessage.Components = []discordgo.TopLevelComponent{}
+		editMessage.Components = []discordgo.MessageComponent{}
 	}
 
 	_, err := common.BotSession.ChannelMessageEditComplex(&editMessage)

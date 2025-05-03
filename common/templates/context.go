@@ -207,7 +207,7 @@ type ContextFrame struct {
 
 	DelResponseDelay         int
 	EmbedsToSend             []*discordgo.MessageEmbed
-	ComponentsToSend         []discordgo.TopLevelComponent
+	ComponentsToSend         []discordgo.MessageComponent
 	AddResponseReactionNames []string
 
 	isNestedTemplate bool
@@ -510,9 +510,9 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 	}
 	if sendType == sendMessageDM {
 		msgSend.Content = common.ReplaceServerInvites(msgSend.Content, 0, "[removed-server-invite]")
-		msgSend.Components = []discordgo.TopLevelComponent{
+		msgSend.Components = []discordgo.MessageComponent{
 			discordgo.ActionsRow{
-				Components: []discordgo.InteractiveComponent{
+				Components: []discordgo.MessageComponent{
 					discordgo.Button{
 						Label:    "Show Server Info",
 						Style:    discordgo.PrimaryButton,
