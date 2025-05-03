@@ -79,7 +79,7 @@ var Command = &commands.YAGCommand{
 			Components: []discordgo.TopLevelComponent{discordgo.Container{
 				AccentColor: int(rand.Int63n(16777215)),
 				Components: []discordgo.TopLevelComponent{
-					discordgo.TextDisplay{Content: fmt.Sprintf("\\## #%d: %s", xkcd.Num, xkcd.Title)},
+					discordgo.TextDisplay{Content: fmt.Sprintf("## \\#%d: %s", xkcd.Num, xkcd.Title)},
 					discordgo.MediaGallery{Items: []discordgo.MediaGalleryItem{
 						{
 							Media: discordgo.UnfurledMediaItem{URL: xkcd.Img},
