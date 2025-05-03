@@ -290,7 +290,7 @@ func (p *Plugin) AddCommands() {
 			{Name: "button-9", Help: "Predefined reason for button 9", Type: dcmd.String},
 		},
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
-			var components []discordgo.MessageComponent
+			var components []discordgo.InteractiveComponent
 			var usedReasons []string
 			for i := 1; i < 10; i++ {
 				arg := parsed.Switches["button-"+strconv.Itoa(i)]
@@ -351,10 +351,10 @@ func (p *Plugin) AddCommands() {
 					CustomID: "tickets-open-",
 					Style:    discordgo.SecondaryButton,
 				}
-				components = append([]discordgo.MessageComponent{customButton}, components...)
+				components = append([]discordgo.InteractiveComponent{customButton}, components...)
 			}
 
-			var actionsRows []discordgo.MessageComponent
+			var actionsRows []discordgo.TopLevelComponent
 			if len(components) > 5 {
 				actionsRows = append(actionsRows, discordgo.ActionsRow{Components: components[:5]})
 				components = components[5:]
