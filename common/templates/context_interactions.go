@@ -591,6 +591,7 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 			_, err = common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, token, msgEdit)
 			if err == nil && token == c.CurrentFrame.Interaction.Token {
 				c.CurrentFrame.Interaction.RespondedTo = true
+				c.CurrentFrame.Interaction.Deferred = false
 			}
 		} else {
 			_, err = common.BotSession.EditFollowupMessage(common.BotApplication.ID, token, mID, msgEdit)

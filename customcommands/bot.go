@@ -201,16 +201,20 @@ type triggeredCmdDiagnosis struct {
 	Result cmdDiagnosisResult
 }
 
-func (diag triggeredCmdDiagnosis) WriteTo(out *strings.Builder) {
+func (diag triggeredCmdDiagnosis) WriteTo(out *strings.Builder, includeLink bool) {
 	switch diag.Result {
 	case cmdOK:
-		out.WriteString(":white_check_mark: ")
+		out.WriteString("✅ ")
 	case cmdExceedsTriggerLimits:
-		out.WriteString(":warning: ")
+		out.WriteString("⚠️ ")
 	}
 
-	fmt.Fprintf(out, "[**CC #%d**](%s): %s `%s`\n", diag.CC.LocalID, cmdControlPanelLink(diag.CC),
-		CommandTriggerType(diag.CC.TriggerType), diag.CC.TextTrigger)
+	if includeLink {
+		fmt.Fprintf(out, "[**CC #%d**](%s): %s `%s`\n", diag.CC.LocalID, cmdControlPanelLink(diag.CC),
+			CommandTriggerType(diag.CC.TriggerType), diag.CC.TextTrigger)
+	} else {
+		fmt.Fprintf(out, "CC %d: %s `%s`\n", diag.CC.LocalID, CommandTriggerType(diag.CC.TriggerType), diag.CC.TextTrigger)
+	}
 	switch diag.Result {
 	case cmdOK:
 		out.WriteString("- will execute")
@@ -288,16 +292,29 @@ var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 > Note that at most %d custom commands can be executed by a single message.`, limit)
 			out.WriteByte('\n')
 		}
-		out.WriteString("## Commands triggering on input\n")
-		for _, diagnosis := range diagnoses {
-			diagnosis.WriteTo(&out)
-			out.WriteByte('\n')
+
+		const inlineThreshold = 5 // If there's more than this many diagnostics, output to a file instead.
+		if len(diagnoses) <= inlineThreshold {
+			out.WriteString("## Commands triggering on input\n")
+			for _, diagnosis := range diagnoses {
+				diagnosis.WriteTo(&out, true)
+				out.WriteByte('\n')
+			}
+			return &discordgo.MessageSend{
+				Flags:   discordgo.MessageFlagsSuppressEmbeds,
+				Content: out.String(),
+			}, nil
 		}
-		msg := &discordgo.MessageSend{
-			Flags:   discordgo.MessageFlagsSuppressEmbeds,
+
+		var fileOut strings.Builder
+		for _, diag := range diagnoses {
+			diag.WriteTo(&fileOut, false)
+			fileOut.WriteString("\n\n")
+		}
+		return &discordgo.MessageSend{
 			Content: out.String(),
-		}
-		return msg, nil
+			File:    &discordgo.File{Name: "output.md", Reader: strings.NewReader(fileOut.String())},
+		}, nil
 	},
 }
 
@@ -861,6 +878,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 			return
 		}
 
+		deferResponseToCCs(&interaction, triggeredCmds)
 		for _, matched := range triggeredCmds {
 			err = ExecuteCustomCommandFromComponent(matched.CC, evt.GS, cState, matched.Args, matched.Stripped, &interaction)
 			if err != nil {
@@ -886,12 +904,44 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 			return
 		}
 
+		deferResponseToCCs(&interaction, triggeredCmds)
 		for _, matched := range triggeredCmds {
 			err = ExecuteCustomCommandFromModal(matched.CC, evt.GS, cState, matched.Args, matched.Stripped, &interaction)
 			if err != nil {
 				logger.WithField("guild", cState.GuildID).WithField("cc_id", matched.CC.LocalID).WithError(err).Error("Error executing custom command")
 			}
 		}
+	}
+}
+
+func deferResponseToCCs(interaction *templates.CustomCommandInteraction, ccs []*TriggeredCC) {
+	def := &discordgo.InteractionResponse{
+		Data: &discordgo.InteractionResponseData{},
+	}
+
+	for _, c := range ccs {
+		switch c.CC.InteractionDeferMode {
+		case InteractionDeferModeNone:
+			continue
+		case InteractionDeferModeMessage:
+			def.Type = discordgo.InteractionResponseDeferredChannelMessageWithSource
+		case InteractionDeferModeEphemeral:
+			def.Type = discordgo.InteractionResponseDeferredChannelMessageWithSource
+			def.Data.Flags = def.Data.Flags | discordgo.MessageFlagsEphemeral
+		case InteractionDeferModeUpdate:
+			def.Type = discordgo.InteractionResponseDeferredMessageUpdate
+		}
+
+		break
+	}
+
+	if def.Type != 0 {
+		err := common.BotSession.CreateInteractionResponse(interaction.ID, interaction.Token, def)
+		if err != nil {
+			logger.WithField("guild", interaction.GuildID).WithError(err).Error("Error deferring response")
+		}
+		interaction.RespondedTo = true
+		interaction.Deferred = true
 	}
 }
 

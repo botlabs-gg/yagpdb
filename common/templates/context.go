@@ -220,6 +220,7 @@ type ContextFrame struct {
 type CustomCommandInteraction struct {
 	*discordgo.Interaction
 	RespondedTo bool
+	Deferred    bool
 }
 
 func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberState) *Context {
@@ -462,6 +463,9 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 	if c.CurrentFrame.Interaction != nil {
 		if c.CurrentFrame.Interaction.RespondedTo {
 			sendType = sendMessageInteractionFollowup
+			if c.CurrentFrame.Interaction.Deferred {
+				sendType = sendMessageInteractionDeferred
+			}
 		} else {
 			sendType = sendMessageInteractionResponse
 		}
@@ -548,6 +552,16 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 			AllowedMentions: &msgSend.AllowedMentions,
 			Flags:           int64(msgSend.Flags),
 		})
+	case sendMessageInteractionDeferred:
+		m, err = common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, c.CurrentFrame.Interaction.Token, &discordgo.WebhookParams{
+			Content:         msgSend.Content,
+			Embeds:          msgSend.Embeds,
+			AllowedMentions: &msgSend.AllowedMentions,
+			Flags:           int64(msgSend.Flags),
+		})
+		if err == nil {
+			c.CurrentFrame.Interaction.Deferred = false
+		}
 	default:
 		m, err = common.BotSession.ChannelMessageSendComplex(channelID, msgSend)
 	}
@@ -585,10 +599,11 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 type sendMessageType uint
 
 const (
-	sendMessageGuildChannel        sendMessageType = 0
-	sendMessageDM                  sendMessageType = 1
-	sendMessageInteractionResponse sendMessageType = 2
-	sendMessageInteractionFollowup sendMessageType = 3
+	sendMessageGuildChannel sendMessageType = iota
+	sendMessageDM
+	sendMessageInteractionResponse
+	sendMessageInteractionFollowup
+	sendMessageInteractionDeferred
 )
 
 // IncreaseCheckCallCounter Returns true if key is above the limit

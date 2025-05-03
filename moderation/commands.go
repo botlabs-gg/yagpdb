@@ -800,7 +800,8 @@ var ModerationCommands = []*commands.YAGCommand{
 				err = common.BotSession.ChannelMessageDelete(parsed.ChannelID, toDelete[0])
 				resp = "Deleted 1 message! :')"
 			default:
-				err = common.BotSession.ChannelMessagesBulkDelete(parsed.ChannelID, toDelete)
+				reason := fmt.Sprintf("Deleted by %s", parsed.Author.String())
+				err = common.BotSession.ChannelMessagesBulkDeleteWithReason(parsed.ChannelID, toDelete, reason)
 				resp = fmt.Sprintf("Deleted %d messages! :')", numDeleted)
 			}
 
