@@ -477,10 +477,11 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 					return "", errors.New("both content and embed cannot be null")
 				}
 			}
+			msgEdit.AllowedMentions = typedMsg.AllowedMentions
+			msgEdit.Components = typedMsg.Components
 			msgEdit.Content = typedMsg.Content
 			msgEdit.Embeds = typedMsg.Embeds
-			msgEdit.Components = typedMsg.Components
-			msgEdit.AllowedMentions = typedMsg.AllowedMentions
+			msgEdit.Flags = typedMsg.Flags
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
