@@ -171,9 +171,6 @@ func (p *Poller) Poll() {
 		// Loop over the pledges to get e.g. their amount and user name
 		for _, memberData := range membersResponse.Data {
 			attributes := memberData.Attributes
-			if memberData.ID == "7997692f-610e-446f-b9c7-ffe198cb7808" {
-				logger.Printf("%#v", memberData)
-			}
 			user, ok := users[memberData.Relationships.User.Data.ID]
 			tierCents := 0
 			if len(memberData.Relationships.Tiers.Data) > 0 {
@@ -207,8 +204,9 @@ func (p *Poller) Poll() {
 				Avatar:      user.ImageURL,
 			}
 
+			patron.AmountCents = tierCents
 			if patron.AmountCents == 0 {
-				patron.AmountCents = tierCents
+				patron.AmountCents = attributes.CurrentEntitledAmountCents
 			}
 
 			if user.Vanity != "" {
