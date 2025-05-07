@@ -580,7 +580,7 @@ type MessageInteraction struct {
 
 // RoleSubscriptionData contains information about the data that prompted a role subscription purchase message (type 25).
 type RoleSubscriptionData struct {
-	RoleSubscriptionListingID int64  `json:"role_subscription_listing_id"`
+	RoleSubscriptionListingID int64  `json:"role_subscription_listing_id,string"`
 	TierName                  string `json:"tier_name"`
 	TotalMonthsSubscribed     int    `json:"total_months_subscribed"`
 	IsRenewal                 bool   `json:"is_renewal"`
