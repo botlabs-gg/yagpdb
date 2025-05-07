@@ -75,15 +75,22 @@ var Command = &commands.YAGCommand{
 			}
 		}
 
-		embed := &discordgo.MessageEmbed{
-			Title:       fmt.Sprintf("#%d: %s", xkcd.Num, xkcd.Title),
-			Description: fmt.Sprintf("[%s](%s%d/)", xkcd.Alt, XkcdHost, xkcd.Num),
-			Color:       int(rand.Int63n(16777215)),
-			Image: &discordgo.MessageEmbedImage{
-				URL: xkcd.Img,
-			},
+		message := &discordgo.MessageSend{
+			Components: []discordgo.TopLevelComponent{discordgo.Container{
+				AccentColor: int(rand.Int63n(16777215)),
+				Components: []discordgo.TopLevelComponent{
+					discordgo.TextDisplay{Content: fmt.Sprintf("## \\#%d: %s", xkcd.Num, xkcd.Title)},
+					discordgo.MediaGallery{Items: []discordgo.MediaGalleryItem{
+						{
+							Media: discordgo.UnfurledMediaItem{URL: xkcd.Img},
+						},
+					}},
+					discordgo.TextDisplay{Content: fmt.Sprintf("[%s](%s%d/)", xkcd.Alt, XkcdHost, xkcd.Num)},
+				},
+			}},
+			Flags: discordgo.MessageFlagsIsComponentsV2,
 		}
-		return embed, nil
+		return message, nil
 	},
 }
 

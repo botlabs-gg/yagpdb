@@ -74,10 +74,10 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func createNavigationButtons(prevDisabled bool, nextDisabled bool) []discordgo.MessageComponent {
-	return []discordgo.MessageComponent{
+func createNavigationButtons(prevDisabled bool, nextDisabled bool) []discordgo.TopLevelComponent {
+	return []discordgo.TopLevelComponent{
 		discordgo.ActionsRow{
-			Components: []discordgo.MessageComponent{
+			Components: []discordgo.InteractiveComponent{
 				discordgo.Button{
 					Label:    EmojiPrev,
 					Style:    discordgo.PrimaryButton,
@@ -278,7 +278,7 @@ OUTER:
 
 		_, err := common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
 			Embeds:     []*discordgo.MessageEmbed{lastMessage},
-			Components: []discordgo.MessageComponent{},
+			Components: []discordgo.TopLevelComponent{},
 			Channel:    p.ChannelID,
 			ID:         p.MessageID,
 		})
