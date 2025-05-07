@@ -175,7 +175,7 @@ func (t *triviaSession) updateMessage() {
 	if mID == 0 {
 		msgSend := &discordgo.MessageSend{
 			Embeds:     []*discordgo.MessageEmbed{embed},
-			Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: buttons}},
+			Components: []discordgo.TopLevelComponent{discordgo.ActionsRow{Components: buttons}},
 		}
 		m, err = common.BotSession.ChannelMessageSendComplex(t.ChannelID, msgSend)
 	} else {
@@ -183,7 +183,7 @@ func (t *triviaSession) updateMessage() {
 			Channel:    t.ChannelID,
 			ID:         mID,
 			Embeds:     []*discordgo.MessageEmbed{embed},
-			Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: buttons}},
+			Components: []discordgo.TopLevelComponent{discordgo.ActionsRow{Components: buttons}},
 		}
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
 	}
@@ -199,8 +199,8 @@ func (t *triviaSession) updateMessage() {
 	}
 }
 
-func (t *triviaSession) buildButtons() []discordgo.MessageComponent {
-	components := []discordgo.MessageComponent{}
+func (t *triviaSession) buildButtons() []discordgo.InteractiveComponent {
+	components := []discordgo.InteractiveComponent{}
 	if t.ended {
 		for index, option := range t.Question.Options {
 			totalAnswered := 0
