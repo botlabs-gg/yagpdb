@@ -150,6 +150,8 @@ type YAGCommand struct {
 
 	IsResponseEphemeral bool
 	NSFW                bool
+
+	CommandType discordgo.ApplicationCommandType
 }
 
 // CmdWithCategory puts the command in a category, mostly used for the help generation

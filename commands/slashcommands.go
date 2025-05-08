@@ -158,20 +158,30 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 		return nil
 	}
 
-	if !cast.SlashCommandEnabled {
+	if !cast.SlashCommandEnabled && cast.CommandType == discordgo.ChatApplicationCommand || cast.CommandType == 0 {
 		// not enabled for slash commands
 		return nil
 	}
 	t := true
-
-	_, opts := cast.slashCommandOptions()
-	return &discordgo.CreateApplicationCommandRequest{
+	command := &discordgo.CreateApplicationCommandRequest{
 		Name:              strings.ToLower(cmd.Trigger.Names[0]),
-		Description:       common.CutStringShort(cast.Description, 100),
 		DefaultPermission: &t,
-		Options:           opts,
 		NSFW:              cast.NSFW,
 	}
+
+	switch cast.CommandType {
+	case discordgo.UserApplicationCommand:
+		command.Name = strings.Title(command.Name)
+		command.Type = discordgo.UserApplicationCommand
+	case discordgo.MessageApplicationCommand:
+		command.Name = strings.Title(command.Name)
+		command.Type = discordgo.MessageApplicationCommand
+	default:
+		_, command.Options = cast.slashCommandOptions()
+		command.Description = common.CutStringShort(cast.Description, 100)
+	}
+
+	return command
 }
 
 func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result []*discordgo.ApplicationCommandOption) {
