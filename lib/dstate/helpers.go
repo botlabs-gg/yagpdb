@@ -73,11 +73,6 @@ func MessageStateFromDgo(m *discordgo.Message) *MessageState {
 		author = *m.Author
 	}
 
-	var poll *discordgo.Poll
-	if m.Poll != nil {
-		poll = m.Poll
-	}
-
 	parsedC, _ := m.Timestamp.Parse()
 	var parsedE time.Time
 	if m.EditedTimestamp != "" {
@@ -85,20 +80,21 @@ func MessageStateFromDgo(m *discordgo.Message) *MessageState {
 	}
 
 	ms := &MessageState{
-		ID:               m.ID,
-		GuildID:          m.GuildID,
-		ChannelID:        m.ChannelID,
-		Author:           author,
-		Member:           m.Member,
-		Content:          m.Content,
-		MessageSnapshots: convertMessageSnapshots(m.MessageSnapshots),
-		Embeds:           embeds,
-		Poll:             poll,
-		Mentions:         mentions,
-		Attachments:      attachments,
-		MentionRoles:     m.MentionRoles,
-		ParsedCreatedAt:  parsedC,
-		ParsedEditedAt:   parsedE,
+		ID:                   m.ID,
+		GuildID:              m.GuildID,
+		ChannelID:            m.ChannelID,
+		Author:               author,
+		Member:               m.Member,
+		Content:              m.Content,
+		MessageSnapshots:     convertMessageSnapshots(m.MessageSnapshots),
+		Embeds:               embeds,
+		Poll:             	  m.poll,
+		Mentions:             mentions,
+		Attachments:          attachments,
+		MentionRoles:         m.MentionRoles,
+		ParsedCreatedAt:      parsedC,
+		ParsedEditedAt:       parsedE,
+		RoleSubscriptionData: m.RoleSubscriptionData,
 	}
 	if m.Reference() != nil {
 		ms.MessageReference = *m.Reference()

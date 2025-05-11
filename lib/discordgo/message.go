@@ -170,6 +170,9 @@ type Message struct {
 
 	// Poll object
 	Poll *Poll `json:"poll"`
+
+	// Data of the role subscription purchase or renewal that prompted this role subscription message.
+	RoleSubscriptionData *RoleSubscriptionData `json:"role_subscription_data,omitempty"`
 }
 
 type MessageSnapshot struct {
@@ -577,4 +580,12 @@ type MessageInteraction struct {
 
 	// Member is only present when the interaction is from a guild.
 	Member *Member `json:"member"`
+}
+
+// RoleSubscriptionData contains information about the data that prompted a role subscription purchase message (type 25).
+type RoleSubscriptionData struct {
+	RoleSubscriptionListingID int64  `json:"role_subscription_listing_id"`
+	TierName                  string `json:"tier_name"`
+	TotalMonthsSubscribed     int    `json:"total_months_subscribed"`
+	IsRenewal                 bool   `json:"is_renewal"`
 }
