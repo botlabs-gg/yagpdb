@@ -171,7 +171,7 @@ type Message struct {
 
 	// Poll object
 	Poll *Poll `json:"poll"`
-
+  
 	// Data of the role subscription purchase or renewal that prompted this role subscription message.
 	RoleSubscriptionData *RoleSubscriptionData `json:"role_subscription_data,omitempty"`
 }
