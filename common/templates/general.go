@@ -367,7 +367,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				default:
 					return nil, errors.New("invalid component passed to send message builder")
 				}
-				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{component}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{component}})
 			}
 		case "ephemeral":
 			if val == nil || val == false {
@@ -402,7 +402,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				if button.Style == discordgo.LinkButton {
 					button.CustomID = ""
 				}
-				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{button}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{button}})
 			}
 		case "menus":
 			if val == nil {
@@ -429,7 +429,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				if err != nil {
 					return nil, err
 				}
-				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{menu}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{menu}})
 			}
 		case "forward":
 			if val == nil {
@@ -579,7 +579,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				default:
 					return nil, errors.New("invalid component passed to send message builder")
 				}
-				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{component}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{component}})
 			}
 		case "buttons":
 			if val == nil {
@@ -609,7 +609,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				if button.Style == discordgo.LinkButton {
 					button.CustomID = ""
 				}
-				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{button}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{button}})
 			}
 		case "menus":
 			if val == nil {
@@ -636,7 +636,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				if err != nil {
 					return nil, err
 				}
-				msg.Components = append(msg.Components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{menu}})
+				msg.Components = append(msg.Components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{menu}})
 			}
 		case "suppress_embeds":
 			if val == nil || val == false {

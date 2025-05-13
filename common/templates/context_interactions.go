@@ -63,7 +63,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 			v, _ := indirect(reflect.ValueOf(val))
 			if v.Kind() == reflect.Slice {
 				const maxRows = 5 // Discord limitation
-				usedCustomIDs := []string{}
+				usedCustomIDs := &map[string]bool{}
 				for i := 0; i < v.Len() && i < maxRows; i++ {
 					f, err := CreateComponent(discordgo.TextInputComponent, v.Index(i).Interface())
 					if err != nil {
@@ -74,12 +74,12 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 					if field.Style == 0 {
 						field.Style = discordgo.TextInputShort
 					}
-					err = validateCustomID(&field.CustomID, &usedCustomIDs)
+					field.CustomID, err = validateCustomID(field.CustomID, usedCustomIDs)
 					if err != nil {
 						return nil, err
 					}
-					usedCustomIDs = append(usedCustomIDs, field.CustomID)
-					modal.Components = append(modal.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{field}})
+					(*usedCustomIDs)[field.CustomID] = true
+					modal.Components = append(modal.Components, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{field}})
 				}
 			} else {
 				f, err := CreateComponent(discordgo.TextInputComponent, val)
@@ -90,8 +90,11 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 				if field.Style == 0 {
 					field.Style = discordgo.TextInputShort
 				}
-				validateCustomID(&field.CustomID, nil)
-				modal.Components = append(modal.Components, discordgo.ActionsRow{[]discordgo.InteractiveComponent{field}})
+				field.CustomID, err = validateCustomID(field.CustomID, nil)
+				if err != nil {
+					return nil, err
+				}
+				modal.Components = append(modal.Components, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{field}})
 			}
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)

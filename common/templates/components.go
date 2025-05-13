@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"slices"
+
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -549,7 +551,7 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 				default:
 					return nil, errors.New("invalid component passed to send message builder")
 				}
-				components = append(components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{component}})
+				components = append(components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{component}})
 			}
 		case "buttons":
 			if val == nil {
@@ -579,7 +581,7 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 				if button.Style == discordgo.LinkButton {
 					button.CustomID = ""
 				}
-				components = append(components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{button}})
+				components = append(components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{button}})
 			}
 		case "menus":
 			if val == nil {
@@ -606,7 +608,7 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 				if err != nil {
 					return nil, err
 				}
-				components = append(components, &discordgo.ActionsRow{[]discordgo.InteractiveComponent{menu}})
+				components = append(components, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{menu}})
 			}
 		case "section":
 			if val == nil {
@@ -823,8 +825,7 @@ func distributeComponentsIntoActionsRows(components reflect.Value) (returnCompon
 			returnComponents = append(returnComponents, &tempRow)
 		}
 	} else {
-		// user just slapped a bunch of components into a slice. we need to organize ourselves
-		tempRow := discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{}}
+		currentComponents := make([]discordgo.InteractiveComponent, 0)
 		for i := 0; i < components.Len() && i < maxRows*maxComponents; i++ {
 			var component discordgo.InteractiveComponent
 			var isMenu bool
@@ -839,22 +840,22 @@ func distributeComponentsIntoActionsRows(components reflect.Value) (returnCompon
 				return nil, errors.New("invalid component passed to send message builder")
 			}
 
-			availableSpace := 5 - len(tempRow.Components)
+			availableSpace := 5 - len(currentComponents)
 			if !isMenu && availableSpace > 0 || isMenu && availableSpace == 5 {
-				tempRow.Components = append(tempRow.Components, component)
+				currentComponents = append(currentComponents, component)
 			} else {
-				returnComponents = append(returnComponents, &tempRow)
-				tempRow.Components = []discordgo.InteractiveComponent{component}
+				returnComponents = append(returnComponents, &discordgo.ActionsRow{Components: slices.Clone(currentComponents)})
+				currentComponents = []discordgo.InteractiveComponent{component}
 			}
 
 			// if it's a menu, the row is full now, append and start a new one
 			if isMenu {
-				returnComponents = append(returnComponents, &tempRow)
-				tempRow.Components = []discordgo.InteractiveComponent{}
+				returnComponents = append(returnComponents, &discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{component}})
+				currentComponents = []discordgo.InteractiveComponent{}
 			}
 
-			if i == components.Len()-1 && len(tempRow.Components) > 0 { // if we're at the end, append the last row
-				returnComponents = append(returnComponents, &tempRow)
+			if i == components.Len()-1 && len(currentComponents) > 0 { // if we're at the end, append the last row
+				returnComponents = append(returnComponents, &discordgo.ActionsRow{Components: slices.Clone(currentComponents)})
 			}
 		}
 	}
@@ -863,41 +864,36 @@ func distributeComponentsIntoActionsRows(components reflect.Value) (returnCompon
 
 // validateCustomID sets a unique custom ID based on componentIndex if needed
 // and returns an error if id is already in used
-func validateCustomID(id *string, used *[]string) error {
-	if id == nil {
-		return nil
+func validateCustomID(id string, used *map[string]bool) (string, error) {
+	if id == "" {
+		id = fmt.Sprint(len(*used))
 	}
 
-	if *id == "" {
-		*id = fmt.Sprint(len(*used))
-	}
-
-	if !strings.HasPrefix(*id, "templates-") {
-		*id = fmt.Sprint("templates-", *id)
+	if !strings.HasPrefix(id, "templates-") {
+		id = fmt.Sprint("templates-", id)
 	}
 
 	const maxCIDLength = 100 // discord limitation
-	if len(*id) > maxCIDLength {
-		return errors.New("custom id too long (max 90 chars)") // maxCIDLength - len("templates-")
+	if len(id) > maxCIDLength {
+		return "", errors.New("custom id too long (max 90 chars)") // maxCIDLength - len("templates-")
 	}
 
 	if used == nil {
-		return nil
+		return id, nil
 	}
 
-	if in(*used, *id) {
-		return errors.New("duplicate custom ids used")
+	if _, ok := (*used)[id]; ok {
+		return "", errors.New("duplicate custom ids used")
 	}
-	return nil
+	return id, nil
 }
 
 // validateCustomIDs sets unique custom IDs for any component in the action
 // rows provided in the slice, sets any link buttons' ids to an empty string,
 // and returns an error if duplicate custom ids are used.
-func validateTopLevelComponentsCustomIDs(rows *[]discordgo.TopLevelComponent, usedPrev *[]string) error {
-	used := &[]string{}
-	if usedPrev != nil {
-		used = usedPrev
+func validateTopLevelComponentsCustomIDs(rows *[]discordgo.TopLevelComponent, used *map[string]bool) error {
+	if used == nil {
+		used = &map[string]bool{}
 	}
 	for rowIdx := 0; rowIdx < len(*rows); rowIdx++ {
 		var rowComps *[]discordgo.InteractiveComponent
@@ -927,11 +923,11 @@ func validateTopLevelComponentsCustomIDs(rows *[]discordgo.TopLevelComponent, us
 					c.CustomID = ""
 					continue
 				}
-				err = validateCustomID(&c.CustomID, used)
-				*used = append(*used, c.CustomID)
+				c.CustomID, err = validateCustomID(c.CustomID, used)
+				(*used)[c.CustomID] = true
 			case *discordgo.SelectMenu:
-				err = validateCustomID(&c.CustomID, used)
-				*used = append(*used, c.CustomID)
+				c.CustomID, err = validateCustomID(c.CustomID, used)
+				(*used)[c.CustomID] = true
 			}
 			if err != nil {
 				return err
