@@ -864,9 +864,9 @@ func distributeComponentsIntoActionsRows(components reflect.Value) (returnCompon
 
 // validateCustomID sets a unique custom ID based on componentIndex if needed
 // and returns an error if id is already in used
-func validateCustomID(id string, used *map[string]bool) (string, error) {
+func validateCustomID(id string, used map[string]bool) (string, error) {
 	if id == "" {
-		id = fmt.Sprint(len(*used))
+		id = fmt.Sprint(len(used))
 	}
 
 	if !strings.HasPrefix(id, "templates-") {
@@ -882,7 +882,7 @@ func validateCustomID(id string, used *map[string]bool) (string, error) {
 		return id, nil
 	}
 
-	if _, ok := (*used)[id]; ok {
+	if _, ok := used[id]; ok {
 		return "", errors.New("duplicate custom ids used")
 	}
 	return id, nil
@@ -891,9 +891,9 @@ func validateCustomID(id string, used *map[string]bool) (string, error) {
 // validateCustomIDs sets unique custom IDs for any component in the action
 // rows provided in the slice, sets any link buttons' ids to an empty string,
 // and returns an error if duplicate custom ids are used.
-func validateTopLevelComponentsCustomIDs(rows *[]discordgo.TopLevelComponent, used *map[string]bool) error {
+func validateTopLevelComponentsCustomIDs(rows *[]discordgo.TopLevelComponent, used map[string]bool) error {
 	if used == nil {
-		used = &map[string]bool{}
+		used = make(map[string]bool)
 	}
 	for rowIdx := 0; rowIdx < len(*rows); rowIdx++ {
 		var rowComps *[]discordgo.InteractiveComponent
@@ -924,10 +924,10 @@ func validateTopLevelComponentsCustomIDs(rows *[]discordgo.TopLevelComponent, us
 					continue
 				}
 				c.CustomID, err = validateCustomID(c.CustomID, used)
-				(*used)[c.CustomID] = true
+				used[c.CustomID] = true
 			case *discordgo.SelectMenu:
 				c.CustomID, err = validateCustomID(c.CustomID, used)
-				(*used)[c.CustomID] = true
+				used[c.CustomID] = true
 			}
 			if err != nil {
 				return err

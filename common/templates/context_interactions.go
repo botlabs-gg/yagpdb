@@ -63,7 +63,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 			v, _ := indirect(reflect.ValueOf(val))
 			if v.Kind() == reflect.Slice {
 				const maxRows = 5 // Discord limitation
-				usedCustomIDs := &map[string]bool{}
+				usedCustomIDs := make(map[string]bool)
 				for i := 0; i < v.Len() && i < maxRows; i++ {
 					f, err := CreateComponent(discordgo.TextInputComponent, v.Index(i).Interface())
 					if err != nil {
@@ -78,7 +78,7 @@ func CreateModal(values ...interface{}) (*discordgo.InteractionResponse, error) 
 					if err != nil {
 						return nil, err
 					}
-					(*usedCustomIDs)[field.CustomID] = true
+					usedCustomIDs[field.CustomID] = true
 					modal.Components = append(modal.Components, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{field}})
 				}
 			} else {
