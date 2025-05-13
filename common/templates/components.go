@@ -891,23 +891,23 @@ func validateCustomID(id string, used map[string]bool) (string, error) {
 // validateCustomIDs sets unique custom IDs for any component in the action
 // rows provided in the slice, sets any link buttons' ids to an empty string,
 // and returns an error if duplicate custom ids are used.
-func validateTopLevelComponentsCustomIDs(rows *[]discordgo.TopLevelComponent, used map[string]bool) error {
+func validateTopLevelComponentsCustomIDs(rows []discordgo.TopLevelComponent, used map[string]bool) error {
 	if used == nil {
 		used = make(map[string]bool)
 	}
-	for rowIdx := 0; rowIdx < len(*rows); rowIdx++ {
-		var rowComps *[]discordgo.InteractiveComponent
-		switch r := (*rows)[rowIdx].(type) {
+	for rowIdx := 0; rowIdx < len(rows); rowIdx++ {
+		var rowComps []discordgo.InteractiveComponent
+		switch r := rows[rowIdx].(type) {
 		case *discordgo.ActionsRow:
-			rowComps = &r.Components
+			rowComps = r.Components
 		case *discordgo.Section:
 			if c, ok := r.Accessory.(discordgo.InteractiveComponent); ok {
-				rowComps = &[]discordgo.InteractiveComponent{c}
+				rowComps = []discordgo.InteractiveComponent{c}
 			} else {
 				continue
 			}
 		case *discordgo.Container:
-			err := validateTopLevelComponentsCustomIDs(&r.Components, used)
+			err := validateTopLevelComponentsCustomIDs(r.Components, used)
 			if err != nil {
 				return err
 			}
@@ -915,9 +915,9 @@ func validateTopLevelComponentsCustomIDs(rows *[]discordgo.TopLevelComponent, us
 		default:
 			continue
 		}
-		for compIdx := 0; compIdx < len(*rowComps); compIdx++ {
+		for compIdx := 0; compIdx < len(rowComps); compIdx++ {
 			var err error
-			switch c := (*rowComps)[compIdx].(type) {
+			switch c := (rowComps)[compIdx].(type) {
 			case *discordgo.Button:
 				if c.Style == discordgo.LinkButton {
 					c.CustomID = ""

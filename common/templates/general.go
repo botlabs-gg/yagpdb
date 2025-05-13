@@ -493,7 +493,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 	}
 
 	if len(msg.Components) > 0 {
-		err := validateTopLevelComponentsCustomIDs(&msg.Components, nil)
+		err := validateTopLevelComponentsCustomIDs(msg.Components, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -650,7 +650,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 	}
 
 	if len(msg.Components) > 0 {
-		err := validateTopLevelComponentsCustomIDs(&msg.Components, nil)
+		err := validateTopLevelComponentsCustomIDs(msg.Components, nil)
 		if err != nil {
 			return nil, err
 		}
