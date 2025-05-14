@@ -593,7 +593,7 @@ func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID
 				return nil, err
 			}
 
-			err = validateTopLevelComponentsCustomIDs(&components, nil)
+			err = validateTopLevelComponentsCustomIDs(components, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -678,7 +678,7 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 				return nil, err
 			}
 
-			err = validateTopLevelComponentsCustomIDs(&components, nil)
+			err = validateTopLevelComponentsCustomIDs(components, nil)
 			if err != nil {
 				return nil, err
 			}
