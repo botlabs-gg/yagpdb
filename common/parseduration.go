@@ -81,7 +81,7 @@ func parseDurationComponent(numStr, modifierStr string) (time.Duration, error) {
 	case strings.HasPrefix(modifierStr, "y"):
 		parsedDur = parsedDur * time.Hour * 24 * 365
 	default:
-		return 0, errors.New("couldn't figure out what '" + numStr + modifierStr + "` was")
+		return 0, errors.New("couldn't figure out what '" + numStr + modifierStr + "' was")
 	}
 
 	return parsedDur, nil
