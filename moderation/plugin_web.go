@@ -55,7 +55,6 @@ func HandleModeration(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	activeGuild, templateData := web.GetBaseCPContextData(r.Context())
 
 	templateData["DefaultDMMessage"] = DefaultDMMessage
-	templateData["DefaultTimeoutDuration"] = int(DefaultTimeoutDuration.Minutes())
 
 	if _, ok := templateData["ModConfig"]; !ok {
 		config, err := FetchConfig(activeGuild.ID)
@@ -126,12 +125,11 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	<li>Kick command: %s</li>
 	<li>Ban command: %s</li>
 	<li>Mute/Unmute commands: %s</li>
-	<li>Timeout/Untimeout commands: %s</li>
 	<li>Warning commands: %s</li>
 </ul>`
 
 	if config.ReportEnabled || config.CleanEnabled || config.GiveRoleCmdEnabled || config.ActionChannel != 0 ||
-		config.MuteEnabled || config.KickEnabled || config.BanEnabled || config.WarnCommandsEnabled || config.TimeoutEnabled {
+		config.MuteEnabled || config.KickEnabled || config.BanEnabled || config.WarnCommandsEnabled {
 		templateData["WidgetEnabled"] = true
 	} else {
 		templateData["WidgetDisabled"] = true
@@ -140,8 +138,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, web.EnabledDisabledSpanStatus(config.ReportEnabled),
 		web.EnabledDisabledSpanStatus(config.CleanEnabled), web.EnabledDisabledSpanStatus(config.GiveRoleCmdEnabled),
 		web.EnabledDisabledSpanStatus(config.KickEnabled), web.EnabledDisabledSpanStatus(config.BanEnabled),
-		web.EnabledDisabledSpanStatus(config.MuteEnabled), web.EnabledDisabledSpanStatus(config.TimeoutEnabled),
-		web.EnabledDisabledSpanStatus(config.WarnCommandsEnabled)))
+		web.EnabledDisabledSpanStatus(config.MuteEnabled), web.EnabledDisabledSpanStatus(config.WarnCommandsEnabled)))
 
 	return templateData, nil
 }
