@@ -43,7 +43,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/streaming"
 	"github.com/botlabs-gg/yagpdb/v2/tickets"
 	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
-	"github.com/botlabs-gg/yagpdb/v2/twitter"
 	"github.com/botlabs-gg/yagpdb/v2/verification"
 	"github.com/botlabs-gg/yagpdb/v2/youtube"
 	// External plugins
@@ -86,7 +85,6 @@ func main() {
 	patreonpremiumsource.RegisterPlugin()
 	discordpremiumsource.RegisterPlugin()
 	scheduledevents2.RegisterPlugin()
-	twitter.RegisterPlugin()
 	rsvp.RegisterPlugin()
 	timezonecompanion.RegisterPlugin()
 	admin.RegisterPlugin()
