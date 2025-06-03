@@ -88,7 +88,6 @@ var RulePartMap = map[int]RulePart{
 	311: &EnableChannelSlowmodeEffect{},
 	312: &RemoveRoleEffect{},
 	313: &SendChannelMessageEffect{},
-	314: &TimeoutUserEffect{},
 	315: &SendModeratorAlertMessageEffect{},
 }
 

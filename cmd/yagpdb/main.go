@@ -33,17 +33,13 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium/patreonpremiumsource"
 	"github.com/botlabs-gg/yagpdb/v2/reddit"
 	"github.com/botlabs-gg/yagpdb/v2/reminders"
-	"github.com/botlabs-gg/yagpdb/v2/reputation"
 	"github.com/botlabs-gg/yagpdb/v2/rolecommands"
 	"github.com/botlabs-gg/yagpdb/v2/rsvp"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 	"github.com/botlabs-gg/yagpdb/v2/serverstats"
-	"github.com/botlabs-gg/yagpdb/v2/soundboard"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands"
-	"github.com/botlabs-gg/yagpdb/v2/streaming"
 	"github.com/botlabs-gg/yagpdb/v2/tickets"
 	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
-	"github.com/botlabs-gg/yagpdb/v2/twitter"
 	"github.com/botlabs-gg/yagpdb/v2/verification"
 	"github.com/botlabs-gg/yagpdb/v2/youtube"
 	// External plugins
@@ -69,14 +65,11 @@ func main() {
 	customcommands.RegisterPlugin()
 	reddit.RegisterPlugin()
 	moderation.RegisterPlugin()
-	reputation.RegisterPlugin()
-	streaming.RegisterPlugin()
 	automod_legacy.RegisterPlugin()
 	automod.RegisterPlugin()
 	logs.RegisterPlugin()
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
-	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
 	rolecommands.RegisterPlugin()
 	cah.RegisterPlugin()
@@ -86,7 +79,6 @@ func main() {
 	patreonpremiumsource.RegisterPlugin()
 	discordpremiumsource.RegisterPlugin()
 	scheduledevents2.RegisterPlugin()
-	twitter.RegisterPlugin()
 	rsvp.RegisterPlugin()
 	timezonecompanion.RegisterPlugin()
 	admin.RegisterPlugin()
