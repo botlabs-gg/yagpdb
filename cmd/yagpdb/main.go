@@ -33,7 +33,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium/patreonpremiumsource"
 	"github.com/botlabs-gg/yagpdb/v2/reddit"
 	"github.com/botlabs-gg/yagpdb/v2/reminders"
-	"github.com/botlabs-gg/yagpdb/v2/reputation"
 	"github.com/botlabs-gg/yagpdb/v2/rolecommands"
 	"github.com/botlabs-gg/yagpdb/v2/rsvp"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
@@ -66,7 +65,6 @@ func main() {
 	customcommands.RegisterPlugin()
 	reddit.RegisterPlugin()
 	moderation.RegisterPlugin()
-	reputation.RegisterPlugin()
 	automod_legacy.RegisterPlugin()
 	automod.RegisterPlugin()
 	logs.RegisterPlugin()
