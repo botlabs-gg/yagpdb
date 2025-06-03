@@ -3,7 +3,6 @@ package moderation
 import (
 	"database/sql"
 	"math/rand"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -325,14 +324,6 @@ func HandleGuildAuditLogEntryCreate(evt *eventsystem.EventData) (retry bool, err
 	var action ModlogAction
 	// setup done, now we get to the actions.
 	switch {
-	case config.LogTimeouts && *data.ActionType == discordgo.AuditLogActionMemberUpdate:
-		isTimeout := slices.ContainsFunc(data.Changes, func(c *discordgo.AuditLogChange) bool {
-			return *c.Key == discordgo.AuditLogChangeKeyCommunicationDisabledUntil && c.NewValue != nil
-		})
-		if !isTimeout {
-			return false, nil
-		}
-		action = MATimeoutAdded
 	case config.LogKicks && *data.ActionType == discordgo.AuditLogActionMemberKick:
 		action = MAKick
 	case config.LogBans && *data.ActionType == discordgo.AuditLogActionMemberBanAdd:

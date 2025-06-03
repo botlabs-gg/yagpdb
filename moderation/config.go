@@ -66,14 +66,6 @@ type Config struct {
 	BanMessage           string     `valid:"template,5000"`
 	DefaultBanDeleteDays null.Int64 `valid:"0,7"`
 
-	// Timeout
-	TimeoutEnabled              bool
-	TimeoutCmdRoles             types.Int64Array `valid:"role,true"`
-	TimeoutReasonOptional       bool
-	TimeoutRemoveReasonOptional bool
-	TimeoutMessage              string     `valid:"template,5000"`
-	DefaultTimeoutDuration      null.Int64 `valid:"1,40320"`
-
 	// Mute/unmute
 	MuteEnabled             bool
 	MuteCmdRoles            types.Int64Array `valid:"role,true"`
@@ -107,7 +99,6 @@ type Config struct {
 	LogUnbans          bool
 	LogBans            bool
 	LogKicks           bool
-	LogTimeouts        bool
 
 	GiveRoleCmdEnabled bool
 	GiveRoleCmdModlog  bool
@@ -131,13 +122,6 @@ func (c *Config) ToModel() *models.ModerationConfig {
 		BanReasonOptional:    null.BoolFrom(c.BanReasonOptional),
 		BanMessage:           null.StringFrom(c.BanMessage),
 		DefaultBanDeleteDays: c.DefaultBanDeleteDays,
-
-		TimeoutEnabled:              null.BoolFrom(c.TimeoutEnabled),
-		TimeoutCmdRoles:             c.TimeoutCmdRoles,
-		TimeoutReasonOptional:       null.BoolFrom(c.TimeoutReasonOptional),
-		TimeoutRemoveReasonOptional: null.BoolFrom(c.TimeoutRemoveReasonOptional),
-		TimeoutMessage:              null.StringFrom(c.TimeoutMessage),
-		DefaultTimeoutDuration:      c.DefaultTimeoutDuration,
 
 		MuteEnabled:             null.BoolFrom(c.MuteEnabled),
 		MuteCmdRoles:            c.MuteCmdRoles,
@@ -169,7 +153,6 @@ func (c *Config) ToModel() *models.ModerationConfig {
 		LogUnbans:          null.BoolFrom(c.LogUnbans),
 		LogBans:            null.BoolFrom(c.LogBans),
 		LogKicks:           null.BoolFrom(c.LogKicks),
-		LogTimeouts:        null.BoolFrom(c.LogTimeouts),
 
 		GiveRoleCmdEnabled: null.BoolFrom(c.GiveRoleCmdEnabled),
 		GiveRoleCmdModlog:  null.BoolFrom(c.GiveRoleCmdModlog),
@@ -199,13 +182,6 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		BanReasonOptional:    model.BanReasonOptional.Bool,
 		BanMessage:           model.BanMessage.String,
 		DefaultBanDeleteDays: model.DefaultBanDeleteDays,
-
-		TimeoutEnabled:              model.TimeoutEnabled.Bool,
-		TimeoutCmdRoles:             model.TimeoutCmdRoles,
-		TimeoutReasonOptional:       model.TimeoutReasonOptional.Bool,
-		TimeoutRemoveReasonOptional: model.TimeoutRemoveReasonOptional.Bool,
-		TimeoutMessage:              model.TimeoutMessage.String,
-		DefaultTimeoutDuration:      model.DefaultTimeoutDuration,
 
 		MuteEnabled:             model.MuteEnabled.Bool,
 		MuteCmdRoles:            model.MuteCmdRoles,
@@ -237,7 +213,6 @@ func configFromModel(model *models.ModerationConfig) *Config {
 		LogUnbans:          model.LogUnbans.Bool,
 		LogBans:            model.LogBans.Bool,
 		LogKicks:           model.LogKicks.Bool,
-		LogTimeouts:        model.LogTimeouts.Bool,
 
 		GiveRoleCmdEnabled: model.GiveRoleCmdEnabled.Bool,
 		GiveRoleCmdModlog:  model.GiveRoleCmdModlog.Bool,
