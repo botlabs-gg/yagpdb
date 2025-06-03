@@ -89,6 +89,79 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	return ""
 }
 
+func (c *Context) tmplSendTargetDM(target interface{}, s ...interface{}) string {
+	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil {
+		return ""
+	}
+
+	targetID := TargetUserID(target)
+	if targetID == 0 {
+		return ""
+	}
+
+	ts, err := bot.GetMember(c.GS.ID, targetID)
+	if err != nil {
+		return ""
+	}
+
+	msgSend := &discordgo.MessageSend{
+		AllowedMentions: discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+		},
+	}
+
+	switch t := s[0].(type) {
+	case *discordgo.MessageEmbed:
+		msgSend.Embeds = []*discordgo.MessageEmbed{t}
+	case []*discordgo.MessageEmbed:
+		msgSend.Embeds = t
+	case *discordgo.MessageSend:
+		msgSend = t
+		if (len(msgSend.Embeds) == 0 && strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) && (len(msgSend.Components) == 0) {
+			return ""
+		}
+	default:
+		msgSend.Content = common.ReplaceServerInvites(fmt.Sprint(s...), 0, "[removed-server-invite]")
+	}
+	serverInfo := []discordgo.TopLevelComponent{
+		discordgo.ActionsRow{
+			Components: []discordgo.InteractiveComponent{
+				discordgo.Button{
+					Label:    "Show Server Info",
+					Style:    discordgo.PrimaryButton,
+					Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
+					CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
+				},
+			},
+		},
+	}
+	if len(msgSend.Components) >= 5 {
+		msgSend.Components = msgSend.Components[:4]
+	}
+	msgSend.Components = append(serverInfo, msgSend.Components...)
+
+	if msgSend.Reference != nil {
+		if msgSend.Reference.Type == discordgo.MessageReferenceTypeForward {
+			if originChannel := c.ChannelArgNoDM(msgSend.Reference.ChannelID); originChannel != 0 {
+				hasPerms, _ := bot.BotHasPermissionGS(c.GS, originChannel, discordgo.PermissionViewChannel|discordgo.PermissionReadMessageHistory)
+				if !hasPerms {
+					msgSend.Reference = &discordgo.MessageReference{}
+				}
+			} else {
+				msgSend.Reference = &discordgo.MessageReference{}
+			}
+		}
+	}
+
+	channel, err := common.BotSession.UserChannelCreate(ts.User.ID)
+	if err != nil {
+		return ""
+	}
+	_, _ = common.BotSession.ChannelMessageSendComplex(channel.ID, msgSend)
+
+	return ""
+}
+
 func (c *Context) baseChannelArg(v interface{}) *dstate.ChannelState {
 	// Look for the channel
 	if v == nil && c.CurrentFrame.CS != nil {

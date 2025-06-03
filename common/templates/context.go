@@ -694,6 +694,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
 	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
 	c.addContextFunc("sendMessageRetID", c.tmplSendMessage(true, true))
+	c.addContextFunc("sendTargetDM", c.tmplSendTargetDM)
 
 	c.addContextFunc("sendTemplate", c.tmplSendTemplate)
 	c.addContextFunc("sendTemplateDM", c.tmplSendTemplateDM)
