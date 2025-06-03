@@ -1,3 +1,5 @@
+name: veilbot
+
 volumes:
   db:
   redis:
@@ -9,12 +11,8 @@ networks:
 
 services:
   app:
-    # We don't provide an official image, but there is a community-made image you can try:
-    #  - teyker/yagpdb (https://hub.docker.com/r/teyker/yagpdb)
-    #
-    # Note that we do not take responsibility for anything that happens as a result of using
-    # the image above. uncomment the below line in case your want to put your own image.
-    #image: PUT_YOUR_OWN_IMAGE_HERE
+    container_name: veilbot-app
+    image: RhykerWells/yagpdb-iota
     build:
       context: ../
       dockerfile: yagpdb_docker/Dockerfile
@@ -23,8 +21,8 @@ services:
       # - "/app/yagpdb"
       - "-all"
       - "-pa"
-      - "-exthttps=false"
-      - "-https=true"
+      - "-exthttps=true"
+      - "-https=false"
     depends_on:
       - redis
       - db
@@ -34,12 +32,13 @@ services:
       - cert_cache:/app/cert
       - soundboard:/app/soundboard
     ports:
-      - '80:80'
-      - '443:443'
+      - '8086:80'
+      - '9998:443'
     env_file:
-      - app.env
+      - app.iota.env
 
   redis:
+    container_name: veilbot-redis-db
     image: docker.io/redis
     restart: unless-stopped
     networks:
@@ -48,6 +47,7 @@ services:
       - redis:/data
 
   db:
+    container_name: veilbot-postgres-db
     image: docker.io/postgres:11
     restart: unless-stopped
     volumes:
@@ -55,4 +55,4 @@ services:
     networks:
       - default
     env_file:
-      - db.env
+      - db.iota.env
