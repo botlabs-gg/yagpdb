@@ -36,6 +36,7 @@ type TicketConfig struct {
 	AdminRoles                         types.Int64Array `boil:"admin_roles" json:"admin_roles,omitempty" toml:"admin_roles" yaml:"admin_roles,omitempty"`
 	TicketsTranscriptsChannelAdminOnly int64            `boil:"tickets_transcripts_channel_admin_only" json:"tickets_transcripts_channel_admin_only" toml:"tickets_transcripts_channel_admin_only" yaml:"tickets_transcripts_channel_admin_only"`
 	AppendButtons                      int64            `boil:"append_buttons" json:"append_buttons" toml:"append_buttons" yaml:"append_buttons"`
+	TicketsUseTXTTranscriptsOwner      bool             `boil:"tickets_use_txt_transcripts_owner" json:"tickets_use_txt_transcripts_owner" toml:"tickets_use_txt_transcripts_owner" yaml:"tickets_use_txt_transcripts_owner"`
 
 	R *ticketConfigR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L ticketConfigL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +55,7 @@ var TicketConfigColumns = struct {
 	AdminRoles                         string
 	TicketsTranscriptsChannelAdminOnly string
 	AppendButtons                      string
+	TicketsUseTXTTranscriptsOwner      string
 }{
 	GuildID:                            "guild_id",
 	Enabled:                            "enabled",
@@ -67,6 +69,7 @@ var TicketConfigColumns = struct {
 	AdminRoles:                         "admin_roles",
 	TicketsTranscriptsChannelAdminOnly: "tickets_transcripts_channel_admin_only",
 	AppendButtons:                      "append_buttons",
+	TicketsUseTXTTranscriptsOwner:      "tickets_use_txt_transcripts_owner",
 }
 
 var TicketConfigTableColumns = struct {
@@ -82,6 +85,7 @@ var TicketConfigTableColumns = struct {
 	AdminRoles                         string
 	TicketsTranscriptsChannelAdminOnly string
 	AppendButtons                      string
+	TicketsUseTXTTranscriptsOwner      string
 }{
 	GuildID:                            "ticket_configs.guild_id",
 	Enabled:                            "ticket_configs.enabled",
@@ -95,6 +99,7 @@ var TicketConfigTableColumns = struct {
 	AdminRoles:                         "ticket_configs.admin_roles",
 	TicketsTranscriptsChannelAdminOnly: "ticket_configs.tickets_transcripts_channel_admin_only",
 	AppendButtons:                      "ticket_configs.append_buttons",
+	TicketsUseTXTTranscriptsOwner:      "ticket_configs.tickets_use_txt_transcripts_owner",
 }
 
 // Generated where
@@ -195,6 +200,7 @@ var TicketConfigWhere = struct {
 	AdminRoles                         whereHelpertypes_Int64Array
 	TicketsTranscriptsChannelAdminOnly whereHelperint64
 	AppendButtons                      whereHelperint64
+	TicketsUseTXTTranscriptsOwner      whereHelperbool
 }{
 	GuildID:                            whereHelperint64{field: "\"ticket_configs\".\"guild_id\""},
 	Enabled:                            whereHelperbool{field: "\"ticket_configs\".\"enabled\""},
@@ -208,6 +214,7 @@ var TicketConfigWhere = struct {
 	AdminRoles:                         whereHelpertypes_Int64Array{field: "\"ticket_configs\".\"admin_roles\""},
 	TicketsTranscriptsChannelAdminOnly: whereHelperint64{field: "\"ticket_configs\".\"tickets_transcripts_channel_admin_only\""},
 	AppendButtons:                      whereHelperint64{field: "\"ticket_configs\".\"append_buttons\""},
+	TicketsUseTXTTranscriptsOwner:      whereHelperbool{field: "\"ticket_configs\".\"tickets_use_txt_transcripts_owner\""},
 }
 
 // TicketConfigRels is where relationship names are stored.
@@ -227,9 +234,9 @@ func (*ticketConfigR) NewStruct() *ticketConfigR {
 type ticketConfigL struct{}
 
 var (
-	ticketConfigAllColumns            = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts", "mod_roles", "admin_roles", "tickets_transcripts_channel_admin_only", "append_buttons"}
+	ticketConfigAllColumns            = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts", "mod_roles", "admin_roles", "tickets_transcripts_channel_admin_only", "append_buttons", "tickets_use_txt_transcripts_owner"}
 	ticketConfigColumnsWithoutDefault = []string{"guild_id", "enabled", "ticket_open_msg", "tickets_channel_category", "status_channel", "tickets_transcripts_channel", "download_attachments", "tickets_use_txt_transcripts"}
-	ticketConfigColumnsWithDefault    = []string{"mod_roles", "admin_roles", "tickets_transcripts_channel_admin_only", "append_buttons"}
+	ticketConfigColumnsWithDefault    = []string{"mod_roles", "admin_roles", "tickets_transcripts_channel_admin_only", "append_buttons", "tickets_use_txt_transcripts_owner"}
 	ticketConfigPrimaryKeyColumns     = []string{"guild_id"}
 	ticketConfigGeneratedColumns      = []string{}
 )
