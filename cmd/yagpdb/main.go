@@ -39,7 +39,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 	"github.com/botlabs-gg/yagpdb/v2/serverstats"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands"
-	"github.com/botlabs-gg/yagpdb/v2/streaming"
 	"github.com/botlabs-gg/yagpdb/v2/tickets"
 	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
 	"github.com/botlabs-gg/yagpdb/v2/verification"
@@ -68,7 +67,6 @@ func main() {
 	reddit.RegisterPlugin()
 	moderation.RegisterPlugin()
 	reputation.RegisterPlugin()
-	streaming.RegisterPlugin()
 	automod_legacy.RegisterPlugin()
 	automod.RegisterPlugin()
 	logs.RegisterPlugin()
