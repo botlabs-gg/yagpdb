@@ -38,7 +38,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/rsvp"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 	"github.com/botlabs-gg/yagpdb/v2/serverstats"
-	"github.com/botlabs-gg/yagpdb/v2/soundboard"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands"
 	"github.com/botlabs-gg/yagpdb/v2/streaming"
 	"github.com/botlabs-gg/yagpdb/v2/tickets"
@@ -75,7 +74,6 @@ func main() {
 	logs.RegisterPlugin()
 	autorole.RegisterPlugin()
 	reminders.RegisterPlugin()
-	soundboard.RegisterPlugin()
 	youtube.RegisterPlugin()
 	rolecommands.RegisterPlugin()
 	cah.RegisterPlugin()
