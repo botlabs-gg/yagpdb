@@ -95,7 +95,7 @@ func (s *stdSuite) TestBonus(c *C) {
 	res := r.(StdResult)
 
 	c.Assert(err, IsNil)
-	c.Assert(res.String(), Equals, "2 [1] ([])")
+	c.Assert(res.String(), Equals, "2 [1]")
 }
 
 func (s *stdSuite) TestNumTooBig(c *C) {
