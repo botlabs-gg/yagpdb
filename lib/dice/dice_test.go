@@ -3,7 +3,7 @@ package dice_test
 import (
 	"testing"
 
-	. "github.com/justinian/dice"
+	. "github.com/botlabs-gg/yagpdb/v2/lib/dice"
 )
 
 func TestRoll(t *testing.T) {
@@ -15,6 +15,22 @@ func TestRoll(t *testing.T) {
 
 	roll = "3d8+2test"
 	_, _, err := Roll(roll)
+	if err != nil {
+		t.Logf("err '%v' properly detected in %s", err, roll)
+	} else {
+		t.Fatalf("err not detected in %s", roll)
+	}
+
+	roll = "4d0"
+	_, _, err = Roll(roll)
+	if err != nil {
+		t.Logf("err '%v' properly detected in %s", err, roll)
+	} else {
+		t.Fatalf("err not detected in %s", roll)
+	}
+
+	roll = "4d0v5"
+	_, _, err = Roll(roll)
 	if err != nil {
 		t.Logf("err '%v' properly detected in %s", err, roll)
 	} else {
@@ -34,6 +50,39 @@ func TestRoll(t *testing.T) {
 	res, _, _ = Roll(roll)
 	if _, ok := res.(VsResult); !ok {
 		t.Fatalf("%s is not a VsResult", roll)
+	}
+
+	// Trying to keep or drop too many dice
+	roll = "2d6k5"
+	_, _, err = Roll(roll)
+	if err != nil {
+		t.Logf("err '%v' properly detected in %s", err, roll)
+	} else {
+		t.Fatalf("err not detected in %s", roll)
+	}
+
+	roll = "2d6kl5"
+	_, _, err = Roll(roll)
+	if err != nil {
+		t.Logf("err '%v' properly detected in %s", err, roll)
+	} else {
+		t.Fatalf("err not detected in %s", roll)
+	}
+
+	roll = "2d6dh5"
+	_, _, err = Roll(roll)
+	if err != nil {
+		t.Logf("err '%v' properly detected in %s", err, roll)
+	} else {
+		t.Fatalf("err not detected in %s", roll)
+	}
+
+	roll = "2d6dl5"
+	_, _, err = Roll(roll)
+	if err != nil {
+		t.Logf("err '%v' properly detected in %s", err, roll)
+	} else {
+		t.Fatalf("err not detected in %s", roll)
 	}
 }
 
