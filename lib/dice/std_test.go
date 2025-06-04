@@ -3,7 +3,7 @@ package dice_test
 import (
 	"testing"
 
-	. "github.com/justinian/dice"
+	. "github.com/botlabs-gg/yagpdb/v2/lib/dice"
 	. "gopkg.in/check.v1"
 )
 
