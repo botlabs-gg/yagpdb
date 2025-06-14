@@ -41,6 +41,7 @@ var (
 	EndpointCDNSplashes     string
 	EndpointCDNChannelIcons string
 	EndpointCDNBanners      string
+	EndpointCDNRoleIcons	string
 
 	EndpointAuth           string
 	EndpointLogin          string
@@ -83,9 +84,7 @@ var (
 	EndpointGuildMemberAvatarAnimated = func(gID, uID int64, aID string) string { return "" }
 	EndpointGuildMemberMe             = func(gID int64) string { return "" }
 	EndpointGuildMemberVoiceState     = func(gID, uID int64) string { return "" }
-	EndpointGuildMemberRole           = func(gID, uID, rID int64) string {
-		return ""
-	}
+	EndpointGuildMemberRole           = func(gID, uID, rID int64) string { return "" }
 	EndpointGuildBans            = func(gID int64) string { return "" }
 	EndpointGuildBan             = func(gID, uID int64) string { return "" }
 	EndpointGuildIntegrations    = func(gID int64) string { return "" }
@@ -152,6 +151,8 @@ var (
 	EndpointMessageReaction = func(cID, mID int64, emoji EmojiName, uID string) string {
 		return ""
 	}
+
+	EndpointRoleIcon = func(rID int64, iID string) string { return "" }
 
 	EndpointRelationships       = func() string { return "" }
 	EndpointRelationship        = func(uID int64) string { return "" }
@@ -251,6 +252,7 @@ func CreateEndpoints(base string) {
 	EndpointCDNSplashes = EndpointCDN + "splashes/"
 	EndpointCDNChannelIcons = EndpointCDN + "channel-icons/"
 	EndpointCDNBanners = EndpointCDN + "banners/"
+	EndpointCDNRoleIcons = EndpointCDN + "role-icons/"
 
 	EndpointAuth = EndpointAPI + "auth/"
 	EndpointLogin = EndpointAuth + "login"
@@ -373,6 +375,8 @@ func CreateEndpoints(base string) {
 		return EndpointMessageReactions(cID, mID, emoji) + "/" + uID
 	}
 
+	EndpointRoleIcon = func(rID int64, iID string) string { return EndpointCDNRoleIcons + StrID(rID) + "/" + iID + ".png" }
+	
 	EndpointRelationships = func() string { return EndpointUsers + "@me" + "/relationships" }
 	EndpointRelationship = func(uID int64) string { return EndpointRelationships() + "/" + StrID(uID) }
 	EndpointRelationshipsMutual = func(uID int64) string { return EndpointUsers + StrID(uID) + "/relationships" }
