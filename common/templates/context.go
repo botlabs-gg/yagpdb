@@ -326,8 +326,8 @@ func (c *Context) Parse(source string) (*template.Template, error) {
 const (
 	MaxOpsNormal      = 1000000
 	MaxOpsPremium     = 2500000
-	MaxOpsEvalNormal  = 5000
-	MaxOpsEvalPremium = 10000
+	MaxOpsEvalNormal  = 200000
+	MaxOpsEvalPremium = 500000
 )
 
 func (c *Context) Execute(source string) (string, error) {

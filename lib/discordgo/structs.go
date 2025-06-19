@@ -722,11 +722,28 @@ type Role struct {
 	// This is a combination of bit masks; the presence of a certain permission can
 	// be checked by performing a bitwise AND between this int and the permission.
 	Permissions int64 `json:"permissions,string"`
+
+	// The hash of the role icon. Use .IconURL to retrieve the icon's URL.
+	Icon string `json:"icon"`
 }
 
 // Mention returns a string which mentions the role
 func (r *Role) Mention() string {
 	return fmt.Sprintf("<@&%d>", r.ID)
+}
+
+func (r *Role) IconURL(size string) string {
+	if r.Icon == "" {
+		return ""
+	}
+
+	URL := EndpointRoleIcon(r.ID, r.Icon)
+
+	if size != "" {
+		return URL + "?size=" + size
+	}
+
+	return URL
 }
 
 // Roles are a collection of Role
