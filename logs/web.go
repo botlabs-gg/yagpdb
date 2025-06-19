@@ -53,6 +53,7 @@ type ConfigFormData struct {
 	AccessMode                   int
 	BlacklistedChannels          []string
 	MessageLogsAllowedRoles      []int64
+	ChannelsWhitelistMode        bool `json:"channels_whitelist_mode" schema:"channels_whitelist_mode"`
 }
 
 var (
@@ -169,6 +170,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	form := ctx.Value(common.ContextKeyParsedForm).(*ConfigFormData)
+	fmt.Printf("Form: %#v\n", form)
 
 	config := &models.GuildLoggingConfig{
 		GuildID: g.ID,
@@ -180,6 +182,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 		ManageMessagesCanViewDeleted: null.BoolFrom(form.ManageMessagesCanViewDeleted),
 		MessageLogsAllowedRoles:      form.MessageLogsAllowedRoles,
 		AccessMode:                   int16(form.AccessMode),
+		ChannelsWhitelistMode:        form.ChannelsWhitelistMode,
 	}
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
