@@ -53,6 +53,7 @@ type ConfigFormData struct {
 	AccessMode                   int
 	BlacklistedChannels          []string
 	MessageLogsAllowedRoles      []int64
+	ExcludeAllChannels           bool
 }
 
 var (
@@ -180,6 +181,7 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 		ManageMessagesCanViewDeleted: null.BoolFrom(form.ManageMessagesCanViewDeleted),
 		MessageLogsAllowedRoles:      form.MessageLogsAllowedRoles,
 		AccessMode:                   int16(form.AccessMode),
+		ExcludeAllChannels:           null.BoolFrom(form.ExcludeAllChannels),
 	}
 
 	err := config.UpsertG(ctx, true, []string{"guild_id"}, boil.Infer(), boil.Infer())
