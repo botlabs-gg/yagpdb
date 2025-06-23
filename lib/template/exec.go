@@ -71,6 +71,11 @@ func (s *state) pop(mark int) {
 // setVar overwrites the last declared variable with the given name.
 // Used by variable assignments.
 func (s *state) setVar(name string, value reflect.Value) {
+	if value.Kind() == reflect.String && value.Len() > maxStringLength {
+		s.errorf("variable assignment exceeds maximum allowed string size")
+		return
+	}
+
 	for i := s.mark() - 1; i >= 0; i-- {
 		if s.vars[i].name == name {
 			s.vars[i].value = value
@@ -82,6 +87,10 @@ func (s *state) setVar(name string, value reflect.Value) {
 
 // setTopVar overwrites the top-nth variable on the stack. Used by range iterations.
 func (s *state) setTopVar(n int, value reflect.Value) {
+	if value.Kind() == reflect.String && value.Len() > maxStringLength {
+		s.errorf("variable assignment exceeds maximum allowed string size")
+		return
+	}
 	s.vars[len(s.vars)-n].value = value
 }
 
