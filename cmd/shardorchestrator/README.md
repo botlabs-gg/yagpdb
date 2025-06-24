@@ -7,15 +7,6 @@ Stores the total shard number in redis in the key: dshardorchestrator_totalshard
 To use shardorchestrator in your YAGPDB Instance, you need to do the following things:
 
 ### Build the shardorchestrator binary
-Download Go and Git
-```bash
-apt update
-apt install git -y
-```
-```bash
-wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
-```
 
 Clone the repository if you haven't already:
 ```bash
