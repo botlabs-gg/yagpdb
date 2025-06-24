@@ -16,8 +16,8 @@ git clone https://github.com/botlabs-gg/yagpdb.git
 Go to the shardorchestrator directory and build the binary:
 ```bash
 cd yagpdb/cmd/orchestrator
-go build -o orchestrator .
-```
+go build
+```Kee
 
 Export all the required environment variables
 ```bash
