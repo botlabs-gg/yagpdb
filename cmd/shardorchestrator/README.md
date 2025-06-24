@@ -39,6 +39,7 @@ Finally, start the orchestrator:
 ### Go to your YAGPDB instance directory
 
 ### Configure your YAGPDB instance to use the orchestrator
+
 You need to use 3 more "exports" when starting YAGPDB:
 ```bash
 # These Variables need to match exactly with what you provided via "export" to the shardorchestrator
@@ -47,6 +48,8 @@ export YAGPDB_SHARDING_ACTIVE_SHARDS=
 
 export YAGPDB_ORCHESTRATOR_ADDRESS="YOUR_NODE_IP:7447"
 ```
+
+### Start YAGPDB
 
 When starting YAGPDB in orchestrator mode, you'll also need to provide a node ID for every node.
 
