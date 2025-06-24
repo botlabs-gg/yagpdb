@@ -71,11 +71,6 @@ func (s *state) pop(mark int) {
 // setVar overwrites the last declared variable with the given name.
 // Used by variable assignments.
 func (s *state) setVar(name string, value reflect.Value) {
-	if value.Kind() == reflect.String && value.Len() > maxStringLength {
-		s.errorf("variable assignment exceeds maximum allowed string size")
-		return
-	}
-
 	for i := s.mark() - 1; i >= 0; i-- {
 		if s.vars[i].name == name {
 			s.vars[i].value = value
@@ -87,10 +82,6 @@ func (s *state) setVar(name string, value reflect.Value) {
 
 // setTopVar overwrites the top-nth variable on the stack. Used by range iterations.
 func (s *state) setTopVar(n int, value reflect.Value) {
-	if value.Kind() == reflect.String && value.Len() > maxStringLength {
-		s.errorf("variable assignment exceeds maximum allowed string size")
-		return
-	}
 	s.vars[len(s.vars)-n].value = value
 }
 
@@ -453,8 +444,12 @@ func (s *state) walkRange(dot reflect.Value, r *parse.RangeNode) controlFlowSign
 	// mark top of stack before any variables in the body are pushed.
 	mark := s.mark()
 	oneIteration := func(index, elem reflect.Value) controlFlowSignal {
-		s.incrOPs(1)
+		if elem.Kind() == reflect.String && elem.Len() > maxStringLength {
+			s.errorf("string length exceeds maximum allowed %d", maxStringLength)
+			return controlFlowNone
+		}
 
+		s.incrOPs(1)
 		// Set top var (lexically the second if there are two) to the element.
 		if len(r.Pipe.Decl) > 0 {
 			s.setTopVar(1, elem)
@@ -642,11 +637,18 @@ func (s *state) evalPipeline(dot reflect.Value, pipe *parse.PipeNode) (value ref
 	value = missingVal
 	for _, cmd := range pipe.Cmds {
 		value = s.evalCommand(dot, cmd, value) // previous value is this one's final arg.
+		// prevent strings from being too long
+		if value.Kind() == reflect.String && value.Len() > maxStringLength {
+			s.errorf("string length exceeds maximum allowed %d", maxStringLength)
+			return
+		}
+
 		// If the object has type interface{}, dig down one level to the thing inside.
 		if value.Kind() == reflect.Interface && value.Type().NumMethod() == 0 {
 			value = reflect.ValueOf(value.Interface()) // lovely!
 		}
 	}
+
 	for _, variable := range pipe.Decl {
 		if pipe.IsAssign {
 			s.setVar(variable.Ident[0], value)
