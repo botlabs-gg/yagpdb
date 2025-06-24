@@ -56,13 +56,8 @@ export YAGPDB_SHARDING_ACTIVE_SHARDS=
 export YAGPDB_ORCHESTRATOR_ADDRESS="YOUR_NODE_IP:7447"
 ```
 
-### Start YAGPDB
-When starting YAGPDB, you also need to provide one more flag
-```flag
--nodeid= # You can set this to whatever you want, it is used to identify the node
-```
+When starting YAGPDB in orchestrator mode, you'll also need to provide a node ID for every node.
 
-So in the end:
 ```bash
 ./yagpdb -all -nodeid=YOUR_NODE_ID
 ```
