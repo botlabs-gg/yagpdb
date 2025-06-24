@@ -6,18 +6,30 @@ Stores the total shard number in redis in the key: dshardorchestrator_totalshard
 
 To use shardorchestrator in your YAGPDB Instance, you need to do the following things:
 
-### Build the shardorchestrator binary
+### Clone the repository and edit the file
 
 Clone the repository if you haven't already:
 ```bash
 git clone https://github.com/botlabs-gg/yagpdb.git
 ```
 
-Go to the shardorchestrator directory and build the binary:
+Navigate to the `cmd/shardorchestrator` directory:
 ```bash
-cd yagpdb/cmd/orchestrator
+cd yagpdb/cmd/shardorchestrator
+```
+
+Edit the `main.go` file on line 77 to match your Node IP:
+Example:
+```go
+	err = orch.Start("192.168.178.5:7447")
+```
+
+### Build the binary:
+```bash
 go build
 ```
+
+### Start the orchestrator
 
 Export all the required environment variables
 ```bash
