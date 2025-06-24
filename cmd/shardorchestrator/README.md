@@ -38,13 +38,10 @@ export YAGPDB_REDIS=
 export YAGPDB_HOST=
 ```
 
-### Run the shardorchestrator binary
+Finally, start the orchestrator:
 
 ```bash
-# This will run in your console, meaning if you close it it will exit the process
-./orchestrator
-# This will run in the background
-nohup /path/to/your/orchestrator/file &
+./shardorchestrator
 ```
 
 ### Go to your YAGPDB instance directory
