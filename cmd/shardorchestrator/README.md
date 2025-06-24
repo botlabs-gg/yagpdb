@@ -17,7 +17,7 @@ Go to the shardorchestrator directory and build the binary:
 ```bash
 cd yagpdb/cmd/orchestrator
 go build
-```Kee
+```
 
 Export all the required environment variables
 ```bash
@@ -28,14 +28,6 @@ export YAGPDB_SHARDING_TOTAL_SHARDS=
 export YAGPDB_SHARDING_ACTIVE_SHARDS=
 
 export YAGPDB_BOTREST_LISTEN_ADDRESS=IP_OF_NODE
-
-# These should match the values you provided in the YAGPDB instance
-export YAGPDB_OWNER=
-export YAGPDB_CLIENTID=
-export YAGPDB_CLIENTSECRET=
-export YAGPDB_BOTTOKEN=
-export YAGPDB_REDIS=
-export YAGPDB_HOST=
 ```
 
 Finally, start the orchestrator:
