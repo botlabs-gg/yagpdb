@@ -9,7 +9,12 @@ To use shardorchestrator in your YAGPDB Instance, you need to do the following t
 ### Build the shardorchestrator binary
 Download Go and Git
 ```bash
-apt install golang-go git -y
+apt update
+apt install git -y
+```
+```bash
+wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
 ```
 
 Clone the repository if you haven't already:
