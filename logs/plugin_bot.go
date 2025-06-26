@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"emperror.dev/errors"
@@ -167,6 +168,15 @@ var cmdWhois = &commands.YAGCommand{
 			}
 		}
 
+		var sb strings.Builder
+		for i, role := range member.Member.Roles {
+			if i == 25 {
+				sb.WriteString("... and more")
+				break
+			}
+			fmt.Fprintf(&sb, "<@&%d> ", role)
+		}
+
 		embed := &discordgo.MessageEmbed{
 			Title: fmt.Sprintf("%s %s", member.User.String(), nick),
 			Fields: []*discordgo.MessageEmbedField{
@@ -204,6 +214,11 @@ var cmdWhois = &commands.YAGCommand{
 					Name:   "Status",
 					Value:  memberStatus,
 					Inline: true,
+				},
+				{
+					Name:   "Roles",
+					Value:  sb.String(),
+					Inline: false,
 				},
 			},
 			Thumbnail: &discordgo.MessageEmbedThumbnail{

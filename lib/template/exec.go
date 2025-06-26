@@ -444,8 +444,12 @@ func (s *state) walkRange(dot reflect.Value, r *parse.RangeNode) controlFlowSign
 	// mark top of stack before any variables in the body are pushed.
 	mark := s.mark()
 	oneIteration := func(index, elem reflect.Value) controlFlowSignal {
-		s.incrOPs(1)
+		if elem.Kind() == reflect.String && elem.Len() > maxStringLength {
+			s.errorf("string length exceeds maximum allowed %d", maxStringLength)
+			return controlFlowNone
+		}
 
+		s.incrOPs(1)
 		// Set top var (lexically the second if there are two) to the element.
 		if len(r.Pipe.Decl) > 0 {
 			s.setTopVar(1, elem)
@@ -633,11 +637,18 @@ func (s *state) evalPipeline(dot reflect.Value, pipe *parse.PipeNode) (value ref
 	value = missingVal
 	for _, cmd := range pipe.Cmds {
 		value = s.evalCommand(dot, cmd, value) // previous value is this one's final arg.
+		// prevent strings from being too long
+		if value.Kind() == reflect.String && value.Len() > maxStringLength {
+			s.errorf("string length exceeds maximum allowed %d", maxStringLength)
+			return
+		}
+
 		// If the object has type interface{}, dig down one level to the thing inside.
 		if value.Kind() == reflect.Interface && value.Type().NumMethod() == 0 {
 			value = reflect.ValueOf(value.Interface()) // lovely!
 		}
 	}
+
 	for _, variable := range pipe.Decl {
 		if pipe.IsAssign {
 			s.setVar(variable.Ident[0], value)
