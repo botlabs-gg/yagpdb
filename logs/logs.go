@@ -84,6 +84,10 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		return nil, bot.ErrGuildNotFound
 	}
 
+	if config.ExcludeAllChannels.Bool {
+		return nil, ErrChannelBlacklisted
+	}
+
 	// Make a light copy of the channel
 	channel := gs.GetChannelOrThread(channelID)
 	if channel == nil {
