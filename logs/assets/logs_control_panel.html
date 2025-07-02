@@ -96,6 +96,9 @@
                                     multiple="multiple" data-plugin-multiselect>
                                     {{textChannelOptionsMulti .ActiveGuild.Channels .ConfBlacklistedChannels}}
                                 </select>
+                                {{checkbox "ExcludeAllChannels" "ExcludeAllChannels"
+                                "Exclude all channels from creating message logs, including future channels."
+                                .Config.ExcludeAllChannels.Bool}}
                             </div>
                         </div>
                         <div class="col-lg-4 col-md 12">
