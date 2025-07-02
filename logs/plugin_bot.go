@@ -176,6 +176,9 @@ var cmdWhois = &commands.YAGCommand{
 			}
 			fmt.Fprintf(&sb, "<@&%d> ", role)
 		}
+		if sb.Len() == 0 {
+			sb.WriteString("None")
+		}
 
 		embed := &discordgo.MessageEmbed{
 			Title: fmt.Sprintf("%s %s", member.User.String(), nick),
