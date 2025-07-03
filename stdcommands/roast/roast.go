@@ -18,7 +18,7 @@ var Command = &commands.YAGCommand{
 		{Name: "Target", Type: dcmd.User},
 	},
 	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "raw", Help: "Raw roast output, no embed"},
 	},

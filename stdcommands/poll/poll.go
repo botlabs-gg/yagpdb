@@ -15,7 +15,7 @@ var (
 		Name:                "Poll",
 		Description:         "Create very simple reaction poll. Example: `poll \"favorite color?\" blue red pink`",
 		RequiredArgs:        3,
-		SlashCommandEnabled: true,
+		SlashCommandEnabled: false,
 		Arguments: []*dcmd.ArgDef{
 			{
 				Name: "Topic",

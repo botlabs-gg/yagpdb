@@ -24,7 +24,7 @@ var Command = &commands.YAGCommand{
 	Description:         "Shows 'inspirational' quotes from inspirobot.me",
 	RunInDM:             false,
 	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	Cooldown:            3,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Season", Type: dcmd.String, Default: ""},

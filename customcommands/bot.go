@@ -322,7 +322,7 @@ var cmdListCommands = &commands.YAGCommand{
 		{Name: "ID", Type: dcmd.Int},
 		{Name: "Name-Or-Trigger", Type: dcmd.String},
 	},
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	DefaultEnabled:      false,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "file", Help: "Send responses in file"},

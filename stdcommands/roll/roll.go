@@ -21,7 +21,7 @@ var Command = &commands.YAGCommand{
 	},
 	ArgumentCombos:      [][]int{{0}, {1}, {}},
 	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		if data.Args[1].Value != nil {
 			// Special dice syntax if string

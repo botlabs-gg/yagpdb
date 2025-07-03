@@ -32,7 +32,7 @@ var Command = &commands.YAGCommand{
 		{Name: "Query", Help: "Word to search for", Type: dcmd.String},
 	},
 	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		query := strings.ToLower(data.Args[0].Str())
 		url := "https://api.dictionaryapi.dev/api/v2/entries/en/" + url.QueryEscape(query)

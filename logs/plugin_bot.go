@@ -65,7 +65,7 @@ var cmdLogs = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "channel", Help: "Optional channel to log instead", Type: dcmd.Channel},
 	},
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	DefaultEnabled:      false,
 	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
 		num := cmd.Args[0].Int()
@@ -106,7 +106,7 @@ var cmdWhois = &commands.YAGCommand{
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: &commands.MemberArg{}},
 	},
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	DefaultEnabled:      false,
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		config, err := GetConfig(common.PQ, parsed.Context(), parsed.GuildData.GS.ID)
