@@ -6,6 +6,7 @@ package commands
 import (
 	"context"
 
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/commands/models"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -14,7 +15,6 @@ import (
 	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})

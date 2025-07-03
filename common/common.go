@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/botlabs-gg/yagpdb/v2/common/cacheset"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/jmoiron/sqlx"
@@ -22,7 +23,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 var (

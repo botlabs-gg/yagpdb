@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/boil"
 	"goji.io"
 	"goji.io/pat"
 

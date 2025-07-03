@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
@@ -23,7 +24,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/logs"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func MBaseCmd(cmdData *dcmd.Data, targetID int64) (config *Config, targetUser *discordgo.User, err error) {

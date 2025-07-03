@@ -34,13 +34,13 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/lib/pq"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 type CustomValidator interface {

@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
@@ -20,8 +22,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/russross/blackfriday"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 	"goji.io/pat"
 )
 

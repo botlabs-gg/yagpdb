@@ -12,6 +12,8 @@ import (
 	"unicode/utf8"
 
 	"emperror.dev/errors"
+	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
@@ -25,8 +27,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/verification/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const InTicketPerms = discordgo.PermissionSendMessages | discordgo.PermissionViewChannel

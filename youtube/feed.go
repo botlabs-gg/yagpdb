@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
@@ -23,7 +24,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/youtube/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )

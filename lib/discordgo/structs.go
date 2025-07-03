@@ -20,9 +20,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/botlabs-gg/yagpdb/v2/lib/gojay"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null/v8"
 )
 
 // A Session represents a connection to the Discord API.
@@ -452,10 +452,10 @@ type StickerFormat int
 
 // Defines all known Sticker types.
 const (
-	StickerFormatTypePNG	StickerFormat = 1
-	StickerFormatTypeAPNG	StickerFormat = 2
-	StickerFormatTypeLottie	StickerFormat = 3
-	StickerFormatTypeGIF	StickerFormat = 4
+	StickerFormatTypePNG    StickerFormat = 1
+	StickerFormatTypeAPNG   StickerFormat = 2
+	StickerFormatTypeLottie StickerFormat = 3
+	StickerFormatTypeGIF    StickerFormat = 4
 )
 
 // StickerType is the type of Sticker.
@@ -463,8 +463,8 @@ type StickerType int
 
 // Defines Sticker types.
 const (
-	StickerTypeStandard	StickerType = 1
-	StickerTypeGuild	StickerType = 2
+	StickerTypeStandard StickerType = 1
+	StickerTypeGuild    StickerType = 2
 )
 
 // Sticker represents a Sticker object that can be sent in a Message.
@@ -479,7 +479,7 @@ type Sticker struct {
 	Available   bool          `json:"available"`
 	GuildID     int64         `json:"guild_id,string"`
 	User        *User         `json:"user"`
-	SortValue   int	          `json:"sort_value"`
+	SortValue   int           `json:"sort_value"`
 }
 
 // StickerItem represents the smallest amount of data required to render a sticker. A partial sticker object.

@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -18,9 +21,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium/models"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/lib/pq"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var (

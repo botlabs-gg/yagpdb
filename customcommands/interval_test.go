@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/robfig/cron/v3"
-	"github.com/volatiletech/null/v8"
 )
 
 // Common test helpers.

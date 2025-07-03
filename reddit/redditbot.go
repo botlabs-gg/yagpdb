@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
@@ -20,7 +21,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/reddit/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"golang.org/x/oauth2"
 )
 

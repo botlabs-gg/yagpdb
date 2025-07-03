@@ -8,12 +8,12 @@ import (
 	"unicode"
 
 	"emperror.dev/errors"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/automod/models"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/karlseguin/ccache"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 //go:generate sqlboiler --no-hooks psql

@@ -10,6 +10,9 @@ import (
 	"sort"
 	"time"
 
+	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/automod/models"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
@@ -20,9 +23,6 @@ import (
 	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func (p *Plugin) BotInit() {

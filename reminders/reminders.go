@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
@@ -13,7 +14,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/reminders/models"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 //go:generate sqlboiler --no-hooks --add-soft-deletes psql

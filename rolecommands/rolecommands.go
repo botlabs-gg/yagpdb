@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -17,7 +18,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/rolecommands/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/tidwall/buntdb"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type Plugin struct{}

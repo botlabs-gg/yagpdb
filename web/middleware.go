@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/aarondl/null/v8"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
@@ -24,7 +25,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null/v8"
 	"goji.io/pat"
 )
 

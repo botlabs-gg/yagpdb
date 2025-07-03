@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
-	"github.com/volatiletech/null/v8"
 )
 
 func init() {

@@ -3,12 +3,12 @@ package topservers
 import (
 	"fmt"
 
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/bot/models"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var Command = &commands.YAGCommand{

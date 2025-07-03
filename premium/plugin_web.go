@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/premium/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"goji.io"
 	"goji.io/pat"

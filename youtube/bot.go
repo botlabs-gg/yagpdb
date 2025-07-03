@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/youtube/models"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func (p *Plugin) Status() (string, string) {

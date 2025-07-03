@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
 	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/robfig/cron/v3"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 // CalcNextRunTime calculates the next run time for a custom command using the last ran time
@@ -66,7 +66,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		specSchedule := cronSchedule.(*cron.SpecSchedule)
 		const hoursInADay = 24
 		const daysInAWeek = 7
-		const starIsConfiguredBitset = 1<<63 // top bit set == "*"
+		const starIsConfiguredBitset = 1 << 63 // top bit set == "*"
 		var newHoursScheduledBitset uint64
 		var newDaysScheduledBitset uint64
 		for hourOfDay := range hoursInADay {
@@ -98,8 +98,8 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 			}
 		}
 
-		const allHoursBitset = (1<<hoursInADay)-1
-		const allDaysBitset = (1<<daysInAWeek)-1
+		const allHoursBitset = (1 << hoursInADay) - 1
+		const allDaysBitset = (1 << daysInAWeek) - 1
 		if newHoursScheduledBitset != allHoursBitset { // if all hours set, leave as is to distinguish between "0,1,2...,23" and "*"
 			specSchedule.Hour = newHoursScheduledBitset
 		}
