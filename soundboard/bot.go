@@ -21,7 +21,7 @@ func (p *Plugin) AddCommands() {
 			Arguments: []*dcmd.ArgDef{
 				{Name: "Name", Type: dcmd.String},
 			},
-			SlashCommandEnabled: true,
+			SlashCommandEnabled: false,
 			DefaultEnabled:      true,
 			RunFunc: func(data *dcmd.Data) (interface{}, error) {
 				sounds, err := GetSoundboardSounds(data.GuildData.GS.ID, data.Context())
@@ -89,7 +89,7 @@ func (p *Plugin) AddCommands() {
 			Name:                "SoundboardReset",
 			Aliases:             []string{"sbclose", "sbReset"},
 			Description:         "Reset Soundboard Player",
-			SlashCommandEnabled: true,
+			SlashCommandEnabled: false,
 			DefaultEnabled:      true,
 			RunFunc: func(data *dcmd.Data) (interface{}, error) {
 				response := resetPlayerServer(data.GuildData.GS.ID)

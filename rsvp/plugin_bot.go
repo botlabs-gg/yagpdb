@@ -270,9 +270,9 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdDel, cmdDel.GetTrigger())
 	container.AddCommand(cmdStopSetup, cmdStopSetup.GetTrigger())
 	container.Description = "Manage events"
-	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
-		return nil, nil
-	})
+	//commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
+	//	return nil, nil
+	//})
 }
 
 type RolesRunFunc func(gs *dstate.GuildSet) ([]int64, error)

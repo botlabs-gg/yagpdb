@@ -30,7 +30,7 @@ var Command = &commands.YAGCommand{
 	Description:         "💱 convert value from one currency to another.",
 	RunInDM:             true,
 	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	RequiredArgs:        3,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Amount", Type: dcmd.Float}, {Name: "From", Type: dcmd.String}, {Name: "To", Type: dcmd.String},

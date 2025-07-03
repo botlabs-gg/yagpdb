@@ -40,7 +40,7 @@ var cmdPremiumStatus = &commands.YAGCommand{
 	Description:         "Lets you check premium status of yourself or a specific user.",
 	RequiredArgs:        0,
 	RunInDM:             true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "user", Type: dcmd.UserID, Help: "Optional User to check premium status for, Owner only", Default: 0},
 	},

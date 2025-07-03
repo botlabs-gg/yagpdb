@@ -56,7 +56,7 @@ var cmds = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "channel", Type: dcmd.Channel},
 		},
-		SlashCommandEnabled: true,
+		SlashCommandEnabled: false,
 		DefaultEnabled:      true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			uid := discordgo.StrID(parsed.Author.ID)
@@ -125,7 +125,7 @@ var cmds = []*commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
 		Name:                "Reminders",
 		Description:         "Lists your active reminders in the server, use in DM to see all your reminders",
-		SlashCommandEnabled: true,
+		SlashCommandEnabled: false,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
 		RunInDM:             true,
@@ -163,7 +163,7 @@ var cmds = []*commands.YAGCommand{
 		Aliases:             []string{"channelreminders"},
 		Description:         "Lists reminders in channel",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageChannels},
-		SlashCommandEnabled: true,
+		SlashCommandEnabled: false,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -196,7 +196,7 @@ var cmds = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "a", Help: "All"},
 		},
-		SlashCommandEnabled: true,
+		SlashCommandEnabled: false,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {

@@ -13,7 +13,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -376,7 +375,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdListVLC, cmdListVLC.GetTrigger())
 	container.AddCommand(cmdDelV, cmdDelV.GetTrigger())
 	container.AddCommand(cmdClearV, cmdClearV.GetTrigger())
-	commands.RegisterSlashCommandsContainer(container, false, func(gs *dstate.GuildSet) ([]int64, error) {
-		return nil, nil
-	})
+	//commands.RegisterSlashCommandsContainer(container, false, func(gs *dstate.GuildSet) ([]int64, error) {
+	//	return nil, nil
+	//})
 }

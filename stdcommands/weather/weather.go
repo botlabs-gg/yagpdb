@@ -30,7 +30,7 @@ var Command = &commands.YAGCommand{
 		{Name: "Where", Type: dcmd.String},
 	},
 	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		where := data.Args[0].Str()
 

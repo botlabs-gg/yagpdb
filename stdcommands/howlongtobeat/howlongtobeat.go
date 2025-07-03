@@ -46,7 +46,7 @@ var Command = &commands.YAGCommand{
 	RequiredArgs:        1,
 	Description:         "Game information based on query from howlongtobeat.com.\nResults are sorted by popularity, it's their default. Without -p returns the first result.\nSwitch -p gives paginated output using the Jaro-Winkler similarity metric sorting max 20 results.",
 	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Game-Title", Type: dcmd.String},
 	},

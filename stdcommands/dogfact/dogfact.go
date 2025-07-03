@@ -12,7 +12,7 @@ var Command = &commands.YAGCommand{
 	Name:                "DogFact",
 	Aliases:             []string{"dog", "dogfacts"},
 	Description:         "Dog Facts",
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	DefaultEnabled:      true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		df := dogfacts[rand.Intn(len(dogfacts))]

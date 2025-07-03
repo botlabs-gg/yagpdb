@@ -37,7 +37,7 @@ func (p *Plugin) AddCommands() {
 			Arguments: []*dcmd.ArgDef{
 				{Name: "Role", Type: dcmd.String},
 			},
-			SlashCommandEnabled: true,
+			SlashCommandEnabled: false,
 			DefaultEnabled:      true,
 			RunFunc:             CmdFuncRole,
 		})
@@ -158,9 +158,9 @@ func (p *Plugin) AddCommands() {
 	menuContainer.AddCommand(cmdEditOption, cmdEditOption.GetTrigger())
 	menuContainer.AddCommand(cmdFinishSetup, cmdFinishSetup.GetTrigger())
 	menuContainer.AddCommand(cmdListGroups, cmdListGroups.GetTrigger())
-	commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildSet) ([]int64, error) {
-		return nil, nil
-	})
+	//commands.RegisterSlashCommandsContainer(menuContainer, true, func(gs *dstate.GuildSet) ([]int64, error) {
+	//	return nil, nil
+	//})
 }
 
 type ScheduledMemberRoleRemoveData struct {

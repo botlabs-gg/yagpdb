@@ -39,7 +39,7 @@ var Command = &commands.YAGCommand{
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "l", Help: "Latest comic"},
 	},
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	DefaultEnabled:      true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 

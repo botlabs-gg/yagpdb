@@ -13,7 +13,7 @@ var Command = &commands.YAGCommand{
 	Name:                "Topic",
 	Description:         "Generates a conversation topic to help chat get moving.",
 	DefaultEnabled:      true,
-	SlashCommandEnabled: true,
+	SlashCommandEnabled: false,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		topic := ChatTopics[rand.Intn(len(ChatTopics))]
 		return "> " + topic, nil

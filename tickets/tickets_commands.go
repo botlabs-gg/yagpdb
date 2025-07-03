@@ -440,7 +440,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdAdminsOnly, cmdAdminsOnly.GetTrigger().SetMiddlewares(RequireActiveTicketMW))
 	container.AddCommand(cmdMenuCreate, cmdMenuCreate.GetTrigger().SetMiddlewares(ProhibitActiveTicketMW))
 
-	commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
+	//commands.RegisterSlashCommandsContainer(container, false, TicketCommandsRolesRunFuncfunc)
 }
 
 func TicketCommandsRolesRunFuncfunc(gs *dstate.GuildSet) ([]int64, error) {

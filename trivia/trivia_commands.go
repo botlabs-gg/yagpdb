@@ -11,7 +11,7 @@ func (p *Plugin) AddCommands() {
 		Description:         "Asks a random question, you have got 30 seconds to answer!",
 		RunInDM:             false,
 		CmdCategory:         commands.CategoryFun,
-		SlashCommandEnabled: true,
+		SlashCommandEnabled: false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			err := manager.NewTrivia(parsed.GuildData.GS.ID, parsed.ChannelID)
 			if err != nil {
