@@ -760,6 +760,7 @@ func baseContextFuncs(c *Context) {
 
 	// Member functions
 	c.addContextFunc("getMember", c.tmplGetMember)
+	c.addContextFunc("getMembers", c.tmplGetMembers)
 	c.addContextFunc("getMemberVoiceState", c.tmplGetMemberVoiceState)
 	c.addContextFunc("editNickname", c.tmplEditNickname)
 
