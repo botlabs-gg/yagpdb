@@ -1231,6 +1231,18 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	return member.DgoMember(), nil
 }
 
+func (c *Context) tmplGetMembers(after ...int64) ([]*discordgo.Member, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return nil, ErrTooManyAPICalls
+	}
+	var a int64
+	if len(after) > 0 {
+		a = after[0]
+	}
+
+	return common.BotSession.GuildMembers(c.GS.ID, a, 1000)
+}
+
 func (c *Context) tmplGetMemberVoiceState(target interface{}) (*discordgo.VoiceState, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
