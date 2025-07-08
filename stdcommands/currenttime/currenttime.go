@@ -1,6 +1,7 @@
 package currenttime
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 var Command = &commands.YAGCommand{
 	CmdCategory:    commands.CategoryTool,
 	Name:           "CurrentTime",
-	Aliases:        []string{"ctime", "gettime"},
+	Aliases:        []string{"ctime", "gettime", "ct"},
 	Description:    "Shows current time in different timezones. [Available timezones](https://pastebin.com/ZqSPUhc7)",
 	ArgumentCombos: [][]int{{1}, {0}, {}},
 	Arguments: []*dcmd.ArgDef{
@@ -24,7 +25,7 @@ var Command = &commands.YAGCommand{
 }
 
 func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
-	const format = "Mon Jan 02 15:04:05 (UTC -07:00)"
+	const format = "January 02, 15:04"
 
 	now := time.Now()
 	if data.Args[0].Value != nil {
@@ -42,16 +43,16 @@ func cmdFuncCurrentTime(data *dcmd.Data) (interface{}, error) {
 				return "Unknown timezone :(", err
 			}
 		}
-		return now.In(location).Format(format), nil
+		return fmt.Sprintf("Your current time is **%s**", now.In(location).Format(format)), nil
 	} else if data.Args[1].Value != nil {
 		location := time.FixedZone("", data.Args[1].Int()*60*60)
-		return now.In(location).Format(format), nil
+		return fmt.Sprintf("Your current time is **%s**", now.In(location).Format(format)), nil
 	}
 
 	loc := timezonecompanion.GetUserTimezone(data.Author.ID)
 	if loc != nil {
-		return now.In(loc).Format(format), nil
+		return fmt.Sprintf("Your current time is **%s**", now.In(loc).Format(format)), nil
 	}
 
-	return now.Format(format), nil
+	return fmt.Sprintf("Your current time is **%s**", now.Format(format)), nil
 }
