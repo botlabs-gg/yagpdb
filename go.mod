@@ -70,6 +70,7 @@ require (
 	github.com/aarondl/sqlboiler/v4 v4.19.5
 	github.com/aarondl/strmangle v0.0.9
 	github.com/francoispqt/gojay v1.2.13
+	github.com/google/go-querystring v1.1.0
 	github.com/justinian/dice v1.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
@@ -153,6 +154,7 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/rtred v0.1.2 // indirect
 	github.com/tidwall/tinyqueue v0.1.1 // indirect
+	github.com/typical-developers/goblox v0.0.0-20250626165130-e4815d2a6ae7
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	go.mongodb.org/mongo-driver v1.12.0 // indirect
