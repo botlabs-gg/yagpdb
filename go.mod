@@ -31,7 +31,6 @@ require (
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/rcache v1.0.1
 	github.com/lib/pq v1.10.9
-	github.com/lunixbochs/vtclean v1.0.0
 	github.com/mailru/easyjson v0.7.7
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mediocregopher/radix/v3 v3.8.1
@@ -56,7 +55,6 @@ require (
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.38.0
-	golang.org/x/image v0.18.0
 	golang.org/x/net v0.38.0
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sys v0.33.0 // indirect
@@ -72,7 +70,6 @@ require (
 	github.com/aarondl/sqlboiler/v4 v4.19.5
 	github.com/aarondl/strmangle v0.0.9
 	github.com/francoispqt/gojay v1.2.13
-	github.com/goccy/go-yaml v1.11.3
 	github.com/justinian/dice v1.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
