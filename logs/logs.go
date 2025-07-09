@@ -76,13 +76,10 @@ func isChannelBlacklisted(config *models.GuildLoggingConfig, channel *dstate.Cha
 	// note: since the blacklisted channels column is just a TEXT type with a comma separator...
 	// i was not a smart person back then
 	blacklist := strings.Split(config.BlacklistedChannels.String, ",")
-	if channel.Type.IsThread() {
-		parentIDStr := strconv.FormatInt(channel.ParentID, 10)
-		return common.ContainsStringSlice(blacklist, parentIDStr)
-	}
-
+	parentIDStr := strconv.FormatInt(channel.ParentID, 10)
 	idStr := strconv.FormatInt(channel.ID, 10)
-	return common.ContainsStringSlice(blacklist, idStr)
+
+	return common.ContainsStringSlice(blacklist, idStr) || common.ContainsStringSlice(blacklist, parentIDStr)
 }
 
 func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLogs2, error) {
