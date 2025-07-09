@@ -170,7 +170,6 @@ func HandleLogsCPSaveGeneral(w http.ResponseWriter, r *http.Request) (web.Templa
 	g, tmpl := web.GetBaseCPContextData(ctx)
 
 	form := ctx.Value(common.ContextKeyParsedForm).(*ConfigFormData)
-	fmt.Printf("Form: %#v\n", form)
 
 	config := &models.GuildLoggingConfig{
 		GuildID: g.ID,
