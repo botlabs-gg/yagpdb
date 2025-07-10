@@ -511,18 +511,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 	}
 	if sendType == sendMessageDM {
 		msgSend.Content = common.ReplaceServerInvites(msgSend.Content, 0, "[removed-server-invite]")
-		msgSend.Components = []discordgo.TopLevelComponent{
-			discordgo.ActionsRow{
-				Components: []discordgo.InteractiveComponent{
-					discordgo.Button{
-						Label:    "Show Server Info",
-						Style:    discordgo.PrimaryButton,
-						Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
-						CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
-					},
-				},
-			},
-		}
+		msgSend.Components = bot.GenerateServerInfoButton(c.GS.ID)
 	}
 
 	if c.CurrentFrame.EphemeralResponse {

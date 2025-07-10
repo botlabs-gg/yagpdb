@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -68,6 +69,15 @@ func SendDMEmbedList(user int64, embeds []*discordgo.MessageEmbed) error {
 		return err
 	}
 	_, err = common.BotSession.ChannelMessageSendEmbedList(channel.ID, embeds)
+	return err
+}
+
+func SendDMComplexMessage(user int64, msg *discordgo.MessageSend) error {
+	channel, err := common.BotSession.UserChannelCreate(user)
+	if err != nil {
+		return err
+	}
+	_, err = common.BotSession.ChannelMessageSendComplex(channel.ID, msg)
 	return err
 }
 
@@ -207,6 +217,21 @@ func BotPermissions(gs *dstate.GuildSet, channelID int64) (int64, error) {
 	return int64(perms), nil
 }
 
+func GenerateServerInfoButton(guildID int64) []discordgo.TopLevelComponent {
+	return []discordgo.TopLevelComponent{
+		discordgo.ActionsRow{
+			Components: []discordgo.InteractiveComponent{
+				discordgo.Button{
+					Label:    "Show Server Info",
+					Style:    discordgo.PrimaryButton,
+					Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
+					CustomID: fmt.Sprintf("DM_%d", guildID),
+				},
+			},
+		},
+	}
+}
+
 func SendMessage(guildID int64, channelID int64, msg string) (permsOK bool, resp *discordgo.Message, err error) {
 	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel)
 	if !hasPerms {
@@ -227,6 +252,7 @@ func SendMessageGS(gs *dstate.GuildSet, channelID int64, msg string) (permsOK bo
 	resp, err = common.BotSession.ChannelMessageSend(channelID, msg)
 	return true, resp, err
 }
+
 func SendMessageEmbed(guildID int64, channelID int64, embed *discordgo.MessageEmbed) (permsOK bool, resp *discordgo.Message, err error) {
 	hasPerms, err := BotHasPermission(guildID, channelID, discordgo.PermissionSendMessages|discordgo.PermissionViewChannel|discordgo.PermissionEmbedLinks)
 	if !hasPerms {
@@ -412,8 +438,8 @@ func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
 			logger.WithError(err).WithField("guild", guildID).Error("failed retrieving user from api")
 			resp = append(resp, &discordgo.User{
 				Discriminator: "0",
-				ID:       id,
-				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",
+				ID:            id,
+				Username:      "Unknown (" + strconv.FormatInt(id, 10) + ")",
 			})
 			continue
 		}
