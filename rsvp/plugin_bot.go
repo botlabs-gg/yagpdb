@@ -195,7 +195,7 @@ func (p *Plugin) AddCommands() {
 
 			var output strings.Builder
 			for _, v := range events {
-				timeUntil := v.StartsAt.Sub(time.Now())
+				timeUntil := time.Until(v.StartsAt)
 				humanized := common.HumanizeDuration(common.DurationPrecisionMinutes, timeUntil)
 
 				output.WriteString(fmt.Sprintf("#%2d: **%s** in `%s` https://ptb.discordapp.com/channels/%d/%d/%d\n",
@@ -354,7 +354,7 @@ func UpdateEventEmbed(m *models.RSVPSession) error {
 		},
 	}
 
-	timeUntil := m.StartsAt.Sub(time.Now())
+	timeUntil := time.Until(m.StartsAt)
 	timeUntilStr := common.HumanizeDuration(common.DurationPrecisionMinutes, timeUntil)
 	if timeUntil > 0 {
 		timeUntilStr = "Starts in `" + timeUntilStr + "`"
@@ -539,7 +539,7 @@ func ParticipantField(state ParticipantState, participants []*models.RSVPPartici
 }
 
 func NextUpdateTime(m *models.RSVPSession) time.Time {
-	timeUntil := m.StartsAt.Sub(time.Now())
+	timeUntil := time.Until(m.StartsAt)
 
 	if timeUntil < time.Second*15 {
 		return time.Now().Add(time.Second * 1)
@@ -571,10 +571,10 @@ func (p *Plugin) handleScheduledUpdate(evt *eventModels.ScheduledEvent, data int
 		return scheduledevents2.CheckDiscordErrRetry(err), err
 	}
 
-	if m.StartsAt.Sub(time.Now()) < 1 {
+	if time.Until(m.StartsAt) < 1 {
 		p.startEvent(m)
 		return false, nil
-	} else if m.StartsAt.Sub(time.Now()) < time.Minute*30 && !m.SentReminders && m.SendReminders {
+	} else if time.Until(m.StartsAt) < time.Minute*30 && !m.SentReminders && m.SendReminders {
 		m.SentReminders = true
 		_, err := m.UpdateG(context.Background(), boil.Whitelist("sent_reminders"))
 		if err != nil {
@@ -618,16 +618,20 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 		if v.JoinState != int16(ParticipantStateJoining) && v.JoinState != int16(ParticipantStateMaybe) {
 			continue
 		}
-
-		err := bot.SendDMEmbed(v.UserID,
-			&discordgo.MessageEmbed{
-				Title:       title,
-				Description: desc,
-				Footer: &discordgo.MessageEmbedFooter{
-					Text: "From the server: " + serverName,
+		msgSend := &discordgo.MessageSend{
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Title:       title,
+					Description: common.ReplaceServerInvites(desc, 0, "[removed-server-invite]"),
+					Footer: &discordgo.MessageEmbedFooter{
+						Text: "From the server: " + serverName,
+					},
 				},
-			})
+			},
+			Components: bot.GenerateServerInfoButton(m.GuildID),
+		}
 
+		err := bot.SendDMComplexMessage(v.UserID, msgSend)
 		if err != nil {
 			logger.WithError(err).WithField("guild", m.GuildID).Error("failed sending reminder")
 		}

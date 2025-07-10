@@ -51,18 +51,7 @@ func (c *Context) tmplSendDM(s ...interface{}) string {
 	default:
 		msgSend.Content = common.ReplaceServerInvites(fmt.Sprint(s...), 0, "[removed-server-invite]")
 	}
-	serverInfo := []discordgo.TopLevelComponent{
-		discordgo.ActionsRow{
-			Components: []discordgo.InteractiveComponent{
-				discordgo.Button{
-					Label:    "Show Server Info",
-					Style:    discordgo.PrimaryButton,
-					Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
-					CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
-				},
-			},
-		},
-	}
+	serverInfo := bot.GenerateServerInfoButton(c.GS.ID)
 	if len(msgSend.Components) >= 5 {
 		msgSend.Components = msgSend.Components[:4]
 	}
@@ -389,18 +378,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 
 		if sendType == sendMessageDM {
 			msgSend.Content = common.ReplaceServerInvites(ToString(msg), 0, "[removed-server-invite]")
-			serverInfo := []discordgo.TopLevelComponent{
-				discordgo.ActionsRow{
-					Components: []discordgo.InteractiveComponent{
-						discordgo.Button{
-							Label:    "Show Server Info",
-							Style:    discordgo.PrimaryButton,
-							Emoji:    &discordgo.ComponentEmoji{Name: "📬"},
-							CustomID: fmt.Sprintf("DM_%d", c.GS.ID),
-						},
-					},
-				},
-			}
+			serverInfo := bot.GenerateServerInfoButton(c.GS.ID)
 			if len(msgSend.Components) >= 5 {
 				msgSend.Components = msgSend.Components[:4]
 			}
@@ -560,7 +538,7 @@ func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID
 			case "reply":
 				msgID := ToInt64(val)
 				if msgID <= 0 {
-					return nil, errors.New(fmt.Sprintf("invalid message id '%s' provided to reply.", ToString(val)))
+					return nil, fmt.Errorf("invalid message id '%s' provided to reply.", ToString(val))
 				}
 				msg.Reference = &discordgo.MessageReference{
 					GuildID:   c.GS.ID,

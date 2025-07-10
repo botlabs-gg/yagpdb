@@ -774,7 +774,7 @@ func SetGuildMemberMiddleware(inner http.Handler) http.Handler {
 			m, err := discorddata.GetMember(guild.ID, user.ID)
 			if err != nil || m == nil {
 				CtxLogger(r.Context()).WithError(err).Warn("failed retrieving member info from discord api")
-			} else if m != nil {
+			} else {
 				// calculate permissions
 				perms := dstate.CalculatePermissions(&guild.GuildState, guild.Roles, nil, m.User.ID, m.Roles)
 

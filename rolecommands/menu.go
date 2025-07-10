@@ -97,9 +97,9 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 		OwnerID:   parsed.Author.ID,
 		ChannelID: parsed.ChannelID,
 
-		RoleGroupID:                null.Int64From(group.ID),
-		OwnMessage:                 true,
-		DisableSendDM:              parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool),
+		RoleGroupID:   null.Int64From(group.ID),
+		OwnMessage:    true,
+		DisableSendDM: parsed.Switches["nodm"].Value != nil && parsed.Switches["nodm"].Value.(bool),
 		// `rr` is `true` by default, which is why we want
 		// a `true` value, if `.Value` is `nil`.
 		RemoveRoleOnReactionRemove: parsed.Switches["rr"].Value == nil || !parsed.Switches["rr"].Value.(bool),
@@ -530,7 +530,18 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 	}
 
 	if resp != "" {
-		bot.SendDM(uID, "**"+gs.Name+"**: "+resp)
+		msgSend := &discordgo.MessageSend{
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Description: resp,
+					Footer: &discordgo.MessageEmbedFooter{
+						Text: fmt.Sprintf("From: **" + gs.Name + "**: "),
+					},
+				},
+			},
+			Components: bot.GenerateServerInfoButton(gs.ID),
+		}
+		bot.SendDMComplexMessage(uID, msgSend)
 	}
 }
 

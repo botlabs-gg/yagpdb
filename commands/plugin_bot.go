@@ -415,9 +415,7 @@ func clearGlobalCommands() error {
 	if err != nil {
 		return err
 	}
-
-	logger.Info("COMMANDS LENGHT: ", len(commands))
-
+	logger.Info("COMMANDS LENGTH: ", len(commands))
 	for _, v := range commands {
 		err = common.BotSession.DeleteGlobalApplicationCommand(common.BotApplication.ID, v.ID)
 		if err != nil {
