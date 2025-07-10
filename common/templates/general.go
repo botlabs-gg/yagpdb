@@ -1320,8 +1320,8 @@ func sequence(start, stop int) ([]int, error) {
 		return nil, errors.New("stop is less than start?")
 	}
 
-	if stop-start > 10000 {
-		return nil, errors.New("Sequence max length is 10000")
+	if stop-start > MaxSliceLength {
+		return nil, fmt.Errorf("Sequence max length is %d", MaxSliceLength)
 	}
 
 	out := make([]int, stop-start)

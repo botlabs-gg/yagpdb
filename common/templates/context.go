@@ -328,6 +328,7 @@ const (
 	MaxOpsPremium     = 2500000
 	MaxOpsEvalNormal  = 200000
 	MaxOpsEvalPremium = 500000
+	MaxSliceLength    = 10000
 )
 
 func (c *Context) Execute(source string) (string, error) {
@@ -1043,18 +1044,23 @@ func (d SDict) HasKey(k string) (ok bool) {
 type Slice []interface{}
 
 func (s Slice) Append(item interface{}) (interface{}, error) {
-	if len(s)+1 > 10000 {
+	if len(s)+1 > MaxSliceLength {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
 
-	switch v := item.(type) {
-	case nil:
-		result := reflect.Append(reflect.ValueOf(&s).Elem(), reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
-		return result.Interface(), nil
-	default:
-		result := reflect.Append(reflect.ValueOf(&s).Elem(), reflect.ValueOf(v))
-		return result.Interface(), nil
+	var result reflect.Value
+	if item == nil {
+		result = reflect.Append(reflect.ValueOf(&s).Elem(), reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
+	} else {
+		result = reflect.Append(reflect.ValueOf(&s).Elem(), reflect.ValueOf(item))
 	}
+
+	if isContainer(item) {
+		if err := detectCyclicValue(result.Interface()); err != nil {
+			return "", template.UncatchableError(err)
+		}
+	}
+	return result.Interface(), nil
 }
 
 func (s Slice) Set(index int, item interface{}) (string, error) {
@@ -1076,26 +1082,32 @@ func (s Slice) AppendSlice(slice interface{}) (interface{}, error) {
 	switch val.Kind() {
 	case reflect.Slice, reflect.Array:
 	// this is valid
-
 	default:
 		return nil, errors.New("value passed is not an array or slice")
 	}
 
-	if len(s)+val.Len() > 10000 {
+	if len(s)+val.Len() > MaxSliceLength {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
 
 	result := reflect.ValueOf(&s).Elem()
+	containsContainer := false
 	for i := 0; i < val.Len(); i++ {
-		switch v := val.Index(i).Interface().(type) {
-		case nil:
+		elem := val.Index(i).Interface()
+		if elem == nil {
 			result = reflect.Append(result, reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
-
-		default:
-			result = reflect.Append(result, reflect.ValueOf(v))
+		} else {
+			result = reflect.Append(result, reflect.ValueOf(elem))
+			if !containsContainer && isContainer(elem) {
+				containsContainer = true
+			}
 		}
 	}
-
+	if containsContainer {
+		if err := detectCyclicValue(result.Interface()); err != nil {
+			return "", template.UncatchableError(err)
+		}
+	}
 	return result.Interface(), nil
 }
 
@@ -1134,12 +1146,18 @@ type ComponentBuilder struct {
 }
 
 func (s *ComponentBuilder) Add(key string, value interface{}) (interface{}, error) {
-	if len(s.Components)+1 > 10000 {
+	if len(s.Components)+1 > MaxSliceLength {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
 
 	s.Components = append(s.Components, key)
 	s.Values = append(s.Values, value)
+
+	if isContainer(value) {
+		if err := detectCyclicValue(s.Values); err != nil {
+			return "", template.UncatchableError(err)
+		}
+	}
 	return "", nil
 }
 
@@ -1153,33 +1171,51 @@ func (s *ComponentBuilder) AddSlice(key string, slice interface{}) (interface{},
 		return nil, errors.New("value passed is not an array or slice")
 	}
 
-	if len(s.Components)+val.Len() > 10000 {
+	if len(s.Components)+val.Len() > MaxSliceLength {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
 
 	result := reflect.ValueOf(&s.Values).Elem()
+	containsContainer := false
 	for i := 0; i < val.Len(); i++ {
 		s.Components = append(s.Components, key)
-		switch v := val.Index(i).Interface().(type) {
-		case nil:
+		elem := val.Index(i).Interface()
+		if elem == nil {
 			result = reflect.Append(result, reflect.Zero(reflect.TypeOf((*interface{})(nil)).Elem()))
-
-		default:
-			result = reflect.Append(result, reflect.ValueOf(v))
+		} else {
+			result = reflect.Append(result, reflect.ValueOf(elem))
+			if !containsContainer && isContainer(elem) {
+				containsContainer = true
+			}
 		}
 	}
 	s.Values = result.Interface().([]interface{})
+
+	if containsContainer {
+		if err := detectCyclicValue(s.Values); err != nil {
+			return "", template.UncatchableError(err)
+		}
+	}
 
 	return "", nil
 }
 
 func (s *ComponentBuilder) Merge(toMerge *ComponentBuilder) (interface{}, error) {
-	if len(s.Components)+len(toMerge.Components) > 10000 {
+	if len(s.Components)+len(toMerge.Components) > MaxSliceLength {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
 
+	containsContainer := false
 	for i, k := range toMerge.Components {
 		s.Add(k, toMerge.Values[i])
+		if !containsContainer && isContainer(toMerge.Values[i]) {
+			containsContainer = true
+		}
+	}
+	if containsContainer {
+		if err := detectCyclicValue(s.Values); err != nil {
+			return "", template.UncatchableError(err)
+		}
 	}
 
 	return "", nil
