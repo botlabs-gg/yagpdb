@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS guild_logging_configs (
 
 	`ALTER TABLE guild_logging_configs ADD COLUMN IF NOT EXISTS message_logs_allowed_roles BIGINT[];`,
 	`ALTER TABLE guild_logging_configs ADD COLUMN IF NOT EXISTS access_mode SMALLINT NOT NULL DEFAULT 0;`,
+	`ALTER TABLE guild_logging_configs ADD COLUMN IF NOT EXISTS channels_whitelist_mode BOOLEAN NOT NULL DEFAULT FALSE;`,
 
 	`CREATE TABLE IF NOT EXISTS username_listings (
 	id SERIAL PRIMARY KEY,

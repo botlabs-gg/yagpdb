@@ -91,7 +91,20 @@
                             "Allow everyone to view deleted messages" .Config.EveryoneCanViewDeleted.Bool}}
                             <hr />
                             <div class="form-group">
-                                <label>Blacklist channels from message logs</label><br />
+                                <div class="radio">
+                                    <label>
+                                        <input id="require-channel-mode" type="radio" name="channels_whitelist_mode" value="on"
+                                            {{if .Config.ChannelsWhitelistMode}}checked{{end}}>
+                                        Only allow logging messages in these channels
+                                    </label>
+                                </div>
+                                <div class="radio">
+                                    <label>
+                                        <input id="ignore-channel-mode" type="radio" name="channels_whitelist_mode" value=""
+                                            {{if not .Config.ChannelsWhitelistMode}}checked{{end}}>
+                                        Disallow logging messages in these channels
+                                    </label>
+                                </div>
                                 <select class="multiselect" id="blacklist-channels" name="BlacklistedChannels"
                                     multiple="multiple" data-plugin-multiselect>
                                     {{textChannelOptionsMulti .ActiveGuild.Channels .ConfBlacklistedChannels}}

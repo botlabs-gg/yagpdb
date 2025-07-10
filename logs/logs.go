@@ -15,6 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/logs/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/null/v8"
@@ -70,6 +71,17 @@ func CreateLink(guildID int64, id int) string {
 	return fmt.Sprintf("%s/public/%d/log/%d", web.BaseURL(), guildID, id)
 }
 
+// isChannelBlacklisted reports if the given channel is in the blacklist of the given config.
+func isChannelBlacklisted(config *models.GuildLoggingConfig, channel *dstate.ChannelState) bool {
+	// note: since the blacklisted channels column is just a TEXT type with a comma separator...
+	// i was not a smart person back then
+	blacklist := strings.Split(config.BlacklistedChannels.String, ",")
+	parentIDStr := strconv.FormatInt(channel.ParentID, 10)
+	idStr := strconv.FormatInt(channel.ID, 10)
+
+	return common.ContainsStringSlice(blacklist, idStr) || common.ContainsStringSlice(blacklist, parentIDStr)
+}
+
 func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLogs2, error) {
 	if config == nil {
 		var err error
@@ -90,19 +102,11 @@ func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, gu
 		return nil, errors.New("Unknown channel")
 	}
 
-	// note: since the blacklisted channels column is just a TEXT type with a comma separator...
-	// i was not a smart person back then
-	blacklist := strings.Split(config.BlacklistedChannels.String, ",")
-	if channel.Type.IsThread() {
-		parentIDStr := strconv.FormatInt(channel.ParentID, 10)
-		if common.ContainsStringSlice(blacklist, parentIDStr) {
-			return nil, ErrChannelBlacklisted
-		}
-	} else {
-		idStr := strconv.FormatInt(channel.ID, 10)
-		if common.ContainsStringSlice(blacklist, idStr) {
-			return nil, ErrChannelBlacklisted
-		}
+	// if we're in whitelist mode, inverse the blacklist
+	if config.ChannelsWhitelistMode && !isChannelBlacklisted(config, channel) {
+		return nil, ErrChannelBlacklisted
+	} else if !config.ChannelsWhitelistMode && isChannelBlacklisted(config, channel) {
+		return nil, ErrChannelBlacklisted
 	}
 
 	if count > 300 {
