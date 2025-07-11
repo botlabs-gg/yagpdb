@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RhykerWells/yagpdb/v2/customcommands/models"
 	"github.com/aarondl/null/v8"
-	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/robfig/cron/v3"
 )
 

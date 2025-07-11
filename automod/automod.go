@@ -8,11 +8,11 @@ import (
 	"unicode"
 
 	"emperror.dev/errors"
+	"github.com/RhykerWells/yagpdb/v2/automod/models"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/featureflags"
+	"github.com/RhykerWells/yagpdb/v2/premium"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"github.com/botlabs-gg/yagpdb/v2/automod/models"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/karlseguin/ccache"
 )
 

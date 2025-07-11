@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common"
 )
 
 type Producer struct {

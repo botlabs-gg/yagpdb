@@ -3,9 +3,9 @@ package listroles
 import (
 	"fmt"
 
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/commands"
+	"github.com/RhykerWells/yagpdb/v2/lib/dcmd"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
 )
 
 var Command = &commands.YAGCommand{

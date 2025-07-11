@@ -3,7 +3,7 @@ package common
 import (
 	"regexp"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
+	"github.com/RhykerWells/yagpdb/v2/lib/confusables"
 )
 
 type InviteSource struct {

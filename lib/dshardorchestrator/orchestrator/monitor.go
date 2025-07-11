@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
+	"github.com/RhykerWells/yagpdb/v2/lib/dshardorchestrator"
 )
 
 type monitor struct {

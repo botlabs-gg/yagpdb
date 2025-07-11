@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dice"
+	"github.com/RhykerWells/yagpdb/v2/commands"
+	"github.com/RhykerWells/yagpdb/v2/lib/dcmd"
+	"github.com/RhykerWells/yagpdb/v2/lib/dice"
 )
 
 var Command = &commands.YAGCommand{

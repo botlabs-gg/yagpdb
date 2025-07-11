@@ -3,14 +3,14 @@ package discordpremiumsource
 import (
 	"fmt"
 
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
+	"github.com/RhykerWells/yagpdb/v2/bot"
+	"github.com/RhykerWells/yagpdb/v2/bot/eventsystem"
+	"github.com/RhykerWells/yagpdb/v2/commands"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/pubsub"
+	"github.com/RhykerWells/yagpdb/v2/lib/dcmd"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/stdcommands/util"
 )
 
 var _ bot.BotInitHandler = (*Plugin)(nil)

@@ -1,7 +1,7 @@
 package dice_test
 
 import (
-	. "github.com/botlabs-gg/yagpdb/v2/lib/dice"
+	. "github.com/RhykerWells/yagpdb/v2/lib/dice"
 	. "gopkg.in/check.v1"
 )
 

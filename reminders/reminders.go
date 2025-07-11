@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RhykerWells/yagpdb/v2/bot"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/mqueue"
+	"github.com/RhykerWells/yagpdb/v2/common/scheduledevents2"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/reminders/models"
 	"github.com/aarondl/sqlboiler/v4/boil"
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/reminders/models"
 	"github.com/sirupsen/logrus"
 )
 

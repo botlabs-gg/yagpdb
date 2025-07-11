@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dshardorchestrator/node"
+	"github.com/RhykerWells/yagpdb/v2/lib/dshardorchestrator"
+	"github.com/RhykerWells/yagpdb/v2/lib/dshardorchestrator/node"
 )
 
 var Node *node.Conn

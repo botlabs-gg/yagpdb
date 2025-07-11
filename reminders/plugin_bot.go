@@ -8,16 +8,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RhykerWells/yagpdb/v2/bot"
+	"github.com/RhykerWells/yagpdb/v2/commands"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/scheduledevents2"
+	seventsmodels "github.com/RhykerWells/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/RhykerWells/yagpdb/v2/lib/dcmd"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/lib/dstate"
+	"github.com/RhykerWells/yagpdb/v2/reminders/models"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
-	seventsmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/v2/reminders/models"
 )
 
 var logger = common.GetPluginLogger(&Plugin{})

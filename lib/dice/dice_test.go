@@ -3,7 +3,7 @@ package dice_test
 import (
 	"testing"
 
-	. "github.com/botlabs-gg/yagpdb/v2/lib/dice"
+	. "github.com/RhykerWells/yagpdb/v2/lib/dice"
 )
 
 func TestRoll(t *testing.T) {

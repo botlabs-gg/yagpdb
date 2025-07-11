@@ -11,15 +11,15 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/RhykerWells/yagpdb/v2/bot"
+	"github.com/RhykerWells/yagpdb/v2/commands"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/lib/dcmd"
+	"github.com/RhykerWells/yagpdb/v2/premium/models"
+	"github.com/RhykerWells/yagpdb/v2/stdcommands/util"
 	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
-	"github.com/botlabs-gg/yagpdb/v2/premium/models"
-	"github.com/botlabs-gg/yagpdb/v2/stdcommands/util"
 	"github.com/lib/pq"
 )
 

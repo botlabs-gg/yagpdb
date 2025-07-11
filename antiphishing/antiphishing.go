@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/lib/confusables"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/sirupsen/logrus"
 )

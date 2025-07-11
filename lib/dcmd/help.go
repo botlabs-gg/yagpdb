@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
 )
 
 // HelpFormatter is a interface for help formatters, for an example see StdHelpFormatter

@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
 )
 
 type ModlogAction struct {
@@ -27,16 +27,16 @@ func (m ModlogAction) String() string {
 }
 
 var (
-	MAMute           = ModlogAction{Prefix: "Muted", Emoji: "🔇", Color: 0x57728e}
-	MAUnmute         = ModlogAction{Prefix: "Unmuted", Emoji: "🔊", Color: 0x62c65f}
-	MAKick           = ModlogAction{Prefix: "Kicked", Emoji: "👢", Color: 0xf2a013}
-	MABanned         = ModlogAction{Prefix: "Banned", Emoji: "🔨", Color: 0xd64848}
-	MAUnbanned       = ModlogAction{Prefix: "Unbanned", Emoji: "🔓", Color: 0x62c65f}
-	MAWarned         = ModlogAction{Prefix: "Warned", Emoji: "⚠", Color: 0xfca253}
-	MADelwarn      	 = ModlogAction{Prefix: "Warning removed from", Emoji: "🧽", Color: 0xfca253}
-	MAGiveRole       = ModlogAction{Prefix: "", Emoji: "➕", Color: 0x53fcf9}
-	MARemoveRole     = ModlogAction{Prefix: "", Emoji: "➖", Color: 0x53fcf9}
-	MAClearWarnings  = ModlogAction{Prefix: "Cleared warnings", Emoji: "👌", Color: 0x62c65f}
+	MAMute          = ModlogAction{Prefix: "Muted", Emoji: "🔇", Color: 0x57728e}
+	MAUnmute        = ModlogAction{Prefix: "Unmuted", Emoji: "🔊", Color: 0x62c65f}
+	MAKick          = ModlogAction{Prefix: "Kicked", Emoji: "👢", Color: 0xf2a013}
+	MABanned        = ModlogAction{Prefix: "Banned", Emoji: "🔨", Color: 0xd64848}
+	MAUnbanned      = ModlogAction{Prefix: "Unbanned", Emoji: "🔓", Color: 0x62c65f}
+	MAWarned        = ModlogAction{Prefix: "Warned", Emoji: "⚠", Color: 0xfca253}
+	MADelwarn       = ModlogAction{Prefix: "Warning removed from", Emoji: "🧽", Color: 0xfca253}
+	MAGiveRole      = ModlogAction{Prefix: "", Emoji: "➕", Color: 0x53fcf9}
+	MARemoveRole    = ModlogAction{Prefix: "", Emoji: "➖", Color: 0x53fcf9}
+	MAClearWarnings = ModlogAction{Prefix: "Cleared warnings", Emoji: "👌", Color: 0x62c65f}
 )
 
 func CreateModlogEmbed(config *Config, author *discordgo.User, action ModlogAction, target *discordgo.User, reason, logLink string) error {

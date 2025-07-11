@@ -1,4 +1,4 @@
-module github.com/botlabs-gg/yagpdb/v2
+module github.com/RhykerWells/yagpdb/v2
 
 go 1.23.3
 
@@ -154,7 +154,6 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/rtred v0.1.2 // indirect
 	github.com/tidwall/tinyqueue v0.1.1 // indirect
-	github.com/typical-developers/goblox v0.0.0-20250626165130-e4815d2a6ae7
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	go.mongodb.org/mongo-driver v1.12.0 // indirect

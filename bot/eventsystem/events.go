@@ -6,7 +6,7 @@
 package eventsystem
 
 import (
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
 )
 
 type Event int

@@ -7,12 +7,12 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/RhykerWells/yagpdb/v2/commands"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/cplogs"
+	"github.com/RhykerWells/yagpdb/v2/tickets/models"
+	"github.com/RhykerWells/yagpdb/v2/web"
 	"github.com/aarondl/sqlboiler/v4/boil"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
-	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
-	"github.com/botlabs-gg/yagpdb/v2/web"
 	"goji.io/pat"
 )
 

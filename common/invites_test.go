@@ -3,7 +3,7 @@ package common
 import (
 	"testing"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
+	"github.com/RhykerWells/yagpdb/v2/lib/confusables"
 )
 
 func TestDiscordInviteRegex(t *testing.T) {

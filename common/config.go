@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
+	"github.com/RhykerWells/yagpdb/v2/common/config"
 )
 
 var (

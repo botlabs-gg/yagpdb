@@ -15,9 +15,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/RhykerWells/yagpdb/v2/common/cacheset"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
 	"github.com/aarondl/sqlboiler/v4/boil"
-	"github.com/botlabs-gg/yagpdb/v2/common/cacheset"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/jmoiron/sqlx"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"

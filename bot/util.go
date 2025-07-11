@@ -8,10 +8,10 @@ import (
 
 	"emperror.dev/errors"
 
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/pubsub"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/lib/dstate"
 	"github.com/bwmarrin/snowflake"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/patrickmn/go-cache"
@@ -412,8 +412,8 @@ func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
 			logger.WithError(err).WithField("guild", guildID).Error("failed retrieving user from api")
 			resp = append(resp, &discordgo.User{
 				Discriminator: "0",
-				ID:       id,
-				Username: "Unknown (" + strconv.FormatInt(id, 10) + ")",
+				ID:            id,
+				Username:      "Unknown (" + strconv.FormatInt(id, 10) + ")",
 			})
 			continue
 		}

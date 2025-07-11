@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
 	"github.com/shurcooL/github_flavored_markdown"
 	"github.com/sirupsen/logrus"
 )

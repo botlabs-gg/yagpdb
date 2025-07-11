@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/backgroundworkers"
+	"github.com/RhykerWells/yagpdb/v2/premium/models"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
-	"github.com/botlabs-gg/yagpdb/v2/premium/models"
 	"github.com/mediocregopher/radix/v3"
 )
 

@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/lib/dstate"
 )
 
 type TrackerConfig struct {
@@ -291,7 +291,7 @@ func (shard *ShardTracker) handleGuildCreate(gc *discordgo.GuildCreate) {
 		emojis[i] = *gc.Emojis[i]
 	}
 
-	stickers := make([]discordgo.Sticker,len(gc.Stickers))
+	stickers := make([]discordgo.Sticker, len(gc.Stickers))
 	for i := range gc.Stickers {
 		stickers[i] = *gc.Stickers[i]
 	}

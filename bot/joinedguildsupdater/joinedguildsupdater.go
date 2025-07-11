@@ -5,11 +5,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/RhykerWells/yagpdb/v2/bot/eventsystem"
+	"github.com/RhykerWells/yagpdb/v2/bot/models"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
 	"github.com/aarondl/sqlboiler/v4/boil"
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/bot/models"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 var logger = common.GetFixedPrefixLogger("joinedguildsupdater")

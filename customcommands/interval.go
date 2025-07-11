@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/scheduledevents2"
+	schEventsModels "github.com/RhykerWells/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/RhykerWells/yagpdb/v2/customcommands/models"
 	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
-	schEventsModels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/robfig/cron/v3"
 )
 

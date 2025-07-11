@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/botlabs-gg/yagpdb/v2/common/testutils"
+	"github.com/RhykerWells/yagpdb/v2/common/testutils"
 )
 
 var db *DB

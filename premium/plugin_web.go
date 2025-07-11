@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/premium/models"
+	"github.com/RhykerWells/yagpdb/v2/web"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/premium/models"
-	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 

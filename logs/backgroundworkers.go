@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/backgroundworkers"
+	"github.com/RhykerWells/yagpdb/v2/logs/models"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/backgroundworkers"
-	"github.com/botlabs-gg/yagpdb/v2/logs/models"
 	"golang.org/x/net/context"
 )
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/AlekSi/pointer"
-	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
+	"github.com/RhykerWells/yagpdb/v2/lib/when/rules"
 )
 
 // https://play.golang.org/p/IUbYhm7Nu-

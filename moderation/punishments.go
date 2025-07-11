@@ -9,17 +9,17 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/RhykerWells/yagpdb/v2/bot"
+	"github.com/RhykerWells/yagpdb/v2/common"
+	"github.com/RhykerWells/yagpdb/v2/common/scheduledevents2"
+	seventsmodels "github.com/RhykerWells/yagpdb/v2/common/scheduledevents2/models"
+	"github.com/RhykerWells/yagpdb/v2/common/templates"
+	"github.com/RhykerWells/yagpdb/v2/lib/discordgo"
+	"github.com/RhykerWells/yagpdb/v2/lib/dstate"
+	"github.com/RhykerWells/yagpdb/v2/logs"
+	"github.com/RhykerWells/yagpdb/v2/moderation/models"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
-	seventsmodels "github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2/models"
-	"github.com/botlabs-gg/yagpdb/v2/common/templates"
-	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
-	"github.com/botlabs-gg/yagpdb/v2/logs"
-	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/mediocregopher/radix/v3"
 )
 
@@ -171,11 +171,11 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 }
 
 var ActionMap = map[string]string{
-	MAMute.Prefix:         "Mute DM",
-	MAUnmute.Prefix:       "Unmute DM",
-	MAKick.Prefix:         "Kick DM",
-	MABanned.Prefix:       "Ban DM",
-	MAWarned.Prefix:       "Warn DM",
+	MAMute.Prefix:   "Mute DM",
+	MAUnmute.Prefix: "Unmute DM",
+	MAKick.Prefix:   "Kick DM",
+	MABanned.Prefix: "Ban DM",
+	MAWarned.Prefix: "Warn DM",
 }
 
 func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildSet, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int, executedFromCommandTemplate bool) {

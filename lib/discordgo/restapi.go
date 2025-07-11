@@ -237,7 +237,7 @@ func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, h
 	}
 
 	// TODO: Make a configurable static variable.
-	req.Header.Set("User-Agent", fmt.Sprintf("DiscordBot (https://github.com/botlabs-gg/discordgo, v%s)", VERSION))
+	req.Header.Set("User-Agent", fmt.Sprintf("DiscordBot (https://github.com/RhykerWells/yagpdb/v2/discordgo, v%s)", VERSION))
 
 	// for things such as stats collecting in the roundtripper for example
 	ctx := context.WithValue(req.Context(), CtxKeyRatelimitBucket, bucket)

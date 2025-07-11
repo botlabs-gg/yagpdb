@@ -1,43 +1,44 @@
 package main
 
 import (
-	"github.com/botlabs-gg/yagpdb/v2/analytics"
-	"github.com/botlabs-gg/yagpdb/v2/antiphishing"
-	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
-	"github.com/botlabs-gg/yagpdb/v2/common/prom"
-	"github.com/botlabs-gg/yagpdb/v2/common/run"
-	"github.com/botlabs-gg/yagpdb/v2/lib/confusables"
-	"github.com/botlabs-gg/yagpdb/v2/trivia"
-	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
+	"github.com/RhykerWells/yagpdb/v2/analytics"
+	"github.com/RhykerWells/yagpdb/v2/antiphishing"
+	"github.com/RhykerWells/yagpdb/v2/common/featureflags"
+	"github.com/RhykerWells/yagpdb/v2/common/prom"
+	"github.com/RhykerWells/yagpdb/v2/common/run"
+	"github.com/RhykerWells/yagpdb/v2/lib/confusables"
+	"github.com/RhykerWells/yagpdb/v2/trivia"
+	"github.com/RhykerWells/yagpdb/v2/web/discorddata"
 
 	// Core yagpdb packages
 
-	"github.com/botlabs-gg/yagpdb/v2/admin"
-	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
-	"github.com/botlabs-gg/yagpdb/v2/common/internalapi"
-	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
+	"github.com/RhykerWells/yagpdb/v2/admin"
+	"github.com/RhykerWells/yagpdb/v2/bot/paginatedmessages"
+	"github.com/RhykerWells/yagpdb/v2/common/internalapi"
+	"github.com/RhykerWells/yagpdb/v2/common/scheduledevents2"
 
 	// Plugin imports
-	"github.com/botlabs-gg/yagpdb/v2/automod"
-	"github.com/botlabs-gg/yagpdb/v2/automod_legacy"
-	"github.com/botlabs-gg/yagpdb/v2/autorole"
-	"github.com/botlabs-gg/yagpdb/v2/commands"
-	"github.com/botlabs-gg/yagpdb/v2/customcommands"
-	"github.com/botlabs-gg/yagpdb/v2/discordlogger"
-	"github.com/botlabs-gg/yagpdb/v2/logs"
-	"github.com/botlabs-gg/yagpdb/v2/moderation"
-	"github.com/botlabs-gg/yagpdb/v2/notifications"
-	"github.com/botlabs-gg/yagpdb/v2/premium"
-	"github.com/botlabs-gg/yagpdb/v2/premium/discordpremiumsource"
-	"github.com/botlabs-gg/yagpdb/v2/premium/patreonpremiumsource"
-	"github.com/botlabs-gg/yagpdb/v2/reminders"
-	"github.com/botlabs-gg/yagpdb/v2/rolecommands"
-	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
-	"github.com/botlabs-gg/yagpdb/v2/serverstats"
-	"github.com/botlabs-gg/yagpdb/v2/stdcommands"
-	"github.com/botlabs-gg/yagpdb/v2/tickets"
-	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion"
-	"github.com/botlabs-gg/yagpdb/v2/verification"
+	"github.com/RhykerWells/yagpdb/v2/automod"
+	"github.com/RhykerWells/yagpdb/v2/automod_legacy"
+	"github.com/RhykerWells/yagpdb/v2/autorole"
+	"github.com/RhykerWells/yagpdb/v2/commands"
+	"github.com/RhykerWells/yagpdb/v2/customcommands"
+	"github.com/RhykerWells/yagpdb/v2/discordlogger"
+	"github.com/RhykerWells/yagpdb/v2/iota"
+	"github.com/RhykerWells/yagpdb/v2/logs"
+	"github.com/RhykerWells/yagpdb/v2/moderation"
+	"github.com/RhykerWells/yagpdb/v2/notifications"
+	"github.com/RhykerWells/yagpdb/v2/premium"
+	"github.com/RhykerWells/yagpdb/v2/premium/discordpremiumsource"
+	"github.com/RhykerWells/yagpdb/v2/premium/patreonpremiumsource"
+	"github.com/RhykerWells/yagpdb/v2/reminders"
+	"github.com/RhykerWells/yagpdb/v2/rolecommands"
+	"github.com/RhykerWells/yagpdb/v2/safebrowsing"
+	"github.com/RhykerWells/yagpdb/v2/serverstats"
+	"github.com/RhykerWells/yagpdb/v2/stdcommands"
+	"github.com/RhykerWells/yagpdb/v2/tickets"
+	"github.com/RhykerWells/yagpdb/v2/timezonecompanion"
+	"github.com/RhykerWells/yagpdb/v2/verification"
 	// External plugins
 )
 
@@ -78,7 +79,7 @@ func main() {
 	prom.RegisterPlugin()
 	featureflags.RegisterPlugin()
 	trivia.RegisterPlugin()
-
+	iota.RegisterPlugin()
 	// Register confusables replacer
 	confusables.Init()
 

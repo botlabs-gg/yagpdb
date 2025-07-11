@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/botlabs-gg/yagpdb/v2/lib/when"
-	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules"
-	"github.com/botlabs-gg/yagpdb/v2/lib/when/rules/ru"
+	"github.com/RhykerWells/yagpdb/v2/lib/when"
+	"github.com/RhykerWells/yagpdb/v2/lib/when/rules"
+	"github.com/RhykerWells/yagpdb/v2/lib/when/rules/ru"
 )
 
 func TestDeadline(t *testing.T) {
