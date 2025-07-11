@@ -120,7 +120,7 @@ func (p *Poller) Run() {
 }
 
 func (p *Poller) IsLastFetchSuccess() bool {
-	if p.activePatrons == nil || len(p.activePatrons) < 1 {
+	if len(p.activePatrons) < 1 {
 		return false
 	}
 	if time.Since(p.lastSuccesfulFetchAt) < time.Minute*5 {
@@ -172,14 +172,6 @@ func (p *Poller) Poll() {
 		for _, memberData := range membersResponse.Data {
 			attributes := memberData.Attributes
 			user, ok := users[memberData.Relationships.User.Data.ID]
-			tierCents := 0
-			if len(memberData.Relationships.Tiers.Data) > 0 {
-				for _, tier := range memberData.Relationships.Tiers.Data {
-					if t, ok := tiers[tier.ID]; ok && t.AmountCents > tierCents {
-						tierCents = t.AmountCents
-					}
-				}
-			}
 
 			if !ok {
 				logger.Infof("Unknown user: %s", memberData.ID)
@@ -200,13 +192,12 @@ func (p *Poller) Poll() {
 			}
 
 			patron := &Patron{
-				AmountCents: attributes.CurrentEntitledAmountCents,
-				Avatar:      user.ImageURL,
+				Avatar: user.ImageURL,
 			}
 
-			patron.AmountCents = tierCents
-			if patron.AmountCents == 0 {
-				patron.AmountCents = attributes.CurrentEntitledAmountCents
+			for _, tier := range memberData.Relationships.Tiers.Data {
+				id, _ := strconv.Atoi(tier.ID)
+				patron.Tiers = append(patron.Tiers, int64(id))
 			}
 
 			if user.Vanity != "" {

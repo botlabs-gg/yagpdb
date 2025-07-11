@@ -307,9 +307,10 @@ func (p *Plugin) UpdateFeatureFlagsBatch() (map[int64][]string, error) {
 }
 
 func tierFlags(tier PremiumTier) []string {
-	if tier == PremiumTierPremium {
+	switch tier {
+	case PremiumTierPremium:
 		return []string{FeatureFlagPremiumFull, FeatureFlagPremiumPlus}
-	} else if tier == PremiumTierPlus {
+	case PremiumTierPlus:
 		return []string{FeatureFlagPremiumPlus}
 	}
 

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
-	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
@@ -16,16 +15,7 @@ type DiscordPremiumPoller struct {
 	isLastFetchSuccess   bool
 }
 
-var confDiscordPremiumSKUID = config.RegisterOption("yagpdb.discord.premium.sku_id", "SKU_ID for Discord Premium", nil)
-
 func InitPoller() *DiscordPremiumPoller {
-
-	discordPremiumSKUID := int64(confDiscordPremiumSKUID.GetInt())
-	if discordPremiumSKUID == 0 {
-		DiscordPremiumDisabled(nil, "Missing Discord Premium SKU_ID, not starting poller")
-		return nil
-	}
-
 	poller := &DiscordPremiumPoller{}
 	go poller.Run()
 	return poller
@@ -51,7 +41,7 @@ func (p *DiscordPremiumPoller) Run() {
 }
 
 func (p *DiscordPremiumPoller) IsLastFetchSuccess() bool {
-	if p.activeEntitlements == nil || len(p.activeEntitlements) < 1 {
+	if len(p.activeEntitlements) < 1 {
 		return false
 	}
 	if time.Since(p.lastSuccesfulFetchAt) < time.Minute*10 {
@@ -62,7 +52,6 @@ func (p *DiscordPremiumPoller) IsLastFetchSuccess() bool {
 
 func (p *DiscordPremiumPoller) Poll() {
 	logger.Info("Fetching Discord SKUs")
-	discordPremiumSKUID := int64(confDiscordPremiumSKUID.GetInt())
 	// Get your SKU data
 	skus, err := common.BotSession.SKUs(common.BotApplication.ID)
 	if err != nil || len(skus) < 1 {
@@ -71,26 +60,12 @@ func (p *DiscordPremiumPoller) Poll() {
 		return
 	}
 
-	var is_sku_configured bool
-	for _, sku := range skus {
-		if sku.ID == discordPremiumSKUID {
-			is_sku_configured = true
-			break
-		}
-	}
-
-	if !is_sku_configured {
-		p.isLastFetchSuccess = false
-		logger.Error("SKU ID not found in bot's application SKUs")
-		return
-	}
-
 	afterID := int64(0)
 	filterOptions := &discordgo.EntitlementFilterOptions{
-		SkuIDs:       []int64{discordPremiumSKUID},
 		ExcludeEnded: true,
 		Limit:        100,
 	}
+
 	allEntitlements := make([]*discordgo.Entitlement, 0)
 	for {
 		entitlements, err := common.BotSession.Entitlements(common.BotApplication.ID, filterOptions)

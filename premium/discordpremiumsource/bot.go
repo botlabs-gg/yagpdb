@@ -53,12 +53,19 @@ var CmdActivateTestEntitlement = &commands.YAGCommand{
 	RequiredArgs:         3,
 	RunInDM:              true,
 	Arguments: []*dcmd.ArgDef{
-		{Name: "User", Type: dcmd.UserID},
+		{Name: "User", Type: dcmd.User},
+		{Name: "SkuID", Type: dcmd.UserID},
 	},
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		userID := data.Args[0].Int64()
+		skuID := data.Args[0].Int()
+		slots := fetchSlotsForDiscordSku(int64(skuID))
+		if slots == 0 {
+			return fmt.Sprintf("No Slots configured for skuID %d", skuID), nil
+		}
+
 		entitlementData := &discordgo.EntitlementTest{
-			SKUID:     int64(confDiscordPremiumSKUID.GetInt()),
+			SKUID:     int64(skuID),
 			OwnerID:   userID,
 			OwnerType: discordgo.EntitlementOwnerTypeUserSubscription,
 		}
@@ -66,7 +73,7 @@ var CmdActivateTestEntitlement = &commands.YAGCommand{
 		if err != nil {
 			return fmt.Sprintf("Failed enabling Entitlement for <@%d>: %s", userID, err), nil
 		}
-		return fmt.Sprintf("Enabled Entitlement for <@%d>", userID), nil
+		return fmt.Sprintf("Enabled Entitlement with %d slots for <@%d>", slots, userID), nil
 	}),
 }
 
@@ -85,7 +92,6 @@ var CmdDeleteTestEntitlement = &commands.YAGCommand{
 		userID := data.Args[0].Int64()
 		entitlements, err := common.BotSession.Entitlements(common.BotApplication.ID, &discordgo.EntitlementFilterOptions{
 			UserID:       userID,
-			SkuIDs:       []int64{int64(confDiscordPremiumSKUID.GetInt())},
 			ExcludeEnded: true,
 		})
 		if err != nil {
@@ -95,12 +101,10 @@ var CmdDeleteTestEntitlement = &commands.YAGCommand{
 			return fmt.Sprintf("No Entitlements found for <@%d>", userID), nil
 		}
 		for _, v := range entitlements {
-			//if v.Type == discordgo.EntitlementTypeTestModePurchase {
 			err := common.BotSession.EntitlementTestDelete(common.BotApplication.ID, v.ID)
 			if err != nil {
 				return fmt.Sprintf("Failed deleting Entitlement for <@%d>: %s", userID, err), nil
 			}
-			//}
 		}
 		return fmt.Sprintf("Deleted Entitlement for <@%d>", userID), nil
 	}),

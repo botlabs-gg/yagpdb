@@ -8,4 +8,10 @@ host="localhost"
 user="yagpdb"
 pass="ihateducks"
 sslmode="disable"
-whitelist=["premium_slots", "premium_codes"]
+whitelist=["premium_slots", "premium_codes", "patreon_tiers", "discord_skus"]
+
+[aliases.tables.discord_skus]
+up_plural     = "DiscordSkus"
+up_singular   = "DiscordSku"
+down_plural   = "discordSkus"
+down_singular = "discordSku"

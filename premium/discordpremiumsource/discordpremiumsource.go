@@ -46,10 +46,6 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 var _ web.Plugin = (*Plugin)(nil)
 
 func (p *Plugin) InitWeb() {
-	if confDiscordPremiumSKUID.GetInt() == 0 {
-		logger.Warn("No discord premium SKU ID set, not starting poller")
-		return
-	}
 	ActiveDiscordPremiumPoller = InitPoller()
 	if ActiveDiscordPremiumPoller == nil {
 		logger.Warn("Failed initializing discord premium poller")
@@ -77,123 +73,99 @@ func RunPoller() {
 	}
 }
 
-func handleEntitlementCreate(evt *pubsub.Event) {
-	entitlement := evt.Data.(*discordgo.EntitlementCreate)
-	logger.Infof("EntitlementCreate Event Recieved for User %d and SKUID %d", entitlement.UserID, entitlement.SKUID)
-	if entitlement.SKUID != int64(confDiscordPremiumSKUID.GetInt()) {
-		logger.Errorf("EntitlementCreate recieved for unknown SKUID %d", entitlement.SKUID)
-		return
+// Recalculate slots for a user by fetching entitlements from Discord REST API
+func recalculateDiscordSlotsForUser(userID int64) error {
+	entitlements, err := common.BotSession.Entitlements(common.BotApplication.ID, &discordgo.EntitlementFilterOptions{
+		UserID:       userID,
+		ExcludeEnded: true,
+	})
+
+	if err != nil {
+		logger.WithError(err).Errorf("Failed to fetch entitlements for user %d from Discord", userID)
+		return err
 	}
-	ActiveDiscordPremiumPoller.activeEntitlements = append(ActiveDiscordPremiumPoller.activeEntitlements, entitlement.Entitlement)
+
+	totalEntitledSlots := 0
+	for _, e := range entitlements {
+		totalEntitledSlots += fetchSlotsForDiscordSku(e.SKUID)
+	}
+
 	ctx := context.Background()
 	tx, err := common.PQ.BeginTx(ctx, nil)
 	if err != nil {
 		logger.Error(errors.WithMessage(err, "BeginTX"))
-		tx.Rollback()
-		return
+		return err
 	}
-	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
+
+	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", userID)).All(ctx, tx)
 	if err != nil {
-		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementCreate"))
+		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for recalculateDiscordSlotsForUser"))
 		tx.Rollback()
-		return
+		return err
 	}
-	if len(slots) > 0 {
-		logger.Infof("User %d already has PremiumSlots", entitlement.UserID)
+
+	diff := totalEntitledSlots - len(slots)
+	if diff == 0 {
 		tx.Rollback()
-		return
+		return nil
 	}
-	_, err = premium.CreatePremiumSlot(ctx, tx, entitlement.UserID, premium.PremiumSourceTypeDiscord, "Discord Slot #1", "Slot is available as long as subscription is active on Discord", 1, -1, premium.PremiumTierPremium)
-	if err != nil {
-		logger.WithError(err).Error("Failed creating PremiumSlot for EntitlementCreate Event")
-		tx.Rollback()
-		return
+
+	if diff > 0 {
+		// Add slots
+		for i := range diff {
+			title := fmt.Sprintf("Discord Slot #%d", 1+i+len(slots))
+			slot, err := premium.CreatePremiumSlot(ctx, tx, userID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is active on Discord", int64(i+len(slots)), -1, premium.PremiumTierPremium)
+			if err != nil {
+				logger.WithError(err).Error("Failed creating PremiumSlot for recalculateDiscordSlotsForUser")
+				tx.Rollback()
+				return err
+			}
+			logger.Info("Created discord premium slot #", slot.ID, slot.UserID)
+		}
+		if diff > 0 {
+			go premium.SendPremiumDM(userID, premium.PremiumSourceTypeDiscord, diff)
+		}
+	} else if diff < 0 {
+		// Remove slots
+		slotsToRemove := make([]int64, 0)
+		for i := 0; i < -diff; i++ {
+			slot := slots[i]
+			slotsToRemove = append(slotsToRemove, slot.ID)
+			logger.Info("Marked discord slot for deletion #", slot.ID, slot.UserID)
+		}
+		err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
+		if err != nil {
+			logger.WithError(err).Error("Failed removing PremiumSlots for recalculateDiscordSlotsForUser")
+			tx.Rollback()
+			return err
+		}
 	}
+
 	err = tx.Commit()
-	go premium.SendPremiumDM(entitlement.UserID, premium.PremiumSourceTypeDiscord, 1)
 	if err != nil {
-		logger.WithError(err).Error("Failed committing transaction for EntitlementCreate Event")
+		logger.WithError(err).Error("Failed committing transaction for recalculateDiscordSlotsForUser")
+		return err
 	}
+	return nil
+}
+
+func handleEntitlementCreate(evt *pubsub.Event) {
+	entitlement := evt.Data.(*discordgo.EntitlementCreate)
+	logger.Infof("EntitlementCreate Event Recieved for User %d and SKUID %d", entitlement.UserID, entitlement.SKUID)
+	ActiveDiscordPremiumPoller.activeEntitlements = append(ActiveDiscordPremiumPoller.activeEntitlements, entitlement.Entitlement)
+	recalculateDiscordSlotsForUser(entitlement.UserID)
 }
 
 func handleEntitlementDelete(evt *pubsub.Event) {
 	entitlement := evt.Data.(*discordgo.EntitlementDelete)
 	logger.Infof("EntitlementDelete Event Recieved for User %d and SKUID %d", entitlement.UserID, entitlement.SKUID)
-	if entitlement.SKUID != int64(confDiscordPremiumSKUID.GetInt()) {
-		logger.Errorf("EntitlementDelete recieved for unknown SKUID %d", entitlement.SKUID)
-		return
-	}
-	ctx := context.Background()
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "BeginTX"))
-		tx.Rollback()
-		return
-	}
-	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementDelete"))
-		tx.Rollback()
-		return
-	}
-	if len(slots) == 0 {
-		logger.Infof("User %d has no PremiumSlots", entitlement.UserID)
-		tx.Rollback()
-		return
-	}
-
-	err = premium.RemovePremiumSlots(ctx, tx, entitlement.UserID, []int64{slots[0].ID})
-	if err != nil {
-		logger.WithError(err).Error("Failed Removing PremiumSlot for EntitlementDelete Event")
-		tx.Rollback()
-		return
-	}
-	err = tx.Commit()
-	if err != nil {
-		logger.WithError(err).Error("Failed committing transaction for EntitlementDelete Event")
-	}
+	recalculateDiscordSlotsForUser(entitlement.UserID)
 }
 
 func handleEntitlementUpdate(evt *pubsub.Event) {
 	entitlement := evt.Data.(*discordgo.EntitlementUpdate)
 	logger.Infof("EntitlementUpdate Event Recieved for User %d and SKUID %d", entitlement.UserID, entitlement.SKUID)
-	if entitlement.SKUID != int64(confDiscordPremiumSKUID.GetInt()) {
-		logger.Errorf("EntitlementUpdate recieved for unknown SKUID %d", entitlement.SKUID)
-		return
-	}
-	ctx := context.Background()
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "BeginTX"))
-		tx.Rollback()
-		return
-	}
-	if entitlement.EndsAt != nil && entitlement.EndsAt.Before(time.Now()) {
-		tx.Rollback()
-		return
-	}
-	slots, err := models.PremiumSlots(qm.Where("source=?", string(premium.PremiumSourceTypeDiscord)), qm.Where("user_id = ?", entitlement.UserID)).All(ctx, tx)
-	if err != nil {
-		logger.Error(errors.WithMessage(err, "Failed fetching PremiumSlots for EntitlementUpdate"))
-		tx.Rollback()
-		return
-	}
-	if len(slots) == 0 {
-		logger.Infof("User %d has no PremiumSlots", entitlement.UserID)
-		tx.Rollback()
-		return
-	}
-
-	err = premium.RemovePremiumSlots(ctx, tx, entitlement.UserID, []int64{slots[0].ID})
-	if err != nil {
-		logger.WithError(err).Error("Failed Removing PremiumSlot for EntitlementUpdate Event")
-		tx.Rollback()
-		return
-	}
-	err = tx.Commit()
-	if err != nil {
-		logger.WithError(err).Error("Failed committing transaction for EntitlementUpdate Event")
-	}
+	recalculateDiscordSlotsForUser(entitlement.UserID)
 }
 
 func UpdatePremiumSlots(ctx context.Context) error {
@@ -215,70 +187,25 @@ func UpdatePremiumSlots(ctx context.Context) error {
 	}
 
 	// Sort the slots into a map of users -> slots
-	sorted := make(map[int64][]*models.PremiumSlot)
+	existingUserSlots := make(map[int64][]*models.PremiumSlot)
 	for _, slot := range slots {
-		sorted[slot.UserID] = append(sorted[slot.UserID], slot)
+		existingUserSlots[slot.UserID] = append(existingUserSlots[slot.UserID], slot)
 	}
 
-	// Update already tracked slots
-	for userID, userSlots := range sorted {
-		slotsForPledge := 0
-		for _, entitlement := range entitlements {
-			if entitlement.UserID == userID {
-				//TODO: Add Support for multiple slots via discord
-				slotsForPledge = 1
-				break
-			}
-		}
-
-		if slotsForPledge == len(userSlots) {
-			// Correct number of slots already set up
-			continue
-		}
-
-		if slotsForPledge > len(userSlots) {
-			totalSlots := slotsForPledge - len(userSlots)
-			// Need to create more slots
-			for i := 0; i < totalSlots; i++ {
-				title := fmt.Sprintf("Discord Slot #%d", 1+i+len(userSlots))
-				slot, err := premium.CreatePremiumSlot(ctx, tx, userID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is Active on Discord", int64(i+len(userSlots)), -1, premium.PremiumTierPremium)
-				if err != nil {
-					tx.Rollback()
-					return errors.WithMessage(err, "CreatePremiumSlot")
-				}
-				logger.Info("Created discord premium slot #", slot.ID, slot.UserID)
-			}
-			if totalSlots > 0 {
-				go premium.SendPremiumDM(userID, premium.PremiumSourceTypeDiscord, totalSlots)
-			}
-		} else if slotsForPledge < len(userSlots) {
-			// Need to remove slots
-			slotsToRemove := make([]int64, 0)
-			for i := 0; i < len(userSlots)-slotsForPledge; i++ {
-				slot := userSlots[i]
-				slotsToRemove = append(slotsToRemove, slot.ID)
-				logger.Info("Marked discord slot for deletion #", slot.ID, slot.UserID)
-			}
-			err = premium.RemovePremiumSlots(ctx, tx, userID, slotsToRemove)
-			if err != nil {
-				tx.Rollback()
-				return errors.WithMessage(err, "RemovePremiumSlots")
-			}
-		}
+	// recalculate slots for each user
+	for userID := range existingUserSlots {
+		recalculateDiscordSlotsForUser(userID)
 	}
 
 	// Add completely new premium slots
-OUTER:
 	for _, v := range entitlements {
-		for userID := range sorted {
-			if userID == v.UserID {
-				continue OUTER
-			}
+		if _, ok := existingUserSlots[v.UserID]; ok {
+			continue
 		}
 
 		// If we got here then that means this is a new user
-		slots := 1
-		for i := 0; i < slots; i++ {
+		slots := fetchSlotsForDiscordSku(v.SKUID)
+		for i := range slots {
 			title := fmt.Sprintf("Discord Premium Slot #%d", i+1)
 			slot, err := premium.CreatePremiumSlot(ctx, tx, v.UserID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is active on Discord", int64(i+1), -1, premium.PremiumTierPremium)
 			if err != nil {
@@ -293,4 +220,13 @@ OUTER:
 	}
 	err = tx.Commit()
 	return errors.WithMessage(err, "Commit")
+}
+
+func fetchSlotsForDiscordSku(skuID int64) int {
+	sku, err := models.DiscordSkus(models.DiscordSkuWhere.SkuID.EQ(skuID)).OneG(context.Background())
+	if err != nil {
+		logger.WithError(err).Errorf("Failed to fetch discord skus for sku_id: %d", skuID)
+		return 0
+	}
+	return sku.Slots
 }
