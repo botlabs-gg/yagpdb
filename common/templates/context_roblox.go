@@ -5,10 +5,6 @@ import (
 )
 
 func (c *Context) tmplGetRobloxUserByID(target interface{}) (interface{}, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return nil, ErrTooManyAPICalls
-	}
-
 	user, err := roblox.RobloxClient.GetUserByID(ToString(target))
 	if err != nil {
 		return user, nil
@@ -18,10 +14,6 @@ func (c *Context) tmplGetRobloxUserByID(target interface{}) (interface{}, error)
 }
 
 func (c *Context) tmplGetRobloxUserByUsername(target interface{}) (interface{}, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return nil, ErrTooManyAPICalls
-	}
-
 	user, err := roblox.RobloxClient.GetUserByUsername(ToString(target))
 	if err != nil {
 		return nil, err
@@ -31,9 +23,10 @@ func (c *Context) tmplGetRobloxUserByUsername(target interface{}) (interface{}, 
 }
 
 func (c *Context) tmplGetRobloxGroupByID(target interface{}) (interface{}, error) {
-	if c.IncreaseCheckGenericAPICall() {
-		return nil, ErrTooManyAPICalls
-	}
+	group, _ := roblox.RobloxClient.GetGroupByID(ToString(target))
+
+	return group, nil // Don't return err, a nil output should indicate unknown/invalid group
+}
 
 	group, err := roblox.RobloxClient.GetGroupByID(ToString(target))
 	if err != nil {
