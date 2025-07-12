@@ -797,6 +797,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getRobloxUserByID", c.tmplGetRobloxUserByID)
 	c.addContextFunc("getRobloxUserByUsername", c.tmplGetRobloxUserByUsername)
 	c.addContextFunc("getRobloxGroupByID", c.tmplGetRobloxGroupByID)
+	c.addContextFunc("updateMemberRole", c.tmplUpdateMemberRole)
 
 	// Miscellaneous functions
 	c.addContextFunc("onlineCount", c.tmplOnlineCount)

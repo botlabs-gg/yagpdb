@@ -28,10 +28,13 @@ func (c *Context) tmplGetRobloxGroupByID(target interface{}) (interface{}, error
 	return group, nil // Don't return err, a nil output should indicate unknown/invalid group
 }
 
-	group, err := roblox.RobloxClient.GetGroupByID(ToString(target))
+func (c *Context) tmplUpdateGroupRole(group interface{}, target interface{}, role interface{}) (interface{}, error) {
+	robloxGroup, err := roblox.RobloxClient.GetGroupByID(ToString(group))
 	if err != nil {
-		return group, nil
+		return nil, err
 	}
 
-	return group, err
+	groupRole, _ := robloxGroup.UpdateUserRole(ToString(target), ToString(role))
+
+	return groupRole, nil // Don't return err, a nil output should indicate unknown/invalid group
 }
