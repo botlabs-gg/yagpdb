@@ -102,7 +102,7 @@ require (
 require (
 	github.com/AlekSi/pointer v1.2.0
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/RhykerWells/robloxgo v1.0.0-rc.2
+	github.com/RhykerWells/robloxgo v1.0.0-rc.3
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
