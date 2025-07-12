@@ -793,6 +793,11 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("reReplace", c.reReplace)
 	c.addContextFunc("reSplit", c.reSplit)
 
+	// Roblox functions
+	c.addContextFunc("getRobloxUserByID", c.tmplGetRobloxUserByID)
+	c.addContextFunc("getRobloxUserByUsername", c.tmplGetRobloxUserByUsername)
+	c.addContextFunc("getRobloxGroupByID", c.tmplGetRobloxGroupByID)
+
 	// Miscellaneous functions
 	c.addContextFunc("onlineCount", c.tmplOnlineCount)
 	c.addContextFunc("onlineCountBots", c.tmplOnlineCountBots)
