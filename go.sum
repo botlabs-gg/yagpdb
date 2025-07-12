@@ -35,6 +35,8 @@ github.com/RhykerWells/robloxgo v0.4.0 h1:n5AFAE2HLIAtW6faZJ9YwjC4vFWjF7qvb7cQgL
 github.com/RhykerWells/robloxgo v0.4.0/go.mod h1:uC7/jaBT1llPFiZ3qOpbJ7MZjR+6OxAjnkQS8F72KsU=
 github.com/RhykerWells/robloxgo v1.0.0-rc.1 h1:AK9lNEc22drQooNeOjLZF+nJ+xDAf+BPUOBG77O6yAI=
 github.com/RhykerWells/robloxgo v1.0.0-rc.1/go.mod h1:uC7/jaBT1llPFiZ3qOpbJ7MZjR+6OxAjnkQS8F72KsU=
+github.com/RhykerWells/robloxgo v1.0.0-rc.2 h1:1pB4Lo/bd5FBiz0nfOJvm/U6m6PBm/NY7pYsx9h6rbQ=
+github.com/RhykerWells/robloxgo v1.0.0-rc.2/go.mod h1:uC7/jaBT1llPFiZ3qOpbJ7MZjR+6OxAjnkQS8F72KsU=
 github.com/aarondl/inflect v0.0.2 h1:XvH8K5g1wKS921tMmDOUsZ3zS1Eo8WwK5RHC0IGGT2s=
 github.com/aarondl/inflect v0.0.2/go.mod h1:zjmCfdXHUDQ9jFOV6SeHknpo0Au6rQhV8GchS4Vzv/0=
 github.com/aarondl/null/v8 v8.1.3 h1:ZJcvvj34BkXAguqU7xzDqEmzG86cSBgM8HYxcqeK0+8=
