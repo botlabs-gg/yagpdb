@@ -28,7 +28,7 @@ func (c *Context) tmplGetRobloxGroupByID(target interface{}) (interface{}, error
 	return group, nil // Don't return err, a nil output should indicate unknown/invalid group
 }
 
-func (c *Context) tmplUpdateGroupRole(group interface{}, target interface{}, role interface{}) (interface{}, error) {
+func (c *Context) tmplUpdateMemberRole(group interface{}, target interface{}, role interface{}) (interface{}, error) {
 	robloxGroup, err := roblox.RobloxClient.GetGroupByID(ToString(group))
 	if err != nil {
 		return nil, err
