@@ -99,7 +99,6 @@ var Adjectives = []string{
 	"agrarian",
 	"agreeable",
 	"aimless",
-	"airline",
 	"airsick",
 	"airy",
 	"ajar",
