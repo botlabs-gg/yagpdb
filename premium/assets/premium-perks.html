@@ -1,64 +1,33 @@
 {{define "premium_perks"}}
 {{template "cp_head" .}}
 
-<div class="page-header">
-    <h2>Premium Perks</h2>
+<div class="page-header mb-4">
+     <h2 class="display-4 font-weight-bold mb-0"><i class="fas fa-crown text-warning mr-2"></i>YAGPDB Premium</h2>
 </div>
 
 {{template "cp_alerts" .}}
 
 <div class="row">
     <div class="col-lg-12">
-        <section class="card">
-            <header class="card-header">
-                <h2 class="card-title">Information about YAGPDB Premium</h2>
-            </header>
+        <section class="card shadow-sm mb-4">
             <div class="card-body">
-                <p>Premium helps covers server cost and supports the development of the bot</p>
-                <p>Here you can find the features that premium subscription provides.</p>
-                <h3 class="mb-2">
-                    How to get premium?
-                </h3>
-                <div id="premium-how-to-get">
-                    <section class="card">
-                        <div class="card-body">
-                            <ul>
-                                <li>Purchase it from our <a href="https://discord.com/application-directory/{{.ClientID}}/store">Discord Store</a></li>
-                            </ul>
-                            <ul>
-                                <li>Make a pledge on our <a href="https://patreon.com/yagpdb">Patreon</a>. Tiers $3 and above
-                                    will grant you premium slots. It can take up to 10 minutes from you making a pledge to it
-                                    being processed on our side. (If you do not see your premium slots after that time, please contact us through the support server.)</li>
-                            </ul>
-                            <span>To manage and assign your premium slots to a server, please <a href="https://{{.Host}}/premium"> go to the premium page </a> </span>
-                            <br>
-                            <span>Note: Premium slots are not transferable between Patreon and Discord Store.</span>
-                        </div>
-                    </section>
-                </div><br>
-                <h3>
-                    Full list of premium benefits
-                </h3>
+                <h3 class="h5 font-weight-bold mb-3">Premium Features</h3>
                 <div id="premium-full-benefits">
-                    <section class="card">
+                    <section class="card bg-light border-0 mb-3">
                         <div class="card-body">
-                            <b>General goodies</b>
-                            <ul>
-                                <li>Trigger CCs on Message Edit </li>
-                                <li>Retroactive AutoRole Scan and Assignment </li>
-                                <li>Access to priority support channels on our support server ($5 and above subscription only)</li>
+                            <b class="font-weight-bold">General goodies</b>
+                            <ul class="mb-3">
+                                <li>Trigger CCs on Message Edit</li>
+                                <li>Retroactive AutoRole Scan and Assignment</li>
                             </ul>
-
-                            <b>Extended limits:</b>
+                            <b class="font-weight-bold">Extended limits:</b>
                             <ul>
-                                <li>Message cache duration increased from 1 hour to 12 hours, which means you will be
-                                    able to see the removed messages in the logs if the message was sent in the previous
-                                    12 hours</li>
-                                <li>Max custom commands increased from 100 to 250</li>
-                                <li>Max Reddit feeds increased from 20 to 1000</li>
-                                <li>Max Youtube feeds increased from 10 to 250</li>
-                                <li>Max Soundboard sounds increased from 50 to 250</li>
-                                <li>Custom Command Length increased to 20000 characters from 10000</li>
+                                <li>Message cache duration increased from <b>1 hour</b> to <b>12 hours</b>, which means you will be able to see the removed messages in the logs if the message was sent in the previous 12 hours</li>
+                                <li>Max custom commands increased from <b>100</b> to <b>250</b></li>
+                                <li>Max Reddit feeds increased from <b>20</b> to <b>1000</b></li>
+                                <li>Max Youtube feeds increased from <b>10</b> to <b>250</b></li>
+                                <li>Max Soundboard sounds increased from <b>50</b> to <b>250</b></li>
+                                <li>Custom Command Length increased to <b>20,000</b> characters from <b>10,000</b></li>
                                 <li>Increased database storage and interaction limits.</li>
                                 <li>Various custom command function limits increased</li>
                                 <li>Advanced Automod limits increased</li>
@@ -66,13 +35,24 @@
                         </div>
                     </section>
                 </div>
+                <h3 class="h5 font-weight-bold mb-3">How to get premium?</h3>
+                <div id="premium-how-to-get">
+                    <section class="card bg-light border-0 mb-3">
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <a href="https://discord.com/application-directory/{{.ClientID}}/store" target="_blank" class="btn btn-primary btn-lg font-weight-bold mr-2 mb-2"><i class="fab fa-discord mr-1"></i> Buy on Discord</a>
+                                <a href="https://patreon.com/yagpdb/membership" target="_blank" class="btn btn-danger ignore-prompt btn-lg font-weight-bold mb-2"><i class="fab fa-patreon mr-1"></i> Buy on Patreon</a>
+                            </div>
+                            <span class="text-muted">Manage your subscription: <a href="https://{{.Host}}/premium" class="font-weight-bold">Manage Premium</a></span>
+                            <br>
+                            <span class="text-muted">Note: Premium slots are not transferable between Patreon and Discord Purchases</span>
+                        </div>
+                    </section>
+                </div>
             </div>
         </section>
-        <!-- /.panel -->
     </div>
-    <!-- /.col-lg-12 -->
 </div>
-
 
 {{template "cp_footer" .}}
 

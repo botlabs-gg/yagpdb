@@ -3,8 +3,8 @@ package patreon
 var ActivePoller *Poller
 
 type Patron struct {
-	Name        string
-	Avatar      string
-	AmountCents int
-	DiscordID   int64
+	Name      string
+	Avatar    string
+	DiscordID int64
+	Tiers     []int64
 }

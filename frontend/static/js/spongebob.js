@@ -522,6 +522,9 @@ function formSubmissionEvents() {
 		if (!target.attr("formaction")) return;
 
 		if (target.hasClass("btn-danger") || target.attr("data-open-confirm") || target.hasClass("delete-button")) {
+      if (target.hasClass("ignore-prompt")) {
+        return;
+      }
 			var title = target.attr("title");
 			if (title !== undefined) {
 				if (!confirm("Deleting " + title + ". Are you sure you want to do this?")) {
@@ -529,7 +532,7 @@ function formSubmissionEvents() {
 					event.stopImmediatePropagation();
 					return;
 				}
-			} else {
+			} else{
 				if (!confirm("Are you sure you want to do this?")) {
 					event.preventDefault(true);
 					event.stopImmediatePropagation();
