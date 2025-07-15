@@ -58,7 +58,7 @@ var CmdActivateTestEntitlement = &commands.YAGCommand{
 	},
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		userID := data.Args[0].Int64()
-		skuID := data.Args[0].Int64()
+		skuID := data.Args[1].Int64()
 		slots := fetchSlotsForDiscordSku(int64(skuID))
 		if slots == 0 {
 			return fmt.Sprintf("No Slots configured for skuID %d", skuID), nil
@@ -91,15 +91,16 @@ var CmdDeleteTestEntitlement = &commands.YAGCommand{
 	},
 	RunFunc: util.RequireOwner(func(data *dcmd.Data) (interface{}, error) {
 		userID := data.Args[0].Int64()
-		skuID := data.Args[0].Int64()
-		entitlements, err := common.BotSession.Entitlements(common.BotApplication.ID, &discordgo.EntitlementFilterOptions{
-			UserID:       userID,
-			ExcludeEnded: true,
-		})
+		skuID := data.Args[1].Int64()
 		slots := fetchSlotsForDiscordSku(int64(skuID))
 		if slots == 0 {
 			return fmt.Sprintf("No Slots configured for skuID %d", skuID), nil
 		}
+		entitlements, err := common.BotSession.Entitlements(common.BotApplication.ID, &discordgo.EntitlementFilterOptions{
+			UserID:       userID,
+			SkuIDs:       []int64{skuID},
+			ExcludeEnded: true,
+		})
 		if err != nil {
 			return fmt.Sprintf("Failed fetching Entitlements for <@%d>: %s", userID, err), nil
 		}

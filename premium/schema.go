@@ -43,9 +43,9 @@ CREATE TABLE IF NOT EXISTS premium_codes (
 `, `
 CREATE INDEX IF NOT EXISTS premium_codes_code_idx ON premium_codes(code);
 `, `
-CREATE TABLE discord_skus ( sku_id BIGINT PRIMARY KEY, slots INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS discord_skus ( sku_id BIGINT PRIMARY KEY, slots INTEGER NOT NULL);
 `,
 	`
-CREATE TABLE patreon_tiers ( tier_id BIGINT PRIMARY KEY, slots INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS patreon_tiers ( tier_id BIGINT PRIMARY KEY, slots INTEGER NOT NULL);
 `,
 }
