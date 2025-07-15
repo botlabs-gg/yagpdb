@@ -200,6 +200,7 @@ func (p *Poller) Poll() {
 				patron.Tiers = append(patron.Tiers, int64(id))
 			}
 
+			patron.AmountCents = int64(memberData.Attributes.CurrentEntitledAmountCents)
 			if user.Vanity != "" {
 				patron.Name = user.Vanity
 			} else {
