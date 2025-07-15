@@ -116,21 +116,21 @@ func EmitEvent(data *EventData, evt Event) {
 		}
 	}
 
-	if messageUpdate, ok := data.EvtInterface.(*discordgo.MessageUpdate); ok {
+	if mu, ok := data.EvtInterface.(*discordgo.MessageUpdate); ok {
 
-		if messageUpdate.EditedTimestamp == "" {
-			logrus.Warnf("Skipped event as message update wasn't really an edit: %v, %#v", data.Type, messageUpdate)
+		if mu.EditedTimestamp == "" {
+			logrus.Warnf("Skipped event as message update wasn't really an edit: guild_id: %d, channel_id: %d, message_id: %d, editedAt: %s", mu.GuildID, mu.ChannelID, mu.ID, mu.EditedTimestamp)
 			return
 		}
 
-		editedTime, err := messageUpdate.EditedTimestamp.Parse()
+		editedTime, err := mu.EditedTimestamp.Parse()
 		if err != nil {
-			logrus.WithError(err).Errorf("Failed to parse edited timestamp %v, %#v", data.Type, messageUpdate)
+			logrus.WithError(err).Errorf("Failed to parse edited timestamp guild_id: %d, channel_id: %d, message_id: %d, editedAt: %s", mu.GuildID, mu.ChannelID, mu.ID, mu.EditedTimestamp)
 		}
 
 		// Check if the message was edited more than a minute ago
 		if time.Since(editedTime) > time.Minute {
-			logrus.Warnf("Stale Edits! %v, %#v", data.Type, messageUpdate)
+			logrus.Warnf("Stale Edited Message! guild_id: %d, channel_id: %d, message_id: %d, editedAt: %s", mu.GuildID, mu.ChannelID, mu.ID, mu.EditedTimestamp)
 			return
 		}
 	}
