@@ -172,7 +172,11 @@ func Run() {
 
 	blogChannel := confAnnouncementsChannel.GetInt()
 	if blogChannel != 0 {
-		go discordblog.RunPoller(common.BotSession, int64(blogChannel), time.Minute)
+		go func() {
+			// Wait for bot session to be ready
+			common.WaitForDiscordReady()
+			discordblog.RunPoller(common.BotSession, int64(blogChannel), time.Minute)
+		}()
 	}
 
 	loadAd()

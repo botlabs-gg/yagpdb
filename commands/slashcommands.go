@@ -46,10 +46,28 @@ func RegisterSlashCommandsContainer(container *dcmd.Container, defaultPermission
 }
 
 func (p *Plugin) startSlashCommandsUpdater() {
-	p.updateGlobalCommands()
+	// Wait for bot session and application to be ready
+	go func() {
+		common.WaitForDiscordReady()
+		p.updateGlobalCommands()
+	}()
 }
 
 func (p *Plugin) updateGlobalCommands() {
+	logger.Info("Starting updateGlobalCommands")
+
+	if common.BotSession == nil {
+		logger.Error("BotSession is nil, cannot update slash commands")
+		return
+	}
+
+	if common.BotApplication.ID == 0 {
+		logger.Error("BotApplication.ID is 0, cannot update slash commands")
+		return
+	}
+
+	logger.Info("BotSession and BotApplication are ready, proceeding with slash command update")
+
 	result := make([]*discordgo.CreateApplicationCommandRequest, 0)
 
 	for _, v := range CommandSystem.Root.Commands {
@@ -115,6 +133,8 @@ OUTER:
 	if err != nil {
 		logger.WithError(err).Error("failed setting current slash commands in redis")
 	}
+
+	logger.Info("Slash commands successfully updated and saved")
 }
 
 func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *discordgo.CreateApplicationCommandRequest {

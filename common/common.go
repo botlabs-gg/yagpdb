@@ -315,3 +315,13 @@ func SetShutdownFunc(f func()) {
 	shutdownFunc = f
 	shutdownMU.Unlock()
 }
+
+// WaitForDiscordReady waits for BotSession and BotApplication to be initialized
+func WaitForDiscordReady() {
+	for {
+		if BotSession != nil && BotApplication != nil && BotApplication.ID != 0 {
+			return
+		}
+		time.Sleep(time.Second)
+	}
+}
