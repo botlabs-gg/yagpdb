@@ -68,6 +68,19 @@ func (p *Plugin) updateGlobalCommands() {
 
 	logger.Info("BotSession and BotApplication are ready, proceeding with slash command update")
 
+	// Check if bot has the necessary permissions
+	if common.BotApplication.Flags&discordgo.ApplicationFlagGatewayGuildMembers == 0 {
+		logger.Warn("Bot application does not have Guild Members intent enabled")
+	}
+	if common.BotApplication.Flags&discordgo.ApplicationFlagGatewayPresence == 0 {
+		logger.Warn("Bot application does not have Presence intent enabled")
+	}
+	if common.BotApplication.Flags&discordgo.ApplicationFlagGatewayMessageContent == 0 {
+		logger.Warn("Bot application does not have Message Content intent enabled")
+	}
+
+	logger.Infof("Bot application name: %s, ID: %d", common.BotApplication.Name, common.BotApplication.ID)
+
 	result := make([]*discordgo.CreateApplicationCommandRequest, 0)
 
 	for _, v := range CommandSystem.Root.Commands {
@@ -99,12 +112,54 @@ func (p *Plugin) updateGlobalCommands() {
 
 	logger.Info("Slash commands changed, updating....")
 
-	ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
-	// ret, err := common.BotSession.BulkOverwriteGuildApplicationCommands(common.BotApplication.ID, 614909558585819162, result)
+	// Debug: Show first few commands being sent
+	logger.Infof("Sending %d commands to Discord:", len(result))
+	for i, cmd := range result {
+		if i < 5 { // Show first 5 commands
+			logger.Infof("  Command %d: %s (%s)", i+1, cmd.Name, cmd.Description)
+		}
+	}
+	if len(result) > 5 {
+		logger.Infof("  ... and %d more commands", len(result)-5)
+	}
+
+	logger.Infof("Calling BulkOverwriteGlobalApplicationCommands with %d commands for application ID %d", len(result), common.BotApplication.ID)
+
+	// Add timeout context to prevent hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Create a channel to handle the API call
+	type apiResult struct {
+		commands []*discordgo.ApplicationCommand
+		err      error
+	}
+
+	resultChan := make(chan apiResult, 1)
+
+	go func() {
+		ret, err := common.BotSession.BulkOverwriteGlobalApplicationCommands(common.BotApplication.ID, result)
+		resultChan <- apiResult{ret, err}
+	}()
+
+	var ret []*discordgo.ApplicationCommand
+	var err error
+
+	select {
+	case res := <-resultChan:
+		ret = res.commands
+		err = res.err
+	case <-ctx.Done():
+		logger.Error("Discord API call timed out after 30 seconds")
+		return
+	}
+
 	if err != nil {
 		logger.WithError(err).Error("failed updating global slash commands")
 		return
 	}
+
+	logger.Infof("Successfully called Discord API, received %d commands back", len(ret))
 
 	// assign the id's
 OUTER:
