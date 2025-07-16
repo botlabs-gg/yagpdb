@@ -68,17 +68,6 @@ func (p *Plugin) updateGlobalCommands() {
 
 	logger.Info("BotSession and BotApplication are ready, proceeding with slash command update")
 
-	// Check if bot has the necessary permissions
-	if common.BotApplication.Flags&discordgo.ApplicationFlagGatewayGuildMembers == 0 {
-		logger.Warn("Bot application does not have Guild Members intent enabled")
-	}
-	if common.BotApplication.Flags&discordgo.ApplicationFlagGatewayPresence == 0 {
-		logger.Warn("Bot application does not have Presence intent enabled")
-	}
-	if common.BotApplication.Flags&discordgo.ApplicationFlagGatewayMessageContent == 0 {
-		logger.Warn("Bot application does not have Message Content intent enabled")
-	}
-
 	logger.Infof("Bot application name: %s, ID: %d", common.BotApplication.Name, common.BotApplication.ID)
 
 	result := make([]*discordgo.CreateApplicationCommandRequest, 0)
@@ -143,19 +132,19 @@ func (p *Plugin) updateGlobalCommands() {
 	}()
 
 	var ret []*discordgo.ApplicationCommand
-	var err error
+	var apiErr error
 
 	select {
 	case res := <-resultChan:
 		ret = res.commands
-		err = res.err
+		apiErr = res.err
 	case <-ctx.Done():
 		logger.Error("Discord API call timed out after 30 seconds")
 		return
 	}
 
-	if err != nil {
-		logger.WithError(err).Error("failed updating global slash commands")
+	if apiErr != nil {
+		logger.WithError(apiErr).Error("failed updating global slash commands")
 		return
 	}
 
