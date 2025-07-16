@@ -155,6 +155,8 @@ func Run() {
 
 	if flagRunBot || flagRunEverything {
 		botrest.RegisterPlugin()
+		// Start API server before registering bot service
+		common.RunCommonRunPlugins()
 		bot.Run(flagNodeID)
 	}
 
@@ -172,7 +174,10 @@ func Run() {
 
 	go pubsub.PollEvents()
 
-	common.RunCommonRunPlugins()
+	// Run common plugins for non-bot components
+	if !flagRunBot && !flagRunEverything {
+		common.RunCommonRunPlugins()
+	}
 
 	common.SetShutdownFunc(shutdown)
 	listenSignal()
