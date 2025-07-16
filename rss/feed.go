@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"html"
+	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
@@ -191,11 +192,11 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 			sanitizer := bluemonday.StrictPolicy()
 			// Sanitize and decode title and description
 			title := sanitizer.Sanitize(item.Title)
-			if title == "" {
-				title = "(no title)"
-			}
 			title, _ = url.QueryUnescape(title)
 			title = html.UnescapeString(title)
+			if strings.TrimSpace(title) == "" {
+				title = "(no title)"
+			}
 
 			desc := sanitizer.Sanitize(item.Description)
 			if len(desc) > 300 {
