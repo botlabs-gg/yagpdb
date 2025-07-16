@@ -1,0 +1,15 @@
+add-global-variants = true
+no-hooks = true
+no-tests = true
+
+[psql]
+dbname = "yagpdb"
+host = "localhost"
+user="yagpdb"
+pass="ihateducks"
+sslmode = "disable"
+whitelist = ["rss_feed_subscriptions"]
+
+[auto-columns]
+created = "created_at"
+updated = "updated_at"

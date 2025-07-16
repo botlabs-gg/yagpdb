@@ -35,6 +35,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/reminders"
 	"github.com/botlabs-gg/yagpdb/v2/reputation"
 	"github.com/botlabs-gg/yagpdb/v2/rolecommands"
+	"github.com/botlabs-gg/yagpdb/v2/rss"
 	"github.com/botlabs-gg/yagpdb/v2/rsvp"
 	"github.com/botlabs-gg/yagpdb/v2/safebrowsing"
 	"github.com/botlabs-gg/yagpdb/v2/serverstats"
@@ -94,6 +95,7 @@ func main() {
 	prom.RegisterPlugin()
 	featureflags.RegisterPlugin()
 	trivia.RegisterPlugin()
+	rss.RegisterPlugin()
 
 	// Register confusables replacer
 	confusables.Init()

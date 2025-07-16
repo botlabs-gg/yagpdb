@@ -97,12 +97,29 @@ func maybeDisableFeed(source PluginWithSourceDisabler, elem *QueuedElement, err 
 }
 
 func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
-	if elem.MessageStr == "" && elem.MessageEmbed == nil {
-		l.Error("Both MessageEmbed and MessageStr empty")
+	send := func(msg *discordgo.MessageSend) error {
+		m, err := common.BotSession.ChannelMessageSendComplex(elem.ChannelID, msg)
+		if err != nil {
+			logrus.WithError(err).Errorf("Failed sending mqueue message %#v", msg)
+			return err
+		}
+
+		if elem.PublishAnnouncement {
+			_, err = common.BotSession.ChannelMessageCrosspost(elem.ChannelID, m.ID)
+		}
+		return err
+	}
+
+	if elem.MessageStr == "" && elem.MessageEmbed == nil && elem.MessageSend == nil {
+		l.Error("Empty Send Item received, skipping.")
 		return
 	}
 
-	var msg = &discordgo.MessageSend{}
+	if elem.MessageSend != nil {
+		return send(elem.MessageSend)
+	}
+
+	msg := &discordgo.MessageSend{}
 	if elem.MessageStr != "" {
 		msg.Content = elem.MessageStr
 		msg.AllowedMentions = elem.AllowedMentions
@@ -110,51 +127,69 @@ func trySendNormal(l *logrus.Entry, elem *QueuedElement) (err error) {
 	if elem.MessageEmbed != nil {
 		msg.Embeds = []*discordgo.MessageEmbed{elem.MessageEmbed}
 	}
-	m, err := common.BotSession.ChannelMessageSendComplex(elem.ChannelID, msg)
-	if err != nil {
-		logrus.WithError(err).Error("Failed sending mqueue message")
-		return
-	}
 
-	if elem.PublishAnnouncement {
-		_, err = common.BotSession.ChannelMessageCrosspost(elem.ChannelID, m.ID)
-	}
-	return
+	return send(msg)
 }
 
 var errGuildNotFound = errors.New("Guild not found")
 
 func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
+	// Helper to fetch or create the webhook
+	getWebhook := func() (*webhook, string, error) {
+		avatar := ""
+		if source, ok := sources[elem.Source]; ok {
+			if avatarProvider, ok := source.(PluginWithWebhookAvatar); ok {
+				avatar = avatarProvider.WebhookAvatar()
+			}
+		}
+		gs := bot.State.GetGuild(elem.GuildID)
+		if gs == nil {
+			if onGuild, err := common.BotIsOnGuild(elem.GuildID); err == nil && !onGuild {
+				return nil, "", errGuildNotFound
+			} else if err != nil {
+				return nil, "", err
+			}
+		}
+		whI, err := webhookCache.GetCustomFetch(elem.ChannelID, func(key interface{}) (interface{}, error) {
+			return findCreateWebhook(elem.GuildID, elem.ChannelID, elem.Source, avatar)
+		})
+		if err != nil {
+			return nil, "", err
+		}
+		return whI.(*webhook), avatar, nil
+	}
+
+	if elem.MessageSend != nil {
+		wh, avatar, err := getWebhook()
+		if err != nil {
+			return err
+		}
+		params := &discordgo.WebhookParams{
+			Content:         elem.MessageSend.Content,
+			Username:        elem.WebhookUsername,
+			AvatarURL:       avatar,
+			Embeds:          elem.MessageSend.Embeds,
+			Components:      elem.MessageSend.Components,
+			Flags:           int64(elem.MessageSend.Flags),
+			AllowedMentions: &elem.MessageSend.AllowedMentions,
+		}
+		_, err = webhookSession.WebhookExecuteComplex(wh.ID, wh.Token, true, params)
+		if err != nil {
+			logrus.WithError(err).Error("Failed sending mqueue v2 message via webhook (WebhookExecuteComplex)")
+			return err
+		}
+		return nil
+	}
+
 	if elem.MessageStr == "" && elem.MessageEmbed == nil {
 		l.Error("Both MessageEmbed and MessageStr empty")
 		return
 	}
 
-	// find the avatar, this is slightly expensive, do i need to rethink this?
-	avatar := ""
-	if source, ok := sources[elem.Source]; ok {
-		if avatarProvider, ok := source.(PluginWithWebhookAvatar); ok {
-			avatar = avatarProvider.WebhookAvatar()
-		}
-	}
-
-	gs := bot.State.GetGuild(elem.GuildID)
-	if gs == nil {
-		// another check just in case
-		if onGuild, err := common.BotIsOnGuild(elem.GuildID); err == nil && !onGuild {
-			return errGuildNotFound
-		} else if err != nil {
-			return err
-		}
-	}
-
-	whI, err := webhookCache.GetCustomFetch(elem.ChannelID, func(key interface{}) (interface{}, error) {
-		return findCreateWebhook(elem.GuildID, elem.ChannelID, elem.Source, avatar)
-	})
+	wh, _, err := getWebhook()
 	if err != nil {
 		return err
 	}
-	wh := whI.(*webhook)
 
 	webhookParams := &discordgo.WebhookParams{
 		Username:        elem.WebhookUsername,
@@ -168,17 +203,13 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 
 	err = webhookSession.WebhookExecute(wh.ID, wh.Token, true, webhookParams)
 	if code, _ := common.DiscordError(err); code == discordgo.ErrCodeUnknownWebhook {
-		// if the webhook was deleted, then delete the bad boi from the databse and retry
-		const query = `DELETE FROM mqueue_webhooks WHERE id=$1`
-		_, err := common.PQ.Exec(query, wh.ID)
-		if err != nil {
-			return errors.WrapIf(err, "sql.delete")
-		}
-
+		// webhook got deleted, try again
 		webhookCache.Delete(elem.ChannelID)
-
-		return errors.New("deleted webhook")
+		wh, _, err = getWebhook()
+		if err != nil {
+			return err
+		}
+		err = webhookSession.WebhookExecute(wh.ID, wh.Token, true, webhookParams)
 	}
-
-	return
+	return err
 }

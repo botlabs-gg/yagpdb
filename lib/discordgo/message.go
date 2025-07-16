@@ -17,6 +17,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 // MessageType is the type of Message
@@ -247,6 +249,33 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 			contents = append(contents, GetTextDisplayContent(c)...)
 		}
 		m.Content = strings.Join(contents, "\n")
+	}
+	return err
+}
+
+// Custom UnmarshalJSON for MessageSend to support v2 components
+func (m *MessageSend) UnmarshalJSON(data []byte) error {
+
+	type messageSend MessageSend
+	var v struct {
+		messageSend
+		RawComponents []unmarshalableMessageComponent `json:"components"`
+	}
+
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		logrus.WithError(err).Errorf("failed to unmarshal messageSend")
+		return err
+	}
+	*m = MessageSend(v.messageSend)
+	m.Components = make([]TopLevelComponent, len(v.RawComponents))
+	for i, v := range v.RawComponents {
+		var ok bool
+		comp := v.MessageComponent
+		m.Components[i], ok = comp.(TopLevelComponent)
+		if !ok {
+			return errors.New("non top level component passed to MessageSend unmarshaller")
+		}
 	}
 	return err
 }
