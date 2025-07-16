@@ -411,7 +411,11 @@ func setupRootMux() {
 }
 
 func httpsRedirHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "https://"+r.Host+r.URL.String(), http.StatusMovedPermanently)
+	isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
+	if !isHTTPS {
+		http.Redirect(w, r, "https://"+r.Host+r.URL.String(), http.StatusMovedPermanently)
+		return
+	}
 }
 
 func AddGlobalTemplateData(key string, data interface{}) {
