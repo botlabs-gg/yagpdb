@@ -231,6 +231,21 @@ func runServers(mainMuxer *goji.Mux) {
 		if err != nil {
 			logger.Error("Failed http ListenAndServe:", err)
 		}
+	} else if exthttps {
+		// External HTTPS is handled by nginx/reverse proxy
+		// Only serve HTTP but application logic assumes HTTPS URLs
+		logger.Info("Starting yagpdb web server http:", ListenAddressHTTP, " (external HTTPS)")
+
+		server := &http.Server{
+			Addr:        ListenAddressHTTP,
+			Handler:     mainMuxer,
+			IdleTimeout: time.Minute,
+		}
+
+		err := server.ListenAndServe()
+		if err != nil {
+			logger.Error("Failed http ListenAndServe:", err)
+		}
 	} else {
 		logger.Info("Starting yagpdb web server http:", ListenAddressHTTP, ", and https:", ListenAddressHTTPS)
 
@@ -245,9 +260,21 @@ func runServers(mainMuxer *goji.Mux) {
 
 		// launch the redir server
 		go func() {
+			// Create a handler that checks for proxy headers and serves content or redirects
+			httpHandler := func(w http.ResponseWriter, r *http.Request) {
+				// Check if the request is already HTTPS (through proxy)
+				if r.Header.Get("X-Forwarded-Proto") == "https" {
+					// Request is already HTTPS through proxy, serve the main content
+					mainMuxer.ServeHTTP(w, r)
+				} else {
+					// Request is plain HTTP, redirect to HTTPS
+					http.Redirect(w, r, "https://"+r.Host+r.URL.String(), http.StatusMovedPermanently)
+				}
+			}
+
 			unsafeHandler := &http.Server{
 				Addr:        ListenAddressHTTP,
-				Handler:     certManager.HTTPHandler(http.HandlerFunc(httpsRedirHandler)),
+				Handler:     certManager.HTTPHandler(http.HandlerFunc(httpHandler)),
 				IdleTimeout: time.Minute,
 			}
 
@@ -408,14 +435,6 @@ func setupRootMux() {
 	mux.HandleFunc(pat.Get("/login"), HandleLogin)
 	mux.HandleFunc(pat.Get("/confirm_login"), HandleConfirmLogin)
 	mux.HandleFunc(pat.Get("/logout"), HandleLogout)
-}
-
-func httpsRedirHandler(w http.ResponseWriter, r *http.Request) {
-	isHTTPS := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
-	if !isHTTPS {
-		http.Redirect(w, r, "https://"+r.Host+r.URL.String(), http.StatusMovedPermanently)
-		return
-	}
 }
 
 func AddGlobalTemplateData(key string, data interface{}) {
