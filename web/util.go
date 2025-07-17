@@ -370,6 +370,20 @@ func GetRequestIP(r *http.Request) string {
 	return r.Header.Get(headerField)
 }
 
+func IsHTTPS(r *http.Request) bool {
+	if exthttps {
+		if proto := r.Header.Get("X-Forwarded-Proto"); proto == "https" {
+			return true
+		}
+		if proto := r.Header.Get("X-Scheme"); proto == "https" {
+			return true
+		}
+		return false
+	}
+
+	return r.TLS != nil || https
+}
+
 func GetIsReadOnly(ctx context.Context) bool {
 	readOnly := ctx.Value(common.ContextKeyIsReadOnly)
 	if readOnly == nil {

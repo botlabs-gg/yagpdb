@@ -218,7 +218,7 @@ func IsAcceptingRequests() bool {
 }
 
 func runServers(mainMuxer *goji.Mux) {
-	if !https {
+	if !https || exthttps {
 		logger.Info("Starting yagpdb web server http:", ListenAddressHTTP)
 
 		server := &http.Server{
