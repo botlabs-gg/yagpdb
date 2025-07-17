@@ -23,6 +23,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/feeds"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/getsentry/sentry-go"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -172,6 +173,7 @@ func Run() {
 
 	go pubsub.PollEvents()
 
+	logrus.Info("Running Common Run Plugins")
 	common.RunCommonRunPlugins()
 
 	common.SetShutdownFunc(shutdown)
