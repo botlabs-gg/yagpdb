@@ -304,8 +304,17 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 
 			if desc != "" {
 				//new lines break the subtext formatting
-				desc = strings.ReplaceAll(desc, "\n", "\n-# ")
-				text = fmt.Sprintf("%s\n-# %s", text, desc)
+				lines := strings.Split(desc, "\n")
+				var filtered []string
+				for _, line := range lines {
+					line = strings.TrimSpace(line)
+					if line != "" {
+						filtered = append(filtered, "-# "+line)
+					}
+				}
+				desc = strings.Join(filtered, "\n")
+
+				text = fmt.Sprintf("%s\n%s", text, desc)
 			}
 
 			section := discordgo.Section{
