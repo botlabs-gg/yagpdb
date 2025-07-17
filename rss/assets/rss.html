@@ -1,5 +1,21 @@
 {{define "cp_rss"}}
 {{template "cp_head" .}}
+
+<style>
+  .rss-tbl-actions-column {
+      display: flex;
+      flex-direction: column;
+  }
+  .rss-tbl-actions-column > button { 
+    margin: 5px
+  }
+
+  .card-deck {
+    margin: 0 !important;
+  }
+
+</style>
+
 <header class="page-header">
     <h2>RSS Feeds</h2>
 </header>
@@ -14,8 +30,7 @@
             </header>
             <div class="card-body">
                 <form class="no-unsaved-popup" method="post" action="/manage/{{.ActiveGuild.ID}}/rss">
-                    <p><b>Note:</b> Added feeds may take up to 10 minutes before they start being used</p>
-                    <p>RSS feeds are premium only.</p>
+                    <p>RSS feeds are <a href="/premium-perks" target="_blank" class="text-warning">premium only. </a></p>
                     <div class="form-group">
                         <label for="rss-feed-url">Feed URL</label>
                         <input type="url" class="form-control" id="rss-feed-url" name="FeedURL" required>
@@ -27,7 +42,6 @@
                             {{textChannelOptions .ActiveGuild.Channels nil false ""}}
                         </select>
                     </div>
-                    <!-- Update Mention Everyone checkbox in add form to a toggle -->
                     <div class="form-group">
                         {{checkbox "MentionEveryone" "new-mention-everyone" `Mention Everyone` false}}
                     </div>
@@ -44,16 +58,14 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col">
+<div class="row ">
+    <div class="col card-deck">
         <section class="card">
             <header class="card-header">
                 <h2 class="card-title">Current RSS feeds</h2>
             </header>
             <div class="card-body">
                 <p>Feeds might get disabled if premium expires or feed url doesn't work, or the bot is unable to send the feed in the channel</p>
-                {{$Dot := .}}
-                <form class="no-unsaved-popup" data-async-form method="post">
                 <table class="ui celled table" style="width:100%;">
                   <thead>
                     <tr>
@@ -66,37 +78,43 @@
                     </tr>
                   </thead>
                   <tbody>
+                  {{$dot := .}}
                   {{range .FeedItems}}
+                  <form id="feed-item-{{.ID}}" class="no-unsaved-popup" data-async-form method="post" action="/manage/{{$dot.ActiveGuild.ID}}/rss/{{.ID}}/update">
                     <tr>
-                      <td><a class="feedlink" href="{{.FeedURL}}" target="_blank">{{.FeedURL}}</a></td>
                       <td>
-                        <select class="form-control" name="DiscordChannel">
-                          {{textChannelOptions $Dot.ActiveGuild.Channels .ChannelID false ""}}
+                          <a class="feedlink" href="{{.FeedURL}}" target="_blank">
+                            {{.FeedURL}}</a>
+                      </td>
+                      <td>
+                        <select form="feed-item-{{.ID}}" class="form-control" name="DiscordChannel" >
+                          {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                         </select>
                       </td>
                       <td>
-                        {{checkbox "MentionEveryone" (joinStr "-" "feed" .ID "everyone") `` .MentionEveryone}}
+                        {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `Mention everyone` .MentionEveryone (print `form="feed-item-` .ID `"`)}}
                       </td>
                       <td>
-                        <select class="multiselect form-control" multiple="multiple" name="MentionRoles" data-plugin-multiselect>
-                          {{roleOptionsMulti $Dot.ActiveGuild.Roles nil .MentionRoles}}
-                        </select>
+                        <select form="feed-item-{{.ID}}" name="MentionRoles" class="multiselect form-control" multiple="multiple"
+                              id="mention-roles" data-plugin-multiselect>
+                              {{roleOptionsMulti $dot.ActiveGuild.Roles nil .MentionRoles }}
+                            </select>
                       </td>
                       <td>
-                        {{checkbox "Enabled" (joinStr "-" "feed" .ID "enabled") `` .Enabled}}
+                        {{checkbox "Enabled" (print "feed-enabled-" .ID) `` .Enabled (print `form="feed-item-` .ID `"`)}}
                       </td>
                       <td>
-                        <div class="btn-group">
-                          <button type="submit" class="btn btn-success" formaction="/manage/{{$Dot.ActiveGuild.ID}}/rss/{{.ID}}/update">Save</button>
-                          <button type="submit" class="btn btn-danger" formaction="/manage/{{$Dot.ActiveGuild.ID}}/rss/{{.ID}}/delete">Delete</button>
+                        <div class="btn-group rss-tbl-actions-column">
+                          <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success" formaction="/manage/{{$dot.ActiveGuild.ID}}/rss/{{.ID}}/update">Save</button>
+                          <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger" formaction="/manage/{{$dot.ActiveGuild.ID}}/rss/{{.ID}}/delete">Delete</button>
                         </div>
-                        <input type="hidden" name="id" value="{{.ID}}">
                       </td>
                     </tr>
+                  </form>
                   {{end}}
                   </tbody>
                 </table>
-                </form>
+
             </div>
         </section>
     </div>
