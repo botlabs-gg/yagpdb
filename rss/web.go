@@ -159,8 +159,11 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (web.Templat
 	ctx := r.Context()
 	_, templateData := web.GetBaseCPContextData(ctx)
 	sub := ctx.Value(ContextKeySub).(*models.RSSFeedSubscription)
-
 	data := ctx.Value(common.ContextKeyParsedForm).(*RSSFeedForm)
+	if !premium.ContextPremium(ctx) && sub.Enabled == false && data.Enabled == true {
+		return templateData.AddAlerts(web.ErrorAlert("You don't have premium to enable RSS Feeds")), nil
+	}
+
 	sub.ChannelID = data.DiscordChannel
 	sub.MentionEveryone = data.MentionEveryone
 	sub.MentionRoles = data.MentionRoles

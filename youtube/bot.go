@@ -8,6 +8,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/youtube/models"
 	"github.com/mediocregopher/radix/v3"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -21,19 +22,24 @@ func (p *Plugin) Status() (string, string) {
 }
 
 func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
-	numDisabled, err := models.YoutubeChannelSubscriptions(
+	toDisable, err := models.YoutubeChannelSubscriptions(
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(guildID)),
 		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),
 
 		qm.Offset(GuildMaxEnabledFeeds),
 		qm.OrderBy("id DESC"),
-	).UpdateAllG(context.Background(), models.M{"enabled": false})
+	).AllG(context.Background())
+
+	for _, f := range toDisable {
+		f.Enabled = false
+		f.UpdateG(context.Background(), boil.Infer())
+	}
 
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed disabling excess feeds")
 		return err
 	}
 
-	logger.WithField("guild", guildID).Infof("disabled %d excess feeds", numDisabled)
+	logger.WithField("guild", guildID).Infof("disabled %d excess feeds", len(toDisable))
 	return nil
 }
