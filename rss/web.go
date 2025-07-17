@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 
@@ -12,7 +13,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/rss/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/mediocregopher/radix/v3"
 	"github.com/mmcdole/gofeed"
+	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
@@ -45,14 +48,12 @@ func (p *Plugin) InitWeb() {
 	rssMux.Handle(pat.Post(""), addHandler)
 	rssMux.Handle(pat.Post("/"), addHandler)
 	rssMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
-	rssMux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 	rssMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, RSSFeedForm{}))
 }
 
 type RSSFeedForm struct {
 	FeedURL         string
 	DiscordChannel  int64 `valid:"channel,false"`
-	FeedName        string
 	MentionEveryone bool
 	MentionRoles    []int64
 	Enabled         bool
@@ -64,7 +65,6 @@ func (p *Plugin) HandleRSS(w http.ResponseWriter, r *http.Request) (web.Template
 
 	subs, err := models.RSSFeedSubscriptions(
 		models.RSSFeedSubscriptionWhere.GuildID.EQ(activeGuild.ID),
-		models.RSSFeedSubscriptionWhere.Enabled.EQ(true),
 		qm.OrderBy("id DESC"),
 	).AllG(ctx)
 	if err != nil {
@@ -87,7 +87,6 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 
 	count, err := models.RSSFeedSubscriptions(
 		models.RSSFeedSubscriptionWhere.GuildID.EQ(activeGuild.ID),
-		models.RSSFeedSubscriptionWhere.Enabled.EQ(true),
 	).CountG(ctx)
 	if err != nil {
 		return templateData.AddAlerts(web.ErrorAlert("Failed to check current RSS feed count.")), err
@@ -160,14 +159,14 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (web.Templat
 	ctx := r.Context()
 	_, templateData := web.GetBaseCPContextData(ctx)
 	sub := ctx.Value(ContextKeySub).(*models.RSSFeedSubscription)
-	data := ctx.Value(common.ContextKeyParsedForm).(*RSSFeedForm)
 
+	data := ctx.Value(common.ContextKeyParsedForm).(*RSSFeedForm)
 	sub.ChannelID = data.DiscordChannel
 	sub.MentionEveryone = data.MentionEveryone
 	sub.MentionRoles = data.MentionRoles
 	sub.Enabled = data.Enabled
 
-	_, err := sub.UpdateG(ctx, boil.Infer())
+	_, err := sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled", "mention_everyone", "mention_roles"))
 	if err != nil {
 		return templateData.AddAlerts(web.ErrorAlert("Failed to update RSS feed.")), err
 	}
@@ -183,5 +182,34 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (web.Templ
 	if err != nil {
 		return templateData.AddAlerts(web.ErrorAlert("Failed to remove RSS feed.")), err
 	}
+
+	key := seenSetKey(sub.ID)
+	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", key))
+	if err != nil {
+		logrus.WithError(err).WithField("key", key).Warn("Failed to delete RSS deduplication key after feed deletion")
+	}
+	return templateData, nil
+}
+
+func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	ag, templateData := web.GetBaseCPContextData(r.Context())
+
+	templateData["WidgetTitle"] = "RSS feeds"
+	templateData["SettingsPath"] = "/rss"
+
+	numFeeds, err := models.RSSFeedSubscriptions(models.RSSFeedSubscriptionWhere.GuildID.EQ(ag.ID), models.RSSFeedSubscriptionWhere.Enabled.EQ(true)).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	if numFeeds > 0 {
+		templateData["WidgetEnabled"] = true
+	} else {
+		templateData["WidgetDisabled"] = true
+	}
+
+	const format = `<p>Active RSS feeds: <code>%d</code></p>`
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, numFeeds))
+
 	return templateData, nil
 }

@@ -3,11 +3,15 @@ package rss
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"sync"
 	"time"
+
+	"crypto/md5"
+	"encoding/hex"
 
 	"html"
 	"strings"
@@ -102,8 +106,67 @@ func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
 	}
 }
 
+// Helper to compute MD5 hash of a string
+func md5Hash(s string) string {
+	h := md5.Sum([]byte(s))
+	return hex.EncodeToString(h[:])
+}
+
+// Returns the Redis key for the seen set for a feed subscription
+func seenSetKey(feedID int) string {
+	return fmt.Sprintf("rss:seen:%d", feedID)
+}
+
+// Checks if the item (by URL) has already been seen for this feed
+func isItemSeen(feedID int, url string) (bool, error) {
+	key := seenSetKey(feedID)
+	urlHash := md5Hash(url)
+	var zscoreResult string
+	err := common.RedisPool.Do(radix.Cmd(&zscoreResult, "ZSCORE", key, urlHash))
+	if err != nil {
+		return false, err
+	}
+	return zscoreResult != "", nil
+}
+
+func markItemSeen(feedID int, url string, published *time.Time) error {
+	key := seenSetKey(feedID)
+	urlHash := md5Hash(url)
+	var score float64
+	if published != nil {
+		score = float64(published.Unix())
+	} else {
+		score = float64(time.Now().Unix())
+	}
+	if err := common.RedisPool.Do(radix.Cmd(nil, "ZADD", key, fmt.Sprintf("%f", score), urlHash)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Cleans up items older than 90 days for this feed
+func cleanupOldItems(feedID int) error {
+	key := seenSetKey(feedID)
+	oldest := time.Now().Add(-90 * 24 * time.Hour).Unix()
+	return common.RedisPool.Do(radix.Cmd(nil, "ZREMRANGEBYSCORE", key, "0", fmt.Sprintf("%d", oldest)))
+}
+
 func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 	parser := gofeed.NewParser()
+	//use an http proxy if configured
+	proxy := common.ConfHttpProxy.GetString()
+	if len(proxy) > 0 {
+		proxyURL, err := url.Parse(proxy)
+		if err != nil {
+			parser.Client = &http.Client{
+				Transport: &http.Transport{
+					Proxy: http.ProxyURL(proxyURL),
+				},
+			}
+		}
+	}
+
 	feed, err := parser.ParseURL(sub.FeedURL)
 	if err != nil {
 		logger.WithError(err).WithField("url", sub.FeedURL).Warn("Failed to parse RSS feed, requesting disable via mqueue")
@@ -120,34 +183,39 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 		return
 	}
 
-	field := fmt.Sprintf("%d", sub.ID)
-	var lastPostedGUID string
-	err = common.RedisPool.Do(radix.Cmd(&lastPostedGUID, "HGET", redisFeedsHashKey, field))
-	if err != nil {
-		logger.WithError(err).WithField("field", field).Warn("Failed to get last posted RSS item from Redis hash")
-		return
-	}
-
+	// We'll collect new items to post
 	var newItems []*gofeed.Item
-	foundLast := lastPostedGUID == ""
-
+	cutoff := time.Now().Add(-24 * time.Hour)
 	for i := len(feed.Items) - 1; i >= 0; i-- {
 		item := feed.Items[i]
-		guid := item.GUID
-		if guid == "" {
-			guid = item.Link
-		}
-		if !foundLast {
-			if guid == lastPostedGUID {
-				foundLast = true
-			}
+		link := item.Link
+		if link == "" {
 			continue
 		}
-		// Ignore articles published more than 24 hours ago
+		u, err := url.ParseRequestURI(link)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+			continue
+		}
+
+		// Use PublishedParsed, then UpdatedParsed
+		var itemTime *time.Time
 		if item.PublishedParsed != nil {
-			if time.Since(*item.PublishedParsed) > 24*time.Hour {
-				continue
-			}
+			itemTime = item.PublishedParsed
+		} else if item.UpdatedParsed != nil {
+			itemTime = item.UpdatedParsed
+		}
+		if itemTime != nil && itemTime.Before(cutoff) {
+			continue
+		}
+		item.PublishedParsed = itemTime
+
+		seen, err := isItemSeen(sub.ID, link)
+		if err != nil {
+			logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed to check RSS deduplication set")
+			continue
+		}
+		if seen {
+			continue
 		}
 		newItems = append(newItems, item)
 	}
@@ -175,7 +243,7 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 			for _, roleId := range sub.MentionRoles {
 				mentions += "<@&" + discordgo.StrID(roleId) + "> "
 			}
-			mentions = mentions[:len(mentions)-1]
+			mentions = strings.TrimSpace(mentions)
 		}
 
 		if mentions != "" {
@@ -184,28 +252,7 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 
 		var added = 0
 		for _, item := range batch {
-			guid := item.GUID
-			if guid == "" {
-				guid = item.Link
-			}
-
-			sanitizer := bluemonday.StrictPolicy()
-			// Sanitize and decode title and description
-			title := sanitizer.Sanitize(item.Title)
-			title, _ = url.QueryUnescape(title)
-			title = html.UnescapeString(title)
-			if strings.TrimSpace(title) == "" {
-				title = "(no title)"
-			}
-
-			desc := sanitizer.Sanitize(item.Description)
-			if len(desc) > 300 {
-				desc = desc[:297] + "..."
-			}
-			desc, _ = url.QueryUnescape(desc)
-			desc = html.UnescapeString(desc)
 			link := item.Link
-
 			if link == "" {
 				continue
 			}
@@ -213,6 +260,20 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 			if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
 				continue
 			}
+
+			sanitizer := bluemonday.StrictPolicy()
+			// Sanitize and decode title and description
+			title := sanitizer.Sanitize(item.Title)
+			title = html.UnescapeString(title)
+			if strings.TrimSpace(title) == "" {
+				title = "(no title)"
+			}
+
+			desc := sanitizer.Sanitize(item.Description)
+			if len(desc) > 250 {
+				desc = desc[:245] + "..."
+			}
+			desc = html.UnescapeString(desc)
 
 			// Try to find an image for the post
 			var imageURL string
@@ -237,7 +298,22 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 			}
 
 			text := fmt.Sprintf("### [%s](%s)", title, link)
+			if item.PublishedParsed != nil {
+				text = fmt.Sprintf("%s\n-# Published <t:%d:R>\n", text, item.PublishedParsed.Unix())
+			}
+
 			if desc != "" {
+				//new lines break the subtext formatting
+				lines := strings.Split(desc, "\n")
+				var filtered []string
+				for _, line := range lines {
+					line = strings.TrimSpace(line)
+					if line != "" {
+						filtered = append(filtered, "-# "+line)
+					}
+				}
+				desc = strings.Join(filtered, "\n")
+
 				text = fmt.Sprintf("%s\n%s", text, desc)
 			}
 
@@ -262,6 +338,11 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 
 			container.Components = append(container.Components, discordgo.Separator{}, section)
 			added++
+
+			// Mark as seen in Redis
+			if err := markItemSeen(sub.ID, link, item.PublishedParsed); err != nil {
+				logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed to mark RSS item as seen")
+			}
 		}
 		if added == 0 {
 			return
@@ -293,15 +374,11 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 				Parse: parseMentions,
 			},
 		})
+	}
 
-		lastGUID := batch[len(batch)-1].GUID
-		if lastGUID == "" {
-			lastGUID = batch[len(batch)-1].Link
-		}
-		err = common.RedisPool.Do(radix.Cmd(nil, "HSET", redisFeedsHashKey, field, lastGUID))
-		if err != nil {
-			logger.WithError(err).WithField("field", field).Warn("Failed to set last posted RSS item in Redis hash")
-		}
+	// Cleanup old items after processing the feed
+	if err := cleanupOldItems(sub.ID); err != nil {
+		logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed to cleanup old RSS deduplication entries")
 	}
 }
 
