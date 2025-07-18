@@ -15,7 +15,6 @@ require (
 	github.com/getsentry/sentry-go v0.22.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-errors/errors v1.4.2
-  github.com/mmcdole/gofeed v1.3.0
 	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
@@ -39,6 +38,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.24
 	github.com/miolini/datacounter v1.0.3
 	github.com/mitchellh/cli v1.1.5
+	github.com/mmcdole/gofeed v1.3.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -63,7 +63,7 @@ require (
 	golang.org/x/crypto v0.36.0
 	golang.org/x/image v0.18.0
 	golang.org/x/net v0.38.0
-	golang.org/x/oauth2 v0.10.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0
 	golang.org/x/time v0.3.0
@@ -84,8 +84,7 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.21.0 // indirect
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
