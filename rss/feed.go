@@ -23,6 +23,8 @@ import (
 	"github.com/mediocregopher/radix/v3"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/mmcdole/gofeed"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const (
@@ -435,12 +437,26 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
-	logger.WithField("guild_id", guildID).Infof("Removed Excess RSS Feeds")
-	_, err := models.RSSFeedSubscriptions(models.RSSFeedSubscriptionWhere.GuildID.EQ(guildID)).UpdateAllG(context.Background(), models.M{"enabled": false})
+	logger.WithField("guild_id", guildID).Infof("Enforcing free RSS feed limits after premium removal")
+	ctx := context.Background()
+
+	toDisable, err := models.RSSFeedSubscriptions(
+		models.RSSFeedSubscriptionWhere.GuildID.EQ(guildID),
+		models.RSSFeedSubscriptionWhere.Enabled.EQ(true),
+		qm.OrderBy("id DESC"),
+		qm.Offset(GuildMaxRSSFeedsFree),
+	).AllG(ctx)
+
 	if err != nil {
-		logger.WithError(err).WithField("guild_id", guildID).Error("failed disabling feed for missing premium")
+		logger.WithError(err).WithField("guild_id", guildID).Error("failed disabling excess feeds after premium removal")
 		return err
 	}
+
+	for _, feed := range toDisable {
+		feed.Enabled = false
+		feed.UpdateG(ctx, boil.Infer())
+	}
+
 	return nil
 }
 
