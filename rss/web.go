@@ -25,6 +25,18 @@ import (
 //go:embed assets/rss.html
 var PageHTML string
 
+const (
+	GuildMaxRSSFeedsFree    = 2
+	GuildMaxRSSFeedsPremium = 10
+)
+
+func MaxRSSFeedsForContext(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return GuildMaxRSSFeedsPremium
+	}
+	return GuildMaxRSSFeedsFree
+}
+
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("rss/assets/rss.html", PageHTML)
 	web.AddSidebarItem(web.SidebarCategoryFeeds, &web.SidebarItem{
@@ -81,16 +93,6 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
 	data := ctx.Value(common.ContextKeyParsedForm).(*RSSFeedForm)
 
-	totalCount, err := models.RSSFeedSubscriptions(
-		models.RSSFeedSubscriptionWhere.GuildID.EQ(activeGuild.ID),
-	).CountG(ctx)
-	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("Failed to check current RSS feed count.")), err
-	}
-	if totalCount >= GuildMaxRSSFeedsTotal {
-		return templateData.AddAlerts(web.ErrorAlert("You can only have up to 20 RSS feeds per server (enabled or disabled). Please delete old feeds to add new ones.")), nil
-	}
-
 	enabledLimit := MaxRSSFeedsForContext(ctx)
 	enabledCount, err := models.RSSFeedSubscriptions(
 		models.RSSFeedSubscriptionWhere.GuildID.EQ(activeGuild.ID),
@@ -101,9 +103,9 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 	if enabledCount >= int64(enabledLimit) {
 		if premium.ContextPremium(ctx) {
-			return templateData.AddAlerts(web.ErrorAlert("You can only have up to 10 enabled RSS feeds per server (premium limit). Disable or delete an existing feed to add a new one.")), nil
+			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("You can only have up to %d enabled RSS feeds per server (premium limit). Disable or delete an existing feed to add a new one.", enabledLimit))), nil
 		} else {
-			return templateData.AddAlerts(web.ErrorAlert("You can only have up to 2 enabled RSS feeds per server (free limit). Upgrade to premium for more, or disable/delete an existing feed.")), nil
+			return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("You can only have up to %d enabled RSS feeds per server (free limit). Upgrade to premium for more, or disable/delete an existing feed.", enabledLimit))), nil
 		}
 	}
 
@@ -184,15 +186,11 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (web.Templat
 		}
 		if enabledCount >= int64(enabledLimit) {
 			if premium.ContextPremium(ctx) {
-				return templateData.AddAlerts(web.ErrorAlert("You can only have up to 10 enabled RSS feeds per server (premium limit). Disable or delete an existing feed to enable this one.")), nil
+				return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("You can only have up to %d enabled RSS feeds per server (premium limit). Disable or delete an existing feed to enable this one.", enabledLimit))), nil
 			} else {
-				return templateData.AddAlerts(web.ErrorAlert("You can only have up to 2 enabled RSS feeds per server (free limit). Upgrade to premium for more, or disable/delete an existing feed.")), nil
+				return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("You can only have up to %d enabled RSS feeds per server (free limit). Upgrade to premium for more, or disable/delete an existing feed.", enabledLimit))), nil
 			}
 		}
-	}
-
-	if !premium.ContextPremium(ctx) && sub.Enabled == false && data.Enabled == true {
-		return templateData.AddAlerts(web.ErrorAlert("You don't have premium to enable RSS Feeds")), nil
 	}
 
 	sub.ChannelID = data.DiscordChannel
@@ -246,17 +244,4 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, numFeeds))
 
 	return templateData, nil
-}
-
-const (
-	GuildMaxRSSFeedsFree    = 2
-	GuildMaxRSSFeedsPremium = 10
-	GuildMaxRSSFeedsTotal   = 20
-)
-
-func MaxRSSFeedsForContext(ctx context.Context) int {
-	if premium.ContextPremium(ctx) {
-		return GuildMaxRSSFeedsPremium
-	}
-	return GuildMaxRSSFeedsFree
 }
