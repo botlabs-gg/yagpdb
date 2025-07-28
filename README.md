@@ -48,9 +48,9 @@ YAGPDB supports two main HTTPS setups:
 
 Let YAGPDB serve HTTPS directly (no reverse proxy):
 
-- Provide your certificate and key:
+- Just run with https (Default is true; you may specify this flag explicitly if desired):
   ```bash
-  ./yagpdb --https=true --httpsCert=/path/to/cert.pem --httpsKey=/path/to/key.pem
+  ./yagpdb --https=true
   ```
 - All HTTPS traffic is handled by YAGPDB.
 
