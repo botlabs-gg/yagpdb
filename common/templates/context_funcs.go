@@ -1185,11 +1185,24 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 
 	cstate := c.GS.GetThread(cID)
 
-	if cstate == nil {
-		return nil, errors.New("thread not in state")
+	if cstate != nil {
+		return CtxChannelFromCS(cstate), nil
 	}
 
-	return CtxChannelFromCS(cstate), nil
+	logger.Warnf("thread %d for guild %d not in state, fetching form ", cID, c.GS.ID)
+	thread, err := common.BotSession.Channel(cID)
+	if err != nil {
+		logger.Errorf("failed to get thread %d for guild %d from discord", cID, c.GS.ID)
+		return nil, fmt.Errorf("failed to get thread %d", cID)
+	}
+
+	if thread == nil || thread.GuildID != c.GS.ID || !thread.Type.IsThread() {
+		logger.Errorf("Invalid thread %d for guild %d", cID, c.GS.ID)
+		return nil, fmt.Errorf("invalid thread id %d", cID)
+	}
+
+	tstate := dstate.ChannelStateFromDgo(thread)
+	return CtxChannelFromCS(&tstate), nil
 }
 
 func (c *Context) tmplThreadMemberAdd(threadID, memberID interface{}) string {
