@@ -1179,9 +1179,12 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 	}
 
 	var cID int64
-	if _, ok := channel.(int64); ok {
-		cID = channel.(int64)
-	} else {
+	switch v := channel.(type) {
+	case int:
+		cID = int64(v)
+	case int64:
+		cID = v
+	default:
 		cID = c.ChannelArg(channel)
 	}
 
