@@ -1178,13 +1178,18 @@ func (c *Context) tmplGetThread(channel interface{}) (*CtxChannel, error) {
 		return nil, ErrTooManyAPICalls
 	}
 
-	cID := c.ChannelArg(channel)
+	var cID int64
+	if _, ok := channel.(int64); ok {
+		cID = channel.(int64)
+	} else {
+		cID = c.ChannelArg(channel)
+	}
+
 	if cID == 0 {
-		return nil, nil // dont send an error , a nil output would indicate invalid/unknown channel
+		return nil, fmt.Errorf("unknown or invalid thread")
 	}
 
 	cstate := c.GS.GetThread(cID)
-
 	if cstate != nil {
 		return CtxChannelFromCS(cstate), nil
 	}
