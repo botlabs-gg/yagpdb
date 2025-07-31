@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/rss/models"
@@ -24,6 +25,11 @@ import (
 
 //go:embed assets/rss.html
 var PageHTML string
+var (
+	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_added_feed", FormatString: "Added rss feed from %s"})
+	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_updated_feed", FormatString: "Updated rss feed from %s"})
+	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_removed_feed", FormatString: "Removed rss feed from %s"})
+)
 
 const (
 	GuildMaxRSSFeedsFree    = 2
@@ -136,6 +142,8 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	if err := sub.InsertG(ctx, boil.Infer()); err != nil {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Failed to add RSS feed: %v", err))), err
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: data.FeedURL}))
 	return templateData, nil
 }
 
@@ -202,6 +210,8 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (web.Templat
 	if err != nil {
 		return templateData.AddAlerts(web.ErrorAlert("Failed to update RSS feed.")), err
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: data.FeedURL}))
 	return templateData, nil
 }
 
@@ -220,6 +230,8 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (web.Templ
 	if err != nil {
 		logrus.WithError(err).WithField("key", key).Warn("Failed to delete RSS deduplication key after feed deletion")
 	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.FeedURL}))
 	return templateData, nil
 }
 
