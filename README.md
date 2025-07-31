@@ -40,6 +40,32 @@ In addition, you will need to add the following urls to the bot's "REDIRECT URI(
 * <https://YourHostNameHere/confirm_login>
 * <https://YourHostNameHere/manage>
 
+### HTTPS Options
+
+YAGPDB supports two main HTTPS setups:
+
+#### 1. **YAGPDB Handles HTTPS (Built-in)**
+
+Let YAGPDB serve HTTPS directly (no reverse proxy):
+
+- Just run with https (Default is true; you may specify this flag explicitly if desired):
+  ```bash
+  ./yagpdb --https=true
+  ```
+- All HTTPS traffic is handled by YAGPDB.
+
+#### 2. **Reverse Proxy Handles HTTPS (Recommended for Production)**
+
+Put YAGPDB behind a reverse proxy (like Nginx, Caddy, etc.):
+
+- Disable YAGPDB's built-in HTTPS server:
+  - `--https=false`: YAGPDB uses plain HTTP internally.
+  - `--extHttps=true`: Tell YAGPDB that HTTPS is handled externally.
+  ```bash
+  ./yagpdb --https=false --extHttps=true
+  ```
+- Your proxy handles HTTPS, YAGPDB talks HTTP.
+
 ### Hosting Dockerized
 
 If you have docker-compose installed, that might be the fastest route of getting the bot up and running:
