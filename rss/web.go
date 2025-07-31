@@ -26,9 +26,9 @@ import (
 //go:embed assets/rss.html
 var PageHTML string
 var (
-	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_added_feed", FormatString: "Added rss feed from %s"})
-	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_updated_feed", FormatString: "Updated rss feed from %s"})
-	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_removed_feed", FormatString: "Removed rss feed from %s"})
+	panelLogKeyAddedFeed   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_added_feed", FormatString: "Added RSS feed: %s"})
+	panelLogKeyUpdatedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_updated_feed", FormatString: "Updated RSS feed: %s"})
+	panelLogKeyRemovedFeed = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "rss_removed_feed", FormatString: "Removed RSS feed: %s"})
 )
 
 const (
@@ -211,7 +211,7 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (web.Templat
 		return templateData.AddAlerts(web.ErrorAlert("Failed to update RSS feed.")), err
 	}
 
-	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: data.FeedURL}))
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.FeedURL}))
 	return templateData, nil
 }
 

@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	PollInterval       = time.Minute * 1
+	PollInterval       = time.Minute * 5
 	maxConcurrentFeeds = 10
 )
 
