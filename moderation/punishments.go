@@ -243,9 +243,6 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 			Embeds: []*discordgo.MessageEmbed{
 				{
 					Description: common.ReplaceServerInvites(executed, 0, "[removed-server-invite]"),
-					Footer: &discordgo.MessageEmbedFooter{
-						Text: fmt.Sprintf("From: **%s**", gs.Name),
-					},
 				},
 			},
 			Components: bot.GenerateServerInfoButton(gs.ID),
