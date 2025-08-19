@@ -535,7 +535,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 				{
 					Description: resp,
 					Footer: &discordgo.MessageEmbedFooter{
-						Text: fmt.Sprintf("From: **" + gs.Name + "**: "),
+						Text: fmt.Sprint("From: **" + gs.Name + "**: "),
 					},
 				},
 			},

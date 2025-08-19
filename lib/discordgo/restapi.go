@@ -155,7 +155,7 @@ func (s *Session) doRequest(method, urlStr, contentType string, b []byte, header
 	case http.StatusBadGateway, http.StatusGatewayTimeout:
 		// Retry sending request if possible
 		err = errors.Errorf("%s Failed (%s)", urlStr, resp.Status)
-		s.log(LogWarning, err.Error())
+		s.log(LogWarning, "Error: %s", err.Error())
 		return nil, true, false, err
 
 	case 429: // TOO MANY REQUESTS - Rate limiting
