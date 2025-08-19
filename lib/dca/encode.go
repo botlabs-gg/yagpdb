@@ -212,7 +212,6 @@ func (e *EncodeSession) run() {
 		"-f", "ogg",
 		"-vbr", vbrStr,
 		"-compression_level", strconv.Itoa(e.options.CompressionLevel),
-		"-vol", strconv.Itoa(e.options.Volume),
 		"-ar", strconv.Itoa(e.options.FrameRate),
 		"-ac", strconv.Itoa(e.options.Channels),
 		"-b:a", strconv.Itoa(e.options.Bitrate * 1000),
@@ -223,10 +222,12 @@ func (e *EncodeSession) run() {
 		"-ss", strconv.Itoa(e.options.StartTime),
 	}
 
+	// Build audio filter with volume control
+	audioFilter := fmt.Sprintf("volume=%d/256", e.options.Volume)
 	if e.options.AudioFilter != "" {
-		// Lit af
-		args = append(args, "-af", e.options.AudioFilter)
+		audioFilter = e.options.AudioFilter + "," + audioFilter
 	}
+	args = append(args, "-af", audioFilter)
 
 	args = append(args, "pipe:1")
 
