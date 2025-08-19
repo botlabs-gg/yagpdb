@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.23.3 AS builder
+FROM docker.io/golang:1.25.0 AS builder
 
 WORKDIR /appbuild/yagpdb
 COPY go.mod go.sum ./
@@ -7,7 +7,7 @@ RUN go mod download
 COPY . .
 
 WORKDIR /appbuild/yagpdb/cmd/yagpdb
-RUN CGO_ENABLED=0 GOOS=linux go build -v -ldflags "-X github.com/botlabs-gg/yagpdb/v2/common.VERSION=$(git describe --tags)"
+RUN GOEXPERIMENT=jsonv2 CGO_ENABLED=0 GOOS=linux go build -v -ldflags "-X github.com/botlabs-gg/yagpdb/v2/common.VERSION=$(git describe --tags)"
 
 
 

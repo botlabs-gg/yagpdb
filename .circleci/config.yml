@@ -3,7 +3,7 @@ jobs: # basic units of work in a run
   build: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
       # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
-      - image: cimg/go:1.23.3 #
+      - image: cimg/go:1.25.0 #
 
     # directory where steps are run. Path must conform to the Go Workspace requirements
     working_directory: ~/app
@@ -24,6 +24,7 @@ jobs: # basic units of work in a run
           command: |
             VERSION=$(git describe --tags)
             cd cmd/yagpdb
+            GOEXPERIMENT=jsonv2
             go install -ldflags "-X github.com/botlabs-gg/yagpdb/v2/common.VERSION=${VERSION}"
             cd -
       - run: cd cmd/shardorchestrator && go install && cd -

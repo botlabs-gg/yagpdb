@@ -1,6 +1,6 @@
 module github.com/botlabs-gg/yagpdb/v2
 
-go 1.23.3
+go 1.25.0
 
 require (
 	emperror.dev/errors v0.8.1
