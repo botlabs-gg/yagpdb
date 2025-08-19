@@ -35,8 +35,8 @@ jobs: # basic units of work in a run
       - save_cache: # Store cache in the /go/pkg directory
           key: v1-pkg-cache
           paths:
-            - "$HOME/go/pkg"
+            - "~/go/pkg"
 
       - store_artifacts:
-          path: $HOME/go/bin/
+          path: ~/go/bin/
           destination: binaries
