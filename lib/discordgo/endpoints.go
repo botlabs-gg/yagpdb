@@ -41,7 +41,7 @@ var (
 	EndpointCDNSplashes     string
 	EndpointCDNChannelIcons string
 	EndpointCDNBanners      string
-	EndpointCDNRoleIcons	string
+	EndpointCDNRoleIcons    string
 
 	EndpointAuth           string
 	EndpointLogin          string
@@ -85,11 +85,11 @@ var (
 	EndpointGuildMemberMe             = func(gID int64) string { return "" }
 	EndpointGuildMemberVoiceState     = func(gID, uID int64) string { return "" }
 	EndpointGuildMemberRole           = func(gID, uID, rID int64) string { return "" }
-	EndpointGuildBans            = func(gID int64) string { return "" }
-	EndpointGuildBan             = func(gID, uID int64) string { return "" }
-	EndpointGuildIntegrations    = func(gID int64) string { return "" }
-	EndpointGuildIntegration     = func(gID, iID int64) string { return "" }
-	EndpointGuildIntegrationSync = func(gID, iID int64) string {
+	EndpointGuildBans                 = func(gID int64) string { return "" }
+	EndpointGuildBan                  = func(gID, uID int64) string { return "" }
+	EndpointGuildIntegrations         = func(gID int64) string { return "" }
+	EndpointGuildIntegration          = func(gID, iID int64) string { return "" }
+	EndpointGuildIntegrationSync      = func(gID, iID int64) string {
 		return ""
 	}
 	EndpointGuildRoles          = func(gID int64) string { return "" }
@@ -342,8 +342,8 @@ func CreateEndpoints(base string) {
 	EndpointChannelMessage = func(cID, mID int64) string { return EndpointChannels + StrID(cID) + "/messages/" + StrID(mID) }
 	EndpointChannelMessageAck = func(cID, mID int64) string { return EndpointChannels + StrID(cID) + "/messages/" + StrID(mID) + "/ack" }
 	EndpointChannelMessagesBulkDelete = func(cID int64) string { return EndpointChannel(cID) + "/messages/bulk-delete" }
-	EndpointChannelMessagesPins = func(cID int64) string { return EndpointChannel(cID) + "/pins" }
-	EndpointChannelMessagePin = func(cID, mID int64) string { return EndpointChannel(cID) + "/pins/" + StrID(mID) }
+	EndpointChannelMessagesPins = func(cID int64) string { return EndpointChannel(cID) + "/messages/pins" }
+	EndpointChannelMessagePin = func(cID, mID int64) string { return EndpointChannel(cID) + "/messages/pins/" + StrID(mID) }
 	EndpointChannelMessageCrosspost = func(cID, mID int64) string { return EndpointChannel(cID) + "/messages/" + StrID(mID) + "/crosspost" }
 	EndpointChannelMessageThread = func(cID, mID int64) string { return EndpointChannelMessage(cID, mID) + "/threads" }
 	EndpointThreadMembers = func(tID int64) string { return EndpointChannel(tID) + "/thread-members" }
@@ -376,7 +376,7 @@ func CreateEndpoints(base string) {
 	}
 
 	EndpointRoleIcon = func(rID int64, iID string) string { return EndpointCDNRoleIcons + StrID(rID) + "/" + iID + ".png" }
-	
+
 	EndpointRelationships = func() string { return EndpointUsers + "@me" + "/relationships" }
 	EndpointRelationship = func(uID int64) string { return EndpointRelationships() + "/" + StrID(uID) }
 	EndpointRelationshipsMutual = func(uID int64) string { return EndpointUsers + StrID(uID) + "/relationships" }
