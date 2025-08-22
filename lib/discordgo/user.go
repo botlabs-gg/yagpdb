@@ -31,6 +31,25 @@ type User struct {
 
 	// Whether the user is a bot.
 	Bot bool `json:"bot"`
+
+	// The user's primary guild.
+	PrimaryGuild *UserPrimaryGuild `json:"primary_guild,omitempty"`
+}
+
+// UserPrimaryGuild stores information about a user's primary guild.
+type UserPrimaryGuild struct {
+	IdentityGuildID int64  `json:"identity_guild_id,string"`
+	IdentityEnabled bool   `json:"identity_enabled"`
+	Tag             string `json:"tag,omitempty"`
+	Badge           string `json:"badge,omitempty"`
+}
+
+// BadgeURL returns a URL to the user's primary guild badge.
+func (pg *UserPrimaryGuild) BadgeURL() string {
+	if pg.Badge == "" {
+		return ""
+	}
+	return EndpointGuildTagBadge(pg.IdentityGuildID, pg.Badge)
 }
 
 // String returns a unique identifier of the form username#discriminator
