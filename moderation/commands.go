@@ -1388,10 +1388,10 @@ type IgnorePinnedMessagesFilter struct {
 	PinnedMsgIDs map[int64]struct{}
 }
 
-func NewIgnorePinnedMessagesFilter(pinned []*discordgo.Message) *IgnorePinnedMessagesFilter {
+func NewIgnorePinnedMessagesFilter(pinned []*discordgo.MessagePin) *IgnorePinnedMessagesFilter {
 	ids := make(map[int64]struct{})
-	for _, msg := range pinned {
-		ids[msg.ID] = struct{}{}
+	for _, pin := range pinned {
+		ids[pin.Message.ID] = struct{}{}
 	}
 	return &IgnorePinnedMessagesFilter{ids}
 }

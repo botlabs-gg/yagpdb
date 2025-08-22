@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -177,6 +178,16 @@ type Message struct {
 
 type MessageSnapshot struct {
 	Message *Message `json:"message"`
+}
+
+type MessagePin struct {
+	PinnedAt *time.Time `json:"pinned_at"`
+	Message  *Message   `json:"message"`
+}
+
+type MessagePinsResponse struct {
+	Items   []*MessagePin `json:"items"`
+	HasMore bool          `json:"has_more"`
 }
 
 func (m *Message) GetMessageContents() []string {

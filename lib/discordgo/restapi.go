@@ -1868,7 +1868,7 @@ func (s *Session) ChannelMessageUnpin(channelID, messageID int64) (err error) {
 // ChannelMessagesPinned returns an array of Message structures for pinned messages
 // within a given channel
 // channelID : The ID of a Channel.
-func (s *Session) ChannelMessagesPinned(channelID int64) (st []*Message, err error) {
+func (s *Session) ChannelMessagesPinned(channelID int64) (st []*MessagePin, err error) {
 
 	body, err := s.RequestWithBucketID("GET", EndpointChannelMessagesPins(channelID), nil, nil, EndpointChannelMessagesPins(channelID))
 
@@ -1876,8 +1876,13 @@ func (s *Session) ChannelMessagesPinned(channelID int64) (st []*Message, err err
 		return
 	}
 
-	err = unmarshal(body, &st)
-	return
+	var r MessagePinsResponse
+	err = unmarshal(body, &r)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Items, nil
 }
 
 // ChannelFileSend sends a file to the given channel.
