@@ -423,7 +423,7 @@ func createGalleryItem(values ...interface{}) (item discordgo.MediaGalleryItem, 
 	return
 }
 
-func CreateGallery(values ...interface{}) (*discordgo.MediaGallery, error) {
+func CreateGallery(values interface{}) (*discordgo.MediaGallery, error) {
 	convertedGallery := &discordgo.MediaGallery{}
 	val, _ := indirect(reflect.ValueOf(values))
 	if val.Kind() == reflect.Slice {
@@ -437,7 +437,7 @@ func CreateGallery(values ...interface{}) (*discordgo.MediaGallery, error) {
 		}
 		convertedGallery.Items = galleryItems
 	} else {
-		item, err := createGalleryItem(val)
+		item, err := createGalleryItem(val.Interface())
 		if err != nil {
 			return nil, err
 		}
@@ -537,10 +537,11 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 			}
 			v, _ := indirect(reflect.ValueOf(val))
 			if v.Kind() == reflect.Slice {
-				components, err = distributeComponentsIntoActionsRows(v)
+				distributedComponents, err := distributeComponentsIntoActionsRows(v)
 				if err != nil {
 					return nil, err
 				}
+				components = append(components, distributedComponents...)
 			} else {
 				var component discordgo.InteractiveComponent
 				switch comp := val.(type) {
