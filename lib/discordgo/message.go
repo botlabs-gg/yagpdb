@@ -343,7 +343,7 @@ type MessageSend struct {
 type MessageEdit struct {
 	Content         *string             `json:"content,omitempty"`
 	Components      []TopLevelComponent `json:"components"`
-	Embeds          []*MessageEmbed     `json:"embeds,omitempty"`
+	Embeds          []*MessageEmbed     `json:"embeds"`
 	AllowedMentions AllowedMentions     `json:"allowed_mentions,omitempty"`
 	Flags           MessageFlags        `json:"flags,omitempty"`
 
