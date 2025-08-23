@@ -121,7 +121,7 @@ func punish(config *Config, p Punishment, guildID int64, channel *dstate.Channel
 			return errors.New("cannot " + actionPresentTense + " a member who is ranked higher than the bot")
 		}
 
-		go sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason, -1, executedFromCommandTemplate)
+		sendPunishDM(config, msg, action, gs, channel, message, author, member, duration, reason, -1, executedFromCommandTemplate)
 	}
 
 	logLink := ""
