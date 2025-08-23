@@ -625,9 +625,6 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 					}
 					sections = append(sections, section)
 				}
-				if err != nil {
-					return nil, err
-				}
 				components = append(components, sections...)
 			} else {
 				section, err := CreateSection(val)
@@ -649,9 +646,6 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 						return nil, err
 					}
 					displays = append(displays, display)
-				}
-				if err != nil {
-					return nil, err
 				}
 				components = append(components, displays...)
 			} else {
@@ -684,9 +678,6 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 					}
 					files = append(files, file)
 				}
-				if err != nil {
-					return nil, err
-				}
 				components = append(components, files...)
 			} else {
 				file, err := CreateFile(msgFiles, val)
@@ -706,9 +697,6 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 					separator := CreateSeparator(v.Index(i).Interface())
 					separators = append(separators, separator)
 				}
-				if err != nil {
-					return nil, err
-				}
 				components = append(components, separators...)
 			} else {
 				separator := CreateSeparator(val)
@@ -727,9 +715,6 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 						return nil, err
 					}
 					containers = append(containers, container)
-				}
-				if err != nil {
-					return nil, err
 				}
 				components = append(components, containers...)
 			} else {

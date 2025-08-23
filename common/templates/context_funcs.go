@@ -328,12 +328,6 @@ func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
 }
 
 func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
-	var repliedUser bool
-	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-	if !filterSpecialMentions {
-		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
-		repliedUser = true
-	}
 
 	return func(channel interface{}, msg interface{}) interface{} {
 		if c.IncreaseCheckGenericAPICall() {
@@ -351,12 +345,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		var m *discordgo.Message
-		msgSend := &discordgo.MessageSend{
-			AllowedMentions: discordgo.AllowedMentions{
-				Parse:       parseMentions,
-				RepliedUser: repliedUser,
-			},
-		}
+		msgSend := &discordgo.MessageSend{}
 		var err error
 
 		switch typedMsg := msg.(type) {
@@ -366,10 +355,13 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			msgSend.Embeds = typedMsg
 		case *discordgo.MessageSend:
 			msgSend = typedMsg
-			if !filterSpecialMentions {
-				msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
-			}
 			if msgSend.Reference != nil && msgSend.Reference.ChannelID == 0 {
+				msgSend.Reference.ChannelID = cid
+			}
+		case *ComponentBuilder:
+			msgSend, _ = ComponentBuilderToComplexMessage(typedMsg)
+			if msgSend.Reference != nil {
+				msgSend.Reference.GuildID = c.GS.ID
 				msgSend.Reference.ChannelID = cid
 			}
 		default:
@@ -383,6 +375,14 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 				msgSend.Components = msgSend.Components[:4]
 			}
 			msgSend.Components = append(serverInfo, msgSend.Components...)
+		}
+
+		var repliedUser bool
+		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+		if !filterSpecialMentions {
+			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+			repliedUser = true
+			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
 
 		if msgSend.Reference != nil {
@@ -439,8 +439,13 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			msgEdit.Embeds = typedMsg
 		case *discordgo.MessageEdit:
 			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
-			// If there are no Embeds and string are explicitly set as null, give an error message.
-			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
+			msgEdit.AllowedMentions = typedMsg.AllowedMentions
+			msgEdit.Components = typedMsg.Components
+			msgEdit.Flags = typedMsg.Flags
+			msgEdit.Content = typedMsg.Content
+			msgEdit.Embeds = typedMsg.Embeds
+			// If there are no Embeds or if the message is not of type component V2  and string are explicitly set as null, give an error message.
+			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
 				if len(typedMsg.Embeds) == 0 {
 					return "", errors.New("both content and embed cannot be null")
 				}
@@ -455,11 +460,15 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 					return "", errors.New("both content and embed cannot be null")
 				}
 			}
-			msgEdit.AllowedMentions = typedMsg.AllowedMentions
-			msgEdit.Components = typedMsg.Components
-			msgEdit.Content = typedMsg.Content
-			msgEdit.Embeds = typedMsg.Embeds
-			msgEdit.Flags = typedMsg.Flags
+
+		case *ComponentBuilder:
+			msgEdit, err = ComponentBuilderToComplexMessageEdit(typedMsg)
+			if err != nil {
+				return "", err
+			}
+			msgEdit.ID = mID
+			msgEdit.Channel = cid
+
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
@@ -481,12 +490,6 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 }
 
 func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, values ...interface{}) (interface{}, error) {
-	var repliedUser bool
-	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-	if !filterSpecialMentions {
-		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
-		repliedUser = true
-	}
 
 	return func(channel interface{}, values ...interface{}) (interface{}, error) {
 		if c.IncreaseCheckGenericAPICall() {
@@ -511,72 +514,22 @@ func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID
 			return nil, err
 		}
 
-		msg := &discordgo.MessageSend{
-			AllowedMentions: discordgo.AllowedMentions{
-				Parse:       parseMentions,
-				RepliedUser: repliedUser,
-			},
-			Flags: discordgo.MessageFlagsIsComponentsV2,
+		msg, err := ComponentBuilderToComplexMessage(compBuilder)
+		if err != nil {
+			return nil, err
 		}
 
-		componentArgs := &ComponentBuilder{}
-
-		for i, key := range compBuilder.Components {
-			val := compBuilder.Values[i]
-
-			switch strings.ToLower(key) {
-			case "allowed_mentions":
-				if val == nil {
-					msg.AllowedMentions = discordgo.AllowedMentions{}
-					continue
-				}
-				parsed, err := parseAllowedMentions(val)
-				if err != nil {
-					return nil, err
-				}
-				msg.AllowedMentions = *parsed
-			case "reply":
-				msgID := ToInt64(val)
-				if msgID <= 0 {
-					return nil, fmt.Errorf("invalid message id '%s' provided to reply.", ToString(val))
-				}
-				msg.Reference = &discordgo.MessageReference{
-					GuildID:   c.GS.ID,
-					ChannelID: cid,
-					MessageID: msgID,
-				}
-			case "silent":
-				if val == nil || val == false {
-					continue
-				}
-				msg.Flags |= discordgo.MessageFlagsSuppressNotifications
-			case "ephemeral":
-				if val == nil || val == false {
-					continue
-				}
-				msg.Flags |= discordgo.MessageFlagsEphemeral
-			case "suppress_embeds":
-				if val == nil || val == false {
-					continue
-				}
-				msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
-			default:
-				componentArgs.Add(key, val)
-			}
+		if msg.Reference != nil {
+			msg.Reference.GuildID = c.GS.ID
+			msg.Reference.ChannelID = cid
 		}
 
-		if len(componentArgs.Components) > 0 {
-			components, err := CreateComponentArray(&msg.Files, componentArgs)
-			if err != nil {
-				return nil, err
-			}
-
-			err = validateTopLevelComponentsCustomIDs(components, nil)
-			if err != nil {
-				return nil, err
-			}
-
-			msg.Components = components
+		var repliedUser bool
+		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+		if !filterSpecialMentions {
+			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+			repliedUser = true
+			msg.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
 
 		m, err = common.BotSession.ChannelMessageSendComplex(cid, msg)
@@ -614,56 +567,13 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 		}
 
 		mID := ToInt64(msgID)
-		empty := ""
-		msg := &discordgo.MessageEdit{
-			ID:              mID,
-			Channel:         cid,
-			AllowedMentions: discordgo.AllowedMentions{Parse: parseMentions},
-			Flags:           discordgo.MessageFlagsIsComponentsV2,
-			Content:         &empty,
-			Embeds:          []*discordgo.MessageEmbed{},
+		msg, err := ComponentBuilderToComplexMessageEdit(compBuilder)
+		if err != nil {
+			return nil, err
 		}
-
-		componentArgs := &ComponentBuilder{}
-
-		for i, key := range compBuilder.Components {
-			val := compBuilder.Values[i]
-
-			switch strings.ToLower(key) {
-			case "allowed_mentions":
-				if val == nil {
-					msg.AllowedMentions = discordgo.AllowedMentions{}
-					continue
-				}
-				parsed, err := parseAllowedMentions(val)
-				if err != nil {
-					return nil, err
-				}
-				msg.AllowedMentions = *parsed
-			case "suppress_embeds":
-				if val == nil || val == false {
-					continue
-				}
-				msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
-			default:
-				componentArgs.Add(key, val)
-			}
-		}
-
-		if len(componentArgs.Components) > 0 {
-			components, err := CreateComponentArray(nil, componentArgs)
-			if err != nil {
-				return nil, err
-			}
-
-			err = validateTopLevelComponentsCustomIDs(components, nil)
-			if err != nil {
-				return nil, err
-			}
-
-			msg.Components = components
-		}
-
+		msg.ID = mID
+		msg.Channel = cid
+		msg.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
 		if !filterSpecialMentions {
 			msg.AllowedMentions = discordgo.AllowedMentions{
 				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
