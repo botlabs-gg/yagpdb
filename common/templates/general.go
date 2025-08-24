@@ -502,6 +502,73 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 	return msg, nil
 }
 
+func ComponentBuilderToComplexMessage(compBuilder *ComponentBuilder) (*discordgo.MessageSend, error) {
+	msg := &discordgo.MessageSend{
+		AllowedMentions: discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+		},
+		Flags: discordgo.MessageFlagsIsComponentsV2,
+	}
+
+	componentArgs := &ComponentBuilder{}
+	for i, key := range compBuilder.Components {
+		val := compBuilder.Values[i]
+
+		switch strings.ToLower(key) {
+		case "allowed_mentions":
+			if val == nil {
+				msg.AllowedMentions = discordgo.AllowedMentions{}
+				continue
+			}
+			parsed, err := parseAllowedMentions(val)
+			if err != nil {
+				return nil, err
+			}
+			msg.AllowedMentions = *parsed
+		case "reply":
+			msgID := ToInt64(val)
+			if msgID <= 0 {
+				return nil, errors.New(fmt.Sprintf("invalid message id '%s' provided to reply.", ToString(val)))
+			}
+			msg.Reference = &discordgo.MessageReference{
+				MessageID: msgID,
+			}
+		case "silent":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
+		case "ephemeral":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsEphemeral
+		case "suppress_embeds":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
+		default:
+			componentArgs.Add(key, val)
+		}
+	}
+
+	if len(componentArgs.Components) > 0 {
+		components, err := CreateComponentArray(&msg.Files, componentArgs)
+		if err != nil {
+			return nil, err
+		}
+
+		err = validateTopLevelComponentsCustomIDs(components, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		msg.Components = components
+	}
+	return msg, nil
+}
+
 func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 	if len(values) < 1 {
 		return &discordgo.MessageEdit{}, nil
@@ -658,6 +725,66 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 
 	return msg, nil
 
+}
+
+func ComponentBuilderToComplexMessageEdit(compBuilder *ComponentBuilder) (*discordgo.MessageEdit, error) {
+	empty := ""
+	msg := &discordgo.MessageEdit{
+		AllowedMentions: discordgo.AllowedMentions{Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}},
+		Flags:           discordgo.MessageFlagsIsComponentsV2,
+		Content:         &empty,
+		Embeds:          []*discordgo.MessageEmbed{},
+	}
+
+	componentArgs := &ComponentBuilder{}
+	for i, key := range compBuilder.Components {
+		val := compBuilder.Values[i]
+
+		switch strings.ToLower(key) {
+		case "allowed_mentions":
+			if val == nil {
+				msg.AllowedMentions = discordgo.AllowedMentions{}
+				continue
+			}
+			parsed, err := parseAllowedMentions(val)
+			if err != nil {
+				return nil, err
+			}
+			msg.AllowedMentions = *parsed
+		case "silent":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressNotifications
+		case "ephemeral":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsEphemeral
+		case "suppress_embeds":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
+		default:
+			componentArgs.Add(key, val)
+		}
+	}
+
+	if len(componentArgs.Components) > 0 {
+		components, err := CreateComponentArray(nil, componentArgs)
+		if err != nil {
+			return nil, err
+		}
+
+		err = validateTopLevelComponentsCustomIDs(components, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		msg.Components = components
+	}
+	return msg, nil
 }
 
 func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) {
