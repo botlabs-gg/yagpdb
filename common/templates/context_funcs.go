@@ -359,7 +359,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 				msgSend.Reference.ChannelID = cid
 			}
 		case *ComponentBuilder:
-			msgSend, _ = typedMsg.toComplexMessage()
+			msgSend, _ = typedMsg.ToComplexMessage()
 			if msgSend.Reference != nil {
 				msgSend.Reference.GuildID = c.GS.ID
 				msgSend.Reference.ChannelID = cid
@@ -462,7 +462,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			}
 
 		case *ComponentBuilder:
-			msgEdit, err = typedMsg.toComplexMessageEdit()
+			msgEdit, err = typedMsg.ToComplexMessageEdit()
 			if err != nil {
 				return "", err
 			}
@@ -514,7 +514,7 @@ func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID
 			return nil, err
 		}
 
-		msg, err := compBuilder.toComplexMessage()
+		msg, err := compBuilder.ToComplexMessage()
 		if err != nil {
 			return nil, err
 		}
@@ -567,7 +567,7 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 		}
 
 		mID := ToInt64(msgID)
-		msg, err := compBuilder.toComplexMessageEdit()
+		msg, err := compBuilder.ToComplexMessageEdit()
 		if err != nil {
 			return nil, err
 		}

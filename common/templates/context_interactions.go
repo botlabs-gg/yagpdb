@@ -189,7 +189,7 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 			msgEditResponse.Components = typedMsg.Components
 			msgEditResponse.AllowedMentions = &typedMsg.AllowedMentions
 		case *ComponentBuilder:
-			msg, err := typedMsg.toComplexMessageEdit()
+			msg, err := typedMsg.ToComplexMessageEdit()
 			if err != nil {
 				return "", err
 			}
@@ -334,7 +334,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 				msgReponse.Files = []*discordgo.File{typedMsg.File}
 			}
 		case *ComponentBuilder:
-			msg, err := typedMsg.toComplexMessage()
+			msg, err := typedMsg.ToComplexMessage()
 			if err != nil {
 				return ""
 			}
@@ -452,7 +452,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 			msgResponseEdit.Components = typedMsg.Components
 			msgResponseEdit.AllowedMentions = &typedMsg.AllowedMentions
 		case *ComponentBuilder:
-			msg, err := typedMsg.toComplexMessageEdit()
+			msg, err := typedMsg.ToComplexMessageEdit()
 			if err != nil {
 				return "", err
 			}

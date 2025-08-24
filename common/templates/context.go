@@ -1230,7 +1230,7 @@ func (s *ComponentBuilder) Get(key string) (result []interface{}) {
 	return
 }
 
-func (s *ComponentBuilder) toComplexMessage() (*discordgo.MessageSend, error) {
+func (s *ComponentBuilder) ToComplexMessage() (*discordgo.MessageSend, error) {
 	msg := &discordgo.MessageSend{
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
@@ -1297,7 +1297,7 @@ func (s *ComponentBuilder) toComplexMessage() (*discordgo.MessageSend, error) {
 	return msg, nil
 }
 
-func (s *ComponentBuilder) toComplexMessageEdit() (*discordgo.MessageEdit, error) {
+func (s *ComponentBuilder) ToComplexMessageEdit() (*discordgo.MessageEdit, error) {
 	empty := ""
 	msg := &discordgo.MessageEdit{
 		AllowedMentions: discordgo.AllowedMentions{Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}},
