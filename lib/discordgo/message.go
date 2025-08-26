@@ -341,14 +341,38 @@ type MessageSend struct {
 // MessageEdit is used to chain parameters via ChannelMessageEditComplex, which
 // is also where you should get the instance from.
 type MessageEdit struct {
-	Content         *string             `json:"content,omitempty"`
-	Components      []TopLevelComponent `json:"components"`
-	Embeds          []*MessageEmbed     `json:"embeds"`
-	AllowedMentions AllowedMentions     `json:"allowed_mentions,omitempty"`
-	Flags           MessageFlags        `json:"flags,omitempty"`
+	Content         *string
+	Components      []TopLevelComponent
+	Embeds          []*MessageEmbed
+	AllowedMentions AllowedMentions
+	Flags           MessageFlags
 
 	ID      int64
 	Channel int64
+}
+
+func (m *MessageEdit) MarshalJSON() ([]byte, error) {
+	type MessageEditAlias MessageEdit
+	temp := struct {
+		*MessageEditAlias
+		Content         *string             `json:"content,omitempty"`
+		Components      []TopLevelComponent `json:"components"`
+		Embeds          *[]*MessageEmbed    `json:"embeds,omitempty"`
+		AllowedMentions *AllowedMentions    `json:"allowed_mentions,omitempty"`
+		Flags           *MessageFlags       `json:"flags,omitempty"`
+	}{
+		MessageEditAlias: (*MessageEditAlias)(m),
+		Content:          m.Content,
+		Components:       m.Components,
+		AllowedMentions:  &m.AllowedMentions,
+		Flags:            &m.Flags,
+	}
+
+	if m.Embeds != nil {
+		temp.Embeds = &m.Embeds
+	}
+
+	return json.Marshal(temp)
 }
 
 // NewMessageEdit returns a MessageEdit struct, initialized
