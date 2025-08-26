@@ -345,7 +345,11 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		var m *discordgo.Message
-		msgSend := &discordgo.MessageSend{}
+		msgSend := &discordgo.MessageSend{
+			AllowedMentions: discordgo.AllowedMentions{
+				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+			},
+		}
 		var err error
 
 		switch typedMsg := msg.(type) {
@@ -409,10 +413,6 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 }
 
 func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
-	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-	if !filterSpecialMentions {
-		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
-	}
 	return func(channel interface{}, msgID interface{}, msg interface{}) (interface{}, error) {
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
@@ -425,9 +425,11 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 
 		mID := ToInt64(msgID)
 		msgEdit := &discordgo.MessageEdit{
-			ID:              mID,
-			Channel:         cid,
-			AllowedMentions: discordgo.AllowedMentions{Parse: parseMentions},
+			ID:      mID,
+			Channel: cid,
+			AllowedMentions: discordgo.AllowedMentions{
+				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+			},
 		}
 		var err error
 
@@ -474,10 +476,12 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			msgEdit.Content = &temp
 		}
 
+		var repliedUser bool
+		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
 		if !filterSpecialMentions {
-			msgEdit.AllowedMentions = discordgo.AllowedMentions{
-				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
-			}
+			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+			repliedUser = true
+			msgEdit.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
 
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
@@ -543,10 +547,6 @@ func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID
 }
 
 func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(channel interface{}, msgID interface{}, values ...interface{}) (interface{}, error) {
-	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-	if !filterSpecialMentions {
-		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
-	}
 	return func(channel interface{}, msgID interface{}, values ...interface{}) (interface{}, error) {
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
@@ -573,11 +573,12 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 		}
 		msg.ID = mID
 		msg.Channel = cid
-		msg.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions}
+		var repliedUser bool
+		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
 		if !filterSpecialMentions {
-			msg.AllowedMentions = discordgo.AllowedMentions{
-				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
-			}
+			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+			repliedUser = true
+			msg.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
 
 		_, err = common.BotSession.ChannelMessageEditComplex(msg)

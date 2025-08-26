@@ -133,10 +133,6 @@ func (c *Context) tmplDeleteInteractionResponse(interactionToken, msgID interfac
 }
 
 func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(interactionToken, msgID, msg interface{}) (interface{}, error) {
-	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-	if !filterSpecialMentions {
-		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
-	}
 	return func(interactionToken, msgID, msg interface{}) (interface{}, error) {
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
@@ -154,7 +150,7 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 		}
 
 		msgEditResponse := &discordgo.WebhookParams{
-			AllowedMentions: &discordgo.AllowedMentions{Parse: parseMentions},
+			AllowedMentions: &discordgo.AllowedMentions{Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}},
 		}
 		var err error
 
@@ -202,10 +198,12 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 			msgEditResponse.Content = temp
 		}
 
+		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+		var repliedUser bool
 		if !filterSpecialMentions {
-			msgEditResponse.AllowedMentions = &discordgo.AllowedMentions{
-				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
-			}
+			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+			repliedUser = true
+			msgEditResponse.AllowedMentions = &discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
 
 		if editOriginal {
@@ -304,7 +302,6 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 }
 
 func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, returnID bool) func(interactionToken interface{}, msg interface{}) interface{} {
-
 	return func(interactionToken interface{}, msg interface{}) interface{} {
 		if c.IncreaseCheckGenericAPICall() {
 			return ""
@@ -349,8 +346,8 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			msgReponse.Content = ToString(msg)
 		}
 
-		var repliedUser bool
 		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+		var repliedUser bool
 		if !filterSpecialMentions {
 			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
 			repliedUser = true
@@ -399,10 +396,6 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 }
 
 func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interface{}) (interface{}, error) {
-	parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-	if !filterSpecialMentions {
-		parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
-	}
 	return func(msg interface{}) (interface{}, error) {
 		if c.CurrentFrame.Interaction == nil {
 			return "", errors.New("no interaction data in context; consider editMessage or editResponse")
@@ -417,7 +410,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 		}
 
 		msgResponseEdit := &discordgo.InteractionResponseData{
-			AllowedMentions: &discordgo.AllowedMentions{Parse: parseMentions},
+			AllowedMentions: &discordgo.AllowedMentions{Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}},
 		}
 		var err error
 
@@ -464,10 +457,12 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 			msgResponseEdit.Content = temp
 		}
 
+		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
+		repliedUser := false
 		if !filterSpecialMentions {
-			msgResponseEdit.AllowedMentions = &discordgo.AllowedMentions{
-				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone},
-			}
+			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
+			repliedUser = true
+			msgResponseEdit.AllowedMentions = &discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
 
 		err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
