@@ -3112,7 +3112,7 @@ func (s *Session) BatchEditGuildApplicationCommandsPermissions(applicationID int
 // CreateInteractionResponse Create a response to an Interaction from the gateway. Takes an Interaction response.
 // POST /interactions/{interaction.id}/{interaction.token}/callback
 func (s *Session) CreateInteractionResponse(interactionID int64, token string, data *InteractionResponse) (err error) {
-	if len(data.Data.Embeds) > 0 {
+	if data.Data != nil && len(data.Data.Embeds) > 0 {
 		data.Data.Embeds = ValidateComplexMessageEmbeds(data.Data.Embeds)
 	}
 
