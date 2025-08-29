@@ -523,7 +523,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 
 	switch sendType {
 	case sendMessageInteractionResponse:
-		err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
+		_, err := common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Content:         msgSend.Content,
@@ -663,8 +663,6 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("deleteResponse", c.tmplDelResponse)
 	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
 
-	c.addContextFunc("editComponentMessage", c.tmplEditComponentsMessage(true))
-	c.addContextFunc("editComponentMessageNoEscape", c.tmplEditComponentsMessage(false))
 	c.addContextFunc("editMessage", c.tmplEditMessage(true))
 	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
 	c.addContextFunc("getMessage", c.tmplGetMessage)
@@ -675,15 +673,10 @@ func baseContextFuncs(c *Context) {
 
 	// Message send functions
 	c.addContextFunc("sendDM", c.tmplSendDM)
-	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
-	c.addContextFunc("sendComponentMessage", c.tmplSendComponentsMessage(true, false))
-	c.addContextFunc("sendComponentMessageNoEscape", c.tmplSendComponentsMessage(false, false))
-	c.addContextFunc("sendComponentMessageNoEscapeRetID", c.tmplSendComponentsMessage(false, true))
-	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
-	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
-	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
-	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
-	c.addContextFunc("sendMessageRetID", c.tmplSendMessage(true, true))
+	c.addContextFunc("sendMessage", c.tmplSendMessage(true))
+	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false))
+	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false))
+	c.addContextFunc("sendMessageRetID", c.tmplSendMessage(true))
 
 	c.addContextFunc("sendTemplate", c.tmplSendTemplate)
 	c.addContextFunc("sendTemplateDM", c.tmplSendTemplateDM)

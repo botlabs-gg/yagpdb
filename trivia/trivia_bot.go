@@ -333,7 +333,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	// Editing the embed can sometime get ratelimited
 	if t.ended || time.Since(t.startedAt) > TriviaDuration {
 		response.Data.Content = "You're too slow, trivia has already ended."
-		err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
+		_, err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 		if err != nil {
 			logger.WithError(err).Error("Failed creating interaction response")
 		}
@@ -344,7 +344,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	for _, v := range t.SelectedOptions {
 		if v.User.ID == ic.Member.User.ID {
 			response.Data.Content = fmt.Sprintf("You've already picked an answer: `%s`, I am going to ignore this 😒", t.Question.Options[v.Option])
-			err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
+			_, err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 			if err != nil {
 				logger.WithError(err).Error("Failed creating interaction response")
 			}
@@ -371,7 +371,7 @@ func (t *triviaSession) handleInteractionAdd(evt *eventsystem.EventData) {
 	}
 	response.Type = discordgo.InteractionResponseDeferredMessageUpdate
 	response.Data.Content = ""
-	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
+	_, err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 	if err != nil {
 		logger.WithError(err).Error("Failed creating interaction response")
 	}

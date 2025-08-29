@@ -931,7 +931,7 @@ func deferResponseToCCs(interaction *templates.CustomCommandInteraction, ccs []*
 	}
 
 	if def.Type != 0 {
-		err := common.BotSession.CreateInteractionResponse(interaction.ID, interaction.Token, def)
+		_, err := common.BotSession.CreateInteractionResponse(interaction.ID, interaction.Token, def)
 		if err != nil {
 			logger.WithField("guild", interaction.GuildID).WithError(err).Error("Error deferring response")
 		}

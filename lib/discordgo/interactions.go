@@ -586,3 +586,12 @@ func VerifyInteraction(r *http.Request, key ed25519.PublicKey) bool {
 
 	return ed25519.Verify(key, msg.Bytes(), sig)
 }
+
+type InteractionCallbackResponse struct {
+	ID                       int64           `json:"id,string"`
+	Type                     InteractionType `json:"type,omitempty"`
+	ActivityInstanceID       int64           `json:"activity_instance_id,string,omitempty"`
+	ResponseMessageID        int64           `json:"response_message_id,string,omitempty"`
+	ResponseMessageLoading   bool            `json:"response_message_loading,omitempty"`
+	ResponseMessageEphemeral bool            `json:"response_message_ephemeral,omitempty"`
+}

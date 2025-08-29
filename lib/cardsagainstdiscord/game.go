@@ -905,7 +905,7 @@ func (g *Game) HandleInteractionAdd(ic *discordgo.InteractionCreate) {
 
 	if g.State != GameStatePickingResponses {
 		// Pong the interaction
-		err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		_, err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseDeferredMessageUpdate,
 		})
 		if err != nil {
@@ -1076,7 +1076,7 @@ func (g *Game) HandleMessageCreate(ic *discordgo.InteractionCreate) {
 				msg += fmt.Sprintf("go to <#%d> and wait for the other players to finish their selections, the winner will be picked there", g.MasterChannel)
 			}
 
-			err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+			_, err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
 					Embeds: []*discordgo.MessageEmbed{{Description: msg}},
@@ -1249,7 +1249,7 @@ func (g *Game) playerPickedResponseReaction(player *Player, response string, ic 
 	card := player.Cards[emojiIndex]
 	if card != BlankCard {
 		// Pong the interaction
-		err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+		_, err := g.Session.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseDeferredMessageUpdate,
 		})
 		if err != nil {

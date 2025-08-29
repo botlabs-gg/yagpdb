@@ -336,7 +336,7 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 		content = fmt.Sprintf("This DM was sent from server\nID: **%d**, \nName: **%s**", guild_id, gs.Name)
 	}
 	response.Data.Content = content
-	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
+	_, err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
 	logger.WithError(err).Printf("Interaction Response!")
 }
 

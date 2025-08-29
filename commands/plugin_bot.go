@@ -186,7 +186,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 			if yc.IsResponseEphemeral || settings.AlwaysEphemeral {
 				response.Data = &discordgo.InteractionResponseData{Flags: 64}
 			}
-			err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &response)
+			_, err := data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &response)
 			if err != nil {
 				return nil, err
 			}

@@ -19,10 +19,10 @@ func interactionContextFuncs(c *Context) {
 	c.addContextFunc("ephemeralResponse", c.tmplEphemeralResponse)
 	c.addContextFunc("getResponse", c.tmplGetResponse)
 	c.addContextFunc("sendModal", c.tmplSendModal)
-	c.addContextFunc("sendResponse", c.tmplSendInteractionResponse(true, false))
-	c.addContextFunc("sendResponseNoEscape", c.tmplSendInteractionResponse(false, false))
-	c.addContextFunc("sendResponseNoEscapeRetID", c.tmplSendInteractionResponse(false, true))
-	c.addContextFunc("sendResponseRetID", c.tmplSendInteractionResponse(true, true))
+	c.addContextFunc("sendResponse", c.tmplSendInteractionResponse(true))
+	c.addContextFunc("sendResponseRetID", c.tmplSendInteractionResponse(true))
+	c.addContextFunc("sendResponseNoEscape", c.tmplSendInteractionResponse(false))
+	c.addContextFunc("sendResponseNoEscapeRetID", c.tmplSendInteractionResponse(false))
 	c.addContextFunc("updateMessage", c.tmplUpdateMessage(true))
 	c.addContextFunc("updateMessageNoEscape", c.tmplUpdateMessage(false))
 }
@@ -293,7 +293,7 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 		return "", errors.New("invalid modal passed to sendModal")
 	}
 
-	err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, typedModal)
+	_, err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, typedModal)
 	if err != nil {
 		return "", err
 	}
@@ -301,7 +301,7 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 	return "", nil
 }
 
-func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, returnID bool) func(interactionToken interface{}, msg interface{}) interface{} {
+func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool) func(interactionToken interface{}, msg interface{}) interface{} {
 	return func(interactionToken interface{}, msg interface{}) interface{} {
 		if c.IncreaseCheckGenericAPICall() {
 			return ""
@@ -359,17 +359,12 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			if c.IncreaseCheckCallCounter("interaction_response", 1) {
 				return ""
 			}
-			err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, token, &discordgo.InteractionResponse{
+			resp, err := common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, token, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: msgReponse,
 			})
 			if err == nil {
-				if token == c.CurrentFrame.Interaction.Token {
-					c.CurrentFrame.Interaction.RespondedTo = true
-				}
-				if returnID {
-					m, err = common.BotSession.GetOriginalInteractionResponse(common.BotApplication.ID, token)
-				}
+				return resp.ResponseMessageID
 			}
 		case sendMessageInteractionFollowup:
 			var file *discordgo.File
@@ -387,7 +382,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			})
 		}
 
-		if err == nil && returnID {
+		if err == nil {
 			return m.ID
 		}
 
@@ -465,7 +460,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 			msgResponseEdit.AllowedMentions = &discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
 
-		err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
+		_, err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, c.CurrentFrame.Interaction.Token, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: msgResponseEdit,
 		})

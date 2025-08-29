@@ -327,7 +327,7 @@ func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
 	return true
 }
 
-func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
+func (c *Context) tmplSendMessage(filterSpecialMentions bool) func(channel interface{}, msg interface{}) interface{} {
 
 	return func(channel interface{}, msg interface{}) interface{} {
 		if c.IncreaseCheckGenericAPICall() {
@@ -404,7 +404,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 
 		m, err = common.BotSession.ChannelMessageSendComplex(cid, msgSend)
 
-		if err == nil && returnID {
+		if err == nil {
 			return m.ID
 		}
 
@@ -485,103 +485,6 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 		}
 
 		_, err = common.BotSession.ChannelMessageEditComplex(msgEdit)
-		if err != nil {
-			return "", err
-		}
-
-		return "", nil
-	}
-}
-
-func (c *Context) tmplSendComponentsMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, values ...interface{}) (interface{}, error) {
-
-	return func(channel interface{}, values ...interface{}) (interface{}, error) {
-		if c.IncreaseCheckGenericAPICall() {
-			return nil, errors.New("too many calls")
-		}
-
-		cid := c.ChannelArg(channel)
-		if cid == 0 {
-			return nil, errors.New("invalid channel")
-		}
-
-		var m *discordgo.Message
-
-		var err error
-
-		if len(values) < 1 {
-			return nil, errors.New("no values passed")
-		}
-
-		compBuilder, err := CreateComponentBuilder(values...)
-		if err != nil {
-			return nil, err
-		}
-
-		msg, err := compBuilder.ToComplexMessage()
-		if err != nil {
-			return nil, err
-		}
-
-		if msg.Reference != nil {
-			msg.Reference.GuildID = c.GS.ID
-			msg.Reference.ChannelID = cid
-		}
-
-		var repliedUser bool
-		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-		if !filterSpecialMentions {
-			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
-			repliedUser = true
-			msg.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
-		}
-
-		m, err = common.BotSession.ChannelMessageSendComplex(cid, msg)
-
-		if err == nil && returnID {
-			return m.ID, nil
-		}
-
-		return "", err
-	}
-}
-
-func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(channel interface{}, msgID interface{}, values ...interface{}) (interface{}, error) {
-	return func(channel interface{}, msgID interface{}, values ...interface{}) (interface{}, error) {
-		if c.IncreaseCheckGenericAPICall() {
-			return "", ErrTooManyAPICalls
-		}
-
-		cid := c.ChannelArgNoDM(channel)
-		if cid == 0 {
-			return "", errors.New("unknown channel")
-		}
-
-		if len(values) < 1 {
-			return nil, errors.New("no values passed")
-		}
-
-		compBuilder, err := CreateComponentBuilder(values...)
-		if err != nil {
-			return nil, err
-		}
-
-		mID := ToInt64(msgID)
-		msg, err := compBuilder.ToComplexMessageEdit()
-		if err != nil {
-			return nil, err
-		}
-		msg.ID = mID
-		msg.Channel = cid
-		var repliedUser bool
-		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
-		if !filterSpecialMentions {
-			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone)
-			repliedUser = true
-			msg.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
-		}
-
-		_, err = common.BotSession.ChannelMessageEditComplex(msg)
 		if err != nil {
 			return "", err
 		}

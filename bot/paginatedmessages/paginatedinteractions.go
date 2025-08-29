@@ -178,7 +178,7 @@ func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate
 	defer p.mu.Unlock()
 
 	// Pong the interaction
-	err := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
+	_, err := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredMessageUpdate,
 	})
 	if err != nil {

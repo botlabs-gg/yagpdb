@@ -3111,7 +3111,7 @@ func (s *Session) BatchEditGuildApplicationCommandsPermissions(applicationID int
 
 // CreateInteractionResponse Create a response to an Interaction from the gateway. Takes an Interaction response.
 // POST /interactions/{interaction.id}/{interaction.token}/callback
-func (s *Session) CreateInteractionResponse(interactionID int64, token string, data *InteractionResponse) (err error) {
+func (s *Session) CreateInteractionResponse(interactionID int64, token string, data *InteractionResponse) (resp *InteractionCallbackResponse, err error) {
 	if data.Data != nil && len(data.Data.Embeds) > 0 {
 		data.Data.Embeds = ValidateComplexMessageEmbeds(data.Data.Embeds)
 	}
@@ -3119,15 +3119,23 @@ func (s *Session) CreateInteractionResponse(interactionID int64, token string, d
 	if data.Data != nil && len(data.Data.Files) > 0 {
 		contentType, body, err := MultipartBodyWithJSON(data, data.Data.Files)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		_, err = s.request("POST", EndpointInteractionCallback(interactionID, token), contentType, body, nil, EndpointInteractionCallback(0, ""))
-		return err
+		responseBody, err := s.request("POST", EndpointInteractionCallback(interactionID, token), contentType, body, nil, EndpointInteractionCallback(0, ""))
+		if err != nil {
+			return nil, err
+		}
+		err = unmarshal(responseBody, &resp)
+		return resp, err
 	}
 
-	_, err = s.RequestWithBucketID("POST", EndpointInteractionCallback(interactionID, token), data, nil, EndpointInteractionCallback(0, ""))
-	return
+	responseBody, err := s.RequestWithBucketID("POST", EndpointInteractionCallback(interactionID, token), data, nil, EndpointInteractionCallback(interactionID, ""))
+	if err != nil {
+		return nil, err
+	}
+	err = unmarshal(responseBody, &resp)
+	return resp, err
 }
 
 // GetOriginalInteractionResponse Returns the initial Interaction response. Functions the same as Get Webhook Message.
