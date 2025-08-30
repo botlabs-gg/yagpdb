@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"emperror.dev/errors"
@@ -103,7 +102,6 @@ func (p *Plugin) InitWeb() {
 	muxer.Handle(pat.Get(""), getHandler)
 	muxer.Handle(pat.Get("/"), getHandler)
 
-	muxer.Handle(pat.Post("/start"), web.ControllerPostHandler(handlePostStartOperation, getHandler, nil))
 	muxer.Handle(pat.Post("/cancel"), web.ControllerPostHandler(handlePostCancelOperation, getHandler, nil))
 
 	muxer.Handle(pat.Post(""), web.ControllerPostHandler(handlePostSaveAndStart, getHandler, nil))
@@ -205,61 +203,6 @@ func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) interface
 	return tmpl
 }
 
-func handlePostStartOperation(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
-	ctx := r.Context()
-	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
-
-	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		return tmpl.AddAlerts(web.ErrorAlert("Bulk Role Manager is premium only")), nil
-	}
-
-	config, err := GetBulkRoleConfig(activeGuild.ID)
-	if err != nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Failed to get configuration")), nil
-	}
-
-	if config.TargetRole == 0 {
-		return tmpl.AddAlerts(web.ErrorAlert("Please select a target role")), nil
-	}
-
-	if config.Operation == "" {
-		return tmpl.AddAlerts(web.ErrorAlert("Please select an operation type")), nil
-	}
-
-	if config.FilterType == "" {
-		return tmpl.AddAlerts(web.ErrorAlert("Please select a filter type")), nil
-	}
-
-	switch config.FilterType {
-	case "has_roles", "missing_roles":
-		if len(config.FilterRoleIDs) == 0 {
-			return tmpl.AddAlerts(web.ErrorAlert("Please select filter roles for this filter type")), nil
-		}
-		// Debug: Show how many roles were selected
-		logger.WithField("guild", activeGuild.ID).WithField("filterType", config.FilterType).WithField("roleCount", len(config.FilterRoleIDs)).Info("Role filter validation passed")
-
-		// Warn if too many roles selected (might cause notification truncation)
-		if len(config.FilterRoleIDs) > 20 {
-			tmpl.AddAlerts(web.WarningAlert(fmt.Sprintf("Warning: %d roles selected. Notifications may be truncated due to Discord's message limits.", len(config.FilterRoleIDs))))
-		} else if len(config.FilterRoleIDs) > 10 {
-			tmpl.AddAlerts(web.SucessAlert(fmt.Sprintf("Configuration saved with %d filter roles selected", len(config.FilterRoleIDs))))
-		}
-	case "joined_after", "joined_before":
-		if config.FilterDate == "" {
-			return tmpl.AddAlerts(web.ErrorAlert("Please select a filter date for this filter type")), nil
-		}
-	}
-
-	err = internalapi.PostWithGuild(activeGuild.ID, strconv.FormatInt(activeGuild.ID, 10)+"/bulkrole/start", nil, nil)
-	if err != nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Failed to start operation: " + err.Error())), nil
-	}
-
-	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyStartedOperation))
-
-	return tmpl.AddAlerts(web.SucessAlert("Bulk role operation started")), nil
-}
-
 func handlePostSaveAndStart(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
@@ -282,7 +225,7 @@ func handlePostSaveAndStart(w http.ResponseWriter, r *http.Request) (web.Templat
 		TargetRole:          parseFormInt64(r.FormValue("TargetRole")),
 		Operation:           r.FormValue("Operation"),
 		FilterType:          r.FormValue("FilterType"),
-		FilterRoleIDs:       parseFormInt64SliceFromForm(r.Form["FilterRoleIDs"]),
+		FilterRoleIDs:       parseFormInt64Slice(r.Form["FilterRoleIDs"]),
 		FilterRequireAll:    r.FormValue("FilterRequireAll") == "true",
 		FilterDate:          r.FormValue("FilterDate"),
 		NotificationChannel: parseFormInt64(r.FormValue("NotificationChannel")),
@@ -341,24 +284,7 @@ func parseFormInt64(value string) int64 {
 	return parsed
 }
 
-func parseFormInt64Slice(value string) []int64 {
-	if value == "" {
-		return nil
-	}
-	parts := strings.Split(value, ",")
-	var result []int64
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part != "" {
-			if parsed, err := strconv.ParseInt(part, 10, 64); err == nil {
-				result = append(result, parsed)
-			}
-		}
-	}
-	return result
-}
-
-func parseFormInt64SliceFromForm(values []string) []int64 {
+func parseFormInt64Slice(values []string) []int64 {
 	var result []int64
 	for _, value := range values {
 		if value != "" && value != "0" {

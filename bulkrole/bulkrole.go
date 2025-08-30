@@ -5,6 +5,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/mediocregopher/radix/v3"
 )
 
 var configCache = common.CacheSet.RegisterSlot("bulkrole_config", func(key interface{}) (interface{}, error) {
@@ -50,6 +51,7 @@ type BulkRoleConfig struct {
 
 	StartedBy         int64  `json:",string"`
 	StartedByUsername string `json:",omitempty"`
+	GuildID           int64  `json:",string"`
 }
 
 const (
@@ -73,5 +75,12 @@ func GetBulkRoleConfig(guildID int64) (*BulkRoleConfig, error) {
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed retrieving bulkrole config")
 	}
+	conf.GuildID = guildID
 	return conf, err
+}
+
+func IsBulkRoleOperationActive(guildID int64) bool {
+	var status int
+	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyBulkRoleStatus(guildID)))
+	return status > 0
 }
