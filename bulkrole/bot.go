@@ -3,6 +3,7 @@ package bulkrole
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -460,6 +461,101 @@ func IsBulkRoleOperationActive(guildID int64) bool {
 	return status > 0
 }
 
+// formatRoleList formats a list of role IDs with smart truncation to stay within Discord limits
+func formatRoleList(roleIDs []int64, prefix string, requireAll bool) string {
+	const maxFieldLength = 1000 // Leave some buffer below Discord's 1024 char limit
+
+	if len(roleIDs) == 0 {
+		return prefix + " (none selected)"
+	}
+
+	// Build the suffix first
+	var suffix string
+	if requireAll {
+		suffix = " (must have ALL)"
+	} else {
+		suffix = " (must have ANY)"
+	}
+
+	// Start building the role list
+	roleText := prefix + ": "
+	availableLength := maxFieldLength - len(roleText) - len(suffix)
+
+	var addedRoles []string
+	totalLength := 0
+
+	for i, roleID := range roleIDs {
+		roleStr := fmt.Sprintf("<@&%d>", roleID)
+		separator := ""
+		if i > 0 {
+			separator = ", "
+		}
+
+		testLength := totalLength + len(separator) + len(roleStr)
+
+		// Check if adding this role would exceed the limit
+		if testLength > availableLength {
+			// We need to truncate
+			remaining := len(roleIDs) - len(addedRoles)
+			truncationMsg := fmt.Sprintf(", ... and %d more", remaining)
+
+			// Make sure we have room for the truncation message
+			if totalLength+len(truncationMsg) <= availableLength {
+				roleText += strings.Join(addedRoles, ", ") + truncationMsg + suffix
+			} else {
+				// Not enough room even for truncation message, show fewer roles
+				for j := len(addedRoles) - 1; j >= 0; j-- {
+					testText := strings.Join(addedRoles[:j+1], ", ") + truncationMsg
+					if len(testText) <= availableLength {
+						roleText += testText + suffix
+						break
+					}
+				}
+				// If still too long, just show count
+				if len(roleText) <= len(prefix)+2 {
+					return fmt.Sprintf("%s: %d roles selected%s", prefix, len(roleIDs), suffix)
+				}
+			}
+			return roleText
+		}
+
+		addedRoles = append(addedRoles, roleStr)
+		totalLength = testLength
+	}
+
+	// All roles fit
+	roleText += strings.Join(addedRoles, ", ") + suffix
+	return roleText
+}
+
+// formatFilterDetails returns a formatted string with filter-specific information
+func formatFilterDetails(guildID int64, config *BulkRoleConfig) string {
+	switch config.FilterType {
+	case "all":
+		return "All members"
+	case "bots":
+		return "Bot accounts only"
+	case "humans":
+		return "Human accounts only"
+	case "has_roles":
+		return formatRoleList(config.FilterRoleIDs, "Has roles", config.FilterRequireAll)
+	case "missing_roles":
+		return formatRoleList(config.FilterRoleIDs, "Missing roles", config.FilterRequireAll)
+	case "joined_after":
+		if config.FilterDate != "" {
+			return fmt.Sprintf("Joined after %s", config.FilterDate)
+		}
+		return "Joined after (no date specified)"
+	case "joined_before":
+		if config.FilterDate != "" {
+			return fmt.Sprintf("Joined before %s", config.FilterDate)
+		}
+		return "Joined before (no date specified)"
+	default:
+		return config.FilterType
+	}
+}
+
 // sendNotificationAlert sends a notification to the configured channel about operation status
 func sendNotificationAlert(guildID int64, config *BulkRoleConfig, status string, processedCount int, resultsCount int, errorMsg string) {
 	if config.NotificationChannel == 0 {
@@ -484,10 +580,28 @@ func sendNotificationAlert(guildID int64, config *BulkRoleConfig, status string,
 		embed.Color = 0xffa500
 		embed.Title = "⏹️ Bulk Role Operation Cancelled"
 	}
+	filterDetails := formatFilterDetails(guildID, config)
+
+	// Final safety check: if filter details are still too long, use a simple fallback
+	if len(filterDetails) > 1024 {
+		switch config.FilterType {
+		case "has_roles":
+			filterDetails = fmt.Sprintf("Has %d specific roles (too many to display)%s",
+				len(config.FilterRoleIDs),
+				map[bool]string{true: " (must have ALL)", false: " (must have ANY)"}[config.FilterRequireAll])
+		case "missing_roles":
+			filterDetails = fmt.Sprintf("Missing %d specific roles (too many to display)%s",
+				len(config.FilterRoleIDs),
+				map[bool]string{true: " (must be missing ALL)", false: " (must be missing ANY)"}[config.FilterRequireAll])
+		default:
+			filterDetails = config.FilterType
+		}
+	}
+
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{
 			Name:   "Operation",
-			Value:  config.Operation,
+			Value:  strings.Title(config.Operation),
 			Inline: true,
 		},
 		{
@@ -496,9 +610,14 @@ func sendNotificationAlert(guildID int64, config *BulkRoleConfig, status string,
 			Inline: true,
 		},
 		{
-			Name:   "Filter Type",
-			Value:  config.FilterType,
+			Name:   "Started By",
+			Value:  fmt.Sprintf("<@%d>", config.StartedBy),
 			Inline: true,
+		},
+		{
+			Name:   "Filter Criteria",
+			Value:  filterDetails,
+			Inline: false,
 		},
 		{
 			Name:   "Members Processed",
@@ -519,12 +638,13 @@ func sendNotificationAlert(guildID int64, config *BulkRoleConfig, status string,
 		})
 	}
 
+	messageContent := fmt.Sprintf("Alert for bulk role operation started by <@%d>", config.StartedBy)
 	msg := &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{embed},
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
 		},
-		Content: fmt.Sprintf("Alert for bulk role operation started by <@%d>", config.StartedBy),
+		Content: messageContent,
 	}
 	_, err := bot.ShardManager.SessionForGuild(guildID).ChannelMessageSendComplex(config.NotificationChannel, msg)
 	if err != nil {
