@@ -79,7 +79,7 @@ var roleCommands = []*commands.YAGCommand{
 // 	}
 // 	gs.RUnlock()
 
-// 	config, err := GuildCacheGetGeneralConfig(gs)
+// 	config, err := GuildCacheGetAutoroleConfig(gs)
 // 	if err != nil {
 // 		return true, errors.WithStackIf(err)
 // 	}
@@ -91,7 +91,7 @@ var roleCommands = []*commands.YAGCommand{
 // 	return false, nil
 // }
 
-func saveGeneral(guildID int64, config *GeneralConfig) {
+func saveGeneral(guildID int64, config *AutoroleConfig) {
 	err := common.SetRedisJson(KeyGeneral(guildID), config)
 	if err != nil {
 		logger.WithError(err).Error("Failed saving autorole config")
@@ -117,7 +117,7 @@ func addMemberToAutorolePendingSet(guildID int64, userID int64) {
 }
 
 // Function to assign autorole to the user, or to schedule an event to assign the autorole after the membership screening is completed
-func assignRoleAfterScreening(config *GeneralConfig, evt *eventsystem.EventData, member *discordgo.Member) (retry bool, err error) {
+func assignRoleAfterScreening(config *AutoroleConfig, evt *eventsystem.EventData, member *discordgo.Member) (retry bool, err error) {
 	if config.Role == 0 || evt.GS.GetRole(config.Role) == nil {
 		return
 	}
@@ -148,7 +148,7 @@ func assignRoleAfterScreening(config *GeneralConfig, evt *eventsystem.EventData,
 func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	addEvt := evt.GuildMemberAdd()
 
-	config, err := GuildCacheGetGeneralConfig(addEvt.GuildID)
+	config, err := GuildCacheGetAutoroleConfig(addEvt.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}
@@ -166,7 +166,7 @@ func onMemberJoin(evt *eventsystem.EventData) (retry bool, err error) {
 	return assignRoleAfterScreening(config, evt, addEvt.Member)
 }
 
-func assignRole(config *GeneralConfig, guildID int64, targetID int64) (disabled bool, retry bool, err error) {
+func assignRole(config *AutoroleConfig, guildID int64, targetID int64) (disabled bool, retry bool, err error) {
 	analytics.RecordActiveUnit(guildID, &Plugin{}, "assigned_role")
 	err = common.BotSession.GuildMemberRoleAdd(guildID, targetID, config.Role)
 	if err != nil {
@@ -187,7 +187,7 @@ func assignRole(config *GeneralConfig, guildID int64, targetID int64) (disabled 
 	return false, false, nil
 }
 
-func (conf *GeneralConfig) CanAssignTo(currentRoles []int64, joinedAt time.Time) bool {
+func (conf *AutoroleConfig) CanAssignTo(currentRoles []int64, joinedAt time.Time) bool {
 	if time.Since(joinedAt) < time.Duration(conf.RequiredDuration)*time.Minute {
 		return false
 	}
@@ -256,7 +256,7 @@ func handleGuildChunk(evt *eventsystem.EventData) {
 		return
 	}
 
-	config, err := GetGeneralConfig(guildID)
+	config, err := GetAutoroleConfig(guildID)
 	if err != nil {
 		return
 	}
@@ -268,7 +268,7 @@ func handleGuildChunk(evt *eventsystem.EventData) {
 }
 
 // Iterate through all the members in the chunk, and add them to set, if autorole needs to be assigned to them
-func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *discordgo.GuildMembersChunk) {
+func iterateGuildChunkMembers(guildID int64, config *AutoroleConfig, chunk *discordgo.GuildMembersChunk) {
 	if isFullScanCancelled(guildID) {
 		return
 	}
@@ -343,7 +343,7 @@ func iterateGuildChunkMembers(guildID int64, config *GeneralConfig, chunk *disco
 }
 
 // Fetches 10 member ids from the set and assigns autorole to them
-func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigned *int, totalMembers int) bool {
+func handleAssignFullScanRole(guildID int64, config *AutoroleConfig, rolesAssigned *int, totalMembers int) bool {
 	var uIDs []string
 	common.RedisPool.Do(radix.Cmd(&uIDs, "ZPOPMIN", RedisKeyFullScanAutoroleMembers(guildID), "10"))
 	uIDCount := len(uIDs)
@@ -382,7 +382,7 @@ func handleAssignFullScanRole(guildID int64, config *GeneralConfig, rolesAssigne
 	return isFullScanCancelled(guildID)
 }
 
-func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
+func assignFullScanAutorole(guildID int64, config *AutoroleConfig) {
 	lastTimeFullScanStatusRefreshed := time.Now()
 	err := common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyFullScanStatus(guildID), "100", strconv.Itoa(FullScanAssigningRole)))
 	if err != nil {
@@ -425,17 +425,17 @@ func assignFullScanAutorole(guildID int64, config *GeneralConfig) {
 	}
 }
 
-func GuildCacheGetGeneralConfig(guildID int64) (*GeneralConfig, error) {
+func GuildCacheGetAutoroleConfig(guildID int64) (*AutoroleConfig, error) {
 	v, err := configCache.Get(guildID)
 	if err != nil {
 		return nil, err
 	}
 
-	return v.(*GeneralConfig), nil
+	return v.(*AutoroleConfig), nil
 }
 
 func handleAssignRole(evt *scheduledEventsModels.ScheduledEvent, data interface{}) (retry bool, err error) {
-	config, err := GetGeneralConfig(evt.GuildID)
+	config, err := GetAutoroleConfig(evt.GuildID)
 	if err != nil {
 		return true, nil
 	}
@@ -496,7 +496,7 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
-	config, err := GuildCacheGetGeneralConfig(update.GuildID)
+	config, err := GuildCacheGetAutoroleConfig(update.GuildID)
 	if err != nil {
 		return true, errors.WithStackIf(err)
 	}

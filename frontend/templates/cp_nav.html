@@ -230,6 +230,17 @@
                     </li>
                     <li class="nav-parent">
                         <a class="nav-link" href="#">
+                            <i class="fas fa-tags" aria-hidden="true"></i>
+                            <span>Roles</span>
+                        </a>
+                        <ul class="nav nav-children">
+                            {{range (index .SidebarItems "Roles")}}
+                            {{template "sidebar_item" (dict "ActiveGuild" $ag "Item" .)}}
+                            {{end}}
+                        </ul>
+                    </li>
+                    <li class="nav-parent">
+                        <a class="nav-link" href="#">
                             <i class="fas fa-bolt" aria-hidden="true"></i>
                             <span>Tools & Utilities</span>
                         </a>
@@ -239,6 +250,7 @@
                             {{end}}
                         </ul>
                     </li>
+                
                     <li class="nav-parent">
                         <a class="nav-link" href="#">
                             <i class="fas fa-trophy" aria-hidden="true"></i>

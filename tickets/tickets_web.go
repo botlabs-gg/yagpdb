@@ -69,9 +69,9 @@ func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.
 		settings = &models.TicketConfig{}
 	}
 
-	appendButtons := map[string]bool {}
-	appendButtons["Close"] = settings.AppendButtons & AppendButtonsClose == AppendButtonsClose
-	appendButtons["CloseWithReason"] = settings.AppendButtons & AppendButtonsCloseWithReason == AppendButtonsCloseWithReason
+	appendButtons := map[string]bool{}
+	appendButtons["Close"] = settings.AppendButtons&AppendButtonsClose == AppendButtonsClose
+	appendButtons["CloseWithReason"] = settings.AppendButtons&AppendButtonsCloseWithReason == AppendButtonsCloseWithReason
 
 	templateData["DefaultTicketMessage"] = DefaultTicketMsg
 	templateData["PluginSettings"] = settings

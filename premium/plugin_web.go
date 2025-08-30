@@ -194,7 +194,7 @@ func ContextPremium(ctx context.Context) bool {
 
 func ContextPremiumTier(ctx context.Context) PremiumTier {
 	if confAllGuildsPremium.GetBool() {
-		return PremiumTierPlus
+		return PremiumTierPremium
 	}
 
 	if v := ctx.Value(CtxKeyPremiumTier); v != nil {

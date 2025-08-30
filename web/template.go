@@ -183,6 +183,152 @@ OUTER:
 	return template.HTML(builder.String())
 }
 
+// tmplRoleDropdownExclude is a template function for generating role dropdown options
+// that excludes AutoRole, MuteRole, and StreamingRole
+// roles: slice of roles to display options for
+// highestBotRole: the bot's highest role, if not nil will disable roles above this one.
+// excludedRoleIDs: slice of role IDs to exclude
+// args are optional and in this order:
+// 1. current selected roleid
+// 2. default empty display name
+// 3. default unknown display name
+func tmplRoleDropdownExclude(roles []discordgo.Role, highestBotRole *discordgo.Role, excludedRoleIDs []int64, args ...interface{}) template.HTML {
+	hasCurrentSelected := len(args) > 0
+	var currentSelected int64
+	if hasCurrentSelected {
+		currentSelected = templates.ToInt64(args[0])
+	}
+
+	hasEmptyName := len(args) > 1
+	emptyName := ""
+	if hasEmptyName {
+		emptyName = templates.ToString(args[1])
+	}
+
+	hasUnknownName := len(args) > 2
+	unknownName := "Unknown role (deleted most likely)"
+	if hasUnknownName {
+		emptyName = templates.ToString(args[2])
+	}
+
+	output := ""
+	if hasEmptyName {
+		output += `<option value=""`
+		if currentSelected == 0 {
+			output += `selected`
+		}
+		output += ">" + template.HTMLEscapeString(emptyName) + "</option>\n"
+		output += `<optgroup label="────────────"></optgroup>`
+	}
+
+	found := false
+	for k, role := range roles {
+		// Skip the everyone role
+		if k == len(roles)-1 {
+			break
+		}
+
+		// Skip managed roles
+		if role.Managed && highestBotRole != nil {
+			continue
+		}
+
+		// Skip excluded roles (AutoRole, MuteRole, StreamingRole)
+		if common.ContainsInt64Slice(excludedRoleIDs, role.ID) {
+			continue
+		}
+
+		output += `<option value="` + discordgo.StrID(role.ID) + `"`
+		if role.ID == currentSelected {
+			output += " selected"
+			found = true
+		}
+
+		if role.Color != 0 {
+			hexColor := fmt.Sprintf("%06x", int64(role.Color))
+			output += " style=\"color: #" + hexColor + "\""
+		}
+
+		optName := template.HTMLEscapeString(role.Name)
+		if highestBotRole != nil {
+			if common.IsRoleAbove(&role, highestBotRole) || role.ID == highestBotRole.ID {
+				output += " disabled"
+				optName += " (role is above bot)"
+			}
+		}
+		output += ">" + optName + "</option>\n"
+	}
+
+	if !found && currentSelected != 0 {
+		output += `<option value="` + discordgo.StrID(currentSelected) + `" selected>` + unknownName + "</option>\n"
+	}
+
+	return template.HTML(output)
+}
+
+// tmplRoleDropdownMultiExclude is a template function for generating multi-select role dropdown options
+// that excludes AutoRole, MuteRole, and StreamingRole
+func tmplRoleDropdownMultiExclude(roles []discordgo.Role, highestBotRole *discordgo.Role, excludedRoleIDs []int64, selections []int64) template.HTML {
+	var builder strings.Builder
+
+	// show deleted roles
+OUTER:
+	for _, sr := range selections {
+		for _, gr := range roles {
+			if sr == gr.ID {
+				continue OUTER
+			}
+		}
+
+		builder.WriteString(fmt.Sprintf(`<option value="%[1]d" selected>Deleted role: %[1]d</option>\n`, sr))
+	}
+
+	for k, role := range roles {
+		// Skip the everyone role
+		if k == len(roles)-1 {
+			break
+		}
+
+		// Allow the selection of managed roles in cases where we do not assign them (for filters and such for example)
+		if role.Managed && highestBotRole != nil {
+			continue
+		}
+
+		// Skip excluded roles (AutoRole, MuteRole, StreamingRole)
+		if common.ContainsInt64Slice(excludedRoleIDs, role.ID) {
+			continue
+		}
+
+		optIsSelected := false
+		builder.WriteString(`<option value="` + discordgo.StrID(role.ID) + `"`)
+		for _, selected := range selections {
+			if selected == role.ID {
+				builder.WriteString(" selected")
+				optIsSelected = true
+			}
+		}
+
+		if role.Color != 0 {
+			hexColor := fmt.Sprintf("%06x", int64(role.Color))
+			builder.WriteString(" data-color=\"#" + hexColor + "\"")
+		}
+
+		optName := template.HTMLEscapeString(role.Name)
+		if highestBotRole != nil {
+			if common.IsRoleAbove(&role, highestBotRole) || highestBotRole.ID == role.ID {
+				if !optIsSelected {
+					builder.WriteString(" disabled")
+				}
+
+				optName += " (role is above bot)"
+			}
+		}
+		builder.WriteString(">" + optName + "</option>\n")
+	}
+
+	return template.HTML(builder.String())
+}
+
 func tmplChannelOpts(channelTypes []discordgo.ChannelType) interface{} {
 	optsBuilder := tmplChannelOptsMulti(channelTypes)
 	return func(channels []dstate.ChannelState, selection interface{}, allowEmpty bool, emptyName string) template.HTML {

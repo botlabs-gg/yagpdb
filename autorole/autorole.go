@@ -6,7 +6,7 @@ import (
 )
 
 var configCache = common.CacheSet.RegisterSlot("autorole_config", func(key interface{}) (interface{}, error) {
-	config, err := GetGeneralConfig(key.(int64))
+	config, err := GetAutoroleConfig(key.(int64))
 	return config, err
 }, int64(0))
 
@@ -32,7 +32,7 @@ func RegisterPlugin() {
 	common.RegisterPlugin(p)
 }
 
-type GeneralConfig struct {
+type AutoroleConfig struct {
 	Role             int64 `json:",string" valid:"role,true"`
 	RequiredDuration int   `valid:"0,"`
 
@@ -51,8 +51,8 @@ const (
 	FullScanCancelled
 )
 
-func GetGeneralConfig(guildID int64) (*GeneralConfig, error) {
-	conf := &GeneralConfig{}
+func GetAutoroleConfig(guildID int64) (*AutoroleConfig, error) {
+	conf := &AutoroleConfig{}
 	err := common.GetRedisJson(KeyGeneral(guildID), conf)
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed retreiving autorole config")
