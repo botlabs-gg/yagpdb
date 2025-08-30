@@ -1,0 +1,350 @@
+{{define "cp_bulkrole"}}
+{{template "cp_head" .}}
+
+
+<header class="page-header">
+    <h2>BulkRole</h2>
+</header>
+{{template "cp_alerts" .}}
+{{if .OperationActive}}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card card-featured card-featured-info">
+            <header class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cog fa-spin"></i> Bulk Role Operation in Progress
+                </h5>
+            </header>
+            <div class="card-body">
+                <span id="op-status" data-status="{{.OperationStatus}}" style="display:none;"></span>
+                <!-- Status and Progress -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div>
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Target Role</th>
+                                            <td class="text-warning">{{.CurrentOperation.TargetRole}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Operation</th>
+                                            <td class="text-warning">{{.CurrentOperation.Operation}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Filter Type</th>
+                                            <td class="text-warning">{{.CurrentOperation.FilterType}}</td>
+                                        </tr>
+                                        {{if and (eq .CurrentOperation.FilterType "has_roles" "missing_roles") (.CurrentOperation.FilterRequireAll)}}
+                                        <tr>
+                                            <th scope="row" class="text-danger">Match Critiera</th>
+                                            <td class="text-warning">{{if .CurrentOperation.FilterRequireAll }}Must match ALL{{else}}Must match ANY{{end}}</td>
+                                        </tr>
+                                        {{end}}
+                                        <tr>
+                                            <th scope="row" class="text-danger">Filter Date</th>
+                                            <td class="text-warning">{{.CurrentOperation.FilterDate}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Notification Channel</th>
+                                            <td class="text-warning">{{.CurrentOperation.NotificationChannel}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Started By</th>
+                                            <td class="text-warning">{{.CurrentOperation.StartedBy}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Total</th>
+                                            <td class="text-warning">{{.TotalMembers}} members</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Processed</th>
+                                            <td class="text-warning">{{.ProcessedCount}} members</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Modified</th>
+                                            <td class="text-warning">{{.ResultsCount}} members</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{if and (ne .OperationStatus "Completed") (ne .OperationStatus "Cancelled")}}
+                <div class="text-center mt-4">
+                    <form method="post" action="/manage/{{.ActiveGuild.ID}}/bulkrole/cancel" data-async-form>
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="fas fa-stop"></i> Cancel Operation
+                        </button>
+                    </form>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+{{else}}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card card-featured card-featured-info">
+            <header class="card-header">
+                <h4 class="card-title">Bulk Role Configuration</h4>
+            </header>
+            <div class="card-body">
+                {{if .PremiumRequired}}
+                <div class="card">
+                    <h5><i class="fas fa-crown"></i> Premium Feature</h5>
+                    <p class="mb-0">Bulk Role Manager is a premium feature. Please upgrade to premium to use this
+                        functionality.</p>
+                </div>
+                {{else if .RateLimitActive}}
+                <div class="card">
+                    <h5><i class="fas fa-clock"></i> Rate Limited</h5>
+                    <p class="mb-0">You are currently rate limited from bulk role operations. Please wait
+                        <strong>{{.RemainingCooldown}}</strong> seconds before starting another operation.
+                    </p>
+                </div>
+                {{else}}
+                <form method="post" action="" data-async-form>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="target-role">Target Role</label>
+                                <select id="target-role" class="form-control" name="TargetRole">
+                                    {{roleOptionsExclude .ActiveGuild.Roles .HighestRole .ExcludedRoleIDs 0 "Select a role"}}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="operation">Operation</label>
+                                <select id="operation" class="form-control" name="Operation">
+                                    <option value="">Select operation</option>
+                                    <option value="assign" {{if eq $.BulkRole.Operation "assign" }}selected{{end}}>
+                                        Assign Role</option>
+                                    <option value="remove" {{if eq $.BulkRole.Operation "remove" }}selected{{end}}>
+                                        Remove Role</option>
+                                </select>
+                            </div>
+                        </div>
+
+
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="filter-type">Filter Type</label>
+                                <select id="filter-type" class="form-control" name="FilterType">
+                                    <option value="">Select filter type</option>
+                                    <option value="all" {{if eq $.BulkRole.FilterType "all" }}selected{{end}}>All
+                                        members</option>
+                                    <option value="bots" {{if eq $.BulkRole.FilterType "bots" }}selected{{end}}>Bots
+                                        only</option>
+                                    <option value="humans" {{if eq $.BulkRole.FilterType "humans" }}selected{{end}}>
+                                        Humans only</option>
+                                    <option value="has_roles" {{if eq $.BulkRole.FilterType "has_roles"
+                                        }}selected{{end}}>Has specific roles</option>
+                                    <option value="missing_roles" {{if eq $.BulkRole.FilterType "missing_roles"
+                                        }}selected{{end}}>Missing specific roles</option>
+                                    <option value="joined_after" {{if eq $.BulkRole.FilterType "joined_after"
+                                        }}selected{{end}}>Joined after date</option>
+                                    <option value="joined_before" {{if eq $.BulkRole.FilterType "joined_before"
+                                        }}selected{{end}}>Joined before date</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="filter-role-group" style="display: none;">
+                                <label for="filter-roles">Filter Roles</label>
+                                <select name="FilterRoleIDs" data-plugin-multiselect class="multiselect form-control"
+                                    multiple="multiple">
+                                    {{roleOptionsMultiExclude .ActiveGuild.Roles nil .ExcludedRoleIDs nil}}
+                                </select>
+                                <div class="form-group mt-2">
+                                    {{checkbox "FilterRequireAll" "FilterRequireAll" "Require ALL selected roles" $.BulkRole.FilterRequireAll}}
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="filter-date-group" style="display: none;">
+                                <label for="filter-date">Filter Date</label>
+                                <input type="date" class="form-control" id="filter-date" name="FilterDate"
+                                    value="{{$.BulkRole.FilterDate}}">
+                            </div>
+
+                             <div class="form-group">
+                                <label for="notification-channel">Notification Channel</label>
+                                <small class="form-text text-info">(Optional) Receive alerts when operations complete or
+                                    fail</small>
+                                <select id="notification-channel" class="form-control" name="NotificationChannel"
+                                    data-requireperms-send>
+                                    <option value="0">No notifications</option>
+                                    {{textChannelOptions .ActiveGuild.Channels nil true "None"}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <button type="submit" class="btn btn-success btn-lg btn-block" {{if eq .BulkRole.TargetRole
+                            0}}disabled{{end}}>
+                            {{if eq .BulkRole.TargetRole 0}}START (Select a role){{else}}START{{end}}
+                        </button>
+                    </div>
+                </form>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Only run JavaScript if user has premium access
+        {{if not .PremiumRequired}}
+        const filterType = document.getElementById('filter-type');
+        const filterRoleGroup = document.getElementById('filter-role-group');
+        const filterDateGroup = document.getElementById('filter-date-group');
+        const targetRole = document.getElementById('target-role');
+        const startButton = document.querySelector('button[type="submit"]');
+
+        // Check if rate limited
+        const isRateLimited = {{if .RateLimitActive}}true{{else}}false{{end}};
+
+        function updateFilterFields() {
+            // Don't update if rate limited
+            if (isRateLimited) return;
+
+            const selectedValue = filterType.value;
+
+            // Hide all filter groups
+            filterRoleGroup.style.display = 'none';
+            filterDateGroup.style.display = 'none';
+
+            // Show relevant filter group only for filter types that need additional input
+            if (selectedValue === 'has_roles' || selectedValue === 'missing_roles') {
+                filterRoleGroup.style.display = 'block';
+            } else if (selectedValue === 'joined_after' || selectedValue === 'joined_before') {
+                filterDateGroup.style.display = 'block';
+            }
+            // For 'all', 'bots', 'humans' - no additional fields needed
+
+            // Update start button state
+            updateStartButton();
+        }
+
+        function updateStartButton() {
+            if (startButton && !isRateLimited) {
+                const hasRole = targetRole.value && targetRole.value !== '0';
+                startButton.disabled = !hasRole;
+                startButton.textContent = hasRole ? 'START' : 'START (Select a role)';
+            }
+        }
+
+        // Add event listeners only if not rate limited
+        if (!isRateLimited) {
+            filterType.addEventListener('change', updateFilterFields);
+            targetRole.addEventListener('change', updateStartButton);
+
+            // Initial setup
+            updateFilterFields();
+        }
+        {{end}}
+
+        // Auto-refresh operation status when operation is active (works for both premium and non-premium users)
+        const operationActive = {{if .OperationActive}}true{{else}}false{{end}};
+
+        if (operationActive) {
+            let refreshInterval;
+
+            function startAutoRefresh() {
+                refreshInterval = setInterval(function () {
+                    refreshOperationStatus();
+                }, 5000); // Refresh every 5 seconds
+            }
+
+            function stopAutoRefresh() {
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                }
+            }
+
+            function refreshOperationStatus() {
+                // Fetch only the operation status data
+                fetch(window.location.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+
+                        // Read new status from hidden element
+                        const newStatusEl = doc.querySelector('#op-status');
+                        const newStatus = newStatusEl ? newStatusEl.getAttribute('data-status') : '';
+
+                        // Update local status element
+                        const currentStatusEl = document.querySelector('#op-status');
+                        if (currentStatusEl && newStatus) {
+                            currentStatusEl.setAttribute('data-status', newStatus);
+                        }
+
+                        // If status is Completed or Cancelled, finalize UI
+                        if (newStatus === 'Completed' || newStatus === 'Cancelled') {
+                            stopAutoRefresh();
+                            updateUIForCompletion();
+                            return;
+                        }
+
+                        // Fallback: if operation section disappeared, finalize
+                        const opSection = doc.querySelector('#op-status');
+                        if (!opSection) {
+                            stopAutoRefresh();
+                            updateUIForCompletion();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Failed to refresh operation status:', error);
+                    });
+            }
+
+            function updateUIForCompletion() {
+                // Find the operation section and update it to show completion
+                const operationCard = document.querySelector('.card.card-featured.card-featured-warning');
+                if (operationCard) {
+                    const cardBody = operationCard.querySelector('.card-body');
+                    if (cardBody) {
+                        // Replace the operation content with completion message
+                        cardBody.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle"></i> Operation Completed</h5>
+                            <p class="mb-0">The bulk role operation has finished processing.</p>
+                        </div>
+                        <p class="text-info">No bulk role operation is currently active.</p>
+                    `;
+                    }
+                }
+            }
+
+            // Start auto-refresh
+            startAutoRefresh();
+
+            // Stop auto-refresh when page becomes hidden (user switches tabs)
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    stopAutoRefresh();
+                } else {
+                    startAutoRefresh();
+                }
+            });
+
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', stopAutoRefresh);
+        }
+});
+</script>
+
+{{template "cp_footer" .}}
+{{end}}

@@ -67,7 +67,7 @@ type FormGroup struct {
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("rolecommands/assets/rolecommands.html", PageHTML)
 
-	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+	web.AddSidebarItem(web.SidebarCategoryRoles, &web.SidebarItem{
 		Name: "Role Commands",
 		URL:  "rolecommands/",
 		Icon: "fas fa-tags",

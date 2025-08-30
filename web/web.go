@@ -91,12 +91,14 @@ func init() {
 
 	Templates = template.New("")
 	Templates = Templates.Funcs(template.FuncMap{
-		"mTemplate":        mTemplate,
-		"hasPerm":          hasPerm,
-		"formatTime":       prettyTime,
-		"checkbox":         tmplCheckbox,
-		"roleOptions":      tmplRoleDropdown,
-		"roleOptionsMulti": tmplRoleDropdownMulti,
+		"mTemplate":               mTemplate,
+		"hasPerm":                 hasPerm,
+		"formatTime":              prettyTime,
+		"checkbox":                tmplCheckbox,
+		"roleOptions":             tmplRoleDropdown,
+		"roleOptionsMulti":        tmplRoleDropdownMulti,
+		"roleOptionsExclude":      tmplRoleDropdownExclude,
+		"roleOptionsMultiExclude": tmplRoleDropdownMultiExclude,
 
 		"textChannelOptions": tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews, discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildForum,
 			discordgo.ChannelTypeGuildStageVoice}),
@@ -441,6 +443,7 @@ func loadCoreHTMLTemplate(path string) {
 const (
 	SidebarCategoryTopLevel       = "Top"
 	SidebarCategoryFeeds          = "Feeds"
+	SidebarCategoryRoles          = "Roles"
 	SidebarCategoryTools          = "Tools"
 	SidebarCategoryFun            = "Fun"
 	SidebarCategoryCore           = "Core"

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/antiphishing"
+	"github.com/botlabs-gg/yagpdb/v2/bulkrole"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/common/prom"
 	"github.com/botlabs-gg/yagpdb/v2/common/run"
@@ -96,6 +97,7 @@ func main() {
 	featureflags.RegisterPlugin()
 	trivia.RegisterPlugin()
 	rss.RegisterPlugin()
+	bulkrole.RegisterPlugin()
 
 	// Register confusables replacer
 	confusables.Init()

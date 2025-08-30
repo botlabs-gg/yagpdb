@@ -6603,6 +6603,7 @@ html.dark .card-actions a:hover {
 
 html.dark .card-body {
 	background: #2e353e;
+	border-radius: 0px !important;
 }
 
 html.dark .card-footer {

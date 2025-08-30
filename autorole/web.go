@@ -24,7 +24,7 @@ import (
 var PageHTML string
 
 type Form struct {
-	GeneralConfig `valid:"traverse"`
+	AutoroleConfig `valid:"traverse"`
 }
 
 var _ web.SimpleConfigSaver = (*Form)(nil)
@@ -35,7 +35,7 @@ var (
 )
 
 func (f Form) Save(guildID int64) error {
-	err := common.SetRedisJson(KeyGeneral(guildID), f.GeneralConfig)
+	err := common.SetRedisJson(KeyGeneral(guildID), f.AutoroleConfig)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (f Form) Name() string {
 func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("autorole/assets/autorole.html", PageHTML)
 
-	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
+	web.AddSidebarItem(web.SidebarCategoryRoles, &web.SidebarItem{
 		Name: "Autorole",
 		URL:  "autorole",
 		Icon: "fas fa-user-plus",
@@ -81,7 +81,7 @@ func handleGetAutoroleMainPage(w http.ResponseWriter, r *http.Request) interface
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
-	general, err := GetGeneralConfig(activeGuild.ID)
+	general, err := GetAutoroleConfig(activeGuild.ID)
 	web.CheckErr(tmpl, err, "Failed retrieving general config (contact support)", web.CtxLogger(r.Context()).Error)
 	tmpl["Autorole"] = general
 
@@ -167,7 +167,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	templateData["WidgetTitle"] = "Autorole"
 	templateData["SettingsPath"] = "/autorole"
 
-	general, err := GetGeneralConfig(ag.ID)
+	general, err := GetAutoroleConfig(ag.ID)
 	if err != nil {
 		return templateData, err
 	}
