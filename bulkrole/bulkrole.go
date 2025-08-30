@@ -48,7 +48,8 @@ type BulkRoleConfig struct {
 
 	NotificationChannel int64 `json:",string" valid:"channel,true"`
 
-	StartedBy int64 `json:",string"`
+	StartedBy         int64  `json:",string"`
+	StartedByUsername string `json:",omitempty"`
 }
 
 const (
@@ -59,6 +60,12 @@ const (
 	BulkRoleCancelled
 	BulkRoleCompleted
 )
+
+type StatusResponse struct {
+	Status    int `json:"status"`
+	Processed int `json:"processed"`
+	Results   int `json:"results"`
+}
 
 func GetBulkRoleConfig(guildID int64) (*BulkRoleConfig, error) {
 	conf := &BulkRoleConfig{}

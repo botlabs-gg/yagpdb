@@ -14,6 +14,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/autorole"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/common/internalapi"
 	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
@@ -149,9 +150,13 @@ func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) interface
 		common.RedisPool.Do(radix.Cmd(&remainingCooldown, "TTL", "bulkrole:"+discordgo.StrID(activeGuild.ID)+":cooldown"))
 	}
 
-	status, processed, results, err := getBulkRoleStatus(activeGuild.ID)
+	var statusResp StatusResponse
+	err = internalapi.GetWithGuild(activeGuild.ID, strconv.FormatInt(activeGuild.ID, 10)+"/bulkrole/status", &statusResp)
+	status, processed, results := 0, 0, 0
 	if err != nil {
 		logger.WithError(err).Error("Failed to get bulk role status")
+	} else {
+		status, processed, results = statusResp.Status, statusResp.Processed, statusResp.Results
 	}
 
 	operationActive := status > 0
@@ -193,6 +198,7 @@ func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) interface
 			"FilterDate":          general.FilterDate,
 			"NotificationChannel": general.NotificationChannel,
 			"StartedBy":           general.StartedBy,
+			"StartedByUsername":   general.StartedByUsername,
 		}
 	}
 
@@ -229,13 +235,22 @@ func handlePostStartOperation(w http.ResponseWriter, r *http.Request) (web.Templ
 		if len(config.FilterRoleIDs) == 0 {
 			return tmpl.AddAlerts(web.ErrorAlert("Please select filter roles for this filter type")), nil
 		}
+		// Debug: Show how many roles were selected
+		logger.WithField("guild", activeGuild.ID).WithField("filterType", config.FilterType).WithField("roleCount", len(config.FilterRoleIDs)).Info("Role filter validation passed")
+
+		// Warn if too many roles selected (might cause notification truncation)
+		if len(config.FilterRoleIDs) > 20 {
+			tmpl.AddAlerts(web.WarningAlert(fmt.Sprintf("Warning: %d roles selected. Notifications may be truncated due to Discord's message limits.", len(config.FilterRoleIDs))))
+		} else if len(config.FilterRoleIDs) > 10 {
+			tmpl.AddAlerts(web.SucessAlert(fmt.Sprintf("Configuration saved with %d filter roles selected", len(config.FilterRoleIDs))))
+		}
 	case "joined_after", "joined_before":
 		if config.FilterDate == "" {
 			return tmpl.AddAlerts(web.ErrorAlert("Please select a filter date for this filter type")), nil
 		}
 	}
 
-	err = startBulkRoleOperation(activeGuild.ID, config)
+	err = internalapi.PostWithGuild(activeGuild.ID, strconv.FormatInt(activeGuild.ID, 10)+"/bulkrole/start", nil, nil)
 	if err != nil {
 		return tmpl.AddAlerts(web.ErrorAlert("Failed to start operation: " + err.Error())), nil
 	}
@@ -258,16 +273,25 @@ func handlePostSaveAndStart(w http.ResponseWriter, r *http.Request) (web.Templat
 		return tmpl.AddAlerts(web.ErrorAlert("Failed to parse form data")), nil
 	}
 
+	user := web.ContextUser(r.Context())
+
+	// Debug: Log the raw form values for FilterRoleIDs
+	logger.WithField("guild", activeGuild.ID).WithField("filterRoleIDs_raw", r.Form["FilterRoleIDs"]).Info("Processing FilterRoleIDs from form")
+
 	config := &BulkRoleConfig{
 		TargetRole:          parseFormInt64(r.FormValue("TargetRole")),
 		Operation:           r.FormValue("Operation"),
 		FilterType:          r.FormValue("FilterType"),
-		FilterRoleIDs:       parseFormInt64Slice(r.FormValue("FilterRoleIDs")),
+		FilterRoleIDs:       parseFormInt64SliceFromForm(r.Form["FilterRoleIDs"]),
 		FilterRequireAll:    r.FormValue("FilterRequireAll") == "true",
 		FilterDate:          r.FormValue("FilterDate"),
 		NotificationChannel: parseFormInt64(r.FormValue("NotificationChannel")),
-		StartedBy:           web.ContextUser(r.Context()).ID,
+		StartedBy:           user.ID,
+		StartedByUsername:   user.String(),
 	}
+
+	// Debug: Log the parsed FilterRoleIDs
+	logger.WithField("guild", activeGuild.ID).WithField("filterRoleIDs_parsed", config.FilterRoleIDs).Info("Parsed FilterRoleIDs")
 
 	if config.FilterDate != "" {
 		parsed, err := time.Parse("2006-01-02", config.FilterDate)
@@ -296,7 +320,7 @@ func handlePostSaveAndStart(w http.ResponseWriter, r *http.Request) (web.Templat
 
 	pubsub.EvictCacheSet(configCache, activeGuild.ID)
 
-	err = startBulkRoleOperation(activeGuild.ID, config)
+	err = internalapi.PostWithGuild(activeGuild.ID, strconv.FormatInt(activeGuild.ID, 10)+"/bulkrole/start", nil, nil)
 	if err != nil {
 		return tmpl.AddAlerts(web.ErrorAlert("Failed to start operation: " + err.Error())), nil
 	}
@@ -334,6 +358,18 @@ func parseFormInt64Slice(value string) []int64 {
 	return result
 }
 
+func parseFormInt64SliceFromForm(values []string) []int64 {
+	var result []int64
+	for _, value := range values {
+		if value != "" && value != "0" {
+			if parsed, err := strconv.ParseInt(value, 10, 64); err == nil {
+				result = append(result, parsed)
+			}
+		}
+	}
+	return result
+}
+
 func handlePostCancelOperation(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
@@ -342,7 +378,7 @@ func handlePostCancelOperation(w http.ResponseWriter, r *http.Request) (web.Temp
 		return tmpl.AddAlerts(web.ErrorAlert("Bulk Role Manager is premium only")), nil
 	}
 
-	err := cancelBulkRoleOperation(activeGuild.ID)
+	err := internalapi.PostWithGuild(activeGuild.ID, strconv.FormatInt(activeGuild.ID, 10)+"/bulkrole/cancel", nil, nil)
 	if err != nil {
 		return tmpl.AddAlerts(web.ErrorAlert("Failed to cancel operation: " + err.Error())), nil
 	}

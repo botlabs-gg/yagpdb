@@ -26,33 +26,71 @@
                                     <tbody>
                                         <tr>
                                             <th scope="row" class="text-danger">Target Role</th>
-                                            <td class="text-warning">{{.CurrentOperation.TargetRole}}</td>
+                                            <td class="text-warning">
+                                                {{$role := .ActiveGuild.GetRole .CurrentOperation.TargetRole}}
+                                                {{if $role}}{{$role.Name}}{{else}}Unknown Role ({{.CurrentOperation.TargetRole}}){{end}}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th scope="row" class="text-danger">Operation</th>
-                                            <td class="text-warning">{{.CurrentOperation.Operation}}</td>
+                                            <td class="text-warning">{{title .CurrentOperation.Operation}}</td>
                                         </tr>
                                         <tr>
                                             <th scope="row" class="text-danger">Filter Type</th>
-                                            <td class="text-warning">{{.CurrentOperation.FilterType}}</td>
+                                            <td class="text-warning">
+                                                {{if eq .CurrentOperation.FilterType "all"}}All members
+                                                {{else if eq .CurrentOperation.FilterType "bots"}}Bots only
+                                                {{else if eq .CurrentOperation.FilterType "humans"}}Humans only
+                                                {{else if eq .CurrentOperation.FilterType "has_roles"}}Has specific roles
+                                                {{else if eq .CurrentOperation.FilterType "missing_roles"}}Missing specific roles
+                                                {{else if eq .CurrentOperation.FilterType "joined_after"}}Joined after date
+                                                {{else if eq .CurrentOperation.FilterType "joined_before"}}Joined before date
+                                                {{else}}{{.CurrentOperation.FilterType}}{{end}}
+                                            </td>
                                         </tr>
-                                        {{if and (eq .CurrentOperation.FilterType "has_roles" "missing_roles") (.CurrentOperation.FilterRequireAll)}}
+                                        {{if or (eq .CurrentOperation.FilterType "has_roles") (eq .CurrentOperation.FilterType "missing_roles")}}
+                                        {{if .CurrentOperation.FilterRoleIDs}}
                                         <tr>
-                                            <th scope="row" class="text-danger">Match Critiera</th>
-                                            <td class="text-warning">{{if .CurrentOperation.FilterRequireAll }}Must match ALL{{else}}Must match ANY{{end}}</td>
+                                            <th scope="row" class="text-danger">Filter Roles</th>
+                                            <td class="text-warning">
+                                                {{range $i, $roleID := .CurrentOperation.FilterRoleIDs}}
+                                                    {{$filterRole := $.ActiveGuild.GetRole $roleID}}
+                                                    {{if $filterRole}}{{$filterRole.Name}}{{else}}Unknown ({{$roleID}}){{end}}{{if lt (add $i 1) (len $.CurrentOperation.FilterRoleIDs)}}, {{end}}
+                                                {{end}}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row" class="text-danger">Match Criteria</th>
+                                            <td class="text-warning">{{if .CurrentOperation.FilterRequireAll}}Must match ALL{{else}}Must match ANY{{end}}</td>
                                         </tr>
                                         {{end}}
+                                        {{end}}
+                                        {{if or (eq .CurrentOperation.FilterType "joined_after") (eq .CurrentOperation.FilterType "joined_before")}}
+                                        {{if .CurrentOperation.FilterDate}}
                                         <tr>
                                             <th scope="row" class="text-danger">Filter Date</th>
                                             <td class="text-warning">{{.CurrentOperation.FilterDate}}</td>
                                         </tr>
+                                        {{end}}
+                                        {{end}}
+                                        {{if ne .CurrentOperation.NotificationChannel 0}}
                                         <tr>
                                             <th scope="row" class="text-danger">Notification Channel</th>
-                                            <td class="text-warning">{{.CurrentOperation.NotificationChannel}}</td>
+                                            <td class="text-warning">
+                                                {{$channel := .ActiveGuild.GetChannel .CurrentOperation.NotificationChannel}}
+                                                {{if $channel}}#{{$channel.Name}}{{else}}Unknown Channel ({{.CurrentOperation.NotificationChannel}}){{end}}
+                                            </td>
                                         </tr>
+                                        {{end}}
                                         <tr>
                                             <th scope="row" class="text-danger">Started By</th>
-                                            <td class="text-warning">{{.CurrentOperation.StartedBy}}</td>
+                                            <td class="text-warning">
+                                                {{if .CurrentOperation.StartedByUsername}}
+                                                    {{.CurrentOperation.StartedByUsername}} ({{.CurrentOperation.StartedBy}})
+                                                {{else}}
+                                                    User ID: {{.CurrentOperation.StartedBy}}
+                                                {{end}}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th scope="row" class="text-danger">Total</th>
@@ -114,7 +152,7 @@
                             <div class="form-group">
                                 <label for="target-role">Target Role</label>
                                 <select id="target-role" class="form-control" name="TargetRole">
-                                    {{roleOptionsExclude .ActiveGuild.Roles .HighestRole .ExcludedRoleIDs 0 "Select a role"}}
+                                    {{roleOptionsExclude .ActiveGuild.Roles .HighestRole .ExcludedRoleIDs .BulkRole.TargetRole "Select a role"}}
                                 </select>
                             </div>
 
@@ -159,7 +197,7 @@
                                 <label for="filter-roles">Filter Roles</label>
                                 <select name="FilterRoleIDs" data-plugin-multiselect class="multiselect form-control"
                                     multiple="multiple">
-                                    {{roleOptionsMultiExclude .ActiveGuild.Roles nil .ExcludedRoleIDs nil}}
+                                    {{roleOptionsMultiExclude .ActiveGuild.Roles nil .ExcludedRoleIDs .BulkRole.FilterRoleIDs}}
                                 </select>
                                 <div class="form-group mt-2">
                                     {{checkbox "FilterRequireAll" "FilterRequireAll" "Require ALL selected roles" $.BulkRole.FilterRequireAll}}
@@ -178,8 +216,8 @@
                                     fail</small>
                                 <select id="notification-channel" class="form-control" name="NotificationChannel"
                                     data-requireperms-send>
-                                    <option value="0">No notifications</option>
-                                    {{textChannelOptions .ActiveGuild.Channels nil true "None"}}
+                                    <option value="0" {{if eq .BulkRole.NotificationChannel 0}}selected{{end}}>No notifications</option>
+                                    {{textChannelOptions .ActiveGuild.Channels .BulkRole.NotificationChannel true "None"}}
                                 </select>
                             </div>
                         </div>
