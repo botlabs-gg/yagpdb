@@ -29,12 +29,14 @@ func botRestHandleStartOperation(w http.ResponseWriter, r *http.Request) {
 
 	config, err := GetBulkRoleConfig(parsedGID)
 	if err != nil {
+		logger.WithField("guild", parsedGID).WithError(err).Error("failed to get config via internal API")
 		internalapi.ServerError(w, r, errors.WithMessage(err, "failed to get config"))
 		return
 	}
 
-	err = startBulkRoleOperation(parsedGID, config)
+	err = config.startBulkRoleOperation()
 	if err != nil {
+		logger.WithField("guild", parsedGID).WithError(err).Error("failed to start bulk role operation via internal API")
 		internalapi.ServerError(w, r, err)
 		return
 	}
@@ -52,7 +54,13 @@ func botRestHandleCancelOperation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := cancelBulkRoleOperation(parsedGID)
+	config, err := GetBulkRoleConfig(parsedGID)
+	if err != nil {
+		internalapi.ServerError(w, r, errors.WithMessage(err, "failed to get config"))
+		return
+	}
+
+	err = config.cancelBulkRoleOperation()
 	if err != nil {
 		internalapi.ServerError(w, r, err)
 		return
@@ -71,7 +79,13 @@ func botRestHandleGetStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, processed, results, err := getBulkRoleStatus(parsedGID)
+	config, err := GetBulkRoleConfig(parsedGID)
+	if err != nil {
+		internalapi.ServerError(w, r, errors.WithMessage(err, "failed to get config"))
+		return
+	}
+
+	status, processed, results, err := config.getBulkRoleStatus()
 	if err != nil {
 		internalapi.ServerError(w, r, err)
 		return
