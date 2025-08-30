@@ -103,8 +103,6 @@ func handleGuildChunk(evt *eventsystem.EventData) {
 
 // Process a chunk of members for bulk role operations
 func (config *BulkRoleConfig) processBulkRoleChunk(chunk *discordgo.GuildMembersChunk) {
-
-	// Check permissions periodically
 	if err := config.canBotAssignRole(); err != nil {
 		logger.WithError(err).WithField("guild", config.GuildID).Error("Bot lost permissions during bulk role operation, canceling")
 		config.forceOperationCompletion("Bot lost permissions during operation")
@@ -349,9 +347,6 @@ func (config *BulkRoleConfig) startBulkRoleOperation() error {
 	common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyBulkRoleResults(guildID), "0"))
 	common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyBulkRoleChunksProcessed(guildID), "0"))
 
-	// Start a fallback completion timer as a safety net
-	go startFallbackCompletionTimer(guildID)
-
 	session := bot.ShardManager.SessionForGuild(guildID)
 	query := ""
 	nonce := strconv.Itoa(int(guildID))
@@ -364,78 +359,6 @@ func (config *BulkRoleConfig) startBulkRoleOperation() error {
 	logger.WithField("guild", guildID).Info("Bulk role operation started")
 
 	return nil
-}
-
-// startFallbackCompletionTimer provides a safety net for completion detection
-// This handles edge cases where chunk counting might fail
-func startFallbackCompletionTimer(guildID int64) {
-	// Wait for a reasonable time for chunks to arrive
-	time.Sleep(time.Second * 60) // 1 minute
-
-	// Check if operation is still active
-	var status int
-	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyBulkRoleStatus(guildID)))
-
-	if status == BulkRoleStarted || status == BulkRoleIterating {
-		// Operation is still in early stages, check again later
-		go startFallbackCompletionTimer(guildID)
-		return
-	}
-
-	if status == BulkRoleCompleted || status == BulkRoleCancelled {
-		// Operation already completed or cancelled
-		return
-	}
-
-	// If we're still in iteration after 1 minute, start a more aggressive timer
-	if status == BulkRoleIterating {
-		go startAggressiveCompletionTimer(guildID)
-	}
-}
-
-// startAggressiveCompletionTimer handles cases where chunks might be delayed or missing
-func startAggressiveCompletionTimer(guildID int64) {
-	// Check every 30 seconds
-	ticker := time.NewTicker(time.Second * 30)
-	defer ticker.Stop()
-
-	timeout := time.After(time.Minute * 10) // 10 minute maximum timeout
-
-	for {
-		select {
-		case <-ticker.C:
-			var status int
-			common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyBulkRoleStatus(guildID)))
-
-			if status == BulkRoleCompleted || status == BulkRoleCancelled {
-				return
-			}
-
-			if status == BulkRoleIterating {
-				// Still processing, continue waiting
-				continue
-			}
-
-			// If we're stuck in an unexpected state, force completion
-			if status == BulkRoleStarted || status == BulkRoleIterationDone {
-				logger.WithField("guild", guildID).Warn("Bulk role operation stuck, forcing completion")
-				// Get config for the method call
-				if config, err := GetBulkRoleConfig(guildID); err == nil {
-					config.forceOperationCompletion("Bulk role operation stuck")
-				}
-				return
-			}
-
-		case <-timeout:
-			// Maximum timeout reached, force completion
-			logger.WithField("guild", guildID).Warn("Bulk role operation timeout reached, forcing completion")
-			// Get config for the method call
-			if config, err := GetBulkRoleConfig(guildID); err == nil {
-				config.forceOperationCompletion("Bulk role operation timeout")
-			}
-			return
-		}
-	}
 }
 
 // forceOperationCompletion handles stuck operations by forcing them to complete
