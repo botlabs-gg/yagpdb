@@ -278,7 +278,7 @@ func (p *Plugin) AddCommands() {
 		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "message", Help: "ID to attach menu to", Type: dcmd.BigInt},
-			{Name: "disable-custom", Help: "Disable Cutsom Reason button", Default: false},
+			{Name: "disable-custom", Help: "Disable Custom Reason button", Default: false},
 			{Name: "button-1", Help: "Predefined reason for button 1", Type: dcmd.String},
 			{Name: "button-2", Help: "Predefined reason for button 2", Type: dcmd.String},
 			{Name: "button-3", Help: "Predefined reason for button 3", Type: dcmd.String},
