@@ -17,6 +17,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/reputation/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -59,7 +60,17 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	if !thanksRegex.MatchString(msg.Content) {
+	// Premium guilds can set a custom thanks regex override
+	usedRegex := thanksRegex
+	if conf.ThanksRegex.Valid {
+		if isPrem, _ := premium.IsGuildPremium(msg.GuildID); isPrem {
+			if custom, err := regexp.Compile(conf.ThanksRegex.String); err == nil {
+				usedRegex = custom
+			}
+		}
+	}
+
+	if !usedRegex.MatchString(msg.Content) {
 		return
 	}
 
