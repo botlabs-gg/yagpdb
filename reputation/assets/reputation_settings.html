@@ -40,7 +40,7 @@
                                 <input type="number" min="1" class="form-control" id="max-rep-amount-remove"
                                     name="MaxRemoveAmount" value="{{.RepSettings.MaxRemoveAmount}}">
                             </div>
-                            {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when someone says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection) `onchange="toggleThanksDetection(this)"`}}
+                            {{checkbox "EnableThanksDetection" "rep-thanks-detection" `Enable automatically giving rep when someone says "thanks @user" or variations of it?` (not .RepSettings.DisableThanksDetection) `onchange="toggleThanksDetection(this)"`}}                
                             <div id="thanks-channels" {{if eq .RepSettings.DisableThanksDetection true}}hidden{{end}}>
                                 <div class="form-group">
                                     <label>Allowed channels for giving rep using thanks</label><br>
@@ -55,6 +55,11 @@
                                         multiple="multiple" id="blacklisted-channels" data-plugin-multiselect>
                                         {{textChannelOptionsMulti .ActiveGuild.Channels .RepSettings.BlacklistedThanksChannels}}
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="thanks-regex">Custom thanks detection regex {{if not .IsGuildPremium}}(premium only){{end}}</label>
+                                    <input type="text" class="form-control" id="thanks-regex" name="ThanksRegex" value="{{.RepSettings.ThanksRegex.String}}" {{if not .IsGuildPremium}}disabled{{end}}>
+                                    <p class="help-block">Overrides the default thanks detection. Case-insensitive is supported with (?i). Max length 2000. {{if not .IsGuildPremium}}Upgrade to premium to enable.{{end}}</p>
                                 </div>
                             </div>
                         </div>

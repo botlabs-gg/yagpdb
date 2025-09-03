@@ -12,8 +12,10 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/reputation/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
@@ -40,6 +42,7 @@ type PostConfigForm struct {
 	AdminRoles                []int64 `valid:"role,true"`
 	WhitelistedThanksChannels []int64 `valid:"channel,true"`
 	BlacklistedThanksChannels []int64 `valid:"channel,true"`
+	ThanksRegex               string  `valid:"regex,2000"`
 }
 
 func (p PostConfigForm) RepConfig() *models.ReputationConfig {
@@ -57,6 +60,7 @@ func (p PostConfigForm) RepConfig() *models.ReputationConfig {
 		DisableThanksDetection:    !p.EnableThanksDetection,
 		WhitelistedThanksChannels: p.WhitelistedThanksChannels,
 		BlacklistedThanksChannels: p.BlacklistedThanksChannels,
+		ThanksRegex:               null.String{String: p.ThanksRegex, Valid: p.ThanksRegex != ""},
 	}
 }
 
@@ -139,6 +143,11 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 	conf := form.RepConfig()
 	conf.GuildID = activeGuild.ID
 
+	// Premium-only: custom thanks regex
+	if !premium.ContextPremium(r.Context()) {
+		conf.ThanksRegex = null.String{}
+	}
+
 	templateData["RepSettings"] = conf
 
 	err = conf.UpsertG(r.Context(), true, []string{"guild_id"}, boil.Whitelist(
@@ -155,6 +164,7 @@ func HandlePostReputation(w http.ResponseWriter, r *http.Request) (templateData 
 		"disable_thanks_detection",
 		"whitelisted_thanks_channels",
 		"blacklisted_thanks_channels",
+		"thanks_regex",
 	), boil.Infer())
 
 	if err == nil {

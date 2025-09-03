@@ -21,6 +21,8 @@ ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS whitelisted_thanks_chann
 `, `
 ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS blacklisted_thanks_channels BIGINT[];
 `, `
+ALTER TABLE reputation_configs ADD COLUMN IF NOT EXISTS thanks_regex TEXT;
+`, `
 DO $$
 BEGIN
 
