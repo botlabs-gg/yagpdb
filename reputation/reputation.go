@@ -56,8 +56,8 @@ func DefaultConfig(guildID int64) *models.ReputationConfig {
 	}
 }
 
-func KeyCooldown(guildID, userID int64) string {
-	return "reputation_cooldown:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(userID)
+func KeyCooldown(guildID, senderID int64, receiverID int64) string {
+	return "reputation_cooldown:" + discordgo.StrID(guildID) + ":" + discordgo.StrID(senderID) + ":" + discordgo.StrID(receiverID)
 }
 
 var (
@@ -168,7 +168,7 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, gs *dstate.Gu
 		return nil
 	}
 
-	ok, err := CheckSetCooldown(conf, sender.User.ID)
+	ok, err := CheckSetCooldown(conf, sender.User.ID, receiver.User.ID)
 	if err != nil || !ok {
 		if err == nil {
 			err = ErrCooldown
@@ -179,7 +179,7 @@ func ModifyRep(ctx context.Context, conf *models.ReputationConfig, gs *dstate.Gu
 	newRep, err := insertUpdateUserRep(ctx, gs.ID, receiver.User.ID, amount)
 	if err != nil {
 		// Clear the cooldown since it failed updating the rep
-		ClearCooldown(gs.ID, sender.User.ID)
+		ClearCooldown(gs.ID, sender.User.ID, receiver.User.ID)
 		return
 	}
 
@@ -414,13 +414,13 @@ func DelRep(ctx context.Context, gs *dstate.GuildSet, userID int64) error {
 
 // CheckSetCooldown checks and updates the reputation cooldown of a user,
 // it returns true if the user was not on cooldown
-func CheckSetCooldown(conf *models.ReputationConfig, senderID int64) (bool, error) {
+func CheckSetCooldown(conf *models.ReputationConfig, senderID int64, receiverID int64) (bool, error) {
 	if conf.Cooldown < 1 {
 		return true, nil
 	}
 
 	var resp string
-	err := common.RedisPool.Do(radix.FlatCmd(&resp, "SET", KeyCooldown(conf.GuildID, senderID), true, "EX", conf.Cooldown, "NX"))
+	err := common.RedisPool.Do(radix.FlatCmd(&resp, "SET", KeyCooldown(conf.GuildID, senderID, receiverID), true, "EX", conf.Cooldown, "NX"))
 	if resp != "OK" {
 		return false, err
 	}
@@ -428,8 +428,8 @@ func CheckSetCooldown(conf *models.ReputationConfig, senderID int64) (bool, erro
 	return true, err
 }
 
-func ClearCooldown(guildID, senderID int64) error {
-	return common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyCooldown(guildID, senderID)))
+func ClearCooldown(guildID, senderID int64, receiverID int64) error {
+	return common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyCooldown(guildID, senderID, receiverID)))
 }
 
 func GetConfig(ctx context.Context, guildID int64) (*models.ReputationConfig, error) {

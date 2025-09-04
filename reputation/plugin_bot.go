@@ -88,44 +88,42 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	who := msg.Mentions[0]
-	if who.ID == msg.Author.ID {
-		return
-	}
-
-	target, err := bot.GetMember(msg.GuildID, who.ID)
 	sender := dstate.MemberStateFromMember(msg.Member)
-	if err != nil {
-		logger.WithError(err).Error("Failed retrieving target member")
-		return
-	}
-
-	if err = CanModifyRep(conf, sender, target); err != nil {
-		return
-	}
-
-	err = ModifyRep(evt.Context(), conf, evt.GS, sender, target, 1)
-	if err != nil {
-		if err == ErrCooldown {
-			// Ignore this error silently
-			return
+	for _, who := range msg.Mentions {
+		if who.ID == msg.Author.ID {
+			continue
 		}
-		logger.WithError(err).Error("Failed giving rep")
-		return
+
+		target, err := bot.GetMember(msg.GuildID, who.ID)
+		if err != nil {
+			logger.WithError(err).Error("Failed retrieving target member")
+			continue
+		}
+		if err = CanModifyRep(conf, sender, target); err != nil {
+			continue
+		}
+		err = ModifyRep(evt.Context(), conf, evt.GS, sender, target, 1)
+		if err != nil {
+			if err == ErrCooldown {
+				// Ignore this error silently
+				continue
+			}
+			logger.WithError(err).Error("Failed giving rep")
+			continue
+		}
+
+		go analytics.RecordActiveUnit(msg.GuildID, &Plugin{}, "auto_add_rep")
+		newScore, newRank, err := GetUserStats(msg.GuildID, who.ID)
+		if err != nil {
+			newScore = -1
+			newRank = -1
+			logger.WithError(err).Error("Failed retrieving target stats")
+			continue
+		}
+
+		content := fmt.Sprintf("Gave +1 %s to **%s** (current: `#%d` - `%d`)", conf.PointsName, who.Mention(), newRank, newScore)
+		common.BotSession.ChannelMessageSend(msg.ChannelID, content)
 	}
-
-	go analytics.RecordActiveUnit(msg.GuildID, &Plugin{}, "auto_add_rep")
-
-	newScore, newRank, err := GetUserStats(msg.GuildID, who.ID)
-	if err != nil {
-		newScore = -1
-		newRank = -1
-		logger.WithError(err).Error("Failed retrieving target stats")
-		return
-	}
-
-	content := fmt.Sprintf("Gave +1 %s to **%s** (current: `#%d` - `%d`)", conf.PointsName, who.Mention(), newRank, newScore)
-	common.BotSession.ChannelMessageSend(msg.ChannelID, content)
 }
 
 var cmds = []*commands.YAGCommand{
