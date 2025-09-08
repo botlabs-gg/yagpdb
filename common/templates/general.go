@@ -1124,11 +1124,12 @@ func tmplLog(arguments ...interface{}) (float64, error) {
 	return logarithm, nil
 }
 
-func tmplBitwiseAnd(args ...interface{}) (res int) {
+func tmplBitwiseAnd(arg0 interface{}, args ...interface{}) int {
+	res := tmplToInt(arg0)
 	for _, arg := range args {
 		res &= tmplToInt(arg)
 	}
-	return
+	return res
 }
 
 func tmplBitwiseOr(args ...interface{}) (res int) {
