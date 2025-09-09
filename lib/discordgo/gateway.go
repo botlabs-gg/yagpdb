@@ -714,7 +714,7 @@ func (g *GatewayConnection) Reconnect(forceReIdentify bool) error {
 		return nil
 	}
 
-	g.log(LogInformational, "reconnecting to the gateway")
+	g.log(LogInformational, "reconnecting to the gateway with forceReIdentify: %v", forceReIdentify)
 	debug.PrintStack()
 
 	g.reconnecting = true
@@ -936,12 +936,15 @@ func (g *GatewayConnection) open(sessionID string, sequence int64, resumeGateway
 		if sessionID != "" && resumeGatewayUrl != "" {
 			gatewayUrl = resumeGatewayUrl
 		}
-		conn, _, _, err = ws.Dial(context.TODO(), gatewayUrl+"?v="+APIVersion+"&encoding=json&compress=zlib-stream")
+		g.log(LogInformational, "Dialing gateway websocket: %s", gatewayUrl)
+		dialCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		conn, _, _, err = ws.Dial(dialCtx, gatewayUrl+"?v="+APIVersion+"&encoding=json&compress=zlib-stream")
+		cancel()
 		if err != nil {
 			if conn != nil {
 				conn.Close()
 			}
-			g.log(LogError, "Failed opening connection to the gateway, retrying in 5 seconds: %v", err)
+			g.log(LogError, "Failed opening connection to the gateway (url: %s), retrying in 5 seconds: %v", gatewayUrl, err)
 			time.Sleep(time.Second * 5)
 			continue
 		}
