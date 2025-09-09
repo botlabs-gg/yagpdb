@@ -421,6 +421,8 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData, errors.WrapIf(err, "error generating local id")
 	}
 
+	defaultResponse := fmt.Sprintf("[Click here](%s/manage/{{.Guild.ID}}/customcommands/commands/{{.CCID}}) to edit the response for Custom Command {{.CCID}}!", web.BaseURL())
+
 	dbModel := &models.CustomCommand{
 		GuildID: activeGuild.ID,
 		LocalID: localID,
@@ -431,7 +433,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		TimeTriggerExcludingDays:  []int64{},
 		TimeTriggerExcludingHours: []int64{},
 
-		Responses: []string{"Edit this to change the output of the custom command {{.CCID}}!"},
+		Responses: []string{defaultResponse},
 	}
 
 	if groupID != 0 {
