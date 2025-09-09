@@ -177,10 +177,6 @@ func (m *Manager) Start() error {
 	m.Unlock()
 
 	for i := 0; i < m.numShards; i++ {
-		if i != 0 {
-			// One indentify every 5 seconds
-			time.Sleep(time.Second * 5)
-		}
 
 		m.Lock()
 		err := m.startSession(i)

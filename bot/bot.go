@@ -260,21 +260,42 @@ type identifyRatelimiter struct {
 	lastRatelimitAt      time.Time
 }
 
-func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
-	const key = "yagpdb.gateway.identify.limit"
-	for {
+var identifyMaxConcurrency int
+var identifyConcurrencyOnce sync.Once
 
-		if rl.checkSameBucket(shardID) {
+func (rl *identifyRatelimiter) getIdentifyMaxConcurrency() int {
+	identifyConcurrencyOnce.Do(func() {
+		identifyMaxConcurrency = 1
+		s, err := discordgo.New(common.GetBotToken())
+		if err != nil {
+			logger.WithError(err).Warn("failed to create session to fetch gateway bot info")
 			return
 		}
+		resp, err := s.GatewayBot()
+		if err != nil {
+			logger.WithError(err).Warn("failed to fetch gateway bot info")
+			return
+		}
+		if resp != nil && resp.SessionStartLimit.MaxConcurrency > 0 {
+			identifyMaxConcurrency = resp.SessionStartLimit.MaxConcurrency
+		}
+		logger.Infof("Gateway identify max_concurrency: %d", identifyMaxConcurrency)
+	})
+	return identifyMaxConcurrency
+}
 
-		// The ratelimit is 1 identify every 5 seconds, but with exactly that limit we will still encounter invalid session
-		// closes, probably due to small variances in networking and scheduling latencies
-		// Adding a extra 100ms fixes this completely, but to be on the safe side we add a extra 50ms
+func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
+	mc := rl.getIdentifyMaxConcurrency()
+	// total buckets is equal to the value of max_concurrency.
+	bucket := shardID % mc
+	key := "yagpdb.gateway.identify.bucket." + strconv.Itoa(bucket)
+
+	for {
 		var resp string
+		//instead of a global ratelimit of 1 identify per 5 seconds, we have a bucket ratelimit of 1 identify per 5 seconds per bucket.
 		err := common.RedisPool.Do(radix.Cmd(&resp, "SET", key, "1", "PX", "5100", "NX"))
 		if err != nil {
-			logger.WithError(err).Error("failed ratelimiting gateway")
+			logger.WithError(err).Errorf("failed ratelimiting gateway for bucket %d", bucket)
 			time.Sleep(time.Second)
 			continue
 		}
@@ -288,113 +309,12 @@ func (rl *identifyRatelimiter) RatelimitIdentify(shardID int) {
 			return
 		}
 
-		// otherwise a identify was sent by someone else last 5 seconds
+		// otherwise a identify was sent by someone on this bucket else last 5 seconds
 		time.Sleep(time.Second)
 	}
 }
 
-func (rl *identifyRatelimiter) checkSameBucket(shardID int) bool {
-	if !common.ConfLargeBotShardingEnabled.GetBool() {
-		// only works with large bot sharding enabled
-		return false
-	}
-
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
-	if rl.lastRatelimitAt.IsZero() {
-		return false
-	}
-
-	// normally 16, but thats a bit too fast for us, so we use 4
-	bucketSize := common.ConfShardBucketSize.GetInt()
-	currentBucket := shardID / bucketSize
-	lastBucket := rl.lastShardRatelimited / bucketSize
-
-	if currentBucket != lastBucket {
-		return false
-	}
-
-	if time.Since(rl.lastRatelimitAt) > time.Second*5 {
-		return false
-	}
-
-	// same large bot sharding bucket
-	return true
-}
-
-// var (
-// 	metricsCacheHits = promauto.NewCounter(prometheus.CounterOpts{
-// 		Name: "yagpdb_state_cache_hits_total",
-// 		Help: "Cache hits in the satte cache",
-// 	})
-
-// 	metricsCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
-// 		Name: "yagpdb_state_cache_misses_total",
-// 		Help: "Cache misses in the sate cache",
-// 	})
-
-// 	metricsCacheEvictions = promauto.NewCounter(prometheus.CounterOpts{
-// 		Name: "yagpdb_state_cache_evicted_total",
-// 		Help: "Cache evictions",
-// 	})
-
-// 	metricsCacheMemberEvictions = promauto.NewCounter(prometheus.CounterOpts{
-// 		Name: "yagpdb_state_members_evicted_total",
-// 		Help: "Members evicted from state cache",
-// 	})
-// )
-
 var confStateRemoveOfflineMembers = config.RegisterOption("yagpdb.state.remove_offline_members", "Remove offline members from state", true)
-
-// func setupState() {
-// 	// Things may rely on state being available at this point for initialization
-// 	State = dstate.NewState()
-// 	State.MaxChannelMessages = 1000
-// 	State.MaxMessageAge = time.Hour
-// 	// State.Debug = true
-// 	State.ThrowAwayDMMessages = true
-// 	State.TrackPrivateChannels = false
-// 	State.CacheExpirey = time.Hour * 2
-
-// 	if confStateRemoveOfflineMembers.GetBool() {
-// 		State.RemoveOfflineMembers = true
-// 	}
-
-// 	go State.RunGCWorker()
-
-// 	eventsystem.DiscordState = State
-
-// 	// track cache hits/misses
-// 	go func() {
-// 		lastHits := int64(0)
-// 		lastMisses := int64(0)
-// 		lastEvictionsCache := int64(0)
-// 		lastEvictionsMembers := int64(0)
-
-// 		ticker := time.NewTicker(time.Minute)
-// 		for {
-// 			<-ticker.C
-
-// 			stats := State.StateStats()
-// 			deltaHits := stats.CacheHits - lastHits
-// 			deltaMisses := stats.CacheMisses - lastMisses
-// 			lastHits = stats.CacheHits
-// 			lastMisses = stats.CacheMisses
-
-// 			metricsCacheHits.Add(float64(deltaHits))
-// 			metricsCacheMisses.Add(float64(deltaMisses))
-
-// 			metricsCacheEvictions.Add(float64(stats.UserCachceEvictedTotal - lastEvictionsCache))
-// 			metricsCacheMemberEvictions.Add(float64(stats.MembersRemovedTotal - lastEvictionsMembers))
-
-// 			lastEvictionsCache = stats.UserCachceEvictedTotal
-// 			lastEvictionsMembers = stats.MembersRemovedTotal
-
-// 			// logger.Debugf("guild cache Hits: %d Misses: %d", deltaHits, deltaMisses)
-// 		}
-// 	}()
-// }
 
 var StateLimitsF func(guildID int64) (int, time.Duration) = func(guildID int64) (int, time.Duration) {
 	return 1000, time.Hour
