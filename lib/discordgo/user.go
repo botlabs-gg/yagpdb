@@ -23,6 +23,10 @@ type User struct {
 	// to retrieve the avatar itself.
 	Avatar string `json:"avatar"`
 
+	// The hash of the user's banner. Use Session.UserBanner
+	// to retrieve the banner itself.
+	Banner string `json:"banner"`
+
 	// The user's chosen language option.
 	Locale string `json:"locale"`
 
@@ -76,6 +80,8 @@ func (u *User) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
 		return dec.String(&u.Globalname)
 	case "avatar":
 		return dec.String(&u.Avatar)
+	case "banner":
+		return dec.String(&u.Banner)
 	case "locale":
 		return dec.String(&u.Locale)
 	case "discriminator":
@@ -115,6 +121,27 @@ func (u *User) AvatarURL(size string) string {
 		URL = EndpointUserAvatarAnimated(u.ID, u.Avatar)
 	} else {
 		URL = EndpointUserAvatar(u.ID, u.Avatar)
+	}
+
+	if size != "" {
+		return URL + "?size=" + size
+	}
+	return URL
+}
+
+// BannerURL returns a URL to the user's banner.
+//
+//	size:    The size of the user's banner as a power of two
+//	         if size is an empty string, no size parameter will
+//	         be added to the URL.
+func (u *User) BannerURL(size string) string {
+	var URL string
+	if u.Banner == "" {
+		return ""
+	} else if strings.HasPrefix(u.Banner, "a_") {
+		URL = EndpointUserBannerAnimated(u.ID, u.Banner)
+	} else {
+		URL = EndpointUserBanner(u.ID, u.Banner)
 	}
 
 	if size != "" {

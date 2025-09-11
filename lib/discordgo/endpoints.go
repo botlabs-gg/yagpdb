@@ -68,6 +68,8 @@ var (
 	EndpointUser               = func(uID string) string { return "" }
 	EndpointUserAvatar         = func(uID int64, aID string) string { return "" }
 	EndpointUserAvatarAnimated = func(uID int64, aID string) string { return "" }
+	EndpointUserBanner         = func(uID int64, aID string) string { return "" }
+	EndpointUserBannerAnimated = func(uID int64, aID string) string { return "" }
 	EndpointUserSettings       = func(uID string) string { return "" }
 	EndpointUserGuilds         = func(uID string) string { return "" }
 	EndpointUserGuild          = func(uID string, gID int64) string { return "" }
@@ -281,6 +283,8 @@ func CreateEndpoints(base string) {
 	EndpointUser = func(uID string) string { return EndpointUsers + uID }
 	EndpointUserAvatar = func(uID int64, aID string) string { return EndpointCDNAvatars + StrID(uID) + "/" + aID + ".png" }
 	EndpointUserAvatarAnimated = func(uID int64, aID string) string { return EndpointCDNAvatars + StrID(uID) + "/" + aID + ".gif" }
+	EndpointUserBanner = func(uID int64, aID string) string { return EndpointCDNBanners + StrID(uID) + "/" + aID + ".png" }
+	EndpointUserBannerAnimated = func(uID int64, aID string) string { return EndpointCDNBanners + StrID(uID) + "/" + aID + ".gif" }
 	EndpointUserSettings = func(uID string) string { return EndpointUsers + uID + "/settings" }
 	EndpointUserGuilds = func(uID string) string { return EndpointUsers + uID + "/guilds" }
 	EndpointUserGuild = func(uID string, gID int64) string { return EndpointUsers + uID + "/guilds/" + StrID(gID) }

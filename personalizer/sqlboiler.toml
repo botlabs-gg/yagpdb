@@ -1,0 +1,11 @@
+add-global-variants="true"
+no-hooks="true"
+no-tests="true"
+
+[psql]
+dbname="yagpdb"
+host="localhost"
+user="yagpdb"
+pass="ihateducks"
+sslmode="disable"
+whitelist=["personalized_guilds"]

@@ -971,6 +971,9 @@ type Member struct {
 	// The guild avatar hash of the member, if they have one.
 	Avatar string `json:"avatar"`
 
+	// The guild banner hash of the member, if they have one.
+	Banner string `json:"banner"`
+
 	// Whether the member is deafened at a guild level.
 	Deaf bool `json:"deaf"`
 
@@ -1017,6 +1020,22 @@ func (m *Member) AvatarURL(size string) string {
 		URL = EndpointGuildMemberAvatarAnimated(m.GuildID, u.ID, m.Avatar)
 	} else {
 		URL = EndpointGuildMemberAvatar(m.GuildID, u.ID, m.Avatar)
+	}
+
+	if size != "" {
+		return URL + "?size=" + size
+	}
+	return URL
+}
+
+func (m *Member) BannerURL(size string) string {
+	var URL string
+	if m.Banner == "" {
+		return ""
+	} else if strings.HasPrefix(m.Banner, "a_") {
+		URL = EndpointUserBannerAnimated(m.GuildID, m.Banner)
+	} else {
+		URL = EndpointUserBanner(m.GuildID, m.Banner)
 	}
 
 	if size != "" {
@@ -1956,4 +1975,10 @@ type SubscriptionFilterOptions struct {
 	AfterID  int64
 	Limit    int
 	UserId   int64
+}
+
+type CurrentGuildMemberUpdate struct {
+	Nick   string `json:"nick,omitempty"`
+	Avatar string `json:"avatar,omitempty"`
+	Banner string `json:"banner,omitempty"`
 }

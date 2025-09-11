@@ -1,0 +1,161 @@
+{{define "cp_personalizer"}}
+{{template "cp_head" .}}
+
+<header class="page-header">
+    <h2>Personalize YAGPDB</h2>
+</header>
+
+{{template "cp_alerts" .}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            {{if not .IsGuildPremium}}
+            <div class="alert alert-warning">This feature requires <a href="/premium-perks">Premium</a>.</div>
+            {{end}}
+            <form method="POST" action="/manage/{{.ActiveGuild.ID}}/personalizer" data-async-form
+                enctype="multipart/form-data" id="personalizer-form"
+                style="{{if not .IsGuildPremium}}opacity:.6;{{end}}">
+                {{if not .IsGuildPremium}}<fieldset disabled aria-disabled="true">{{end}}
+                    <div class="card mt-3">
+                        <div class="card-header">Profile Preview</div>
+                        <div class="card-body p-0">
+                            <div class="position-relative" style="background-color:#2f3136;">
+                                <div id="banner-preview" class="w-100"
+                                    style="height: 180px; background-size: cover; background-position: center; {{with index .CurrentMember "banner_url"}}background-image: url('{{.}}');{{end}}">
+                                </div>
+                                <label for="banner-file" class="position-absolute"
+                                    style="right: 12px; top: 12px; cursor:pointer; background: rgba(0,0,0,0.6); color:#fff; padding:6px 10px; border-radius:6px;">
+                                    <i class="fas fa-edit"></i> Edit Banner
+                                </label>
+                                <input type="file" id="banner-file" name="BannerFile"
+                                    accept="image/png,image/jpeg,image/gif" style="display:none;" />
+
+                                <div class="position-absolute" style="left: 24px; top: 130px;">
+                                    <div class="position-relative"
+                                        style="width:96px; height:96px; border-radius:50%; overflow:hidden; border:6px solid #2f3136;">
+                                        <img id="avatar-preview" src="{{index .CurrentMember "avatar_url"}}"
+                                            alt="avatar" style="width:100%; height:100%; object-fit:cover;" />
+                                        <label for="avatar-file" class="position-absolute"
+                                            style="right: 2px; bottom: 2px; cursor:pointer; background: rgba(0,0,0,0.6); color:#fff; padding:4px 6px; border-radius:6px;">
+                                            <i class="fas fa-edit"></i>
+                                        </label>
+                                    </div>
+                                    <input type="file" id="avatar-file" name="AvatarFile"
+                                        accept="image/png,image/jpeg,image/gif" style="display:none;" />
+                                </div>
+                            </div>
+                            <div class="p-3" style="margin-top:48px;">
+                                <div class="form-group">
+                                    <label>Nickname</label>
+                                    <input type="text" class="form-control" name="Nick" value="{{index .CurrentMember "nick"}}" placeholder="Leave blank to keep current" />
+                                </div>
+                                {{if .IsGuildPremium}}
+                                <button type="submit" class="btn btn-primary mt-2">Save Changes</button>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    {{if not .IsGuildPremium}}
+                </fieldset>{{end}}
+            </form>
+
+            <script>
+                (function () {
+                    var form = document.getElementById('personalizer-form');
+                    var avatarInput = document.getElementById('avatar-file');
+                    var bannerInput = document.getElementById('banner-file');
+                    var avatarPreview = document.getElementById('avatar-preview');
+                    var bannerPreview = document.getElementById('banner-preview');
+
+                    var MAX_BYTES = 8 * 1024 * 1024;
+                    var MIN_DIM = 64;
+                    var MAX_DIM = 4096;
+
+                    function getFile(input) { return (input.files && input.files[0]) || null; }
+
+                    function setPreviewImg(imgEl, file) {
+                        if (!file) return;
+                        var url = URL.createObjectURL(file);
+                        imgEl.src = url;
+                    }
+                    function setPreviewBg(el, file) {
+                        if (!file) return;
+                        var url = URL.createObjectURL(file);
+                        el.style.backgroundImage = 'url(' + url + ')';
+                    }
+
+                    function getDimension(file) {
+                        return new Promise(function (resolve) {
+                            var url = URL.createObjectURL(file);
+                            var img = new Image();
+                            img.onload = function () {
+                                try { URL.revokeObjectURL(url); } catch (e) { }
+                                resolve({ w: img.width, h: img.height });
+                            };
+                            img.onerror = function () { resolve({ w: 0, h: 0 }); };
+                            img.src = url;
+                        });
+                    }
+
+                    async function validateFile(input) {
+                        var f = getFile(input);
+                        if (!f) return true;
+                        if (f.size > MAX_BYTES) { alert('File too large: max 8MB'); return false; }
+                        var d = await getDimension(f);
+                        if (d.w < MIN_DIM || d.h < MIN_DIM) { alert('Image too small: minimum 64×64.'); return false; }
+                        if (d.w > MAX_DIM || d.h > MAX_DIM) { alert('Image too large in dimensions: maximum 4096×4096.'); return false; }
+                        return true;
+                    }
+
+                    avatarInput.addEventListener('change', async function () {
+                        if (await validateFile(avatarInput)) setPreviewImg(avatarPreview, getFile(avatarInput)); else avatarInput.value = '';
+                    });
+                    bannerInput.addEventListener('change', async function () {
+                        if (await validateFile(bannerInput)) setPreviewBg(bannerPreview, getFile(bannerInput)); else bannerInput.value = '';
+                    });
+
+                    form.addEventListener('submit', async function (e) {
+                        e.preventDefault();
+                        {{if .IsGuildPremium}}
+                        var hasFiles = (!!getFile(avatarInput)) || (!!getFile(bannerInput));
+
+                        var ok = await Promise.all([validateFile(avatarInput), validateFile(bannerInput)]);
+                        if (!ok.every(Boolean)) return;
+
+                        var action = form.getAttribute('action') || window.location.pathname;
+                        if (hasFiles) {
+                            var fd = new FormData(form);
+                            var url = action + (action.indexOf('?') === -1 ? '?' : '&') + 'partial=1&alertsonly=1';
+                            try {
+                                var resp = await fetch(url, { method: 'POST', body: fd, credentials: 'same-origin' });
+                                var txt = await resp.text();
+                                if (typeof showAlerts === 'function') showAlerts(txt);
+                                if (typeof navigate === 'function') {
+                                    navigate(window.location.pathname, 'GET', null, false, false, false);
+                                }
+                            } catch (err) {
+                                alert('Upload failed. Please try again.');
+                            }
+                            return;
+                        }
+
+                        if (typeof submitForm === 'function' && window.jQuery) {
+                            submitForm(window.jQuery(form), action, false);
+                        } else {
+                            form.submit();
+                        }
+                        {{else}}
+                        if (typeof addAlertHTML === 'function') {
+                            addAlertHTML('warning', 'This feature requires <a href="/premium-perks">Premium</a>.');
+                        } else {
+                            alert('This feature requires Premium.');
+                        }
+                        {{end}}
+                    });
+                })();
+            </script>
+        </div>
+    </div>
+</div>
+{{template "cp_footer" .}}
+{{end}}

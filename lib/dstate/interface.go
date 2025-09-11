@@ -317,6 +317,7 @@ type MemberFields struct {
 	Roles                      []int64
 	Nick                       string
 	Avatar                     string
+	Banner                     string
 	Pending                    bool
 	PremiumSince               *time.Time
 	Flags                      discordgo.MemberFlags
@@ -364,6 +365,7 @@ func MemberStateFromMember(member *discordgo.Member) *MemberState {
 			Roles:                      member.Roles,
 			Nick:                       member.Nick,
 			Avatar:                     member.Avatar,
+			Banner:                     member.Banner,
 			Pending:                    member.Pending,
 			PremiumSince:               member.PremiumSince,
 			Flags:                      member.Flags,
