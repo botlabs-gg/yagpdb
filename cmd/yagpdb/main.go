@@ -29,6 +29,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/logs"
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/botlabs-gg/yagpdb/v2/notifications"
+	"github.com/botlabs-gg/yagpdb/v2/personalizer"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/premium/discordpremiumsource"
 	"github.com/botlabs-gg/yagpdb/v2/premium/patreonpremiumsource"
@@ -98,6 +99,7 @@ func main() {
 	trivia.RegisterPlugin()
 	rss.RegisterPlugin()
 	bulkrole.RegisterPlugin()
+	personalizer.RegisterPlugin()
 
 	// Register confusables replacer
 	confusables.Init()

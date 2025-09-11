@@ -971,13 +971,43 @@ func (s *Session) GuildMemberTimeout(guildID int64, userID int64, until *time.Ti
 // guildID   : The ID of a guild
 // nickname  : The new nickname
 func (s *Session) GuildMemberNicknameMe(guildID int64, nickname string) (err error) {
-
-	data := struct {
-		Nick string `json:"nick"`
-	}{nickname}
-
-	_, err = s.RequestWithBucketID("PATCH", EndpointGuildMemberMe(guildID)+"/nick", data, nil, EndpointGuildMember(guildID, 0))
+	data := CurrentGuildMemberUpdate{
+		Nick: nickname,
+	}
+	_, err = s.GuildMemberMe(guildID, data)
 	return
+}
+
+// GuildMemberMe updates the nickname the current user
+// guildID   : The ID of a guild
+// data  :  contains optional Banner, Avatar, Nick, and Bio
+func (s *Session) GuildMemberMe(guildID int64, data CurrentGuildMemberUpdate) (response *Member, err error) {
+	body, err := s.RequestWithBucketID("PATCH", EndpointGuildMemberMe(guildID), data, nil, EndpointGuildMember(guildID, 0))
+	if err != nil {
+		return nil, err
+	}
+	err = unmarshal(body, &response)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+func (s *Session) GuildMemberMeReset(guildID int64, resetAvatar bool, resetBanner bool) error {
+	payload := struct {
+		Avatar *string `json:"avatar"`
+		Banner *string `json:"banner"`
+	}{}
+
+	if resetAvatar {
+		payload.Avatar = nil
+	}
+	if resetBanner {
+		payload.Banner = nil
+	}
+
+	_, err := s.RequestWithBucketID("PATCH", EndpointGuildMemberMe(guildID), payload, nil, EndpointGuildMember(guildID, 0))
+	return err
 }
 
 // GuildMemberRoleAdd adds the specified role to a given member
