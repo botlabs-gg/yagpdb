@@ -18,6 +18,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/personalizer/models"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
@@ -26,6 +27,10 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"goji.io/pat"
+)
+
+var (
+	panelLogKeyPersonalizerUpdate = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "personalizer_updated", FormatString: "Updated bot profile"})
 )
 
 //go:embed assets/personalizer.html
@@ -220,6 +225,10 @@ func handlePostUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 
 	if err := pg.UpsertG(context.Background(), true, nil, boil.Whitelist(models.PersonalizedGuildColumns.Nick, models.PersonalizedGuildColumns.Avatar, models.PersonalizedGuildColumns.Banner), boil.Infer()); err != nil {
 		return tmpl.AddAlerts(web.ErrorAlert("Failed to update bot profile, please try again later.")), nil
+	}
+
+	if err == nil {
+		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyPersonalizerUpdate))
 	}
 
 	return tmpl, nil
