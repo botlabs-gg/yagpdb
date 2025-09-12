@@ -6,371 +6,375 @@
     <h2>BulkRole</h2>
 </header>
 {{template "cp_alerts" .}}
-{{if .OperationActive}}
-<div class="row">
-    <div class="col-lg-12">
-        <div class="card card-featured card-featured-info">
-            <header class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-cog fa-spin"></i> Bulk Role Operation in Progress
-                </h5>
-            </header>
-            <div class="card-body">
-                <span id="op-status" data-status="{{.OperationStatus}}" style="display:none;"></span>
-                <!-- Status and Progress -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-3">
-                            <div>
-                                <table class="table table-sm table-borderless mb-0">
-                                    <tbody>
-                                        <tr>
-                                            <th scope="row" class="text-danger">Target Role</th>
-                                            <td class="text-warning">
-                                                {{$role := .ActiveGuild.GetRole .CurrentOperation.TargetRole}}
-                                                {{if $role}}{{$role.Name}}{{else}}Unknown Role
-                                                ({{.CurrentOperation.TargetRole}}){{end}}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th scope="row" class="text-danger">Operation</th>
-                                            <td class="text-warning">{{title .CurrentOperation.Operation}}</td>
-                                        </tr>
-                                        <tr>
-                                            <th scope="row" class="text-danger">Filter Type</th>
-                                            <td class="text-warning">
-                                                {{if eq .CurrentOperation.FilterType "all"}}All members
-                                                {{else if eq .CurrentOperation.FilterType "bots"}}Bots only
-                                                {{else if eq .CurrentOperation.FilterType "humans"}}Humans only
-                                                {{else if eq .CurrentOperation.FilterType "has_roles"}}Has specific
-                                                roles
-                                                {{else if eq .CurrentOperation.FilterType "missing_roles"}}Missing
-                                                specific roles
-                                                {{else if eq .CurrentOperation.FilterType "joined_after"}}Joined after
-                                                date
-                                                {{else if eq .CurrentOperation.FilterType "joined_before"}}Joined before
-                                                date
-                                                {{else}}{{.CurrentOperation.FilterType}}{{end}}
-                                            </td>
-                                        </tr>
-                                        {{if or (eq .CurrentOperation.FilterType "has_roles") (eq
-                                        .CurrentOperation.FilterType "missing_roles")}}
-                                        {{if .CurrentOperation.FilterRoleIDs}}
-                                        <tr>
-                                            <th scope="row" class="text-danger">Filter Roles</th>
-                                            <td class="text-warning">
-                                                {{range $i, $roleID := .CurrentOperation.FilterRoleIDs}}
-                                                {{$filterRole := $.ActiveGuild.GetRole $roleID}}
-                                                {{if $filterRole}}{{$filterRole.Name}}{{else}}Unknown
-                                                ({{$roleID}}){{end}}{{if lt (add $i 1) (len
-                                                $.CurrentOperation.FilterRoleIDs)}}, {{end}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            {{if not .IsGuildPremium}}
+            <div class="alert alert-warning">This feature requires <a href="/premium-perks">Premium</a>.</div>
+            {{end}}
+        </div>
+    </div>
+    {{if .OperationActive}}
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card card-featured card-featured-info">
+                <header class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog fa-spin"></i> Bulk Role Operation in Progress
+                    </h5>
+                </header>
+                <div class="card-body">
+                    <span id="op-status" data-status="{{.OperationStatus}}" style="display:none;"></span>
+                    <!-- Status and Progress -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <div>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <th scope="row" class="text-danger">Target Role</th>
+                                                <td class="text-warning">
+                                                    {{$role := .ActiveGuild.GetRole .CurrentOperation.TargetRole}}
+                                                    {{if $role}}
+                                                        {{$role.Name}}
+                                                    {{else}}
+                                                        Unknown Role({{.CurrentOperation.TargetRole}})
+                                                    {{end}}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row" class="text-danger">Operation</th>
+                                                <td class="text-warning">{{title .CurrentOperation.Operation}}</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row" class="text-danger">Filter Type</th>
+                                                <td class="text-warning">
+                                                    {{if eq .CurrentOperation.FilterType "all"}}
+                                                        All members
+                                                    {{else if eq .CurrentOperation.FilterType "bots"}}
+                                                        Bots only
+                                                    {{else if eq .CurrentOperation.FilterType "humans"}}
+                                                        Humans only
+                                                    {{else if eq .CurrentOperation.FilterType "has_roles"}}
+                                                        Has specific roles
+                                                    {{else if eq .CurrentOperation.FilterType "missing_roles"}}
+                                                        Missing specific roles
+                                                    {{else if eq .CurrentOperation.FilterType "joined_after"}}
+                                                        Joined after date
+                                                    {{else if eq .CurrentOperation.FilterType "joined_before"}}
+                                                        Joined before date
+                                                    {{else}}
+                                                        {{.CurrentOperation.FilterType}}
+                                                    {{end}}
+                                                </td>
+                                            </tr>
+                                            {{if or (eq .CurrentOperation.FilterType "has_roles") (eq .CurrentOperation.FilterType "missing_roles")}}
+                                                {{if .CurrentOperation.FilterRoleIDs}}
+                                                    <tr>
+                                                        <th scope="row" class="text-danger">Filter Roles</th>
+                                                        <td class="text-warning">
+                                                            {{range $i, $roleID := .CurrentOperation.FilterRoleIDs}}
+                                                                {{$filterRole := $.ActiveGuild.GetRole $roleID}}
+                                                                {{if $filterRole}}
+                                                                    {{$filterRole.Name}}
+                                                                {{else}}
+                                                                    Unknown({{$roleID}})
+                                                                {{end}}
+                                                                {{if lt (add $i 1) (len $.CurrentOperation.FilterRoleIDs)}}, {{end}}
+                                                            {{end}}
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th scope="row" class="text-danger">Match Criteria</th>
+                                                        <td class="text-warning">{{if .CurrentOperation.FilterRequireAll}}Must match ALL{{else}}Must match ANY{{end}}</td>
+                                                    </tr>
                                                 {{end}}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th scope="row" class="text-danger">Match Criteria</th>
-                                            <td class="text-warning">{{if .CurrentOperation.FilterRequireAll}}Must match
-                                                ALL{{else}}Must match ANY{{end}}</td>
-                                        </tr>
-                                        {{end}}
-                                        {{end}}
-                                        {{if or (eq .CurrentOperation.FilterType "joined_after") (eq
-                                        .CurrentOperation.FilterType "joined_before")}}
-                                        {{if .CurrentOperation.FilterDate}}
-                                        <tr>
-                                            <th scope="row" class="text-danger">Filter Date</th>
-                                            <td class="text-warning">{{.CurrentOperation.FilterDate}}</td>
-                                        </tr>
-                                        {{end}}
-                                        {{end}}
-                                        {{if ne .CurrentOperation.NotificationChannel 0}}
-                                        <tr>
-                                            <th scope="row" class="text-danger">Notification Channel</th>
-                                            <td class="text-warning">
-                                                {{$channel := .ActiveGuild.GetChannel
-                                                .CurrentOperation.NotificationChannel}}
-                                                {{if $channel}}#{{$channel.Name}}{{else}}Unknown Channel
-                                                ({{.CurrentOperation.NotificationChannel}}){{end}}
-                                            </td>
-                                        </tr>
-                                        {{end}}
-                                        <tr>
-                                            <th scope="row" class="text-danger">Started By</th>
-                                            <td class="text-warning">
-                                                {{if .CurrentOperation.StartedByUsername}}
-                                                {{.CurrentOperation.StartedByUsername}}
-                                                ({{.CurrentOperation.StartedBy}})
-                                                {{else}}
-                                                User ID: {{.CurrentOperation.StartedBy}}
+                                            {{end}}
+                                            {{if or (eq .CurrentOperation.FilterType "joined_after") (eq .CurrentOperation.FilterType "joined_before")}}
+                                                {{if .CurrentOperation.FilterDate}}
+                                                <tr>
+                                                    <th scope="row" class="text-danger">Filter Date</th>
+                                                    <td class="text-warning">{{.CurrentOperation.FilterDate}}</td>
+                                                </tr>
                                                 {{end}}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th scope="row" class="text-danger">Total</th>
-                                            <td class="text-warning">{{.TotalMembers}} members</td>
-                                        </tr>
-                                        <tr>
-                                            <th scope="row" class="text-danger">Processed</th>
-                                            <td class="text-warning">{{.ProcessedCount}} members</td>
-                                        </tr>
-                                        <tr>
-                                            <th scope="row" class="text-danger">Modified</th>
-                                            <td class="text-warning">{{.ResultsCount}} members</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                            {{end}}
+                                            {{if ne .CurrentOperation.NotificationChannel 0}}
+                                                <tr>
+                                                    <th scope="row" class="text-danger">Notification Channel</th>
+                                                    <td class="text-warning">
+                                                        {{$channel := .ActiveGuild.GetChannel .CurrentOperation.NotificationChannel}}
+                                                        {{if $channel}}
+                                                            #{{$channel.Name}}
+                                                        {{else}}
+                                                            Unknown Channel({{.CurrentOperation.NotificationChannel}})
+                                                        {{end}}
+                                                    </td>
+                                                </tr>
+                                            {{end}}
+                                            <tr>
+                                                <th scope="row" class="text-danger">Started By</th>
+                                                <td class="text-warning">
+                                                    {{if .CurrentOperation.StartedByUsername}}
+                                                        {{.CurrentOperation.StartedByUsername}}
+                                                        ({{.CurrentOperation.StartedBy}})
+                                                    {{else}}
+                                                        User ID: {{.CurrentOperation.StartedBy}}
+                                                    {{end}}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row" class="text-danger">Total</th>
+                                                <td class="text-warning">{{.TotalMembers}} members</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row" class="text-danger">Processed</th>
+                                                <td class="text-warning">{{.ProcessedCount}} members</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row" class="text-danger">Modified</th>
+                                                <td class="text-warning">{{.ResultsCount}} members</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                             {{if and (ne .OperationStatus "Completed") (ne .OperationStatus "Cancelled")}}
+                                <div class="text-center mt-4">
+                                    <form method="post" action="/manage/{{.ActiveGuild.ID}}/bulkrole/cancel" data-async-form>
+                                        <button type="submit" class="btn btn-danger btn-lg btn-block">
+                                            Cancel
+                                        </button>
+                                    </form>
+                                </div>
+                            {{end}}
+                        </div>
+                    </div>
                 </div>
-
-                {{if and (ne .OperationStatus "Completed") (ne .OperationStatus "Cancelled")}}
-                <div class="text-center mt-4">
-                    <form method="post" action="/manage/{{.ActiveGuild.ID}}/bulkrole/cancel" data-async-form>
-                        <button type="submit" class="btn btn-danger btn-lg">
-                            <i class="fas fa-stop"></i> Cancel Operation
-                        </button>
-                    </form>
-                </div>
-                {{end}}
             </div>
         </div>
     </div>
-</div>
-{{else}}
-<div class="row">
-    <div class="col-lg-12">
-        <div class="card card-featured card-featured-info">
-            <header class="card-header">
-                <h4 class="card-title">Bulk Role Configuration</h4>
-            </header>
-            <div class="card-body">
-                {{if .PremiumRequired}}
-                <div class="card">
-                    <h5><i class="fas fa-crown"></i> Premium Feature</h5>
-                    <p class="mb-0">Bulk Role Manager is a premium feature. Please upgrade to premium to use this
-                        functionality.</p>
-                </div>
-                {{else if .RateLimitActive}}
-                <div class="card">
-                    <h5><i class="fas fa-clock"></i> Rate Limited</h5>
-                    <p class="mb-0">You are currently rate limited from bulk role operations. Please wait
-                        <strong>{{.RemainingCooldown}}</strong> seconds before starting another operation.
-                    </p>
-                </div>
-                {{else}}
-                <form method="post" action="" class="no-unsaved-popup" data-async-form>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="target-role">Target Role</label>
-                                <select id="target-role" class="form-control" name="TargetRole">
-                                    {{roleOptionsExclude .ActiveGuild.Roles .HighestRole .ExcludedRoleIDs
-                                    .BulkRole.TargetRole "Select a role"}}
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="operation">Operation</label>
-                                <select id="operation" class="form-control" name="Operation">
-                                    <option value="">Select operation</option>
-                                    <option value="assign" {{if eq $.BulkRole.Operation "assign" }}selected{{end}}>
-                                        Assign Role</option>
-                                    <option value="remove" {{if eq $.BulkRole.Operation "remove" }}selected{{end}}>
-                                        Remove Role</option>
-                                </select>
-                            </div>
-                        </div>
-
-
+    {{else}}
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card card-featured card-featured-info">
+                <header class="card-header">
+                    <h4 class="card-title">Bulk Role Configuration</h4>
+                </header>
+                <div class="card-body">
+                    {{if .RateLimitActive}}
+                    <div class="card">
+                        <h5><i class="fas fa-clock"></i> Rate Limited</h5>
+                        <p class="mb-0">You are currently rate limited from bulk role operations. Please wait
+                            <strong>{{.RemainingCooldown}}</strong> seconds before starting another operation.
+                        </p>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="filter-type">Filter Type</label>
-                                <select id="filter-type" class="form-control" name="FilterType">
-                                    <option value="">Select filter type</option>
-                                    <option value="all" {{if eq $.BulkRole.FilterType "all" }}selected{{end}}>All
-                                        members</option>
-                                    <option value="bots" {{if eq $.BulkRole.FilterType "bots" }}selected{{end}}>Bots
-                                        only</option>
-                                    <option value="humans" {{if eq $.BulkRole.FilterType "humans" }}selected{{end}}>
-                                        Humans only</option>
-                                    <option value="has_roles" {{if eq $.BulkRole.FilterType "has_roles"
-                                        }}selected{{end}}>Has specific roles</option>
-                                    <option value="missing_roles" {{if eq $.BulkRole.FilterType "missing_roles"
-                                        }}selected{{end}}>Missing specific roles</option>
-                                    <option value="joined_after" {{if eq $.BulkRole.FilterType "joined_after"
-                                        }}selected{{end}}>Joined after date</option>
-                                    <option value="joined_before" {{if eq $.BulkRole.FilterType "joined_before"
-                                        }}selected{{end}}>Joined before date</option>
-                                </select>
+                    {{else}}
+                    <form method="post" action="" class="no-unsaved-popup" data-async-form
+                        style="{{if not .IsGuildPremium}}opacity:.6;{{end}}">
+                        {{if not .IsGuildPremium}}<fieldset disabled aria-disabled="true">{{end}}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="target-role">Target Role</label>
+                                        <select id="target-role" class="form-control" name="TargetRole">
+                                            {{roleOptionsExclude .ActiveGuild.Roles .HighestRole .ExcludedRoleIDs .BulkRole.TargetRole "Select a role"}}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="operation">Operation</label>
+                                        <select id="operation" class="form-control" name="Operation">
+                                            <option value="">Select operation</option>
+                                            <option value="assign" {{if eq $.BulkRole.Operation "assign"}}selected{{end}}>Assign Role</option>
+                                            <option value="remove" {{if eq $.BulkRole.Operation "remove"}}selected{{end}}>Remove Role</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="form-group" id="filter-role-group" style="display: none;">
-                                <label for="filter-roles">Filter Roles</label>
-                                <select name="FilterRoleIDs" data-plugin-multiselect class="multiselect form-control"
-                                    multiple="multiple">
-                                    {{roleOptionsMultiExclude .ActiveGuild.Roles nil .ExcludedRoleIDs
-                                    .BulkRole.FilterRoleIDs}}
-                                </select>
-                                <div class="form-group mt-2">
-                                    {{checkbox "FilterRequireAll" "FilterRequireAll" "Require ALL selected roles"
-                                    $.BulkRole.FilterRequireAll}}
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="filter-type">Filter Type</label>
+                                        <select id="filter-type" class="form-control" name="FilterType">
+                                            <option value="">Select filter type</option>
+                                            <option value="all" {{if eq $.BulkRole.FilterType "all" }}selected{{end}}> All members</option>
+                                            <option value="bots" {{if eq $.BulkRole.FilterType "bots" }}selected{{end}}>Bots only</option>
+                                            <option value="humans" {{if eq $.BulkRole.FilterType "humans"}}selected{{end}}>Humans only</option>
+                                            <option value="has_roles" {{if eq $.BulkRole.FilterType "has_roles" }}selected{{end}}>Has specific roles</option>
+                                            <option value="missing_roles" {{if eq $.BulkRole.FilterType "missing_roles" }}selected{{end}}>Missing specific roles</option>
+                                            <option value="joined_after" {{if eq $.BulkRole.FilterType "joined_after" }}selected{{end}}>Joined after date</option>
+                                            <option value="joined_before" {{if eq $.BulkRole.FilterType "joined_before" }}selected{{end}}>Joined before date</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group" id="filter-role-group" {{if eq $.BulkRole.FilterType "has_roles" "missing_roles"}} {{else}} style="display: none;" {{end}}>
+                                        <label for="filter-roles">Filter Roles</label>
+                                        <select name="FilterRoleIDs" data-plugin-multiselect
+                                            class="multiselect form-control" multiple="multiple">
+                                            {{roleOptionsMultiExclude .ActiveGuild.Roles nil .ExcludedRoleIDs .BulkRole.FilterRoleIDs}}
+                                        </select>
+                                        <div class="form-group mt-2">
+                                            {{checkbox "FilterRequireAll" "FilterRequireAll" "Require ALL selected roles" $.BulkRole.FilterRequireAll}}
+                                        </div>
+                                    </div>
+                                    <div class="form-group" id="filter-date-group" {{if eq $.BulkRole.FilterType "joined_after" "joined_before"}} {{else}} style="display: none;" {{end}}>
+                                        <label for="filter-date">Filter Date</label>
+                                        <input type="date" class="form-control" id="filter-date" name="FilterDate"
+                                            value="{{$.BulkRole.FilterDate}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="notification-channel">Notification Channel </label>  <i class="fas fa-info-circle" data-toggle="tooltip" data-placement="top" title="Receive alerts when operations complete or fail"></i>
+                                            <select id="notification-channel" class="form-control"
+                                                name="NotificationChannel" data-requireperms-send>
+                                                <option value="0" {{if eq .BulkRole.NotificationChannel 0}}selected{{end}}> No notifications</option>
+                                                {{textChannelOptions .ActiveGuild.Channels .BulkRole.NotificationChannel true "None"}}
+                                            </select>
+                                        </div>
                                 </div>
                             </div>
 
-                            <div class="form-group" id="filter-date-group" style="display: none;">
-                                <label for="filter-date">Filter Date</label>
-                                <input type="date" class="form-control" id="filter-date" name="FilterDate"
-                                    value="{{$.BulkRole.FilterDate}}">
+                            {{if .IsGuildPremium}}
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group mt-2">
+                                        <button id="start-button" type="submit" class="btn btn-success btn-lg btn-block" {{if eq .BulkRole.TargetRole 0}}disabled{{end}}>
+                                           START{{if eq .BulkRole.TargetRole 0}} (Select a role){{end}}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="form-group">
-                                <label for="notification-channel">Notification Channel</label>
-                                <small class="form-text text-info">(Optional) Receive alerts when operations complete or
-                                    fail</small>
-                                <select id="notification-channel" class="form-control" name="NotificationChannel"
-                                    data-requireperms-send>
-                                    <option value="0" {{if eq .BulkRole.NotificationChannel 0}}selected{{end}}>No
-                                        notifications</option>
-                                    {{textChannelOptions .ActiveGuild.Channels .BulkRole.NotificationChannel true
-                                    "None"}}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group mt-2">
-                        <button type="submit" class="btn btn-success btn-lg btn-block" {{if eq .BulkRole.TargetRole
-                            0}}disabled{{end}}>
-                            {{if eq .BulkRole.TargetRole 0}}START (Select a role){{else}}START{{end}}
-                        </button>
-                    </div>
-                </form>
-                {{end}}
+                            {{else}}
+                            </fieldset>
+                            {{end}}
+                    </form>
+                    {{end}}
+                </div>
             </div>
         </div>
     </div>
+    {{end}}
 </div>
-{{end}}
-
 
 
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+  $(document).ready(function() {
         // Only run JavaScript if user has premium access
-    {{ if not .PremiumRequired }}
+        {{if .IsGuildPremium}}
         const filterType = document.getElementById('filter-type');
         const filterRoleGroup = document.getElementById('filter-role-group');
         const filterDateGroup = document.getElementById('filter-date-group');
         const targetRole = document.getElementById('target-role');
-        const startButton = document.querySelector('button[type="submit"]');
+        const startButton = document.getElementById('start-button');
 
         // Check if rate limited
-        const isRateLimited = {{ if .RateLimitActive }}true{{ else}}false{{ end }};
+        const isRateLimited = {{if .RateLimitActive}}true{{else}}false{{end}};
+        function updateFilterFields() {
 
-    function updateFilterFields() {
-        // Don't update if rate limited or elements not found
-        if (isRateLimited || !filterType || !filterRoleGroup || !filterDateGroup) return;
+            const selectedValue = filterType.value;
 
-        const selectedValue = filterType.value;
+            // Hide all filter groups
+            filterRoleGroup.style.display = 'none';
+            filterDateGroup.style.display = 'none';
 
-        // Hide all filter groups
-        filterRoleGroup.style.display = 'none';
-        filterDateGroup.style.display = 'none';
+            // Show relevant filter group only for filter types that need additional input
+            if (selectedValue === 'has_roles' || selectedValue === 'missing_roles') {
+                filterRoleGroup.style.display = 'block';
+            } else if (selectedValue === 'joined_after' || selectedValue === 'joined_before') {
+                filterDateGroup.style.display = 'block';
+            }
+            // For 'all', 'bots', 'humans' - no additional fields needed
 
-        // Show relevant filter group only for filter types that need additional input
-        if (selectedValue === 'has_roles' || selectedValue === 'missing_roles') {
-            filterRoleGroup.style.display = 'block';
-        } else if (selectedValue === 'joined_after' || selectedValue === 'joined_before') {
-            filterDateGroup.style.display = 'block';
+            // Update start button state
+            updateStartButton();
         }
-        // For 'all', 'bots', 'humans' - no additional fields needed
 
-        // Update start button state
-        updateStartButton();
-    }
-
-    function updateStartButton() {
-        if (startButton && !isRateLimited) {
-            const hasRole = targetRole.value && targetRole.value !== '0';
-            startButton.disabled = !hasRole;
-            startButton.textContent = hasRole ? 'START' : 'START (Select a role)';
+        function updateStartButton() {
+            if (startButton ) {
+                const hasRole = targetRole.value && targetRole.value !== '0';
+                startButton.disabled = !hasRole;
+                startButton.textContent = hasRole ? 'START' : 'START (Select a role)';
+            }
         }
-    }
 
-    // Add event listeners only if not rate limited
-    if (!isRateLimited) {
+        // Add event listeners only if not rate limited
         filterType.addEventListener('change', updateFilterFields);
         targetRole.addEventListener('change', updateStartButton);
 
         // Initial setup - ensure filter fields are shown correctly based on current selection
         updateFilterFields();
         updateStartButton();
-    }
-    {{ end }}
+        {{end}}
 
-    // Auto-refresh operation status when operation is active (works for both premium and non-premium users)
-    const operationActive = {{ if .OperationActive }}true{{else }}false{{ end }};
+        // Auto-refresh operation status when operation is active (works for both premium and non-premium users)
+        const operationActive = {{if .OperationActive}}true{{else}}false{{end}};
 
-    if (operationActive) {
-        let refreshInterval;
-
-        function startAutoRefresh() {
-            refreshInterval = setInterval(function () {
-                refreshOperationStatus();
-            }, 5000); // Refresh every 5 seconds
-        }
-
-        function stopAutoRefresh() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
+        if (operationActive) {
+            let refreshInterval;
+            function startAutoRefresh() {
+                refreshInterval = setInterval(function () {
+                    refreshOperationStatus();
+                }, 5000); // Refresh every 5 seconds
             }
-        }
 
-        function refreshOperationStatus() {
-            // Fetch only the operation status data
-            fetch(window.location.href)
-                .then(response => response.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
+            function stopAutoRefresh() {
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                }
+            }
 
-                    // Read new status from hidden element
-                    const newStatusEl = doc.querySelector('#op-status');
-                    const newStatus = newStatusEl ? newStatusEl.getAttribute('data-status') : '';
+            function refreshOperationStatus() {
+                // Fetch only the operation status data
+                fetch(window.location.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
 
-                    // Update local status element
-                    const currentStatusEl = document.querySelector('#op-status');
-                    if (currentStatusEl && newStatus) {
-                        currentStatusEl.setAttribute('data-status', newStatus);
-                    }
+                        // Read new status from hidden element
+                        const newStatusEl = doc.querySelector('#op-status');
+                        const newStatus = newStatusEl ? newStatusEl.getAttribute('data-status') : '';
 
-                    // If status is Completed or Cancelled, finalize UI
-                    if (newStatus === 'Completed' || newStatus === 'Cancelled') {
-                        stopAutoRefresh();
-                        updateUIForCompletion();
-                        return;
-                    }
+                        // Update local status element
+                        const currentStatusEl = document.querySelector('#op-status');
+                        if (currentStatusEl && newStatus) {
+                            currentStatusEl.setAttribute('data-status', newStatus);
+                        }
 
-                    // Fallback: if operation section disappeared, finalize
-                    const opSection = doc.querySelector('#op-status');
-                    if (!opSection) {
-                        stopAutoRefresh();
-                        updateUIForCompletion();
-                    }
-                })
-                .catch(error => {
-                    console.error('Failed to refresh operation status:', error);
-                });
-        }
+                        // If status is Completed or Cancelled, finalize UI
+                        if (newStatus === 'Completed' || newStatus === 'Cancelled') {
+                            stopAutoRefresh();
+                            updateUIForCompletion();
+                            return;
+                        }
 
-        function updateUIForCompletion() {
-            // Reload the page to show the full form again with updated state
-            window.location.reload();
-        }
+                        // Fallback: if operation section disappeared, finalize
+                        const opSection = doc.querySelector('#op-status');
+                        if (!opSection) {
+                            stopAutoRefresh();
+                            updateUIForCompletion();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Failed to refresh operation status:', error);
+                    });
+            }
+
+            function updateUIForCompletion() {
+                // Reload the page to show the full form again with updated state
+                window.location.reload();
+            }
 
         // Start auto-refresh
         startAutoRefresh();

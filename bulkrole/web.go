@@ -84,9 +84,10 @@ func (p *Plugin) InitWeb() {
 	web.AddHTMLTemplate("bulkrole/assets/bulkrole.html", PageHTML)
 
 	web.AddSidebarItem(web.SidebarCategoryRoles, &web.SidebarItem{
-		Name: "Bulk Role",
-		URL:  "bulkrole",
-		Icon: "fas fa-users-cog",
+		Name:      "Bulk Role",
+		URL:       "bulkrole",
+		Icon:      "fas fa-users-cog",
+		IsPremium: true,
 	})
 
 	muxer := goji.SubMux()
@@ -96,6 +97,7 @@ func (p *Plugin) InitWeb() {
 
 	muxer.Use(web.RequireBotMemberMW)
 	muxer.Use(web.RequirePermMW(discordgo.PermissionManageRoles))
+	muxer.Use(premium.PremiumGuildMW)
 
 	getHandler := web.RenderHandler(handleGetBulkRoleMainPage, "cp_bulkrole")
 
@@ -111,15 +113,6 @@ func (p *Plugin) InitWeb() {
 func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) interface{} {
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
-
-	premiumTier := premium.ContextPremiumTier(ctx)
-	logger.WithField("guild", activeGuild.ID).WithField("premium_tier", premiumTier).Info("Premium check")
-
-	if premiumTier != premium.PremiumTierPremium {
-		tmpl["PremiumRequired"] = true
-		tmpl["PremiumTier"] = premiumTier
-		return tmpl
-	}
 
 	general, err := GetBulkRoleConfig(activeGuild.ID)
 	if err != nil {

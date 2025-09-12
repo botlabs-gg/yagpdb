@@ -15,7 +15,9 @@
             <form method="POST" action="/manage/{{.ActiveGuild.ID}}/personalizer" data-async-form
                 enctype="multipart/form-data" id="personalizer-form"
                 style="{{if not .IsGuildPremium}}opacity:.6;{{end}}">
-                {{if not .IsGuildPremium}}<fieldset disabled aria-disabled="true">{{end}}
+                {{if not .IsGuildPremium}}
+                <fieldset disabled aria-disabled="true">
+                {{end}}
                     <div class="card mt-3">
                         <div class="card-header">Profile Preview</div>
                         <div class="card-body p-0">
@@ -53,10 +55,20 @@
                                 <button type="submit" class="btn btn-primary mt-2">Save Changes</button>
                                 {{end}}
                             </div>
+                            <div class="px-3 pt-3 small text-muted">
+                                <div><strong>Image requirements</strong>: PNG, JPEG, or GIF, up to 8MB.</div>
+                                <ul class="mb-1">
+                                    <li>Avatar: minimum 64×64, maximum 4096×4096. Square images recommended.</li>
+                                    <li>Banner: minimum 64×64 (600×240+ recommended), maximum 4096×4096.</li>
+                                </ul>
+                                <div>Note: Banner changes may not appear in the Discord client immediately.</div>
+                            </div>
                         </div>
                     </div>
-                    {{if not .IsGuildPremium}}
-                </fieldset>{{end}}
+                {{if not .IsGuildPremium}}
+                </fieldset>
+                {{end}}
+
             </form>
 
             <script>
@@ -116,7 +128,7 @@
 
                     form.addEventListener('submit', async function (e) {
                         e.preventDefault();
-                        {{if .IsGuildPremium}}
+                        {{ if .IsGuildPremium }}
                         var hasFiles = (!!getFile(avatarInput)) || (!!getFile(bannerInput));
 
                         var ok = await Promise.all([validateFile(avatarInput), validateFile(bannerInput)]);
@@ -144,13 +156,13 @@
                         } else {
                             form.submit();
                         }
-                        {{else}}
+                        {{else }}
                         if (typeof addAlertHTML === 'function') {
                             addAlertHTML('warning', 'This feature requires <a href="/premium-perks">Premium</a>.');
                         } else {
                             alert('This feature requires Premium.');
                         }
-                        {{end}}
+                        {{ end }}
                     });
                 })();
             </script>

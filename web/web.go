@@ -458,6 +458,7 @@ type SidebarItem struct {
 	CustomIconImage string
 	New             bool
 	External        bool
+	IsPremium       bool
 }
 
 var sideBarItems = make(map[string][]*SidebarItem)
