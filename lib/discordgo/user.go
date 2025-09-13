@@ -27,6 +27,9 @@ type User struct {
 	// to retrieve the banner itself.
 	Banner string `json:"banner"`
 
+	// The color of the user's banner in case they don't have a banner.
+	BannerColor string `json:"banner_color"`
+
 	// The user's chosen language option.
 	Locale string `json:"locale"`
 
@@ -36,9 +39,52 @@ type User struct {
 	// Whether the user is a bot.
 	Bot bool `json:"bot"`
 
+	// The flags on the user.
+	Flags UserFlags `json:"flags"`
+
+	// The public flags of the user.
+	PublicFlags UserFlags `json:"public_flags"`
+
 	// The user's primary guild.
 	PrimaryGuild *UserPrimaryGuild `json:"primary_guild,omitempty"`
 }
+
+// UserFlags is the public flags of a user.
+type UserFlags int
+
+// Block containing known UserFlags values.
+const (
+	// UserFlagStaff indicates the user is a Discord employee.
+	UserFlagStaff UserFlags = 1 << 0
+	// UserFlagPartner indicates the user is a Partnered Server Owner.
+	UserFlagPartner UserFlags = 1 << 1
+	// UserFlagHypeSquad indicates the user is a HypeSquad Events member.
+	UserFlagHypeSquad UserFlags = 1 << 2
+	// UserFlagBugHunterLevel1 indicates the user is a Bug Hunter (Level 1).
+	UserFlagBugHunterLevel1 UserFlags = 1 << 3
+	// UserFlagHypesquadOnlineHouse1 indicates the user is a House Bravery member.
+	UserFlagHypesquadOnlineHouse1 UserFlags = 1 << 6
+	// UserFlagHypesquadOnlineHouse2 indicates the user is a House Brilliance member.
+	UserFlagHypesquadOnlineHouse2 UserFlags = 1 << 7
+	// UserFlagHypesquadOnlineHouse3 indicates the user is a House Balance member.
+	UserFlagHypesquadOnlineHouse3 UserFlags = 1 << 8
+	// UserFlagPremiumEarlySupporter indicates the user is an Early Nitro Supporter.
+	UserFlagPremiumEarlySupporter UserFlags = 1 << 9
+	// UserFlagTeamPseudoUser indicates the account represents a Team.
+	UserFlagTeamPseudoUser UserFlags = 1 << 10
+	// UserFlagBugHunterLevel2 indicates the user is a Bug Hunter (Level 2).
+	UserFlagBugHunterLevel2 UserFlags = 1 << 14
+	// UserFlagVerifiedBot indicates the user is a Verified Bot.
+	UserFlagVerifiedBot UserFlags = 1 << 16
+	// UserFlagVerifiedDeveloper indicates the user is an Early Verified Bot Developer.
+	UserFlagVerifiedDeveloper UserFlags = 1 << 17
+	// UserFlagCertifiedModerator indicates the user is Moderator Programs Alumni.
+	UserFlagCertifiedModerator UserFlags = 1 << 18
+	// UserFlagBotHTTPInteractions indicates the bot uses only HTTP interactions and is shown online.
+	UserFlagBotHTTPInteractions UserFlags = 1 << 19
+	// UserFlagActiveDeveloper indicates the user is an Active Developer.
+	UserFlagActiveDeveloper UserFlags = 1 << 22
+)
 
 // UserPrimaryGuild stores information about a user's primary guild.
 type UserPrimaryGuild struct {
@@ -82,12 +128,28 @@ func (u *User) UnmarshalJSONObject(dec *gojay.Decoder, key string) error {
 		return dec.String(&u.Avatar)
 	case "banner":
 		return dec.String(&u.Banner)
+	case "banner_color":
+		return dec.String(&u.BannerColor)
 	case "locale":
 		return dec.String(&u.Locale)
 	case "discriminator":
 		return dec.String(&u.Discriminator)
 	case "bot":
 		return dec.Bool(&u.Bot)
+	case "flags":
+		var tmp int
+		if err := dec.Int(&tmp); err != nil {
+			return err
+		}
+		u.Flags = UserFlags(tmp)
+		return nil
+	case "public_flags":
+		var tmp int
+		if err := dec.Int(&tmp); err != nil {
+			return err
+		}
+		u.PublicFlags = UserFlags(tmp)
+		return nil
 	}
 
 	return nil

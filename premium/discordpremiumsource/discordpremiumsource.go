@@ -206,7 +206,7 @@ func UpdatePremiumSlots(ctx context.Context) error {
 		// If we got here then that means this is a new user
 		slots := fetchSlotsForDiscordSku(v.SKUID)
 		for i := range slots {
-			title := fmt.Sprintf("Discord Premium Slot #%d", i+1)
+			title := fmt.Sprintf("Discord Slot #%d", i+1)
 			slot, err := premium.CreatePremiumSlot(ctx, tx, v.UserID, premium.PremiumSourceTypeDiscord, title, "Slot is available as long as subscription is active on Discord", int64(i+1), -1, premium.PremiumTierPremium)
 			if err != nil {
 				tx.Rollback()
