@@ -130,6 +130,7 @@ func (p *Plugin) InitWeb() {
 	subMux.Handle(pat.Post("/database/delete/:id"), web.ControllerPostHandler(handleDeleteDatabaseEntry, getDBHandler, nil))
 
 	subMux.Handle(pat.Get("/commands/:cmd/"), getCmdHandler)
+	subMux.Handle(pat.Get("/commands/:cmd"), getCmdHandler)
 
 	subMux.Handle(pat.Get("/groups/:group/"), web.ControllerHandler(handleGetCommandsGroup, "cp_custom_commands"))
 	subMux.Handle(pat.Get("/groups/:group"), web.ControllerHandler(handleGetCommandsGroup, "cp_custom_commands"))
