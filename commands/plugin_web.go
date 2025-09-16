@@ -461,17 +461,23 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 		return templateData, err
 	}
 
-	count, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", ag.ID), qm.Where("global=false")).CountG(r.Context())
+	channelOverrideCount, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", ag.ID), qm.Where("global=false")).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+
+	globalOverrideCount, err := models.CommandsChannelsOverrides(qm.Where("guild_id=?", ag.ID), qm.Where("global=true")).CountG(r.Context())
 	if err != nil {
 		return templateData, err
 	}
 
 	const format = `<ul>
 	<li>Command prefix: <code>%s</code></li>
-	<li>Active channel overrides: <code>%d</code></li>
+	<li>Active Global Overrides: <code>%d</code></li>
+	<li>Active Channel overrides: <code>%d</code></li>
 </ul>`
 
-	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, html.EscapeString(prefix), count))
+	templateData["WidgetBody"] = template.HTML(fmt.Sprintf(format, html.EscapeString(prefix), globalOverrideCount, channelOverrideCount))
 
 	return templateData, nil
 }
