@@ -29,7 +29,7 @@
             <li>
               <a href="/premium-perks" class="notification-icon" data-toggle="tooltip" data-placement="bottom" title=""
                   data-original-title="Premium">
-                  <i class="text-warning fas fa-crown"></i>
+                  <i class="premium-color fas fa-crown"></i>
               </a>
             </li>
             <li>
@@ -79,7 +79,7 @@
                 </figure>
                 <div class="profile-info" data-lock-name="Server Name">
                     <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i
-                            class="fas fa-crown text-warning ml-1"></i>{{end}}{{else}}Loading...{{end}}</span>
+                            class="fas fa-crown premium-color ml-1"></i>{{end}}{{else}}Loading...{{end}}</span>
                     <span class="role">loading....</span>
                 </div>
                 <i class="fa custom-caret"></i>
@@ -182,7 +182,7 @@
                         </a>
                     </li>
                     <li>
-                        <a class="nav-link text-warning" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/personalizer">
+                        <a class="nav-link premium-color" data-partial-load="true" href="/manage/{{.ActiveGuild.ID}}/personalizer">
                             <i class="fas fa-user" aria-hidden="true"></i>
                             <span>Personalize</span>
                         </a>
@@ -305,7 +305,7 @@
 {{$ag := .ActiveGuild}}
 {{$item := .Item}}
 <li>
-    <a class="nav-link {{if $item.IsPremium}}text-warning{{end}}" {{if not $item.External}}data-partial-load="true"{{else}}target="_blank"{{end}} href="{{if not $item.External}}/manage/{{$ag.ID}}/{{$item.URL}}{{else}}{{$item.URL}}{{end}}">
+    <a class="nav-link {{if $item.IsPremium}}premium-color{{end}}" {{if not $item.External}}data-partial-load="true"{{else}}target="_blank"{{end}} href="{{if not $item.External}}/manage/{{$ag.ID}}/{{$item.URL}}{{else}}{{$item.URL}}{{end}}">
         {{if $item.Icon}}<i class="{{$item.Icon}}" aria-hidden="true"></i>{{end}}
         {{if $item.CustomIconImage}}<image src="{{$item.CustomIconImage}}" width="24" class="nav-sidebar-icon-custom mr-1" />{{end}}
         {{if $item.New}}<span class="float-right badge badge-success">New!</span>{{end}}
@@ -327,7 +327,7 @@
     </figure>
     <div class="profile-info" data-lock-name="Server Name">
         <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i
-                class="fas fa-crown text-warning ml-1"></i>{{end}}{{else}}Select Server{{end}}</span>
+                class="fas fa-crown premium-color ml-1"></i>{{end}}{{else}}Select Server{{end}}</span>
         <span class="role">Change server</span>
     </div>
 
