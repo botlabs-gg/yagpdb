@@ -94,8 +94,6 @@ func handleGetPage(w http.ResponseWriter, r *http.Request) (web.TemplateData, er
 		"banner_url": bannerURL,
 	}
 
-	logrus.Info("CurrentMember: ", current)
-
 	tmpl["CurrentMember"] = current
 	return tmpl, nil
 }
@@ -209,7 +207,6 @@ func handlePostUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		logrus.WithError(err).Error("Failed to update bot profile")
 		return tmpl.AddAlerts(web.ErrorAlert("Failed to update bot profile, please try again later.")), nil
 	}
-	logrus.Infof("CurrentMember: %#v ", member)
 
 	pg, err := models.FindPersonalizedGuildG(context.Background(), guild.ID)
 	if err != nil && err != sql.ErrNoRows {

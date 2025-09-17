@@ -5,6 +5,10 @@
 	z-index: 1000000;
 }
 
+.premium-color {
+	color: #ffd806  !important;
+}
+
 .avatar {
 	border-radius: 50%;
 	width: 50px;
