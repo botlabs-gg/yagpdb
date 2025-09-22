@@ -173,6 +173,13 @@ func sendTemplate(gs *dstate.GuildSet, cs *dstate.ChannelState, tmpl string, ms 
 	}
 	ctx.DisabledContextFuncs = disableFuncs
 
+	// Construct a fake message so that things like exec and execAdmin work as expected.
+	ctx.Msg = new(discordgo.Message)
+	ctx.Msg.Author = &ms.User
+	ctx.Msg.Member = ms.DgoMember()
+	ctx.Msg.ChannelID = cs.ID
+	ctx.Msg.GuildID = gs.ID
+
 	msg, err := ctx.Execute(tmpl)
 	if err != nil {
 		logger.WithError(err).WithField("guild", gs.ID).Warnf("Failed parsing/executing %s template", name)
