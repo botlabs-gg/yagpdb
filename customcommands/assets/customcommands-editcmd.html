@@ -866,23 +866,27 @@
     // we need to reinitialize the codemirror instance for each new textarea, the script below is the old implementation coming from the spongebob.js file
     $(document).on('click', '.btn-add', function (e) {
 		e.preventDefault();
-
 		var currentEntry = $(this).parent().parent(),
-			newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
+		newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
         newEntry.find('.CodeMirror').remove();
 		newEntry.find('input, textarea').val('');
         setupCodeMirrorEditor(newEntry.find('textarea')[0]);
-
-		newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
-			.removeClass('btn-add').addClass('btn-remove')
+		newEntry.parent()
+            .find('.entry:not(:last-of-type) .btn-add')
+		    .removeClass('btn-add').addClass('btn-remove')
 			.removeClass('btn-success').addClass('btn-danger')
+            .attr('noconfirm', 'true')
 			.html('<i class="fas fa-minus"></i>');
-	}).on('click', '.btn-remove', function (e) {
-		$(this).parents('.entry:first').remove();
-
-		e.preventDefault();
-		return false;
-	});
+	    }).on('click', '.btn-remove', 
+        function (e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to delete this response? You will not be able to recover any unsaved changes.')) {
+                return false;
+            }else{
+                $(this).parents('.entry:first').remove();
+            }
+		    return true;
+        });
 </script>
 
 {{template "cp_footer" .}}
