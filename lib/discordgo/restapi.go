@@ -993,10 +993,11 @@ func (s *Session) GuildMemberMe(guildID int64, data CurrentGuildMemberUpdate) (r
 	return response, nil
 }
 
-func (s *Session) GuildMemberMeReset(guildID int64, resetAvatar bool, resetBanner bool) error {
+func (s *Session) GuildMemberMeReset(guildID int64, resetAvatar bool, resetBanner bool, resetNick bool) error {
 	payload := struct {
 		Avatar *string `json:"avatar"`
 		Banner *string `json:"banner"`
+		Nick   *string `json:"nick"`
 	}{}
 
 	if resetAvatar {
@@ -1004,6 +1005,9 @@ func (s *Session) GuildMemberMeReset(guildID int64, resetAvatar bool, resetBanne
 	}
 	if resetBanner {
 		payload.Banner = nil
+	}
+	if resetNick {
+		payload.Nick = nil
 	}
 
 	_, err := s.RequestWithBucketID("PATCH", EndpointGuildMemberMe(guildID), payload, nil, EndpointGuildMember(guildID, 0))

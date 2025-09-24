@@ -59,8 +59,17 @@
                                     <label>Nickname</label>
                                     <input type="text" class="form-control" name="Nick" value="{{index .CurrentMember "nick"}}" placeholder="Leave blank to keep current" />
                                 </div>
+                                
                                 {{if .IsGuildPremium}}
-                                <button type="submit" class="btn btn-block btn-primary mt-2">Save Changes</button>
+                                <div class="row">
+                                    <div class="col">
+                                        <button type="submit" id="reset-bot-profile" class="btn btn-block btn-danger mt-2" formaction="/manage/{{.ActiveGuild.ID}}/personalizer/reset" data-async-form-alertsonly>Reset</button>
+                                    </div>
+                                    <div class="col">
+                                        <button type="submit" class="btn btn-block btn-primary mt-2">Save Changes</button>
+                                    </div>
+                                </div>
+                                </div>
                                 {{end}}
                             </div>
                         </div>
@@ -125,6 +134,34 @@
                     bannerInput.addEventListener('change', async function () {
                         if (await validateFile(bannerInput)) setPreviewBg(bannerPreview, getFile(bannerInput)); else bannerInput.value = '';
                     });
+
+                    var resetBtn = document.getElementById('reset-bot-profile');
+                    if (resetBtn) {
+                        resetBtn.addEventListener('click', async function (e) {
+                            if (!confirm('Reset bot profile (nickname, avatar, banner) to default?')) return;
+                            e.preventDefault();
+                            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+
+                            var url = resetBtn.getAttribute('formaction') || (form.getAttribute('action') || window.location.pathname) + '/reset';
+                            url += (url.indexOf('?') === -1 ? '?' : '&') + 'partial=1&alertsonly=1';
+
+                            try {
+                                var resp = await fetch(url, { method: 'POST', credentials: 'same-origin' });
+                                var txt = await resp.text();
+                                if (typeof showAlerts === 'function') showAlerts(txt);
+                            } catch (err) {
+                                alert('Reset failed. Please try again.');
+                            }
+
+                            setTimeout(function () {
+                                if (typeof navigate === 'function') {
+                                    navigate(window.location.pathname, 'GET', null, false, false, false);
+                                } else {
+                                    window.location.reload();
+                                }
+                            }, 800);
+                        });
+                    }
 
                     form.addEventListener('submit', async function (e) {
                         e.preventDefault();

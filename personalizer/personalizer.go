@@ -40,6 +40,6 @@ func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
 		_, _ = pg.DeleteG(ctx)
 	}
 
-	err = common.BotSession.GuildMemberMeReset(guildID, true, true)
+	err = common.BotSession.GuildMemberMeReset(guildID, true, true, false)
 	return err
 }

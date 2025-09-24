@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"strings"
 
+	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot/botrest"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
@@ -32,6 +33,7 @@ import (
 
 var (
 	panelLogKeyPersonalizerUpdate = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "personalizer_updated", FormatString: "Updated bot profile"})
+	panelLogKeyPersonalizerReset  = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "personalizer_reset", FormatString: "Reset bot profile"})
 )
 
 //go:embed assets/personalizer.html
@@ -42,10 +44,10 @@ func (p *Plugin) InitWeb() {
 	mux := goji.SubMux()
 	// Register routes under control panel mux
 	gethandler := web.ControllerHandler(handleGetPage, "cp_personalizer")
-	postHandler := web.ControllerPostHandler(handlePostUpdate, gethandler, postForm{})
-	web.CPMux.Handle(pat.Get("/personalizer"), mux)
-	web.CPMux.Handle(pat.Get("/personalizer/"), mux)
-	web.CPMux.Handle(pat.Post("/personalizer"), mux)
+	postHandler := web.ControllerPostHandler(handleUpdateProfile, gethandler, postForm{})
+	deleteHandler := web.ControllerPostHandler(handleResetProfile, gethandler, nil)
+	web.CPMux.Handle(pat.New("/personalizer/*"), mux)
+	web.CPMux.Handle(pat.New("/personalizer"), mux)
 	mux.Use(web.RequireBotMemberMW)
 	mux.Use(web.RequirePermMW(discordgo.PermissionChangeNickname))
 	mux.Use(premium.PremiumGuildMW)
@@ -53,6 +55,9 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Get(""), gethandler)
 	mux.Handle(pat.Post("/"), postHandler)
 	mux.Handle(pat.Post(""), postHandler)
+
+	mux.Handle(pat.Post("/reset"), deleteHandler)
+	mux.Handle(pat.Post("/reset/"), deleteHandler)
 }
 
 type postForm struct {
@@ -153,7 +158,38 @@ func readImageToDataURI(fh *multipart.FileHeader) (string, error) {
 	return prefix + base64.StdEncoding.EncodeToString(raw), nil
 }
 
-func handlePostUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+func handleResetProfile(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
+	guild, tmpl := web.GetBaseCPContextData(r.Context())
+
+	if !premium.ContextPremium(r.Context()) {
+		tmpl.AddAlerts(web.ErrorAlert("This feature requires Premium"))
+		return tmpl, nil
+	}
+	pg, err := models.FindPersonalizedGuildG(context.Background(), guild.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			pg = nil
+		} else {
+			logrus.WithError(err).Error("Failed to reset bot profile")
+			return tmpl.AddAlerts(web.ErrorAlert("Failed to reset bot profile, please try again later.")), nil
+		}
+	}
+
+	if pg != nil {
+		_, _ = pg.DeleteG(context.Background())
+	}
+
+	err = common.BotSession.GuildMemberMeReset(guild.ID, true, true, false)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to reset bot profile")
+		return tmpl.AddAlerts(web.ErrorAlert("Failed to reset bot profile, please try again later.")), nil
+	}
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyPersonalizerReset))
+	return tmpl, nil
+}
+
+func handleUpdateProfile(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	guild, tmpl := web.GetBaseCPContextData(r.Context())
 
 	if !premium.ContextPremium(r.Context()) {
@@ -199,8 +235,6 @@ func handlePostUpdate(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 	if bannerDataURI != "" {
 		update.Banner = bannerDataURI
 	}
-
-	logrus.Infof("handlePostUpdate: banner: %s, avatar: %s, nick: %s", bannerDataURI, avatarDataURI, nick)
 
 	member, err := common.BotSession.GuildMemberMe(guild.ID, *update)
 	if err != nil {
