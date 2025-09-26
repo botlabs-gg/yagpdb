@@ -1356,9 +1356,10 @@ func (g *GatewayConnection) identify() error {
 	}
 
 	data := identifyData{
-		Token:              g.manager.session.Token,
-		Properties:         properties,
-		LargeThreshold:     250,
+		Token:          g.manager.session.Token,
+		Properties:     properties,
+		LargeThreshold: 250,
+		// Compress:      g.manager.session.Compress, // this is no longer needed since we use zlib-steam anyways
 		Shard:              nil,
 		GuildSubscriptions: true,
 		Intents:            intents,
