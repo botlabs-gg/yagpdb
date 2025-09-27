@@ -58,7 +58,6 @@ func (p *Plugin) SetupClient() error {
 
 func (p *Plugin) deleteOldVideos() {
 	ticker := time.NewTicker(time.Minute * 1)
-	// Remove videos older than 24 hours
 	for {
 		select {
 		case wg := <-p.Stop:
@@ -138,7 +137,7 @@ func (p *Plugin) checkExpiringWebsubs() {
 	for index, chunk := range expiringChunks {
 		logger.Infof("Processing chunk %d of %d for %d expiring youtube subs", index+1, len(expiringChunks), totalExpiring)
 		for _, sub := range chunk {
-			go p.WebSubSubscribe(sub)
+			p.WebSubSubscribe(sub)
 		}
 		// sleep for a second before processing next chunk
 		time.Sleep(time.Second)
@@ -185,7 +184,7 @@ func (p *Plugin) syncWebSubs() {
 				if mn < time.Now().Unix() {
 					didChunkUpdate = true
 					// Channel not added to redis, resubscribe and add to redis
-					go p.WebSubSubscribe(channel)
+					p.WebSubSubscribe(channel)
 				}
 			}
 			if didChunkUpdate {
