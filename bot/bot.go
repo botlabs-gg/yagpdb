@@ -266,6 +266,18 @@ var identifyConcurrencyOnce sync.Once
 func (rl *identifyRatelimiter) getIdentifyMaxConcurrency() int {
 	identifyConcurrencyOnce.Do(func() {
 		identifyMaxConcurrency = 1
+
+		const redisKey = "yagpdb.gateway.identify.max_concurrency"
+
+		var cached string
+		if err := common.RedisPool.Do(radix.Cmd(&cached, "GET", redisKey)); err == nil && cached != "" {
+			if parsed, perr := strconv.Atoi(cached); perr == nil && parsed > 0 {
+				identifyMaxConcurrency = parsed
+				logger.Infof("Gateway identify max_concurrency (cached): %d", identifyMaxConcurrency)
+				return
+			}
+		}
+
 		s, err := discordgo.New(common.GetBotToken())
 		if err != nil {
 			logger.WithError(err).Warn("failed to create session to fetch gateway bot info")
@@ -280,6 +292,9 @@ func (rl *identifyRatelimiter) getIdentifyMaxConcurrency() int {
 			identifyMaxConcurrency = resp.SessionStartLimit.MaxConcurrency
 		}
 		logger.Infof("Gateway identify max_concurrency: %d", identifyMaxConcurrency)
+
+		const ttlSeconds = 21600 // cache for 6 hours, this doesn't change often.
+		_ = common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", redisKey, ttlSeconds, strconv.Itoa(identifyMaxConcurrency)))
 	})
 	return identifyMaxConcurrency
 }
