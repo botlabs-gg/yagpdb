@@ -4,7 +4,6 @@ $(function () {
 
 	$("#loading-overlay").addClass("hidden");
 
-
 	if (visibleURL) {
 		console.log("Should navigate to", visibleURL);
 		window.history.replaceState("", "", visibleURL);
@@ -315,15 +314,15 @@ function initPlugins(partial) {
 	$('.entry:not(:last-of-type) .btn-add')
 		.removeClass('btn-add').addClass('btn-remove')
 		.removeClass('btn-success').addClass('btn-danger')
-		.html('<i class="fas fa-minus"></i>');
+		.html('<i class="fas fa-minus"></i>')
+		.attr('noconfirm', 'true');
 
-	// The uitlity that checks wether the bot has permissions to send messages in the selected channel
+	// The utility that checks wether the bot has permissions to send messages in the selected channel
 	channelRequirepermsDropdown(selectorPrefix);
 	yagInitSelect2(selectorPrefix)
 	yagInitMultiSelect(selectorPrefix)
 	yagInitAutosize(selectorPrefix);
 	yagInitUnsavedForms(selectorPrefix)
-	// initializeMultiselect(selectorPrefix);
 
 	$(selectorPrefix + '.modal-basic').magnificPopup({
 		type: 'inline',
@@ -431,7 +430,6 @@ function validateChannelDropdown(dropdown, currentElem, channel, perms) {
 			}
 		}
 
-		// console.log(missing.join(", "));
 		if (missing.length < 1) {
 			// Has perms
 			currentElem.removeClass("text-danger");
@@ -446,14 +444,7 @@ function validateChannelDropdown(dropdown, currentElem, channel, perms) {
 	}
 }
 
-function initializeMultiselect(selectorPrefix) {
-	// $(selectorPrefix+".multiselect").multiselect();
-}
-
 function formSubmissionEvents() {
-	// forms.each(function(i, elem){
-	// 	elem.onsubmit = submitform;
-	// })
 
 	function dangerButtonClick(evt) {
 		var target = $(evt.target);
@@ -476,12 +467,10 @@ function formSubmissionEvents() {
 			return;
 		}
 
-		// console.log("aaaaa", evt, evt.preventDefault);
 		if (!confirm("Are you sure you want to do this?")) {
 			evt.preventDefault(true);
 			evt.stopImmediatePropagation();
 		}
-		// alert("aaa")
 	}
 
 	$(document).on("click", ".btn-danger", dangerButtonClick);
@@ -495,7 +484,6 @@ function formSubmissionEvents() {
 
 
 	$(document).on("submit", '[data-async-form]', function (event) {
-		// console.log("Clicked the link");
 		event.preventDefault();
 
 		var action = $(event.target).attr("action");
@@ -507,7 +495,6 @@ function formSubmissionEvents() {
 	});
 
 	$(document).on("click", 'button', function (event) {
-		// console.log("Clicked the link");
 		var target = $(event.target);
 
 		if (target.prop("tagName") !== "BUTTON") {
@@ -629,16 +616,6 @@ function trackForm(form) {
 			return;
 		}
 
-		// for (let mutation of mutationList) {
-		// 	for (let removed of mutation.removedNodes) {
-		// 		if (removed === form) {
-		// 			observer.disconnect();
-		// 			hideUnsavedChangesPopup(form);
-		// 			return
-		// 		}
-		// 	}
-		// }
-
 		if (isSavingUnsavedForms)
 			checkForUnsavedChanges();
 	});
@@ -737,18 +714,6 @@ function saveUnsavedChanges() {
 
 		let jf = $(form)
 		let serialized = serializeForm(jf);
-
-		// let alertsOnly = jf.attr("data-async-form-alertsonly") !== undefined;
-		// if (!alertsOnly) {
-		// 	alertsOnly = 
-		// }
-
-		// Keep the current tab selected
-		// let currentTab = null
-		// let tabElements = $(".tabs");
-		// if (tabElements.length > 0) {
-		// 	currentTab = $(".tabs a.active").attr("href")
-		// }
 
 		navigate(action, "POST", serialized, false, true, true, function () {
 			console.log("Doneso!");

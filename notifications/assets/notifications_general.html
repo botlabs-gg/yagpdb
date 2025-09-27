@@ -193,12 +193,16 @@
       newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
         .removeClass('btn-add').addClass('btn-remove')
         .removeClass('btn-success').addClass('btn-danger')
-        .html('<i class="fas fa-minus"></i>');
+        .html('<i class="fas fa-minus"></i>')
+        .attr('noconfirm', 'true')
     }).on('click', '.btn-remove', function (e) {
-      $(this).parents('.entry:first').remove();
-
       e.preventDefault();
-      return false;
+      if (!confirm('Are you sure you want to delete this response? You will not be able to recover any unsaved changes.')) {
+        return false;
+      }else{
+        $(this).parents('.entry:first').remove();
+      }
+      return true;
     });
 </script>
 
