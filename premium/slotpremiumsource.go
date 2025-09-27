@@ -305,11 +305,16 @@ func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID i
 			continue
 		}
 
-		if slot.GuildID.Valid && freeSlotsUsed < len(remainingFreeSlots) {
-			// We can migrate it
-			remainingFreeSlots[freeSlotsUsed].GuildID = slot.GuildID
-			remainingFreeSlots[freeSlotsUsed].AttachedAt = null.TimeFrom(time.Now())
-			freeSlotsUsed++
+		if slot.GuildID.Valid {
+			if freeSlotsUsed < len(remainingFreeSlots) {
+				// We can migrate it
+				remainingFreeSlots[freeSlotsUsed].GuildID = slot.GuildID
+				remainingFreeSlots[freeSlotsUsed].AttachedAt = null.TimeFrom(time.Now())
+				freeSlotsUsed++
+			} else {
+				//else we detach the slot from the guild
+				DetachSlotFromGuild(ctx, slot.ID, slot.UserID)
+			}
 		}
 
 		_, err = slot.Delete(ctx, exec)
