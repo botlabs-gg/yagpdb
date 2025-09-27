@@ -1,7 +1,6 @@
 package timezonecompanion
 
 //go:generate sqlboiler --no-hooks psql
-//go:generate go run generate/generatemappings.go
 
 import (
 	"github.com/botlabs-gg/yagpdb/v2/common"

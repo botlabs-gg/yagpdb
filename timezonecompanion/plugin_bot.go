@@ -10,7 +10,6 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
-	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -31,7 +30,7 @@ func (p *Plugin) AddCommands() {
 		CmdCategory: commands.CategoryTool,
 		Name:        "settimezone",
 		Aliases:     []string{"setz", "tzset"},
-		Description: "Sets your timezone, used for various purposes such as auto conversion. Give it your country.",
+		Description: "Sets your timezone, used for various purposes such as auto conversion. Give it a TZ identifier as [listed on Wikipedia](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Timezone", Type: dcmd.String},
 		},
@@ -80,53 +79,7 @@ func (p *Plugin) AddCommands() {
 				}
 			}
 
-			zones := FindZone(parsed.Args[0].Str())
-			// No zones matching user input
-			if len(zones) < 1 {
-				return fmt.Sprintf("Unknown timezone, enter a country or timezone (not abbreviation like CET). there's a timezone picker here: <https://kevinnovak.github.io/Time-Zone-Picker/> you can use, enter the `Area/City` result\n\n%s", userTZ), nil
-			}
-			// Multiple zones matching user input
-			note := ""
-			zone := ""
-			if len(zones) > 1 {
-				if len(zones) > 10 {
-					if parsed.Context().Value(paginatedmessages.CtxKeyNoPagination) != nil {
-						return paginatedTimezones(zones)(nil, 1)
-					}
-					resp := paginatedmessages.NewPaginatedResponse(
-						parsed.GuildData.GS.ID, parsed.ChannelID, 1, int(math.Ceil(float64(len(zones))/10)), paginatedTimezones(zones))
-					return resp, nil
-				}
-
-				matches := ""
-				for _, v := range zones {
-					if s := StrZone(v); s != "" {
-						matches += s + "\n"
-					}
-				}
-				// "matches" now contains all zones, as newline-separated list
-
-				// Check whether the requested zone has an exact match in zones
-				found := false
-				for n, candidate := range zones {
-					if strings.EqualFold(candidate, parsed.Args[0].Str()) {
-						found = true
-						// Select matching zone
-						zone = zones[n]
-						// Set a note for the user
-						note = "Other matching timezones were found, you can reuse the command with any of them:\n" + matches
-					}
-				}
-				if !found {
-					out := "More than 1 result, reuse the command with one of the following:\n" + matches + "\n" + userTZ
-					return out, nil
-				}
-			} else {
-				zone = zones[0]
-			}
-
-			// Here, either `zones` is of length 1, or one zone of several is an exact match
-			// Either way, `zone` is already set to the proper value
+			zone := parsed.Args[0].Str()
 			loc, err := time.LoadLocation(zone)
 			if err != nil {
 				return fmt.Sprintf("Unknown timezone `%s`", zone), nil
@@ -144,8 +97,7 @@ func (p *Plugin) AddCommands() {
 				return nil, err
 			}
 
-			return fmt.Sprintf("Set your timezone to `%s`: %s\n%s", zone, name, note), nil
-			// Note that an empty "note" variable will be invisible, since Discord trims trailing message whitespace
+			return fmt.Sprintf("Set your timezone to `%s`: %s\n", zone, name), nil
 		},
 	}, &commands.YAGCommand{
 		CmdCategory:         commands.CategoryTool,
@@ -233,39 +185,6 @@ func (p *Plugin) AddCommands() {
 	})
 }
 
-func StrZone(zone string) string {
-	loc, err := time.LoadLocation(zone)
-	if err != nil {
-		return ""
-	}
-
-	name, _ := time.Now().In(loc).Zone()
-
-	return fmt.Sprintf("`%s`: %s", zone, name)
-}
-
-func paginatedTimezones(timezones []string) func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-	return func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
-		numSkip := (page - 1) * 10
-
-		out := ""
-		numAdded := 0
-		for i := numSkip; i < len(timezones); i++ {
-			if s := StrZone(timezones[i]); s != "" {
-				out += s + "\n"
-				numAdded++
-				if numAdded >= 10 {
-					break
-				}
-			}
-		}
-
-		return &discordgo.MessageEmbed{
-			Description: "Please redo the command with one of the following:\n" + out,
-		}, nil
-	}
-}
-
 func GetUserTimezone(userID int64) *time.Location {
 	m, err := models.FindUserTimezoneG(context.Background(), userID)
 	if err != nil {
@@ -279,49 +198,6 @@ func GetUserTimezone(userID int64) *time.Location {
 	}
 
 	return loc
-}
-
-func FindZone(in string) []string {
-	lowerIn := strings.ToLower(in)
-	inSpaceReplaced := strings.ReplaceAll(lowerIn, " ", "_")
-
-	ccs := make([]string, 0)
-	for country, code := range CountryCodes {
-		if strings.Contains(strings.ToLower(country), lowerIn) {
-			ccs = appendIfNotExists(ccs, code)
-		}
-	}
-
-	matchesZones := make([]string, 0)
-
-	for code, zones := range CCToZones {
-		// if common.ContainsString()
-
-		// check if we specified the country
-		if common.ContainsStringSlice(ccs, code) || strings.EqualFold(code, lowerIn) {
-			for _, v := range zones {
-				matchesZones = appendIfNotExists(matchesZones, v)
-			}
-
-			continue
-		}
-
-		for _, v := range zones {
-			if strings.Contains(strings.ToLower(v), inSpaceReplaced) {
-				matchesZones = appendIfNotExists(matchesZones, v)
-			}
-		}
-	}
-
-	return matchesZones
-}
-
-func appendIfNotExists(in []string, elem string) []string {
-	if !common.ContainsStringSlice(in, elem) {
-		return append(in, elem)
-	}
-
-	return in
 }
 
 func (p *Plugin) handleMessageCreate(evt *eventsystem.EventData) {
