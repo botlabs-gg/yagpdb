@@ -642,6 +642,9 @@ const TicketTXTDateFormat = "2006 Jan 02 15:04:05"
 func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *bytes.Buffer {
 	var buf bytes.Buffer
 
+	// Add UTF-8 BOM at the beginning
+	buf.Write([]byte{0xEF, 0xBB, 0xBF})
+
 	buf.WriteString(fmt.Sprintf("Transcript of ticket #%d - %s, opened by %s at %s, closed at %s.\n\n",
 		ticket.LocalID, ticket.Title, ticket.AuthorUsernameDiscrim, ticket.CreatedAt.UTC().Format(TicketTXTDateFormat), ticket.ClosedAt.Time.UTC().Format(TicketTXTDateFormat)))
 
