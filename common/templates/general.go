@@ -482,6 +482,11 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 				continue
 			}
 			msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
+		case "is_components_v2":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsIsComponentsV2
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder.`)
 		}
@@ -643,6 +648,11 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 				continue
 			}
 			msg.Flags |= discordgo.MessageFlagsSuppressEmbeds
+		case "is_components_v2":
+			if val == nil || val == false {
+				continue
+			}
+			msg.Flags |= discordgo.MessageFlagsIsComponentsV2
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to message edit builder`)
 		}
