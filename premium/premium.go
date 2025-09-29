@@ -30,7 +30,6 @@ type PremiumTier int
 const (
 	PremiumTierNone    PremiumTier = 0
 	PremiumTierPremium PremiumTier = 1
-	PremiumTierPlus    PremiumTier = 2
 )
 
 type PremiumSourceType string
@@ -45,8 +44,6 @@ func (p PremiumTier) String() string {
 	switch p {
 	case PremiumTierNone:
 		return "None"
-	case PremiumTierPlus:
-		return "Plus"
 	case PremiumTierPremium:
 		return "Paid"
 	}
