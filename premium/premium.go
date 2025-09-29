@@ -30,7 +30,6 @@ type PremiumTier int
 const (
 	PremiumTierNone    PremiumTier = 0
 	PremiumTierPremium PremiumTier = 1
-	PremiumTierPlus    PremiumTier = 2
 )
 
 type PremiumSourceType string
@@ -45,8 +44,6 @@ func (p PremiumTier) String() string {
 	switch p {
 	case PremiumTierNone:
 		return "None"
-	case PremiumTierPlus:
-		return "Plus"
 	case PremiumTierPremium:
 		return "Paid"
 	}
@@ -127,10 +124,6 @@ func GuildPremiumTier(guildID int64) (PremiumTier, error) {
 		return PremiumTierPremium, nil
 	}
 
-	if common.ContainsStringSlice(flags, FeatureFlagPremiumPlus) {
-		return PremiumTierPlus, nil
-	}
-
 	return PremiumTierNone, nil
 }
 
@@ -147,7 +140,7 @@ func IsGuildPremium(guildID int64) (bool, error) {
 		return false, nil
 	}
 
-	return featureflags.GuildHasFlag(guildID, FeatureFlagPremiumPlus)
+	return featureflags.GuildHasFlag(guildID, FeatureFlagPremiumFull)
 }
 
 func PremiumProvidedBy(guildID int64) (int64, error) {
@@ -240,7 +233,6 @@ var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)
 var _ featureflags.PluginWithBatchFeatureFlags = (*Plugin)(nil)
 
 const (
-	FeatureFlagPremiumPlus = "premium_plus"
 	FeatureFlagPremiumFull = "premium_full"
 )
 
@@ -266,7 +258,6 @@ func (p *Plugin) UpdateFeatureFlags(guildID int64) ([]string, error) {
 func (p *Plugin) AllFeatureFlags() []string {
 	return []string{
 		FeatureFlagPremiumFull, // set if this server has the highest premium tier
-		FeatureFlagPremiumPlus, // set if this server has the lower premium tier
 	}
 }
 
@@ -309,9 +300,7 @@ func (p *Plugin) UpdateFeatureFlagsBatch() (map[int64][]string, error) {
 func tierFlags(tier PremiumTier) []string {
 	switch tier {
 	case PremiumTierPremium:
-		return []string{FeatureFlagPremiumFull, FeatureFlagPremiumPlus}
-	case PremiumTierPlus:
-		return []string{FeatureFlagPremiumPlus}
+		return []string{FeatureFlagPremiumFull}
 	}
 
 	return nil
