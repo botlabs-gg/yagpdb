@@ -158,8 +158,17 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 			split := strings.SplitN(origin, ":", 3)
 			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
 
-			if len(split) < 2 || !strings.EqualFold("//"+hostSplit[0], split[1]) {
-				CtxLogger(r.Context()).Error("Mismatched origin: ", hostSplit[0]+" : "+split[1])
+			expectedHost := ""
+			if len(hostSplit) > 0 {
+				expectedHost = "//" + hostSplit[0]
+			}
+			originHost := ""
+			if len(split) > 1 {
+				originHost = split[1]
+			}
+
+			if originHost == "" || !strings.EqualFold(expectedHost, originHost) {
+				CtxLogger(r.Context()).Error("Mismatched origin: ", expectedHost+" : "+originHost)
 				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
 				return
 			}
@@ -179,8 +188,17 @@ func CSRFProtectionMW(inner http.Handler) http.Handler {
 			split := strings.SplitN(origin, ":", 3)
 			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
 
-			if len(split) < 2 || !strings.EqualFold("//"+hostSplit[0], split[1]) {
-				CtxLogger(r.Context()).Error("Mismatched origin: ", hostSplit[0]+" : "+split[1])
+			expectedHost := ""
+			if len(hostSplit) > 0 {
+				expectedHost = "//" + hostSplit[0]
+			}
+			originHost := ""
+			if len(split) > 1 {
+				originHost = split[1]
+			}
+
+			if originHost == "" || !strings.EqualFold(expectedHost, originHost) {
+				CtxLogger(r.Context()).Error("Mismatched origin: ", expectedHost+" : "+originHost)
 				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
 				return
 			}
