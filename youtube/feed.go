@@ -234,6 +234,7 @@ func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
 			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
+			p.DisableGuildFeeds(parsedGuild)
 			return
 		}
 
