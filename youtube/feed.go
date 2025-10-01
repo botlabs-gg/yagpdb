@@ -234,6 +234,7 @@ func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video
 		guildState, err := discorddata.GetFullGuild(parsedGuild)
 		if err != nil {
 			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
+			p.DisableGuildFeeds(parsedGuild)
 			return
 		}
 
@@ -684,7 +685,7 @@ func (p *Plugin) postVideo(subs models.YoutubeChannelSubscriptionSlice, publishe
 	}
 
 	contentType := video.Snippet.LiveBroadcastContent
-	logger.Infof("Got a new video for channel %s (%s) with videoid %s (%s), of type %s and publishing to %d subscriptions", channelID, video.Snippet.ChannelTitle, video.Id, video.Snippet.Title, contentType, len(subs))
+	logger.Infof("Got a new video for channel %s with videoid %s, of type %s and publishing to %d subscriptions", channelID, video.Id, contentType, len(subs))
 
 	isLivestream := contentType == "live"
 	isUpcoming := contentType == "upcoming"
