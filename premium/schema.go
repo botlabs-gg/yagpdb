@@ -24,6 +24,10 @@ ALTER TABLE premium_slots ADD COLUMN IF NOT EXISTS tier INT NOT NULL DEFAULT 1;
 `, `
 ALTER TABLE premium_slots ADD COLUMN IF NOT EXISTS deletes_at TIMESTAMP WITH TIME ZONE;
 `, `
+CREATE UNIQUE INDEX IF NOT EXISTS premium_slots_guild_unique
+ON premium_slots(guild_id)
+WHERE guild_id IS NOT NULL;
+`, `
 CREATE TABLE IF NOT EXISTS premium_codes (
 	id BIGSERIAL PRIMARY KEY,
 
