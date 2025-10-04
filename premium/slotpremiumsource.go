@@ -91,27 +91,19 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 		return errors.WithMessage(err, "BeginTX")
 	}
 
-	_, err = tx.Exec("LOCK TABLE premium_slots IN EXCLUSIVE MODE")
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "Lock")
-	}
-
-	// Check if this guild is used in another slot
-	n, err := models.PremiumSlots(qm.Where("guild_id = ?", guildID)).Count(ctx, tx)
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "PremiumSlots.Count")
-	}
-
-	if n > 0 {
-		tx.Rollback()
-		return ErrGuildAlreadyPremium
-	}
-
-	n, err = models.PremiumSlots(qm.Where("id = ? AND user_id = ? AND guild_id IS NULL AND (permanent OR duration_remaining > 0)", slotID, userID)).UpdateAll(
+	n, err := models.PremiumSlots(qm.Where("id = ? AND user_id = ? AND guild_id IS NULL AND (permanent OR duration_remaining > 0)", slotID, userID)).UpdateAll(
 		ctx, tx, models.M{"guild_id": null.Int64From(guildID), "attached_at": time.Now()})
 	if err != nil {
+		logger.Error("Error attaching slot to guild: ", err)
+		logger.Error("Slot ID: ", slotID)
+		logger.Error("User ID: ", userID)
+		logger.Error("Guild ID: ", guildID)
+		// If another transaction attached a different slot to this guild concurrently,
+		// the partial unique index on guild_id will raise a unique violation.
+		if common.ErrPQIsUniqueViolation(err) {
+			tx.Rollback()
+			return ErrGuildAlreadyPremium
+		}
 		tx.Rollback()
 		return errors.WithMessage(err, "UpdateAll")
 	}
