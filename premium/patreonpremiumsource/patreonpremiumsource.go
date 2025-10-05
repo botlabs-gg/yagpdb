@@ -149,12 +149,13 @@ func UpdatePatreonPremiumSlots(ctx context.Context) error {
 				err = premium.MarkSlotsForDeletion(ctx, tx, userID, slotsToRemove)
 				if err != nil {
 					tx.Rollback()
-					return errors.WithMessage(err, "RemovePremiumSlots")
+					return errors.WithMessage(err, "MarkSlotsForDeletion")
 				}
 			}
-			err = premium.RemoveMarkedDeletedSlots(ctx, tx, premium.PremiumSourceTypePatreon)
+			tx.Commit()
+
+			err = premium.RemoveMarkedDeletedSlots(ctx, common.PQ, premium.PremiumSourceTypePatreon)
 			if err != nil {
-				tx.Rollback()
 				return err
 			}
 		}
