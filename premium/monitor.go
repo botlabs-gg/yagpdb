@@ -28,7 +28,7 @@ func (p *Plugin) StopBackgroundWorker(wg *sync.WaitGroup) {
 }
 
 func runMonitor() {
-	ticker := time.NewTicker(time.Second * 30)
+	ticker := time.NewTicker(time.Minute)
 	time.Sleep(time.Second * 3)
 	logger.Info("started premium server monitor")
 
@@ -40,7 +40,6 @@ func runMonitor() {
 	checkedExpiredSlots := false
 	for {
 		<-ticker.C
-
 		if checkedExpiredSlots {
 			// Then, refresh the redis cache from DB
 			err := updatePremiumServers(context.Background())
@@ -116,16 +115,25 @@ func syncPremiumServersOnStart() error {
 
 // Updates ALL premiun slots from ALL sources
 func checkExpiredSlots(ctx context.Context) error {
-	timedSlots, err := models.PremiumSlots(qm.Where("permanent = false"), qm.Where("guild_id IS NOT NULL")).AllG(ctx)
+	timedSlots, err := models.PremiumSlots(qm.Where("permanent = false")).AllG(ctx)
 	if err != nil {
 		return errors.WithMessage(err, "models.PremiumSlots")
 	}
 
 	for _, v := range timedSlots {
 		if SlotDurationLeft(v) <= 0 {
-			err := SlotExpired(ctx, v)
+			tx, err := common.PQ.BeginTx(ctx, nil)
 			if err != nil {
-				logger.WithError(err).WithField("slot", v.ID).Error("Failed expiring premium slot")
+				return errors.WithMessage(err, "BeginTX")
+			}
+			err = RemovePremiumSlots(ctx, tx, v.UserID, []int64{v.ID})
+			if err != nil {
+				tx.Rollback()
+				logger.WithError(err).WithField("slot", v.ID).Error("Failed removing expired premium slot")
+			}
+			err = tx.Commit()
+			if err != nil {
+				return errors.WithMessage(err, "Commit")
 			}
 		}
 	}

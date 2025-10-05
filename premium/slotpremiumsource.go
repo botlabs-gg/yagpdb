@@ -85,14 +85,10 @@ func SlotDurationLeft(slot *models.PremiumSlot) (duration time.Duration) {
 	return duration
 }
 
-func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID int64) error {
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		return errors.WithMessage(err, "BeginTX")
-	}
+func AttachSlotToGuild(ctx context.Context, exec boil.ContextExecutor, slotID int64, userID int64, guildID int64) error {
 
 	n, err := models.PremiumSlots(qm.Where("id = ? AND user_id = ? AND guild_id IS NULL AND (permanent OR duration_remaining > 0)", slotID, userID)).UpdateAll(
-		ctx, tx, models.M{"guild_id": null.Int64From(guildID), "attached_at": time.Now()})
+		ctx, exec, models.M{"guild_id": null.Int64From(guildID), "attached_at": time.Now()})
 	if err != nil {
 		logger.Error("Error attaching slot to guild: ", err)
 		logger.Error("Slot ID: ", slotID)
@@ -101,21 +97,16 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 		// If another transaction attached a different slot to this guild concurrently,
 		// the partial unique index on guild_id will raise a unique violation.
 		if common.ErrPQIsUniqueViolation(err) {
-			tx.Rollback()
 			return ErrGuildAlreadyPremium
 		}
-		tx.Rollback()
 		return errors.WithMessage(err, "UpdateAll")
 	}
 
 	if n < 1 {
-		tx.Rollback()
 		return ErrSlotNotFound
 	}
 
-	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
 		return errors.WithMessage(err, "Commit")
 	}
 
@@ -137,20 +128,14 @@ func AttachSlotToGuild(ctx context.Context, slotID int64, userID int64, guildID 
 	return err
 }
 
-func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error {
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		return errors.WithMessage(err, "BeginTX")
-	}
+func DetachSlotFromGuild(ctx context.Context, exec boil.ContextExecutor, slotID int64, userID int64) error {
 
-	slot, err := models.PremiumSlots(qm.Where("id = ? AND user_id = ?", slotID, userID), qm.For("UPDATE")).One(ctx, tx)
+	slot, err := models.PremiumSlots(qm.Where("id = ? AND user_id = ?", slotID, userID), qm.For("UPDATE")).One(ctx, exec)
 	if err != nil {
-		tx.Rollback()
 		return errors.WithMessage(err, "PremiumSlots.One")
 	}
 
 	if slot == nil {
-		tx.Rollback()
 		return ErrSlotNotFound
 	}
 
@@ -161,15 +146,9 @@ func DetachSlotFromGuild(ctx context.Context, slotID int64, userID int64) error 
 	slot.GuildID = null.Int64{}
 	slot.AttachedAt = null.Time{}
 
-	_, err = slot.Update(ctx, tx, boil.Infer())
+	_, err = slot.Update(ctx, exec, boil.Infer())
 	if err != nil {
-		tx.Rollback()
 		return errors.WithMessage(err, "Update")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return errors.WithMessage(err, "Commit")
 	}
 
 	err = common.RedisPool.Do(radix.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, oldGuildID))
@@ -213,48 +192,6 @@ var (
 	ErrSlotNotFound        = errors.New("premium slot not found")
 	ErrGuildAlreadyPremium = errors.New("guild already assigned premium from another slot")
 )
-
-func SlotExpired(ctx context.Context, slot *models.PremiumSlot) error {
-	err := DetachSlotFromGuild(ctx, slot.ID, slot.UserID)
-	if err != nil {
-		return errors.WithMessage(err, "Detach")
-	}
-
-	// Attempt migrating the guild attached to the epxired slot to the next available slot the owner of the slot has
-	tx, err := common.PQ.BeginTx(ctx, nil)
-	if err != nil {
-		return errors.WithMessage(err, "BeginTX")
-	}
-
-	availableSlot, err := models.PremiumSlots(qm.Where("user_id = ? AND guild_id IS NULL and permanent = true", slot.UserID), qm.For("UPDATE")).One(ctx, tx)
-	if err != nil {
-		tx.Rollback()
-
-		// If there's no available slots to migrate the guild to, not much can be done
-		if errors.Cause(err) == sql.ErrNoRows {
-			return nil
-		}
-
-		return errors.WithMessage(err, "models.PremiumSlots")
-	}
-
-	availableSlot.AttachedAt = null.TimeFrom(time.Now())
-	availableSlot.GuildID = slot.GuildID
-
-	_, err = availableSlot.Update(ctx, tx, boil.Whitelist("attached_at", "guild_id"))
-	if err != nil {
-		tx.Rollback()
-		return errors.WithMessage(err, "Update")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return errors.WithMessage(err, "Commit")
-	}
-
-	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, slot.GuildID.Int64, slot.UserID))
-	return errors.WithMessage(err, "HSET")
-}
 
 // RemovePremiumSlots removes the specifues premium slots and attempts to migrate to other permanent available ones
 // THIS SHOULD BE USED INSIDE A TRANSACTION ONLY, AS OTHERWISE RACE CONDITIONS BE UPON THEE
@@ -305,7 +242,17 @@ func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID i
 				freeSlotsUsed++
 			} else {
 				//else we detach the slot from the guild
-				DetachSlotFromGuild(ctx, slot.ID, slot.UserID)
+				err = DetachSlotFromGuild(ctx, exec, slot.ID, slot.UserID)
+				if err != nil {
+					return errors.WithMessage(err, "DetachSlotFromGuild")
+				}
+			}
+		}
+
+		if slot.Source == string(PremiumSourceTypeCode) {
+			_, err = models.PremiumCodes(qm.Where("slot_id = ?", slot.ID)).DeleteAll(ctx, exec)
+			if err != nil {
+				return errors.WithMessage(err, "PremiumSlots.DeleteAll")
 			}
 		}
 

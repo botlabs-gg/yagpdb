@@ -166,16 +166,37 @@ func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 	strSlotID := pat.Param(r, "slotID")
 	parsedSlotID, _ := strconv.ParseInt(strSlotID, 10, 64)
 
-	err = DetachSlotFromGuild(r.Context(), parsedSlotID, user.ID)
+	dtx, err := common.PQ.BeginTx(r.Context(), nil)
 	if err != nil {
 		return tmpl, err
 	}
 
+	err = DetachSlotFromGuild(r.Context(), dtx, parsedSlotID, user.ID)
+	if err != nil {
+		dtx.Rollback()
+		return tmpl, err
+	}
+	err = dtx.Commit()
+	if err != nil {
+		return tmpl, err
+	}
+
+	atx, err := common.PQ.BeginTx(r.Context(), nil)
+	if err != nil {
+		return tmpl, err
+	}
 	if data.GuildID != 0 {
-		err = AttachSlotToGuild(r.Context(), parsedSlotID, user.ID, data.GuildID)
+		err = AttachSlotToGuild(r.Context(), atx, parsedSlotID, user.ID, data.GuildID)
 		if err == ErrGuildAlreadyPremium {
 			tmpl.AddAlerts(web.ErrorAlert("Server already has premium from another slot (possibly from another user)"))
+			atx.Rollback()
+			return tmpl, err
 		}
+	}
+
+	err = atx.Commit()
+	if err != nil {
+		return tmpl, err
 	}
 
 	return tmpl, err
@@ -280,6 +301,20 @@ func HandlePostDetachGuildSlot(w http.ResponseWriter, r *http.Request) (tmpl web
 		return templateData, err
 	}
 
-	err = DetachSlotFromGuild(r.Context(), slot.ID, slot.UserID)
+	tx, err := common.PQ.BeginTx(r.Context(), nil)
+	if err != nil {
+		return templateData, err
+	}
+
+	err = DetachSlotFromGuild(r.Context(), tx, slot.ID, slot.UserID)
+	if err != nil {
+		tx.Rollback()
+		return templateData, err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return templateData, err
+	}
+
 	return templateData, err
 }
