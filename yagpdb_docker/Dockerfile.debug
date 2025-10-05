@@ -14,4 +14,4 @@ WORKDIR /app/yagpdb/cmd/yagpdb
 VOLUME ["/app/soundboard", "/app/cert"]
 EXPOSE 5000 4000
 EXPOSE 5100-5999
-CMD [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=yagpdb", "--",  "-all", "-https=false" ]
+CMD [ "/go/bin/dlv", "--listen=:4000", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "debug", "--continue", "--output=yagpdb", "--",  "-web", "-https=false" ]

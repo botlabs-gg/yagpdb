@@ -1,6 +1,7 @@
 package discordpremiumsource
 
 import (
+	"math"
 	"sync"
 	"time"
 
@@ -33,7 +34,7 @@ func DiscordPremiumDisabled(err error, reason string) {
 
 func (p *DiscordPremiumPoller) Run() {
 	logger.Info("Starting Discord Premium Poller")
-	ticker := time.NewTicker(time.Minute * 10)
+	ticker := time.NewTicker(time.Minute)
 	for {
 		p.Poll()
 		<-ticker.C
@@ -44,7 +45,7 @@ func (p *DiscordPremiumPoller) IsLastFetchSuccess() bool {
 	if len(p.activeEntitlements) < 1 {
 		return false
 	}
-	if time.Since(p.lastSuccesfulFetchAt) < time.Minute*10 {
+	if time.Since(p.lastSuccesfulFetchAt) < time.Minute*5 {
 		return p.isLastFetchSuccess
 	}
 	return false
@@ -60,7 +61,7 @@ func (p *DiscordPremiumPoller) Poll() {
 		return
 	}
 
-	afterID := int64(0)
+	beforeID := int64(math.MaxInt64)
 	filterOptions := &discordgo.EntitlementFilterOptions{
 		ExcludeEnded: true,
 		Limit:        100,
@@ -68,6 +69,7 @@ func (p *DiscordPremiumPoller) Poll() {
 
 	allEntitlements := make([]*discordgo.Entitlement, 0)
 	for {
+		logger.Infof("Fetching Entitlements before %d", beforeID)
 		entitlements, err := common.BotSession.Entitlements(common.BotApplication.ID, filterOptions)
 		if err != nil {
 			p.isLastFetchSuccess = false
@@ -79,18 +81,18 @@ func (p *DiscordPremiumPoller) Poll() {
 			break
 		}
 		for _, entitlement := range entitlements {
-			if entitlement.ID > afterID {
-				afterID = entitlement.ID
+			if entitlement.ID < beforeID {
+				beforeID = entitlement.ID
 			}
 			allEntitlements = append(allEntitlements, entitlement)
 		}
-		filterOptions.AfterID = afterID
-		p.isLastFetchSuccess = true
-		p.lastSuccesfulFetchAt = time.Now()
+		filterOptions.BeforeID = beforeID
 		time.Sleep(time.Second)
 	}
 	// Swap the stored ones, this dosen't mutate the existing returned slices so we dont have to do any copying on each request woo
 	p.mu.Lock()
+	p.isLastFetchSuccess = true
+	p.lastSuccesfulFetchAt = time.Now()
 	p.activeEntitlements = allEntitlements
 	p.mu.Unlock()
 }
