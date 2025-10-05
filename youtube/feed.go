@@ -150,7 +150,6 @@ func (p *Plugin) checkExpiringWebsubs() {
 		logger.WithError(err).Error("Failed locking channels lock")
 		return
 	}
-	defer common.UnlockRedisKey(RedisChannelsLockKey)
 
 	maxScore := time.Now().Unix()
 
@@ -158,8 +157,12 @@ func (p *Plugin) checkExpiringWebsubs() {
 	err = common.RedisPool.Do(radix.FlatCmd(&expiring, "ZRANGEBYSCORE", RedisKeyWebSubChannels, "-inf", maxScore))
 	if err != nil {
 		logger.WithError(err).Error("Failed checking websubs")
+		common.UnlockRedisKey(RedisChannelsLockKey)
 		return
 	}
+
+	// Unlock early; subscribing does not need to hold the redis lock
+	common.UnlockRedisKey(RedisChannelsLockKey)
 
 	batchSize := confResubBatchSize.GetInt()
 	logger.Infof("Found %d expiring subs", len(expiring))
@@ -175,17 +178,14 @@ func (p *Plugin) syncWebSubs() {
 		return
 	}
 
-	common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
-		locked := false
-		if !locked {
-			err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000)
-			if err != nil {
-				logger.WithError(err).Error("Failed locking channels lock")
-				return err
-			}
-			locked = true
-		}
+	// Lock only while reading from Redis to determine which channels need resubscribe
+	if err := common.BlockingLockRedisKey(RedisChannelsLockKey, 0, 5000); err != nil {
+		logger.WithError(err).Error("Failed locking channels lock")
+		return
+	}
 
+	var toResubscribeAll []string
+	_ = common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
 		totalChannels := len(activeChannels)
 		batchSize := confResubBatchSize.GetInt()
 		logger.Infof("Found %d youtube channels", totalChannels)
@@ -197,26 +197,26 @@ func (p *Plugin) syncWebSubs() {
 			}
 			channelChunks = append(channelChunks, activeChannels[i:end])
 		}
-		for index, chunk := range channelChunks {
-			logger.Infof("Processing chunk %d of %d for %d youtube channels", index+1, len(channelChunks), totalChannels)
-			var toResubscribe []string
+		for _, chunk := range channelChunks {
 			for _, channel := range chunk {
 				var mn int64
 				client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
 				if mn < time.Now().Unix() {
-					// Channel not added to redis, resubscribe and add to redis
-					toResubscribe = append(toResubscribe, channel)
+					toResubscribeAll = append(toResubscribeAll, channel)
 				}
 			}
-			if len(toResubscribe) > 0 {
-				p.processChannelsConcurrently(toResubscribe, batchSize, func(ch string) { p.webSubSubscribeWithRetry(ch) })
-			}
-		}
-		if locked {
-			common.UnlockRedisKey(RedisChannelsLockKey)
 		}
 		return nil
 	}))
+
+	common.UnlockRedisKey(RedisChannelsLockKey)
+
+	// Perform subscriptions outside of the lock
+	batchSize := confResubBatchSize.GetInt()
+	if len(toResubscribeAll) > 0 {
+		logger.Infof("Resubscribing %d youtube channels", len(toResubscribeAll))
+		p.processChannelsConcurrently(toResubscribeAll, batchSize, func(ch string) { p.webSubSubscribeWithRetry(ch) })
+	}
 }
 
 func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video *youtube.Video) {

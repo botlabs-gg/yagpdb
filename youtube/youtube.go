@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
@@ -106,11 +107,13 @@ func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
 		"hub.verify_token": {confWebsubVerifytoken.GetString()},
 	}
 
-	resp, err := http.PostForm(GoogleWebsubHub, values)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.PostForm(GoogleWebsubHub, values)
 	if err != nil {
 		logger.WithError(err).Errorf("Failed to subscribe to youtube channel with id %s", ytChannelID)
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		body, _ := io.ReadAll(resp.Body)
@@ -130,10 +133,12 @@ func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
 		"hub.verify_token": {confWebsubVerifytoken.GetString()},
 	}
 
-	resp, err := http.PostForm(GoogleWebsubHub, values)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.PostForm(GoogleWebsubHub, values)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return fmt.Errorf("bad status code: %d (%s)", resp.StatusCode, resp.Status)
