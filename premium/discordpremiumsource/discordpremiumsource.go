@@ -176,7 +176,7 @@ func recalculateDiscordSlotsForUser(userID int64, entitlements []*discordgo.Enti
 	err = tx.Commit()
 	if err != nil {
 		logger.WithError(err).Error("Failed committing transaction for recalculateDiscordSlotsForUser")
-		return err
+		return errors.WithMessage(err, "Commit")
 	}
 	return nil
 }

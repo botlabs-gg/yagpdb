@@ -152,11 +152,14 @@ func UpdatePatreonPremiumSlots(ctx context.Context) error {
 					return errors.WithMessage(err, "MarkSlotsForDeletion")
 				}
 			}
-			tx.Commit()
+			err = tx.Commit()
+			if err != nil {
+				return errors.WithMessage(err, "Commit")
+			}
 
 			err = premium.RemoveMarkedDeletedSlots(ctx, common.PQ, premium.PremiumSourceTypePatreon)
 			if err != nil {
-				return err
+				return errors.WithMessage(err, "RemoveMarkedDeletedSlots")
 			}
 		}
 	}
@@ -202,7 +205,10 @@ func UpdatePatreonPremiumSlots(ctx context.Context) error {
 	}
 
 	err = tx.Commit()
-	return errors.WithMessage(err, "Commit")
+	if err != nil {
+		return errors.WithMessage(err, "Commit")
+	}
+	return nil
 }
 
 func fetchSlotForPatron(patron *patreon.Patron) (slots int) {
