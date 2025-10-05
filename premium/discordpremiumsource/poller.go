@@ -60,6 +60,7 @@ func (p *DiscordPremiumPoller) Poll() {
 		logger.WithError(err).Error("Failed fetching skus")
 		return
 	}
+	logger.Infof("Got %d SKUs", len(skus))
 
 	beforeID := int64(math.MaxInt64)
 	filterOptions := &discordgo.EntitlementFilterOptions{
