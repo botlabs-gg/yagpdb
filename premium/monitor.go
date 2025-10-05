@@ -93,7 +93,6 @@ func syncPremiumServersOnStart() error {
 		if err := common.RedisPool.Do(radix.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, guildID)); err != nil {
 			logger.WithError(err).WithField("guild", guildID).Error("Premium Server Sync: Failed HDEL stale premium guild")
 			continue
-			// continue attempting others
 		}
 
 		err = featureflags.UpdatePluginFeatureFlags(guildID, &Plugin{})
@@ -108,6 +107,33 @@ func syncPremiumServersOnStart() error {
 			continue
 		}
 
+	}
+
+	for _, slot := range slots {
+		isPremium, err := IsGuildPremium(slot.GuildID.Int64)
+		if err != nil {
+			logger.WithError(err).WithField("guild", slot.GuildID.Int64).Error("Failed checking if guild is premium")
+			continue
+		}
+		if isPremium {
+			continue
+		}
+		logger.Infof("Premium Server Sync: guild %d should've been premium, correcting", slot.GuildID.Int64)
+		err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, slot.GuildID.Int64, slot.UserID))
+		if err != nil {
+			logger.WithError(err).WithField("guild", slot.GuildID.Int64).Errorf("Premium Server Sync: Failed setting guild in redis")
+			continue
+		}
+		err = scheduledevents2.ScheduleEvent("premium_guild_added", slot.GuildID.Int64, time.Now(), nil)
+		if err != nil {
+			logger.WithError(err).WithField("guild", slot.GuildID.Int64).Errorf("Premium Server Sync: Failed triggering premium_guild_added")
+			continue
+		}
+		err = featureflags.UpdatePluginFeatureFlags(slot.GuildID.Int64, &Plugin{})
+		if err != nil {
+			logger.WithError(err).WithField("guild", slot.GuildID.Int64).Errorf("Premium Server Sync: Failed updating plugin feature flags")
+			continue
+		}
 	}
 
 	return nil

@@ -106,10 +106,6 @@ func AttachSlotToGuild(ctx context.Context, exec boil.ContextExecutor, slotID in
 		return ErrSlotNotFound
 	}
 
-	if err != nil {
-		return errors.WithMessage(err, "Commit")
-	}
-
 	err = common.RedisPool.Do(radix.FlatCmd(nil, "HSET", RedisKeyPremiumGuilds, guildID, userID))
 	if err != nil {
 		return errors.WithStackIf(err)
@@ -137,6 +133,10 @@ func DetachSlotFromGuild(ctx context.Context, exec boil.ContextExecutor, slotID 
 
 	if slot == nil {
 		return ErrSlotNotFound
+	}
+
+	if slot.GuildID.Int64 == 0 {
+		return nil
 	}
 
 	oldGuildID := slot.GuildID.Int64

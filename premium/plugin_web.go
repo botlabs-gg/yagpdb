@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/premium/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
@@ -165,36 +166,28 @@ func HandlePostUpdateSlot(w http.ResponseWriter, r *http.Request) (tmpl web.Temp
 
 	strSlotID := pat.Param(r, "slotID")
 	parsedSlotID, _ := strconv.ParseInt(strSlotID, 10, 64)
-
-	dtx, err := common.PQ.BeginTx(r.Context(), nil)
+	slot, err := models.PremiumSlots(qm.Where("id = ?", parsedSlotID), qm.Select(models.PremiumSlotColumns.GuildID)).One(r.Context(), common.PQ)
 	if err != nil {
-		return tmpl, err
+		return tmpl, errors.WithMessage(err, "Failed retrieving slot")
 	}
 
-	err = DetachSlotFromGuild(r.Context(), dtx, parsedSlotID, user.ID)
-	if err != nil {
-		dtx.Rollback()
-		return tmpl, err
+	if slot.GuildID.Int64 == data.GuildID {
+		return tmpl, nil
 	}
-	err = dtx.Commit()
+
+	err = DetachSlotFromGuild(r.Context(), common.PQ, parsedSlotID, user.ID)
 	if err != nil {
 		return tmpl, err
 	}
 
-	atx, err := common.PQ.BeginTx(r.Context(), nil)
-	if err != nil {
-		return tmpl, err
-	}
 	if data.GuildID != 0 {
-		err = AttachSlotToGuild(r.Context(), atx, parsedSlotID, user.ID, data.GuildID)
+		err = AttachSlotToGuild(r.Context(), common.PQ, parsedSlotID, user.ID, data.GuildID)
 		if err == ErrGuildAlreadyPremium {
 			tmpl.AddAlerts(web.ErrorAlert("Server already has premium from another slot (possibly from another user)"))
-			atx.Rollback()
 			return tmpl, err
 		}
 	}
 
-	err = atx.Commit()
 	if err != nil {
 		return tmpl, err
 	}
@@ -301,20 +294,7 @@ func HandlePostDetachGuildSlot(w http.ResponseWriter, r *http.Request) (tmpl web
 		return templateData, err
 	}
 
-	tx, err := common.PQ.BeginTx(r.Context(), nil)
-	if err != nil {
-		return templateData, err
-	}
-
-	err = DetachSlotFromGuild(r.Context(), tx, slot.ID, slot.UserID)
-	if err != nil {
-		tx.Rollback()
-		return templateData, err
-	}
-	err = tx.Commit()
-	if err != nil {
-		return templateData, err
-	}
+	err = DetachSlotFromGuild(r.Context(), common.PQ, slot.ID, slot.UserID)
 
 	return templateData, err
 }
