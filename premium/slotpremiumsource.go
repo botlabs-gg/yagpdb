@@ -266,17 +266,17 @@ func RemovePremiumSlots(ctx context.Context, exec boil.ContextExecutor, userID i
 
 	// Find the remainign free slots after the removal of the specified slots
 	remainingFreeSlots := make([]*models.PremiumSlot, 0)
+	toRemove := make(map[int64]struct{}, len(slotsToRemove))
+	for _, id := range slotsToRemove {
+		toRemove[id] = struct{}{}
+	}
 	for _, slot := range userSlots {
 		if slot.GuildID.Valid || !slot.Permanent || SlotDurationLeft(slot) <= 0 {
 			continue
 		}
-
-		for _, v := range slotsToRemove {
-			if v == slot.ID {
-				continue
-			}
+		if _, isRemoving := toRemove[slot.ID]; isRemoving {
+			continue
 		}
-
 		remainingFreeSlots = append(remainingFreeSlots, slot)
 	}
 
