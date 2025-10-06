@@ -88,7 +88,6 @@ func syncPremiumServersOnStart() error {
 			continue
 		}
 
-		logger.Infof("Premium Server Sync: Removing premium feature flag for guild %d", guildID)
 		isPremium, err := IsGuildPremium(guildID)
 		if err != nil {
 			logger.WithError(err).WithField("guild", guildID).Error("Failed checking if guild is premium")
@@ -97,6 +96,7 @@ func syncPremiumServersOnStart() error {
 		if !isPremium {
 			continue
 		}
+		logger.Infof("Premium Server Sync: Removing premium feature flag for guild %d", guildID)
 		// Remove from redis
 		if err := common.RedisPool.Do(radix.FlatCmd(nil, "HDEL", RedisKeyPremiumGuilds, guildID)); err != nil {
 			logger.WithError(err).WithField("guild", guildID).Error("Premium Server Sync: Failed HDEL stale premium guild")
