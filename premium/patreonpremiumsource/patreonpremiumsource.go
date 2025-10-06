@@ -109,7 +109,7 @@ func UpdatePatreonPremiumSlots(ctx context.Context) error {
 			}
 
 			if entitledSlots > len(userSlots) {
-				markedForDeletion, err := premium.UserPremiumMarkedDeletedSlots(ctx, userID, premium.PremiumSourceTypePatreon)
+				markedForDeletion, err := premium.UserPremiumMarkedDeletedSlots(ctx, tx, userID, premium.PremiumSourceTypePatreon)
 				if err != nil {
 					tx.Rollback()
 					return err
@@ -152,15 +152,6 @@ func UpdatePatreonPremiumSlots(ctx context.Context) error {
 					return errors.WithMessage(err, "MarkSlotsForDeletion")
 				}
 			}
-			err = tx.Commit()
-			if err != nil {
-				return errors.WithMessage(err, "Commit")
-			}
-
-			err = premium.RemoveMarkedDeletedSlots(ctx, common.PQ, premium.PremiumSourceTypePatreon)
-			if err != nil {
-				return errors.WithMessage(err, "RemoveMarkedDeletedSlots")
-			}
 		}
 	}
 
@@ -176,7 +167,7 @@ func UpdatePatreonPremiumSlots(ctx context.Context) error {
 
 		// If we got here then that means this is a new user
 		slots := fetchSlotForPatron(v)
-		markedForDeletion, err := premium.UserPremiumMarkedDeletedSlots(ctx, v.DiscordID, premium.PremiumSourceTypePatreon)
+		markedForDeletion, err := premium.UserPremiumMarkedDeletedSlots(ctx, tx, v.DiscordID, premium.PremiumSourceTypePatreon)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -204,11 +195,12 @@ func UpdatePatreonPremiumSlots(ctx context.Context) error {
 		}
 	}
 
-	err = tx.Commit()
+	err = premium.RemoveMarkedDeletedSlots(ctx, tx, premium.PremiumSourceTypePatreon)
 	if err != nil {
-		return errors.WithMessage(err, "Commit")
+		return errors.WithMessage(err, "RemoveMarkedDeletedSlots")
 	}
-	return nil
+
+	return tx.Commit()
 }
 
 func fetchSlotForPatron(patron *patreon.Patron) (slots int) {

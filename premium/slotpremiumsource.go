@@ -176,8 +176,8 @@ func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.Premiu
 }
 
 // UserPremiumMarkedDeletedSlots returns all slots marked deleted for a user for a specific source
-func UserPremiumMarkedDeletedSlots(ctx context.Context, userID int64, source PremiumSourceType) ([]int64, error) {
-	slots, err := models.PremiumSlots(qm.Where("user_id = ? AND deletes_at IS NOT NULL AND source = ?", userID, source), qm.OrderBy("id desc")).AllG(ctx)
+func UserPremiumMarkedDeletedSlots(ctx context.Context, tx boil.ContextExecutor, userID int64, source PremiumSourceType) ([]int64, error) {
+	slots, err := models.PremiumSlots(qm.Where("user_id = ? AND deletes_at IS NOT NULL AND source = ?", userID, source), qm.OrderBy("id desc")).All(ctx, tx)
 	if err == sql.ErrNoRows {
 		return []int64{}, nil
 	}
@@ -330,11 +330,13 @@ func RemoveMarkedDeletedSlots(ctx context.Context, exec boil.ContextExecutor, so
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
+	logger.Infof("Removing %d marked deleted slots for source %s", len(slots), source)
 	userSlots := make(map[int64][]int64)
 	for _, slot := range slots {
 		userSlots[slot.UserID] = append(userSlots[slot.UserID], slot.ID)
 	}
 	for userID, slotIDs := range userSlots {
+		logger.Infof("Removing %d marked deleted slots for user %d", userID, len(slotIDs))
 		err := RemovePremiumSlots(ctx, exec, userID, slotIDs)
 		if err != nil {
 			return err

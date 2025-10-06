@@ -27,7 +27,7 @@ services:
     ports:
       - '5000:5000'
       - '4000:4000'
-      - '5100-5999:5100-5999'
+ #     - '5100-5999:5100-5999'
     env_file:
       - app.env
     security_opt:
@@ -40,6 +40,8 @@ services:
       - default
     volumes:
       - redis:/data
+    ports:
+      - '6379:6379'
 
   db:
     image: docker.io/postgres:11
@@ -50,3 +52,5 @@ services:
       - default
     env_file:
       - db.env
+    ports:
+      - '5432:5432'
