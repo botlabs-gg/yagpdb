@@ -171,7 +171,7 @@ func DetachSlotFromGuild(ctx context.Context, exec boil.ContextExecutor, slotID 
 
 // UserPremiumSlots returns all slots for a user
 func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.PremiumSlot, err error) {
-	slots, err = models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id desc")).AllG(ctx)
+	slots, err = models.PremiumSlots(qm.Where("user_id = ?", userID), qm.OrderBy("id asc")).AllG(ctx)
 	return
 }
 
