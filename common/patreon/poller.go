@@ -207,11 +207,17 @@ func (p *Poller) Poll() {
 				patron.Name = user.FirstName
 			}
 
-			if user.SocialConnections != nil && user.SocialConnections.Discord != nil && user.SocialConnections.Discord.UserID != "" {
-				discordID, _ := strconv.ParseInt(user.SocialConnections.Discord.UserID, 10, 64)
-				patron.DiscordID = discordID
+			if user.SocialConnections == nil || user.SocialConnections.Discord == nil || len(user.SocialConnections.Discord.UserID) == 0 {
+				continue
 			}
 
+			discordID, err := strconv.ParseInt(user.SocialConnections.Discord.UserID, 10, 64)
+			if err != nil {
+				logger.Errorf("Error parsing Discord ID for user %s, with discord id: %s: %v", user.FullName, user.SocialConnections.Discord.UserID, err)
+				continue
+			}
+
+			patron.DiscordID = discordID
 			patrons = append(patrons, patron)
 		}
 
