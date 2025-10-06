@@ -176,8 +176,8 @@ func UserPremiumSlots(ctx context.Context, userID int64) (slots []*models.Premiu
 }
 
 // UserPremiumMarkedDeletedSlots returns all slots marked deleted for a user for a specific source
-func UserPremiumMarkedDeletedSlots(ctx context.Context, tx boil.ContextExecutor, userID int64, source PremiumSourceType) ([]int64, error) {
-	slots, err := models.PremiumSlots(qm.Where("user_id = ? AND deletes_at IS NOT NULL AND source = ?", userID, source), qm.OrderBy("id desc")).All(ctx, tx)
+func UserPremiumMarkedDeletedSlots(ctx context.Context, tx boil.ContextExecutor, userID int64, limit int, source PremiumSourceType) ([]int64, error) {
+	slots, err := models.PremiumSlots(qm.Where("user_id = ? AND deletes_at IS NOT NULL AND source = ?", userID, source), qm.OrderBy("id desc"), qm.Limit(limit)).All(ctx, tx)
 	if err == sql.ErrNoRows {
 		return []int64{}, nil
 	}
@@ -325,22 +325,18 @@ func CancelSlotDeletionForUser(ctx context.Context, exec boil.ContextExecutor, u
 	return nil
 }
 
-func RemoveMarkedDeletedSlots(ctx context.Context, exec boil.ContextExecutor, source PremiumSourceType) error {
-	slots, err := models.PremiumSlots(qm.Where("deletes_at IS NOT NULL AND deletes_at < ? AND source = ? ", time.Now(), source)).All(ctx, exec)
+func RemoveMarkedDeletedSlotsForUser(ctx context.Context, exec boil.ContextExecutor, userID int64, source PremiumSourceType) error {
+	slots, err := models.PremiumSlots(qm.Where("deletes_at IS NOT NULL AND deletes_at < ? AND user_id = ? AND source = ? ", time.Now(), userID, source)).All(ctx, exec)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
-	logger.Infof("Removing %d marked deleted slots for source %s", len(slots), source)
-	userSlots := make(map[int64][]int64)
+	if len(slots) == 0 {
+		return nil
+	}
+	slotIDs := make([]int64, 0)
 	for _, slot := range slots {
-		userSlots[slot.UserID] = append(userSlots[slot.UserID], slot.ID)
+		slotIDs = append(slotIDs, slot.ID)
 	}
-	for userID, slotIDs := range userSlots {
-		logger.Infof("Removing %d marked deleted slots for user %d", userID, len(slotIDs))
-		err := RemovePremiumSlots(ctx, exec, userID, slotIDs)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	logger.Infof("Removing %d marked deleted slots for user %d and source %s", len(slots), userID, source)
+	return RemovePremiumSlots(ctx, exec, userID, slotIDs)
 }

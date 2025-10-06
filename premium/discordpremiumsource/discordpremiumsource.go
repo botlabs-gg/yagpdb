@@ -136,12 +136,10 @@ func recalculateDiscordSlotsForUser(userID int64, entitlements []*discordgo.Enti
 	}
 
 	diff := totalEntitledSlots - len(slots)
-	logger.Infof("Total entitled slots for user %d: %d, total existing slots: %d, diff: %d", userID, totalEntitledSlots, len(slots), diff)
-	if diff == 0 {
-		tx.Rollback()
-		return nil
-	}
 
+	if diff != 0 {
+		logger.Infof("Total entitled slots for user %d: %d, total existing slots: %d, diff: %d", userID, totalEntitledSlots, len(slots), diff)
+	}
 	if diff > 0 {
 		// Add slots
 		for i := range diff {
