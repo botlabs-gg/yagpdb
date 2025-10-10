@@ -278,6 +278,33 @@ func (rl *identifyRatelimiter) getIdentifyMaxConcurrency() int {
 			}
 		}
 
+		// Use a distributed lock to avoid thundering herd on /gateway/bot
+		lockKey := redisKey + ":lock"
+		if err := common.BlockingLockRedisKey(lockKey, 15*time.Second, 30); err != nil {
+			// Failed to acquire lock quickly; attempt to read cache again and fall back to default
+			var cached2 string
+			if err2 := common.RedisPool.Do(radix.Cmd(&cached2, "GET", redisKey)); err2 == nil && cached2 != "" {
+				if parsed, perr := strconv.Atoi(cached2); perr == nil && parsed > 0 {
+					identifyMaxConcurrency = parsed
+					logger.Infof("Gateway identify max_concurrency (cached after waiting): %d", identifyMaxConcurrency)
+				}
+			} else {
+				logger.WithError(err).Warn("failed to acquire lock for fetching gateway bot info; using default identify max_concurrency")
+			}
+			return
+		}
+		defer common.UnlockRedisKey(lockKey)
+
+		// Double-check cache after acquiring the lock, in case another process set it
+		var cachedLocked string
+		if err := common.RedisPool.Do(radix.Cmd(&cachedLocked, "GET", redisKey)); err == nil && cachedLocked != "" {
+			if parsed, perr := strconv.Atoi(cachedLocked); perr == nil && parsed > 0 {
+				identifyMaxConcurrency = parsed
+				logger.Infof("Gateway identify max_concurrency (cached under lock): %d", identifyMaxConcurrency)
+				return
+			}
+		}
+
 		s, err := discordgo.New(common.GetBotToken())
 		if err != nil {
 			logger.WithError(err).Warn("failed to create session to fetch gateway bot info")
