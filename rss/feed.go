@@ -65,8 +65,6 @@ func (p *Plugin) runFeedLoop() {
 	}
 }
 
-const redisFeedsHashKey = "rss_last_item_ids"
-
 func (p *Plugin) pollFeeds() {
 	ctx := context.Background()
 
@@ -79,7 +77,7 @@ func (p *Plugin) pollFeeds() {
 		return
 	}
 
-	logger.Infof("Polling through %d Rss feeds", len(subs))
+	logger.Infof("Polling through %d RSS feeds", len(subs))
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, maxConcurrentFeeds)
 
@@ -154,7 +152,7 @@ func cleanupOldItems(feedID int) error {
 	return common.RedisPool.Do(radix.Cmd(nil, "ZREMRANGEBYSCORE", key, "0", fmt.Sprintf("%d", oldest)))
 }
 
-func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
+func getFeed(sub *models.RSSFeedSubscription, attempt int) (*gofeed.Feed, error) {
 	parser := gofeed.NewParser()
 	//use an http proxy if configured
 	proxy := common.ConfHttpProxy.GetString()
@@ -168,10 +166,22 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 			}
 		}
 	}
-
 	feed, err := parser.ParseURL(sub.FeedURL)
 	if err != nil {
-		logger.WithError(err).WithField("url", sub.FeedURL).Warn("Failed to parse RSS feed, requesting disable via mqueue")
+		logger.WithError(err).WithField("url", sub.FeedURL).Warnf("Failed to parse RSS feed, retrying attempt %d", attempt+1)
+		if attempt < 3 {
+			time.Sleep(time.Minute * time.Duration(1<<attempt))
+			return getFeed(sub, attempt+1)
+		}
+		return nil, err
+	}
+	return feed, nil
+}
+
+func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
+	feed, err := getFeed(sub, 0)
+	if err != nil {
+		logger.WithError(err).WithField("url", sub.FeedURL).Warn("Failed to parse RSS feed, disabling feed")
 		p.DisableFeed(&mqueue.QueuedElement{
 			GuildID:      sub.GuildID,
 			ChannelID:    sub.ChannelID,
