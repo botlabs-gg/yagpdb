@@ -445,28 +445,8 @@ func (config *BulkRoleConfig) setBulkRoleCooldown() {
 	common.RedisPool.Do(radix.Cmd(nil, "SETEX", RedisKeyBulkRoleCooldown(config.GuildID), "30", "1"))
 }
 
-func (config *BulkRoleConfig) filterString() string {
+func (config *BulkRoleConfig) filterRoleString(prefix string) string {
 	const maxFieldLength = 1000 // Leave some buffer below Discord's 1024 char limit
-	var prefix string
-	switch config.FilterType {
-	case "has_roles":
-		prefix = "Has roles"
-	case "missing_roles":
-		prefix = "Missing roles"
-	case "all":
-		prefix = "All members"
-	case "bots":
-		prefix = "Bots"
-	case "humans":
-		prefix = "Humans"
-	case "joined_after":
-		prefix = "Joined after"
-	case "joined_before":
-		prefix = "Joined before"
-	default:
-		prefix = "Roles"
-	}
-
 	if len(config.FilterRoleIDs) == 0 {
 		return prefix
 	}
@@ -527,6 +507,29 @@ func (config *BulkRoleConfig) filterString() string {
 
 	roleText += strings.Join(addedRoles, ", ") + suffix
 	return roleText
+}
+
+func (config *BulkRoleConfig) filterString() string {
+	var prefix string
+	switch config.FilterType {
+	case "has_roles":
+		return config.filterRoleString("Has roles")
+	case "missing_roles":
+		return config.filterRoleString("Missing roles")
+	case "all":
+		prefix = "All members"
+	case "bots":
+		prefix = "Bots"
+	case "humans":
+		prefix = "Humans"
+	case "joined_after":
+		prefix = "Joined after: " + config.FilterDateParsed.Format("January 2, 2006")
+	case "joined_before":
+		prefix = "Joined before: " + config.FilterDateParsed.Format("January 2, 2006")
+	default:
+		prefix = "Roles"
+	}
+	return prefix
 }
 
 func (config *BulkRoleConfig) sendNotificationAlert(status string, processedCount int, resultsCount int, errorMsg string) {

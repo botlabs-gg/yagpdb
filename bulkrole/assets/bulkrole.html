@@ -218,7 +218,7 @@
                                         <label for="filter-roles">Filter Roles</label>
                                         <select name="FilterRoleIDs" data-plugin-multiselect
                                             class="multiselect form-control" multiple="multiple">
-                                            {{roleOptionsMultiExclude .ActiveGuild.Roles nil .ExcludedRoleIDs .BulkRole.FilterRoleIDs}}
+                                            {{roleOptionsMultiExclude .ActiveGuild.Roles nil nil .BulkRole.FilterRoleIDs}}
                                         </select>
                                         <div class="form-group mt-2">
                                             {{checkbox "FilterRequireAll" "FilterRequireAll" "Require ALL selected roles" $.BulkRole.FilterRequireAll}}

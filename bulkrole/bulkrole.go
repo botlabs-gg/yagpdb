@@ -75,6 +75,12 @@ func GetBulkRoleConfig(guildID int64) (*BulkRoleConfig, error) {
 	if err != nil {
 		logger.WithError(err).WithField("guild", guildID).Error("failed retrieving bulkrole config")
 	}
+	// Recompute parsed fields that are not persisted
+	if conf.FilterDate != "" {
+		if parsed, perr := time.Parse("2006-01-02", conf.FilterDate); perr == nil {
+			conf.FilterDateParsed = parsed
+		}
+	}
 	conf.GuildID = guildID
 	return conf, err
 }

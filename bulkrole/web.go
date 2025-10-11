@@ -64,7 +64,7 @@ func (f Form) Save(guildID int64) error {
 		if err != nil {
 			return errors.WithMessage(err, "Invalid date format. Use YYYY-MM-DD")
 		}
-		f.FilterDateParsed = parsed
+		f.BulkRoleConfig.FilterDateParsed = parsed
 	}
 
 	err := common.SetRedisJson(KeyGeneral(guildID), f.BulkRoleConfig)
