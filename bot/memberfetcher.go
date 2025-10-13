@@ -19,9 +19,13 @@ func GetMember(guildID, userID int64) (*dstate.MemberState, error) {
 		return memberFetcher.GetMember(guildID, userID)
 	}
 
-	ms := State.GetMember(guildID, userID)
-	if ms != nil && ms.Member != nil {
-		return ms, nil
+	// State can be nil in case of execCC done from templates that exec on non-bot contexts,
+	// like youtube feeds. In this case we check if a state is nil, and if it is we fetch from discord API.
+	if State != nil {
+		ms := State.GetMember(guildID, userID)
+		if ms != nil && ms.Member != nil {
+			return ms, nil
+		}
 	}
 
 	member, err := common.BotSession.GuildMember(guildID, userID)
