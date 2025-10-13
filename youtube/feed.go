@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,10 +15,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
-	"github.com/botlabs-gg/yagpdb/v2/common/templates"
+	"github.com/botlabs-gg/yagpdb/v2/common/pubsub"
 	"github.com/botlabs-gg/yagpdb/v2/feeds"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
-	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 	"github.com/botlabs-gg/yagpdb/v2/youtube/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -243,63 +241,13 @@ func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video
 		}
 	}
 
-	var publishAnnouncement bool
-
 	if hasCustomAnnouncement && announcement.Enabled && len(announcement.Message) > 0 {
-		guildState, err := discorddata.GetFullGuild(parsedGuild)
-		if err != nil {
-			logger.WithError(err).Errorf("Failed to get guild state for guild_id %d", parsedGuild)
-			p.DisableGuildFeeds(parsedGuild)
-			return
-		}
-
-		if guildState == nil {
-			logger.Errorf("guild_id %d not found in state for youtube feed", parsedGuild)
-			p.DisableGuildFeeds(parsedGuild)
-			return
-		}
-
-		channelState := guildState.GetChannel(parsedChannel)
-		if channelState == nil {
-			logger.Errorf("channel_id %d for guild_id %d not found in state for youtube feed", parsedChannel, parsedGuild)
-			p.DisableChannelFeeds(parsedChannel)
-			return
-		}
-
-		ctx := templates.NewContext(guildState, channelState, nil)
-		videoDurationString := strings.ToLower(strings.TrimPrefix(video.ContentDetails.Duration, "PT"))
-		videoDuration, err := common.ParseDuration(videoDurationString)
-		if err != nil {
-			videoDuration = time.Duration(0)
-		}
-
-		ctx.Data["URL"] = videoUrl
-		ctx.Data["ChannelName"] = sub.YoutubeChannelName
-		ctx.Data["YoutubeChannelName"] = sub.YoutubeChannelName
-		ctx.Data["YoutubeChannelID"] = sub.YoutubeChannelID
-		ctx.Data["ChannelID"] = sub.ChannelID
-		//should be true for upcoming too as upcoming is also technically a livestream
-		ctx.Data["IsLiveStream"] = (video.Snippet.LiveBroadcastContent == "live" || video.Snippet.LiveBroadcastContent == "upcoming")
-		ctx.Data["IsUpcoming"] = video.Snippet.LiveBroadcastContent == "upcoming"
-		ctx.Data["VideoID"] = video.Id
-		ctx.Data["VideoTitle"] = video.Snippet.Title
-		ctx.Data["VideoThumbnail"] = fmt.Sprintf("https://img.youtube.com/vi/%s/maxresdefault.jpg", video.Id)
-		ctx.Data["VideoDescription"] = video.Snippet.Description
-		ctx.Data["VideoDurationSeconds"] = int(math.Round(videoDuration.Seconds()))
-		//full video object in case people want to do more advanced stuff
-		ctx.Data["Video"] = video
-
-		content, err = ctx.Execute(announcement.Message)
-		//adding role and everyone ping here because most people are stupid and will complain about custom notification not pinging
-		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeRoles, discordgo.AllowedMentionTypeEveryone}
-		if err != nil {
-			logger.WithError(err).WithField("guild", parsedGuild).Warn("Announcement parsing failed")
-			return
-		}
-		if content == "" {
-			return
-		}
-		publishAnnouncement = ctx.CurrentFrame.PublishResponse
+		pubsub.Publish("custom_youtube_announcement", parsedGuild, CustomYoutubeAnnouncement{
+			GuildID:      parsedGuild,
+			Subscription: *sub,
+			Video:        video,
+		})
+		return
 	} else if sub.MentionEveryone {
 		content = "Hey @everyone " + content
 		parseMentions = []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeEveryone}
@@ -320,8 +268,8 @@ func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video
 		Source:              "youtube",
 		SourceItemID:        "",
 		MessageStr:          content,
-		PublishAnnouncement: publishAnnouncement,
 		Priority:            2,
+		PublishAnnouncement: false,
 		AllowedMentions: discordgo.AllowedMentions{
 			Parse: parseMentions,
 		},
