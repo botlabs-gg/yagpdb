@@ -28,7 +28,7 @@ import (
 type CustomYoutubeAnnouncement struct {
 	GuildID      int64                             `json:"guild_id"`
 	Subscription models.YoutubeChannelSubscription `json:"subscription"`
-	Video        *youtube.Video                    `json:"video"`
+	Video        youtube.Video                     `json:"video"`
 }
 
 func (p *Plugin) BotInit() {
@@ -36,12 +36,12 @@ func (p *Plugin) BotInit() {
 		if evt.Data == nil {
 			return
 		}
-		dataCast := evt.Data.(CustomYoutubeAnnouncement)
-		gs := bot.State.GetGuild(dataCast.GuildID)
+		data := evt.Data.(*CustomYoutubeAnnouncement)
+		gs := bot.State.GetGuild(data.GuildID)
 		if gs == nil {
 			return
 		}
-		p.handleCustomAnnouncement(&dataCast)
+		p.handleCustomAnnouncement(data)
 	}, CustomYoutubeAnnouncement{})
 }
 

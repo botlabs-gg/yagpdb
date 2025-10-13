@@ -245,7 +245,7 @@ func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video
 		pubsub.Publish("custom_youtube_announcement", parsedGuild, CustomYoutubeAnnouncement{
 			GuildID:      parsedGuild,
 			Subscription: *sub,
-			Video:        video,
+			Video:        *video,
 		})
 		return
 	} else if sub.MentionEveryone {
