@@ -788,6 +788,13 @@ func in(l interface{}, v interface{}) bool {
 							return true
 						}
 					}
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					switch vv.Kind() {
+					case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+						if vv.Uint() == lvv.Uint() {
+							return true
+						}
+					}
 				case reflect.Float32, reflect.Float64:
 					switch vv.Kind() {
 					case reflect.Float32, reflect.Float64:
