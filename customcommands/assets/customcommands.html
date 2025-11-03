@@ -252,6 +252,19 @@
     $('.collapse').on('shown.bs.collapse', function(){
     $(this).parent().find('.cc-collapsibleDown').removeClass('cc-collapsibleDown').addClass('cc-collapsibleUp');}).on('hidden.bs.collapse',function(){
         $(this).parent().find('.cc-collapsibleUp').removeClass('cc-collapsibleUp').addClass('cc-collapsibleDown');});
+
+    // UPDATE: Custom command length validation for 100000
+    $('textarea[name="responses"], input[name="response"]').on('input', function(){
+        let combinedLength = 0;
+        $('textarea[name="responses"], input[name="response"]').each(function(){
+            combinedLength += $(this).val().length;
+        });
+        if(combinedLength > 100000){
+            alert('Max combined command size can be 100k');
+        }
+        $('.cc-length-counter').text(combinedLength);
+    });
+
 </script>
 {{template "cp_footer" .}}
 
