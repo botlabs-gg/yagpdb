@@ -767,39 +767,31 @@ func in(l interface{}, v interface{}) bool {
 	lv, _ := indirect(reflect.ValueOf(l))
 	vv := reflect.ValueOf(v)
 
-	if !reflect.ValueOf(vv).IsZero() {
-		switch lv.Kind() {
-		case reflect.Array, reflect.Slice:
-			for i := 0; i < lv.Len(); i++ {
-				lvv := lv.Index(i)
-				lvv, isNil := indirect(lvv)
-				if isNil {
-					continue
-				}
-				switch lvv.Kind() {
-				case reflect.String:
-					if vv.Type() == lvv.Type() && vv.String() == lvv.String() {
-						return true
-					}
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					switch vv.Kind() {
-					case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-						if vv.Int() == lvv.Int() {
-							return true
-						}
-					}
-				case reflect.Float32, reflect.Float64:
-					switch vv.Kind() {
-					case reflect.Float32, reflect.Float64:
-						if vv.Float() == lvv.Float() {
-							return true
-						}
-					}
-				}
+	if reflect.ValueOf(vv).IsZero() {
+		return false
+	}
+
+	switch lv.Kind() {
+	case reflect.String:
+		if vv.Type() == lv.Type() && strings.Contains(lv.String(), vv.String()) {
+			return true
+		}
+	case reflect.Array, reflect.Slice:
+		for i := range lv.Len() {
+			lvv := lv.Index(i)
+			lvv, isNil := indirect(lvv)
+			if isNil {
+				continue
 			}
-		case reflect.String:
-			if vv.Type() == lv.Type() && strings.Contains(lv.String(), vv.String()) {
-				return true
+			switch {
+			case lvv.Kind() == reflect.String:
+				return vv.Type() == lvv.Type() && vv.String() == lvv.String()
+			case lvv.CanInt() && vv.CanInt():
+				return vv.Int() == lvv.Int()
+			case lvv.CanUint() && vv.CanUint():
+				return vv.Uint() == lvv.Uint()
+			case lvv.CanFloat() && vv.CanFloat():
+				return vv.Float() == lvv.Float()
 			}
 		}
 	}
