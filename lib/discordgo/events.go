@@ -526,6 +526,29 @@ func (e *GuildStickersUpdate) GetGuildID() int64 {
 	return e.GuildID
 }
 
+// GuildScheduledEventCreate is the data for a GuildScheduledEventCreate event.
+type GuildScheduledEventCreate struct{}
+
+// GuildScheduledEventUpdate is the data for a GuildScheduledEventUpdate event.
+type GuildScheduledEventUpdate struct{}
+
+// GuildScheduledEventDelete is the data for a GuildScheduledEventDelete event.
+type GuildScheduledEventDelete struct{}
+
+// GuildScheduledEventUserAdd is the data for a GuildScheduledEventUserAdd event.
+type GuildScheduledEventUserAdd struct {
+	GuildScheduledEventID int64 `json:"guild_scheduled_event_id,string"`
+	UserID                int64 `json:"user_id,string"`
+	GuildID               int64 `json:"guild_id,string"`
+}
+
+// GuildScheduledEventUserRemove is the data for a GuildScheduledEventUserRemove event.
+type GuildScheduledEventUserRemove struct {
+	GuildScheduledEventID int64 `json:"guild_scheduled_event_id,string"`
+	UserID                int64 `json:"user_id,string"`
+	GuildID               int64 `json:"guild_id,string"`
+}
+
 // stage instance was created
 type StageInstanceCreate struct {
 }
@@ -584,6 +607,7 @@ type GuildAuditLogEntryCreate struct {
 type GuildJoinRequestUpdate struct{}
 type GuildJoinRequestDelete struct{}
 type VoiceChannelStatusUpdate struct{}
+type VoiceChannelStartTimeStatusUpdate struct{}
 type ChannelTopicUpdate struct{}
 
 // Monetization events

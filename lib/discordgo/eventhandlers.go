@@ -42,6 +42,11 @@ const (
 	guildRoleCreateEventType                     = "GUILD_ROLE_CREATE"
 	guildRoleDeleteEventType                     = "GUILD_ROLE_DELETE"
 	guildRoleUpdateEventType                     = "GUILD_ROLE_UPDATE"
+	guildScheduledEventCreateEventType           = "GUILD_SCHEDULED_EVENT_CREATE"
+	guildScheduledEventDeleteEventType           = "GUILD_SCHEDULED_EVENT_DELETE"
+	guildScheduledEventUpdateEventType           = "GUILD_SCHEDULED_EVENT_UPDATE"
+	guildScheduledEventUserAddEventType          = "GUILD_SCHEDULED_EVENT_USER_ADD"
+	guildScheduledEventUserRemoveEventType       = "GUILD_SCHEDULED_EVENT_USER_REMOVE"
 	guildStickersUpdateEventType                 = "GUILD_STICKERS_UPDATE"
 	guildUpdateEventType                         = "GUILD_UPDATE"
 	interactionCreateEventType                   = "INTERACTION_CREATE"
@@ -81,6 +86,7 @@ const (
 	userSettingsUpdateEventType                  = "USER_SETTINGS_UPDATE"
 	userUpdateEventType                          = "USER_UPDATE"
 	voiceChannelStatusUpdateEventType            = "VOICE_CHANNEL_STATUS_UPDATE"
+	voiceChannelStartTimeUpdateEventType         = "VOICE_CHANNEL_START_TIME_UPDATE"
 	voiceServerUpdateEventType                   = "VOICE_SERVER_UPDATE"
 	voiceStateUpdateEventType                    = "VOICE_STATE_UPDATE"
 	webhooksUpdateEventType                      = "WEBHOOKS_UPDATE"
@@ -767,6 +773,106 @@ func (eh guildRoleUpdateEventHandler) New() interface{} {
 // Handle is the handler for GuildRoleUpdate events.
 func (eh guildRoleUpdateEventHandler) Handle(s *Session, i interface{}) {
 	if t, ok := i.(*GuildRoleUpdate); ok {
+		eh(s, t)
+	}
+}
+
+// guildScheduledEventCreateEventHandler is an event handler for GuildScheduledEventCreate events.
+type guildScheduledEventCreateEventHandler func(*Session, *GuildScheduledEventCreate)
+
+// Type returns the event type for GuildScheduledEventCreate events.
+func (eh guildScheduledEventCreateEventHandler) Type() string {
+	return guildScheduledEventCreateEventType
+}
+
+// New returns a new instance of GuildScheduledEventCreate.
+func (eh guildScheduledEventCreateEventHandler) New() interface{} {
+	return &GuildScheduledEventCreate{}
+}
+
+// Handle is the handler for GuildScheduledEventCreate events.
+func (eh guildScheduledEventCreateEventHandler) Handle(s *Session, i interface{}) {
+	if t, ok := i.(*GuildScheduledEventCreate); ok {
+		eh(s, t)
+	}
+}
+
+// guildScheduledEventDeleteEventHandler is an event handler for GuildScheduledEventDelete events.
+type guildScheduledEventDeleteEventHandler func(*Session, *GuildScheduledEventDelete)
+
+// Type returns the event type for GuildScheduledEventDelete events.
+func (eh guildScheduledEventDeleteEventHandler) Type() string {
+	return guildScheduledEventDeleteEventType
+}
+
+// New returns a new instance of GuildScheduledEventDelete.
+func (eh guildScheduledEventDeleteEventHandler) New() interface{} {
+	return &GuildScheduledEventDelete{}
+}
+
+// Handle is the handler for GuildScheduledEventDelete events.
+func (eh guildScheduledEventDeleteEventHandler) Handle(s *Session, i interface{}) {
+	if t, ok := i.(*GuildScheduledEventDelete); ok {
+		eh(s, t)
+	}
+}
+
+// guildScheduledEventUpdateEventHandler is an event handler for GuildScheduledEventUpdate events.
+type guildScheduledEventUpdateEventHandler func(*Session, *GuildScheduledEventUpdate)
+
+// Type returns the event type for GuildScheduledEventUpdate events.
+func (eh guildScheduledEventUpdateEventHandler) Type() string {
+	return guildScheduledEventUpdateEventType
+}
+
+// New returns a new instance of GuildScheduledEventUpdate.
+func (eh guildScheduledEventUpdateEventHandler) New() interface{} {
+	return &GuildScheduledEventUpdate{}
+}
+
+// Handle is the handler for GuildScheduledEventUpdate events.
+func (eh guildScheduledEventUpdateEventHandler) Handle(s *Session, i interface{}) {
+	if t, ok := i.(*GuildScheduledEventUpdate); ok {
+		eh(s, t)
+	}
+}
+
+// guildScheduledEventUserAddEventHandler is an event handler for GuildScheduledEventUserAdd events.
+type guildScheduledEventUserAddEventHandler func(*Session, *GuildScheduledEventUserAdd)
+
+// Type returns the event type for GuildScheduledEventUserAdd events.
+func (eh guildScheduledEventUserAddEventHandler) Type() string {
+	return guildScheduledEventUserAddEventType
+}
+
+// New returns a new instance of GuildScheduledEventUserAdd.
+func (eh guildScheduledEventUserAddEventHandler) New() interface{} {
+	return &GuildScheduledEventUserAdd{}
+}
+
+// Handle is the handler for GuildScheduledEventUserAdd events.
+func (eh guildScheduledEventUserAddEventHandler) Handle(s *Session, i interface{}) {
+	if t, ok := i.(*GuildScheduledEventUserAdd); ok {
+		eh(s, t)
+	}
+}
+
+// guildScheduledEventUserRemoveEventHandler is an event handler for GuildScheduledEventUserRemove events.
+type guildScheduledEventUserRemoveEventHandler func(*Session, *GuildScheduledEventUserRemove)
+
+// Type returns the event type for GuildScheduledEventUserRemove events.
+func (eh guildScheduledEventUserRemoveEventHandler) Type() string {
+	return guildScheduledEventUserRemoveEventType
+}
+
+// New returns a new instance of GuildScheduledEventUserRemove.
+func (eh guildScheduledEventUserRemoveEventHandler) New() interface{} {
+	return &GuildScheduledEventUserRemove{}
+}
+
+// Handle is the handler for GuildScheduledEventUserRemove events.
+func (eh guildScheduledEventUserRemoveEventHandler) Handle(s *Session, i interface{}) {
+	if t, ok := i.(*GuildScheduledEventUserRemove); ok {
 		eh(s, t)
 	}
 }
@@ -1546,6 +1652,26 @@ func (eh voiceChannelStatusUpdateEventHandler) Handle(s *Session, i interface{})
 	}
 }
 
+// voiceChannelStartTimeUpdateEventHandler is an event handler for VoiceChannelStartTimeStatusUpdate events.
+type voiceChannelStartTimeUpdateEventHandler func(*Session, *VoiceChannelStartTimeStatusUpdate)
+
+// Type returns the event type for VoiceChannelStartTimeStatusUpdate events.
+func (eh voiceChannelStartTimeUpdateEventHandler) Type() string {
+	return voiceChannelStartTimeUpdateEventType
+}
+
+// New returns a new instance of VoiceChannelStartTimeStatusUpdate.
+func (eh voiceChannelStartTimeUpdateEventHandler) New() interface{} {
+	return &VoiceChannelStartTimeStatusUpdate{}
+}
+
+// Handle is the handler for VoiceChannelStartTimeStatusUpdate events.
+func (eh voiceChannelStartTimeUpdateEventHandler) Handle(s *Session, i interface{}) {
+	if t, ok := i.(*VoiceChannelStartTimeStatusUpdate); ok {
+		eh(s, t)
+	}
+}
+
 // voiceServerUpdateEventHandler is an event handler for VoiceServerUpdate events.
 type voiceServerUpdateEventHandler func(*Session, *VoiceServerUpdate)
 
@@ -1760,6 +1886,8 @@ func handlerForInterface(handler interface{}) EventHandler {
 		return voiceChannelStatusUpdateEventHandler(v)
 	case func(*Session, *VoiceServerUpdate):
 		return voiceServerUpdateEventHandler(v)
+	case func(*Session, *VoiceChannelStartTimeStatusUpdate):
+		return voiceChannelStartTimeUpdateEventHandler(v)
 	case func(*Session, *VoiceStateUpdate):
 		return voiceStateUpdateEventHandler(v)
 	case func(*Session, *WebhooksUpdate):
