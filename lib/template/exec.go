@@ -712,7 +712,9 @@ func (s *state) idealConstant(constant *parse.NumberNode) reflect.Value {
 	switch {
 	case constant.IsComplex:
 		return reflect.ValueOf(constant.Complex128) // incontrovertible.
-	case constant.IsFloat && !isHexInt(constant.Text) && strings.ContainsAny(constant.Text, ".eEpP"):
+	case constant.IsFloat &&
+		!isHexInt(constant.Text) && !isRuneInt(constant.Text) &&
+		strings.ContainsAny(constant.Text, ".eEpP"):
 		return reflect.ValueOf(constant.Float64)
 	case constant.IsInt:
 		n := int(constant.Int64)
@@ -724,6 +726,10 @@ func (s *state) idealConstant(constant *parse.NumberNode) reflect.Value {
 		s.errorf("%s overflows int", constant.Text)
 	}
 	return zero
+}
+
+func isRuneInt(s string) bool {
+	return len(s) > 0 && s[0] == '\''
 }
 
 func isHexInt(s string) bool {
