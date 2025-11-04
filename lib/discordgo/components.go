@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 )
 
 // ComponentType is type of component.
@@ -25,6 +26,7 @@ const (
 	MediaGalleryComponent          ComponentType = 12
 	FileComponent                  ComponentType = 13
 	SeparatorComponent             ComponentType = 14
+	ActivityContentComponent       ComponentType = 16
 	ContainerComponent             ComponentType = 17
 )
 
@@ -49,6 +51,8 @@ func (umc *unmarshalableMessageComponent) UnmarshalJSON(src []byte) error {
 	}
 
 	switch v.Type {
+	case ActivityContentComponent:
+		umc.MessageComponent = &ActivityContent{}
 	case ActionsRowComponent:
 		umc.MessageComponent = &ActionsRow{}
 	case ButtonComponent:
@@ -98,6 +102,77 @@ type TopLevelComponent interface {
 type InteractiveComponent interface {
 	MessageComponent
 	IsInteractive() bool
+}
+
+type ActivityContentInventoryTrait struct {
+	Type            int  `json:"type"`
+	DurationSeconds int  `json:"duration_seconds"`
+	FirstTime       bool `json:"first_time"`
+}
+
+type ActivityContentInventorySignature struct {
+	Version   int    `json:"version"`
+	Signature string `json:"signature"`
+	Kid       string `json:"kid"`
+}
+
+type ActivityContentInventoryExtra struct {
+	Type          int    `json:"type"`
+	Platform      int    `json:"platform"`
+	GameName      string `json:"game_name"`
+	ApplicationID string `json:"application_id"`
+}
+
+type ActivityContentInventoryEntry struct {
+	ID           int                               `json:"id"`
+	Traits       []ActivityContentInventoryTrait   `json:"traits"`
+	StartedAt    time.Time                         `json:"started_at"`
+	Signature    ActivityContentInventorySignature `json:"signature"`
+	Participants []string                          `json:"participants"`
+	EndedAt      time.Time                         `json:"ended_at"`
+	ContentType  int                               `json:"content_type"`
+	AuthorType   int                               `json:"author_type"`
+	AuthorID     string                            `json:"author_id"`
+	Extra        ActivityContentInventoryExtra     `json:"extra"`
+}
+
+type ActivityContent struct {
+	InventoryEntry ActivityContentInventoryEntry `json:"inventory_entry"`
+}
+
+// Type is a method to get the type of a component.
+func (r ActivityContent) Type() ComponentType {
+	return ActionsRowComponent
+}
+
+// IsTopLevel is a method to assert the component as top level.
+func (ActivityContent) IsTopLevel() bool {
+	return true
+}
+
+// MarshalJSON is a method for marshaling ActionsRow to a JSON object.
+func (r ActivityContent) MarshalJSON() ([]byte, error) {
+	type activityContent ActivityContent
+	return json.Marshal(struct {
+		activityContent
+		Type ComponentType `json:"type"`
+	}{
+		activityContent: activityContent(r),
+		Type:            r.Type(),
+	})
+}
+
+// UnmarshalJSON is a helper function to unmarshal ActivityContent
+func (r *ActivityContent) UnmarshalJSON(data []byte) error {
+	var v struct {
+		ActivityContent ActivityContent `json:"components"`
+	}
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		return err
+	}
+	*r = v.ActivityContent
+	return err
 }
 
 // ActionsRow is a container for interactive components within one row.
@@ -427,6 +502,8 @@ func (Section) IsTopLevel() bool {
 func GetTextDisplayContent(component TopLevelComponent) (contents []string) {
 	switch typed := component.(type) {
 	case ActionsRow:
+		return
+	case ActivityContent:
 		return
 	case Section:
 		for _, c := range typed.Components {
