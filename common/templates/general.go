@@ -785,13 +785,21 @@ func in(l interface{}, v interface{}) bool {
 			}
 			switch {
 			case lvv.Kind() == reflect.String:
-				return vv.Type() == lvv.Type() && vv.String() == lvv.String()
+				if vv.Type() == lvv.Type() && vv.String() == lvv.String() {
+					return true
+				}
 			case lvv.CanInt() && vv.CanInt():
-				return vv.Int() == lvv.Int()
+				if vv.Int() == lvv.Int() {
+					return true
+				}
 			case lvv.CanUint() && vv.CanUint():
-				return vv.Uint() == lvv.Uint()
+				if vv.Uint() == lvv.Uint() {
+					return true
+				}
 			case lvv.CanFloat() && vv.CanFloat():
-				return vv.Float() == lvv.Float()
+				if vv.Float() == lvv.Float() {
+					return true
+				}
 			}
 		}
 	}
