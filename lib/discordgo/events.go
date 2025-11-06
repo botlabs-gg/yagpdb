@@ -604,11 +604,19 @@ type GuildAuditLogEntryCreate struct {
 	*AuditLogEntry
 }
 
+type GuildAppliedBoostUpdate struct{}
+type GuildPowerupEntitlementsCreate struct{}
+type GuildSoundboardSoundCreate struct{}
+type GuildSoundboardSoundDelete struct{}
+type GuildSoundboardSoundsUpdate struct{}
+type GuildJoinRequestCreate struct{}
 type GuildJoinRequestUpdate struct{}
 type GuildJoinRequestDelete struct{}
 type VoiceChannelStatusUpdate struct{}
 type VoiceChannelStartTimeStatusUpdate struct{}
+type VoiceChannelEffectSend struct{}
 type ChannelTopicUpdate struct{}
+type GiftCodeUpdate struct{}
 
 // Monetization events
 type EntitlementCreate struct {
