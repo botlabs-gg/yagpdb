@@ -562,7 +562,7 @@ func (TextDisplay) IsSectionComponent() bool {
 
 type UnfurledMediaItem struct {
 	URL         string `json:"url"`                    // Supports arbitrary urls and attachment://<filename> references
-	ProxyURL    string `json"proxy_url,omitempty"`     // The proxied url of the media item. This field is ignored and provided by the API as part of the response
+	ProxyURL    string `json:"proxy_url,omitempty"`    // The proxied url of the media item. This field is ignored and provided by the API as part of the response
 	Height      int    `json:"height,omitempty"`       // The height of the media item. This field is ignored and provided by the API as part of the response
 	Width       int    `json:"width,omitempty"`        // The width of the media item. This field is ignored and provided by the API as part of the response
 	ContentType string `json:"content_type,omitempty"` // The media type of the content. This field is ignored and provided by the API as part of the response
