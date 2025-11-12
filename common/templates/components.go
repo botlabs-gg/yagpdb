@@ -16,18 +16,18 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
-func CreateComponent(expectedType discordgo.ComponentType, values ...interface{}) (discordgo.MessageComponent, error) {
+func CreateComponent(expectedType discordgo.ComponentType, values ...any) (discordgo.MessageComponent, error) {
 	if len(values) < 1 && expectedType != discordgo.ActionsRowComponent {
 		return discordgo.ActionsRow{}, errors.New("no values passed to component builder")
 	}
 
-	var m map[string]interface{}
+	var m map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		m = t
 	case *SDict:
 		m = *t
-	case map[string]interface{}:
+	case map[string]any:
 		m = t
 	default:
 		dict, err := StringKeyDictionary(values...)
@@ -102,6 +102,10 @@ func CreateComponent(expectedType discordgo.ComponentType, values ...interface{}
 		comp := discordgo.Container{}
 		err = json.Unmarshal(encoded, &comp)
 		component = comp
+	case discordgo.LabelComponent:
+		comp := discordgo.Label{}
+		err = json.Unmarshal(encoded, &comp)
+		component = comp
 	}
 
 	if err != nil {
@@ -111,14 +115,63 @@ func CreateComponent(expectedType discordgo.ComponentType, values ...interface{}
 	return component, nil
 }
 
-func CreateButton(values ...interface{}) (*discordgo.Button, error) {
-	var messageSdict map[string]interface{}
+func CreateLabel(values ...any) (*discordgo.Label, error) {
+	var messageSdict map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		messageSdict = t
 	case *SDict:
 		messageSdict = *t
-	case map[string]interface{}:
+	case map[string]any:
+		messageSdict = t
+	case *discordgo.Label:
+		return t, nil
+	default:
+		dict, err := StringKeyDictionary(values...)
+		if err != nil {
+			return nil, err
+		}
+		messageSdict = dict
+	}
+
+	convertedLabel := make(map[string]any)
+	for k, v := range messageSdict {
+		switch strings.ToLower(k) {
+		case "custom_id":
+			c, err := validateCustomID(ToString(v), nil)
+			if err != nil {
+				return nil, err
+			}
+			convertedLabel[k] = c
+		case "label":
+			convertedLabel[k] = v
+		case "description":
+			convertedLabel[k] = v
+		case "component":
+			if c, ok := v.(discordgo.InteractiveComponent); ok && c.IsAllowedInLabel() {
+				convertedLabel[k] = c
+			} else {
+				return nil, errors.New("unsupported component in label")
+			}
+		}
+	}
+
+	l, err := CreateComponent(discordgo.LabelComponent, convertedLabel)
+	if err != nil {
+		return nil, err
+	}
+	label := l.(discordgo.Label)
+	return &label, nil
+}
+
+func CreateButton(values ...any) (*discordgo.Button, error) {
+	var messageSdict map[string]any
+	switch t := values[0].(type) {
+	case SDict:
+		messageSdict = t
+	case *SDict:
+		messageSdict = *t
+	case map[string]any:
 		messageSdict = t
 	case *discordgo.Button:
 		return t, nil
@@ -130,7 +183,7 @@ func CreateButton(values ...interface{}) (*discordgo.Button, error) {
 		messageSdict = dict
 	}
 
-	convertedButton := make(map[string]interface{})
+	convertedButton := make(map[string]any)
 	for k, v := range messageSdict {
 		switch strings.ToLower(k) {
 		case "style":
@@ -188,14 +241,14 @@ func CreateButton(values ...interface{}) (*discordgo.Button, error) {
 	return &button, err
 }
 
-func CreateSelectMenu(values ...interface{}) (*discordgo.SelectMenu, error) {
-	var messageSdict map[string]interface{}
+func CreateSelectMenu(values ...any) (*discordgo.SelectMenu, error) {
+	var messageSdict map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		messageSdict = t
 	case *SDict:
 		messageSdict = *t
-	case map[string]interface{}:
+	case map[string]any:
 		messageSdict = t
 	case *discordgo.SelectMenu:
 		return t, nil
@@ -209,7 +262,7 @@ func CreateSelectMenu(values ...interface{}) (*discordgo.SelectMenu, error) {
 
 	menuType := discordgo.SelectMenuComponent
 
-	convertedMenu := make(map[string]interface{})
+	convertedMenu := make(map[string]any)
 	for k, v := range messageSdict {
 		switch strings.ToLower(k) {
 		case "type":
@@ -263,15 +316,15 @@ func CreateSelectMenu(values ...interface{}) (*discordgo.SelectMenu, error) {
 	return &menu, err
 }
 
-func createThumbnail(values ...interface{}) (discordgo.Thumbnail, error) {
+func createThumbnail(values ...any) (discordgo.Thumbnail, error) {
 	thumb := discordgo.Thumbnail{}
-	var messageSdict map[string]interface{}
+	var messageSdict map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		messageSdict = t
 	case *SDict:
 		messageSdict = *t
-	case map[string]interface{}:
+	case map[string]any:
 		messageSdict = t
 	case *discordgo.Thumbnail:
 		return *t, nil
@@ -285,7 +338,7 @@ func createThumbnail(values ...interface{}) (discordgo.Thumbnail, error) {
 		messageSdict = dict
 	}
 
-	convertedThumbnail := make(map[string]interface{})
+	convertedThumbnail := make(map[string]any)
 	for k, v := range messageSdict {
 		switch strings.ToLower(k) {
 		case "media":
@@ -302,14 +355,14 @@ func createThumbnail(values ...interface{}) (discordgo.Thumbnail, error) {
 	return thumb, err
 }
 
-func CreateSection(values ...interface{}) (*discordgo.Section, error) {
-	var messageSdict map[string]interface{}
+func CreateSection(values ...any) (*discordgo.Section, error) {
+	var messageSdict map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		messageSdict = t
 	case *SDict:
 		messageSdict = *t
-	case map[string]interface{}:
+	case map[string]any:
 		messageSdict = t
 	case *discordgo.Section:
 		return t, nil
@@ -321,7 +374,7 @@ func CreateSection(values ...interface{}) (*discordgo.Section, error) {
 		messageSdict = dict
 	}
 
-	convertedSection := make(map[string]interface{})
+	convertedSection := make(map[string]any)
 	for k, v := range messageSdict {
 		switch strings.ToLower(k) {
 		case "text":
@@ -368,9 +421,9 @@ func CreateSection(values ...interface{}) (*discordgo.Section, error) {
 	return &section, err
 }
 
-func CreateTextDisplay(value interface{}) (*discordgo.TextDisplay, error) {
+func CreateTextDisplay(value any) (*discordgo.TextDisplay, error) {
 	var display discordgo.TextDisplay
-	d, err := CreateComponent(discordgo.TextDisplayComponent, map[string]interface{}{
+	d, err := CreateComponent(discordgo.TextDisplayComponent, map[string]any{
 		"content": ToString(value),
 	})
 	if err == nil {
@@ -379,20 +432,59 @@ func CreateTextDisplay(value interface{}) (*discordgo.TextDisplay, error) {
 	return &display, err
 }
 
-func createUnfurledMedia(value interface{}) discordgo.UnfurledMediaItem {
-	return discordgo.UnfurledMediaItem{
-		URL: ToString(value),
-	}
-}
-
-func createGalleryItem(values ...interface{}) (item discordgo.MediaGalleryItem, err error) {
-	var messageSdict map[string]interface{}
+func CreateTextInput(values ...any) (*discordgo.TextInput, error) {
+	var messageSdict map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		messageSdict = t
 	case *SDict:
 		messageSdict = *t
-	case map[string]interface{}:
+	case map[string]any:
+		messageSdict = t
+	default:
+		dict, err := StringKeyDictionary(values...)
+		if err != nil {
+			return nil, err
+		}
+		messageSdict = dict
+	}
+	var textInput discordgo.TextInput
+	convertedTextInput := make(map[string]any)
+	for k, v := range messageSdict {
+		switch strings.ToLower(k) {
+		case "custom_id":
+			c, err := validateCustomID(TemplateCustomIDPrefix+ToString(v), nil)
+			if err != nil {
+				return nil, err
+			}
+			convertedTextInput[k] = c
+		default:
+			convertedTextInput[k] = v
+		}
+	}
+
+	t, err := CreateComponent(discordgo.TextInputComponent, convertedTextInput)
+	if err == nil {
+		textInput = t.(discordgo.TextInput)
+	}
+
+	return &textInput, err
+}
+
+func createUnfurledMedia(value any) discordgo.UnfurledMediaItem {
+	return discordgo.UnfurledMediaItem{
+		URL: ToString(value),
+	}
+}
+
+func createGalleryItem(values ...any) (item discordgo.MediaGalleryItem, err error) {
+	var messageSdict map[string]any
+	switch t := values[0].(type) {
+	case SDict:
+		messageSdict = t
+	case *SDict:
+		messageSdict = *t
+	case map[string]any:
 		messageSdict = t
 	case discordgo.MediaGalleryItem:
 		item = t
@@ -423,7 +515,7 @@ func createGalleryItem(values ...interface{}) (item discordgo.MediaGalleryItem, 
 	return
 }
 
-func CreateGallery(values interface{}) (*discordgo.MediaGallery, error) {
+func CreateGallery(values any) (*discordgo.MediaGallery, error) {
 	convertedGallery := &discordgo.MediaGallery{}
 	val, _ := indirect(reflect.ValueOf(values))
 	if val.Kind() == reflect.Slice {
@@ -447,14 +539,14 @@ func CreateGallery(values interface{}) (*discordgo.MediaGallery, error) {
 	return convertedGallery, nil
 }
 
-func CreateFile(msgFiles *[]*discordgo.File, values ...interface{}) (*discordgo.ComponentFile, error) {
-	var messageSdict map[string]interface{}
+func CreateFile(msgFiles *[]*discordgo.File, values ...any) (*discordgo.ComponentFile, error) {
+	var messageSdict map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		messageSdict = t
 	case *SDict:
 		messageSdict = *t
-	case map[string]interface{}:
+	case map[string]any:
 		messageSdict = t
 	case *discordgo.ComponentFile:
 		return t, nil
@@ -470,7 +562,7 @@ func CreateFile(msgFiles *[]*discordgo.File, values ...interface{}) (*discordgo.
 		ContentType: "text/plain",
 		Name:        "attachment_" + time.Now().Format("2006-01-02_15-04-05") + ".txt",
 	}
-	convertedFile := make(map[string]interface{})
+	convertedFile := make(map[string]any)
 	for k, v := range messageSdict {
 		switch strings.ToLower(k) {
 		case "content":
@@ -501,7 +593,7 @@ func CreateFile(msgFiles *[]*discordgo.File, values ...interface{}) (*discordgo.
 	return &cFile, err
 }
 
-func CreateSeparator(large interface{}) *discordgo.Separator {
+func CreateSeparator(large any) *discordgo.Separator {
 	spacing := discordgo.SeparatorSpacingSmall
 	if large != nil && large != false {
 		spacing = discordgo.SeparatorSpacingLarge
@@ -511,7 +603,7 @@ func CreateSeparator(large interface{}) *discordgo.Separator {
 	}
 }
 
-func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([]discordgo.TopLevelComponent, error) {
+func CreateComponentArray(msgFiles *[]*discordgo.File, values ...any) ([]discordgo.TopLevelComponent, error) {
 	if len(values) < 1 {
 		return nil, nil
 	}
@@ -733,14 +825,14 @@ func CreateComponentArray(msgFiles *[]*discordgo.File, values ...interface{}) ([
 	return components, nil
 }
 
-func CreateContainer(msgFiles *[]*discordgo.File, values ...interface{}) (*discordgo.Container, error) {
-	var messageSdict map[string]interface{}
+func CreateContainer(msgFiles *[]*discordgo.File, values ...any) (*discordgo.Container, error) {
+	var messageSdict map[string]any
 	switch t := values[0].(type) {
 	case SDict:
 		messageSdict = t
 	case *SDict:
 		messageSdict = *t
-	case map[string]interface{}:
+	case map[string]any:
 		messageSdict = t
 	case *discordgo.Container:
 		return t, nil
@@ -855,22 +947,15 @@ func validateCustomID(id string, used map[string]bool) (string, error) {
 		id = fmt.Sprint(len(used))
 	}
 
-	if !strings.HasPrefix(id, "templates-") {
-		id = fmt.Sprint("templates-", id)
+	if !strings.HasPrefix(id, TemplateCustomIDPrefix) {
+		id = fmt.Sprint(TemplateCustomIDPrefix, id)
 	}
 
 	const maxCIDLength = 100 // discord limitation
 	if len(id) > maxCIDLength {
-		return "", errors.New("custom id too long (max 90 chars)") // maxCIDLength - len("templates-")
+		return "", fmt.Errorf("custom id too long (max %d chars)", maxCIDLength-len(TemplateCustomIDPrefix))
 	}
 
-	if used == nil {
-		return id, nil
-	}
-
-	if _, ok := used[id]; ok {
-		return "", errors.New("duplicate custom ids used")
-	}
 	return id, nil
 }
 

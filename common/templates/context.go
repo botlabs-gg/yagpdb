@@ -26,13 +26,17 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
 	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
-	StandardFuncMap = map[string]interface{}{
+	titleCaser = cases.Title(language.Und)
+
+	StandardFuncMap = map[string]any{
 		// conversion functions
 		"str":        ToString,
-		"toString":   ToString, // don't ask why we have 2 of these
+		"toString":   ToString, // don't ask why we have 2 of these, update: the answer is always "deprecated but not removed"
 		"toInt":      tmplToInt,
 		"toInt64":    ToInt64,
 		"toFloat":    ToFloat64,
@@ -47,7 +51,7 @@ var (
 		"lower":        strings.ToLower,
 		"slice":        slice,
 		"split":        strings.Split,
-		"title":        strings.Title,
+		"title":        titleCaser.String,
 		"trimSpace":    strings.TrimSpace,
 		"upper":        strings.ToUpper,
 		"urlescape":    url.PathEscape,
@@ -89,20 +93,30 @@ var (
 		"bitwiseLeftShift":  tmplBitwiseLeftShift,
 		"bitwiseRightShift": tmplBitwiseRightShift,
 
-		// misc
-		"humanizeThousands":  tmplHumanizeThousands,
-		"dict":               Dictionary,
-		"sdict":              StringKeyDictionary,
-		"structToSdict":      StructToSdict,
-		"componentBuilder":   CreateComponentBuilder,
+		// message component builders
+		"componentBuilder": CreateComponentBuilder,
+		"modalBuilder":     CreateModalBuilder,
+		"cbutton":          CreateButton,
+		"cmenu":            CreateSelectMenu,
+		"cmodal":           CreateModal,
+		"clabel":           CreateLabel,
+		"ctextInput":       CreateTextInput,
+		"ctextDisplay":     CreateTextDisplay,
+
+		// message builders
 		"cembed":             CreateEmbed,
-		"cbutton":            CreateButton,
-		"cmenu":              CreateSelectMenu,
-		"cmodal":             CreateModal,
-		"cslice":             CreateSlice,
 		"complexMessage":     CreateMessageSend,
 		"complexMessageEdit": CreateMessageEdit,
-		"kindOf":             KindOf,
+
+		// misc
+		"humanizeThousands": tmplHumanizeThousands,
+		"dict":              Dictionary,
+		"sdict":             StringKeyDictionary,
+		"structToSdict":     StructToSdict,
+
+		"cslice": CreateSlice,
+
+		"kindOf": KindOf,
 
 		"adjective":   common.RandomAdjective,
 		"in":          in,
@@ -675,11 +689,6 @@ func baseContextFuncs(c *Context) {
 
 	// Message send functions
 	c.addContextFunc("sendDM", c.tmplSendDM)
-	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
-	c.addContextFunc("sendComponentMessage", c.tmplSendComponentsMessage(true, false))
-	c.addContextFunc("sendComponentMessageNoEscape", c.tmplSendComponentsMessage(false, false))
-	c.addContextFunc("sendComponentMessageNoEscapeRetID", c.tmplSendComponentsMessage(false, true))
-	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
 	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
 	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
@@ -1140,9 +1149,53 @@ func (s Slice) StringSlice(flag ...bool) interface{} {
 	return StringSlice
 }
 
+type ModalBuilder struct {
+	Title      string
+	CustomID   string
+	Components []discordgo.TopLevelComponent
+}
+
+func (s *ModalBuilder) addComponent(comp any) (*ModalBuilder, error) {
+	if len(s.Components) == 5 {
+		return nil, errors.New("modal builder can only have maximum 5 top level components")
+	}
+
+	if comp, ok := comp.(discordgo.TopLevelComponent); ok {
+		if !comp.IsModalSupported() {
+			return nil, errors.New("invalid top level component passed to modal builder")
+		}
+		s.Components = append(s.Components, comp)
+	} else {
+		return nil, errors.New("invalid top level component passed to modal builder")
+	}
+
+	return s, nil
+}
+
+func (s *ModalBuilder) AddComponents(comps ...any) (*ModalBuilder, error) {
+	for _, comp := range comps {
+		_, err := s.addComponent(comp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return s, nil
+}
+
+func (s *ModalBuilder) toModal() (*discordgo.InteractionResponse, error) {
+	return &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseModal,
+		Data: &discordgo.InteractionResponseData{
+			Title:      s.Title,
+			CustomID:   s.CustomID,
+			Components: s.Components,
+		},
+	}, nil
+}
+
 type ComponentBuilder struct {
 	Components []string
-	Values     []interface{}
+	Values     []any
 }
 
 func (s *ComponentBuilder) Add(key string, value interface{}) (interface{}, error) {
