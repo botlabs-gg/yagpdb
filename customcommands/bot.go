@@ -858,7 +858,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		cID := interaction.MessageComponentData().CustomID
 
 		// continue only if this component was created by a cc
-		cID, ok := strings.CutPrefix(cID, "templates-")
+		cID, ok := strings.CutPrefix(cID, templates.TemplateCustomIDPrefix)
 		if !ok {
 			return
 		}
@@ -884,7 +884,7 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		cID := interaction.ModalSubmitData().CustomID
 
 		// continue only if this modal was created by a cc
-		cID, ok := strings.CutPrefix(cID, "templates-")
+		cID, ok := strings.CutPrefix(cID, templates.TemplateCustomIDPrefix)
 		if !ok {
 			return
 		}
@@ -1337,7 +1337,7 @@ func ExecuteCustomCommandFromComponent(cc *models.CustomCommand, gs *dstate.Guil
 
 	tmplCtx.Data["Interaction"] = interaction
 	tmplCtx.Data["InteractionData"] = interaction.MessageComponentData()
-	cid := strings.TrimPrefix(interaction.MessageComponentData().CustomID, "templates-")
+	cid := strings.TrimPrefix(interaction.MessageComponentData().CustomID, templates.TemplateCustomIDPrefix)
 	tmplCtx.Data["CustomID"] = cid
 	tmplCtx.Data["Cmd"] = cmdArgs[0]
 	if len(cmdArgs) > 1 {
@@ -1385,7 +1385,7 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 
 	tmplCtx.Data["Interaction"] = interaction
 	tmplCtx.Data["InteractionData"] = interaction.ModalSubmitData()
-	cid := strings.TrimPrefix(interaction.ModalSubmitData().CustomID, "templates-")
+	cid := strings.TrimPrefix(interaction.ModalSubmitData().CustomID, templates.TemplateCustomIDPrefix)
 	tmplCtx.Data["CustomID"] = cid
 	tmplCtx.Data["Cmd"] = cmdArgs[0]
 	if len(cmdArgs) > 1 {
@@ -1397,13 +1397,40 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 	tmplCtx.Data["StrippedMsg"] = stripped
 	tmplCtx.Data["IsModal"] = true
 	cmdValues := []string{}
+	type modalValue struct {
+		CustomID string
+		Type     discordgo.ComponentType
+		value    string
+		values   []string
+	}
+	modalValues := map[string]modalValue{}
 	for i := 0; i < len(interaction.ModalSubmitData().Components); i++ {
-		row := interaction.ModalSubmitData().Components[i].(*discordgo.ActionsRow)
-		field := row.Components[0].(*discordgo.TextInput)
-		cmdValues = append(cmdValues, field.Value)
+		switch comp := interaction.ModalSubmitData().Components[i].(type) {
+		case *discordgo.ActionsRow:
+			for j := 0; j < len(comp.Components); j++ {
+				field, ok := comp.Components[j].(*discordgo.TextInput)
+				if ok {
+					cmdValues = append(cmdValues, field.Value)
+				}
+			}
+		case *discordgo.Label:
+			if t, ok := comp.Component.(*discordgo.TextInput); ok {
+				modalValues[t.CustomID] = modalValue{
+					CustomID: t.CustomID,
+					Type:     t.Type(),
+					value:    t.Value,
+				}
+			} else if sm, ok := comp.Component.(*discordgo.SelectMenu); ok {
+				modalValues[sm.CustomID] = modalValue{
+					CustomID: sm.CustomID,
+					Type:     sm.Type(),
+					values:   sm.Values,
+				}
+			}
+		}
 	}
 	tmplCtx.Data["Values"] = cmdValues
-
+	tmplCtx.Data["ModalValues"] = modalValues
 	msg := interaction.Message
 	msg.Member = ms.DgoMember()
 	msg.Author = msg.Member.User

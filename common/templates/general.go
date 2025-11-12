@@ -381,7 +381,7 @@ func CreateMessageSend(values ...interface{}) (*discordgo.MessageSend, error) {
 			v, _ := indirect(reflect.ValueOf(val))
 			if v.Kind() == reflect.Slice {
 				buttons := []*discordgo.Button{}
-				const maxButtons = 25 // Discord limitation
+				const maxButtons = 40 // Discord limitation
 				for i := 0; i < v.Len() && i < maxButtons; i++ {
 					button, err := CreateButton(v.Index(i).Interface())
 					if err != nil {
@@ -1335,7 +1335,7 @@ func sequence(start, stop int) ([]int, error) {
 	}
 
 	if stop-start > MaxSliceLength {
-		return nil, fmt.Errorf("Sequence max length is %d", MaxSliceLength)
+		return nil, fmt.Errorf("sequence max length is %d", MaxSliceLength)
 	}
 
 	out := make([]int, stop-start)
