@@ -1385,8 +1385,8 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 
 	tmplCtx.Data["Interaction"] = interaction
 	tmplCtx.Data["InteractionData"] = interaction.ModalSubmitData()
-	cid := strings.TrimPrefix(interaction.ModalSubmitData().CustomID, templates.TemplateCustomIDPrefix)
-	tmplCtx.Data["CustomID"] = cid
+	modalCustomID := strings.TrimPrefix(interaction.ModalSubmitData().CustomID, templates.TemplateCustomIDPrefix)
+	tmplCtx.Data["CustomID"] = modalCustomID
 	tmplCtx.Data["Cmd"] = cmdArgs[0]
 	if len(cmdArgs) > 1 {
 		tmplCtx.Data["CmdArgs"] = cmdArgs[1:]
@@ -1418,7 +1418,7 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 			if t, ok := comp.Component.(*discordgo.TextInput); ok {
 				cID, _ := strings.CutPrefix(t.CustomID, templates.TemplateCustomIDPrefix)
 				cmdValues = append(cmdValues, t.Value)
-				modalValues.Set(cid, templates.SDict{
+				modalValues.Set(cID, templates.SDict{
 					"type":      t.Type(),
 					"value":     t.Value,
 					"custom_id": cID,
@@ -1426,7 +1426,7 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 			} else if sm, ok := comp.Component.(*discordgo.SelectMenu); ok {
 				cID, _ := strings.CutPrefix(sm.CustomID, templates.TemplateCustomIDPrefix)
 				cmdValues = append(cmdValues, sm.Values)
-				modalValues.Set(cid, templates.SDict{
+				modalValues.Set(cID, templates.SDict{
 					"type":      sm.Type(),
 					"value":     sm.Values,
 					"custom_id": cID,
