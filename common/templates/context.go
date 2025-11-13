@@ -689,6 +689,13 @@ func baseContextFuncs(c *Context) {
 
 	// Message send functions
 	c.addContextFunc("sendDM", c.tmplSendDM)
+	//TODO: Remove these functions
+	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
+	c.addContextFunc("sendComponentMessage", c.tmplSendComponentsMessage(true, false))
+	c.addContextFunc("sendComponentMessageNoEscape", c.tmplSendComponentsMessage(false, false))
+	c.addContextFunc("sendComponentMessageNoEscapeRetID", c.tmplSendComponentsMessage(false, true))
+	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
+
 	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
 	c.addContextFunc("sendMessageNoEscapeRetID", c.tmplSendMessage(false, true))
@@ -1024,7 +1031,7 @@ func (d Dict) MarshalJSON() ([]byte, error) {
 	return json.Marshal(md)
 }
 
-type SDict map[string]interface{}
+type SDict map[string]any
 
 func (d SDict) Set(key string, value interface{}) (string, error) {
 	d[key] = value
