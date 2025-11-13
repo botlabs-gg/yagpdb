@@ -677,8 +677,6 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("deleteResponse", c.tmplDelResponse)
 	c.addContextFunc("deleteTrigger", c.tmplDelTrigger)
 
-	c.addContextFunc("editComponentMessage", c.tmplEditComponentsMessage(true))
-	c.addContextFunc("editComponentMessageNoEscape", c.tmplEditComponentsMessage(false))
 	c.addContextFunc("editMessage", c.tmplEditMessage(true))
 	c.addContextFunc("editMessageNoEscape", c.tmplEditMessage(false))
 	c.addContextFunc("getMessage", c.tmplGetMessage)
@@ -689,12 +687,14 @@ func baseContextFuncs(c *Context) {
 
 	// Message send functions
 	c.addContextFunc("sendDM", c.tmplSendDM)
-	//TODO: Remove these functions
+
+	//TODO: Remove these component functions
 	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
 	c.addContextFunc("sendComponentMessage", c.tmplSendComponentsMessage(true, false))
 	c.addContextFunc("sendComponentMessageNoEscape", c.tmplSendComponentsMessage(false, false))
 	c.addContextFunc("sendComponentMessageNoEscapeRetID", c.tmplSendComponentsMessage(false, true))
-	c.addContextFunc("sendComponentMessageRetID", c.tmplSendComponentsMessage(true, true))
+	c.addContextFunc("editComponentMessage", c.tmplEditComponentsMessage(true))
+	c.addContextFunc("editComponentMessageNoEscape", c.tmplEditComponentsMessage(false))
 
 	c.addContextFunc("sendMessage", c.tmplSendMessage(true, false))
 	c.addContextFunc("sendMessageNoEscape", c.tmplSendMessage(false, false))
