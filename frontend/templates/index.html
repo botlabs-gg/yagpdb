@@ -66,12 +66,16 @@
           <a class="nav-link" href="/premium-perks"> <span class="premium-color"> Premium </span></a>
         </li>
       </ul>
+      {{if .User}}
       <form class="form-inline my-2 my-lg-0 mr-2">
         <a class="btn btn-outline-danger my-2 my-sm-0" href="/manage">Control Panel</a>
       </form>
-      {{if .User}}
       <form class="form-inline my-2 my-lg-0">
         <a class="btn btn-outline-danger my-2 my-sm-0" href="/logout">Logout</a>
+      </form>
+      {{else}}
+      <form class="form-inline my-2 my-lg-0 mr-2">
+        <a class="btn btn-outline-danger my-2 my-sm-0" href="/login?goto={{urlquery "/manage"}}">Login with Discord</a>
       </form>
       {{end}}
     </div>
