@@ -1162,6 +1162,35 @@ type ModalBuilder struct {
 	Components []discordgo.TopLevelComponent
 }
 
+func (s *ModalBuilder) Set(key string, value any) (*ModalBuilder, error) {
+	switch key {
+	case "title":
+		s.Title = ToString(value)
+	case "custom_id":
+		cID, err := validateCustomID(ToString(value), nil)
+		if err != nil {
+			return nil, err
+		}
+		s.CustomID = cID
+	case "components":
+		val, _ := indirect(reflect.ValueOf(value))
+		if val.Kind() == reflect.Slice {
+			for i := 0; i < val.Len(); i++ {
+				_, err := s.addComponent(val.Index(i).Interface())
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			return nil, errors.New("components must be a slice of Labels or TextFields")
+		}
+		s.Components = value.([]discordgo.TopLevelComponent)
+	default:
+		return nil, errors.New("invalid key, accepted keys are: title, custom_id, components")
+	}
+	return s, nil
+}
+
 func (s *ModalBuilder) addComponent(comp any) (*ModalBuilder, error) {
 	if len(s.Components) == 5 {
 		return nil, errors.New("modal builder can only have maximum 5 top level components")
@@ -1205,7 +1234,7 @@ type ComponentBuilder struct {
 	Values     []any
 }
 
-func (s *ComponentBuilder) Add(key string, value interface{}) (interface{}, error) {
+func (s *ComponentBuilder) Add(key string, value any) (interface{}, error) {
 	if len(s.Components)+1 > MaxSliceLength {
 		return nil, errors.New("resulting slice exceeds slice size limit")
 	}
