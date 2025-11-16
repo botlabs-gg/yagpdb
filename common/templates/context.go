@@ -1174,6 +1174,7 @@ func (s *ModalBuilder) Set(key string, value any) (*ModalBuilder, error) {
 		s.CustomID = cID
 	case "components":
 		val, _ := indirect(reflect.ValueOf(value))
+		s.Components = make([]discordgo.TopLevelComponent, 0)
 		if val.Kind() == reflect.Slice {
 			for i := 0; i < val.Len(); i++ {
 				_, err := s.addComponent(val.Index(i).Interface())
@@ -1184,7 +1185,6 @@ func (s *ModalBuilder) Set(key string, value any) (*ModalBuilder, error) {
 		} else {
 			return nil, errors.New("components must be a slice of Labels or TextFields")
 		}
-		s.Components = value.([]discordgo.TopLevelComponent)
 	default:
 		return nil, errors.New("invalid key, accepted keys are: title, custom_id, components")
 	}
@@ -1210,9 +1210,19 @@ func (s *ModalBuilder) addComponent(comp any) (*ModalBuilder, error) {
 
 func (s *ModalBuilder) AddComponents(comps ...any) (*ModalBuilder, error) {
 	for _, comp := range comps {
-		_, err := s.addComponent(comp)
-		if err != nil {
-			return nil, err
+		val, _ := indirect(reflect.ValueOf(comp))
+		if val.Kind() == reflect.Slice {
+			for i := 0; i < val.Len(); i++ {
+				_, err := s.addComponent(val.Index(i).Interface())
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			_, err := s.addComponent(comp)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return s, nil
