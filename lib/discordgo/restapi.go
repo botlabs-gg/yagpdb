@@ -162,8 +162,19 @@ func (s *Session) doRequest(method, urlStr, contentType string, b []byte, header
 		rl := TooManyRequests{}
 		err = json.Unmarshal(response, &rl)
 		if err != nil {
-			s.log(LogError, "rate limit unmarshal error, %s, %q, url: %s", err, string(response), urlStr)
-			return
+			s.log(LogError, "request body rate limit unmarshal error, %s, %q, url: %s", err, string(response), urlStr)
+			// get ratelimit from headers in case body doesn't have it.
+			retryAfter := resp.Header.Get("Retry-After")
+			if retryAfter != "" {
+				rl.RetryAfter, err = strconv.ParseFloat(retryAfter, 64)
+				if err != nil {
+					s.log(LogError, "request header rate limit unmarshal error, %s, %q, url: %s", err, string(response), urlStr)
+					return nil, true, false, err
+				}
+				rl.Global = true
+			} else {
+				return nil, true, false, err
+			}
 		}
 
 		rl.Bucket = bucket.Key
