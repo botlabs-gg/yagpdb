@@ -73,18 +73,29 @@ func CreateModal(values ...any) (*discordgo.InteractionResponse, error) {
 		m = dict
 	}
 
-	modal := &discordgo.InteractionResponseData{CustomID: TemplateCustomIDPrefix + "-0"} // default cID if not set
+	modalBuilder := &ModalBuilder{
+		CustomID: TemplateCustomIDPrefix + "-0",
+	}
+	_, hasComponentsKey := m["components"]
+	_, hasFieldsKey := m["fields"]
+	if hasComponentsKey && hasFieldsKey {
+		return nil, errors.New("cannot have both 'components' and 'fields' in a cmodal")
+	}
 
 	for key, val := range m {
 		switch key {
 		case "title":
-			modal.Title = ToString(val)
+			modalBuilder.Title = ToString(val)
 		case "custom_id":
 			cid, err := validateCustomID(ToString(val), nil)
 			if err != nil {
 				return nil, err
 			}
-			modal.CustomID = cid
+			modalBuilder.CustomID = cid
+		case "components":
+			modalBuilder.Set("components", val)
+
+		//TODO: Deprecate this key in future versions
 		case "fields":
 			if val == nil {
 				continue
@@ -108,7 +119,7 @@ func CreateModal(values ...any) (*discordgo.InteractionResponse, error) {
 						return nil, err
 					}
 					usedCustomIDs[field.CustomID] = true
-					modal.Components = append(modal.Components, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{field}})
+					modalBuilder.Components = append(modalBuilder.Components, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{field}})
 				}
 			} else {
 				f, err := CreateComponent(discordgo.TextInputComponent, val)
@@ -123,7 +134,7 @@ func CreateModal(values ...any) (*discordgo.InteractionResponse, error) {
 				if err != nil {
 					return nil, err
 				}
-				modal.Components = append(modal.Components, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{field}})
+				modalBuilder.Components = append(modalBuilder.Components, discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{field}})
 			}
 		default:
 			return nil, errors.New(`invalid key "` + key + `" passed to send message builder`)
@@ -131,10 +142,7 @@ func CreateModal(values ...any) (*discordgo.InteractionResponse, error) {
 
 	}
 
-	return &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseModal,
-		Data: modal,
-	}, nil
+	return modalBuilder.toModal()
 }
 
 func (c *Context) tmplDeleteInteractionResponse(interactionToken, msgID interface{}, delaySeconds ...interface{}) (interface{}, error) {
