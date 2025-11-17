@@ -189,6 +189,7 @@ func RefreshMuteOverrides(guildID int64, createRole bool) {
 
 	for _, v := range guild.Channels {
 		RefreshMuteOverrideForChannel(config, v)
+		time.Sleep(1 * time.Second)
 	}
 }
 
