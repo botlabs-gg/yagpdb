@@ -365,7 +365,6 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		case *ComponentBuilder:
 			msgSend, err = typedMsg.ToComplexMessage()
 			if err != nil {
-				logger.Error(err)
 				return "", err
 			}
 		default:
