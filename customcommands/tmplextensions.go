@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"emperror.dev/errors"
@@ -867,7 +868,17 @@ type LightDBEntry struct {
 func ToLightDBEntry(m *models.TemplatesUserDatabase) (*LightDBEntry, error) {
 	var dst interface{}
 	dec := newDecoder(bytes.NewBuffer(m.ValueRaw))
-	err := dec.Decode(&dst)
+
+	var err error
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				err = errors.New(fmt.Sprint("panic decoding db entry: ", r))
+			}
+		}()
+		err = dec.Decode(&dst)
+	}()
+
 	if err != nil {
 		return nil, err
 	}
@@ -910,7 +921,7 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 		mi := make(map[interface{}]interface{}, n)
 		ms := make(map[string]interface{})
 
-		for i := 0; i < n; i++ {
+		for range n {
 			mk, err := d.DecodeInterface()
 			if err != nil {
 				return nil, err
@@ -938,6 +949,7 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 				mi[mk] = mv
 			}
 		}
+
 		if isStringKeysOnly {
 			return ms, nil
 		}
