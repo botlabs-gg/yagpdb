@@ -327,17 +327,17 @@ func (c *Context) checkSafeDictNoRecursion(d Dict, n int) bool {
 	return true
 }
 
-func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel interface{}, msg interface{}) interface{} {
+func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) func(channel any, msg any) (any, error) {
 
-	return func(channel interface{}, msg interface{}) interface{} {
+	return func(channel any, msg any) (any, error) {
 		if c.IncreaseCheckGenericAPICall() {
-			return ""
+			return "", nil
 		}
 
 		sendType := sendMessageGuildChannel
 		cid := c.ChannelArg(channel)
 		if cid == 0 {
-			return ""
+			return "", nil
 		}
 
 		if cid != c.ChannelArgNoDM(channel) {
@@ -363,10 +363,9 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 				msgSend.Reference.ChannelID = cid
 			}
 		case *ComponentBuilder:
-			msgSend, _ = typedMsg.ToComplexMessage()
-			if msgSend.Reference != nil {
-				msgSend.Reference.GuildID = c.GS.ID
-				msgSend.Reference.ChannelID = cid
+			msgSend, err = typedMsg.ToComplexMessage()
+			if err != nil {
+				return "", err
 			}
 		default:
 			msgSend.Content = ToString(msg)
@@ -390,6 +389,8 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		if msgSend.Reference != nil {
+			msgSend.Reference.GuildID = c.GS.ID
+			msgSend.Reference.ChannelID = cid
 			if msgSend.Reference.Type == discordgo.MessageReferenceTypeForward {
 				if originChannel := c.ChannelArgNoDM(msgSend.Reference.ChannelID); originChannel != 0 {
 					hasPerms, _ := bot.BotHasPermissionGS(c.GS, originChannel, discordgo.PermissionViewChannel|discordgo.PermissionReadMessageHistory)
@@ -403,12 +404,15 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		m, err = common.BotSession.ChannelMessageSendComplex(cid, msgSend)
-
-		if err == nil && returnID {
-			return m.ID
+		if err != nil {
+			return "", err
 		}
 
-		return ""
+		if returnID {
+			return m.ID, nil
+		}
+
+		return "", nil
 	}
 }
 

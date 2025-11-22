@@ -494,7 +494,7 @@ func (s Section) MarshalJSON() ([]byte, error) {
 func (s *Section) UnmarshalJSON(data []byte) error {
 	var v struct {
 		RawComponents []unmarshalableMessageComponent `json:"components"`
-		RawAccessory  unmarshalableMessageComponent   `json:"accessory"`
+		RawAccessory  *unmarshalableMessageComponent  `json:"accessory"`
 	}
 	err := json.Unmarshal(data, &v)
 	if err != nil {
@@ -506,14 +506,17 @@ func (s *Section) UnmarshalJSON(data []byte) error {
 		comp := v.MessageComponent
 		s.Components[i], ok = comp.(SectionComponentPart)
 		if !ok {
-			return errors.New("non text display passed to section component unmarshaller")
+			return errors.New("non text display passed to section component")
 		}
+	}
+	if v.RawAccessory == nil {
+		return errors.New("missing accessory component in section")
 	}
 
 	accessory := v.RawAccessory.MessageComponent
 	s.Accessory, ok = accessory.(AccessoryComponent)
 	if !ok {
-		return errors.New("non accessory component passed to section component unmarshaller")
+		return errors.New("non accessory component passed to section component")
 	}
 
 	return err
