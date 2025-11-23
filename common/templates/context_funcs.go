@@ -388,9 +388,11 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			msgSend.AllowedMentions = discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
 
-		if msgSend.Reference != nil {
+		if msgSend.Reference != nil && msgSend.Reference.MessageID != 0 {
 			msgSend.Reference.GuildID = c.GS.ID
-			msgSend.Reference.ChannelID = cid
+			if msgSend.Reference.ChannelID == 0 {
+				msgSend.Reference.ChannelID = cid
+			}
 			if msgSend.Reference.Type == discordgo.MessageReferenceTypeForward {
 				if originChannel := c.ChannelArgNoDM(msgSend.Reference.ChannelID); originChannel != 0 {
 					hasPerms, _ := bot.BotHasPermissionGS(c.GS, originChannel, discordgo.PermissionViewChannel|discordgo.PermissionReadMessageHistory)
