@@ -155,22 +155,21 @@ func (p *Plugin) processStreamsBatch(userIDs []string) {
 		}
 		if isLive {
 			common.RedisPool.Do(radix.Cmd(nil, "ZADD", "twitch_online_users", strconv.FormatInt(now.Unix(), 10), userID))
-			// Still online - check cooldown
-			lastTime, err := strconv.ParseInt(onlineScore, 10, 64)
-			if err != nil {
-				logger.WithError(err).Error("Failed parsing online score")
-				continue
-			}
-			if timeSinceOnline := now.Unix() - lastTime; timeSinceOnline < 300 {
-				// 5 minutes cooldown before sending offline notification
-				logger.Infof("Skipping notification for %s - already online for %d seconds", stream.UserName, timeSinceOnline)
-				continue
-			}
 			// New stream - add to online set and notify
 			logger.Infof("Twitch stream live: %s (Stream ID: %s)", stream.UserName, stream.ID)
 		} else {
 			// Stream went offline - remove from set and notify
 			logger.Infof("Twitch stream offline: %s", userID)
+			lastTime, err := strconv.ParseInt(onlineScore, 10, 64)
+			if err != nil {
+				logger.WithError(err).Error("Failed parsing online score")
+				continue
+			}
+			if timeSinceOffline := now.Unix() - lastTime; timeSinceOffline < 300 {
+				// 5 minutes cooldown before sending offline notification
+				logger.Infof("Skipping notification for %s - only been offline for %d seconds", stream.UserName, timeSinceOffline)
+				continue
+			}
 			common.RedisPool.Do(radix.Cmd(nil, "ZREM", "twitch_online_users", userID))
 			stream = helix.Stream{
 				UserID: userID,
