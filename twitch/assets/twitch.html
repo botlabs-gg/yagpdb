@@ -1,0 +1,219 @@
+{{define "cp_twitch"}}
+{{template "cp_head" .}}
+
+<style>
+    .twitch-tbl-actions-column {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .twitch-tbl-actions-column>button {
+        margin: 5px
+    }
+</style>
+
+<header class="page-header">
+    <h2>Twitch Feeds</h2>
+</header>
+
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Add New Feed</h3>
+            </div>
+            <div class="card-body">
+                <form role="form" class="no-unsaved-popup" data-async-form method="post"
+                    action="/manage/{{.ActiveGuild.ID}}/twitch">
+                    <div class="form-group">
+                        <label for="twitch-username">Twitch Channel Name (User Login)</label>
+                        <input type="text" class="form-control" id="twitch-username" name="TwitchUsername"
+                            placeholder="e.g. ninja">
+                    </div>
+                    <div class="form-group">
+                        <label for="discord-channel">Discord Channel</label>
+                        <select class="form-control" name="DiscordChannel">
+                            {{textChannelOptions .ActiveGuild.Channels nil false ""}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mention-roles">Mention Roles</label>
+                        <select id="mention-roles" class="multiselect form-control" multiple="multiple"
+                            name="MentionRoles" data-plugin-multiselect>
+                            {{roleOptionsMulti .ActiveGuild.Roles nil .MentionRoles}}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        {{checkbox "MentionEveryone" "mention-everyone" "Mention Everyone" false}}
+                    </div>
+                    <div class="form-group">
+                        {{checkbox "PublishVOD" "publish-vod" "Publish VOD (when stream goes offline)" false}}
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Add Feed</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Custom Announcement</h3>
+            </div>
+            <div class="card-body">
+                {{if not .IsGuildPremium}}
+                <div class="alert alert-warning">
+                    Custom announcements are a premium feature. <a href="/premium">Upgrade to Premium</a> to unlock this
+                    feature.
+                </div>
+                {{end}}
+                <form role="form" class="no-unsaved-popup" method="post"
+                    action="/manage/{{.ActiveGuild.ID}}/twitch/announcement">
+                    <fieldset {{if not .IsGuildPremium}}disabled{{end}}>
+                        <div class="form-group col mb-0">
+                            {{$announcementEnabled := false}}
+                            {{if .TwitchAnnouncement}}
+                            {{$announcementEnabled = .TwitchAnnouncement.Enabled}}
+                            {{end}}
+                            {{checkbox "Enabled" "announcement-enabled" `<h2 class="card-title">Enable</h2>`
+                            $announcementEnabled}}
+
+                            <label>Twitch Announcement Message (<span class="twitch-announcement-length-counter"> {{if
+                                    .TwitchAnnouncement}}{{toRune
+                                    .TwitchAnnouncement.Message|len}}{{else}}0{{end}}</span>/5000)</label>
+
+                            <textarea class="form-control" rows="10" id="twitch-announcement-msg" name="Message"
+                                oninput="OnAnnouncementChange(this)">{{if .TwitchAnnouncement}}{{.TwitchAnnouncement.Message}}{{else}}{{end}}</textarea>
+                            <span style="display: block;">
+                                <button type="submit" id="twitch-save-announcement-btn"
+                                    class="btn btn-sm btn-success btn-block" data-async-form-alertsonly>Save</button>
+                            </span>
+                            <p class="help-block">
+                                <b>Note: using Custom Announcement will override the default announcement message
+                                    mention settings, you will have to do mentions like they are done in <a
+                                        href="https://help.yagpdb.xyz/docs/reference/templates/functions/#mentions"
+                                        target="_blank">custom commands</a> </b>
+                            </p>
+                            <p class="help-block">
+                                In addition to the full <a href="https://help.yagpdb.xyz/docs/custom-commands/"
+                                    target="_blank">Custom Command syntax </a>, the following templates are also
+                                supported:</br>
+                            <ul style="list-style-type: none; margin: 0; padding: 0;">
+                                <li><code>{{"{{"}} .User {{"}}"}}</code> - The Twitch username.</li>
+                                <li><code>{{"{{"}} .URL {{"}}"}}</code> - The link to the stream.</li>
+                                <li><code>{{"{{"}} .Title {{"}}"}}</code> - The stream title.</li>
+                                <li><code>{{"{{"}} .Game {{"}}"}}</code> - The game being played.</li>
+                                <li><code>{{"{{"}} .IsLive {{"}}"}}</code> - Boolean, true if live.</li>
+                                <li><code>{{"{{"}} .VODUrl {{"}}"}}</code> - The URL to the VOD (if offline).</li>
+                            </ul>
+                            </p>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function OnAnnouncementChange(textArea) {
+        let counter = document.querySelector(".twitch-announcement-length-counter")
+        let saveButton = document.querySelector("#twitch-save-announcement-btn")
+        let totalLength = textArea.value.length
+        let newLines = textArea.value.match(/\n/g);
+        if (newLines) {
+            totalLength += newLines.length
+        }
+
+        counter.textContent = totalLength
+        if (totalLength > 5000) {
+            counter.classList.add("text-danger");
+            saveButton.classList.remove("btn-success")
+            saveButton.classList.add("btn-disabled")
+            saveButton.classList.add("disabled")
+            saveButton.disabled = true
+        } else {
+            counter.classList.remove("text-danger");
+            saveButton.disabled = false
+            saveButton.classList.add("btn-success")
+            saveButton.classList.remove("btn-disabled")
+        }
+    }
+</script>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Current Feeds</h3>
+            </div>
+            <div class="card-body">
+                {{$dot := .}}
+                {{range .TwitchSubs}}
+                <form id="feed-item-{{.ID}}" class="no-unsaved-popup" method="post"
+                    action="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/update"></form>
+                {{end}}
+                <table class="table table-responsive-md table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Twitch User</th>
+                            <th>Discord Channel</th>
+                            <th>Mention Everyone</th>
+                            <th>Mention Roles</th>
+                            <th>Publish VOD</th>
+                            <th>Enabled</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .TwitchSubs}}
+                        <tr>
+                            <td>
+                                <p class="form-control-static"><a href="https://twitch.tv/{{.TwitchUsername}}"
+                                        target="_blank"><b>{{.TwitchUsername}}</b></a></p>
+                            </td>
+                            <td>
+                                <select form="feed-item-{{.ID}}" class="form-control" name="DiscordChannel">
+                                    {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
+                                </select>
+                            </td>
+                            <td>
+                                {{checkbox "MentionEveryone" (print "mention-everyone-" .ID) `Mention everyone`
+                                .MentionEveryone (print `form="feed-item-` .ID `"`)}}
+                            </td>
+                            <td>
+                                <select form="feed-item-{{.ID}}" name="MentionRoles" class="multiselect form-control"
+                                    multiple="multiple" data-plugin-multiselect>
+                                    {{roleOptionsMulti $dot.ActiveGuild.Roles nil .MentionRoles }}
+                                </select>
+                            </td>
+                            <td>
+                                {{checkbox "PublishVOD" (print "publish-vod-" .ID) `Publish VOD` .PublishVod (print
+                                `form="feed-item-` .ID `"`)}}
+                            </td>
+                            <td>
+                                {{checkbox "Enabled" (print "enabled-" .ID) `` .Enabled (print `form="feed-item-` .ID
+                                `"`)}}
+                            </td>
+                            <td>
+                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success"
+                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/update"
+                                    data-async-form-alertsonly>Save</button>
+                                <button form="feed-item-{{.ID}}" type="submit" class="btn btn-danger"
+                                    formaction="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/delete">Delete</button>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{template "cp_footer" .}}
+{{end}}
