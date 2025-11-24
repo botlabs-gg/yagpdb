@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS twitch_channel_subscriptions (
 	enabled BOOLEAN NOT NULL DEFAULT TRUE
 );
 `, `
+CREATE INDEX IF NOT EXISTS idx_twitch_user_id ON twitch_channel_subscriptions (twitch_user_id);
+`, `
 CREATE TABLE IF NOT EXISTS twitch_announcements (
 	guild_id BIGINT PRIMARY KEY,
 	message TEXT NOT NULL,

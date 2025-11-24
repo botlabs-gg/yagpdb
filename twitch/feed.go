@@ -17,11 +17,12 @@ import (
 	"github.com/mediocregopher/radix/v3"
 	"github.com/nicklaw5/helix/v2"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 const (
 	// PollingInterval is how often we check for new streams
-	PollingInterval = time.Minute * 5
+	PollingInterval = time.Minute * 1
 )
 
 func (p *Plugin) StartFeed() {
@@ -77,69 +78,38 @@ func (p *Plugin) runPoller() {
 }
 
 func (p *Plugin) checkStreams() {
-	// 1. Check for NEW streams (users not currently marked as online)
-	p.checkNewStreams()
+	var items models.TwitchChannelSubscriptionSlice
+	err := models.TwitchChannelSubscriptions(
+		qm.Select("DISTINCT "+models.TwitchChannelSubscriptionColumns.TwitchUserID),
+		models.TwitchChannelSubscriptionWhere.Enabled.EQ(true),
+	).BindG(context.Background(), &items)
 
-	// 2. Check for OFFLINE streams (users currently marked as online)
-	p.checkOfflineStreams()
-}
-
-func (p *Plugin) checkNewStreams() {
-	// Get all active subscriptions
-	subs, err := models.TwitchChannelSubscriptions(models.TwitchChannelSubscriptionWhere.Enabled.EQ(true)).AllG(context.Background())
 	if err != nil {
 		logger.WithError(err).Error("Failed retrieving twitch subscriptions")
 		return
 	}
 
-	if len(subs) == 0 {
-		return
-	}
-
-	// Get currently online users from Redis ZSET
-	var onlineUserIDs []string
-	err = common.RedisPool.Do(radix.Cmd(&onlineUserIDs, "ZRANGE", "twitch_online_users", "0", "-1"))
-	if err != nil {
-		logger.WithError(err).Error("Failed retrieving online users")
-		return
-	}
-
-	// Create a map for faster lookup
-	onlineMap := make(map[string]bool)
-	for _, id := range onlineUserIDs {
-		onlineMap[id] = true
-	}
-
-	// Filter out users who are already online
-	uniqueUsers := make(map[string]bool)
-	var usersToCheck []string
-
-	for _, sub := range subs {
-		if sub.TwitchUserID == "" {
-			continue
-		}
-		if _, ok := uniqueUsers[sub.TwitchUserID]; !ok {
-			// Only check if NOT already online
-			if !onlineMap[sub.TwitchUserID] {
-				uniqueUsers[sub.TwitchUserID] = true
-				usersToCheck = append(usersToCheck, sub.TwitchUserID)
-			}
+	var allUserIDs []string
+	for _, item := range items {
+		if item.TwitchUserID != "" {
+			allUserIDs = append(allUserIDs, item.TwitchUserID)
 		}
 	}
 
-	if len(usersToCheck) == 0 {
+	if len(allUserIDs) == 0 {
 		return
 	}
 
-	// Batch requests to Twitch
-	chunks := chunkStringSlice(usersToCheck, 100)
-	for _, chunk := range chunks {
-		p.processNewStreamsBatch(chunk, subs)
+	// Process in chunks of 100
+	chunks := chunkStringSlice(allUserIDs, 100)
+	for i, chunk := range chunks {
+		logger.Infof("Total: %d streams, Processing chunk %d/%d", len(allUserIDs), i+1, len(chunks))
+		p.processStreamsBatch(chunk)
 		time.Sleep(time.Second * 1)
 	}
 }
 
-func (p *Plugin) processNewStreamsBatch(userIDs []string, allSubs models.TwitchChannelSubscriptionSlice) {
+func (p *Plugin) processStreamsBatch(userIDs []string) {
 	// Check if token is valid, refresh if needed
 	isValid, _, _ := p.HelixClient.ValidateToken(p.HelixClient.GetAppAccessToken())
 	if !isValid {
@@ -151,6 +121,7 @@ func (p *Plugin) processNewStreamsBatch(userIDs []string, allSubs models.TwitchC
 		p.HelixClient.SetAppAccessToken(resp.Data.AccessToken)
 	}
 
+	// Get current stream status from Twitch
 	resp, err := p.HelixClient.GetStreams(&helix.StreamsParams{
 		UserIDs: userIDs,
 		Type:    "live",
@@ -160,84 +131,7 @@ func (p *Plugin) processNewStreamsBatch(userIDs []string, allSubs models.TwitchC
 		return
 	}
 
-	now := time.Now()
-	for _, stream := range resp.Data.Streams {
-		// Check if user is already in the online set (cooldown check)
-		var lastOnlineTime string
-		err := common.RedisPool.Do(radix.Cmd(&lastOnlineTime, "ZSCORE", "twitch_online_users", stream.UserID))
-		if err == nil && lastOnlineTime != "" {
-			// User is already marked as online, check how long ago
-			lastTime, parseErr := strconv.ParseInt(lastOnlineTime, 10, 64)
-			if parseErr == nil {
-				timeSinceOnline := now.Unix() - lastTime
-				if timeSinceOnline < 300 { // 5 minutes = 300 seconds
-					logger.Infof("Skipping notification for %s - already online for %d seconds", stream.UserName, timeSinceOnline)
-					continue
-				}
-			}
-		}
-
-		// New stream found!
-		logger.Infof("Twitch stream live: %s (Stream ID: %s)", stream.UserName, stream.ID)
-
-		// Add to Online ZSET with current timestamp
-		common.RedisPool.Do(radix.Cmd(nil, "ZADD", "twitch_online_users", strconv.FormatInt(now.Unix(), 10), stream.UserID))
-
-		// Notify
-		p.notifySubscribers(stream.UserID, stream, allSubs, true)
-	}
-}
-
-func (p *Plugin) checkOfflineStreams() {
-	// Get currently online users
-	var onlineUserIDs []string
-	err := common.RedisPool.Do(radix.Cmd(&onlineUserIDs, "ZRANGE", "twitch_online_users", "0", "-1"))
-	if err != nil {
-		logger.WithError(err).Error("Failed retrieving online users")
-		return
-	}
-
-	if len(onlineUserIDs) == 0 {
-		return
-	}
-
-	// Get all subs to have context for notifications
-	subs, err := models.TwitchChannelSubscriptions(models.TwitchChannelSubscriptionWhere.Enabled.EQ(true)).AllG(context.Background())
-	if err != nil {
-		logger.WithError(err).Error("Failed retrieving twitch subscriptions")
-		return
-	}
-
-	// Batch requests
-	chunks := chunkStringSlice(onlineUserIDs, 100)
-	for _, chunk := range chunks {
-		p.processOfflineStreamsBatch(chunk, subs)
-		time.Sleep(time.Second * 1)
-	}
-}
-
-func (p *Plugin) processOfflineStreamsBatch(userIDs []string, allSubs models.TwitchChannelSubscriptionSlice) {
-	// Check if token is valid, refresh if needed
-	isValid, _, _ := p.HelixClient.ValidateToken(p.HelixClient.GetAppAccessToken())
-	if !isValid {
-		resp, err := p.HelixClient.RequestAppAccessToken([]string{})
-		if err != nil {
-			logger.WithError(err).Error("Failed refreshing twitch token")
-			return
-		}
-		p.HelixClient.SetAppAccessToken(resp.Data.AccessToken)
-	}
-
-	resp, err := p.HelixClient.GetStreams(&helix.StreamsParams{
-		UserIDs: userIDs,
-		Type:    "live",
-	})
-	if err != nil {
-		logger.WithError(err).Error("Failed getting streams from twitch")
-		return
-	}
-
-	// Create map of currently live users from response
+	// Create map of currently live users
 	liveMap := make(map[string]helix.Stream)
 	for _, stream := range resp.Data.Streams {
 		liveMap[stream.UserID] = stream
@@ -245,55 +139,83 @@ func (p *Plugin) processOfflineStreamsBatch(userIDs []string, allSubs models.Twi
 
 	now := time.Now()
 	for _, userID := range userIDs {
-		if _, ok := liveMap[userID]; ok {
-			// Still online, update heartbeat
-			common.RedisPool.Do(radix.Cmd(nil, "ZADD", "twitch_online_users", strconv.FormatInt(now.Unix(), 10), userID))
-		} else {
-			// Offline!
-			logger.Infof("Twitch stream offline: %s", userID)
+		stream, isLive := liveMap[userID]
+		// Check if user is in the online set
+		var onlineScore string
+		err := common.RedisPool.Do(radix.Cmd(&onlineScore, "ZSCORE", "twitch_online_users", userID))
+		wasOnline := err == nil && onlineScore != ""
 
-			// Remove from ZSET
-			common.RedisPool.Do(radix.Cmd(nil, "ZREM", "twitch_online_users", userID))
-
-			// Notify Offline
-			var username string
-			for _, s := range allSubs {
-				if s.TwitchUserID == userID {
-					username = s.TwitchUsername
-					break
-				}
-			}
-
-			offlineStream := helix.Stream{
-				UserID:    userID,
-				UserLogin: username,
-				UserName:  username,
-			}
-			p.notifySubscribers(userID, offlineStream, allSubs, false)
+		if !isLive && !wasOnline {
+			continue
 		}
+		if isLive && wasOnline {
+			// Past cooldown, update timestamp and continue (no new notification)
+			common.RedisPool.Do(radix.Cmd(nil, "ZADD", "twitch_online_users", strconv.FormatInt(now.Unix(), 10), userID))
+			continue
+		}
+		if isLive {
+			common.RedisPool.Do(radix.Cmd(nil, "ZADD", "twitch_online_users", strconv.FormatInt(now.Unix(), 10), userID))
+			// Still online - check cooldown
+			lastTime, err := strconv.ParseInt(onlineScore, 10, 64)
+			if err != nil {
+				logger.WithError(err).Error("Failed parsing online score")
+				continue
+			}
+			if timeSinceOnline := now.Unix() - lastTime; timeSinceOnline < 300 {
+				// 5 minutes cooldown before sending offline notification
+				logger.Infof("Skipping notification for %s - already online for %d seconds", stream.UserName, timeSinceOnline)
+				continue
+			}
+			// New stream - add to online set and notify
+			logger.Infof("Twitch stream live: %s (Stream ID: %s)", stream.UserName, stream.ID)
+		} else {
+			// Stream went offline - remove from set and notify
+			logger.Infof("Twitch stream offline: %s", userID)
+			common.RedisPool.Do(radix.Cmd(nil, "ZREM", "twitch_online_users", userID))
+			stream = helix.Stream{
+				UserID: userID,
+			}
+		}
+		p.notifySubscribers(userID, stream, isLive)
 	}
 }
 
 func chunkStringSlice(slice []string, chunkSize int) [][]string {
 	var chunks [][]string
 	for i := 0; i < len(slice); i += chunkSize {
-		end := i + chunkSize
-		if end > len(slice) {
-			end = len(slice)
-		}
+		end := min(i+chunkSize, len(slice))
 		chunks = append(chunks, slice[i:end])
 	}
 	return chunks
 }
 
-func (p *Plugin) notifySubscribers(twitchUserID string, stream helix.Stream, allSubs models.TwitchChannelSubscriptionSlice, isLive bool) {
+func (p *Plugin) notifySubscribers(twitchUserID string, stream helix.Stream, isLive bool) {
+	userSubs, err := models.TwitchChannelSubscriptions(
+		models.TwitchChannelSubscriptionWhere.TwitchUserID.EQ(twitchUserID),
+		models.TwitchChannelSubscriptionWhere.Enabled.EQ(true),
+	).AllG(context.Background())
+	if err != nil {
+		logger.WithError(err).Error("Failed retrieving twitch subscriptions for notification")
+		return
+	}
+
+	if len(userSubs) == 0 {
+		return
+	}
+
+	// Fill in username if missing (offline case)
+	if stream.UserName == "" {
+		stream.UserName = userSubs[0].TwitchUsername
+		stream.UserLogin = userSubs[0].TwitchUsername
+	}
+
 	// Fetch VOD if offline and needed
 	var vodUrl string
 	if !isLive {
 		// Check if any sub needs VOD
 		needsVOD := false
-		for _, sub := range allSubs {
-			if sub.TwitchUserID == twitchUserID && sub.Enabled && sub.PublishVod {
+		for _, sub := range userSubs {
+			if sub.PublishVod {
 				needsVOD = true
 				break
 			}
@@ -318,10 +240,8 @@ func (p *Plugin) notifySubscribers(twitchUserID string, stream helix.Stream, all
 		}
 	}
 
-	for _, sub := range allSubs {
-		if sub.TwitchUserID == twitchUserID && sub.Enabled {
-			p.sendStreamMessage(sub, stream, isLive, vodUrl)
-		}
+	for _, sub := range userSubs {
+		p.sendStreamMessage(sub, stream, isLive, vodUrl)
 	}
 }
 
