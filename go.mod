@@ -79,6 +79,7 @@ require (
 	github.com/jarcoal/httpmock v1.0.4
 	github.com/justinian/dice v1.0.2
 	github.com/n0madic/twitter-scraper v0.0.0-20230711213008-94503a2bc36c
+	github.com/nicklaw5/helix/v2 v2.32.0
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 )
@@ -93,6 +94,7 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/s2a-go v0.1.4 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.5 // indirect
