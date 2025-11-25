@@ -22,9 +22,9 @@ var (
 )
 
 const (
-	GuildMaxFeeds               = 25
-	GuildMaxEnabledFeeds        = 1
-	GuildMaxEnabledFeedsPremium = 25
+	GuildMaxFeeds               = 15
+	GuildMaxEnabledFeeds        = 3
+	GuildMaxEnabledFeedsPremium = 15
 )
 
 func MaxFeedsForContext(ctx context.Context) int {
