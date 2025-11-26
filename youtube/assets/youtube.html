@@ -100,7 +100,7 @@
                   <div class="form-group col mb-0">
                         {{checkbox "Enabled" "yt-announcement-enabled" `<h2 class="card-title">Enable</h2>` .Announcement.Enabled}}
                         
-                        <label>YouTube Announcement Message (<span class="yt-announcement-length-counter"> {{toRune .Announcement.Message|len}}</span>/5000)</label>
+                        <label>YouTube Announcement Message (<span class="yt-announcement-length-counter">{{toRune .Announcement.Message|len}}</span>/5000)</label>
 
                         <textarea class="form-control" rows="10" id="yt-announcement-msg" name="Message" oninput="OnAnnouncementChange(this)">{{.Announcement.Message}}</textarea>
                         <span style="display: block;">
