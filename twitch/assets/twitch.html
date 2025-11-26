@@ -82,7 +82,7 @@
                             {{checkbox "Enabled" "announcement-enabled" `<h2 class="card-title">Enable</h2>`
                             $announcementEnabled}}
 
-                            <label>Twitch Announcement Message (<span class="twitch-announcement-length-counter"> {{if
+                            <label>Twitch Announcement Message (<span class="twitch-announcement-length-counter">{{if
                                     .TwitchAnnouncement}}{{toRune
                                     .TwitchAnnouncement.Message|len}}{{else}}0{{end}}</span>/5000)</label>
 
