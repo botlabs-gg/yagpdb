@@ -10,6 +10,8 @@
 package discordgo
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -21,6 +23,7 @@ import (
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/gojay"
 	"github.com/gorilla/websocket"
+	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/nacl/secretbox"
 )
 
@@ -241,8 +244,8 @@ type VoiceSpeakingUpdate struct {
 // A voiceOP4 stores the data for the voice operation 4 websocket event
 // which provides us with the NaCl SecretBox encryption key
 type voiceOP4 struct {
-	SecretKey [32]byte `json:"secret_key"`
-	Mode      string   `json:"mode"`
+	SecretKey [32]byte  `json:"secret_key"`
+	Mode      VoiceMode `json:"mode"`
 }
 
 // A voiceOP2 stores the data for the voice operation 2 websocket event
@@ -448,6 +451,7 @@ func (v *VoiceConnection) onEvent(message []byte) {
 			v.log(LogError, "OP4 unmarshall error, %s, %s", err, string(e.RawData))
 			return
 		}
+		v.Ready = true
 		return
 
 	case 5:
@@ -515,10 +519,21 @@ func (v *VoiceConnection) wsHeartbeat(wsConn *websocket.Conn, close <-chan struc
 // ------------------------------------------------------------------------------------------------
 
 type voiceUDPData struct {
-	Address string `json:"address"` // Public IP of machine running this code
-	Port    uint16 `json:"port"`    // UDP Port of machine running this code
-	Mode    string `json:"mode"`    // always "xsalsa20_poly1305"
+	Address string    `json:"address"` // Public IP of machine running this code
+	Port    uint16    `json:"port"`    // UDP Port of machine running this code
+	Mode    VoiceMode `json:"mode"`    // Discord voice mode
 }
+
+type VoiceMode string
+
+const (
+	VoiceModeXSalsa20Poly1305Lite         VoiceMode = "xsalsa20_poly1305_lite"
+	VoiceModeXSalsa20Poly1305Suffix       VoiceMode = "xsalsa20_poly1305_suffix"
+	VoiceModeXSalsa20Poly1305             VoiceMode = "xsalsa20_poly1305"
+	VoiceModeAeadAes256GcmRtpsize         VoiceMode = "aead_aes256_gcm_rtpsize"
+	VoiceModeAeadXChaCha20Poly1305Rtpsize VoiceMode = "aead_xchacha20_poly1305_rtpsize"
+	VoiceModeXSalsa20Poly1305LiteRtpsize  VoiceMode = "xsalsa20_poly1305_lite_rtpsize"
+)
 
 type voiceUDPD struct {
 	Protocol string       `json:"protocol"` // Always "udp" ?
@@ -620,11 +635,34 @@ func (v *VoiceConnection) udpOpen() (err error) {
 	// Grab port from position 72 and 73
 	port := binary.BigEndian.Uint16(rb[len(rb)-2:])
 
+	// Select the best mode
+	var selectedMode VoiceMode
+	preferredModes := []VoiceMode{
+		VoiceModeAeadAes256GcmRtpsize,
+		VoiceModeAeadXChaCha20Poly1305Rtpsize,
+		VoiceModeXSalsa20Poly1305LiteRtpsize,
+	}
+
+loop:
+	for _, preferred := range preferredModes {
+		for _, available := range v.op2.Modes {
+			if VoiceMode(available) == preferred {
+				selectedMode = preferred
+				break loop
+			}
+		}
+	}
+
+	if selectedMode == "" {
+		selectedMode = VoiceModeXSalsa20Poly1305
+	}
+
 	// Take the data from above and send it back to Discord to finalize
 	// the UDP connection handshake.
-	data := voiceUDPOp{1, voiceUDPD{"udp", voiceUDPData{ip, port, "xsalsa20_poly1305"}}}
+	data := voiceUDPOp{1, voiceUDPD{"udp", voiceUDPData{ip, port, selectedMode}}}
 
 	v.log(LogInformational, "External IP: %s, Port: %d", ip, port)
+	v.log(LogInformational, "Selected mode: %s (Available: %v)", selectedMode, v.op2.Modes)
 
 	v.wsMutex.Lock()
 	err = v.wsConn.WriteJSON(data)
@@ -697,6 +735,20 @@ func (v *VoiceConnection) udpKeepAlive(udpConn *net.UDPConn, close <-chan struct
 	}
 }
 
+// buildRtpsizePacket constructs an encrypted voice packet for _rtpsize encryption modes.
+// It encrypts the plaintext using the provided AEAD cipher and nonce, then appends the
+// nonce counter to the packet as required by Discord's _rtpsize modes.
+func buildRtpsizePacket(aead cipher.AEAD, nonce, udpHeader, plaintext []byte, nonceCount uint32) []byte {
+	ciphertext := aead.Seal(nil, nonce, plaintext, udpHeader)
+
+	sendbuf := make([]byte, len(udpHeader)+len(ciphertext)+4)
+	copy(sendbuf, udpHeader)
+	copy(sendbuf[len(udpHeader):], ciphertext)
+	binary.BigEndian.PutUint32(sendbuf[len(udpHeader)+len(ciphertext):], nonceCount)
+
+	return sendbuf
+}
+
 // opusSender will listen on the given channel and send any
 // pre-encoded opus audio to Discord.  Supposedly.
 func (v *VoiceConnection) opusSender(udpConn *net.UDPConn, close <-chan struct{}, opus <-chan []byte, rate, size int) {
@@ -707,9 +759,6 @@ func (v *VoiceConnection) opusSender(udpConn *net.UDPConn, close <-chan struct{}
 
 	// VoiceConnection is now ready to receive audio packets
 	// TODO: this needs reviewed as I think there must be a better way.
-	v.Lock()
-	v.Ready = true
-	v.Unlock()
 	defer func() {
 		v.Lock()
 		v.Ready = false
@@ -722,6 +771,7 @@ func (v *VoiceConnection) opusSender(udpConn *net.UDPConn, close <-chan struct{}
 	var ok bool
 	udpHeader := make([]byte, 12)
 	var nonce [24]byte
+	var nonceCount uint32
 
 	// build the parts that don't change in the udpHeader
 	udpHeader[0] = 0x80
@@ -758,11 +808,83 @@ func (v *VoiceConnection) opusSender(udpConn *net.UDPConn, close <-chan struct{}
 		binary.BigEndian.PutUint16(udpHeader[2:], sequence)
 		binary.BigEndian.PutUint32(udpHeader[4:], timestamp)
 
-		// encrypt the opus data
-		copy(nonce[:], udpHeader)
 		v.RLock()
-		sendbuf := secretbox.Seal(udpHeader, recvbuf, &nonce, &v.op4.SecretKey)
+		mode := v.op4.Mode
+		key := v.op4.SecretKey
 		v.RUnlock()
+
+		if mode == "" {
+			v.log(LogWarning, "opusSender: mode is empty, waiting for OP4")
+			// Optional: sleep or continue? If we continue we might send garbage or fallback to default.
+			// But if we fallback to default (legacy) and Discord expects new mode, it fails.
+		}
+
+		var sendbuf []byte
+		var err error
+
+		// v.log(LogDebug, "opusSender: sending packet with mode %s, sequence %d", mode, sequence)
+
+		switch mode {
+		case VoiceModeAeadAes256GcmRtpsize:
+			block, err := aes.NewCipher(key[:])
+			if err != nil {
+				v.log(LogError, "error creating aes cipher: %v", err)
+				return
+			}
+
+			gcm, err := cipher.NewGCM(block)
+			if err != nil {
+				v.log(LogError, "error creating gcm: %v", err)
+				return
+			}
+
+			nonce := make([]byte, 12)
+			binary.BigEndian.PutUint32(nonce[:4], nonceCount)
+
+			sendbuf = buildRtpsizePacket(gcm, nonce, udpHeader, recvbuf, nonceCount)
+			nonceCount++
+
+		case VoiceModeAeadXChaCha20Poly1305Rtpsize:
+			aead, err := chacha20poly1305.NewX(key[:])
+			if err != nil {
+				v.log(LogError, "error creating xchacha20poly1305: %v", err)
+				return
+			}
+
+			nonce := make([]byte, 24)
+			binary.BigEndian.PutUint32(nonce[20:], nonceCount)
+
+			sendbuf = buildRtpsizePacket(aead, nonce, udpHeader, recvbuf, nonceCount)
+			nonceCount++
+
+		case VoiceModeXSalsa20Poly1305LiteRtpsize:
+			nonce := make([]byte, 24)
+			binary.BigEndian.PutUint32(nonce[20:], nonceCount)
+
+			var polyNonce [24]byte
+			copy(polyNonce[:], nonce)
+
+			ciphertext := secretbox.Seal(nil, recvbuf, &polyNonce, &key)
+
+			sendbuf = make([]byte, len(udpHeader)+len(ciphertext)+4)
+			copy(sendbuf, udpHeader)
+			copy(sendbuf[len(udpHeader):], ciphertext)
+			binary.BigEndian.PutUint32(sendbuf[len(udpHeader)+len(ciphertext):], nonceCount)
+
+			nonceCount++
+
+		default:
+			// Fallback to xsalsa20_poly1305
+			copy(nonce[:], udpHeader)
+			v.RLock()
+			// Note: secretbox.Seal appends to the first argument.
+			// We pass udpHeader as the first argument, so it appends ciphertext to it.
+			// But udpHeader is modified in place? No, Seal returns a new slice if capacity is not enough.
+			// But we should be careful not to modify udpHeader for the next iteration if it was a pointer.
+			// Here udpHeader is a slice.
+			sendbuf = secretbox.Seal(udpHeader, recvbuf, &nonce, &key)
+			v.RUnlock()
+		}
 
 		// block here until we're exactly at the right time :)
 		// Then send rtp audio packet to Discord over UDP
@@ -772,7 +894,7 @@ func (v *VoiceConnection) opusSender(udpConn *net.UDPConn, close <-chan struct{}
 		case <-ticker.C:
 			// continue
 		}
-		_, err := udpConn.Write(sendbuf)
+		_, err = udpConn.Write(sendbuf)
 
 		if err != nil {
 			v.log(LogError, "udp write error, %s", err)
@@ -786,11 +908,7 @@ func (v *VoiceConnection) opusSender(udpConn *net.UDPConn, close <-chan struct{}
 			sequence++
 		}
 
-		if (timestamp + uint32(size)) >= 0xFFFFFFFF {
-			timestamp = 0
-		} else {
-			timestamp += uint32(size)
-		}
+		timestamp += uint32(size)
 	}
 }
 
@@ -853,9 +971,83 @@ func (v *VoiceConnection) opusReceiver(udpConn *net.UDPConn, close <-chan struct
 		p.Sequence = binary.BigEndian.Uint16(recvbuf[2:4])
 		p.Timestamp = binary.BigEndian.Uint32(recvbuf[4:8])
 		p.SSRC = binary.BigEndian.Uint32(recvbuf[8:12])
-		// decrypt opus data
-		copy(nonce[:], recvbuf[0:12])
-		p.Opus, _ = secretbox.Open(nil, recvbuf[12:rlen], &nonce, &v.op4.SecretKey)
+
+		v.RLock()
+		mode := v.op4.Mode
+		key := v.op4.SecretKey
+		v.RUnlock()
+
+		var opus []byte
+		var decErr error
+		var ok bool
+
+		switch mode {
+		case VoiceModeAeadAes256GcmRtpsize:
+			if rlen < 12+4 {
+				continue
+			}
+			block, err := aes.NewCipher(key[:])
+			if err != nil {
+				v.log(LogError, "error creating aes cipher: %v", err)
+				continue
+			}
+			gcm, err := cipher.NewGCM(block)
+			if err != nil {
+				v.log(LogError, "error creating gcm: %v", err)
+				continue
+			}
+
+			nonce := make([]byte, 12)
+			nonceCounter := binary.BigEndian.Uint32(recvbuf[rlen-4 : rlen])
+			binary.BigEndian.PutUint32(nonce[:4], nonceCounter)
+
+			opus, decErr = gcm.Open(nil, nonce, recvbuf[12:rlen-4], recvbuf[0:12])
+
+		case VoiceModeAeadXChaCha20Poly1305Rtpsize:
+			if rlen < 12+4 {
+				continue
+			}
+			aead, err := chacha20poly1305.NewX(key[:])
+			if err != nil {
+				v.log(LogError, "error creating xchacha20poly1305: %v", err)
+				continue
+			}
+
+			nonce := make([]byte, 24)
+			copy(nonce[20:], recvbuf[rlen-4:rlen])
+
+			opus, decErr = aead.Open(nil, nonce, recvbuf[12:rlen-4], recvbuf[0:12])
+
+		case VoiceModeXSalsa20Poly1305LiteRtpsize:
+			if rlen < 12+4 {
+				continue
+			}
+			nonce := make([]byte, 24)
+			copy(nonce[20:], recvbuf[rlen-4:rlen])
+
+			var polyNonce [24]byte
+			copy(polyNonce[:], nonce)
+
+			opus, ok = secretbox.Open(nil, recvbuf[12:rlen-4], &polyNonce, &key)
+			if !ok {
+				decErr = fmt.Errorf("decryption failed")
+			}
+
+		default:
+			// Legacy
+			copy(nonce[:], recvbuf[0:12])
+			opus, ok = secretbox.Open(nil, recvbuf[12:rlen], &nonce, &v.op4.SecretKey)
+			if !ok {
+				decErr = fmt.Errorf("decryption failed")
+			}
+		}
+
+		if decErr != nil {
+			// v.log(LogError, "decryption error: %v", decErr)
+			continue
+		}
+
+		p.Opus = opus
 
 		if len(p.Opus) > 8 && recvbuf[0] == 0x90 {
 			// Extension bit is set, first 8 bytes is the extended header
