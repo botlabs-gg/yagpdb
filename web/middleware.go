@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"emperror.dev/errors"
@@ -354,6 +355,39 @@ func RequireServerAdminMiddleware(inner http.Handler) http.Handler {
 		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)
+}
+
+var guildPathMutexes sync.Map
+
+// Prevents Race Conditions on POST and PUT endpoints.
+func GuildPathMutexMiddleware(inner http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		method := strings.ToUpper(r.Method)
+		if method != "POST" && method != "PUT" {
+			inner.ServeHTTP(w, r)
+			return
+		}
+
+		guildInterface := r.Context().Value(common.ContextKeyCurrentGuild)
+		if guildInterface == nil {
+			// No guild in context, pass through
+			inner.ServeHTTP(w, r)
+			return
+		}
+
+		guild := guildInterface.(*dstate.GuildSet)
+		guildID := guild.ID
+
+		mutexKey := fmt.Sprintf("%d:%s", guildID, r.URL.Path)
+
+		mutexInterface, _ := guildPathMutexes.LoadOrStore(mutexKey, &sync.Mutex{})
+		mutex := mutexInterface.(*sync.Mutex)
+
+		mutex.Lock()
+		defer mutex.Unlock()
+
+		inner.ServeHTTP(w, r)
+	})
 }
 
 // RequireBotMemberMW ensures that the bot member for the curreng guild is available, mostly used for checking the bot's roles
