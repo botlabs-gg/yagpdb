@@ -55,8 +55,8 @@ func (p *Plugin) AddCommands() {
 		},
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "m", Help: "Message ID", Type: dcmd.BigInt},
-			{Name: "nodm", Help: "Disable DM"},
 			{Name: "rr", Help: "Remove role on reaction removed"},
+			{Name: "nodm", Help: "Disable assignment confirmation DMs"},
 			{Name: "skip", Help: "Number of roles to skip", Default: 0, Type: dcmd.Int},
 		},
 		RunFunc: cmdFuncRoleMenuCreate,
