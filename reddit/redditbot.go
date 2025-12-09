@@ -104,7 +104,7 @@ func setupClient() *reddit.Client {
 }
 
 func (p *Plugin) restartFeed() {
-	wg := <-p.stopFeedChan
+	wg := new(sync.WaitGroup)
 	wg.Add(1)
 	p.StopFeed(wg)
 	common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyLastScannedPostIDFast))
