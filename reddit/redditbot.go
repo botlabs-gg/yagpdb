@@ -76,12 +76,13 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 }
 
 func (p *Plugin) checkFeed() {
-	ticker := time.NewTicker(time.Minute * 5)
+	ticker := time.NewTicker(time.Minute * 1)
 	for {
 		select {
 		case <-ticker.C:
+			logger.Infof("Checking Feed Status, last success was %s ago", time.Since(lastFeedSuccessAt))
 			if time.Since(lastFeedSuccessAt) > (15 * time.Minute) {
-				logger.Infof("Feed has errors since 15+ minutes, restarting")
+				logger.Warnf("No successful feed since %s, restarting", time.Since(lastFeedSuccessAt))
 				p.restartFeed()
 			}
 		case wg := <-p.stopFeedChan:
