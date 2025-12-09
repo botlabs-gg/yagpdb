@@ -46,32 +46,32 @@ func (p *Plugin) StartFeed() {
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
-	wg.Add(1)
-
 	feedLock.Lock()
 
 	if fastFeed != nil {
+		wg.Add(1)
 		ff := fastFeed
 		go func() {
 			ff.StopChan <- wg
 		}()
 		fastFeed = nil
-	} else {
-		wg.Done()
 	}
 
 	if slowFeed != nil {
+		wg.Add(1)
 		sf := slowFeed
 		go func() {
 			sf.StopChan <- wg
 		}()
 		slowFeed = nil
-	} else {
-		wg.Done()
-
 	}
-	sf := <-p.stopFeedChan
-	sf.Add(1)
+
+	select {
+	case p.stopFeedChan <- wg:
+		wg.Add(1)
+	default:
+	}
+
 	feedLock.Unlock()
 }
 
@@ -84,6 +84,7 @@ func (p *Plugin) checkFeed() {
 			if time.Since(lastFeedSuccessAt) > (15 * time.Minute) {
 				logger.Warnf("No successful feed since %s, restarting", time.Since(lastFeedSuccessAt))
 				p.restartFeed()
+				return
 			}
 		case wg := <-p.stopFeedChan:
 			wg.Done()
@@ -104,12 +105,14 @@ func setupClient() *reddit.Client {
 }
 
 func (p *Plugin) restartFeed() {
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
-	p.StopFeed(wg)
-	common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyLastScannedPostIDFast))
-	common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyLastScannedPostIDSlow))
-	p.StartFeed()
+	go func() {
+		wg := new(sync.WaitGroup)
+		p.StopFeed(wg)
+		wg.Wait()
+		common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyLastScannedPostIDFast))
+		common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyLastScannedPostIDSlow))
+		p.StartFeed()
+	}()
 }
 
 func (p *Plugin) runBot() {
