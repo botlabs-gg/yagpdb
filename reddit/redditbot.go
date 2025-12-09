@@ -42,6 +42,7 @@ var (
 
 func (p *Plugin) StartFeed() {
 	go p.runBot()
+	go p.checkFeed()
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
@@ -72,7 +73,7 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 	feedLock.Unlock()
 }
 
-func (p *Plugin) CheckFeed() {
+func (p *Plugin) checkFeed() {
 	ticker := time.NewTicker(time.Minute * 5)
 	for {
 		select {
