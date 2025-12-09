@@ -16,7 +16,7 @@ var KeyLastScannedPostIDFast = "reddit_last_post_id"
 var KeyLastScannedPostIDSlow = "reddit_slow_last_post_id"
 
 // PostFetcher is responsible from fetching posts from reddit at a given interval and delay
-// delay bieng it will make sure not to call the handler on posts newer than the given delay
+// delay being it will make sure not to call the handler on posts newer than the given delay
 type PostFetcher struct {
 	Name                 string
 	LastScannedPostIDKey string
@@ -79,6 +79,7 @@ func (p *PostFetcher) Run() {
 			continue
 		}
 
+		lastFeedSuccessAt = time.Now()
 		if len(links) < 1 {
 			continue
 		}
@@ -139,7 +140,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 
 	toFetch := make([]string, 100)
 
-	for i := int64(0); i < 100; i++ {
+	for i := range int64(100) {
 		toFetch[i] = "t3_" + strconv.FormatInt(p.LastID+i+1, 36)
 	}
 
