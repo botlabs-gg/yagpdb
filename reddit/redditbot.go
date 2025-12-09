@@ -70,6 +70,8 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 		wg.Done()
 
 	}
+	sf := <-p.stopFeedChan
+	sf.Add(1)
 	feedLock.Unlock()
 }
 
@@ -101,7 +103,7 @@ func setupClient() *reddit.Client {
 }
 
 func (p *Plugin) restartFeed() {
-	wg := new(sync.WaitGroup)
+	wg := <-p.stopFeedChan
 	wg.Add(1)
 	p.StopFeed(wg)
 	common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyLastScannedPostIDFast))
