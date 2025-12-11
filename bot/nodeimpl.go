@@ -138,10 +138,11 @@ func (n *NodeImpl) StartShardTransferFrom(shard int) (numEventsSent int) {
 
 func (n *NodeImpl) HandleUserEvent(evt dshardorchestrator.EventType, data interface{}) {
 
-	if evt == EvtGuildState {
+	switch evt {
+	case EvtGuildState:
 		dataCast := data.(*dstate.GuildSet)
 		stateTracker.SetGuild(dataCast)
-	} else if evt == EvtMember {
+	case EvtMember:
 		dataCast := data.(*dstate.MemberState)
 		stateTracker.SetMember(dataCast)
 	}
