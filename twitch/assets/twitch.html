@@ -2,12 +2,12 @@
 {{template "cp_head" .}}
 
 <style>
-    .twitch-tbl-actions-column {
+    .tbl-actions-column {
         display: flex;
         flex-direction: column;
     }
 
-    .twitch-tbl-actions-column>button {
+    .tbl-actions-column>button {
         margin: 5px
     }
 </style>
@@ -52,7 +52,7 @@
                         {{checkbox "PublishVOD" "publish-vod" "Publish VOD (when stream goes offline)" false}}
                     </div>
                     <div class="form-group">
-                        <button type="submit" class="btn btn-primary">Add Feed</button>
+                        <button type="submit" class="btn btn-success">Add</button>
                     </div>
                 </form>
             </div>
@@ -67,7 +67,7 @@
             <div class="card-body">
                 {{if not .IsGuildPremium}}
                 <div class="alert alert-warning">
-                    Custom announcements are a premium feature. <a href="/premium">Upgrade to Premium</a> to unlock this
+                    Custom announcements are a premium feature. <a href="/premium-perks">Upgrade to Premium</a> to unlock this
                     feature.
                 </div>
                 {{end}}
@@ -199,7 +199,7 @@
                                 {{checkbox "Enabled" (print "enabled-" .ID) `` .Enabled (print `form="feed-item-` .ID
                                 `"`)}}
                             </td>
-                            <td>
+                            <td class="tbl-actions-column">
                                 <button form="feed-item-{{.ID}}" type="submit" class="btn btn-success"
                                     formaction="/manage/{{$dot.ActiveGuild.ID}}/twitch/{{.ID}}/update"
                                     data-async-form-alertsonly>Save</button>

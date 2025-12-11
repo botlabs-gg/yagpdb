@@ -1,0 +1,135 @@
+{{define "cp_voiceroles"}}
+{{template "cp_head" .}}
+
+<style>
+    .tbl-actions-column {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tbl-actions-column>button {
+        margin: 5px
+    }
+
+</style>
+
+<div class="page-header">
+    <h2>Voice Roles</h2>
+</div>
+
+{{template "cp_alerts" .}}
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="card mb-3">
+            <header class="card-header">
+                <h2 class="card-title">Automatically assign roles to users when they join voice or stage channels.</h2>
+            </header>
+            <div class="card-body">
+                {{if not .CanAddMore}}
+                    {{if .IsGuildPremium}}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> You have reached the maximum limit of {{.MaxConfigs}}
+                        voice roles.
+                    </div>
+                    {{else}}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-crown premium-color"></i> You have reached the free limit of {{.FreeLimit}} voice
+                        roles.
+                        <a href="/premium-perks" class="alert-link">Upgrade to Premium</a> to add up to {{.PremiumLimit}}
+                        voice roles!
+                    </div>
+                    {{end}}
+                {{end}}
+                <p><b>Note:</b> Each channel can only have one voice role. The role will be removed when the
+                    user leaves the channel.</p>
+                <form role="form" class="no-unsaved-popup" method="post"
+                    action="/manage/{{.ActiveGuild.ID}}/voiceroles/new" data-async-form>
+                    <fieldset {{if not .CanAddMore}}disabled="disabled" {{end}}>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="channel-select">Voice/Stage Channel</label>
+                                    <select class="form-control" id="channel-select" name="ChannelID" required>
+                                        <option value="">Select a channel...</option> 
+                                        {{voiceChannelOptions .ActiveGuild.Channels 0 false ""}}
+                                    </select>
+                                    <small class="form-text text-muted">Only voice and stage channels are shown</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label for="role-select">Role to Assign</label>
+                                    <select class="form-control" id="role-select" name="RoleID" required>
+                                        <option value="">Select a role...</option>
+                                        {{roleOptionsExclude .ActiveGuild.Roles .HighestRole .ExcludedRoleIDs 0}}
+                                    </select>
+                                    <small class="form-text text-muted">The bot must have permission to assign this role</small>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success"> Add </button>
+                    </fieldset>
+                </form>
+            </div>
+            <div class="card-body">
+
+
+                {{if .VoiceRoles}}
+                <div>
+                    {{$dot := .}}
+                    {{range .VoiceRoles}}
+                    <form id="item-{{.ID}}" class="no-unsaved-popup" method="post"
+                        action="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/update" data-async-form></form>
+                    {{end}}
+
+                    <table class="table table-responsive-md table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Channel</th>
+                                <th>Role</th>
+                                <th>Enabled</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .VoiceRoles}}
+                            <tr>
+                                <td>
+                                    <select form="item-{{.ID}}" class="form-control" name="ChannelID" required>
+                                        {{voiceChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select form="item-{{.ID}}" class="form-control" name="RoleID" required>
+                                        {{roleOptionsExclude $dot.ActiveGuild.Roles $dot.HighestRole $dot.ExcludedRoleIDs .RoleID}}
+                                    </select>
+                                </td>
+                                <td>
+                                    {{checkbox "Enabled" (print "enabled-" .ID) "" .Enabled (print `form="item-` .ID `"`)}}
+                                </td>
+                                <td class="tbl-actions-column">
+                                    <button form="item-{{.ID}}" type="submit" class="btn btn-success"
+                                        formaction="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/update"
+                                        data-async-form-alertsonly>
+                                        Save
+                                    </button>
+                                    <button form="item-{{.ID}}" type="submit" class="btn btn-danger"
+                                        formaction="/manage/{{$dot.ActiveGuild.ID}}/voiceroles/{{.ID}}/delete">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+                {{end}}
+            </div>
+        </section>
+    </div>
+</div>
+
+{{template "cp_footer" .}}
+
+{{end}}

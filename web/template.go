@@ -411,11 +411,23 @@ func (g *channelOptsHTMLGenState) outputCategorizedChannels() {
 			continue
 		}
 
-		g.output(`<optgroup label="` + template.HTMLEscapeString(cat.Name) + `">`)
+		// First check if the category has any visible channels
+		hasVisibleChannels := false
+		channels := make([]dstate.ChannelState, 0)
 		for _, c := range g.channels {
 			if c.ParentID == cat.ID && g.include(c.Type) {
-				g.outputChannel(c.ID, c.Name, c.Type)
+				hasVisibleChannels = true
+				channels = append(channels, c)
 			}
+		}
+
+		if !hasVisibleChannels {
+			continue
+		}
+
+		g.output(`<optgroup label="` + template.HTMLEscapeString(cat.Name) + `">`)
+		for _, c := range channels {
+			g.outputChannel(c.ID, c.Name, c.Type)
 		}
 		g.output("</optgroup>")
 	}
@@ -442,8 +454,10 @@ func (g *channelOptsHTMLGenState) outputChannel(id int64, name string, channelTy
 	switch channelType {
 	case discordgo.ChannelTypeGuildText:
 		prefix = "#"
-	case discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildStageVoice:
+	case discordgo.ChannelTypeGuildVoice:
 		prefix = "🔊"
+	case discordgo.ChannelTypeGuildStageVoice:
+		prefix = "🎤"
 	case discordgo.ChannelTypeGuildForum:
 		prefix = "📃"
 	default:

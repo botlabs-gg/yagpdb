@@ -31,7 +31,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"unicode"
 	"unicode/utf8"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -198,21 +197,7 @@ func ValidateForm(guild *dstate.GuildSet, tmpl TemplateData, form interface{}) b
 		}
 
 		if err != nil {
-
-			// Create a pretty name for the field by turing: "AnnounceMessage" into "Announce Message"
-			prettyField := ""
-			for _, r := range tField.Name {
-				if unicode.IsUpper(r) {
-					if prettyField != "" {
-						prettyField += " "
-					}
-				}
-
-				prettyField += string(r)
-			}
-			prettyField = strings.TrimSpace(prettyField)
-
-			tmpl.AddAlerts(ErrorAlert(prettyField, ": ", err.Error()))
+			tmpl.AddAlerts(ErrorAlert(tField.Name, ": ", err.Error()))
 			ok = false
 		}
 	}
