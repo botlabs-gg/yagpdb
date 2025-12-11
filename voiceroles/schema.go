@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS voice_roles (
 	guild_id bigint NOT NULL,
 	channel_id bigint NOT NULL,
 	role_id bigint NOT NULL,
-	enabled boolean NOT NULL DEFAULT true,
+	enabled boolean NOT NULL DEFAULT true
 );
 `, `
 CREATE UNIQUE INDEX IF NOT EXISTS voice_roles_channel_idx ON voice_roles(channel_id);
