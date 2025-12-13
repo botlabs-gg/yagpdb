@@ -295,7 +295,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	ag, templateData := web.GetBaseCPContextData(r.Context())
 
 	templateData["WidgetTitle"] = "Voice Role"
-	templateData["SettingsPath"] = "/voicerole"
+	templateData["SettingsPath"] = "/voiceroles"
 
 	configs, err := GetVoiceRoles(r.Context(), ag.ID)
 	if err != nil {
