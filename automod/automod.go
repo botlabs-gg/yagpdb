@@ -98,7 +98,18 @@ const (
 
 	MaxRulesets        = 10
 	MaxRulesetsPremium = 25
+
+	MaxRoleEffects        = 3
+	MaxRoleEffectsPremium = 5
 )
+
+func GuildMaxRoleEffects(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return MaxRoleEffectsPremium
+	}
+
+	return MaxRoleEffects
+}
 
 func GuildMaxMessageTriggers(guildID int64) int {
 	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
