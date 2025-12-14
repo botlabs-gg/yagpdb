@@ -100,7 +100,7 @@ const (
 	MaxRulesetsPremium = 25
 
 	MaxRoleEffects        = 3
-	MaxRoleEffectsPremium = 5
+	MaxRoleEffectsPremium = 10
 )
 
 func GuildMaxRoleEffects(guildID int64) int {
