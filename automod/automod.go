@@ -99,7 +99,7 @@ const (
 	MaxRulesets        = 10
 	MaxRulesetsPremium = 25
 
-	MaxRoleEffects        = 3
+	MaxRoleEffects        = 5
 	MaxRoleEffectsPremium = 10
 )
 
