@@ -452,6 +452,8 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 	go analytics.RecordActiveUnit(ruleset.RSModel.GuildID, p, "rule_triggered")
 
+	totalRoleEffects := 0
+	maxRoleEffects := GuildMaxRoleEffects(ruleset.RSModel.GuildID)
 	// apply the effects
 	for i, rule := range triggeredRules {
 		ctxData.CurrentRule = rule
@@ -465,6 +467,12 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 					}
 				}()
 
+				if fx.Part.(Effect).IsRoleEffect() {
+					if totalRoleEffects >= maxRoleEffects {
+						return
+					}
+					totalRoleEffects++
+				}
 				err := fx.Part.(Effect).Apply(ctx, fx.ParsedSettings)
 				if err != nil {
 					logger.WithError(err).WithField("guild", ruleset.RSModel.GuildID).WithField("part", fx.Part.Name()).Error("failed applying automod effect")
