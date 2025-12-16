@@ -122,62 +122,11 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	fakeMsg := *m.Message
 	fakeMsg.Mentions = make([]*discordgo.User, 0)
 
-	cmdLine := cmd + " "
-
-	for _, arg := range args {
-		if arg == nil {
-			return "", errors.New("Nil arg passed")
-		}
-
-		switch t := arg.(type) {
-		case string:
-			if strings.HasPrefix(t, "-") {
-				// Don't put quotes around switches
-				cmdLine += t
-			} else if strings.HasPrefix(t, "\\-") {
-				// Escaped -
-				cmdLine += "\"" + t[1:] + "\""
-			} else {
-				cmdLine += "\"" + t + "\""
-			}
-		case int:
-			cmdLine += strconv.FormatInt(int64(t), 10)
-		case int32:
-			cmdLine += strconv.FormatInt(int64(t), 10)
-		case int64:
-			cmdLine += strconv.FormatInt(t, 10)
-		case uint:
-			cmdLine += strconv.FormatUint(uint64(t), 10)
-		case uint8:
-			cmdLine += strconv.FormatUint(uint64(t), 10)
-		case uint16:
-			cmdLine += strconv.FormatUint(uint64(t), 10)
-		case uint32:
-			cmdLine += strconv.FormatUint(uint64(t), 10)
-		case uint64:
-			cmdLine += strconv.FormatUint(t, 10)
-		case float32:
-			cmdLine += strconv.FormatFloat(float64(t), 'E', -1, 32)
-		case float64:
-			cmdLine += strconv.FormatFloat(t, 'E', -1, 64)
-		case *discordgo.User:
-			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
-			fakeMsg.Mentions = append(fakeMsg.Mentions, t)
-		case discordgo.User:
-			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
-			fakeMsg.Mentions = append(fakeMsg.Mentions, &t)
-		case []string:
-			for i, str := range t {
-				if i != 0 {
-					cmdLine += " "
-				}
-				cmdLine += str
-			}
-		default:
-			return "", errors.New("Unknown type in exec, only strings, numbers, users and string slices are supported")
-		}
-		cmdLine += " "
+	cmdLine, mentions, err := buildExecCmdLine(cmd, args...)
+	if err != nil {
+		return "", err
 	}
+	fakeMsg.Mentions = append(fakeMsg.Mentions, mentions...)
 
 	logger.Infof("Custom template is executing a command: %s for guild %v", cmdLine, tmplCtx.Msg.GuildID)
 
@@ -264,4 +213,70 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	}
 
 	return "", nil
+}
+
+func buildExecCmdLine(cmd string, args ...any) (string, []*discordgo.User, error) {
+	cmdLine := cmd + " "
+	var mentions []*discordgo.User
+
+	for _, arg := range args {
+		if arg == nil {
+			return "", nil, errors.New("Nil arg passed")
+		}
+
+		switch t := arg.(type) {
+		case string:
+			if strings.HasPrefix(t, "-") {
+				// Don't put quotes around switches
+				cmdLine += t
+			} else if strings.HasPrefix(t, "\\-") {
+				// Escaped -
+				cmdLine += "\"" + t[1:] + "\""
+			} else {
+				cmdLine += "\"" + t + "\""
+			}
+		case int:
+			cmdLine += strconv.FormatInt(int64(t), 10)
+		case int32:
+			cmdLine += strconv.FormatInt(int64(t), 10)
+		case int64:
+			cmdLine += strconv.FormatInt(t, 10)
+		case uint:
+			cmdLine += strconv.FormatUint(uint64(t), 10)
+		case uint8:
+			cmdLine += strconv.FormatUint(uint64(t), 10)
+		case uint16:
+			cmdLine += strconv.FormatUint(uint64(t), 10)
+		case uint32:
+			cmdLine += strconv.FormatUint(uint64(t), 10)
+		case uint64:
+			cmdLine += strconv.FormatUint(t, 10)
+		case float32:
+			cmdLine += strconv.FormatFloat(float64(t), 'E', -1, 32)
+		case float64:
+			cmdLine += strconv.FormatFloat(t, 'E', -1, 64)
+		case *discordgo.User:
+			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
+			mentions = append(mentions, t)
+		case discordgo.User:
+			cmdLine += "<@" + strconv.FormatInt(t.ID, 10) + ">"
+			mentions = append(mentions, &t)
+		case []string:
+			for i, str := range t {
+				if i != 0 {
+					cmdLine += " "
+				}
+				cmdLine += str
+			}
+		default:
+			return "", nil, errors.New("Unknown type in exec, only strings, numbers, users and string slices are supported")
+		}
+		cmdLine += " "
+
+		if len(cmdLine) > templates.MaxStringLength {
+			return "", nil, templates.ErrStringTooLong
+		}
+	}
+
+	return cmdLine, mentions, nil
 }
