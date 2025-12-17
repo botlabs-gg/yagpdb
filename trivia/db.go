@@ -138,13 +138,16 @@ func GetTotalTriviaUsers(guildID int64) (int, error) {
 }
 
 func CleanOldTriviaScores() {
-	_, err := models.TriviaUsers(
+	logger.Info("Cleaning up old trivia scores")
+	count, err := models.TriviaUsers(
 		models.TriviaUserWhere.LastPlayed.LT(time.Now().Add(-7 * 24 * time.Hour)),
 	).DeleteAllG(context.Background())
 
 	if err != nil {
 		logger.WithError(err).Error("failed cleaning up old trivia scores")
+		return
 	}
+	logger.Infof("Deleted %d old trivia scores", count)
 }
 
 func ResetTriviaLeaderboard(guildID int64) error {

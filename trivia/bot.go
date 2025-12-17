@@ -17,25 +17,6 @@ var TriviaDuration = time.Second * 30
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
-	go p.runCleanupLoop()
-}
-
-func (p *Plugin) runCleanupLoop() {
-	ticker := time.NewTicker(24 * time.Hour)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			CleanOldTriviaScores()
-		case <-p.stopCleanup:
-			return
-		}
-	}
-}
-
-func (p *Plugin) StopBot(wg *sync.WaitGroup) {
-	close(p.stopCleanup)
-	wg.Done()
 }
 
 func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
