@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
@@ -46,22 +47,47 @@ func (p *Plugin) AddCommands() {
 				userID = data.Author.ID
 			}
 			user, rank, err := GetTriviaUser(data.GuildData.GS.ID, userID)
-			embed := &discordgo.MessageEmbed{
-				Title: "Trivia Rank",
-			}
-
 			if err != nil {
 				if err == sql.ErrNoRows {
-					embed.Description = fmt.Sprintf("<@%d> is unranked", userID)
-					return embed, nil
+					return fmt.Sprintf("<@%d> is unranked. Play some trivia to get a rank!", userID), nil
 				}
 				return nil, err
 			}
-			field := &discordgo.MessageEmbedField{
-				Name:  fmt.Sprintf("Rank #%d", rank),
-				Value: fmt.Sprintf("<@%d>: Score %d | Played %d | Correct %d | Incorrect %d | Streak %d | Max Streak %d", user.UserID, user.Score, user.CorrectAnswers+user.IncorrectAnswers, user.CorrectAnswers, user.IncorrectAnswers, user.CurrentStreak, user.MaxStreak),
+
+			username := fmt.Sprintf("%d", userID)
+			thumbnail := "https://opentdb.com/images/logo-banner.png"
+			if member, err := bot.GetMember(data.GuildData.GS.ID, userID); err == nil {
+				username = member.User.Username
+				thumbnail = member.User.AvatarURL("128")
 			}
-			embed.Fields = append(embed.Fields, field)
+
+			var emoji string
+			switch rank {
+			case 1:
+				emoji = "🥇"
+			case 2:
+				emoji = "🥈"
+			case 3:
+				emoji = "🥉"
+			default:
+				emoji = "🏅"
+			}
+
+			embed := &discordgo.MessageEmbed{
+				Title:       fmt.Sprintf("%s Trivia Rank: %s", emoji, username),
+				Color:       0xFFD700, // Gold
+				Description: fmt.Sprintf("**Rank**: #%d\n**Score**: %d", rank, user.Score),
+				Fields: []*discordgo.MessageEmbedField{
+					{Name: "Stats", Value: fmt.Sprintf("✅ Correct: **%d**\n❌ Incorrect: **%d**\n🔥 Streak: **%d**\n⚡ Max Streak: **%d**",
+						user.CorrectAnswers, user.IncorrectAnswers, user.CurrentStreak, user.MaxStreak), Inline: true},
+					{Name: "Questions", Value: fmt.Sprintf("🎮 Total Played: **%d**\n🏆 Win Rate: **%.1f%%**",
+						user.CorrectAnswers+user.IncorrectAnswers, float64(user.CorrectAnswers)/float64(user.CorrectAnswers+user.IncorrectAnswers)*100), Inline: true},
+				},
+				Thumbnail: &discordgo.MessageEmbedThumbnail{
+					URL: thumbnail,
+				},
+			}
+
 			return embed, nil
 		},
 	}
@@ -72,7 +98,12 @@ func (p *Plugin) AddCommands() {
 		Description: "Shows the trivia leaderboard",
 		CmdCategory: commands.CategoryFun,
 		Arguments: []*dcmd.ArgDef{
-			{Name: "Sort", Type: dcmd.String, Default: "score", Help: "Sort by score, streak, or maxstreak"},
+			{
+				Name: "Sort", Type: dcmd.String, Default: "score", Choices: []*discordgo.ApplicationCommandOptionChoice{
+					{Name: "Score", Value: "score"},
+					{Name: "Streak", Value: "streak"},
+					{Name: "Max Streak", Value: "maxstreak"},
+				}, Help: "Sort by score, streak, or maxstreak"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			sort := strings.ToLower(parsed.Args[0].Str())
@@ -107,22 +138,36 @@ func (p *Plugin) AddCommands() {
 					}
 
 					embed := &discordgo.MessageEmbed{
-						Title:       "Trivia Leaderboard",
-						Description: fmt.Sprintf("**Max Score:** %d\n**Max Streak:** %d\n\n", maxScore, maxStreak),
+						Title:       "🥇🥈🏅 Trivia Leaderboard",
+						Color:       0xFFD700, // Gold
+						Description: fmt.Sprintf("👑 **Server Best**\nMax Score: `%d` | Max Streak: `%d`| Total Players: `%d`, \n\n", maxScore, maxStreak, totalUsers),
 					}
 
 					switch sort {
 					case "streak":
-						embed.Title += " (Sorted by Streak)"
+						embed.Title += " (By Streak)"
 					case "maxstreak":
-						embed.Title += " (Sorted by Max Streak)"
+						embed.Title += " (By Max Streak)"
 					}
 
 					for i, u := range users {
+						var emoji string
+						rank := offset + i + 1
+						switch rank {
+						case 1:
+							emoji = "🥇 "
+						case 2:
+							emoji = "🥈 "
+						case 3:
+							emoji = "🥉 "
+						default:
+							emoji = ""
+						}
+
 						entry := &discordgo.MessageEmbedField{}
 						entry.Inline = false
-						entry.Name = fmt.Sprintf("Rank #%d", offset+i+1)
-						entry.Value = fmt.Sprintf("<@%d>: Score %d | Played %d | Correct %d | Incorrect %d | Streak %d | Max Streak %d", u.UserID, u.Score, u.CorrectAnswers+u.IncorrectAnswers, u.CorrectAnswers, u.IncorrectAnswers, u.CurrentStreak, u.MaxStreak)
+						entry.Name = fmt.Sprintf("%sRank #%d / %d", emoji, rank, totalUsers)
+						entry.Value = fmt.Sprintf("**<@%d>**: Score **%d** | Played **%d** | Correct **%d** | Incorrect **%d** | Streak **%d** | Max Streak **%d**", u.UserID, u.Score, u.CorrectAnswers+u.IncorrectAnswers, u.CorrectAnswers, u.IncorrectAnswers, u.CurrentStreak, u.MaxStreak)
 						embed.Fields = append(embed.Fields, entry)
 					}
 
