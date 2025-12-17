@@ -77,6 +77,10 @@ func GetTopTriviaUsers(guildID int64, limit, offset int, sort string) ([]*models
 		mods = append(mods, qm.OrderBy(models.TriviaUserColumns.CurrentStreak+" DESC"))
 	case "maxstreak":
 		mods = append(mods, qm.OrderBy(models.TriviaUserColumns.MaxStreak+" DESC"))
+	case "correct":
+		mods = append(mods, qm.OrderBy(models.TriviaUserColumns.CorrectAnswers+" DESC"))
+	case "incorrect":
+		mods = append(mods, qm.OrderBy(models.TriviaUserColumns.IncorrectAnswers+" DESC"))
 	default:
 		mods = append(mods, qm.OrderBy(models.TriviaUserColumns.Score+" DESC"))
 	}

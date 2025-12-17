@@ -103,12 +103,14 @@ func (p *Plugin) AddCommands() {
 				Name: "Sort", Type: dcmd.String, Default: "score", Choices: []*discordgo.ApplicationCommandOptionChoice{
 					{Name: "Score", Value: "score"},
 					{Name: "Streak", Value: "streak"},
+					{Name: "Correct Answers", Value: "correct"},
+					{Name: "Incorrect Answers", Value: "incorrect"},
 					{Name: "Max Streak", Value: "maxstreak"},
 				}, Help: "Sort by score, streak, or maxstreak"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			sort := strings.ToLower(parsed.Args[0].Str())
-			if sort != "streak" && sort != "maxstreak" {
+			if sort != "streak" && sort != "maxstreak" && sort != "correct" && sort != "incorrect" {
 				sort = "score"
 			}
 
@@ -167,7 +169,7 @@ func (p *Plugin) AddCommands() {
 
 						entry := &discordgo.MessageEmbedField{}
 						entry.Inline = false
-						entry.Name = fmt.Sprintf("%sRank #%d / %d", emoji, rank, totalUsers)
+						entry.Name = fmt.Sprintf("%sRank #%d", emoji, rank)
 						entry.Value = fmt.Sprintf("**<@%d>**: Score **%d** | Played **%d** | Correct **%d** | Incorrect **%d** | Streak **%d** | Max Streak **%d**", u.UserID, u.Score, u.CorrectAnswers+u.IncorrectAnswers, u.CorrectAnswers, u.IncorrectAnswers, u.CurrentStreak, u.MaxStreak)
 						embed.Fields = append(embed.Fields, entry)
 					}
