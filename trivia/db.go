@@ -29,7 +29,7 @@ func MarkAnswer(ctx context.Context, guildID, userID int64, correct bool) error 
 				LastPlayed: time.Now(),
 			}
 			if correct {
-				u.Score = 1
+				u.Score = 2
 				u.CorrectAnswers = 1
 				u.CurrentStreak = 1
 				u.MaxStreak = 1
@@ -44,7 +44,7 @@ func MarkAnswer(ctx context.Context, guildID, userID int64, correct bool) error 
 	} else {
 		u.LastPlayed = time.Now()
 		if correct {
-			u.Score++
+			u.Score += 2
 			u.CorrectAnswers++
 			u.CurrentStreak++
 			if u.CurrentStreak > u.MaxStreak {
@@ -145,4 +145,11 @@ func CleanOldTriviaScores() {
 	if err != nil {
 		logger.WithError(err).Error("failed cleaning up old trivia scores")
 	}
+}
+
+func ResetTriviaLeaderboard(guildID int64) error {
+	_, err := models.TriviaUsers(
+		models.TriviaUserWhere.GuildID.EQ(guildID),
+	).DeleteAllG(context.Background())
+	return err
 }

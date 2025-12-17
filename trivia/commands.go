@@ -73,15 +73,16 @@ func (p *Plugin) AddCommands() {
 				emoji = "🏅"
 			}
 
+			totalPlayed := user.CorrectAnswers + user.IncorrectAnswers
 			embed := &discordgo.MessageEmbed{
 				Title:       fmt.Sprintf("%s Trivia Rank: %s", emoji, username),
 				Color:       0xFFD700, // Gold
-				Description: fmt.Sprintf("**Rank**: #%d\n**Score**: %d", rank, user.Score),
+				Description: fmt.Sprintf("**Rank**: #%d \n**Score**: %d", rank, user.Score),
 				Fields: []*discordgo.MessageEmbedField{
-					{Name: "Stats", Value: fmt.Sprintf("✅ Correct: **%d**\n❌ Incorrect: **%d**\n🔥 Streak: **%d**\n⚡ Max Streak: **%d**",
-						user.CorrectAnswers, user.IncorrectAnswers, user.CurrentStreak, user.MaxStreak), Inline: true},
-					{Name: "Questions", Value: fmt.Sprintf("🎮 Total Played: **%d**\n🏆 Win Rate: **%.1f%%**",
-						user.CorrectAnswers+user.IncorrectAnswers, float64(user.CorrectAnswers)/float64(user.CorrectAnswers+user.IncorrectAnswers)*100), Inline: true},
+					{Name: "Questions", Value: fmt.Sprintf("🎮 Total Played: **%d**\n✅ Correct: **%d**\n❌ Incorrect: **%d**\n",
+						totalPlayed, user.CorrectAnswers, user.IncorrectAnswers), Inline: true},
+					{Name: "Stats", Value: fmt.Sprintf("🔥 Streak: **%d**\n⚡ Max Streak: **%d**\n🏆 Win Rate: **%.1f%%**",
+						user.CurrentStreak, user.MaxStreak, float64(user.CorrectAnswers)/float64(totalPlayed)*100), Inline: true},
 				},
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
 					URL: thumbnail,
@@ -179,6 +180,17 @@ func (p *Plugin) AddCommands() {
 		},
 	}
 
+	cmdLbReset := &commands.YAGCommand{
+		Name:                "ResetLeaderboard",
+		Description:         "Resets the trivia leaderboard for the server",
+		RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
+		CmdCategory:         commands.CategoryFun,
+		RunFunc: func(data *dcmd.Data) (any, error) {
+			ResetTriviaLeaderboard(data.GuildData.GS.ID)
+			return "Leaderboard reset", nil
+		},
+	}
+
 	container, _ := commands.CommandSystem.Root.Sub("Trivia", "triv")
 	container.Description = "Trivia commands"
 	container.NotFound = func(data *dcmd.Data) (any, error) {
@@ -195,6 +207,7 @@ func (p *Plugin) AddCommands() {
 	container.AddCommand(cmdStart, cmdStart.GetTrigger())
 	container.AddCommand(cmdRank, cmdRank.GetTrigger())
 	container.AddCommand(cmdLeaderboard, cmdLeaderboard.GetTrigger())
+	container.AddCommand(cmdLbReset, cmdLbReset.GetTrigger())
 
 	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
