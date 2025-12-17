@@ -1,0 +1,148 @@
+package trivia
+
+import (
+	"context"
+	"database/sql"
+	"time"
+
+	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/trivia/models"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+)
+
+type TriviaUser = models.TriviaUser
+
+func MarkAnswer(ctx context.Context, guildID, userID int64, correct bool) error {
+	tx, err := common.PQ.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	u, err := models.FindTriviaUser(ctx, tx, guildID, userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			u = &models.TriviaUser{
+				GuildID:    guildID,
+				UserID:     userID,
+				LastPlayed: time.Now(),
+			}
+			if correct {
+				u.Score = 1
+				u.CorrectAnswers = 1
+				u.CurrentStreak = 1
+				u.MaxStreak = 1
+			} else {
+				u.Score = -1
+				u.IncorrectAnswers = 1
+			}
+			err = u.Insert(ctx, tx, boil.Infer())
+		} else {
+			return err
+		}
+	} else {
+		u.LastPlayed = time.Now()
+		if correct {
+			u.Score++
+			u.CorrectAnswers++
+			u.CurrentStreak++
+			if u.CurrentStreak > u.MaxStreak {
+				u.MaxStreak = u.CurrentStreak
+			}
+		} else {
+			u.Score--
+			u.IncorrectAnswers++
+			u.CurrentStreak = 0
+		}
+		_, err = u.Update(ctx, tx, boil.Infer())
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func GetTopTriviaUsers(guildID int64, limit, offset int, sort string) ([]*models.TriviaUser, error) {
+	mods := []qm.QueryMod{
+		models.TriviaUserWhere.GuildID.EQ(guildID),
+		qm.Limit(limit),
+		qm.Offset(offset),
+	}
+
+	switch sort {
+	case "streak":
+		mods = append(mods, qm.OrderBy(models.TriviaUserColumns.CurrentStreak+" DESC"))
+	case "maxstreak":
+		mods = append(mods, qm.OrderBy(models.TriviaUserColumns.MaxStreak+" DESC"))
+	default:
+		mods = append(mods, qm.OrderBy(models.TriviaUserColumns.Score+" DESC"))
+	}
+
+	return models.TriviaUsers(mods...).AllG(context.Background())
+}
+
+func GetTriviaUser(guildID, userID int64) (*models.TriviaUser, int64, error) {
+	ctx := context.Background()
+	user, err := models.FindTriviaUserG(ctx, guildID, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	count, err := models.TriviaUsers(
+		models.TriviaUserWhere.GuildID.EQ(guildID),
+		models.TriviaUserWhere.Score.GT(user.Score),
+	).CountG(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return user, count + 1, nil
+}
+
+func GetTriviaGuildStats(guildID int64) (maxScore int, maxStreak int, err error) {
+	ctx := context.Background()
+
+	topScoreUser, err := models.TriviaUsers(
+		models.TriviaUserWhere.GuildID.EQ(guildID),
+		qm.OrderBy(models.TriviaUserColumns.Score+" DESC"),
+		qm.Select(models.TriviaUserColumns.Score),
+	).OneG(ctx)
+	if err != nil && err != sql.ErrNoRows {
+		return 0, 0, err
+	}
+	if topScoreUser != nil {
+		maxScore = topScoreUser.Score
+	}
+
+	topStreakUser, err := models.TriviaUsers(
+		models.TriviaUserWhere.GuildID.EQ(guildID),
+		qm.OrderBy(models.TriviaUserColumns.MaxStreak+" DESC"),
+		qm.Select(models.TriviaUserColumns.MaxStreak),
+	).OneG(ctx)
+	if err != nil && err != sql.ErrNoRows {
+		return 0, 0, err
+	}
+	if topStreakUser != nil {
+		maxStreak = topStreakUser.MaxStreak
+	}
+
+	return maxScore, maxStreak, nil
+}
+
+func GetTotalTriviaUsers(guildID int64) (int, error) {
+	count, err := models.TriviaUsers(models.TriviaUserWhere.GuildID.EQ(guildID)).CountG(context.Background())
+	return int(count), err
+}
+
+func CleanOldTriviaScores() {
+	_, err := models.TriviaUsers(
+		models.TriviaUserWhere.LastPlayed.LT(time.Now().Add(-7 * 24 * time.Hour)),
+	).DeleteAllG(context.Background())
+
+	if err != nil {
+		logger.WithError(err).Error("failed cleaning up old trivia scores")
+	}
+}

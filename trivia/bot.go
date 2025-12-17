@@ -1,6 +1,7 @@
 package trivia
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -16,6 +17,25 @@ var TriviaDuration = time.Second * 30
 
 func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, p.handleInteractionCreate, eventsystem.EventInteractionCreate)
+	go p.runCleanupLoop()
+}
+
+func (p *Plugin) runCleanupLoop() {
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			CleanOldTriviaScores()
+		case <-p.stopCleanup:
+			return
+		}
+	}
+}
+
+func (p *Plugin) StopBot(wg *sync.WaitGroup) {
+	close(p.stopCleanup)
+	wg.Done()
 }
 
 func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) {
@@ -156,10 +176,23 @@ func (t *triviaSession) tick() (ended bool) {
 
 	if time.Since(t.startedAt) > TriviaDuration {
 		t.ended = true
+		t.processScores()
 		t.updateMessage()
 	}
 
 	return t.ended
+}
+
+func (t *triviaSession) processScores() {
+	// Determine winners and losers
+	ctx := context.Background()
+	for _, v := range t.SelectedOptions {
+		isCorrect := t.Question.Options[v.Option] == t.Question.Answer
+		err := MarkAnswer(ctx, t.GuildID, v.User.ID, isCorrect)
+		if err != nil {
+			logger.WithError(err).Error("failed processing trivia score")
+		}
+	}
 }
 
 func (t *triviaSession) updateMessage() {
