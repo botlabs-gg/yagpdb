@@ -140,7 +140,7 @@ func (p *Plugin) AddCommands() {
 					embed := &discordgo.MessageEmbed{
 						Title:       "🥇🥈🏅 Trivia Leaderboard",
 						Color:       0xFFD700, // Gold
-						Description: fmt.Sprintf("👑 **Server Best**\nMax Score: `%d` | Max Streak: `%d`| Total Players: `%d`, \n\n", maxScore, maxStreak, totalUsers),
+						Description: fmt.Sprintf("👑 **Server Best**\nMax Score: `%d` | Max Streak: `%d`| Total Players: `%d` \n\n", maxScore, maxStreak, totalUsers),
 					}
 
 					switch sort {
