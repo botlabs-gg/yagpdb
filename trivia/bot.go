@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -57,7 +58,7 @@ type triviaSession struct {
 
 var ErrSessionInChannel = errors.New("a trivia session already exists in this channel")
 
-func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64) error {
+func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64, difficulty string) error {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	for _, v := range tm.sessions {
@@ -66,7 +67,7 @@ func (tm *triviaSessionManager) NewTrivia(guildID int64, channelID int64) error 
 		}
 	}
 
-	triviaQuestions, err := FetchQuestions(1)
+	triviaQuestions, err := FetchQuestions(1, difficulty)
 	if err != nil {
 		return err
 	}
@@ -169,7 +170,7 @@ func (t *triviaSession) processScores() {
 	ctx := context.Background()
 	for _, v := range t.SelectedOptions {
 		isCorrect := t.Question.Options[v.Option] == t.Question.Answer
-		err := MarkAnswer(ctx, t.GuildID, v.User.ID, isCorrect)
+		err := MarkAnswer(ctx, t.GuildID, v.User.ID, isCorrect, t.Question)
 		if err != nil {
 			logger.WithError(err).Error("failed processing trivia score")
 		}
@@ -252,33 +253,27 @@ func (t *triviaSession) buildButtons() []discordgo.InteractiveComponent {
 
 func (t *triviaSession) buildEmbed() *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{}
-	embed.Title = fmt.Sprintf("Trivia Category: %s ", t.Question.Category)
-	embed.Description += fmt.Sprintf("\n ## %s \n", t.Question.Question)
+	embed.Title = fmt.Sprintf("%s difficulty trivia on %s", strings.Title(t.Question.Difficulty), t.Question.Category)
+	embed.Description += fmt.Sprintf("\n## %s \n\n\n", t.Question.Question)
 
 	embed.Footer = &discordgo.MessageEmbedFooter{
-		Text:    "Powered by Opentdb.com",
+		Text:    "Powered by OpenTDB | Use /trivia leaderboard to see all scores",
 		IconURL: "https://opentdb.com/images/logo-banner.png",
-	}
-
-	optionsField := &discordgo.MessageEmbedField{
-		Name:  "Options",
-		Value: "",
 	}
 
 	for i, v := range t.Question.Options {
 		if t.ended && v != t.Question.Answer {
-			optionsField.Value += fmt.Sprintf("~~\n%s %s\n\n~~", t.optionEmojis[i], v)
+			embed.Description += fmt.Sprintf("~~\n%s %s\n\n~~", t.optionEmojis[i], v)
 		} else {
-			optionsField.Value += fmt.Sprintf("** \n%s %s \n\n ** ", t.optionEmojis[i], v)
+			embed.Description += fmt.Sprintf("** \n%s %s \n\n ** ", t.optionEmojis[i], v)
 		}
 	}
 
-	embed.Fields = append(embed.Fields, optionsField)
 	if !t.ended {
 		timeLeft := t.startedAt.Add(TriviaDuration)
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
 			Name:  "Timer",
-			Value: fmt.Sprintf("**Trivia ends <t:%d:R> \n**", timeLeft.Unix()),
+			Value: fmt.Sprintf("ends **<t:%d:R> \n**", timeLeft.Unix()),
 		})
 	}
 

@@ -19,8 +19,21 @@ func (p *Plugin) AddCommands() {
 		Aliases:     []string{"", "s"},
 		Description: "Starts a trivia session",
 		CmdCategory: commands.CategoryFun,
+		Arguments: []*dcmd.ArgDef{
+			{
+				Name: "Difficulty", Type: dcmd.String, Default: "none", Choices: []*discordgo.ApplicationCommandOptionChoice{
+					{Name: "None", Value: "none"},
+					{Name: "Easy", Value: "easy"},
+					{Name: "Medium", Value: "medium"},
+					{Name: "Hard", Value: "hard"},
+				}, Help: "Difficulty of the trivia, can be none, easy, medium or hard"},
+		},
 		RunFunc: func(parsed *dcmd.Data) (any, error) {
-			err := manager.NewTrivia(parsed.GuildData.GS.ID, parsed.ChannelID)
+			difficulty := strings.ToLower(parsed.Args[0].Str())
+			if difficulty != "easy" && difficulty != "medium" && difficulty != "hard" {
+				difficulty = "none"
+			}
+			err := manager.NewTrivia(parsed.GuildData.GS.ID, parsed.ChannelID, difficulty)
 			if err != nil {
 				logger.WithError(err).Error("Failed to create new trivia")
 				if err == ErrSessionInChannel {
@@ -106,7 +119,7 @@ func (p *Plugin) AddCommands() {
 					{Name: "Streak", Value: "streak"},
 					{Name: "Correct Answers", Value: "correct"},
 					{Name: "Incorrect Answers", Value: "incorrect"},
-				}, Help: "Sort by score, streak, or maxstreak"},
+				}, Help: "Sort by score, streak, maxstreak, correct, or incorrect"},
 		},
 		RunFunc: func(parsed *dcmd.Data) (any, error) {
 			sort := strings.ToLower(parsed.Args[0].Str())
@@ -149,6 +162,7 @@ func (p *Plugin) AddCommands() {
 						Color:       0xFFD700, // Gold
 						Description: "👑 **Server Best**",
 						Fields: []*discordgo.MessageEmbedField{
+							{Name: "Total Players:", Value: fmt.Sprintf("**%d**", totalUsers), Inline: true},
 							{Name: "Highest Score:", Value: fmt.Sprintf("**%d**", maxScore), Inline: true},
 							{Name: "Longest Current Streak", Value: fmt.Sprintf("**%d**", currentStreak), Inline: true},
 							{Name: "Longest Streak Ever", Value: fmt.Sprintf("**%d**", maxStreak), Inline: true},
@@ -171,7 +185,7 @@ func (p *Plugin) AddCommands() {
 					}
 					emojiList := []string{"🥇", "🥈", "🥉"}
 					if sort == "incorrect" {
-						emojiList = []string{"🤡", "💩", "🗿"}
+						emojiList = []string{"🤡", "🥴", "🤪"}
 					}
 					for i, u := range users {
 						emoji := ""

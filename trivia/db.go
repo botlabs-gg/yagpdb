@@ -13,48 +13,61 @@ import (
 
 type TriviaUser = models.TriviaUser
 
-func MarkAnswer(ctx context.Context, guildID, userID int64, correct bool) error {
+func MarkAnswer(ctx context.Context, guildID, userID int64, correct bool, question *TriviaQuestion) error {
 	tx, err := common.PQ.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
+	add := 2
+	remove := 1
+	switch question.Difficulty {
+	case "easy":
+		add = 2
+		remove = 1
+	case "medium":
+		add = 3
+		remove = 2
+	case "hard":
+		add = 4
+		remove = 3
+	}
+
 	u, err := models.FindTriviaUser(ctx, tx, guildID, userID)
+	isNew := false
 	if err != nil {
-		if err == sql.ErrNoRows {
-			u = &models.TriviaUser{
-				GuildID:    guildID,
-				UserID:     userID,
-				LastPlayed: time.Now(),
-			}
-			if correct {
-				u.Score = 2
-				u.CorrectAnswers = 1
-				u.CurrentStreak = 1
-				u.MaxStreak = 1
-			} else {
-				u.Score = -1
-				u.IncorrectAnswers = 1
-			}
-			err = u.Insert(ctx, tx, boil.Infer())
-		} else {
+		if err != sql.ErrNoRows {
 			return err
 		}
-	} else {
-		u.LastPlayed = time.Now()
-		if correct {
-			u.Score += 2
-			u.CorrectAnswers++
-			u.CurrentStreak++
-			if u.CurrentStreak > u.MaxStreak {
-				u.MaxStreak = u.CurrentStreak
-			}
-		} else {
-			u.Score--
-			u.IncorrectAnswers++
-			u.CurrentStreak = 0
+		u = &models.TriviaUser{
+			GuildID:          guildID,
+			UserID:           userID,
+			Score:            0,
+			CorrectAnswers:   0,
+			IncorrectAnswers: 0,
+			CurrentStreak:    0,
+			MaxStreak:        0,
+			LastPlayed:       time.Now(),
 		}
+		isNew = true
+	}
+	if correct {
+		u.Score += add
+		u.CorrectAnswers++
+		u.CurrentStreak++
+		if u.CurrentStreak > u.MaxStreak {
+			u.MaxStreak = u.CurrentStreak
+		}
+	} else {
+		u.Score -= remove
+		u.IncorrectAnswers++
+		u.CurrentStreak = 0
+	}
+	u.LastPlayed = time.Now()
+	if isNew {
+		err = u.Insert(ctx, tx, boil.Infer())
+	} else {
 		_, err = u.Update(ctx, tx, boil.Infer())
 	}
 

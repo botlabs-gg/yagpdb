@@ -13,11 +13,12 @@ import (
 )
 
 type TriviaQuestion struct {
-	Question string   `json:"question"`
-	Answer   string   `json:"correct_answer"`
-	Category string   `json:"category"`
-	Type     string   `json:"type"`
-	Options  []string `json:"incorrect_answers"`
+	Question   string   `json:"question"`
+	Answer     string   `json:"correct_answer"`
+	Category   string   `json:"category"`
+	Difficulty string   `json:"difficulty"`
+	Type       string   `json:"type"`
+	Options    []string `json:"incorrect_answers"`
 }
 
 type TriviaResponse struct {
@@ -25,7 +26,7 @@ type TriviaResponse struct {
 	Questions []*TriviaQuestion `json:"results"`
 }
 
-func FetchQuestions(amount int) ([]*TriviaQuestion, error) {
+func FetchQuestions(amount int, difficulty string) ([]*TriviaQuestion, error) {
 	client := &http.Client{}
 	proxy := common.ConfHttpProxy.GetString()
 	if len(proxy) > 0 {
@@ -40,6 +41,9 @@ func FetchQuestions(amount int) ([]*TriviaQuestion, error) {
 	}
 
 	url := fmt.Sprintf("https://opentdb.com/api.php?amount=%d&encode=base64", amount)
+	if difficulty != "none" {
+		url += "&difficulty=" + difficulty
+	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -83,6 +87,7 @@ func (q *TriviaQuestion) Decode() {
 	q.Answer, _ = common.Base64DecodeToString(q.Answer)
 	q.Category, _ = common.Base64DecodeToString(q.Category)
 	q.Type, _ = common.Base64DecodeToString(q.Type)
+	q.Difficulty, _ = common.Base64DecodeToString(q.Difficulty)
 	for index, option := range q.Options {
 		q.Options[index], _ = common.Base64DecodeToString(option)
 	}
