@@ -16,7 +16,7 @@ import (
 func (p *Plugin) AddCommands() {
 	cmdStart := &commands.YAGCommand{
 		Name:        "Start",
-		Aliases:     []string{"s"},
+		Aliases:     []string{"", "s"},
 		Description: "Starts a trivia session",
 		CmdCategory: commands.CategoryFun,
 		RunFunc: func(parsed *dcmd.Data) (any, error) {
@@ -207,17 +207,6 @@ func (p *Plugin) AddCommands() {
 
 	container, _ := commands.CommandSystem.Root.Sub("Trivia", "triv")
 	container.Description = "Trivia commands"
-	container.NotFound = func(data *dcmd.Data) (any, error) {
-		if data.TraditionalTriggerData != nil {
-			if strings.TrimSpace(data.TraditionalTriggerData.MessageStrippedPrefix) == "" {
-				return cmdStart.RunFunc(data)
-			}
-		} else if data.TriggerType == dcmd.TriggerTypeSlashCommands {
-			return cmdStart.RunFunc(data)
-		}
-		return commands.CommonContainerNotFoundHandler(container, "")(data)
-	}
-
 	container.AddCommand(cmdStart, cmdStart.GetTrigger())
 	container.AddCommand(cmdRank, cmdRank.GetTrigger())
 	container.AddCommand(cmdLeaderboard, cmdLeaderboard.GetTrigger())
