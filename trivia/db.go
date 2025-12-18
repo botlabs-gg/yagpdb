@@ -106,7 +106,7 @@ func GetTriviaUser(guildID, userID int64) (*models.TriviaUser, int64, error) {
 	return user, count + 1, nil
 }
 
-func GetTriviaGuildStats(guildID int64) (maxScore int, maxStreak int, err error) {
+func GetTriviaGuildStats(guildID int64) (maxScore, currentStreak, maxStreak, maxCorrect, maxIncorrect int, err error) {
 	ctx := context.Background()
 
 	topScoreUser, err := models.TriviaUsers(
@@ -115,10 +115,22 @@ func GetTriviaGuildStats(guildID int64) (maxScore int, maxStreak int, err error)
 		qm.Select(models.TriviaUserColumns.Score),
 	).OneG(ctx)
 	if err != nil && err != sql.ErrNoRows {
-		return 0, 0, err
+		return 0, 0, 0, 0, 0, err
 	}
 	if topScoreUser != nil {
 		maxScore = topScoreUser.Score
+	}
+
+	topCurrentStreakUser, err := models.TriviaUsers(
+		models.TriviaUserWhere.GuildID.EQ(guildID),
+		qm.OrderBy(models.TriviaUserColumns.CurrentStreak+" DESC"),
+		qm.Select(models.TriviaUserColumns.CurrentStreak),
+	).OneG(ctx)
+	if err != nil && err != sql.ErrNoRows {
+		return 0, 0, 0, 0, 0, err
+	}
+	if topCurrentStreakUser != nil {
+		currentStreak = topCurrentStreakUser.CurrentStreak
 	}
 
 	topStreakUser, err := models.TriviaUsers(
@@ -127,13 +139,39 @@ func GetTriviaGuildStats(guildID int64) (maxScore int, maxStreak int, err error)
 		qm.Select(models.TriviaUserColumns.MaxStreak),
 	).OneG(ctx)
 	if err != nil && err != sql.ErrNoRows {
-		return 0, 0, err
+		return 0, 0, 0, 0, 0, err
 	}
 	if topStreakUser != nil {
 		maxStreak = topStreakUser.MaxStreak
 	}
 
-	return maxScore, maxStreak, nil
+	maxCorrectUser, err := models.TriviaUsers(
+		models.TriviaUserWhere.GuildID.EQ(guildID),
+		qm.OrderBy(models.TriviaUserColumns.CorrectAnswers+" DESC"),
+		qm.Select(models.TriviaUserColumns.CorrectAnswers),
+	).OneG(ctx)
+
+	if err != nil && err != sql.ErrNoRows {
+		return 0, 0, 0, 0, 0, err
+	}
+	if maxCorrectUser != nil {
+		maxCorrect = maxCorrectUser.CorrectAnswers
+	}
+
+	maxIncorrectUser, err := models.TriviaUsers(
+		models.TriviaUserWhere.GuildID.EQ(guildID),
+		qm.OrderBy(models.TriviaUserColumns.IncorrectAnswers+" DESC"),
+		qm.Select(models.TriviaUserColumns.IncorrectAnswers),
+	).OneG(ctx)
+	if err != nil && err != sql.ErrNoRows {
+		return 0, 0, 0, 0, 0, err
+	}
+
+	if maxIncorrectUser != nil {
+		maxIncorrect = maxIncorrectUser.IncorrectAnswers
+	}
+
+	return maxScore, currentStreak, maxStreak, maxCorrect, maxIncorrect, nil
 }
 
 func GetTotalTriviaUsers(guildID int64) (int, error) {

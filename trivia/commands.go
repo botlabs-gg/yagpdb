@@ -130,7 +130,7 @@ func (p *Plugin) AddCommands() {
 						return nil, paginatedmessages.ErrNoResults
 					}
 
-					maxScore, maxStreak, err := GetTriviaGuildStats(p.GuildID)
+					maxScore, currentStreak, maxStreak, maxCorrect, maxIncorrect, err := GetTriviaGuildStats(p.GuildID)
 					if err != nil {
 						return nil, err
 					}
@@ -147,7 +147,14 @@ func (p *Plugin) AddCommands() {
 					embed := &discordgo.MessageEmbed{
 						Title:       titleemoji + " Trivia Leaderboard",
 						Color:       0xFFD700, // Gold
-						Description: fmt.Sprintf("👑 **Server Best**\nMax Score: `%d` | Max Streak: `%d`| Total Players: `%d` \n\n", maxScore, maxStreak, totalUsers),
+						Description: "👑 **Server Best**",
+						Fields: []*discordgo.MessageEmbedField{
+							{Name: "Highest Score:", Value: fmt.Sprintf("**%d**", maxScore), Inline: true},
+							{Name: "Longest Current Streak", Value: fmt.Sprintf("**%d**", currentStreak), Inline: true},
+							{Name: "Longest Streak Ever", Value: fmt.Sprintf("**%d**", maxStreak), Inline: true},
+							{Name: "Most Correct Answers", Value: fmt.Sprintf("**%d**", maxCorrect), Inline: true},
+							{Name: "Most Incorrect Answers", Value: fmt.Sprintf("**%d**", maxIncorrect), Inline: true},
+						},
 					}
 
 					switch sort {
@@ -155,6 +162,12 @@ func (p *Plugin) AddCommands() {
 						embed.Title += " (By Streak)"
 					case "maxstreak":
 						embed.Title += " (By Max Streak)"
+					case "correct":
+						embed.Title += " (By Correct Answers)"
+					case "incorrect":
+						embed.Title += " (By Incorrect Answers)"
+					case "score":
+						embed.Title += " (By Score)"
 					}
 					emojiList := []string{"🥇", "🥈", "🥉"}
 					if sort == "incorrect" {
