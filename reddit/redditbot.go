@@ -66,31 +66,47 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 		slowFeed = nil
 	}
 
-	select {
-	case p.stopFeedChan <- wg:
+	if p.feedCheckerRunning {
+		p.stopFeedChan <- wg
 		wg.Add(1)
-	default:
 	}
 
 	feedLock.Unlock()
 }
 
 func (p *Plugin) checkFeed() {
-	ticker := time.NewTicker(time.Minute * 1)
-	for {
-		select {
-		case <-ticker.C:
-			logger.Infof("Checking Feed Status, last success was %s ago", time.Since(lastFeedSuccessAt))
-			if time.Since(lastFeedSuccessAt) > (15 * time.Minute) {
-				logger.Warnf("No successful feed since %s, restarting", time.Since(lastFeedSuccessAt))
-				p.restartFeed()
+	feedLock.Lock()
+	p.feedCheckerRunning = true
+	feedLock.Unlock()
+
+	func() {
+		defer func() {
+			feedLock.Lock()
+			p.feedCheckerRunning = false
+			feedLock.Unlock()
+		}()
+
+		ticker := time.NewTicker(time.Minute * 1)
+		for {
+			select {
+			case <-ticker.C:
+				logger.Infof("Checking Feed Status, last success was %s ago", time.Since(lastFeedSuccessAt))
+				if time.Since(lastFeedSuccessAt) > (15 * time.Minute) {
+					logger.Warnf("No successful feed since %s, restarting", time.Since(lastFeedSuccessAt))
+
+					feedLock.Lock()
+					p.feedCheckerRunning = false
+					feedLock.Unlock()
+
+					p.restartFeed()
+					return
+				}
+			case wg := <-p.stopFeedChan:
+				wg.Done()
 				return
 			}
-		case wg := <-p.stopFeedChan:
-			wg.Done()
-			return
 		}
-	}
+	}()
 }
 
 func UserAgent() string {
