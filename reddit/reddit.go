@@ -25,8 +25,9 @@ const (
 var logger = common.GetPluginLogger(&Plugin{})
 
 type Plugin struct {
-	stopFeedChan chan *sync.WaitGroup
-	redditClient *reddit.Client
+	stopFeedChan       chan *sync.WaitGroup
+	redditClient       *reddit.Client
+	feedCheckerRunning bool
 }
 
 func (p *Plugin) PluginInfo() *common.PluginInfo {
@@ -68,7 +69,7 @@ func RegisterPlugin() {
 	common.InitSchemas("reddit", DBSchemas...)
 
 	plugin := &Plugin{
-		stopFeedChan: make(chan *sync.WaitGroup),
+		stopFeedChan: make(chan *sync.WaitGroup, 1),
 	}
 
 	if confClientID.GetString() == "" || confClientSecret.GetString() == "" || confRefreshToken.GetString() == "" {
