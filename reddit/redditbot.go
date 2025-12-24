@@ -66,11 +66,10 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 		slowFeed = nil
 	}
 
-	select {
-	case p.stopFeedChan <- wg:
-		wg.Add(1)
-	default:
-	}
+	wg.Add(1)
+	go func() {
+		p.stopFeedChan <- wg
+	}()
 
 	feedLock.Unlock()
 }
@@ -87,6 +86,7 @@ func (p *Plugin) checkFeed() {
 				return
 			}
 		case wg := <-p.stopFeedChan:
+			logger.Infof("Stopping feed checker, count: %d", wg)
 			wg.Done()
 			return
 		}
