@@ -64,7 +64,7 @@ func (p *PostFetcher) Run() {
 	lastLogged := time.Now()
 	numPosts := 0
 
-	ticker := time.NewTicker(time.Second * 1)
+	ticker := time.NewTicker(time.Second * 5)
 	for {
 		select {
 		case wg := <-p.StopChan:
@@ -138,9 +138,9 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 		logrus.Info("Initialized reddit post cursor at ", lID)
 	}
 
-	toFetch := make([]string, 50)
+	toFetch := make([]string, 100)
 
-	for i := range int64(50) {
+	for i := range int64(100) {
 		toFetch[i] = "t3_" + strconv.FormatInt(p.LastID+i+1, 36)
 	}
 
@@ -185,7 +185,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 		logrus.Info("Redditfeed processed ", len(resp), " links")
 	}
 
-	if len(resp) < 20 && !p.hasCaughtUp {
+	if len(resp) < 50 && !p.hasCaughtUp {
 		logrus.Info("Reddit feed caught up in ", time.Since(p.started).String())
 		p.hasCaughtUp = true
 	}
