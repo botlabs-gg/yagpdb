@@ -377,12 +377,14 @@ func (c CustomCommandSlice) Swap(i, j int) {
 }
 
 const (
-	MaxCommands                 = 100
-	MaxCommandsPremium          = 250
-	MaxCCResponsesLength        = 10000
-	MaxCCResponsesLengthPremium = 20000
-	MaxUserMessages             = 20
-	MaxGroups                   = 50
+	MaxCommands                   = 100
+	MaxCommandsPremium            = 250
+	MaxRoleTriggerCommands        = 1
+	MaxRoleTriggerCommandsPremium = 5
+	MaxCCResponsesLength          = 10000
+	MaxCCResponsesLengthPremium   = 20000
+	MaxUserMessages               = 20
+	MaxGroups                     = 50
 )
 
 func MaxCommandsForContext(ctx context.Context) int {
@@ -391,6 +393,14 @@ func MaxCommandsForContext(ctx context.Context) int {
 	}
 
 	return MaxCommands
+}
+
+func MaxRoleTriggerCommandsForContext(ctx context.Context) int {
+	if premium.ContextPremium(ctx) {
+		return MaxRoleTriggerCommandsPremium
+	}
+
+	return MaxRoleTriggerCommands
 }
 
 var _ featureflags.PluginWithFeatureFlags = (*Plugin)(nil)

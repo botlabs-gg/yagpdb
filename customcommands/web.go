@@ -418,19 +418,6 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))), nil
 	}
 
-	// Role triggers are premium-only and limited to 5
-	// We need to parse the form value for TriggerType to check this before DB insertion
-	triggerTypeForm, _ := strconv.ParseInt(r.FormValue("TriggerType"), 10, 64)
-	if CommandTriggerType(triggerTypeForm) == CommandTriggerRole {
-		count, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ?", activeGuild.ID, int(CommandTriggerRole))).CountG(ctx)
-		if err != nil {
-			return templateData, err
-		}
-		if count >= 5 {
-			return templateData.AddAlerts(web.ErrorAlert("Maximum 5 role trigger commands allowed")), nil
-		}
-	}
-
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
 	if err != nil {
 		return templateData, errors.WrapIf(err, "error generating local id")
@@ -786,11 +773,7 @@ func checkIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templa
 
 func checkRoleTriggerLimit(ctx context.Context, guildID int64, cmdID int64, templateData web.TemplateData) (ok bool, err error) {
 	isPremium := premium.ContextPremium(ctx)
-	limit := 1
-	if isPremium {
-		limit = 5
-	}
-
+	limit := MaxRoleTriggerCommandsForContext(ctx)
 	// Check if we're at the limit (excluding the current command being updated)
 	count, err := models.CustomCommands(
 		qm.Where("guild_id = ? AND trigger_type = ? AND local_id != ?", guildID, int(CommandTriggerRole), cmdID),
@@ -802,7 +785,7 @@ func checkRoleTriggerLimit(ctx context.Context, guildID int64, cmdID int64, temp
 	if int(count) >= limit {
 		msg := fmt.Sprintf("Max %d role trigger commands allowed", limit)
 		if !isPremium {
-			msg += " (Premium servers allow up to 5)"
+			msg = fmt.Sprintf("%s (Premium servers allow up to %d)", msg, MaxRoleTriggerCommandsPremium)
 		}
 		templateData.AddAlerts(web.ErrorAlert(msg))
 		return false, nil

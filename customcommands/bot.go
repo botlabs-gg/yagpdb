@@ -537,7 +537,7 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 		return errors.WrapIf(err, "Failed disabling long custom commands on premium removal")
 	}
 
-	_, err = models.CustomCommands(qm.Where("guild_id = ? AND disabled = false AND trigger_type = ?", GuildID, CommandTriggerRole), qm.OrderBy("local_id ASC"), qm.Offset(1)).UpdateAllG(context.Background(), models.M{"disabled": true})
+	_, err = models.CustomCommands(qm.Where("guild_id = ? AND disabled = false AND trigger_type = ?", GuildID, CommandTriggerRole), qm.OrderBy("local_id ASC"), qm.Offset(MaxRoleTriggerCommands)).UpdateAllG(context.Background(), models.M{"disabled": true})
 	if err != nil {
 		return errors.WrapIf(err, "failed disabling role trigger custom commands on premium removal")
 	}

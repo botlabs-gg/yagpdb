@@ -218,7 +218,6 @@ func handleGuildAuditLogEntryCreate(evt *eventsystem.EventData) {
 
 		// Execute matched commands
 		metricsExecutedCommands.With(prometheus.Labels{"trigger": "role"}).Inc()
-
 		filteredCommands := make([]*TriggeredCC, 0, len(commands))
 		for _, cmd := range commands {
 			cs := gs.GetChannel(cmd.CC.ContextChannel)
@@ -262,7 +261,7 @@ func handleGuildAuditLogEntryCreate(evt *eventsystem.EventData) {
 			tmplCtx := templates.NewContext(gs, cs, modMember)
 			tmplCtx.MS = targetMember
 			tmplCtx.GS = gs
-			tmplCtx.Data["ModMember"] = modMember     // User who assigned the role
+			tmplCtx.Data["ModMember"] = modMember     // Member who assigned the role
 			tmplCtx.Data["Role"] = role               // Role that was assigned/removed
 			tmplCtx.Data["ModUser"] = &modMember.User // User object who assigned the role
 			tmplCtx.Data["RoleAdded"] = roleChange.added
