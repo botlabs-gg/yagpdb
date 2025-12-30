@@ -563,14 +563,17 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	// Check limits for role triggers (1 free, 5 premium)
 	if dbModel.TriggerType == int(CommandTriggerRole) {
+		dbModel.ContextChannel = cmdEdit.RoleContextChannel
 		ok, err := checkRoleTriggerLimit(ctx, activeGuild.ID, cmdEdit.ID, templateData)
 		if err != nil || !ok {
 			return templateData, err
 		}
+
 	}
 
 	// check low interval limits
 	if dbModel.TriggerType == int(CommandTriggerInterval) || dbModel.TriggerType == int(CommandTriggerCron) {
+		dbModel.ContextChannel = cmdEdit.TimeContextChannel
 		switch CommandTriggerType(dbModel.TriggerType) {
 		case CommandTriggerInterval:
 			if dbModel.TimeTriggerInterval <= 10 {

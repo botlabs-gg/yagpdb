@@ -289,7 +289,7 @@
                                     <div class="col-md-8">
                                         <div class="form-group">
                                             <label>Channel</label>
-                                            <select id="time-trigger-channel" name="context_channel" class="form-control">
+                                            <select id="role-trigger-channel" name="role_context_channel" class="form-control">
                                                 {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
                                             </select>
                                         </div>
@@ -305,10 +305,10 @@
                                                 placeholder="" value="{{call $dot.GetCCInterval .CC}}">
                                         </div>
                                     </div>
-                                    <div class="col-lg-8">
+                                    <div class="col-md-8">
                                         <div class="form-group">
                                             <label>Channel</label>
-                                            <select id="time-trigger-channel" name="context_channel" class="form-control">
+                                            <select id="time-trigger-channel" name="time_context_channel" class="form-control">
                                                 {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
                                             </select>
                                         </div>
@@ -793,9 +793,9 @@
 
     var checkMissingTriggerChannel = {
         applicableTriggerTypes: ['interval_hours', 'interval_minutes', 'cron', 'role_trigger'],
-        warningId: 'time-trigger-no-channel-warning',
-        run() {
-            const selectedChannel = $('#time-trigger-channel').val();
+        warningId: 'trigger-no-channel-warning',
+        run(id) {
+            const selectedChannel = $(`#${id}`).val();
             if (!selectedChannel) {
                 addWarningIfNotExists(this.warningId,
                     "Selecting no channel for this command type effectively disables your command, meaning it will never run."
@@ -810,8 +810,8 @@
         },
     };
 
-    $('#time-trigger-channel').change(() => checkMissingTriggerChannel.run());
-    $('#role-trigger-channel').change(() => checkMissingTriggerChannel.run());
+    $('#time-trigger-channel').change(() => checkMissingTriggerChannel.run('time-trigger-channel'));
+    $('#role-trigger-channel').change(() => checkMissingTriggerChannel.run('role-trigger-channel'));
 
     function updateTriggerLength() {
         const triggerLength = $('#trigger-length');

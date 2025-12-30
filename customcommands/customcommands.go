@@ -147,6 +147,8 @@ type CustomCommand struct {
 	PublicID        string             `json:"public_id" schema:"public_id"`
 
 	ContextChannel        int64 `schema:"context_channel" valid:"channel,true"`
+	TimeContextChannel    int64 `schema:"time_context_channel" valid:"channel,true"`
+	RoleContextChannel    int64 `schema:"role_context_channel" valid:"channel,true"`
 	RedirectErrorsChannel int64 `schema:"redirect_errors_channel" valid:"channel,true"`
 
 	TimeTriggerInterval       int     `schema:"time_trigger_interval"`
@@ -156,8 +158,7 @@ type CustomCommand struct {
 	ReactionTriggerMode  int `schema:"reaction_trigger_mode"`
 	InteractionDeferMode int `schema:"interaction_defer_mode"`
 
-	RoleTriggerMode    int   `schema:"role_trigger_mode"`
-	RoleTriggerChannel int64 `schema:"role_trigger_channel" valid:"channel,true"`
+	RoleTriggerMode int `schema:"role_trigger_mode"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -236,10 +237,6 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData, guild_id int64) (ok boo
 	}
 
 	if cc.TriggerTypeForm == "role_trigger" {
-		if cc.RoleTriggerChannel == 0 {
-			tmpl.AddAlerts(web.ErrorAlert("Role triggers require a channel to be specified"))
-			return false
-		}
 		if cc.RoleTriggerMode < 0 || cc.RoleTriggerMode > 2 {
 			tmpl.AddAlerts(web.ErrorAlert("Invalid role trigger mode"))
 			return false

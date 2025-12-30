@@ -48,7 +48,7 @@ func BotCachedGetCommandsWithRoleTriggers(guildID int64, ctx context.Context) ([
 		var err error
 
 		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": guildID}, func() {
-			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = 11", guildID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = 11 and disabled = false", guildID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
 		})
 
 		return cmds, err
@@ -132,24 +132,15 @@ func handleGuildAuditLogEntryCreate(evt *eventsystem.EventData) {
 			continue
 		}
 
-		isAdd := *change.Key == discordgo.AuditLogChangeKeyRoleAdd
-		isRemove := *change.Key == discordgo.AuditLogChangeKeyRoleRemove
-
-		if !isAdd && !isRemove {
+		if *change.Key != discordgo.AuditLogChangeKeyRoleAdd && *change.Key != discordgo.AuditLogChangeKeyRoleRemove {
 			continue
 		}
 
+		isRoleAdded := *change.Key == discordgo.AuditLogChangeKeyRoleAdd
+
 		var roles []map[string]any
-		if isAdd && change.NewValue != nil {
+		if change.NewValue != nil {
 			if roleArray, ok := change.NewValue.([]any); ok {
-				for _, r := range roleArray {
-					if roleMap, ok := r.(map[string]any); ok {
-						roles = append(roles, roleMap)
-					}
-				}
-			}
-		} else if isRemove && change.OldValue != nil {
-			if roleArray, ok := change.OldValue.([]any); ok {
 				for _, r := range roleArray {
 					if roleMap, ok := r.(map[string]any); ok {
 						roles = append(roles, roleMap)
@@ -164,7 +155,7 @@ func handleGuildAuditLogEntryCreate(evt *eventsystem.EventData) {
 					roleChanges = append(roleChanges, struct {
 						roleID int64
 						added  bool
-					}{roleID: roleID, added: isAdd})
+					}{roleID: roleID, added: isRoleAdded})
 				}
 			}
 		}
@@ -180,6 +171,10 @@ func handleGuildAuditLogEntryCreate(evt *eventsystem.EventData) {
 	targetMember, err := bot.GetMember(data.GuildID, targetUserID)
 	if err != nil {
 		logger.WithError(err).Warn("failed getting target member for role trigger")
+		return
+	}
+
+	if targetMember.User.Bot {
 		return
 	}
 
@@ -265,11 +260,11 @@ func handleGuildAuditLogEntryCreate(evt *eventsystem.EventData) {
 			cs := gs.GetChannel(cmd.CC.ContextChannel)
 			// Create template context with role trigger specific variables
 			tmplCtx := templates.NewContext(gs, cs, modMember)
-			tmplCtx.Data["Member"] = targetMember     // User who assigned the role
-			tmplCtx.Data["ModMember"] = modMember     // User who was assigned the role
+			tmplCtx.MS = targetMember
+			tmplCtx.GS = gs
+			tmplCtx.Data["ModMember"] = modMember     // User who assigned the role
 			tmplCtx.Data["Role"] = role               // Role that was assigned/removed
-			tmplCtx.Data["User"] = &targetMember.User // User object who assigned
-			tmplCtx.Data["ModUser"] = &modMember.User // User object who was assigned
+			tmplCtx.Data["ModUser"] = &modMember.User // User object who assigned the role
 			tmplCtx.Data["RoleAdded"] = roleChange.added
 			err = ExecuteCustomCommand(cmd.CC, tmplCtx)
 			if err != nil {
