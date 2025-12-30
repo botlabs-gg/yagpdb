@@ -77,6 +77,8 @@ ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS import_count INT NOT NULL D
 `, `
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS interaction_defer_mode SMALLINT NOT NULL DEFAULT 0;
 `, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS role_trigger_mode SMALLINT NOT NULL DEFAULT 0;
+`, `
 CREATE TABLE IF NOT EXISTS templates_user_database (
 	id BIGSERIAL PRIMARY KEY,
 

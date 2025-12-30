@@ -1416,6 +1416,10 @@ type AuditLogEntry struct {
 	GuildID    int64             `json:"guild_id,string,omitempty"`
 }
 
+func (a *AuditLogEntry) GetGuildID() int64 {
+	return a.GuildID
+}
+
 // A UserGuildSettingsChannelOverride stores data for a channel override for a users guild settings.
 type UserGuildSettingsChannelOverride struct {
 	Muted                bool  `json:"muted"`

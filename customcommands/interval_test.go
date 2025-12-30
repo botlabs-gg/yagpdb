@@ -64,7 +64,6 @@ type date struct {
 
 type dateOpt func(*date)
 
-func year(y int) dateOpt         { return func(d *date) { d.Year = y } }
 func month(m time.Month) dateOpt { return func(d *date) { d.Month = m } }
 func day(day int) dateOpt        { return func(d *date) { d.Day = day } }
 func hour(h int) dateOpt         { return func(d *date) { d.Hour = h } }
