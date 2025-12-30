@@ -258,12 +258,13 @@ func handleGuildAuditLogEntryCreate(evt *eventsystem.EventData) {
 		for _, cmd := range filteredCommands {
 			cs := gs.GetChannel(cmd.CC.ContextChannel)
 			// Create template context with role trigger specific variables
-			tmplCtx := templates.NewContext(gs, cs, modMember)
-			tmplCtx.MS = targetMember
+			tmplCtx := templates.NewContext(gs, cs, nil)
 			tmplCtx.GS = gs
-			tmplCtx.Data["ModMember"] = modMember     // Member who assigned the role
-			tmplCtx.Data["Role"] = role               // Role that was assigned/removed
-			tmplCtx.Data["ModUser"] = &modMember.User // User object who assigned the role
+			tmplCtx.Data["TargetMember"] = &targetMember    // member who got the role
+			tmplCtx.Data["TargetUser"] = &targetMember.User // user who got the role
+			tmplCtx.Data["ModMember"] = &modMember          // Member who assigned the role
+			tmplCtx.Data["Role"] = role                     // Role that was assigned/removed
+			tmplCtx.Data["ModUser"] = &modMember.User       // User object who assigned the role
 			tmplCtx.Data["RoleAdded"] = roleChange.added
 			err = ExecuteCustomCommand(cmd.CC, tmplCtx)
 			if err != nil {
