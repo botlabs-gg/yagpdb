@@ -39,59 +39,65 @@
                       <div class="row">
                         <div class="col" id="trigger-help">
                           {{ if eq .CC.TriggerType 10}}
-                          <p id="trigger-desc-none" class="text-danger">
-                            No trigger: can only be triggered manually by other custom
+                          <small id="trigger-desc-none" class="text-danger">
+                            Can only be triggered manually by other custom
                             commands
-                          </p>
+                          </small>
                           {{else if eq .CC.TriggerType 0}}
-                          <p id="trigger-desc-cmd">
-                            <b>Command Trigger</b>: Works the same way as normal commands by using the
+                          <small id="trigger-desc-cmd">
+                            Works the same way as normal commands by using the
                             command
                             prefix or bot mention followed by the trigger.<br />
-                          </p>
+                          </small>
                           {{else if eq .CC.TriggerType 1}}
-                          <p id="trigger-desc-prefix">
+                          <small id="trigger-desc-prefix">
                             Any message that starts with the trigger will run the command.
-                          </p>
+                          </small>
                           {{else if eq .CC.TriggerType 2}}
-                          <p id="trigger-desc-contains">
+                          <small id="trigger-desc-contains">
                             Any message that contains the trigger will run the command.
-                          </p>
+                          </small>
                           {{else if eq .CC.TriggerType 3}}
-                          <p id="trigger-desc-regex">
+                          <small id="trigger-desc-regex">
                             Any message that matches the provided regex will trigger the command.
-                          </p>
+                          </small>
                           {{else if eq .CC.TriggerType 4}}
-                          <p id="trigger-desc-exact">
+                          <small id="trigger-desc-exact">
                             Any message that is equal to the trigger will run the command.
-                          </p>
+                          </small>
                           {{else if eq .CC.TriggerType 5}}
                           {{if eq (call .GetCCIntervalType .CC) 1}}
-                          <p id="trigger-desc-interval_hours">
+                          <small id="trigger-desc-interval_hours">
                             The command will run at a hourly interval, for example every 5 hours.
-                          </p>
+                          </small>
                           {{else}}
-                          <p id="trigger-desc-interval_minutes">
+                          <small id="trigger-desc-interval_minutes">
                             The command will run at a minute interval, for example every 10 minutes.
-                          </p>
+                          </small>
                           {{end}}
                           {{else if eq .CC.TriggerType 6}}
-                          <p id="trigger-desc-reaction">
+                          <small id="trigger-desc-reaction">
                             The command will trigger on the specified reaction events.
-                          </p>
+                          </small>
                           {{else if eq .CC.TriggerType 7}}
-                          <p id="trigger-desc-component">
-                              The command will run when a component (a button or a select menu) whose
-                              custom ID matches the given regex is used. BETA FEATURE.
-                          </p>
+                          <small id="trigger-desc-component">
+                            The command will run when a component (a button or a select menu) whose
+                            custom ID matches the given regex is used.
+                          </small>
                           {{else if eq .CC.TriggerType 8}}
-                          <p id="trigger-desc-modal">
-                              The command will run when a modal whose custom ID matches the given regex is submitted. BETA FEATURE.
-                          </p>
+                          <small id="trigger-desc-modal">
+                            The command will run when a modal whose custom ID matches the given regex is submitted.
+                          </small>
                           {{else if eq .CC.TriggerType 9}}
-                          <p id="trigger-desc-cron">
-                              The command will run on a crontab interval, for example <code>45 23 * * 6</code> (23:45 every Saturday).
-                          </p>
+                          <small id="trigger-desc-cron">
+                            The command will run on a crontab interval, for example <code>45 23 * * 6</code> (23:45
+                            every Saturday).
+                          </small>
+                          {{else if eq .CC.TriggerType 11}}
+                          <small id="trigger-desc-role_trigger">
+                            The command will run when a role is assigned to or removed from a member,
+                            <b>has a cooldown of 5 minutes per user-role combination, reduced to 1 minute for premium servers</b>
+                          </small>
                           {{end}}
                         </div>
                       </div>
@@ -99,6 +105,7 @@
                   </div>
                 </div>
               </div>
+              <br/>
               {{if eq .CC.TriggerType 0 1 2 3 4 7 8 9}}
               <div id="cc-text-trigger-details" class="col-lg-8">
                 <div class="row">
@@ -177,7 +184,7 @@
                               </label>
                           </div>
                       </div>
-                      <p>Deferring a response becomes the original interaction response. Use <code>editResponse</code> to edit a deferred response.</p>
+                      <p>Deferring a response becomes the original interaction response. Use <code>editResponse</code> to edit a deferred response.</small>
                   </div>
                 </div>
                 {{end}}
@@ -226,7 +233,7 @@
                 </div>
                 {{end}}
                 <div class="row mt-3">
-                    <div class="form-group col-lg-3">
+                  <div class="form-group col-lg-3">
                       <label for="trigger">Excluding hours (UTC)</label><br>
                       <select name="time_trigger_excluding_hours" class="multiselect form-control" multiple="multiple"
                         disabled data-plugin-multiselect>
@@ -259,6 +266,35 @@
                 </div>
               </div>
               {{end}}
+              {{if eq .CC.TriggerType 11}}
+              <div id="cc-role-trigger-details" class="col-lg-8">
+                <div class="row">
+                  <div class="col-lg-12">
+                    <div class="form-check">
+                      <input class="form-check-input" disabled type="radio" name="role_trigger_mode"
+                        id="role-mode-both-{{.CC.PublicID}}" value="0" {{if eq .CC.RoleTriggerMode 0}}checked{{end}}>
+                      <label class="form-check-label" for="role-mode-both-{{.CC.PublicID}}">
+                        Both (Add and Remove)
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" disabled type="radio" name="role_trigger_mode"
+                        id="role-mode-add-{{.CC.PublicID}}" value="1" {{if eq .CC.RoleTriggerMode 1}}checked{{end}}>
+                      <label class="form-check-label" for="role-mode-add-{{.CC.PublicID}}">
+                        Role Add Only
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" disabled type="radio" name="role_trigger_mode"
+                        id="role-mode-remove-{{.CC.PublicID}}" value="2" {{if eq .CC.RoleTriggerMode 2}}checked{{end}}>
+                      <label class="form-check-label" for="role-mode-remove-{{.CC.PublicID}}">
+                        Role Remove Only
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {{end}}
             </div>
             <div class="row mt-3">
               <div class="col-lg-4">
@@ -266,30 +302,11 @@
                   <label>Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
                   <input type="text" class="form-control" disabled id="name" name="name" placeholder="Enter a name"
                     value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
-                  <p>An optional name that can be used to identify the command.</p>
+                  <small>An optional name that can be used to identify the command.</small>
                 </div>
-              </div>
-              <div class="form-group col-lg-4">
-                <label>Import this Custom Command in your server</label>
-                {{if .User}}
-                <select name="GuildID" class="form-control" id="import-guild" onchange="updateImportModal()">
-                  <option value="0" selected>None</option>
-
-                  {{range $dot.UserGuilds}}{{if .Connected}}
-                  <option value="{{.ID}}">{{.Name}}
-                  </option>
-                  {{end}}{{end}}
-                </select>
-                <button id="import-button" class="mb-1 mt-1 mr-1 modal-basic btn btn-success btn-block"
-                  href="#cc-import-modal" disabled>Import CC</button>
-                {{else}}
-                <div>
-                  <a href="/login?goto={{urlquery .RequestURI}}">Log in to import this CC into your server.</a>
-                </div>
-                {{end}}
               </div>
             </div>
-            <div class="row mb-2">
+            <div class="row mt-3">
               <div class="col-lg-12">
                 <div class="form-group">
                   <label for="responses">Total Response Length: <span class="cc-length-counter">x</span> <br/><span id="premium-only-import"><span></label>
@@ -320,6 +337,26 @@
                 </div>
               </div>
             </div>
+            <div class="row mt-3">
+              <div class="col-lg-12 form-group">
+                <label for="GuildID">Select a Server to Import this Custom Command</label>
+                {{if .User}}
+                <select name="GuildID" class="form-control" id="import-guild" onchange="updateImportModal()">
+                  <option value="0" selected>None</option>
+                  {{range $dot.UserGuilds}}{{if .Connected}}
+                  <option value="{{.ID}}">{{.Name}}
+                  </option>
+                  {{end}}{{end}}
+                </select>
+                <button id="import-button" class="mb-1 mt-1 mr-1 modal-basic btn btn-success btn-block"
+                  href="#cc-import-modal" disabled>Import CC</button>
+                {{else}}
+                <div>
+                  <a href="/login?goto={{urlquery .RequestURI}}">Log in to import this CC into your server.</a>
+                </div>
+                {{end}}
+              </div>
+            </div>
           </form>
         </div>
       </div>
@@ -334,16 +371,16 @@
     <div class="card-body">
       <div class="modal-wrapper">
         <div class="modal-text">
-          <p class="help-block">You are about to import a CC created by another user, which is <em>not vetted by
+          <small class="help-block">You are about to import a CC created by another user, which is <em>not vetted by
               YAGPDB or its staff</em>.
-          </p>
-          <p class="help-block">CCs may exploit YAGPDB's functionality for malicious purposes. Ensure you
+          </small>
+          <small class="help-block">CCs may exploit YAGPDB's functionality for malicious purposes. Ensure you
             fully understand the custom command code before deploying it on your server.
-          </p>
-          <p class="help-block">YAGPDB is not responsible for any potential damage caused by importing the CC.
-          </p>
-          <p id="guild-confirmation" class="help-block">Import to ?
-          </p>
+          </small>
+          <small class="help-block">YAGPDB is not responsible for any potential damage caused by importing the CC.
+          </small>
+          <small id="guild-confirmation" class="help-block">Import to ?
+          </small>
           <div class="row mt-4">
             <div class="col">
               <button class="btn btn-quaternary btn-block modal-dismiss">Cancel</button>

@@ -408,13 +408,27 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		templateData["CurrentGroupID"] = groupID
 	}
 
-	c, err := models.CustomCommands(qm.Where("guild_id = ?", activeGuild.ID)).CountG(ctx)
+	// Check the limits
+	currentCount, err := models.CustomCommands(qm.Where("guild_id = ? AND disabled = false", activeGuild.ID)).CountG(ctx)
 	if err != nil {
 		return templateData, err
 	}
 
-	if int(c) >= MaxCommandsForContext(ctx) {
+	if int(currentCount) >= MaxCommandsForContext(ctx) {
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Max %d custom commands allowed (or %d for premium servers)", MaxCommands, MaxCommandsPremium))), nil
+	}
+
+	// Role triggers are premium-only and limited to 5
+	// We need to parse the form value for TriggerType to check this before DB insertion
+	triggerTypeForm, _ := strconv.ParseInt(r.FormValue("TriggerType"), 10, 64)
+	if CommandTriggerType(triggerTypeForm) == CommandTriggerRole {
+		count, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ?", activeGuild.ID, int(CommandTriggerRole))).CountG(ctx)
+		if err != nil {
+			return templateData, err
+		}
+		if count >= 5 {
+			return templateData.AddAlerts(web.ErrorAlert("Maximum 5 role trigger commands allowed")), nil
+		}
 	}
 
 	localID, err := common.GenLocalIncrID(activeGuild.ID, "custom_command")
@@ -546,6 +560,15 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 	dbModel.GuildID = activeGuild.ID
 	dbModel.LocalID = cmdEdit.ID
 	dbModel.TriggerType = int(triggerTypeFromForm(cmdEdit.TriggerTypeForm))
+
+	// Check limits for role triggers (1 free, 5 premium)
+	if dbModel.TriggerType == int(CommandTriggerRole) {
+		ok, err := checkRoleTriggerLimit(ctx, activeGuild.ID, cmdEdit.ID, templateData)
+		if err != nil || !ok {
+			return templateData, err
+		}
+	}
+
 	// check low interval limits
 	if dbModel.TriggerType == int(CommandTriggerInterval) || dbModel.TriggerType == int(CommandTriggerCron) {
 		switch CommandTriggerType(dbModel.TriggerType) {
@@ -758,6 +781,33 @@ func checkIntervalLimits(ctx context.Context, guildID int64, cmdID int64, templa
 	return false, nil
 }
 
+func checkRoleTriggerLimit(ctx context.Context, guildID int64, cmdID int64, templateData web.TemplateData) (ok bool, err error) {
+	isPremium := premium.ContextPremium(ctx)
+	limit := 1
+	if isPremium {
+		limit = 5
+	}
+
+	// Check if we're at the limit (excluding the current command being updated)
+	count, err := models.CustomCommands(
+		qm.Where("guild_id = ? AND trigger_type = ? AND local_id != ?", guildID, int(CommandTriggerRole), cmdID),
+	).CountG(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	if int(count) >= limit {
+		msg := fmt.Sprintf("Max %d role trigger commands allowed", limit)
+		if !isPremium {
+			msg += " (Premium servers allow up to 5)"
+		}
+		templateData.AddAlerts(web.ErrorAlert(msg))
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func handleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
 	ctx := r.Context()
 	activeGuild, templateData := web.GetBaseCPContextData(ctx)
@@ -866,6 +916,8 @@ func triggerTypeFromForm(str string) CommandTriggerType {
 		return CommandTriggerModal
 	case "cron":
 		return CommandTriggerCron
+	case "role_trigger":
+		return CommandTriggerRole
 	default:
 		return CommandTriggerCommand
 

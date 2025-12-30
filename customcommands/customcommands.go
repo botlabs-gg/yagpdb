@@ -76,6 +76,7 @@ const (
 	CommandTriggerComponent  CommandTriggerType = 7
 	CommandTriggerModal      CommandTriggerType = 8
 	CommandTriggerCron       CommandTriggerType = 9
+	CommandTriggerRole       CommandTriggerType = 11
 )
 
 var (
@@ -91,6 +92,7 @@ var (
 		CommandTriggerComponent,
 		CommandTriggerModal,
 		CommandTriggerCron,
+		CommandTriggerRole,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
@@ -105,6 +107,7 @@ var (
 		CommandTriggerComponent:  "Component",
 		CommandTriggerModal:      "Modal",
 		CommandTriggerCron:       "Crontab",
+		CommandTriggerRole:       "Role",
 	}
 )
 
@@ -119,6 +122,12 @@ const (
 	InteractionDeferModeMessage
 	InteractionDeferModeEphemeral
 	InteractionDeferModeUpdate
+)
+
+const (
+	RoleTriggerModeBoth = iota
+	RoleTriggerModeAdd
+	RoleTriggerModeRemove
 )
 
 func (t CommandTriggerType) String() string {
@@ -146,6 +155,9 @@ type CustomCommand struct {
 
 	ReactionTriggerMode  int `schema:"reaction_trigger_mode"`
 	InteractionDeferMode int `schema:"interaction_defer_mode"`
+
+	RoleTriggerMode    int   `schema:"role_trigger_mode"`
+	RoleTriggerChannel int64 `schema:"role_trigger_channel" valid:"channel,true"`
 
 	// If set, then the following channels are required, otherwise they are ignored
 	RequireChannels bool    `json:"require_channels" schema:"require_channels"`
@@ -223,7 +235,19 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData, guild_id int64) (ok boo
 		}
 	}
 
+	if cc.TriggerTypeForm == "role_trigger" {
+		if cc.RoleTriggerChannel == 0 {
+			tmpl.AddAlerts(web.ErrorAlert("Role triggers require a channel to be specified"))
+			return false
+		}
+		if cc.RoleTriggerMode < 0 || cc.RoleTriggerMode > 2 {
+			tmpl.AddAlerts(web.ErrorAlert("Invalid role trigger mode"))
+			return false
+		}
+	}
+
 	return true
+
 }
 
 func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
@@ -247,6 +271,8 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 
 		ReactionTriggerMode:  int16(cc.ReactionTriggerMode),
 		InteractionDeferMode: int16(cc.InteractionDeferMode),
+
+		RoleTriggerMode: int16(cc.RoleTriggerMode),
 
 		Responses: cc.Responses,
 
