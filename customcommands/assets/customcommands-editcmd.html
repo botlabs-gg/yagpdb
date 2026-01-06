@@ -423,7 +423,7 @@
                         <div class="row mt-3">
                             <div class="col-lg-6">
                                 <div class="row">
-                                    <div class="form-group col-auto">
+                                    <div class="form-group col-12">
                                         <label for="GroupID" class="text-white">Custom command group</label>
                                         {{$selectedGroup := .CC.GroupID.Int64}}
                                         <select Name="GroupID" class="form-control">
@@ -437,23 +437,23 @@
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-auto">
+                                    <div class="col-3">
                                         <h5>Last error</h5>
                                         <small>{{if .CC.LastError}}<b>{{formatTime .CC.LastErrorTime.Time.UTC}}</b> - <code>
                                             {{.CC.LastError}}</code>{{else}}None{{end}}</small>
                                     </div>
 
-                                    <div class="col-auto">
+                                    <div class="col-3">
                                         <h5>Run count</h5>
                                         <small><code>{{.CC.RunCount}}</code></small>
                                     </div>
                                   
-                                    <div class="col-auto">
+                                    <div class="col-3">
                                         <h5>Last run</h5>
                                         <small>{{if .CC.LastRun.Valid}}{{formatTime .CC.LastRun.Time.UTC}}{{else}}None{{end}}</small>
                                     </div>
                                     {{if (eq .CC.TriggerType 5 9)}}
-                                    <div class="col-auto">
+                                    <div class="col-3">
                                         <h5>Next scheduled run</h5>
                                         <small>{{if .CC.NextRun.Valid}}{{formatTime .CC.NextRun.Time.UTC}}{{else}}None{{end}}</small>
                                     </div>
@@ -461,11 +461,11 @@
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-auto">
+                                    <div class="col-6">
                                         <label for="show_errors" class="text-white">Output Error as command response</label>
                                         {{checkbox "show_errors" "show_errors" "" .CC.ShowErrors}}
                                     </div>
-                                    <div class="col-auto">
+                                    <div class="col-6">
                                         <label for="redirect_errors_channel" class="text-white">Redirect errors to selected channel</label>
                                         <select class="form-control" name="redirect_errors_channel" data-requireperms-send>
                                             {{textChannelOptions $g.Channels .CC.RedirectErrorsChannel true "None"}}
