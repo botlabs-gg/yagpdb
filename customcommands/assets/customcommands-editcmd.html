@@ -437,28 +437,28 @@
                                 </div>
                                 <hr>
                                 <div class="row">
-                                    <div class="col-3">
+                                    <div class="col-6">
                                         <h5>Last error</h5>
                                         <small>{{if .CC.LastError}}<b>{{formatTime .CC.LastErrorTime.Time.UTC}}</b> - <code>
                                             {{.CC.LastError}}</code>{{else}}None{{end}}</small>
                                     </div>
-
                                     <div class="col-3">
                                         <h5>Run count</h5>
                                         <small><code>{{.CC.RunCount}}</code></small>
                                     </div>
-                                  
                                     <div class="col-3">
                                         <h5>Last run</h5>
                                         <small>{{if .CC.LastRun.Valid}}{{formatTime .CC.LastRun.Time.UTC}}{{else}}None{{end}}</small>
                                     </div>
-                                    {{if (eq .CC.TriggerType 5 9)}}
-                                    <div class="col-3">
+                                </div>
+                                {{if (eq .CC.TriggerType 5 9)}}
+                                <div class="row">
+                                    <div class="col-6">
                                         <h5>Next scheduled run</h5>
                                         <small>{{if .CC.NextRun.Valid}}{{formatTime .CC.NextRun.Time.UTC}}{{else}}None{{end}}</small>
                                     </div>
-                                    {{end}}
                                 </div>
+                                {{end}}
                                 <hr>
                                 <div class="row">
                                     <div class="col-6">
@@ -520,6 +520,7 @@
                             </div>
                         </div>
                         <hr>
+                        <small class="help-block text-center">Tip: Alt + Shift + S also saves the custom command </small>
                         <div class="row mt-3">
                             <div class="col">
                                 <button type="submit" class="btn btn-success btn-block"
@@ -527,7 +528,6 @@
                                     data-async-form-alertsonly
                                     id = "save-custom-command"
                                 >Save</button>
-                                <small class="help-block">Tip: Alt + Shift + S also saves the custom command </small>
                             </div>
                             <div class="col">
                                 <button type="submit" class="btn btn-danger btn-block"
