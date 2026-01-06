@@ -274,7 +274,7 @@ var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 		}
 		return &discordgo.MessageSend{
 			Content: out.String(),
-			File:    &discordgo.File{Name: "output.md", Reader: strings.NewReader(fileOut.String())},
+			File:    &discordgo.File{Name: "output.txt", Reader: strings.NewReader(fileOut.String())},
 		}, nil
 	},
 }

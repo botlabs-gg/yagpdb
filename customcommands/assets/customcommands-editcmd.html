@@ -794,7 +794,12 @@
     var checkMissingTriggerChannel = {
         applicableTriggerTypes: ['interval_hours', 'interval_minutes', 'cron', 'role_trigger'],
         warningId: 'trigger-no-channel-warning',
-        run(id) {
+        run() {
+            const triggerType = $('#trigger-type-dropdown').val();
+            let id = 'time-trigger-channel';
+            if (triggerType == 'role_trigger') {
+                id = 'role-trigger-channel';
+            }
             const selectedChannel = $(`#${id}`).val();
             if (!selectedChannel) {
                 addWarningIfNotExists(this.warningId,
@@ -810,8 +815,8 @@
         },
     };
 
-    $('#time-trigger-channel').change(() => checkMissingTriggerChannel.run('time-trigger-channel'));
-    $('#role-trigger-channel').change(() => checkMissingTriggerChannel.run('role-trigger-channel'));
+    $('#time-trigger-channel').change(() => checkMissingTriggerChannel.run());
+    $('#role-trigger-channel').change(() => checkMissingTriggerChannel.run());
 
     function updateTriggerLength() {
         const triggerLength = $('#trigger-length');

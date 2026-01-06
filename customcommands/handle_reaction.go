@@ -3,6 +3,7 @@ package customcommands
 import (
 	"context"
 	"sort"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
@@ -13,6 +14,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 func handleMessageReactions(evt *eventsystem.EventData) {
@@ -86,8 +89,29 @@ func handleMessageReactions(evt *eventsystem.EventData) {
 	}
 }
 
+var cachedCommandsReactionTrigger = common.CacheSet.RegisterSlot("custom_commands_reaction_trigger", nil, int64(0))
+
+func BotCachedGetCommandsWithReactionTrigger(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
+	v, err := cachedCommandsReactionTrigger.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+		var cmds []*models.CustomCommand
+		var err error
+
+		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": guildID}, func() {
+			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = 6", guildID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+		})
+
+		return cmds, err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return v.([]*models.CustomCommand), nil
+}
+
 func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelState, userID int64, reaction *discordgo.MessageReaction, add bool) (ms *dstate.MemberState, matches []*TriggeredCC, err error) {
-	cmds, err := BotCachedGetCommandsWithMessageTriggers(cs.GuildID, ctx)
+	cmds, err := BotCachedGetCommandsWithReactionTrigger(cs.GuildID, ctx)
 	if err != nil {
 		return nil, nil, errors.WrapIf(err, "BotCachedGetCommandsWithReactionTriggers")
 	}
@@ -99,7 +123,6 @@ func findReactionTriggerCustomCommands(ctx context.Context, cs *dstate.ChannelSt
 		}
 
 		if didMatch := CheckMatchReaction(cmd, reaction, add); didMatch {
-
 			matched = append(matched, &TriggeredCC{
 				CC: cmd,
 			})

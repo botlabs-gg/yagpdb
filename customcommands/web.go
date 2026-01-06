@@ -491,7 +491,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyImportedCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
 	}
 
-	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
+	EvictCustomCommandCache(activeGuild.ID)
 	return templateData, nil
 }
 
@@ -651,7 +651,7 @@ func handleUpdateCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyDisabledSharingCommand, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: dbModel.LocalID}))
 	}
 
-	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
+	EvictCustomCommandCache(activeGuild.ID)
 	return templateData, err
 }
 
@@ -683,7 +683,7 @@ func handleDeleteCommand(w http.ResponseWriter, r *http.Request) (web.TemplateDa
 
 	err = DelNextRunEvent(cmd.GuildID, cmd.LocalID)
 	featureflags.MarkGuildDirty(activeGuild.ID)
-	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
+	EvictCustomCommandCache(activeGuild.ID)
 	return templateData, err
 }
 
@@ -823,7 +823,7 @@ func handleNewGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData, e
 
 	templateData["CurrentGroupID"] = dbModel.ID
 
-	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
+	EvictCustomCommandCache(activeGuild.ID)
 	return templateData, nil
 }
 
@@ -852,7 +852,7 @@ func handleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedGroup, &cplogs.Param{Type: cplogs.ParamTypeString, Value: model.Name}))
 	}
 
-	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
+	EvictCustomCommandCache(activeGuild.ID)
 	return templateData, err
 }
 
@@ -874,7 +874,7 @@ func handleDeleteGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedGroup, &cplogs.Param{Type: cplogs.ParamTypeInt, Value: id}))
 	}
 
-	pubsub.EvictCacheSet(cachedCommandsMessage, activeGuild.ID)
+	EvictCustomCommandCache(activeGuild.ID)
 	return templateData, err
 }
 
@@ -1012,4 +1012,11 @@ func UpdateImportCount(cmd *models.CustomCommand) {
 	if err != nil {
 		logger.WithError(err).WithField("guild", cmd.GuildID).Error("failed running post command imported query")
 	}
+}
+
+func EvictCustomCommandCache(guildID int64) {
+	pubsub.EvictCacheSet(cachedCommandsMessageTrigger, guildID)
+	pubsub.EvictCacheSet(cachedCommandsComponentTrigger, guildID)
+	pubsub.EvictCacheSet(cachedCommandsReactionTrigger, guildID)
+	pubsub.EvictCacheSet(cachedCommandsRoleTrigger, guildID)
 }
