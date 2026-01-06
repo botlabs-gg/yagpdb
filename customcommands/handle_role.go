@@ -42,13 +42,15 @@ func setRoleTriggerCooldown(guildID, userID, roleID int64, duration int) error {
 	return common.RedisPool.Do(radix.FlatCmd(nil, "SETEX", keyRoleTriggerCooldown(guildID, userID, roleID), duration, "1"))
 }
 
-func BotCachedGetCommandsWithRoleTriggers(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
-	v, err := cachedCommandsMessage.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
+var cachedCommandsRoleTrigger = common.CacheSet.RegisterSlot("custom_commands_role_trigger", nil, int64(0))
+
+func BotCachedGetCommandsWithRoleTrigger(guildID int64, ctx context.Context) ([]*models.CustomCommand, error) {
+	v, err := cachedCommandsRoleTrigger.GetCustomFetch(guildID, func(key interface{}) (interface{}, error) {
 		var cmds []*models.CustomCommand
 		var err error
 
 		common.LogLongCallTime(time.Second, true, "Took longer than a second to fetch custom commands from db", logrus.Fields{"guild": guildID}, func() {
-			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = 11 and disabled = false", guildID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
+			cmds, err = models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = 11", guildID), qm.OrderBy("local_id desc"), qm.Load("Group")).AllG(ctx)
 		})
 
 		return cmds, err
@@ -87,7 +89,7 @@ func CmdRunsForRole(cc *models.CustomCommand, role *discordgo.Role) bool {
 }
 
 func findRoleTriggerCommands(ctx context.Context, guildID int64) (matches []*TriggeredCC, err error) {
-	allCmds, err := BotCachedGetCommandsWithRoleTriggers(guildID, ctx)
+	allCmds, err := BotCachedGetCommandsWithRoleTrigger(guildID, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -95,11 +97,7 @@ func findRoleTriggerCommands(ctx context.Context, guildID int64) (matches []*Tri
 	matches = make([]*TriggeredCC, 0, len(allCmds))
 
 	for _, cmd := range allCmds {
-		if cmd.R.Group != nil && cmd.R.Group.Disabled {
-			continue
-		}
-
-		if cmd.ContextChannel == 0 {
+		if cmd.Disabled || cmd.R.Group != nil && cmd.R.Group.Disabled || cmd.ContextChannel == 0 {
 			continue
 		}
 
