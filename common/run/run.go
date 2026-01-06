@@ -93,7 +93,7 @@ func Init() {
 		AddSyslogHooks()
 	}
 
-	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC && !flagGenConfigDocs {
+	if !flagRunBot && !flagRunWeb && flagRunFeeds == "" && !flagRunEverything && !flagDryRun && !flagRunBWC && !flagGenConfigDocs && !FlagGenCmdDocs {
 		log.Error("Didnt specify what to run, see -h for more info")
 		os.Exit(1)
 	}

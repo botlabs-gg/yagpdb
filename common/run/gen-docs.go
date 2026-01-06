@@ -40,7 +40,11 @@ func GenCommandsDocs() {
 			nameStr += entry.Cmd.Trigger.Names[0]
 
 			// then aliases
-			aliases := strings.Join(entry.Cmd.Trigger.Names[1:], "/")
+			var as bytes.Buffer
+			for _, alias := range entry.Cmd.Trigger.Names[1:] {
+				as.WriteString("- " + alias + "\n")
+			}
+			aliases := as.String()
 
 			// arguments and switches
 			args := stdHelpFmt.ArgDefs(entry.Cmd, mockCmdData)
@@ -59,29 +63,26 @@ func GenCommandsDocs() {
 				}
 			}
 
+			anchor := strings.ReplaceAll(nameStr, " ", "-")
 			out.WriteString("### " + nameStr + "\n\n")
 			if aliases != "" {
-				out.WriteString("**Aliases:** " + aliases + "\n\n")
+				out.WriteString("#### Aliases{#" + anchor + "-aliases}\n\n" + aliases + "\n")
 			}
 
 			out.WriteString(desc)
-			out.WriteString("\n\n")
+			out.WriteString("\n")
 
-			out.WriteString("**Usage:**\n")
-			out.WriteString("```\n" + args + "\n```\n")
+			out.WriteString("#### Usage{#" + anchor + "-usage}\n\n")
+			out.WriteString("```txt\n" + args + "\n```\n")
 
 			if switches != "" {
-				out.WriteString("```\n" + switches + "\n```\n")
+				out.WriteString("\n```txt\n" + switches + "\n```\n")
 			}
-
 			out.WriteString("\n")
 		}
-
 	}
 
 	os.Stdout.Write(out.Bytes())
-
-	return
 }
 
 func GenConfigDocs() {
@@ -127,7 +128,7 @@ func GenConfigDocs() {
 		out.WriteString("\n")
 
 		properKey := strings.ToUpper(v.Name)
-		properKey = strings.Replace(properKey, ".", "_", -1)
+		properKey = strings.ReplaceAll(properKey, ".", "_")
 		out.WriteString(properKey + "\n\n")
 	}
 
