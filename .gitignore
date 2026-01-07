@@ -5,6 +5,7 @@ cmd/yagpdb/static/index.html
 cmd/yagpdb/cert
 cmd/yagpdb/access_log
 cmd/yagpdb/access.log
+cmd/yagpdb/*.log
 cmd/yagpdb/static/report.html
 cmd/yagpdb/yagpdb
 cmd/yagpdb/templates/plugins/*.html
