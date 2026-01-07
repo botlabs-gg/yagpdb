@@ -261,6 +261,10 @@ func (s *StdHelpFormatter) Switches(cmd Cmd) (str string) {
 	for _, sw := range switches {
 		str += "[-" + strings.ToLower(sw.Name) + " " + s.ArgDef(sw) + "]\n"
 	}
+	// Trim the last newline
+	if len(str) > 0 && strings.HasSuffix(str, "\n") {
+		str = str[:len(str)-1]
+	}
 
 	return
 }
@@ -283,6 +287,10 @@ func (s *StdHelpFormatter) ArgDefs(cmd *RegisteredCommand, data *Data) (str stri
 		}
 	} else {
 		str = cmd.FormatNames(false, "/") + " " + s.ArgDefLine(defs, req)
+	}
+	// Trim the last newline
+	if len(str) > 0 && strings.HasSuffix(str, "\n") {
+		str = str[:len(str)-1]
 	}
 
 	return
