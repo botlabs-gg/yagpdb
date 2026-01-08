@@ -324,7 +324,9 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 		logger.Errorf("DM interaction received with incorrect customID: %s from user %d", customID, ic.User.ID)
 	}
 	gs, err := evt.Session.Guild(guild_id)
-	logger.WithError(err).Errorf("Failed getting guild info for DM %s from user %d", customID, ic.User.ID)
+	if err != nil {
+		logger.WithError(err).Errorf("Failed getting guild info for DM %s from user %d", customID, ic.User.ID)
+	}
 	response := discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{Flags: 64},
@@ -337,7 +339,9 @@ func handleDmGuildInfoInteraction(evt *eventsystem.EventData) {
 	}
 	response.Data.Content = content
 	err = evt.Session.CreateInteractionResponse(ic.ID, ic.Token, &response)
-	logger.WithError(err).Printf("Interaction Response!")
+	if err != nil {
+		logger.WithError(err).Errorf("DM interaction response failed.")
+	}
 }
 
 func HandleInteractionCreate(evt *eventsystem.EventData) {
