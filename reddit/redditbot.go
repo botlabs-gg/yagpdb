@@ -81,7 +81,7 @@ func (p *Plugin) checkFeed() {
 		select {
 		case <-ticker.C:
 			logger.Infof("Checking Feed Status, last success was %s ago", time.Since(lastFeedSuccessAt))
-			if time.Since(lastFeedSuccessAt) > (15 * time.Minute) {
+			if time.Since(lastFeedSuccessAt) > (10 * time.Minute) {
 				logger.Warnf("No successful feed since %s, restarting", time.Since(lastFeedSuccessAt))
 				p.restartFeed()
 				return

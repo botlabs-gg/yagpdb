@@ -185,7 +185,7 @@ func (p *PostFetcher) GetNewPosts() ([]*greddit.Link, error) {
 		logrus.Info("Redditfeed processed ", len(resp), " links")
 	}
 
-	if len(resp) < 50 && !p.hasCaughtUp {
+	if len(resp) < 75 && !p.hasCaughtUp {
 		logrus.Info("Reddit feed caught up in ", time.Since(p.started).String())
 		p.hasCaughtUp = true
 	}
