@@ -1376,7 +1376,11 @@ func shuffle(seq interface{}) (interface{}, error) {
 	return shuffled.Interface(), nil
 }
 
-func tmplToInt(from any) int {
+func tmplToInt(from any, base ...int) int {
+	b := 10
+	if len(base) > 0 {
+		b = base[0]
+	}
 	t := reflect.ValueOf(from)
 	switch {
 	case t.CanInt():
@@ -1386,15 +1390,18 @@ func tmplToInt(from any) int {
 	case t.CanUint():
 		return int(t.Uint())
 	case t.Kind() == reflect.String:
-		// base 0 to infer hex, octal, etc. from string prefix
-		parsed, _ := strconv.ParseInt(t.String(), 0, 64)
+		parsed, _ := strconv.ParseInt(t.String(), b, 64)
 		return int(parsed)
 	default:
 		return 0
 	}
 }
 
-func ToInt64(from any) int64 {
+func ToInt64(from any, base ...int) int64 {
+	b := 10
+	if len(base) > 0 {
+		b = base[0]
+	}
 	t := reflect.ValueOf(from)
 	switch {
 	case t.CanInt():
@@ -1404,7 +1411,7 @@ func ToInt64(from any) int64 {
 	case t.CanUint():
 		return int64(t.Uint())
 	case t.Kind() == reflect.String:
-		parsed, _ := strconv.ParseInt(t.String(), 0, 64)
+		parsed, _ := strconv.ParseInt(t.String(), b, 64)
 		return parsed
 	default:
 		return 0
