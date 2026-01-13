@@ -390,7 +390,7 @@ func GuildPathMutexMiddleware(inner http.Handler) http.Handler {
 	})
 }
 
-// RequireBotMemberMW ensures that the bot member for the curreng guild is available, mostly used for checking the bot's roles
+// RequireBotMemberMW ensures that the bot member for the current guild is available, mostly used for checking the bot's roles
 func RequireBotMemberMW(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		parsedGuildID, _ := strconv.ParseInt(pat.Param(r, "server"), 10, 64)

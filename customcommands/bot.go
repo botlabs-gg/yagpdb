@@ -537,16 +537,21 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 		return errors.WrapIf(err, "Failed disabling long custom commands on premium removal")
 	}
 
-	_, err = models.CustomCommands(qm.Where("guild_id = ? AND disabled = false AND trigger_type = ?", GuildID, CommandTriggerRole), qm.OrderBy("local_id ASC"), qm.Offset(MaxRoleTriggerCommands)).UpdateAllG(context.Background(), models.M{"disabled": true})
+	commands, err := models.CustomCommands(qm.Where("guild_id = ? AND disabled = false AND trigger_type = ?", GuildID, CommandTriggerRole), qm.OrderBy("local_id ASC	"), qm.Offset(MaxRoleTriggerCommands)).AllG(context.Background())
 	if err != nil {
-		return errors.WrapIf(err, "failed disabling role trigger custom commands on premium removal")
+		return errors.WrapIf(err, "failed fetching role trigger custom commands on premium removal")
+	}
+	if len(commands) > 0 {
+		_, err = commands.UpdateAllG(context.Background(), models.M{"disabled": true})
+		if err != nil {
+			return errors.WrapIf(err, "failed disabling role trigger custom commands on premium removal")
+		}
 	}
 
-	commands, err := models.CustomCommands(qm.Where("guild_id = ? AND disabled = false", GuildID), qm.OrderBy("local_id ASC"), qm.Offset(MaxCommands)).AllG(context.Background())
+	commands, err = models.CustomCommands(qm.Where("guild_id = ? AND disabled = false", GuildID), qm.OrderBy("local_id ASC"), qm.Offset(MaxCommands)).AllG(context.Background())
 	if err != nil {
 		return errors.WrapIf(err, "failed getting custom commands")
 	}
-
 	if len(commands) > 0 {
 		_, err = commands.UpdateAllG(context.Background(), models.M{"disabled": true})
 		if err != nil {
