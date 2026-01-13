@@ -17,6 +17,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -51,6 +52,7 @@ func (t TicketUserError) Error() string {
 
 const (
 	ErrNoTicketCategory    TicketUserError = "No category for ticket channels set"
+	ErrNoThreadChannel     TicketUserError = "No thread channel for ticket channels set"
 	ErrTitleTooLong        TicketUserError = "Title is too long (max 90 characters.) Please shorten it down, you can add more details in the ticket after it has been created"
 	ErrMaxOpenTickets      TicketUserError = "You're currently in over 10 open tickets on this server, please close some of the ones you're in."
 	ErrMaxCategoryChannels TicketUserError = "Max channels in category reached (50)"
@@ -62,23 +64,8 @@ const (
 )
 
 func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberState, conf *models.TicketConfig, topic string, checkMaxTickets, executedByCommandTemplate bool) (*dstate.GuildSet, *models.Ticket, error) {
-	if gs.GetChannel(conf.TicketsChannelCategory) == nil {
-		return gs, nil, ErrNoTicketCategory
-	}
-
-	categoryChannels := 0
-	for _, v := range gs.Channels {
-		if v.ParentID == conf.TicketsChannelCategory {
-			categoryChannels++
-		}
-
-		if categoryChannels == 50 {
-			return gs, nil, ErrMaxCategoryChannels
-		}
-	}
-
-	if hasPerms, _ := bot.BotHasPermissionGS(gs, conf.TicketsChannelCategory, InTicketPerms); !hasPerms {
-		return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the following permissions on the ticket category: %s", common.HumanizePermissions(InTicketPerms)))
+	if utf8.RuneCountInString(topic) > 90 {
+		return gs, nil, ErrTitleTooLong
 	}
 
 	if checkMaxTickets {
@@ -102,18 +89,53 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 		}
 	}
 
-	if utf8.RuneCountInString(topic) > 90 {
-		return gs, nil, ErrTitleTooLong
-	}
-
-	// we manually insert the channel into gs for reliability
+	var ticketParent *dstate.ChannelState
+	var id int64
+	var channel *discordgo.Channel
+	var err error
+	isPremium, _ := premium.IsGuildPremium(gs.ID)
+	canUseThreadedTickets := isPremium && conf.UseThreadedTickets
 	gsCop := *gs
-	gsCop.Channels = make([]dstate.ChannelState, len(gs.Channels), len(gs.Channels)+1)
-	copy(gsCop.Channels, gs.Channels)
-
-	id, channel, err := createTicketChannel(conf, gs, ms.User.ID, topic)
-	if err != nil {
-		return gs, nil, err
+	if canUseThreadedTickets {
+		if ticketParent = gs.GetChannel(conf.TicketsThreadChannelID); ticketParent == nil {
+			return gs, nil, ErrNoTicketCategory
+		}
+		if hasPerms, _ := bot.BotHasPermissionGS(gs, ticketParent.ID, ThreadedTicketPerms); !hasPerms {
+			return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the following permissions on the ticket category: %s", common.HumanizePermissions(ThreadedTicketPerms)))
+		}
+		id, channel, err = createTicketThread(conf, gs, ms.User.ID, topic)
+		if err != nil {
+			return gs, nil, err
+		}
+		gsCop.Threads = make([]dstate.ChannelState, len(gs.Threads), len(gs.Threads)+1)
+		copy(gsCop.Threads, gs.Threads)
+	} else {
+		if ticketParent = gs.GetChannel(conf.TicketsChannelCategory); ticketParent == nil {
+			return gs, nil, ErrNoTicketCategory
+		}
+		if hasPerms, _ := bot.BotHasPermissionGS(gs, conf.TicketsChannelCategory, InTicketPerms); !hasPerms {
+			return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the following permissions on the ticket category: %s", common.HumanizePermissions(InTicketPerms)))
+		}
+		categoryChannels := 0
+		for _, v := range gs.Channels {
+			if v.ParentID == conf.TicketsChannelCategory {
+				categoryChannels++
+			}
+		}
+		if categoryChannels == 50 {
+			return gs, nil, ErrMaxCategoryChannels
+		}
+		if hasPerms, _ := bot.BotHasPermissionGS(gs, conf.TicketsChannelCategory, InTicketPerms); !hasPerms {
+			return gs, nil, TicketUserError(fmt.Sprintf("The bot is missing one of the following permissions on the ticket category: %s", common.HumanizePermissions(InTicketPerms)))
+		}
+		// we manually insert the channel into gs for reliability
+		gsCop := *gs
+		gsCop.Channels = make([]dstate.ChannelState, len(gs.Channels), len(gs.Channels)+1)
+		copy(gsCop.Channels, gs.Channels)
+		id, channel, err = createTicketChannel(conf, gs, ms.User.ID, topic)
+		if err != nil {
+			return gs, nil, err
+		}
 	}
 
 	// create the db model for it
@@ -138,7 +160,11 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 
 	// insert the channel into gs, TODO: Should we sort?
 	gs = &gsCop
-	gs.Channels = append(gs.Channels, cs)
+	if canUseThreadedTickets {
+		gs.Threads = append(gs.Threads, cs)
+	} else {
+		gs.Channels = append(gs.Channels, cs)
+	}
 
 	tmplCTX := templates.NewContext(gs, &cs, ms)
 	if executedByCommandTemplate {
@@ -146,6 +172,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 	} else {
 		tmplCTX.ExecutedFrom = templates.ExecutedFromCommandTemplate
 	}
+
 	tmplCTX.Name = "ticket open message"
 	tmplCTX.Data["Reason"] = topic
 	ticketOpenMsg := conf.TicketOpenMSG
@@ -180,8 +207,7 @@ func CreateTicket(ctx context.Context, gs *dstate.GuildSet, ms *dstate.MemberSta
 		Color:       0x5df948,
 	})
 
-	// Annn done setting up the ticket
-	// return fmt.Sprintf("Ticket #%d opened in <#%d>", id, channel.ID), nil
+	// And done setting up the ticket
 	return gs, dbModel, nil
 }
 
@@ -242,12 +268,26 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 		Color:       0xf23c3c,
 	})
 
-	// if everything went well, delete the channel
-	_, err = common.BotSession.ChannelDelete(currentTicket.Ticket.ChannelID)
-	if err != nil {
-		return "", err
+	cs := gs.GetChannelOrThread(currentTicket.Ticket.ChannelID)
+	if cs == nil {
+		return "", nil
 	}
-
+	if cs.Type == discordgo.ChannelTypeGuildPrivateThread && conf.LockAndArchiveThreadOnClose {
+		archivedAndLocked := true
+		_, err = common.BotSession.ChannelEditComplex(currentTicket.Ticket.ChannelID, &discordgo.ChannelEdit{
+			Archived: &archivedAndLocked,
+			Locked:   &archivedAndLocked,
+		})
+		if err != nil {
+			return "", err
+		}
+	} else {
+		// if everything went well, delete the channel
+		_, err = common.BotSession.ChannelDelete(currentTicket.Ticket.ChannelID)
+		if err != nil {
+			return "", err
+		}
+	}
 	_, err = currentTicket.Ticket.UpdateG(ctx, boil.Whitelist("closed_at"))
 	if err != nil {
 		return "", err
@@ -486,4 +526,23 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		}
 	}
 	return false, err
+}
+
+func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
+	ctx := context.Background()
+	config, err := models.FindTicketConfigG(ctx, guildID)
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed retrieving ticket config for limit enforcement")
+		return err
+	}
+
+	if config.UseThreadedTickets {
+		config.UseThreadedTickets = false
+		_, err := config.UpdateG(ctx, boil.Whitelist("use_threaded_tickets"))
+		if err != nil {
+			logger.WithError(err).WithField("guild", guildID).Error("failed disabling threaded tickets")
+		}
+	}
+
+	return nil
 }

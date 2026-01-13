@@ -10,9 +10,12 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/tickets/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"goji.io"
 	"goji.io/pat"
 )
 
@@ -33,6 +36,9 @@ type FormData struct {
 	TicketOpenMSG                      string  `valid:"template,10000"`
 	AppendButtonsClose                 bool
 	AppendButtonsCloseWithReason       bool
+	UseThreadedTickets                 bool
+	TicketsThreadChannelID             int64 `valid:"channel,true"`
+	LockAndArchiveThreadOnClose        bool
 }
 
 var panelLogKey = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "tickets_updated_settings", FormatString: "Updated ticket settings"})
@@ -42,17 +48,21 @@ func (p *Plugin) InitWeb() {
 
 	web.AddSidebarItem(web.SidebarCategoryTools, &web.SidebarItem{
 		Name: "Ticket System",
-		URL:  "tickets/settings",
+		URL:  "tickets",
 		Icon: "fas fa-ticket-alt",
 	})
 
 	getHandler := web.ControllerHandler(p.handleGetSettings, "cp_tickets_settings")
 	postHandler := web.ControllerPostHandler(p.handlePostSettings, getHandler, FormData{})
-
-	web.CPMux.Handle(pat.Get("/tickets/settings"), getHandler)
-	web.CPMux.Handle(pat.Get("/tickets/settings/"), getHandler)
-
-	web.CPMux.Handle(pat.Post("/tickets/settings"), postHandler)
+	mux := goji.SubMux()
+	web.CPMux.Handle(pat.New("/tickets/*"), mux)
+	web.CPMux.Handle(pat.New("/tickets"), mux)
+	mux.Use(web.RequireBotMemberMW)
+	mux.Use(web.RequirePermMW(discordgo.PermissionManageChannels, discordgo.PermissionManageThreads, discordgo.PermissionUsePrivateThreads))
+	mux.Use(premium.PremiumGuildMW)
+	mux.Handle(pat.Get(""), getHandler)
+	mux.Handle(pat.Get("/"), getHandler)
+	mux.Handle(pat.Post(""), postHandler)
 }
 
 func (p *Plugin) handleGetSettings(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
@@ -93,6 +103,16 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 	if formConfig.AppendButtonsCloseWithReason {
 		appendButtons = appendButtons | AppendButtonsCloseWithReason
 	}
+	// Check premium for custom announcements
+	if !premium.ContextPremium(ctx) && formConfig.UseThreadedTickets {
+		return templateData.AddAlerts(web.ErrorAlert("Threaded tickets are premium only")), nil
+	}
+
+	if formConfig.UseThreadedTickets {
+		if formConfig.TicketsThreadChannelID == 0 {
+			return templateData.AddAlerts(web.ErrorAlert("Threaded tickets require configuring a channel to open threads in")), nil
+		}
+	}
 
 	model := &models.TicketConfig{
 		GuildID:                            activeGuild.ID,
@@ -101,6 +121,9 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 		TicketsTranscriptsChannel:          formConfig.TicketsTranscriptsChannel,
 		TicketsTranscriptsChannelAdminOnly: formConfig.TicketsTranscriptsChannelAdminOnly,
 		AppendButtons:                      appendButtons,
+		UseThreadedTickets:                 formConfig.UseThreadedTickets,
+		TicketsThreadChannelID:             formConfig.TicketsThreadChannelID,
+		LockAndArchiveThreadOnClose:        formConfig.LockAndArchiveThreadOnClose,
 		StatusChannel:                      formConfig.StatusChannel,
 		TicketsUseTXTTranscripts:           formConfig.TicketsUseTXTTranscripts,
 		DownloadAttachments:                formConfig.DownloadAttachments,
@@ -132,7 +155,7 @@ func (p *Plugin) LoadServerHomeWidget(w http.ResponseWriter, r *http.Request) (w
 	enabled := settings != nil && settings.Enabled
 
 	templateData["WidgetTitle"] = "Tickets"
-	templateData["SettingsPath"] = "/tickets/settings"
+	templateData["SettingsPath"] = "/tickets"
 	if enabled {
 		templateData["WidgetEnabled"] = true
 	} else {

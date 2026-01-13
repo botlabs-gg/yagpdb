@@ -99,7 +99,7 @@ func init() {
 		"roleOptionsMulti":        tmplRoleDropdownMulti,
 		"roleOptionsExclude":      tmplRoleDropdownExclude,
 		"roleOptionsMultiExclude": tmplRoleDropdownMultiExclude,
-
+		"textOnlyChannelOptions":  tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildText}),
 		"textChannelOptions": tmplChannelOpts([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews, discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildForum,
 			discordgo.ChannelTypeGuildStageVoice}),
 		"textChannelOptionsMulti": tmplChannelOptsMulti([]discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews, discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildForum,

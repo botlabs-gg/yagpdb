@@ -27,6 +27,7 @@ import (
 )
 
 const InTicketPerms = discordgo.PermissionReadMessageHistory | discordgo.PermissionViewChannel | discordgo.PermissionSendMessages | discordgo.PermissionEmbedLinks | discordgo.PermissionAttachFiles
+const ThreadedTicketPerms = InTicketPerms | discordgo.PermissionManageThreads | discordgo.PermissionUsePrivateThreads
 
 var _ commands.CommandProvider = (*Plugin)(nil)
 
@@ -79,6 +80,15 @@ func (p *Plugin) AddCommands() {
 			target := parsed.Args[0].Value.(*dstate.MemberState)
 
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
+			cs := parsed.GuildData.CS
+			isThreadedTicket := cs.Type == discordgo.ChannelTypeGuildPrivateThread
+			if isThreadedTicket {
+				err := common.BotSession.ThreadMemberAdd(currentTicket.Ticket.ChannelID, discordgo.StrID(target.User.ID))
+				if err != nil {
+					return nil, err
+				}
+				return fmt.Sprintf("Added %s to the ticket", target.User.String()), nil
+			}
 
 		OUTER:
 			for _, v := range parsed.GuildData.CS.PermissionOverwrites {
@@ -115,9 +125,18 @@ func (p *Plugin) AddCommands() {
 			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
 
 			foundUser := false
+			cs := parsed.GuildData.CS
+			isThreadedTicket := cs.Type == discordgo.ChannelTypeGuildPrivateThread
+			if isThreadedTicket {
+				err := common.BotSession.ThreadMemberRemove(currentTicket.Ticket.ChannelID, discordgo.StrID(target.User.ID))
+				if err != nil {
+					return nil, err
+				}
+				return fmt.Sprintf("Removed %s from the ticket", target.User.String()), nil
+			}
 
 		OUTER:
-			for _, v := range parsed.GuildData.CS.PermissionOverwrites {
+			for _, v := range cs.PermissionOverwrites {
 				if v.Type == discordgo.PermissionOverwriteTypeMember && v.ID == target.User.ID {
 					if (v.Allow & InTicketPerms) == InTicketPerms {
 						foundUser = true
@@ -196,15 +215,18 @@ func (p *Plugin) AddCommands() {
 		Name:        "AdminsOnly",
 		Aliases:     []string{"adminonly", "ao"},
 		Description: "Toggle admins only mode for this ticket",
-		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+		RunFunc: func(parsed *dcmd.Data) (any, error) {
 
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
+			if len(conf.ModRoles) == 0 {
+				return "No mod roles set to add or remove from ticket", nil
+			}
 
 			isAdminsOnlyCurrently := true
-
 			modOverwrites := make([]discordgo.PermissionOverwrite, 0)
+			cs := parsed.GuildData.CS
 
-			for _, ow := range parsed.GuildData.CS.PermissionOverwrites {
+			for _, ow := range cs.PermissionOverwrites {
 				if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
 					if (ow.Allow & InTicketPerms) == InTicketPerms {
 						// one of the mod roles has ticket perms, this is not a admin ticket currently
@@ -213,6 +235,16 @@ func (p *Plugin) AddCommands() {
 
 					modOverwrites = append(modOverwrites, ow)
 				}
+			}
+
+			isThreadedTicket := cs.Type == discordgo.ChannelTypeGuildPrivateThread
+			if !isAdminsOnlyCurrently && !isThreadedTicket {
+				var mentions strings.Builder
+				mentions.WriteString("Added the following roles to the ticket: ")
+				for _, roleID := range conf.ModRoles {
+					mentions.WriteString(" <@&" + strconv.FormatInt(roleID, 10) + ">")
+				}
+				return mentions.String(), nil
 			}
 
 			// update existing overwrites
@@ -705,6 +737,32 @@ func transcriptChannel(conf *models.TicketConfig, adminOnly bool) int64 {
 	}
 
 	return conf.TicketsTranscriptsChannel
+}
+
+func createTicketThread(conf *models.TicketConfig, gs *dstate.GuildSet, authorID int64, subject string) (int64, *discordgo.Channel, error) {
+	id, err := common.GenLocalIncrID(gs.ID, "ticket")
+	if err != nil {
+		return 0, nil, err
+	}
+
+	threadName := fmt.Sprintf("%d-%s", id, subject)
+	channel, err := common.BotSession.ThreadStartComplex(conf.TicketsThreadChannelID, &discordgo.ThreadStart{
+		Name:                threadName,
+		Type:                discordgo.ChannelTypeGuildPrivateThread,
+		AutoArchiveDuration: 10080,
+		Invitable:           false,
+	})
+
+	if err != nil {
+		return 0, nil, err
+	}
+
+	err = common.BotSession.ThreadMemberAdd(channel.ID, discordgo.StrID(authorID))
+	if err != nil {
+		logger.WithError(err).Error("Failed adding user to thread")
+	}
+
+	return id, channel, nil
 }
 
 func createTicketChannel(conf *models.TicketConfig, gs *dstate.GuildSet, authorID int64, subject string) (int64, *discordgo.Channel, error) {
