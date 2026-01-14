@@ -12,23 +12,36 @@
     <div class="col-lg-12">
         <section class="card">
             <header class="card-header">
-                <h1 class="card-title">Redeem code</h1>
+                <h1 class="card-title">How to claim your premium slots</h1>
             </header>
             <div class="card-body">
+                <div >
+                    <ul>
+                        <li>If you've subscribed from Patreon, <a href="https://support.patreon.com/hc/en-us/articles/212052266-Getting-Discord-access" target="_blank">you need to connect your discord to patreon.</a>
+                        Once that is done, your slots will appear below automatically with-in 10 minutes.</li>     
+                        <li>If you've subscribed from Discord, your slots should automatically show below as soon as discord processes your payment.</li>
+                        <li>Premium slots are assigned to servers, you can assign them to any server you have manage server permissions on. </li>
+                        <li>If you don't see your slots even after 10 minutes, please contact us on our <a href="https://discord.gg/4udtcA5" target="_blank">support server.</a></li>
+                        <li>Premium slots are not transferable between Patreon and Discord Purchases</li>
+                        <li>To learn more about premium features and to subscribe to premium, check our <a href="/premium-perks" target="_blank">premium perks</a> list.</li>
+                        <li>
+                            <strong>For cancellation, read the instructions below for your subscription source.</strong> 
+                            <ul>
+                                <li><a target="_blank" href="https://support.patreon.com/hc/en-us/articles/360005502572-Canceling-a-paid-membership">Patreon Cancellation Instructions</a> </li>
+                                <li><a target="_blank" href="https://support.discord.com/hc/en-us/articles/26729692307351-How-to-Cancel-your-Premium-App-Subscription">Discord Cancellation Instructions</a> </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <hr/>
                 <form method="post" data-async-form>
+                    <label for="code">If you've been given a code by the developer, you can redeem or check it here:</label>
                     <input type="text" class="form-control mb-2" name="code">
                     <button type="submit" value="Redeem code" class="btn btn-success"
                         formaction="/premium/redeemcode">Redeem code</button>
                     <button type="submit" value="Check code" class="btn btn-primary"
                         formaction="/premium/lookupcode">Check code</button>
                 </form>
-                <div class="mt-5">
-                <p>If you're coming here after making a payment on patreon, <a href="https://support.patreon.com/hc/en-us/articles/212052266-Getting-Discord-access" target="_blank">you need to connect your discord to patreon</a>
-                Once that is done, your slots will appear below automatically with-in 10 minutes.
-                Premium slots are assigned to servers, you can assign them to any server you have manage server permissions on.
-                If you don't see your slots after 10 minutes, please contact us on the <a href="https://discord.gg/4udtcA5" target="_blank">support server.</a></p>
-                <p>To learn more about what premium features and how to get premium, check the <a href="/premium-perks" target="_blank">premium perks</a> list.</p>
-                </div>
 
                 {{if .QueriedCode}}
                 <ul>
@@ -118,6 +131,7 @@
     <!-- /.col-lg-12 -->
 </div>
 <!-- /.row -->
+
 
 {{template "cp_footer" .}}
 
