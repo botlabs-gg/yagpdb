@@ -498,7 +498,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		},
 	}
 
-	var currentChannel *dstate.ChannelState = evt.GS.GetChannel(ic.ChannelID)
+	var currentChannel *dstate.ChannelState = evt.GS.GetChannelOrThread(ic.ChannelID)
 
 	switch ic.Type {
 	case discordgo.InteractionMessageComponent:
