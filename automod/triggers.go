@@ -1074,6 +1074,7 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 	settingsCast := triggerCtx.Data.(*SpamTriggerData)
 
 	mToCheckAgainst := strings.TrimSpace(strings.ToLower(m.Content))
+	totalAttachments := len(m.GetMessageAttachments())
 
 	count := 1
 
@@ -1102,8 +1103,8 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 			break
 		}
 
-		if len(v.GetMessageAttachments()) > 0 {
-			break // treat any attachment as a different message, in the future i may download them and check hash or something? maybe too much
+		if len(v.GetMessageAttachments()) != totalAttachments {
+			break // attachment count don't match
 		}
 
 		contentStripped := strings.TrimSpace(v.Content)
