@@ -254,7 +254,7 @@ func closeTicket(gs *dstate.GuildSet, currentTicket *Ticket, ticketCS *dstate.Ch
 	currentTicket.Ticket.ClosedAt.Time = time.Now()
 	currentTicket.Ticket.ClosedAt.Valid = true
 
-	isAdminsOnly := ticketIsAdminOnly(conf, ticketCS)
+	isAdminsOnly := isTicketAdminOnly(conf, currentTicket, ticketCS)
 
 	// create the logs, download the attachments
 	err := createLogs(gs, conf, currentTicket.Ticket, isAdminsOnly)

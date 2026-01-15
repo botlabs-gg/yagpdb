@@ -33,6 +33,7 @@ type Ticket struct {
 	LogsID                int64     `boil:"logs_id" json:"logs_id" toml:"logs_id" yaml:"logs_id"`
 	AuthorID              int64     `boil:"author_id" json:"author_id" toml:"author_id" yaml:"author_id"`
 	AuthorUsernameDiscrim string    `boil:"author_username_discrim" json:"author_username_discrim" toml:"author_username_discrim" yaml:"author_username_discrim"`
+	IsAdminOnly           bool      `boil:"is_admin_only" json:"is_admin_only" toml:"is_admin_only" yaml:"is_admin_only"`
 
 	R *ticketR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L ticketL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -48,6 +49,7 @@ var TicketColumns = struct {
 	LogsID                string
 	AuthorID              string
 	AuthorUsernameDiscrim string
+	IsAdminOnly           string
 }{
 	GuildID:               "guild_id",
 	LocalID:               "local_id",
@@ -58,6 +60,7 @@ var TicketColumns = struct {
 	LogsID:                "logs_id",
 	AuthorID:              "author_id",
 	AuthorUsernameDiscrim: "author_username_discrim",
+	IsAdminOnly:           "is_admin_only",
 }
 
 var TicketTableColumns = struct {
@@ -70,6 +73,7 @@ var TicketTableColumns = struct {
 	LogsID                string
 	AuthorID              string
 	AuthorUsernameDiscrim string
+	IsAdminOnly           string
 }{
 	GuildID:               "tickets.guild_id",
 	LocalID:               "tickets.local_id",
@@ -80,6 +84,7 @@ var TicketTableColumns = struct {
 	LogsID:                "tickets.logs_id",
 	AuthorID:              "tickets.author_id",
 	AuthorUsernameDiscrim: "tickets.author_username_discrim",
+	IsAdminOnly:           "tickets.is_admin_only",
 }
 
 // Generated where
@@ -139,6 +144,7 @@ var TicketWhere = struct {
 	LogsID                whereHelperint64
 	AuthorID              whereHelperint64
 	AuthorUsernameDiscrim whereHelperstring
+	IsAdminOnly           whereHelperbool
 }{
 	GuildID:               whereHelperint64{field: "\"tickets\".\"guild_id\""},
 	LocalID:               whereHelperint64{field: "\"tickets\".\"local_id\""},
@@ -149,6 +155,7 @@ var TicketWhere = struct {
 	LogsID:                whereHelperint64{field: "\"tickets\".\"logs_id\""},
 	AuthorID:              whereHelperint64{field: "\"tickets\".\"author_id\""},
 	AuthorUsernameDiscrim: whereHelperstring{field: "\"tickets\".\"author_username_discrim\""},
+	IsAdminOnly:           whereHelperbool{field: "\"tickets\".\"is_admin_only\""},
 }
 
 // TicketRels is where relationship names are stored.
@@ -168,9 +175,9 @@ func (*ticketR) NewStruct() *ticketR {
 type ticketL struct{}
 
 var (
-	ticketAllColumns            = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id", "author_id", "author_username_discrim"}
+	ticketAllColumns            = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "closed_at", "logs_id", "author_id", "author_username_discrim", "is_admin_only"}
 	ticketColumnsWithoutDefault = []string{"guild_id", "local_id", "channel_id", "title", "created_at", "logs_id", "author_id", "author_username_discrim"}
-	ticketColumnsWithDefault    = []string{"closed_at"}
+	ticketColumnsWithDefault    = []string{"closed_at", "is_admin_only"}
 	ticketPrimaryKeyColumns     = []string{"guild_id", "local_id"}
 	ticketGeneratedColumns      = []string{}
 )
