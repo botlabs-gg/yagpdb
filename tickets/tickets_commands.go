@@ -218,84 +218,29 @@ func (p *Plugin) AddCommands() {
 		RunFunc: func(parsed *dcmd.Data) (any, error) {
 
 			conf := parsed.Context().Value(CtxKeyConfig).(*models.TicketConfig)
+			currentTicket := parsed.Context().Value(CtxKeyCurrentTicket).(*Ticket)
 			if len(conf.ModRoles) == 0 {
 				return "No mod roles set to add or remove from ticket", nil
 			}
 
-			isAdminsOnlyCurrently := true
-			modOverwrites := make([]discordgo.PermissionOverwrite, 0)
-			cs := parsed.GuildData.CS
-
-			for _, ow := range cs.PermissionOverwrites {
-				if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
-					if (ow.Allow & InTicketPerms) == InTicketPerms {
-						// one of the mod roles has ticket perms, this is not a admin ticket currently
-						isAdminsOnlyCurrently = false
-					}
-
-					modOverwrites = append(modOverwrites, ow)
-				}
-			}
-
-			isThreadedTicket := cs.Type == discordgo.ChannelTypeGuildPrivateThread
-			if !isAdminsOnlyCurrently && !isThreadedTicket {
-				var mentions strings.Builder
-				mentions.WriteString("Added the following roles to the ticket: ")
-				for _, roleID := range conf.ModRoles {
-					mentions.WriteString(" <@&" + strconv.FormatInt(roleID, 10) + ">")
-				}
-				return mentions.String(), nil
-			}
-
-			// update existing overwrites
-			for _, v := range modOverwrites {
-				var err error
-				if isAdminsOnlyCurrently {
-					// add back the mods to this ticket
-					if (v.Allow & InTicketPerms) != InTicketPerms {
-						// add it back to allows, remove from denies
-						newAllows := v.Allow | InTicketPerms
-						newDenies := v.Deny & (^InTicketPerms)
-						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, discordgo.PermissionOverwriteTypeRole, newAllows, newDenies)
-					}
-				} else {
-					// remove the mods from this ticket
-					if (v.Allow & InTicketPerms) == InTicketPerms {
-						// remove it from allows
-						newAllows := v.Allow & (^InTicketPerms)
-						err = common.BotSession.ChannelPermissionSet(parsed.ChannelID, v.ID, discordgo.PermissionOverwriteTypeRole, newAllows, v.Deny)
-					}
-				}
-
+			isAdminsOnlyCurrently := isTicketAdminOnly(conf, currentTicket, parsed.GuildData.CS)
+			if !isAdminsOnlyCurrently {
+				_, err := setTicketAdminOnly(conf, parsed.GuildData.CS)
 				if err != nil {
-					logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] failed to update channel overwrite")
+					return "Failed to make ticket admin only", err
 				}
+				currentTicket.Ticket.IsAdminOnly = true
+				currentTicket.Ticket.UpdateG(context.Background(), boil.Whitelist("is_admin_only"))
+				return "Ticket Set to Admin Only", nil
 			}
 
-			if isAdminsOnlyCurrently {
-				// add the missing overwrites for the missing roles
-			OUTER:
-				for _, v := range conf.ModRoles {
-					for _, ow := range modOverwrites {
-						if ow.ID == v {
-							// already handled above
-							continue OUTER
-						}
-					}
-
-					// need to create a new overwrite
-					err := common.BotSession.ChannelPermissionSet(parsed.ChannelID, v, discordgo.PermissionOverwriteTypeRole, InTicketPerms, 0)
-					if err != nil {
-						logger.WithError(err).WithField("guild", parsed.GuildData.GS.ID).Error("[tickets] failed to create channel overwrite")
-					}
-				}
+			resp, err := unsetTicketAdminOnly(conf, currentTicket, parsed.GuildData.CS)
+			if err != nil {
+				return "Failed to remove admin only from tickets", err
 			}
-
-			if isAdminsOnlyCurrently {
-				return "Added back mods to the ticket", nil
-			}
-
-			return "Removed mods from this ticket", nil
+			currentTicket.Ticket.IsAdminOnly = false
+			currentTicket.Ticket.UpdateG(context.Background(), boil.Whitelist("is_admin_only"))
+			return resp, nil
 		},
 	}
 
@@ -715,10 +660,128 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 	return &buf
 }
 
-func ticketIsAdminOnly(conf *models.TicketConfig, cs *dstate.ChannelState) bool {
+func unsetTicketAdminOnly(conf *models.TicketConfig, currentTicket *Ticket, cs *dstate.ChannelState) (string, error) {
+	isThreadedTicket := cs.Type == discordgo.ChannelTypeGuildPrivateThread
+	if !isThreadedTicket {
+		modOverwrites := make([]discordgo.PermissionOverwrite, 0)
+		for _, ow := range cs.PermissionOverwrites {
+			if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+				modOverwrites = append(modOverwrites, ow)
+			}
+		}
+		for _, v := range modOverwrites {
+			var err error
+			// remove the mods from this ticket
+			if (v.Allow & InTicketPerms) == InTicketPerms {
+				// remove it from allows
+				newAllows := v.Allow & (^InTicketPerms)
+				err = common.BotSession.ChannelPermissionSet(cs.ID, v.ID, discordgo.PermissionOverwriteTypeRole, newAllows, v.Deny)
+			}
+			if err != nil {
+				logger.WithError(err).WithField("guild", cs.GuildID).Error("[tickets] failed to remove channel overwrite")
+				return "", err
+			}
+		}
+		return "Removed all mod roles from the ticket, ticket is no longer admin only.", nil
+	}
+	lastMemberID := ""
+	memberList := make([]*discordgo.ThreadMember, 0)
+	endReached := false
+	for !endReached {
+		nextMemberlist, err := common.BotSession.ThreadMembers(cs.ID, 100, true, lastMemberID)
+		if err != nil {
+			return "", err
+		}
+		memberList = append(memberList, nextMemberlist...)
+		if len(nextMemberlist) < 100 {
+			endReached = true
+		}
+		lastMemberID = discordgo.StrID(nextMemberlist[len(nextMemberlist)-1].ID)
+	}
 
+	participants := make(map[int64]*models.TicketParticipant)
+	for _, v := range currentTicket.Participants {
+		participants[v.UserID] = v
+	}
+
+	for _, v := range memberList {
+		_, isParticipant := participants[v.UserID]
+		isAuthor := v.UserID == currentTicket.Ticket.AuthorID
+		isBot := v.UserID == common.BotUser.ID
+		if isParticipant || isAuthor || isBot {
+			continue
+		}
+		if common.ContainsInt64SliceOneOf(v.Member.Roles, conf.ModRoles) {
+			err := common.BotSession.ThreadMemberRemove(cs.ID, discordgo.StrID(v.UserID))
+			if err != nil {
+				logger.WithError(err).WithField("guild", cs.GuildID).Error("[tickets] failed to remove thread member")
+				return "", err
+			}
+		}
+	}
+
+	return "Removed all mod roles from the ticket, ticket is no longer admin only.", nil
+}
+
+func setTicketAdminOnly(conf *models.TicketConfig, cs *dstate.ChannelState) (string, error) {
+	isThreadedTicket := cs.Type == discordgo.ChannelTypeGuildPrivateThread
+	response := ""
+	if isThreadedTicket {
+		var mentions strings.Builder
+		mentions.WriteString("Added the following roles to the ticket: ")
+		for _, roleID := range conf.ModRoles {
+			mentions.WriteString(" <@&" + strconv.FormatInt(roleID, 10) + ">")
+		}
+		response = mentions.String()
+		message := &discordgo.MessageSend{
+			Content: response,
+			AllowedMentions: discordgo.AllowedMentions{
+				Roles: discordgo.IDSlice(conf.ModRoles),
+			},
+		}
+		_, err := common.BotSession.ChannelMessageSendComplex(cs.ID, message)
+		if err != nil {
+			logger.WithError(err).WithField("guild", cs.GuildID).Error("[tickets] failed to send message to thread")
+			return "", err
+		}
+	} else {
+		modOverwrites := make([]discordgo.PermissionOverwrite, 0)
+		for _, ow := range cs.PermissionOverwrites {
+			if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+				modOverwrites = append(modOverwrites, ow)
+			}
+		}
+
+		// update existing overwrites
+		for _, v := range modOverwrites {
+			var err error
+			// add back the mods to this ticket
+			if (v.Allow & InTicketPerms) != InTicketPerms {
+				// add it back to allows, remove from denies
+				newAllows := v.Allow | InTicketPerms
+				newDenies := v.Deny & (^InTicketPerms)
+				err = common.BotSession.ChannelPermissionSet(cs.ID, v.ID, discordgo.PermissionOverwriteTypeRole, newAllows, newDenies)
+			}
+
+			if err != nil {
+				logger.WithError(err).WithField("guild", cs.GuildID).Error("[tickets] failed to add channel overwrite")
+				return "", err
+			}
+			response = "Ticket is now admin only, added all mod roles to the ticket."
+		}
+	}
+
+	return response, nil
+}
+
+func isTicketAdminOnly(conf *models.TicketConfig, currentTicket *Ticket, cs *dstate.ChannelState) bool {
+	isThreadedTicket := cs.Type == discordgo.ChannelTypeGuildPrivateThread
+	if isThreadedTicket || currentTicket.Ticket.IsAdminOnly {
+		return currentTicket.Ticket.IsAdminOnly
+	}
+
+	//legacy check
 	isAdminsOnlyCurrently := true
-
 	for _, ow := range cs.PermissionOverwrites {
 		if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
 			if (ow.Allow & InTicketPerms) == InTicketPerms {
