@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS tickets (
 
 	author_id BIGINT NOT NULL,
 	author_username_discrim TEXT NOT NULL,
-	PRIMARY KEY(guild_id, local_id
+	PRIMARY KEY(guild_id, local_id)
 );
 `, `
 ALTER TABLE tickets ADD COLUMN IF NOT EXISTS is_admin_only BOOLEAN NOT NULL DEFAULT false;
