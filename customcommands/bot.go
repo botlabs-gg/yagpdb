@@ -197,7 +197,7 @@ var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 		{Name: "input", Type: dcmd.String},
 	},
 	RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
-	SlashCommandEnabled: false,
+	SlashCommandEnabled: true,
 	DefaultEnabled:      true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		cmds, err := BotCachedGetCommandsWithMessageTriggers(data.GuildData.GS.ID, data.Context())
