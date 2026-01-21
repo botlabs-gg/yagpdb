@@ -248,6 +248,11 @@ func (p *Plugin) sendStreamMessage(sub *models.TwitchChannelSubscription, stream
 	parsedGuild, _ := strconv.ParseInt(sub.GuildID, 10, 64)
 	parsedChannel, _ := strconv.ParseInt(sub.ChannelID, 10, 64)
 
+	// only send for Live events, for VODs only send if publish vod is enabled
+	if !isLive && (!sub.PublishVod || vodUrl == "") {
+		return
+	}
+
 	// Check for custom announcement
 	announcement, err := models.FindTwitchAnnouncementG(context.Background(), parsedGuild)
 	if err == nil && announcement.Enabled && len(announcement.Message) > 0 {
@@ -262,15 +267,14 @@ func (p *Plugin) sendStreamMessage(sub *models.TwitchChannelSubscription, stream
 		return
 	}
 
-	// If standard message, only send for Live events unless VOD is present
-	if !isLive && (!sub.PublishVod || vodUrl == "") {
-		return
-	}
-
 	var content string
 	if isLive {
 		streamUrl := "https://www.twitch.tv/" + stream.UserLogin
-		content = fmt.Sprintf("**%s** is live now playing **%s**!\n%s", stream.UserName, stream.GameName, streamUrl)
+		if len(stream.GameName) > 0 {
+			content = fmt.Sprintf("**%s** is live now and playing **%s**!\n%s", stream.UserName, stream.GameName, streamUrl)
+		} else {
+			content = fmt.Sprintf("**%s** is live now!\n%s", stream.UserName, streamUrl)
+		}
 	} else {
 		content = fmt.Sprintf("**%s** has gone offline. Catch the VOD here: %s", stream.UserName, vodUrl)
 	}

@@ -105,9 +105,9 @@
                             <ul style="list-style-type: none; margin: 0; padding: 0;">
                                 <li><code>{{"{{"}} .User {{"}}"}}</code> - The Twitch username.</li>
                                 <li><code>{{"{{"}} .URL {{"}}"}}</code> - The link to the stream.</li>
-                                <li><code>{{"{{"}} .Title {{"}}"}}</code> - The stream title.</li>
-                                <li><code>{{"{{"}} .Game {{"}}"}}</code> - The game being played.</li>
-                                <li><code>{{"{{"}} .IsLive {{"}}"}}</code> - Boolean, true if live.</li>
+                                <li><code>{{"{{"}} .Title {{"}}"}}</code> - The stream title, empty in case of a VOD.</li>
+                                <li><code>{{"{{"}} .Game {{"}}"}}</code> - The game being played, empty in case of a VOD.</li>
+                                <li><code>{{"{{"}} .IsLive {{"}}"}}</code> - Boolean, true if live, false if notification is for a VOD.</li>
                                 <li><code>{{"{{"}} .VODUrl {{"}}"}}</code> - The URL to the VOD (if offline).</li>
                             </ul>
                             </p>

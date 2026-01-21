@@ -101,7 +101,13 @@ func (p *Plugin) HandleTwitch(w http.ResponseWriter, r *http.Request) (web.Templ
 	if err != nil {
 		announcement = &models.TwitchAnnouncement{
 			GuildID: activeGuild.ID,
-			Message: "{{.User}} is now live on Twitch! {{.URL}}",
+			Message: `{{if not .IsLive}} 
+{{.User}} went offline! Catch the VOD here:
+{{.VODUrl}}
+{{else}}
+{{.User}} is now live!
+{{.URL}}
+{{end}}`,
 			Enabled: false,
 		}
 	}
