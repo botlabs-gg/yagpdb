@@ -58,7 +58,7 @@
                             <div class="form-group">
                                 <label>Log verification events to a channel</label><br>
                                 <select name="LogChannel" class="form-control">
-                                    {{textChannelOptions .ActiveGuild.Channels .PluginSettings.LogChannel true ""}}
+                                    {{textOnlyChannelOptions .ActiveGuild.Channels .PluginSettings.LogChannel true ""}}
                                 </select>
                             </div>
 

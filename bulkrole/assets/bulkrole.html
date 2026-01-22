@@ -238,7 +238,7 @@
                                             <select id="notification-channel" class="form-control"
                                                 name="NotificationChannel" data-requireperms-send>
                                                 <option value="0" {{if eq .BulkRole.NotificationChannel 0}}selected{{end}}> No notifications</option>
-                                                {{textChannelOptions .ActiveGuild.Channels .BulkRole.NotificationChannel true "None"}}
+                                                {{textOnlyChannelOptions .ActiveGuild.Channels .BulkRole.NotificationChannel true "None"}}
                                             </select>
                                         </div>
                                 </div>

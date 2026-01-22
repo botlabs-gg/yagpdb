@@ -124,7 +124,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
         <div class="form-group">
             <label>Channel to announce bans and kicks through the bot in (modlog)</label>
             <select class="form-control" name="ActionChannel" data-requireperms-embed>
-                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "None"}}
+                {{textOnlyChannelOptions .ActiveGuild.Channels .ModConfig.ActionChannel true "None"}}
             </select>
         </div>
         <hr />
@@ -132,7 +132,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
         <div class="form-group">
             <label>Channel to send error messages of the moderation DMs</label>
             <select class="form-control" name="ErrorChannel" data-requireperms-embed>
-                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ErrorChannel true "None"}}
+                {{textOnlyChannelOptions .ActiveGuild.Channels .ModConfig.ErrorChannel true "None"}}
             </select>
         </div>
         <hr />
@@ -170,7 +170,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
         <div class="form-group">
             <label>Channel to send messages for the mods/admins in (reports and such)</label>
             <select class="form-control" name="ReportChannel" data-requireperms-send>
-                {{textChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel true "None"}}
+                {{textOnlyChannelOptions .ActiveGuild.Channels .ModConfig.ReportChannel true "None"}}
             </select>
         </div>
         <hr />

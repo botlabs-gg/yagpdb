@@ -338,7 +338,7 @@ table{
         {{textChannelOptionsMulti .ActiveGuild.Channels nil}}
     </select>
     <select id="automod-channel-single-template" class="form-control">
-        {{textChannelOptions .ActiveGuild.Channels nil true "None"}}
+        {{textOnlyChannelOptions .ActiveGuild.Channels nil true "None"}}
     </select>
     <select id="automod-list-selection-template" class="form-control">
         {{range .AutomodLists}}

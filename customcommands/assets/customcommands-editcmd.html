@@ -290,7 +290,7 @@
                                         <div class="form-group">
                                             <label>Channel</label>
                                             <select id="role-trigger-channel" name="role_context_channel" class="form-control">
-                                                {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
+                                                {{textOnlyChannelOptions $g.Channels .CC.ContextChannel true "None"}}
                                             </select>
                                         </div>
                                     </div>
@@ -309,7 +309,7 @@
                                         <div class="form-group">
                                             <label>Channel</label>
                                             <select id="time-trigger-channel" name="time_context_channel" class="form-control">
-                                                {{textChannelOptions $g.Channels .CC.ContextChannel true "None"}}
+                                                {{textOnlyChannelOptions $g.Channels .CC.ContextChannel true "None"}}
                                             </select>
                                         </div>
                                     </div>
@@ -468,7 +468,7 @@
                                     <div class="col-6">
                                         <label for="redirect_errors_channel" class="text-white">Redirect errors to selected channel</label>
                                         <select class="form-control" name="redirect_errors_channel" data-requireperms-send>
-                                            {{textChannelOptions $g.Channels .CC.RedirectErrorsChannel true "None"}}
+                                            {{textOnlyChannelOptions $g.Channels .CC.RedirectErrorsChannel true "None"}}
                                         </select>   
                                     </div>
                                 </div>
