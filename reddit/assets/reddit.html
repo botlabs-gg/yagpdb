@@ -63,7 +63,7 @@
                 <div class="form-group col">
                     <label for="new-channel-slow-{{.Slow}}">Server Channel</label>
                     <select id="new-channel-slow-{{.Slow}}" class="form-control" name="channel">
-                        {{textChannelOptions .Dot.ActiveGuild.Channels nil false ""}}
+                        {{textOnlyChannelOptions .Dot.ActiveGuild.Channels nil false ""}}
                     </select>
                 </div>
             </div>
@@ -107,7 +107,7 @@
                 <div class="form-group col">
                     <label for="channel-feed-{{.ID}}">Server Channel</label>
                     <select id="channel-feed-{{.ID}}" class="form-control" name="channel">
-                        {{textChannelOptions $channels .ChannelID false ""}}
+                        {{textOnlyChannelOptions $channels .ChannelID false ""}}
                     </select>
                 </div>
             </div>

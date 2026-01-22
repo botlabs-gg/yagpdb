@@ -38,7 +38,7 @@
                             <div class="form-group">
                                 <label>Channel</label>
                                 <select class="form-control" name="join_server_channel" data-requireperms-send>
-                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.JoinServerChannel false ""}}
+                                    {{textOnlyChannelOptions .ActiveGuild.Channels .NotifyConfig.JoinServerChannel false ""}}
                                 </select>
                             </div>
                             <div class="form-group">
@@ -79,7 +79,7 @@
                             <div class="form-group">
                                 <label>Channel</label>
                                 <select class="form-control" name="leave_channel" data-requireperms-send>
-                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.LeaveChannel false ""}}
+                                    {{textOnlyChannelOptions .ActiveGuild.Channels .NotifyConfig.LeaveChannel false ""}}
                                 </select>
                             </div>
                             <div class="form-group">
@@ -139,7 +139,7 @@
                             <div class="form-group">
                                 <label>Channel</label>
                                 <select class="form-control" name="topic_channel" data-requireperms-send>
-                                    {{textChannelOptions .ActiveGuild.Channels .NotifyConfig.TopicChannel true "Channel topic was changed in"}}
+                                    {{textOnlyChannelOptions .ActiveGuild.Channels .NotifyConfig.TopicChannel true "Channel topic was changed in"}}
                                 </select>
                             </div>
                         </div>

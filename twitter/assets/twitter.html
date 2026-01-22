@@ -29,7 +29,7 @@
                     <div class="form-group">
                         <label for="channel">Discord Channel</label>
                         <select id="channel" class="form-control" name="DiscordChannel" data-requireperms-send>
-                            {{textChannelOptions .ActiveGuild.Channels nil false ""}}
+                            {{textOnlyChannelOptions .ActiveGuild.Channels nil false ""}}
                         </select>
                     </div>
                     <button type="submit" class="btn btn-success">Add</button>
@@ -61,7 +61,7 @@
                         <div class="form-group col">
                             <label for="channel-feed-{{.ID}}">Server Channel</label>
                             <select id="channel-feed-{{.ID}}" class="form-control" name="DiscordChannel">
-                                {{textChannelOptions $Dot.ActiveGuild.Channels .ChannelID false ""}}
+                                {{textOnlyChannelOptions $Dot.ActiveGuild.Channels .ChannelID false ""}}
                             </select>
                         </div>
                         <div class="form-group col">

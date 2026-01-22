@@ -66,7 +66,7 @@
                     <div class="form-group">
                         <label for="channel">Discord Channel</label>
                         <select id="channel" class="form-control" name="DiscordChannel" data-requireperms-send>
-                            {{textChannelOptions .ActiveGuild.Channels nil false ""}}
+                            {{textOnlyChannelOptions .ActiveGuild.Channels nil false ""}}
                         </select>
                     </div>
                     <div class="custom-announcement-disables">
@@ -161,7 +161,7 @@
                         </td>
                         <td class="yt-tbl-column">
                             <select form="sub-item-{{.ID}}" id="channel" class="form-control" name="DiscordChannel" data-requireperms-embed>
-                                {{textChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
+                                {{textOnlyChannelOptions $dot.ActiveGuild.Channels .ChannelID false ""}}
                             </select>
                         </td>
                         <td class="yt-tbl-column custom-announcement-disables">
