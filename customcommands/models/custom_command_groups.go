@@ -24,57 +24,62 @@ import (
 
 // CustomCommandGroup is an object representing the database table.
 type CustomCommandGroup struct {
-	ID                int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
-	GuildID           int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
-	Name              string           `boil:"name" json:"name" toml:"name" yaml:"name"`
-	IgnoreRoles       types.Int64Array `boil:"ignore_roles" json:"ignore_roles,omitempty" toml:"ignore_roles" yaml:"ignore_roles,omitempty"`
-	IgnoreChannels    types.Int64Array `boil:"ignore_channels" json:"ignore_channels,omitempty" toml:"ignore_channels" yaml:"ignore_channels,omitempty"`
-	WhitelistRoles    types.Int64Array `boil:"whitelist_roles" json:"whitelist_roles,omitempty" toml:"whitelist_roles" yaml:"whitelist_roles,omitempty"`
-	WhitelistChannels types.Int64Array `boil:"whitelist_channels" json:"whitelist_channels,omitempty" toml:"whitelist_channels" yaml:"whitelist_channels,omitempty"`
-	Disabled          bool             `boil:"disabled" json:"disabled" toml:"disabled" yaml:"disabled"`
+	ID                    int64            `boil:"id" json:"id" toml:"id" yaml:"id"`
+	GuildID               int64            `boil:"guild_id" json:"guild_id" toml:"guild_id" yaml:"guild_id"`
+	Name                  string           `boil:"name" json:"name" toml:"name" yaml:"name"`
+	IgnoreRoles           types.Int64Array `boil:"ignore_roles" json:"ignore_roles,omitempty" toml:"ignore_roles" yaml:"ignore_roles,omitempty"`
+	IgnoreChannels        types.Int64Array `boil:"ignore_channels" json:"ignore_channels,omitempty" toml:"ignore_channels" yaml:"ignore_channels,omitempty"`
+	WhitelistRoles        types.Int64Array `boil:"whitelist_roles" json:"whitelist_roles,omitempty" toml:"whitelist_roles" yaml:"whitelist_roles,omitempty"`
+	WhitelistChannels     types.Int64Array `boil:"whitelist_channels" json:"whitelist_channels,omitempty" toml:"whitelist_channels" yaml:"whitelist_channels,omitempty"`
+	Disabled              bool             `boil:"disabled" json:"disabled" toml:"disabled" yaml:"disabled"`
+	RedirectErrorsChannel int64            `boil:"redirect_errors_channel" json:"redirect_errors_channel" toml:"redirect_errors_channel" yaml:"redirect_errors_channel"`
 
 	R *customCommandGroupR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L customCommandGroupL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var CustomCommandGroupColumns = struct {
-	ID                string
-	GuildID           string
-	Name              string
-	IgnoreRoles       string
-	IgnoreChannels    string
-	WhitelistRoles    string
-	WhitelistChannels string
-	Disabled          string
+	ID                    string
+	GuildID               string
+	Name                  string
+	IgnoreRoles           string
+	IgnoreChannels        string
+	WhitelistRoles        string
+	WhitelistChannels     string
+	Disabled              string
+	RedirectErrorsChannel string
 }{
-	ID:                "id",
-	GuildID:           "guild_id",
-	Name:              "name",
-	IgnoreRoles:       "ignore_roles",
-	IgnoreChannels:    "ignore_channels",
-	WhitelistRoles:    "whitelist_roles",
-	WhitelistChannels: "whitelist_channels",
-	Disabled:          "disabled",
+	ID:                    "id",
+	GuildID:               "guild_id",
+	Name:                  "name",
+	IgnoreRoles:           "ignore_roles",
+	IgnoreChannels:        "ignore_channels",
+	WhitelistRoles:        "whitelist_roles",
+	WhitelistChannels:     "whitelist_channels",
+	Disabled:              "disabled",
+	RedirectErrorsChannel: "redirect_errors_channel",
 }
 
 var CustomCommandGroupTableColumns = struct {
-	ID                string
-	GuildID           string
-	Name              string
-	IgnoreRoles       string
-	IgnoreChannels    string
-	WhitelistRoles    string
-	WhitelistChannels string
-	Disabled          string
+	ID                    string
+	GuildID               string
+	Name                  string
+	IgnoreRoles           string
+	IgnoreChannels        string
+	WhitelistRoles        string
+	WhitelistChannels     string
+	Disabled              string
+	RedirectErrorsChannel string
 }{
-	ID:                "custom_command_groups.id",
-	GuildID:           "custom_command_groups.guild_id",
-	Name:              "custom_command_groups.name",
-	IgnoreRoles:       "custom_command_groups.ignore_roles",
-	IgnoreChannels:    "custom_command_groups.ignore_channels",
-	WhitelistRoles:    "custom_command_groups.whitelist_roles",
-	WhitelistChannels: "custom_command_groups.whitelist_channels",
-	Disabled:          "custom_command_groups.disabled",
+	ID:                    "custom_command_groups.id",
+	GuildID:               "custom_command_groups.guild_id",
+	Name:                  "custom_command_groups.name",
+	IgnoreRoles:           "custom_command_groups.ignore_roles",
+	IgnoreChannels:        "custom_command_groups.ignore_channels",
+	WhitelistRoles:        "custom_command_groups.whitelist_roles",
+	WhitelistChannels:     "custom_command_groups.whitelist_channels",
+	Disabled:              "custom_command_groups.disabled",
+	RedirectErrorsChannel: "custom_command_groups.redirect_errors_channel",
 }
 
 // Generated where
@@ -167,23 +172,25 @@ func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field
 func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 var CustomCommandGroupWhere = struct {
-	ID                whereHelperint64
-	GuildID           whereHelperint64
-	Name              whereHelperstring
-	IgnoreRoles       whereHelpertypes_Int64Array
-	IgnoreChannels    whereHelpertypes_Int64Array
-	WhitelistRoles    whereHelpertypes_Int64Array
-	WhitelistChannels whereHelpertypes_Int64Array
-	Disabled          whereHelperbool
+	ID                    whereHelperint64
+	GuildID               whereHelperint64
+	Name                  whereHelperstring
+	IgnoreRoles           whereHelpertypes_Int64Array
+	IgnoreChannels        whereHelpertypes_Int64Array
+	WhitelistRoles        whereHelpertypes_Int64Array
+	WhitelistChannels     whereHelpertypes_Int64Array
+	Disabled              whereHelperbool
+	RedirectErrorsChannel whereHelperint64
 }{
-	ID:                whereHelperint64{field: "\"custom_command_groups\".\"id\""},
-	GuildID:           whereHelperint64{field: "\"custom_command_groups\".\"guild_id\""},
-	Name:              whereHelperstring{field: "\"custom_command_groups\".\"name\""},
-	IgnoreRoles:       whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"ignore_roles\""},
-	IgnoreChannels:    whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"ignore_channels\""},
-	WhitelistRoles:    whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"whitelist_roles\""},
-	WhitelistChannels: whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"whitelist_channels\""},
-	Disabled:          whereHelperbool{field: "\"custom_command_groups\".\"disabled\""},
+	ID:                    whereHelperint64{field: "\"custom_command_groups\".\"id\""},
+	GuildID:               whereHelperint64{field: "\"custom_command_groups\".\"guild_id\""},
+	Name:                  whereHelperstring{field: "\"custom_command_groups\".\"name\""},
+	IgnoreRoles:           whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"ignore_roles\""},
+	IgnoreChannels:        whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"ignore_channels\""},
+	WhitelistRoles:        whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"whitelist_roles\""},
+	WhitelistChannels:     whereHelpertypes_Int64Array{field: "\"custom_command_groups\".\"whitelist_channels\""},
+	Disabled:              whereHelperbool{field: "\"custom_command_groups\".\"disabled\""},
+	RedirectErrorsChannel: whereHelperint64{field: "\"custom_command_groups\".\"redirect_errors_channel\""},
 }
 
 // CustomCommandGroupRels is where relationship names are stored.
@@ -223,9 +230,9 @@ func (r *customCommandGroupR) GetGroupCustomCommands() CustomCommandSlice {
 type customCommandGroupL struct{}
 
 var (
-	customCommandGroupAllColumns            = []string{"id", "guild_id", "name", "ignore_roles", "ignore_channels", "whitelist_roles", "whitelist_channels", "disabled"}
+	customCommandGroupAllColumns            = []string{"id", "guild_id", "name", "ignore_roles", "ignore_channels", "whitelist_roles", "whitelist_channels", "disabled", "redirect_errors_channel"}
 	customCommandGroupColumnsWithoutDefault = []string{"guild_id", "name"}
-	customCommandGroupColumnsWithDefault    = []string{"id", "ignore_roles", "ignore_channels", "whitelist_roles", "whitelist_channels", "disabled"}
+	customCommandGroupColumnsWithDefault    = []string{"id", "ignore_roles", "ignore_channels", "whitelist_roles", "whitelist_channels", "disabled", "redirect_errors_channel"}
 	customCommandGroupPrimaryKeyColumns     = []string{"id"}
 	customCommandGroupGeneratedColumns      = []string{}
 )

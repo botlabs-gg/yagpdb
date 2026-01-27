@@ -65,73 +65,84 @@
             <!-- Tab panes -->
             <div class="tab-content">
                 <div class="tab-pane active">
-                    {{if not .CurrentCommandGroup}}<p>Create a new group to put allowed/denied roles/channels on
-                        multiple commands at the same time, as well as keeping things organized.</p>{{else}}
+                    {{if not .CurrentCommandGroup}}
+                    <p>Create a new group to put allowed/denied roles/channels on multiple commands at the same time, as well as keeping things organized.</p>
+                    {{else}}
                     <form class="form-horizontal" method="post"
                         action="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/update"
                         data-async-form>
-                        <div class="row" style="margin-bottom: 20px;">
-                            <div class="col-6">
+                        <div style="margin-bottom: 20px;">
                                 <div class="form-group">
                                     <label>Name </label>
                                     <input type="text" class="form-control" value="{{.CurrentCommandGroup.Name}}"
                                         name="Name" />
                                 </div>
                                 <div class="form-group">
-                                    <label>Allowed roles (who can use these commands)</label><br>
-                                    <select name="WhitelistRoles" class="multiselect form-control" multiple="multiple"
-                                        id="require-roles-receive" data-placeholder="Everyone" data-plugin-multiselect>
-                                        {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.WhitelistRoles}}
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Denied roles (who cannot use these commands)</label><br>
-                                    <select name="BlacklistRoles" class="multiselect form-control" multiple="multiple"
-                                        id="blacklisted-roles-give" data-plugin-multiselect>
-                                        {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.IgnoreRoles}}
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <button type="submit" class="btn btn-success">Save group settings</button>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label>Channels these commands can be used in (empty for all)</label><br>
-                                    <select multiple="multiple" class="form-control" data-plugin-multiselect
-                                        name="WhitelistChannels" data-placeholder="Everywhere">
-                                        {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.WhitelistChannels }}
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Channels Ignored</label><br>
-                                    <select multiple="multiple" class="form-control" data-plugin-multiselect
-                                        name="BlacklistChannels">
-                                        {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}
+                                    <label for="RedirectErrorsChannel">Redirect errors to selected channel</label>
+                                    <select class="form-control" name="RedirectErrorsChannel" data-requireperms-send>
+                                        {{textOnlyChannelOptions .ActiveGuild.Channels .CurrentCommandGroup.RedirectErrorsChannel true "None"}}
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label>Group Enabled?</label><br>
                                       {{checkbox "IsEnabled" "IsEnabled" "Enables or Disables the Group" (not .CurrentCommandGroup.Disabled) }}
                                 </div>
-                                <div class="form-group">
-                                    <button type="submit"
-                                        title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}} &#013;Deleted group's commands become ungrouped."
-                                        class="btn btn-danger"
-                                        formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Delete
-                                        group</button>
+                                <div class="form-group row">
+                                    <div class="col-6">
+                                        <label>Allowed roles (who can use these commands)</label><br>
+                                        <select name="WhitelistRoles" class="multiselect form-control" multiple="multiple"
+                                            id="require-roles-receive" data-placeholder="Everyone" data-plugin-multiselect>
+                                            {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.WhitelistRoles}}
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label>Denied roles (who cannot use these commands)</label><br>
+                                        <select name="BlacklistRoles" class="multiselect form-control" multiple="multiple"
+                                            id="blacklisted-roles-give" data-plugin-multiselect>
+                                            {{roleOptionsMulti .ActiveGuild.Roles nil .CurrentCommandGroup.IgnoreRoles}}
+                                        </select>
+                                    </div>
                                 </div>
+                                <div class="form-group row">
+                                    <div class="col-6">
+                                        <label>Channels these commands can be used in (empty for all)</label><br>
+                                        <select multiple="multiple" class="form-control" data-plugin-multiselect
+                                            name="WhitelistChannels" data-placeholder="Everywhere">
+                                            {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.WhitelistChannels }}
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label>Channels Ignored</label><br>
+                                        <select multiple="multiple" class="form-control" data-plugin-multiselect
+                                            name="BlacklistChannels" data-placeholder="None">
+                                            {{textChannelOptionsMulti .ActiveGuild.Channels .CurrentCommandGroup.IgnoreChannels }}
+                                        </select>
+                                    </div>
+                                </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-6">
+                                <button type="submit"
+                                    title="Group #{{.CurrentCommandGroup.ID}} - {{.CurrentCommandGroup.Name}} &#013;Deleted group's commands become ungrouped."
+                                    class="btn btn-block btn-danger"
+                                    formaction="/manage/{{.ActiveGuild.ID}}/customcommands/groups/{{.CurrentCommandGroup.ID}}/delete">Delete
+                                        group</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="submit" class="btn btn-block btn-success">Save group settings</button>
                             </div>
                         </div>
                     </form>
                     {{end}}
+                    <hr/>
                     <p>You have created <code>{{.CCCount}}</code> custom commands against the total limit of <code>{{.CCLimit}}</code> {{.AdditionalMessage}}</p>
                     <form method="post" action="/manage/{{.ActiveGuild.ID}}/customcommands/commands/new">
                         <input type="text" name="GroupID" hidden
                             value="{{if .CurrentCommandGroup}}{{.CurrentCommandGroup.ID}}{{end}}">
-                        <button type="submit" class="btn btn-success" {{if ge .CCCount .CCLimit}}disabled{{end}}>Create
+                        <button type="submit" class="btn btn-block btn-success" {{if ge .CCCount .CCLimit}}disabled{{end}}>Create
                             a new Custom Command</button>
                     </form>
+                    
                 </div>
             </div>
         </div>
