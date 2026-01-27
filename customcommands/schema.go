@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS custom_command_groups (
 `, `
 ALTER TABLE custom_command_groups ADD COLUMN IF NOT EXISTS disabled BOOLEAN NOT NULL DEFAULT false;
 `, `
+ALTER TABLE custom_command_groups ADD COLUMN IF NOT EXISTS redirect_errors_channel BIGINT NOT NULL DEFAULT 0;
+`, `
 CREATE TABLE IF NOT EXISTS custom_commands (
 	local_id BIGINT NOT NULL,
 	guild_id BIGINT NOT NULL,

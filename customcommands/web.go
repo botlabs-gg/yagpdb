@@ -55,9 +55,10 @@ type GroupForm struct {
 	WhitelistChannels []int64 `valid:"channel,true"`
 	BlacklistChannels []int64 `valid:"channel,true"`
 
-	WhitelistRoles []int64 `valid:"role,true"`
-	BlacklistRoles []int64 `valid:"role,true"`
-	IsEnabled      bool
+	WhitelistRoles        []int64 `valid:"role,true"`
+	BlacklistRoles        []int64 `valid:"role,true"`
+	RedirectErrorsChannel int64   `valid:"channel,true"`
+	IsEnabled             bool
 }
 
 type SearchForm struct {
@@ -838,7 +839,6 @@ func handleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	if err != nil {
 		return templateData, err
 	}
-	logrus.Infof("groupForm.IsEnabled %#v", groupForm.IsEnabled)
 
 	model.WhitelistChannels = groupForm.WhitelistChannels
 	model.IgnoreChannels = groupForm.BlacklistChannels
@@ -846,6 +846,7 @@ func handleUpdateGroup(w http.ResponseWriter, r *http.Request) (web.TemplateData
 	model.IgnoreRoles = groupForm.BlacklistRoles
 	model.Name = groupForm.Name
 	model.Disabled = !groupForm.IsEnabled
+	model.RedirectErrorsChannel = groupForm.RedirectErrorsChannel
 
 	_, err = model.UpdateG(ctx, boil.Infer())
 	if err == nil {
