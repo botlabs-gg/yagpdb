@@ -30,6 +30,9 @@ const (
 	ActivityContentComponent       ComponentType = 16
 	ContainerComponent             ComponentType = 17
 	LabelComponent                 ComponentType = 18
+	RadioGroupComponent            ComponentType = 19
+	CheckboxGroupComponent         ComponentType = 22
+	CheckboxComponent              ComponentType = 23
 )
 
 // MessageComponent is a base interface for all message components.
@@ -78,6 +81,12 @@ func (umc *unmarshalableMessageComponent) UnmarshalJSON(src []byte) error {
 		umc.MessageComponent = &Container{}
 	case LabelComponent:
 		umc.MessageComponent = &Label{}
+	case RadioGroupComponent:
+		umc.MessageComponent = &RadioGroup{}
+	case CheckboxGroupComponent:
+		umc.MessageComponent = &CheckboxGroup{}
+	case CheckboxComponent:
+		umc.MessageComponent = &Checkbox{}
 	default:
 		logrus.Warnf("unknown component type: %d", v.Type)
 		umc.MessageComponent = &UnknownComponent{}
@@ -811,4 +820,118 @@ func (Container) IsTopLevel() bool {
 
 func (Container) IsModalSupported() bool {
 	return false
+}
+
+type RadioGroupOption struct {
+	Value       string `json:"value"`
+	Label       string `json:"label"`
+	Description string `json:"description,omitempty"`
+	Default     bool   `json:"default,omitempty"`
+}
+
+type RadioGroup struct {
+	ID       int                `json:"id,omitempty"`
+	CustomID string             `json:"custom_id"`
+	Options  []RadioGroupOption `json:"options"`
+	Required bool               `json:"required,omitempty"`
+}
+
+// MarshalJSON is a method for marshaling RadioGroupActionComponent to a JSON object.
+func (t RadioGroup) MarshalJSON() ([]byte, error) {
+	type radioGroup RadioGroup
+
+	return json.Marshal(struct {
+		radioGroup
+		Type ComponentType `json:"type"`
+	}{
+		radioGroup: radioGroup(t),
+		Type:       t.Type(),
+	})
+}
+
+// Type is a method to get the type of a component.
+func (RadioGroup) Type() ComponentType {
+	return RadioGroupComponent
+}
+
+func (RadioGroup) IsInteractive() bool {
+	return true
+}
+
+func (RadioGroup) IsAllowedInLabel() bool {
+	return true
+}
+
+type CheckboxGroup struct {
+	ID        int                   `json:"id,omitempty"`
+	CustomID  string                `json:"custom_id"`
+	Options   []CheckboxGroupOption `json:"options"`
+	MinValues int                   `json:"min_values,omitempty"`
+	MaxValues int                   `json:"max_values,omitempty"`
+	Required  bool                  `json:"required,omitempty"`
+}
+
+// MarshalJSON is a method for marshaling RadioGroupActionComponent to a JSON object.
+func (t CheckboxGroup) MarshalJSON() ([]byte, error) {
+	type checkboxGroup CheckboxGroup
+
+	return json.Marshal(struct {
+		checkboxGroup
+		Type ComponentType `json:"type"`
+	}{
+		checkboxGroup: checkboxGroup(t),
+		Type:          t.Type(),
+	})
+}
+
+// Type is a method to get the type of a component.
+func (CheckboxGroup) Type() ComponentType {
+	return CheckboxGroupComponent
+}
+
+func (CheckboxGroup) IsInteractive() bool {
+	return true
+}
+
+func (CheckboxGroup) IsAllowedInLabel() bool {
+	return true
+}
+
+type CheckboxGroupOption struct {
+	Value       string `json:"value"`
+	Label       string `json:"label"`
+	Description string `json:"description,omitempty"`
+	Default     bool   `json:"default,omitempty"`
+}
+
+type Checkbox struct {
+	ID       int    `json:"id,omitempty"`
+	CustomID string `json:"custom_id"`
+	Default  bool   `json:"default,omitempty"`
+}
+
+// MarshalJSON is a method for marshaling RadioGroupActionComponent to a JSON object.
+func (t Checkbox) MarshalJSON() ([]byte, error) {
+	type checkbox Checkbox
+
+	return json.Marshal(struct {
+		checkbox
+		Type ComponentType `json:"type"`
+	}{
+		checkbox: checkbox(t),
+		Type:     t.Type(),
+	})
+}
+
+// Type is a method to get the type of a component.
+func (Checkbox) Type() ComponentType {
+	return CheckboxComponent
+}
+
+func (Checkbox) IsInteractive() bool {
+	return true
+}
+
+func (Checkbox) IsAllowedInLabel() bool {
+	return true
 }
