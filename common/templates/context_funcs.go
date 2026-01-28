@@ -22,9 +22,10 @@ import (
 )
 
 var (
-	ErrTooManyCalls    = errors.New("too many calls to this function")
-	ErrTooManyAPICalls = errors.New("too many potential Discord API calls")
-	ErrRegexCacheLimit = errors.New("too many unique regular expressions (regex)")
+	ErrTooManyCalls           = errors.New("too many calls to this function")
+	ErrTooManyAPICalls        = errors.New("too many potential Discord API calls")
+	ErrFuncRemovedTemporarily = errors.New("this function is removed temporarily")
+	ErrRegexCacheLimit        = errors.New("too many unique regular expressions (regex)")
 )
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
@@ -598,22 +599,23 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 
 func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (string, error) {
 	return func(channel, msgID interface{}) (string, error) {
-		if c.IncreaseCheckCallCounter("message_pins", 5) {
-			return "", ErrTooManyCalls
-		}
+		return "", ErrFuncRemovedTemporarily
+		// if c.IncreaseCheckCallCounter("message_pins", 5) {
+		// 	return "", ErrTooManyCalls
+		// }
 
-		cID := c.ChannelArgNoDM(channel)
-		if cID == 0 {
-			return "", errors.New("unknown channel")
-		}
-		mID := ToInt64(msgID)
-		var err error
-		if unpin {
-			err = common.BotSession.ChannelMessageUnpin(cID, mID)
-		} else {
-			err = common.BotSession.ChannelMessagePin(cID, mID)
-		}
-		return "", err
+		// cID := c.ChannelArgNoDM(channel)
+		// if cID == 0 {
+		// 	return "", errors.New("unknown channel")
+		// }
+		// mID := ToInt64(msgID)
+		// var err error
+		// if unpin {
+		// 	err = common.BotSession.ChannelMessageUnpin(cID, mID)
+		// } else {
+		// 	err = common.BotSession.ChannelMessagePin(cID, mID)
+		// }
+		// return "", err
 	}
 }
 
@@ -1703,30 +1705,32 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 
 func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (interface{}, error) {
 	return func(channel interface{}) (interface{}, error) {
-		if c.IncreaseCheckCallCounterPremium("channel_pins", 2, 4) {
-			return 0, ErrTooManyCalls
-		}
+		return 0, ErrFuncRemovedTemporarily
 
-		cID := c.ChannelArgNoDM(channel)
-		if cID == 0 {
-			return 0, errors.New("unknown channel")
-		}
+		// if c.IncreaseCheckCallCounterPremium("channel_pins", 2, 4) {
+		// 	return 0, ErrTooManyCalls
+		// }
 
-		msg, err := common.BotSession.ChannelMessagesPinned(cID)
-		if err != nil {
-			return 0, err
-		}
+		// cID := c.ChannelArgNoDM(channel)
+		// if cID == 0 {
+		// 	return 0, errors.New("unknown channel")
+		// }
 
-		if pinCount {
-			return len(msg), nil
-		}
+		// msg, err := common.BotSession.ChannelMessagesPinned(cID)
+		// if err != nil {
+		// 	return 0, err
+		// }
 
-		pinnedMessages := make([]discordgo.Message, 0, len(msg))
-		for _, m := range msg {
-			pinnedMessages = append(pinnedMessages, *m)
-		}
+		// if pinCount {
+		// 	return len(msg), nil
+		// }
 
-		return pinnedMessages, nil
+		// pinnedMessages := make([]discordgo.Message, 0, len(msg))
+		// for _, m := range msg {
+		// 	pinnedMessages = append(pinnedMessages, *m)
+		// }
+
+		// return pinnedMessages, nil
 	}
 }
 

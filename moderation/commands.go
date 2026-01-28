@@ -733,11 +733,13 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if parsed.Switches["nopin"].Bool() {
-				pinned, err := common.BotSession.ChannelMessagesPinned(parsed.ChannelID)
-				if err != nil {
-					return "Failed fetching pinned messages", err
-				}
-				filters = append(filters, NewIgnorePinnedMessagesFilter(pinned))
+				return "nopin flag has been disabled due to discord api changes.", nil
+
+				// pinned, err := common.BotSession.ChannelMessagesPinned(parsed.ChannelID)
+				// if err != nil {
+				// 	return "Failed fetching pinned messages", err
+				// }
+				// filters = append(filters, NewIgnorePinnedMessagesFilter(pinned))
 			}
 
 			if onlyDeleteWithAttachments := parsed.Switches["a"].Bool(); onlyDeleteWithAttachments {
