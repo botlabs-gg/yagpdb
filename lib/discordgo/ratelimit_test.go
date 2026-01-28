@@ -12,7 +12,7 @@ func TestRatelimitReset(t *testing.T) {
 	rl := NewRatelimiter()
 
 	sendReq := func(endpoint string) {
-		bucket, id := rl.LockBucket(endpoint)
+		bucket := rl.LockBucket(endpoint)
 
 		headers := http.Header(make(map[string][]string))
 
@@ -21,7 +21,7 @@ func TestRatelimitReset(t *testing.T) {
 		headers.Set("X-RateLimit-Reset-After", "2")
 		headers.Set("Date", time.Now().Format(time.RFC850))
 
-		err := bucket.Release(headers, id)
+		err := bucket.Release(headers)
 		if err != nil {
 			t.Errorf("Release returned error: %v", err)
 		}
@@ -50,7 +50,7 @@ func TestRatelimitGlobal(t *testing.T) {
 	rl := NewRatelimiter()
 
 	sendReq := func(endpoint string) {
-		bucket, id := rl.LockBucket(endpoint)
+		bucket := rl.LockBucket(endpoint)
 
 		headers := http.Header(make(map[string][]string))
 
@@ -58,7 +58,7 @@ func TestRatelimitGlobal(t *testing.T) {
 		// Reset for approx 1 seconds from now
 		headers.Set("Retry-After", "1")
 
-		err := bucket.Release(headers, id)
+		err := bucket.Release(headers)
 		if err != nil {
 			t.Errorf("Release returned error: %v", err)
 		}
@@ -102,7 +102,7 @@ func BenchmarkRatelimitParallelMultiEndpoints(b *testing.B) {
 
 // Does not actually send requests, but locks the bucket and releases it with made-up headers
 func sendBenchReq(endpoint string, rl *RateLimiter) {
-	bucket, id := rl.LockBucket(endpoint)
+	bucket := rl.LockBucket(endpoint)
 
 	headers := http.Header(make(map[string][]string))
 
@@ -112,5 +112,5 @@ func sendBenchReq(endpoint string, rl *RateLimiter) {
 
 	time.Sleep(time.Millisecond * 100)
 
-	bucket.Release(headers, id)
+	bucket.Release(headers)
 }
