@@ -615,7 +615,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		errChannel := tmplCtx.CurrentFrame.CS.ID
 		if cmd.RedirectErrorsChannel != 0 {
 			errChannel = cmd.RedirectErrorsChannel
-		} else if cmd.R.Group.RedirectErrorsChannel != 0 {
+		} else if cmd.R.Group != nil && cmd.R.Group.RedirectErrorsChannel != 0 {
 			errChannel = cmd.R.Group.RedirectErrorsChannel
 		}
 
@@ -652,7 +652,7 @@ func ExecuteCustomCommand(cmd *models.CustomCommand, tmplCtx *templates.Context)
 		errChannel := tmplCtx.CurrentFrame.CS.ID
 		if cmd.RedirectErrorsChannel != 0 {
 			errChannel = cmd.RedirectErrorsChannel
-		} else if cmd.R.Group.RedirectErrorsChannel != 0 {
+		} else if cmd.R.Group != nil && cmd.R.Group.RedirectErrorsChannel != 0 {
 			errChannel = cmd.R.Group.RedirectErrorsChannel
 		}
 
@@ -817,7 +817,7 @@ func onExecPanic(cmd *models.CustomCommand, err error, tmplCtx *templates.Contex
 	errChannel := tmplCtx.CurrentFrame.CS.ID
 	if cmd.RedirectErrorsChannel != 0 {
 		errChannel = cmd.RedirectErrorsChannel
-	} else if cmd.R.Group.RedirectErrorsChannel != 0 {
+	} else if cmd.R.Group != nil && cmd.R.Group.RedirectErrorsChannel != 0 {
 		errChannel = cmd.R.Group.RedirectErrorsChannel
 	}
 
