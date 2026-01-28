@@ -460,6 +460,8 @@ func (g *channelOptsHTMLGenState) outputChannel(id int64, name string, channelTy
 		prefix = "🎤"
 	case discordgo.ChannelTypeGuildForum:
 		prefix = "📃"
+	case discordgo.ChannelTypeGuildNews:
+		prefix = "📢"
 	default:
 		prefix = ""
 	}
