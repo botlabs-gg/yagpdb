@@ -70,6 +70,15 @@ func HandleGuildMemberAdd(evtData *eventsystem.EventData) (retry bool, err error
 	ms := dstate.MemberStateFromMember(evt.Member)
 	ms.GuildID = evt.GuildID
 
+	joinedAt, err := ms.Member.JoinedAt.Parse()
+	if err != nil {
+		return true, errors.WithStackIf(err)
+	}
+
+	if time.Since(joinedAt) > 1*time.Minute {
+		return
+	}
+
 	// Beware of the pyramid and its curses
 	if config.JoinDMEnabled && !evt.User.Bot {
 		cid, err := common.BotSession.UserChannelCreate(evt.User.ID)
