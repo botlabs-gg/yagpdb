@@ -535,6 +535,7 @@ func CreateMessageEdit(values ...interface{}) (*discordgo.MessageEdit, error) {
 			v, _ := indirect(reflect.ValueOf(val))
 			if v.Kind() == reflect.Slice {
 				const maxEmbeds = 10 // Discord limitation
+				msg.Embeds = make([]*discordgo.MessageEmbed, 0, maxEmbeds)
 				for i := 0; i < v.Len() && i < maxEmbeds; i++ {
 					embed, err := CreateEmbed(v.Index(i).Interface())
 					if err != nil {

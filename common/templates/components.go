@@ -870,7 +870,7 @@ func CreateContainer(msgFiles *[]*discordgo.File, values ...any) (*discordgo.Con
 
 func distributeComponentsIntoActionsRows(components reflect.Value) (returnComponents []discordgo.TopLevelComponent, err error) {
 	if components.Len() < 1 {
-		return
+		return make([]discordgo.TopLevelComponent, 0), nil
 	}
 
 	const maxRows = 5       // Discord limitation

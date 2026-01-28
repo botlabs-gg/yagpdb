@@ -355,17 +355,20 @@ func (m *MessageEdit) MarshalJSON() ([]byte, error) {
 	type MessageEditAlias MessageEdit
 	temp := struct {
 		*MessageEditAlias
-		Content         *string             `json:"content,omitempty"`
-		Components      []TopLevelComponent `json:"components"`
-		Embeds          *[]*MessageEmbed    `json:"embeds,omitempty"`
-		AllowedMentions *AllowedMentions    `json:"allowed_mentions,omitempty"`
-		Flags           *MessageFlags       `json:"flags,omitempty"`
+		Content         *string              `json:"content,omitempty"`
+		Components      *[]TopLevelComponent `json:"components,omitempty"`
+		Embeds          *[]*MessageEmbed     `json:"embeds,omitempty"`
+		AllowedMentions *AllowedMentions     `json:"allowed_mentions,omitempty"`
+		Flags           *MessageFlags        `json:"flags,omitempty"`
 	}{
 		MessageEditAlias: (*MessageEditAlias)(m),
 		Content:          m.Content,
-		Components:       m.Components,
 		AllowedMentions:  &m.AllowedMentions,
 		Flags:            &m.Flags,
+	}
+
+	if m.Components != nil {
+		temp.Components = &m.Components
 	}
 
 	if m.Embeds != nil {
