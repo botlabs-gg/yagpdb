@@ -208,8 +208,13 @@ func (s *Session) doRequest(method, urlStr, contentType string, b []byte, header
 }
 
 func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, headers map[string]string, bucket *Bucket) (*http.Request, *http.Response, error) {
-	// Wait for any rate limits before proceeding (does not hold lock after returning)
-	s.Ratelimiter.LockBucketObject(bucket)
+	bucketLockID := s.Ratelimiter.LockBucketObject(bucket)
+	defer func() {
+		err := bucket.Release(nil, bucketLockID)
+		if err != nil {
+			s.log(LogError, "failed unlocking ratelimit bucket: %v", err)
+		}
+	}()
 
 	if s.Debug {
 		log.Printf("API REQUEST %8s :: %s\n", method, urlStr)
@@ -255,24 +260,12 @@ func (s *Session) innerDoRequest(method, urlStr, contentType string, b []byte, h
 		}
 	}
 
-	// Make the HTTP request (no lock held - prevents deadlock if request hangs)
 	resp, err := s.Client.Do(req)
-	if err != nil {
-		// Log timeout errors specifically for debugging
-		if urlErr, ok := err.(*url.Error); ok && urlErr.Timeout() {
-			s.log(LogWarning, "HTTP request timeout (30s) for %s %s: %v", method, urlStr, err)
-		}
-		// Still need to update rate limit state even on error (for concurrent request tracking)
-		bucket.Release(nil)
-		return req, nil, err
+	if err == nil {
+		err = bucket.Release(resp.Header, bucketLockID)
 	}
 
-	// Update rate limit state from response headers
-	if releaseErr := bucket.Release(resp.Header); releaseErr != nil {
-		s.log(LogError, "failed updating ratelimit bucket: %v", releaseErr)
-	}
-
-	return req, resp, nil
+	return req, resp, err
 }
 
 func unmarshal(data []byte, v interface{}) error {

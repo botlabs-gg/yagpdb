@@ -62,7 +62,7 @@ func New(args ...interface{}) (s *Session, err error) {
 		ShardID:                0,
 		ShardCount:             1,
 		MaxRestRetries:         10,
-		Client:                 createHTTPClient(),
+		Client:                 cleanhttp.DefaultPooledClient(),
 		LastHeartbeatAck:       time.Now().UTC(),
 		tokenInvalid:           new(int32),
 	}
@@ -141,14 +141,6 @@ func New(args ...interface{}) (s *Session, err error) {
 	// It is recommended that you now call Open() so that events will trigger.
 
 	return
-}
-
-// createHTTPClient creates an HTTP client with a reasonable timeout
-// to prevent requests from hanging indefinitely.
-func createHTTPClient() *http.Client {
-	client := cleanhttp.DefaultPooledClient()
-	client.Timeout = 30 * time.Second
-	return client
 }
 
 func CheckRetry(_ context.Context, resp *http.Response, err error) (bool, error) {

@@ -1,15 +1,12 @@
 package discordgo
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 // customRateLimit holds information for defining a custom rate limit
@@ -63,10 +60,10 @@ func (r *RateLimiter) GetBucket(key string) *Bucket {
 	}
 
 	b := &Bucket{
-		Remaining: 1,
-		Key:       key,
-		global:    r.global,
-		sem:       make(chan struct{}, 1), // Semaphore to serialize requests per bucket
+		Remaining:   1,
+		Key:         key,
+		global:      r.global,
+		lockCounter: new(int64),
 	}
 
 	if r.MaxConcurrentRequests > 0 {
@@ -117,30 +114,14 @@ func (r *RateLimiter) GetWaitTime(b *Bucket, minRemaining int) time.Duration {
 }
 
 // LockBucket Locks until a request can be made
-func (r *RateLimiter) LockBucket(bucketID string) *Bucket {
+func (r *RateLimiter) LockBucket(bucketID string) (b *Bucket, lockID int64) {
 	bucket := r.GetBucket(bucketID)
-	r.LockBucketObject(bucket)
-	return bucket
+	id := r.LockBucketObject(bucket)
+	return bucket, id
 }
 
-// LockBucketObject waits for any rate limits on the bucket, acquires the per-bucket
-// semaphore, decrements remaining, and returns. The semaphore serializes requests
-// to prevent racing 429s, while a timeout prevents deadlock if a request hangs.
-func (r *RateLimiter) LockBucketObject(b *Bucket) {
-	// First, acquire the per-bucket semaphore to serialize requests.
-	// Use a timeout to prevent deadlock if a request never completes.
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	select {
-	case b.sem <- struct{}{}:
-		// Acquired semaphore, proceed
-	case <-ctx.Done():
-		// Timeout waiting for semaphore - proceed anyway to prevent deadlock
-		// This indicates a previous request is hanging
-		logrus.Warnf("WARNING: Semaphore timeout (30s) for bucket %s - previous request may be hanging", b.Key)
-	}
-
+// LockBucketObject Locks an already resolved bucket until a request can be made
+func (r *RateLimiter) LockBucketObject(b *Bucket) (lockID int64) {
 	b.Lock()
 
 	if wait := r.GetWaitTime(b, 1); wait > 0 {
@@ -170,7 +151,9 @@ func (r *RateLimiter) LockBucketObject(b *Bucket) {
 	}
 
 	b.Remaining--
-	b.Unlock() // Release mutex before HTTP request (semaphore still held)
+
+	counter := atomic.AddInt64(b.lockCounter, 1)
+	return counter
 }
 
 func (r *RateLimiter) SetGlobalTriggered(to time.Time) {
@@ -185,26 +168,26 @@ type Bucket struct {
 	reset              time.Time
 	global             *int64
 	numConcurrentLocks *int32
-	sem                chan struct{} // Semaphore to serialize requests per bucket
 
 	lastReset       time.Time
 	customRateLimit *customRateLimit
 	Userdata        interface{}
+
+	lockCounter *int64
 }
 
-// Release updates the bucket's ratelimit info from response headers.
-// This acquires the lock, updates state, then releases the lock and semaphore.
-func (b *Bucket) Release(headers http.Header) error {
-	b.Lock()
+// Release unlocks the bucket and reads the headers to update the buckets ratelimit info
+// and locks up the whole thing in case if there's a global ratelimit.
+func (b *Bucket) Release(headers http.Header, lockCounter int64) error {
+	if atomic.LoadInt64(b.lockCounter) != lockCounter {
+		// attempted double unlock
+		return nil
+	}
+
 	defer b.Unlock()
 
-	// Release the per-bucket semaphore to allow next request
-	select {
-	case <-b.sem:
-		// Released semaphore
-	default:
-		// Semaphore wasn't held (timeout case in LockBucketObject)
-	}
+	// make sure that we can no longer unlock with the same ID
+	atomic.AddInt64(b.lockCounter, 1)
 
 	if b.numConcurrentLocks != nil {
 		atomic.AddInt32(b.numConcurrentLocks, -1)
