@@ -209,4 +209,6 @@ var yagFuncs = {
   dbBottomEntries: true,
   dbCount: true,
   dbRank: true,
+  suppressEmbeds: true,
+  unsuppressEmbeds: true,
 };
