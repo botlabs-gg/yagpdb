@@ -422,6 +422,7 @@ type MessageState struct {
 	ParsedEditedAt  time.Time
 
 	Deleted bool
+	Pinned  bool
 
 	RoleSubscriptionData *discordgo.RoleSubscriptionData
 }

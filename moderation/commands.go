@@ -733,16 +733,10 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			if parsed.Switches["nopin"].Bool() {
-				return "nopin flag has been disabled due to discord api changes.", nil
-
-				// pinned, err := common.BotSession.ChannelMessagesPinned(parsed.ChannelID)
-				// if err != nil {
-				// 	return "Failed fetching pinned messages", err
-				// }
-				// filters = append(filters, NewIgnorePinnedMessagesFilter(pinned))
+				filters = append(filters, &IgnorePinnedMessagesFilter{})
 			}
 
-			if onlyDeleteWithAttachments := parsed.Switches["a"].Bool(); onlyDeleteWithAttachments {
+			if parsed.Switches["a"].Bool() {
 				filters = append(filters, &MessagesWithAttachmentsFilter{})
 			}
 
@@ -1387,23 +1381,10 @@ func (f *MessageAgeFilter) Matches(msg *dstate.MessageState) (delete bool) {
 }
 
 // Do not delete pinned messages.
-type IgnorePinnedMessagesFilter struct {
-	PinnedMsgIDs map[int64]struct{}
-}
-
-func NewIgnorePinnedMessagesFilter(pinned []*discordgo.Message) *IgnorePinnedMessagesFilter {
-	ids := make(map[int64]struct{})
-	for _, msg := range pinned {
-		ids[msg.ID] = struct{}{}
-	}
-	return &IgnorePinnedMessagesFilter{ids}
-}
+type IgnorePinnedMessagesFilter struct{}
 
 func (f *IgnorePinnedMessagesFilter) Matches(msg *dstate.MessageState) (delete bool) {
-	if _, pinned := f.PinnedMsgIDs[msg.ID]; pinned {
-		return false
-	}
-	return true
+	return !msg.Pinned
 }
 
 // Only delete messages with attachments.
