@@ -291,7 +291,7 @@ func (shard *ShardTracker) handleGuildCreate(gc *discordgo.GuildCreate) {
 		emojis[i] = *gc.Emojis[i]
 	}
 
-	stickers := make([]discordgo.Sticker,len(gc.Stickers))
+	stickers := make([]discordgo.Sticker, len(gc.Stickers))
 	for i := range gc.Stickers {
 		stickers[i] = *gc.Stickers[i]
 	}
@@ -675,47 +675,9 @@ func (shard *ShardTracker) handleMessageUpdate(m *discordgo.MessageUpdate) {
 
 	if cl, ok := shard.channelMessages[m.ChannelID]; ok {
 		for e := cl.Back(); e != nil; e = e.Prev() {
-			// do something with e.Value
 			cast := e.Value.(*dstate.MessageState)
 			if cast.ID == m.ID {
-				// Update the message
-				cop := *cast
-
-				if m.Content != "" {
-					cop.Content = m.Content
-				}
-
-				if m.Mentions != nil {
-					cop.Mentions = make([]discordgo.User, len(m.Mentions))
-					for i, v := range m.Mentions {
-						cop.Mentions[i] = *v
-					}
-				}
-				if m.Embeds != nil {
-					cop.Embeds = make([]discordgo.MessageEmbed, len(m.Embeds))
-					for i, v := range m.Embeds {
-						cop.Embeds[i] = *v
-					}
-				}
-
-				if m.Attachments != nil {
-					cop.Attachments = make([]discordgo.MessageAttachment, len(m.Attachments))
-					for i, v := range m.Attachments {
-						cop.Attachments[i] = *v
-					}
-				}
-
-				if m.Author != nil {
-					cop.Author = *m.Author
-				}
-
-				if m.MentionRoles != nil {
-					cop.MentionRoles = m.MentionRoles
-				}
-
-				e.Value = &cop
-				return
-				// m.parseTimes(msg.Timestamp, msg.EditedTimestamp)
+				e.Value = dstate.MessageStateFromDgo(m.Message)
 			}
 		}
 	}
