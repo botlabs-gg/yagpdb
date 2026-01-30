@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -317,6 +318,16 @@ type File struct {
 	Name        string
 	ContentType string
 	Reader      io.Reader
+}
+
+type PinnedMessage struct {
+	Message  *Message  `json:"message"`
+	PinnedAt time.Time `json:"pinned_at"`
+}
+
+type PinnedItems struct {
+	HasMore bool             `json:"has_more"`
+	Items   []*PinnedMessage `json:"items"`
 }
 
 // MessageSend stores all parameters you can send with ChannelMessageSendComplex.

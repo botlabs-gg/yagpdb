@@ -89,6 +89,12 @@ func PermissionName(p int64) string {
 		return "CreateGuildExpressions"
 	case PermissionCreateEvents:
 		return "CreateEvents"
+	case PermissionPinMessages:
+		return "PinMessages"
+	case PermissionBypassSlowmode:
+		return "BypassSlowmode"
+	case PermissionUseExternalApps:
+		return "UseExternalApps"
 	case PermissionManageThreads:
 		return "ManageThreads"
 	case PermissionUsePublicThreads:

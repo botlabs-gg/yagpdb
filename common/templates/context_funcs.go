@@ -599,23 +599,22 @@ func (c *Context) tmplEditComponentsMessage(filterSpecialMentions bool) func(cha
 
 func (c *Context) tmplPinMessage(unpin bool) func(channel, msgID interface{}) (string, error) {
 	return func(channel, msgID interface{}) (string, error) {
-		return "", ErrFuncRemovedTemporarily
-		// if c.IncreaseCheckCallCounter("message_pins", 5) {
-		// 	return "", ErrTooManyCalls
-		// }
+		if c.IncreaseCheckCallCounter("message_pins", 2) {
+			return "", ErrTooManyCalls
+		}
 
-		// cID := c.ChannelArgNoDM(channel)
-		// if cID == 0 {
-		// 	return "", errors.New("unknown channel")
-		// }
-		// mID := ToInt64(msgID)
-		// var err error
-		// if unpin {
-		// 	err = common.BotSession.ChannelMessageUnpin(cID, mID)
-		// } else {
-		// 	err = common.BotSession.ChannelMessagePin(cID, mID)
-		// }
-		// return "", err
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return "", errors.New("unknown channel")
+		}
+		mID := ToInt64(msgID)
+		var err error
+		if unpin {
+			err = common.BotSession.ChannelMessageUnpin(cID, mID)
+		} else {
+			err = common.BotSession.ChannelMessagePin(cID, mID)
+		}
+		return "", err
 	}
 }
 
@@ -1705,32 +1704,35 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 
 func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (interface{}, error) {
 	return func(channel interface{}) (interface{}, error) {
-		return 0, ErrFuncRemovedTemporarily
+		if c.IncreaseCheckCallCounterPremium("channel_pins", 2, 4) {
+			return 0, ErrTooManyCalls
+		}
 
-		// if c.IncreaseCheckCallCounterPremium("channel_pins", 2, 4) {
-		// 	return 0, ErrTooManyCalls
-		// }
+		cID := c.ChannelArgNoDM(channel)
+		if cID == 0 {
+			return 0, errors.New("unknown channel")
+		}
 
-		// cID := c.ChannelArgNoDM(channel)
-		// if cID == 0 {
-		// 	return 0, errors.New("unknown channel")
-		// }
+		hasMore := true
+		var before *time.Time
+		msgs := make([]discordgo.Message, 0)
+		for hasMore {
+			pinned, err := common.BotSession.ChannelMessagesPinned(cID, 50, before)
+			if err != nil {
+				return 0, err
+			}
+			hasMore = pinned.HasMore
+			for _, item := range pinned.Items {
+				msgs = append(msgs, *item.Message)
+			}
+			before = &pinned.Items[len(pinned.Items)-1].PinnedAt
+		}
 
-		// msg, err := common.BotSession.ChannelMessagesPinned(cID)
-		// if err != nil {
-		// 	return 0, err
-		// }
+		if pinCount {
+			return len(msgs), nil
+		}
 
-		// if pinCount {
-		// 	return len(msg), nil
-		// }
-
-		// pinnedMessages := make([]discordgo.Message, 0, len(msg))
-		// for _, m := range msg {
-		// 	pinnedMessages = append(pinnedMessages, *m)
-		// }
-
-		// return pinnedMessages, nil
+		return msgs, nil
 	}
 }
 
