@@ -678,6 +678,7 @@ func (shard *ShardTracker) handleMessageUpdate(m *discordgo.MessageUpdate) {
 			cast := e.Value.(*dstate.MessageState)
 			if cast.ID == m.ID {
 				e.Value = dstate.MessageStateFromDgo(m.Message)
+				return
 			}
 		}
 	}
