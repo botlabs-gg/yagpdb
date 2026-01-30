@@ -93,6 +93,7 @@ func MessageStateFromDgo(m *discordgo.Message) *MessageState {
 		MentionRoles:         m.MentionRoles,
 		ParsedCreatedAt:      parsedC,
 		ParsedEditedAt:       parsedE,
+		Pinned:               m.Pinned,
 		RoleSubscriptionData: m.RoleSubscriptionData,
 	}
 	if m.Reference() != nil {
