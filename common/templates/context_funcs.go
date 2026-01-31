@@ -1704,7 +1704,7 @@ func (c *Context) tmplGetChannelOrThread(channel interface{}) (*CtxChannel, erro
 
 func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (interface{}, error) {
 	return func(channel interface{}) (interface{}, error) {
-		if c.IncreaseCheckCallCounterPremium("channel_pins", 2, 4) {
+		if c.IncreaseCheckCallCounterPremium("channel_pins", 1, 2) {
 			return 0, ErrTooManyCalls
 		}
 
