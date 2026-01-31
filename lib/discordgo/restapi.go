@@ -1918,9 +1918,23 @@ func (s *Session) ChannelMessageUnpin(channelID, messageID int64) (err error) {
 // ChannelMessagesPinned returns an array of Message structures for pinned messages
 // within a given channel
 // channelID : The ID of a Channel.
-func (s *Session) ChannelMessagesPinned(channelID int64) (st []*Message, err error) {
+func (s *Session) ChannelMessagesPinned(channelID int64, limit int, before *time.Time) (st *PinnedItems, err error) {
 
-	body, err := s.RequestWithBucketID("GET", EndpointChannelMessagesPins(channelID), nil, nil, EndpointChannelMessagesPins(channelID))
+	uri := EndpointChannelMessagesPins(channelID)
+	queryParams := url.Values{}
+	if before != nil && before.Unix() > 0 {
+		queryParams.Set("before", before.Format(time.RFC3339))
+	}
+	if limit > 50 {
+		limit = 50
+	}
+	if limit > 0 {
+		queryParams.Set("limit", strconv.Itoa(limit))
+	}
+
+	uri += "?" + queryParams.Encode()
+
+	body, err := s.RequestWithBucketID("GET", uri, nil, nil, EndpointChannelMessagesPins(channelID))
 
 	if err != nil {
 		return
