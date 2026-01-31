@@ -189,7 +189,7 @@ func execCmd(tmplCtx *templates.Context, dryRun bool, m *discordgo.MessageCreate
 	}
 
 	if cd > 0 {
-		return "", errors.NewPlain("this command is on guild scope cooldown")
+		return "", errors.NewPlain("This command is on cooldown, try again in " + strconv.Itoa(cd) + "seconds")
 	}
 
 	resp, err := runFunc(data)

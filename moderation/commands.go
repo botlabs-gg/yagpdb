@@ -659,7 +659,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled:      true,
 		CmdCategory:        commands.CategoryModeration,
 		Name:               "Clean",
-		GuildScopeCooldown: 120,
+		GuildScopeCooldown: 10,
 		Description:        "Delete the last number of messages from chat, optionally filtering by user, max age and regex or ignoring pinned messages.",
 		LongDescription:    "Specify a regex with \"-r regex_here\" and max age with \"-ma 1h10m\"\nYou can invert the regex match (i.e. only clear messages that do not match the given regex) by supplying the `-im` flag\nNote: Will only look in the last 1k messages, and none > 2 weeks old.",
 		Aliases:            []string{"clear", "cl"},

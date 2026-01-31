@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -496,7 +497,7 @@ func (yc *YAGCommand) checkCanExecuteCommand(data *dcmd.Data) (canExecute bool, 
 	if cdLeft > 0 {
 		resp = &CanExecuteError{
 			Type:    ReasonCooldown,
-			Message: "Command is on cooldown",
+			Message: "Command is on cooldown, try again in " + strconv.Itoa(cdLeft) + " seconds",
 		}
 		return false, resp, settings, nil
 	}
