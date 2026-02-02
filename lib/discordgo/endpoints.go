@@ -352,7 +352,7 @@ func CreateEndpoints(base string) {
 	EndpointChannelMessagesBulkDelete = func(cID int64) string { return EndpointChannelMessages(cID) + "/bulk-delete" }
 	EndpointChannelMessagesPins = func(cID int64) string { return EndpointChannelMessages(cID) + "/pins" }
 	EndpointChannelMessagePin = func(cID, mID int64) string { return EndpointChannelMessagesPins(cID) + "/" + StrID(mID) }
-	EndpointChannelMessageCrosspost = func(cID, mID int64) string { return EndpointChannelMessages(cID) + StrID(mID) + "/crosspost" }
+	EndpointChannelMessageCrosspost = func(cID, mID int64) string { return EndpointChannelMessages(cID) + "/" + StrID(mID) + "/crosspost" }
 	EndpointChannelMessageThread = func(cID, mID int64) string { return EndpointChannelMessage(cID, mID) + "/threads" }
 	EndpointThreadMembers = func(tID int64) string { return EndpointChannel(tID) + "/thread-members" }
 	EndpointThreadMember = func(tID int64, mID string) string { return EndpointThreadMembers(tID) + "/" + mID }
