@@ -506,12 +506,13 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 	case discordgo.InteractionModalSubmit:
 		response, err = handleModal(evt, ic, ic.Member, conf, currentChannel)
 	}
-	if response != nil {
-		if response.Data.Content == "" && len(response.Data.Components) == 0 {
-			response = errorResponse
-		}
-	} else {
+
+	if err != nil {
 		response = errorResponse
+	}
+
+	if response.Data.Content == "" && len(response.Data.Components) == 0 {
+		return false, nil
 	}
 
 	respErr := common.BotSession.CreateInteractionResponse(ic.ID, ic.Token, response)
@@ -525,7 +526,8 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 			return bot.CheckDiscordErrRetry(respErr), respErr
 		}
 	}
-	return false, err
+
+	return false, nil
 }
 
 func (p *Plugin) OnRemovedPremiumGuild(guildID int64) error {
