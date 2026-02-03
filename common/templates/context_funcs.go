@@ -1722,10 +1722,12 @@ func (c *Context) tmplGetChannelPins(pinCount bool) func(channel interface{}) (i
 				return 0, err
 			}
 			hasMore = pinned.HasMore
+			if hasMore && len(pinned.Items) > 0 {
+				before = &pinned.Items[len(pinned.Items)-1].PinnedAt
+			}
 			for _, item := range pinned.Items {
 				msgs = append(msgs, *item.Message)
 			}
-			before = &pinned.Items[len(pinned.Items)-1].PinnedAt
 		}
 
 		if pinCount {
