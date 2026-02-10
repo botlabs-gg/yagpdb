@@ -10,7 +10,14 @@ networks:
 
 
 services:
-  app:
+
+  nirn: 
+    image: ghcr.io/germanoeich/nirn-proxy
+    restart: unless-stopped
+    networks:
+      - default
+
+  yagpdb:
     build:
       # We change context so that we can copy the local repo in during
       # development
@@ -18,6 +25,7 @@ services:
       dockerfile: yagpdb_docker/Dockerfile.debug
     restart: unless-stopped
     depends_on:
+      - nirn
       - redis
       - db
     networks:
