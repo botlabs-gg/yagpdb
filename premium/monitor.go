@@ -61,6 +61,11 @@ func runMonitor() {
 // This syncs servers between Redis and the database and removes any guilds present in Redis but not in DB.
 // For each removed guild, it schedules the premium_guild_removed event and updates feature flags.
 func syncPremiumServersOnStart() error {
+	if confAllGuildsPremium.GetBool() {
+		logger.Info("Premium Server Sync: All Guilds Premium enabled, skipping sync")
+		return nil
+	}
+
 	logger.Info("Premium Server Sync: Getting All Guilds Once Premium")
 	allOncePremiumGuildIDs, err := AllGuildsOncePremium()
 	if err != nil {
