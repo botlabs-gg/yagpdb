@@ -1293,7 +1293,7 @@ func (c *Context) tmplCreateThread(channel, msgID, name interface{}, optionals .
 	}
 
 	if err != nil {
-		return nil, nil // dont send an error, a nil output would indicate invalid/unknown channel
+		return nil, err
 	}
 
 	tstate := dstate.ChannelStateFromDgo(ctxThread)
@@ -1520,7 +1520,7 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 
 	thread, err := common.BotSession.ForumThreadStartComplex(cID, start, msgData)
 	if err != nil {
-		return nil, errors.New("unable to create forum post")
+		return nil, err
 	}
 
 	tstate := dstate.ChannelStateFromDgo(thread)
