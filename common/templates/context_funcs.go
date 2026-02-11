@@ -1074,6 +1074,24 @@ func (c *Context) tmplMemberAbove(a, b *discordgo.Member) (bool, error) {
 	return bot.IsMemberAbove(c.GS, aState, bState), nil
 }
 
+func (c *Context) tmplMemberAboveRole(a *discordgo.Member, role *discordgo.Role) (bool, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
+	}
+
+	if a == nil {
+		return false, nil
+	}
+
+	if role == nil {
+		return false, nil
+	}
+
+	aState := dstate.MemberStateFromMember(a)
+
+	return bot.IsMemberAboveRole(c.GS, aState, role), nil
+}
+
 func (c *Context) tmplGetMemberVoiceState(target interface{}) (*discordgo.VoiceState, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
