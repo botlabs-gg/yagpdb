@@ -769,6 +769,7 @@ func baseContextFuncs(c *Context) {
 	c.addContextFunc("getMemberVoiceState", c.tmplGetMemberVoiceState)
 	c.addContextFunc("editNickname", c.tmplEditNickname)
 	c.addContextFunc("memberAbove", c.tmplMemberAbove)
+	c.addContextFunc("memberAboveRole", c.tmplMemberAboveRole)
 
 	// Thread functions
 	c.addContextFunc("addThreadMember", c.tmplThreadMemberAdd)
