@@ -1054,6 +1054,26 @@ func (c *Context) tmplGetMember(target interface{}) (*discordgo.Member, error) {
 	return member.DgoMember(), nil
 }
 
+// memberAbove returns whether member a is higher than member b in the guild hierarchy.
+func (c *Context) tmplMemberAbove(a, b *discordgo.Member) (bool, error) {
+	if c.IncreaseCheckGenericAPICall() {
+		return false, ErrTooManyAPICalls
+	}
+
+	if a == nil {
+		return false, nil
+	}
+
+	if b == nil {
+		return true, nil
+	}
+
+	aState := dstate.MemberStateFromMember(a)
+	bState := dstate.MemberStateFromMember(b)
+
+	return bot.IsMemberAbove(c.GS, aState, bState), nil
+}
+
 func (c *Context) tmplGetMemberVoiceState(target interface{}) (*discordgo.VoiceState, error) {
 	if c.IncreaseCheckGenericAPICall() {
 		return nil, ErrTooManyAPICalls
