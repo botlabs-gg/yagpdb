@@ -333,7 +333,9 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 				})
 			}
 		case *discordgo.Label:
-			if t, ok := comp.Component.(*discordgo.TextInput); ok {
+			switch comp.Component.(type) {
+			case *discordgo.TextInput:
+				t, _ := comp.Component.(*discordgo.TextInput)
 				cID, _ := strings.CutPrefix(t.CustomID, templates.TemplateCustomIDPrefix)
 				cmdValues = append(cmdValues, t.Value)
 				modalValues.Set(cID, templates.SDict{
@@ -341,12 +343,40 @@ func ExecuteCustomCommandFromModal(cc *models.CustomCommand, gs *dstate.GuildSet
 					"value":     t.Value,
 					"custom_id": cID,
 				})
-			} else if sm, ok := comp.Component.(*discordgo.SelectMenu); ok {
+			case *discordgo.Checkbox:
+				cb, _ := comp.Component.(*discordgo.Checkbox)
+				cID, _ := strings.CutPrefix(cb.CustomID, templates.TemplateCustomIDPrefix)
+				cmdValues = append(cmdValues, cb.Value)
+				modalValues.Set(cID, templates.SDict{
+					"type":      cb.Type(),
+					"value":     cb.Value,
+					"custom_id": cID,
+				})
+			case *discordgo.RadioGroup:
+				rg, _ := comp.Component.(*discordgo.RadioGroup)
+				cID, _ := strings.CutPrefix(rg.CustomID, templates.TemplateCustomIDPrefix)
+				cmdValues = append(cmdValues, rg.Value)
+				modalValues.Set(cID, templates.SDict{
+					"type":      rg.Type(),
+					"value":     rg.Value,
+					"custom_id": cID,
+				})
+			case *discordgo.SelectMenu:
+				sm, _ := comp.Component.(*discordgo.SelectMenu)
 				cID, _ := strings.CutPrefix(sm.CustomID, templates.TemplateCustomIDPrefix)
 				cmdValues = append(cmdValues, sm.Values)
 				modalValues.Set(cID, templates.SDict{
 					"type":      sm.Type(),
 					"value":     sm.Values,
+					"custom_id": cID,
+				})
+			case *discordgo.CheckboxGroup:
+				cbg, _ := comp.Component.(*discordgo.CheckboxGroup)
+				cID, _ := strings.CutPrefix(cbg.CustomID, templates.TemplateCustomIDPrefix)
+				cmdValues = append(cmdValues, cbg.Values)
+				modalValues.Set(cID, templates.SDict{
+					"type":      cbg.Type(),
+					"value":     cbg.Values,
 					"custom_id": cID,
 				})
 			}

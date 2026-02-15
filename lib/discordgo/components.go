@@ -834,6 +834,7 @@ type RadioGroup struct {
 	CustomID string             `json:"custom_id"`
 	Options  []RadioGroupOption `json:"options"`
 	Required bool               `json:"required,omitempty"`
+	Value    string             `json:"value,omitempty"`
 }
 
 // MarshalJSON is a method for marshaling RadioGroupActionComponent to a JSON object.
@@ -869,6 +870,7 @@ type CheckboxGroup struct {
 	MinValues int                   `json:"min_values,omitempty"`
 	MaxValues int                   `json:"max_values,omitempty"`
 	Required  bool                  `json:"required,omitempty"`
+	Values    []string              `json:"values,omitempty"`
 }
 
 // MarshalJSON is a method for marshaling RadioGroupActionComponent to a JSON object.
@@ -908,6 +910,7 @@ type Checkbox struct {
 	ID       int    `json:"id,omitempty"`
 	CustomID string `json:"custom_id"`
 	Default  bool   `json:"default,omitempty"`
+	Value    bool   `json:"value,omitempty"`
 }
 
 // MarshalJSON is a method for marshaling RadioGroupActionComponent to a JSON object.
