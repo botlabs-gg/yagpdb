@@ -645,9 +645,6 @@ func CreateRadioGroup(values ...any) (*discordgo.RadioGroup, error) {
 			if err != nil {
 				return nil, err
 			}
-			if len(radioGroup.Options) < 2 || len(radioGroup.Options) > 10 {
-				return nil, errors.New("invalid number of radiogroup options, must have between 2 and 10")
-			}
 			convertedRadioGroup[k] = c
 		default:
 			convertedRadioGroup[k] = v
@@ -657,6 +654,9 @@ func CreateRadioGroup(values ...any) (*discordgo.RadioGroup, error) {
 	c, err := CreateComponent(discordgo.RadioGroupComponent, convertedRadioGroup)
 	if err == nil {
 		radioGroup = c.(discordgo.RadioGroup)
+		if len(radioGroup.Options) < 2 || len(radioGroup.Options) > 10 {
+			return nil, errors.New("invalid number of radiogroup options, must have between 2 and 10")
+		}
 	}
 	return &radioGroup, err
 }
@@ -691,15 +691,6 @@ func CreateCheckboxGroup(values ...any) (*discordgo.CheckboxGroup, error) {
 			if err != nil {
 				return nil, err
 			}
-			if len(checkboxGroup.Options) < 1 || len(checkboxGroup.Options) > 10 {
-				return nil, errors.New("invalid number of checkboxgroup options, must have between 1 and 10")
-			}
-			if checkboxGroup.MinValues > 10 {
-				return nil, errors.New("invalid min values in checkboxgroup, must be less than 10")
-			}
-			if checkboxGroup.MaxValues < checkboxGroup.MinValues || checkboxGroup.MaxValues > 10 {
-				return nil, errors.New("invalid max values in checkboxgroup, max 10 and greater than min values")
-			}
 			convertedCheckboxGroup[k] = c
 		default:
 			convertedCheckboxGroup[k] = v
@@ -709,6 +700,15 @@ func CreateCheckboxGroup(values ...any) (*discordgo.CheckboxGroup, error) {
 	c, err := CreateComponent(discordgo.CheckboxGroupComponent, convertedCheckboxGroup)
 	if err == nil {
 		checkboxGroup = c.(discordgo.CheckboxGroup)
+		if len(checkboxGroup.Options) < 1 || len(checkboxGroup.Options) > 10 {
+			return nil, errors.New("invalid number of checkboxgroup options, must have between 1 and 10")
+		}
+		if checkboxGroup.MinValues > 10 {
+			return nil, errors.New("invalid min values in checkboxgroup, must be less than 10")
+		}
+		if checkboxGroup.MaxValues < checkboxGroup.MinValues || checkboxGroup.MaxValues > 10 {
+			return nil, errors.New("invalid max values in checkboxgroup, max 10 and greater than min values")
+		}
 	}
 
 	return &checkboxGroup, err

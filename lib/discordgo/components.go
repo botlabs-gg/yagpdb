@@ -30,7 +30,7 @@ const (
 	ActivityContentComponent       ComponentType = 16
 	ContainerComponent             ComponentType = 17
 	LabelComponent                 ComponentType = 18
-	RadioGroupComponent            ComponentType = 19
+	RadioGroupComponent            ComponentType = 21
 	CheckboxGroupComponent         ComponentType = 22
 	CheckboxComponent              ComponentType = 23
 )
