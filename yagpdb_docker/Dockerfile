@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.25.4 AS builder
+FROM docker.io/golang:1.26.0 AS builder
 
 WORKDIR /appbuild/yagpdb
 COPY go.mod go.sum ./
