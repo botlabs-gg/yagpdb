@@ -13,6 +13,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common/templates"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -184,10 +185,18 @@ func handleGuildAuditLogEntryCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	modMember, err := bot.GetMember(data.GuildID, modUserID)
-	if err != nil {
-		logger.WithField("guild", data.GuildID).WithField("ModUserID", modUserID).WithError(err).Warn("failed getting mod member for role trigger")
-		return
+	var modMember *dstate.MemberState
+	if modUserID == 0 || modUserID == targetUserID {
+		// If we can't get the mod member, use the target member as the mod,
+		// as the role was most likely assigned by an integration like a discord boost or a 3rd party non-bot integration like twitch.
+		// which can be considered an example of self-assignment
+		modMember = targetMember
+	} else {
+		modMember, err = bot.GetMember(data.GuildID, modUserID)
+		if err != nil {
+			logger.WithField("guild", data.GuildID).WithField("ModUserID", modUserID).WithError(err).Warn("failed getting mod member for role trigger")
+			return
+		}
 	}
 
 	for _, roleChange := range roleChanges {
