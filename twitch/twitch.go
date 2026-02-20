@@ -83,3 +83,16 @@ func (p *Plugin) DisableGuildFeeds(guildID int64) error {
 	}
 	return err
 }
+
+func (p *Plugin) RefreshAccessToken() error {
+	isValid, _, _ := p.HelixClient.ValidateToken(p.HelixClient.GetAppAccessToken())
+	if !isValid {
+		resp, err := p.HelixClient.RequestAppAccessToken([]string{})
+		if err != nil {
+			logger.WithError(err).Error("Failed refreshing twitch token")
+			return err
+		}
+		p.HelixClient.SetAppAccessToken(resp.Data.AccessToken)
+	}
+	return nil
+}
