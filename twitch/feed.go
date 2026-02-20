@@ -111,14 +111,10 @@ func (p *Plugin) checkStreams() {
 
 func (p *Plugin) processStreamsBatch(userIDs []string) {
 	// Check if token is valid, refresh if needed
-	isValid, _, _ := p.HelixClient.ValidateToken(p.HelixClient.GetAppAccessToken())
-	if !isValid {
-		resp, err := p.HelixClient.RequestAppAccessToken([]string{})
-		if err != nil {
-			logger.WithError(err).Error("Failed refreshing twitch token")
-			return
-		}
-		p.HelixClient.SetAppAccessToken(resp.Data.AccessToken)
+	err := p.RefreshAccessToken()
+	if err != nil {
+		logger.WithError(err).Error("Failed refreshing twitch token")
+		return
 	}
 
 	// Get current stream status from Twitch

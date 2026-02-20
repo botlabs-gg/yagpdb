@@ -164,6 +164,12 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	// Extract username from URL if a URL was provided
 	username := extractTwitchUsername(data.TwitchUsername)
 
+	err = p.RefreshAccessToken()
+	if err != nil {
+		logger.WithError(err).Error("Failed refreshing twitch token")
+		return templateData.AddAlerts(web.ErrorAlert("Failed to get twitch user")), nil
+	}
+
 	// Validate Twitch User
 	// We need to get the user ID from Twitch
 	users, err := p.HelixClient.GetUsers(&helix.UsersParams{
