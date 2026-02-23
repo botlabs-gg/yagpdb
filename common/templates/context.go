@@ -406,10 +406,25 @@ func (c *Context) executeParsed() (string, error) {
 	var buf bytes.Buffer
 	w := LimitWriter(&buf, 25000)
 
-	// started := time.Now()
+	started := time.Now()
+	logger.WithFields(logrus.Fields{
+		"guild_id":      c.GS.ID,
+		"cc_id":         c.Data["CCID"],
+		"executed_from": c.ExecutedFrom,
+	}).Info("Template execution started")
 	err := parsed.Execute(w, c.Data)
 
-	// dur := time.Since(started)
+	defer func() {
+		dur := time.Since(started)
+		logger.WithFields(logrus.Fields{
+			"guild_id":      c.GS.ID,
+			"executed_from": c.ExecutedFrom,
+			"cc_id":         c.Data["CCID"],
+			"success":       err == nil,
+			"duration":      dur,
+		}).Info("Template execution finished")
+	}()
+
 	if c.FixedOutput != "" {
 		return c.FixedOutput, nil
 	}
