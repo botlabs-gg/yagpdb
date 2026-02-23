@@ -407,22 +407,30 @@ func (c *Context) executeParsed() (string, error) {
 	w := LimitWriter(&buf, 25000)
 
 	started := time.Now()
-	logger.WithFields(logrus.Fields{
-		"guild_id":      c.GS.ID,
-		"cc_id":         c.Data["CCID"],
-		"executed_from": c.ExecutedFrom,
-	}).Info("Template execution started")
-	err := parsed.Execute(w, c.Data)
 
-	defer func() {
-		dur := time.Since(started)
+	//log only if execution takes longer than 5 seconds
+	timer := time.AfterFunc(5*time.Second, func() {
 		logger.WithFields(logrus.Fields{
 			"guild_id":      c.GS.ID,
 			"executed_from": c.ExecutedFrom,
 			"cc_id":         c.Data["CCID"],
-			"success":       err == nil,
-			"duration":      dur,
-		}).Info("Template execution finished")
+		}).Warn("Template execution is taking longer than 5 seconds")
+	})
+
+	err := parsed.Execute(w, c.Data)
+
+	defer func() {
+		timer.Stop()
+		dur := time.Since(started)
+		if dur > 5*time.Second {
+			logger.WithFields(logrus.Fields{
+				"guild_id":      c.GS.ID,
+				"executed_from": c.ExecutedFrom,
+				"cc_id":         c.Data["CCID"],
+				"success":       err == nil,
+				"duration":      dur,
+			}).Warn("Long template execution finished")
+		}
 	}()
 
 	if c.FixedOutput != "" {
