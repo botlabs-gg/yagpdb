@@ -197,6 +197,7 @@ type Context struct {
 	ContextFuncs         map[string]interface{}
 	Data                 map[string]interface{}
 	Counters             map[string]int
+	Cooldowns            map[string]time.Time
 
 	FixedOutput  string
 	secondsSlept int
@@ -250,6 +251,7 @@ func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberS
 
 		ContextFuncs: make(map[string]interface{}),
 		Data:         make(map[string]interface{}),
+		Cooldowns:    make(map[string]time.Time),
 		Counters:     make(map[string]int),
 
 		CurrentFrame: &ContextFrame{
@@ -636,6 +638,17 @@ const (
 	sendMessageInteractionFollowup
 	sendMessageInteractionDeferred
 )
+
+// SetCooldown Sets a cooldown for a key, returns true if the key is already on cooldown
+func (c *Context) SetCooldown(key string, duration time.Duration) bool {
+	cooldown := c.Cooldowns[key]
+	if cooldown.After(time.Now()) {
+		return true
+	}
+
+	c.Cooldowns[key] = time.Now().Add(duration)
+	return false
+}
 
 // IncreaseCheckCallCounter Returns true if key is above the limit
 func (c *Context) IncreaseCheckCallCounter(key string, limit int) bool {
