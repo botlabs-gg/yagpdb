@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -161,7 +162,43 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 	contextSetupFuncs = append(contextSetupFuncs, f)
 }
 
+type TemplateCooldowns struct {
+	mu        sync.RWMutex
+	cooldowns map[string]time.Time
+}
+
+func (tc *TemplateCooldowns) Set(key string, duration time.Duration) bool {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+	t, ok := tc.cooldowns[key]
+	if !ok || time.Now().After(t) {
+		tc.cooldowns[key] = time.Now().Add(duration)
+		return false
+	}
+	go tc.Tick()
+	return true
+}
+
+func (tc *TemplateCooldowns) Tick() {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+	for k, v := range tc.cooldowns {
+		if time.Now().After(v) {
+			delete(tc.cooldowns, k)
+		}
+	}
+}
+
+var templateCooldownTracker *TemplateCooldowns
+
+func InitCooldownTracker() {
+	templateCooldownTracker = &TemplateCooldowns{}
+	templateCooldownTracker.mu = sync.RWMutex{}
+	templateCooldownTracker.cooldowns = make(map[string]time.Time)
+}
+
 func init() {
+	InitCooldownTracker()
 	RegisterSetupFunc(baseContextFuncs)
 	RegisterSetupFunc(interactionContextFuncs)
 
@@ -197,7 +234,6 @@ type Context struct {
 	ContextFuncs         map[string]interface{}
 	Data                 map[string]interface{}
 	Counters             map[string]int
-	Cooldowns            map[string]time.Time
 
 	FixedOutput  string
 	secondsSlept int
@@ -251,7 +287,6 @@ func NewContext(gs *dstate.GuildSet, cs *dstate.ChannelState, ms *dstate.MemberS
 
 		ContextFuncs: make(map[string]interface{}),
 		Data:         make(map[string]interface{}),
-		Cooldowns:    make(map[string]time.Time),
 		Counters:     make(map[string]int),
 
 		CurrentFrame: &ContextFrame{
@@ -641,13 +676,7 @@ const (
 
 // SetCooldown Sets a cooldown for a key, returns true if the key is already on cooldown
 func (c *Context) SetCooldown(key string, duration time.Duration) bool {
-	cooldown := c.Cooldowns[key]
-	if cooldown.After(time.Now()) {
-		return true
-	}
-
-	c.Cooldowns[key] = time.Now().Add(duration)
-	return false
+	return templateCooldownTracker.Set(key, duration)
 }
 
 // IncreaseCheckCallCounter Returns true if key is above the limit
