@@ -22,10 +22,10 @@ import (
 )
 
 var (
-	ErrTooManyCalls           = errors.New("too many calls to this function")
-	ErrTooManyAPICalls        = errors.New("too many potential Discord API calls")
-	ErrFuncRemovedTemporarily = errors.New("this function is removed temporarily")
-	ErrRegexCacheLimit        = errors.New("too many unique regular expressions (regex)")
+	ErrTooManyCalls    = errors.New("too many calls to this function")
+	ErrFuncOnCooldown  = errors.New("function is on cooldown")
+	ErrTooManyAPICalls = errors.New("too many potential Discord API calls")
+	ErrRegexCacheLimit = errors.New("too many unique regular expressions (regex)")
 )
 
 func (c *Context) tmplSendDM(s ...interface{}) string {
@@ -1999,7 +1999,13 @@ func (c *Context) tmplEditChannelName(channel interface{}, newName string) (stri
 		return "", errors.New("unknown channel")
 	}
 
-	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+	key := "edit_channel_name" + strconv.FormatInt(cID, 10)
+
+	if c.SetCooldown(key, 10*time.Minute) {
+		return "", ErrFuncOnCooldown
+	}
+
+	if c.IncreaseCheckCallCounter(key, 1) {
 		return "", ErrTooManyCalls
 	}
 
@@ -2017,7 +2023,13 @@ func (c *Context) tmplEditChannelTopic(channel interface{}, newTopic string) (st
 		return "", errors.New("unknown channel")
 	}
 
-	if c.IncreaseCheckCallCounter("edit_channel_"+strconv.FormatInt(cID, 10), 2) {
+	key := "edit_channel_topic" + strconv.FormatInt(cID, 10)
+
+	if c.SetCooldown(key, 10*time.Minute) {
+		return "", ErrFuncOnCooldown
+	}
+
+	if c.IncreaseCheckCallCounter(key, 1) {
 		return "", ErrTooManyCalls
 	}
 
