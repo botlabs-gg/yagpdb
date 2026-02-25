@@ -26,11 +26,11 @@ import (
 )
 
 var (
-	confClientID     = config.RegisterOption("yagpdb.reddit.clientid", "Client ID for the reddit api application", "")
-	confClientSecret = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
-	confRedirectURI  = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
-	confRefreshToken = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
-
+	confClientID         = config.RegisterOption("yagpdb.reddit.clientid", "Client ID for the reddit api application", "")
+	confClientSecret     = config.RegisterOption("yagpdb.reddit.clientsecret", "Client Secret for the reddit api application", "")
+	confRedirectURI      = config.RegisterOption("yagpdb.reddit.redirect", "Redirect URI for the reddit api application", "")
+	confRefreshToken     = config.RegisterOption("yagpdb.reddit.refreshtoken", "RefreshToken for the reddit api application, you need to ackquire this manually, should be set to permanent", "")
+	confDevUsername      = config.RegisterOption("yagpdb.reddit.devusername", "Username for the reddit api application", "")
 	confMaxPostsHourFast = config.RegisterOption("yagpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
 	confMaxPostsHourSlow = config.RegisterOption("yagpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)
 
@@ -94,7 +94,7 @@ func (p *Plugin) checkFeed() {
 }
 
 func UserAgent() string {
-	return fmt.Sprintf("YAGPDB:%s:%s (by /u/jonas747)", confClientID.GetString(), common.VERSION)
+	return fmt.Sprintf("YAGPDB:%s:%s (by /u/%s)", confClientID.GetString(), common.VERSION, confDevUsername.GetString())
 }
 
 func setupClient() *reddit.Client {
