@@ -163,38 +163,48 @@ func RegisterSetupFunc(f ContextSetupFunc) {
 }
 
 type TemplateCooldowns struct {
-	mu        sync.RWMutex
+	sync.RWMutex
 	cooldowns map[string]time.Time
 }
 
 func (tc *TemplateCooldowns) Set(key string, duration time.Duration) bool {
-	tc.mu.Lock()
-	defer tc.mu.Unlock()
+	tc.Lock()
+	defer tc.Unlock()
 	t, ok := tc.cooldowns[key]
 	if !ok || time.Now().After(t) {
 		tc.cooldowns[key] = time.Now().Add(duration)
 		return false
 	}
-	go tc.Tick()
 	return true
 }
 
+func (tc *TemplateCooldowns) gc(d time.Duration) {
+	ticker := time.NewTicker(d)
+	for range ticker.C {
+		tc.Tick()
+	}
+}
+
 func (tc *TemplateCooldowns) Tick() {
-	tc.mu.Lock()
-	defer tc.mu.Unlock()
+	tc.Lock()
+	defer tc.Unlock()
+	var deleteCounter int
 	for k, v := range tc.cooldowns {
 		if time.Now().After(v) {
 			delete(tc.cooldowns, k)
+			deleteCounter++
 		}
+	}
+	if deleteCounter > 0 {
+		logger.Infof("deleted %d template cooldowns", deleteCounter)
 	}
 }
 
 var templateCooldownTracker *TemplateCooldowns
 
 func InitCooldownTracker() {
-	templateCooldownTracker = &TemplateCooldowns{}
-	templateCooldownTracker.mu = sync.RWMutex{}
-	templateCooldownTracker.cooldowns = make(map[string]time.Time)
+	templateCooldownTracker = &TemplateCooldowns{cooldowns: make(map[string]time.Time)}
+	go templateCooldownTracker.gc(time.Minute)
 }
 
 func init() {
