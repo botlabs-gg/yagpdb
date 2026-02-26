@@ -51,8 +51,14 @@ func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
 	}
 }
 
+func (p *Plugin) Status() (string, string) {
+	total, _ := models.RSSFeedSubscriptions().CountG(context.Background())
+	return "Total RSS Feeds", fmt.Sprintf("%d", total)
+}
+
 func (p *Plugin) runFeedLoop() {
 	ticker := time.NewTicker(PollInterval)
+	p.pollFeeds()
 	defer ticker.Stop()
 	for {
 		select {
@@ -235,6 +241,8 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 	if len(newItems) == 0 {
 		return
 	}
+
+	logger.Infof("Found %d new items for feed %d", len(newItems), sub.ID)
 
 	batchSize := 5
 	for i := 0; i < len(newItems); i += batchSize {
