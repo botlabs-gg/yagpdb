@@ -552,7 +552,7 @@ func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
 			return nil, err
 		}
 
-		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
+		return tmplResultSetToLightDBEntries(ctx, results), nil
 	}
 }
 
@@ -797,7 +797,7 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 			return nil, err
 		}
 
-		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
+		return tmplResultSetToLightDBEntries(ctx, results), nil
 	}
 }
 
@@ -975,7 +975,7 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 	return dec
 }
 
-func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
+func tmplResultSetToLightDBEntries(ctx *templates.Context, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
 	// convert them into lightdb entries and decode their values
 	entries := make([]*LightDBEntry, 0, len(rs))
 	for _, v := range rs {
@@ -998,7 +998,7 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, 
 		membersToFetch = append(membersToFetch, v.UserID)
 	}
 
-	users := bot.GetUsers(ctx.GS.ID, membersToFetch...)
+	users := bot.GetUsersFromState(ctx.GS.ID, membersToFetch...)
 	for _, v := range entries {
 		for _, u := range users {
 			if u.ID == v.UserID {

@@ -423,6 +423,23 @@ func MemberHighestRole(gs *dstate.GuildSet, ms *dstate.MemberState) *discordgo.R
 	return highest
 }
 
+func GetUsersFromState(guildID int64, ids ...int64) []*discordgo.User {
+	resp := make([]*discordgo.User, 0, len(ids))
+	for _, id := range ids {
+		m := State.GetMember(guildID, id)
+		if m != nil {
+			resp = append(resp, &m.User)
+		} else {
+			resp = append(resp, &discordgo.User{
+				Discriminator: "0",
+				ID:            id,
+				Username:      "Unknown (" + strconv.FormatInt(id, 10) + ")",
+			})
+		}
+	}
+	return resp
+}
+
 func GetUsers(guildID int64, ids ...int64) []*discordgo.User {
 	resp := make([]*discordgo.User, 0, len(ids))
 	for _, id := range ids {
