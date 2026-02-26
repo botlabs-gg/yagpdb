@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/scheduledevents2"
@@ -551,7 +552,7 @@ func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
 			return nil, err
 		}
 
-		return tmplResultSetToLightDBEntries(ctx, results), nil
+		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
 	}
 }
 
@@ -796,7 +797,7 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 			return nil, err
 		}
 
-		return tmplResultSetToLightDBEntries(ctx, results), nil
+		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
 	}
 }
 
@@ -974,7 +975,7 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 	return dec
 }
 
-func tmplResultSetToLightDBEntries(ctx *templates.Context, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
+func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
 	// convert them into lightdb entries and decode their values
 	entries := make([]*LightDBEntry, 0, len(rs))
 	for _, v := range rs {
@@ -985,6 +986,26 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, rs []*models.Template
 		}
 
 		entries = append(entries, converted)
+	}
+
+	// fill in user fields
+	membersToFetch := make([]int64, 0, len(entries))
+	for _, v := range entries {
+		if common.ContainsInt64Slice(membersToFetch, v.UserID) {
+			continue
+		}
+
+		membersToFetch = append(membersToFetch, v.UserID)
+	}
+
+	users := bot.GetUsers(ctx.GS.ID, membersToFetch...)
+	for _, v := range entries {
+		for _, u := range users {
+			if u.ID == v.UserID {
+				v.User = *u
+				break
+			}
+		}
 	}
 
 	return entries
