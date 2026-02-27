@@ -433,7 +433,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			return m.ID, nil
 		}
 
-		return nil, err
+		return "", err
 	}
 }
 
