@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strings"
@@ -342,15 +343,15 @@ func (c *Context) tmplSendModal(modal interface{}) (interface{}, error) {
 	return "", nil
 }
 
-func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, returnID bool) func(interactionToken interface{}, msg interface{}) interface{} {
-	return func(interactionToken interface{}, msg interface{}) interface{} {
+func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, returnID bool) func(interactionToken interface{}, msg interface{}) (interface{}, error) {
+	return func(interactionToken interface{}, msg interface{}) (interface{}, error) {
 		if c.IncreaseCheckGenericAPICall() {
-			return ""
+			return "", ErrTooManyAPICalls
 		}
 
 		sendType, token := c.tokenArg(interactionToken)
 		if token == "" {
-			return ""
+			return "", errors.New("invalid interaction token")
 		}
 
 		var m *discordgo.Message
@@ -374,7 +375,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 		case *ComponentBuilder:
 			msg, err := typedMsg.ToComplexMessage()
 			if err != nil {
-				return ""
+				return "", err
 			}
 			msgReponse.Components = msg.Components
 			msgReponse.Flags = msg.Flags
@@ -398,7 +399,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 		switch sendType {
 		case sendMessageInteractionResponse:
 			if c.IncreaseCheckCallCounter("interaction_response", 1) {
-				return ""
+				return "", ErrTooManyInteractionResponses
 			}
 			err = common.BotSession.CreateInteractionResponse(c.CurrentFrame.Interaction.ID, token, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -429,10 +430,10 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 		}
 
 		if err == nil && returnID {
-			return m.ID
+			return m.ID, nil
 		}
 
-		return ""
+		return nil, err
 	}
 }
 
@@ -525,8 +526,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 // these. also returns the sendMessageType.
 func (c *Context) tokenArg(interactionToken interface{}) (sendType sendMessageType, token string) {
 	sendType = sendMessageInteractionFollowup
-
-	token, ok := interactionToken.(string)
+	sToken, ok := interactionToken.(string)
 	if !ok {
 		if interactionToken == nil && c.CurrentFrame.Interaction != nil {
 			// no token provided, assume current interaction
@@ -534,6 +534,20 @@ func (c *Context) tokenArg(interactionToken interface{}) (sendType sendMessageTy
 		} else {
 			return
 		}
+	} else {
+		//rudimentary check for valid token because people don't read docs and will send anything.
+		decoded, err := base64.URLEncoding.DecodeString(sToken)
+		if err != nil {
+			return
+		}
+		parts := strings.Split(string(decoded), ":")
+		if len(parts) < 3 {
+			return
+		}
+		if parts[0] != "interaction" {
+			return
+		}
+		token = string(decoded)
 	}
 
 	if c.CurrentFrame.Interaction != nil && token == c.CurrentFrame.Interaction.Token && !c.CurrentFrame.Interaction.RespondedTo {
