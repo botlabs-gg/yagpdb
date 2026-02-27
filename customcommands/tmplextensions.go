@@ -552,7 +552,7 @@ func tmplDBGetPattern(ctx *templates.Context, inverse bool) interface{} {
 			return nil, err
 		}
 
-		return tmplResultSetToLightDBEntries(ctx, results), nil
+		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
 	}
 }
 
@@ -797,7 +797,7 @@ func tmplDBTopEntries(ctx *templates.Context, bottom bool) interface{} {
 			return nil, err
 		}
 
-		return tmplResultSetToLightDBEntries(ctx, results), nil
+		return tmplResultSetToLightDBEntries(ctx, ctx.GS, results), nil
 	}
 }
 
@@ -975,7 +975,7 @@ func newDecoder(buf *bytes.Buffer) *msgpack.Decoder {
 	return dec
 }
 
-func tmplResultSetToLightDBEntries(ctx *templates.Context, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
+func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, rs []*models.TemplatesUserDatabase) []*LightDBEntry {
 	// convert them into lightdb entries and decode their values
 	entries := make([]*LightDBEntry, 0, len(rs))
 	for _, v := range rs {
@@ -994,15 +994,40 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, rs []*models.Template
 		if common.ContainsInt64Slice(membersToFetch, v.UserID) {
 			continue
 		}
+		//don't check invalid snowflakes
+		idLen := len(fmt.Sprintf("%d", v.UserID))
+		if idLen < 16 {
+			continue
+		}
 
 		membersToFetch = append(membersToFetch, v.UserID)
 	}
 
-	users := bot.GetUsersFromState(ctx.GS.ID, membersToFetch...)
+	// fast path in case of single member
+	if len(membersToFetch) == 1 {
+		member, err := bot.GetMember(gs.ID, membersToFetch[0])
+		if err != nil {
+			ctx.LogEntry().WithError(err).Errorf("[cc] failed retrieving member %d", membersToFetch[0])
+			return entries
+		}
+
+		for _, v := range entries {
+			v.User = member.User
+		}
+
+		return entries
+	}
+
+	// multiple members
+	members, err := bot.GetMembers(gs.ID, membersToFetch...)
+	if err != nil {
+		ctx.LogEntry().WithError(err).Error("[cc] failed bot.GetMembers call")
+	}
+
 	for _, v := range entries {
-		for _, u := range users {
-			if u.ID == v.UserID {
-				v.User = *u
+		for _, m := range members {
+			if m.User.ID == v.UserID {
+				v.User = m.User
 				break
 			}
 		}

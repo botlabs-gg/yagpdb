@@ -536,10 +536,7 @@ func (c *Context) tokenArg(interactionToken interface{}) (sendType sendMessageTy
 		}
 	} else {
 		//rudimentary check for valid token because people don't read docs and will send anything.
-		decoded, err := base64.URLEncoding.DecodeString(sToken)
-		if err != nil {
-			return
-		}
+		decoded, _ := base64.URLEncoding.DecodeString(sToken)
 		parts := strings.Split(string(decoded), ":")
 		if len(parts) < 3 {
 			return
@@ -547,7 +544,7 @@ func (c *Context) tokenArg(interactionToken interface{}) (sendType sendMessageTy
 		if parts[0] != "interaction" {
 			return
 		}
-		token = string(decoded)
+		token = sToken
 	}
 
 	if c.CurrentFrame.Interaction != nil && token == c.CurrentFrame.Interaction.Token && !c.CurrentFrame.Interaction.RespondedTo {
