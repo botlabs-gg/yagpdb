@@ -92,7 +92,10 @@ func IsBulkRoleCancelled(guildID int64) bool {
 }
 
 func IsBulkRoleOperationActive(guildID int64) bool {
+	if IsBulkRoleCancelled(guildID) {
+		return false
+	}
 	var status int
 	common.RedisPool.Do(radix.Cmd(&status, "GET", RedisKeyBulkRoleStatus(guildID)))
-	return status > 0 && status != BulkRoleCompleted && !IsBulkRoleCancelled(guildID)
+	return status > 0 && status != BulkRoleCompleted && status != BulkRoleCancelled
 }

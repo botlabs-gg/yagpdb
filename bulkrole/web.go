@@ -294,12 +294,10 @@ func handlePostCancelOperation(w http.ResponseWriter, r *http.Request) (web.Temp
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
-	config, err := GetBulkRoleConfig(activeGuild.ID)
+	err := internalapi.PostWithGuild(activeGuild.ID, strconv.FormatInt(activeGuild.ID, 10)+"/bulkrole/cancel", nil, nil)
 	if err != nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Failed to get configuration")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("Failed to cancel operation: " + err.Error())), nil
 	}
-
-	config.cancelBulkRoleOperation("Cancelled", "Cancelled by user")
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyCancelledOperation))
 

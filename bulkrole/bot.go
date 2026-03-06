@@ -108,6 +108,7 @@ func (config *BulkRoleConfig) processBulkRoleChunk(chunk *discordgo.GuildMembers
 	lastTimeStatusRefreshed := time.Now()
 
 	guildID := config.GuildID
+	session := bot.ShardManager.SessionForGuild(guildID)
 	for _, member := range chunk.Members {
 		if !IsBulkRoleOperationActive(guildID) {
 			return
@@ -136,9 +137,9 @@ func (config *BulkRoleConfig) processBulkRoleChunk(chunk *discordgo.GuildMembers
 		var err error
 		switch config.Operation {
 		case "assign":
-			err = bot.ShardManager.SessionForGuild(guildID).GuildMemberRoleAdd(guildID, member.User.ID, config.TargetRole)
+			err = session.GuildMemberRoleAdd(guildID, member.User.ID, config.TargetRole)
 		case "remove":
-			err = bot.ShardManager.SessionForGuild(guildID).GuildMemberRoleRemove(guildID, member.User.ID, config.TargetRole)
+			err = session.GuildMemberRoleRemove(guildID, member.User.ID, config.TargetRole)
 		}
 
 		if err != nil {
@@ -170,7 +171,7 @@ func (config *BulkRoleConfig) processBulkRoleChunk(chunk *discordgo.GuildMembers
 	common.RedisPool.Do(radix.Cmd(&doneChunks, "INCR", RedisKeyBulkRoleChunksProcessed(guildID)))
 
 	if doneChunks >= chunk.ChunkCount {
-		config.MarkBulkRoleOperationEnd("Completed", "Bulk Role operation completed")
+		config.markBulkRoleOperationEnd("Completed", "Bulk Role operation completed")
 	} else {
 		logger.WithField("guild", guildID).WithField("doneChunks", doneChunks).WithField("chunkCount", chunk.ChunkCount).Debug("Processed chunk, waiting for more")
 	}
@@ -330,7 +331,7 @@ func (config *BulkRoleConfig) startBulkRoleOperation() error {
 	return nil
 }
 
-func (config *BulkRoleConfig) MarkBulkRoleOperationEnd(status, msg string) {
+func (config *BulkRoleConfig) markBulkRoleOperationEnd(status, msg string) {
 	guildID := config.GuildID
 
 	var setnx int
@@ -340,6 +341,9 @@ func (config *BulkRoleConfig) MarkBulkRoleOperationEnd(status, msg string) {
 	}
 	common.RedisPool.Do(radix.Cmd(nil, "EXPIRE", RedisKeyBulkRoleFinalized(guildID), "30"))
 	_, processed, results, err := config.getBulkRoleProgress()
+	if err != nil {
+		logger.WithField("guild", guildID).WithError(err).Error("Failed to get bulk role progress")
+	}
 
 	common.RedisPool.Do(radix.Cmd(nil, "SET", RedisKeyBulkRoleStatus(guildID), strconv.Itoa(BulkRoleCompleted)))
 	common.RedisPool.Do(radix.Cmd(nil, "DEL",
@@ -347,10 +351,7 @@ func (config *BulkRoleConfig) MarkBulkRoleOperationEnd(status, msg string) {
 		RedisKeyBulkRoleProcessed(guildID),
 		RedisKeyBulkRoleResults(guildID)))
 
-	if err == nil {
-		config.sendNotificationAlert(status, processed, results, msg)
-	}
-
+	config.sendNotificationAlert(status, processed, results, msg)
 	logger.WithField("guild", guildID).Info("Bulk role operation force-completed due to timeout/stuck/cancellation state")
 }
 
@@ -368,7 +369,7 @@ func (config *BulkRoleConfig) cancelBulkRoleOperation(reason, msg string) error 
 	// Give running chunks a moment to detect the cancellation
 	time.Sleep(time.Second * 1)
 
-	config.MarkBulkRoleOperationEnd(reason, msg)
+	config.markBulkRoleOperationEnd(reason, msg)
 	logger.WithField("guild", guildID).Info("Bulk role operation cancelled")
 	return nil
 }
@@ -557,6 +558,8 @@ func (config *BulkRoleConfig) sendNotificationAlert(status string, processedCoun
 			Value: errorMsg,
 		})
 	}
+
+	embed.Footer.Text = "Value for Members Processed and Changes Made can be inaccurate because of discord rate limits."
 
 	messageContent := fmt.Sprintf("Alert for bulk role operation started by <@%d>", config.StartedBy)
 	msg := &discordgo.MessageSend{
