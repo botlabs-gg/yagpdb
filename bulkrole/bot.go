@@ -559,7 +559,7 @@ func (config *BulkRoleConfig) sendNotificationAlert(status string, processedCoun
 		})
 	}
 
-	embed.Footer.Text = "Value for Members Processed and Changes Made can be inaccurate because of discord rate limits."
+	embed.Footer.Text = "Members Processed and Changes Made can be inaccurate because of discord rate limits."
 
 	messageContent := fmt.Sprintf("Alert for bulk role operation started by <@%d>", config.StartedBy)
 	msg := &discordgo.MessageSend{
