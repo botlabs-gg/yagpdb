@@ -24,18 +24,12 @@ type hltb struct {
 	CompletionistTimeHours  string
 	GameURL                 string
 	ImageURL                string
-	JaroWinklerSimilarity   float64
-}
-
-type hltbRequest struct {
-	SearchType  string   `json:"searchType"`
-	SearchTerms []string `json:"searchTerms"`
+	Similarity              float64
 }
 
 var (
-	hltbScheme   = "https"
-	hltbHost     = "howlongtobeat.com"
-	hltbHostPath = "api/search"
+	hltbScheme = "https"
+	hltbHost   = "howlongtobeat.com"
 )
 
 // Command var needs a comment for lint :)
@@ -76,7 +70,6 @@ var Command = &commands.YAGCommand{
 			return "No results", nil
 		}
 
-		games = parseGameData(gameName, games)
 		if compactView {
 			compactData := fmt.Sprintf("%s: %s | %s | %s | <%s>",
 				normaliseTitle(games[0].GameTitle),
@@ -88,16 +81,16 @@ var Command = &commands.YAGCommand{
 			return compactData, nil
 		}
 
-		hltbEmbed := embedCreator(games, 0, paginatedView)
+		hltbEmbed := embedCreator(games[0], paginatedView)
 
 		if paginatedView {
 			return paginatedmessages.NewPaginatedResponse(
 				data.GuildData.GS.ID, data.ChannelID, 1, len(games), func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
 					i := page - 1
 					sort.SliceStable(games, func(i, j int) bool {
-						return games[i].JaroWinklerSimilarity > games[j].JaroWinklerSimilarity
+						return games[i].Similarity > games[j].Similarity
 					})
-					paginatedEmbed := embedCreator(games, i, paginatedView)
+					paginatedEmbed := embedCreator(games[i], paginatedView)
 					return paginatedEmbed, nil
 				}), nil
 		}
@@ -106,32 +99,32 @@ var Command = &commands.YAGCommand{
 	},
 }
 
-func embedCreator(games []hltb, i int, paginated bool) *discordgo.MessageEmbed {
+func embedCreator(game hltb, paginated bool) *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
-			Name: normaliseTitle(games[i].GameTitle),
-			URL:  games[i].GameURL,
+			Name: normaliseTitle(game.GameTitle),
+			URL:  game.GameURL,
 		},
 
 		Color: int(rand.Int63n(16777215)),
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: games[i].ImageURL,
+			URL: game.ImageURL,
 		},
 	}
-	if games[i].MainStoryTime > 0 {
+	if game.MainStoryTime > 0 {
 		embed.Fields = append(embed.Fields,
-			&discordgo.MessageEmbedField{Name: "Main Story", Value: games[i].MainStoryTimeHours})
+			&discordgo.MessageEmbedField{Name: "Main Story", Value: game.MainStoryTimeHours})
 	}
-	if games[i].MainExtraTime > 0 {
+	if game.MainExtraTime > 0 {
 		embed.Fields = append(embed.Fields,
-			&discordgo.MessageEmbedField{Name: "Main + Extra", Value: games[i].MainStoryExtraTimeHours})
+			&discordgo.MessageEmbedField{Name: "Main + Extra", Value: game.MainStoryExtraTimeHours})
 	}
-	if games[i].CompletionistTime > 0 {
+	if game.CompletionistTime > 0 {
 		embed.Fields = append(embed.Fields,
-			&discordgo.MessageEmbedField{Name: "Completionist", Value: games[i].CompletionistTimeHours})
+			&discordgo.MessageEmbedField{Name: "Completionist", Value: game.CompletionistTimeHours})
 	}
 	if paginated {
-		embed.Description = fmt.Sprintf("Term similarity: %.1f%%", games[i].JaroWinklerSimilarity*100)
+		embed.Description = fmt.Sprintf("Term similarity: %.1f%%", game.Similarity*100)
 	}
 
 	return embed
