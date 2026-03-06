@@ -35,7 +35,8 @@ type Form struct {
 var _ web.SimpleConfigSaver = (*Form)(nil)
 
 var (
-	panelLogKeyStartedOperation = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "bulkrole_started_operation", FormatString: "Started bulk role operation"})
+	panelLogKeyStartedOperation   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "bulkrole_started_operation", FormatString: "Started bulk role operation"})
+	panelLogKeyCancelledOperation = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "bulkrole_cancelled_operation", FormatString: "Cancelled bulk role operation"})
 )
 
 // getExcludedRoleIDs returns the IDs of roles that should be excluded from bulk role operations
@@ -293,16 +294,14 @@ func handlePostCancelOperation(w http.ResponseWriter, r *http.Request) (web.Temp
 	ctx := r.Context()
 	activeGuild, tmpl := web.GetBaseCPContextData(ctx)
 
-	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {
-		return tmpl.AddAlerts(web.ErrorAlert("Bulk Role Manager is premium only")), nil
-	}
-
-	err := internalapi.PostWithGuild(activeGuild.ID, strconv.FormatInt(activeGuild.ID, 10)+"/bulkrole/cancel", nil, nil)
+	config, err := GetBulkRoleConfig(activeGuild.ID)
 	if err != nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Failed to cancel operation: " + err.Error())), nil
+		return tmpl.AddAlerts(web.ErrorAlert("Failed to get configuration")), nil
 	}
 
-	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyStartedOperation))
+	config.cancelBulkRoleOperation("Cancelled", "Cancelled by user")
+
+	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyCancelledOperation))
 
 	return tmpl.AddAlerts(web.SucessAlert("Bulk role operation cancelled")), nil
 }

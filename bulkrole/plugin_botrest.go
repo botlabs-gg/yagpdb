@@ -60,7 +60,7 @@ func botRestHandleCancelOperation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = config.cancelBulkRoleOperation()
+	err = config.cancelBulkRoleOperation("Cancelled", "Cancelled by user")
 	if err != nil {
 		internalapi.ServerError(w, r, err)
 		return
@@ -85,7 +85,7 @@ func botRestHandleGetStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, processed, results, err := config.getBulkRoleStatus()
+	status, processed, results, err := config.getBulkRoleProgress()
 	if err != nil {
 		internalapi.ServerError(w, r, err)
 		return
