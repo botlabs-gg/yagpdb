@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -47,13 +48,11 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redir := r.FormValue("goto")
-	if redir != "" && strings.HasPrefix(redir, "/") {
+	if redir != "" && strings.HasPrefix(redir, "/") && !strings.HasPrefix(redir, "//") && !strings.HasPrefix(redir, "/\\") {
 		common.RedisPool.Do(radix.Cmd(nil, "SET", "csrf_redir:"+csrfToken, redir, "EX", "500"))
 	}
 
 	url := OauthConf.AuthCodeURL(csrfToken, oauth2.AccessTypeOnline)
-	// disabled prompt to see if the multiple requests are still happening when user expliclity consents to login
-	// url += "&prompt=none"
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -89,15 +88,20 @@ func HandleConfirmLogin(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, sessionCookie)
 
-	var redirUrl string
-	err = common.RedisPool.Do(radix.Cmd(&redirUrl, "GET", "csrf_redir:"+state))
+	var redir string
+	err = common.RedisPool.Do(radix.Cmd(&redir, "GET", "csrf_redir:"+state))
 	if err != nil {
-		redirUrl = "/manage"
+		redir = "/manage"
 	} else {
 		common.RedisPool.Do(radix.Cmd(nil, "DEL", "csrf_redir:"+state))
 	}
 
-	http.Redirect(w, r, redirUrl, http.StatusTemporaryRedirect)
+	redirParsed, err := url.Parse(redir)
+	if err != nil || redirParsed.Host != "" || redirParsed.Scheme != "" {
+		redirParsed, _ = url.Parse("/manage")
+	}
+
+	http.Redirect(w, r, redirParsed.String(), http.StatusTemporaryRedirect)
 
 }
 

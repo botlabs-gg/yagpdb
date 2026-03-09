@@ -166,7 +166,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) (web.TemplateData, error)
 		var resp *http.Response
 		resp, err = http.Get(r.FormValue("SoundURL"))
 		if err != nil {
-			tmpl.AddAlerts(web.ErrorAlert("Failed downloading sound: " + err.Error()))
+			logger.WithError(err).Error("Failed downloading soundboard sound")
+			tmpl.AddAlerts(web.ErrorAlert("Failed downloading sound from: " + r.FormValue("SoundURL") + " Make sure the link is correct"))
 			destFile.Close()
 		} else {
 			defer resp.Body.Close()
