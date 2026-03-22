@@ -32,7 +32,7 @@ const ThreadedTicketPerms = InTicketPerms | discordgo.PermissionManageThreads | 
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func createTicketsDisabledError(guildID int64) string {
-	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets/settings>.", web.ManageServerURL(guildID))
+	return fmt.Sprintf("**The tickets system is disabled for this server.** Enable it at: <%s/tickets>.", web.ManageServerURL(guildID))
 }
 
 func (p *Plugin) AddCommands() {
