@@ -77,11 +77,11 @@ type Event struct {
 }
 
 var NonStandardEvents = []Event{
-	Event{"NewGuild", false},
-	Event{"All", false},
-	Event{"AllPre", false},
-	Event{"AllPost", false},
-	Event{"MemberFetched", false},
+	{"NewGuild", false},
+	{"All", false},
+	{"AllPre", false},
+	{"AllPost", false},
+	{"MemberFetched", false},
 }
 
 var (
@@ -111,7 +111,7 @@ func main() {
 	}
 
 	names := []string{}
-	for name, _ := range parsedFile.Scope.Objects {
+	for name := range parsedFile.Scope.Objects {
 		names = append(names, name)
 	}
 	sort.Strings(names)
