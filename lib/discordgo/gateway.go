@@ -424,10 +424,11 @@ func (g *GatewayConnectionManager) GetCurrentConnection() *GatewayConnection {
 }
 
 type voiceChannelJoinData struct {
-	GuildID   *string `json:"guild_id"`
-	ChannelID *string `json:"channel_id"`
-	SelfMute  bool    `json:"self_mute"`
-	SelfDeaf  bool    `json:"self_deaf"`
+	GuildID                *string `json:"guild_id"`
+	ChannelID              *string `json:"channel_id"`
+	SelfMute               bool    `json:"self_mute"`
+	SelfDeaf               bool    `json:"self_deaf"`
+	MaxDAVEProtocolVersion int     `json:"max_dave_protocol_version"`
 }
 
 // ChannelVoiceJoin joins the session user to a voice channel.
@@ -439,7 +440,6 @@ type voiceChannelJoinData struct {
 func (g *GatewayConnectionManager) ChannelVoiceJoin(gID, cID int64, mute, deaf bool) (voice *VoiceConnection, err error) {
 
 	g.session.log(LogInformational, "called")
-	debug.PrintStack()
 
 	g.mu.Lock()
 	voice = g.voiceConnections[gID]
@@ -449,6 +449,7 @@ func (g *GatewayConnectionManager) ChannelVoiceJoin(gID, cID int64, mute, deaf b
 			gatewayConnManager: g,
 			gatewayConn:        g.currentConnection,
 			GuildID:            gID,
+			UserID:             g.session.State.User.ID,
 			session:            g.session,
 			Connected:          make(chan bool),
 			LogLevel:           g.session.LogLevel,
@@ -471,7 +472,7 @@ func (g *GatewayConnectionManager) ChannelVoiceJoin(gID, cID int64, mute, deaf b
 	// Send the request to Discord that we want to join the voice channel
 	op := outgoingEvent{
 		Operation: GatewayOPVoiceStateUpdate,
-		Data:      voiceChannelJoinData{&strGID, &strCID, mute, deaf},
+		Data:      voiceChannelJoinData{&strGID, &strCID, mute, deaf, 1},
 	}
 
 	g.mu.Lock()
@@ -515,7 +516,7 @@ func (g *GatewayConnectionManager) ChannelVoiceLeave(gID int64) {
 	strGID := strconv.FormatInt(gID, 10)
 	data := outgoingEvent{
 		Operation: GatewayOPVoiceStateUpdate,
-		Data:      voiceChannelJoinData{&strGID, nil, true, true},
+		Data:      voiceChannelJoinData{&strGID, nil, true, true, 1},
 	}
 
 	cc.writer.Queue(data)
@@ -1331,7 +1332,7 @@ func (g *GatewayConnection) handleReady(r *Ready) {
 }
 
 func (g *GatewayConnection) handleResumed(r *Resumed) {
-	g.log(LogInformational, "received resumed")
+	g.log(LogInformational, "received resumed", r)
 	g.mu.Lock()
 	g.status = GatewayStatusReady
 	g.mu.Unlock()
@@ -1340,7 +1341,7 @@ func (g *GatewayConnection) handleResumed(r *Resumed) {
 func (g *GatewayConnection) identify() error {
 	properties := identifyProperties{
 		OS:              runtime.GOOS,
-		Browser:         "Discordgo-jonas747_fork v" + VERSION,
+		Browser:         "YAGPDB v" + VERSION,
 		Device:          "",
 		Referer:         "",
 		ReferringDomain: "",
