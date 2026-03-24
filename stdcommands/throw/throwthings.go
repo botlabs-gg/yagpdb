@@ -26,7 +26,7 @@ var throwThings = []string{
 	"hot firemen",
 	"fat idiots",
 	"a hairy potter",
-	"a hen with a tie",
+	"a hen wearing a tie",
 	"a soft knife",
 	"a sharp pillow",
 	"love",
