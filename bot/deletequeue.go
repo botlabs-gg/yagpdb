@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -24,7 +25,7 @@ func (q *messageDeleteQueue) DeleteMessages(guildID int64, channel int64, ids ..
 
 		if !cq.Exiting {
 			for _, id := range ids {
-				if !common.ContainsInt64Slice(cq.Processing, id) && !common.ContainsInt64Slice(cq.Queued, id) {
+				if !slices.Contains(cq.Processing, id) && !slices.Contains(cq.Queued, id) {
 					cq.Queued = append(cq.Queued, id)
 				}
 			}

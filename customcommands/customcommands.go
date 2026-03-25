@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -306,12 +307,12 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
 	if cc.GroupID.Valid {
 		// check group restrictions
-		if common.ContainsInt64Slice(cc.R.Group.IgnoreChannels, channel) {
+		if slices.Contains(cc.R.Group.IgnoreChannels, channel) {
 			return false
 		}
 
 		if len(cc.R.Group.WhitelistChannels) > 0 {
-			if !common.ContainsInt64Slice(cc.R.Group.WhitelistChannels, channel) {
+			if !slices.Contains(cc.R.Group.WhitelistChannels, channel) {
 				return false
 			}
 		}
@@ -347,7 +348,7 @@ func CmdRunsForUser(cc *models.CustomCommand, ms *dstate.MemberState) bool {
 	}
 
 	for _, v := range cc.Roles {
-		if common.ContainsInt64Slice(ms.Member.Roles, v) {
+		if slices.Contains(ms.Member.Roles, v) {
 			return cc.RolesWhitelistMode
 		}
 	}

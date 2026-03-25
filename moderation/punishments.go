@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -606,7 +607,7 @@ func AddMemberMuteRole(config *Config, id int64, currentRoles []int64) (removedR
 			continue
 		}
 
-		if common.ContainsInt64Slice(config.MuteRemoveRoles, r) {
+		if slices.Contains(config.MuteRemoveRoles, r) {
 			removedRoles = append(removedRoles, r)
 		} else {
 			newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
@@ -642,7 +643,7 @@ func decideUnmuteRoles(config *Config, currentRoles []int64, mute *models.MutedU
 		}
 
 		for _, r := range mute.RemovedRoles {
-			if !common.ContainsInt64Slice(currentRoles, r) && gs.GetRole(r) != nil {
+			if !slices.Contains(currentRoles, r) && gs.GetRole(r) != nil {
 				newMemberRoles = append(newMemberRoles, strconv.FormatInt(r, 10))
 			}
 		}
@@ -660,7 +661,7 @@ func decideUnmuteRoles(config *Config, currentRoles []int64, mute *models.MutedU
 
 	for _, v := range mute.RemovedRoles {
 		r := gs.GetRole(v)
-		if !common.ContainsInt64Slice(currentRoles, v) && r != nil && common.IsRoleAbove(yagHighest, r) {
+		if !slices.Contains(currentRoles, v) && r != nil && common.IsRoleAbove(yagHighest, r) {
 			newMemberRoles = append(newMemberRoles, strconv.FormatInt(v, 10))
 		}
 	}

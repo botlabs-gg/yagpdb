@@ -3,6 +3,7 @@ package automod
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -742,7 +743,7 @@ func (rf *RemoveRoleEffect) Description() (description string) {
 func (rf *RemoveRoleEffect) Apply(ctxData *TriggeredRuleData, settings interface{}) error {
 	settingsCast := settings.(*RemoveRoleEffectData)
 
-	if !common.ContainsInt64Slice(ctxData.MS.Member.Roles, settingsCast.Role) {
+	if !slices.Contains(ctxData.MS.Member.Roles, settingsCast.Role) {
 		return nil
 	}
 

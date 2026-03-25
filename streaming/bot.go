@@ -3,6 +3,7 @@ package streaming
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -340,7 +341,7 @@ func CheckPresence(client radix.Client, config *Config, ms *dstate.MemberState, 
 func (config *Config) MeetsRequirements(roles []int64, activityState, activityDetails string) bool {
 	// Check if they have the required role
 	if config.RequireRole != 0 {
-		if !common.ContainsInt64Slice(roles, config.RequireRole) {
+		if !slices.Contains(roles, config.RequireRole) {
 			// Dosen't have required role
 			return false
 		}
@@ -348,7 +349,7 @@ func (config *Config) MeetsRequirements(roles []int64, activityState, activityDe
 
 	// Check if they have a ignored role
 	if config.IgnoreRole != 0 {
-		if common.ContainsInt64Slice(roles, config.IgnoreRole) {
+		if slices.Contains(roles, config.IgnoreRole) {
 			// We ignore people with this role.. :'(
 			return false
 		}
@@ -469,7 +470,7 @@ func GiveStreamingRole(guildID, memberID, streamingRole int64, currentUserRoles 
 
 	var err error
 
-	if !common.ContainsInt64Slice(currentUserRoles, streamingRole) {
+	if !slices.Contains(currentUserRoles, streamingRole) {
 		err = common.BotSession.GuildMemberRoleAdd(guildID, memberID, streamingRole)
 		go analytics.RecordActiveUnit(guildID, &Plugin{}, "assigned_streaming_role")
 
@@ -490,7 +491,7 @@ func RemoveStreamingRole(guildID, memberID int64, streamingRole int64, currentRo
 		return
 	}
 
-	if !common.ContainsInt64Slice(currentRoles, streamingRole) {
+	if !slices.Contains(currentRoles, streamingRole) {
 		return
 	}
 

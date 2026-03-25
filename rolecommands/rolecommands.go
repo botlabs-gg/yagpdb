@@ -6,6 +6,7 @@ package rolecommands
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 
@@ -75,7 +76,7 @@ func FindToggleRole(ctx context.Context, ms *dstate.MemberState, name string) (g
 
 func CheckRequiredRoles(requireOneOf []int64, has []int64) bool {
 	for _, r := range requireOneOf {
-		if common.ContainsInt64Slice(has, r) {
+		if slices.Contains(has, r) {
 			// Only 1 role required
 			return true
 		}
@@ -86,7 +87,7 @@ func CheckRequiredRoles(requireOneOf []int64, has []int64) bool {
 
 func CheckIgnoredRoles(ignore []int64, has []int64) error {
 	for _, r := range ignore {
-		if common.ContainsInt64Slice(has, r) {
+		if slices.Contains(has, r) {
 			return NewRoleError("Has ignored role", r)
 		}
 	}

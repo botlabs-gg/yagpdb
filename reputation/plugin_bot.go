@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -552,12 +553,12 @@ func userPresentInRepLog(userID int64, guildID int64, parsed *dcmd.Data) (found 
 // Checks if the thanks detection is allowed to be run in the given channel
 func isThanksDetectionAllowedInChannel(config *models.ReputationConfig, channelID int64) bool {
 	if len(config.BlacklistedThanksChannels) > 0 {
-		if common.ContainsInt64Slice(config.BlacklistedThanksChannels, channelID) {
+		if slices.Contains(config.BlacklistedThanksChannels, channelID) {
 			return false
 		}
 	}
 	if len(config.WhitelistedThanksChannels) > 0 {
-		return common.ContainsInt64Slice(config.WhitelistedThanksChannels, channelID)
+		return slices.Contains(config.WhitelistedThanksChannels, channelID)
 	}
 	return true
 }

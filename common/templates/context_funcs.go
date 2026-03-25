@@ -9,6 +9,7 @@ import (
 	"math"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -2381,7 +2382,7 @@ func (c *Context) mentionRole(roleInput interface{}, accept roleInputType) strin
 		return ""
 	}
 
-	if common.ContainsInt64Slice(c.CurrentFrame.MentionRoles, role.ID) {
+	if slices.Contains(c.CurrentFrame.MentionRoles, role.ID) {
 		return role.Mention()
 	}
 
@@ -2415,7 +2416,7 @@ func (c *Context) hasRole(roleInput interface{}, accept roleInputType) bool {
 		return false
 	}
 
-	return common.ContainsInt64Slice(c.MS.Member.Roles, role.ID)
+	return slices.Contains(c.MS.Member.Roles, role.ID)
 }
 
 func (c *Context) tmplHasRole(roleInput interface{}) bool {
@@ -2454,7 +2455,7 @@ func (c *Context) targetHasRole(target interface{}, roleInput interface{}, accep
 		return false, fmt.Errorf("role %v not found", roleInput)
 	}
 
-	return common.ContainsInt64Slice(ms.Member.Roles, role.ID), nil
+	return slices.Contains(ms.Member.Roles, role.ID), nil
 }
 
 func (c *Context) tmplTargetHasRole(target interface{}, roleInput interface{}) (bool, error) {
@@ -2498,7 +2499,7 @@ func (c *Context) giveRole(target interface{}, roleInput interface{}, accept rol
 		ms, err := bot.GetMember(c.GS.ID, targetID)
 		var hasRole bool
 		if ms != nil && err == nil {
-			hasRole = common.ContainsInt64Slice(ms.Member.Roles, role.ID)
+			hasRole = slices.Contains(ms.Member.Roles, role.ID)
 		}
 
 		if hasRole {
@@ -2602,7 +2603,7 @@ func (c *Context) takeRole(target interface{}, roleInput interface{}, accept rol
 		ms, err := bot.GetMember(c.GS.ID, targetID)
 		hasRole := true
 		if ms != nil && err == nil {
-			hasRole = common.ContainsInt64Slice(ms.Member.Roles, role.ID)
+			hasRole = slices.Contains(ms.Member.Roles, role.ID)
 		}
 
 		if !hasRole {

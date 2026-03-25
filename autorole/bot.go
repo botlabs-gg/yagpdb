@@ -2,6 +2,7 @@ package autorole
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -197,7 +198,7 @@ func (conf *AutoroleConfig) CanAssignTo(currentRoles []int64, joinedAt time.Time
 	}
 
 	for _, ignoreRole := range conf.IgnoreRoles {
-		if common.ContainsInt64Slice(currentRoles, ignoreRole) {
+		if slices.Contains(currentRoles, ignoreRole) {
 			return false
 		}
 	}
@@ -205,7 +206,7 @@ func (conf *AutoroleConfig) CanAssignTo(currentRoles []int64, joinedAt time.Time
 	// If require roles are set up, make sure the member has one of them
 	if len(conf.RequiredRoles) > 0 {
 		for _, reqRole := range conf.RequiredRoles {
-			if common.ContainsInt64Slice(currentRoles, reqRole) {
+			if slices.Contains(currentRoles, reqRole) {
 				return true
 			}
 		}
@@ -303,7 +304,7 @@ func iterateGuildChunkMembers(guildID int64, config *AutoroleConfig, chunk *disc
 		}
 
 		// already has role
-		if common.ContainsInt64Slice(m.Roles, config.Role) {
+		if slices.Contains(m.Roles, config.Role) {
 			continue
 		}
 
@@ -533,7 +534,7 @@ func handleGuildMemberUpdate(evt *eventsystem.EventData) (retry bool, err error)
 		return false, nil
 	}
 
-	if common.ContainsInt64Slice(update.Member.Roles, config.Role) {
+	if slices.Contains(update.Member.Roles, config.Role) {
 		return false, nil
 	}
 

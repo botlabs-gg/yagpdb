@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -744,7 +745,7 @@ func (c *Context) LogEntry() *logrus.Entry {
 }
 
 func (c *Context) addContextFunc(name string, f interface{}) {
-	if !common.ContainsStringSlice(c.DisabledContextFuncs, name) {
+	if !slices.Contains(c.DisabledContextFuncs, name) {
 		c.ContextFuncs[name] = f
 	}
 }

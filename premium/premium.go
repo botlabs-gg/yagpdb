@@ -2,6 +2,7 @@ package premium
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"emperror.dev/errors"
@@ -120,7 +121,7 @@ func GuildPremiumTier(guildID int64) (PremiumTier, error) {
 		return PremiumTierNone, err
 	}
 
-	if common.ContainsStringSlice(flags, FeatureFlagPremiumFull) {
+	if slices.Contains(flags, FeatureFlagPremiumFull) {
 		return PremiumTierPremium, nil
 	}
 
