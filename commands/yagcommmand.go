@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -515,7 +516,7 @@ func checkWhitelistRoles(guildRoles map[int64]string, whitelistRoles []int64, da
 	}
 
 	for _, r := range member.Member.Roles {
-		if common.ContainsInt64Slice(whitelistRoles, r) {
+		if slices.Contains(whitelistRoles, r) {
 			// we have a whitelist role!
 			return nil
 		}
@@ -560,7 +561,7 @@ func checkBlacklistRoles(guildRoles map[int64]string, blacklistRoles []int64, da
 
 	hasRole := int64(0)
 	for _, r := range member.Member.Roles {
-		if common.ContainsInt64Slice(blacklistRoles, r) {
+		if slices.Contains(blacklistRoles, r) {
 			// we have a blacklist role!
 			hasRole = r
 			break

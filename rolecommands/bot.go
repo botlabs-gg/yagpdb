@@ -3,6 +3,7 @@ package rolecommands
 import (
 	"context"
 	"database/sql"
+	"slices"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
@@ -280,7 +281,7 @@ func StringCommands(cmds []*models.RoleCommand) string {
 	output := "```\n"
 
 	for _, cmd := range cmds {
-		if common.ContainsInt64Slice(stringedCommands, cmd.Role) {
+		if slices.Contains(stringedCommands, cmd.Role) {
 			continue
 		}
 

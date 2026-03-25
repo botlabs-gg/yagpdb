@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -304,7 +305,7 @@ func (p *Plugin) AddCommands() {
 				})
 				reason = strings.TrimSpace(reason)
 
-				if common.ContainsStringSlice(usedReasons, reason) {
+				if slices.Contains(usedReasons, reason) {
 					return "You may not use the exact same reason on multiple buttons", nil
 				}
 				label := reason
@@ -670,7 +671,7 @@ func setTicketAdminOnly(conf *models.TicketConfig, currentTicket *Ticket, cs *ds
 	if !isThreadedTicket {
 		modOverwrites := make([]discordgo.PermissionOverwrite, 0)
 		for _, ow := range cs.PermissionOverwrites {
-			if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+			if ow.Type == discordgo.PermissionOverwriteTypeRole && slices.Contains(conf.ModRoles, ow.ID) {
 				modOverwrites = append(modOverwrites, ow)
 			}
 		}
@@ -744,7 +745,7 @@ func unsetTicketAdminOnly(conf *models.TicketConfig, cs *dstate.ChannelState) (s
 	} else {
 		modOverwrites := make([]discordgo.PermissionOverwrite, 0)
 		for _, ow := range cs.PermissionOverwrites {
-			if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+			if ow.Type == discordgo.PermissionOverwriteTypeRole && slices.Contains(conf.ModRoles, ow.ID) {
 				modOverwrites = append(modOverwrites, ow)
 			}
 		}
@@ -780,7 +781,7 @@ func isTicketAdminOnly(conf *models.TicketConfig, currentTicket *Ticket, cs *dst
 	//legacy check
 	isAdminsOnlyCurrently := true
 	for _, ow := range cs.PermissionOverwrites {
-		if ow.Type == discordgo.PermissionOverwriteTypeRole && common.ContainsInt64Slice(conf.ModRoles, ow.ID) {
+		if ow.Type == discordgo.PermissionOverwriteTypeRole && slices.Contains(conf.ModRoles, ow.ID) {
 			if (ow.Allow & InTicketPerms) == InTicketPerms {
 				// one of the mod roles has ticket perms, this is not a admin ticket currently
 				isAdminsOnlyCurrently = false

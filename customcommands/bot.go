@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"regexp"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -103,7 +104,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 
 		writeRoles := common.GetCoreServerConfCached(data.GuildData.GS.ID).AllowedWriteRoles
 		for _, r := range data.GuildData.MS.Member.Roles {
-			if common.ContainsInt64Slice(writeRoles, r) {
+			if slices.Contains(writeRoles, r) {
 				hasCoreWriteRole = true
 				break
 			}

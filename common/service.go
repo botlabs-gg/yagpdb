@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"slices"
 	"sync"
 	"time"
 
@@ -212,7 +213,7 @@ func (sp *servicePoller) GetShardAddress(shardID int) (string, error) {
 
 	for _, h := range hosts {
 		for _, v := range h.Services {
-			if v.Type == ServiceTypeBot && ContainsIntSlice(v.BotDetails.RunningShards, shardID) {
+			if v.Type == ServiceTypeBot && slices.Contains(v.BotDetails.RunningShards, shardID) {
 				return h.InternalAPIAddress, nil
 			}
 		}
@@ -232,7 +233,7 @@ func (sp *servicePoller) GetShardNode(shardID int) (BotServiceDetails, error) {
 
 	for _, h := range hosts {
 		for _, v := range h.Services {
-			if v.Type == ServiceTypeBot && ContainsIntSlice(v.BotDetails.RunningShards, shardID) {
+			if v.Type == ServiceTypeBot && slices.Contains(v.BotDetails.RunningShards, shardID) {
 				return *v.BotDetails, nil
 			}
 		}
@@ -260,7 +261,7 @@ func (sp *servicePoller) GetGuildAddress(guildID int64) (string, error) {
 
 			shardID := int((guildID >> 22) % int64(v.BotDetails.TotalShards))
 
-			if ContainsIntSlice(v.BotDetails.RunningShards, shardID) {
+			if slices.Contains(v.BotDetails.RunningShards, shardID) {
 				return h.InternalAPIAddress, nil
 			}
 		}

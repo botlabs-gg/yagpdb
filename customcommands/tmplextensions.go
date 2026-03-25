@@ -991,7 +991,7 @@ func tmplResultSetToLightDBEntries(ctx *templates.Context, gs *dstate.GuildSet, 
 	// fill in user fields
 	membersToFetch := make([]int64, 0, len(entries))
 	for _, v := range entries {
-		if common.ContainsInt64Slice(membersToFetch, v.UserID) {
+		if slices.Contains(membersToFetch, v.UserID) {
 			continue
 		}
 		//don't check invalid snowflakes

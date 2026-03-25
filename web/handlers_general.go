@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 	"sync"
@@ -302,7 +303,7 @@ func HandleGuildStatusJSON(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	shard := int(g.ID>>22) % status.TotalShards
-	isOffline := common.ContainsIntSlice(status.OfflineShards, shard)
+	isOffline := slices.Contains(status.OfflineShards, shard)
 	return GuildStatus{ShardOnline: !isOffline}
 }
 

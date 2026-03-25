@@ -2,6 +2,7 @@ package featureflags
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -55,7 +56,7 @@ func (p *Plugin) checkInitFeatureFlags() {
 			pluginHadMissingFlags := false
 
 			for _, v := range pluginFlags {
-				if !common.ContainsStringSlice(currentInitFlags, v) {
+				if !slices.Contains(currentInitFlags, v) {
 					// NEW FLAG! Refresh needed...
 					newFlags = append(newFlags, v)
 					pluginHadMissingFlags = true

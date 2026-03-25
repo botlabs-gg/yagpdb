@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 	"unicode"
@@ -922,7 +923,7 @@ func (mt *MultiMsgMentionTrigger) CheckMessage(triggerCtx *TriggerContext, cs *d
 		if mt.ChannelBased || v.Author.ID == triggerCtx.MS.User.ID {
 			// we only care about unique mentions, e.g mentioning the same user a ton wont do anythin
 			for _, msgMention := range v.Mentions {
-				if settings.CountDuplicates || !common.ContainsInt64Slice(mentions, msgMention.ID) {
+				if settings.CountDuplicates || !slices.Contains(mentions, msgMention.ID) {
 					mentions = append(mentions, msgMention.ID)
 				}
 			}

@@ -2,6 +2,7 @@ package serverstats
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -162,7 +163,7 @@ func (c *Compressor) RunCompressionLegacy(t time.Time) error {
 
 	// process misc stats and message stats combined
 	for _, v := range activeGuildsMisc {
-		err := compressGuildLegacy(t, v, common.ContainsInt64Slice(activeGuildsMsgs, v), true)
+		err := compressGuildLegacy(t, v, slices.Contains(activeGuildsMsgs, v), true)
 		if err != nil {
 			return errors.WithStackIf(err)
 		}
@@ -172,7 +173,7 @@ func (c *Compressor) RunCompressionLegacy(t time.Time) error {
 
 	// process the message stats only
 	for _, v := range activeGuildsMsgs {
-		if common.ContainsInt64Slice(activeGuildsMisc, v) {
+		if slices.Contains(activeGuildsMisc, v) {
 			continue
 		}
 

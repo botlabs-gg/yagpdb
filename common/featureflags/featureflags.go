@@ -2,6 +2,7 @@ package featureflags
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -190,7 +191,7 @@ func GuildHasFlag(guildID int64, flag string) (bool, error) {
 		return false, err
 	}
 
-	return common.ContainsStringSlice(flags, flag), nil
+	return slices.Contains(flags, flag), nil
 }
 
 // GuildHasFlagOrLogError is the same as GuildHasFlag but will handle the error and log it
@@ -252,7 +253,7 @@ func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 
 	toDel := make([]string, 0)
 	for _, v := range allFlags {
-		if common.ContainsStringSlice(activeFlags, v) {
+		if slices.Contains(activeFlags, v) {
 			continue
 		}
 
@@ -264,7 +265,7 @@ func updatePluginFeatureFlags(guildID int64, p PluginWithFeatureFlags) error {
 
 	// make sure all flags are valid
 	for _, v := range activeFlags {
-		if !common.ContainsStringSlice(allFlags, v) {
+		if !slices.Contains(allFlags, v) {
 			logger.WithError(err).Errorf("Flag %q is not in the spec of %s", v, p.PluginInfo().SysName)
 		} else {
 			filtered = append(filtered, v)
