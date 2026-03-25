@@ -788,15 +788,21 @@ func (s Container) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON is a helper function to unmarshal Container.
 func (c *Container) UnmarshalJSON(data []byte) error {
+	type container Container
 	var v struct {
+		container
 		RawComponents []unmarshalableMessageComponent `json:"components"`
 	}
+
 	err := json.Unmarshal(data, &v)
 	if err != nil {
 		return err
 	}
+
 	var ok bool
+	*c = Container(v.container)
 	c.Components = make([]TopLevelComponent, len(v.RawComponents))
+
 	for i, v := range v.RawComponents {
 		comp := v.MessageComponent
 		c.Components[i], ok = comp.(TopLevelComponent)
