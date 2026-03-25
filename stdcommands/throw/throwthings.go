@@ -22,7 +22,7 @@ var throwThings = []string{
 	"an evil villain with a plan to destroy earth",
 	"a superhero on his way to stop an evil villain",
 	"jonas747#0001",
-	"Elyas, who will never forget you,he'll also add you to a list, and every few months he'll ping you from alt accounts and threaten to sue you, and leave then server immediately, and respond with another alt account and then leave immediately ",
+	"Elyas, he'll never forget you, he'll add you to a list, and every few months he'll ping you from alt accounts and threaten to sue you. He's harmless though and kinda funny",
 	"Soggy Saussages",
 	"Borbot and his minions who will occasionally make you question your existence.",
 	"Weird dad jokes from savage",
