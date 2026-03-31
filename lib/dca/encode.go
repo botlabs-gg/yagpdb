@@ -478,7 +478,9 @@ func (e *EncodeSession) handleStderrLine(line string) {
 
 	_, err := fmt.Sscanf(line, "size=%dkB time=%d:%d:%f bitrate=%fkbits/s speed=%fx", &size, &timeH, &timeM, &timeS, &bitrate, &speed)
 	if err != nil {
-		logln("Error parsing ffmpeg stats:", err)
+		// Silently skip malformed stats lines (e.g., when ffmpeg outputs "N/A" for unavailable values)
+		// This commonly happens with short audio files or during early transcoding stages
+		return
 	}
 
 	dur := time.Duration(timeH) * time.Hour

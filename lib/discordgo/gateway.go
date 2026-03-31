@@ -835,7 +835,7 @@ func newUpdateStatusData(activityType ActivityType, statusType Status, statusTex
 	if statusText != "" {
 		usd.Activity = &Activity{
 			Name:  statusText,
-			State: statusText,
+			// State: statusText,
 			Type:  activityType,
 			URL:   streamingUrl,
 		}
