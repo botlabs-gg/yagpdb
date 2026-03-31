@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -86,7 +87,7 @@ func (e *EventData) WithContext(ctx context.Context) *EventData {
 
 // HasFeatureFlag returns true if the guild the event came from has the provided feature flag
 func (e *EventData) HasFeatureFlag(flag string) bool {
-	return common.ContainsStringSlice(e.GuildFeatureFlags, flag)
+	return slices.Contains(e.GuildFeatureFlags, flag)
 }
 
 // EmitEvent emits an event

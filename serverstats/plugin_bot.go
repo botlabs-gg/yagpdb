@@ -3,6 +3,7 @@ package serverstats
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -111,7 +112,7 @@ func HandleMessageCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		return true, errors.WithStackIf(err)
 	}
 
-	if common.ContainsInt64Slice(config.ParsedChannels, channel.ID) {
+	if slices.Contains(config.ParsedChannels, channel.ID) {
 		return false, nil
 	}
 

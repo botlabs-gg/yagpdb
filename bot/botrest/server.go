@@ -3,6 +3,7 @@ package botrest
 import (
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"time"
 
@@ -157,7 +158,7 @@ func HandleGetMemberColors(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			if !common.ContainsInt64Slice(ms.Member.Roles, role.ID) {
+			if !slices.Contains(ms.Member.Roles, role.ID) {
 				continue
 			}
 

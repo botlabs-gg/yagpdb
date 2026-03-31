@@ -2,6 +2,7 @@ package cah
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
@@ -78,7 +79,7 @@ func (p *Plugin) Status() (string, string) {
 	activePlayers := 0
 
 	for _, v := range p.Manager.ActiveGames {
-		if common.ContainsInt64Slice(countedGames, v.MasterChannel) {
+		if slices.Contains(countedGames, v.MasterChannel) {
 			continue
 		}
 		p.Manager.RUnlock()

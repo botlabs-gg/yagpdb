@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -79,7 +80,7 @@ func isChannelBlacklisted(config *models.GuildLoggingConfig, channel *dstate.Cha
 	parentIDStr := strconv.FormatInt(channel.ParentID, 10)
 	idStr := strconv.FormatInt(channel.ID, 10)
 
-	return common.ContainsStringSlice(blacklist, idStr) || common.ContainsStringSlice(blacklist, parentIDStr)
+	return slices.Contains(blacklist, idStr) || slices.Contains(blacklist, parentIDStr)
 }
 
 func CreateChannelLog(ctx context.Context, config *models.GuildLoggingConfig, guildID, channelID int64, author string, authorID int64, count int) (*models.MessageLogs2, error) {

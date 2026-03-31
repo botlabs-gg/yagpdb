@@ -3,6 +3,7 @@ package featureflags
 import (
 	"fmt"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
@@ -39,7 +40,7 @@ func (f *FakePlugin) AllFeatureFlags() []string {
 
 func (f *FakePlugin) checkFlags(t *testing.T, flags []string) {
 	for _, v := range f.ActiveFlags {
-		has := common.ContainsStringSlice(flags, v)
+		has := slices.Contains(flags, v)
 		if v == "unknown" {
 			if has {
 				t.Error("'unknown' flag was set")

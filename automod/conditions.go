@@ -1,6 +1,7 @@
 package automod
 
 import (
+	"slices"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/bot"
@@ -75,7 +76,7 @@ func (mrc *MemberRolesCondition) IsMet(data *TriggeredRuleData, settings interfa
 	settingsCast := settings.(*MemberRolesConditionData)
 	allRolesPresent := false
 	for _, r := range settingsCast.Roles {
-		if common.ContainsInt64Slice(data.MS.Member.Roles, r) {
+		if slices.Contains(data.MS.Member.Roles, r) {
 			if mrc.Blacklist {
 				// Had a blacklist role, this condition is not met
 				return false, nil
@@ -175,7 +176,7 @@ func (cd *ChannelsCondition) IsMet(data *TriggeredRuleData, settings interface{}
 		return true, nil
 	}
 
-	if common.ContainsInt64Slice(settingsCast.Channels, common.ChannelOrThreadParentID(data.CS)) {
+	if slices.Contains(settingsCast.Channels, common.ChannelOrThreadParentID(data.CS)) {
 		if cd.Blacklist {
 			// Blacklisted channel
 			return false, nil
@@ -277,7 +278,7 @@ func (cd *ChannelCategoriesCondition) IsMet(data *TriggeredRuleData, settings in
 		parentID = threadParent.ParentID
 	}
 
-	if common.ContainsInt64Slice(settingsCast.Categories, parentID) {
+	if slices.Contains(settingsCast.Categories, parentID) {
 		if cd.Blacklist {
 			// blacklisted channel category
 			return false, nil

@@ -2,6 +2,7 @@ package bulkrole
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -120,7 +121,7 @@ func (config *BulkRoleConfig) processBulkRoleChunk(chunk *discordgo.GuildMembers
 			continue
 		}
 
-		hasRole := common.ContainsInt64Slice(member.Roles, config.TargetRole)
+		hasRole := slices.Contains(member.Roles, config.TargetRole)
 		needsOperation := false
 
 		switch config.Operation {
@@ -188,14 +189,14 @@ func (config *BulkRoleConfig) filterMember(member *discordgo.Member) bool {
 		}
 		if config.FilterRequireAll {
 			for _, roleID := range config.FilterRoleIDs {
-				if !common.ContainsInt64Slice(member.Roles, roleID) {
+				if !slices.Contains(member.Roles, roleID) {
 					return false
 				}
 			}
 			return true
 		} else {
 			for _, roleID := range config.FilterRoleIDs {
-				if common.ContainsInt64Slice(member.Roles, roleID) {
+				if slices.Contains(member.Roles, roleID) {
 					return true
 				}
 			}
@@ -207,14 +208,14 @@ func (config *BulkRoleConfig) filterMember(member *discordgo.Member) bool {
 		}
 		if config.FilterRequireAll {
 			for _, roleID := range config.FilterRoleIDs {
-				if common.ContainsInt64Slice(member.Roles, roleID) {
+				if slices.Contains(member.Roles, roleID) {
 					return false
 				}
 			}
 			return true
 		} else {
 			for _, roleID := range config.FilterRoleIDs {
-				if !common.ContainsInt64Slice(member.Roles, roleID) {
+				if !slices.Contains(member.Roles, roleID) {
 					return true
 				}
 			}

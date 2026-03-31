@@ -2,6 +2,7 @@ package customcommands
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"emperror.dev/errors"
@@ -72,7 +73,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		for hourOfDay := range hoursInADay {
 			hourOfDayBitVal := uint64(1) << hourOfDay
 			hourPresentInSchedule := specSchedule.Hour&hourOfDayBitVal == hourOfDayBitVal
-			blacklistedHour := common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(hourOfDay))
+			blacklistedHour := slices.Contains(cc.TimeTriggerExcludingHours, int64(hourOfDay))
 			if hourPresentInSchedule && !blacklistedHour {
 				newHoursScheduledBitset = newHoursScheduledBitset | hourOfDayBitVal
 			}
@@ -92,7 +93,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 		for dayOfWeek := range daysInAWeek {
 			dayOfWeekBitVal := uint64(1) << dayOfWeek
 			dayPresentInSchedule := specSchedule.Dow&dayOfWeekBitVal != 0
-			blacklistedDay := common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(dayOfWeek))
+			blacklistedDay := slices.Contains(cc.TimeTriggerExcludingDays, int64(dayOfWeek))
 			if dayPresentInSchedule && (skipBlacklistCheck || !blacklistedDay) {
 				newDaysScheduledBitset = newDaysScheduledBitset | dayOfWeekBitVal
 			}
@@ -119,7 +120,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 			// the lucky scenarios where it's calculated right on the first
 			// try, this won't need to loop.
 			timeNext = specSchedule.Next(timeNext)
-			timeNextWeekdayIsBlacklisted := common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(timeNext.Weekday()))
+			timeNextWeekdayIsBlacklisted := slices.Contains(cc.TimeTriggerExcludingDays, int64(timeNext.Weekday()))
 			if !timeNextWeekdayIsBlacklisted {
 				break
 			}
@@ -132,7 +133,7 @@ func CalcNextRunTime(cc *models.CustomCommand, now time.Time) time.Time {
 
 func intervalCheckDays(cc *models.CustomCommand, tNext time.Time, resetClock bool) time.Time {
 	// check for blacklisted days
-	if !common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(tNext.Weekday())) {
+	if !slices.Contains(cc.TimeTriggerExcludingDays, int64(tNext.Weekday())) {
 		return tNext
 	}
 
@@ -140,7 +141,7 @@ func intervalCheckDays(cc *models.CustomCommand, tNext time.Time, resetClock boo
 	for {
 		tNext = tNext.Add(time.Hour * 24)
 
-		if !common.ContainsInt64Slice(cc.TimeTriggerExcludingDays, int64(tNext.Weekday())) {
+		if !slices.Contains(cc.TimeTriggerExcludingDays, int64(tNext.Weekday())) {
 			break
 		}
 	}
@@ -157,7 +158,7 @@ func intervalCheckDays(cc *models.CustomCommand, tNext time.Time, resetClock boo
 
 func intervalCheckHours(cc *models.CustomCommand, tNext time.Time) time.Time {
 	// check for blacklisted hours
-	if !common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(tNext.Hour())) {
+	if !slices.Contains(cc.TimeTriggerExcludingHours, int64(tNext.Hour())) {
 		return tNext
 	}
 
@@ -165,7 +166,7 @@ func intervalCheckHours(cc *models.CustomCommand, tNext time.Time) time.Time {
 	for {
 		tNext = tNext.Add(time.Hour)
 
-		if !common.ContainsInt64Slice(cc.TimeTriggerExcludingHours, int64(tNext.Hour())) {
+		if !slices.Contains(cc.TimeTriggerExcludingHours, int64(tNext.Hour())) {
 			break
 		}
 	}

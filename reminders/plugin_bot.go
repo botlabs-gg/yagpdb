@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -255,7 +256,7 @@ var cmds = []*commands.YAGCommand{
 
 func memberHasAnyRole(ms *dstate.MemberState, roles []int64) bool {
 	for _, r := range ms.Member.Roles {
-		if common.ContainsInt64Slice(roles, r) {
+		if slices.Contains(roles, r) {
 			return true
 		}
 	}

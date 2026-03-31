@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -117,7 +118,7 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 	}
 
 	// Check if member is already verified, if yes then remove any scheduled events
-	if common.ContainsInt64Slice(member.Roles, conf.VerifiedRole) {
+	if slices.Contains(member.Roles, conf.VerifiedRole) {
 		logger.WithField("guild", member.GuildID).WithField("user", member.User.ID).Info("Member already verified, clearing scheduled events")
 		err = p.clearScheduledEvents(context.Background(), member.GuildID, member.User.ID)
 		if err != nil {
@@ -368,7 +369,7 @@ func (p *Plugin) handleUserVerifiedScheduledEvent(ms *dstate.MemberState, guildI
 }
 
 func (p *Plugin) checkMemberAlreadyVerified(ms *dstate.MemberState, conf *models.VerificationConfig) bool {
-	if !common.ContainsInt64Slice(ms.Member.Roles, conf.VerifiedRole) {
+	if !slices.Contains(ms.Member.Roles, conf.VerifiedRole) {
 		return false
 	}
 

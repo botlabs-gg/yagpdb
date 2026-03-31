@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"slices"
 	"strings"
 	"time"
 
@@ -234,7 +235,7 @@ func tmplRoleDropdownExclude(roles []discordgo.Role, highestBotRole *discordgo.R
 		}
 
 		// Skip excluded roles (AutoRole, MuteRole, StreamingRole)
-		if common.ContainsInt64Slice(excludedRoleIDs, role.ID) {
+		if slices.Contains(excludedRoleIDs, role.ID) {
 			continue
 		}
 
@@ -295,7 +296,7 @@ OUTER:
 		}
 
 		// Skip excluded roles (AutoRole, MuteRole, StreamingRole)
-		if common.ContainsInt64Slice(excludedRoleIDs, role.ID) {
+		if slices.Contains(excludedRoleIDs, role.ID) {
 			continue
 		}
 

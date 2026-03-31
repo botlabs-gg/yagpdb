@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -369,7 +370,7 @@ func SetMessageLogsColors(guildID int64, views []*MessageView) {
 	users := make([]int64, 0, 50)
 
 	for _, v := range views {
-		if !common.ContainsInt64Slice(users, v.Model.AuthorID) {
+		if !slices.Contains(users, v.Model.AuthorID) {
 			users = append(users, v.Model.AuthorID)
 		}
 	}

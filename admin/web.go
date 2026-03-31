@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -297,7 +298,7 @@ func (p *Plugin) handleEditConfig(w http.ResponseWriter, r *http.Request) (web.T
 			}
 
 			lower := strings.ToLower(value)
-			if !common.ContainsStringSlice(possibleChoices, lower) {
+			if !slices.Contains(possibleChoices, lower) {
 				return tmpl.AddAlerts(web.ErrorAlert("Value is not a boolean")), nil
 			}
 		}
