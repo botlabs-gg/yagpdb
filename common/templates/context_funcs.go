@@ -369,7 +369,7 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 				return "", err
 			}
 		case *discordgo.MessageEdit:
-			return "", errors.New("use complexMessage instead of complexMessageEdit, you dwaft headed dolt.")
+			return "", errors.New("use complexMessage instead of complexMessageEdit, you daft headed dolt.")
 		default:
 			msgSend.Content = ToString(msg)
 		}
@@ -480,7 +480,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			msgEdit.ID = mID
 			msgEdit.Channel = cid
 		case *discordgo.MessageSend:
-			return "", errors.New("use complexMessageEdit instead of complexMessage, you dwaft headed dolt.")
+			return "", errors.New("use complexMessageEdit instead of complexMessage, you daft headed dolt.")
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp

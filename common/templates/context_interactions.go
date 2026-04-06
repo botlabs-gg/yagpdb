@@ -231,7 +231,7 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 			msgEditResponse.Flags = int64(msg.Flags)
 			msgEditResponse.AllowedMentions = &msg.AllowedMentions
 		case *discordgo.MessageSend:
-			return "", errors.New("use complexMessageEdit instead of complexMessage, you dwaft headed dolt.")
+			return "", errors.New("use complexMessageEdit instead of complexMessage, you daft headed dolt.")
 		default:
 			temp := fmt.Sprint(msg)
 			msgEditResponse.Content = temp
@@ -386,7 +386,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 				msgReponse.Files = []*discordgo.File{msg.File}
 			}
 		case *discordgo.MessageEdit:
-			return "", errors.New("use complexMessage instead of complexMessageEdit, you dwaft headed dolt.")
+			return "", errors.New("use complexMessage instead of complexMessageEdit, you daft headed dolt.")
 		default:
 			msgReponse.Content = ToString(msg)
 		}
@@ -498,7 +498,7 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 			msgResponseEdit.Flags = msg.Flags
 			msgResponseEdit.AllowedMentions = &msg.AllowedMentions
 		case *discordgo.MessageSend:
-			return "", errors.New("use complexMessageEdit instead of complexMessage, you dwaft headed dolt.")
+			return "", errors.New("use complexMessageEdit instead of complexMessage, you daft headed dolt.")
 		default:
 			temp := fmt.Sprint(msg)
 			msgResponseEdit.Content = temp
