@@ -222,16 +222,36 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 			msgEditResponse.Embeds = typedMsg.Embeds
 			msgEditResponse.Components = typedMsg.Components
 			msgEditResponse.AllowedMentions = &typedMsg.AllowedMentions
+		case *discordgo.MessageSend:
+			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
+			msgEditResponse.AllowedMentions = &typedMsg.AllowedMentions
+			msgEditResponse.Components = typedMsg.Components
+			msgEditResponse.Flags = typedMsg.Flags
+			msgEditResponse.Content = typedMsg.Content
+			msgEditResponse.Embeds = typedMsg.Embeds
+			// If there are no Embeds or if the message is not of type component V2  and string are explicitly set as null, give an error message.
+			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && strings.TrimSpace(typedMsg.Content) == "" {
+				if len(typedMsg.Embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+				// only keep valid embeds
+				for _, e := range typedMsg.Embeds {
+					if e != nil && !e.GetMarshalNil() {
+						embeds = append(typedMsg.Embeds, e)
+					}
+				}
+				if len(embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+			}
 		case *ComponentBuilder:
 			msg, err := typedMsg.ToComplexMessageEdit()
 			if err != nil {
 				return "", err
 			}
 			msgEditResponse.Components = msg.Components
-			msgEditResponse.Flags = int64(msg.Flags)
+			msgEditResponse.Flags = msg.Flags
 			msgEditResponse.AllowedMentions = &msg.AllowedMentions
-		case *discordgo.MessageSend:
-			return "", errors.New("use complexMessageEdit instead of complexMessage, you daft headed dolt.")
 		default:
 			temp := fmt.Sprint(msg)
 			msgEditResponse.Content = temp
@@ -385,8 +405,6 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			if msg.File != nil {
 				msgReponse.Files = []*discordgo.File{msg.File}
 			}
-		case *discordgo.MessageEdit:
-			return "", errors.New("use complexMessage instead of complexMessageEdit, you daft headed dolt.")
 		default:
 			msgReponse.Content = ToString(msg)
 		}
@@ -427,7 +445,7 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 				Components:      msgReponse.Components,
 				Embeds:          msgReponse.Embeds,
 				AllowedMentions: msgReponse.AllowedMentions,
-				Flags:           int64(msgReponse.Flags),
+				Flags:           msgReponse.Flags,
 				File:            file,
 			})
 		}
@@ -489,6 +507,28 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 			msgResponseEdit.Embeds = typedMsg.Embeds
 			msgResponseEdit.Components = typedMsg.Components
 			msgResponseEdit.AllowedMentions = &typedMsg.AllowedMentions
+		case *discordgo.MessageSend:
+			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
+			msgResponseEdit.AllowedMentions = &typedMsg.AllowedMentions
+			msgResponseEdit.Components = typedMsg.Components
+			msgResponseEdit.Flags = typedMsg.Flags
+			msgResponseEdit.Content = typedMsg.Content
+			msgResponseEdit.Embeds = typedMsg.Embeds
+			// If there are no Embeds or if the message is not of type component V2  and string are explicitly set as null, give an error message.
+			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && strings.TrimSpace(typedMsg.Content) == "" {
+				if len(typedMsg.Embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+				// only keep valid embeds
+				for _, e := range typedMsg.Embeds {
+					if e != nil && !e.GetMarshalNil() {
+						embeds = append(typedMsg.Embeds, e)
+					}
+				}
+				if len(embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+			}
 		case *ComponentBuilder:
 			msg, err := typedMsg.ToComplexMessageEdit()
 			if err != nil {
@@ -497,8 +537,6 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 			msgResponseEdit.Components = msg.Components
 			msgResponseEdit.Flags = msg.Flags
 			msgResponseEdit.AllowedMentions = &msg.AllowedMentions
-		case *discordgo.MessageSend:
-			return "", errors.New("use complexMessageEdit instead of complexMessage, you daft headed dolt.")
 		default:
 			temp := fmt.Sprint(msg)
 			msgResponseEdit.Content = temp

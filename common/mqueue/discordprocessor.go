@@ -163,7 +163,7 @@ func trySendWebhook(l *logrus.Entry, elem *QueuedElement) (err error) {
 			AvatarURL:       avatar,
 			Embeds:          elem.MessageSend.Embeds,
 			Components:      elem.MessageSend.Components,
-			Flags:           int64(elem.MessageSend.Flags),
+			Flags:           elem.MessageSend.Flags,
 			AllowedMentions: &elem.MessageSend.AllowedMentions,
 		}
 		_, err = webhookSession.WebhookExecuteComplex(wh.ID, wh.Token, true, params)

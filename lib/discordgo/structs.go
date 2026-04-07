@@ -1473,7 +1473,7 @@ type WebhookParams struct {
 	File            *File               `json:"-,omitempty"`
 	Components      []TopLevelComponent `json:"components"`
 	Embeds          []*MessageEmbed     `json:"embeds,omitempty"`
-	Flags           int64               `json:"flags,omitempty"`
+	Flags           MessageFlags        `json:"flags,omitempty"`
 	AllowedMentions *AllowedMentions    `json:"allowed_mentions,omitempty"`
 }
 

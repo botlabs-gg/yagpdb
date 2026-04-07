@@ -368,8 +368,6 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 			if err != nil {
 				return "", err
 			}
-		case *discordgo.MessageEdit:
-			return "", errors.New("use complexMessage instead of complexMessageEdit, you daft headed dolt.")
 		default:
 			msgSend.Content = ToString(msg)
 		}
@@ -471,7 +469,28 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 					return "", errors.New("both content and embed cannot be null")
 				}
 			}
-
+		case *discordgo.MessageSend:
+			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
+			msgEdit.AllowedMentions = typedMsg.AllowedMentions
+			msgEdit.Components = typedMsg.Components
+			msgEdit.Flags = typedMsg.Flags
+			msgEdit.Content = &typedMsg.Content
+			msgEdit.Embeds = typedMsg.Embeds
+			// If there are no Embeds or if the message is not of type component V2  and string are explicitly set as null, give an error message.
+			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && strings.TrimSpace(typedMsg.Content) == "" {
+				if len(typedMsg.Embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+				// only keep valid embeds
+				for _, e := range typedMsg.Embeds {
+					if e != nil && !e.GetMarshalNil() {
+						embeds = append(typedMsg.Embeds, e)
+					}
+				}
+				if len(embeds) == 0 {
+					return "", errors.New("both content and embed cannot be null")
+				}
+			}
 		case *ComponentBuilder:
 			msgEdit, err = typedMsg.ToComplexMessageEdit()
 			if err != nil {
@@ -479,8 +498,7 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 			}
 			msgEdit.ID = mID
 			msgEdit.Channel = cid
-		case *discordgo.MessageSend:
-			return "", errors.New("use complexMessageEdit instead of complexMessage, you daft headed dolt.")
+
 		default:
 			temp := fmt.Sprint(msg)
 			msgEdit.Content = &temp
@@ -1530,9 +1548,9 @@ func (c *Context) tmplCreateForumPost(channel, name, content interface{}, option
 		if len(v) == 0 {
 			return nil, errors.New("post content must be non-zero length")
 		}
-		msgData, _ = CreateMessageSend("content", v)
+		msgData, _ = CreateComplexMessage("content", v)
 	case *discordgo.MessageEmbed:
-		msgData, _ = CreateMessageSend("embed", v)
+		msgData, _ = CreateComplexMessage("embed", v)
 	case *discordgo.MessageSend:
 		msgData = v
 	default:

@@ -520,7 +520,7 @@ func (p *Plugin) handleInteractionCreate(evt *eventsystem.EventData) (retry bool
 		// try again as a followup, if that still fails, return the original error
 		_, followupErr := common.BotSession.CreateFollowupMessage(ic.ApplicationID, ic.Token, &discordgo.WebhookParams{
 			Content: response.Data.Content,
-			Flags:   int64(response.Data.Flags),
+			Flags:   response.Data.Flags,
 		})
 		if followupErr != nil {
 			return bot.CheckDiscordErrRetry(respErr), respErr

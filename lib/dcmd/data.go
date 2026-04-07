@@ -163,7 +163,7 @@ func (d *Data) SendFollowupMessage(reply interface{}, allowedMentions discordgo.
 				AllowedMentions: &t.AllowedMentions,
 				File:            t.File,
 				Components:      t.Components,
-				Flags:           int64(t.Flags),
+				Flags:           t.Flags,
 			}
 
 			if len(t.Files) > 0 {

@@ -109,8 +109,8 @@ var (
 
 		// message builders
 		"cembed":             CreateEmbed,
-		"complexMessage":     CreateMessageSend,
-		"complexMessageEdit": CreateMessageEdit,
+		"complexMessage":     CreateComplexMessage,
+		"complexMessageEdit": CreateComplexMessage,
 
 		// misc
 		"humanizeThousands": tmplHumanizeThousands,
@@ -628,14 +628,14 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 			Content:         msgSend.Content,
 			Embeds:          msgSend.Embeds,
 			AllowedMentions: &msgSend.AllowedMentions,
-			Flags:           int64(msgSend.Flags),
+			Flags:           msgSend.Flags,
 		})
 	case sendMessageInteractionDeferred:
 		m, err = common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, c.CurrentFrame.Interaction.Token, &discordgo.WebhookParams{
 			Content:         msgSend.Content,
 			Embeds:          msgSend.Embeds,
 			AllowedMentions: &msgSend.AllowedMentions,
-			Flags:           int64(msgSend.Flags),
+			Flags:           msgSend.Flags,
 		})
 		if err == nil {
 			c.CurrentFrame.Interaction.Deferred = false
