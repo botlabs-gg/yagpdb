@@ -283,7 +283,7 @@ func (m *MessageSend) UnmarshalJSON(data []byte) error {
 
 // MessageFlags is the flags of "message" (see MessageFlags* consts)
 // https://discord.com/developers/docs/resources/channel#message-object-message-flags
-type MessageFlags int
+type MessageFlags int64
 
 // Valid MessageFlags values
 const (
@@ -667,4 +667,54 @@ type RoleSubscriptionData struct {
 	TierName                  string `json:"tier_name"`
 	TotalMonthsSubscribed     int    `json:"total_months_subscribed"`
 	IsRenewal                 bool   `json:"is_renewal"`
+}
+
+func (m *MessageSend) ToMessageEdit() *MessageEdit {
+	return &MessageEdit{
+		Content:         &m.Content,
+		Embeds:          m.Embeds,
+		Components:      m.Components,
+		AllowedMentions: m.AllowedMentions,
+		Flags:           m.Flags,
+	}
+}
+
+func (m *MessageEdit) ToMessageSend() *MessageSend {
+	var content string
+	if m.Content != nil {
+		content = *m.Content
+	}
+	return &MessageSend{
+		Content:         content,
+		Embeds:          m.Embeds,
+		Components:      m.Components,
+		AllowedMentions: m.AllowedMentions,
+		Flags:           m.Flags,
+	}
+}
+
+func (m *MessageSend) ToWebhookParams() *WebhookParams {
+	wp := &WebhookParams{
+		Content:         m.Content,
+		Embeds:          m.Embeds,
+		Components:      m.Components,
+		AllowedMentions: &m.AllowedMentions,
+		Flags:           m.Flags,
+		File:            m.File,
+	}
+	if len(m.Files) > 0 {
+		wp.File = m.Files[0]
+	}
+	return wp
+}
+
+func (m *MessageSend) ToInteractionResponseData() *InteractionResponseData {
+	return &InteractionResponseData{
+		Content:         m.Content,
+		Embeds:          m.Embeds,
+		Components:      m.Components,
+		AllowedMentions: &m.AllowedMentions,
+		Flags:           m.Flags,
+		Files:           m.Files,
+	}
 }
