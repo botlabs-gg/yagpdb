@@ -587,3 +587,16 @@ func VerifyInteraction(r *http.Request, key ed25519.PublicKey) bool {
 
 	return ed25519.Verify(key, msg.Bytes(), sig)
 }
+func (m *InteractionResponseData) ToMessageSend() *MessageSend {
+	ms := &MessageSend{
+		Content:    m.Content,
+		Embeds:     m.Embeds,
+		Components: m.Components,
+		Files:      m.Files,
+		Flags:      m.Flags,
+	}
+	if m.AllowedMentions != nil {
+		ms.AllowedMentions = *m.AllowedMentions
+	}
+	return ms
+}

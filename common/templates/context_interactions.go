@@ -2,7 +2,6 @@ package templates
 
 import (
 	"encoding/base64"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -187,76 +186,13 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 			editOriginal = true
 		}
 
-		msgEditResponse := &discordgo.WebhookParams{
-			AllowedMentions: &discordgo.AllowedMentions{Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}},
-		}
 		var err error
-
-		switch typedMsg := msg.(type) {
-
-		case *discordgo.MessageEmbed:
-			msgEditResponse.Embeds = []*discordgo.MessageEmbed{typedMsg}
-		case []*discordgo.MessageEmbed:
-			msgEditResponse.Embeds = typedMsg
-		case *discordgo.MessageEdit:
-			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
-			//If there are no Embeds and string are explicitly set as null, give an error message.
-			if typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
-				if len(typedMsg.Embeds) == 0 && len(typedMsg.Components) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-
-				//only keep valid embeds
-				for _, e := range typedMsg.Embeds {
-					if e != nil && !e.GetMarshalNil() {
-						embeds = append(typedMsg.Embeds, e)
-					}
-				}
-				if len(embeds) == 0 && len(typedMsg.Components) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-			}
-			if typedMsg.Content != nil {
-				msgEditResponse.Content = *typedMsg.Content
-			}
-			msgEditResponse.Embeds = typedMsg.Embeds
-			msgEditResponse.Components = typedMsg.Components
-			msgEditResponse.AllowedMentions = &typedMsg.AllowedMentions
-		case *discordgo.MessageSend:
-			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
-			msgEditResponse.AllowedMentions = &typedMsg.AllowedMentions
-			msgEditResponse.Components = typedMsg.Components
-			msgEditResponse.Flags = typedMsg.Flags
-			msgEditResponse.Content = typedMsg.Content
-			msgEditResponse.Embeds = typedMsg.Embeds
-			// If there are no Embeds or if the message is not of type component V2  and string are explicitly set as null, give an error message.
-			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && strings.TrimSpace(typedMsg.Content) == "" {
-				if len(typedMsg.Embeds) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-				// only keep valid embeds
-				for _, e := range typedMsg.Embeds {
-					if e != nil && !e.GetMarshalNil() {
-						embeds = append(typedMsg.Embeds, e)
-					}
-				}
-				if len(embeds) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-			}
-		case *ComponentBuilder:
-			msg, err := typedMsg.ToComplexMessageEdit()
-			if err != nil {
-				return "", err
-			}
-			msgEditResponse.Components = msg.Components
-			msgEditResponse.Flags = msg.Flags
-			msgEditResponse.AllowedMentions = &msg.AllowedMentions
-		default:
-			temp := fmt.Sprint(msg)
-			msgEditResponse.Content = temp
+		msgSend, err := c.parseMessageInput(msg)
+		if err != nil {
+			return "", err
 		}
 
+		msgEditResponse := msgSend.ToWebhookParams()
 		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
 		var repliedUser bool
 		if !filterSpecialMentions {
@@ -376,38 +312,12 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 		}
 
 		var m *discordgo.Message
-		msgReponse := &discordgo.InteractionResponseData{}
-		var err error
-
-		switch typedMsg := msg.(type) {
-		case *discordgo.MessageEmbed:
-			msgReponse.Embeds = []*discordgo.MessageEmbed{typedMsg}
-		case []*discordgo.MessageEmbed:
-			msgReponse.Embeds = typedMsg
-		case *discordgo.MessageSend:
-			msgReponse.Content = typedMsg.Content
-			msgReponse.Embeds = typedMsg.Embeds
-			msgReponse.Components = typedMsg.Components
-			msgReponse.Flags = typedMsg.Flags
-			msgReponse.Files = typedMsg.Files
-			if typedMsg.File != nil {
-				msgReponse.Files = []*discordgo.File{typedMsg.File}
-			}
-		case *ComponentBuilder:
-			msg, err := typedMsg.ToComplexMessage()
-			if err != nil {
-				return "", err
-			}
-			msgReponse.Components = msg.Components
-			msgReponse.Flags = msg.Flags
-			msgReponse.Files = msg.Files
-			msgReponse.AllowedMentions = &msg.AllowedMentions
-			if msg.File != nil {
-				msgReponse.Files = []*discordgo.File{msg.File}
-			}
-		default:
-			msgReponse.Content = ToString(msg)
+		msgSend, err := c.parseMessageInput(msg)
+		if err != nil {
+			return "", err
 		}
+
+		msgReponse := msgSend.ToInteractionResponseData()
 
 		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
 		var repliedUser bool
@@ -416,7 +326,6 @@ func (c *Context) tmplSendInteractionResponse(filterSpecialMentions bool, return
 			repliedUser = true
 			msgReponse.AllowedMentions = &discordgo.AllowedMentions{Parse: parseMentions, RepliedUser: repliedUser}
 		}
-
 		switch sendType {
 		case sendMessageInteractionResponse:
 			if c.IncreaseCheckCallCounter("interaction_response", 1) {
@@ -472,76 +381,11 @@ func (c *Context) tmplUpdateMessage(filterSpecialMentions bool) func(msg interfa
 			return "", ErrTooManyInteractionResponses
 		}
 
-		msgResponseEdit := &discordgo.InteractionResponseData{
-			AllowedMentions: &discordgo.AllowedMentions{Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}},
+		msgSend, err := c.parseMessageInput(msg)
+		if err != nil {
+			return "", err
 		}
-		var err error
-
-		switch typedMsg := msg.(type) {
-
-		case *discordgo.MessageEmbed:
-			msgResponseEdit.Embeds = []*discordgo.MessageEmbed{typedMsg}
-		case []*discordgo.MessageEmbed:
-			msgResponseEdit.Embeds = typedMsg
-		case *discordgo.MessageEdit:
-			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
-			//If there are no Embeds and string are explicitly set as null, give an error message.
-			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
-				if len(typedMsg.Embeds) == 0 && len(typedMsg.Components) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-
-				//only keep valid embeds
-				for _, e := range typedMsg.Embeds {
-					if e != nil && !e.GetMarshalNil() {
-						embeds = append(typedMsg.Embeds, e)
-					}
-				}
-				if len(embeds) == 0 && len(typedMsg.Components) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-			}
-			if typedMsg.Content != nil {
-				msgResponseEdit.Content = *typedMsg.Content
-			}
-			msgResponseEdit.Embeds = typedMsg.Embeds
-			msgResponseEdit.Components = typedMsg.Components
-			msgResponseEdit.AllowedMentions = &typedMsg.AllowedMentions
-		case *discordgo.MessageSend:
-			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
-			msgResponseEdit.AllowedMentions = &typedMsg.AllowedMentions
-			msgResponseEdit.Components = typedMsg.Components
-			msgResponseEdit.Flags = typedMsg.Flags
-			msgResponseEdit.Content = typedMsg.Content
-			msgResponseEdit.Embeds = typedMsg.Embeds
-			// If there are no Embeds or if the message is not of type component V2  and string are explicitly set as null, give an error message.
-			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && strings.TrimSpace(typedMsg.Content) == "" {
-				if len(typedMsg.Embeds) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-				// only keep valid embeds
-				for _, e := range typedMsg.Embeds {
-					if e != nil && !e.GetMarshalNil() {
-						embeds = append(typedMsg.Embeds, e)
-					}
-				}
-				if len(embeds) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-			}
-		case *ComponentBuilder:
-			msg, err := typedMsg.ToComplexMessageEdit()
-			if err != nil {
-				return "", err
-			}
-			msgResponseEdit.Components = msg.Components
-			msgResponseEdit.Flags = msg.Flags
-			msgResponseEdit.AllowedMentions = &msg.AllowedMentions
-		default:
-			temp := fmt.Sprint(msg)
-			msgResponseEdit.Content = temp
-		}
-
+		msgResponseEdit := msgSend.ToInteractionResponseData()
 		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
 		repliedUser := false
 		if !filterSpecialMentions {

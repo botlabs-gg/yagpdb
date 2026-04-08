@@ -28,28 +28,74 @@ var (
 	ErrRegexCacheLimit = errors.New("too many unique regular expressions (regex)")
 )
 
+func (c *Context) parseMessageInput(msg interface{}) (*discordgo.MessageSend, error) {
+	msgSend := &discordgo.MessageSend{}
+	var err error
+
+	switch typedMsg := msg.(type) {
+	case *discordgo.MessageEmbed:
+		msgSend.Embeds = []*discordgo.MessageEmbed{typedMsg}
+	case []*discordgo.MessageEmbed:
+		msgSend.Embeds = typedMsg
+	case *discordgo.MessageSend:
+		msgSend = typedMsg
+	case *discordgo.MessageEdit:
+		msgSend = typedMsg.ToMessageSend()
+	case *discordgo.InteractionResponseData:
+		msgSend = typedMsg.ToMessageSend()
+	case *ComponentBuilder:
+		msgSend, err = typedMsg.ToComplexMessage()
+		if err != nil {
+			return nil, err
+		}
+	default:
+		msgSend.Content = ToString(msg)
+	}
+
+	if msgSend.AllowedMentions.Parse == nil {
+		msgSend.AllowedMentions = discordgo.AllowedMentions{
+			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
+		}
+	}
+
+	if msgSend.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && strings.TrimSpace(msgSend.Content) == "" {
+		if len(msgSend.Embeds) == 0 && len(msgSend.Components) == 0 {
+			return nil, errors.New("both content and embed cannot be null")
+		}
+
+		// only keep valid embeds
+		var embeds []*discordgo.MessageEmbed
+		for _, e := range msgSend.Embeds {
+			if e != nil && !e.GetMarshalNil() {
+				embeds = append(embeds, e)
+			}
+		}
+		msgSend.Embeds = embeds
+		if len(embeds) == 0 && len(msgSend.Components) == 0 {
+			return nil, errors.New("both content and embed cannot be null")
+		}
+	}
+
+	return msgSend, nil
+}
+
 func (c *Context) tmplSendDM(s ...interface{}) string {
 	if len(s) < 1 || c.IncreaseCheckCallCounter("send_dm", 1) || c.IncreaseCheckGenericAPICall() || c.MS == nil || c.ExecutedFrom == ExecutedFromLeave {
 		return ""
 	}
 
-	msgSend := &discordgo.MessageSend{
-		AllowedMentions: discordgo.AllowedMentions{
-			Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
-		},
+	msgSend, err := c.parseMessageInput(s[0])
+	if err != nil {
+		return ""
 	}
 
-	switch t := s[0].(type) {
-	case *discordgo.MessageEmbed:
-		msgSend.Embeds = []*discordgo.MessageEmbed{t}
-	case []*discordgo.MessageEmbed:
-		msgSend.Embeds = t
-	case *discordgo.MessageSend:
-		msgSend = t
-		if (len(msgSend.Embeds) == 0 && strings.TrimSpace(msgSend.Content) == "") && (msgSend.File == nil) && (len(msgSend.Components) == 0) {
+	if cast, ok := s[0].(*discordgo.MessageSend); ok {
+		if (len(cast.Embeds) == 0 && strings.TrimSpace(cast.Content) == "") && (cast.File == nil) && (len(cast.Components) == 0) {
 			return ""
 		}
-	default:
+	}
+
+	if msgSend.Content != "" && reflect.TypeOf(s[0]).Kind() != reflect.Ptr && reflect.TypeOf(s[0]).Kind() != reflect.Struct {
 		msgSend.Content = common.ReplaceServerInvites(fmt.Sprint(s...), 0, "[removed-server-invite]")
 	}
 	serverInfo := bot.GenerateServerInfoButton(c.GS.ID)
@@ -346,30 +392,15 @@ func (c *Context) tmplSendMessage(filterSpecialMentions bool, returnID bool) fun
 		}
 
 		var m *discordgo.Message
-		msgSend := &discordgo.MessageSend{
-			AllowedMentions: discordgo.AllowedMentions{
-				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
-			},
+		msgSend, err := c.parseMessageInput(msg)
+		if err != nil {
+			return "", err
 		}
-		var err error
 
-		switch typedMsg := msg.(type) {
-		case *discordgo.MessageEmbed:
-			msgSend.Embeds = []*discordgo.MessageEmbed{typedMsg}
-		case []*discordgo.MessageEmbed:
-			msgSend.Embeds = typedMsg
-		case *discordgo.MessageSend:
-			msgSend = typedMsg
-			if msgSend.Reference != nil && msgSend.Reference.ChannelID == 0 {
-				msgSend.Reference.ChannelID = cid
+		if cast, ok := msg.(*discordgo.MessageSend); ok {
+			if cast.Reference != nil && cast.Reference.ChannelID == 0 {
+				cast.Reference.ChannelID = cid
 			}
-		case *ComponentBuilder:
-			msgSend, err = typedMsg.ToComplexMessage()
-			if err != nil {
-				return "", err
-			}
-		default:
-			msgSend.Content = ToString(msg)
 		}
 
 		if sendType == sendMessageDM {
@@ -431,78 +462,13 @@ func (c *Context) tmplEditMessage(filterSpecialMentions bool) func(channel inter
 		}
 
 		mID := ToInt64(msgID)
-		msgEdit := &discordgo.MessageEdit{
-			ID:      mID,
-			Channel: cid,
-			AllowedMentions: discordgo.AllowedMentions{
-				Parse: []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers},
-			},
+		msgSend, err := c.parseMessageInput(msg)
+		if err != nil {
+			return "", err
 		}
-		var err error
-
-		switch typedMsg := msg.(type) {
-
-		case *discordgo.MessageEmbed:
-			msgEdit.Embeds = []*discordgo.MessageEmbed{typedMsg}
-		case []*discordgo.MessageEmbed:
-			msgEdit.Embeds = typedMsg
-		case *discordgo.MessageEdit:
-			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
-			msgEdit.AllowedMentions = typedMsg.AllowedMentions
-			msgEdit.Components = typedMsg.Components
-			msgEdit.Flags = typedMsg.Flags
-			msgEdit.Content = typedMsg.Content
-			msgEdit.Embeds = typedMsg.Embeds
-			// If there are no Embeds or if the message is not of type component V2  and string are explicitly set as null, give an error message.
-			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && typedMsg.Content != nil && strings.TrimSpace(*typedMsg.Content) == "" {
-				if len(typedMsg.Embeds) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-
-				// only keep valid embeds
-				for _, e := range typedMsg.Embeds {
-					if e != nil && !e.GetMarshalNil() {
-						embeds = append(typedMsg.Embeds, e)
-					}
-				}
-				if len(embeds) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-			}
-		case *discordgo.MessageSend:
-			embeds := make([]*discordgo.MessageEmbed, 0, len(typedMsg.Embeds))
-			msgEdit.AllowedMentions = typedMsg.AllowedMentions
-			msgEdit.Components = typedMsg.Components
-			msgEdit.Flags = typedMsg.Flags
-			msgEdit.Content = &typedMsg.Content
-			msgEdit.Embeds = typedMsg.Embeds
-			// If there are no Embeds or if the message is not of type component V2  and string are explicitly set as null, give an error message.
-			if typedMsg.Flags&discordgo.MessageFlagsIsComponentsV2 == 0 && strings.TrimSpace(typedMsg.Content) == "" {
-				if len(typedMsg.Embeds) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-				// only keep valid embeds
-				for _, e := range typedMsg.Embeds {
-					if e != nil && !e.GetMarshalNil() {
-						embeds = append(typedMsg.Embeds, e)
-					}
-				}
-				if len(embeds) == 0 {
-					return "", errors.New("both content and embed cannot be null")
-				}
-			}
-		case *ComponentBuilder:
-			msgEdit, err = typedMsg.ToComplexMessageEdit()
-			if err != nil {
-				return "", err
-			}
-			msgEdit.ID = mID
-			msgEdit.Channel = cid
-
-		default:
-			temp := fmt.Sprint(msg)
-			msgEdit.Content = &temp
-		}
+		msgEdit := msgSend.ToMessageEdit()
+		msgEdit.ID = mID
+		msgEdit.Channel = cid
 
 		var repliedUser bool
 		parseMentions := []discordgo.AllowedMentionType{discordgo.AllowedMentionTypeUsers}
