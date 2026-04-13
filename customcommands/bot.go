@@ -84,7 +84,8 @@ type DelayedRunCCData struct {
 	Message *discordgo.Message
 	Member  *dstate.MemberState
 
-	UserKey interface{} `json:"user_key"`
+	UserKey      interface{}             `json:"user_key"`
+	CurrentFrame *templates.ContextFrame `json:"current_frame,omitempty"`
 
 	ExecutedFrom templates.ExecutedFromType `json:"executed_from"`
 }

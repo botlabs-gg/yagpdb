@@ -212,7 +212,7 @@ func (c *Context) sendNestedTemplate(channel interface{}, dm bool, name string, 
 	if name == "" {
 		return "", errors.New("no template name passed")
 	}
-	if c.CurrentFrame.isNestedTemplate {
+	if c.CurrentFrame.IsNestedTemplate {
 		return "", errors.New("can't call this in a nested template")
 	}
 

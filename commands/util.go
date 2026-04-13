@@ -334,10 +334,6 @@ func (e *EphemeralOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 			params.Embeds = []*discordgo.MessageEmbed{e.Embed}
 		}
 
-		// _, err := data.Session.EditOriginalInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.EditWebhookMessageRequest{
-		// 	Content: "Failed running the command.",
-		// })
-
 		if yc, ok := data.Cmd.Command.(*YAGCommand); ok {
 			settings, err := yc.GetSettings(data.ContainerChain, data.GuildData.CS, data.GuildData.GS)
 			if err != nil {
@@ -354,19 +350,10 @@ func (e *EphemeralOrNone) Send(data *dcmd.Data) ([]*discordgo.Message, error) {
 		}
 
 		m, err := data.Session.CreateFollowupMessage(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
-		// m, err := data.Session.EditOriginalInteractionResponse(common.BotApplication.ID, data.SlashCommandTriggerData.Interaction.Token, params)
-		// err = data.Session.CreateInteractionResponse(data.SlashCommandTriggerData.Interaction.ID, data.SlashCommandTriggerData.Interaction.Token, &discordgo.InteractionResponse{
-		// 	Kind: discordgo.InteractionResponseTypeChannelMessageWithSource,
-		// 	Data: &discordgo.InteractionApplicationCommandCallbackData{
-		// 		Content: &e.Content,
-		// 		Flags:   64,
-		// 	},
-		// })
 		if err != nil {
 			return nil, err
 		}
 
-		// return []*discordgo.Message{}, nil
 		return []*discordgo.Message{m}, nil
 	default:
 		return nil, nil

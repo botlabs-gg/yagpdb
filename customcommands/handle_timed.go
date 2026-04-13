@@ -106,6 +106,14 @@ func handleDelayedRunCC(evt *schEventsModels.ScheduledEvent, data interface{}) (
 	}
 
 	tmplCtx.ExecutedFrom = dataCast.ExecutedFrom
+	if dataCast.CurrentFrame != nil {
+		tmplCtx.CurrentFrame = dataCast.CurrentFrame
+		tmplCtx.CurrentFrame.CS = cs
+	}
+
+	if tmplCtx.CurrentFrame.Interaction != nil {
+		tmplCtx.Data["Interaction"] = tmplCtx.CurrentFrame.Interaction.Interaction
+	}
 
 	// decode userdata
 	if len(dataCast.UserData) > 0 {

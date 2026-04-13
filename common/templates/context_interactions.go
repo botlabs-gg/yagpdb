@@ -171,6 +171,10 @@ func (c *Context) tmplDeleteInteractionResponse(interactionToken, msgID interfac
 
 func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(interactionToken, msgID, msg interface{}) (interface{}, error) {
 	return func(interactionToken, msgID, msg interface{}) (interface{}, error) {
+		if c.CurrentFrame.Interaction == nil {
+			return "", errors.New("no interaction data in context")
+		}
+
 		if c.IncreaseCheckGenericAPICall() {
 			return "", ErrTooManyAPICalls
 		}
@@ -202,8 +206,13 @@ func (c *Context) tmplEditInteractionResponse(filterSpecialMentions bool) func(i
 		}
 
 		if editOriginal {
-			_, err = common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, token, msgEditResponse)
-			if err == nil && token == c.CurrentFrame.Interaction.Token {
+			if c.CurrentFrame.EphemeralResponse {
+				_, err = common.BotSession.EditOriginalInteractionResponse(common.BotApplication.ID, token, msgEditResponse)
+			} else {
+				_, err = common.BotSession.CreateFollowupMessage(common.BotApplication.ID, token, msgEditResponse)
+			}
+
+			if err == nil && c.CurrentFrame.Interaction != nil && token == c.CurrentFrame.Interaction.Token {
 				c.CurrentFrame.Interaction.RespondedTo = true
 				c.CurrentFrame.Interaction.Deferred = false
 			}
@@ -422,9 +431,16 @@ func (c *Context) tokenArg(interactionToken interface{}) (sendType sendMessageTy
 			return
 		}
 	} else {
+		sToken = strings.TrimSpace(sToken)
 		//rudimentary check for valid token because people don't read docs and will send anything.
-		decoded, _ := base64.URLEncoding.DecodeString(sToken)
-		parts := strings.Split(string(decoded), ":")
+		decoded, err := base64.RawURLEncoding.DecodeString(sToken)
+		if err != nil {
+			decoded, err = base64.URLEncoding.DecodeString(sToken)
+		}
+		if err != nil {
+			return
+		}
+		parts := strings.SplitN(string(decoded), ":", 3)
 		if len(parts) < 3 {
 			return
 		}

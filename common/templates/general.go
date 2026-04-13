@@ -538,9 +538,10 @@ func parseAllowedMentions(Data interface{}) (*discordgo.AllowedMentions, error) 
 					return nil, errors.New(`Allowed Mentions Parsing: invalid slice element in "Parse", accepts "roles", "users", and "everyone"`)
 				}
 				parseMentions = append(parseMentions, discordgo.AllowedMentionType(elem_conv))
-				if elem_conv == "users" {
+				switch elem_conv {
+				case "users":
 					parsingUsers = true
-				} else if elem_conv == "roles" {
+				case "roles":
 					parsingRoles = true
 				}
 			}

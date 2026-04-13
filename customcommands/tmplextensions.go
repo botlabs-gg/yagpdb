@@ -253,8 +253,9 @@ func tmplRunCC(ctx *templates.Context) interface{} {
 			ChannelID: channelID,
 			CmdID:     cmd.LocalID,
 
-			Member:  ctx.MS,
-			Message: ctx.Msg,
+			Member:       ctx.MS,
+			Message:      ctx.Msg,
+			CurrentFrame: ctx.CurrentFrame,
 
 			ExecutedFrom: ctx.ExecutedFrom,
 		}
@@ -337,9 +338,10 @@ func tmplScheduleUniqueCC(ctx *templates.Context) interface{} {
 			ChannelID: channelID,
 			CmdID:     cmd.LocalID,
 
-			Member:  ctx.MS,
-			Message: ctx.Msg,
-			UserKey: stringedKey,
+			Member:       ctx.MS,
+			Message:      ctx.Msg,
+			UserKey:      stringedKey,
+			CurrentFrame: ctx.CurrentFrame,
 
 			ExecutedFrom: ctx.ExecutedFrom,
 		}
