@@ -572,7 +572,7 @@ func (c *Context) SendResponse(content string) (m *discordgo.Message, err error)
 	if c.CurrentFrame.Interaction != nil {
 		if c.CurrentFrame.Interaction.RespondedTo {
 			sendType = sendMessageInteractionFollowup
-			if c.CurrentFrame.EphemeralResponse {
+			if c.CurrentFrame.Interaction.Deferred {
 				sendType = sendMessageInteractionDeferred
 			}
 		} else {
