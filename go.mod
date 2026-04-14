@@ -75,7 +75,6 @@ require (
 
 require (
 	github.com/cloudflare/circl v1.6.3
-	github.com/forbiddencoding/howlongtobeat v0.0.0-20260210184841-a1f74e4d3b15
 	github.com/francoispqt/gojay v1.2.13
 	github.com/goccy/go-yaml v1.11.3
 	github.com/jarcoal/httpmock v1.0.4
