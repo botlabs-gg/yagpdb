@@ -850,7 +850,9 @@ func baseContextFuncs(c *Context) {
 
 	// Permission functions
 	c.addContextFunc("hasPermissions", c.tmplHasPermissions)
+	c.addContextFunc("hasAnyPermissions", c.tmplHasAnyPermissions)
 	c.addContextFunc("targetHasPermissions", c.tmplTargetHasPermissions)
+	c.addContextFunc("targetHasAnyPermissions", c.tmplTargetHasAnyPermissions)
 	c.addContextFunc("getTargetPermissionsIn", c.tmplGetTargetPermissionsIn)
 
 	// Channel functions
