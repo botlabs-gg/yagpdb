@@ -628,8 +628,8 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 	// Add UTF-8 BOM at the beginning
 	buf.Write([]byte{0xEF, 0xBB, 0xBF})
 
-	buf.WriteString(fmt.Sprintf("Transcript of ticket #%d - %s, opened by %s at %s, closed at %s.\n\n",
-		ticket.LocalID, ticket.Title, ticket.AuthorUsernameDiscrim, ticket.CreatedAt.UTC().Format(TicketTXTDateFormat), ticket.ClosedAt.Time.UTC().Format(TicketTXTDateFormat)))
+	fmt.Fprintf(&buf, "Transcript of ticket #%d - %s, opened by %s at %s, closed at %s.\n\n",
+		ticket.LocalID, ticket.Title, ticket.AuthorUsernameDiscrim, ticket.CreatedAt.UTC().Format(TicketTXTDateFormat), ticket.ClosedAt.Time.UTC().Format(TicketTXTDateFormat))
 
 	// traverse reverse for correct order (they come in with new-old order, we want old-new)
 	for i := len(msgs) - 1; i >= 0; i-- {
@@ -637,7 +637,14 @@ func createTXTTranscript(ticket *models.Ticket, msgs []*discordgo.Message) *byte
 
 		// serialize message content
 		ts, _ := m.Timestamp.Parse()
-		buf.WriteString(fmt.Sprintf("[%s] %s (%d): ", ts.UTC().Format(TicketTXTDateFormat), m.Author.String(), m.Author.ID))
+
+		forward := ""
+		if len(m.MessageSnapshots) >= 1 {
+			// space is necessary here to retain nice formatting
+			forward = " FORWARDED"
+		}
+
+		fmt.Fprintf(&buf, "[%s] %s (%d)%s: ", ts.UTC().Format(TicketTXTDateFormat), m.Author.String(), m.Author.ID, forward)
 		contents := m.GetMessageContents()
 		if len(contents) > 0 {
 			for _, c := range contents {
