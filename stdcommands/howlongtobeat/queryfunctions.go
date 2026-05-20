@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -110,8 +109,7 @@ func getSearchAuth(ctx context.Context) (*hltbFindInitResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, fmt.Errorf("find init failed with status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return nil, fmt.Errorf("find init failed with status %d", resp.StatusCode)
 	}
 
 	var auth hltbFindInitResponse
@@ -223,8 +221,7 @@ func searchGames(ctx context.Context, searchTitle string, auth *hltbFindInitResp
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, fmt.Errorf("search failed with status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+		return nil, fmt.Errorf("search failed with status %d", resp.StatusCode)
 	}
 
 	var parsed hltbSearchResponse

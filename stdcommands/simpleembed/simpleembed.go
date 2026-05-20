@@ -114,7 +114,7 @@ var Command = &commands.YAGCommand{
 			} else {
 				parsedColor, ok := ParseColor(color)
 				if !ok {
-					return "Unknown color: " + color + ", can be either hex color code or name for a known color", nil
+					return "Unknown color. Provide either a hex color code (e.g. `#ff0080`) or the name of a known color.", nil
 				}
 				embed.Color = parsedColor
 			}

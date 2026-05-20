@@ -36,7 +36,7 @@ var Command = &commands.YAGCommand{
 		toCompute = replacer.Replace(toCompute)
 		result, err := compute.Evaluate(toCompute)
 		if err != nil {
-			return err, err
+			return "Failed evaluating the expression.", nil
 		}
 
 		return fmt.Sprintf("Result: `%f`", result), nil

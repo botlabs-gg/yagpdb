@@ -12,7 +12,7 @@ type InvalidInt struct {
 }
 
 func (i *InvalidInt) Error() string {
-	return fmt.Sprintf("%q is not a whole number", i.Part)
+	return "Argument is not a whole number"
 }
 
 func (i *InvalidInt) IsUserError() bool {
@@ -26,7 +26,7 @@ type ErrResolvedNotFound struct {
 }
 
 func (r *ErrResolvedNotFound) Error() string {
-	return fmt.Sprintf("could not find resolved %s for arg %q with id %d", r.Type, r.Key, r.ID)
+	return fmt.Sprintf("could not find resolved %s with id %d", r.Type, r.ID)
 }
 
 func (r *ErrResolvedNotFound) IsUserError() bool {
@@ -67,7 +67,7 @@ type InvalidFloat struct {
 }
 
 func (i *InvalidFloat) Error() string {
-	return fmt.Sprintf("%q is not a number", i.Part)
+	return "Argument is not a number"
 }
 
 func (i *InvalidFloat) IsUserError() bool {
@@ -79,7 +79,7 @@ type ImproperMention struct {
 }
 
 func (i *ImproperMention) Error() string {
-	return fmt.Sprintf("Improper mention %q", i.Part)
+	return "Improper mention"
 }
 
 func (i *ImproperMention) IsUserError() bool {
@@ -91,7 +91,7 @@ type NoMention struct {
 }
 
 func (i *NoMention) Error() string {
-	return fmt.Sprintf("No mention found in %q", i.Part)
+	return "No mention found"
 }
 
 func (i *NoMention) IsUserError() bool {
@@ -103,7 +103,7 @@ type UserNotFound struct {
 }
 
 func (i *UserNotFound) Error() string {
-	return fmt.Sprintf("User %q not found", i.Part)
+	return "User not found"
 }
 
 func (i *UserNotFound) IsUserError() bool {

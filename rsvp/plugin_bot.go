@@ -147,7 +147,7 @@ func (p *Plugin) AddCommands() {
 
 				t, err := dateParser.Parse(parsed.Switch("time").Str(), time.Now().In(registeredTimezone))
 				if err != nil || t == nil {
-					return "failed parsing the date; " + err.Error(), nil
+					return "Failed parsing the date.", nil
 				}
 
 				m.StartsAt = t.Time

@@ -83,7 +83,7 @@ func (p *Plugin) AddCommands() {
 			zone := parsed.Args[0].Str()
 			loc, err := time.LoadLocation(zone)
 			if err != nil {
-				return fmt.Sprintf("Unknown timezone `%s`", zone), nil
+				return "Unknown timezone. Give it a TZ identifier as listed on <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>.", nil
 			}
 
 			name, _ := time.Now().In(loc).Zone()
