@@ -452,11 +452,20 @@ func (p *Plugin) RulesetRulesTriggeredCondsPassed(ruleset *ParsedRuleset, trigge
 
 	go analytics.RecordActiveUnit(ruleset.RSModel.GuildID, p, "rule_triggered")
 
+	totalRoleEffects := 0
+	maxRoleEffects := GuildMaxRoleEffects(ruleset.RSModel.GuildID)
 	// apply the effects
 	for i, rule := range triggeredRules {
 		ctxData.CurrentRule = rule
 
 		for _, effect := range rule.Effects {
+			if effect.Part.(Effect).IsRoleEffect() {
+				if totalRoleEffects >= maxRoleEffects {
+					continue
+				}
+				totalRoleEffects++
+			}
+
 			go func(fx *ParsedPart, ctx *TriggeredRuleData) {
 				defer func() {
 					if r := recover(); r != nil {
