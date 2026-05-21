@@ -27,7 +27,7 @@ var Command = &commands.YAGCommand{
 			// Special dice syntax if string
 			r, _, err := dice.Roll(strings.ToLower(data.Args[1].Str()))
 			if err != nil {
-				return err.Error(), nil
+				return "Bad roll format. See `-help roll` for the supported syntax (e.g. `2d6`).", nil
 			}
 
 			output := r.String()

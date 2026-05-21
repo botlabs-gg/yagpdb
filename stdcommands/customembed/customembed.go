@@ -26,7 +26,7 @@ var Command = &commands.YAGCommand{
 		// yaml.Unmarshal also works with JSON, as that is a subset of YAML.
 		err := yaml.Unmarshal([]byte(j), &parsed)
 		if err != nil {
-			return err, err
+			return "Failed parsing the embed JSON.", nil
 		}
 
 		if discordgo.IsEmbedEmpty(&parsed) {

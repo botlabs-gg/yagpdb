@@ -79,7 +79,7 @@ func cmdFuncRoleMenuCreate(parsed *dcmd.Data) (interface{}, error) {
 				return genericHelpMessage, nil
 			}
 
-			return fmt.Sprintf("Did not find a role group with the name `%s`; did you mean %s?", name, common.FormatList(suggestions, "or")), nil
+			return fmt.Sprintf("Did not find a role group with that name; did you mean %s?", common.FormatList(suggestions, "or")), nil
 		}
 
 		return nil, err
