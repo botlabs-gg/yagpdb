@@ -3,6 +3,7 @@ package moderation
 import (
 	"database/sql"
 	"math/rand"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -22,6 +23,8 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/moderation/models"
 	"github.com/karlseguin/ccache"
+	"github.com/mediocregopher/radix/v3"
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -55,12 +58,15 @@ func (p *Plugin) BotInit() {
 
 	eventsystem.AddHandlerAsyncLast(p, HandleGuildAuditLogEntryCreate, eventsystem.EventGuildAuditLogEntryCreate)
 
-	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(HandleGuildCreate), eventsystem.EventGuildCreate)
+	eventsystem.AddHandlerAsyncLastLegacy(p, HandleGuildCreate, eventsystem.EventGuildCreate)
 	eventsystem.AddHandlerAsyncLast(p, HandleChannelCreateUpdate, eventsystem.EventChannelCreate, eventsystem.EventChannelUpdate)
 
 	pubsub.AddHandler("invalidate_moderation_config_cache", handleInvalidateConfigCache, nil)
 	pubsub.AddHandler("mod_refresh_mute_override", HandleRefreshMuteOverrides, nil)
 	pubsub.AddHandler("mod_refresh_mute_override_create_role", HandleRefreshMuteOverridesCreateRole, nil)
+
+	initMuteRefreshQueueKey()
+	go muteRefreshWorker()
 }
 
 func BotCachedGetConfigIfNotSet(guildID int64, config *Config) (*Config, error) {
@@ -128,22 +134,71 @@ func HandleRefreshMuteOverridesCreateRole(evt *pubsub.Event) {
 	RefreshMuteOverrides(evt.TargetGuildInt, true)
 }
 
-var started = time.Now()
+const muteRefreshQueueKeyPrefix = "moderation:mute_refresh:host:"
+
+var (
+	muteRefreshLocalQueueKey string
+	muteRefreshLimiter       = rate.NewLimiter(rate.Every(2*time.Second), 1)
+)
+
+func initMuteRefreshQueueKey() {
+	host := common.NodeID
+	if host == "" {
+		if h, err := os.Hostname(); err == nil {
+			host = h
+		}
+	}
+	if host == "" {
+		host = "unknown"
+	}
+	muteRefreshLocalQueueKey = muteRefreshQueueKeyPrefix + host
+}
+
+func enqueueMuteRefresh(gid int64) {
+	score := strconv.FormatInt(time.Now().UnixNano(), 10)
+	err := common.RedisPool.Do(radix.Cmd(nil, "ZADD", muteRefreshLocalQueueKey, "NX", score, strconv.FormatInt(gid, 10)))
+	if err != nil {
+		logger.WithError(err).WithField("guild", gid).Error("failed enqueueing mute refresh")
+	}
+}
+
+func popMuteRefresh() (int64, bool) {
+	var resp []string
+	err := common.RedisPool.Do(radix.Cmd(&resp, "ZPOPMIN", muteRefreshLocalQueueKey, "1"))
+	if err != nil {
+		logger.WithError(err).Error("failed popping mute refresh")
+		return 0, false
+	}
+	if len(resp) < 1 {
+		return 0, false
+	}
+	gid, err := strconv.ParseInt(resp[0], 10, 64)
+	if err != nil {
+		logger.WithError(err).WithField("v", resp[0]).Error("invalid mute refresh queue entry")
+		return 0, false
+	}
+	return gid, true
+}
+
+func muteRefreshWorker() {
+	for {
+		gid, ok := popMuteRefresh()
+		if !ok {
+			time.Sleep(time.Second)
+			continue
+		}
+		if delay := muteRefreshLimiter.Reserve().Delay(); delay > 0 {
+			time.Sleep(delay)
+		}
+		RefreshMuteOverrides(gid, false)
+	}
+}
 
 func HandleGuildCreate(evt *eventsystem.EventData) {
 	if !evt.HasFeatureFlag(featureFlagMuteRoleManaged) {
-		return // nothing to do
+		return
 	}
-
-	gc := evt.GuildCreate()
-
-	// relieve startup preasure, sleep for up to 10 minutes
-	if time.Since(started) < time.Minute*10 {
-		sleep := time.Second * time.Duration(100+rand.Intn(60*180))
-		time.Sleep(sleep)
-	}
-
-	RefreshMuteOverrides(gc.ID, false)
+	enqueueMuteRefresh(evt.GuildCreate().ID)
 }
 
 // Refreshes the mute override on the channel, currently it only adds it.
