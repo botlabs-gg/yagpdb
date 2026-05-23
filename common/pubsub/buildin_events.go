@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"encoding/json"
+	"os"
 	"reflect"
 	"time"
 
@@ -10,14 +11,25 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
+var hostname string
+
+func init() {
+	h, err := os.Hostname()
+	if err != nil {
+		return
+	}
+	hostname = h
+}
+
 // PublishRatelimit publishes a new global ratelimit hit on discord
 func PublishRatelimit(rl *discordgo.RateLimit) {
 	logger.Printf("Got 429: %s, %s", rl.Bucket, rl.RetryAfterDur())
 
 	reset := time.Now().Add(rl.RetryAfterDur())
 	err := Publish("global_ratelimit", -1, &globalRatelimitTriggeredEventData{
-		Bucket: rl.Bucket,
-		Reset:  reset,
+		Bucket:     rl.Bucket,
+		Reset:      reset,
+		SourceHost: hostname,
 	})
 	if err != nil {
 		logger.WithError(err).Error("failed publishing global ratelimit")
@@ -25,12 +37,16 @@ func PublishRatelimit(rl *discordgo.RateLimit) {
 }
 
 type globalRatelimitTriggeredEventData struct {
-	Reset  time.Time `json:"reset"`
-	Bucket string    `json:"bucket"`
+	Reset      time.Time `json:"reset"`
+	Bucket     string    `json:"bucket"`
+	SourceHost string    `json:"source_host"`
 }
 
 func handleGlobalRatelimtPusub(evt *Event) {
 	data := evt.Data.(*globalRatelimitTriggeredEventData)
+	if data.SourceHost == "" || hostname == "" || data.SourceHost != hostname {
+		return
+	}
 	common.BotSession.Ratelimiter.SetGlobalTriggered(data.Reset)
 }
 

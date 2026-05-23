@@ -75,6 +75,12 @@ WHERE guild_id=$1 AND channel_id=$2 AND plugin=$3;
 	return &hook, nil
 }
 
+func deleteWebhookRow(channelID int64, plugin string) error {
+	const query = `DELETE FROM mqueue_webhooks WHERE channel_id=$1 AND plugin=$2;`
+	_, err := common.PQ.Exec(query, channelID, plugin)
+	return err
+}
+
 func createWebhook(guildID int64, channelID int64, plugin string, avatar string) (*webhook, error) {
 	discordHook, err := common.BotSession.WebhookCreate(channelID, plugin, avatar)
 	if err != nil {
