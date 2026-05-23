@@ -18,6 +18,8 @@
 
 {{template "cp_alerts" .}}
 
+{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .TwitchSubs) "FreeLimit" 3 "PremiumLimit" 15 "FeatureName" "Twitch feeds" "ManageURL" "/premium-perks")}}
+
 <div class="row">
     <div class="col-lg-6">
         <div class="card">

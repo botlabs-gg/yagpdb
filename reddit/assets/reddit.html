@@ -7,6 +7,8 @@
 
 {{template "cp_alerts" .}}
 
+{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .RedditConfig) "FreeLimit" 20 "PremiumLimit" 1000 "FeatureName" "Reddit feeds" "ManageURL" "/premium-perks")}}
+
 <div class="row">
     <div class="col">
         <div class="tabs">
