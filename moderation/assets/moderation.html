@@ -45,6 +45,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
                                 class="indicator indicator-{{if .ModConfig.WarnCommandsEnabled}}success{{else}}danger{{end}}"></span>
                         </a></li>
                 </ul>
+                {{template "codemirror_toggle"}}
                 <div class="tab-content">
                     <div role="tabpanel" class="tab-pane active" id="general">{{template "moderation_general" .}}</div>
                     <div role="tabpanel" class="tab-pane" id="mute">{{template "moderation_mute" .}}</div>
@@ -105,6 +106,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
         MuteManagedChanged();
     })
 </script>
+{{template "codemirror_assets" .}}
 {{template "cp_footer" .}}
 
 {{end}}
@@ -230,7 +232,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
     <div class="col-sm">
         <div class="form-group">
             <label>Timeout DM (Leave empty for default)</label>
-            <textarea rows="5" class="form-control" name="TimeoutMessage"
+            <textarea rows="5" class="form-control template-editor" name="TimeoutMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.TimeoutMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
                 Available template data:<br />
@@ -312,7 +314,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
     <div class="col-sm">
         <div class="form-group">
             <label>Mute DM (Leave empty for default)</label>
-            <textarea rows="5" class="form-control" name="MuteMessage"
+            <textarea rows="5" class="form-control template-editor" name="MuteMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.MuteMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
                 Available template data:<br />
@@ -327,7 +329,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
         <hr />
         <div class="form-group">
             <label>Unmute DM (Leave empty for default)</label>
-            <textarea rows="5" class="form-control" name="UnmuteMessage"
+            <textarea rows="5" class="form-control template-editor" name="UnmuteMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.UnmuteMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">
                 Available template data:<br />
@@ -376,7 +378,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
     <div class="col-sm">
         <div class="form-group">
             <label>Kick DM (Leave empty for default)</label>
-            <textarea rows="5" class="form-control" name="KickMessage"
+            <textarea rows="5" class="form-control template-editor" name="KickMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.KickMessage .DefaultDMMessage}}</textarea>
 
             <p class="help-block">Available template data:<br />
@@ -435,7 +437,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
     <div class="col-sm">
         <div class="form-group">
             <label>Ban DM (Leave empty for default)</label>
-            <textarea rows="5" class="form-control" name="BanMessage"
+            <textarea rows="5" class="form-control template-editor" name="BanMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.BanMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">Available template data:<br />
                 {{template "template_helper_user"}} - The user being banned/kicked<br />
@@ -484,7 +486,7 @@ the punishment, is an <a href="https://help.yagpdb.xyz/docs/reference/templates/
     <div class="col-sm">
         <div class="form-group">
             <label>Warning DM (Leave empty for default)</label>
-            <textarea rows="5" class="form-control" name="WarnMessage"
+            <textarea rows="5" class="form-control template-editor" name="WarnMessage"
                 placeholder="{{.DefaultDMMessage}}">{{or .ModConfig.WarnMessage .DefaultDMMessage}}</textarea>
             <p class="help-block">Available template data:<br />
                 {{template "template_helper_user"}} - The user being warned<br />

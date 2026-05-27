@@ -101,7 +101,8 @@
                             {{checkbox "DownloadAttachments" "tickets-download-att-checkbox2" `Download and archive attachments when closing the ticket` .PluginSettings.DownloadAttachments}}
                             <div class="form-group">
                                 <label>Opening message in new tickets</label>
-                                <textarea rows="5" class="form-control" name="TicketOpenMSG"
+                                {{template "codemirror_toggle"}}
+                                <textarea rows="5" class="form-control template-editor" name="TicketOpenMSG"
                                     placeholder="{{.DefaultTicketMessage}}">{{or .PluginSettings.TicketOpenMSG .DefaultTicketMessage}}</textarea>
                                 <p class="help-block">
                                     Available template data:<br />
@@ -130,6 +131,7 @@
 <!-- /.row -->
 
 
+{{template "codemirror_assets" .}}
 {{template "cp_footer" .}}
 
 {{end}}
