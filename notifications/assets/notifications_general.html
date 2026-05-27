@@ -10,6 +10,7 @@
         <div class="card-body mb-0">
             <div class="row">
                 <div class="col">
+                    {{template "codemirror_toggle"}}
                     {{template "template_help"}}
                 </div>
             </div>
@@ -46,7 +47,7 @@
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .NotifyConfig.JoinServerMsgs}}
                                 <div class="entry input-group input-group-sm">
-                                    <textarea rows="5" class="form-control" name="join_server_msgs" oninput="onCCChanged(this)">{{.}}</textarea>
+                                    <textarea rows="5" class="form-control template-editor" name="join_server_msgs" oninput="onCCChanged(this)">{{.}}</textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -55,7 +56,7 @@
                                 </div>
                                 {{else}}
                                 <div class="entry input-group input-group-sm">
-                                    <textarea rows="5" class="form-control" name="join_server_msgs" oninput="onCCChanged(this)"></textarea>
+                                    <textarea rows="5" class="form-control template-editor" name="join_server_msgs" oninput="onCCChanged(this)"></textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -87,7 +88,7 @@
                                 {{/* Use .btn-add for simplicity and let the page loader adjust. */}}
                                 {{range .NotifyConfig.LeaveMsgs}}
                                 <div class="entry input-group input-group-sm">
-                                    <textarea rows="5" class="form-control" name="leave_msgs" oninput="onCCChanged(this)">{{.}}</textarea>
+                                    <textarea rows="5" class="form-control template-editor" name="leave_msgs" oninput="onCCChanged(this)">{{.}}</textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -96,7 +97,7 @@
                                 </div>
                                 {{else}}
                                 <div class="entry input-group input-group-sm">
-                                    <textarea rows="5" class="form-control" name="leave_msgs" oninput="onCCChanged(this)"></textarea>
+                                    <textarea rows="5" class="form-control template-editor" name="leave_msgs" oninput="onCCChanged(this)"></textarea>
                                     <span class="input-group-append">
                                         <button class="btn btn-success btn-add btn-circle" type="button">
                                             <i class="fas fa-plus"></i>
@@ -122,7 +123,7 @@
                         <div class="card-body">
                             <div class="form-group">
                                 <label for="responses">Message (<span class="cc-length-counter">x</span>/5000)</label>
-                                <textarea rows="5" class="form-control"
+                                <textarea rows="5" class="form-control template-editor"
                                     name="join_dm_msg" oninput="onCCChanged(this)">{{.NotifyConfig.JoinDMMsg}}</textarea>
                                 <p class="help-block">Available template data is {{template "template_helper_user"}} and
                                 {{template "template_helper_guild"}}</p>
@@ -189,7 +190,9 @@
       var currentEntry = $(this).parent().parent(),
         newEntry = $(currentEntry.clone()).insertAfter(currentEntry);
 
+      newEntry.find('.CodeMirror').remove();
       newEntry.find('input, textarea').val('');
+      YAGCodeMirror.setup(newEntry.find('textarea')[0]);
       newEntry.parent().find('.entry:not(:last-of-type) .btn-add')
         .removeClass('btn-add').addClass('btn-remove')
         .removeClass('btn-success').addClass('btn-danger')
@@ -205,7 +208,7 @@
       return true;
     });
 </script>
-
+{{template "codemirror_assets" .}}
 {{template "cp_footer" .}}
 
 {{end}}

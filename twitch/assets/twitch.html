@@ -86,7 +86,8 @@
                                     .TwitchAnnouncement}}{{toRune
                                     .TwitchAnnouncement.Message|len}}{{else}}0{{end}}</span>/5000)</label>
 
-                            <textarea class="form-control" rows="10" id="twitch-announcement-msg" name="Message"
+                            {{template "codemirror_toggle"}}
+                            <textarea class="form-control template-editor" rows="10" id="twitch-announcement-msg" name="Message"
                                 oninput="OnAnnouncementChange(this)">{{if .TwitchAnnouncement}}{{.TwitchAnnouncement.Message}}{{else}}{{end}}</textarea>
                             <span style="display: block;">
                                 <button type="submit" id="twitch-save-announcement-btn"
@@ -215,5 +216,6 @@
     </div>
 </div>
 
+{{template "codemirror_assets" .}}
 {{template "cp_footer" .}}
 {{end}}

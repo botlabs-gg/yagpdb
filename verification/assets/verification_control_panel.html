@@ -35,9 +35,10 @@
                                 </select>
                             </div>
 
+                            {{template "codemirror_toggle"}}
                             <div class="form-group">
                                 <label>Verify Page content</label>
-                                <textarea rows="5" class="form-control" name="PageContent"
+                                <textarea rows="5" class="form-control template-editor" name="PageContent"
                                     placeholder="{{.DefaultPageContent}}">{{or .PluginSettings.PageContent .DefaultPageContent}}</textarea>
                                 <p class="help-block">
                                     The verify page content in markdown format (similar to discord formatting)
@@ -46,7 +47,7 @@
 
                             <div class="form-group">
                                 <label>Verification DM message (empty for default)</label>
-                                <textarea rows="5" class="form-control" name="DMMessage"
+                                <textarea rows="5" class="form-control template-editor" name="DMMessage"
                                     placeholder="">{{or .PluginSettings.DMMessage ""}}</textarea>
                                 <p class="help-block">
                                     Available template data:<br />
@@ -79,7 +80,7 @@
 
                             <div class="form-group">
                                 <label>Notification/Warning message</label>
-                                <textarea rows="5" class="form-control" name="WarnMessage"
+                                <textarea rows="5" class="form-control template-editor" name="WarnMessage"
                                     placeholder="">{{or .PluginSettings.WarnMessage ""}}</textarea>
                                 <p class="help-block">
                                     Available template data:<br />
@@ -105,6 +106,7 @@
 </div>
 <!-- /.row -->
 
+{{template "codemirror_assets" .}}
 {{template "cp_footer" .}}
 
 {{end}}
