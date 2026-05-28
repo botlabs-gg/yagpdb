@@ -35,6 +35,8 @@
 
 {{template "cp_alerts" .}}
 
+{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" .CCCount "FreeLimit" 100 "PremiumLimit" 250 "FeatureName" "custom commands" "ManageURL" "/premium-perks")}}
+
 <!-- Nav -->
 <div class="row">
     <div class="col">

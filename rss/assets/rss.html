@@ -22,6 +22,8 @@
 
 {{template "cp_alerts" .}}
 
+{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .FeedItems) "FreeLimit" 2 "PremiumLimit" 10 "FeatureName" "RSS feeds" "ManageURL" "/premium-perks")}}
+
 <div class="row">
     <div class="card-deck col-lg-12">
         <section class="card">

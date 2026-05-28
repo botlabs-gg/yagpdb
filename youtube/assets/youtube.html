@@ -17,6 +17,8 @@
     <h2>Youtube upload feeds</h2>
 </header>
 {{template "cp_alerts" .}}
+
+{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .Subs) "FreeLimit" 10 "PremiumLimit" 250 "FeatureName" "YouTube feeds" "ManageURL" "/premium-perks")}}
 <!-- /.row -->
 <div class="row">
     <div class="card-deck col-lg-12">

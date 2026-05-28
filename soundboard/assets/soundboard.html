@@ -6,6 +6,8 @@
 
 {{template "cp_alerts" .}}
 
+{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .SoundboardSounds) "FreeLimit" 50 "PremiumLimit" 250 "FeatureName" "soundboard sounds" "ManageURL" "/premium-perks")}}
+
 <div class="row">
     <div class="col-lg-12">
         <div class="card">

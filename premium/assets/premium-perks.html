@@ -1,76 +1,266 @@
 {{define "premium_perks"}}
 {{template "cp_head" .}}
 
-<div class="page-header mb-4">
-    <h2 class="display-4 font-weight-bold mb-0"><i class="fas fa-crown premium-color mr-2"></i>YAGPDB Premium</h2>
-</div>
+<style>
+    /* Page only links out — hide the manage-server sidebar and toggle */
+    #sidebar-left { display: none !important; }
+    #main-content.content-body { margin-left: 0 !important; }
+    .header .toggle-sidebar-left { display: none; }
+
+    /* Hero: warm gold backdrop on light, deep slate on dark */
+    .premium-hero {
+        background: linear-gradient(135deg, #fff7d6 0%, #ffe4a3 100%);
+        border-color: #e6c75a !important;
+    }
+    .premium-hero .crown-orb {
+        background: radial-gradient(circle at center, #fff3b0 0%, #f1c40f 65%, #b8860b 100%);
+        color: #fff;
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        box-shadow: 0 4px 12px rgba(241, 196, 15, 0.4);
+    }
+    html.dark .premium-hero {
+        background: linear-gradient(135deg, #2a2e3a 0%, #1a1c24 100%);
+        border-color: #4a3f1c !important;
+    }
+    html.dark .premium-hero . { color: #c9ced8 !important; }
+
+    /* Subtle lift on hover for all feature/limit/pricing cards */
+    .perk-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .perk-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+    }
+    html.dark .perk-card:hover { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5) !important; }
+
+    /* Limit card: make the "to" number the focal point */
+    .perk-limit-to {
+        font-size: 1.5rem;
+        line-height: 1;
+        font-weight: 700;
+    }
+
+    /* Pricing card headers — distinct per source */
+    .pricing-discord .card-header { background: #5865f2; color: #fff; border-bottom: none; }
+    .pricing-patreon .card-header { background: #ff424d; color: #fff; border-bottom: none; }
+    .pricing-discord .card-header h5,
+    .pricing-patreon .card-header h5 { color: #fff; margin: 0; }
+
+    /* Section header with bottom rule */
+    .section-heading {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        padding-bottom: 0.5rem;
+    }
+    html.dark .section-heading { border-bottom-color: rgba(255, 255, 255, 0.1); }
+</style>
 
 {{template "cp_alerts" .}}
 
+<div class="container">
+
+<!-- HERO -->
+<div class="card border premium-hero shadow-sm mb-4">
+    <div class="card-body p-4 d-flex flex-column flex-md-row align-items-md-center">
+        <div class="text-center mr-md-4 mb-3 mb-md-0">
+            <span class="crown-orb"><i class="fas fa-crown"></i></span>
+        </div>
+        <div class="flex-grow-1 text-center text-md-left mb-3 mb-md-0">
+            <h1 class="display-5 font-weight-bold mb-1">YAGPDB Premium</h1>
+            <p class="lead mb-0 ">Higher limits, exclusive features, and the polish your server deserves.</p>
+        </div>
+        <div class="text-center text-md-right">
+            <div class="d-flex flex-column flex-sm-row justify-content-md-end">
+                <a href="https://discord.com/application-directory/{{.ClientID}}/store" target="_blank"
+                    class="btn btn-primary btn-lg font-weight-bold mb-2 mb-sm-0 mr-sm-2 shadow-sm">
+                    <i class="fab fa-discord mr-1"></i> Get on Discord
+                </a>
+                <a href="https://patreon.com/yagpdb/membership" target="_blank"
+                    class="btn btn-danger btn-lg ignore-prompt font-weight-bold shadow-sm">
+                    <i class="fab fa-patreon mr-1"></i> Get on Patreon
+                </a>
+            </div>
+            <a href="/premium" class="small premium-color mt-2 d-inline-block font-weight-bold">Already premium? Manage slots &rarr;</a>
+        </div>
+    </div>
+</div>
+
+<!-- PREMIUM EXCLUSIVES -->
+<div class="section-heading d-flex align-items-baseline mt-4 mb-3">
+    <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-star premium-color mr-2"></i>Premium Exclusives</h4>
+    <small class=" d-none d-sm-inline">Features only premium servers get</small>
+</div>
 <div class="row">
-    <div class="col-lg-12">
-        <section class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h3 class="h5 font-weight-bold mb-3">Premium Features</h3>
-                <div id="premium-full-benefits">
-                    <section class="card bg-light border-0 mb-3">
-                        <div class="card-body">
-                            <b class="font-weight-bold">Premium Exclusives</b>
-                            <ul class="mb-3">
-                                <li>Change Bot Avatar (profile picture) and Banner for your server</li>
-                                <li>Trigger CCs on Message Edit</li>
-                                <li>Bulk Role Removal and Assignment</li>
-                                <li>Custom Thanks Detection Regex for Reputation System</li>
-                                <li>Custom Announcement for Twitch Notifications</li>
-                                <li>Retroactive AutoRole Scan and Assignment</li>
-                                <li>Use Private Threads for tickets</li>
-                            </ul>
-                            <b class="font-weight-bold">Increased Limits</b>
-                            <ul>
-                                <li>Message cache duration increased from <b>1 hour</b> to <b>12 hours</b>, which means
-                                    you will be able to see the removed messages in the logs if the message was sent in
-                                    the previous 12 hours</li>
-                                <li>Max custom commands increased from <b>100</b> to <b>250</b></li>
-                                <li>Max Reddit feeds increased from <b>20</b> to <b>1000</b></li>
-                                <li>Max Youtube feeds increased from <b>10</b> to <b>250</b></li>
-                                <li>Max Twitch feeds increased from <b>3</b> to <b>15</b></li>
-                                <li>Max Soundboard sounds increased from <b>50</b> to <b>250</b></li>
-                                <li>Max RSS Feeds increased from <b>2</b> to <b>10</b></li>
-                                <li>Max Voice Roles increased from <b>1</b> to <b>10</b></li>
-                                <li>Max Custom Command Length increased to <b>20,000</b> characters from <b>10,000</b>
-                                </li>
-                                <li>Reduced Cooldown on Role Change Custom Commands and Increased limit to 5 from 1 </li>
-                                <li>Increased database storage and interaction limits.</li>
-                                <li>Various custom command function limits increased</li>
-                                <li>Advanced Automod limits increased</li>
-                            </ul>
-                        </div>
-                    </section>
-                </div>
-                <h3 class="h5 font-weight-bold mb-3">How to get premium?</h3>
-                <div id="premium-how-to-get">
-                    <section class="card bg-light border-0 mb-3">
-                        <div class="card-body">
-                            <div class="mb-2">
-                                <a href="https://discord.com/application-directory/{{.ClientID}}/store" target="_blank"
-                                    class="btn btn-primary btn-lg font-weight-bold mr-2 mb-2"><i
-                                        class="fab fa-discord mr-1"></i> Buy on Discord</a>
-                                <a href="https://patreon.com/yagpdb/membership" target="_blank"
-                                    class="btn btn-danger ignore-prompt btn-lg font-weight-bold mb-2"><i
-                                        class="fab fa-patreon mr-1"></i> Buy on Patreon</a>
-                            </div>
-                            <span class="text-muted">Manage your subscription: <a href="https://{{.Host}}/premium"
-                                    class="font-weight-bold">Manage Premium</a></span>
-                            <br>
-                            <span class="text-muted">Note: Premium slots are not transferable between Patreon and Discord Purchases</span>
-                        </div>
-                    </section>
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm perk-card">
+            <div class="card-body p-3 d-flex">
+                <i class="fas fa-image premium-color fa-lg mr-3 mt-1"></i>
+                <div>
+                    <div class="font-weight-bold mb-1">Custom Bot Avatar &amp; Banner</div>
+                    <p class="small  mb-0">Give YAGPDB its own face and banner in your server.</p>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm perk-card">
+            <div class="card-body p-3 d-flex">
+                <i class="fas fa-edit premium-color fa-lg mr-3 mt-1"></i>
+                <div>
+                    <div class="font-weight-bold mb-1">Trigger CCs on Message Edit</div>
+                    <p class="small  mb-0">Re-run custom commands when a user edits their message.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm perk-card">
+            <div class="card-body p-3 d-flex">
+                <i class="fas fa-users-cog premium-color fa-lg mr-3 mt-1"></i>
+                <div>
+                    <div class="font-weight-bold mb-1">Bulk Role Assignment</div>
+                    <p class="small  mb-0">Add or remove roles for many members in one go.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm perk-card">
+            <div class="card-body p-3 d-flex">
+                <i class="fas fa-heart premium-color fa-lg mr-3 mt-1"></i>
+                <div>
+                    <div class="font-weight-bold mb-1">Custom Thanks Regex</div>
+                    <p class="small  mb-0">Define how reputation's thanks detection matches messages.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm perk-card">
+            <div class="card-body p-3 d-flex">
+                <i class="fab fa-twitch premium-color fa-lg mr-3 mt-1"></i>
+                <div>
+                    <div class="font-weight-bold mb-1">Custom Twitch Announcements</div>
+                    <p class="small  mb-0">Replace the default go-live message with your own.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm perk-card">
+            <div class="card-body p-3 d-flex">
+                <i class="fas fa-user-plus premium-color fa-lg mr-3 mt-1"></i>
+                <div>
+                    <div class="font-weight-bold mb-1">Retroactive Autorole Scan</div>
+                    <p class="small  mb-0">Apply your autorole to existing members, not just new joins.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card h-100 shadow-sm perk-card">
+            <div class="card-body p-3 d-flex">
+                <i class="fas fa-comments premium-color fa-lg mr-3 mt-1"></i>
+                <div>
+                    <div class="font-weight-bold mb-1">Threaded Tickets</div>
+                    <p class="small mb-0">Use private threads instead of new channels for tickets.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BIGGER LIMITS -->
+<div class="section-heading d-flex align-items-baseline mt-4 mb-3">
+    <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-chart-line premium-color mr-2"></i>Bigger Limits</h4>
+    <small class=" d-none d-sm-inline">Free &rarr; Premium</small>
+</div>
+<div class="row">
+    {{template "premium_limit_card" (dict "Icon" "fas fa-history"     "Name" "Modlog cache"     "From" "1h"   "To" "12h")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-terminal"    "Name" "Custom commands"  "From" "100"  "To" "250")}}
+    {{template "premium_limit_card" (dict "Icon" "fab fa-reddit"      "Name" "Reddit feeds"     "From" "20"   "To" "1000")}}
+    {{template "premium_limit_card" (dict "Icon" "fab fa-youtube"     "Name" "YouTube feeds"    "From" "10"   "To" "250")}}
+    {{template "premium_limit_card" (dict "Icon" "fab fa-twitch"      "Name" "Twitch feeds"     "From" "3"    "To" "15")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-volume-up"   "Name" "Soundboard"       "From" "50"   "To" "250")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-rss"         "Name" "RSS feeds"        "From" "2"    "To" "10")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-microphone"  "Name" "Voice roles"      "From" "1"    "To" "10")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-file-alt"    "Name" "CC length"        "From" "10k"  "To" "20k")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-user-tag"    "Name" "Role-change CCs"  "From" "1"    "To" "5")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-shield-alt"  "Name" "Automod rules"    "From" "25"   "To" "150")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-bolt"        "Name" "Template ops"     "From" "1M"   "To" "2.5M")}}
+    {{template "premium_limit_card" (dict "Icon" "fas fa-database"    "Name" "DB rows / member" "From" "50"   "To" "500")}}
+</div>
+
+<!-- HOW TO GET PREMIUM -->
+<div class="section-heading d-flex align-items-baseline mt-4 mb-3">
+    <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-shopping-cart premium-color mr-2"></i>How to Get Premium</h4>
+    <small class=" d-none d-sm-inline">Pick whichever fits you better</small>
+</div>
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5 mb-3">
+        <div class="card h-100 shadow-sm perk-card pricing-discord">
+            <div class="card-header py-3">
+                <h5 class="font-weight-bold"><i class="fab fa-discord mr-2"></i>Discord Subscription</h5>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <ul class="list-unstyled mb-3">
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Quickest setup — billed through your Discord account</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Cancel anytime from Discord settings</li>
+                </ul>
+                <a href="https://discord.com/application-directory/{{.ClientID}}/store" target="_blank"
+                    class="btn btn-primary btn-block font-weight-bold mt-auto">
+                    <i class="fab fa-discord mr-1"></i> Get on Discord
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-5 mb-3">
+        <div class="card h-100 shadow-sm perk-card pricing-patreon">
+            <div class="card-header py-3">
+                <h5 class="font-weight-bold"><i class="fab fa-patreon mr-2"></i>Patreon</h5>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <ul class="list-unstyled mb-3">
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Higher tiers grant more premium slots</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Discounted Annual Subscription</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Switch premium to a different discord account</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Bundle with any other Patreon memberships you have</li>
+                </ul>
+                <a href="https://patreon.com/yagpdb/membership" target="_blank"
+                    class="btn btn-danger ignore-prompt btn-block font-weight-bold mt-auto">
+                    <i class="fab fa-patreon mr-1"></i> Get on Patreon
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<p class="small text-center mt-2 mb-4 premium-color">
+    <i class="fas fa-info-circle mr-1"></i>
+    Slots purchased through Discord and Patreon are tracked separately and can't be transferred between the two.
+</p>
+
 </div>
 
 {{template "cp_footer" .}}
 
+{{end}}
+
+{{define "premium_limit_card"}}
+<div class="col-6 col-md-3 col-lg-2 mb-3">
+    <div class="card h-100 text-center shadow-sm perk-card">
+        <div class="card-body p-3">
+            <i class="{{.Icon}} premium-color fa-lg mb-2"></i>
+            <div class="small  text-uppercase font-weight-bold mb-2" style="letter-spacing:.05em;">{{.Name}}</div>
+            <div>
+                <span class=" small"><s>{{.From}}</s></span>
+                <i class="fas fa-arrow-right  small mx-1"></i>
+                <span class="perk-limit-to premium-color">{{.To}}</span>
+            </div>
+        </div>
+    </div>
+</div>
 {{end}}
