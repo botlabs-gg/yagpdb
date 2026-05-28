@@ -3918,7 +3918,6 @@ html.dark .inner-menu .inner-menu-toggle-inside:after {
 	display: inline-block;
 	height: 100%;
 	margin: 0 25px 0;
-	width: 1px;
 	vertical-align: middle;
 }
 
@@ -3938,13 +3937,13 @@ html.dark .inner-menu .inner-menu-toggle-inside:after {
 	background: #CCC;
 	border-radius: 100px;
 	color: #FFF;
-	height: 30px;
+	height: 32px;
 	line-height: 30px;
 	position: absolute;
 	right: 15px;
 	text-align: center;
-	top: 14px;
-	width: 30px;
+	top: 11px;
+	width: 32px;
 }
 
 .header-right {
@@ -14343,7 +14342,6 @@ p.drop-caps.drop-caps-style-2:first-letter {
 @media only screen and (max-width: 767px) {
 	.userbox .name,
 	.userbox .role {
-		max-width: 68px;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -14410,21 +14408,7 @@ p.drop-caps.drop-caps-style-2:first-letter {
 		float: left;
 		margin: 16px 0 0 12px;
 		position: relative;
-	}
-
-	.userbox:after {
-		background: #E9E9E6;
-		content: '';
-		height: 63px;
-		margin: 0;
-		position: absolute;
-		right: -11px;
-		top: -18px;
-		width: 1px;
-	}
-
-	.userbox .profile-picture {
-		display: none;
+		width: 46%;
 	}
 
 	.userbox.show .dropdown-menu {

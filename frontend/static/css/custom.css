@@ -9,6 +9,65 @@
 	color: #ffd806  !important;
 }
 
+/* Mobile: pull the notifications row up alongside the logo + sidebar toggle. */
+@media only screen and (max-width: 767px) {
+	.header .header-right .notifications {
+		position: fixed;
+		top: 14px;
+		right: 55px;
+		z-index: 100;
+		float: none;
+		margin: 0;
+		display: flex;
+		align-items: center;
+	}
+	.header .header-right .notifications > li {
+		margin: 0 2px;
+	}
+	.header .header-right .notifications > li .notification-icon {
+		width: 32px;
+		height: 32px;
+		line-height: 32px;
+	}
+	.header .header-right .notifications > li .notification-icon i {
+		font-size: 0.85rem;
+	}
+	/* Keep the premium pill compact when it sits in the logo row */
+	.header .premium-nav-link {
+		padding: 0 10px !important;
+		height: 32px;
+		line-height: 32px;
+	}
+}
+
+/* Premium nav pill — used in both the dashboard header and the homepage navbar */
+.premium-nav-link {
+	background: linear-gradient(135deg, #f1c40f 0%, #b8860b 100%) !important;
+	color: #fff !important;
+	width: auto !important;
+	padding: 5px 14px !important;
+	border-radius: 18px !important;
+	display: inline-flex !important;
+	align-items: center;
+	box-shadow: 0 2px 6px rgba(241, 196, 15, 0.35);
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+	line-height: 1.4;
+}
+.premium-nav-link:hover,
+.premium-nav-link:focus {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 10px rgba(241, 196, 15, 0.5);
+	color: #fff !important;
+	text-decoration: none;
+}
+.premium-nav-link i { color: #fff !important; }
+.premium-nav-link .premium-nav-label {
+	font-weight: 700;
+	font-size: 0.85rem;
+	margin-left: 6px;
+	letter-spacing: 0.02em;
+}
+
 .avatar {
 	border-radius: 50%;
 	width: 50px;
@@ -60,7 +119,7 @@ html.dark .tabs .nav-link:focus {
 
 	.userbox .name,
 	.userbox .role {
-		max-width: 50px;
+		max-width: 100%;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -68,12 +127,6 @@ html.dark .tabs .nav-link:focus {
 
 }
 
-@media only screen and (max-width: 500px) {
-	.userbox .profile-info {
-		margin-right: 2px !important;
-	}
-
-}
 
 code {
 	font-size: 90% !important;
