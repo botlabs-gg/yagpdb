@@ -14411,6 +14411,11 @@ p.drop-caps.drop-caps-style-2:first-letter {
 		width: 46%;
 	}
 
+	.loginbox {
+		width: 100% !important;
+		text-align: center;
+	}
+
 	.userbox.show .dropdown-menu {
 		left: -5px !important;
 		padding: 43px 0 0 0;

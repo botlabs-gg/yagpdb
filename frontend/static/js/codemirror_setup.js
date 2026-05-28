@@ -17,12 +17,6 @@
         return !!(next && next.classList && next.classList.contains('CodeMirror'));
     }
 
-    function applyMinHeight(cm) {
-        var textArea = cm.getTextArea();
-        var rows = parseInt(textArea && textArea.getAttribute('rows'), 10) || 5;
-        var lineHeight = cm.defaultTextHeight() || 18;
-        cm.getWrapperElement().style.minHeight = (rows * lineHeight + 8) + 'px';
-    }
 
     function setup(textArea) {
         if (!textArea || !window.CodeMirror) return null;
@@ -59,7 +53,6 @@
             cm.getTextArea().dispatchEvent(new Event('input', { bubbles: true }));
         });
 
-        applyMinHeight(codeMirror);
         return codeMirror;
     }
 
@@ -104,7 +97,7 @@
             $(href).find('.CodeMirror').each(function () {
                 if (this.CodeMirror) {
                     this.CodeMirror.refresh();
-                    applyMinHeight(this.CodeMirror);
+                    applyDefaultHeight(this.CodeMirror);
                 }
             });
         });

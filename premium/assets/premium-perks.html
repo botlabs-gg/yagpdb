@@ -5,7 +5,6 @@
     /* Page only links out — hide the manage-server sidebar and toggle */
     #sidebar-left { display: none !important; }
     #main-content.content-body { margin-left: 0 !important; }
-    .header .toggle-sidebar-left { display: none; }
 
     /* Hero: warm gold backdrop on light, deep slate on dark */
     .premium-hero {
@@ -13,7 +12,7 @@
         border-color: #e6c75a !important;
     }
     .premium-hero .crown-orb {
-        background: radial-gradient(circle at center, #fff3b0 0%, #f1c40f 65%, #b8860b 100%);
+        background: #cb9a0c;
         color: #fff;
         width: 64px; height: 64px;
         border-radius: 50%;
@@ -91,7 +90,7 @@
 <!-- PREMIUM EXCLUSIVES -->
 <div class="section-heading d-flex align-items-baseline mt-4 mb-3">
     <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-star premium-color mr-2"></i>Premium Exclusives</h4>
-    <small class=" d-none d-sm-inline">Features only premium servers get</small>
+    <small class="premium-color d-none d-sm-inline">Features only premium servers get</small>
 </div>
 <div class="row">
     <div class="col-md-4 col-lg-3 mb-3">
@@ -176,7 +175,7 @@
 <!-- BIGGER LIMITS -->
 <div class="section-heading d-flex align-items-baseline mt-4 mb-3">
     <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-chart-line premium-color mr-2"></i>Bigger Limits</h4>
-    <small class=" d-none d-sm-inline">Free &rarr; Premium</small>
+    <small class="premium-color d-none d-sm-inline">Free &rarr; Premium</small>
 </div>
 <div class="row">
     {{template "premium_limit_card" (dict "Icon" "fas fa-history"     "Name" "Modlog cache"     "From" "1h"   "To" "12h")}}
@@ -197,7 +196,7 @@
 <!-- HOW TO GET PREMIUM -->
 <div class="section-heading d-flex align-items-baseline mt-4 mb-3">
     <h4 class="font-weight-bold mb-0 mr-3"><i class="fas fa-shopping-cart premium-color mr-2"></i>How to Get Premium</h4>
-    <small class=" d-none d-sm-inline">Pick whichever fits you better</small>
+    <small class="premium-color d-none d-sm-inline">Pick whichever fits you better</small>
 </div>
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5 mb-3">
