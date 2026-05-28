@@ -271,6 +271,7 @@ For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></
     <input type="checkbox" class="toggle-code-mirror" id="toggle-code-mirror" checked>
     <label for="toggle-code-mirror" class="mb-0">Show CodeMirror Editor</label>
 </span>
+{{end}}
 {{define "cp_premium_reminder_banner"}}
     {{if and (not .IsGuildPremium) (ge (mult .Count 5) (mult .FreeLimit 4))}}
         {{$atLimit := ge .Count .FreeLimit}}
