@@ -119,7 +119,7 @@ html.dark .tabs .nav-link:focus {
 
 	.userbox .name,
 	.userbox .role {
-		max-width: 100%;
+		max-width: 50px;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
