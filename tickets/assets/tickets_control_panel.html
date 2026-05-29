@@ -64,14 +64,9 @@
                                 </select>
                             </div>
                             <hr />
-                           
-                            {{if not .IsGuildPremium}}
-                            <div class="alert alert-warning">
-                                Threaded tickets are a premium feature. <a href="/premium-perks">Upgrade to Premium</a> to unlock this feature.
-                            </div>
-                            {{end}}
+
                             <fieldset {{if not .IsGuildPremium}}disabled{{end}}>
-                                 <h5 class="premium-color">Threaded Tickets</h5>
+                                <h5>Threaded Tickets</h5>
                                 {{checkbox "UseThreadedTickets" "use-threaded-tickets-checkbox" `Instead of creating a new channel for each ticket, create a thread in a specific channel.` .PluginSettings.UseThreadedTickets}}
                                 <div class="form-group">
                                     <label>Channel to create ticket threads in</label>
@@ -80,6 +75,7 @@
                                     </select>
                                     {{checkbox "LockAndArchiveThreadOnClose" "lock-and-archive-thread-on-close" `Lock and archive the thread when the ticket is closed, instead of deleting it.` .PluginSettings.LockAndArchiveThreadOnClose}}
                                 </div>
+                                {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "Threaded tickets is a premium feature.")}}
                             </fieldset>
                             <hr />
                             <div class="form-group">
