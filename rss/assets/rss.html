@@ -22,8 +22,6 @@
 
 {{template "cp_alerts" .}}
 
-{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .FeedItems) "FreeLimit" 2 "PremiumLimit" 10 "FeatureName" "RSS feeds" "ManageURL" "/premium-perks")}}
-
 <div class="row">
     <div class="card-deck col-lg-12">
         <section class="card">
@@ -47,12 +45,15 @@
                         {{checkbox "MentionEveryone" "new-mention-everyone" `Mention Everyone` false}}
                     </div>
                     <div class="form-group">
-                        <label for="mention-roles">Mention Roles</label>
+                        <label for="mention-roles" class="d-block">Mention Roles</label>
                         <select id="mention-roles" class="multiselect form-control" multiple="multiple" name="MentionRoles" data-plugin-multiselect>
                             {{roleOptionsMulti .ActiveGuild.Roles nil .MentionRoles}}
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-success">Add</button>
+                    <div class="form-group">
+                       <button type="submit" class="btn btn-block btn-success" {{if and (not .IsGuildPremium) (ge (len .FeedItems) .FreeLimit)}}disabled{{end}}>Add</button>
+                      {{template "cp_premium_at_limit_link" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .FeedItems) "FreeLimit" .FreeLimit "PremiumLimit" .PremiumLimit "Name" "RSS Feeds")}}
+                    </div>
                 </form>
             </div>
         </section>

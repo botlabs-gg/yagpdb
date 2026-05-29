@@ -271,20 +271,20 @@ For example, to mention a user, you would do <code><@{{"{{"}}.User.ID{{"}}"}}></
     <label for="toggle-code-mirror" class="mb-0">Show CodeMirror Editor</label>
 </span>
 {{end}}
-{{define "cp_premium_reminder_banner"}}
-    {{if and (not .IsGuildPremium) (ge (mult .Count 5) (mult .FreeLimit 4))}}
-        {{$atLimit := ge .Count .FreeLimit}}
-        <div class="alert alert-{{if $atLimit}}warning{{else}}info{{end}} d-flex align-items-center" role="alert">
-            <i class="fas fa-crown premium-color mr-2"></i>
-            <div class="flex-grow-1">
-                {{if $atLimit}}
-                    You've hit the free limit of <b>{{.FreeLimit}}</b> {{.FeatureName}}.
-                {{else}}
-                    You're using <b>{{.Count}} of {{.FreeLimit}}</b> {{.FeatureName}} on the free plan.
-                {{end}}
-                Premium servers get up to <b>{{.PremiumLimit}}</b>.
-                <a href="{{.ManageURL}}" class="alert-link">See premium perks &rarr;</a>
-            </div>
-        </div>
+
+{{define "cp_premium_at_limit_link"}}
+    {{if and (not .IsGuildPremium) (ge .Count .FreeLimit)}}
+    <small class="form-text premium-color">
+        <i class="fas fa-crown mr-1"> </i>You've reached free limit of {{.FreeLimit}} {{.Name}},  <a href="/premium-perks"> Get premium </a> to increase the limit to {{.PremiumLimit}} {{.Name}}
+    </small>
+    {{end}}
+{{end}}
+
+
+{{define "cp_premium_nudge"}}
+    {{if(not .IsGuildPremium)}}
+        <small class="form-text premium-color">
+             <i class="fas fa-crown premium-color mr-1"></i> {{.Title}} <a href="/premium-perks">Upgrade to Premium</a> to unlock.
+        </small>
     {{end}}
 {{end}}

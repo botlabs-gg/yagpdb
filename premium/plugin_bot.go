@@ -7,11 +7,9 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
-	ccmodels "github.com/botlabs-gg/yagpdb/v2/customcommands/models"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/premium/models"
-	rssmodels "github.com/botlabs-gg/yagpdb/v2/rss/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -62,10 +60,14 @@ func runPremium(data *dcmd.Data) (interface{}, error) {
 	patreonURL := "https://patreon.com/yagpdb/membership"
 
 	if confAllGuildsPremium.GetBool() {
-		return v2Message(premiumAccentActive,
-			discordgo.TextDisplay{Content: "## YAGPDB Premium"},
-			discordgo.TextDisplay{Content: "All servers are Premium on this instance — have fun!"},
-		), nil
+		return &discordgo.MessageSend{
+			Embeds: []*discordgo.MessageEmbed{{
+				Title:       "YAGPDB Premium",
+				Description: "All servers are Premium on this instance, have fun!",
+				Color:       premiumAccentActive,
+			}},
+			Flags: discordgo.MessageFlagsEphemeral,
+		}, nil
 	}
 
 	userID := data.Author.ID
@@ -78,74 +80,32 @@ func runPremium(data *dcmd.Data) (interface{}, error) {
 		return "Failed fetching premium slots", err
 	}
 
-	slotsLine := fmt.Sprintf("<@%d> has **%d** premium slot(s).", userID, premiumSlots)
+	embed := &discordgo.MessageEmbed{Color: premiumAccentGold}
+	if premiumSlots == 0 {
+		embed.Title = "YAGPDB Premium"
+		embed.Description = fmt.Sprintf("<@%d> doesn't have any premium slots. Unlock higher limits and exclusive features for your servers.", userID)
+	} else {
+		embed.Title = "YAGPDB Premium"
+		embed.Color = premiumAccentActive
+		embed.Description = fmt.Sprintf("<@%d> has **%d** premium slot(s).", userID, premiumSlots)
+	}
 
-	if data.GuildData == nil {
-		return v2Message(premiumAccentGold,
-			discordgo.TextDisplay{Content: "## YAGPDB Premium"},
-			discordgo.TextDisplay{Content: slotsLine + "\nUnlock higher limits and exclusive features on your servers."},
-			discordgo.Separator{Divider: true},
+	return &discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{embed},
+		Components: []discordgo.TopLevelComponent{
 			premiumActionsRow(discordStoreURL, patreonURL, perksURL, manageURL),
-		), nil
-	}
-
-	guildID := data.GuildData.GS.ID
-	isPremium, _ := IsGuildPremium(guildID)
-
-	if isPremium {
-		tier, _ := GuildPremiumTier(guildID)
-		return v2Message(premiumAccentActive,
-			discordgo.TextDisplay{Content: "## YAGPDB Premium · Active"},
-			discordgo.TextDisplay{Content: fmt.Sprintf("This server has premium (tier: **%s**). Enjoy the perks!", tier.String())},
-			discordgo.TextDisplay{Content: "-# " + slotsLine},
-			discordgo.Separator{Divider: true},
-			discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{
-				discordgo.Button{Style: discordgo.LinkButton, Label: "Manage Slots", URL: manageURL},
-				discordgo.Button{Style: discordgo.LinkButton, Label: "Premium Perks", URL: perksURL},
-			}},
-		), nil
-	}
-
-	ccCount, _ := ccmodels.CustomCommands(qm.Where("guild_id = ?", guildID)).CountG(data.Context())
-	rssCount, _ := rssmodels.RSSFeedSubscriptions(qm.Where("guild_id = ?", guildID)).CountG(data.Context())
-
-	usage := fmt.Sprintf(
-		"**Your current usage**\n"+
-			"-# Custom commands · `%d / 100` *(premium: 250)*\n"+
-			"-# RSS feeds · `%d / 2` *(premium: 10)*",
-		ccCount, rssCount,
-	)
-	exclusives := "**Premium exclusives**\n" +
-		"-# Trigger CCs on message edit · Custom Twitch announcements · Retroactive autorole scan · Threaded tickets · Custom bot avatar & banner · Bulk role assignment · Custom reputation regex"
-
-	return v2Message(premiumAccentGold,
-		discordgo.TextDisplay{Content: "## YAGPDB Premium"},
-		discordgo.TextDisplay{Content: "Premium is not active on this server. Upgrade to unlock higher limits and exclusive features."},
-		discordgo.Separator{Divider: true},
-		discordgo.TextDisplay{Content: usage},
-		discordgo.TextDisplay{Content: exclusives},
-		discordgo.TextDisplay{Content: "-# " + slotsLine},
-		discordgo.Separator{Divider: true},
-		premiumActionsRow(discordStoreURL, patreonURL, perksURL, manageURL),
-	), nil
+		},
+		Flags: discordgo.MessageFlagsEphemeral,
+	}, nil
 }
 
 func premiumActionsRow(discordURL, patreonURL, perksURL, manageURL string) discordgo.ActionsRow {
 	return discordgo.ActionsRow{Components: []discordgo.InteractiveComponent{
 		discordgo.Button{Style: discordgo.LinkButton, Label: "Get on Discord", URL: discordURL},
 		discordgo.Button{Style: discordgo.LinkButton, Label: "Get on Patreon", URL: patreonURL},
-		discordgo.Button{Style: discordgo.LinkButton, Label: "See All Perks", URL: perksURL},
-		discordgo.Button{Style: discordgo.LinkButton, Label: "Manage Slots", URL: manageURL},
+		discordgo.Button{Style: discordgo.LinkButton, Label: "Premium Perks", URL: perksURL},
+		discordgo.Button{Style: discordgo.LinkButton, Label: "Manage Premium", URL: manageURL},
 	}}
-}
-
-func v2Message(accentColor int, components ...discordgo.TopLevelComponent) *discordgo.MessageSend {
-	container := discordgo.Container{AccentColor: accentColor}
-	container.Components = append(container.Components, components...)
-	return &discordgo.MessageSend{
-		Components: []discordgo.TopLevelComponent{container},
-		Flags:      discordgo.MessageFlagsIsComponentsV2,
-	}
 }
 
 func (p *Plugin) BotInit() {

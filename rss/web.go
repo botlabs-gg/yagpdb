@@ -90,6 +90,8 @@ func (p *Plugin) HandleRSS(w http.ResponseWriter, r *http.Request) (web.Template
 	}
 
 	templateData["FeedItems"] = subs
+	templateData["FreeLimit"] = GuildMaxRSSFeedsFree
+	templateData["PremiumLimit"] = GuildMaxRSSFeedsPremium
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/rss"
 	return templateData, nil
 }
