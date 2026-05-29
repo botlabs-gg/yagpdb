@@ -14339,14 +14339,15 @@ p.drop-caps.drop-caps-style-2:first-letter {
 	content: "\f107";
 }
 
-@media only screen and (max-width: 767px) {
-	.userbox .name,
-	.userbox .role {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
+
+.userbox .name,
+.userbox .role {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 60px;
 }
+
 /* Userbox - Open */
 .userbox.show > a {
 	position: relative;
