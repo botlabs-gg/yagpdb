@@ -6,8 +6,6 @@
 
 {{template "cp_alerts" .}}
 
-{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .SoundboardSounds) "FreeLimit" 50 "PremiumLimit" 250 "FeatureName" "soundboard sounds" "ManageURL" "/premium-perks")}}
-
 <div class="row">
     <div class="col-lg-12">
         <div class="card">
@@ -46,7 +44,8 @@
                         <input type="text" class="form-control" name="SoundURL" placeholder="URL">
                         <p class="help-block">Specify a sound url instead of uploading a sound (direct link to a media file, NOT a youtube link)</p>
                     </div>
-                    <input type="submit" class="btn btn-success" value="Upload/Download!">
+                    <input type="submit" class="btn btn-block btn-success" value="Upload/Download!" {{if and (not .IsGuildPremium) (ge (len .SoundboardSounds) .FreeLimit)}}disabled{{end}}>
+                    {{template "cp_premium_at_limit_link" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .SoundboardSounds) "FreeLimit" .FreeLimit "PremiumLimit" .PremiumLimit "Name" "Sounds")}}
                 </form>
             </div>
         </div>

@@ -19,8 +19,6 @@
 
 {{template "cp_alerts" .}}
 
-{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .VoiceRoles) "FreeLimit" 1 "PremiumLimit" 10 "FeatureName" "voice roles" "ManageURL" "/premium-perks")}}
-
 <div class="row">
     <div class="col-lg-12">
         <section class="card mb-3">
@@ -33,13 +31,6 @@
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle"></i> You have reached the maximum limit of {{.MaxConfigs}}
                         voice roles.
-                    </div>
-                    {{else}}
-                    <div class="alert alert-warning">
-                        <i class="fas fa-crown premium-color"></i> You have reached the free limit of {{.FreeLimit}} voice
-                        roles.
-                        <a href="/premium-perks" class="alert-link">Upgrade to Premium</a> to add up to {{.PremiumLimit}}
-                        voice roles!
                     </div>
                     {{end}}
                 {{end}}
@@ -70,7 +61,8 @@
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success"> Add </button>
+                        <button type="submit" class="mt-3 btn btn-success btn-block" {{if and (not .IsGuildPremium) (ge (len .VoiceRoles) .FreeLimit)}}disabled{{end}}> Add </button>
+                        {{template "cp_premium_at_limit_link" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .VoiceRoles) "FreeLimit" .FreeLimit "PremiumLimit" .PremiumLimit "Name" "Voice Roles")}}
                     </fieldset>
                 </form>
             </div>

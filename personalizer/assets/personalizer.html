@@ -9,9 +9,6 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            {{if not .IsGuildPremium}}
-            <div class="alert alert-warning">This feature requires <a href="/premium-perks">Premium</a>.</div>
-            {{end}}
             <div class="px-3 pt-3 mb-3 small">
                 <div><strong>Image requirements</strong>:</div>
                 <ul class="mb-1">
@@ -77,6 +74,7 @@
                 {{if not .IsGuildPremium}}
                 </fieldset>
                 {{end}}
+                {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "Custom bot avatar and banner are a premium feature.")}}
 
             </form>
 
@@ -192,12 +190,6 @@
                             submitForm(window.jQuery(form), action, false);
                         } else {
                             form.submit();
-                        }
-                        {{else }}
-                        if (typeof addAlertHTML === 'function') {
-                            addAlertHTML('warning', 'This feature requires <a href="/premium-perks">Premium</a>.');
-                        } else {
-                            alert('This feature requires Premium.');
                         }
                         {{ end }}
                     });

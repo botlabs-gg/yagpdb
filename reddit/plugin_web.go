@@ -113,6 +113,8 @@ func HandleReddit(w http.ResponseWriter, r *http.Request) interface{} {
 
 	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
+	templateData["FreeLimit"] = GuildMaxFeedsNormal
+	templateData["PremiumLimit"] = GuildMaxFeedsPremium
 
 	return templateData
 }
@@ -124,6 +126,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 
 	templateData["RedditConfig"] = currentConfig
+	templateData["FreeLimit"] = GuildMaxFeedsNormal
+	templateData["PremiumLimit"] = GuildMaxFeedsPremium
 
 	newElem := ctx.Value(common.ContextKeyParsedForm).(*CreateForm)
 	ok := ctx.Value(common.ContextKeyFormOk).(bool)
@@ -167,6 +171,8 @@ func HandleNew(w http.ResponseWriter, r *http.Request) interface{} {
 	})
 
 	templateData["RedditConfig"] = currentConfig
+	templateData["FreeLimit"] = GuildMaxFeedsNormal
+	templateData["PremiumLimit"] = GuildMaxFeedsPremium
 	templateData.AddAlerts(web.SucessAlert("Sucessfully added subreddit feed for /r/" + watchItem.Subreddit))
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: watchItem.Subreddit}))
@@ -184,6 +190,8 @@ func HandleModify(w http.ResponseWriter, r *http.Request) interface{} {
 
 	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
+	templateData["FreeLimit"] = GuildMaxFeedsNormal
+	templateData["PremiumLimit"] = GuildMaxFeedsPremium
 
 	updated := ctx.Value(common.ContextKeyParsedForm).(*UpdateForm)
 	ok := ctx.Value(common.ContextKeyFormOk).(bool)
@@ -227,6 +235,8 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 
 	currentConfig := ctx.Value(CurrentConfig).(models.RedditFeedSlice)
 	templateData["RedditConfig"] = currentConfig
+	templateData["FreeLimit"] = GuildMaxFeedsNormal
+	templateData["PremiumLimit"] = GuildMaxFeedsPremium
 
 	id := pat.Param(r, "item")
 	idInt, err := strconv.ParseInt(id, 10, 32)
@@ -255,6 +265,8 @@ func HandleRemove(w http.ResponseWriter, r *http.Request) interface{} {
 	}
 
 	templateData["RedditConfig"] = currentConfig
+	templateData["FreeLimit"] = GuildMaxFeedsNormal
+	templateData["PremiumLimit"] = GuildMaxFeedsPremium
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: item.Subreddit}))
 	go pubsub.Publish("reddit_clear_subreddit_cache", -1, PubSubSubredditEventData{

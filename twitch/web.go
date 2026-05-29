@@ -96,6 +96,8 @@ func (p *Plugin) HandleTwitch(w http.ResponseWriter, r *http.Request) (web.Templ
 	}
 
 	templateData["TwitchSubs"] = subs
+	templateData["FreeLimit"] = GuildMaxEnabledFeeds
+	templateData["PremiumLimit"] = GuildMaxEnabledFeedsPremium
 
 	announcement, err := models.FindTwitchAnnouncementG(ctx, activeGuild.ID)
 	if err != nil {

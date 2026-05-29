@@ -17,8 +17,6 @@
     <h2>Youtube upload feeds</h2>
 </header>
 {{template "cp_alerts" .}}
-
-{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .Subs) "FreeLimit" 10 "PremiumLimit" 250 "FeatureName" "YouTube feeds" "ManageURL" "/premium-perks")}}
 <!-- /.row -->
 <div class="row">
     <div class="card-deck col-lg-12">
@@ -89,7 +87,8 @@
                     {{checkbox "PublishLivestream" "new-publish-livestream" `Publish Livestreams` true}}
                     {{checkbox "PublishShorts" "new-publish-shorts" `Publish Shorts` true}}
 
-                    <button type="submit" id="yt-add-btn" disabled="true" class="btn btn-success">Add</button>
+                    <button type="submit" id="yt-add-btn" disabled="true" class="btn btn-success btn-block" {{if and (not .IsGuildPremium) (ge (len .Subs) .FreeLimit)}}data-at-limit="1"{{end}}>Add</button>
+                    {{template "cp_premium_at_limit_link" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .Subs) "FreeLimit" .FreeLimit "PremiumLimit" .PremiumLimit "Name" "Youtube Feeds")}}
                 </form>
             </div>
         </div>
@@ -209,6 +208,11 @@
         let addButton = $("#yt-add-btn")
 
         ytUrlInput.on("input", function(arg) {
+            // Stay disabled when the server has hit the free feed limit
+            if (addButton.attr("data-at-limit")) {
+                addButton.attr("disabled", true)
+                return
+            }
             let ytUrl = ytUrlInput.val()
             let ytLinkRegex = new RegExp("^(https?:\/\/)?((www|m)\.)?youtube\.com", 'g')
             let ytShortLinkRegex = new RegExp("^(https?:\/\/)?youtu\.be\/([a-zA-Z0-9_-]+).*", 'g')

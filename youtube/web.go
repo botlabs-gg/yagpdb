@@ -119,6 +119,8 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 
 	templateData["Announcement"] = announcement
 	templateData["Subs"] = subs
+	templateData["FreeLimit"] = GuildMaxEnabledFeeds
+	templateData["PremiumLimit"] = GuildMaxEnabledFeedsPremium
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/youtube"
 	return templateData, nil
 }

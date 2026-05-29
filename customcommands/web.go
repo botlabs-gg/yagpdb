@@ -969,6 +969,8 @@ func updateTemplateWithCountData(count int, templateData web.TemplateData, ctx c
 	maxCommands := MaxCommandsForContext(ctx)
 	templateData["CCCount"] = count
 	templateData["CCLimit"] = maxCommands
+	templateData["FreeLimit"] = MaxCommands
+	templateData["PremiumLimit"] = MaxCommandsPremium
 
 	additionalMessage := ""
 	if premium.ContextPremiumTier(ctx) != premium.PremiumTierPremium {

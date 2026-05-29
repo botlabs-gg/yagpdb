@@ -182,11 +182,7 @@
                                                     {{$disabledClass := ""}}
                                                     {{if not .IsGuildPremium}}{{$disabledClass = "disabled"}}{{end}}
                                                     {{checkbox "trigger_on_edit" "trigger_on_edit" "Trigger on message edits too?" .CC.TriggerOnEdit $disabledClass}}
-                                                    {{if not .IsGuildPremium}}
-                                                    <small class="form-text text-warning">
-                                                        Triggering on edits is a premium feature. <a href="/premium-perks">Upgrade to Premium</a> to unlock.
-                                                    </small>
-                                                    {{end}}
+                                                    {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "Triggering on message edits is a premium feature.")}}
                                                 </div>
                                               </div>
                                             </div>

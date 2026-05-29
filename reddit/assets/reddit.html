@@ -7,8 +7,6 @@
 
 {{template "cp_alerts" .}}
 
-{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .RedditConfig) "FreeLimit" 20 "PremiumLimit" 1000 "FeatureName" "Reddit feeds" "ManageURL" "/premium-perks")}}
-
 <div class="row">
     <div class="col">
         <div class="tabs">
@@ -87,7 +85,8 @@
             {{checkbox "spoilers_enabled" (printf "spoiler-toggle-new-slow-%t" .Slow) `Spoilers enabled<small class="ml-2">(On Reddit posts marked as spoilers)</small>` true}}
             {{checkbox "use_embeds" (printf "embed-new-slow-%t" .Slow) `Use embeds<small class="ml-2">(Videos won't be attached, but just linked)</small>` true}}
 
-            <button type="submit" class="btn btn-success">Add</button>
+            <button type="submit" class="btn btn-block btn-success" {{if and (not .Dot.IsGuildPremium) (ge (len .Dot.RedditConfig) .Dot.FreeLimit)}}disabled{{end}}>Add</button>
+            {{template "cp_premium_at_limit_link" (dict "IsGuildPremium" .Dot.IsGuildPremium "Count" (len .Dot.RedditConfig) "FreeLimit" .Dot.FreeLimit "PremiumLimit" .Dot.PremiumLimit "Name" "Reddit Feeds")}}
         </form>
     </div> <!-- col -->
 </div> <!-- row -->

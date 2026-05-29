@@ -39,7 +39,7 @@ $(function(){
 
 
 {{define "cp_server_home_widget"}}
-<section class="card {{if .WidgetEnabled}}card-featured card-featured-success{{else if .WidgetDisabled}}card-featured card-featured-danger{{end}}">
+<section class="card {{if .WidgetEnabled}}card-featured card-featured-success{{else if .WidgetDisabled}}card-featured card-featured-danger{{else if .WidgetUpsell}}card-featured card-featured-warning{{end}}">
     <header class="card-header">
         <h2 class="card-title">{{.WidgetTitle}}</h2>
     </header>

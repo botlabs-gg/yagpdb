@@ -57,12 +57,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    {{if not .IsGuildPremium}}
-                                    <div class="alert alert-warning">
-                                        Custom thanks regex is a premium feature. <a href="/premium-perks">Upgrade to Premium</a> to unlock this feature.
-                                    </div>
-                                    {{end}}
                                     <label for="thanks-regex">Custom thanks detection regex</label>
+                                    {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "Custom thanks regex is a premium feature.")}}
                                     <input type="text" class="form-control" id="thanks-regex" name="ThanksRegex" value="{{.RepSettings.ThanksRegex.String}}" {{if not .IsGuildPremium}}disabled{{end}}>
                                     <p class="help-block">Overrides the default thanks detection. Case-insensitive is supported with (?i). Max length 2000.</p>
                                 </div>

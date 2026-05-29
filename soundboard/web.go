@@ -83,6 +83,8 @@ func HandleGetCP(w http.ResponseWriter, r *http.Request) (web.TemplateData, erro
 	}
 
 	tmpl["SoundboardSounds"] = sounds
+	tmpl["FreeLimit"] = MaxGuildSounds
+	tmpl["PremiumLimit"] = MaxGuildSoundsPremium
 	return tmpl, nil
 }
 

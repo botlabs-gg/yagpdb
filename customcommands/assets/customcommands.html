@@ -35,8 +35,6 @@
 
 {{template "cp_alerts" .}}
 
-{{template "cp_premium_reminder_banner" (dict "IsGuildPremium" .IsGuildPremium "Count" .CCCount "FreeLimit" 100 "PremiumLimit" 250 "FeatureName" "custom commands" "ManageURL" "/premium-perks")}}
-
 <!-- Nav -->
 <div class="row">
     <div class="col">
@@ -143,6 +141,7 @@
                             value="{{if .CurrentCommandGroup}}{{.CurrentCommandGroup.ID}}{{end}}">
                         <button type="submit" class="btn btn-block btn-success" {{if ge .CCCount .CCLimit}}disabled{{end}}>Create
                             a new Custom Command</button>
+                        {{template "cp_premium_at_limit_link" (dict "IsGuildPremium" .IsGuildPremium "Count" .CCCount "FreeLimit" .FreeLimit "PremiumLimit" .PremiumLimit "Name" "Custom Commands")}}
                     </form>
                     
                 </div>

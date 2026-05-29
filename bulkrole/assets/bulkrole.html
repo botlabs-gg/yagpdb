@@ -7,13 +7,6 @@
 </header>
 {{template "cp_alerts" .}}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-lg-12">
-            {{if not .IsGuildPremium}}
-            <div class="alert alert-warning">This feature requires <a href="/premium-perks">Premium</a>.</div>
-            {{end}}
-        </div>
-    </div>
     {{if .OperationActive}}
     <div class="row">
         <div class="col-lg-12">
@@ -256,6 +249,7 @@
                             </div>
                             {{else}}
                             </fieldset>
+                            {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "Bulk role assignment is a premium feature.")}}
                             {{end}}
                     </form>
                     {{end}}
