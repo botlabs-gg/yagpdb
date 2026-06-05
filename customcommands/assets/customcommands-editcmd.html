@@ -107,7 +107,8 @@
                                                     Modal Submission</option>
                                                 <option value="cron" {{ if eq .CC.TriggerType 9}} selected{{end}}>
                                                     Crontab </option>
-                                                <option value="role_trigger" {{ if eq .CC.TriggerType 11}}selected{{end}}> Role Change (BETA)</option>
+                                                <option value="role_trigger" {{ if eq .CC.TriggerType 11}}selected{{end}}> Role Change</option>
+                                                <option value="slash_command" {{ if eq .CC.TriggerType 12}}selected{{end}}> Slash Command</option>
                                             </select>
                                         </div>
                                     </div>
@@ -158,6 +159,9 @@
                                             The command will run when a role is assigned to or removed from a member,
                                             <b>has a cooldown of 5 minutes per user-role combination, reduced to 1 minute for premium servers</b>
                                         </small>
+                                        <small id="trigger-desc-slash_command">
+                                            Creates A Guild slash command, trigger name must not be same as an inbuilt slash command.
+                                        </small>
                                     </div>
                                 </div>
                             </div>
@@ -168,6 +172,7 @@
                                             <label id="cc-message-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
+                                            <label id="cc-slash-trigger-label">Command name (1-32 chars, lowercase letters/numbers/dashes/underscores)</label>
                                             <div class="input-group mb-2">
                                                 <div id="command-trigger-prepended-prefix" class="input-group-prepend">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
@@ -219,7 +224,7 @@
                                                     Ephemeral Message Response
                                                 </label>
                                             </div>
-                                            <div class="form-check">
+                                            <div class="form-check" id="interaction-defer-update-option">
                                                 <input class="form-check-input" type="radio" name="interaction_defer_mode"
                                                     id="interaction-defer-update-{{.CC.LocalID}}" value="3"
                                                     {{if eq .CC.InteractionDeferMode 3}}checked{{end}}>
@@ -263,6 +268,9 @@
                                 </div>
                             </div>
                             <div id="cc-role-trigger-details" class="hidden col-lg-8">
+                                {{if and (not .IsGuildPremium) .RoleTriggerLimitReached}}
+                                {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "You've reached the free limit of 1 role-change command. Premium servers can register up to 5.")}}
+                                {{end}}
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="form-check">
@@ -296,6 +304,102 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div id="cc-slash-trigger-details" class="hidden col-lg-12">
+                                {{if and (not .IsGuildPremium) .SlashCommandLimitReached}}
+                                {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "You've reached the free limit of 3 slash commands. Premium servers can register up to 10.")}}
+                                {{end}}
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-group">
+                                            <label for="slash_command_description">Command description (1-100 chars)</label>
+                                            <input id="slash_command_description" type="text" class="form-control" name="slash_command_description"
+                                                maxlength="100" placeholder="A short description shown in Discord"
+                                                value="{{call .GetCCSlashDescription .CC}}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <label>Arguments (available in <code>.Args</code> by name)</label>
+                                        <div id="slash-options-list">
+                                            {{range $i, $opt := call .GetCCSlashOptions .CC}}
+                                            <div class="slash-option-row mb-3">
+                                                <div class="form-row align-items-end">
+                                                    <div class="col-12 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Name</label>
+                                                        <input type="text" class="form-control" name="slash_option_names" maxlength="32" placeholder="name" value="{{$opt.Name}}">
+                                                    </div>
+                                                    <div class="col-12 col-md-2 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Type</label>
+                                                        <select class="form-control" name="slash_option_types">
+                                                            <option value="3" {{if eq $opt.Type 3}}selected{{end}}>Text</option>
+                                                            <option value="4" {{if eq $opt.Type 4}}selected{{end}}>Integer</option>
+                                                            <option value="10" {{if eq $opt.Type 10}}selected{{end}}>Number</option>
+                                                            <option value="5" {{if eq $opt.Type 5}}selected{{end}}>True/False</option>
+                                                            <option value="6" {{if eq $opt.Type 6}}selected{{end}}>User</option>
+                                                            <option value="7" {{if eq $opt.Type 7}}selected{{end}}>Channel</option>
+                                                            <option value="8" {{if eq $opt.Type 8}}selected{{end}}>Role</option>
+                                                            <option value="9" {{if eq $opt.Type 9}}selected{{end}}>User or Role</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 col-md-4 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Description</label>
+                                                        <input type="text" class="form-control" name="slash_option_descriptions" maxlength="100" placeholder="description" value="{{$opt.Description}}">
+                                                    </div>
+                                                    <div class="col-6 col-md-2 mb-2 mb-md-0 text-center">
+                                                        <label class="small mb-1 d-block">Required</label>
+                                                        <input type="checkbox" class="tgl tgl-flat slash-option-required-cb" id="slash-opt-req-{{$i}}" {{if $opt.Required}}checked{{end}} onchange="slashReqToggle(this)">
+                                                        <label class="tgl-btn mb-0" for="slash-opt-req-{{$i}}"></label>
+                                                        <input type="hidden" name="slash_option_required" value="{{if $opt.Required}}true{{else}}false{{end}}">
+                                                    </div>
+                                                    <div class="col-6 col-md-1 text-right">
+                                                        <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {{end}}
+                                        </div>
+                                        <button type="button" id="slash-option-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add argument</button>
+                                        <small class="form-text text-muted">Up to 5 arguments. Required arguments are automatically ordered before optional ones.</small>
+                                    </div>
+                                </div>
+                                <template id="slash-option-template">
+                                    <div class="slash-option-row mb-3">
+                                        <div class="form-row align-items-end">
+                                            <div class="col-12 col-md-3 mb-2 mb-md-0">
+                                                <label class="small mb-1">Name</label>
+                                                <input type="text" class="form-control" name="slash_option_names" maxlength="32" placeholder="name">
+                                            </div>
+                                            <div class="col-12 col-md-2 mb-2 mb-md-0">
+                                                <label class="small mb-1">Type</label>
+                                                <select class="form-control" name="slash_option_types">
+                                                    <option value="3">Text</option>
+                                                    <option value="4">Integer</option>
+                                                    <option value="10">Number</option>
+                                                    <option value="5">True/False</option>
+                                                    <option value="6">User</option>
+                                                    <option value="7">Channel</option>
+                                                    <option value="8">Role</option>
+                                                    <option value="9">User or Role</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                                                <label class="small mb-1">Description</label>
+                                                <input type="text" class="form-control" name="slash_option_descriptions" maxlength="100" placeholder="description">
+                                            </div>
+                                            <div class="col-6 col-md-2 mb-2 mb-md-0 text-center">
+                                                <label class="small mb-1 d-block">Required</label>
+                                                <input type="checkbox" class="tgl tgl-flat slash-option-required-cb" onchange="slashReqToggle(this)">
+                                                <label class="tgl-btn mb-0"></label>
+                                                <input type="hidden" name="slash_option_required" value="false">
+                                            </div>
+                                            <div class="col-6 col-md-1 text-right">
+                                                <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                             <div id="cc-time-trigger-details" class="hidden col-lg-8">
                                 <div class="row">
@@ -687,6 +791,7 @@
         exact: [...messageTriggerEls, '#trigger-desc-exact'],
         cron: ['#cc-text-trigger-details', '#cc-cron-trigger-label', '#cc-time-trigger-details', '#trigger-desc-cron'],
         role_trigger: ['#cc-role-trigger-details', '#cc-role-settings','#trigger-desc-role_trigger'],
+        slash_command: ['#cc-text-trigger-details', '#cc-slash-trigger-label', '#cc-interaction-trigger-details', '#cc-role-settings', '#cc-channel-settings', '#cc-slash-trigger-details', '#trigger-desc-slash_command'],
         none: ['#trigger-desc-none'],
     };
 
@@ -708,6 +813,21 @@
         // for the current trigger type.
         for (const el of elsToHide) $(el).addClass('hidden');
         for (const el of elsToShow) $(el).removeClass('hidden');
+
+        // "Update Message Response" defer mode is not valid for slash commands (there
+        // is no prior message to update), so hide that option for them and fall back
+        // to "None" if it happened to be selected.
+        const updateOption = $('#interaction-defer-update-option');
+        if (curTriggerType === 'slash_command') {
+            updateOption.addClass('hidden');
+            const updateRadio = updateOption.find('input[type="radio"]');
+            if (updateRadio.prop('checked')) {
+                updateRadio.prop('checked', false);
+                $('input[name="interaction_defer_mode"][value="0"]').prop('checked', true);
+            }
+        } else {
+            updateOption.removeClass('hidden');
+        }
 
         refreshWarnings();
     }
@@ -853,6 +973,39 @@
     function onCCChanged(textArea) {
        updateCCLength();
     }
+
+    // Slash command argument rows: keep the hidden "required" value in sync with the
+    // toggle, and add/remove dynamic option rows.
+    function slashReqToggle(cb) {
+        const row = cb.closest('.slash-option-row');
+        if (!row) return;
+        const hidden = row.querySelector('input[type="hidden"][name="slash_option_required"]');
+        if (hidden) hidden.value = cb.checked ? 'true' : 'false';
+    }
+
+    var slashOptCounter = 0;
+    $('#slash-option-add').on('click', function (e) {
+        e.preventDefault();
+        const list = document.getElementById('slash-options-list');
+        if (list.querySelectorAll('.slash-option-row').length >= 5) {
+            return;
+        }
+        const frag = document.getElementById('slash-option-template').content.cloneNode(true);
+        // The toggle <label for> must reference a unique id to remain clickable.
+        const id = 'slash-opt-req-new-' + (slashOptCounter++);
+        const cb = frag.querySelector('.slash-option-required-cb');
+        const lbl = frag.querySelector('.tgl-btn');
+        if (cb && lbl) {
+            cb.id = id;
+            lbl.htmlFor = id;
+        }
+        list.appendChild(frag);
+    });
+
+    $('#slash-options-list').on('click', '.slash-option-remove', function (e) {
+        e.preventDefault();
+        $(this).closest('.slash-option-row').remove();
+    });
 </script>
 
 {{template "codemirror_assets" .}}

@@ -7,11 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"regexp"
 	"slices"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
 	"emperror.dev/errors"
+	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/featureflags"
 	"github.com/botlabs-gg/yagpdb/v2/customcommands/models"
@@ -78,6 +81,7 @@ const (
 	CommandTriggerModal      CommandTriggerType = 8
 	CommandTriggerCron       CommandTriggerType = 9
 	CommandTriggerRole       CommandTriggerType = 11
+	CommandTriggerSlash      CommandTriggerType = 12
 )
 
 var (
@@ -94,6 +98,7 @@ var (
 		CommandTriggerModal,
 		CommandTriggerCron,
 		CommandTriggerRole,
+		CommandTriggerSlash,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
@@ -109,6 +114,7 @@ var (
 		CommandTriggerModal:      "Modal",
 		CommandTriggerCron:       "Crontab",
 		CommandTriggerRole:       "Role",
+		CommandTriggerSlash:      "Slash Command",
 	}
 )
 
@@ -134,6 +140,22 @@ const (
 func (t CommandTriggerType) String() string {
 	return triggerStrings[t]
 }
+
+type SlashCommandOption struct {
+	Name        string `json:"name"`
+	Type        int    `json:"type"` // discordgo.ApplicationCommandOptionType (3,4,5,6,7,8,9,10)
+	Description string `json:"description"`
+	Required    bool   `json:"required"`
+}
+
+// slashCommandNameRegex matches Discord's allowed application command/option name
+// pattern (lowercased). See https://discord.com/developers/docs/interactions/application-commands#application-command-object
+var slashCommandNameRegex = regexp.MustCompile(`^[-_\p{L}\p{N}]{1,32}$`)
+
+const (
+	MaxSlashCommandOptions     = 25
+	MaxSlashCommandDescription = 100
+)
 
 type CustomCommand struct {
 	TriggerType     CommandTriggerType `json:"trigger_type"`
@@ -173,6 +195,39 @@ type CustomCommand struct {
 	GroupID int64
 
 	ShowErrors bool `schema:"show_errors"`
+
+	SlashCommandDescription string   `schema:"slash_command_description" valid:",0,100"`
+	SlashOptionNames        []string `schema:"slash_option_names"`
+	SlashOptionTypes        []int    `schema:"slash_option_types"`
+	SlashOptionDescriptions []string `schema:"slash_option_descriptions"`
+	SlashOptionRequired     []bool   `schema:"slash_option_required"`
+}
+
+func (cc *CustomCommand) SlashCommandOptions() []SlashCommandOption {
+	opts := make([]SlashCommandOption, 0, len(cc.SlashOptionNames))
+	for i, name := range cc.SlashOptionNames {
+		if strings.TrimSpace(name) == "" {
+			continue
+		}
+
+		opt := SlashCommandOption{Name: strings.ToLower(strings.TrimSpace(name))}
+		if i < len(cc.SlashOptionTypes) {
+			opt.Type = cc.SlashOptionTypes[i]
+		}
+		if i < len(cc.SlashOptionDescriptions) {
+			opt.Description = cc.SlashOptionDescriptions[i]
+		}
+		if i < len(cc.SlashOptionRequired) {
+			opt.Required = cc.SlashOptionRequired[i]
+		}
+		opts = append(opts, opt)
+	}
+
+	sort.SliceStable(opts, func(i, j int) bool {
+		return opts[i].Required && !opts[j].Required
+	})
+
+	return opts
 }
 
 var _ web.CustomValidator = (*CustomCommand)(nil)
@@ -244,8 +299,106 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData, guild_id int64) (ok boo
 		}
 	}
 
+	if cc.TriggerTypeForm == "slash_command" {
+		if !cc.validateSlashCommand(tmpl, guild_id) {
+			return false
+		}
+	}
+
 	return true
 
+}
+
+var validSlashOptionTypes = map[int]bool{
+	int(discordgo.ApplicationCommandOptionString):      true,
+	int(discordgo.ApplicationCommandOptionInteger):     true,
+	int(discordgo.ApplicationCommandOptionBoolean):     true,
+	int(discordgo.ApplicationCommandOptionUser):        true,
+	int(discordgo.ApplicationCommandOptionChannel):     true,
+	int(discordgo.ApplicationCommandOptionRole):        true,
+	int(discordgo.ApplicationCommandOptionMentionable): true,
+	int(discordgo.ApplicationCommandOptionNumber):      true,
+}
+
+func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int64) bool {
+	name := cc.Trigger
+	if name != strings.ToLower(name) {
+		tmpl.AddAlerts(web.ErrorAlert("Slash command name must be lowercase"))
+		return false
+	}
+	if !slashCommandNameRegex.MatchString(name) {
+		tmpl.AddAlerts(web.ErrorAlert("Slash command name must be 1-32 characters and contain only letters, numbers, dashes and underscores"))
+		return false
+	}
+
+	if l := utf8.RuneCountInString(cc.SlashCommandDescription); l < 1 || l > MaxSlashCommandDescription {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Slash command description must be between 1 and %d characters", MaxSlashCommandDescription)))
+		return false
+	}
+
+	if commands.IsInbuiltSlashCommandName(name) {
+		tmpl.AddAlerts(web.ErrorAlert("A built-in command with that name already exists, please choose a different name"))
+		return false
+	}
+
+	options := cc.SlashCommandOptions()
+	if len(options) > MaxSlashCommandOptions {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("A slash command can have at most %d options", MaxSlashCommandOptions)))
+		return false
+	}
+
+	seenOptions := make(map[string]bool, len(options))
+	for _, opt := range options {
+		if !slashCommandNameRegex.MatchString(opt.Name) {
+			tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Option name %q must be 1-32 lowercase characters (letters, numbers, dashes, underscores)", opt.Name)))
+			return false
+		}
+		if seenOptions[opt.Name] {
+			tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Duplicate option name %q", opt.Name)))
+			return false
+		}
+		seenOptions[opt.Name] = true
+
+		if l := utf8.RuneCountInString(opt.Description); l < 1 || l > MaxSlashCommandDescription {
+			tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Description for option %q must be between 1 and %d characters", opt.Name, MaxSlashCommandDescription)))
+			return false
+		}
+		if !validSlashOptionTypes[opt.Type] {
+			tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid type for option %q", opt.Name)))
+			return false
+		}
+	}
+
+	if cc.InteractionDeferMode == InteractionDeferModeUpdate {
+		tmpl.AddAlerts(web.ErrorAlert("\"Update message\" defer mode is not valid for slash commands"))
+		return false
+	}
+
+	existing, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND local_id != ?", guildID, int(CommandTriggerSlash), cc.ID)).AllG(context.Background())
+	if err != nil {
+		tmpl.AddAlerts(web.ErrorAlert("Failed validating slash command, please try again"))
+		logger.WithError(err).WithField("guild", guildID).Error("failed fetching existing slash command ccs for validation")
+		return false
+	}
+
+	enabledCount := 0
+	for _, e := range existing {
+		if strings.EqualFold(e.TextTrigger, name) {
+			tmpl.AddAlerts(web.ErrorAlert("Another slash command in this server already uses that name"))
+			return false
+		}
+		if !e.Disabled {
+			enabledCount++
+		}
+	}
+
+	maxSlash := MaxSlashCommandForContext(guildID)
+	if cc.IsEnabled && enabledCount >= maxSlash {
+		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("You can have at most %d enabled slash commands per server (%d on premium servers)", maxSlash, MaxSlashCommandCCsPremium)))
+		return false
+	}
+
+	return true
 }
 
 func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
@@ -301,7 +454,42 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		pqCommand.TimeTriggerInterval *= 60
 	}
 
+	if cc.TriggerTypeForm == "slash_command" {
+		pqCommand.TextTrigger = strings.ToLower(cc.Trigger)
+
+		opts := cc.SlashCommandOptions()
+		payload := slashCommandData{
+			Description: cc.SlashCommandDescription,
+			Options:     opts,
+		}
+		if b, err := json.Marshal(payload); err == nil {
+			pqCommand.SlashCommandOptions = null.JSONFrom(b)
+		} else {
+			logger.WithError(err).Error("failed marshalling slash command options")
+		}
+	}
+
 	return pqCommand
+}
+
+// slashCommandData is the structure stored in the slash_command_options jsonb
+// column for slash command custom commands.
+type slashCommandData struct {
+	Description string               `json:"description"`
+	Options     []SlashCommandOption `json:"options"`
+}
+
+// parseSlashCommandData decodes the slash_command_options jsonb column of a stored
+// custom command. It returns zero values if the column is null or invalid.
+func parseSlashCommandData(cc *models.CustomCommand) slashCommandData {
+	var data slashCommandData
+	if !cc.SlashCommandOptions.Valid {
+		return data
+	}
+	if err := json.Unmarshal(cc.SlashCommandOptions.JSON, &data); err != nil {
+		logger.WithError(err).WithField("cc_id", cc.LocalID).Error("failed unmarshalling slash command options")
+	}
+	return data
 }
 
 func CmdRunsInChannel(cc *models.CustomCommand, channel int64) bool {
@@ -379,14 +567,25 @@ func (c CustomCommandSlice) Swap(i, j int) {
 
 const (
 	MaxCommands                   = 100
-	MaxCommandsPremium            = 250
+	MaxCommandsPremium            = 500
 	MaxRoleTriggerCommands        = 1
 	MaxRoleTriggerCommandsPremium = 5
 	MaxCCResponsesLength          = 10000
 	MaxCCResponsesLengthPremium   = 20000
 	MaxUserMessages               = 20
 	MaxGroups                     = 50
+	MaxSlashCommandCCs            = 3
+	MaxSlashCommandCCsPremium     = 10
 )
+
+// MaxSlashCommandForContext returns how many enabled slash command custom commands
+// a guild may have, depending on its premium status.
+func MaxSlashCommandForContext(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return MaxSlashCommandCCsPremium
+	}
+	return MaxSlashCommandCCs
+}
 
 func MaxCommandsForContext(ctx context.Context) int {
 	if premium.ContextPremium(ctx) {

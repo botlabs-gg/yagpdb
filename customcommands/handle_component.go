@@ -44,6 +44,13 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	// Slash command interactions carry no source message, so handle them before the
+	// message/member guard below that the component & modal paths rely on.
+	if interaction.Type == discordgo.InteractionApplicationCommand {
+		handleSlashCommandInteraction(evt, cState, &interaction)
+		return
+	}
+
 	// Ephemeral messages always have guild_id = 0 even if created in a guild channel; see
 	// https://github.com/discord/discord-api-docs/issues/4557. But exec/execAdmin rely
 	// on the guild ID of the message to fill guild data, so patch it here.
