@@ -153,7 +153,7 @@ type SlashCommandOption struct {
 var slashCommandNameRegex = regexp.MustCompile(`^[-_\p{L}\p{N}]{1,32}$`)
 
 const (
-	MaxSlashCommandOptions     = 5
+	MaxSlashCommandOptions     = 25
 	MaxSlashCommandDescription = 100
 )
 
