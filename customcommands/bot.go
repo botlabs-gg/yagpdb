@@ -72,6 +72,7 @@ func (p *Plugin) BotInit() {
 	eventsystem.AddHandlerAsyncLastLegacy(p, bot.ConcurrentEventHandler(handleGuildAuditLogEntryCreate), eventsystem.EventGuildAuditLogEntryCreate)
 
 	pubsub.AddHandler("custom_commands_run_now", handleCustomCommandsRunNow, models.CustomCommand{})
+	pubsub.AddHandler(SlashCommandResyncEvent, handleResyncGuildSlashCommands, nil)
 	scheduledevents2.RegisterHandler("cc_next_run", NextRunScheduledEvent{}, handleNextRunScheduledEVent)
 	scheduledevents2.RegisterHandler("cc_delayed_run", DelayedRunCCData{}, handleDelayedRunCC)
 }
@@ -564,6 +565,18 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 	if err != nil {
 		return errors.WrapIf(err, "Failed disabling trigger on edits on premium removal")
 	}
+
+	slashCommands, err := models.CustomCommands(qm.Where("guild_id = ? AND disabled = false AND trigger_type = ?", GuildID, CommandTriggerSlash), qm.OrderBy("local_id ASC"), qm.Offset(MaxSlashCommandCCs)).AllG(context.Background())
+	if err != nil {
+		return errors.WrapIf(err, "failed fetching slash command custom commands on premium removal")
+	}
+	if len(slashCommands) > 0 {
+		_, err = slashCommands.UpdateAllG(context.Background(), models.M{"disabled": true})
+		if err != nil {
+			return errors.WrapIf(err, "Failed disabling slash command custom commands on premium removal")
+		}
+	}
+	pubsub.PublishLogErr(SlashCommandResyncEvent, GuildID, nil)
 
 	return nil
 }

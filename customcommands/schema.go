@@ -81,6 +81,8 @@ ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS interaction_defer_mode SMAL
 `, `
 ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS role_trigger_mode SMALLINT NOT NULL DEFAULT 0;
 `, `
+ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS slash_command_options JSONB;
+`, `
 CREATE TABLE IF NOT EXISTS templates_user_database (
 	id BIGSERIAL PRIMARY KEY,
 
