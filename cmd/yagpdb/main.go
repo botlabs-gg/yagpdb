@@ -30,6 +30,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/discordlogger"
 	"github.com/botlabs-gg/yagpdb/v2/logs"
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
+	"github.com/botlabs-gg/yagpdb/v2/naturaltime"
 	"github.com/botlabs-gg/yagpdb/v2/notifications"
 	"github.com/botlabs-gg/yagpdb/v2/personalizer"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
@@ -104,9 +105,9 @@ func main() {
 	personalizer.RegisterPlugin()
 	twitch.RegisterPlugin()
 	voiceroles.RegisterPlugin()
+	naturaltime.RegisterPlugin()
 
 	// Register confusables replacer
 	confusables.Init()
-
 	run.Run()
 }
