@@ -134,7 +134,7 @@ func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet
 	}
 	tmplCtx.Data["Options"] = options
 	tmplCtx.Data["Args"] = args
-	tmplCtx.Data["CmdArgs"] = args
+	tmplCtx.Data["CmdArgs"] = args[1:]
 
 	// application command interactions carry no source message, build a minimal one
 	// so member/author template helpers keep working.
