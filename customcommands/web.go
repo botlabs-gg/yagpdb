@@ -487,6 +487,16 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		dbModel.TimeTriggerInterval = importCC.TimeTriggerInterval
 		dbModel.TriggerOnEdit = importCC.TriggerOnEdit && premium.ContextPremium(ctx)
 		dbModel.TriggerType = importCC.TriggerType
+		dbModel.RoleTriggerMode = importCC.RoleTriggerMode
+		dbModel.SlashCommandOptions = importCC.SlashCommandOptions
+		if importCC.TriggerType == int(CommandTriggerSlash) {
+			data := parseSlashCommandData(dbModel)
+			if ok, _ := validateSlashCommandData(activeGuild.ID, dbModel.TextTrigger, data.Description, data.Options, dbModel.LocalID, !dbModel.Disabled); !ok {
+				http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
+				return templateData, nil
+			}
+		}
+
 		templateData.AddAlerts(web.WarningAlert("It is recommended you scan your CC for hardcoded IDs or other server-specific arguments you may want to update"))
 	}
 
