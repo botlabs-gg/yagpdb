@@ -155,6 +155,8 @@ type SlashCommandOption struct {
 
 	MinLength *int `json:"min_length,omitempty"`
 	MaxLength *int `json:"max_length,omitempty"`
+
+	ChannelTypes []int `json:"channel_types,omitempty"`
 }
 
 // slashCommandNameRegex matches Discord's allowed application command/option name
@@ -213,15 +215,83 @@ type CustomCommand struct {
 }
 
 type SlashCommandOptionForm struct {
-	Name        string `schema:"name"`
-	Type        int    `schema:"type"`
-	Description string `schema:"description"`
-	Required    bool   `schema:"required"`
-	Choices     string `schema:"choices"`
-	MinValue    string `schema:"min_value"`
-	MaxValue    string `schema:"max_value"`
-	MinLength   string `schema:"min_length"`
-	MaxLength   string `schema:"max_length"`
+	Name string `schema:"name"`
+	// Type is a UI key (e.g. "string", "string_menu", "integer", "integer_menu",
+	// "number", "number_menu", "boolean", "user", "channel", "role", "mentionable").
+	// The *_menu variants map to the same Discord type as their base but carry choices
+	// instead of min/max constraints (the two are mutually exclusive on Discord).
+	Type         string `schema:"type"`
+	Description  string `schema:"description"`
+	Required     bool   `schema:"required"`
+	Choices      string `schema:"choices"`
+	MinValue     string `schema:"min_value"`
+	MaxValue     string `schema:"max_value"`
+	MinLength    string `schema:"min_length"`
+	MaxLength    string `schema:"max_length"`
+	ChannelTypes []int  `schema:"channel_types"`
+}
+
+// slashFormType maps a slash option UI type key to its Discord option type and whether
+// it's a "menu" (choices) variant. ok is false for unknown keys.
+func slashFormType(key string) (discordType int, isMenu, ok bool) {
+	switch key {
+	case "string":
+		return int(discordgo.ApplicationCommandOptionString), false, true
+	case "string_menu":
+		return int(discordgo.ApplicationCommandOptionString), true, true
+	case "integer":
+		return int(discordgo.ApplicationCommandOptionInteger), false, true
+	case "integer_menu":
+		return int(discordgo.ApplicationCommandOptionInteger), true, true
+	case "number":
+		return int(discordgo.ApplicationCommandOptionNumber), false, true
+	case "number_menu":
+		return int(discordgo.ApplicationCommandOptionNumber), true, true
+	case "boolean":
+		return int(discordgo.ApplicationCommandOptionBoolean), false, true
+	case "user":
+		return int(discordgo.ApplicationCommandOptionUser), false, true
+	case "channel":
+		return int(discordgo.ApplicationCommandOptionChannel), false, true
+	case "role":
+		return int(discordgo.ApplicationCommandOptionRole), false, true
+	case "mentionable":
+		return int(discordgo.ApplicationCommandOptionMentionable), false, true
+	}
+	return 0, false, false
+}
+
+// slashFormTypeKey is the inverse of slashFormType for rendering a stored option back
+// into the editor's type dropdown. A *_menu key is returned when choices are present.
+func slashFormTypeKey(opt SlashCommandOption) string {
+	switch opt.Type {
+	case int(discordgo.ApplicationCommandOptionString):
+		if len(opt.Choices) > 0 {
+			return "string_menu"
+		}
+		return "string"
+	case int(discordgo.ApplicationCommandOptionInteger):
+		if len(opt.Choices) > 0 {
+			return "integer_menu"
+		}
+		return "integer"
+	case int(discordgo.ApplicationCommandOptionNumber):
+		if len(opt.Choices) > 0 {
+			return "number_menu"
+		}
+		return "number"
+	case int(discordgo.ApplicationCommandOptionBoolean):
+		return "boolean"
+	case int(discordgo.ApplicationCommandOptionUser):
+		return "user"
+	case int(discordgo.ApplicationCommandOptionChannel):
+		return "channel"
+	case int(discordgo.ApplicationCommandOptionRole):
+		return "role"
+	case int(discordgo.ApplicationCommandOptionMentionable):
+		return "mentionable"
+	}
+	return "string"
 }
 
 func (f SlashCommandOptionForm) isEmpty() bool {
@@ -231,7 +301,8 @@ func (f SlashCommandOptionForm) isEmpty() bool {
 		strings.TrimSpace(f.MinValue) == "" &&
 		strings.TrimSpace(f.MaxValue) == "" &&
 		strings.TrimSpace(f.MinLength) == "" &&
-		strings.TrimSpace(f.MaxLength) == ""
+		strings.TrimSpace(f.MaxLength) == "" &&
+		len(f.ChannelTypes) == 0
 }
 
 func (cc *CustomCommand) SlashCommandOptions() []SlashCommandOption {
@@ -241,23 +312,33 @@ func (cc *CustomCommand) SlashCommandOptions() []SlashCommandOption {
 			continue
 		}
 
+		// resolve the UI type key into the Discord type and whether it's a choices menu.
+		dType, isMenu, _ := slashFormType(f.Type)
+
 		opt := SlashCommandOption{
 			Name:        strings.ToLower(strings.TrimSpace(f.Name)),
-			Type:        f.Type,
+			Type:        dType,
 			Description: f.Description,
 			Required:    f.Required,
 		}
 
-		switch opt.Type {
-		case int(discordgo.ApplicationCommandOptionString):
+		// menu variants carry choices; the plain variants carry min/max constraints.
+		// the two are mutually exclusive on Discord, enforced here by the type key.
+		switch {
+		case isMenu:
 			opt.Choices = parseChoiceLines(f.Choices)
-			if len(opt.Choices) == 0 {
-				opt.MinLength = parseIntPtr(f.MinLength)
-				opt.MaxLength = parseIntPtr(f.MaxLength)
-			}
-		case int(discordgo.ApplicationCommandOptionInteger), int(discordgo.ApplicationCommandOptionNumber):
+		case dType == int(discordgo.ApplicationCommandOptionString):
+			opt.MinLength = parseIntPtr(f.MinLength)
+			opt.MaxLength = parseIntPtr(f.MaxLength)
+		case dType == int(discordgo.ApplicationCommandOptionInteger), dType == int(discordgo.ApplicationCommandOptionNumber):
 			opt.MinValue = parseFloatPtr(f.MinValue)
 			opt.MaxValue = parseFloatPtr(f.MaxValue)
+		case dType == int(discordgo.ApplicationCommandOptionChannel):
+			for _, ct := range f.ChannelTypes {
+				if validSlashChannelTypes[ct] {
+					opt.ChannelTypes = append(opt.ChannelTypes, ct)
+				}
+			}
 		}
 
 		opts = append(opts, opt)
@@ -393,6 +474,20 @@ var validSlashOptionTypes = map[int]bool{
 	int(discordgo.ApplicationCommandOptionNumber):      true,
 }
 
+// validSlashChannelTypes are the discordgo.ChannelType values that may be used to
+// restrict a Channel option (guild channel kinds only).
+var validSlashChannelTypes = map[int]bool{
+	int(discordgo.ChannelTypeGuildText):          true,
+	int(discordgo.ChannelTypeGuildVoice):         true,
+	int(discordgo.ChannelTypeGuildCategory):      true,
+	int(discordgo.ChannelTypeGuildNews):          true,
+	int(discordgo.ChannelTypeGuildNewsThread):    true,
+	int(discordgo.ChannelTypeGuildPublicThread):  true,
+	int(discordgo.ChannelTypeGuildPrivateThread): true,
+	int(discordgo.ChannelTypeGuildStageVoice):    true,
+	int(discordgo.ChannelTypeGuildForum):         true,
+}
+
 func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int64) bool {
 	if cc.Trigger != strings.ToLower(cc.Trigger) {
 		tmpl.AddAlerts(web.ErrorAlert("Slash command name must be lowercase"))
@@ -462,6 +557,16 @@ func validateSlashCommandData(guildID int64, name, description string, options [
 			}
 			if utf8.RuneCountInString(c) > MaxSlashCommandChoiceLength {
 				return false, fmt.Sprintf("Choice %q on option %q must be at most %d characters", c, oname, MaxSlashCommandChoiceLength)
+			}
+			// Integer/Number choice values must parse to the matching numeric type.
+			if opt.Type == int(discordgo.ApplicationCommandOptionInteger) {
+				if _, err := strconv.ParseInt(strings.TrimSpace(c), 10, 64); err != nil {
+					return false, fmt.Sprintf("Choice %q on option %q must be a whole number", c, oname)
+				}
+			} else if opt.Type == int(discordgo.ApplicationCommandOptionNumber) {
+				if _, err := strconv.ParseFloat(strings.TrimSpace(c), 64); err != nil {
+					return false, fmt.Sprintf("Choice %q on option %q must be a number", c, oname)
+				}
 			}
 		}
 

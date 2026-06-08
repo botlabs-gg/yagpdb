@@ -12,10 +12,10 @@ import (
 func TestSlashCommandOptionsSortsRequiredFirst(t *testing.T) {
 	cc := &CustomCommand{
 		SlashOptions: []SlashCommandOptionForm{
-			{Name: "opt_a", Type: int(discordgo.ApplicationCommandOptionString), Description: "desc a"},
-			{Name: "  ", Type: int(discordgo.ApplicationCommandOptionString)}, // fully empty → dropped
-			{Name: "opt_b", Type: int(discordgo.ApplicationCommandOptionUser), Description: "desc b", Required: true},
-			{Name: "opt_c", Type: int(discordgo.ApplicationCommandOptionInteger), Description: "desc c"},
+			{Name: "opt_a", Type: "string", Description: "desc a"},
+			{Name: "  ", Type: "string"}, // fully empty → dropped
+			{Name: "opt_b", Type: "user", Description: "desc b", Required: true},
+			{Name: "opt_c", Type: "integer", Description: "desc c"},
 		},
 	}
 
@@ -46,8 +46,8 @@ func TestToDBModelAndParseSlashCommandRoundTrip(t *testing.T) {
 		Trigger:                 "MyCommand", // should be lowercased
 		SlashCommandDescription: "does a thing",
 		SlashOptions: []SlashCommandOptionForm{
-			{Name: "target", Type: int(discordgo.ApplicationCommandOptionUser), Description: "the target", Required: true},
-			{Name: "count", Type: int(discordgo.ApplicationCommandOptionInteger), Description: "how many"},
+			{Name: "target", Type: "user", Description: "the target", Required: true},
+			{Name: "count", Type: "integer", Description: "how many"},
 		},
 		Responses: []string{"hello"},
 	}
@@ -77,10 +77,10 @@ func TestToDBModelAndParseSlashCommandRoundTrip(t *testing.T) {
 func TestSlashCommandOptionsParsesExtraProperties(t *testing.T) {
 	cc := &CustomCommand{
 		SlashOptions: []SlashCommandOptionForm{
-			{Name: "choice", Type: int(discordgo.ApplicationCommandOptionString), Description: "pick one", Choices: "red\ngreen\n\nblue\n"},
-			{Name: "amount", Type: int(discordgo.ApplicationCommandOptionInteger), Description: "how many", MinValue: "1", MaxValue: "10"},
-			{Name: "note", Type: int(discordgo.ApplicationCommandOptionString), Description: "free text", MinLength: "2", MaxLength: "50"},
-			{Name: "user", Type: int(discordgo.ApplicationCommandOptionUser), Description: "who"},
+			{Name: "choice", Type: "string_menu", Description: "pick one", Choices: "red\ngreen\n\nblue\n"},
+			{Name: "amount", Type: "integer", Description: "how many", MinValue: "1", MaxValue: "10"},
+			{Name: "note", Type: "string", Description: "free text", MinLength: "2", MaxLength: "50"},
+			{Name: "user", Type: "user", Description: "who"},
 		},
 	}
 
@@ -143,6 +143,41 @@ func TestBuildSlashCommandRequestMapsExtras(t *testing.T) {
 	}
 	if byName["num"].MinValue == nil || *byName["num"].MinValue != 1 || byName["num"].MaxValue != 10 {
 		t.Errorf("value not mapped: %+v", byName["num"])
+	}
+}
+
+func TestSlashCommandChannelTypes(t *testing.T) {
+	cc := &CustomCommand{
+		SlashOptions: []SlashCommandOptionForm{
+			// valid (text=0, voice=2) plus an invalid value (99) that must be filtered out
+			{Name: "chan", Type: "channel", Description: "pick", ChannelTypes: []int{0, 2, 99}},
+			// channel types on a non-channel option must be ignored
+			{Name: "txt", Type: "string", Description: "t", ChannelTypes: []int{0}},
+		},
+	}
+
+	opts := cc.SlashCommandOptions()
+	byName := map[string]SlashCommandOption{}
+	for _, o := range opts {
+		byName[o.Name] = o
+	}
+
+	if got := byName["chan"].ChannelTypes; len(got) != 2 || got[0] != 0 || got[1] != 2 {
+		t.Errorf("expected channel types [0 2] (99 filtered), got %#v", got)
+	}
+	if len(byName["txt"].ChannelTypes) != 0 {
+		t.Errorf("channel types should be ignored on non-channel option, got %#v", byName["txt"].ChannelTypes)
+	}
+
+	// round-trip through the DB model and into the discordgo request
+	b, _ := json.Marshal(slashCommandData{Description: "d", Options: opts})
+	req := buildSlashCommandRequest(&models.CustomCommand{TextTrigger: "t", SlashCommandOptions: null.JSONFrom(b)})
+	for _, o := range req.Options {
+		if o.Name == "chan" {
+			if len(o.ChannelTypes) != 2 || o.ChannelTypes[0] != discordgo.ChannelTypeGuildText || o.ChannelTypes[1] != discordgo.ChannelTypeGuildVoice {
+				t.Errorf("channel types not mapped to request: %#v", o.ChannelTypes)
+			}
+		}
 	}
 }
 

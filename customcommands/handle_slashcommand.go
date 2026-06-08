@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -231,7 +232,22 @@ func buildSlashCommandRequest(cc *models.CustomCommand) *discordgo.CreateApplica
 			ao.MaxValue = *o.MaxValue
 		}
 		for _, c := range o.Choices {
-			ao.Choices = append(ao.Choices, &discordgo.ApplicationCommandOptionChoice{Name: c, Value: c})
+			// the choice value type must match the option type (string/int/number).
+			var value any = c
+			switch o.Type {
+			case int(discordgo.ApplicationCommandOptionInteger):
+				if n, err := strconv.ParseInt(strings.TrimSpace(c), 10, 64); err == nil {
+					value = n
+				}
+			case int(discordgo.ApplicationCommandOptionNumber):
+				if f, err := strconv.ParseFloat(strings.TrimSpace(c), 64); err == nil {
+					value = f
+				}
+			}
+			ao.Choices = append(ao.Choices, &discordgo.ApplicationCommandOptionChoice{Name: c, Value: value})
+		}
+		for _, ct := range o.ChannelTypes {
+			ao.ChannelTypes = append(ao.ChannelTypes, discordgo.ChannelType(ct))
 		}
 		opts = append(opts, ao)
 	}

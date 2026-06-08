@@ -18,16 +18,16 @@ func TestSlashFormIndexedDecodeAlignment(t *testing.T) {
 
 		"slash_command_description": {"say hi"},
 
-		// row 0: Number, no choices. row 1: Text with choices. row 2: fully empty (dropped).
+		// row 0: Integer (min value, no choices). row 1: Text menu with choices. row 2: empty (dropped).
 		"slash_options.0.name":      {"amount"},
-		"slash_options.0.type":      {"4"},
+		"slash_options.0.type":      {"integer"},
 		"slash_options.0.choices":   {""},
 		"slash_options.0.min_value": {"1"},
 		"slash_options.1.name":      {"color"},
-		"slash_options.1.type":      {"3"},
+		"slash_options.1.type":      {"string_menu"},
 		"slash_options.1.choices":   {"red\ngreen\nblue"},
 		"slash_options.2.name":      {""},
-		"slash_options.2.type":      {"3"},
+		"slash_options.2.type":      {"string"},
 		"slash_options.2.choices":   {""},
 	}
 

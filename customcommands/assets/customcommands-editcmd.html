@@ -364,14 +364,17 @@
                                                     <div class="col-12 col-md-2 mb-2 mb-md-0">
                                                         <label class="small mb-1">Type</label>
                                                         <select class="form-control slash-option-type-select" data-slash-field="type" name="slash_options.{{$i}}.type" onchange="slashOptTypeChanged(this)">
-                                                            <option value="3" {{if eq $opt.Type 3}}selected{{end}}>Text</option>
-                                                            <option value="4" {{if eq $opt.Type 4}}selected{{end}}>Integer</option>
-                                                            <option value="10" {{if eq $opt.Type 10}}selected{{end}}>Number</option>
-                                                            <option value="5" {{if eq $opt.Type 5}}selected{{end}}>True/False</option>
-                                                            <option value="6" {{if eq $opt.Type 6}}selected{{end}}>User</option>
-                                                            <option value="7" {{if eq $opt.Type 7}}selected{{end}}>Channel</option>
-                                                            <option value="8" {{if eq $opt.Type 8}}selected{{end}}>Role</option>
-                                                            <option value="9" {{if eq $opt.Type 9}}selected{{end}}>User or Role</option>
+                                                            <option value="string" {{if eq $opt.TypeKey "string"}}selected{{end}}>Text</option>
+                                                            <option value="string_menu" {{if eq $opt.TypeKey "string_menu"}}selected{{end}}>Text menu</option>
+                                                            <option value="integer" {{if eq $opt.TypeKey "integer"}}selected{{end}}>Integer</option>
+                                                            <option value="integer_menu" {{if eq $opt.TypeKey "integer_menu"}}selected{{end}}>Integer menu</option>
+                                                            <option value="number" {{if eq $opt.TypeKey "number"}}selected{{end}}>Number</option>
+                                                            <option value="number_menu" {{if eq $opt.TypeKey "number_menu"}}selected{{end}}>Number menu</option>
+                                                            <option value="boolean" {{if eq $opt.TypeKey "boolean"}}selected{{end}}>True/False</option>
+                                                            <option value="user" {{if eq $opt.TypeKey "user"}}selected{{end}}>User</option>
+                                                            <option value="channel" {{if eq $opt.TypeKey "channel"}}selected{{end}}>Channel</option>
+                                                            <option value="role" {{if eq $opt.TypeKey "role"}}selected{{end}}>Role</option>
+                                                            <option value="mentionable" {{if eq $opt.TypeKey "mentionable"}}selected{{end}}>User or Role</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-12 col-md-4 mb-2 mb-md-0">
@@ -385,12 +388,14 @@
                                                         <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
                                                     </div>
                                                 </div>
-                                                <div class="form-row slash-opt-extra-text mt-2 {{if ne $opt.Type 3}}hidden{{end}}">
-                                                    <div class="col-12 col-md-6 mb-2 mb-md-0">
-                                                        <label class="small mb-1">Choices - one per line (turns this into a dropdown / select menu)</label>
-                                                        <textarea class="form-control" data-slash-field="choices" name="slash_options.{{$i}}.choices" rows="3" placeholder="Leave empty for free text input">{{range $opt.Choices}}{{.}}
+                                                <div class="form-row slash-opt-extra-choices mt-2 {{if and (ne $opt.TypeKey "string_menu") (ne $opt.TypeKey "integer_menu") (ne $opt.TypeKey "number_menu")}}hidden{{end}}">
+                                                    <div class="col-12">
+                                                        <label class="small mb-1">Choices - one per line (turns this into a dropdown / select menu). For Integer/Number arguments each line must be a number.</label>
+                                                        <textarea class="form-control" data-slash-field="choices" name="slash_options.{{$i}}.choices" rows="3" placeholder="Leave empty for free input">{{range $opt.Choices}}{{.}}
 {{end}}</textarea>
                                                     </div>
+                                                </div>
+                                                <div class="form-row slash-opt-extra-text mt-2 {{if ne $opt.TypeKey "string"}}hidden{{end}}">
                                                     <div class="col-6 col-md-3 mb-2 mb-md-0">
                                                         <label class="small mb-1">Min length</label>
                                                         <input type="number" min="0" class="form-control" data-slash-field="min_length" name="slash_options.{{$i}}.min_length" {{if $opt.MinLength}}value="{{$opt.MinLength}}"{{end}}>
@@ -400,7 +405,7 @@
                                                         <input type="number" min="0" class="form-control" data-slash-field="max_length" name="slash_options.{{$i}}.max_length" {{if $opt.MaxLength}}value="{{$opt.MaxLength}}"{{end}}>
                                                     </div>
                                                 </div>
-                                                <div class="form-row slash-opt-extra-number mt-2 {{if and (ne $opt.Type 4) (ne $opt.Type 10)}}hidden{{end}}">
+                                                <div class="form-row slash-opt-extra-number mt-2 {{if and (ne $opt.TypeKey "integer") (ne $opt.TypeKey "number")}}hidden{{end}}">
                                                     <div class="col-6 col-md-3 mb-2 mb-md-0">
                                                         <label class="small mb-1">Min value</label>
                                                         <input type="number" step="any" class="form-control" data-slash-field="min_value" name="slash_options.{{$i}}.min_value" {{if $opt.MinValue}}value="{{$opt.MinValue}}"{{end}}>
@@ -410,10 +415,26 @@
                                                         <input type="number" step="any" class="form-control" data-slash-field="max_value" name="slash_options.{{$i}}.max_value" {{if $opt.MaxValue}}value="{{$opt.MaxValue}}"{{end}}>
                                                     </div>
                                                 </div>
+                                                <div class="form-row slash-opt-extra-channel mt-2 {{if ne $opt.TypeKey "channel"}}hidden{{end}}">
+                                                    <div class="col-12">
+                                                        <label class="small mb-1 d-block">Allowed channel types (leave empty to allow any)</label>
+                                                        <select class="multiselect form-control" multiple="multiple" data-plugin-multiselect data-slash-field="channel_types" name="slash_options.{{$i}}.channel_types">
+                                                            <option value="0" {{if in $opt.ChannelTypes 0}}selected{{end}}>Text</option>
+                                                            <option value="2" {{if in $opt.ChannelTypes 2}}selected{{end}}>Voice</option>
+                                                            <option value="4" {{if in $opt.ChannelTypes 4}}selected{{end}}>Category</option>
+                                                            <option value="5" {{if in $opt.ChannelTypes 5}}selected{{end}}>Announcement</option>
+                                                            <option value="13" {{if in $opt.ChannelTypes 13}}selected{{end}}>Stage</option>
+                                                            <option value="15" {{if in $opt.ChannelTypes 15}}selected{{end}}>Forum</option>
+                                                            <option value="11" {{if in $opt.ChannelTypes 11}}selected{{end}}>Public Thread</option>
+                                                            <option value="12" {{if in $opt.ChannelTypes 12}}selected{{end}}>Private Thread</option>
+                                                            <option value="10" {{if in $opt.ChannelTypes 10}}selected{{end}}>Announcement Thread</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                             </div>
                                             {{end}}
                                         </div>
-                                        <button type="button" id="slash-option-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add argument</button>
+                                        <button type="button" id="slash-option-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add Option</button>
                                         <small class="form-text text-muted">Up to 5 arguments. Required arguments are automatically ordered before optional ones. Add choices to a Text argument to turn it into a dropdown / select menu.</small>
                                         </div>
                                         <div id="slash-validation-errors" class="alert alert-danger py-2 mt-2 mb-0 hidden"></div>
@@ -429,14 +450,17 @@
                                             <div class="col-12 col-md-2 mb-2 mb-md-0">
                                                 <label class="small mb-1">Type</label>
                                                 <select class="form-control slash-option-type-select" data-slash-field="type" onchange="slashOptTypeChanged(this)">
-                                                    <option value="3">Text</option>
-                                                    <option value="4">Integer</option>
-                                                    <option value="10">Number</option>
-                                                    <option value="5">True/False</option>
-                                                    <option value="6">User</option>
-                                                    <option value="7">Channel</option>
-                                                    <option value="8">Role</option>
-                                                    <option value="9">User or Role</option>
+                                                    <option value="string">Text</option>
+                                                    <option value="string_menu">Text menu (choices)</option>
+                                                    <option value="integer">Integer</option>
+                                                    <option value="integer_menu">Integer menu (choices)</option>
+                                                    <option value="number">Number</option>
+                                                    <option value="number_menu">Number menu (choices)</option>
+                                                    <option value="boolean">True/False</option>
+                                                    <option value="user">User</option>
+                                                    <option value="channel">Channel</option>
+                                                    <option value="role">Role</option>
+                                                    <option value="mentionable">User or Role</option>
                                                 </select>
                                             </div>
                                             <div class="col-12 col-md-4 mb-2 mb-md-0">
@@ -454,11 +478,13 @@
                                                 <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
                                             </div>
                                         </div>
-                                        <div class="form-row slash-opt-extra-text mt-2">
-                                            <div class="col-12 col-md-6 mb-2 mb-md-0">
-                                                <label class="small mb-1">Choices, one per line (turns this into a dropdown / select menu)</label>
-                                                <textarea class="form-control" data-slash-field="choices" rows="3" placeholder="Leave empty for free text input"></textarea>
+                                        <div class="form-row slash-opt-extra-choices mt-2 hidden">
+                                            <div class="col-12">
+                                                <label class="small mb-1">Choices - one per line (max 25). For Integer/Number arguments each line must be a number.</label>
+                                                <textarea class="form-control" data-slash-field="choices" rows="3" placeholder="One choice per line"></textarea>
                                             </div>
+                                        </div>
+                                        <div class="form-row slash-opt-extra-text mt-2">
                                             <div class="col-6 col-md-3 mb-2 mb-md-0">
                                                 <label class="small mb-1">Min length</label>
                                                 <input type="number" min="0" class="form-control" data-slash-field="min_length">
@@ -476,6 +502,22 @@
                                             <div class="col-6 col-md-3 mb-2 mb-md-0">
                                                 <label class="small mb-1">Max value</label>
                                                 <input type="number" step="any" class="form-control" data-slash-field="max_value">
+                                            </div>
+                                        </div>
+                                        <div class="form-row slash-opt-extra-channel mt-2 hidden">
+                                            <div class="col-12">
+                                                <label class="small mb-1 d-block">Allowed channel types (leave empty to allow any)</label>
+                                                <select class="multiselect form-control" multiple="multiple" data-plugin-multiselect data-slash-field="channel_types">
+                                                    <option value="0">Text</option>
+                                                    <option value="2">Voice</option>
+                                                    <option value="4">Category</option>
+                                                    <option value="5">Announcement</option>
+                                                    <option value="13">Stage</option>
+                                                    <option value="15">Forum</option>
+                                                    <option value="11">Public Thread</option>
+                                                    <option value="12">Private Thread</option>
+                                                    <option value="10">Announcement Thread</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -1087,15 +1129,21 @@
     }
 
     // Show only the per-type extra fields relevant to the selected option type:
-    // choices + min/max length for Text (3), min/max value for Integer (4) / Number (10).
+    // choices for the *_menu variants, min/max length for plain Text, min/max value
+    // for plain Integer/Number, allowed channel types for Channel.
     function slashOptTypeChanged(sel) {
         const row = sel.closest('.slash-option-row');
         if (!row) return;
         const t = sel.value;
+        const isMenu = t === 'string_menu' || t === 'integer_menu' || t === 'number_menu';
+        const choicesExtra = row.querySelector('.slash-opt-extra-choices');
         const textExtra = row.querySelector('.slash-opt-extra-text');
         const numberExtra = row.querySelector('.slash-opt-extra-number');
-        if (textExtra) textExtra.classList.toggle('hidden', t !== '3');
-        if (numberExtra) numberExtra.classList.toggle('hidden', t !== '4' && t !== '10');
+        const channelExtra = row.querySelector('.slash-opt-extra-channel');
+        if (choicesExtra) choicesExtra.classList.toggle('hidden', !isMenu);
+        if (textExtra) textExtra.classList.toggle('hidden', t !== 'string');
+        if (numberExtra) numberExtra.classList.toggle('hidden', t !== 'integer' && t !== 'number');
+        if (channelExtra) channelExtra.classList.toggle('hidden', t !== 'channel');
     }
 
     $('#slash-option-add').on('click', function (e) {
@@ -1107,6 +1155,20 @@
         const frag = document.getElementById('slash-option-template').content.cloneNode(true);
         list.appendChild(frag);
         renumberSlashOptions();
+
+        // Initialize the channel-types multiselect on the newly added row (cloned from
+        // an un-initialized template). Mirrors yagInitMultiSelect for the new element.
+        const newRow = list.lastElementChild;
+        if (newRow && $.isFunction($.fn['multiselect'])) {
+            $(newRow).find('[data-plugin-multiselect]').each(function () {
+                $(this).themePluginMultiSelect($(this).data('plugin-options') || {});
+            });
+        }
+        // sync the new row's per-type field visibility with its default type.
+        if (newRow) {
+            const typeSel = newRow.querySelector('[data-slash-field="type"]');
+            if (typeSel) slashOptTypeChanged(typeSel);
+        }
     });
 
     $('#slash-options-list').on('click', '.slash-option-remove', function (e) {
@@ -1196,9 +1258,14 @@
             }
 
             const t = tSel ? tSel.value : '';
-            if (t === '3') {
+            const isMenu = t === 'string_menu' || t === 'integer_menu' || t === 'number_menu';
+            if (isMenu) {
                 const choicesEl = row.querySelector('[data-slash-field="choices"]');
                 const lines = (choicesEl ? choicesEl.value : '').split('\n').map((s) => s.trim()).filter((s) => s !== '');
+                if (lines.length === 0) {
+                    errors.push(label + ' is a menu but has no choices.');
+                    slashMark(choicesEl, true);
+                }
                 if (lines.length > 25) {
                     errors.push(label + ' can have at most 25 choices.');
                     slashMark(choicesEl, true);
@@ -1207,26 +1274,33 @@
                     errors.push('Each choice on ' + label + ' must be at most 100 characters.');
                     slashMark(choicesEl, true);
                 }
-                if (lines.length === 0) {
-                    const minL = row.querySelector('[data-slash-field="min_length"]');
-                    const maxL = row.querySelector('[data-slash-field="max_length"]');
-                    const minv = minL && minL.value.trim() !== '' ? parseInt(minL.value, 10) : null;
-                    const maxv = maxL && maxL.value.trim() !== '' ? parseInt(maxL.value, 10) : null;
-                    if (minv !== null && minv < 0) {
-                        errors.push('Min length for ' + label + ' cannot be negative.');
-                        slashMark(minL, true);
-                    }
-                    if (maxv !== null && maxv > 6000) {
-                        errors.push('Max length for ' + label + ' cannot exceed 6000.');
-                        slashMark(maxL, true);
-                    }
-                    if (minv !== null && maxv !== null && minv > maxv) {
-                        errors.push('Min length cannot exceed max length for ' + label + '.');
-                        slashMark(minL, true);
-                        slashMark(maxL, true);
-                    }
+                if (t === 'integer_menu' && lines.some((l) => !/^-?\d+$/.test(l))) {
+                    errors.push('Each choice on ' + label + ' must be a whole number.');
+                    slashMark(choicesEl, true);
                 }
-            } else if (t === '4' || t === '10') {
+                if (t === 'number_menu' && lines.some((l) => isNaN(Number(l)))) {
+                    errors.push('Each choice on ' + label + ' must be a number.');
+                    slashMark(choicesEl, true);
+                }
+            } else if (t === 'string') {
+                const minL = row.querySelector('[data-slash-field="min_length"]');
+                const maxL = row.querySelector('[data-slash-field="max_length"]');
+                const minv = minL && minL.value.trim() !== '' ? parseInt(minL.value, 10) : null;
+                const maxv = maxL && maxL.value.trim() !== '' ? parseInt(maxL.value, 10) : null;
+                if (minv !== null && minv < 0) {
+                    errors.push('Min length for ' + label + ' cannot be negative.');
+                    slashMark(minL, true);
+                }
+                if (maxv !== null && maxv > 6000) {
+                    errors.push('Max length for ' + label + ' cannot exceed 6000.');
+                    slashMark(maxL, true);
+                }
+                if (minv !== null && maxv !== null && minv > maxv) {
+                    errors.push('Min length cannot exceed max length for ' + label + '.');
+                    slashMark(minL, true);
+                    slashMark(maxL, true);
+                }
+            } else if (t === 'integer' || t === 'number') {
                 const minV = row.querySelector('[data-slash-field="min_value"]');
                 const maxV = row.querySelector('[data-slash-field="max_value"]');
                 const minn = minV && minV.value.trim() !== '' ? parseFloat(minV.value) : null;

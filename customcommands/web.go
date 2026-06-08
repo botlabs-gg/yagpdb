@@ -971,10 +971,22 @@ func tmplGetCCInterval(cc *models.CustomCommand) int {
 	return cc.TimeTriggerInterval
 }
 
+// SlashOptionView is a stored slash command option plus its editor type key
+// ("string", "string_menu", ...) for rendering the type dropdown.
+type SlashOptionView struct {
+	SlashCommandOption
+	TypeKey string
+}
+
 // tmplGetCCSlashOptions returns the configured options of a slash command custom
-// command for rendering in the edit form.
-func tmplGetCCSlashOptions(cc *models.CustomCommand) []SlashCommandOption {
-	return parseSlashCommandData(cc).Options
+// command for rendering in the edit form, each tagged with its UI type key.
+func tmplGetCCSlashOptions(cc *models.CustomCommand) []SlashOptionView {
+	stored := parseSlashCommandData(cc).Options
+	views := make([]SlashOptionView, 0, len(stored))
+	for _, o := range stored {
+		views = append(views, SlashOptionView{SlashCommandOption: o, TypeKey: slashFormTypeKey(o)})
+	}
+	return views
 }
 
 // tmplGetCCSlashDescription returns the configured description of a slash command
