@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -146,6 +147,14 @@ type SlashCommandOption struct {
 	Type        int    `json:"type"` // discordgo.ApplicationCommandOptionType (3,4,5,6,7,8,9,10)
 	Description string `json:"description"`
 	Required    bool   `json:"required"`
+
+	Choices []string `json:"choices,omitempty"`
+
+	MinValue *float64 `json:"min_value,omitempty"`
+	MaxValue *float64 `json:"max_value,omitempty"`
+
+	MinLength *int `json:"min_length,omitempty"`
+	MaxLength *int `json:"max_length,omitempty"`
 }
 
 // slashCommandNameRegex matches Discord's allowed application command/option name
@@ -153,8 +162,11 @@ type SlashCommandOption struct {
 var slashCommandNameRegex = regexp.MustCompile(`^[-_\p{L}\p{N}]{1,32}$`)
 
 const (
-	MaxSlashCommandOptions     = 25
-	MaxSlashCommandDescription = 100
+	MaxSlashCommandOptions      = 25
+	MaxSlashCommandDescription  = 100
+	MaxSlashCommandChoices      = 25
+	MaxSlashCommandChoiceLength = 100
+	MaxSlashCommandStringLength = 6000
 )
 
 type CustomCommand struct {
@@ -196,30 +208,58 @@ type CustomCommand struct {
 
 	ShowErrors bool `schema:"show_errors"`
 
-	SlashCommandDescription string   `schema:"slash_command_description" valid:",0,100"`
-	SlashOptionNames        []string `schema:"slash_option_names"`
-	SlashOptionTypes        []int    `schema:"slash_option_types"`
-	SlashOptionDescriptions []string `schema:"slash_option_descriptions"`
-	SlashOptionRequired     []bool   `schema:"slash_option_required"`
+	SlashCommandDescription string                   `schema:"slash_command_description" valid:",0,100"`
+	SlashOptions            []SlashCommandOptionForm `schema:"slash_options"`
+}
+
+type SlashCommandOptionForm struct {
+	Name        string `schema:"name"`
+	Type        int    `schema:"type"`
+	Description string `schema:"description"`
+	Required    bool   `schema:"required"`
+	Choices     string `schema:"choices"`
+	MinValue    string `schema:"min_value"`
+	MaxValue    string `schema:"max_value"`
+	MinLength   string `schema:"min_length"`
+	MaxLength   string `schema:"max_length"`
+}
+
+func (f SlashCommandOptionForm) isEmpty() bool {
+	return strings.TrimSpace(f.Name) == "" &&
+		strings.TrimSpace(f.Description) == "" &&
+		strings.TrimSpace(f.Choices) == "" &&
+		strings.TrimSpace(f.MinValue) == "" &&
+		strings.TrimSpace(f.MaxValue) == "" &&
+		strings.TrimSpace(f.MinLength) == "" &&
+		strings.TrimSpace(f.MaxLength) == ""
 }
 
 func (cc *CustomCommand) SlashCommandOptions() []SlashCommandOption {
-	opts := make([]SlashCommandOption, 0, len(cc.SlashOptionNames))
-	for i, name := range cc.SlashOptionNames {
-		if strings.TrimSpace(name) == "" {
+	opts := make([]SlashCommandOption, 0, len(cc.SlashOptions))
+	for _, f := range cc.SlashOptions {
+		if f.isEmpty() {
 			continue
 		}
 
-		opt := SlashCommandOption{Name: strings.ToLower(strings.TrimSpace(name))}
-		if i < len(cc.SlashOptionTypes) {
-			opt.Type = cc.SlashOptionTypes[i]
+		opt := SlashCommandOption{
+			Name:        strings.ToLower(strings.TrimSpace(f.Name)),
+			Type:        f.Type,
+			Description: f.Description,
+			Required:    f.Required,
 		}
-		if i < len(cc.SlashOptionDescriptions) {
-			opt.Description = cc.SlashOptionDescriptions[i]
+
+		switch opt.Type {
+		case int(discordgo.ApplicationCommandOptionString):
+			opt.Choices = parseChoiceLines(f.Choices)
+			if len(opt.Choices) == 0 {
+				opt.MinLength = parseIntPtr(f.MinLength)
+				opt.MaxLength = parseIntPtr(f.MaxLength)
+			}
+		case int(discordgo.ApplicationCommandOptionInteger), int(discordgo.ApplicationCommandOptionNumber):
+			opt.MinValue = parseFloatPtr(f.MinValue)
+			opt.MaxValue = parseFloatPtr(f.MaxValue)
 		}
-		if i < len(cc.SlashOptionRequired) {
-			opt.Required = cc.SlashOptionRequired[i]
-		}
+
 		opts = append(opts, opt)
 	}
 
@@ -228,6 +268,39 @@ func (cc *CustomCommand) SlashCommandOptions() []SlashCommandOption {
 	})
 
 	return opts
+}
+
+func parseChoiceLines(raw string) []string {
+	var out []string
+	for line := range strings.SplitSeq(raw, "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			out = append(out, line)
+		}
+	}
+	return out
+}
+
+func parseIntPtr(raw string) *int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	if v, err := strconv.Atoi(raw); err == nil {
+		return &v
+	}
+	return nil
+}
+
+func parseFloatPtr(raw string) *float64 {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	if v, err := strconv.ParseFloat(raw, 64); err == nil {
+		return &v
+	}
+	return nil
 }
 
 var _ web.CustomValidator = (*CustomCommand)(nil)
@@ -321,52 +394,9 @@ var validSlashOptionTypes = map[int]bool{
 }
 
 func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int64) bool {
-	name := cc.Trigger
-	if name != strings.ToLower(name) {
+	if cc.Trigger != strings.ToLower(cc.Trigger) {
 		tmpl.AddAlerts(web.ErrorAlert("Slash command name must be lowercase"))
 		return false
-	}
-	if !slashCommandNameRegex.MatchString(name) {
-		tmpl.AddAlerts(web.ErrorAlert("Slash command name must be 1-32 characters and contain only letters, numbers, dashes and underscores"))
-		return false
-	}
-
-	if l := utf8.RuneCountInString(cc.SlashCommandDescription); l < 1 || l > MaxSlashCommandDescription {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Slash command description must be between 1 and %d characters", MaxSlashCommandDescription)))
-		return false
-	}
-
-	if commands.IsInbuiltSlashCommandName(name) {
-		tmpl.AddAlerts(web.ErrorAlert("A built-in command with that name already exists, please choose a different name"))
-		return false
-	}
-
-	options := cc.SlashCommandOptions()
-	if len(options) > MaxSlashCommandOptions {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("A slash command can have at most %d options", MaxSlashCommandOptions)))
-		return false
-	}
-
-	seenOptions := make(map[string]bool, len(options))
-	for _, opt := range options {
-		if !slashCommandNameRegex.MatchString(opt.Name) {
-			tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Option name %q must be 1-32 lowercase characters (letters, numbers, dashes, underscores)", opt.Name)))
-			return false
-		}
-		if seenOptions[opt.Name] {
-			tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Duplicate option name %q", opt.Name)))
-			return false
-		}
-		seenOptions[opt.Name] = true
-
-		if l := utf8.RuneCountInString(opt.Description); l < 1 || l > MaxSlashCommandDescription {
-			tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Description for option %q must be between 1 and %d characters", opt.Name, MaxSlashCommandDescription)))
-			return false
-		}
-		if !validSlashOptionTypes[opt.Type] {
-			tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("Invalid type for option %q", opt.Name)))
-			return false
-		}
 	}
 
 	if cc.InteractionDeferMode == InteractionDeferModeUpdate {
@@ -374,18 +404,88 @@ func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int
 		return false
 	}
 
-	existing, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND local_id != ?", guildID, int(CommandTriggerSlash), cc.ID)).AllG(context.Background())
-	if err != nil {
-		tmpl.AddAlerts(web.ErrorAlert("Failed validating slash command, please try again"))
-		logger.WithError(err).WithField("guild", guildID).Error("failed fetching existing slash command ccs for validation")
+	if ok, msg := validateSlashCommandData(guildID, cc.Trigger, cc.SlashCommandDescription, cc.SlashCommandOptions(), cc.ID, cc.IsEnabled); !ok {
+		tmpl.AddAlerts(web.ErrorAlert(msg))
 		return false
+	}
+
+	return true
+}
+
+// validateSlashCommandData enforces Discord's slash command rules and the per-guild
+// name-uniqueness and count limits. It is shared by the editor form and the import
+// path so both reject invalid/duplicate commands. currentLocalID is the local_id of
+// the command being saved (0 for new commands) and is excluded from the duplicate
+// and limit checks.
+func validateSlashCommandData(guildID int64, name, description string, options []SlashCommandOption, currentLocalID int64, isEnabled bool) (ok bool, errMsg string) {
+	name = strings.ToLower(strings.TrimSpace(name))
+	if !slashCommandNameRegex.MatchString(name) {
+		return false, "Slash command name must be 1-32 characters and contain only letters, numbers, dashes and underscores"
+	}
+
+	if l := utf8.RuneCountInString(description); l < 1 || l > MaxSlashCommandDescription {
+		return false, fmt.Sprintf("Slash command description must be between 1 and %d characters", MaxSlashCommandDescription)
+	}
+
+	if commands.IsInbuiltSlashCommandName(name) {
+		return false, "A built-in command with that name already exists, please choose a different name"
+	}
+
+	if len(options) > MaxSlashCommandOptions {
+		return false, fmt.Sprintf("A slash command can have at most %d options", MaxSlashCommandOptions)
+	}
+
+	seenOptions := make(map[string]bool, len(options))
+	for _, opt := range options {
+		oname := strings.ToLower(strings.TrimSpace(opt.Name))
+		if !slashCommandNameRegex.MatchString(oname) {
+			return false, fmt.Sprintf("Option name %q must be 1-32 lowercase characters (letters, numbers, dashes, underscores)", opt.Name)
+		}
+		if seenOptions[oname] {
+			return false, fmt.Sprintf("Duplicate option name %q", oname)
+		}
+		seenOptions[oname] = true
+
+		if l := utf8.RuneCountInString(opt.Description); l < 1 || l > MaxSlashCommandDescription {
+			return false, fmt.Sprintf("Description for option %q must be between 1 and %d characters", oname, MaxSlashCommandDescription)
+		}
+		if !validSlashOptionTypes[opt.Type] {
+			return false, fmt.Sprintf("Invalid type for option %q", oname)
+		}
+
+		if len(opt.Choices) > MaxSlashCommandChoices {
+			return false, fmt.Sprintf("Option %q can have at most %d choices", oname, MaxSlashCommandChoices)
+		}
+		for _, c := range opt.Choices {
+			if strings.TrimSpace(c) == "" {
+				return false, fmt.Sprintf("Option %q has an empty choice", oname)
+			}
+			if utf8.RuneCountInString(c) > MaxSlashCommandChoiceLength {
+				return false, fmt.Sprintf("Choice %q on option %q must be at most %d characters", c, oname, MaxSlashCommandChoiceLength)
+			}
+		}
+
+		if opt.MinValue != nil && opt.MaxValue != nil && *opt.MinValue > *opt.MaxValue {
+			return false, fmt.Sprintf("Min value cannot be greater than max value for option %q", oname)
+		}
+		if opt.MinLength != nil && opt.MaxLength != nil && *opt.MinLength > *opt.MaxLength {
+			return false, fmt.Sprintf("Min length cannot be greater than max length for option %q", oname)
+		}
+		if (opt.MinLength != nil && *opt.MinLength < 0) || (opt.MaxLength != nil && *opt.MaxLength > MaxSlashCommandStringLength) {
+			return false, fmt.Sprintf("Length constraints for option %q must be between 0 and %d", oname, MaxSlashCommandStringLength)
+		}
+	}
+
+	existing, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND local_id != ?", guildID, int(CommandTriggerSlash), currentLocalID)).AllG(context.Background())
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed fetching existing slash command ccs for validation")
+		return false, "Failed validating slash command, please try again"
 	}
 
 	enabledCount := 0
 	for _, e := range existing {
 		if strings.EqualFold(e.TextTrigger, name) {
-			tmpl.AddAlerts(web.ErrorAlert("Another slash command in this server already uses that name"))
-			return false
+			return false, "Another slash command in this server already uses that name"
 		}
 		if !e.Disabled {
 			enabledCount++
@@ -393,12 +493,11 @@ func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int
 	}
 
 	maxSlash := MaxSlashCommandForContext(guildID)
-	if cc.IsEnabled && enabledCount >= maxSlash {
-		tmpl.AddAlerts(web.ErrorAlert(fmt.Sprintf("You can have at most %d enabled slash commands per server (%d on premium servers)", maxSlash, MaxSlashCommandCCsPremium)))
-		return false
+	if isEnabled && enabledCount >= maxSlash {
+		return false, fmt.Sprintf("You can have at most %d enabled slash commands per server (%d on premium servers)", maxSlash, MaxSlashCommandCCsPremium)
 	}
 
-	return true
+	return true, ""
 }
 
 func (cc *CustomCommand) ToDBModel() *models.CustomCommand {

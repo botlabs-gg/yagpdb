@@ -11,15 +11,17 @@ import (
 
 func TestSlashCommandOptionsSortsRequiredFirst(t *testing.T) {
 	cc := &CustomCommand{
-		SlashOptionNames:        []string{"opt_a", "  ", "opt_b", "opt_c"},
-		SlashOptionTypes:        []int{int(discordgo.ApplicationCommandOptionString), 0, int(discordgo.ApplicationCommandOptionUser), int(discordgo.ApplicationCommandOptionInteger)},
-		SlashOptionDescriptions: []string{"desc a", "ignored", "desc b", "desc c"},
-		SlashOptionRequired:     []bool{false, false, true, false},
+		SlashOptions: []SlashCommandOptionForm{
+			{Name: "opt_a", Type: int(discordgo.ApplicationCommandOptionString), Description: "desc a"},
+			{Name: "  ", Type: int(discordgo.ApplicationCommandOptionString)}, // fully empty → dropped
+			{Name: "opt_b", Type: int(discordgo.ApplicationCommandOptionUser), Description: "desc b", Required: true},
+			{Name: "opt_c", Type: int(discordgo.ApplicationCommandOptionInteger), Description: "desc c"},
+		},
 	}
 
 	opts := cc.SlashCommandOptions()
 
-	// the blank-named row must be skipped
+	// the blank/empty row must be skipped
 	if len(opts) != 3 {
 		t.Fatalf("expected 3 options, got %d: %+v", len(opts), opts)
 	}
@@ -43,11 +45,11 @@ func TestToDBModelAndParseSlashCommandRoundTrip(t *testing.T) {
 		TriggerType:             CommandTriggerSlash,
 		Trigger:                 "MyCommand", // should be lowercased
 		SlashCommandDescription: "does a thing",
-		SlashOptionNames:        []string{"target", "count"},
-		SlashOptionTypes:        []int{int(discordgo.ApplicationCommandOptionUser), int(discordgo.ApplicationCommandOptionInteger)},
-		SlashOptionDescriptions: []string{"the target", "how many"},
-		SlashOptionRequired:     []bool{true, false},
-		Responses:               []string{"hello"},
+		SlashOptions: []SlashCommandOptionForm{
+			{Name: "target", Type: int(discordgo.ApplicationCommandOptionUser), Description: "the target", Required: true},
+			{Name: "count", Type: int(discordgo.ApplicationCommandOptionInteger), Description: "how many"},
+		},
+		Responses: []string{"hello"},
 	}
 
 	dbModel := cc.ToDBModel()
@@ -69,6 +71,78 @@ func TestToDBModelAndParseSlashCommandRoundTrip(t *testing.T) {
 	// required-first ordering preserved through serialization
 	if data.Options[0].Name != "target" || !data.Options[0].Required {
 		t.Errorf("expected required target option first, got %+v", data.Options[0])
+	}
+}
+
+func TestSlashCommandOptionsParsesExtraProperties(t *testing.T) {
+	cc := &CustomCommand{
+		SlashOptions: []SlashCommandOptionForm{
+			{Name: "choice", Type: int(discordgo.ApplicationCommandOptionString), Description: "pick one", Choices: "red\ngreen\n\nblue\n"},
+			{Name: "amount", Type: int(discordgo.ApplicationCommandOptionInteger), Description: "how many", MinValue: "1", MaxValue: "10"},
+			{Name: "note", Type: int(discordgo.ApplicationCommandOptionString), Description: "free text", MinLength: "2", MaxLength: "50"},
+			{Name: "user", Type: int(discordgo.ApplicationCommandOptionUser), Description: "who"},
+		},
+	}
+
+	opts := cc.SlashCommandOptions()
+	byName := map[string]SlashCommandOption{}
+	for _, o := range opts {
+		byName[o.Name] = o
+	}
+
+	// String with choices → select menu (blank lines dropped)
+	if got := byName["choice"].Choices; len(got) != 3 || got[0] != "red" || got[2] != "blue" {
+		t.Errorf("unexpected choices: %#v", got)
+	}
+	// choices option must not also carry length constraints
+	if byName["choice"].MinLength != nil || byName["choice"].MaxLength != nil {
+		t.Errorf("choice option should not have length constraints")
+	}
+	// integer min/max value
+	if byName["amount"].MinValue == nil || *byName["amount"].MinValue != 1 || byName["amount"].MaxValue == nil || *byName["amount"].MaxValue != 10 {
+		t.Errorf("unexpected min/max value: %+v", byName["amount"])
+	}
+	// free-text string min/max length
+	if byName["note"].MinLength == nil || *byName["note"].MinLength != 2 || byName["note"].MaxLength == nil || *byName["note"].MaxLength != 50 {
+		t.Errorf("unexpected min/max length: %+v", byName["note"])
+	}
+	// non-text/number types carry none of the extras
+	u := byName["user"]
+	if len(u.Choices) != 0 || u.MinValue != nil || u.MaxValue != nil || u.MinLength != nil || u.MaxLength != nil {
+		t.Errorf("user option should have no extra properties: %+v", u)
+	}
+}
+
+func TestBuildSlashCommandRequestMapsExtras(t *testing.T) {
+	min := 2
+	max := 50
+	minV := 1.0
+	maxV := 10.0
+	payload := slashCommandData{
+		Description: "x",
+		Options: []SlashCommandOption{
+			{Name: "color", Type: int(discordgo.ApplicationCommandOptionString), Description: "c", Choices: []string{"red", "blue"}},
+			{Name: "len", Type: int(discordgo.ApplicationCommandOptionString), Description: "l", MinLength: &min, MaxLength: &max},
+			{Name: "num", Type: int(discordgo.ApplicationCommandOptionInteger), Description: "n", MinValue: &minV, MaxValue: &maxV},
+		},
+	}
+	b, _ := json.Marshal(payload)
+	cc := &models.CustomCommand{TextTrigger: "t", SlashCommandOptions: null.JSONFrom(b)}
+
+	req := buildSlashCommandRequest(cc)
+	byName := map[string]*discordgo.ApplicationCommandOption{}
+	for _, o := range req.Options {
+		byName[o.Name] = o
+	}
+
+	if len(byName["color"].Choices) != 2 || byName["color"].Choices[0].Name != "red" || byName["color"].Choices[0].Value != "red" {
+		t.Errorf("choices not mapped: %#v", byName["color"].Choices)
+	}
+	if byName["len"].MinLength == nil || *byName["len"].MinLength != 2 || byName["len"].MaxLength == nil || *byName["len"].MaxLength != 50 {
+		t.Errorf("length not mapped: %+v", byName["len"])
+	}
+	if byName["num"].MinValue == nil || *byName["num"].MinValue != 1 || byName["num"].MaxValue != 10 {
+		t.Errorf("value not mapped: %+v", byName["num"])
 	}
 }
 

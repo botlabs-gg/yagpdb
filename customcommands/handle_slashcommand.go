@@ -77,16 +77,14 @@ func handleSlashCommandInteraction(evt *eventsystem.EventData, cs *dstate.Channe
 		return
 	}
 
-	if !CmdRunsInChannel(matched, common.ChannelOrThreadParentID(cs)) {
-		return
-	}
-
 	ms := dstate.MemberStateFromMember(interaction.Member)
 	if ms == nil || ms.User.Bot {
 		return
 	}
 
-	if !CmdRunsForUser(matched, ms) {
+	// Channel/role restrictions: tell the user why instead of failing silently.
+	if !CmdRunsInChannel(matched, common.ChannelOrThreadParentID(cs)) || !CmdRunsForUser(matched, ms) {
+		respondRestrictedInteraction(interaction)
 		return
 	}
 
@@ -97,8 +95,9 @@ func handleSlashCommandInteraction(evt *eventsystem.EventData, cs *dstate.Channe
 }
 
 // ExecuteCustomCommandFromSlash builds the template context for a slash command
-// custom command and executes it. Option values are exposed in .Args (keyed by
-// option name) and .CmdArgs (ordered to match the configured option order).
+// custom command and executes it. Option values are exposed in .Options (keyed by
+// option name); .Args is the ordered slice (command name at index 0) and .CmdArgs
+// is the ordered option values.
 func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet, cs *dstate.ChannelState, interaction *templates.CustomCommandInteraction) error {
 	ms := dstate.MemberStateFromMember(interaction.Member)
 	tmplCtx := templates.NewContext(gs, cs, ms)
@@ -119,8 +118,9 @@ func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet
 		provided[strings.ToLower(o.Name)] = o
 	}
 
-	args := templates.SDict{}
-	cmdArgs := make([]interface{}, 0, len(stored.Options))
+	options := templates.SDict{}
+	args := make([]interface{}, 0, len(stored.Options)+1)
+	args = append(args, data.Name)
 	for _, def := range stored.Options {
 		o, ok := provided[strings.ToLower(def.Name)]
 		if !ok {
@@ -128,11 +128,12 @@ func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet
 			continue
 		}
 		val := resolveSlashOptionValue(o, data)
-		args[def.Name] = val
-		cmdArgs = append(cmdArgs, val)
+		options[def.Name] = val
+		args = append(args, val)
 	}
+	tmplCtx.Data["Options"] = options
 	tmplCtx.Data["Args"] = args
-	tmplCtx.Data["CmdArgs"] = cmdArgs
+	tmplCtx.Data["CmdArgs"] = args
 
 	// application command interactions carry no source message, build a minimal one
 	// so member/author template helpers keep working.
@@ -217,12 +218,22 @@ func buildSlashCommandRequest(cc *models.CustomCommand) *discordgo.CreateApplica
 
 	opts := make([]*discordgo.ApplicationCommandOption, 0, len(stored.Options))
 	for _, o := range stored.Options {
-		opts = append(opts, &discordgo.ApplicationCommandOption{
+		ao := &discordgo.ApplicationCommandOption{
 			Type:        discordgo.ApplicationCommandOptionType(o.Type),
 			Name:        strings.ToLower(o.Name),
 			Description: o.Description,
 			Required:    o.Required,
-		})
+			MinValue:    o.MinValue,
+			MinLength:   o.MinLength,
+			MaxLength:   o.MaxLength,
+		}
+		if o.MaxValue != nil {
+			ao.MaxValue = *o.MaxValue
+		}
+		for _, c := range o.Choices {
+			ao.Choices = append(ao.Choices, &discordgo.ApplicationCommandOptionChoice{Name: c, Value: c})
+		}
+		opts = append(opts, ao)
 	}
 
 	// Discord requires required options to come before optional ones.

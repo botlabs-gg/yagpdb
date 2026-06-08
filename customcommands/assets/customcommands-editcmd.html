@@ -17,6 +17,20 @@
     #cc-responses {
       flex-wrap: unset !important;
     }
+
+    .slash-option-row:not(:last-child) {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      padding-bottom: 1rem;
+    }
+    html.dark .slash-option-row:not(:last-child) {
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+    .slash-options-chevron {
+      transition: transform 0.15s ease;
+    }
+    .slash-options-toggle[aria-expanded="true"] .slash-options-chevron {
+      transform: rotate(180deg);
+    }
 </style>
 
 <!-- Nav -->
@@ -160,7 +174,7 @@
                                             <b>has a cooldown of 5 minutes per user-role combination, reduced to 1 minute for premium servers</b>
                                         </small>
                                         <small id="trigger-desc-slash_command">
-                                            Creates A Guild slash command, trigger name must not be same as an inbuilt slash command.
+                                            Creates a Slash command, trigger name must not be same as an inbuilt slash command.
                                         </small>
                                     </div>
                                 </div>
@@ -172,7 +186,7 @@
                                             <label id="cc-message-trigger-label">Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
-                                            <label id="cc-slash-trigger-label">Command name (1-32 chars, lowercase letters/numbers/dashes/underscores)</label>
+                                            <label id="cc-slash-trigger-label">Command Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/32) <i class="fas fa-info-circle text-primary" data-toggle="tooltip" data-placement="top" title="The /name members type in Discord. Lowercase letters, numbers, dashes and underscores only."></i></label>
                                             <div class="input-group mb-2">
                                                 <div id="command-trigger-prepended-prefix" class="input-group-prepend">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
@@ -309,30 +323,47 @@
                                 {{if and (not .IsGuildPremium) .SlashCommandLimitReached}}
                                 {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "You've reached the free limit of 3 slash commands. Premium servers can register up to 10.")}}
                                 {{end}}
-                                <div class="row">
+                                <hr>
+                                 <div class="row">
                                     <div class="col-lg-12">
                                         <div class="form-group">
-                                            <label for="slash_command_description">Command description (1-100 chars)</label>
-                                            <input id="slash_command_description" type="text" class="form-control" name="slash_command_description"
-                                                maxlength="100" placeholder="A short description shown in Discord"
-                                                value="{{call .GetCCSlashDescription .CC}}">
+                                            <label for="name">Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
+                                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
+                                            <small>An optional name that can be used to identify the command.</small>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row">
+                                <div class="row mt-2">
                                     <div class="col-lg-12">
-                                        <label>Arguments (available in <code>.Args</code> by name)</label>
+                                        <div class="form-group">
+                                            <label for="slash_command_description">Description (<span id="slash-description-length">{{len (call .GetCCSlashDescription .CC)}}</span>/100)</label>
+                                            <input id="slash_command_description" type="text" class="form-control" name="slash_command_description"
+                                                maxlength="100" placeholder="A short description shown in Discord"
+                                                value="{{call .GetCCSlashDescription .CC}}">
+                                            <small>Description for the slash command shown on Discord</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row mt-2">
+                                    <div class="col-lg-12">
+                                        <button type="button" class="btn btn-primary btn-sm btn-block d-flex align-items-center justify-content-between slash-options-toggle" data-toggle="collapse" data-target="#slash-options-collapse" aria-expanded="true">
+                                            <span>Options (<span id="slash-options-count">0</span>)</span>
+                                            <i class="fas fa-chevron-down slash-options-chevron"></i>
+                                        </button>
+                                        <small class="form-text text-muted">Options in <code>.Options</code> by name, or <code>.Args</code> by position.</small>
+                                        <div class="collapse show mt-2" id="slash-options-collapse">
                                         <div id="slash-options-list">
                                             {{range $i, $opt := call .GetCCSlashOptions .CC}}
                                             <div class="slash-option-row mb-3">
                                                 <div class="form-row align-items-end">
                                                     <div class="col-12 col-md-3 mb-2 mb-md-0">
                                                         <label class="small mb-1">Name</label>
-                                                        <input type="text" class="form-control" name="slash_option_names" maxlength="32" placeholder="name" value="{{$opt.Name}}">
+                                                        <input type="text" class="form-control" data-slash-field="name" name="slash_options.{{$i}}.name" maxlength="32" placeholder="name" value="{{$opt.Name}}">
                                                     </div>
                                                     <div class="col-12 col-md-2 mb-2 mb-md-0">
                                                         <label class="small mb-1">Type</label>
-                                                        <select class="form-control" name="slash_option_types">
+                                                        <select class="form-control slash-option-type-select" data-slash-field="type" name="slash_options.{{$i}}.type" onchange="slashOptTypeChanged(this)">
                                                             <option value="3" {{if eq $opt.Type 3}}selected{{end}}>Text</option>
                                                             <option value="4" {{if eq $opt.Type 4}}selected{{end}}>Integer</option>
                                                             <option value="10" {{if eq $opt.Type 10}}selected{{end}}>Number</option>
@@ -345,23 +376,47 @@
                                                     </div>
                                                     <div class="col-12 col-md-4 mb-2 mb-md-0">
                                                         <label class="small mb-1">Description</label>
-                                                        <input type="text" class="form-control" name="slash_option_descriptions" maxlength="100" placeholder="description" value="{{$opt.Description}}">
+                                                        <input type="text" class="form-control" data-slash-field="description" name="slash_options.{{$i}}.description" maxlength="100" placeholder="description" value="{{$opt.Description}}">
                                                     </div>
-                                                    <div class="col-6 col-md-2 mb-2 mb-md-0 text-center">
-                                                        <label class="small mb-1 d-block">Required</label>
-                                                        <input type="checkbox" class="tgl tgl-flat slash-option-required-cb" id="slash-opt-req-{{$i}}" {{if $opt.Required}}checked{{end}} onchange="slashReqToggle(this)">
-                                                        <label class="tgl-btn mb-0" for="slash-opt-req-{{$i}}"></label>
-                                                        <input type="hidden" name="slash_option_required" value="{{if $opt.Required}}true{{else}}false{{end}}">
+                                                    <div class="col-6 col-md-2 mb-2 mb-md-0">
+                                                        {{checkbox (printf "slash_options.%d.required" $i) (printf "slash-opt-req-%d" $i) "Required" $opt.Required "data-slash-field=required"}}
                                                     </div>
                                                     <div class="col-6 col-md-1 text-right">
                                                         <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row slash-opt-extra-text mt-2 {{if ne $opt.Type 3}}hidden{{end}}">
+                                                    <div class="col-12 col-md-6 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Choices - one per line (turns this into a dropdown / select menu)</label>
+                                                        <textarea class="form-control" data-slash-field="choices" name="slash_options.{{$i}}.choices" rows="3" placeholder="Leave empty for free text input">{{range $opt.Choices}}{{.}}
+{{end}}</textarea>
+                                                    </div>
+                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Min length</label>
+                                                        <input type="number" min="0" class="form-control" data-slash-field="min_length" name="slash_options.{{$i}}.min_length" {{if $opt.MinLength}}value="{{$opt.MinLength}}"{{end}}>
+                                                    </div>
+                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Max length</label>
+                                                        <input type="number" min="0" class="form-control" data-slash-field="max_length" name="slash_options.{{$i}}.max_length" {{if $opt.MaxLength}}value="{{$opt.MaxLength}}"{{end}}>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row slash-opt-extra-number mt-2 {{if and (ne $opt.Type 4) (ne $opt.Type 10)}}hidden{{end}}">
+                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Min value</label>
+                                                        <input type="number" step="any" class="form-control" data-slash-field="min_value" name="slash_options.{{$i}}.min_value" {{if $opt.MinValue}}value="{{$opt.MinValue}}"{{end}}>
+                                                    </div>
+                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Max value</label>
+                                                        <input type="number" step="any" class="form-control" data-slash-field="max_value" name="slash_options.{{$i}}.max_value" {{if $opt.MaxValue}}value="{{$opt.MaxValue}}"{{end}}>
                                                     </div>
                                                 </div>
                                             </div>
                                             {{end}}
                                         </div>
                                         <button type="button" id="slash-option-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add argument</button>
-                                        <small class="form-text text-muted">Up to 5 arguments. Required arguments are automatically ordered before optional ones.</small>
+                                        <small class="form-text text-muted">Up to 5 arguments. Required arguments are automatically ordered before optional ones. Add choices to a Text argument to turn it into a dropdown / select menu.</small>
+                                        </div>
+                                        <div id="slash-validation-errors" class="alert alert-danger py-2 mt-2 mb-0 hidden"></div>
                                     </div>
                                 </div>
                                 <template id="slash-option-template">
@@ -369,11 +424,11 @@
                                         <div class="form-row align-items-end">
                                             <div class="col-12 col-md-3 mb-2 mb-md-0">
                                                 <label class="small mb-1">Name</label>
-                                                <input type="text" class="form-control" name="slash_option_names" maxlength="32" placeholder="name">
+                                                <input type="text" class="form-control" data-slash-field="name" maxlength="32" placeholder="name">
                                             </div>
                                             <div class="col-12 col-md-2 mb-2 mb-md-0">
                                                 <label class="small mb-1">Type</label>
-                                                <select class="form-control" name="slash_option_types">
+                                                <select class="form-control slash-option-type-select" data-slash-field="type" onchange="slashOptTypeChanged(this)">
                                                     <option value="3">Text</option>
                                                     <option value="4">Integer</option>
                                                     <option value="10">Number</option>
@@ -386,16 +441,41 @@
                                             </div>
                                             <div class="col-12 col-md-4 mb-2 mb-md-0">
                                                 <label class="small mb-1">Description</label>
-                                                <input type="text" class="form-control" name="slash_option_descriptions" maxlength="100" placeholder="description">
+                                                <input type="text" class="form-control" data-slash-field="description" maxlength="100" placeholder="description">
                                             </div>
-                                            <div class="col-6 col-md-2 mb-2 mb-md-0 text-center">
-                                                <label class="small mb-1 d-block">Required</label>
-                                                <input type="checkbox" class="tgl tgl-flat slash-option-required-cb" onchange="slashReqToggle(this)">
-                                                <label class="tgl-btn mb-0"></label>
-                                                <input type="hidden" name="slash_option_required" value="false">
+                                            <div class="col-6 col-md-2 mb-2 mb-md-0">
+                                                <div class="form-group d-flex align-items-center">
+                                                    <input type="checkbox" class="tgl tgl-flat" data-slash-field="required">
+                                                    <label class="tgl-btn mb-2"></label>
+                                                    <span class="tgl-desc ml-2 mb-2">Required</span>
+                                                </div>
                                             </div>
                                             <div class="col-6 col-md-1 text-right">
                                                 <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="form-row slash-opt-extra-text mt-2">
+                                            <div class="col-12 col-md-6 mb-2 mb-md-0">
+                                                <label class="small mb-1">Choices, one per line (turns this into a dropdown / select menu)</label>
+                                                <textarea class="form-control" data-slash-field="choices" rows="3" placeholder="Leave empty for free text input"></textarea>
+                                            </div>
+                                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                <label class="small mb-1">Min length</label>
+                                                <input type="number" min="0" class="form-control" data-slash-field="min_length">
+                                            </div>
+                                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                <label class="small mb-1">Max length</label>
+                                                <input type="number" min="0" class="form-control" data-slash-field="max_length">
+                                            </div>
+                                        </div>
+                                        <div class="form-row slash-opt-extra-number mt-2 hidden">
+                                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                <label class="small mb-1">Min value</label>
+                                                <input type="number" step="any" class="form-control" data-slash-field="min_value">
+                                            </div>
+                                            <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                <label class="small mb-1">Max value</label>
+                                                <input type="number" step="any" class="form-control" data-slash-field="max_value">
                                             </div>
                                         </div>
                                     </div>
@@ -460,14 +540,8 @@
                                 </div>
                             </div>
                         </div>
+                        <hr>
                         <div class="row mt-3">
-                            <div class="col-lg-4">
-                                <div class="form-group">
-                                    <label for="name">Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
-                                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
-                                    <small>An optional name that can be used to identify the command.</small>
-                                </div>
-                            </div>
                              <div class="col-lg-4">
                                 <div class="form-group">
                                     <label for="is_enabled"> Command Enabled?</label>
@@ -829,6 +903,8 @@
             updateOption.removeClass('hidden');
         }
 
+        // the trigger length limit differs for slash commands (32) vs others (1000)
+        updateTriggerLength();
         refreshWarnings();
     }
 
@@ -928,15 +1004,16 @@
     $('#role-trigger-channel').change(() => checkMissingTriggerChannel.run());
 
     function updateTriggerLength() {
-        const triggerLength = $('#trigger-length');
         const trigger = $('#trigger');
-        if (triggerLength > 0 && trigger && trigger.val()) {
-            triggerLength
-                .text(trigger.val().length)
-                .toggleClass('text-danger', trigger.val().length > 1000);
-        }
+        if (!trigger.length) return;
+        const len = trigger.val().length;
+        // slash command triggers are limited to 32 chars, other triggers to 1000.
+        const max = $('#trigger-type-dropdown').val() === 'slash_command' ? 32 : 1000;
+        // there are several #trigger-length spans (one per trigger-type label); update them all.
+        $('[id="trigger-length"]').text(len).toggleClass('text-danger', len > max);
     }
-    $('#trigger').keyup(updateTriggerLength);
+    $('#trigger').on('input', updateTriggerLength);
+    updateTriggerLength();
   
     function updateNameLength() {
         const nameLength = $('#name-length');
@@ -948,6 +1025,18 @@
         }
     }
     $('#name').keyup(updateNameLength);
+
+    function updateSlashDescriptionLength() {
+        const len = $('#slash-description-length');
+        const desc = $('#slash_command_description');
+        if (len.length && desc.length) {
+            len
+                .text(desc.val().length)
+                .toggleClass('text-danger', desc.val().length > 100);
+        }
+    }
+    $('#slash_command_description').on('input', updateSlashDescriptionLength);
+    updateSlashDescriptionLength();
 
     function updateCCLength() {
         const textAreas = document.querySelectorAll('#cc-responses > textarea');
@@ -974,16 +1063,41 @@
        updateCCLength();
     }
 
-    // Slash command argument rows: keep the hidden "required" value in sync with the
-    // toggle, and add/remove dynamic option rows.
-    function slashReqToggle(cb) {
-        const row = cb.closest('.slash-option-row');
-        if (!row) return;
-        const hidden = row.querySelector('input[type="hidden"][name="slash_option_required"]');
-        if (hidden) hidden.value = cb.checked ? 'true' : 'false';
+    // Options are decoded server-side as an indexed struct slice (slash_options.N.<field>)
+    // rather than parallel arrays, so empty fields don't misalign rows. Field names are
+    // assigned here from each input's data-slash-field and its row index. The required
+    // toggle's id/label-for are kept unique so the toggle stays clickable.
+    function renumberSlashOptions() {
+        const rows = document.querySelectorAll('#slash-options-list .slash-option-row');
+        rows.forEach((row, i) => {
+            row.querySelectorAll('[data-slash-field]').forEach((el) => {
+                el.name = 'slash_options.' + i + '.' + el.getAttribute('data-slash-field');
+            });
+            const cb = row.querySelector('[data-slash-field="required"]');
+            const lbl = row.querySelector('.tgl-btn');
+            if (cb && lbl) {
+                const id = 'slash-opt-req-' + i;
+                cb.id = id;
+                lbl.htmlFor = id;
+            }
+        });
+
+        const count = document.getElementById('slash-options-count');
+        if (count) count.textContent = rows.length;
     }
 
-    var slashOptCounter = 0;
+    // Show only the per-type extra fields relevant to the selected option type:
+    // choices + min/max length for Text (3), min/max value for Integer (4) / Number (10).
+    function slashOptTypeChanged(sel) {
+        const row = sel.closest('.slash-option-row');
+        if (!row) return;
+        const t = sel.value;
+        const textExtra = row.querySelector('.slash-opt-extra-text');
+        const numberExtra = row.querySelector('.slash-opt-extra-number');
+        if (textExtra) textExtra.classList.toggle('hidden', t !== '3');
+        if (numberExtra) numberExtra.classList.toggle('hidden', t !== '4' && t !== '10');
+    }
+
     $('#slash-option-add').on('click', function (e) {
         e.preventDefault();
         const list = document.getElementById('slash-options-list');
@@ -991,20 +1105,170 @@
             return;
         }
         const frag = document.getElementById('slash-option-template').content.cloneNode(true);
-        // The toggle <label for> must reference a unique id to remain clickable.
-        const id = 'slash-opt-req-new-' + (slashOptCounter++);
-        const cb = frag.querySelector('.slash-option-required-cb');
-        const lbl = frag.querySelector('.tgl-btn');
-        if (cb && lbl) {
-            cb.id = id;
-            lbl.htmlFor = id;
-        }
         list.appendChild(frag);
+        renumberSlashOptions();
     });
 
     $('#slash-options-list').on('click', '.slash-option-remove', function (e) {
         e.preventDefault();
         $(this).closest('.slash-option-row').remove();
+        renumberSlashOptions();
+        validateSlashUI();
+    });
+
+    // Ensure field names/ids are consistent on initial load too.
+    renumberSlashOptions();
+
+    // Client-side validation mirroring the server rules in validateSlashCommandData.
+    // Discord's name pattern (lowercased). \p{L}\p{N} need the unicode flag.
+    const SLASH_NAME_RE = /^[-_\p{L}\p{N}]{1,32}$/u;
+
+    function slashEscapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function slashMark(el, invalid) {
+        if (el) el.classList.toggle('is-invalid', !!invalid);
+    }
+
+    // Validates the slash command fields, marks offending inputs and renders an error
+    // summary. Returns true when valid. No-op (valid) when the trigger isn't a slash command.
+    function validateSlashUI() {
+        const section = document.getElementById('cc-slash-trigger-details');
+        const box = document.getElementById('slash-validation-errors');
+        const nameEl = document.getElementById('trigger');
+        if (!section || !box) return true;
+
+        // clear previous marks
+        section.querySelectorAll('.is-invalid').forEach((e) => e.classList.remove('is-invalid'));
+        slashMark(nameEl, false);
+
+        if ($('#trigger-type-dropdown').val() !== 'slash_command') {
+            box.innerHTML = '';
+            box.classList.add('hidden');
+            return true;
+        }
+
+        const errors = [];
+
+        const name = (nameEl ? nameEl.value : '').trim();
+        if (!SLASH_NAME_RE.test(name)) {
+            errors.push('Command trigger must be 1-32 characters: letters, numbers, dashes and underscores.');
+            slashMark(nameEl, true);
+        } else if (name !== name.toLowerCase()) {
+            errors.push('Command trigger must be lowercase.');
+            slashMark(nameEl, true);
+        }
+
+        const descEl = document.getElementById('slash_command_description');
+        const desc = (descEl ? descEl.value : '').trim();
+        if (desc.length < 1 || desc.length > 100) {
+            errors.push('Command description must be between 1 and 100 characters.');
+            slashMark(descEl, true);
+        }
+
+        const seen = {};
+        section.querySelectorAll('.slash-option-row').forEach((row) => {
+            const nIn = row.querySelector('[data-slash-field="name"]');
+            const dIn = row.querySelector('[data-slash-field="description"]');
+            const tSel = row.querySelector('[data-slash-field="type"]');
+            const raw = (nIn ? nIn.value : '').trim();
+            if (raw === '') return; // blank rows are dropped server-side
+            const oname = raw.toLowerCase();
+            const label = 'argument "' + oname + '"';
+
+            if (!SLASH_NAME_RE.test(oname)) {
+                errors.push('Argument name "' + raw + '" must be 1-32 characters: letters, numbers, dashes and underscores.');
+                slashMark(nIn, true);
+            }
+            if (seen[oname]) {
+                errors.push('Duplicate argument name "' + oname + '".');
+                slashMark(nIn, true);
+            }
+            seen[oname] = true;
+
+            const odesc = (dIn ? dIn.value : '').trim();
+            if (odesc.length < 1 || odesc.length > 100) {
+                errors.push('Description for ' + label + ' must be between 1 and 100 characters.');
+                slashMark(dIn, true);
+            }
+
+            const t = tSel ? tSel.value : '';
+            if (t === '3') {
+                const choicesEl = row.querySelector('[data-slash-field="choices"]');
+                const lines = (choicesEl ? choicesEl.value : '').split('\n').map((s) => s.trim()).filter((s) => s !== '');
+                if (lines.length > 25) {
+                    errors.push(label + ' can have at most 25 choices.');
+                    slashMark(choicesEl, true);
+                }
+                if (lines.some((l) => l.length > 100)) {
+                    errors.push('Each choice on ' + label + ' must be at most 100 characters.');
+                    slashMark(choicesEl, true);
+                }
+                if (lines.length === 0) {
+                    const minL = row.querySelector('[data-slash-field="min_length"]');
+                    const maxL = row.querySelector('[data-slash-field="max_length"]');
+                    const minv = minL && minL.value.trim() !== '' ? parseInt(minL.value, 10) : null;
+                    const maxv = maxL && maxL.value.trim() !== '' ? parseInt(maxL.value, 10) : null;
+                    if (minv !== null && minv < 0) {
+                        errors.push('Min length for ' + label + ' cannot be negative.');
+                        slashMark(minL, true);
+                    }
+                    if (maxv !== null && maxv > 6000) {
+                        errors.push('Max length for ' + label + ' cannot exceed 6000.');
+                        slashMark(maxL, true);
+                    }
+                    if (minv !== null && maxv !== null && minv > maxv) {
+                        errors.push('Min length cannot exceed max length for ' + label + '.');
+                        slashMark(minL, true);
+                        slashMark(maxL, true);
+                    }
+                }
+            } else if (t === '4' || t === '10') {
+                const minV = row.querySelector('[data-slash-field="min_value"]');
+                const maxV = row.querySelector('[data-slash-field="max_value"]');
+                const minn = minV && minV.value.trim() !== '' ? parseFloat(minV.value) : null;
+                const maxn = maxV && maxV.value.trim() !== '' ? parseFloat(maxV.value) : null;
+                if (minn !== null && maxn !== null && minn > maxn) {
+                    errors.push('Min value cannot exceed max value for ' + label + '.');
+                    slashMark(minV, true);
+                    slashMark(maxV, true);
+                }
+            }
+        });
+
+        if (errors.length) {
+            box.innerHTML = '<ul class="mb-0 pl-3">' + errors.map((e) => '<li>' + slashEscapeHtml(e) + '</li>').join('') + '</ul>';
+            box.classList.remove('hidden');
+        } else {
+            box.innerHTML = '';
+            box.classList.add('hidden');
+        }
+        return errors.length === 0;
+    }
+
+    // Live-validate as the user edits the slash command fields. (Not bound to the
+    // trigger-type dropdown itself, so merely selecting "Slash Command" doesn't show
+    // errors before anything has been entered; the section/box is hidden for other
+    // trigger types anyway.)
+    $('#cc-slash-trigger-details').on('input change', 'input, select, textarea', validateSlashUI);
+    $('#trigger').on('input', function () {
+        if ($('#trigger-type-dropdown').val() === 'slash_command') validateSlashUI();
+    });
+
+    // Block submission of an invalid slash command. Bound directly on the form so it
+    // runs before the delegated async-form handler on document and can stop it.
+    $('#trigger-type-dropdown').closest('form').on('submit', function (e) {
+        if ($('#trigger-type-dropdown').val() === 'slash_command' && !validateSlashUI()) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            // Expand the arguments section so the offending (marked) fields are visible.
+            $('#slash-options-collapse').collapse('show');
+            const box = document.getElementById('slash-validation-errors');
+            if (box) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     });
 </script>
 
