@@ -520,7 +520,8 @@ var ModerationCommands = []*commands.YAGCommand{
 
 			return GenericCmdResp(MATimeoutAdded, target, d, true, false), nil
 		},
-	}, {
+	},
+	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "RemoveTimeout",
@@ -569,6 +570,69 @@ var ModerationCommands = []*commands.YAGCommand{
 			}
 
 			return GenericCmdResp(MATimeoutRemoved, target, 0, false, true), nil
+		},
+	},
+	{
+		CustomEnabled: true,
+		CmdCategory:   commands.CategoryModeration,
+		Name:          "Disconnect",
+		Aliases:       []string{"voicekick" "disconnect"},
+		Description:   "Disconnects a member from their voice channel",
+		RequiredArgs:  1,
+		Arguments: []*dcmd.ArgDef{
+			{Name: "User", Type: dcmd.UserID},
+			{Name: "Reason", Type: dcmd.String},
+		},
+		RequiredDiscordPermsHelp: "MoveMembers or ManageGuild",
+		RequireBotPerms: [][]int64{
+			{discordgo.PermissionAdministrator},
+			{discordgo.PermissionVoiceMoveMembers},
+		},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      false,
+		IsResponseEphemeral: false,
+		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
+			config, target, err := MBaseCmd(parsed, parsed.Args[0].Int64())
+			if err != nil {
+				return nil, err
+			}
+
+			reason := SafeArgString(parsed, 1)
+			reason, err = MBaseCmdSecond(parsed, reason, true,
+				discordgo.PermissionVoiceMoveMembers,
+				config.KickCmdRoles,
+				config.KickEnabled, true)
+			if err != nil {
+				return nil, err
+			}
+
+			member, err := bot.GetMember(parsed.GuildData.GS.ID, target.ID)
+			if err != nil || member == nil {
+				return "Member not found", err
+			}
+
+			vs := parsed.GuildData.GS.GetVoiceState(target.ID)
+			if vs == nil {
+				return "Member is not in a voice channel", nil
+			}
+
+			err = checkHierarchy(parsed, target.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			err = common.BotSession.GuildMemberMove(
+				parsed.GuildData.GS.ID, target.ID, 0)
+			if err != nil {
+				return nil, err
+			}
+
+			if config.ActionChannel != 0 {
+				CreateModlogEmbed(config, parsed.Author,
+					MADisconnect, target, reason, "")
+			}
+
+			return GenericCmdResp(MADisconnect, target, 0, true, true), nil
 		},
 	},
 	{
