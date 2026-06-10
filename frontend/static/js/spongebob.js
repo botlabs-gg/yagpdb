@@ -650,12 +650,12 @@ function markFormClean(form) {
 	removeUnsavedForm(form);
 }
 
-// onbeforeunload
-function unsavedChangesAlert() {
-    if (unsavedChangesStack.length > 0) {
-        return "You have unsaved changes, are you sure you want to leave?";
-    }
-}
+window.addEventListener('beforeunload', function (e) {
+	if (unsavedChangesStack.length > 0) {
+		e.preventDefault();
+		e.returnValue = '';
+	}
+});
 
 
 function guardUnsavedNavigation(navFn) {
@@ -667,6 +667,7 @@ function guardUnsavedNavigation(navFn) {
 	pendingNavigation = navFn;
 	$("#unsaved-changes-message").text("You have unsaved changes, would you like to save them?");
 	$("#unsaved-changes-save-button").attr("hidden", false);
+	$("#unsaved-changes-leave-button").attr("hidden", false);
 	$("#unsaved-changes-popup").attr("hidden", false);
 }
 
@@ -676,9 +677,16 @@ function resolvePendingNavigation() {
 	if (nav) nav();
 }
 
+function leaveWithoutSaving() {
+	unsavedChangesStack = [];
+	$("#unsaved-changes-popup").attr("hidden", true);
+	resolvePendingNavigation();
+}
+
 function saveUnsavedChanges() {
 	let forms = unsavedChangesStack.slice();
 	$("#unsaved-changes-save-button").attr("hidden", true);
+	$("#unsaved-changes-leave-button").attr("hidden", true);
 	isSavingUnsavedForms = true;
 	saveNext();
 
