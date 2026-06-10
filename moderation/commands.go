@@ -576,7 +576,7 @@ var ModerationCommands = []*commands.YAGCommand{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
 		Name:          "Disconnect",
-		Aliases:       []string{"voicekick" "disconnect"},
+		Aliases:       []string{"voicekick", "disconnect"},
 		Description:   "Disconnects a member from their voice channel",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
