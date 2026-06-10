@@ -694,7 +694,7 @@ function saveUnsavedChanges() {
 			action = window.location.pathname;
 		}
 
-		submitForm($(form), action, false);
+		submitForm($(form), action, true);
 		unsavedChangesStack = [];
 		updateUnsavedChangesPopup();
 	} else {
