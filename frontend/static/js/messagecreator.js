@@ -15,6 +15,12 @@
 
     var NODE_TITLES = { 1: "Action Row", 9: "Section", 10: "Text", 12: "Media Gallery", 14: "Separator", 17: "Container" };
 
+    var TEMPLATE_PREFIX = "templates-";
+    var MAX_CUSTOM_ID = 100;                                 // Discord limit, including the prefix
+    var MAX_SUFFIX = MAX_CUSTOM_ID - TEMPLATE_PREFIX.length; // editable part the user types
+    var PRESET_COLORS = ["#5865f2", "#57f287", "#fee75c", "#eb459e", "#ed4245", "#1abc9c",
+        "#3498db", "#9b59b6", "#e67e22", "#f1c40f", "#95a5a6", "#ffffff", "#2c2f33", "#000000"];
+
     var currentMode = "normal";
     var currentAction = "create";
     var loadedForEdit = false;
@@ -258,10 +264,10 @@
                 errs.push("A button needs a label or emoji.");
             }
             if (rc(c.label) > 80) errs.push("A button label exceeds 80 characters.");
-            if (c.custom_id && rc(c.custom_id) > 89) errs.push("A button custom id is too long (max 89 characters).");
+            if (c.custom_id && rc(c.custom_id) > MAX_CUSTOM_ID) errs.push("A button custom id is too long (max " + MAX_SUFFIX + " characters, plus the templates- prefix).");
         } else {
             if (rc(c.placeholder) > 150) errs.push("A select placeholder exceeds 150 characters.");
-            if (c.custom_id && rc(c.custom_id) > 89) errs.push("A select custom id is too long (max 89 characters).");
+            if (c.custom_id && rc(c.custom_id) > MAX_CUSTOM_ID) errs.push("A select custom id is too long (max " + MAX_SUFFIX + " characters, plus the templates- prefix).");
             if (!c.type || c.type === 3) {
                 var opts = c.options || [];
                 if (opts.length < 1 || opts.length > 25) errs.push("A text-options select menu needs between 1 and 25 options.");
@@ -371,16 +377,40 @@
     }
 
     // A checkbox + color picker bound to an optional numeric color (undefined = no color).
+    function colorPicker(value, oninput) {
+        var cur = (typeof value === "number") ? intToHex(value) : "#5865f2";
+        var swatch = el("span", { class: "mc-color-swatch" }); swatch.style.background = cur;
+        var hexIn = el("input", { class: "form-control form-control-sm", maxlength: "7" });
+        hexIn.value = cur; hexIn.style.maxWidth = "110px";
+        function apply(h, fromHexInput) {
+            h = h.trim(); if (h[0] !== "#") h = "#" + h;
+            if (!/^#[0-9a-fA-F]{6}$/.test(h)) return;
+            swatch.style.background = h;
+            if (!fromHexInput) hexIn.value = h;
+            oninput(hexToInt(h));
+        }
+        hexIn.addEventListener("input", function () { apply(hexIn.value, true); });
+        var palette = el("div", { class: "mc-color-palette" });
+        PRESET_COLORS.forEach(function (c) {
+            var s = el("span", { class: "mc-color-swatch mc-color-preset" });
+            s.style.background = c; s.title = c;
+            s.addEventListener("click", function () { apply(c, false); });
+            palette.appendChild(s);
+        });
+        return el("div", {}, [el("div", { class: "d-flex align-items-center", style: "gap:6px;" }, [swatch, hexIn]), palette]);
+    }
+
+    // Optional-color field: a checkbox enables the color picker; unchecked means no color.
     function colorField(labelText, value, oninput) {
+        var selected = (typeof value === "number") ? value : hexToInt("#5865f2");
         var enabled = typeof value === "number";
-        var cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = enabled; cb.title = "Use a custom color";
-        var color = el("input", { type: "color" }); color.value = enabled ? intToHex(value) : "#5865f2";
-        color.style.width = "52px"; color.style.height = "32px"; color.style.padding = "2px";
-        cb.addEventListener("change", function () { oninput(cb.checked ? hexToInt(color.value) : undefined); });
-        color.addEventListener("input", function () { if (cb.checked) oninput(hexToInt(color.value)); });
+        var cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = enabled;
+        var pickerWrap = el("div", { class: "mt-1" }, [colorPicker(value, function (v) { selected = v; if (cb.checked) oninput(v); })]);
+        show(pickerWrap, enabled);
+        cb.addEventListener("change", function () { show(pickerWrap, cb.checked); oninput(cb.checked ? selected : undefined); });
         return el("div", { class: "form-group mb-2" }, [
-            el("label", { class: "small mb-1 d-block" }, [labelText]),
-            el("div", { class: "d-flex align-items-center", style: "height:32px;" }, [cb, color])
+            el("label", { class: "small mb-1 d-block" }, [cb, labelText]),
+            pickerWrap
         ]);
     }
 
@@ -511,7 +541,7 @@
         if (node.style === 5) {
             wrap.appendChild(field("URL", node.url, function (v) { node.url = v; touch(); }, { placeholder: "https://..." }));
         } else {
-            wrap.appendChild(field("Custom ID (optional)", node.custom_id, function (v) { node.custom_id = v; touch(); }, { placeholder: "auto-generated" }));
+            wrap.appendChild(customIdField(node));
         }
         wrap.appendChild(field("Emoji (optional)", node.emoji && node.emoji.name, function (v) {
             if (v) node.emoji = { name: v }; else delete node.emoji; touch();
@@ -530,7 +560,7 @@
                 rebuild();
             }));
         wrap.appendChild(field("Placeholder", node.placeholder, function (v) { node.placeholder = v; touch(); }));
-        wrap.appendChild(field("Custom ID (optional)", node.custom_id, function (v) { node.custom_id = v; touch(); }, { placeholder: "auto-generated" }));
+        wrap.appendChild(customIdField(node));
         wrap.appendChild(el("div", { class: "form-row" }, [
             el("div", { class: "col" }, [numField("Min values", node.min_values, function (v) { if (v == null) delete node.min_values; else node.min_values = v; touch(); })]),
             el("div", { class: "col" }, [numField("Max values", node.max_values, function (v) { if (v == null) delete node.max_values; else node.max_values = v; touch(); })])
@@ -582,13 +612,10 @@
     function containerBody(node) {
         node.components = node.components || [];
         var body = el("div");
-        var hasAccent = typeof node.accent_color === "number";
-        var cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = hasAccent;
-        var color = el("input", { type: "color" }); color.value = hasAccent ? intToHex(node.accent_color) : "#5865f2";
-        color.style.width = "48px"; color.style.height = "30px"; color.style.padding = "2px";
-        cb.addEventListener("change", function () { if (cb.checked) node.accent_color = hexToInt(color.value); else delete node.accent_color; touch(); });
-        color.addEventListener("input", function () { if (cb.checked) { node.accent_color = hexToInt(color.value); touch(); } });
-        body.appendChild(el("div", { class: "d-flex align-items-center mb-2" }, [el("span", { class: "small mr-2" }, ["Accent color"]), cb, color]));
+        body.appendChild(colorField("Accent color", node.accent_color, function (v) {
+            if (v == null) delete node.accent_color; else node.accent_color = v;
+            touch();
+        }));
         node.components.forEach(function (child, ci) { body.appendChild(renderNode(child, node.components, ci)); });
         body.appendChild(makeAddBar(node.components, "v2container"));
         return body;
@@ -610,21 +637,63 @@
     }
 
 
+    // Finalize one interactive component's custom_id: link buttons carry none; locked components
+    // (loaded without the templates- prefix) keep their id verbatim; everything else gets the
+    // "templates-" prefix added to the user-entered suffix (blank stays blank for server auto-fill).
+    function finalizeInteractive(c) {
+        if (c.type === 2 && c.style === 5) { delete c.custom_id; delete c._locked; return; }
+        if (c._locked) { delete c._locked; return; }
+        delete c._locked;
+        var s = (c.custom_id || "").trim();
+        c.custom_id = s ? (TEMPLATE_PREFIX + s) : "";
+    }
+
+    function finalizeWalk(arr) {
+        arr.forEach(function (c) {
+            if (c.type === 1) (c.components || []).forEach(finalizeInteractive);
+            else if (c.type === 17) finalizeWalk(c.components || []);
+            else if (c.type === 9 && c.accessory) finalizeInteractive(c.accessory);
+        });
+    }
+
+    // Loaded (edit) inverse of finalizeInteractive: strip the templates- prefix to show the bare
+    // suffix; ids that were never templated are flagged _locked so the UI won't let them be edited.
+    function adaptInteractive(c) {
+        if (c.type === 2 && c.style === 5) return; // link button, no custom_id
+        var id = c.custom_id || "";
+        if (id.indexOf(TEMPLATE_PREFIX) === 0) { c.custom_id = id.slice(TEMPLATE_PREFIX.length); c._locked = false; }
+        else if (id) { c._locked = true; }
+        else { c.custom_id = ""; c._locked = false; }
+    }
+
+    function adaptLoadedComponents(arr) {
+        arr.forEach(function (c) {
+            if (c.type === 1) (c.components || []).forEach(adaptInteractive);
+            else if (c.type === 17) adaptLoadedComponents(c.components || []);
+            else if (c.type === 9 && c.accessory) adaptInteractive(c.accessory);
+        });
+    }
+
     // Drop empty action rows / containers so we never send an invalid (empty) row to Discord.
-    function pruneComponents(comps) {
+    function pruneEmpty(comps) {
         var out = [];
-        (comps || []).forEach(function (c) {
+        comps.forEach(function (c) {
             if (c.type === 1) { if (c.components && c.components.length) out.push(c); }
-            else if (c.type === 17) {
-                var inner = pruneComponents(c.components);
-                if (inner.length) { var copy = {}; for (var k in c) copy[k] = c[k]; copy.components = inner; out.push(copy); }
-            } else out.push(c);
+            else if (c.type === 17) { c.components = pruneEmpty(c.components || []); if (c.components.length) out.push(c); }
+            else out.push(c);
         });
         return out;
     }
 
+    // Deep-clone the live model, finalize custom_ids, and prune empties for the outgoing payload.
+    function buildComponents(comps) {
+        var clone = JSON.parse(JSON.stringify(comps || []));
+        finalizeWalk(clone);
+        return pruneEmpty(clone);
+    }
+
     function computeMessage() {
-        var comps = pruneComponents(state.components);
+        var comps = buildComponents(state.components);
         if (currentMode === "componentsv2") return { message: { components: comps } };
         var msg = {};
         var content = val("embed-content"); if (content) msg.content = content;
@@ -645,7 +714,7 @@
 
     function renderEmbed(e) {
         var box = div("mc-embed");
-        if (typeof e.color === "number") box.style.borderLeftColor = intToHex(e.color);
+        box.style.borderLeftColor = (typeof e.color === "number") ? intToHex(e.color) : "#4f545c";
         if (e.author && e.author.name) {
             var a = div("mc-embed-author");
             if (e.author.icon_url) a.appendChild(img(e.author.icon_url, "mc-embed-author-icon"));
@@ -684,7 +753,7 @@
             case 10: return renderText(c.content || "", "mc-v2-text");
             case 17:
                 var ct = div("mc-v2-container");
-                if (typeof c.accent_color === "number") ct.style.borderLeftColor = intToHex(c.accent_color);
+                ct.style.borderLeftColor = (typeof c.accent_color === "number") ? intToHex(c.accent_color) : "transparent";
                 renderComponents(c.components || [], ct);
                 return ct;
             case 9:
@@ -722,6 +791,11 @@
                 var st = BUTTON_STYLES[c.style] || BUTTON_STYLES[2];
                 var b = div("mc-v2-button", (c.emoji && c.emoji.name ? c.emoji.name + " " : "") + (c.label || (c.style === 5 ? "Link" : "Button")));
                 b.style.backgroundColor = st.bg; b.style.color = st.fg;
+                if (c.style === 5) { // link buttons show an external-link indicator, like Discord
+                    var icon = document.createElement("i");
+                    icon.className = "fas fa-external-link-alt mc-v2-link-icon";
+                    b.appendChild(icon);
+                }
                 return b;
             case 3: case 5: case 6: case 7: case 8:
                 return div("mc-v2-select", c.placeholder || "Select…");
@@ -760,6 +834,7 @@
         var payload = resp.payload || {};
         var mode = resp.mode === "componentsv2" ? "componentsv2" : "normal";
         state.components = (payload.components && payload.components.length) ? payload.components : [];
+        adaptLoadedComponents(state.components);
         setMode(mode);
 
         if (mode === "normal") {
@@ -814,9 +889,30 @@
         input.className = "form-control form-control-sm";
         if (opts.textarea) input.rows = opts.rows || 2;
         if (opts.placeholder) input.placeholder = opts.placeholder;
+        if (opts.maxlength) input.maxLength = opts.maxlength;
         input.value = value == null ? "" : value;
         input.addEventListener("input", function () { oninput(input.value); });
-        return el("div", { class: "form-group mb-2" }, [el("label", { class: "small mb-1" }, [labelText]), input]);
+        var children = [el("label", { class: "small mb-1" }, [labelText]), input];
+        if (opts.help) children.push(el("small", { class: "form-text text-muted" }, [opts.help]));
+        return el("div", { class: "form-group mb-2" }, children);
+    }
+
+    function readonlyField(labelText, value, help) {
+        var input = el("input", { class: "form-control form-control-sm" }); input.value = value || ""; input.disabled = true;
+        var children = [el("label", { class: "small mb-1" }, [labelText]), input];
+        if (help) children.push(el("small", { class: "form-text text-muted" }, [help]));
+        return el("div", { class: "form-group mb-2" }, children);
+    }
+
+    // The editable custom_id field holds the bare suffix; the "templates-" prefix is added on build.
+    // Components loaded without that prefix are "locked" — shown read-only so their id is preserved.
+    function customIdField(node) {
+        if (node._locked) {
+            return readonlyField("Custom ID (fixed)", node.custom_id,
+                "This component wasn't created with the templates- prefix, so its id can't be changed.");
+        }
+        return field("Custom ID (optional)", node.custom_id, function (v) { node.custom_id = v; touch(); },
+            { placeholder: "auto-generated", maxlength: MAX_SUFFIX, help: '"templates-" is added automatically so it can trigger a custom command.' });
     }
 
     function inlineInput(placeholder, value, oninput) {

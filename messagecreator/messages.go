@@ -330,10 +330,6 @@ func validateSelect(m *discordgo.SelectMenu) error {
 	return nil
 }
 
-// applyTemplatePrefix walks the component tree and prefixes the custom_id of every interactive
-// component with templates.TemplateCustomIDPrefix ("templates-") unless it already has it, so the
-// component routes to a custom-command component trigger. Empty custom_ids are assigned a unique
-// index (mirroring the templates package) so they don't collide. Link buttons carry no custom_id.
 func applyTemplatePrefix(comps []discordgo.TopLevelComponent) error {
 	counter := 0
 	return prefixComponents(comps, &counter)
@@ -391,14 +387,11 @@ func prefixInteractive(c discordgo.InteractiveComponent, counter *int) error {
 
 func setPrefixedID(id *string, counter *int) error {
 	if *id == "" {
-		*id = strconv.Itoa(*counter)
+		*id = templates.TemplateCustomIDPrefix + strconv.Itoa(*counter)
 	}
 	*counter++
-	if !strings.HasPrefix(*id, templates.TemplateCustomIDPrefix) {
-		*id = templates.TemplateCustomIDPrefix + *id
-	}
-	if len(*id) > maxCustomIDLen {
-		return errors.Errorf("custom id too long (max %d chars including the %q prefix)", maxCustomIDLen, templates.TemplateCustomIDPrefix)
+	if rcLen(*id) > maxCustomIDLen {
+		return errors.Errorf("custom id %q is too long (max %d characters including the %q prefix)", *id, maxCustomIDLen, templates.TemplateCustomIDPrefix)
 	}
 	return nil
 }

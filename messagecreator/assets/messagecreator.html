@@ -19,6 +19,10 @@
     .mc-add-bar .btn { margin: 0 4px 4px 0; }
     .mc-opt-row { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
 
+    .mc-color-swatch { width: 26px; height: 26px; border-radius: 4px; border: 1px solid rgba(128, 128, 128, .5); display: inline-block; flex: 0 0 auto; }
+    .mc-color-preset { width: 22px; height: 22px; cursor: pointer; }
+    .mc-color-palette { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
     @media (min-width: 992px) {
         .mc-preview-col { border-left: 1px solid rgba(128, 128, 128, .28); }
     }
@@ -50,7 +54,8 @@
     .mc-v2-section-body { flex: 1 1 auto; }
     .mc-v2-thumb { max-width: 72px; border-radius: 4px; }
     .mc-v2-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
-    .mc-v2-button { padding: 8px 16px; border-radius: 4px; font-weight: 500; font-size: .875rem; cursor: default; }
+    .mc-v2-button { display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 4px; font-weight: 500; font-size: .875rem; cursor: default; }
+    .mc-v2-link-icon { margin-left: 8px; font-size: .8em; opacity: .85; }
     .mc-v2-select { background: #1e1f22; border: 1px solid #1e1f22; border-radius: 4px; padding: 8px 12px; color: #b5bac1; max-width: 400px; }
     .mc-v2-separator { height: 1px; margin: 12px 0; }
     .mc-v2-separator.mc-divider { background: #3f4147; }
@@ -103,7 +108,7 @@
             </header>
             <div class="card-body">
 
-                <form id="mc-form" method="post" action="/manage/{{.ActiveGuild.ID}}/messagecreator/send" data-async-form>
+                <form id="mc-form" method="post" action="/manage/{{.ActiveGuild.ID}}/messagecreator/send" data-async-form data-async-form-alertsonly>
                     <input type="hidden" name="mode" id="mc-f-mode">
                     <input type="hidden" name="payload" id="mc-f-payload">
 
