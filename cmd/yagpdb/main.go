@@ -29,6 +29,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/customcommands"
 	"github.com/botlabs-gg/yagpdb/v2/discordlogger"
 	"github.com/botlabs-gg/yagpdb/v2/logs"
+	"github.com/botlabs-gg/yagpdb/v2/messagecreator"
 	"github.com/botlabs-gg/yagpdb/v2/moderation"
 	"github.com/botlabs-gg/yagpdb/v2/notifications"
 	"github.com/botlabs-gg/yagpdb/v2/personalizer"
@@ -86,6 +87,7 @@ func main() {
 	rolecommands.RegisterPlugin()
 	cah.RegisterPlugin()
 	tickets.RegisterPlugin()
+	messagecreator.RegisterPlugin()
 	verification.RegisterPlugin()
 	premium.RegisterPlugin()
 	patreonpremiumsource.RegisterPlugin()

@@ -323,7 +323,17 @@
                                 {{if and (not .IsGuildPremium) .SlashCommandLimitReached}}
                                 {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "You've reached the free limit of 3 slash commands. Premium servers can register up to 10.")}}
                                 {{end}}
-                                <div class="row">
+                                <hr>
+                                 <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-group">
+                                            <label for="name">Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
+                                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
+                                            <small>An optional name that can be used to identify the command.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
                                     <div class="col-lg-12">
                                         <div class="form-group">
                                             <label for="slash_command_description">Description (<span id="slash-description-length">{{len (call .GetCCSlashDescription .CC)}}</span>/100)</label>
@@ -574,13 +584,6 @@
                         </div>
                         <hr>
                         <div class="row mt-3">
-                            <div class="col-lg-4">
-                                <div class="form-group">
-                                    <label for="name">Name (<span id="name-length">{{len .CC.Name.String}}</span>/100) </label>
-                                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter a name" value="{{if .CC.Name.Valid}}{{.CC.Name.String}}{{end}}">
-                                    <small>An optional name that can be used to identify the command.</small>
-                                </div>
-                            </div>
                              <div class="col-lg-4">
                                 <div class="form-group">
                                     <label for="is_enabled"> Command Enabled?</label>
