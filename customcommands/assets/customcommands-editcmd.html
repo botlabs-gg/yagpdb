@@ -338,7 +338,7 @@
                                         <div class="form-group">
                                             <label for="slash_command_description">Description (<span id="slash-description-length">{{len (call .GetCCSlashDescription .CC)}}</span>/100)</label>
                                             <input id="slash_command_description" type="text" class="form-control" name="slash_command_description"
-                                                maxlength="100" placeholder="A short description shown in Discord"
+                                                maxlength="100" placeholder="A short description shown on Discord"
                                                 value="{{call .GetCCSlashDescription .CC}}">
                                             <small>Description for the slash command shown on Discord</small>
                                         </div>
@@ -374,7 +374,7 @@
                                                             <option value="user" {{if eq $opt.TypeKey "user"}}selected{{end}}>User</option>
                                                             <option value="channel" {{if eq $opt.TypeKey "channel"}}selected{{end}}>Channel</option>
                                                             <option value="role" {{if eq $opt.TypeKey "role"}}selected{{end}}>Role</option>
-                                                            <option value="mentionable" {{if eq $opt.TypeKey "mentionable"}}selected{{end}}>User or Role</option>
+                                                            <option value="mentionable" {{if eq $opt.TypeKey "mentionable"}}selected{{end}}>Mentionable</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-12 col-md-4 mb-2 mb-md-0">
@@ -460,7 +460,7 @@
                                                     <option value="user">User</option>
                                                     <option value="channel">Channel</option>
                                                     <option value="role">Role</option>
-                                                    <option value="mentionable">User or Role</option>
+                                                    <option value="mentionable">Mentionable</option>
                                                 </select>
                                             </div>
                                             <div class="col-12 col-md-4 mb-2 mb-md-0">
