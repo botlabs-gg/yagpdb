@@ -1236,13 +1236,15 @@
             const nIn = row.querySelector('[data-slash-field="name"]');
             const dIn = row.querySelector('[data-slash-field="description"]');
             const tSel = row.querySelector('[data-slash-field="type"]');
-            const raw = (nIn ? nIn.value : '').trim();
-            if (raw === '') return; // blank rows are dropped server-side
-            const oname = raw.toLowerCase();
+            const oname = (nIn ? nIn.value : '').trim();
+            if (oname === '') return; // blank rows are dropped server-side
             const label = 'argument "' + oname + '"';
 
             if (!SLASH_NAME_RE.test(oname)) {
-                errors.push('Argument name "' + raw + '" must be 1-32 characters: letters, numbers, dashes and underscores.');
+                errors.push('Argument name "' + oname + '" must be 1-32 characters: letters, numbers, dashes and underscores.');
+                slashMark(nIn, true);
+            } else if (oname !== oname.toLowerCase()) {
+                errors.push('Argument name "' + oname + '" must be lowercase.');
                 slashMark(nIn, true);
             }
             if (seen[oname]) {

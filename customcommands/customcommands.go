@@ -532,9 +532,13 @@ func validateSlashCommandData(guildID int64, name, description string, options [
 
 	seenOptions := make(map[string]bool, len(options))
 	for _, opt := range options {
-		oname := strings.ToLower(strings.TrimSpace(opt.Name))
+		oname := strings.TrimSpace(opt.Name)
 		if !slashCommandNameRegex.MatchString(oname) {
-			return false, fmt.Sprintf("Option name %q must be 1-32 lowercase characters (letters, numbers, dashes, underscores)", opt.Name)
+			return false, fmt.Sprintf("Option name %q must be 1-32 characters (letters, numbers, dashes, underscores)", opt.Name)
+		}
+
+		if oname != strings.ToLower(oname) {
+			return false, fmt.Sprintf("Option name %q must be lowercase", opt.Name)
 		}
 		if seenOptions[oname] {
 			return false, fmt.Sprintf("Duplicate option name %q", oname)
