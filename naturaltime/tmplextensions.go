@@ -122,7 +122,7 @@ func parseTimezone(input string) (*time.Location, string) {
 //	{{$t := parseNaturalTime "friday 3pm UTC+1"}}
 //	{{$t := parseNaturalTime "next monday 10am GMT-5:30"}}
 //	{{$t.Format "2006-01-02T15:04:05Z"}}
-func tmplParseNaturalTime(ctx *templates.Context) interface{} {
+func tmplParseNaturalTime(ctx *templates.Context) any {
 	return func(input string) (time.Time, error) {
 		if ctx.IncreaseCheckGenericAPICall() {
 			return time.Time{}, templates.ErrTooManyAPICalls
