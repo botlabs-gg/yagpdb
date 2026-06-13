@@ -174,6 +174,31 @@ func (p *Plugin) yagCommandToSlashCommand(cmd *dcmd.RegisteredCommand) *discordg
 	}
 }
 
+// IsInbuiltSlashCommandName checks if the provided name is already
+// a built-in global slash command
+func IsInbuiltSlashCommandName(name string) bool {
+	name = strings.ToLower(name)
+	if CommandSystem == nil || CommandSystem.Root == nil {
+		return false
+	}
+
+	for _, v := range CommandSystem.Root.Commands {
+		if cast, ok := v.Command.(*YAGCommand); ok {
+			if cast.SlashCommandEnabled && strings.EqualFold(v.Trigger.Names[0], name) {
+				return true
+			}
+		}
+	}
+
+	for _, c := range slashCommandsContainers {
+		if strings.EqualFold(c.container.Names[0], name) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (yc *YAGCommand) slashCommandOptions() (turnedIntoSubCommands bool, result []*discordgo.ApplicationCommandOption) {
 
 	var subCommands []*discordgo.ApplicationCommandOption

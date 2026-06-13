@@ -56,6 +56,7 @@ type CustomCommand struct {
 	ImportCount               int               `boil:"import_count" json:"import_count" toml:"import_count" yaml:"import_count"`
 	InteractionDeferMode      int16             `boil:"interaction_defer_mode" json:"interaction_defer_mode" toml:"interaction_defer_mode" yaml:"interaction_defer_mode"`
 	RoleTriggerMode           int16             `boil:"role_trigger_mode" json:"role_trigger_mode" toml:"role_trigger_mode" yaml:"role_trigger_mode"`
+	SlashCommandOptions       null.JSON         `boil:"slash_command_options" json:"slash_command_options,omitempty" toml:"slash_command_options" yaml:"slash_command_options,omitempty"`
 
 	R *customCommandR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L customCommandL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -93,6 +94,7 @@ var CustomCommandColumns = struct {
 	ImportCount               string
 	InteractionDeferMode      string
 	RoleTriggerMode           string
+	SlashCommandOptions       string
 }{
 	LocalID:                   "local_id",
 	GuildID:                   "guild_id",
@@ -125,6 +127,7 @@ var CustomCommandColumns = struct {
 	ImportCount:               "import_count",
 	InteractionDeferMode:      "interaction_defer_mode",
 	RoleTriggerMode:           "role_trigger_mode",
+	SlashCommandOptions:       "slash_command_options",
 }
 
 var CustomCommandTableColumns = struct {
@@ -159,6 +162,7 @@ var CustomCommandTableColumns = struct {
 	ImportCount               string
 	InteractionDeferMode      string
 	RoleTriggerMode           string
+	SlashCommandOptions       string
 }{
 	LocalID:                   "custom_commands.local_id",
 	GuildID:                   "custom_commands.guild_id",
@@ -191,6 +195,7 @@ var CustomCommandTableColumns = struct {
 	ImportCount:               "custom_commands.import_count",
 	InteractionDeferMode:      "custom_commands.interaction_defer_mode",
 	RoleTriggerMode:           "custom_commands.role_trigger_mode",
+	SlashCommandOptions:       "custom_commands.slash_command_options",
 }
 
 // Generated where
@@ -380,6 +385,30 @@ func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
 func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
 func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
+type whereHelpernull_JSON struct{ field string }
+
+func (w whereHelpernull_JSON) EQ(x null.JSON) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_JSON) NEQ(x null.JSON) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_JSON) LT(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_JSON) LTE(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_JSON) GT(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_JSON) GTE(x null.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 var CustomCommandWhere = struct {
 	LocalID                   whereHelperint64
 	GuildID                   whereHelperint64
@@ -412,6 +441,7 @@ var CustomCommandWhere = struct {
 	ImportCount               whereHelperint
 	InteractionDeferMode      whereHelperint16
 	RoleTriggerMode           whereHelperint16
+	SlashCommandOptions       whereHelpernull_JSON
 }{
 	LocalID:                   whereHelperint64{field: "\"custom_commands\".\"local_id\""},
 	GuildID:                   whereHelperint64{field: "\"custom_commands\".\"guild_id\""},
@@ -444,6 +474,7 @@ var CustomCommandWhere = struct {
 	ImportCount:               whereHelperint{field: "\"custom_commands\".\"import_count\""},
 	InteractionDeferMode:      whereHelperint16{field: "\"custom_commands\".\"interaction_defer_mode\""},
 	RoleTriggerMode:           whereHelperint16{field: "\"custom_commands\".\"role_trigger_mode\""},
+	SlashCommandOptions:       whereHelpernull_JSON{field: "\"custom_commands\".\"slash_command_options\""},
 }
 
 // CustomCommandRels is where relationship names are stored.
@@ -483,9 +514,9 @@ func (r *customCommandR) GetGroup() *CustomCommandGroup {
 type customCommandL struct{}
 
 var (
-	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "redirect_errors_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "trigger_on_edit", "public_id", "name", "public", "import_count", "interaction_defer_mode", "role_trigger_mode"}
+	customCommandAllColumns            = []string{"local_id", "guild_id", "group_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "last_run", "next_run", "responses", "channels", "channels_whitelist_mode", "roles", "roles_whitelist_mode", "context_channel", "redirect_errors_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "trigger_on_edit", "public_id", "name", "public", "import_count", "interaction_defer_mode", "role_trigger_mode", "slash_command_options"}
 	customCommandColumnsWithoutDefault = []string{"local_id", "guild_id", "trigger_type", "text_trigger", "text_trigger_case_sensitive", "time_trigger_interval", "time_trigger_excluding_days", "time_trigger_excluding_hours", "responses", "channels_whitelist_mode", "roles_whitelist_mode"}
-	customCommandColumnsWithDefault    = []string{"group_id", "last_run", "next_run", "channels", "roles", "context_channel", "redirect_errors_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "trigger_on_edit", "public_id", "name", "public", "import_count", "interaction_defer_mode", "role_trigger_mode"}
+	customCommandColumnsWithDefault    = []string{"group_id", "last_run", "next_run", "channels", "roles", "context_channel", "redirect_errors_channel", "reaction_trigger_mode", "last_error", "last_error_time", "run_count", "show_errors", "disabled", "trigger_on_edit", "public_id", "name", "public", "import_count", "interaction_defer_mode", "role_trigger_mode", "slash_command_options"}
 	customCommandPrimaryKeyColumns     = []string{"guild_id", "local_id"}
 	customCommandGeneratedColumns      = []string{}
 )

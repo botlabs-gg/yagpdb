@@ -356,6 +356,23 @@ func handleGetCommandsGroup(w http.ResponseWriter, r *http.Request) (web.Templat
 func serveGroupSelected(r *http.Request, templateData web.TemplateData, groupID int64, guildID int64) (web.TemplateData, error) {
 	templateData["GetCCIntervalType"] = tmplGetCCIntervalTriggerType
 	templateData["GetCCInterval"] = tmplGetCCInterval
+	templateData["GetCCSlashOptions"] = tmplGetCCSlashOptions
+	templateData["GetCCSlashDescription"] = tmplGetCCSlashDescription
+
+	// Whether the guild has already reached the free-tier slash command limit, used
+	// to decide when to surface the premium nudge in the slash command editor.
+	slashCount, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND disabled = false", guildID, int(CommandTriggerSlash))).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+	templateData["SlashCommandLimitReached"] = slashCount >= MaxSlashCommandCCs
+
+	// Same, for the free-tier role-change command limit.
+	roleTriggerCount, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND disabled = false", guildID, int(CommandTriggerRole))).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+	templateData["RoleTriggerLimitReached"] = roleTriggerCount >= MaxRoleTriggerCommands
 
 	_, ok := templateData["CustomCommands"]
 	if !ok {
@@ -470,6 +487,16 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		dbModel.TimeTriggerInterval = importCC.TimeTriggerInterval
 		dbModel.TriggerOnEdit = importCC.TriggerOnEdit && premium.ContextPremium(ctx)
 		dbModel.TriggerType = importCC.TriggerType
+		dbModel.RoleTriggerMode = importCC.RoleTriggerMode
+		dbModel.SlashCommandOptions = importCC.SlashCommandOptions
+		if importCC.TriggerType == int(CommandTriggerSlash) {
+			data := parseSlashCommandData(dbModel)
+			if ok, _ := validateSlashCommandData(activeGuild.ID, dbModel.TextTrigger, data.Description, data.Options, dbModel.LocalID, !dbModel.Disabled); !ok {
+				http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
+				return templateData, nil
+			}
+		}
+
 		templateData.AddAlerts(web.WarningAlert("It is recommended you scan your CC for hardcoded IDs or other server-specific arguments you may want to update"))
 	}
 
@@ -905,6 +932,8 @@ func triggerTypeFromForm(str string) CommandTriggerType {
 		return CommandTriggerCron
 	case "role_trigger":
 		return CommandTriggerRole
+	case "slash_command":
+		return CommandTriggerSlash
 	default:
 		return CommandTriggerCommand
 
@@ -940,6 +969,30 @@ func tmplGetCCInterval(cc *models.CustomCommand) int {
 	}
 
 	return cc.TimeTriggerInterval
+}
+
+// SlashOptionView is a stored slash command option plus its editor type key
+// ("string", "string_menu", ...) for rendering the type dropdown.
+type SlashOptionView struct {
+	SlashCommandOption
+	TypeKey string
+}
+
+// tmplGetCCSlashOptions returns the configured options of a slash command custom
+// command for rendering in the edit form, each tagged with its UI type key.
+func tmplGetCCSlashOptions(cc *models.CustomCommand) []SlashOptionView {
+	stored := parseSlashCommandData(cc).Options
+	views := make([]SlashOptionView, 0, len(stored))
+	for _, o := range stored {
+		views = append(views, SlashOptionView{SlashCommandOption: o, TypeKey: slashFormTypeKey(o)})
+	}
+	return views
+}
+
+// tmplGetCCSlashDescription returns the configured description of a slash command
+// custom command for rendering in the edit form.
+func tmplGetCCSlashDescription(cc *models.CustomCommand) string {
+	return parseSlashCommandData(cc).Description
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
@@ -1022,4 +1075,10 @@ func EvictCustomCommandCache(guildID int64) {
 	pubsub.EvictCacheSet(cachedCommandsComponentTrigger, guildID)
 	pubsub.EvictCacheSet(cachedCommandsReactionTrigger, guildID)
 	pubsub.EvictCacheSet(cachedCommandsRoleTrigger, guildID)
+	pubsub.EvictCacheSet(cachedCommandsSlashTrigger, guildID)
+
+	// Rebuild the guild's registered slash commands on the owning bot node. This is
+	// a no-op (deduped via a redis hash) when the slash command set is unchanged, so
+	// it's safe to fire on every custom command mutation.
+	pubsub.PublishLogErr(SlashCommandResyncEvent, guildID, nil)
 }

@@ -1,0 +1,216 @@
+{{define "cp_messagecreator"}}
+{{template "cp_head" .}}
+
+<style>
+    .mc-section-label { letter-spacing: .04em; }
+    .mc-action-toggle, .mc-mode-toggle { display: flex; width: 100%; }
+    .mc-mode-toggle .btn, .mc-action-toggle .btn { flex: 1 1 0; }
+    .mc-action-toggle .btn.active, .mc-mode-toggle .btn.active { font-weight: 600; }
+    .btn-group label.disabled { opacity: .5; pointer-events: none; }
+    .mc-editor-scroll { max-height: 68vh; overflow-y: auto; padding-right: 6px; }
+    .mc-field { background: rgba(0, 0, 0, .12); border-radius: 4px; padding: 8px; margin-bottom: 8px; }
+
+    .mc-node { border: 1px solid rgba(255, 255, 255, .12); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; background: rgba(0, 0, 0, .1); }
+    .mc-node .mc-node { background: rgba(255, 255, 255, .03); }
+    .mc-node-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .mc-node-title { font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; color: #b5bac1; }
+    .mc-node-tools { margin-left: auto; display: flex; gap: 4px; }
+    .mc-node-tools .btn { padding: 1px 7px; line-height: 1.4; }
+    .mc-add-bar .btn { margin: 0 4px 4px 0; }
+    .mc-opt-row { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+
+    .mc-color-swatch { width: 26px; height: 26px; border-radius: 4px; border: 1px solid rgba(128, 128, 128, .5); display: inline-block; flex: 0 0 auto; }
+    .mc-color-preset { width: 22px; height: 22px; cursor: pointer; }
+    .mc-color-palette { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+    @media (min-width: 992px) {
+        .mc-preview-col { border-left: 1px solid rgba(128, 128, 128, .28); }
+    }
+
+    .mc-preview-wrap { position: sticky; top: 16px; }
+    .mc-discord-preview {
+        background: #313338; color: #dbdee1; border-radius: 8px; padding: 16px;
+        font-size: .95rem; line-height: 1.4; min-height: 120px; word-wrap: break-word;
+    }
+    .mc-discord-preview a { color: #00a8fc; text-decoration: none; }
+    .mc-discord-preview code { background: #2b2d31; color: #dbdee1; padding: 1px 4px; border-radius: 3px; }
+    .mc-content { margin-bottom: 8px; white-space: pre-wrap; }
+    .mc-embed { border-left: 4px solid #5865f2; background: #2b2d31; border-radius: 4px; padding: 10px 14px; margin-bottom: 8px; max-width: 100%; }
+    .mc-embed-author { display: flex; align-items: center; font-weight: 600; margin-bottom: 4px; font-size: .85rem; }
+    .mc-embed-author-icon { width: 22px; height: 22px; border-radius: 50%; margin-right: 8px; }
+    .mc-embed-title { font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .mc-embed-desc { white-space: pre-wrap; margin-bottom: 8px; font-size: .9rem; }
+    .mc-embed-fields { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+    .mc-embed-field { flex: 1 1 100%; font-size: .875rem; }
+    .mc-embed-field.mc-inline { flex: 1 1 30%; }
+    .mc-embed-field-name { font-weight: 700; color: #fff; }
+    .mc-embed-image { max-width: 100%; border-radius: 4px; margin-top: 8px; display: block; }
+    .mc-embed-thumb { max-width: 80px; border-radius: 4px; float: right; margin: 0 0 8px 12px; }
+    .mc-embed-footer { display: flex; align-items: center; font-size: .75rem; color: #b5bac1; margin-top: 8px; }
+    .mc-embed-footer-icon { width: 18px; height: 18px; border-radius: 50%; margin-right: 6px; }
+    .mc-v2-text { white-space: pre-wrap; margin-bottom: 6px; }
+    .mc-v2-container { border-left: 4px solid #5865f2; background: #2b2d31; border-radius: 4px; padding: 12px 14px; margin-bottom: 8px; }
+    .mc-v2-section { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .mc-v2-section-body { flex: 1 1 auto; }
+    .mc-v2-thumb { max-width: 72px; border-radius: 4px; }
+    .mc-v2-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+    .mc-v2-button { display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 4px; font-weight: 500; font-size: .875rem; cursor: default; }
+    .mc-v2-link-icon { margin-left: 8px; font-size: .8em; opacity: .85; }
+    .mc-v2-select { background: #1e1f22; border: 1px solid #1e1f22; border-radius: 4px; padding: 8px 12px; color: #b5bac1; max-width: 400px; }
+    .mc-v2-separator { height: 1px; margin: 12px 0; }
+    .mc-v2-separator.mc-divider { background: #3f4147; }
+    .mc-v2-gallery { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+    .mc-v2-gallery-item { max-width: 48%; border-radius: 4px; }
+    .mc-v2-unknown, .mc-v2-file { color: #b5bac1; font-style: italic; }
+    .mc-preview-error { color: #fa777c; font-family: monospace; white-space: pre-wrap; }
+
+    .mc-discord-preview .mc-md-h { font-weight: 700; color: #f2f3f5; margin: 4px 0; line-height: 1.3; }
+    .mc-discord-preview .mc-md-h1 { font-size: 1.5em; }
+    .mc-discord-preview .mc-md-h2 { font-size: 1.25em; }
+    .mc-discord-preview .mc-md-h3 { font-size: 1.07em; }
+    .mc-discord-preview .mc-md-subtext { font-size: .8em; color: #b5bac1; margin: 2px 0; }
+    .mc-discord-preview .mc-md-quote { border-left: 4px solid #4e5058; margin: 2px 0; padding: 0 10px; color: #dbdee1; }
+    .mc-discord-preview .mc-md-list { margin: 2px 0; padding-left: 22px; }
+    .mc-discord-preview .mc-md-list li { margin: 1px 0; }
+    .mc-discord-preview .mc-md-code { background: #1e1f22; color: #dbdee1; padding: 1px 4px; border-radius: 3px; font-size: .85em; }
+    .mc-discord-preview .mc-md-codeblock { background: #1e1f22; color: #dbdee1; padding: 8px 10px; border-radius: 4px; margin: 4px 0; white-space: pre-wrap; word-break: break-word; }
+    .mc-discord-preview .mc-md-codeblock code { background: none; padding: 0; }
+    .mc-discord-preview .mc-md-spoiler { background: #1e1f22; color: transparent; border-radius: 3px; padding: 0 2px; cursor: pointer; transition: color .1s; }
+    .mc-discord-preview .mc-md-spoiler:hover { color: #dbdee1; }
+
+    /* The theme's dark-mode .text-muted (#505461) and body text (#808697) are too dim against the
+       card background, so lift contrast for this tool's labels and helper text. Scoped to
+       html.dark #mc-root so light mode is unaffected. */
+    html.dark #mc-root { color: #c9cdd6; }
+    html.dark #mc-root label,
+    html.dark #mc-root h5,
+    html.dark #mc-root summary { color: #e3e6ea; }
+    html.dark #mc-root .text-muted,
+    html.dark #mc-root small,
+    html.dark #mc-root .small,
+    html.dark #mc-root .form-text,
+    html.dark #mc-root .mc-section-label { color: #aeb4c0 !important; }
+    html.dark #mc-root .mc-node-title { color: #c2c8d2; }
+    html.dark #mc-root .mc-node { border-color: rgba(255, 255, 255, .18); }
+</style>
+
+<div class="page-header">
+    <h2>Message Creator</h2>
+</div>
+
+{{template "cp_alerts" .}}
+
+<div id="mc-root" class="row" data-guildid="{{.ActiveGuild.ID}}">
+    <div class="col-lg-12">
+        <section class="card">
+            <header class="card-header">
+                <h2 class="card-title mb-0">Message Creator</h2>
+            </header>
+            <div class="card-body">
+
+                <form id="mc-form" method="post" action="/manage/{{.ActiveGuild.ID}}/messagecreator/send" data-async-form data-async-form-alertsonly>
+                    <input type="hidden" name="mode" id="mc-f-mode">
+                    <input type="hidden" name="payload" id="mc-f-payload">
+
+                    <div class="row">
+                        <div class="col-lg-7 mc-editor-col">
+
+                            <div class="form-group">
+                                <label class="d-block text-muted small text-uppercase font-weight-bold mc-section-label">Action</label>
+                                <div class="btn-group mc-action-toggle">
+                                    <label class="btn btn-outline-primary active">
+                                        <input type="radio" name="mc-action" value="create" checked hidden> <i class="fas fa-plus"></i> Create
+                                    </label>
+                                    <label class="btn btn-outline-primary">
+                                        <input type="radio" name="mc-action" value="edit" hidden> <i class="fas fa-pen"></i> Edit
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group mc-when-create">
+                                <label>Channel</label>
+                                <select name="channel_id" class="form-control" data-requireperms-send>
+                                    {{textOnlyChannelOptions .ActiveGuild.Channels 0 true "Select a channel"}}
+                                </select>
+                            </div>
+
+                            <div class="form-group mc-when-existing" style="display:none;">
+                                <label>Message link <span class="text-muted">(a message YAGPDB sent in this server)</span></label>
+                                <div class="input-group">
+                                    <input type="text" name="message_link" id="mc-edit-link" class="form-control"
+                                        placeholder="https://discord.com/channels/.../.../...">
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-info" id="mc-load-btn">
+                                            <i class="fas fa-download"></i> Load
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="mc-load-error" class="small mt-1"></div>
+                            </div>
+
+                            <hr>
+
+                            <div class="form-group">
+                                <label class="d-block text-muted small text-uppercase font-weight-bold mc-section-label">Message type</label>
+                                <div class="btn-group mc-mode-toggle">
+                                    <label class="btn btn-primary active" id="mode-normal-btn">
+                                        <input type="radio" name="mc-mode" value="normal" checked hidden> <i class="fas fa-align-left"></i> Embed
+                                    </label>
+                                    <label class="btn btn-primary" id="mode-v2-btn">
+                                        <input type="radio" name="mc-mode" value="componentsv2" hidden> <i class="fas fa-th-large"></i> Components V2
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted" id="mc-mode-hint"></small>
+                                <div id="mc-type-lock-note" class="small text-warning mt-1" style="display:none;"></div>
+                            </div>
+
+                            <div id="normal-fields">
+                                <div class="form-group">
+                                    <label>Message content <span class="text-muted">(optional)</span></label>
+                                    <textarea class="form-control mc-input" id="embed-content" rows="2" maxlength="2000"></textarea>
+                                </div>
+
+                                <label class="d-block mb-1">Embeds <span class="text-muted">(up to 10)</span></label>
+                                <div id="embeds-builder"></div>
+                                <div id="embeds-add-bar" class="mb-2"></div>
+                                <hr>
+                            </div>
+
+                            <div id="components-editor">
+                                <label class="d-block mb-1" id="components-label">Components <span class="text-muted">(optional)</span></label>
+                                <div id="components-builder"></div>
+                                <div id="components-add-bar" class="mt-2"></div>
+                                <small class="form-text text-muted">
+                                    The <code>templates-</code> prefix is added to component ids on send so they can
+                                    trigger a <em>Message Component</em> type custom command.
+                                </small>
+                                <div id="components-error" class="text-danger small mt-1"></div>
+                            </div>
+
+                            <div id="mc-errors" class="alert alert-danger mt-3" style="display:none;"></div>
+
+                            <button type="submit" id="mc-submit" class="btn btn-success btn-block btn-lg mt-3">
+                                <span id="mc-submit-label">Create message</span>
+                            </button>
+                            <div id="mc-edit-hint" class="text-muted small text-center mt-1" style="display:none;">Load a message first to edit it.</div>
+                        </div>
+
+                        <div class="col-lg-5 mc-preview-col">
+                            <hr class="d-lg-none mt-0">
+                            <div class="mc-preview-wrap">
+                                <label class="text-muted text-uppercase small font-weight-bold mc-section-label">Live preview</label>
+                                <div id="mc-preview" class="mc-discord-preview"></div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="/static/js/messagecreator.js?{{.StartedAtUnix}}"></script>
+
+{{template "cp_footer" .}}
+{{end}}

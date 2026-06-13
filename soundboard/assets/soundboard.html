@@ -13,7 +13,7 @@
                 <h2 class="card-title">Upload new</h2>
             </header>
             <div class="card-body">
-                <form method="post" action="new" enctype="multipart/form-data">
+                <form class="no-unsaved-popup" method="post" action="/manage/{{.ActiveGuild.ID}}/soundboard/new" enctype="multipart/form-data">
                     <div class="form-group">
                         <label>Name</label>
                         <input type="text" class="form-control" name="Name" placeholder="name">
@@ -37,14 +37,17 @@
                     </div>
                     <div class="form-group">
                         <label for="sound-file">Upload a sound</label>
-                        <input type="file" id="sound-file" name="Sound">
+                        <div class="custom-file d-block">
+                            <input type="file" class="custom-file-input" id="sound-file" name="Sound">
+                            <label class="custom-file-label" for="sound-file">Choose file...</label>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Sound URL</label>
                         <input type="text" class="form-control" name="SoundURL" placeholder="URL">
                         <p class="help-block">Specify a sound url instead of uploading a sound (direct link to a media file, NOT a youtube link)</p>
                     </div>
-                    <input type="submit" class="btn btn-block btn-success" value="Upload/Download!" {{if and (not .IsGuildPremium) (ge (len .SoundboardSounds) .FreeLimit)}}disabled{{end}}>
+                    <input type="submit" class="btn btn-block btn-success" value="Save" {{if and (not .IsGuildPremium) (ge (len .SoundboardSounds) .FreeLimit)}}disabled{{end}}>
                     {{template "cp_premium_at_limit_link" (dict "IsGuildPremium" .IsGuildPremium "Count" (len .SoundboardSounds) "FreeLimit" .FreeLimit "PremiumLimit" .PremiumLimit "Name" "Sounds")}}
                 </form>
             </div>
@@ -110,5 +113,12 @@
 <!-- /.row -->            
 
 {{template "cp_footer" .}}
+
+<script>
+    document.getElementById("sound-file").addEventListener("change", function () {
+        var label = this.nextElementSibling;
+        label.textContent = this.files.length ? this.files[0].name : "Choose file...";
+    });
+</script>
 
 {{end}}
