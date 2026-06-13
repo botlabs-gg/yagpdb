@@ -1149,7 +1149,7 @@
     $('#slash-option-add').on('click', function (e) {
         e.preventDefault();
         const list = document.getElementById('slash-options-list');
-        if (list.querySelectorAll('.slash-option-row').length >= 5) {
+        if (list.querySelectorAll('.slash-option-row').length >= 25) {
             return;
         }
         const frag = document.getElementById('slash-option-template').content.cloneNode(true);
