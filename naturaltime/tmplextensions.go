@@ -60,14 +60,9 @@ func init() {
 		}
 	}
 
-	// Build the default location from the EDT entry in the map.
-	// This is used when no timezone is found in the input string.
-	if edtOffset, ok := tzOffsets["EDT"]; ok {
-		defaultLocation = time.FixedZone("EDT", edtOffset*60)
-	} else {
-		defaultLocation = time.UTC // last-resort safety net
-	}
-
+	// Default to UTC when no timezone is found in the input string.
+	defaultLocation = time.UTC // last-resort safety net
+	
 	templates.RegisterSetupFunc(func(ctx *templates.Context) {
 		ctx.ContextFuncs["parseNaturalTime"] = tmplParseNaturalTime(ctx)
 	})
@@ -116,7 +111,7 @@ func parseTimezone(input string) (*time.Location, string) {
 
 // tmplParseNaturalTime parses a natural language time string, automatically
 // detecting any timezone abbreviation or UTC/GMT offset in the input.
-// Falls back to EDT if no timezone is found.
+// Falls back to UTC if no timezone is found.
 // Returns a time.Time in UTC.
 //
 // Counts against the template's generic API-call budget (100 calls per execution).
