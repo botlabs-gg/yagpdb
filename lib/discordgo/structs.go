@@ -1698,11 +1698,14 @@ func (a *ApplicationCommandInteractionDataOption) UnmarshalJSON(b []byte) error 
 		err = json.Unmarshal(temp.Value, &v)
 		a.Value = v
 	case ApplicationCommandOptionUser, ApplicationCommandOptionChannel, ApplicationCommandOptionRole, ApplicationCommandOptionMentionable, ApplicationCommandOptionAttachment:
-		// parse the snowflake
 		v := ""
-		err = json.Unmarshal(temp.Value, &v)
-		if err == nil {
+		if err = json.Unmarshal(temp.Value, &v); err == nil {
 			a.Value, err = strconv.ParseInt(v, 10, 64)
+		} else {
+			var n int64
+			if err = json.Unmarshal(temp.Value, &n); err == nil {
+				a.Value = n
+			}
 		}
 	case ApplicationCommandOptionNumber:
 		v := float64(0)
