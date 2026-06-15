@@ -446,9 +446,11 @@ func GetConfig(ctx context.Context, guildID int64) (*models.ReputationConfig, er
 
 type LeaderboardEntry struct {
 	*RankEntry
-	Username string `json:"username"`
-	Bot      bool   `json:"bot"`
-	Avatar   string `json:"avatar"`
+	Username   string `json:"username"`
+	Nick       string `json:"nick"`
+	Globalname string `json:"globalname"`
+	Bot        bool   `json:"bot"`
+	Avatar     string `json:"avatar"`
 }
 
 func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*LeaderboardEntry, error) {
@@ -490,6 +492,8 @@ func DetailedLeaderboardEntries(guildID int64, ranks []*RankEntry) ([]*Leaderboa
 		for _, m := range members {
 			if m.User.ID == userIDs[i] {
 				lEntry.Username = m.User.String()
+				lEntry.Nick = m.Nick
+				lEntry.Globalname = m.User.Globalname
 				lEntry.Avatar = m.User.AvatarURL("256")
 				lEntry.Bot = m.User.Bot
 				break
