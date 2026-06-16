@@ -5,7 +5,7 @@
 (function () {
     "use strict";
 
-    var BUTTON_STYLES = {
+    let BUTTON_STYLES = {
         1: { bg: "#5865f2", fg: "#fff" },
         2: { bg: "#4f545c", fg: "#fff" },
         3: { bg: "#248046", fg: "#fff" },
@@ -13,22 +13,22 @@
         5: { bg: "#4f545c", fg: "#fff" }
     };
 
-    var NODE_TITLES = { 1: "Action Row", 9: "Section", 10: "Text", 12: "Media Gallery", 14: "Separator", 17: "Container" };
+    let NODE_TITLES = { 1: "Action Row", 9: "Section", 10: "Text", 12: "Media Gallery", 14: "Separator", 17: "Container" };
 
-    var TEMPLATE_PREFIX = "templates-";
-    var MAX_CUSTOM_ID = 100;                                 // Discord limit, including the prefix
-    var MAX_SUFFIX = MAX_CUSTOM_ID - TEMPLATE_PREFIX.length; // editable part the user types
-    var PRESET_COLORS = ["#5865f2", "#57f287", "#fee75c", "#eb459e", "#ed4245", "#1abc9c",
+    let TEMPLATE_PREFIX = "templates-";
+    let MAX_CUSTOM_ID = 100;                                 // Discord limit, including the prefix
+    let MAX_SUFFIX = MAX_CUSTOM_ID - TEMPLATE_PREFIX.length; // editable part the user types
+    let PRESET_COLORS = ["#5865f2", "#57f287", "#fee75c", "#eb459e", "#ed4245", "#1abc9c",
         "#3498db", "#9b59b6", "#e67e22", "#f1c40f", "#95a5a6", "#ffffff", "#2c2f33", "#000000"];
 
-    var currentMode = "normal";
-    var currentAction = "create";
-    var loadedForEdit = false;
-    var state = { embeds: [], components: [] };
-    var els = {};
+    let currentMode = "normal";
+    let currentAction = "create";
+    let loadedForEdit = false;
+    let state = { embeds: [], components: [] };
+    let els = {};
 
     function init() {
-        var root = document.getElementById("mc-root");
+        let root = document.getElementById("mc-root");
         if (!root) return;
 
         els.root = root;
@@ -53,7 +53,7 @@
         root.querySelectorAll(".mc-action-toggle label").forEach(function (label) {
             label.addEventListener("click", function (e) {
                 e.preventDefault();
-                var input = label.querySelector("input");
+                let input = label.querySelector("input");
                 if (input) setAction(input.value);
             });
         });
@@ -61,7 +61,7 @@
             label.addEventListener("click", function (e) {
                 e.preventDefault();
                 if (label.classList.contains("disabled")) return;
-                var input = label.querySelector("input");
+                let input = label.querySelector("input");
                 if (input) setMode(input.value);
             });
         });
@@ -72,7 +72,7 @@
             }
         });
 
-        var loadBtn = document.getElementById("mc-load-btn");
+        let loadBtn = document.getElementById("mc-load-btn");
         if (loadBtn) loadBtn.addEventListener("click", loadMessage);
 
         els.form.addEventListener("submit", onSubmit);
@@ -86,14 +86,14 @@
 
     function syncToggle(name) {
         els.root.querySelectorAll("input[name=" + name + "]").forEach(function (r) {
-            var label = r.closest("label");
+            let label = r.closest("label");
             if (label) label.classList.toggle("active", r.checked);
         });
     }
 
     function setAction(action) {
         currentAction = action;
-        var creating = action === "create";
+        let creating = action === "create";
         els.root.querySelectorAll("input[name=mc-action]").forEach(function (r) { r.checked = r.value === action; });
         syncToggle("mc-action");
 
@@ -119,7 +119,7 @@
         els.root.querySelectorAll("input[name=mc-mode]").forEach(function (r) { r.checked = r.value === mode; });
         syncToggle("mc-mode");
 
-        var v2 = mode === "componentsv2";
+        let v2 = mode === "componentsv2";
         show(els.normalFields, !v2);
         els.componentsLabel.innerHTML = v2
             ? "Components"
@@ -133,11 +133,11 @@
     }
 
     function setTypeLock(lockedMode) {
-        var radios = els.root.querySelectorAll("input[name=mc-mode]");
+        let radios = els.root.querySelectorAll("input[name=mc-mode]");
         if (lockedMode) {
             setMode(lockedMode);
             radios.forEach(function (r) {
-                var label = r.closest("label");
+                let label = r.closest("label");
                 if (label) label.classList.toggle("disabled", r.value !== lockedMode);
             });
             els.typeLockNote.style.display = "";
@@ -146,7 +146,7 @@
                 : "Editing an existing message — its type can't be changed.";
         } else {
             radios.forEach(function (r) {
-                var label = r.closest("label");
+                let label = r.closest("label");
                 if (label) label.classList.remove("disabled");
             });
             els.typeLockNote.style.display = "none";
@@ -155,8 +155,8 @@
 
     function onSubmit(e) {
         els.form.action = base() + "/" + (currentAction === "create" ? "send" : "edit");
-        var msg = computeMessage().message;
-        var errs = validateComposed(msg, currentMode);
+        let msg = computeMessage().message;
+        let errs = validateComposed(msg, currentMode);
         if (errs.length) {
             e.preventDefault(); e.stopPropagation();
             showErrors(errs);
@@ -175,20 +175,20 @@
     }
     function clearErrors() { els.errors.style.display = "none"; els.errors.innerHTML = ""; }
 
-    function rc(s) { return s ? String(s).length : 0; }
+    function charLen(s) { return s ? String(s).length : 0; }
     function isURL(s) { return /^https?:\/\//i.test(s) || /^attachment:\/\//i.test(s); }
 
     function validateComposed(msg, mode) {
-        var errs = [];
+        let errs = [];
         if (mode === "normal") {
-            if (rc(msg.content) > 2000) errs.push("Message content exceeds 2000 characters.");
-            var embeds = msg.embeds || [];
+            if (charLen(msg.content) > 2000) errs.push("Message content exceeds 2000 characters.");
+            let embeds = msg.embeds || [];
             if (embeds.length > 10) errs.push("A message can have at most 10 embeds.");
             embeds.forEach(function (e, i) { validateEmbed(e, i + 1, errs); });
             if (!msg.content && !embeds.length && !(msg.components || []).length) {
                 errs.push("Add content, an embed, or a component before sending.");
             }
-            var rows = (msg.components || []).filter(function (c) { return c.type === 1; }).length;
+            let rows = (msg.components || []).filter(function (c) { return c.type === 1; }).length;
             if (rows > 5) errs.push("A message can have at most 5 action rows.");
         } else {
             if (!(msg.components || []).length) errs.push("Add at least one component for a Components V2 message.");
@@ -199,19 +199,19 @@
     }
 
     function validateEmbed(e, n, errs) {
-        var total = 0;
-        if (rc(e.title) > 256) errs.push("Embed " + n + ": title exceeds 256 characters.");
-        if (rc(e.description) > 4096) errs.push("Embed " + n + ": description exceeds 4096 characters.");
-        total += rc(e.title) + rc(e.description);
-        if (e.author) { if (rc(e.author.name) > 256) errs.push("Embed " + n + ": author name exceeds 256 characters."); total += rc(e.author.name); }
-        if (e.footer) { if (rc(e.footer.text) > 2048) errs.push("Embed " + n + ": footer text exceeds 2048 characters."); total += rc(e.footer.text); }
-        var fields = e.fields || [];
+        let total = 0;
+        if (charLen(e.title) > 256) errs.push("Embed " + n + ": title exceeds 256 characters.");
+        if (charLen(e.description) > 4096) errs.push("Embed " + n + ": description exceeds 4096 characters.");
+        total += charLen(e.title) + charLen(e.description);
+        if (e.author) { if (charLen(e.author.name) > 256) errs.push("Embed " + n + ": author name exceeds 256 characters."); total += charLen(e.author.name); }
+        if (e.footer) { if (charLen(e.footer.text) > 2048) errs.push("Embed " + n + ": footer text exceeds 2048 characters."); total += charLen(e.footer.text); }
+        let fields = e.fields || [];
         if (fields.length > 25) errs.push("Embed " + n + ": at most 25 fields.");
         fields.forEach(function (f, fi) {
             if (!f.name || !f.value) errs.push("Embed " + n + " field " + (fi + 1) + ": both name and value are required.");
-            if (rc(f.name) > 256) errs.push("Embed " + n + " field " + (fi + 1) + ": name exceeds 256 characters.");
-            if (rc(f.value) > 1024) errs.push("Embed " + n + " field " + (fi + 1) + ": value exceeds 1024 characters.");
-            total += rc(f.name) + rc(f.value);
+            if (charLen(f.name) > 256) errs.push("Embed " + n + " field " + (fi + 1) + ": name exceeds 256 characters.");
+            if (charLen(f.value) > 1024) errs.push("Embed " + n + " field " + (fi + 1) + ": value exceeds 1024 characters.");
+            total += charLen(f.name) + charLen(f.value);
         });
         if (total > 6000) errs.push("Embed " + n + ": total text exceeds 6000 characters.");
         [e.url, e.image && e.image.url, e.thumbnail && e.thumbnail.url, e.author && e.author.icon_url, e.footer && e.footer.icon_url]
@@ -222,7 +222,7 @@
         comps.forEach(function (c) {
             switch (c.type) {
                 case 1:
-                    var items = c.components || [];
+                    let items = c.components || [];
                     if (!items.length) errs.push("An action row is empty — add a button or select menu, or remove it.");
                     if (items.length > 5) errs.push("An action row can have at most 5 components.");
                     if (items.some(function (x) { return x.type !== 2; }) && items.length > 1) {
@@ -242,7 +242,7 @@
                     break;
                 case 10:
                     if (!c.content) errs.push("A text component can't be empty.");
-                    if (rc(c.content) > 4000) errs.push("A text component exceeds 4000 characters.");
+                    if (charLen(c.content) > 4000) errs.push("A text component exceeds 4000 characters.");
                     break;
                 case 12:
                     if (!(c.items || []).length) errs.push("A media gallery needs at least one item.");
@@ -263,15 +263,15 @@
             } else if (!c.label && !(c.emoji && c.emoji.name)) {
                 errs.push("A button needs a label or emoji.");
             }
-            if (rc(c.label) > 80) errs.push("A button label exceeds 80 characters.");
-            if (c.custom_id && rc(c.custom_id) > MAX_CUSTOM_ID) errs.push("A button custom id is too long (max " + MAX_SUFFIX + " characters, plus the templates- prefix).");
+            if (charLen(c.label) > 80) errs.push("A button label exceeds 80 characters.");
+            if (c.custom_id && charLen(c.custom_id) > MAX_CUSTOM_ID) errs.push("A button custom id is too long (max " + MAX_SUFFIX + " characters, plus the templates- prefix).");
         } else {
-            if (rc(c.placeholder) > 150) errs.push("A select placeholder exceeds 150 characters.");
-            if (c.custom_id && rc(c.custom_id) > MAX_CUSTOM_ID) errs.push("A select custom id is too long (max " + MAX_SUFFIX + " characters, plus the templates- prefix).");
+            if (charLen(c.placeholder) > 150) errs.push("A select placeholder exceeds 150 characters.");
+            if (c.custom_id && charLen(c.custom_id) > MAX_CUSTOM_ID) errs.push("A select custom id is too long (max " + MAX_SUFFIX + " characters, plus the templates- prefix).");
             if (!c.type || c.type === 3) {
-                var opts = c.options || [];
+                let opts = c.options || [];
                 if (opts.length < 1 || opts.length > 25) errs.push("A text-options select menu needs between 1 and 25 options.");
-                var seen = {};
+                let seen = {};
                 opts.forEach(function (o, oi) {
                     if (!o.label) errs.push("Select option " + (oi + 1) + " needs a label.");
                     if (!o.value) errs.push("Select option " + (oi + 1) + " needs a value.");
@@ -287,7 +287,7 @@
     function escapeHtml(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
 
-    function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; }
+    function fieldValue(id) { let el = document.getElementById(id); return el ? el.value.trim() : ""; }
 
     function defEmbed() {
         return {
@@ -310,40 +310,40 @@
     }
 
     function embedCard(e, idx) {
-        var card = el("div", { class: "mc-node" });
+        let card = el("div", { class: "mc-node" });
         card.appendChild(nodeHeader("Embed " + (idx + 1), state.embeds, idx, rebuildEmbeds));
 
         card.appendChild(el("div", { class: "form-row" }, [
-            el("div", { class: "col-md-8" }, [field("Title", e.title, function (v) { e.title = v; touch(); })]),
-            el("div", { class: "col-md-4" }, [colorField("Color", e.color, function (v) { e.color = v; touch(); })])
+            el("div", { class: "col-md-8" }, [field("Title", e.title, function (v) { e.title = v; refreshPreview(); })]),
+            el("div", { class: "col-md-4" }, [colorField("Color", e.color, function (v) { e.color = v; refreshPreview(); })])
         ]));
-        card.appendChild(field("Title URL", e.url, function (v) { e.url = v; touch(); }, { placeholder: "https://..." }));
-        card.appendChild(field("Description", e.description, function (v) { e.description = v; touch(); }, { textarea: true, rows: 3 }));
+        card.appendChild(field("Title URL", e.url, function (v) { e.url = v; refreshPreview(); }, { placeholder: "https://..." }));
+        card.appendChild(field("Description", e.description, function (v) { e.description = v; refreshPreview(); }, { textarea: true, rows: 3 }));
         card.appendChild(el("div", { class: "form-row" }, [
-            el("div", { class: "col-md-6" }, [field("Image URL", e.imageUrl, function (v) { e.imageUrl = v; touch(); }, { placeholder: "https://..." })]),
-            el("div", { class: "col-md-6" }, [field("Thumbnail URL", e.thumbUrl, function (v) { e.thumbUrl = v; touch(); }, { placeholder: "https://..." })])
-        ]));
-        card.appendChild(el("div", { class: "form-row" }, [
-            el("div", { class: "col-md-6" }, [field("Author name", e.authorName, function (v) { e.authorName = v; touch(); })]),
-            el("div", { class: "col-md-6" }, [field("Author icon URL", e.authorIcon, function (v) { e.authorIcon = v; touch(); }, { placeholder: "https://..." })])
+            el("div", { class: "col-md-6" }, [field("Image URL", e.imageUrl, function (v) { e.imageUrl = v; refreshPreview(); }, { placeholder: "https://..." })]),
+            el("div", { class: "col-md-6" }, [field("Thumbnail URL", e.thumbUrl, function (v) { e.thumbUrl = v; refreshPreview(); }, { placeholder: "https://..." })])
         ]));
         card.appendChild(el("div", { class: "form-row" }, [
-            el("div", { class: "col-md-8" }, [field("Footer text", e.footerText, function (v) { e.footerText = v; touch(); })]),
-            el("div", { class: "col-md-4" }, [field("Footer icon URL", e.footerIcon, function (v) { e.footerIcon = v; touch(); }, { placeholder: "https://..." })])
+            el("div", { class: "col-md-6" }, [field("Author name", e.authorName, function (v) { e.authorName = v; refreshPreview(); })]),
+            el("div", { class: "col-md-6" }, [field("Author icon URL", e.authorIcon, function (v) { e.authorIcon = v; refreshPreview(); }, { placeholder: "https://..." })])
         ]));
-        var tsCb = el("input", { type: "checkbox" }); tsCb.className = "mr-2"; tsCb.checked = !!e.ts;
-        tsCb.addEventListener("change", function () { e.ts = tsCb.checked; touch(); });
+        card.appendChild(el("div", { class: "form-row" }, [
+            el("div", { class: "col-md-8" }, [field("Footer text", e.footerText, function (v) { e.footerText = v; refreshPreview(); })]),
+            el("div", { class: "col-md-4" }, [field("Footer icon URL", e.footerIcon, function (v) { e.footerIcon = v; refreshPreview(); }, { placeholder: "https://..." })])
+        ]));
+        let tsCb = el("input", { type: "checkbox" }); tsCb.className = "mr-2"; tsCb.checked = !!e.ts;
+        tsCb.addEventListener("change", function () { e.ts = tsCb.checked; refreshPreview(); });
         card.appendChild(el("label", { class: "d-flex align-items-center mb-2" }, [tsCb, "Include current timestamp in footer"]));
 
         card.appendChild(el("hr", { class: "my-2" }));
         card.appendChild(el("label", { class: "small d-block mb-1" }, ["Fields"]));
         e.fields = e.fields || [];
         e.fields.forEach(function (f, fi) {
-            var inlineCb = el("input", { type: "checkbox" }); inlineCb.checked = !!f.inline;
-            inlineCb.addEventListener("change", function () { f.inline = inlineCb.checked; touch(); });
+            let inlineCb = el("input", { type: "checkbox" }); inlineCb.checked = !!f.inline;
+            inlineCb.addEventListener("change", function () { f.inline = inlineCb.checked; refreshPreview(); });
             card.appendChild(el("div", { class: "mc-opt-row" }, [
-                inlineInput("Field name", f.name, function (v) { f.name = v; touch(); }),
-                inlineInput("Field value", f.value, function (v) { f.value = v; touch(); }),
+                inlineInput("Field name", f.name, function (v) { f.name = v; refreshPreview(); }),
+                inlineInput("Field value", f.value, function (v) { f.value = v; refreshPreview(); }),
                 el("label", { class: "mb-0 small text-nowrap", title: "Display inline" }, [inlineCb, " in"]),
                 btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { e.fields.splice(fi, 1); renderEmbeds(); renderPreview(); }, { noconfirm: true })
             ]));
@@ -356,9 +356,9 @@
 
     // Build clean Discord embed objects from the model, dropping empty ones.
     function buildEmbeds() {
-        var out = [];
+        let out = [];
         state.embeds.forEach(function (e) {
-            var emb = {};
+            let emb = {};
             if (e.title) emb.title = e.title;
             if (e.url) emb.url = e.url;
             if (e.description) emb.description = e.description;
@@ -368,7 +368,7 @@
             if (e.imageUrl) emb.image = { url: e.imageUrl };
             if (e.thumbUrl) emb.thumbnail = { url: e.thumbUrl };
             if (e.ts) emb.timestamp = new Date().toISOString();
-            var fields = (e.fields || []).filter(function (f) { return f.name || f.value; })
+            let fields = (e.fields || []).filter(function (f) { return f.name || f.value; })
                 .map(function (f) { return { name: f.name || "", value: f.value || "", inline: !!f.inline }; });
             if (fields.length) emb.fields = fields;
             if (Object.keys(emb).length) out.push(emb);
@@ -378,9 +378,9 @@
 
     // A checkbox + color picker bound to an optional numeric color (undefined = no color).
     function colorPicker(value, oninput) {
-        var cur = (typeof value === "number") ? intToHex(value) : "#5865f2";
-        var swatch = el("span", { class: "mc-color-swatch" }); swatch.style.background = cur;
-        var hexIn = el("input", { class: "form-control form-control-sm", maxlength: "7" });
+        let cur = (typeof value === "number") ? intToHex(value) : "#5865f2";
+        let swatch = el("span", { class: "mc-color-swatch" }); swatch.style.background = cur;
+        let hexIn = el("input", { class: "form-control form-control-sm", maxlength: "7" });
         hexIn.value = cur; hexIn.style.maxWidth = "110px";
         function apply(h, fromHexInput) {
             h = h.trim(); if (h[0] !== "#") h = "#" + h;
@@ -390,9 +390,9 @@
             oninput(hexToInt(h));
         }
         hexIn.addEventListener("input", function () { apply(hexIn.value, true); });
-        var palette = el("div", { class: "mc-color-palette" });
+        let palette = el("div", { class: "mc-color-palette" });
         PRESET_COLORS.forEach(function (c) {
-            var s = el("span", { class: "mc-color-swatch mc-color-preset" });
+            let s = el("span", { class: "mc-color-swatch mc-color-preset" });
             s.style.background = c; s.title = c;
             s.addEventListener("click", function () { apply(c, false); });
             palette.appendChild(s);
@@ -402,10 +402,10 @@
 
     // Optional-color field: a checkbox enables the color picker; unchecked means no color.
     function colorField(labelText, value, oninput) {
-        var selected = (typeof value === "number") ? value : hexToInt("#5865f2");
-        var enabled = typeof value === "number";
-        var cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = enabled;
-        var pickerWrap = el("div", { class: "mt-1" }, [colorPicker(value, function (v) { selected = v; if (cb.checked) oninput(v); })]);
+        let selected = (typeof value === "number") ? value : hexToInt("#5865f2");
+        let enabled = typeof value === "number";
+        let cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = enabled;
+        let pickerWrap = el("div", { class: "mt-1" }, [colorPicker(value, function (v) { selected = v; if (cb.checked) oninput(v); })]);
         show(pickerWrap, enabled);
         cb.addEventListener("change", function () { show(pickerWrap, cb.checked); oninput(cb.checked ? selected : undefined); });
         return el("div", { class: "form-group mb-2" }, [
@@ -419,15 +419,15 @@
 
     // touch: a field changed — refresh the preview without rebuilding the editor (keeps input
     // focus). rebuild: structure changed — re-render the whole builder.
-    function touch() { renderPreview(); }
-    function rebuild() { renderBuilder(); renderPreview(); }
+    function refreshPreview() { renderPreview(); }
+    function rebuildEditor() { renderBuilder(); renderPreview(); }
 
     function rebuildEmbeds() { renderEmbeds(); renderPreview(); }
 
     function move(list, idx, delta, onChange) {
-        var j = idx + delta;
+        let j = idx + delta;
         if (j < 0 || j >= list.length) return;
-        var tmp = list[idx]; list[idx] = list[j]; list[j] = tmp;
+        let tmp = list[idx]; list[idx] = list[j]; list[j] = tmp;
         (onChange || rebuild)();
     }
 
@@ -448,9 +448,9 @@
     function defGallery() { return { type: 12, items: [{ media: { url: "" } }] }; }
 
     function makeAddBar(list, context) {
-        var bar = el("div", { class: "mc-add-bar" });
+        let bar = el("div", { class: "mc-add-bar" });
         function add(label, factory) {
-            bar.appendChild(btn(label, "btn-sm btn-outline-primary", function () { list.push(factory()); rebuild(); }));
+            bar.appendChild(btn(label, "btn-sm btn-outline-primary", function () { list.push(factory()); rebuildEditor(); }));
         }
         if (context === "normaltop") {
             add("+ Action row", defActionRow);
@@ -467,7 +467,7 @@
 
     function nodeHeader(title, list, idx, onChange) {
         onChange = onChange || rebuild;
-        var tools = el("div", { class: "mc-node-tools" }, [
+        let tools = el("div", { class: "mc-node-tools" }, [
             btn('<i class="fas fa-arrow-up"></i>', "btn-sm btn-secondary", function () { move(list, idx, -1, onChange); }, { title: "Move up" }),
             btn('<i class="fas fa-arrow-down"></i>', "btn-sm btn-secondary", function () { move(list, idx, 1, onChange); }, { title: "Move down" }),
             btn('<i class="fas fa-trash"></i>', "btn-sm btn-danger", function () { list.splice(idx, 1); onChange(); }, { noconfirm: true, title: "Remove" })
@@ -476,11 +476,11 @@
     }
 
     function renderNode(node, list, idx) {
-        var card = el("div", { class: "mc-node" });
+        let card = el("div", { class: "mc-node" });
         card.appendChild(nodeHeader(NODE_TITLES[node.type] || ("Type " + node.type), list, idx));
-        var body;
+        let body;
         switch (node.type) {
-            case 10: body = field("Text (markdown supported)", node.content, function (v) { node.content = v; touch(); }, { textarea: true, rows: 2 }); break;
+            case 10: body = field("Text (markdown supported)", node.content, function (v) { node.content = v; refreshPreview(); }, { textarea: true, rows: 2 }); break;
             case 14: body = separatorBody(node); break;
             case 1: body = actionRowBody(node); break;
             case 9: body = sectionBody(node); break;
@@ -493,77 +493,77 @@
     }
 
     function separatorBody(node) {
-        var wrap = el("div");
-        var cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = node.divider !== false;
-        cb.addEventListener("change", function () { node.divider = cb.checked; touch(); });
+        let wrap = el("div");
+        let cb = el("input", { type: "checkbox" }); cb.className = "mr-2"; cb.checked = node.divider !== false;
+        cb.addEventListener("change", function () { node.divider = cb.checked; refreshPreview(); });
         wrap.appendChild(el("label", { class: "small d-block mb-2" }, [cb, "Show divider line"]));
-        wrap.appendChild(selectField("Spacing", [{ v: 1, t: "Small" }, { v: 2, t: "Large" }], node.spacing || 1, function (v) { node.spacing = parseInt(v); touch(); }));
+        wrap.appendChild(selectField("Spacing", [{ v: 1, t: "Small" }, { v: 2, t: "Large" }], node.spacing || 1, function (v) { node.spacing = parseInt(v); refreshPreview(); }));
         return wrap;
     }
 
     function actionRowBody(node) {
         node.components = node.components || [];
-        var hasSelect = node.components.some(function (c) { return c.type !== 2; });
-        var body = el("div");
+        let hasSelect = node.components.some(function (c) { return c.type !== 2; });
+        let body = el("div");
         node.components.forEach(function (child, ci) { body.appendChild(interactiveEditor(child, node.components, ci)); });
-        var bar = el("div", { class: "mc-add-bar mt-1" });
+        let bar = el("div", { class: "mc-add-bar mt-1" });
         if (node.components.length === 0) {
-            bar.appendChild(btn("+ Button", "btn-block btn-outline-secondary", function () { node.components.push(defButton()); rebuild(); }));
-            bar.appendChild(btn("+ Select menu", "btn-block btn-outline-secondary", function () { node.components.push(defSelect()); rebuild(); }));
+            bar.appendChild(btn("+ Button", "btn-block btn-outline-secondary", function () { node.components.push(defButton()); rebuildEditor(); }));
+            bar.appendChild(btn("+ Select menu", "btn-block btn-outline-secondary", function () { node.components.push(defSelect()); rebuildEditor(); }));
             bar.appendChild(el("span", { class: "small text-muted ml-1" }, ["Up to 5 buttons, or one select menu."]));
         } else if (hasSelect) {
             bar.appendChild(el("span", { class: "small text-muted" }, ["A select menu takes up the whole row."]));
         } else if (node.components.length < 5) {
-            bar.appendChild(btn("+ Button", "btn-block btn-outline-secondary", function () { node.components.push(defButton()); rebuild(); }));
+            bar.appendChild(btn("+ Button", "btn-block btn-outline-secondary", function () { node.components.push(defButton()); rebuildEditor(); }));
         }
         body.appendChild(bar);
         return body;
     }
 
     function interactiveEditor(child, list, idx) {
-        var card = el("div", { class: "mc-node" });
+        let card = el("div", { class: "mc-node" });
         card.appendChild(nodeHeader(child.type === 2 ? "Button" : "Select menu", list, idx));
         card.appendChild(child.type === 2 ? buttonEditor(child) : selectEditor(child));
         return card;
     }
 
     function buttonEditor(node) {
-        var wrap = el("div");
+        let wrap = el("div");
         wrap.appendChild(selectField("Style",
             [{ v: 1, t: "Primary" }, { v: 2, t: "Secondary" }, { v: 3, t: "Success" }, { v: 4, t: "Danger" }, { v: 5, t: "Link" }],
             node.style || 1, function (v) {
                 node.style = parseInt(v);
                 if (node.style === 5) { delete node.custom_id; if (node.url == null) node.url = ""; }
                 else { delete node.url; if (node.custom_id == null) node.custom_id = ""; }
-                rebuild();
+                rebuildEditor();
             }));
-        wrap.appendChild(field("Label", node.label, function (v) { node.label = v; touch(); }));
+        wrap.appendChild(field("Label", node.label, function (v) { node.label = v; refreshPreview(); }));
         if (node.style === 5) {
-            wrap.appendChild(field("URL", node.url, function (v) { node.url = v; touch(); }, { placeholder: "https://..." }));
+            wrap.appendChild(field("URL", node.url, function (v) { node.url = v; refreshPreview(); }, { placeholder: "https://..." }));
         } else {
             wrap.appendChild(customIdField(node));
         }
         wrap.appendChild(field("Emoji (optional)", node.emoji && node.emoji.name, function (v) {
-            if (v) node.emoji = { name: v }; else delete node.emoji; touch();
+            if (v) node.emoji = { name: v }; else delete node.emoji; refreshPreview();
         }, { placeholder: "e.g. 🔥" }));
         return wrap;
     }
 
     function selectEditor(node) {
-        var wrap = el("div");
+        let wrap = el("div");
         wrap.appendChild(selectField("Menu type",
             [{ v: 3, t: "Text options" }, { v: 5, t: "Users" }, { v: 6, t: "Roles" }, { v: 7, t: "Users & roles" }, { v: 8, t: "Channels" }],
             node.type || 3, function (v) {
                 node.type = parseInt(v);
                 if (node.type === 3) { if (!node.options) node.options = [{ label: "Option 1", value: "1" }]; }
                 else { delete node.options; }
-                rebuild();
+                rebuildEditor();
             }));
-        wrap.appendChild(field("Placeholder", node.placeholder, function (v) { node.placeholder = v; touch(); }));
+        wrap.appendChild(field("Placeholder", node.placeholder, function (v) { node.placeholder = v; refreshPreview(); }));
         wrap.appendChild(customIdField(node));
         wrap.appendChild(el("div", { class: "form-row" }, [
-            el("div", { class: "col" }, [numField("Min values", node.min_values, function (v) { if (v == null) delete node.min_values; else node.min_values = v; touch(); })]),
-            el("div", { class: "col" }, [numField("Max values", node.max_values, function (v) { if (v == null) delete node.max_values; else node.max_values = v; touch(); })])
+            el("div", { class: "col" }, [numField("Min values", node.min_values, function (v) { if (v == null) delete node.min_values; else node.min_values = v; refreshPreview(); })]),
+            el("div", { class: "col" }, [numField("Max values", node.max_values, function (v) { if (v == null) delete node.max_values; else node.max_values = v; refreshPreview(); })])
         ]));
         // Only "Text options" menus carry an explicit option list; the other types are auto-populated by Discord.
         if (!node.type || node.type === 3) {
@@ -571,15 +571,15 @@
             wrap.appendChild(el("label", { class: "small mb-1 d-block" }, ["Options"]));
             node.options.forEach(function (opt, oi) {
                 wrap.appendChild(el("div", { class: "mc-opt-row" }, [
-                    inlineInput("Label", opt.label, function (v) { opt.label = v; touch(); }),
-                    inlineInput("Value", opt.value, function (v) { opt.value = v; touch(); }),
-                    inlineInput("Description", opt.description, function (v) { if (v) opt.description = v; else delete opt.description; touch(); }),
-                    node.options.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.options.splice(oi, 1); rebuild(); }, { noconfirm: true }) : null
+                    inlineInput("Label", opt.label, function (v) { opt.label = v; refreshPreview(); }),
+                    inlineInput("Value", opt.value, function (v) { opt.value = v; refreshPreview(); }),
+                    inlineInput("Description", opt.description, function (v) { if (v) opt.description = v; else delete opt.description; refreshPreview(); }),
+                    node.options.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.options.splice(oi, 1); rebuildEditor(); }, { noconfirm: true }) : null
                 ]));
             });
             if (node.options.length < 25) {
                 wrap.appendChild(btn("+ Option", "btn-block btn-outline-secondary", function () {
-                    node.options.push({ label: "Option " + (node.options.length + 1), value: String(node.options.length + 1) }); rebuild();
+                    node.options.push({ label: "Option " + (node.options.length + 1), value: String(node.options.length + 1) }); rebuildEditor();
                 }));
             }
         }
@@ -589,32 +589,32 @@
     function sectionBody(node) {
         node.components = node.components || [defText()];
         node.accessory = node.accessory || defButton();
-        var body = el("div");
+        let body = el("div");
         node.components.forEach(function (td, ti) {
-            var ta = el("textarea", { class: "form-control form-control-sm", placeholder: "Text" }); ta.rows = 2; ta.value = td.content || "";
-            ta.addEventListener("input", function () { td.content = ta.value; touch(); });
+            let ta = el("textarea", { class: "form-control form-control-sm", placeholder: "Text" }); ta.rows = 2; ta.value = td.content || "";
+            ta.addEventListener("input", function () { td.content = ta.value; refreshPreview(); });
             body.appendChild(el("div", { class: "mc-opt-row" }, [
                 ta,
-                node.components.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.components.splice(ti, 1); rebuild(); }, { noconfirm: true }) : null
+                node.components.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.components.splice(ti, 1); rebuildEditor(); }, { noconfirm: true }) : null
             ]));
         });
-        if (node.components.length < 3) body.appendChild(btn("+ Text", "btn-block btn-outline-secondary", function () { node.components.push(defText()); rebuild(); }));
+        if (node.components.length < 3) body.appendChild(btn("+ Text", "btn-block btn-outline-secondary", function () { node.components.push(defText()); rebuildEditor(); }));
         body.appendChild(el("hr", { class: "my-2" }));
         body.appendChild(selectField("Accessory", [{ v: 2, t: "Button" }, { v: 11, t: "Thumbnail" }], node.accessory.type, function (v) {
             node.accessory = parseInt(v) === 2 ? defButton() : { type: 11, media: { url: "" } };
-            rebuild();
+            rebuildEditor();
         }));
         if (node.accessory.type === 2) body.appendChild(buttonEditor(node.accessory));
-        else body.appendChild(field("Thumbnail URL", node.accessory.media && node.accessory.media.url, function (v) { node.accessory.media = { url: v }; touch(); }, { placeholder: "https://..." }));
+        else body.appendChild(field("Thumbnail URL", node.accessory.media && node.accessory.media.url, function (v) { node.accessory.media = { url: v }; refreshPreview(); }, { placeholder: "https://..." }));
         return body;
     }
 
     function containerBody(node) {
         node.components = node.components || [];
-        var body = el("div");
+        let body = el("div");
         body.appendChild(colorField("Accent color", node.accent_color, function (v) {
             if (v == null) delete node.accent_color; else node.accent_color = v;
-            touch();
+            refreshPreview();
         }));
         node.components.forEach(function (child, ci) { body.appendChild(renderNode(child, node.components, ci)); });
         body.appendChild(makeAddBar(node.components, "v2container"));
@@ -623,16 +623,16 @@
 
     function galleryBody(node) {
         node.items = node.items || [{ media: { url: "" } }];
-        var body = el("div");
+        let body = el("div");
         node.items.forEach(function (it, ii) {
             it.media = it.media || { url: "" };
             body.appendChild(el("div", { class: "mc-opt-row" }, [
-                inlineInput("Image / video URL", it.media.url, function (v) { it.media.url = v; touch(); }),
-                inlineInput("Description (optional)", it.description, function (v) { if (v) it.description = v; else delete it.description; touch(); }),
-                node.items.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.items.splice(ii, 1); rebuild(); }, { noconfirm: true }) : null
+                inlineInput("Image / video URL", it.media.url, function (v) { it.media.url = v; refreshPreview(); }),
+                inlineInput("Description (optional)", it.description, function (v) { if (v) it.description = v; else delete it.description; refreshPreview(); }),
+                node.items.length > 1 ? btn('<i class="fas fa-times"></i>', "btn-block btn-danger", function () { node.items.splice(ii, 1); rebuildEditor(); }, { noconfirm: true }) : null
             ]));
         });
-        if (node.items.length < 10) body.appendChild(btn("+ Item", "btn-block btn-outline-secondary", function () { node.items.push({ media: { url: "" } }); rebuild(); }));
+        if (node.items.length < 10) body.appendChild(btn("+ Item", "btn-block btn-outline-secondary", function () { node.items.push({ media: { url: "" } }); rebuildEditor(); }));
         return body;
     }
 
@@ -644,7 +644,7 @@
         if (c.type === 2 && c.style === 5) { delete c.custom_id; delete c._locked; return; }
         if (c._locked) { delete c._locked; return; }
         delete c._locked;
-        var s = (c.custom_id || "").trim();
+        let s = (c.custom_id || "").trim();
         c.custom_id = s ? (TEMPLATE_PREFIX + s) : "";
     }
 
@@ -660,7 +660,7 @@
     // suffix; ids that were never templated are flagged _locked so the UI won't let them be edited.
     function adaptInteractive(c) {
         if (c.type === 2 && c.style === 5) return; // link button, no custom_id
-        var id = c.custom_id || "";
+        let id = c.custom_id || "";
         if (id.indexOf(TEMPLATE_PREFIX) === 0) { c.custom_id = id.slice(TEMPLATE_PREFIX.length); c._locked = false; }
         else if (id) { c._locked = true; }
         else { c.custom_id = ""; c._locked = false; }
@@ -676,7 +676,7 @@
 
     // Drop empty action rows / containers so we never send an invalid (empty) row to Discord.
     function pruneEmpty(comps) {
-        var out = [];
+        let out = [];
         comps.forEach(function (c) {
             if (c.type === 1) { if (c.components && c.components.length) out.push(c); }
             else if (c.type === 17) { c.components = pruneEmpty(c.components || []); if (c.components.length) out.push(c); }
@@ -687,24 +687,24 @@
 
     // Deep-clone the live model, finalize custom_ids, and prune empties for the outgoing payload.
     function buildComponents(comps) {
-        var clone = JSON.parse(JSON.stringify(comps || []));
+        let clone = JSON.parse(JSON.stringify(comps || []));
         finalizeWalk(clone);
         return pruneEmpty(clone);
     }
 
     function computeMessage() {
-        var comps = buildComponents(state.components);
+        let comps = buildComponents(state.components);
         if (currentMode === "componentsv2") return { message: { components: comps } };
-        var msg = {};
-        var content = val("embed-content"); if (content) msg.content = content;
-        var embeds = buildEmbeds(); if (embeds.length) msg.embeds = embeds;
+        let msg = {};
+        let content = fieldValue("embed-content"); if (content) msg.content = content;
+        let embeds = buildEmbeds(); if (embeds.length) msg.embeds = embeds;
         if (comps.length) msg.components = comps;
         return { message: msg };
     }
 
     function renderPreview() {
         if (!els.preview) return;
-        var msg = computeMessage().message;
+        let msg = computeMessage().message;
         els.preview.innerHTML = "";
         if (msg.content) els.preview.appendChild(renderText(msg.content, "mc-content"));
         if (msg.embeds) msg.embeds.forEach(function (e) { els.preview.appendChild(renderEmbed(e)); });
@@ -713,22 +713,22 @@
     }
 
     function renderEmbed(e) {
-        var box = div("mc-embed");
+        let box = div("mc-embed");
         box.style.borderLeftColor = (typeof e.color === "number") ? intToHex(e.color) : "#4f545c";
         if (e.author && e.author.name) {
-            var a = div("mc-embed-author");
+            let a = div("mc-embed-author");
             if (e.author.icon_url) a.appendChild(img(e.author.icon_url, "mc-embed-author-icon"));
             a.appendChild(span(e.author.name));
             box.appendChild(a);
         }
         if (e.title) box.appendChild(div("mc-embed-title", e.title)); // titles render no markdown on Discord
-        if (e.description) { var d = div("mc-embed-desc"); d.innerHTML = formatMarkdown(e.description); box.appendChild(d); }
+        if (e.description) { let d = div("mc-embed-desc"); d.appendChild(renderMarkdown(e.description)); box.appendChild(d); }
         if (e.fields && e.fields.length) {
-            var grid = div("mc-embed-fields");
+            let grid = div("mc-embed-fields");
             e.fields.forEach(function (f) {
-                var fd = div("mc-embed-field" + (f.inline ? " mc-inline" : ""));
-                var fn = div("mc-embed-field-name"); fn.innerHTML = formatInline(f.name || "");
-                var fv = div("mc-embed-field-value"); fv.innerHTML = formatMarkdown(f.value || "");
+                let fd = div("mc-embed-field" + (f.inline ? " mc-inline" : ""));
+                let fn = div("mc-embed-field-name"); fn.appendChild(renderInlineMarkdown(f.name || ""));
+                let fv = div("mc-embed-field-value"); fv.appendChild(renderMarkdown(f.value || ""));
                 fd.appendChild(fn); fd.appendChild(fv); grid.appendChild(fd);
             });
             box.appendChild(grid);
@@ -736,9 +736,9 @@
         if (e.image && e.image.url) box.appendChild(img(e.image.url, "mc-embed-image"));
         if (e.thumbnail && e.thumbnail.url) box.appendChild(img(e.thumbnail.url, "mc-embed-thumb"));
         if (e.footer && (e.footer.text || e.timestamp)) {
-            var f = div("mc-embed-footer");
+            let f = div("mc-embed-footer");
             if (e.footer.icon_url) f.appendChild(img(e.footer.icon_url, "mc-embed-footer-icon"));
-            var ftext = e.footer.text || "";
+            let ftext = e.footer.text || "";
             if (e.timestamp) ftext += (ftext ? " • " : "") + new Date(e.timestamp).toLocaleString();
             f.appendChild(span(ftext));
             box.appendChild(f);
@@ -752,27 +752,27 @@
         switch (c.type) {
             case 10: return renderText(c.content || "", "mc-v2-text");
             case 17:
-                var ct = div("mc-v2-container");
+                let ct = div("mc-v2-container");
                 ct.style.borderLeftColor = (typeof c.accent_color === "number") ? intToHex(c.accent_color) : "transparent";
                 renderComponents(c.components || [], ct);
                 return ct;
             case 9:
-                var sec = div("mc-v2-section");
-                var body = div("mc-v2-section-body");
+                let sec = div("mc-v2-section");
+                let body = div("mc-v2-section-body");
                 renderComponents(c.components || [], body);
                 sec.appendChild(body);
                 if (c.accessory) sec.appendChild(renderAccessory(c.accessory));
                 return sec;
             case 1:
-                var row = div("mc-v2-row");
+                let row = div("mc-v2-row");
                 (c.components || []).forEach(function (ic) { row.appendChild(renderInteractive(ic)); });
                 return row;
             case 14:
-                var sep = div("mc-v2-separator");
+                let sep = div("mc-v2-separator");
                 if (c.divider !== false) sep.classList.add("mc-divider");
                 return sep;
             case 12:
-                var g = div("mc-v2-gallery");
+                let g = div("mc-v2-gallery");
                 (c.items || []).forEach(function (it) { if (it.media && it.media.url) g.appendChild(img(it.media.url, "mc-v2-gallery-item")); });
                 return g;
             default: return renderInteractive(c);
@@ -788,11 +788,11 @@
     function renderInteractive(c) {
         switch (c.type) {
             case 2:
-                var st = BUTTON_STYLES[c.style] || BUTTON_STYLES[2];
-                var b = div("mc-v2-button", (c.emoji && c.emoji.name ? c.emoji.name + " " : "") + (c.label || (c.style === 5 ? "Link" : "Button")));
+                let st = BUTTON_STYLES[c.style] || BUTTON_STYLES[2];
+                let b = div("mc-v2-button", (c.emoji && c.emoji.name ? c.emoji.name + " " : "") + (c.label || (c.style === 5 ? "Link" : "Button")));
                 b.style.backgroundColor = st.bg; b.style.color = st.fg;
                 if (c.style === 5) { // link buttons show an external-link indicator, like Discord
-                    var icon = document.createElement("i");
+                    let icon = document.createElement("i");
                     icon.className = "fas fa-external-link-alt mc-v2-link-icon";
                     b.appendChild(icon);
                 }
@@ -804,13 +804,13 @@
         }
     }
 
-    function renderText(text, cls) { var d = div(cls || ""); d.innerHTML = formatMarkdown(text); return d; }
+    function renderText(text, cls) { let d = div(cls || ""); d.appendChild(renderMarkdown(text)); return d; }
 
 
     function loadMessage() {
-        var link = document.getElementById("mc-edit-link").value.trim();
-        var errEl = document.getElementById("mc-load-error");
-        errEl.className = "small mt-1 text-danger";
+        let link = document.getElementById("mc-edit-link").value.trim();
+        let errEl = document.getElementById("mc-load-error");
+        errEl.className = "text-small mt-1 text-danger";
         errEl.textContent = "";
         if (!link) { errEl.textContent = "Paste a message link first."; return; }
 
@@ -820,7 +820,7 @@
                 if (!res.ok || res.body.error) { errEl.textContent = res.body.error || "Failed to load message."; return; }
                 populateFromMessage(res.body);
                 if (!res.body.author_is_bot) {
-                    errEl.className = "small mt-1 text-warning";
+                    errEl.className = "text-small mt-1 text-danger";
                     errEl.textContent = "This message was not sent by YAGPDB, so it can't be edited (switch to Create to send it as a new message).";
                     loadedForEdit = false; els.submit.disabled = true; show(els.editHint, true);
                 } else {
@@ -831,8 +831,8 @@
     }
 
     function populateFromMessage(resp) {
-        var payload = resp.payload || {};
-        var mode = resp.mode === "componentsv2" ? "componentsv2" : "normal";
+        let payload = resp.payload || {};
+        let mode = resp.mode === "componentsv2" ? "componentsv2" : "normal";
         state.components = (payload.components && payload.components.length) ? payload.components : [];
         adaptLoadedComponents(state.components);
         setMode(mode);
@@ -856,12 +856,12 @@
 
         if (currentAction === "edit") setTypeLock(mode);
         renderEmbeds();
-        rebuild();
+        rebuildEditor();
     }
 
 
     function el(tag, attrs, children) {
-        var e = document.createElement(tag);
+        let e = document.createElement(tag);
         if (attrs) Object.keys(attrs).forEach(function (k) {
             if (k === "class") e.className = attrs[k];
             else e.setAttribute(k, attrs[k]);
@@ -875,7 +875,7 @@
 
     function btn(html, cls, onclick, opts) {
         opts = opts || {};
-        var b = document.createElement("button");
+        let b = document.createElement("button");
         b.type = "button"; b.className = "btn " + cls; b.innerHTML = html;
         if (opts.noconfirm) b.setAttribute("noconfirm", "true");
         if (opts.title) b.title = opts.title;
@@ -885,21 +885,21 @@
 
     function field(labelText, value, oninput, opts) {
         opts = opts || {};
-        var input = document.createElement(opts.textarea ? "textarea" : "input");
+        let input = document.createElement(opts.textarea ? "textarea" : "input");
         input.className = "form-control form-control-sm";
         if (opts.textarea) input.rows = opts.rows || 2;
         if (opts.placeholder) input.placeholder = opts.placeholder;
         if (opts.maxlength) input.maxLength = opts.maxlength;
         input.value = value == null ? "" : value;
         input.addEventListener("input", function () { oninput(input.value); });
-        var children = [el("label", { class: "small mb-1" }, [labelText]), input];
+        let children = [el("label", { class: "small mb-1" }, [labelText]), input];
         if (opts.help) children.push(el("small", { class: "form-text text-muted" }, [opts.help]));
         return el("div", { class: "form-group mb-2" }, children);
     }
 
     function readonlyField(labelText, value, help) {
-        var input = el("input", { class: "form-control form-control-sm" }); input.value = value || ""; input.disabled = true;
-        var children = [el("label", { class: "small mb-1" }, [labelText]), input];
+        let input = el("input", { class: "form-control form-control-sm" }); input.value = value || ""; input.disabled = true;
+        let children = [el("label", { class: "small mb-1" }, [labelText]), input];
         if (help) children.push(el("small", { class: "form-text text-muted" }, [help]));
         return el("div", { class: "form-group mb-2" }, children);
     }
@@ -911,12 +911,12 @@
             return readonlyField("Custom ID (fixed)", node.custom_id,
                 "This component wasn't created with the templates- prefix, so its id can't be changed.");
         }
-        return field("Custom ID (optional)", node.custom_id, function (v) { node.custom_id = v; touch(); },
+        return field("Custom ID (optional)", node.custom_id, function (v) { node.custom_id = v; refreshPreview(); },
             { placeholder: "auto-generated", maxlength: MAX_SUFFIX, help: '"templates-" is added automatically so it can trigger a custom command.' });
     }
 
     function inlineInput(placeholder, value, oninput) {
-        var i = document.createElement("input");
+        let i = document.createElement("input");
         i.className = "form-control form-control-sm"; i.placeholder = placeholder;
         i.value = value == null ? "" : value;
         i.addEventListener("input", function () { oninput(i.value); });
@@ -924,7 +924,7 @@
     }
 
     function numField(labelText, value, oninput) {
-        var i = document.createElement("input");
+        let i = document.createElement("input");
         i.type = "number"; i.className = "form-control form-control-sm"; i.min = 0;
         i.value = value == null ? "" : value;
         i.addEventListener("input", function () { oninput(i.value === "" ? null : parseInt(i.value)); });
@@ -932,10 +932,10 @@
     }
 
     function selectField(labelText, options, value, onchange) {
-        var sel = document.createElement("select");
+        let sel = document.createElement("select");
         sel.className = "form-control form-control-sm";
         options.forEach(function (o) {
-            var op = document.createElement("option");
+            let op = document.createElement("option");
             op.value = String(o.v); op.textContent = o.t;
             if (String(o.v) === String(value)) op.selected = true;
             sel.appendChild(op);
@@ -945,82 +945,179 @@
     }
 
     function show(elm, on) { if (elm) elm.style.display = on ? "" : "none"; }
-    function setVal(id, v) { var e = document.getElementById(id); if (e) e.value = v; }
-    function setChecked(id, v) { var e = document.getElementById(id); if (e) e.checked = !!v; }
+    function setVal(id, v) { let e = document.getElementById(id); if (e) e.value = v; }
+    function setChecked(id, v) { let e = document.getElementById(id); if (e) e.checked = !!v; }
     function hexToInt(hex) { return hex ? (parseInt(hex.replace("#", ""), 16) || 0) : 0; }
-    function intToHex(i) { var s = (i & 0xffffff).toString(16); while (s.length < 6) s = "0" + s; return "#" + s; }
+    function intToHex(i) { let s = (i & 0xffffff).toString(16); while (s.length < 6) s = "0" + s; return "#" + s; }
 
-    function div(cls, text) { var d = document.createElement("div"); if (cls) d.className = cls; if (text != null) d.textContent = text; return d; }
-    function span(text) { var s = document.createElement("span"); s.textContent = text; return s; }
+    function div(cls, text) { let d = document.createElement("div"); if (cls) d.className = cls; if (text != null) d.textContent = text; return d; }
+    function span(text) { let s = document.createElement("span"); s.textContent = text; return s; }
     function img(url, cls) {
-        var i = document.createElement("img");
+        let i = document.createElement("img");
         i.src = url; if (cls) i.className = cls;
         i.onerror = function () { i.style.display = "none"; };
         return i;
     }
 
-    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    // ---- Markdown renderer ----
+    let INLINE_RULES = [
+        { regex: /\|\|([\s\S]+?)\|\|/, tag: "span", className: "mc-md-spoiler", recurse: true },
+        { regex: /\*\*\*([\s\S]+?)\*\*\*/, build: buildBoldItalicNode },
+        { regex: /\*\*([\s\S]+?)\*\*/, tag: "strong", recurse: true },
+        { regex: /__([\s\S]+?)__/, tag: "u", recurse: true },
+        { regex: /\*([^\s*][\s\S]*?)\*/, tag: "em", recurse: true },
+        { regex: /_([^_]+?)_/, tag: "em", recurse: true },
+        { regex: /~~([\s\S]+?)~~/, tag: "s", recurse: true },
+        { regex: /`([^`\n]+)`/, tag: "code", className: "mc-md-code", recurse: false },
+        { regex: /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/, build: buildLinkNode }
+    ];
 
-    // Inline-only Discord markdown: spoilers, bold/italic/underline/strikethrough, masked links.
-    // Operates on already-HTML-escaped text. Used where Discord only formats inline (e.g. field names).
-    function mdInline(s) {
-        s = s.replace(/\|\|([\s\S]+?)\|\|/g, '<span class="mc-md-spoiler">$1</span>');
-        s = s.replace(/\*\*\*([\s\S]+?)\*\*\*/g, "<strong><em>$1</em></strong>");
-        s = s.replace(/\*\*([\s\S]+?)\*\*/g, "<strong>$1</strong>");
-        s = s.replace(/\*([^\s*][\s\S]*?)\*/g, "<em>$1</em>");
-        s = s.replace(/__([\s\S]+?)__/g, "<u>$1</u>");
-        s = s.replace(/_([^_]+?)_/g, "<em>$1</em>");
-        s = s.replace(/~~([\s\S]+?)~~/g, "<s>$1</s>");
-        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-        return s;
+    function buildBoldItalicNode(match) {
+        let strong = document.createElement("strong");
+        let em = document.createElement("em");
+        appendInlineMarkdown(em, match[1]);
+        strong.appendChild(em);
+        return strong;
     }
 
-    // Inline-only renderer for fields that don't support block markdown.
-    function formatInline(text) { return mdInline(esc(String(text))); }
+    function buildLinkNode(match) {
+        if (!/^https?:\/\//i.test(match[2])) return document.createTextNode(match[0]);
+        let anchor = document.createElement("a");
+        anchor.href = match[2];
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        appendInlineMarkdown(anchor, match[1]);
+        return anchor;
+    }
 
-    // Full Discord markdown: code blocks/inline code, headers (#, ##, ###), subtext (-#),
-    // blockquotes (>), bullet/numbered lists, plus all inline marks. Used for message content,
-    // Text Display components, embed descriptions and field values.
-    function formatMarkdown(text) {
-        var src = String(text);
-        var codes = [];
-        // Pull out code blocks and inline code first so their contents aren't formatted.
-        src = src.replace(/```(?:[a-zA-Z0-9_+\-]*\n)?([\s\S]*?)```/g, function (_, code) {
-            codes.push('<pre class="mc-md-codeblock"><code>' + esc(code.replace(/\n$/, "")) + "</code></pre>");
-            return " " + (codes.length - 1) + " ";
-        });
-        src = src.replace(/`([^`\n]+)`/g, function (_, code) {
-            codes.push('<code class="mc-md-code">' + esc(code) + "</code>");
-            return " " + (codes.length - 1) + " ";
-        });
-        src = esc(src);
+    function buildInlineNode(rule, match) {
+        if (rule.build) return rule.build(match);
+        let node = document.createElement(rule.tag);
+        if (rule.className) node.className = rule.className;
+        if (rule.recurse) appendInlineMarkdown(node, match[1]);
+        else node.textContent = match[1]; // inline code: contents are literal
+        return node;
+    }
 
-        var parts = [], prevInline = false, list = null;
-        function pushBlock(html) { flushList(); parts.push(html); prevInline = false; }
-        function pushInline(html) { flushList(); if (prevInline) parts.push("<br>"); parts.push(html); prevInline = true; }
-        function flushList() {
-            if (!list) return;
-            parts.push("<" + list.type + ' class="mc-md-list">' + list.items.map(function (it) { return "<li>" + mdInline(it) + "</li>"; }).join("") + "</" + list.type + ">");
-            list = null; prevInline = false;
+    // Parses inline markdown in `text`, appending the resulting nodes to `parent`.
+    function appendInlineMarkdown(parent, text) {
+        while (text.length) {
+            let earliest = null;
+            for (let i = 0; i < INLINE_RULES.length; i++) {
+                let match = INLINE_RULES[i].regex.exec(text);
+                if (match && (!earliest || match.index < earliest.match.index)) {
+                    earliest = { rule: INLINE_RULES[i], match: match };
+                }
+            }
+            if (!earliest) { parent.appendChild(document.createTextNode(text)); return; }
+            if (earliest.match.index > 0) parent.appendChild(document.createTextNode(text.slice(0, earliest.match.index)));
+            parent.appendChild(buildInlineNode(earliest.rule, earliest.match));
+            text = text.slice(earliest.match.index + earliest.match[0].length);
         }
+    }
 
-        src.split("\n").forEach(function (line) {
-            var ul = /^\s*[-*]\s+(.*)$/.exec(line);
-            var ol = /^\s*\d+\.\s+(.*)$/.exec(line);
-            if (ul) { if (!list || list.type !== "ul") { flushList(); list = { type: "ul", items: [] }; } list.items.push(ul[1]); return; }
-            if (ol) { if (!list || list.type !== "ol") { flushList(); list = { type: "ol", items: [] }; } list.items.push(ol[1]); return; }
-            var h = /^(#{1,3})\s+(.*)$/.exec(line);
-            var sub = /^-#\s+(.*)$/.exec(line);
-            var bq = /^&gt;\s?(.*)$/.exec(line); // ">" was HTML-escaped above
-            if (h) { pushBlock('<div class="mc-md-h mc-md-h' + h[1].length + '">' + mdInline(h[2]) + "</div>"); return; }
-            if (sub) { pushBlock('<div class="mc-md-subtext">' + mdInline(sub[1]) + "</div>"); return; }
-            if (bq) { pushBlock('<blockquote class="mc-md-quote">' + mdInline(bq[1]) + "</blockquote>"); return; }
-            pushInline(mdInline(line));
+    // Inline-only markdown (no headings / lists / code blocks), e.g. for embed field names.
+    function renderInlineMarkdown(text) {
+        let fragment = document.createDocumentFragment();
+        appendInlineMarkdown(fragment, String(text));
+        return fragment;
+    }
+
+    let BLOCK_PATTERNS = {
+        bullet: /^\s*[-*]\s+(.*)$/,
+        ordered: /^\s*\d+\.\s+(.*)$/,
+        heading: /^(#{1,3})\s+(.*)$/,
+        subtext: /^-#\s+(.*)$/,
+        quote: /^>\s?(.*)$/
+    };
+
+    function isBlockLine(line) {
+        return BLOCK_PATTERNS.bullet.test(line) || BLOCK_PATTERNS.ordered.test(line) ||
+            BLOCK_PATTERNS.heading.test(line) || BLOCK_PATTERNS.subtext.test(line) || BLOCK_PATTERNS.quote.test(line);
+    }
+
+    // Full Discord markdown (code blocks, headings, subtext, quotes, lists, inline marks), e.g. for
+    // message content, Text Display components, embed descriptions and field values.
+    function renderMarkdown(text) {
+        let fragment = document.createDocumentFragment();
+        // Split on fenced code blocks; odd indices hold the (literal) code body.
+        let segments = String(text).split(/```(?:[a-zA-Z0-9_+\-]*\n)?([\s\S]*?)```/);
+        segments.forEach(function (segment, index) {
+            if (index % 2 === 1) fragment.appendChild(buildCodeBlockNode(segment.replace(/\n$/, "")));
+            else if (segment) appendMarkdownBlocks(fragment, segment);
         });
-        flushList();
+        return fragment;
+    }
 
-        var html = parts.join("");
-        return html.replace(/ (\d+) /g, function (_, n) { return codes[+n]; });
+    function buildCodeBlockNode(code) {
+        let pre = document.createElement("pre");
+        pre.className = "mc-md-codeblock";
+        let codeEl = document.createElement("code");
+        codeEl.textContent = code;
+        pre.appendChild(codeEl);
+        return pre;
+    }
+
+    function buildBlockNode(className, text) {
+        let node = document.createElement("div");
+        node.className = className;
+        appendInlineMarkdown(node, text);
+        return node;
+    }
+
+    function appendMarkdownBlocks(parent, text) {
+        let lines = text.split("\n");
+        let i = 0;
+        while (i < lines.length) {
+            let line = lines[i];
+            if (BLOCK_PATTERNS.bullet.test(line) || BLOCK_PATTERNS.ordered.test(line)) {
+                i = appendListBlock(parent, lines, i, BLOCK_PATTERNS.ordered.test(line));
+                continue;
+            }
+            let heading = BLOCK_PATTERNS.heading.exec(line);
+            if (heading) { parent.appendChild(buildBlockNode("mc-md-h mc-md-h" + heading[1].length, heading[2])); i++; continue; }
+            let subtext = BLOCK_PATTERNS.subtext.exec(line);
+            if (subtext) { parent.appendChild(buildBlockNode("mc-md-subtext", subtext[1])); i++; continue; }
+            let quote = BLOCK_PATTERNS.quote.exec(line);
+            if (quote) {
+                let blockquote = document.createElement("blockquote");
+                blockquote.className = "mc-md-quote";
+                appendInlineMarkdown(blockquote, quote[1]);
+                parent.appendChild(blockquote);
+                i++;
+                continue;
+            }
+            i = appendParagraphBlock(parent, lines, i);
+        }
+    }
+
+    // Appends consecutive list items of one kind; returns the index of the next unconsumed line.
+    function appendListBlock(parent, lines, start, ordered) {
+        let listEl = document.createElement(ordered ? "ol" : "ul");
+        listEl.className = "mc-md-list";
+        let pattern = ordered ? BLOCK_PATTERNS.ordered : BLOCK_PATTERNS.bullet;
+        let i = start, match;
+        for (; i < lines.length && (match = pattern.exec(lines[i])); i++) {
+            let item = document.createElement("li");
+            appendInlineMarkdown(item, match[1]);
+            listEl.appendChild(item);
+        }
+        parent.appendChild(listEl);
+        return i;
+    }
+
+    // Appends a run of consecutive non-block lines as one paragraph (lines joined by <br>); returns
+    // the index of the next unconsumed line.
+    function appendParagraphBlock(parent, lines, start) {
+        let paragraph = document.createElement("div");
+        paragraph.className = "mc-md-line";
+        let i = start;
+        for (; i < lines.length && !isBlockLine(lines[i]); i++) {
+            if (i > start) paragraph.appendChild(document.createElement("br"));
+            appendInlineMarkdown(paragraph, lines[i]);
+        }
+        parent.appendChild(paragraph);
+        return i;
     }
 
     init();
