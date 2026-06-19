@@ -417,8 +417,8 @@
     function showCompError(msg) { if (els.compError) els.compError.textContent = msg || ""; }
 
 
-    // touch: a field changed — refresh the preview without rebuilding the editor (keeps input
-    // focus). rebuild: structure changed — re-render the whole builder.
+    // refreshPreview: a field changed — refresh the preview without rebuilding the editor (keeps
+    // input focus). rebuildEditor: structure changed — re-render the whole builder.
     function refreshPreview() { renderPreview(); }
     function rebuildEditor() { renderBuilder(); renderPreview(); }
 
@@ -428,7 +428,7 @@
         let j = idx + delta;
         if (j < 0 || j >= list.length) return;
         let tmp = list[idx]; list[idx] = list[j]; list[j] = tmp;
-        (onChange || rebuild)();
+        (onChange || rebuildEditor)();
     }
 
     function renderBuilder() {
@@ -466,7 +466,7 @@
     }
 
     function nodeHeader(title, list, idx, onChange) {
-        onChange = onChange || rebuild;
+        onChange = onChange || rebuildEditor;
         let tools = el("div", { class: "mc-node-tools" }, [
             btn('<i class="fas fa-arrow-up"></i>', "btn-sm btn-secondary", function () { move(list, idx, -1, onChange); }, { title: "Move up" }),
             btn('<i class="fas fa-arrow-down"></i>', "btn-sm btn-secondary", function () { move(list, idx, 1, onChange); }, { title: "Move down" }),
