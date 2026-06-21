@@ -171,7 +171,7 @@ require (
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	github.com/volatiletech/randomize v0.0.1 // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
-	go.mongodb.org/mongo-driver v1.12.0 // indirect
+	go.mongodb.org/mongo-driver v1.17.7 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
