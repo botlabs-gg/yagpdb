@@ -97,6 +97,25 @@ func validURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://") || strings.HasPrefix(s, "attachment://")
 }
 
+func countComponents(comps []discordgo.TopLevelComponent) int {
+	n := 0
+	for _, c := range comps {
+		n++
+		switch v := c.(type) {
+		case *discordgo.ActionsRow:
+			n += len(v.Components)
+		case *discordgo.Container:
+			n += countComponents(v.Components)
+		case *discordgo.Section:
+			n += len(v.Components)
+			if v.Accessory != nil {
+				n++
+			}
+		}
+	}
+	return n
+}
+
 func validateMessage(mode string, msg *discordgo.MessageSend) error {
 	if rcLen(msg.Content) > 2000 {
 		return errors.New("message content exceeds 2000 characters")
@@ -109,8 +128,8 @@ func validateMessage(mode string, msg *discordgo.MessageSend) error {
 			return err
 		}
 	}
-	if mode == ModeComponentsV2 && len(msg.Components) > 10 {
-		return errors.New("a Components V2 message can have at most 10 top-level components")
+	if mode == ModeComponentsV2 && countComponents(msg.Components) > 40 {
+		return errors.New("a Components V2 message can have at most 40 components in total")
 	}
 	if mode == ModeNormal {
 		rows := 0
