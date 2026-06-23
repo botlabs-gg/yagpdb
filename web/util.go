@@ -164,7 +164,7 @@ func GetBaseCPContextData(ctx context.Context) (*dstate.GuildSet, TemplateData) 
 }
 
 // Checks and error and logs it aswell as adding it to the alerts
-// returns true if an error occured
+// returns true if an error occurred
 func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface{})) bool {
 	if err == nil {
 		return false
@@ -177,7 +177,7 @@ func CheckErr(t TemplateData, err error, errMsg string, logger func(...interface
 	t.AddAlerts(ErrorAlert("An error occurred: ", errMsg))
 
 	if logger != nil {
-		logger("An error occured:", err)
+		logger("An error occurred:", err)
 	}
 
 	return true

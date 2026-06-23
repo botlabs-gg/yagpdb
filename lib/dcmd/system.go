@@ -32,7 +32,7 @@ func NewStandardSystem(staticPrefix string) (system *System) {
 	return sys
 }
 
-// You can add this as a handler directly to discordgo, it will recover from any panics that occured in commands
+// You can add this as a handler directly to discordgo, it will recover from any panics that occurred in commands
 // and log errors using the standard logger
 func (sys *System) HandleMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Set up handler to recover from panics

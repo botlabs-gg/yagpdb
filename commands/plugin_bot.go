@@ -175,7 +175,7 @@ func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 		// Check if the user can execute the command
 		canExecute, resp, settings, err := yc.checkCanExecuteCommand(data)
 		if err != nil {
-			yc.Logger(data).WithError(err).Error("An error occured while checking if we could run command")
+			yc.Logger(data).WithError(err).Error("An error occurred while checking if we could run command")
 		}
 
 		if data.TriggerType == dcmd.TriggerTypeSlashCommands && data.SlashCommandTriggerData.Interaction.Type != discordgo.InteractionApplicationCommandAutocomplete {

@@ -192,7 +192,7 @@ func runEvents(h []*Handler, data *EventData) {
 					guildID = guildIDProvider.GetGuildID()
 				}
 				if err != nil {
-					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An error occured in a discord event handler: %+v", v.Plugin.PluginInfo().SysName, err)
+					logrus.WithField("guild", guildID).WithField("evt", data.Type.String()).Errorf("%s: An error occurred in a discord event handler: %+v", v.Plugin.PluginInfo().SysName, err)
 				}
 
 				if retry {

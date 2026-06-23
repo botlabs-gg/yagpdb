@@ -189,7 +189,7 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-// StopAll stops all the shard sessions and returns the last error that occured
+// StopAll stops all the shard sessions and returns the last error that occurred
 func (m *Manager) StopAll() (err error) {
 	m.Lock()
 	for _, v := range m.Sessions {
@@ -509,7 +509,7 @@ type Event struct {
 
 	Msg string
 
-	// When this event occured
+	// When this event occurred
 	Time time.Time
 }
 

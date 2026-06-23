@@ -49,7 +49,7 @@ func (c *Conn) Listen() {
 	var err error
 	defer func() {
 		if err != nil {
-			c.Log(LogError, err, "an error occured while handling a connection")
+			c.Log(LogError, err, "an error occurred while handling a connection")
 		}
 
 		c.netConn.Close()

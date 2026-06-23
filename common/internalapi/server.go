@@ -151,7 +151,7 @@ func ServeJson(w http.ResponseWriter, r *http.Request, data interface{}) {
 	}
 }
 
-// Returns true if an error occured
+// Returns true if an error occurred
 func ServerError(w http.ResponseWriter, r *http.Request, err error) bool {
 	if err == nil {
 		return false

@@ -94,7 +94,7 @@ func (p *Plugin) handleVerificationAfterScreening(member *discordgo.Member) {
 		if err != sql.ErrNoRows {
 			logger.WithError(err).WithField("guild", member.GuildID).WithField("user", member.User.ID).Error("unable to retrieve config")
 		}
-		// either no config or an error occured
+		// either no config or an error occurred
 		return
 	}
 	if !conf.Enabled {
@@ -190,7 +190,7 @@ func (p *Plugin) createVerificationSession(userID, guildID int64) (string, error
 			continue
 		}
 
-		// otherwise an unknown error occured
+		// otherwise an unknown error occurred
 		return token, err
 	}
 }

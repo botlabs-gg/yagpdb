@@ -407,7 +407,7 @@ func (yc *YAGCommand) PostCommandExecuted(settings *CommandSettings, cmdData *dc
 type CanExecuteType int
 
 const (
-	// ReasonError                    = "An error occured"
+	// ReasonError                    = "An error occurred"
 	// ReasonCommandDisabaledSettings = "Command is disabled in the settings"
 	// ReasonMissingRole              = "Missing a required role for this command"
 	// ReasonIgnoredRole              = "Has a ignored role for this command"

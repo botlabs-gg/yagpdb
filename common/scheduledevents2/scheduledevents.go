@@ -433,6 +433,6 @@ func CheckDiscordErrRetry(err error) bool {
 		return false
 	}
 
-	// an unknown error unrelated to the discord api occured (503's for example) attempt a retry
+	// an unknown error unrelated to the discord api occurred (503's for example) attempt a retry
 	return true
 }

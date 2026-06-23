@@ -34,7 +34,7 @@ type Cmd interface {
 	// Run the command with the provided data,
 	// response is either string, error, embed or custom that implements CmdResponse
 	// if response is nil, and an error is returned that is not PublicError,
-	// the string "An error occured. Contact bot owner" becomes the response
+	// the string "An error occurred. Contact bot owner" becomes the response
 	Run(data *Data) (interface{}, error)
 }
 

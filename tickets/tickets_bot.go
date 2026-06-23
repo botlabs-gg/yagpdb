@@ -345,7 +345,7 @@ func handleButton(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, m
 			return nil, err
 		}
 		if activeTicket == nil {
-			response.Data.Content = "A problem occured, failed to close the ticket."
+			response.Data.Content = "A problem occurred, failed to close the ticket."
 			return response, err
 		}
 
@@ -417,7 +417,7 @@ func handleModal(evt *eventsystem.EventData, ic *discordgo.InteractionCreate, me
 			return nil, err
 		}
 		if activeTicket == nil {
-			response.Data.Content = "A problem occured, failed to close the ticket."
+			response.Data.Content = "A problem occurred, failed to close the ticket."
 			return response, err
 		}
 
