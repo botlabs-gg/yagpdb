@@ -557,6 +557,10 @@ func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int
 	data := slashCommandData{Description: cc.SlashCommandDescription}
 	if cc.SlashUseSubcommands {
 		data.Subcommands = cc.SlashCommandSubcommands()
+		if len(data.Subcommands) == 0 {
+			tmpl.AddAlerts(web.ErrorAlert("Add at least one subcommand (with a name and description) or turn off the \"Use subcommands\" toggle"))
+			return false
+		}
 	} else {
 		data.Options = cc.SlashCommandOptions()
 	}
