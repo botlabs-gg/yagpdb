@@ -159,6 +159,15 @@ type SlashCommandOption struct {
 	ChannelTypes []int `json:"channel_types,omitempty"`
 }
 
+// SlashCommandSubcommand is one subcommand of a slash command custom command. When a
+// command has subcommands it has no top-level options and is invoked as
+// "/<command> <subcommand>"; the invoked name is exposed to the template as .SubCommand.
+type SlashCommandSubcommand struct {
+	Name        string               `json:"name"`
+	Description string               `json:"description"`
+	Options     []SlashCommandOption `json:"options,omitempty"`
+}
+
 // slashCommandNameRegex matches Discord's allowed application command/option name
 // pattern (lowercased). See https://discord.com/developers/docs/interactions/application-commands#application-command-object
 var slashCommandNameRegex = regexp.MustCompile(`^[-_\p{L}\p{N}]{1,32}$`)
@@ -212,6 +221,28 @@ type CustomCommand struct {
 
 	SlashCommandDescription string                   `schema:"slash_command_description" valid:",0,100"`
 	SlashOptions            []SlashCommandOptionForm `schema:"slash_options"`
+	// When SlashUseSubcommands is set the command has subcommands (slash_subcommands)
+	// instead of top-level options; the two are mutually exclusive on Discord.
+	SlashUseSubcommands bool                         `schema:"slash_use_subcommands"`
+	SlashSubcommands    []SlashCommandSubcommandForm `schema:"slash_subcommands"`
+}
+
+type SlashCommandSubcommandForm struct {
+	Name        string                   `schema:"name"`
+	Description string                   `schema:"description"`
+	Options     []SlashCommandOptionForm `schema:"options"`
+}
+
+func (sf SlashCommandSubcommandForm) isEmpty() bool {
+	if strings.TrimSpace(sf.Name) != "" || strings.TrimSpace(sf.Description) != "" {
+		return false
+	}
+	for _, o := range sf.Options {
+		if !o.isEmpty() {
+			return false
+		}
+	}
+	return true
 }
 
 type SlashCommandOptionForm struct {
@@ -306,8 +337,15 @@ func (f SlashCommandOptionForm) isEmpty() bool {
 }
 
 func (cc *CustomCommand) SlashCommandOptions() []SlashCommandOption {
-	opts := make([]SlashCommandOption, 0, len(cc.SlashOptions))
-	for _, f := range cc.SlashOptions {
+	return parseSlashOptionForms(cc.SlashOptions)
+}
+
+// parseSlashOptionForms converts a list of option form rows into resolved options,
+// dropping empty rows and sorting required-first. Shared by the top-level options and
+// per-subcommand options.
+func parseSlashOptionForms(forms []SlashCommandOptionForm) []SlashCommandOption {
+	opts := make([]SlashCommandOption, 0, len(forms))
+	for _, f := range forms {
 		if f.isEmpty() {
 			continue
 		}
@@ -316,7 +354,7 @@ func (cc *CustomCommand) SlashCommandOptions() []SlashCommandOption {
 		dType, isMenu, _ := slashFormType(f.Type)
 
 		opt := SlashCommandOption{
-			Name:        strings.ToLower(strings.TrimSpace(f.Name)),
+			Name:        strings.TrimSpace(f.Name),
 			Type:        dType,
 			Description: f.Description,
 			Required:    f.Required,
@@ -349,6 +387,23 @@ func (cc *CustomCommand) SlashCommandOptions() []SlashCommandOption {
 	})
 
 	return opts
+}
+
+// SlashCommandSubcommands converts the subcommand form rows into resolved subcommands,
+// dropping fully-empty rows.
+func (cc *CustomCommand) SlashCommandSubcommands() []SlashCommandSubcommand {
+	subs := make([]SlashCommandSubcommand, 0, len(cc.SlashSubcommands))
+	for _, sf := range cc.SlashSubcommands {
+		if sf.isEmpty() {
+			continue
+		}
+		subs = append(subs, SlashCommandSubcommand{
+			Name:        strings.TrimSpace(sf.Name),
+			Description: sf.Description,
+			Options:     parseSlashOptionForms(sf.Options),
+		})
+	}
+	return subs
 }
 
 func parseChoiceLines(raw string) []string {
@@ -499,7 +554,14 @@ func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int
 		return false
 	}
 
-	if ok, msg := validateSlashCommandData(guildID, cc.Trigger, cc.SlashCommandDescription, cc.SlashCommandOptions(), cc.ID, cc.IsEnabled); !ok {
+	data := slashCommandData{Description: cc.SlashCommandDescription}
+	if cc.SlashUseSubcommands {
+		data.Subcommands = cc.SlashCommandSubcommands()
+	} else {
+		data.Options = cc.SlashCommandOptions()
+	}
+
+	if ok, msg := validateSlashCommandData(guildID, cc.Trigger, data, cc.ID, cc.IsEnabled); !ok {
 		tmpl.AddAlerts(web.ErrorAlert(msg))
 		return false
 	}
@@ -512,13 +574,13 @@ func (cc *CustomCommand) validateSlashCommand(tmpl web.TemplateData, guildID int
 // path so both reject invalid/duplicate commands. currentLocalID is the local_id of
 // the command being saved (0 for new commands) and is excluded from the duplicate
 // and limit checks.
-func validateSlashCommandData(guildID int64, name, description string, options []SlashCommandOption, currentLocalID int64, isEnabled bool) (ok bool, errMsg string) {
+func validateSlashCommandData(guildID int64, name string, data slashCommandData, currentLocalID int64, isEnabled bool) (ok bool, errMsg string) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if !slashCommandNameRegex.MatchString(name) {
 		return false, "Slash command name must be 1-32 characters and contain only letters, numbers, dashes and underscores"
 	}
 
-	if l := utf8.RuneCountInString(description); l < 1 || l > MaxSlashCommandDescription {
+	if l := utf8.RuneCountInString(data.Description); l < 1 || l > MaxSlashCommandDescription {
 		return false, fmt.Sprintf("Slash command description must be between 1 and %d characters", MaxSlashCommandDescription)
 	}
 
@@ -526,8 +588,67 @@ func validateSlashCommandData(guildID int64, name, description string, options [
 		return false, "A built-in command with that name already exists, please choose a different name"
 	}
 
+	if len(data.Subcommands) > 0 {
+		// A command with subcommands is invoked as "/<command> <subcommand>" and has no
+		// top-level options; subcommands reuse the same 3-free / 10-premium limit.
+		maxSubs := MaxSlashCommandForContext(guildID)
+		if len(data.Subcommands) > maxSubs {
+			return false, fmt.Sprintf("You can have at most %d subcommands per command (%d on premium servers)", maxSubs, MaxSlashCommandCCsPremium)
+		}
+
+		seenSubs := make(map[string]bool, len(data.Subcommands))
+		for _, sub := range data.Subcommands {
+			sname := strings.TrimSpace(sub.Name)
+			if !slashCommandNameRegex.MatchString(sname) {
+				return false, fmt.Sprintf("Subcommand name %q must be 1-32 characters (letters, numbers, dashes, underscores)", sub.Name)
+			}
+			if sname != strings.ToLower(sname) {
+				return false, fmt.Sprintf("Subcommand name %q must be lowercase", sub.Name)
+			}
+			if seenSubs[sname] {
+				return false, fmt.Sprintf("Duplicate subcommand name %q", sname)
+			}
+			seenSubs[sname] = true
+			if l := utf8.RuneCountInString(sub.Description); l < 1 || l > MaxSlashCommandDescription {
+				return false, fmt.Sprintf("Description for subcommand %q must be between 1 and %d characters", sname, MaxSlashCommandDescription)
+			}
+			if ok, msg := validateSlashOptionList(sub.Options); !ok {
+				return false, fmt.Sprintf("Subcommand %q: %s", sname, msg)
+			}
+		}
+	} else if ok, msg := validateSlashOptionList(data.Options); !ok {
+		return false, msg
+	}
+
+	existing, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND local_id != ?", guildID, int(CommandTriggerSlash), currentLocalID)).AllG(context.Background())
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed fetching existing slash command ccs for validation")
+		return false, "Failed validating slash command, please try again"
+	}
+
+	enabledCount := 0
+	for _, e := range existing {
+		if strings.EqualFold(e.TextTrigger, name) {
+			return false, "Another slash command in this server already uses that name"
+		}
+		if !e.Disabled {
+			enabledCount++
+		}
+	}
+
+	maxSlash := MaxSlashCommandForContext(guildID)
+	if isEnabled && enabledCount >= maxSlash {
+		return false, fmt.Sprintf("You can have at most %d enabled slash commands per server (%d on premium servers)", maxSlash, MaxSlashCommandCCsPremium)
+	}
+
+	return true, ""
+}
+
+// validateSlashOptionList validates a single option list (the command's top-level
+// options, or one subcommand's options). Error messages reference the option name.
+func validateSlashOptionList(options []SlashCommandOption) (ok bool, errMsg string) {
 	if len(options) > MaxSlashCommandOptions {
-		return false, fmt.Sprintf("A slash command can have at most %d options", MaxSlashCommandOptions)
+		return false, fmt.Sprintf("can have at most %d options", MaxSlashCommandOptions)
 	}
 
 	seenOptions := make(map[string]bool, len(options))
@@ -583,27 +704,6 @@ func validateSlashCommandData(guildID int64, name, description string, options [
 		if (opt.MinLength != nil && *opt.MinLength < 0) || (opt.MaxLength != nil && *opt.MaxLength > MaxSlashCommandStringLength) {
 			return false, fmt.Sprintf("Length constraints for option %q must be between 0 and %d", oname, MaxSlashCommandStringLength)
 		}
-	}
-
-	existing, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND local_id != ?", guildID, int(CommandTriggerSlash), currentLocalID)).AllG(context.Background())
-	if err != nil {
-		logger.WithError(err).WithField("guild", guildID).Error("failed fetching existing slash command ccs for validation")
-		return false, "Failed validating slash command, please try again"
-	}
-
-	enabledCount := 0
-	for _, e := range existing {
-		if strings.EqualFold(e.TextTrigger, name) {
-			return false, "Another slash command in this server already uses that name"
-		}
-		if !e.Disabled {
-			enabledCount++
-		}
-	}
-
-	maxSlash := MaxSlashCommandForContext(guildID)
-	if isEnabled && enabledCount >= maxSlash {
-		return false, fmt.Sprintf("You can have at most %d enabled slash commands per server (%d on premium servers)", maxSlash, MaxSlashCommandCCsPremium)
 	}
 
 	return true, ""
@@ -665,10 +765,12 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 	if cc.TriggerTypeForm == "slash_command" {
 		pqCommand.TextTrigger = strings.ToLower(cc.Trigger)
 
-		opts := cc.SlashCommandOptions()
-		payload := slashCommandData{
-			Description: cc.SlashCommandDescription,
-			Options:     opts,
+		payload := slashCommandData{Description: cc.SlashCommandDescription}
+		// subcommands and top-level options are mutually exclusive on Discord.
+		if cc.SlashUseSubcommands {
+			payload.Subcommands = cc.SlashCommandSubcommands()
+		} else {
+			payload.Options = cc.SlashCommandOptions()
 		}
 		if b, err := json.Marshal(payload); err == nil {
 			pqCommand.SlashCommandOptions = null.JSONFrom(b)
@@ -681,10 +783,12 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 }
 
 // slashCommandData is the structure stored in the slash_command_options jsonb
-// column for slash command custom commands.
+// column for slash command custom commands. Options and Subcommands are mutually
+// exclusive: a command with subcommands has no top-level options.
 type slashCommandData struct {
-	Description string               `json:"description"`
-	Options     []SlashCommandOption `json:"options"`
+	Description string                   `json:"description"`
+	Options     []SlashCommandOption     `json:"options,omitempty"`
+	Subcommands []SlashCommandSubcommand `json:"subcommands,omitempty"`
 }
 
 // parseSlashCommandData decodes the slash_command_options jsonb column of a stored

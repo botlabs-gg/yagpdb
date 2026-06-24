@@ -358,6 +358,8 @@ func serveGroupSelected(r *http.Request, templateData web.TemplateData, groupID 
 	templateData["GetCCInterval"] = tmplGetCCInterval
 	templateData["GetCCSlashOptions"] = tmplGetCCSlashOptions
 	templateData["GetCCSlashDescription"] = tmplGetCCSlashDescription
+	templateData["GetCCSlashUseSubcommands"] = tmplGetCCSlashUseSubcommands
+	templateData["GetCCSlashSubcommands"] = tmplGetCCSlashSubcommands
 
 	// Whether the guild has already reached the free-tier slash command limit, used
 	// to decide when to surface the premium nudge in the slash command editor.
@@ -491,7 +493,7 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		dbModel.SlashCommandOptions = importCC.SlashCommandOptions
 		if importCC.TriggerType == int(CommandTriggerSlash) {
 			data := parseSlashCommandData(dbModel)
-			if ok, _ := validateSlashCommandData(activeGuild.ID, dbModel.TextTrigger, data.Description, data.Options, dbModel.LocalID, !dbModel.Disabled); !ok {
+			if ok, _ := validateSlashCommandData(activeGuild.ID, dbModel.TextTrigger, data, dbModel.LocalID, !dbModel.Disabled); !ok {
 				http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
 				return templateData, nil
 			}
@@ -993,6 +995,35 @@ func tmplGetCCSlashOptions(cc *models.CustomCommand) []SlashOptionView {
 // custom command for rendering in the edit form.
 func tmplGetCCSlashDescription(cc *models.CustomCommand) string {
 	return parseSlashCommandData(cc).Description
+}
+
+// SlashSubcommandView is a stored subcommand plus its options tagged with editor
+// type keys, for rendering in the edit form.
+type SlashSubcommandView struct {
+	Name        string
+	Description string
+	Options     []SlashOptionView
+}
+
+// tmplGetCCSlashUseSubcommands reports whether a slash command custom command is
+// configured with subcommands (vs flat top-level options).
+func tmplGetCCSlashUseSubcommands(cc *models.CustomCommand) bool {
+	return len(parseSlashCommandData(cc).Subcommands) > 0
+}
+
+// tmplGetCCSlashSubcommands returns the configured subcommands of a slash command
+// custom command for rendering in the edit form.
+func tmplGetCCSlashSubcommands(cc *models.CustomCommand) []SlashSubcommandView {
+	stored := parseSlashCommandData(cc).Subcommands
+	views := make([]SlashSubcommandView, 0, len(stored))
+	for _, s := range stored {
+		opts := make([]SlashOptionView, 0, len(s.Options))
+		for _, o := range s.Options {
+			opts = append(opts, SlashOptionView{SlashCommandOption: o, TypeKey: slashFormTypeKey(o)})
+		}
+		views = append(views, SlashSubcommandView{Name: s.Name, Description: s.Description, Options: opts})
+	}
+	return views
 }
 
 var _ web.PluginWithServerHomeWidget = (*Plugin)(nil)
