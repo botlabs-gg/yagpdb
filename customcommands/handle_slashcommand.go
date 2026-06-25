@@ -114,15 +114,33 @@ func ExecuteCustomCommandFromSlash(cc *models.CustomCommand, gs *dstate.GuildSet
 
 	stored := parseSlashCommandData(cc)
 
-	provided := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(data.Options))
-	for _, o := range data.Options {
+	// For a command with subcommands the chosen subcommand is the first interaction
+	// option (type SUB_COMMAND); descend into it for the leaf options and expose its
+	// name as .SubCommand. Otherwise use the top-level options directly.
+	defs := stored.Options
+	leafOptions := data.Options
+	subName := ""
+	if len(stored.Subcommands) > 0 && len(data.Options) > 0 && data.Options[0].Type == discordgo.ApplicationCommandOptionSubCommand {
+		subName = data.Options[0].Name
+		leafOptions = data.Options[0].Options
+		for _, s := range stored.Subcommands {
+			if strings.EqualFold(s.Name, subName) {
+				defs = s.Options
+				break
+			}
+		}
+	}
+	tmplCtx.Data["SubCommand"] = subName
+
+	provided := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(leafOptions))
+	for _, o := range leafOptions {
 		provided[strings.ToLower(o.Name)] = o
 	}
 
 	options := templates.SDict{}
-	args := make([]interface{}, 0, len(stored.Options)+1)
+	args := make([]interface{}, 0, len(defs)+1)
 	args = append(args, data.Name)
-	for _, def := range stored.Options {
+	for _, def := range defs {
 		o, ok := provided[strings.ToLower(def.Name)]
 		if !ok {
 			// optional option not provided by the user
@@ -214,11 +232,11 @@ func resolveSlashUser(data *discordgo.ApplicationCommandInteractionData, id int6
 
 // buildSlashCommandRequest converts a stored slash command custom command into the
 // discordgo request used to (re)register it with Discord.
-func buildSlashCommandRequest(cc *models.CustomCommand) *discordgo.CreateApplicationCommandRequest {
-	stored := parseSlashCommandData(cc)
-
-	opts := make([]*discordgo.ApplicationCommandOption, 0, len(stored.Options))
-	for _, o := range stored.Options {
+// buildOptionList converts stored leaf options into discordgo options, sorted
+// required-first (Discord rejects a required option after an optional one).
+func buildOptionList(options []SlashCommandOption) []*discordgo.ApplicationCommandOption {
+	opts := make([]*discordgo.ApplicationCommandOption, 0, len(options))
+	for _, o := range options {
 		ao := &discordgo.ApplicationCommandOption{
 			Type:        discordgo.ApplicationCommandOptionType(o.Type),
 			Name:        strings.ToLower(o.Name),
@@ -256,6 +274,32 @@ func buildSlashCommandRequest(cc *models.CustomCommand) *discordgo.CreateApplica
 	sort.SliceStable(opts, func(i, j int) bool {
 		return opts[i].Required && !opts[j].Required
 	})
+	return opts
+}
+
+func buildSlashCommandRequest(cc *models.CustomCommand) *discordgo.CreateApplicationCommandRequest {
+	stored := parseSlashCommandData(cc)
+
+	var opts []*discordgo.ApplicationCommandOption
+	if len(stored.Subcommands) > 0 {
+		// A command that owns subcommands carries one SUB_COMMAND option per
+		// subcommand and is not directly invocable. Subcommand ordering is stable;
+		// SUB_COMMAND options have no required/optional ordering constraint.
+		for _, sub := range stored.Subcommands {
+			desc := sub.Description
+			if strings.TrimSpace(desc) == "" {
+				desc = "Subcommand"
+			}
+			opts = append(opts, &discordgo.ApplicationCommandOption{
+				Type:        discordgo.ApplicationCommandOptionSubCommand,
+				Name:        strings.ToLower(sub.Name),
+				Description: common.CutStringShort(desc, MaxSlashCommandDescription),
+				Options:     buildOptionList(sub.Options),
+			})
+		}
+	} else {
+		opts = buildOptionList(stored.Options)
+	}
 
 	description := stored.Description
 	if strings.TrimSpace(description) == "" {

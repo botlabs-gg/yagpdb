@@ -576,6 +576,16 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 			return errors.WrapIf(err, "Failed disabling slash command custom commands on premium removal")
 		}
 	}
+
+	_, err = models.CustomCommands(
+		qm.Where("guild_id = ? AND disabled = false AND trigger_type = ?", GuildID, CommandTriggerSlash),
+		qm.Where("jsonb_typeof(slash_command_options->'subcommands') = 'array'"),
+		qm.Where("jsonb_array_length(slash_command_options->'subcommands') > ?", MaxSlashCommandCCs),
+	).UpdateAllG(context.Background(), models.M{"disabled": true})
+	if err != nil {
+		return errors.WrapIf(err, "failed disabling slash command custom commands exceeding the free subcommand limit on premium removal")
+	}
+
 	pubsub.PublishLogErr(SlashCommandResyncEvent, GuildID, nil)
 
 	return nil

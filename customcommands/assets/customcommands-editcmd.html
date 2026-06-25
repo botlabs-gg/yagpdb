@@ -1,3 +1,83 @@
+{{/* Reusable slash option row. Expects a dict with: Prefix (form field name prefix, e.g. "slash_options.0"), ReqID (unique id for the required toggle), Opt (a SlashOptionView). */}}
+{{define "slashOptionRow"}}
+                                            <div class="slash-option-row mb-3">
+                                                <div class="form-row align-items-end">
+                                                    <div class="col-12 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Name</label>
+                                                        <input type="text" class="form-control" data-slash-field="name" name="{{.Prefix}}.name" maxlength="32" placeholder="name" value="{{.Opt.Name}}">
+                                                    </div>
+                                                    <div class="col-12 col-md-2 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Type</label>
+                                                        <select class="form-control slash-option-type-select" data-slash-field="type" name="{{.Prefix}}.type" onchange="slashOptTypeChanged(this)">
+                                                            <option value="string" {{if eq .Opt.TypeKey "string"}}selected{{end}}>Text</option>
+                                                            <option value="string_menu" {{if eq .Opt.TypeKey "string_menu"}}selected{{end}}>Text menu</option>
+                                                            <option value="integer" {{if eq .Opt.TypeKey "integer"}}selected{{end}}>Integer</option>
+                                                            <option value="integer_menu" {{if eq .Opt.TypeKey "integer_menu"}}selected{{end}}>Integer menu</option>
+                                                            <option value="number" {{if eq .Opt.TypeKey "number"}}selected{{end}}>Number</option>
+                                                            <option value="number_menu" {{if eq .Opt.TypeKey "number_menu"}}selected{{end}}>Number menu</option>
+                                                            <option value="boolean" {{if eq .Opt.TypeKey "boolean"}}selected{{end}}>True/False</option>
+                                                            <option value="user" {{if eq .Opt.TypeKey "user"}}selected{{end}}>User</option>
+                                                            <option value="channel" {{if eq .Opt.TypeKey "channel"}}selected{{end}}>Channel</option>
+                                                            <option value="role" {{if eq .Opt.TypeKey "role"}}selected{{end}}>Role</option>
+                                                            <option value="mentionable" {{if eq .Opt.TypeKey "mentionable"}}selected{{end}}>Mentionable</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-12 col-md-4 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Description</label>
+                                                        <input type="text" class="form-control" data-slash-field="description" name="{{.Prefix}}.description" maxlength="100" placeholder="description" value="{{.Opt.Description}}">
+                                                    </div>
+                                                    <div class="col-6 col-md-2 mb-2 mb-md-0">
+                                                        {{checkbox (printf "%s.required" .Prefix) .ReqID "Required" .Opt.Required "data-slash-field=required"}}
+                                                    </div>
+                                                    <div class="col-6 col-md-1 text-right">
+                                                        <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row slash-opt-extra-choices mt-2 {{if and (ne .Opt.TypeKey "string_menu") (ne .Opt.TypeKey "integer_menu") (ne .Opt.TypeKey "number_menu")}}hidden{{end}}">
+                                                    <div class="col-12">
+                                                        <label class="small mb-1">Choices - one per line (turns this into a dropdown / select menu). For Integer/Number arguments each line must be a number.</label>
+                                                        <textarea class="form-control" data-slash-field="choices" name="{{.Prefix}}.choices" rows="3" placeholder="Leave empty for free input">{{range .Opt.Choices}}{{.}}
+{{end}}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row slash-opt-extra-text mt-2 {{if ne .Opt.TypeKey "string"}}hidden{{end}}">
+                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Min length</label>
+                                                        <input type="number" min="0" class="form-control" data-slash-field="min_length" name="{{.Prefix}}.min_length" {{if .Opt.MinLength}}value="{{.Opt.MinLength}}"{{end}}>
+                                                    </div>
+                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Max length</label>
+                                                        <input type="number" min="0" class="form-control" data-slash-field="max_length" name="{{.Prefix}}.max_length" {{if .Opt.MaxLength}}value="{{.Opt.MaxLength}}"{{end}}>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row slash-opt-extra-number mt-2 {{if and (ne .Opt.TypeKey "integer") (ne .Opt.TypeKey "number")}}hidden{{end}}">
+                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Min value</label>
+                                                        <input type="number" step="any" class="form-control" data-slash-field="min_value" name="{{.Prefix}}.min_value" {{if .Opt.MinValue}}value="{{.Opt.MinValue}}"{{end}}>
+                                                    </div>
+                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
+                                                        <label class="small mb-1">Max value</label>
+                                                        <input type="number" step="any" class="form-control" data-slash-field="max_value" name="{{.Prefix}}.max_value" {{if .Opt.MaxValue}}value="{{.Opt.MaxValue}}"{{end}}>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row slash-opt-extra-channel mt-2 {{if ne .Opt.TypeKey "channel"}}hidden{{end}}">
+                                                    <div class="col-12">
+                                                        <label class="small mb-1 d-block">Allowed channel types (leave empty to allow any)</label>
+                                                        <select class="multiselect form-control" multiple="multiple" data-plugin-multiselect data-slash-field="channel_types" name="{{.Prefix}}.channel_types">
+                                                            <option value="0" {{if in .Opt.ChannelTypes 0}}selected{{end}}>Text</option>
+                                                            <option value="2" {{if in .Opt.ChannelTypes 2}}selected{{end}}>Voice</option>
+                                                            <option value="4" {{if in .Opt.ChannelTypes 4}}selected{{end}}>Category</option>
+                                                            <option value="5" {{if in .Opt.ChannelTypes 5}}selected{{end}}>Announcement</option>
+                                                            <option value="13" {{if in .Opt.ChannelTypes 13}}selected{{end}}>Stage</option>
+                                                            <option value="15" {{if in .Opt.ChannelTypes 15}}selected{{end}}>Forum</option>
+                                                            <option value="11" {{if in .Opt.ChannelTypes 11}}selected{{end}}>Public Thread</option>
+                                                            <option value="12" {{if in .Opt.ChannelTypes 12}}selected{{end}}>Private Thread</option>
+                                                            <option value="10" {{if in .Opt.ChannelTypes 10}}selected{{end}}>Announcement Thread</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+{{end}}
 {{define "cp_custom_commands_edit_cmd"}}
 {{template "cp_head" .}}
 <header class="page-header">
@@ -338,6 +418,17 @@
                                 <hr>
                                 <div class="row mt-2">
                                     <div class="col-lg-12">
+                                        <div class="form-group d-flex align-items-center mb-1">
+                                            <input type="checkbox" class="tgl tgl-flat" id="slash_use_subcommands" name="slash_use_subcommands" {{if call .GetCCSlashUseSubcommands .CC}}checked{{end}}>
+                                            <label class="tgl-btn mb-0" for="slash_use_subcommands"></label>
+                                            <span class="ml-2">Use subcommands</span>
+                                        </div>
+                                        <small class="form-text text-muted">Split this command into subcommands (e.g. <code>/cmd add</code>, <code>/cmd remove</code>). Branch your response on <code>.SubCommand</code>, which holds the invoked subcommand name.</small>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div id="slash-flat-options-section" class="row mt-2">
+                                    <div class="col-lg-12">
                                         <button type="button" class="btn btn-primary btn-sm btn-block d-flex align-items-center justify-content-between slash-options-toggle" data-toggle="collapse" data-target="#slash-options-collapse" aria-expanded="true">
                                             <span>Options (<span id="slash-options-count">0</span>)</span>
                                             <i class="fas fa-chevron-down slash-options-chevron"></i>
@@ -346,91 +437,82 @@
                                         <div class="collapse show mt-2" id="slash-options-collapse">
                                         <div id="slash-options-list">
                                             {{range $i, $opt := call .GetCCSlashOptions .CC}}
-                                            <div class="slash-option-row mb-3">
-                                                <div class="form-row align-items-end">
-                                                    <div class="col-12 col-md-3 mb-2 mb-md-0">
-                                                        <label class="small mb-1">Name</label>
-                                                        <input type="text" class="form-control" data-slash-field="name" name="slash_options.{{$i}}.name" maxlength="32" placeholder="name" value="{{$opt.Name}}">
-                                                    </div>
-                                                    <div class="col-12 col-md-2 mb-2 mb-md-0">
-                                                        <label class="small mb-1">Type</label>
-                                                        <select class="form-control slash-option-type-select" data-slash-field="type" name="slash_options.{{$i}}.type" onchange="slashOptTypeChanged(this)">
-                                                            <option value="string" {{if eq $opt.TypeKey "string"}}selected{{end}}>Text</option>
-                                                            <option value="string_menu" {{if eq $opt.TypeKey "string_menu"}}selected{{end}}>Text menu</option>
-                                                            <option value="integer" {{if eq $opt.TypeKey "integer"}}selected{{end}}>Integer</option>
-                                                            <option value="integer_menu" {{if eq $opt.TypeKey "integer_menu"}}selected{{end}}>Integer menu</option>
-                                                            <option value="number" {{if eq $opt.TypeKey "number"}}selected{{end}}>Number</option>
-                                                            <option value="number_menu" {{if eq $opt.TypeKey "number_menu"}}selected{{end}}>Number menu</option>
-                                                            <option value="boolean" {{if eq $opt.TypeKey "boolean"}}selected{{end}}>True/False</option>
-                                                            <option value="user" {{if eq $opt.TypeKey "user"}}selected{{end}}>User</option>
-                                                            <option value="channel" {{if eq $opt.TypeKey "channel"}}selected{{end}}>Channel</option>
-                                                            <option value="role" {{if eq $opt.TypeKey "role"}}selected{{end}}>Role</option>
-                                                            <option value="mentionable" {{if eq $opt.TypeKey "mentionable"}}selected{{end}}>Mentionable</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-12 col-md-4 mb-2 mb-md-0">
-                                                        <label class="small mb-1">Description</label>
-                                                        <input type="text" class="form-control" data-slash-field="description" name="slash_options.{{$i}}.description" maxlength="100" placeholder="description" value="{{$opt.Description}}">
-                                                    </div>
-                                                    <div class="col-6 col-md-2 mb-2 mb-md-0">
-                                                        {{checkbox (printf "slash_options.%d.required" $i) (printf "slash-opt-req-%d" $i) "Required" $opt.Required "data-slash-field=required"}}
-                                                    </div>
-                                                    <div class="col-6 col-md-1 text-right">
-                                                        <button type="button" class="btn btn-danger btn-sm slash-option-remove" title="Remove argument"><i class="fas fa-minus"></i></button>
-                                                    </div>
-                                                </div>
-                                                <div class="form-row slash-opt-extra-choices mt-2 {{if and (ne $opt.TypeKey "string_menu") (ne $opt.TypeKey "integer_menu") (ne $opt.TypeKey "number_menu")}}hidden{{end}}">
-                                                    <div class="col-12">
-                                                        <label class="small mb-1">Choices - one per line (turns this into a dropdown / select menu). For Integer/Number arguments each line must be a number.</label>
-                                                        <textarea class="form-control" data-slash-field="choices" name="slash_options.{{$i}}.choices" rows="3" placeholder="Leave empty for free input">{{range $opt.Choices}}{{.}}
-{{end}}</textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="form-row slash-opt-extra-text mt-2 {{if ne $opt.TypeKey "string"}}hidden{{end}}">
-                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                                        <label class="small mb-1">Min length</label>
-                                                        <input type="number" min="0" class="form-control" data-slash-field="min_length" name="slash_options.{{$i}}.min_length" {{if $opt.MinLength}}value="{{$opt.MinLength}}"{{end}}>
-                                                    </div>
-                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                                        <label class="small mb-1">Max length</label>
-                                                        <input type="number" min="0" class="form-control" data-slash-field="max_length" name="slash_options.{{$i}}.max_length" {{if $opt.MaxLength}}value="{{$opt.MaxLength}}"{{end}}>
-                                                    </div>
-                                                </div>
-                                                <div class="form-row slash-opt-extra-number mt-2 {{if and (ne $opt.TypeKey "integer") (ne $opt.TypeKey "number")}}hidden{{end}}">
-                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                                        <label class="small mb-1">Min value</label>
-                                                        <input type="number" step="any" class="form-control" data-slash-field="min_value" name="slash_options.{{$i}}.min_value" {{if $opt.MinValue}}value="{{$opt.MinValue}}"{{end}}>
-                                                    </div>
-                                                    <div class="col-6 col-md-3 mb-2 mb-md-0">
-                                                        <label class="small mb-1">Max value</label>
-                                                        <input type="number" step="any" class="form-control" data-slash-field="max_value" name="slash_options.{{$i}}.max_value" {{if $opt.MaxValue}}value="{{$opt.MaxValue}}"{{end}}>
-                                                    </div>
-                                                </div>
-                                                <div class="form-row slash-opt-extra-channel mt-2 {{if ne $opt.TypeKey "channel"}}hidden{{end}}">
-                                                    <div class="col-12">
-                                                        <label class="small mb-1 d-block">Allowed channel types (leave empty to allow any)</label>
-                                                        <select class="multiselect form-control" multiple="multiple" data-plugin-multiselect data-slash-field="channel_types" name="slash_options.{{$i}}.channel_types">
-                                                            <option value="0" {{if in $opt.ChannelTypes 0}}selected{{end}}>Text</option>
-                                                            <option value="2" {{if in $opt.ChannelTypes 2}}selected{{end}}>Voice</option>
-                                                            <option value="4" {{if in $opt.ChannelTypes 4}}selected{{end}}>Category</option>
-                                                            <option value="5" {{if in $opt.ChannelTypes 5}}selected{{end}}>Announcement</option>
-                                                            <option value="13" {{if in $opt.ChannelTypes 13}}selected{{end}}>Stage</option>
-                                                            <option value="15" {{if in $opt.ChannelTypes 15}}selected{{end}}>Forum</option>
-                                                            <option value="11" {{if in $opt.ChannelTypes 11}}selected{{end}}>Public Thread</option>
-                                                            <option value="12" {{if in $opt.ChannelTypes 12}}selected{{end}}>Private Thread</option>
-                                                            <option value="10" {{if in $opt.ChannelTypes 10}}selected{{end}}>Announcement Thread</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            {{template "slashOptionRow" (dict "Prefix" (printf "slash_options.%d" $i) "ReqID" (printf "slash-opt-req-%d" $i) "Opt" $opt)}}
                                             {{end}}
                                         </div>
                                         <button type="button" id="slash-option-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add Option</button>
                                         <small class="form-text text-muted">Up to 25 Options. Required Options are automatically ordered before optional ones by discord</small>
                                         </div>
+                                    </div>
+                                </div>
+                                <div id="slash-subcommands-section" class="row mt-2 hidden">
+                                    <div class="col-lg-12">
+                                        <label class="mb-1">Subcommands (<span id="slash-subcommands-count">0</span>)</label>
+                                        <div id="slash-subcommands-list" class="mb-2">
+                                            {{range $si, $sub := call .GetCCSlashSubcommands .CC}}
+                                            <div class="slash-subcommand-card card mb-2">
+                                                <div class="card-header p-2 d-flex align-items-center justify-content-between slash-subcommand-toggle" data-toggle="collapse" data-target="#slash-sub-body-{{$si}}" style="cursor:pointer;">
+                                                    <span class="slash-subcommand-title font-weight-bold">{{if $sub.Name}}{{$sub.Name}}{{else}}Subcommand {{add $si 1}}{{end}}</span>
+                                                    <button type="button" class="btn btn-danger btn-sm slash-subcommand-remove" title="Remove subcommand"><i class="fas fa-minus"></i></button>
+                                                </div>
+                                                <div class="collapse slash-subcommand-body" id="slash-sub-body-{{$si}}" data-parent="#slash-subcommands-list">
+                                                    <div class="card-body">
+                                                        <div class="form-row">
+                                                            <div class="col-12 col-md-4 mb-2">
+                                                                <label class="small mb-1">Name</label>
+                                                                <input type="text" class="form-control" data-slash-sub-field="name" name="slash_subcommands.{{$si}}.name" maxlength="32" placeholder="name" value="{{$sub.Name}}">
+                                                            </div>
+                                                            <div class="col-12 col-md-8 mb-2">
+                                                                <label class="small mb-1">Description</label>
+                                                                <input type="text" class="form-control" data-slash-sub-field="description" name="slash_subcommands.{{$si}}.description" maxlength="100" placeholder="description" value="{{$sub.Description}}">
+                                                            </div>
+                                                        </div>
+                                                        <label class="small mb-1">Options (<span class="slash-subcommand-optcount">0</span>)</label>
+                                                        <div class="slash-subcommand-options">
+                                                            {{range $oi, $opt := $sub.Options}}
+                                                            {{template "slashOptionRow" (dict "Prefix" (printf "slash_subcommands.%d.options.%d" $si $oi) "ReqID" (printf "slash-sub-%d-opt-req-%d" $si $oi) "Opt" $opt)}}
+                                                            {{end}}
+                                                        </div>
+                                                        <button type="button" class="btn btn-success btn-sm mt-1 slash-subcommand-option-add"><i class="fas fa-plus"></i> Add Option</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {{end}}
+                                        </div>
+                                        <button type="button" id="slash-subcommand-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add Subcommand</button>
+                                        <small class="form-text text-muted">Up to <span id="slash-subcommand-limit">{{if .IsGuildPremium}}10{{else}}3{{end}}</span> subcommands, each with up to 25 options. Only one subcommand can be expanded at a time.</small>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-lg-12">
                                         <div id="slash-validation-errors" class="alert alert-danger py-2 mt-2 mb-0 hidden"></div>
                                     </div>
                                 </div>
+                                <template id="slash-subcommand-template">
+                                    <div class="slash-subcommand-card card mb-2">
+                                        <div class="card-header p-2 d-flex align-items-center justify-content-between slash-subcommand-toggle" data-toggle="collapse" style="cursor:pointer;">
+                                            <span class="slash-subcommand-title font-weight-bold">Subcommand</span>
+                                            <button type="button" class="btn btn-danger btn-sm slash-subcommand-remove" title="Remove subcommand"><i class="fas fa-minus"></i></button>
+                                        </div>
+                                        <div class="collapse show slash-subcommand-body" data-parent="#slash-subcommands-list">
+                                            <div class="card-body">
+                                                <div class="form-row">
+                                                    <div class="col-12 col-md-4 mb-2">
+                                                        <label class="small mb-1">Name</label>
+                                                        <input type="text" class="form-control" data-slash-sub-field="name" maxlength="32" placeholder="name">
+                                                    </div>
+                                                    <div class="col-12 col-md-8 mb-2">
+                                                        <label class="small mb-1">Description</label>
+                                                        <input type="text" class="form-control" data-slash-sub-field="description" maxlength="100" placeholder="description">
+                                                    </div>
+                                                </div>
+                                                <label class="small mb-1">Options (<span class="slash-subcommand-optcount">0</span>)</label>
+                                                <div class="slash-subcommand-options"></div>
+                                                <button type="button" class="btn btn-success btn-sm mt-1 slash-subcommand-option-add"><i class="fas fa-plus"></i> Add Option</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
                                 <template id="slash-option-template">
                                     <div class="slash-option-row mb-3">
                                         <div class="form-row align-items-end">
@@ -1179,6 +1261,146 @@
     // Ensure field names/ids are consistent on initial load too.
     renumberSlashOptions();
 
+    // ===== Subcommands =====
+    // Initializes a freshly-cloned option row: multiselect widget + per-type field visibility.
+    function slashInitOptionRow(row) {
+        if (!row) return;
+        if ($.isFunction($.fn['multiselect'])) {
+            $(row).find('[data-plugin-multiselect]').each(function () {
+                $(this).themePluginMultiSelect($(this).data('plugin-options') || {});
+            });
+        }
+        const typeSel = row.querySelector('[data-slash-field="type"]');
+        if (typeSel) slashOptTypeChanged(typeSel);
+    }
+
+    function slashSubcommandLimit() {
+        const el = document.getElementById('slash-subcommand-limit');
+        const n = el ? parseInt(el.textContent, 10) : 3;
+        return isNaN(n) ? 3 : n;
+    }
+
+    // Reassigns field names for every subcommand and its option rows as a 2-level indexed
+    // slice (slash_subcommands.S.name/.description and slash_subcommands.S.options.O.<field>),
+    // keeps the accordion collapse ids/targets unique after add/remove, and refreshes
+    // header titles and option counts.
+    function slashRenumberSubcommands() {
+        const cards = document.querySelectorAll('#slash-subcommands-list .slash-subcommand-card');
+        cards.forEach((card, s) => {
+            card.querySelectorAll('[data-slash-sub-field]').forEach((el) => {
+                el.name = 'slash_subcommands.' + s + '.' + el.getAttribute('data-slash-sub-field');
+            });
+
+            const body = card.querySelector('.slash-subcommand-body');
+            const toggle = card.querySelector('.slash-subcommand-toggle');
+            const bodyId = 'slash-sub-body-' + s;
+            if (body) {
+                body.id = bodyId;
+                body.setAttribute('data-parent', '#slash-subcommands-list');
+            }
+            if (toggle) toggle.setAttribute('data-target', '#' + bodyId);
+
+            const nameInput = card.querySelector('[data-slash-sub-field="name"]');
+            const title = card.querySelector('.slash-subcommand-title');
+            if (title) {
+                const nm = nameInput ? nameInput.value.trim() : '';
+                title.textContent = nm !== '' ? nm : ('Subcommand ' + (s + 1));
+            }
+
+            const rows = card.querySelectorAll('.slash-subcommand-options .slash-option-row');
+            rows.forEach((row, o) => {
+                row.querySelectorAll('[data-slash-field]').forEach((el) => {
+                    el.name = 'slash_subcommands.' + s + '.options.' + o + '.' + el.getAttribute('data-slash-field');
+                });
+                const cb = row.querySelector('[data-slash-field="required"]');
+                const lbl = row.querySelector('.tgl-btn');
+                if (cb && lbl) {
+                    const id = 'slash-sub-' + s + '-opt-req-' + o;
+                    cb.id = id;
+                    lbl.htmlFor = id;
+                }
+            });
+            const optCount = card.querySelector('.slash-subcommand-optcount');
+            if (optCount) optCount.textContent = rows.length;
+        });
+        const count = document.getElementById('slash-subcommands-count');
+        if (count) count.textContent = cards.length;
+    }
+
+    // Show the flat-options editor or the subcommands editor depending on the toggle.
+    function slashUpdateSubcommandMode() {
+        const cb = document.getElementById('slash_use_subcommands');
+        if (!cb) return;
+        const on = cb.checked;
+        const flat = document.getElementById('slash-flat-options-section');
+        const subs = document.getElementById('slash-subcommands-section');
+        if (flat) flat.classList.toggle('hidden', on);
+        if (subs) subs.classList.toggle('hidden', !on);
+    }
+
+    $('#slash_use_subcommands').on('change', function () {
+        slashUpdateSubcommandMode();
+        validateSlashUI();
+    });
+
+    $('#slash-subcommand-add').on('click', function (e) {
+        e.preventDefault();
+        const list = document.getElementById('slash-subcommands-list');
+        if (list.querySelectorAll('.slash-subcommand-card').length >= slashSubcommandLimit()) {
+            return;
+        }
+        // keep only one subcommand expanded at a time: collapse existing before adding
+        // the new (expanded) one.
+        list.querySelectorAll('.slash-subcommand-body.show').forEach((b) => b.classList.remove('show'));
+        const frag = document.getElementById('slash-subcommand-template').content.cloneNode(true);
+        list.appendChild(frag);
+        slashRenumberSubcommands();
+        validateSlashUI();
+    });
+
+    $('#slash-subcommands-list').on('click', '.slash-subcommand-remove', function (e) {
+        e.preventDefault();
+        e.stopPropagation(); // don't also toggle the collapse header
+        $(this).closest('.slash-subcommand-card').remove();
+        slashRenumberSubcommands();
+        validateSlashUI();
+    });
+
+    // Add an option row to a specific subcommand (capped at 25 per subcommand).
+    $('#slash-subcommands-list').on('click', '.slash-subcommand-option-add', function (e) {
+        e.preventDefault();
+        const optList = $(this).closest('.card-body').find('.slash-subcommand-options')[0];
+        if (!optList || optList.querySelectorAll('.slash-option-row').length >= 25) {
+            return;
+        }
+        const frag = document.getElementById('slash-option-template').content.cloneNode(true);
+        optList.appendChild(frag);
+        const newRow = optList.lastElementChild;
+        slashRenumberSubcommands();
+        slashInitOptionRow(newRow);
+    });
+
+    $('#slash-subcommands-list').on('click', '.slash-option-remove', function (e) {
+        e.preventDefault();
+        $(this).closest('.slash-option-row').remove();
+        slashRenumberSubcommands();
+        validateSlashUI();
+    });
+
+    // Keep a subcommand's collapsed-header title in sync as its name is typed.
+    $('#slash-subcommands-list').on('input', '[data-slash-sub-field="name"]', function () {
+        const card = $(this).closest('.slash-subcommand-card')[0];
+        const title = card.querySelector('.slash-subcommand-title');
+        if (title) {
+            const nm = this.value.trim();
+            const cards = Array.prototype.slice.call(document.querySelectorAll('#slash-subcommands-list .slash-subcommand-card'));
+            title.textContent = nm !== '' ? nm : ('Subcommand ' + (cards.indexOf(card) + 1));
+        }
+    });
+
+    slashRenumberSubcommands();
+    slashUpdateSubcommandMode();
+
     // Client-side validation mirroring the server rules in validateSlashCommandData.
     // Discord's name pattern (lowercased). \p{L}\p{N} need the unicode flag.
     const SLASH_NAME_RE = /^[-_\p{L}\p{N}]{1,32}$/u;
@@ -1191,6 +1413,92 @@
 
     function slashMark(el, invalid) {
         if (el) el.classList.toggle('is-invalid', !!invalid);
+    }
+
+    // Validates a single option row, pushing messages into errors and marking offending
+    // inputs. seen tracks duplicate names within the row's scope (command or subcommand).
+    // labelPrefix prefixes messages so subcommand errors are distinguishable.
+    function slashValidateOptionRow(row, seen, errors, labelPrefix) {
+        const nIn = row.querySelector('[data-slash-field="name"]');
+        const dIn = row.querySelector('[data-slash-field="description"]');
+        const tSel = row.querySelector('[data-slash-field="type"]');
+        const oname = (nIn ? nIn.value : '').trim();
+        if (oname === '') return; // blank rows are dropped server-side
+        const label = labelPrefix + 'argument "' + oname + '"';
+
+        if (!SLASH_NAME_RE.test(oname)) {
+            errors.push(labelPrefix + 'argument name "' + oname + '" must be 1-32 characters: letters, numbers, dashes and underscores.');
+            slashMark(nIn, true);
+        } else if (oname !== oname.toLowerCase()) {
+            errors.push(labelPrefix + 'argument name "' + oname + '" must be lowercase.');
+            slashMark(nIn, true);
+        }
+        if (seen[oname]) {
+            errors.push(labelPrefix + 'duplicate argument name "' + oname + '".');
+            slashMark(nIn, true);
+        }
+        seen[oname] = true;
+
+        const odesc = (dIn ? dIn.value : '').trim();
+        if (odesc.length < 1 || odesc.length > 100) {
+            errors.push('Description for ' + label + ' must be between 1 and 100 characters.');
+            slashMark(dIn, true);
+        }
+
+        const t = tSel ? tSel.value : '';
+        const isMenu = t === 'string_menu' || t === 'integer_menu' || t === 'number_menu';
+        if (isMenu) {
+            const choicesEl = row.querySelector('[data-slash-field="choices"]');
+            const lines = (choicesEl ? choicesEl.value : '').split('\n').map((s) => s.trim()).filter((s) => s !== '');
+            if (lines.length === 0) {
+                errors.push(label + ' is a menu but has no choices.');
+                slashMark(choicesEl, true);
+            }
+            if (lines.length > 25) {
+                errors.push(label + ' can have at most 25 choices.');
+                slashMark(choicesEl, true);
+            }
+            if (lines.some((l) => l.length > 100)) {
+                errors.push('Each choice on ' + label + ' must be at most 100 characters.');
+                slashMark(choicesEl, true);
+            }
+            if (t === 'integer_menu' && lines.some((l) => !/^-?\d+$/.test(l))) {
+                errors.push('Each choice on ' + label + ' must be a whole number.');
+                slashMark(choicesEl, true);
+            }
+            if (t === 'number_menu' && lines.some((l) => isNaN(Number(l)))) {
+                errors.push('Each choice on ' + label + ' must be a number.');
+                slashMark(choicesEl, true);
+            }
+        } else if (t === 'string') {
+            const minL = row.querySelector('[data-slash-field="min_length"]');
+            const maxL = row.querySelector('[data-slash-field="max_length"]');
+            const minv = minL && minL.value.trim() !== '' ? parseInt(minL.value, 10) : null;
+            const maxv = maxL && maxL.value.trim() !== '' ? parseInt(maxL.value, 10) : null;
+            if (minv !== null && minv < 0) {
+                errors.push('Min length for ' + label + ' cannot be negative.');
+                slashMark(minL, true);
+            }
+            if (maxv !== null && maxv > 6000) {
+                errors.push('Max length for ' + label + ' cannot exceed 6000.');
+                slashMark(maxL, true);
+            }
+            if (minv !== null && maxv !== null && minv > maxv) {
+                errors.push('Min length cannot exceed max length for ' + label + '.');
+                slashMark(minL, true);
+                slashMark(maxL, true);
+            }
+        } else if (t === 'integer' || t === 'number') {
+            const minV = row.querySelector('[data-slash-field="min_value"]');
+            const maxV = row.querySelector('[data-slash-field="max_value"]');
+            const minn = minV && minV.value.trim() !== '' ? parseFloat(minV.value) : null;
+            const maxn = maxV && maxV.value.trim() !== '' ? parseFloat(maxV.value) : null;
+            if (minn !== null && maxn !== null && minn > maxn) {
+                errors.push('Min value cannot exceed max value for ' + label + '.');
+                slashMark(minV, true);
+                slashMark(maxV, true);
+            }
+        }
     }
 
     // Validates the slash command fields, marks offending inputs and renders an error
@@ -1229,89 +1537,51 @@
             slashMark(descEl, true);
         }
 
-        const seen = {};
-        section.querySelectorAll('.slash-option-row').forEach((row) => {
-            const nIn = row.querySelector('[data-slash-field="name"]');
-            const dIn = row.querySelector('[data-slash-field="description"]');
-            const tSel = row.querySelector('[data-slash-field="type"]');
-            const oname = (nIn ? nIn.value : '').trim();
-            if (oname === '') return; // blank rows are dropped server-side
-            const label = 'argument "' + oname + '"';
+        const useSubs = document.getElementById('slash_use_subcommands').checked;
+        if (!useSubs) {
+            const seen = {};
+            document.querySelectorAll('#slash-options-list .slash-option-row').forEach((row) => {
+                slashValidateOptionRow(row, seen, errors, '');
+            });
+        } else {
+            const cards = document.querySelectorAll('#slash-subcommands-list .slash-subcommand-card');
+            if (cards.length === 0) {
+                errors.push('Enable subcommands requires at least one subcommand (or turn the toggle off).');
+            }
+            if (cards.length > slashSubcommandLimit()) {
+                errors.push('At most ' + slashSubcommandLimit() + ' subcommands are allowed.');
+            }
+            const seenSubs = {};
+            cards.forEach((card, idx) => {
+                const nIn = card.querySelector('[data-slash-sub-field="name"]');
+                const dIn = card.querySelector('[data-slash-sub-field="description"]');
+                const sname = (nIn ? nIn.value : '').trim();
+                const slabel = sname !== '' ? 'subcommand "' + sname + '"' : 'subcommand ' + (idx + 1);
 
-            if (!SLASH_NAME_RE.test(oname)) {
-                errors.push('Argument name "' + oname + '" must be 1-32 characters: letters, numbers, dashes and underscores.');
-                slashMark(nIn, true);
-            } else if (oname !== oname.toLowerCase()) {
-                errors.push('Argument name "' + oname + '" must be lowercase.');
-                slashMark(nIn, true);
-            }
-            if (seen[oname]) {
-                errors.push('Duplicate argument name "' + oname + '".');
-                slashMark(nIn, true);
-            }
-            seen[oname] = true;
+                if (!SLASH_NAME_RE.test(sname)) {
+                    errors.push('Subcommand name "' + sname + '" must be 1-32 characters: letters, numbers, dashes and underscores.');
+                    slashMark(nIn, true);
+                } else if (sname !== sname.toLowerCase()) {
+                    errors.push('Subcommand name "' + sname + '" must be lowercase.');
+                    slashMark(nIn, true);
+                } else if (seenSubs[sname]) {
+                    errors.push('Duplicate subcommand name "' + sname + '".');
+                    slashMark(nIn, true);
+                }
+                if (sname !== '') seenSubs[sname] = true;
 
-            const odesc = (dIn ? dIn.value : '').trim();
-            if (odesc.length < 1 || odesc.length > 100) {
-                errors.push('Description for ' + label + ' must be between 1 and 100 characters.');
-                slashMark(dIn, true);
-            }
+                const sdesc = (dIn ? dIn.value : '').trim();
+                if (sdesc.length < 1 || sdesc.length > 100) {
+                    errors.push('Description for ' + slabel + ' must be between 1 and 100 characters.');
+                    slashMark(dIn, true);
+                }
 
-            const t = tSel ? tSel.value : '';
-            const isMenu = t === 'string_menu' || t === 'integer_menu' || t === 'number_menu';
-            if (isMenu) {
-                const choicesEl = row.querySelector('[data-slash-field="choices"]');
-                const lines = (choicesEl ? choicesEl.value : '').split('\n').map((s) => s.trim()).filter((s) => s !== '');
-                if (lines.length === 0) {
-                    errors.push(label + ' is a menu but has no choices.');
-                    slashMark(choicesEl, true);
-                }
-                if (lines.length > 25) {
-                    errors.push(label + ' can have at most 25 choices.');
-                    slashMark(choicesEl, true);
-                }
-                if (lines.some((l) => l.length > 100)) {
-                    errors.push('Each choice on ' + label + ' must be at most 100 characters.');
-                    slashMark(choicesEl, true);
-                }
-                if (t === 'integer_menu' && lines.some((l) => !/^-?\d+$/.test(l))) {
-                    errors.push('Each choice on ' + label + ' must be a whole number.');
-                    slashMark(choicesEl, true);
-                }
-                if (t === 'number_menu' && lines.some((l) => isNaN(Number(l)))) {
-                    errors.push('Each choice on ' + label + ' must be a number.');
-                    slashMark(choicesEl, true);
-                }
-            } else if (t === 'string') {
-                const minL = row.querySelector('[data-slash-field="min_length"]');
-                const maxL = row.querySelector('[data-slash-field="max_length"]');
-                const minv = minL && minL.value.trim() !== '' ? parseInt(minL.value, 10) : null;
-                const maxv = maxL && maxL.value.trim() !== '' ? parseInt(maxL.value, 10) : null;
-                if (minv !== null && minv < 0) {
-                    errors.push('Min length for ' + label + ' cannot be negative.');
-                    slashMark(minL, true);
-                }
-                if (maxv !== null && maxv > 6000) {
-                    errors.push('Max length for ' + label + ' cannot exceed 6000.');
-                    slashMark(maxL, true);
-                }
-                if (minv !== null && maxv !== null && minv > maxv) {
-                    errors.push('Min length cannot exceed max length for ' + label + '.');
-                    slashMark(minL, true);
-                    slashMark(maxL, true);
-                }
-            } else if (t === 'integer' || t === 'number') {
-                const minV = row.querySelector('[data-slash-field="min_value"]');
-                const maxV = row.querySelector('[data-slash-field="max_value"]');
-                const minn = minV && minV.value.trim() !== '' ? parseFloat(minV.value) : null;
-                const maxn = maxV && maxV.value.trim() !== '' ? parseFloat(maxV.value) : null;
-                if (minn !== null && maxn !== null && minn > maxn) {
-                    errors.push('Min value cannot exceed max value for ' + label + '.');
-                    slashMark(minV, true);
-                    slashMark(maxV, true);
-                }
-            }
-        });
+                const seen = {};
+                card.querySelectorAll('.slash-subcommand-options .slash-option-row').forEach((row) => {
+                    slashValidateOptionRow(row, seen, errors, slabel + ' ');
+                });
+            });
+        }
 
         if (errors.length) {
             box.innerHTML = '<ul class="mb-0 pl-3">' + errors.map((e) => '<li>' + slashEscapeHtml(e) + '</li>').join('') + '</ul>';
@@ -1338,8 +1608,11 @@
         if ($('#trigger-type-dropdown').val() === 'slash_command' && !validateSlashUI()) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            // Expand the arguments section so the offending (marked) fields are visible.
-            $('#slash-options-collapse').collapse('show');
+            // Expand the flat arguments section so the offending (marked) fields are visible
+            // (only relevant when not using subcommands).
+            if (!document.getElementById('slash_use_subcommands').checked) {
+                $('#slash-options-collapse').collapse('show');
+            }
             const box = document.getElementById('slash-validation-errors');
             if (box) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
