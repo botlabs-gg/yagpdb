@@ -441,7 +441,8 @@
                                             {{end}}
                                         </div>
                                         <button type="button" id="slash-option-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add Option</button>
-                                        <small class="form-text text-muted">Up to 25 Options. Required Options are automatically ordered before optional ones by discord</small>
+                                        <small id="slash-option-limit-msg" class="form-text text-muted hidden">You've reached a maximum of 25 options.</small>
+                                        <small class="form-text text-muted">Required Options are automatically ordered before optional ones by discord</small>
                                         </div>
                                     </div>
                                 </div>
@@ -474,13 +475,20 @@
                                                             {{end}}
                                                         </div>
                                                         <button type="button" class="btn btn-success btn-sm mt-1 slash-subcommand-option-add"><i class="fas fa-plus"></i> Add Option</button>
+                                                        <small class="form-text text-muted slash-subcommand-option-limit-msg hidden">You've reached a maximum of 25 options.</small>
                                                     </div>
                                                 </div>
                                             </div>
                                             {{end}}
                                         </div>
-                                        <button type="button" id="slash-subcommand-add" class="btn btn-success btn-sm mt-1"><i class="fas fa-plus"></i> Add Subcommand</button>
-                                        <small class="form-text text-muted">Up to <span id="slash-subcommand-limit">{{if .IsGuildPremium}}10{{else}}3{{end}}</span> subcommands, each with up to 25 options. Only one subcommand can be expanded at a time.</small>
+                                        <button type="button" id="slash-subcommand-add" class="btn btn-success btn-sm mt-1" data-limit="{{if .IsGuildPremium}}10{{else}}3{{end}}"><i class="fas fa-plus"></i> Add Subcommand</button>
+                                        <div id="slash-subcommand-limit-msg" class="hidden mt-1">
+                                            {{if .IsGuildPremium}}
+                                            <small class="form-text text-muted">You've reached the maximum of 10 subcommands.</small>
+                                            {{else}}
+                                            {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "You've reached the free limit of 3 subcommands. Premium servers can have up to 10.")}}
+                                            {{end}}
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -1206,6 +1214,12 @@
 
         const count = document.getElementById('slash-options-count');
         if (count) count.textContent = rows.length;
+
+        const atMax = rows.length >= 25;
+        const addBtn = document.getElementById('slash-option-add');
+        if (addBtn) addBtn.classList.toggle('hidden', atMax);
+        const maxMsg = document.getElementById('slash-option-limit-msg');
+        if (maxMsg) maxMsg.classList.toggle('hidden', !atMax);
     }
 
     // Show only the per-type extra fields relevant to the selected option type:
@@ -1275,8 +1289,8 @@
     }
 
     function slashSubcommandLimit() {
-        const el = document.getElementById('slash-subcommand-limit');
-        const n = el ? parseInt(el.textContent, 10) : 3;
+        const btn = document.getElementById('slash-subcommand-add');
+        const n = btn ? parseInt(btn.getAttribute('data-limit'), 10) : 3;
         return isNaN(n) ? 3 : n;
     }
 
@@ -1322,9 +1336,22 @@
             });
             const optCount = card.querySelector('.slash-subcommand-optcount');
             if (optCount) optCount.textContent = rows.length;
+            const optAtMax = rows.length >= 25;
+            const optAdd = card.querySelector('.slash-subcommand-option-add');
+            if (optAdd) optAdd.classList.toggle('hidden', optAtMax);
+            const optMaxMsg = card.querySelector('.slash-subcommand-option-limit-msg');
+            if (optMaxMsg) optMaxMsg.classList.toggle('hidden', !optAtMax);
         });
         const count = document.getElementById('slash-subcommands-count');
         if (count) count.textContent = cards.length;
+
+        // Disable the add button and surface the premium nudge / max-reached message
+        // once the subcommand limit (3 free / 10 premium) is hit.
+        const limit = slashSubcommandLimit();
+        const addBtn = document.getElementById('slash-subcommand-add');
+        if (addBtn) addBtn.disabled = cards.length >= limit;
+        const limitMsg = document.getElementById('slash-subcommand-limit-msg');
+        if (limitMsg) limitMsg.classList.toggle('hidden', cards.length < limit);
     }
 
     // Show the flat-options editor or the subcommands editor depending on the toggle.
