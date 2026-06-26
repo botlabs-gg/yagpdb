@@ -69,7 +69,7 @@
                     {{end}}
                 </figure>
                 <div class="profile-info" data-lock-name="Server Name">
-                    <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i
+                    <span class="name{{if .IsGuildPremium}} premium-color{{end}}">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i
                             class="fas fa-crown premium-color ml-1"></i>{{end}}{{else}}Loading...{{end}}</span>
                     <span class="role">loading....</span>
                 </div>
@@ -317,7 +317,7 @@
         {{end}}
     </figure>
     <div class="profile-info" data-lock-name="Server Name">
-        <span class="name">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i
+        <span class="name{{if .IsGuildPremium}} premium-color{{end}}">{{if .ActiveGuild}}{{.ActiveGuild.Name}}{{if .IsGuildPremium}}<i
                 class="fas fa-crown premium-color ml-1"></i>{{end}}{{else}}Select Server{{end}}</span>
         <span class="role">Change server</span>
     </div>
