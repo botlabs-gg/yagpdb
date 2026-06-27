@@ -203,6 +203,8 @@
                                                     Crontab </option>
                                                 <option value="role_trigger" {{ if eq .CC.TriggerType 11}}selected{{end}}> Role Change</option>
                                                 <option value="slash_command" {{ if eq .CC.TriggerType 12}}selected{{end}}> Slash Command</option>
+                                                <option value="user_context_menu" {{ if eq .CC.TriggerType 13}}selected{{end}}> User Context Menu</option>
+                                                <option value="message_context_menu" {{ if eq .CC.TriggerType 14}}selected{{end}}> Message Context Menu</option>
                                             </select>
                                         </div>
                                     </div>
@@ -252,9 +254,17 @@
                                         <small id="trigger-desc-role_trigger">
                                             The command will run when a role is assigned to or removed from a member,
                                             <b>has a cooldown of 5 minutes per user-role combination, reduced to 1 minute for premium servers</b>
+                                            The user who got the role available as <code>.TargetUser</code> and <code>.TargetMember</code>, and the user who gave the role is available as <code>.Author</code>
+                                            The role given is availabe in <code>.Role</code>
                                         </small>
                                         <small id="trigger-desc-slash_command">
                                             Creates a Slash command, trigger name must not be same as an inbuilt slash command.
+                                        </small>
+                                        <small id="trigger-desc-user_context_menu">
+                                            Adds a command to the right-click menu on users. The clicked user is available as <code>.TargetUser</code> and <code>.TargetMember</code>; the user who ran the command is <code>.Author</code>.
+                                        </small>
+                                        <small id="trigger-desc-message_context_menu">
+                                            Adds a command to the right-click (Apps) menu on messages. The clicked message is available as <code>.Message</code>, its author as <code>.TargetUser</code> and <code>.TargetMember</code>, and the user who ran the command as <code>.Author</code>.
                                         </small>
                                     </div>
                                 </div>
@@ -267,12 +277,23 @@
                                             <label id="cc-customid-trigger-label">Component Custom ID Regex (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <label id="cc-cron-trigger-label">Crontab (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/1000)</label>
                                             <label id="cc-slash-trigger-label">Command Trigger (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/32) <i class="fas fa-info-circle text-primary" data-toggle="tooltip" data-placement="top" title="The /name members type in Discord. Lowercase letters, numbers, dashes and underscores only."></i></label>
+                                            <label id="cc-contextmenu-trigger-label">Command Name (<span id="trigger-length">{{len .CC.TextTrigger}}</span>/32) <i class="fas fa-info-circle text-primary" data-toggle="tooltip" data-placement="top" title="The label shown in Discord's right-click menu. Letters, numbers and spaces allowed."></i></label>
                                             <div class="input-group mb-2">
                                                 <div id="command-trigger-prepended-prefix" class="input-group-prepend">
                                                     <div class="input-group-text">{{.CommandPrefix}}</div>
                                                 </div>
                                                 <input id="trigger" type="text" class="form-control" name="trigger" placeholder="{{if eq .CC.TriggerType 9}}45 23 * * 6{{else}}fun{{end}}"
                                                     value="{{.CC.TextTrigger}}">
+                                            </div>
+                                            <div id="contextmenu-user-nudge" class="hidden">
+                                                {{if and (not .IsGuildPremium) .UserContextMenuLimitReached}}
+                                                {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "You've reached the free limit of 1 user context menu command. Premium servers can have up to 5.")}}
+                                                {{end}}
+                                            </div>
+                                            <div id="contextmenu-message-nudge" class="hidden">
+                                                {{if and (not .IsGuildPremium) .MessageContextMenuLimitReached}}
+                                                {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "You've reached the free limit of 1 message context menu command. Premium servers can have up to 5.")}}
+                                                {{end}}
                                             </div>
                                             <div class="row">
                                               <div id="cc-text-trigger-case-sensitivity-toggle" class="col-lg-6"> {{checkbox "case_sensitive" "case_sensitive" "Case Sensitive?" .CC.TextTriggerCaseSensitive}}</div>
@@ -996,6 +1017,8 @@
         cron: ['#cc-text-trigger-details', '#cc-cron-trigger-label', '#cc-time-trigger-details', '#trigger-desc-cron'],
         role_trigger: ['#cc-role-trigger-details', '#cc-role-settings','#trigger-desc-role_trigger'],
         slash_command: ['#cc-text-trigger-details', '#cc-slash-trigger-label', '#cc-interaction-trigger-details', '#cc-role-settings', '#cc-channel-settings', '#cc-slash-trigger-details', '#trigger-desc-slash_command'],
+        user_context_menu: ['#cc-text-trigger-details', '#cc-contextmenu-trigger-label', '#cc-interaction-trigger-details', '#cc-role-settings', '#cc-channel-settings', '#contextmenu-user-nudge', '#trigger-desc-user_context_menu'],
+        message_context_menu: ['#cc-text-trigger-details', '#cc-contextmenu-trigger-label', '#cc-interaction-trigger-details', '#cc-role-settings', '#cc-channel-settings', '#contextmenu-message-nudge', '#trigger-desc-message_context_menu'],
         none: ['#trigger-desc-none'],
     };
 
@@ -1022,7 +1045,7 @@
         // is no prior message to update), so hide that option for them and fall back
         // to "None" if it happened to be selected.
         const updateOption = $('#interaction-defer-update-option');
-        if (curTriggerType === 'slash_command') {
+        if (curTriggerType === 'slash_command' || curTriggerType === 'user_context_menu' || curTriggerType === 'message_context_menu') {
             updateOption.addClass('hidden');
             const updateRadio = updateOption.find('input[type="radio"]');
             if (updateRadio.prop('checked')) {
@@ -1137,8 +1160,9 @@
         const trigger = $('#trigger');
         if (!trigger.length) return;
         const len = trigger.val().length;
-        // slash command triggers are limited to 32 chars, other triggers to 1000.
-        const max = $('#trigger-type-dropdown').val() === 'slash_command' ? 32 : 1000;
+        // slash and context menu command names are limited to 32 chars, other triggers to 1000.
+        const triggerType = $('#trigger-type-dropdown').val();
+        const max = (triggerType === 'slash_command' || triggerType === 'user_context_menu' || triggerType === 'message_context_menu') ? 32 : 1000;
         // there are several #trigger-length spans (one per trigger-type label); update them all.
         $('[id="trigger-length"]').text(len).toggleClass('text-danger', len > max);
     }

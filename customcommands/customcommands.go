@@ -71,18 +71,20 @@ const (
 
 	CommandTriggerNone CommandTriggerType = 10
 
-	CommandTriggerCommand    CommandTriggerType = 0
-	CommandTriggerStartsWith CommandTriggerType = 1
-	CommandTriggerContains   CommandTriggerType = 2
-	CommandTriggerRegex      CommandTriggerType = 3
-	CommandTriggerExact      CommandTriggerType = 4
-	CommandTriggerInterval   CommandTriggerType = 5
-	CommandTriggerReaction   CommandTriggerType = 6
-	CommandTriggerComponent  CommandTriggerType = 7
-	CommandTriggerModal      CommandTriggerType = 8
-	CommandTriggerCron       CommandTriggerType = 9
-	CommandTriggerRole       CommandTriggerType = 11
-	CommandTriggerSlash      CommandTriggerType = 12
+	CommandTriggerCommand            CommandTriggerType = 0
+	CommandTriggerStartsWith         CommandTriggerType = 1
+	CommandTriggerContains           CommandTriggerType = 2
+	CommandTriggerRegex              CommandTriggerType = 3
+	CommandTriggerExact              CommandTriggerType = 4
+	CommandTriggerInterval           CommandTriggerType = 5
+	CommandTriggerReaction           CommandTriggerType = 6
+	CommandTriggerComponent          CommandTriggerType = 7
+	CommandTriggerModal              CommandTriggerType = 8
+	CommandTriggerCron               CommandTriggerType = 9
+	CommandTriggerRole               CommandTriggerType = 11
+	CommandTriggerSlash              CommandTriggerType = 12
+	CommandTriggerUserContextMenu    CommandTriggerType = 13
+	CommandTriggerMessageContextMenu CommandTriggerType = 14
 )
 
 var (
@@ -100,22 +102,26 @@ var (
 		CommandTriggerCron,
 		CommandTriggerRole,
 		CommandTriggerSlash,
+		CommandTriggerUserContextMenu,
+		CommandTriggerMessageContextMenu,
 	}
 
 	triggerStrings = map[CommandTriggerType]string{
-		CommandTriggerCommand:    "Command",
-		CommandTriggerStartsWith: "StartsWith",
-		CommandTriggerContains:   "Contains",
-		CommandTriggerRegex:      "Regex",
-		CommandTriggerExact:      "Exact",
-		CommandTriggerInterval:   "Interval",
-		CommandTriggerReaction:   "Reaction",
-		CommandTriggerNone:       "None",
-		CommandTriggerComponent:  "Component",
-		CommandTriggerModal:      "Modal",
-		CommandTriggerCron:       "Crontab",
-		CommandTriggerRole:       "Role",
-		CommandTriggerSlash:      "Slash Command",
+		CommandTriggerCommand:            "Command",
+		CommandTriggerStartsWith:         "StartsWith",
+		CommandTriggerContains:           "Contains",
+		CommandTriggerRegex:              "Regex",
+		CommandTriggerExact:              "Exact",
+		CommandTriggerInterval:           "Interval",
+		CommandTriggerReaction:           "Reaction",
+		CommandTriggerNone:               "None",
+		CommandTriggerComponent:          "Component",
+		CommandTriggerModal:              "Modal",
+		CommandTriggerCron:               "Crontab",
+		CommandTriggerRole:               "Role",
+		CommandTriggerSlash:              "Slash Command",
+		CommandTriggerUserContextMenu:    "User Context Menu",
+		CommandTriggerMessageContextMenu: "Message Context Menu",
 	}
 )
 
@@ -171,6 +177,11 @@ type SlashCommandSubcommand struct {
 // slashCommandNameRegex matches Discord's allowed application command/option name
 // pattern (lowercased). See https://discord.com/developers/docs/interactions/application-commands#application-command-object
 var slashCommandNameRegex = regexp.MustCompile(`^[-_\p{L}\p{N}]{1,32}$`)
+
+// contextMenuNameRegex matches Discord's allowed USER/MESSAGE command name pattern.
+// Unlike slash commands, context menu command names may contain spaces and uppercase
+// letters. See https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-naming
+var contextMenuNameRegex = regexp.MustCompile(`^[-_\p{L}\p{N} ]{1,32}$`)
 
 const (
 	MaxSlashCommandOptions      = 25
@@ -514,8 +525,58 @@ func (cc *CustomCommand) Validate(tmpl web.TemplateData, guild_id int64) (ok boo
 		}
 	}
 
+	if cc.TriggerTypeForm == "user_context_menu" || cc.TriggerTypeForm == "message_context_menu" {
+		if !cc.validateContextMenuCommand(tmpl, guild_id) {
+			return false
+		}
+	}
+
 	return true
 
+}
+
+func (cc *CustomCommand) validateContextMenuCommand(tmpl web.TemplateData, guildID int64) bool {
+	if cc.InteractionDeferMode == InteractionDeferModeUpdate {
+		tmpl.AddAlerts(web.ErrorAlert("\"Update message\" defer mode is not valid for context menu commands"))
+		return false
+	}
+
+	if ok, msg := validateContextMenuData(guildID, cc.Trigger, cc.TriggerType, cc.ID, cc.IsEnabled); !ok {
+		tmpl.AddAlerts(web.ErrorAlert(msg))
+		return false
+	}
+
+	return true
+}
+
+func validateContextMenuData(guildID int64, name string, triggerType CommandTriggerType, currentLocalID int64, isEnabled bool) (ok bool, errMsg string) {
+	name = strings.TrimSpace(name)
+	if !contextMenuNameRegex.MatchString(name) {
+		return false, "Context menu command name must be 1-32 characters and contain only letters, numbers, spaces, dashes and underscores"
+	}
+
+	existing, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND local_id != ?", guildID, int(triggerType), currentLocalID)).AllG(context.Background())
+	if err != nil {
+		logger.WithError(err).WithField("guild", guildID).Error("failed fetching existing context menu ccs for validation")
+		return false, "Failed validating context menu command, please try again"
+	}
+
+	enabledCount := 0
+	for _, e := range existing {
+		if strings.EqualFold(strings.TrimSpace(e.TextTrigger), name) {
+			return false, "Another context menu command of this type in this server already uses that name"
+		}
+		if !e.Disabled {
+			enabledCount++
+		}
+	}
+
+	max := MaxContextMenuForContext(guildID)
+	if isEnabled && enabledCount >= max {
+		return false, fmt.Sprintf("You can have at most %d enabled context menu commands of this type per server (%d on premium servers)", max, MaxContextMenuCCsPremium)
+	}
+
+	return true, ""
 }
 
 var validSlashOptionTypes = map[int]bool{
@@ -783,6 +844,10 @@ func (cc *CustomCommand) ToDBModel() *models.CustomCommand {
 		}
 	}
 
+	if cc.TriggerTypeForm == "user_context_menu" || cc.TriggerTypeForm == "message_context_menu" {
+		pqCommand.TextTrigger = strings.TrimSpace(cc.Trigger)
+	}
+
 	return pqCommand
 }
 
@@ -892,6 +957,8 @@ const (
 	MaxGroups                     = 50
 	MaxSlashCommandCCs            = 3
 	MaxSlashCommandCCsPremium     = 10
+	MaxContextMenuCCs             = 1
+	MaxContextMenuCCsPremium      = 5
 )
 
 // MaxSlashCommandForContext returns how many enabled slash command custom commands
@@ -901,6 +968,21 @@ func MaxSlashCommandForContext(guildID int64) int {
 		return MaxSlashCommandCCsPremium
 	}
 	return MaxSlashCommandCCs
+}
+
+// MaxContextMenuForContext returns how many enabled context menu custom commands of
+// a single type (user or message) a guild may have, depending on premium status.
+func MaxContextMenuForContext(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return MaxContextMenuCCsPremium
+	}
+	return MaxContextMenuCCs
+}
+
+// IsContextMenuTrigger reports whether the trigger type is one of the context menu
+// command types (user or message).
+func IsContextMenuTrigger(t CommandTriggerType) bool {
+	return t == CommandTriggerUserContextMenu || t == CommandTriggerMessageContextMenu
 }
 
 func MaxCommandsForContext(ctx context.Context) int {

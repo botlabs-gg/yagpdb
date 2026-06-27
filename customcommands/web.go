@@ -369,6 +369,19 @@ func serveGroupSelected(r *http.Request, templateData web.TemplateData, groupID 
 	}
 	templateData["SlashCommandLimitReached"] = slashCount >= MaxSlashCommandCCs
 
+	// Same, for the free-tier per-type context menu command limits.
+	userContextMenuCount, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND disabled = false", guildID, int(CommandTriggerUserContextMenu))).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+	templateData["UserContextMenuLimitReached"] = userContextMenuCount >= MaxContextMenuCCs
+
+	messageContextMenuCount, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND disabled = false", guildID, int(CommandTriggerMessageContextMenu))).CountG(r.Context())
+	if err != nil {
+		return templateData, err
+	}
+	templateData["MessageContextMenuLimitReached"] = messageContextMenuCount >= MaxContextMenuCCs
+
 	// Same, for the free-tier role-change command limit.
 	roleTriggerCount, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND disabled = false", guildID, int(CommandTriggerRole))).CountG(r.Context())
 	if err != nil {
@@ -494,6 +507,12 @@ func handleNewCommand(w http.ResponseWriter, r *http.Request) (web.TemplateData,
 		if importCC.TriggerType == int(CommandTriggerSlash) {
 			data := parseSlashCommandData(dbModel)
 			if ok, _ := validateSlashCommandData(activeGuild.ID, dbModel.TextTrigger, data, dbModel.LocalID, !dbModel.Disabled); !ok {
+				http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
+				return templateData, nil
+			}
+		}
+		if IsContextMenuTrigger(CommandTriggerType(importCC.TriggerType)) {
+			if ok, _ := validateContextMenuData(activeGuild.ID, dbModel.TextTrigger, CommandTriggerType(importCC.TriggerType), dbModel.LocalID, !dbModel.Disabled); !ok {
 				http.Redirect(w, r, fmt.Sprintf("/manage/%d/customcommands?import_failed=true", activeGuild.ID), http.StatusSeeOther)
 				return templateData, nil
 			}
@@ -936,6 +955,10 @@ func triggerTypeFromForm(str string) CommandTriggerType {
 		return CommandTriggerRole
 	case "slash_command":
 		return CommandTriggerSlash
+	case "user_context_menu":
+		return CommandTriggerUserContextMenu
+	case "message_context_menu":
+		return CommandTriggerMessageContextMenu
 	default:
 		return CommandTriggerCommand
 
@@ -1107,6 +1130,7 @@ func EvictCustomCommandCache(guildID int64) {
 	pubsub.EvictCacheSet(cachedCommandsReactionTrigger, guildID)
 	pubsub.EvictCacheSet(cachedCommandsRoleTrigger, guildID)
 	pubsub.EvictCacheSet(cachedCommandsSlashTrigger, guildID)
+	pubsub.EvictCacheSet(cachedCommandsContextMenuTrigger, guildID)
 
 	// Rebuild the guild's registered slash commands on the owning bot node. This is
 	// a no-op (deduped via a redis hash) when the slash command set is unchanged, so
