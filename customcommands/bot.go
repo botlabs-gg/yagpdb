@@ -586,6 +586,19 @@ func (p *Plugin) OnRemovedPremiumGuild(GuildID int64) error {
 		return errors.WrapIf(err, "failed disabling slash command custom commands exceeding the free subcommand limit on premium removal")
 	}
 
+	for _, t := range []CommandTriggerType{CommandTriggerUserContextMenu, CommandTriggerMessageContextMenu} {
+		contextMenuCommands, err := models.CustomCommands(qm.Where("guild_id = ? AND disabled = false AND trigger_type = ?", GuildID, t), qm.OrderBy("local_id ASC"), qm.Offset(MaxContextMenuCCs)).AllG(context.Background())
+		if err != nil {
+			return errors.WrapIf(err, "failed fetching context menu custom commands on premium removal")
+		}
+		if len(contextMenuCommands) > 0 {
+			_, err = contextMenuCommands.UpdateAllG(context.Background(), models.M{"disabled": true})
+			if err != nil {
+				return errors.WrapIf(err, "failed disabling context menu custom commands on premium removal")
+			}
+		}
+	}
+
 	pubsub.PublishLogErr(SlashCommandResyncEvent, GuildID, nil)
 
 	return nil

@@ -1600,8 +1600,9 @@ type InviteUser struct {
 
 type CreateApplicationCommandRequest struct {
 	Name              string                      `json:"name"`                         // 1-32 character name matching ^[\w-]{1,32}$
-	Description       string                      `json:"description"`                  // 1-100 character description
-	Options           []*ApplicationCommandOption `json:"options"`                      // the parameters for the command
+	Type              ApplicationCommandType      `json:"type,omitempty"`               // defaults to CHAT_INPUT (1); 2=USER, 3=MESSAGE context menu
+	Description       string                      `json:"description,omitempty"`        // 1-100 character description (must be empty for context menu commands)
+	Options           []*ApplicationCommandOption `json:"options,omitempty"`            // the parameters for the command
 	DefaultPermission *bool                       `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
 	NSFW              bool                        `json:"nsfw,omitempty"`               // marks a command as age-restricted
 }
@@ -1614,10 +1615,12 @@ func (a *ApplicationCommandInteractionDataResolved) UnmarshalJSON(b []byte) erro
 	}
 
 	*a = ApplicationCommandInteractionDataResolved{
-		Users:    make(map[int64]*User),
-		Members:  make(map[int64]*Member),
-		Roles:    make(map[int64]*Role),
-		Channels: make(map[int64]*Channel),
+		Users:       make(map[int64]*User),
+		Members:     make(map[int64]*Member),
+		Roles:       make(map[int64]*Role),
+		Channels:    make(map[int64]*Channel),
+		Messages:    make(map[int64]*Message),
+		Attachments: make(map[int64]*MessageAttachment),
 	}
 
 	for k, v := range temp.Channels {
@@ -1652,14 +1655,32 @@ func (a *ApplicationCommandInteractionDataResolved) UnmarshalJSON(b []byte) erro
 		a.Users[parsed] = v
 	}
 
+	for k, v := range temp.Messages {
+		parsed, err := strconv.ParseInt(k, 10, 64)
+		if err != nil {
+			return err
+		}
+		a.Messages[parsed] = v
+	}
+
+	for k, v := range temp.Attachments {
+		parsed, err := strconv.ParseInt(k, 10, 64)
+		if err != nil {
+			return err
+		}
+		a.Attachments[parsed] = v
+	}
+
 	return nil
 }
 
 type applicationCommandInteractionDataResolvedTemp struct {
-	Users    map[string]*User    `json:"users"`
-	Members  map[string]*Member  `json:"members"`
-	Roles    map[string]*Role    `json:"roles"`
-	Channels map[string]*Channel `json:"channels"`
+	Users       map[string]*User              `json:"users"`
+	Members     map[string]*Member            `json:"members"`
+	Roles       map[string]*Role              `json:"roles"`
+	Channels    map[string]*Channel           `json:"channels"`
+	Messages    map[string]*Message           `json:"messages"`
+	Attachments map[string]*MessageAttachment `json:"attachments"`
 }
 
 type applicationCommandInteractionDataOptionTemporary struct {
