@@ -106,12 +106,21 @@ func handleContextMenuInteraction(evt *eventsystem.EventData, cs *dstate.Channel
 }
 
 // ExecuteCustomCommandFromContextMenu builds the template context for a context menu
-// custom command and executes it. The right-clicked target is exposed as .TargetUser
-// (+ .TargetMember) for user commands and .TargetMessage for message commands, with
-// .CommandType set to "user" or "message".
+// custom command and executes it. The template sees:
+//
+//	.TargetUser    the target's User object — the clicked user for user commands, or the
+//	               author of the clicked message for message commands
+//	.TargetMember  the matching MemberState for that same target
+//	.Author        the User object of the person who invoked the command
+//	.Message       the clicked message (message commands only)
+//	.CommandType   "user" or "message"
+//
+// A nil member is passed to NewContext so .User/.Member are not exposed and sendDM (which
+// targets the context member) is disabled — a context menu command must not be usable to
+// DM an arbitrary target. This mirrors role trigger commands.
 func ExecuteCustomCommandFromContextMenu(cc *models.CustomCommand, gs *dstate.GuildSet, cs *dstate.ChannelState, interaction *templates.CustomCommandInteraction) error {
 	ms := dstate.MemberStateFromMember(interaction.Member)
-	tmplCtx := templates.NewContext(gs, cs, ms)
+	tmplCtx := templates.NewContext(gs, cs, nil)
 	tmplCtx.CurrentFrame.Interaction = interaction
 
 	data := interaction.DataCommand
@@ -121,51 +130,30 @@ func ExecuteCustomCommandFromContextMenu(cc *models.CustomCommand, gs *dstate.Gu
 	tmplCtx.Data["IsContextMenuCommand"] = true
 	tmplCtx.Data["CommandName"] = data.Name
 	tmplCtx.Data["Cmd"] = data.Name
-	tmplCtx.Data["Author"] = &ms.User
-
-	msg := &discordgo.Message{
-		GuildID:   gs.ID,
-		ChannelID: cs.ID,
-		Member:    ms.DgoMember(),
+	if ms != nil {
+		tmplCtx.Data["Author"] = &ms.User
 	}
-	msg.Author = msg.Member.User
 
 	switch data.CommandType {
 	case discordgo.UserApplicationCommand:
 		tmplCtx.Data["CommandType"] = "user"
 		user := resolveSlashUser(data, data.TargetID)
 		tmplCtx.Data["TargetUser"] = user
-		if data.Resolved != nil {
-			if m, ok := data.Resolved.Members[data.TargetID]; ok && m != nil {
-				if m.User == nil {
-					m.User = user
-				}
-				m.GuildID = gs.ID
-				tmplCtx.Data["TargetMember"] = m
-			}
-		}
+		tmplCtx.Data["TargetMember"], _ = bot.GetMember(gs.ID, user.ID)
 	case discordgo.MessageApplicationCommand:
 		tmplCtx.Data["CommandType"] = "message"
 		if data.Resolved != nil {
 			if target, ok := data.Resolved.Messages[data.TargetID]; ok && target != nil {
 				target.GuildID = gs.ID
-				msg = target
-				tmplCtx.Data["TargetUser"] = target.Author
-				authorID := int64(0)
+				tmplCtx.Msg = target
+				tmplCtx.Data["Message"] = target
 				if target.Author != nil {
-					authorID = target.Author.ID
-				}
-				if m, _ := bot.GetMember(gs.ID, authorID); m != nil {
-					tmplCtx.Data["TargetMember"] = m
-				} else {
-					tmplCtx.Data["TargetMember"] = msg.Member
+					tmplCtx.Data["TargetUser"] = target.Author
+					tmplCtx.Data["TargetMember"], _ = bot.GetMember(gs.ID, target.Author.ID)
 				}
 			}
 		}
 	}
-
-	tmplCtx.Msg = msg
-	tmplCtx.Data["Message"] = msg
 
 	return ExecuteCustomCommand(cc, tmplCtx)
 }
