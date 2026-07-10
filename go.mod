@@ -60,7 +60,7 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.14.2
 	github.com/volatiletech/strmangle v0.0.6
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/image v0.38.0
 	golang.org/x/net v0.55.0
 	golang.org/x/oauth2 v0.34.0
