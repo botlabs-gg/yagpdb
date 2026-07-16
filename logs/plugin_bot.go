@@ -63,11 +63,11 @@ var cmdLogs = &commands.YAGCommand{
 		{Name: "Count", Default: 100, Type: &dcmd.IntArg{Min: 2, Max: 250}},
 	},
 	ArgSwitches: []*dcmd.ArgDef{
-		{Name: "channel", Help: "Optional channel to log instead", Type: dcmd.Channel},
+		{Name: "channel", Help: "Optional channel to log instead", Type: dcmd.ChannelOrThread},
 	},
 	SlashCommandEnabled: true,
 	DefaultEnabled:      false,
-	RunFunc: func(cmd *dcmd.Data) (interface{}, error) {
+	RunFunc: func(cmd *dcmd.Data) (any, error) {
 		num := cmd.Args[0].Int()
 
 		cID := cmd.ChannelID
