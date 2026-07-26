@@ -709,6 +709,10 @@ func (m *MessageSend) ToWebhookParams() *WebhookParams {
 }
 
 func (m *MessageSend) ToInteractionResponseData() *InteractionResponseData {
+	if m.File != nil {
+		m.Files = append(m.Files, m.File)
+	}
+
 	return &InteractionResponseData{
 		Content:         m.Content,
 		Embeds:          m.Embeds,
