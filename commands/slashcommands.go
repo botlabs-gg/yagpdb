@@ -392,6 +392,11 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 
+	//if guildID is present then this is a guild custom slash cmmand
+	if interaction.DataCommand.GuildID != 0 {
+		return
+	}
+
 	// serialized, _ := json.MarshalIndent(interaction.Interaction, "", "  ")
 	// logger.Infof("Got interaction %#v", interaction.Interaction)
 	// fmt.Println(string(serialized))

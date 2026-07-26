@@ -53,7 +53,7 @@ func BotCachedGetCommandsWithSlashTrigger(guildID int64, ctx context.Context) ([
 // handleInteractionCreate for InteractionApplicationCommand interactions.
 func handleSlashCommandInteraction(evt *eventsystem.EventData, cs *dstate.ChannelState, interaction *templates.CustomCommandInteraction) {
 	data := interaction.DataCommand
-	if data == nil || interaction.Member == nil {
+	if data == nil || data.GuildID == 0 || interaction.Member == nil {
 		return
 	}
 
