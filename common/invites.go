@@ -28,9 +28,9 @@ var ThirdpartyDiscordSites = []*InviteSource{
 var AllInviteSources = append([]*InviteSource{DiscordInviteSource}, ThirdpartyDiscordSites...)
 
 func ReplaceServerInvites(msg string, guildID int64, replacement string) string {
+	msg = confusables.NormalizeQueryEncodedText(msg)
 
 	for _, s := range AllInviteSources {
-		msg = confusables.NormalizeQueryEncodedText(msg)
 		msg = s.Regex.ReplaceAllString(msg, replacement)
 	}
 

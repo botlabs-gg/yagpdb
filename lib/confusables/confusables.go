@@ -29,7 +29,7 @@ func SanitizeText(content string) string {
 // Normalizes QueryEscaped content in a string.
 // Example: "Hello%20World%20%"" will be normalized to "Hello World "
 func NormalizeQueryEncodedText(content string) string {
-	decoded, err := url.QueryUnescape(content)
+	decoded, err := url.PathUnescape(content)
 	if err != nil {
 		decoded = content
 	}
