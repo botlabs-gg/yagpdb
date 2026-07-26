@@ -101,7 +101,7 @@ var cmdEvalCommand = &commands.YAGCommand{
 	},
 	SlashCommandEnabled: false,
 	DefaultEnabled:      true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+	RunFunc: func(data *dcmd.Data) (any, error) {
 		hasCoreWriteRole := false
 
 		writeRoles := common.GetCoreServerConfCached(data.GuildData.GS.ID).AllowedWriteRoles
@@ -147,7 +147,9 @@ var cmdEvalCommand = &commands.YAGCommand{
 			return formatCustomCommandRunErr(code, err), err
 		}
 
-		return out, nil
+		msg := ctx.MessageSend(out)
+
+		return msg, nil
 	},
 }
 
