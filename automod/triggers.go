@@ -492,15 +492,14 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
 	dataCast := triggerCtx.Data.(*AllCapsTriggerData)
 
-	if len(m.Content) < dataCast.MinLength {
+	if len(m.GetMessageContents()) < dataCast.MinLength {
 		return false, nil
 	}
 
 	totalCapitalisableChars := 0
 	numCaps := 0
 
-	messageContent := m.Content
-
+	messageContent := strings.Join(m.GetMessageContents(), "")
 	if dataCast.SanitizeText {
 		messageContent = confusables.SanitizeText(messageContent)
 	}
@@ -993,7 +992,7 @@ func (r *MessageRegexTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstat
 			sanitizedContent = confusables.SanitizeText(content)
 		}
 
-		if re.MatchString(m.Content) || (dataCast.SanitizeText && re.MatchString(sanitizedContent)) {
+		if re.MatchString(content) || (dataCast.SanitizeText && re.MatchString(sanitizedContent)) {
 			if r.BaseRegexTrigger.Inverse {
 				continue
 			}
@@ -1073,8 +1072,9 @@ func (spam *SpamTrigger) UserSettings() []*SettingDef {
 func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
 
 	settingsCast := triggerCtx.Data.(*SpamTriggerData)
+	messagecontent := strings.Join(m.GetMessageContents(), "")
 
-	mToCheckAgainst := strings.TrimSpace(strings.ToLower(m.Content))
+	mToCheckAgainst := strings.TrimSpace(strings.ToLower(messagecontent))
 	totalAttachments := len(m.GetMessageAttachments())
 
 	count := 1
@@ -1108,7 +1108,8 @@ func (spam *SpamTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.Cha
 			break // attachment count don't match
 		}
 
-		contentStripped := strings.TrimSpace(v.Content)
+		content := strings.Join(v.GetMessageContents(), "")
+		contentStripped := strings.TrimSpace(content)
 		contentLowered := strings.ToLower(contentStripped)
 
 		if contentLowered == mToCheckAgainst {
@@ -1599,12 +1600,12 @@ func (ml *MessageLengthTrigger) UserSettings() []*SettingDef {
 
 func (ml *MessageLengthTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
 	dataCast := triggerCtx.Data.(*MessageLengthTriggerData)
-
+	content := strings.Join(m.GetMessageContents(), "")
 	if ml.Inverted {
-		return utf8.RuneCountInString(m.Content) < dataCast.Length, nil
+		return utf8.RuneCountInString(content) < dataCast.Length, nil
 	}
 
-	return utf8.RuneCountInString(m.Content) > dataCast.Length, nil
+	return utf8.RuneCountInString(content) > dataCast.Length, nil
 }
 
 /////////////////////////////////////////////////////////////
