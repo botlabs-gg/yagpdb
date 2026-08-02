@@ -101,7 +101,6 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 
 	subs, err := models.YoutubeChannelSubscriptions(
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(activeGuild.ID)),
-		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),
 		qm.OrderBy("id DESC"),
 	).AllG(ctx)
 	if err != nil && err != sql.ErrNoRows {
