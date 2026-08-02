@@ -142,7 +142,6 @@ func SessionMiddleware(inner http.Handler) http.Handler {
 }
 
 // RequireSessionMiddleware ensures that a session is available, and otherwise refuse to continue down the chain of handlers
-// Also validates the origin header if present (on POST requests that is)
 func RequireSessionMiddleware(inner http.Handler) http.Handler {
 	mw := func(w http.ResponseWriter, r *http.Request) {
 		// Check if a session is present
@@ -152,63 +151,24 @@ func RequireSessionMiddleware(inner http.Handler) http.Handler {
 			return
 		}
 
-		// validate the origin header (if present) for protection against CSRF attacks
-		// i don't think putting in more protection against CSRF attacks is needed, considering literally every browser these days support it
-		origin := r.Header.Get("Origin")
-		if origin != "" {
-			split := strings.SplitN(origin, ":", 3)
-			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
-
-			expectedHost := ""
-			if len(hostSplit) > 0 {
-				expectedHost = "//" + hostSplit[0]
-			}
-			originHost := ""
-			if len(split) > 1 {
-				originHost = split[1]
-			}
-
-			if originHost == "" || !strings.EqualFold(expectedHost, originHost) {
-				CtxLogger(r.Context()).Error("Mismatched origin: ", expectedHost+" : "+originHost)
-				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
-				return
-			}
-		}
-
 		inner.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(mw)
 }
 
-func CSRFProtectionMW(inner http.Handler) http.Handler {
-	mw := func(w http.ResponseWriter, r *http.Request) {
-		// validate the origin header (if present) for protection against CSRF attacks
-		// i don't think putting in more protection against CSRF attacks is needed, considering literally every browser these days support it
-		origin := r.Header.Get("Origin")
-		if origin != "" {
-			split := strings.SplitN(origin, ":", 3)
-			hostSplit := strings.SplitN(common.ConfHost.GetString(), ":", 2)
+func newCSRFProtection() *http.CrossOriginProtection {
+	p := http.NewCrossOriginProtection()
 
-			expectedHost := ""
-			if len(hostSplit) > 0 {
-				expectedHost = "//" + hostSplit[0]
-			}
-			originHost := ""
-			if len(split) > 1 {
-				originHost = split[1]
-			}
-
-			if originHost == "" || !strings.EqualFold(expectedHost, originHost) {
-				CtxLogger(r.Context()).Error("Mismatched origin: ", expectedHost+" : "+originHost)
-				WriteErrorResponse(w, r, "Bad origin", http.StatusUnauthorized)
-				return
-			}
-		}
-
-		inner.ServeHTTP(w, r)
+	if err := p.AddTrustedOrigin(BaseURL()); err != nil {
+		logger.WithError(err).Error("Failed adding the configured host as a trusted origin, cross-origin requests from it will be rejected")
 	}
 
-	return http.HandlerFunc(mw)
+	p.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		CtxLogger(r.Context()).Errorf("Rejected cross-origin %s request, origin: %q, sec-fetch-site: %q", r.Method, r.Header.Get("Origin"), r.Header.Get("Sec-Fetch-Site"))
+		WriteErrorResponse(w, r, "Bad origin", http.StatusForbidden)
+	}))
+
+	return p
 }
 
 // UserInfoMiddleware fills the context with user information and the guilds it's on guilds if possible

@@ -403,7 +403,7 @@ func setupRootMux() {
 	mux.Use(SkipStaticMW(BaseTemplateDataMiddleware))
 	mux.Use(SkipStaticMW(SessionMiddleware))
 	mux.Use(SkipStaticMW(UserInfoMiddleware))
-	mux.Use(SkipStaticMW(CSRFProtectionMW))
+	mux.Use(SkipStaticMW(newCSRFProtection().Handler))
 	mux.Use(addPromCountMW)
 
 	// General handlers

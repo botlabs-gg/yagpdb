@@ -68,7 +68,6 @@ func (p *Plugin) InitWeb() {
 	mux.Handle(pat.Post("/"), addHandler)
 	mux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, EditForm{}))
 	mux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
-	mux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 }
 
 func (p *Plugin) HandleTwitter(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {

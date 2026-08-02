@@ -113,14 +113,21 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 
 	defer http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 
-	sessionCookie, err := r.Cookie(SessionCookieName)
-	if err != nil {
+	if _, err := r.Cookie(SessionCookieName); err != nil {
 		return
 	}
 
-	sessionCookie.Value = "none"
-	sessionCookie.Path = "/"
-	http.SetCookie(w, sessionCookie)
+	// the cookie returned by r.Cookie only carries the name and value, so build a
+	// fresh one to make sure the attributes match the one we originally set
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    "none",
+		MaxAge:   -1,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Secure:   https || exthttps,
+	})
 }
 
 // CreateCSRFToken creates a csrf token and adds it the list
@@ -208,6 +215,13 @@ func CreateCookieSession(token *oauth2.Token) (cookie *http.Cookie, err error) {
 		Value:  yagToken,
 		MaxAge: int(cookieExpirey.Seconds()),
 		Path:   "/",
+		// SameSite=Lax is our second line of defence against CSRF, independent of
+		// the header based checks in newCSRFProtection: the browser simply won't
+		// attach the cookie to cross-site non-safe requests. Lax rather than
+		// Strict so the cookie survives the oauth redirect back from discord.
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Secure:   https || exthttps,
 	}
 
 	// store token in redis
