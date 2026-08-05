@@ -719,7 +719,7 @@ type Role struct {
 	// Whether this role is hoisted (shows up separately in member list).
 	Hoist bool `json:"hoist"`
 
-	// The hex color of this role (deprecated).
+	// Deprecated: The hex color of this role.
 	Color int `json:"color"`
 
 	// The colors for this role
