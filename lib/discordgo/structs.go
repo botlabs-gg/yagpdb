@@ -694,6 +694,13 @@ type GuildParams struct {
 	Splash                      string             `json:"splash,omitempty"`
 }
 
+// A Colors holds information about a Discord guild role's colors
+type Colors struct {
+  PrimaryColor int32 `json:"primary_color"`
+  SecondaryColor int32 `json:"secondary_color"`
+  TertiaryColor int32 `json:"tertiary_color"`
+}
+
 // A Role stores information about Discord guild member roles.
 type Role struct {
 	// The ID of the role.
@@ -712,8 +719,11 @@ type Role struct {
 	// Whether this role is hoisted (shows up separately in member list).
 	Hoist bool `json:"hoist"`
 
-	// The hex color of this role.
+	// Deprecated: The hex color of this role.
 	Color int `json:"color"`
+
+	// The colors for this role
+	Colors *Colors `json:"colors"`
 
 	// The position of this role in the guild's role hierarchy.
 	Position int `json:"position"`
