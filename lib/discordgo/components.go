@@ -381,6 +381,12 @@ type TextInput struct {
 	MaxLength   int            `json:"max_length,omitempty"`
 }
 
+func NewShortTextInput() TextInput {
+	return TextInput{
+		Style: TextInputShort,
+	}
+}
+
 // Type is a method to get the type of a component.
 func (TextInput) Type() ComponentType {
 	return TextInputComponent
