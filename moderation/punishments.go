@@ -477,6 +477,9 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	}
 
 	gs := bot.State.GetGuild(guildID)
+	if gs == nil {
+		return common.ErrWithCaller(fmt.Errorf("Guild not found"))
+	}
 	isAbove := bot.IsMemberAbove(gs, botMember, member)
 	if isAbove {
 		return ErrMemberAbove
@@ -598,10 +601,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		dmMsg = config.MuteMessage
 	}
 
-	gs := bot.State.GetGuild(guildID)
-	if gs != nil {
-		go sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1, executedByCommandTemplate)
-	}
+	go sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1, executedByCommandTemplate)
 
 	// Create the modlog entry
 	return CreateModlogEmbed(config, author, action, &member.User, reason, logLink)
