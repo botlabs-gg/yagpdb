@@ -305,6 +305,11 @@ type ApplicationCommandInteractionData struct {
 	CommandType ApplicationCommandType                     `json:"type"`
 	Resolved    *ApplicationCommandInteractionDataResolved `json:"resolved"`
 
+	// GuildID is the id of the guild the invoked command is registered to. It is only
+	// set for guild-scoped commands and omitted (0) for global commands, so it can be
+	// used to tell whether the interaction is for a guild command or a global one.
+	GuildID int64 `json:"guild_id,string"`
+
 	// Slash command options
 	Options []*ApplicationCommandInteractionDataOption `json:"options"`
 	// Target (user/message) id on which context menu command was called.
@@ -537,6 +542,7 @@ type InteractionResponseData struct {
 	Embeds          []*MessageEmbed     `json:"embeds"`
 	AllowedMentions *AllowedMentions    `json:"allowed_mentions,omitempty"`
 	Flags           MessageFlags        `json:"flags,omitempty"`
+	File            *File               `json:"-"`
 	Files           []*File             `json:"-"`
 
 	// NOTE: autocomplete interaction only.

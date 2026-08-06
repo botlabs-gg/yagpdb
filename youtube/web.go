@@ -89,7 +89,6 @@ func (p *Plugin) InitWeb() {
 	ytMux.Handle(pat.Post("/announcement"), web.ControllerPostHandler(p.HandleYoutubeAnnouncement, mainGetHandler, YoutubeAnnouncementForm{}))
 	ytMux.Handle(pat.Post("/:item/update"), web.ControllerPostHandler(BaseEditHandler(p.HandleEdit), mainGetHandler, YoutubeFeedForm{}))
 	ytMux.Handle(pat.Post("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
-	ytMux.Handle(pat.Get("/:item/delete"), web.ControllerPostHandler(BaseEditHandler(p.HandleRemove), mainGetHandler, nil))
 
 	// The handler from pubsubhub
 	web.RootMux.Handle(pat.New("/yt_new_upload/"+confWebsubVerifytoken.GetString()), http.HandlerFunc(p.HandleFeedUpdate))
@@ -101,7 +100,6 @@ func (p *Plugin) HandleYoutube(w http.ResponseWriter, r *http.Request) (web.Temp
 
 	subs, err := models.YoutubeChannelSubscriptions(
 		models.YoutubeChannelSubscriptionWhere.GuildID.EQ(discordgo.StrID(activeGuild.ID)),
-		models.YoutubeChannelSubscriptionWhere.Enabled.EQ(true),
 		qm.OrderBy("id DESC"),
 	).AllG(ctx)
 	if err != nil && err != sql.ErrNoRows {

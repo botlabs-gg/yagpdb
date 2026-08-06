@@ -414,14 +414,25 @@ func (m *MessageEdit) SetEmbeds(embeds []*MessageEmbed) *MessageEdit {
 
 // A MessageAttachment stores data for message attachments.
 type MessageAttachment struct {
-	ID       string `json:"id"`
-	URL      string `json:"url"`
-	ProxyURL string `json:"proxy_url"`
-	Filename string `json:"filename"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
-	Size     int    `json:"size"`
+	ID       string                 `json:"id"`
+	URL      string                 `json:"url"`
+	ProxyURL string                 `json:"proxy_url"`
+	Filename string                 `json:"filename"`
+	Width    int                    `json:"width"`
+	Height   int                    `json:"height"`
+	Size     int                    `json:"size"`
+	Flags    MessageAttachmentFlags `json:"flags"`
 }
+
+type MessageAttachmentFlags int
+
+const (
+	MessageAttachmentFlagIsClip = 1 << iota
+	MessageAttachmentFlagIsThumbnail
+	MessageAttachmentFlagIsRemix
+	MessageAttachmentFlagIsSpoiler
+	MessageAttachmentFlagIsAnimated
+)
 
 // MessageEmbedFooter is a part of a MessageEmbed struct.
 type MessageEmbedFooter struct {
@@ -709,6 +720,10 @@ func (m *MessageSend) ToWebhookParams() *WebhookParams {
 }
 
 func (m *MessageSend) ToInteractionResponseData() *InteractionResponseData {
+	if m.File != nil {
+		m.Files = append(m.Files, m.File)
+	}
+
 	return &InteractionResponseData{
 		Content:         m.Content,
 		Embeds:          m.Embeds,
