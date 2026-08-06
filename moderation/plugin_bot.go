@@ -429,11 +429,12 @@ func LockMemberMuteMW(next eventsystem.HandlerFunc) eventsystem.HandlerFunc {
 
 		var userID int64
 		// TODO: add utility functions to the eventdata struct for fetching things like these?
-		if evt.Type == eventsystem.EventGuildMemberAdd {
+		switch evt.Type {
+		case eventsystem.EventGuildMemberAdd:
 			userID = evt.GuildMemberAdd().User.ID
-		} else if evt.Type == eventsystem.EventGuildMemberUpdate {
+		case eventsystem.EventGuildMemberUpdate:
 			userID = evt.GuildMemberUpdate().User.ID
-		} else {
+		default:
 			panic("Unknown event in lock memebr mute middleware")
 		}
 

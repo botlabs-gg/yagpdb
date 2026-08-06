@@ -448,7 +448,8 @@ func isNotFound(err error) (bool, error) {
 }
 
 const (
-	ErrNoMuteRole = errors.Sentinel("No mute role")
+	ErrNoMuteRole  = errors.Sentinel("No mute role")
+	ErrMemberAbove = errors.Sentinel("Cannot mute members with role higher than the bot")
 )
 
 func IsMuted(guildID, userID int64) bool {
@@ -468,6 +469,20 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 	config, err := BotCachedGetConfigIfNotSet(guildID, config)
 	if err != nil {
 		return common.ErrWithCaller(err)
+	}
+
+	botMember, err := bot.GetMember(guildID, common.BotUser.ID)
+	if err != nil {
+		return err
+	}
+
+	gs := bot.State.GetGuild(guildID)
+	if gs == nil {
+		return common.ErrWithCaller(fmt.Errorf("Guild not found"))
+	}
+	isAbove := bot.IsMemberAbove(gs, botMember, member)
+	if isAbove {
+		return ErrMemberAbove
 	}
 
 	if config.MuteRole == 0 {
@@ -586,10 +601,7 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		dmMsg = config.MuteMessage
 	}
 
-	gs := bot.State.GetGuild(guildID)
-	if gs != nil {
-		go sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1, executedByCommandTemplate)
-	}
+	go sendPunishDM(config, dmMsg, action, gs, channel, message, author, member, time.Duration(duration)*time.Minute, reason, -1, executedByCommandTemplate)
 
 	// Create the modlog entry
 	return CreateModlogEmbed(config, author, action, &member.User, reason, logLink)
