@@ -542,6 +542,7 @@ type InteractionResponseData struct {
 	Embeds          []*MessageEmbed     `json:"embeds"`
 	AllowedMentions *AllowedMentions    `json:"allowed_mentions,omitempty"`
 	Flags           MessageFlags        `json:"flags,omitempty"`
+	File            *File               `json:"-"`
 	Files           []*File             `json:"-"`
 
 	// NOTE: autocomplete interaction only.
