@@ -63,10 +63,13 @@ func RandBase64(size int) string {
 func GenSessionCookie() *http.Cookie {
 	data := RandBase64(32)
 	cookie := &http.Cookie{
-		Name:   "yagpdb-session",
-		Value:  data,
-		MaxAge: 86400,
-		Path:   "/",
+		Name:     "yagpdb-session",
+		Value:    data,
+		MaxAge:   86400,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Secure:   https || exthttps,
 	}
 	return cookie
 }
