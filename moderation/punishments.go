@@ -481,12 +481,12 @@ func MuteUnmuteUser(config *Config, mute bool, guildID int64, channel *dstate.Ch
 		return common.ErrWithCaller(fmt.Errorf("Guild not found"))
 	}
 	isAbove := bot.IsMemberAbove(gs, botMember, member)
-	if isAbove {
-		return ErrMemberAbove
+	if !isAbove {
+		return common.ErrWithCaller(ErrMemberAbove)
 	}
 
 	if config.MuteRole == 0 {
-		return ErrNoMuteRole
+		return common.ErrWithCaller(ErrNoMuteRole)
 	}
 
 	var channelID int64

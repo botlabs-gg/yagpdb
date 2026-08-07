@@ -3176,17 +3176,20 @@ func (s *Session) CreateInteractionResponse(interactionID int64, token string, d
 	}
 
 	// TODO: Remove this when compatibility is not required.
-	files := data.Data.Files
-	if data.Data.File != nil {
-		if files == nil {
-			files = []*File{data.Data.File}
-		} else {
-			err = fmt.Errorf("cannot specify both File and Files")
-			return
+	var files []*File
+	if data.Data != nil {
+		files = data.Data.Files
+		if data.Data.File != nil {
+			if files == nil {
+				files = []*File{data.Data.File}
+			} else {
+				err = fmt.Errorf("cannot specify both File and Files")
+				return
+			}
 		}
 	}
 
-	if data.Data != nil && len(files) > 0 {
+	if len(files) > 0 {
 		contentType, body, err := MultipartBodyWithJSON(data, files)
 		if err != nil {
 			return err
