@@ -72,6 +72,8 @@ func InitCommands() {
 
 		ResponseSender: &dcmd.StdResponseSender{LogErrors: true},
 		Prefix:         &Plugin{},
+
+		DisablePrefixTrigger: common.ConfDisablePrefixCommands.GetBool(),
 	}
 
 	// We have our own middleware before the argument parsing, this is to check for things such as whether or not the command is enabled at all

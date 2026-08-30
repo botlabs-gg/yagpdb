@@ -10,6 +10,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
+	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 )
 
 var Command = &commands.YAGCommand{
@@ -18,9 +19,46 @@ var Command = &commands.YAGCommand{
 	Description:     "Shows the latency from the bot to the discord servers.",
 	LongDescription: "Note that high latencies can be the fault of ratelimits and the bot itself, it's not a absolute metric.",
 
+	DefaultEnabled:      true,
+	SlashCommandEnabled: true,
+
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
+		if data.TriggerType == dcmd.TriggerTypeSlashCommands {
+			return runSlashCommand(data)
+		}
+
 		return fmt.Sprintf(":PONG;%d", time.Now().UnixNano()), nil
 	},
+}
+
+// Interaction responses are webhook messages, which we can't edit through the
+// normal message endpoint the ping-pong trick below relies on, so measure the
+// latencies inline instead.
+func runSlashCommand(data *dcmd.Data) (interface{}, error) {
+	interaction := data.SlashCommandTriggerData.Interaction
+
+	gatewayPing := "Unknown"
+	if lastSend, lastAck := data.Session.GatewayManager.HeartBeatStats(); !lastSend.IsZero() && lastAck.After(lastSend) {
+		gatewayPing = lastAck.Sub(lastSend).String()
+	}
+
+	started := time.Now()
+	m, err := data.Session.CreateFollowupMessage(interaction.ApplicationID, interaction.Token, &discordgo.WebhookParams{
+		Content: "Pinging...",
+	})
+	if err != nil {
+		return nil, err
+	}
+	httpPing := time.Since(started)
+
+	_, err = data.Session.EditFollowupMessage(interaction.ApplicationID, interaction.Token, m.ID, &discordgo.WebhookParams{
+		Content: "HTTP API (Send Msg): " + httpPing.String() + "\nGateway (last heartbeat): " + gatewayPing,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return dcmd.MarkManualResponse([]*discordgo.Message{m}), nil
 }
 
 func HandleMessageCreate(evt *eventsystem.EventData) {

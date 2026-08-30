@@ -10,7 +10,8 @@ import (
 
 var Command = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryDebug,
-	Name:         "IsGuildUnavailable",
+	Name:         "Status",
+	Aliases:      []string{"isguildunavailable"},
 	Description:  "Returns whether the specified guild is unavailable or not",
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
