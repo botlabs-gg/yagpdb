@@ -17,6 +17,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
+	prfx "github.com/botlabs-gg/yagpdb/v2/common/prefix"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/web/discorddata"
@@ -97,6 +98,9 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			// Hosts that have already opted out of prefix commands don't need the warning
 			"PrefixCommandsDeprecated":   !common.ConfDisablePrefixCommands.GetBool(),
 			"PrefixCommandsShutdownDate": common.PrefixCommandsShutdownDate.Format("2 January 2006"),
+
+			// Overridden with the guild's own prefix by ActiveServerMW
+			"CommandPrefix": prfx.DefaultCommandPrefix(),
 		}
 
 		baseData["BaseURL"] = BaseURL()
@@ -260,7 +264,10 @@ func ActiveServerMW(inner http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, common.ContextKeyLogger, entry)
 		ctx = context.WithValue(ctx, common.ContextKeyCurrentGuild, guild)
 
-		ctx = SetContextTemplateData(ctx, map[string]interface{}{"ActiveGuild": guild})
+		ctx = SetContextTemplateData(ctx, map[string]interface{}{
+			"ActiveGuild":   guild,
+			"CommandPrefix": prfx.GetPrefixIgnoreError(guildID),
+		})
 
 		r = r.WithContext(ctx)
 	}
