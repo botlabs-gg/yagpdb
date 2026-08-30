@@ -154,6 +154,23 @@
 </html>
 {{end}}{{end}}
 
+{{/*Non-dismissable warning shown until the host opts out of prefix commands*/}}
+{{define "cp_prefix_deprecation_warning"}}
+{{if .PrefixCommandsDeprecated}}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="alert alert-warning" id="prefix-commands-deprecation">
+            <strong>Prefix commands are going away.</strong>
+            From <strong>{{.PrefixCommandsShutdownDate}}</strong>, built-in commands will no longer run through the
+            command prefix. Use discord's <code>/</code> (slash) command interface, or mention the bot
+            (for example <code>@YAGPDB help</code>), to run them instead.
+            Custom commands are not affected and will keep working as they do today.
+        </div>
+    </div>
+</div>
+{{end}}
+{{end}}
+
 {{/*Displays alerts*/}}
 {{define "cp_alerts"}}
 <script>
@@ -211,6 +228,7 @@ $(function(){
     {{end}}
 })
 </script>
+{{template "cp_prefix_deprecation_warning" .}}
 <div id="alerts">
     {{if .Alerts}}
     <div class="row">

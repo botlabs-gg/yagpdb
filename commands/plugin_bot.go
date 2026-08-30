@@ -323,12 +323,15 @@ func handleMsgCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	prefix := prfx.DefaultCommandPrefix()
-	if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
-		var err error
-		prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
-		if err != nil {
-			logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed fetching command prefix")
+	prefix := ""
+	if !CommandSystem.DisablePrefixTrigger {
+		prefix = prfx.DefaultCommandPrefix()
+		if evt.GS != nil && evt.HasFeatureFlag(featureFlagHasCustomPrefix) {
+			var err error
+			prefix, err = prfx.GetCommandPrefixRedis(evt.GS.ID)
+			if err != nil {
+				logger.WithError(err).WithField("guild", evt.GS.ID).Error("failed fetching command prefix")
+			}
 		}
 	}
 

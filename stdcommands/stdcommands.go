@@ -5,6 +5,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/advice"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/allocstat"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/banserver"
@@ -119,8 +120,6 @@ func (p *Plugin) AddCommands() {
 		topservers.Command,
 		topcommands.Command,
 		topevents.Command,
-		currentshard.Command,
-		guildunavailable.Command,
 		yagstatus.Command,
 		setstatus.Command,
 		createinvite.Command,
@@ -134,7 +133,24 @@ func (p *Plugin) AddCommands() {
 	)
 
 	statedbg.Commands()
+	guildCommands(p)
 	commands.AddRootCommands(p, dictionary.Command)
+}
+
+// guildCommands groups the guild related debug commands under a single
+// container so that they're reachable as /guild <subcommand> aswell.
+func guildCommands(p *Plugin) {
+	container, _ := commands.CommandSystem.Root.Sub("guild")
+	container.Description = "Guild utilities"
+
+	for _, cmd := range []*commands.YAGCommand{currentshard.Command, guildunavailable.Command} {
+		cmd.Plugin = p
+		container.AddCommand(cmd, cmd.GetTrigger())
+	}
+
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
+		return nil, nil
+	})
 }
 
 func (p *Plugin) BotInit() {

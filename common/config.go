@@ -3,6 +3,7 @@ package common
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
@@ -23,6 +24,8 @@ var (
 	ConfPQPassword = config.RegisterOption("yagpdb.pqpassword", "Postgres passoword", "")
 	ConfPQDB       = config.RegisterOption("yagpdb.pqdb", "Postgres database", "yagpdb")
 
+	ConfDisablePrefixCommands = config.RegisterOption("yagpdb.disable_prefix_commands", "Disables running built-in commands through the command prefix, leaving the bot mention and discord's slash commands as the only way to run them. Custom commands are unaffected", false)
+
 	ConfMaxCCR            = config.RegisterOption("yagpdb.max_ccr", "Maximum number of concurrent outgoing requests to discord", 25)
 	ConfDisableKeepalives = config.RegisterOption("yagpdb.disable_keepalives", "Disables keepalive connections for outgoing requests to discord, this shouldn't be needed but i had networking issues once so i had to", false)
 
@@ -39,6 +42,11 @@ var (
 
 	BotOwners []int64
 )
+
+// PrefixCommandsShutdownDate is the date built-in commands stop being runnable
+// through the command prefix, after which the bot mention and discord's slash
+// commands are the only ways to run them. Custom commands are unaffected.
+var PrefixCommandsShutdownDate = time.Date(2026, time.September, 15, 0, 0, 0, 0, time.UTC)
 
 var configLoaded = false
 

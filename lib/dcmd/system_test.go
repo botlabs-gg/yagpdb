@@ -101,3 +101,68 @@ func TestFindPrefix(t *testing.T) {
 		})
 	}
 }
+
+func TestFindPrefixWithPrefixTriggerDisabled(t *testing.T) {
+	guildChannel := &discordgo.Channel{Type: discordgo.ChannelTypeGuildText}
+	dmChannel := &discordgo.Channel{Type: discordgo.ChannelTypeDM}
+
+	cases := []struct {
+		name                string
+		channel             *discordgo.Channel
+		msgContent          string
+		mentions            []*discordgo.User
+		source              TriggerSource
+		shouldBeFound       bool
+		expectedTriggerType TriggerType
+	}{
+		{"prefix is ignored", guildChannel, "!test", nil, TriggerSourceGuild, false, TriggerTypePrefix},
+		{"mention still works", guildChannel, "<@" + TestUserIDStr + "> test", []*discordgo.User{{ID: TestUserID}}, TriggerSourceGuild, true, TriggerTypeMention},
+		{"dm still works", dmChannel, "test", nil, TriggerSourceDM, true, TriggerTypeDirect},
+	}
+
+	for _, v := range cases {
+		t.Run(v.name, func(t *testing.T) {
+			sys := NewStandardSystem("!")
+			sys.DisablePrefixTrigger = true
+
+			newData := func() *Data {
+				d := &Data{
+					Session: testSession,
+					TraditionalTriggerData: &TraditionalTriggerData{
+						Message: &discordgo.Message{Content: v.msgContent, Mentions: v.mentions},
+					},
+					Source: v.source,
+				}
+				if v.source != TriggerSourceDM {
+					d.TraditionalTriggerData.Message.GuildID = 1
+				}
+				return d
+			}
+
+			data := newData()
+			assert.Equal(t, v.shouldBeFound, sys.FindPrefix(data), "FindPrefix")
+			if v.shouldBeFound {
+				assert.Equal(t, v.expectedTriggerType, data.TriggerType, "FindPrefix trigger type")
+			}
+
+			data = newData()
+			assert.Equal(t, v.shouldBeFound, sys.FindPrefixWithPrefetched(data, "!"), "FindPrefixWithPrefetched")
+			if v.shouldBeFound {
+				assert.Equal(t, v.expectedTriggerType, data.TriggerType, "FindPrefixWithPrefetched trigger type")
+			}
+		})
+	}
+}
+
+// An empty prefix must never match every message.
+func TestFindPrefixWithPrefetchedEmptyPrefix(t *testing.T) {
+	data := &Data{
+		Session: testSession,
+		TraditionalTriggerData: &TraditionalTriggerData{
+			Message: &discordgo.Message{Content: "not a command", GuildID: 1},
+		},
+		Source: TriggerSourceGuild,
+	}
+
+	assert.False(t, testSystem.FindPrefixWithPrefetched(data, ""))
+}

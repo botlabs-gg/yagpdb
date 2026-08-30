@@ -16,6 +16,11 @@ type System struct {
 	Prefix         PrefixProvider
 	ResponseSender ResponseSender
 	State          dstate.StateTracker
+
+	// DisablePrefixTrigger stops messages from triggering commands through the
+	// command prefix. Mentioning the bot, direct messages and slash commands are
+	// unaffected.
+	DisablePrefixTrigger bool
 }
 
 func NewStandardSystem(staticPrefix string) (system *System) {
@@ -108,6 +113,10 @@ func (sys *System) FindPrefix(data *Data) (found bool) {
 		return true
 	}
 
+	if sys.DisablePrefixTrigger {
+		return false
+	}
+
 	// Check for custom prefix
 	if sys.Prefix == nil {
 		return false
@@ -140,6 +149,10 @@ func (sys *System) FindPrefixWithPrefetched(data *Data, commandPrefix string) (f
 
 	if sys.FindMentionPrefix(data) {
 		return true
+	}
+
+	if sys.DisablePrefixTrigger || commandPrefix == "" {
+		return false
 	}
 
 	data.TraditionalTriggerData.PrefixUsed = commandPrefix

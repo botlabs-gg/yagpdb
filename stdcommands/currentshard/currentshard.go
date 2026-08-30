@@ -12,8 +12,8 @@ import (
 
 var Command = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
-	Name:        "CurrentShard",
-	Aliases:     []string{"cshard"},
+	Name:        "Shard",
+	Aliases:     []string{"cshard", "currentshard"},
 	Description: "Shows the current shard this server is on (or the one specified)",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "serverid", Type: dcmd.BigInt, Default: int64(0)},
