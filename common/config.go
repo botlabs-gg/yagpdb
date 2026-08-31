@@ -43,9 +43,6 @@ var (
 	BotOwners []int64
 )
 
-// PrefixCommandsShutdownDate is the date built-in commands stop being runnable
-// through the command prefix, after which the bot mention and discord's slash
-// commands are the only ways to run them. Custom commands are unaffected.
 var PrefixCommandsShutdownDate = time.Date(2026, time.September, 15, 0, 0, 0, 0, time.UTC)
 
 var configLoaded = false

@@ -1,8 +1,6 @@
 package stdcommands
 
 import (
-	"github.com/botlabs-gg/yagpdb/v2/bot"
-	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
@@ -61,7 +59,6 @@ import (
 )
 
 var (
-	_ bot.BotInitHandler       = (*Plugin)(nil)
 	_ commands.CommandProvider = (*Plugin)(nil)
 )
 
@@ -137,8 +134,6 @@ func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(p, dictionary.Command)
 }
 
-// guildCommands groups the guild related debug commands under a single
-// container so that they're reachable as /guild <subcommand> aswell.
 func guildCommands(p *Plugin) {
 	container, _ := commands.CommandSystem.Root.Sub("guild")
 	container.Description = "Guild utilities"
@@ -151,10 +146,6 @@ func guildCommands(p *Plugin) {
 	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
-}
-
-func (p *Plugin) BotInit() {
-	eventsystem.AddHandlerAsyncLastLegacy(p, ping.HandleMessageCreate, eventsystem.EventMessageCreate)
 }
 
 func RegisterPlugin() {

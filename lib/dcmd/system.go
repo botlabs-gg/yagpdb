@@ -17,9 +17,7 @@ type System struct {
 	ResponseSender ResponseSender
 	State          dstate.StateTracker
 
-	// DisablePrefixTrigger stops messages from triggering commands through the
-	// command prefix. Mentioning the bot, direct messages and slash commands are
-	// unaffected.
+	// Mentions, direct messages and slash commands are unaffected.
 	DisablePrefixTrigger bool
 }
 
