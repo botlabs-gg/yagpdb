@@ -163,7 +163,8 @@
                 <div class="pull-right">
                     {{if and (eq .TriggerType 5) (not .Disabled) }}
                         <button type="submit" class="btn btn-secondary" title="This will trigger this custom command immediately"
-                        formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/run_now" style="margin: 5px 5px 5px 0px!important">Run now</button>
+                        formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/run_now"
+                        data-async-form-alertsonly style="margin: 5px 5px 5px 0px!important">Run now</button>
                     {{end}}
                     <button type="button" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-success" onclick="window.location.href = '/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/';" style="margin: 5px 5px 5px 0px!important">Edit</button>
                     <button type="submit" title="#{{.LocalID}} - {{.TextTrigger}}" class="btn btn-danger" formaction="/manage/{{$guild}}/customcommands/commands/{{.LocalID}}/delete" style="margin: 5px 5px 5px 0px!important">Delete</button>
