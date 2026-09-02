@@ -80,7 +80,7 @@
                                                     </tr>
                                                     <tr>
                                                         <th scope="row" class="text-danger">Match Criteria</th>
-                                                        <td class="text-warning">{{if .CurrentOperation.FilterRequireAll}}Must match ALL{{else}}Must match ANY{{end}}</td>
+                                                        <td class="text-warning">{{.CurrentOperation.MatchCriteria}}</td>
                                                     </tr>
                                                 {{end}}
                                             {{end}}
@@ -213,8 +213,9 @@
                                             class="multiselect form-control" multiple="multiple">
                                             {{roleOptionsMultiExclude .ActiveGuild.Roles nil nil .BulkRole.FilterRoleIDs}}
                                         </select>
-                                        <div class="form-group mt-2">
+                                        <div class="form-group mt-2" id="filter-require-all-group">
                                             {{checkbox "FilterRequireAll" "FilterRequireAll" "Require ALL selected roles" $.BulkRole.FilterRequireAll}}
+                                            <small id="filter-require-all-hint" class="form-text text-muted"></small>
                                         </div>
                                     </div>
                                     <div class="form-group" id="filter-date-group" {{if eq $.BulkRole.FilterType "joined_after" "joined_before"}} {{else}} style="display: none;" {{end}}>
@@ -285,6 +286,7 @@
             // Show relevant filter group only for filter types that need additional input
             if (selectedValue === 'has_roles' || selectedValue === 'missing_roles') {
                 filterRoleGroup.style.display = 'block';
+                updateRequireAllLabel(selectedValue);
             } else if (selectedValue === 'joined_after' || selectedValue === 'joined_before') {
                 filterDateGroup.style.display = 'block';
             }
@@ -292,6 +294,25 @@
 
             // Update start button state
             updateStartButton();
+        }
+
+        // Off is the loose match under either filter type, and under "missing" it is
+        // loose enough to match nearly the whole server - spell out both states so
+        // the toggle cannot be read backwards.
+        function updateRequireAllLabel(filterType) {
+            const desc = document.querySelector('#filter-require-all-group .tgl-desc');
+            const hint = document.getElementById('filter-require-all-hint');
+            if (!desc || !hint) return;
+
+            if (filterType === 'missing_roles') {
+                desc.textContent = 'Require ALL selected roles to be missing';
+                hint.textContent = 'On: matches only members who have none of the selected roles.'
+                    + ' Off: matches members missing at least one of them, which is almost everyone.';
+            } else {
+                desc.textContent = 'Require ALL selected roles';
+                hint.textContent = 'On: matches only members who have every selected role.'
+                    + ' Off: matches members who have at least one of them.';
+            }
         }
 
         function updateStartButton() {
