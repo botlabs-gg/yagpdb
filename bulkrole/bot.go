@@ -178,7 +178,31 @@ func (config *BulkRoleConfig) processBulkRoleChunk(chunk *discordgo.GuildMembers
 	}
 }
 
-// Check if a member meets the filter criteria
+func hasAllRoles(member *discordgo.Member, roleIDs []int64) bool {
+	for _, roleID := range roleIDs {
+		if !slices.Contains(member.Roles, roleID) {
+			return false
+		}
+	}
+	return true
+}
+
+func hasAnyRole(member *discordgo.Member, roleIDs []int64) bool {
+	for _, roleID := range roleIDs {
+		if slices.Contains(member.Roles, roleID) {
+			return true
+		}
+	}
+	return false
+}
+
+// Check if a member meets the filter criteria.
+//
+// FilterRequireAll decides whether the filter's condition has to hold for every
+// selected role or just one of them:
+//
+//	has_roles      off: has any one of them          on: has all of them
+//	missing_roles  off: is missing any one of them   on: is missing all of them
 func (config *BulkRoleConfig) filterMember(member *discordgo.Member) bool {
 	switch config.FilterType {
 	case "all":
@@ -188,39 +212,17 @@ func (config *BulkRoleConfig) filterMember(member *discordgo.Member) bool {
 			return false
 		}
 		if config.FilterRequireAll {
-			for _, roleID := range config.FilterRoleIDs {
-				if !slices.Contains(member.Roles, roleID) {
-					return false
-				}
-			}
-			return true
-		} else {
-			for _, roleID := range config.FilterRoleIDs {
-				if slices.Contains(member.Roles, roleID) {
-					return true
-				}
-			}
-			return false
+			return hasAllRoles(member, config.FilterRoleIDs)
 		}
+		return hasAnyRole(member, config.FilterRoleIDs)
 	case "missing_roles":
 		if len(config.FilterRoleIDs) == 0 {
 			return false
 		}
 		if config.FilterRequireAll {
-			for _, roleID := range config.FilterRoleIDs {
-				if slices.Contains(member.Roles, roleID) {
-					return false
-				}
-			}
-			return true
-		} else {
-			for _, roleID := range config.FilterRoleIDs {
-				if !slices.Contains(member.Roles, roleID) {
-					return true
-				}
-			}
-			return false
+			return !hasAnyRole(member, config.FilterRoleIDs)
 		}
+		return !hasAllRoles(member, config.FilterRoleIDs)
 	case "bots":
 		return member.User.Bot
 	case "humans":
@@ -398,13 +400,7 @@ func (config *BulkRoleConfig) filterRoleString(prefix string) string {
 		return prefix
 	}
 
-	// Build the suffix first
-	var suffix string
-	if config.FilterRequireAll {
-		suffix = " (must have ALL)"
-	} else {
-		suffix = " (must have ANY)"
-	}
+	suffix := " (" + config.matchCriteriaText() + ")"
 
 	// Start building the role list
 	roleText := prefix + ": "
@@ -454,6 +450,22 @@ func (config *BulkRoleConfig) filterRoleString(prefix string) string {
 
 	roleText += strings.Join(addedRoles, ", ") + suffix
 	return roleText
+}
+
+// matchCriteriaText describes what the ALL/ANY toggle means for the configured
+// filter type, see filterMember.
+func (config *BulkRoleConfig) matchCriteriaText() string {
+	if config.FilterType == "missing_roles" {
+		if config.FilterRequireAll {
+			return "must have none of the selected roles"
+		}
+		return "must be missing at least one selected role"
+	}
+
+	if config.FilterRequireAll {
+		return "must have all of the selected roles"
+	}
+	return "must have at least one of the selected roles"
 }
 
 func (config *BulkRoleConfig) filterString() string {
@@ -508,13 +520,11 @@ func (config *BulkRoleConfig) sendNotificationAlert(status string, processedCoun
 	if len(filterString) > 1024 {
 		switch config.FilterType {
 		case "has_roles":
-			filterString = fmt.Sprintf("Has %d specific roles (too many to display)%s",
-				len(config.FilterRoleIDs),
-				map[bool]string{true: " (must have ALL)", false: " (must have ANY)"}[config.FilterRequireAll])
+			filterString = fmt.Sprintf("Has %d specific roles (too many to display) (%s)",
+				len(config.FilterRoleIDs), config.matchCriteriaText())
 		case "missing_roles":
-			filterString = fmt.Sprintf("Missing %d specific roles (too many to display)%s",
-				len(config.FilterRoleIDs),
-				map[bool]string{true: " (must be missing ALL)", false: " (must be missing ANY)"}[config.FilterRequireAll])
+			filterString = fmt.Sprintf("Missing %d specific roles (too many to display) (%s)",
+				len(config.FilterRoleIDs), config.matchCriteriaText())
 		default:
 			filterString = config.FilterType
 		}

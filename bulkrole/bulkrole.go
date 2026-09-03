@@ -35,14 +35,19 @@ func RegisterPlugin() {
 	common.RegisterPlugin(p)
 }
 
+var (
+	validOperations  = []string{"assign", "remove"}
+	validFilterTypes = []string{"all", "has_roles", "missing_roles", "bots", "humans", "joined_after", "joined_before"}
+)
+
 type BulkRoleConfig struct {
 	TargetRole int64 `json:",string" valid:"role,true"`
 
-	Operation string `valid:"in(assign|remove)"`
+	Operation string
 
-	FilterType string `valid:"in(all|has_role|missing_role|bots|humans|joined_after|joined_before)"`
+	FilterType string
 
-	FilterRoleIDs    []int64   `json:",omitempty"`
+	FilterRoleIDs    []int64   `json:",omitempty" valid:"role,true"`
 	FilterRequireAll bool      `json:"boolean,omitempty"`
 	FilterDate       string    `json:",omitempty"`
 	FilterDateParsed time.Time `json:"-"`

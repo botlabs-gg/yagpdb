@@ -6,6 +6,7 @@ import (
 	"html"
 	"html/template"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -32,7 +33,38 @@ type Form struct {
 	BulkRoleConfig `valid:"traverse"`
 }
 
-var _ web.SimpleConfigSaver = (*Form)(nil)
+var (
+	_ web.SimpleConfigSaver = (*Form)(nil)
+	_ web.CustomValidator   = (*Form)(nil)
+)
+
+func (f *Form) Validate(tmpl web.TemplateData, guildID int64) bool {
+	ok := true
+
+	if f.TargetRole == 0 {
+		tmpl.AddAlerts(web.ErrorAlert("Please select a target role"))
+		ok = false
+	}
+
+	if !slices.Contains(validOperations, f.Operation) {
+		tmpl.AddAlerts(web.ErrorAlert("Please select an operation"))
+		ok = false
+	}
+
+	if !slices.Contains(validFilterTypes, f.FilterType) {
+		tmpl.AddAlerts(web.ErrorAlert("Please select a filter type"))
+		ok = false
+	}
+
+	if f.FilterDate != "" {
+		if _, err := time.Parse("2006-01-02", f.FilterDate); err != nil {
+			tmpl.AddAlerts(web.ErrorAlert("Invalid date format. Use YYYY-MM-DD"))
+			ok = false
+		}
+	}
+
+	return ok
+}
 
 var (
 	panelLogKeyStartedOperation   = cplogs.RegisterActionFormat(&cplogs.ActionFormat{Key: "bulkrole_started_operation", FormatString: "Started bulk role operation"})
@@ -107,8 +139,9 @@ func (p *Plugin) InitWeb() {
 
 	muxer.Handle(pat.Post("/cancel"), web.ControllerPostHandler(handlePostCancelOperation, getHandler, nil))
 
-	muxer.Handle(pat.Post(""), web.ControllerPostHandler(handlePostSaveAndStart, getHandler, nil))
-	muxer.Handle(pat.Post("/"), web.ControllerPostHandler(handlePostSaveAndStart, getHandler, nil))
+	saveAndStartHandler := web.ControllerPostHandler(handlePostSaveAndStart, getHandler, Form{})
+	muxer.Handle(pat.Post(""), saveAndStartHandler)
+	muxer.Handle(pat.Post("/"), saveAndStartHandler)
 }
 
 func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) interface{} {
@@ -187,6 +220,7 @@ func handleGetBulkRoleMainPage(w http.ResponseWriter, r *http.Request) interface
 			"FilterType":          general.FilterType,
 			"FilterRoleIDs":       general.FilterRoleIDs,
 			"FilterRequireAll":    general.FilterRequireAll,
+			"MatchCriteria":       general.matchCriteriaText(),
 			"FilterDate":          general.FilterDate,
 			"NotificationChannel": general.NotificationChannel,
 			"StartedBy":           general.StartedBy,
@@ -205,57 +239,15 @@ func handlePostSaveAndStart(w http.ResponseWriter, r *http.Request) (web.Templat
 		return tmpl.AddAlerts(web.ErrorAlert("Bulk Role Manager is premium only")), nil
 	}
 
-	err := r.ParseForm()
-	if err != nil {
-		return tmpl.AddAlerts(web.ErrorAlert("Failed to parse form data")), nil
-	}
+	form := ctx.Value(common.ContextKeyParsedForm).(*Form)
+	user := web.ContextUser(ctx)
+	form.StartedBy = user.ID
+	form.StartedByUsername = user.String()
 
-	user := web.ContextUser(r.Context())
-
-	// Debug: Log the raw form values for FilterRoleIDs
-	logger.WithField("guild", activeGuild.ID).WithField("filterRoleIDs_raw", r.Form["FilterRoleIDs"]).Info("Processing FilterRoleIDs from form")
-
-	config := &BulkRoleConfig{
-		TargetRole:          parseFormInt64(r.FormValue("TargetRole")),
-		Operation:           r.FormValue("Operation"),
-		FilterType:          r.FormValue("FilterType"),
-		FilterRoleIDs:       parseFormInt64Slice(r.Form["FilterRoleIDs"]),
-		FilterRequireAll:    r.FormValue("FilterRequireAll") == "true",
-		FilterDate:          r.FormValue("FilterDate"),
-		NotificationChannel: parseFormInt64(r.FormValue("NotificationChannel")),
-		StartedBy:           user.ID,
-		StartedByUsername:   user.String(),
-	}
-
-	// Debug: Log the parsed FilterRoleIDs
-	logger.WithField("guild", activeGuild.ID).WithField("filterRoleIDs_parsed", config.FilterRoleIDs).Info("Parsed FilterRoleIDs")
-
-	if config.FilterDate != "" {
-		parsed, err := time.Parse("2006-01-02", config.FilterDate)
-		if err != nil {
-			return tmpl.AddAlerts(web.ErrorAlert("Invalid date format. Use YYYY-MM-DD")), nil
-		}
-		config.FilterDateParsed = parsed
-	}
-
-	if config.TargetRole == 0 {
-		return tmpl.AddAlerts(web.ErrorAlert("Please select a target role")), nil
-	}
-
-	if config.Operation == "" {
-		return tmpl.AddAlerts(web.ErrorAlert("Please select an operation")), nil
-	}
-
-	if config.FilterType == "" {
-		return tmpl.AddAlerts(web.ErrorAlert("Please select a filter type")), nil
-	}
-
-	err = common.SetRedisJson(KeyGeneral(activeGuild.ID), config)
+	err := form.Save(activeGuild.ID)
 	if err != nil {
 		return tmpl.AddAlerts(web.ErrorAlert("Failed to save configuration")), nil
 	}
-
-	pubsub.EvictCacheSet(configCache, activeGuild.ID)
 
 	err = internalapi.PostWithGuild(activeGuild.ID, strconv.FormatInt(activeGuild.ID, 10)+"/bulkrole/start", nil, nil)
 	if err != nil {
@@ -265,29 +257,6 @@ func handlePostSaveAndStart(w http.ResponseWriter, r *http.Request) (web.Templat
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyStartedOperation))
 
 	return nil, nil
-}
-
-func parseFormInt64(value string) int64 {
-	if value == "" {
-		return 0
-	}
-	parsed, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return 0
-	}
-	return parsed
-}
-
-func parseFormInt64Slice(values []string) []int64 {
-	var result []int64
-	for _, value := range values {
-		if value != "" && value != "0" {
-			if parsed, err := strconv.ParseInt(value, 10, 64); err == nil {
-				result = append(result, parsed)
-			}
-		}
-	}
-	return result
 }
 
 func handlePostCancelOperation(w http.ResponseWriter, r *http.Request) (web.TemplateData, error) {
