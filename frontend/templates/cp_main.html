@@ -156,7 +156,7 @@
 
 {{/*Non-dismissable warning shown until the host opts out of prefix commands*/}}
 {{define "cp_prefix_deprecation_warning"}}
-{{if .PrefixCommandsDeprecated}}
+{{if .ShowPrefixCommandsWarning}}
 <div class="row">
     <div class="col-lg-12">
         <div class="alert alert-warning" id="prefix-commands-deprecation">

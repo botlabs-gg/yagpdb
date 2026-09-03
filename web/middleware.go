@@ -95,7 +95,8 @@ func BaseTemplateDataMiddleware(inner http.Handler) http.Handler {
 			"SidebarItems":     sideBarItems,
 			"GAID":             confGAID.GetString(),
 
-			"PrefixCommandsDeprecated":   !common.ConfDisablePrefixCommands.GetBool(),
+			// Hosts that have already opted out of prefix commands don't need the warning
+			"ShowPrefixCommandsWarning":  common.ShowPrefixCommandsWarning(),
 			"PrefixCommandsShutdownDate": common.PrefixCommandsShutdownDate.Format("2 January 2006"),
 
 			"CommandPrefix": prfx.DefaultCommandPrefix(),
