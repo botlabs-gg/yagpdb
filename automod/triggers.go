@@ -492,17 +492,17 @@ func (caps *AllCapsTrigger) UserSettings() []*SettingDef {
 func (caps *AllCapsTrigger) CheckMessage(triggerCtx *TriggerContext, cs *dstate.ChannelState, m *discordgo.Message) (bool, error) {
 	dataCast := triggerCtx.Data.(*AllCapsTriggerData)
 
-	if len(m.GetMessageContents()) < dataCast.MinLength {
+	messageContent := strings.Join(m.GetMessageContents(), " ")
+	if len(messageContent) < dataCast.MinLength {
 		return false, nil
+	}
+
+	if dataCast.SanitizeText {
+		messageContent = confusables.SanitizeText(messageContent)
 	}
 
 	totalCapitalisableChars := 0
 	numCaps := 0
-
-	messageContent := strings.Join(m.GetMessageContents(), "")
-	if dataCast.SanitizeText {
-		messageContent = confusables.SanitizeText(messageContent)
-	}
 
 	// count the number of upper case characters, note that this dosen't include other characters such as punctuation
 	for _, r := range messageContent {
