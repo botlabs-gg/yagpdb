@@ -55,7 +55,7 @@ func CreateComponent(expectedType discordgo.ComponentType, values ...any) (disco
 		err = json.Unmarshal(encoded, &comp)
 		component = comp
 	case discordgo.TextInputComponent:
-		var comp discordgo.TextInput
+		comp := discordgo.NewShortTextInput()
 		err = json.Unmarshal(encoded, &comp)
 		component = comp
 	case discordgo.UserSelectMenuComponent:
@@ -460,7 +460,7 @@ func CreateTextInput(values ...any) (*discordgo.TextInput, error) {
 		}
 		messageSdict = dict
 	}
-	var textInput discordgo.TextInput
+
 	convertedTextInput := make(map[string]any)
 	for k, v := range messageSdict {
 		switch strings.ToLower(k) {
@@ -476,6 +476,8 @@ func CreateTextInput(values ...any) (*discordgo.TextInput, error) {
 	}
 
 	t, err := CreateComponent(discordgo.TextInputComponent, convertedTextInput)
+
+	var textInput discordgo.TextInput
 	if err == nil {
 		textInput = t.(discordgo.TextInput)
 	}
