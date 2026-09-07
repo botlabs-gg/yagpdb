@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -129,11 +130,30 @@ func (p *Plugin) webSubSubscribeWithRetry(channel string) {
 		if err == nil {
 			return
 		}
+		if errors.Is(err, errHubCoolingDown) {
+			// the resub checker comes back to this channel after the grace period
+			return
+		}
 		if attempt == maxRetries {
 			logger.WithError(err).WithField("yt_channel", channel).Error("websub subscribe failed after retries")
 			return
 		}
-		time.Sleep(time.Second * time.Duration(1<<attempt))
+
+		// jittered so a batch that trips the limit together does not retry in lockstep
+		backoff := time.Second * time.Duration(1<<attempt)
+		time.Sleep(backoff + time.Duration(rand.Int64N(int64(backoff))))
+	}
+}
+
+func (p *Plugin) resubscribeChannels(channels []string) {
+	batchSize := max(confResubBatchSize.GetInt(), 1)
+	chunks := (len(channels) + batchSize - 1) / batchSize
+	logger.Infof("Found %d expiring subs", len(channels))
+
+	for i := 0; i < len(channels); i += batchSize {
+		chunk := channels[i:min(i+batchSize, len(channels))]
+		logger.Infof("Processing chunk %d of %d for expiring subs", i/batchSize+1, chunks)
+		p.processChannelsConcurrently(chunk, batchSize, p.webSubSubscribeWithRetry)
 	}
 }
 
@@ -156,18 +176,7 @@ func (p *Plugin) checkExpiringWebsubs() {
 	// Unlock early; subscribing does not need to hold the redis lock
 	common.UnlockRedisKey(RedisChannelsLockKey)
 
-	batchSize := confResubBatchSize.GetInt()
-	totalExpiring := len(expiring)
-	logger.Infof("Found %d expiring subs", totalExpiring)
-	channelChunks := make([][]string, 0)
-	for i := 0; i < totalExpiring; i += batchSize {
-		end := min(i+batchSize, totalExpiring)
-		channelChunks = append(channelChunks, expiring[i:end])
-	}
-	for i, chunk := range channelChunks {
-		logger.Infof("Processing chunk %d of %d for expiring subs", i, len(channelChunks))
-		p.processChannelsConcurrently(chunk, batchSize, func(ch string) { p.webSubSubscribeWithRetry(ch) })
-	}
+	p.resubscribeChannels(expiring)
 }
 
 func (p *Plugin) syncWebSubs() {
@@ -198,18 +207,7 @@ func (p *Plugin) syncWebSubs() {
 	}))
 
 	common.UnlockRedisKey(RedisChannelsLockKey)
-	batchSize := confResubBatchSize.GetInt()
-	channelChunks := make([][]string, 0)
-	totalExpiring := len(expiring)
-	logger.Infof("Found %d expiring subs to youtube", totalExpiring)
-	for i := 0; i < totalExpiring; i += batchSize {
-		end := min(i+batchSize, totalExpiring)
-		channelChunks = append(channelChunks, activeChannels[i:end])
-	}
-	for i, chunk := range channelChunks {
-		logger.Infof("Processing chunk %d of %d for expiring subs", i, len(channelChunks))
-		p.processChannelsConcurrently(chunk, batchSize, func(ch string) { p.webSubSubscribeWithRetry(ch) })
-	}
+	p.resubscribeChannels(expiring)
 }
 
 func (p *Plugin) sendNewVidMessage(sub *models.YoutubeChannelSubscription, video *youtube.Video) {

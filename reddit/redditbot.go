@@ -34,11 +34,12 @@ var (
 	confMaxPostsHourFast = config.RegisterOption("yagpdb.reddit.fast_max_posts_hour", "Max posts per hour per guild for fast feed", 60)
 	confMaxPostsHourSlow = config.RegisterOption("yagpdb.reddit.slow_max_posts_hour", "Max posts per hour per guild for slow feed", 120)
 
-	lastFeedSuccessAt = time.Now()
-	feedLock          sync.Mutex
-	fastFeed          *PostFetcher
-	slowFeed          *PostFetcher
+	feedLock sync.Mutex
+	fastFeed *PostFetcher
+	slowFeed *PostFetcher
 )
+
+const feedStallTimeout = 10 * time.Minute
 
 func (p *Plugin) StartFeed() {
 	go p.runBot()
@@ -46,33 +47,51 @@ func (p *Plugin) StartFeed() {
 }
 
 func (p *Plugin) StopFeed(wg *sync.WaitGroup) {
-	feedLock.Lock()
+	// feeds.Stop registers one count for this plugin and nothing else releases it
+	defer wg.Done()
 
-	if fastFeed != nil {
+	stopFetchers(wg)
+
+	wg.Add(1)
+	go func() {
+		p.stopFeedChan <- wg
+	}()
+}
+
+// stopFetchers signals the running fetchers to wind down, adding one count to wg each.
+func stopFetchers(wg *sync.WaitGroup) {
+	feedLock.Lock()
+	defer feedLock.Unlock()
+
+	for _, feed := range runningFeedsLocked() {
 		wg.Add(1)
-		ff := fastFeed
 		go func() {
-			ff.StopChan <- wg
+			feed.StopChan <- wg
 		}()
-		fastFeed = nil
+	}
+
+	fastFeed = nil
+	slowFeed = nil
+}
+
+func runningFeeds() []*PostFetcher {
+	feedLock.Lock()
+	defer feedLock.Unlock()
+
+	return runningFeedsLocked()
+}
+
+func runningFeedsLocked() []*PostFetcher {
+	feeds := make([]*PostFetcher, 0, 2)
+	if fastFeed != nil {
+		feeds = append(feeds, fastFeed)
 	}
 
 	if slowFeed != nil {
-		wg.Add(1)
-		sf := slowFeed
-		go func() {
-			sf.StopChan <- wg
-		}()
-		slowFeed = nil
+		feeds = append(feeds, slowFeed)
 	}
 
-	select {
-	case p.stopFeedChan <- wg:
-		wg.Add(1)
-	default:
-	}
-
-	feedLock.Unlock()
+	return feeds
 }
 
 func (p *Plugin) checkFeed() {
@@ -80,11 +99,14 @@ func (p *Plugin) checkFeed() {
 	for {
 		select {
 		case <-ticker.C:
-			logger.Infof("Checking Feed Status, last success was %s ago", time.Since(lastFeedSuccessAt))
-			if time.Since(lastFeedSuccessAt) > (10 * time.Minute) {
-				logger.Warnf("No successful feed since %s, restarting", time.Since(lastFeedSuccessAt))
-				p.restartFeed()
-				return
+			for _, feed := range runningFeeds() {
+				since := time.Since(feed.LastProgress())
+				logger.Infof("Checking Feed Status, %s feed last progressed %s ago", feed.Name, since)
+				if since > feedStallTimeout {
+					logger.Warnf("%s feed has not progressed in %s, restarting", feed.Name, since)
+					p.restartFeeds(feed)
+					break
+				}
 			}
 		case wg := <-p.stopFeedChan:
 			wg.Done()
@@ -104,14 +126,16 @@ func setupClient() *reddit.Client {
 	return redditClient
 }
 
-func (p *Plugin) restartFeed() {
+// restartFeeds cycles the fetchers only: the watchdog has to outlive them, or its stop
+// signal has no receiver.
+func (p *Plugin) restartFeeds(stalled *PostFetcher) {
 	go func() {
 		wg := new(sync.WaitGroup)
-		p.StopFeed(wg)
+		stopFetchers(wg)
 		wg.Wait()
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyLastScannedPostIDFast))
-		common.RedisPool.Do(radix.Cmd(nil, "DEL", KeyLastScannedPostIDSlow))
-		p.StartFeed()
+		// only the wedged feed's, the other would skip everything up to the front page
+		common.RedisPool.Do(radix.Cmd(nil, "DEL", stalled.LastScannedPostIDKey))
+		p.runBot()
 	}()
 }
 

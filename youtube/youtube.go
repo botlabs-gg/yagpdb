@@ -2,11 +2,13 @@ package youtube
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/config"
@@ -14,6 +16,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/premium"
 	"github.com/botlabs-gg/yagpdb/v2/youtube/models"
+	"github.com/mediocregopher/radix/v3"
 	"google.golang.org/api/youtube/v3"
 )
 
@@ -29,6 +32,7 @@ const (
 var (
 	confWebsubVerifytoken     = config.RegisterOption("yagpdb.youtube.verify_token", "Youtube websub push verify token, set it to a random string and never change it", "asdkpoasdkpaoksdpako")
 	confResubBatchSize        = config.RegisterOption("yagpdb.youtube.resub_batch_size", "Number of Websubs to resubscribe to concurrently", 1)
+	confWebsubRequestsMinute  = config.RegisterOption("yagpdb.youtube.websub_requests_minute", "Max subscribe requests per minute sent to the pubsubhubbub hub, which rate limits by source ip", 30)
 	confYoutubeVideoCacheDays = config.RegisterOption("yagpdb.youtube.video_cache_duration", "Duration in days to cache youtube video data", 1)
 	logger                    = common.GetPluginLogger(&Plugin{})
 )
@@ -97,46 +101,124 @@ func (p *Plugin) DisableGuildFeeds(guildID int64) error {
 	return nil
 }
 
-func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
+var websubClient = &http.Client{Timeout: time.Second * 30}
+
+const (
+	// only the hub's verification callback advances the real score, so without this
+	// every unverified channel is reposted on the next tick
+	websubVerifyGracePeriod = time.Minute * 5
+
+	// the hub keeps answering 503 for a while once tripped, at ~20s per request
+	websubRateLimitCooldown = time.Minute * 10
+
+	websubMaxQueueWait = time.Second * 15
+)
+
+var errHubCoolingDown = errors.New("hub rate limited us, waiting out the cooldown")
+
+// hubGate paces subscribe requests to the hub, which rate limits by source ip.
+type hubGate struct {
+	mu          sync.Mutex
+	next        time.Time
+	cooldownEnd time.Time
+}
+
+var websubGate = &hubGate{}
+
+// reserve blocks until the caller's turn, reporting false if the hub is cooling down
+// or the queue is already longer than websubMaxQueueWait.
+func (g *hubGate) reserve() bool {
+	g.mu.Lock()
+
+	now := time.Now()
+	if now.Before(g.cooldownEnd) {
+		g.mu.Unlock()
+		return false
+	}
+
+	slot := g.next
+	if slot.Before(now) {
+		slot = now
+	}
+
+	if slot.Sub(now) > websubMaxQueueWait {
+		g.mu.Unlock()
+		return false
+	}
+
+	interval := time.Minute / time.Duration(max(confWebsubRequestsMinute.GetInt(), 1))
+	g.next = slot.Add(interval)
+	g.mu.Unlock()
+
+	time.Sleep(time.Until(slot))
+
+	return true
+}
+
+func (g *hubGate) rateLimited() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	if time.Now().Before(g.cooldownEnd) {
+		return
+	}
+
+	g.cooldownEnd = time.Now().Add(websubRateLimitCooldown)
+	logger.Warnf("Websub hub rate limited us, holding off for %s", websubRateLimitCooldown)
+}
+
+func (p *Plugin) websubRequest(ytChannelID, mode string) error {
+	if !websubGate.reserve() {
+		return errHubCoolingDown
+	}
+
 	values := url.Values{
 		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
 		"hub.topic":        {"https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + ytChannelID},
-		"hub.verify":       {"sync"},
-		"hub.mode":         {"subscribe"},
+		"hub.verify":       {"async"},
+		"hub.mode":         {mode},
 		"hub.verify_token": {confWebsubVerifytoken.GetString()},
 	}
 
-	resp, err := http.PostForm(GoogleWebsubHub, values)
+	resp, err := websubClient.PostForm(GoogleWebsubHub, values)
 	if err != nil {
-		logger.WithError(err).Errorf("Failed to subscribe to youtube channel with id %s", ytChannelID)
 		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusServiceUnavailable || resp.StatusCode == http.StatusTooManyRequests {
+		websubGate.rateLimited()
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 		return fmt.Errorf("bad status code: %d (%s) %s", resp.StatusCode, resp.Status, string(body))
 	}
 
-	logger.Info("Websub: Subscribed to channel ", ytChannelID)
+	return nil
+}
+
+func (p *Plugin) WebSubSubscribe(ytChannelID string) error {
+	// before the post, not after: the verification callback has to get the last word on
+	// the score, and it can land while the post is still in flight
+	recheckAt := time.Now().Add(websubVerifyGracePeriod).Unix()
+	err := common.RedisPool.Do(radix.FlatCmd(nil, "ZADD", RedisKeyWebSubChannels, recheckAt, ytChannelID))
+	if err != nil {
+		logger.WithError(err).WithField("yt_channel", ytChannelID).Error("Failed deferring websub recheck")
+	}
+
+	if err := p.websubRequest(ytChannelID, "subscribe"); err != nil {
+		return err
+	}
+
+	// async verification, so the hub has only accepted the request at this point
+	logger.Info("Websub: Requested subscription to channel ", ytChannelID)
 	return nil
 }
 
 func (p *Plugin) WebSubUnsubscribe(ytChannelID string) error {
-	values := url.Values{
-		"hub.callback":     {"https://" + common.ConfHost.GetString() + "/yt_new_upload/" + confWebsubVerifytoken.GetString()},
-		"hub.topic":        {"https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + ytChannelID},
-		"hub.verify":       {"sync"},
-		"hub.mode":         {"unsubscribe"},
-		"hub.verify_token": {confWebsubVerifytoken.GetString()},
-	}
-
-	resp, err := http.PostForm(GoogleWebsubHub, values)
-	if err != nil {
+	if err := p.websubRequest(ytChannelID, "unsubscribe"); err != nil {
 		return err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return fmt.Errorf("bad status code: %d (%s)", resp.StatusCode, resp.Status)
 	}
 
 	logger.Info("Websub: Unsubscribed from channel ", ytChannelID)

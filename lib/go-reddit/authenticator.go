@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -55,6 +56,9 @@ const (
 
 	authURL  = "https://www.reddit.com/api/v1/authorize"
 	tokenURL = "https://www.reddit.com/api/v1/access_token"
+
+	// a hung request otherwise pins the goroutine polling reddit, and shutdown with it
+	requestTimeout = 30 * time.Second
 )
 
 // NewAuthenticator generates a new authenticator with the supplied client, state, and requested scopes.
@@ -99,11 +103,11 @@ func (a *Authenticator) httpClient(token *oauth2.Token) *http.Client {
 	uaSetter := &uaSetterTransport{agent: a.ua}
 
 	tr := oauth2.Transport{
-		Source: a.config.TokenSource(context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: uaSetter}), token),
+		Source: a.config.TokenSource(context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{Transport: uaSetter, Timeout: requestTimeout}), token),
 		Base:   &http.Transport{},
 	}
 
-	return &http.Client{Transport: &tr}
+	return &http.Client{Transport: &tr, Timeout: requestTimeout}
 }
 
 // // agentForward forwards a user agent in all requests made by the Transport.
