@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -130,31 +129,31 @@ func (p *Plugin) webSubSubscribeWithRetry(channel string) {
 		if err == nil {
 			return
 		}
-		if errors.Is(err, errHubCoolingDown) {
-			// the resub checker comes back to this channel after the grace period
-			return
-		}
 		if attempt == maxRetries {
 			logger.WithError(err).WithField("yt_channel", channel).Error("websub subscribe failed after retries")
 			return
 		}
-
-		// jittered so a batch that trips the limit together does not retry in lockstep
-		backoff := time.Second * time.Duration(1<<attempt)
-		time.Sleep(backoff + time.Duration(rand.Int64N(int64(backoff))))
+		time.Sleep(time.Second * time.Duration(1<<attempt))
 	}
 }
 
 func (p *Plugin) resubscribeChannels(channels []string) {
-	batchSize := max(confResubBatchSize.GetInt(), 1)
-	chunks := (len(channels) + batchSize - 1) / batchSize
-	logger.Infof("Found %d expiring subs", len(channels))
-
-	for i := 0; i < len(channels); i += batchSize {
-		chunk := channels[i:min(i+batchSize, len(channels))]
-		logger.Infof("Processing chunk %d of %d for expiring subs", i/batchSize+1, chunks)
-		p.processChannelsConcurrently(chunk, batchSize, p.webSubSubscribeWithRetry)
+	if len(channels) < 1 {
+		return
 	}
+
+	// a batch size of zero would spin forever on the chunking this replaced
+	workers := max(confResubBatchSize.GetInt(), 1)
+	logger.Infof("Resubscribing %d expiring subs with %d workers", len(channels), workers)
+	p.processChannelsConcurrently(channels, workers, p.webSubSubscribeWithRetry)
+}
+
+// websubChannelsByScore returns the channels whose lease expiry falls in the given
+// score range.
+func websubChannelsByScore(minScore, maxScore any) ([]string, error) {
+	var channels []string
+	err := common.RedisPool.Do(radix.FlatCmd(&channels, "ZRANGEBYSCORE", RedisKeyWebSubChannels, minScore, maxScore))
+	return channels, err
 }
 
 func (p *Plugin) checkExpiringWebsubs() {
@@ -164,9 +163,7 @@ func (p *Plugin) checkExpiringWebsubs() {
 		return
 	}
 
-	maxScore := time.Now().Unix()
-	var expiring []string
-	err = common.RedisPool.Do(radix.FlatCmd(&expiring, "ZRANGEBYSCORE", RedisKeyWebSubChannels, "-inf", maxScore))
+	expiring, err := websubChannelsByScore("-inf", time.Now().Unix())
 	if err != nil {
 		logger.WithError(err).Error("Failed checking websubs")
 		common.UnlockRedisKey(RedisChannelsLockKey)
@@ -193,20 +190,28 @@ func (p *Plugin) syncWebSubs() {
 		return
 	}
 
-	var expiring []string
-	_ = common.RedisPool.Do(radix.WithConn(RedisKeyWebSubChannels, func(client radix.Conn) error {
-		logger.Infof("Found %d youtube channels", len(activeChannels))
-		for _, channel := range activeChannels {
-			var mn int64
-			client.Do(radix.Cmd(&mn, "ZSCORE", RedisKeyWebSubChannels, channel))
-			if mn < time.Now().Unix() {
-				expiring = append(expiring, channel)
-			}
-		}
-		return nil
-	}))
-
+	live, err := websubChannelsByScore(time.Now().Unix(), "+inf")
 	common.UnlockRedisKey(RedisChannelsLockKey)
+	if err != nil {
+		logger.WithError(err).Error("Failed syncing websubs, failed retrieving live websubs")
+		return
+	}
+
+	stillCovered := make(map[string]struct{}, len(live))
+	for _, channel := range live {
+		stillCovered[channel] = struct{}{}
+	}
+
+	// anything subscribed in the db without a live lease, which covers channels missing
+	// from the set entirely as well as expired ones
+	var expiring []string
+	for _, channel := range activeChannels {
+		if _, ok := stillCovered[channel]; !ok {
+			expiring = append(expiring, channel)
+		}
+	}
+
+	logger.Infof("Found %d youtube channels, %d without a live websub", len(activeChannels), len(expiring))
 	p.resubscribeChannels(expiring)
 }
 

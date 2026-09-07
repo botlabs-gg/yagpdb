@@ -291,16 +291,16 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	switch query.Get("hub.mode") {
 	case "subscribe":
-		if !verifyTokenOK(ctx, query) {
-			return
+		if query.Get("hub.verify_token") != confWebsubVerifytoken.GetString() {
+			return // We don't want no intruders here
 		}
 
 		web.CtxLogger(ctx).Info("Responding to challenge: ", query.Get("hub.challenge"))
 		p.ValidateSubscription(w, r, query)
 		return
 	case "unsubscribe":
-		if !verifyTokenOK(ctx, query) {
-			return
+		if query.Get("hub.verify_token") != confWebsubVerifytoken.GetString() {
+			return // We don't want no intruders here
 		}
 
 		w.Write([]byte(query.Get("hub.challenge")))
@@ -341,19 +341,6 @@ func (p *Plugin) HandleFeedUpdate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-}
-
-// The callback path already carries the verify token, so treat it as authoritative and
-// only reject a token that is present and wrong. Failing here means answering the hub
-// with an empty body, which it reads as a failed verification, so say so.
-func verifyTokenOK(ctx context.Context, query url.Values) bool {
-	token := query.Get("hub.verify_token")
-	if token == "" || token == confWebsubVerifytoken.GetString() {
-		return true
-	}
-
-	web.CtxLogger(ctx).Warn("Websub verification carried a mismatched verify token, ignoring it")
-	return false
 }
 
 func (p *Plugin) ValidateSubscription(w http.ResponseWriter, r *http.Request, query url.Values) {
