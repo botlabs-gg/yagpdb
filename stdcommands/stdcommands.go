@@ -146,6 +146,17 @@ func guildCommands(p *Plugin) {
 	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
+
+	// The names these had before they moved into the container, so existing
+	// prefix and mention usage keeps working.
+	addLegacyRootAliases(currentshard.Command, "cshard", "currentshard")
+	addLegacyRootAliases(guildunavailable.Command, "isguildunavailable")
+}
+
+func addLegacyRootAliases(cmd *commands.YAGCommand, names ...string) {
+	trigger := cmd.GetTrigger().SetHideFromHelp(true)
+	trigger.Names = names
+	commands.CommandSystem.Root.AddCommand(cmd, trigger)
 }
 
 func RegisterPlugin() {

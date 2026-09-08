@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/analytics"
@@ -122,30 +123,55 @@ func (p *Plugin) processChannelsConcurrently(channels []string, workerCount int,
 	wg.Wait()
 }
 
-func (p *Plugin) webSubSubscribeWithRetry(channel string) {
+func (p *Plugin) webSubSubscribeWithRetry(channel string) bool {
 	const maxRetries = 3
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		err := p.WebSubSubscribe(channel)
 		if err == nil {
-			return
+			return true
 		}
 		if attempt == maxRetries {
 			logger.WithError(err).WithField("yt_channel", channel).Error("websub subscribe failed after retries")
-			return
+			return false
 		}
 		time.Sleep(time.Second * time.Duration(1<<attempt))
 	}
+
+	return false
 }
 
 func (p *Plugin) resubscribeChannels(channels []string) {
-	if len(channels) < 1 {
+	total := len(channels)
+	if total < 1 {
 		return
 	}
 
 	// a batch size of zero would spin forever on the chunking this replaced
 	workers := max(confResubBatchSize.GetInt(), 1)
-	logger.Infof("Resubscribing %d expiring subs with %d workers", len(channels), workers)
-	p.processChannelsConcurrently(channels, workers, p.webSubSubscribeWithRetry)
+	// scaled so a pass reports roughly twenty times whatever its size
+	progressEvery := max(total/20, 1)
+
+	logger.Infof("Resubscribing %d expiring subs with %d workers", total, workers)
+
+	var done, succeeded, failed atomic.Int64
+	started := time.Now()
+
+	p.processChannelsConcurrently(channels, workers, func(channel string) {
+		if p.webSubSubscribeWithRetry(channel) {
+			succeeded.Add(1)
+		} else {
+			failed.Add(1)
+		}
+
+		// Add returns the new value, so exactly one worker reports each milestone
+		if completed := done.Add(1); completed%int64(progressEvery) == 0 || completed == int64(total) {
+			logger.Infof("Resubscribed %d/%d expiring subs, %d ok, %d failed, %d pending",
+				completed, total, succeeded.Load(), failed.Load(), int64(total)-completed)
+		}
+	})
+
+	logger.Infof("Finished resubscribing %d expiring subs in %s, %d ok, %d failed",
+		total, time.Since(started).Truncate(time.Second), succeeded.Load(), failed.Load())
 }
 
 // websubChannelsByScore returns the channels whose lease expiry falls in the given
