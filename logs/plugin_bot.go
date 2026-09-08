@@ -286,13 +286,11 @@ var cmdWhois = &commands.YAGCommand{
 }
 
 var cmdUsernames = &commands.YAGCommand{
-	CmdCategory:         commands.CategoryTool,
-	Name:                "Usernames",
-	Description:         "Shows past usernames of a user.",
-	Aliases:             []string{"unames", "un"},
-	SlashCommandEnabled: true,
-	DefaultEnabled:      true,
-	RunInDM:             true,
+	CmdCategory: commands.CategoryTool,
+	Name:        "Usernames",
+	Description: "Shows past usernames of a user.",
+	Aliases:     []string{"unames", "un"},
+	RunInDM:     true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
@@ -349,13 +347,11 @@ var cmdUsernames = &commands.YAGCommand{
 }
 
 var cmdNicknames = &commands.YAGCommand{
-	CmdCategory:         commands.CategoryTool,
-	Name:                "Nicknames",
-	Description:         "Shows past nicknames of a user.",
-	Aliases:             []string{"nn"},
-	SlashCommandEnabled: true,
-	DefaultEnabled:      true,
-	RunInDM:             false,
+	CmdCategory: commands.CategoryTool,
+	Name:        "Nicknames",
+	Description: "Shows past nicknames of a user.",
+	Aliases:     []string{"nn"},
+	RunInDM:     false,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
@@ -409,12 +405,10 @@ var cmdNicknames = &commands.YAGCommand{
 }
 
 var cmdClearNames = &commands.YAGCommand{
-	CmdCategory:         commands.CategoryTool,
-	Name:                "ResetPastNames",
-	Description:         "Reset your past usernames/nicknames.",
-	SlashCommandEnabled: true,
-	DefaultEnabled:      true,
-	RunInDM:             true,
+	CmdCategory: commands.CategoryTool,
+	Name:        "ResetPastNames",
+	Description: "Reset your past usernames/nicknames.",
+	RunInDM:     true,
 	// Cooldown:    100,
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		queries := []string{

@@ -33,15 +33,18 @@ var reminderLegacyNames = map[string][]string{
 }
 
 func (p *Plugin) AddCommands() {
-	container, _ := commands.CommandSystem.Root.Sub("reminder", "remindme", "remind")
-	container.Description = "Set and manage reminders"
+	container, _ := commands.CommandSystem.Root.Sub("reminder")
+	container.Description = "Manage your reminders"
 
 	for _, cmd := range cmds {
-		commands.AddContainerCommand(container, cmd)
-
-		if legacy, ok := reminderLegacyNames[cmd.Name]; ok {
-			commands.AddRootAliases(p, cmd, legacy...)
+		legacy, isSubcommand := reminderLegacyNames[cmd.Name]
+		if !isSubcommand {
+			commands.AddRootCommands(p, cmd)
+			continue
 		}
+
+		commands.AddContainerCommand(container, cmd)
+		commands.AddRootAliases(p, cmd, legacy...)
 	}
 
 	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
@@ -65,9 +68,10 @@ const (
 var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:         commands.CategoryTool,
-		Name:                "Add",
-		Aliases:             []string{""},
-		LegacyOverrideNames: []string{"remindme"},
+		Name:                "Remindme",
+		Aliases:             []string{"remind"},
+		SlashCommandEnabled: true,
+		DefaultEnabled:      true,
 		Description:         "Schedules a reminder, example: 'remindme 1h30min are you still alive?'",
 		RequiredArgs:        2,
 		Arguments: []*dcmd.ArgDef{
@@ -77,7 +81,6 @@ var cmds = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "channel", Type: dcmd.Channel},
 		},
-		DefaultEnabled: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			uid := discordgo.StrID(parsed.Author.ID)
 			count, _ := models.Reminders(models.ReminderWhere.UserID.EQ(uid)).CountG(parsed.Context())
