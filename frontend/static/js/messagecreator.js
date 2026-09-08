@@ -123,7 +123,7 @@
         show(els.normalFields, !v2);
         els.componentsLabel.innerHTML = v2
             ? "Components"
-            : 'Components <span class="text-muted">(optional — buttons &amp; menus)</span>';
+            : 'Components <span class="text-muted">(optional - buttons &amp; menus)</span>';
         els.modeHint.textContent = v2
             ? "Components V2: content & embeds are replaced by components (Text, Container, Section, …)."
             : "Normal message: content, an embed, and up to 5 rows of buttons / select menus.";
@@ -142,8 +142,8 @@
             });
             els.typeLockNote.style.display = "";
             els.typeLockNote.textContent = lockedMode === "componentsv2"
-                ? "This is a Components V2 message — its type can't be changed when editing."
-                : "Editing an existing message — its type can't be changed.";
+                ? "This is a Components V2 message - its type can't be changed when editing."
+                : "Editing an existing message - its type can't be changed.";
         } else {
             radios.forEach(function (r) {
                 let label = r.closest("label");
@@ -233,7 +233,7 @@
             switch (c.type) {
                 case 1:
                     let items = c.components || [];
-                    if (!items.length) errs.push("An action row is empty — add a button or select menu, or remove it.");
+                    if (!items.length) errs.push("An action row is empty - add a button or select menu, or remove it.");
                     if (items.length > 5) errs.push("An action row can have at most 5 components.");
                     if (items.some(function (x) { return x.type !== 2; }) && items.length > 1) {
                         errs.push("A select menu can't share an action row with other components.");
@@ -427,8 +427,8 @@
     function showCompError(msg) { if (els.compError) els.compError.textContent = msg || ""; }
 
 
-    // refreshPreview: a field changed — refresh the preview without rebuilding the editor (keeps
-    // input focus). rebuildEditor: structure changed — re-render the whole builder.
+    // refreshPreview: a field changed - refresh the preview without rebuilding the editor (keeps
+    // input focus). rebuildEditor: structure changed - re-render the whole builder.
     function refreshPreview() { renderPreview(); }
     function rebuildEditor() { renderBuilder(); renderPreview(); }
 
@@ -915,7 +915,7 @@
     }
 
     // The editable custom_id field holds the bare suffix; the "templates-" prefix is added on build.
-    // Components loaded without that prefix are "locked" — shown read-only so their id is preserved.
+    // Components loaded without that prefix are "locked" - shown read-only so their id is preserved.
     function customIdField(node) {
         if (node._locked) {
             return readonlyField("Custom ID (fixed)", node.custom_id,

@@ -55,7 +55,7 @@ func init() {
 			`Bishounen Hitler`,
 			`Blowjobs`,
 			`Broken Dreams`,
-			`Burlesque shows. Like pole dancing — but classier`,
+			`Burlesque shows. Like pole dancing - but classier`,
 			`Con drama`,
 			`Cosplayers`,
 			`Cosplaying something obscure, and then getting mad when nobody recognizes you`,

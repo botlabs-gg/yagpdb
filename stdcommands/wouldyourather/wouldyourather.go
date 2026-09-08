@@ -20,10 +20,12 @@ func randomQuestion() WouldYouRather {
 }
 
 var Command = &commands.YAGCommand{
-	CmdCategory: commands.CategoryFun,
-	Name:        "WouldYouRather",
-	Aliases:     []string{"wyr"},
-	Description: "Get presented with 2 options.",
+	CmdCategory:         commands.CategoryFun,
+	Name:                "WouldYouRather",
+	Aliases:             []string{"wyr"},
+	Description:         "Get presented with 2 options.",
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "raw", Help: "Raw output"},
 	},

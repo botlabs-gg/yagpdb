@@ -15,6 +15,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/lib/dcmd"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
+	"github.com/botlabs-gg/yagpdb/v2/lib/dstate"
 	"github.com/botlabs-gg/yagpdb/v2/timezonecompanion/models"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
@@ -27,11 +28,16 @@ func (p *Plugin) BotInit() {
 }
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, &commands.YAGCommand{
-		CmdCategory: commands.CategoryTool,
-		Name:        "settimezone",
-		Aliases:     []string{"setz", "tzset"},
-		Description: "Sets your timezone, used for various purposes such as auto conversion. Give it a TZ identifier as [listed on Wikipedia](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).",
+	container, _ := commands.CommandSystem.Root.Sub("timezone", "tz")
+	container.Description = "Set your timezone and control time conversion"
+
+	tzCommands := []*commands.YAGCommand{{
+		CmdCategory:         commands.CategoryTool,
+		Name:                "Set",
+		Aliases:             []string{""},
+		LegacyOverrideNames: []string{"settimezone"},
+		Description:         "Sets your timezone, used for various purposes such as auto conversion. Give it a TZ identifier as [listed on Wikipedia](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).",
+		DefaultEnabled:      true,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Timezone", Type: dcmd.String},
 		},
@@ -100,12 +106,12 @@ func (p *Plugin) AddCommands() {
 
 			return fmt.Sprintf("Set your timezone to `%s`: %s\n", zone, name), nil
 		},
-	}, &commands.YAGCommand{
+	}, {
 		CmdCategory:         commands.CategoryTool,
-		Name:                "ToggleTimeConversion",
-		Aliases:             []string{"toggletconv", "ttc"},
+		Name:                "ToggleConversion",
 		Description:         "Toggles automatic time conversion for people with registered timezones (setz) in this channel, it's on by default, toggle all channels by giving it `all`",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageMessages, discordgo.PermissionManageGuild},
+		DefaultEnabled:      true,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "flags", Type: dcmd.String},
 		},
@@ -183,6 +189,17 @@ func (p *Plugin) AddCommands() {
 
 			return resp, nil
 		},
+	}}
+
+	for _, cmd := range tzCommands {
+		commands.AddContainerCommand(container, cmd)
+	}
+
+	commands.AddRootAliases(p, tzCommands[0], "settimezone", "setz", "tzset")
+	commands.AddRootAliases(p, tzCommands[1], "toggletimeconversion", "toggletconv", "ttc")
+
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
+		return nil, nil
 	})
 }
 

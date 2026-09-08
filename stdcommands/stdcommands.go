@@ -79,33 +79,17 @@ func (p *Plugin) AddCommands() {
 		invite.Command,
 
 		// Standard
-		define.Command,
-		weather.Command,
 		calc.Command,
-		topic.Command,
-		catfact.Command,
-		dadjoke.Command,
-		dogfact.Command,
-		advice.Command,
 		ping.Command,
-		throw.Command,
-		roll.Command,
 		customembed.Command,
 		simpleembed.Command,
 		currenttime.Command,
 		listroles.Command,
 		memstats.Command,
-		wouldyourather.Command,
 		poll.Command,
 		undelete.Command,
 		viewperms.Command,
 		topgames.Command,
-		xkcd.Command,
-		howlongtobeat.Command,
-		inspire.Command,
-		forex.Command,
-		roast.Command,
-		eightball.Command,
 
 		// Maintenance
 		stateinfo.Command,
@@ -131,7 +115,33 @@ func (p *Plugin) AddCommands() {
 
 	statedbg.Commands()
 	guildCommands(p)
-	commands.AddRootCommands(p, dictionary.Command)
+	funCommands(p)
+}
+
+var funCommandList = []*commands.YAGCommand{
+	eightball.Command, advice.Command, catfact.Command, dadjoke.Command,
+	dogfact.Command, define.Command, dictionary.Command, forex.Command,
+	howlongtobeat.Command, inspire.Command, roast.Command, roll.Command,
+	throw.Command, topic.Command, weather.Command, wouldyourather.Command,
+	xkcd.Command,
+}
+
+func funCommands(p *Plugin) {
+	container, _ := commands.CommandSystem.Root.Sub("fun")
+	container.Description = "Fun and lookup commands"
+
+	for _, cmd := range funCommandList {
+		// the container owns the slash surface for these now
+		cmd.SlashCommandEnabled = false
+
+		legacy := append([]string{cmd.Name}, cmd.Aliases...)
+		commands.AddContainerCommand(container, cmd)
+		commands.AddRootAliases(p, cmd, legacy...)
+	}
+
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
+		return nil, nil
+	})
 }
 
 func guildCommands(p *Plugin) {
@@ -140,23 +150,15 @@ func guildCommands(p *Plugin) {
 
 	for _, cmd := range []*commands.YAGCommand{currentshard.Command, guildunavailable.Command} {
 		cmd.Plugin = p
-		container.AddCommand(cmd, cmd.GetTrigger())
+		commands.AddContainerCommand(container, cmd)
 	}
 
 	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
 		return nil, nil
 	})
 
-	// The names these had before they moved into the container, so existing
-	// prefix and mention usage keeps working.
-	addLegacyRootAliases(currentshard.Command, "cshard", "currentshard")
-	addLegacyRootAliases(guildunavailable.Command, "isguildunavailable")
-}
-
-func addLegacyRootAliases(cmd *commands.YAGCommand, names ...string) {
-	trigger := cmd.GetTrigger().SetHideFromHelp(true)
-	trigger.Names = names
-	commands.CommandSystem.Root.AddCommand(cmd, trigger)
+	commands.AddRootAliases(p, currentshard.Command, "cshard", "currentshard")
+	commands.AddRootAliases(p, guildunavailable.Command, "isguildunavailable")
 }
 
 func RegisterPlugin() {

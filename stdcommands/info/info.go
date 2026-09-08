@@ -9,10 +9,12 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory: commands.CategoryGeneral,
-	Name:        "Info",
-	Description: "Responds with bot information",
-	RunInDM:     true,
+	CmdCategory:         commands.CategoryGeneral,
+	Name:                "Info",
+	Description:         "Responds with bot information",
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
+	RunInDM:             true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		info := fmt.Sprintf(`**YAGPDB - Yet Another General Purpose Discord Bot**
 This bot focuses on being configurable and therefore is one of the most advanced bots.

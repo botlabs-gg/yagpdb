@@ -26,8 +26,27 @@ var logger = common.GetPluginLogger(&Plugin{})
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
+var reminderLegacyNames = map[string][]string{
+	"List":    {"reminders"},
+	"Channel": {"creminders", "channelreminders"},
+	"Delete":  {"delreminder", "rmreminder"},
+}
+
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmds...)
+	container, _ := commands.CommandSystem.Root.Sub("reminder", "remindme", "remind")
+	container.Description = "Set and manage reminders"
+
+	for _, cmd := range cmds {
+		commands.AddContainerCommand(container, cmd)
+
+		if legacy, ok := reminderLegacyNames[cmd.Name]; ok {
+			commands.AddRootAliases(p, cmd, legacy...)
+		}
+	}
+
+	commands.RegisterSlashCommandsContainer(container, true, func(gs *dstate.GuildSet) ([]int64, error) {
+		return nil, nil
+	})
 }
 
 func (p *Plugin) BotInit() {
@@ -45,11 +64,12 @@ const (
 // Reminder management commands
 var cmds = []*commands.YAGCommand{
 	{
-		CmdCategory:  commands.CategoryTool,
-		Name:         "Remindme",
-		Description:  "Schedules a reminder, example: 'remindme 1h30min are you still alive?'",
-		Aliases:      []string{"remind", "reminder"},
-		RequiredArgs: 2,
+		CmdCategory:         commands.CategoryTool,
+		Name:                "Add",
+		Aliases:             []string{""},
+		LegacyOverrideNames: []string{"remindme"},
+		Description:         "Schedules a reminder, example: 'remindme 1h30min are you still alive?'",
+		RequiredArgs:        2,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Time", Type: &commands.DurationArg{}},
 			{Name: "Message", Type: dcmd.String},
@@ -57,8 +77,7 @@ var cmds = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "channel", Type: dcmd.Channel},
 		},
-		SlashCommandEnabled: true,
-		DefaultEnabled:      true,
+		DefaultEnabled: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			uid := discordgo.StrID(parsed.Author.ID)
 			count, _ := models.Reminders(models.ReminderWhere.UserID.EQ(uid)).CountG(parsed.Context())
@@ -124,9 +143,8 @@ var cmds = []*commands.YAGCommand{
 	},
 	{
 		CmdCategory:         commands.CategoryTool,
-		Name:                "Reminders",
+		Name:                "List",
 		Description:         "Lists your active reminders in the server, use in DM to see all your reminders",
-		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
 		RunInDM:             true,
@@ -160,11 +178,9 @@ var cmds = []*commands.YAGCommand{
 	},
 	{
 		CmdCategory:         commands.CategoryTool,
-		Name:                "CReminders",
-		Aliases:             []string{"channelreminders"},
+		Name:                "Channel",
 		Description:         "Lists reminders in channel",
 		RequireDiscordPerms: []int64{discordgo.PermissionManageChannels},
-		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
@@ -186,8 +202,7 @@ var cmds = []*commands.YAGCommand{
 	},
 	{
 		CmdCategory:  commands.CategoryTool,
-		Name:         "DelReminder",
-		Aliases:      []string{"rmreminder"},
+		Name:         "Delete",
 		Description:  "Deletes a reminder. You can delete reminders from other users provided you are running this command in the same guild the reminder was created in and have the Manage Channel permission in the channel the reminder was created in.",
 		RequiredArgs: 0,
 		RunInDM:      true,
@@ -197,7 +212,6 @@ var cmds = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "a", Help: "All"},
 		},
-		SlashCommandEnabled: true,
 		DefaultEnabled:      true,
 		IsResponseEphemeral: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {

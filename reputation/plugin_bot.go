@@ -27,8 +27,30 @@ import (
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
+var repLegacyNames = map[string][]string{
+	"Give":   {"giverep", "+", "gr", "grep", "+rep"},
+	"Take":   {"takerep", "-", "tr", "trep", "-rep"},
+	"Set":    {"setrep", "setrepid"},
+	"Delete": {"delrep"},
+	"Log":    {"replog", "replogs"},
+	"Top":    {"toprep"},
+}
+
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmds...)
+	container, _ := commands.CommandSystem.Root.Sub("rep")
+	container.Description = "Give, take and inspect reputation"
+
+	for _, cmd := range cmds {
+		commands.AddContainerCommand(container, cmd)
+
+		if legacy, ok := repLegacyNames[cmd.Name]; ok {
+			commands.AddRootAliases(p, cmd, legacy...)
+		}
+	}
+
+	commands.RegisterSlashCommandsContainer(container, false, func(gs *dstate.GuildSet) ([]int64, error) {
+		return nil, nil
+	})
 }
 
 func (p *Plugin) BotInit() {
@@ -130,16 +152,14 @@ func handleMessageCreate(evt *eventsystem.EventData) {
 var cmds = []*commands.YAGCommand{
 	{
 		CmdCategory:  commands.CategoryFun,
-		Name:         "TakeRep",
-		Aliases:      []string{"-", "tr", "trep", "-rep"},
+		Name:         "Take",
 		Description:  "Takes away rep from someone",
 		RequiredArgs: 1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
 		},
-		SlashCommandEnabled: true,
-		DefaultEnabled:      false,
+		DefaultEnabled: false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			if parsed.Args[1].Int() < 1 {
 				return "**rep amount should be greater than or equal to 1**", nil
@@ -149,13 +169,11 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	{
-		CmdCategory:         commands.CategoryFun,
-		Name:                "GiveRep",
-		Aliases:             []string{"+", "gr", "grep", "+rep"},
-		Description:         "Gives rep to someone",
-		RequiredArgs:        1,
-		SlashCommandEnabled: true,
-		DefaultEnabled:      false,
+		CmdCategory:    commands.CategoryFun,
+		Name:           "Give",
+		Description:    "Gives rep to someone",
+		RequiredArgs:   1,
+		DefaultEnabled: false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
 			{Name: "Num", Type: dcmd.Int, Default: 1},
@@ -168,13 +186,11 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	{
-		CmdCategory:         commands.CategoryFun,
-		Name:                "SetRep",
-		Aliases:             []string{"SetRepID"}, // alias for legacy reasons, used to be a standalone command
-		Description:         "Sets someones rep, this is an admin command and bypasses cooldowns and other restrictions.",
-		RequiredArgs:        2,
-		SlashCommandEnabled: true,
-		DefaultEnabled:      false,
+		CmdCategory:    commands.CategoryFun,
+		Name:           "Set",
+		Description:    "Sets someones rep, this is an admin command and bypasses cooldowns and other restrictions.",
+		RequiredArgs:   2,
+		DefaultEnabled: false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Num", Type: dcmd.Int},
@@ -217,12 +233,11 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	{
-		CmdCategory:         commands.CategoryFun,
-		Name:                "DelRep",
-		Description:         "Deletes someone from the reputation list completely, this cannot be undone.",
-		RequiredArgs:        1,
-		SlashCommandEnabled: true,
-		DefaultEnabled:      false,
+		CmdCategory:    commands.CategoryFun,
+		Name:           "Delete",
+		Description:    "Deletes someone from the reputation list completely, this cannot be undone.",
+		RequiredArgs:   1,
+		DefaultEnabled: false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 		},
@@ -251,12 +266,10 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	{
-		CmdCategory:         commands.CategoryFun,
-		Name:                "RepLog",
-		Aliases:             []string{"replogs"},
-		Description:         "Shows the rep log for the specified user.",
-		SlashCommandEnabled: true,
-		DefaultEnabled:      false,
+		CmdCategory:    commands.CategoryFun,
+		Name:           "Log",
+		Description:    "Shows the rep log for the specified user.",
+		DefaultEnabled: false,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID},
 			{Name: "Page", Type: dcmd.Int, Default: 1},
@@ -355,14 +368,15 @@ var cmds = []*commands.YAGCommand{
 		},
 	},
 	{
-		CmdCategory: commands.CategoryFun,
-		Name:        "Rep",
-		Description: "Shows yours or the specified users current rep and rank",
+		CmdCategory:         commands.CategoryFun,
+		Name:                "Check",
+		Aliases:             []string{""},
+		LegacyOverrideNames: []string{"rep"},
+		Description:         "Shows yours or the specified users current rep and rank",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.User},
 		},
-		SlashCommandEnabled: true,
-		DefaultEnabled:      false,
+		DefaultEnabled: false,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			target := parsed.Author
 			if parsed.Args[0].Value != nil {
@@ -394,7 +408,7 @@ var cmds = []*commands.YAGCommand{
 	},
 	{
 		CmdCategory: commands.CategoryFun,
-		Name:        "TopRep",
+		Name:        "Top",
 		Description: "Shows rep leaderboard on the server",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: dcmd.Int, Default: 0},
@@ -402,8 +416,7 @@ var cmds = []*commands.YAGCommand{
 		ArgSwitches: []*dcmd.ArgDef{
 			{Name: "user", Help: "User to search for in the leaderboard", Type: dcmd.UserID},
 		},
-		SlashCommandEnabled: true,
-		DefaultEnabled:      true,
+		DefaultEnabled: true,
 		RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 			page := parsed.Args[0].Int()
 			if id := parsed.Switch("user").Int64(); id != 0 {

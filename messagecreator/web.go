@@ -92,7 +92,7 @@ func handleSend(w http.ResponseWriter, r *http.Request) (web.TemplateData, error
 	}
 
 	if !allowAction(ctx, activeGuild.ID) {
-		return tmpl.AddAlerts(web.ErrorAlert("You're doing that too fast — you can send or edit at most one message per minute.")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("You're doing that too fast - you can send or edit at most one message per minute.")), nil
 	}
 
 	req := &SendRequest{ChannelID: channelID, Mode: mode, Payload: json.RawMessage(payload)}
@@ -133,7 +133,7 @@ func handleEdit(w http.ResponseWriter, r *http.Request) (web.TemplateData, error
 	}
 
 	if !allowAction(ctx, activeGuild.ID) {
-		return tmpl.AddAlerts(web.ErrorAlert("You're doing that too fast — you can send or edit at most one message per minute.")), nil
+		return tmpl.AddAlerts(web.ErrorAlert("You're doing that too fast - you can send or edit at most one message per minute.")), nil
 	}
 
 	req := &EditRequest{ChannelID: channelID, MessageID: messageID, Mode: mode, Payload: json.RawMessage(payload)}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 	"math/rand"
 	"regexp"
 	"runtime/debug"
@@ -24,6 +25,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/botlabs-gg/yagpdb/v2/bot"
 	"github.com/botlabs-gg/yagpdb/v2/bot/eventsystem"
+	"github.com/botlabs-gg/yagpdb/v2/bot/paginatedmessages"
 	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/keylock"
@@ -61,7 +63,21 @@ var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ commands.CommandProvider = (*Plugin)(nil)
 
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, cmdListCommands, cmdFixCommands, cmdEvalCommand, cmdDiagnoseCCTriggers)
+	commands.AddRootCommands(p, cmdFixCommands)
+
+	container, _ := commands.CommandSystem.Root.Sub("customcommands", "cc")
+	container.Description = "Inspect and run custom commands"
+	commands.AddContainerCommand(container, cmdListCommands)
+	commands.AddContainerCommand(container, cmdEvalCommand)
+	commands.AddContainerCommand(container, cmdDiagnoseCCTriggers)
+
+	commands.RegisterSlashCommandsContainer(container, false, func(gs *dstate.GuildSet) ([]int64, error) {
+		return nil, nil
+	})
+
+	commands.AddRootAliases(p, cmdEvalCommand, "evalcc")
+	commands.AddRootAliases(p, cmdDiagnoseCCTriggers,
+		"diagnosecctriggers", "debugcctriggers", "diagnosetriggers", "debugtriggers", "dcct")
 }
 
 func (p *Plugin) BotInit() {
@@ -93,14 +109,14 @@ type DelayedRunCCData struct {
 
 var cmdEvalCommand = &commands.YAGCommand{
 	CmdCategory:  commands.CategoryTool,
-	Name:         "Evalcc",
+	Name:         "Eval",
+	Aliases:      []string{"evalcc"},
 	Description:  "executes custom command code.",
 	RequiredArgs: 1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "code", Type: dcmd.String},
 	},
-	SlashCommandEnabled: false,
-	DefaultEnabled:      true,
+	DefaultEnabled: true,
 	RunFunc: func(data *dcmd.Data) (any, error) {
 		hasCoreWriteRole := false
 
@@ -129,13 +145,10 @@ var cmdEvalCommand = &commands.YAGCommand{
 		channel := data.GuildData.CS
 		ctx := templates.NewContext(data.GuildData.GS, channel, data.GuildData.MS)
 		ctx.ExecutedFrom = templates.ExecutedFromEvalCC
-		ctx.Msg = data.TraditionalTriggerData.Message
+		ctx.Msg = evalTriggerMessage(data)
 		ctx.Data["Message"] = ctx.Msg
 
-		// use stripped message content instead of parsed arg data to avoid dcmd
-		// from misinterpreting backslashes and losing spaces in input; see
-		// https://github.com/botlabs-gg/yagpdb/pull/1547
-		code := common.ParseCodeblock(data.TraditionalTriggerData.MessageStrippedPrefix)
+		code := common.ParseCodeblock(evalCode(data))
 
 		if channel == nil {
 			return "Something weird happened... Contact the support server.", nil
@@ -195,14 +208,13 @@ func (diag triggeredCmdDiagnosis) WriteTo(out *strings.Builder, includeLink bool
 
 var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 	CmdCategory: commands.CategoryDebug,
-	Name:        "DiagnoseCCTriggers",
-	Aliases:     []string{"debugcctriggers", "diagnosetriggers", "debugtriggers", "dcct"},
+	Name:        "Diagnose",
+	Aliases:     []string{"dcct", "diagnosetriggers", "debugtriggers"},
 	Description: "List all custom commands that would trigger on the input and identify potential issues",
 	Arguments: []*dcmd.ArgDef{
 		{Name: "input", Type: dcmd.String},
 	},
 	RequireDiscordPerms: []int64{discordgo.PermissionManageGuild},
-	SlashCommandEnabled: true,
 	DefaultEnabled:      true,
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		cmds, err := BotCachedGetCommandsWithMessageTriggers(data.GuildData.GS.ID, data.Context())
@@ -285,21 +297,22 @@ var cmdDiagnoseCCTriggers = &commands.YAGCommand{
 }
 
 var cmdListCommands = &commands.YAGCommand{
-	CmdCategory:    commands.CategoryTool,
-	Name:           "CustomCommands",
-	Aliases:        []string{"cc"},
-	Description:    "Shows a custom command specified by id, trigger, or name, or lists them all",
-	ArgumentCombos: [][]int{{0}, {1}, {}},
+	CmdCategory:         commands.CategoryTool,
+	Name:                "List",
+	Aliases:             []string{""},
+	LegacyOverrideNames: []string{"customcommands", "cc"},
+	Description:         "Shows a custom command specified by id, trigger, or name, or lists them all",
+	ArgumentCombos:      [][]int{{0}, {1}, {}},
 	Arguments: []*dcmd.ArgDef{
 		{Name: "ID", Type: dcmd.Int},
 		{Name: "Name-Or-Trigger", Type: dcmd.String},
 	},
-	SlashCommandEnabled: true,
-	DefaultEnabled:      false,
+	DefaultEnabled: false,
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "file", Help: "Send responses in file"},
 		{Name: "color", Help: "Use syntax highlighting (Go)"},
 		{Name: "raw", Help: "Force raw output"},
+		{Name: "page", Help: "Page of the command list to show", Type: dcmd.Int},
 	},
 	RunFunc: func(data *dcmd.Data) (interface{}, error) {
 		ccs, err := models.CustomCommands(qm.Where("guild_id = ?", data.GuildData.GS.ID), qm.OrderBy("local_id")).AllG(data.Context())
@@ -320,19 +333,20 @@ var cmdListCommands = &commands.YAGCommand{
 
 		foundCCS, provided := FindCommands(ccs, data)
 		if len(foundCCS) < 1 {
-			list := StringCommands(ccs, groupMap)
-			if len(list) == 0 {
+			if len(ccs) == 0 {
 				return "This server has no custom commands, sry.", nil
 			}
+
+			header := "No id or trigger provided, here is a list of all server commands:"
 			if provided {
-				return "No command by that id, trigger or name found, here is a list of them all:\n" + list, nil
-			} else {
-				return "No id or trigger provided, here is a list of all server commands:\n" + list, nil
+				header = "No command by that id, trigger or name found, here is a list of them all:"
 			}
+
+			return paginatedCCList(data, ccs, groupMap, header), nil
 		}
 
 		if len(foundCCS) > 1 {
-			return "More than 1 matched command\n" + StringCommands(foundCCS, groupMap), nil
+			return paginatedCCList(data, foundCCS, groupMap, "More than 1 matched command"), nil
 		}
 
 		cc := foundCCS[0]
@@ -467,6 +481,52 @@ func FindCommands(ccs []*models.CustomCommand, data *dcmd.Data) (foundCCS []*mod
 	}
 
 	return
+}
+
+const ccsPerPage = 15
+
+func paginatedCCList(data *dcmd.Data, ccs []*models.CustomCommand, gMap map[int64]string, header string) *paginatedmessages.PaginatedResponse {
+	maxPages := int(math.Ceil(float64(len(ccs)) / ccsPerPage))
+
+	return paginatedmessages.NewPaginatedResponse(data.GuildData.GS.ID, data.ChannelID, data.Switch("page").Int(), maxPages,
+		func(p *paginatedmessages.PaginatedMessage, page int) (*discordgo.MessageEmbed, error) {
+			start := (page - 1) * ccsPerPage
+			if start >= len(ccs) {
+				return nil, paginatedmessages.ErrNoResults
+			}
+
+			return &discordgo.MessageEmbed{
+				Title:       "Custom commands",
+				Description: header + "\n" + StringCommands(ccs[start:min(start+ccsPerPage, len(ccs))], gMap),
+			}, nil
+		})
+}
+
+// dcmd misinterprets backslashes and loses spaces when parsing message args, so
+// prefix invocations read the raw message instead; see
+// https://github.com/botlabs-gg/yagpdb/pull/1547
+func evalCode(data *dcmd.Data) string {
+	if data.TraditionalTriggerData == nil {
+		return data.Args[0].Str()
+	}
+
+	return data.TraditionalTriggerData.MessageStrippedPrefix
+}
+
+func evalTriggerMessage(data *dcmd.Data) *discordgo.Message {
+	if data.TraditionalTriggerData != nil {
+		return data.TraditionalTriggerData.Message
+	}
+
+	interaction := data.SlashCommandTriggerData.Interaction
+	return &discordgo.Message{
+		ID:        interaction.ID,
+		GuildID:   data.GuildData.GS.ID,
+		ChannelID: data.ChannelID,
+		Author:    data.Author,
+		Member:    interaction.Member,
+		Content:   data.Args[0].Str(),
+	}
 }
 
 func StringCommands(ccs []*models.CustomCommand, gMap map[int64]string) string {
