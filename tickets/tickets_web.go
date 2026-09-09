@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/botlabs-gg/yagpdb/v2/commands"
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -136,8 +135,6 @@ func (p *Plugin) handlePostSettings(w http.ResponseWriter, r *http.Request) (web
 	if err == nil {
 		go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKey))
 	}
-
-	commands.PubsubSendUpdateSlashCommandsPermissions(activeGuild.ID)
 
 	return templateData, err
 }
