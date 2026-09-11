@@ -60,12 +60,12 @@ require (
 	github.com/volatiletech/sqlboiler/v4 v4.14.2
 	github.com/volatiletech/strmangle v0.0.6
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.52.0
+	golang.org/x/crypto v0.55.0
 	golang.org/x/image v0.41.0
-	golang.org/x/net v0.55.0
+	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.36.0
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/text v0.37.0
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.41.0
 	golang.org/x/time v0.14.0
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/api v0.264.0
@@ -183,7 +183,7 @@ require (
 	go.mongodb.org/mongo-driver v1.17.7 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/grpc v1.83.1 // indirect
+	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
