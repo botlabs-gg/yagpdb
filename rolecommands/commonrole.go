@@ -280,7 +280,7 @@ func (c *CommonRoleSettings) ToggleRole(ms *dstate.MemberState) (gaveRole bool, 
 }
 
 func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.MemberState) (gaveRole bool, err error) {
-	// Default behaviour of groups is no more restrictions than reuiqred and ignore roles
+	// Groups other than "single" impose no additional restrictions.
 	if c.ParentGroupMode != GroupModeSingle {
 		// We already passed all checks
 		gaveRole, err = c.ToggleRole(ms)
@@ -290,26 +290,37 @@ func (c *CommonRoleSettings) GroupToggleRole(ctx context.Context, ms *dstate.Mem
 		return gaveRole, err
 	}
 
-	// If user already has role it's attempting to give itself
+	// User already has this role, so toggle it off.
 	if slices.Contains(ms.Member.Roles, c.RoleId) {
 		err = common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, c.RoleId)
 		return false, err
 	}
 
-	// Check if the user has any other role commands in this group
 	commands := c.AllGroupRoles(ctx)
+	newRoles := slices.Clone(ms.Member.Roles) // copy so we can safely modify
+
+	modeSettings := c.ModeSettings()
+
+	// Check if the user has any other role commands in this group.
 	for _, v := range commands {
-		if slices.Contains(ms.Member.Roles, v.RoleId) {
-			if c.ModeSettings().SingleAutoToggleOff {
-				common.BotSession.GuildMemberRoleRemove(ms.GuildID, ms.User.ID, v.RoleId)
-			} else {
-				return false, NewCommonRoleError("Max 1 role in **%s** is allowed", c)
-			}
+		if !slices.Contains(ms.Member.Roles, v.RoleId) {
+			continue
 		}
+		if !modeSettings.SingleAutoToggleOff {
+			return false, NewCommonRoleError("Max 1 role in **%s** is allowed", c)
+		}
+		newRoles = slices.DeleteFunc(newRoles, func(id int64) bool {
+			return id == v.RoleId
+		})
 	}
 
-	// Finally give the role
-	err = common.BotSession.GuildMemberRoleAdd(ms.GuildID, ms.User.ID, c.RoleId)
+	newRoles = append(newRoles, c.RoleId)
+	rs := make([]string, len(newRoles))
+	for i, id := range newRoles {
+		rs[i] = discordgo.StrID(id)
+	}
+
+	err = common.BotSession.GuildMemberEdit(ms.GuildID, ms.User.ID, rs)
 	if err == nil {
 		err = c.MaybeScheduleRoleRemoval(ctx, ms)
 	}
