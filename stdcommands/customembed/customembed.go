@@ -16,6 +16,8 @@ var Command = &commands.YAGCommand{
 	LongDescription:     "Example: `-ce {\"title\": \"hello\", \"description\": \"wew\"}`",
 	RequiredArgs:        1,
 	RequireDiscordPerms: []int64{discordgo.PermissionManageMessages},
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Json", Type: dcmd.String},
 	},

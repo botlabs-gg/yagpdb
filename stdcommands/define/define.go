@@ -20,7 +20,8 @@ var Command = &commands.YAGCommand{
 	Aliases:             []string{"df", "define", "urban", "urbandictionary"},
 	Description:         "Look up an urban dictionary definition, default paginated view.",
 	RequiredArgs:        1,
-	SlashCommandEnabled: false,
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Topic", Type: dcmd.String},
 	},

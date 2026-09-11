@@ -46,11 +46,13 @@ func (p *Plugin) BotInit() {
 
 func (p *Plugin) AddCommands() {
 	commands.AddRootCommands(p, &commands.YAGCommand{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryTool,
-		Cooldown:      5,
-		Name:          "Stats",
-		Description:   "Shows server stats (if public stats are enabled)",
+		CustomEnabled:       true,
+		CmdCategory:         commands.CategoryTool,
+		Cooldown:            5,
+		Name:                "Stats",
+		Description:         "Shows server stats (if public stats are enabled)",
+		SlashCommandEnabled: true,
+		DefaultEnabled:      true,
 		RunFunc: func(data *dcmd.Data) (interface{}, error) {
 			config, err := GetConfig(data.Context(), data.GuildData.GS.ID)
 			if err != nil {

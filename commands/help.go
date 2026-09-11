@@ -17,6 +17,9 @@ var cmdHelp = &YAGCommand{
 	Description: "Shows help about all or one specific command",
 	CmdCategory: CategoryGeneral,
 	RunInDM:     true,
+
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "command", Type: dcmd.String},
 	},

@@ -1615,6 +1615,11 @@ type CreateApplicationCommandRequest struct {
 	Options           []*ApplicationCommandOption `json:"options,omitempty"`            // the parameters for the command
 	DefaultPermission *bool                       `json:"default_permission,omitempty"` // (default true)	whether the command is enabled by default when the app is added to a guild
 	NSFW              bool                        `json:"nsfw,omitempty"`               // marks a command as age-restricted
+
+	// Permission bits a member must have for the command to be shown to them.
+	// Replaces the deprecated DefaultPermission. Nil leaves the command visible
+	// to everyone, a value of 0 hides it from everyone but administrators.
+	DefaultMemberPermissions *int64 `json:"default_member_permissions,string,omitempty"`
 }
 
 func (a *ApplicationCommandInteractionDataResolved) UnmarshalJSON(b []byte) error {

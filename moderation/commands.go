@@ -906,12 +906,13 @@ var ModerationCommands = []*commands.YAGCommand{
 		},
 	},
 	{
-		CustomEnabled: true,
-		CmdCategory:   commands.CategoryModeration,
-		Name:          "Warnings",
-		Description:   "Lists warning of a user.",
-		Aliases:       []string{"Warns"},
-		RequiredArgs:  1,
+		CustomEnabled:       true,
+		CmdCategory:         commands.CategoryModeration,
+		Name:                "List",
+		Description:         "Lists warning of a user.",
+		Aliases:             []string{""},
+		LegacyOverrideNames: []string{"warnings", "warns"},
+		RequiredArgs:        1,
 		Arguments: []*dcmd.ArgDef{
 			{Name: "User", Type: dcmd.UserID, Default: 0},
 			{Name: "Page", Type: &dcmd.IntArg{Max: 10000}, Default: 0},
@@ -968,7 +969,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
-		Name:          "EditWarning",
+		Name:          "Edit",
 		Description:   "Edit a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  2,
 		Arguments: []*dcmd.ArgDef{
@@ -1009,8 +1010,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
-		Name:          "DelWarning",
-		Aliases:       []string{"dw", "delwarn", "deletewarning"},
+		Name:          "Delete",
 		Description:   "Deletes a warning, id is the first number of each warning from the warnings command",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -1074,8 +1074,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	{
 		CustomEnabled: true,
 		CmdCategory:   commands.CategoryModeration,
-		Name:          "ClearWarnings",
-		Aliases:       []string{"clw"},
+		Name:          "Clear",
 		Description:   "Clears the warnings of a user",
 		RequiredArgs:  1,
 		Arguments: []*dcmd.ArgDef{
@@ -1116,8 +1115,7 @@ var ModerationCommands = []*commands.YAGCommand{
 	},
 	{
 		CmdCategory: commands.CategoryModeration,
-		Name:        "TopWarnings",
-		Aliases:     []string{"topwarns"},
+		Name:        "Top",
 		Description: "Shows ranked list of warnings on the server",
 		Arguments: []*dcmd.ArgDef{
 			{Name: "Page", Type: dcmd.Int, Default: 0},

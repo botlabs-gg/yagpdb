@@ -43,8 +43,35 @@ var _ commands.CommandProvider = (*Plugin)(nil)
 var _ bot.BotInitHandler = (*Plugin)(nil)
 var _ bot.ShardMigrationReceiver = (*Plugin)(nil)
 
+var warningsLegacyNames = map[string][]string{
+	"Edit":   {"editwarning"},
+	"Delete": {"delwarning", "dw", "delwarn", "deletewarning"},
+	"Clear":  {"clearwarnings", "clw"},
+	"Top":    {"topwarnings", "topwarns"},
+}
+
 func (p *Plugin) AddCommands() {
-	commands.AddRootCommands(p, ModerationCommands...)
+	container, _ := commands.CommandSystem.Root.Sub("warnings", "warns")
+	container.Description = "Inspect and manage warnings"
+
+	for _, cmd := range ModerationCommands {
+		legacy, isWarningSubcommand := warningsLegacyNames[cmd.Name]
+		if !isWarningSubcommand && cmd.Name != "List" {
+			commands.AddRootCommands(p, cmd)
+			continue
+		}
+
+		cmd.SlashCommandEnabled = false
+		commands.AddContainerCommand(container, cmd)
+
+		if isWarningSubcommand {
+			commands.AddRootAliases(p, cmd, legacy...)
+		}
+	}
+
+	commands.RegisterSlashCommandsContainer(container, false, func(gs *dstate.GuildSet) ([]int64, error) {
+		return nil, nil
+	})
 }
 
 func (p *Plugin) BotInit() {

@@ -9,9 +9,11 @@ import (
 )
 
 var Command = &commands.YAGCommand{
-	CmdCategory: commands.CategoryTool,
-	Name:        "ListRoles",
-	Description: "List roles, their id's, color hex code, and 'mention everyone' perms (useful if you wanna double check to make sure you didn't give anyone mention everyone perms that shouldn't have it)",
+	CmdCategory:         commands.CategoryTool,
+	Name:                "ListRoles",
+	SlashCommandEnabled: true,
+	DefaultEnabled:      true,
+	Description:         "List roles, their id's, color hex code, and 'mention everyone' perms (useful if you wanna double check to make sure you didn't give anyone mention everyone perms that shouldn't have it)",
 	ArgSwitches: []*dcmd.ArgDef{
 		{Name: "nomanaged", Help: "Don't list managed/bot roles"},
 	},
