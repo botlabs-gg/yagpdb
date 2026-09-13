@@ -42,6 +42,7 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/sleep"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/statedbg"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/stateinfo"
+	"github.com/botlabs-gg/yagpdb/v2/stdcommands/tennis"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/throw"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/toggledbg"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/topcommands"
@@ -122,8 +123,8 @@ var funCommandList = []*commands.YAGCommand{
 	eightball.Command, advice.Command, catfact.Command, dadjoke.Command,
 	dogfact.Command, define.Command, dictionary.Command, forex.Command,
 	howlongtobeat.Command, inspire.Command, roast.Command, roll.Command,
-	throw.Command, topic.Command, weather.Command, wouldyourather.Command,
-	xkcd.Command,
+	tennis.Command, throw.Command, topic.Command, weather.Command,
+	wouldyourather.Command, xkcd.Command,
 }
 
 func funCommands(p *Plugin) {
