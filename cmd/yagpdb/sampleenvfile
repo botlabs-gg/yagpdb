@@ -67,13 +67,6 @@ YAGPDB_BOTLEAVESJOINS=""
 # Set to anything to disable the request logging of the webserver
 YAGPDB_DISABLE_REQUEST_LOGGING=""
 
-# Aylien
-YAGPDB_AYLIENAPPID="aylien app id here"
-YAGPDB_AYLIENAPPKEY="aylien app key here"
-
-# Owlbot
-YAGPDB_OWLBOT_TOKEN=
-
 # Reddit
 # You'll need to get a permanent refresh token using a script or something, i should probably make a easy way to do it but eh...
 YAGPDB_REDDIT_CLIENTID="Reddit application clientid here"
@@ -121,8 +114,3 @@ YAGPDB_PATREON_API_CLIENT_SECRET=""
 YAGPDB_GOOGLE_RECAPTCHA_SITE_KEY=""
 YAGPDB_GOOGLE_RECAPTCHA_SECRET=""
 
-# Twitter API credentials for twitter feeds
-# YAGPDB_TWITTER_ACCESS_TOKEN=
-# YAGPDB_TWITTER_ACCESS_TOKEN_SECRET=
-# YAGPDB_TWITTER_CONSUMER_KEY=
-# YAGPDB_TWITTER_CONSUMER_SECRET=

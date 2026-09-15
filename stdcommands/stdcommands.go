@@ -25,7 +25,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/forex"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/globalrl"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/guildunavailable"
-	"github.com/botlabs-gg/yagpdb/v2/stdcommands/howlongtobeat"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/info"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/inspire"
 	"github.com/botlabs-gg/yagpdb/v2/stdcommands/invite"
@@ -121,7 +120,7 @@ func (p *Plugin) AddCommands() {
 var funCommandList = []*commands.YAGCommand{
 	eightball.Command, advice.Command, catfact.Command, dadjoke.Command,
 	dogfact.Command, define.Command, dictionary.Command, forex.Command,
-	howlongtobeat.Command, inspire.Command, roast.Command, roll.Command,
+	inspire.Command, roast.Command, roll.Command,
 	throw.Command, topic.Command, weather.Command, wouldyourather.Command,
 	xkcd.Command,
 }

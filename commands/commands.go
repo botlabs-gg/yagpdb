@@ -77,7 +77,7 @@ func InitCommands() {
 	}
 
 	// We have our own middleware before the argument parsing, this is to check for things such as whether or not the command is enabled at all
-	CommandSystem.Root.AddMidlewares(YAGCommandMiddleware)
+	CommandSystem.Root.AddMiddlewares(YAGCommandMiddleware)
 	CommandSystem.Root.AddCommand(cmdHelp, cmdHelp.GetTrigger())
 	CommandSystem.Root.AddCommand(cmdPrefix, cmdPrefix.GetTrigger())
 

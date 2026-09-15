@@ -432,20 +432,3 @@ var cmdPrefix = &YAGCommand{
 		return fmt.Sprintf("Prefix of `%d`: `%s`", targetGuildID, prefix), nil
 	},
 }
-
-func clearGlobalCommands() error {
-	commands, err := common.BotSession.GetGlobalApplicationCommands(common.BotApplication.ID)
-	if err != nil {
-		return err
-	}
-	logger.Info("COMMANDS LENGTH: ", len(commands))
-	for _, v := range commands {
-		err = common.BotSession.DeleteGlobalApplicationCommand(common.BotApplication.ID, v.ID)
-		if err != nil {
-			return err
-		}
-	}
-
-	logger.Info("DONE")
-	return nil
-}

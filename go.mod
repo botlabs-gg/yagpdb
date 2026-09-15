@@ -79,7 +79,6 @@ require (
 	github.com/goccy/go-yaml v1.11.3
 	github.com/jarcoal/httpmock v1.0.4
 	github.com/justinian/dice v1.0.2
-	github.com/n0madic/twitter-scraper v0.0.0-20230711213008-94503a2bc36c
 	github.com/nicklaw5/helix/v2 v2.32.0
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c

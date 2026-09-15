@@ -279,7 +279,7 @@ func (c *Container) AddCommand(cmd Cmd, trigger *Trigger) *RegisteredCommand {
 	return wrapped
 }
 
-func (c *Container) AddMidlewares(mw ...MiddleWareFunc) {
+func (c *Container) AddMiddlewares(mw ...MiddleWareFunc) {
 	c.middlewares = append(c.middlewares, mw...)
 }
 

@@ -40,7 +40,7 @@ func main() {
 		CommandUsages: make(map[string]int),
 	}
 
-	system.Root.AddMidlewares(tracker.MiddleWare)
+	system.Root.AddMiddlewares(tracker.MiddleWare)
 	system.Root.AddCommand(tracker, dcmd.NewTrigger("stats"))
 	system.Root.AddCommand(dcmd.NewStdHelpCommand(), dcmd.NewTrigger("help", "h"))
 	system.Root.BuildMiddlewareChains(nil)

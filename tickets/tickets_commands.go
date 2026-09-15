@@ -374,7 +374,7 @@ func (p *Plugin) AddCommands() {
 	container, _ := commands.CommandSystem.Root.Sub("tickets", "ticket")
 	container.Description = "Command to manage the ticket system"
 	container.NotFound = commands.CommonContainerNotFoundHandler(container, "")
-	container.AddMidlewares(
+	container.AddMiddlewares(
 		func(inner dcmd.RunFunc) dcmd.RunFunc {
 			return func(data *dcmd.Data) (interface{}, error) {
 

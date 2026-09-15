@@ -9,7 +9,7 @@ func TestMiddlewareOrder(t *testing.T) {
 
 	i := 0
 
-	container.AddMidlewares(func(inner RunFunc) RunFunc {
+	container.AddMiddlewares(func(inner RunFunc) RunFunc {
 		return func(d *Data) (interface{}, error) {
 			// This middleware should be ran first
 			if i != 0 {
@@ -45,7 +45,7 @@ func TestMiddlewareOrder(t *testing.T) {
 	}))
 
 	sub, _ := container.Sub("sub")
-	sub.AddMidlewares(func(inner RunFunc) RunFunc {
+	sub.AddMiddlewares(func(inner RunFunc) RunFunc {
 		return func(d *Data) (interface{}, error) {
 			// This middleware should be ran first in sub1, after the parent container
 			if i != 2 {

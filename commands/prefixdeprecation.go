@@ -34,9 +34,8 @@ func warnPrefixCommandDeprecated(data *dcmd.Data) *discordgo.Message {
 
 	name := fullCommandName(data)
 	content := fmt.Sprintf(
-		"**Heads up:** prefixed commands are going away. From %s, `%s%s` will stop working "+
-			"- use `/%s` or mention the bot instead. Custom commands are not affected.",
-		common.PrefixCommandsShutdownDate.Format("2 January 2006"),
+		"**Heads up:** prefixed commands are being discontinued and `%s%s` will stop working. "+
+			"Use `/%s` or mention the bot instead. Custom commands are not affected.",
 		data.TraditionalTriggerData.PrefixUsed, name, name,
 	)
 
