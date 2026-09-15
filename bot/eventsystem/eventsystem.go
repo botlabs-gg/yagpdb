@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"runtime/debug"
 	"slices"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -338,19 +339,65 @@ func queueEvent(evtData *EventData) {
 
 	select {
 	case workers[s.ShardID] <- evtData:
-		return
 	default:
-		logrus.Errorf("Max events in queue: %d, %d", len(workers[s.ShardID]), s.ShardID)
-		guildID := int64(0)
-		if evtData.GS != nil {
-			guildID = evtData.GS.ID
+		recordDroppedEvent(evtData)
+	}
+}
+
+type droppedEventKey struct {
+	shardID int
+	evt     Event
+}
+
+var (
+	droppedEventsMU sync.Mutex
+	droppedEvents   = make(map[droppedEventKey]int64)
+)
+
+func recordDroppedEvent(evtData *EventData) {
+	key := droppedEventKey{shardID: evtData.Session.ShardID, evt: evtData.Type}
+
+	droppedEventsMU.Lock()
+	droppedEvents[key]++
+	droppedEventsMU.Unlock()
+}
+
+func logDroppedEvents(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	for range ticker.C {
+		droppedEventsMU.Lock()
+		snapshot := droppedEvents
+		droppedEvents = make(map[droppedEventKey]int64)
+		droppedEventsMU.Unlock()
+
+		if len(snapshot) < 1 {
+			continue
 		}
-		if evtData.Type == EventPresenceUpdate {
-			logrus.Warningf("event queue is full, discarding presence update for guild: %d", guildID)
-			return
+
+		total := int64(0)
+		perShard := make(map[int]int64, len(snapshot))
+		for key, count := range snapshot {
+			total += count
+			perShard[key.shardID] += count
 		}
-		logrus.Warningf("excess event type: %s, sid: %d, guildID: %d, data: %#v", evtData.Type, s.ShardID, guildID, evtData.EvtInterface)
-		workers[s.ShardID] <- evtData // attempt to send it anyways for now
+
+		worstShard, worstCount := 0, int64(-1)
+		for shardID, count := range perShard {
+			if count > worstCount {
+				worstShard, worstCount = shardID, count
+			}
+		}
+
+		var worstEvt Event
+		worstEvtCount := int64(-1)
+		for key, count := range snapshot {
+			if key.shardID == worstShard && count > worstEvtCount {
+				worstEvt, worstEvtCount = key.evt, count
+			}
+		}
+
+		logrus.Warnf("event queues full, dropped %d events across %d shards in the last %s, worst shard %d with %d (mostly %s)",
+			total, len(perShard), interval, worstShard, worstCount, worstEvt)
 	}
 }
 
@@ -398,6 +445,8 @@ func InitWorkers(totalShards int) {
 		workers[i] = make(chan *EventData, 1000)
 		go eventWorker(workers[i])
 	}
+
+	go logDroppedEvents(time.Second * 10)
 }
 
 func eventWorker(ch chan *EventData) {
