@@ -390,13 +390,19 @@ func (c *Context) setupBaseData() {
 	c.Data["Permissions"] = permNameToBit
 }
 
+// StandardFuncMap is the same for every execution, so convert it once instead
+// of rebuilding the reflect values and copying the map on every parse.
+var sharedStandardFuncs = sync.OnceValue(func() *template.SharedFuncMap {
+	return template.NewSharedFuncMap(template.FuncMap(StandardFuncMap))
+})
+
 func (c *Context) Parse(source string) (*template.Template, error) {
 	if !c.contextFuncsAdded {
 		c.setupContextFuncs()
 	}
 
 	tmpl := template.New(c.Name)
-	tmpl.Funcs(StandardFuncMap)
+	tmpl.SharedFuncs(sharedStandardFuncs())
 	tmpl.Funcs(c.ContextFuncs)
 
 	parsed, err := tmpl.Parse(source)
@@ -455,6 +461,25 @@ func (c *Context) Execute(source string) (string, error) {
 	return c.executeParsed()
 }
 
+// Output buffers start empty and double as the template writes, so a single
+// large response costs several reallocations. Reusing them keeps that to one.
+var outputBufferPool = sync.Pool{New: func() any { return new(bytes.Buffer) }}
+
+const maxPooledOutputBuffer = 1 << 16
+
+func getOutputBuffer() *bytes.Buffer {
+	buf := outputBufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	return buf
+}
+
+func putOutputBuffer(buf *bytes.Buffer) {
+	if buf.Cap() > maxPooledOutputBuffer {
+		return
+	}
+	outputBufferPool.Put(buf)
+}
+
 func (c *Context) executeParsed() (string, error) {
 	parsed := c.CurrentFrame.parsedTemplate
 
@@ -470,8 +495,9 @@ func (c *Context) executeParsed() (string, error) {
 		}
 	}
 
-	var buf bytes.Buffer
-	w := LimitWriter(&buf, 25000)
+	buf := getOutputBuffer()
+	defer putOutputBuffer(buf)
+	w := LimitWriter(buf, 25000)
 
 	started := time.Now()
 
@@ -484,8 +510,9 @@ func (c *Context) executeParsed() (string, error) {
 		}).Warn("Template execution is taking longer than 5 seconds")
 	})
 
-	err := parsed.Execute(w, c.Data)
+	var err error
 
+	// registered before Execute so a panicking template still stops the timer
 	defer func() {
 		timer.Stop()
 		dur := time.Since(started)
@@ -499,6 +526,8 @@ func (c *Context) executeParsed() (string, error) {
 			}).Warn("Long template execution finished")
 		}
 	}()
+
+	err = parsed.Execute(w, c.Data)
 
 	if c.FixedOutput != "" {
 		return c.FixedOutput, nil

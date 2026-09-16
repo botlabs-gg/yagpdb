@@ -145,6 +145,11 @@ func findFunction(name string, tmpl *Template) (reflect.Value, bool) {
 		if fn := tmpl.execFuncs[name]; fn.IsValid() {
 			return fn, true
 		}
+		if tmpl.sharedFuncs != nil {
+			if fn := tmpl.sharedFuncs.exec[name]; fn.IsValid() {
+				return fn, true
+			}
+		}
 	}
 	if fn := builtinFuncs()[name]; fn.IsValid() {
 		return fn, true

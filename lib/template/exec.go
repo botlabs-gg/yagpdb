@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/template/parse"
 )
@@ -875,6 +876,35 @@ var (
 	reflectValueType = reflect.TypeOf((*reflect.Value)(nil)).Elem()
 )
 
+// Call argument slices are the single biggest allocation source during
+// execution, and reflect copies them before the callee ever runs, so they can
+// be recycled.
+var argvPool = sync.Pool{
+	New: func() any {
+		s := make([]reflect.Value, 0, 16)
+		return &s
+	},
+}
+
+func getArgv(n int) *[]reflect.Value {
+	p := argvPool.Get().(*[]reflect.Value)
+	if cap(*p) < n {
+		*p = make([]reflect.Value, n)
+	} else {
+		*p = (*p)[:n]
+	}
+	return p
+}
+
+func putArgv(p *[]reflect.Value) {
+	buf := *p
+	for i := range buf {
+		buf[i] = reflect.Value{}
+	}
+	*p = buf[:0]
+	argvPool.Put(p)
+}
+
 // evalCall executes a function or method call. If it's a method, fun already has the receiver bound, so
 // it looks just like a function call. The arg list, if non-nil, includes (in the manner of the shell), arg[0]
 // as the function itself.
@@ -906,7 +936,8 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 	}
 
 	// Build the arg list.
-	argv := make([]reflect.Value, numIn)
+	argvp := getArgv(numIn)
+	argv := *argvp
 	// Args must be evaluated. Fixed args first.
 	i := 0
 	for ; i < numFixed && i < len(args); i++ {
@@ -939,6 +970,7 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 	// Special case for builtin execTemplate.
 	if fun == builtinExecTemplate {
 		v := s.callExecTemplate(dot, node, argv)
+		putArgv(argvp)
 		if v.Kind() == reflect.String && v.Len() > maxStringLength {
 			s.errorf("function response %s exceeds maximum allowed size", name)
 		}
@@ -946,6 +978,7 @@ func (s *state) evalCall(dot, fun reflect.Value, node parse.Node, name string, a
 	}
 
 	v, panicked, err := safeCall(fun, argv)
+	putArgv(argvp)
 	// If we have an error that is not nil, stop execution and return that
 	// error to the caller.
 	if err != nil {
@@ -1058,42 +1091,12 @@ func (s *state) validateType(value reflect.Value, typ reflect.Type) reflect.Valu
 			kind1, _ := basicKindT(typ.Kind())
 			kind2, _ := basicKindT(value.Kind())
 
-			if kind1 == intKind && kind2 == intKind {
-				vc := value.Int()
-				switch typ.Kind() {
-				case reflect.Int:
-					return reflect.ValueOf(int(vc))
-				case reflect.Int8:
-					return reflect.ValueOf(int8(vc))
-				case reflect.Int16:
-					return reflect.ValueOf(int16(vc))
-				case reflect.Int32:
-					return reflect.ValueOf(int32(vc))
-				case reflect.Int64:
-					return reflect.ValueOf(vc)
-				}
-			} else if kind1 == uintKind && kind2 == uintKind {
-				vc := value.Uint()
-				switch typ.Kind() {
-				case reflect.Uint:
-					return reflect.ValueOf(uint(vc))
-				case reflect.Uint8:
-					return reflect.ValueOf(uint8(vc))
-				case reflect.Uint16:
-					return reflect.ValueOf(uint16(vc))
-				case reflect.Uint32:
-					return reflect.ValueOf(uint32(vc))
-				case reflect.Uint64:
-					return reflect.ValueOf(uint64(vc))
-				}
-			} else if kind1 == floatKind && kind2 == floatKind {
-				vc := value.Float()
-				switch typ.Kind() {
-				case reflect.Float64:
-					return reflect.ValueOf(float64(vc))
-				case reflect.Float32:
-					return reflect.ValueOf(float32(vc))
-				}
+			// Convert keeps the declared type, so named types such as
+			// "type Count int" stay assignable after the conversion.
+			sameNumericFamily := kind1 == kind2 &&
+				(kind1 == intKind || kind1 == uintKind || kind1 == floatKind)
+			if sameNumericFamily && value.Type().ConvertibleTo(typ) {
+				return value.Convert(typ)
 			}
 
 			s.errorf("wrong type for value; expected %s; got %s", typ, value.Type())

@@ -23,13 +23,25 @@ type Tree struct {
 	Root      *ListNode // top-level root of the tree.
 	text      string    // text parsed to create the template (or its parent)
 	// Parsing only; cleared after parse.
-	funcs     []map[string]interface{}
-	lex       *lexer
-	token     [3]item // three-token lookahead for parser.
-	peekCount int
-	vars      []string // variables defined at the moment.
-	treeSet   map[string]*Tree
-	loopDepth int
+	funcs      []map[string]interface{}
+	lex        *lexer
+	token      [3]item // three-token lookahead for parser.
+	peekCount  int
+	vars       []string // variables defined at the moment.
+	treeSet    map[string]*Tree
+	loopDepth  int
+	stackDepth int // depth of nested parenthesized expressions
+}
+
+// maxStackDepth is the maximum depth permitted for nested
+// parenthesized expressions.
+var maxStackDepth = 10000
+
+// init reduces maxStackDepth for WebAssembly due to its smaller stack size.
+func init() {
+	if runtime.GOARCH == "wasm" {
+		maxStackDepth = 1000
+	}
 }
 
 // Copy returns a copy of the Tree. Any parsing state is discarded.
@@ -208,6 +220,7 @@ func (t *Tree) startParse(funcs []map[string]interface{}, lex *lexer, treeSet ma
 	t.vars = []string{"$"}
 	t.funcs = funcs
 	t.treeSet = treeSet
+	t.stackDepth = 0
 }
 
 // stopParse terminates parsing.
@@ -790,6 +803,11 @@ func (t *Tree) term() Node {
 		}
 		return number
 	case itemLeftParen:
+		if t.stackDepth >= maxStackDepth {
+			t.errorf("max expression nesting depth exceeded")
+		}
+		t.stackDepth++
+		defer func() { t.stackDepth-- }()
 		pipe := t.pipeline("parenthesized pipeline")
 		if token := t.next(); token.typ != itemRightParen {
 			t.errorf("unclosed right paren: unexpected %s", token)
