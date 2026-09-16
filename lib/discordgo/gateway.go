@@ -660,6 +660,10 @@ type GatewayConnection struct {
 	// contains the raw message fragments until we have received them all
 	readMessageBuffer *bytes.Buffer
 
+	// control frames arrive interleaved with the zlib stream and must not be
+	// appended to readMessageBuffer, which would corrupt the stream
+	controlFrameBuffer bytes.Buffer
+
 	zlibReader             io.Reader
 	jsonDecoder            *gojay.Decoder
 	teeReader              io.Reader
@@ -1025,6 +1029,12 @@ func (g *GatewayConnection) reader() {
 			return
 		}
 
+		dst := g.readMessageBuffer
+		if header.OpCode.IsControl() {
+			g.controlFrameBuffer.Reset()
+			dst = &g.controlFrameBuffer
+		}
+
 		for readAmount := int64(0); readAmount < header.Length; {
 
 			n, err := g.wsReader.Read(intermediateBuffer)
@@ -1034,8 +1044,7 @@ func (g *GatewayConnection) reader() {
 			}
 
 			if n != 0 {
-				// g.log(LogInformational, base64.URLEncoding.EncodeToString(intermediateBuffer[:n]))
-				g.readMessageBuffer.Write(intermediateBuffer[:n])
+				dst.Write(intermediateBuffer[:n])
 			}
 
 			readAmount += int64(n)
@@ -1073,15 +1082,17 @@ var (
 
 // handleReadFrame handles a copmletely read frame
 func (g *GatewayConnection) handleReadFrame(header ws.Header) {
-	if header.OpCode == ws.OpClose {
-		g.handleCloseFrame(g.readMessageBuffer.Bytes())
-		g.readMessageBuffer.Reset()
+	if header.OpCode.IsControl() {
+		if header.OpCode == ws.OpClose {
+			g.handleCloseFrame(g.controlFrameBuffer.Bytes())
+		} else {
+			g.log(LogError, "Don't know how to respond to websocket frame type: 0x%x", header.OpCode)
+		}
+		g.controlFrameBuffer.Reset()
 		return
 	}
 
-	// TODO: Handle these properly
-	if header.OpCode != ws.OpText && header.OpCode != ws.OpBinary {
-		g.readMessageBuffer.Reset()
+	if header.OpCode != ws.OpText && header.OpCode != ws.OpBinary && header.OpCode != ws.OpContinuation {
 		g.log(LogError, "Don't know how to respond to websocket frame type: 0x%x", header.OpCode)
 		return
 	}
@@ -1105,9 +1116,10 @@ func (g *GatewayConnection) handleReadFrame(header ws.Header) {
 
 // handleCloseFrame handles a close frame
 func (g *GatewayConnection) handleCloseFrame(data []byte) {
-	code := binary.BigEndian.Uint16(data)
+	code := uint16(1005)
 	var msg string
-	if len(data) > 2 {
+	if len(data) >= 2 {
+		code = binary.BigEndian.Uint16(data)
 		msg = string(data[2:])
 	}
 
