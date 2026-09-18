@@ -132,11 +132,14 @@ func FindSortedCommands(sets []*SortedCommandSet, cat *Category, container *Cont
 // GenerateFullHelp generates full help for a container
 func GenerateHelp(d *Data, container *Container, formatter HelpFormatter) (embeds []*discordgo.MessageEmbed) {
 
-	invoked := ""
-	if d != nil && d.TraditionalTriggerData != nil && d.TraditionalTriggerData.PrefixUsed != "" {
-		invoked = d.TraditionalTriggerData.PrefixUsed + " "
-	} else if d != nil && d.TriggerType == TriggerTypeSlashCommands {
-		invoked = "/"
+	// Footers render as plain text, so a mention prefix would show as raw markup
+	// rather than the bot's name. Only an actual prefix trigger is worth echoing,
+	// and only while prefix triggers still work.
+	invoked := "/"
+	if d != nil && d.TriggerType == TriggerTypePrefix && d.TraditionalTriggerData != nil &&
+		d.TraditionalTriggerData.PrefixUsed != "" &&
+		(d.System == nil || !d.System.DisablePrefixTrigger) {
+		invoked = d.TraditionalTriggerData.PrefixUsed
 	}
 
 	sets := SortCommands(container, container)

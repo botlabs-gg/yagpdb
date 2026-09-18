@@ -56,6 +56,25 @@ func ShowPrefixCommandsWarning() bool {
 
 var configLoaded = false
 
+// LoadConfigForDocs loads configuration from the environment only. Generating
+// docs needs the registered options and command definitions, not a reachable
+// redis, database or discord account, so the redis source and the checks for
+// required deployment values are both skipped.
+// RunningDocGen reports that the process was started only to print docs, so
+// plugins must not reach for redis, the database or discord while registering.
+var RunningDocGen bool
+
+func LoadConfigForDocs() {
+	if configLoaded {
+		return
+	}
+
+	configLoaded = true
+
+	config.AddSource(&config.EnvSource{})
+	config.Load()
+}
+
 func LoadConfig() (err error) {
 	if configLoaded {
 		return nil
@@ -86,8 +105,8 @@ func LoadConfig() (err error) {
 	}
 
 	ownersStr := confOwners.GetString()
-	split := strings.Split(ownersStr, ",")
-	for _, o := range split {
+	split := strings.SplitSeq(ownersStr, ",")
+	for o := range split {
 		parsed, _ := strconv.ParseInt(o, 10, 64)
 		if parsed != 0 {
 			BotOwners = append(BotOwners, parsed)
