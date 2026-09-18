@@ -369,6 +369,9 @@ func serveGroupSelected(r *http.Request, templateData web.TemplateData, groupID 
 	}
 	templateData["SlashCommandLimitReached"] = slashCount >= MaxSlashCommandCCs
 
+	templateData["MaxSlashSubcommands"] = MaxSubCommandForContext(guildID)
+	templateData["MaxSlashSubcommandsPremium"] = MaxSubCommandCCsPremium
+
 	// Same, for the free-tier per-type context menu command limits.
 	userContextMenuCount, err := models.CustomCommands(qm.Where("guild_id = ? AND trigger_type = ? AND disabled = false", guildID, int(CommandTriggerUserContextMenu))).CountG(r.Context())
 	if err != nil {

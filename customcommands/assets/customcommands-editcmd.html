@@ -502,12 +502,12 @@
                                             </div>
                                             {{end}}
                                         </div>
-                                        <button type="button" id="slash-subcommand-add" class="btn btn-success btn-sm mt-1" data-limit="{{if .IsGuildPremium}}10{{else}}3{{end}}"><i class="fas fa-plus"></i> Add Subcommand</button>
+                                        <button type="button" id="slash-subcommand-add" class="btn btn-success btn-sm mt-1" data-limit="{{.MaxSlashSubcommands}}"><i class="fas fa-plus"></i> Add Subcommand</button>
                                         <div id="slash-subcommand-limit-msg" class="hidden mt-1">
                                             {{if .IsGuildPremium}}
-                                            <small class="form-text text-muted">You've reached the maximum of 10 subcommands.</small>
+                                            <small class="form-text text-muted">You've reached the maximum of {{.MaxSlashSubcommands}} subcommands.</small>
                                             {{else}}
-                                            {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" "You've reached the free limit of 3 subcommands. Premium servers can have up to 10.")}}
+                                            {{template "cp_premium_nudge" (dict "IsGuildPremium" .IsGuildPremium "Title" (printf "You've reached the free limit of %d subcommands. Premium servers can have up to %d." .MaxSlashSubcommands .MaxSlashSubcommandsPremium))}}
                                             {{end}}
                                         </div>
                                     </div>
@@ -1315,8 +1315,8 @@
 
     function slashSubcommandLimit() {
         const btn = document.getElementById('slash-subcommand-add');
-        const n = btn ? parseInt(btn.getAttribute('data-limit'), 10) : 3;
-        return isNaN(n) ? 3 : n;
+        const n = btn ? parseInt(btn.getAttribute('data-limit'), 10) : 10;
+        return isNaN(n) ? 10 : n;
     }
 
     // Reassigns field names for every subcommand and its option rows as a 2-level indexed
