@@ -2,6 +2,7 @@ package dcmd
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -184,7 +185,48 @@ func GenerateTargettedHelp(target string, d *Data, container *Container, formatt
 	return []*discordgo.MessageEmbed{embed}
 }
 
-type StdHelpFormatter struct{}
+type StdHelpFormatter struct {
+	// SlashCommandID resolves a top level command or container name to its
+	// registered application command id, letting help render clickable command
+	// mentions. Returning 0 falls back to plain text, which is required for
+	// anything not registered as a slash command: discord shows the raw markup
+	// when the id does not resolve.
+	//
+	// Mentions only render where markdown does, so this never applies to embed
+	// titles or footers.
+	SlashCommandID func(topLevelName string) int64
+}
+
+// slashMention returns a clickable command mention for nameStr, or "" when the
+// command has no registered id. Discord keys the mention off the top level
+// command id and carries the rest of the path in the label, so "fun roll"
+// resolves through "fun".
+func (s *StdHelpFormatter) slashMention(nameStr string) string {
+	if s.SlashCommandID == nil || nameStr == "" {
+		return ""
+	}
+
+	topLevel := nameStr
+	if i := strings.IndexByte(nameStr, ' '); i > 0 {
+		topLevel = nameStr[:i]
+	}
+
+	id := s.SlashCommandID(topLevel)
+	if id == 0 {
+		return ""
+	}
+
+	return "</" + nameStr + ":" + strconv.FormatInt(id, 10) + ">"
+}
+
+// cmdMention renders nameStr as a mention where one is available and as plain
+// text otherwise, since discord shows raw markup for an id it cannot resolve.
+func (s *StdHelpFormatter) cmdMention(nameStr string) string {
+	if mention := s.slashMention(nameStr); mention != "" {
+		return mention
+	}
+	return "**`" + nameStr + "`**"
+}
 
 var _ HelpFormatter = (*StdHelpFormatter)(nil)
 
@@ -206,8 +248,15 @@ func (s *StdHelpFormatter) FullCmdHelp(cmd *RegisteredCommand, container *Contai
 	args := s.ArgDefs(cmd, data)
 	switches := s.Switches(cmd.Command)
 
+	nameStr := s.CmdNameString(cmd, container, false)
 	embed := &discordgo.MessageEmbed{
-		Title: s.CmdNameString(cmd, container, false),
+		Title: nameStr,
+	}
+
+	// Embed titles are plain text and code blocks suppress markdown, so the top
+	// of the description is the only place in this embed a mention can render.
+	if mention := s.slashMention(nameStr); mention != "" {
+		embed.Description += mention + "\n"
 	}
 
 	if args != "" {
@@ -238,7 +287,7 @@ func (s *StdHelpFormatter) ShortCmdHelp(cmd *RegisteredCommand, container *Conta
 		}
 	}
 
-	return fmt.Sprintf("**`%s`**%s\n\n", nameStr, desc)
+	return fmt.Sprintf("%s%s\n\n", s.cmdMention(nameStr), desc)
 }
 
 func (s *StdHelpFormatter) CmdNameString(cmd *RegisteredCommand, container *Container, containerAliases bool) string {

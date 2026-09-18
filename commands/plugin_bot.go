@@ -149,7 +149,7 @@ func (p *Plugin) StopBot(wg *sync.WaitGroup) {
 	}
 }
 
-var helpFormatter = &dcmd.StdHelpFormatter{}
+var helpFormatter = &dcmd.StdHelpFormatter{SlashCommandID: SlashCommandIDForName}
 
 func YAGCommandMiddleware(inner dcmd.RunFunc) dcmd.RunFunc {
 	return func(data *dcmd.Data) (interface{}, error) {

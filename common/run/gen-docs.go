@@ -24,6 +24,8 @@ func GenCommandsDocs() {
 	out.WriteString("Text arguments containing multiple words needs be to put in quotes (\"arg here\") or code ticks (`arg here`) if it's not the last argument and there's more than 1 text argument.\n\n")
 	out.WriteString("For example with the poll command if you want the question to have multiple words: `/poll \"whats your favorite color\" red blue green2`\n\n")
 
+	// No SlashCommandID resolver: the docs are plain markdown and a command
+	// mention would render as raw markup on the site.
 	stdHelpFmt := &dcmd.StdHelpFormatter{}
 	mockCmdData := &dcmd.Data{}
 
