@@ -42,6 +42,8 @@ func GenCommandsDocs() {
 				nameStr += " "
 			}
 			nameStr += entry.Cmd.Trigger.Names[0]
+			// match how discord registers them
+			nameStr = strings.ToLower(nameStr)
 
 			// then aliases
 			var as bytes.Buffer
@@ -56,7 +58,7 @@ func GenCommandsDocs() {
 
 			// ArgDefs only knows the command's own name, so commands inside a
 			// container would otherwise be documented without the container.
-			args = qualifyUsageLines(args, entry.Container.FullName(false))
+			args = qualifyUsageLines(args, strings.ToLower(entry.Container.FullName(false)))
 
 			// grab the description
 			desc := ""

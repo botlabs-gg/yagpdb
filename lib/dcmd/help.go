@@ -248,9 +248,13 @@ func (s *StdHelpFormatter) CmdNameString(cmd *RegisteredCommand, container *Cont
 		nameStr += " "
 	}
 
-	nameStr += cmd.FormatNames(true, "/")
+	// Slash commands have no aliases, so listing them here would advertise names
+	// that only work through the prefix and mention triggers.
+	nameStr += cmd.FormatNames(false, "/")
 
-	return nameStr
+	// Discord registers every command and container name lowercased, so help
+	// should show the name as it is actually typed.
+	return strings.ToLower(nameStr)
 }
 
 func (s *StdHelpFormatter) Switches(cmd Cmd) (str string) {
@@ -286,10 +290,10 @@ func (s *StdHelpFormatter) ArgDefs(cmd *RegisteredCommand, data *Data) (str stri
 			for i, v := range combo {
 				comboDefs[i] = defs[v]
 			}
-			str += cmd.FormatNames(false, "/") + " " + s.ArgDefLine(comboDefs, len(comboDefs)) + "\n"
+			str += strings.ToLower(cmd.FormatNames(false, "/")) + " " + s.ArgDefLine(comboDefs, len(comboDefs)) + "\n"
 		}
 	} else {
-		str = cmd.FormatNames(false, "/") + " " + s.ArgDefLine(defs, req)
+		str = strings.ToLower(cmd.FormatNames(false, "/")) + " " + s.ArgDefLine(defs, req)
 	}
 	// Trim the last newline
 	if len(str) > 0 && strings.HasSuffix(str, "\n") {
@@ -327,7 +331,7 @@ func (s *StdHelpFormatter) ArgDef(arg *ArgDef) (str string) {
 		tName = arg.Type.HelpName()
 	}
 
-	str = fmt.Sprintf("%s:%s", arg.Name, tName)
+	str = fmt.Sprintf("%s:%s", strings.ToLower(arg.Name), tName)
 	if arg.Help != "" {
 		str += " - " + arg.Help
 	}
