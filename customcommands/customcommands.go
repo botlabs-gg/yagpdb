@@ -656,10 +656,10 @@ func validateSlashCommandData(guildID int64, name string, data slashCommandData,
 
 	if len(data.Subcommands) > 0 {
 		// A command with subcommands is invoked as "/<command> <subcommand>" and has no
-		// top-level options; subcommands reuse the same 3-free / 10-premium limit.
-		maxSubs := MaxSlashCommandForContext(guildID)
+		// top-level options, so subcommands have their own limit.
+		maxSubs := MaxSubCommandForContext(guildID)
 		if len(data.Subcommands) > maxSubs {
-			return false, fmt.Sprintf("You can have at most %d subcommands per command (%d on premium servers)", maxSubs, MaxSlashCommandCCsPremium)
+			return false, fmt.Sprintf("You can have at most %d subcommands per command (%d on premium servers)", maxSubs, MaxSubCommandCCsPremium)
 		}
 
 		seenSubs := make(map[string]bool, len(data.Subcommands))
@@ -956,10 +956,12 @@ const (
 	MaxCCResponsesLengthPremium   = 20000
 	MaxUserMessages               = 20
 	MaxGroups                     = 50
-	MaxSlashCommandCCs            = 3
-	MaxSlashCommandCCsPremium     = 10
-	MaxContextMenuCCs             = 1
-	MaxContextMenuCCsPremium      = 5
+	MaxSlashCommandCCs            = 10
+	MaxSlashCommandCCsPremium     = 50
+	MaxSubCommandCCs              = 10
+	MaxSubCommandCCsPremium       = 25
+	MaxContextMenuCCs             = 5
+	MaxContextMenuCCsPremium      = 15
 )
 
 // MaxSlashCommandForContext returns how many enabled slash command custom commands
@@ -969,6 +971,16 @@ func MaxSlashCommandForContext(guildID int64) int {
 		return MaxSlashCommandCCsPremium
 	}
 	return MaxSlashCommandCCs
+}
+
+// MaxSubCommandForContext returns how many subcommands a single slash command
+// custom command may have, depending on its premium status. Discord allows at
+// most 25 options per command, so the premium limit cannot be raised further.
+func MaxSubCommandForContext(guildID int64) int {
+	if isPremium, _ := premium.IsGuildPremium(guildID); isPremium {
+		return MaxSubCommandCCsPremium
+	}
+	return MaxSubCommandCCs
 }
 
 // MaxContextMenuForContext returns how many enabled context menu custom commands of
