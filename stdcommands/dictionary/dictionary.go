@@ -27,7 +27,8 @@ const (
 
 	// The data is Wiktionary content under CC BY-SA 4.0, which obliges us to
 	// credit the source and link the original page.
-	attribution = "Wiktionary (CC BY-SA 4.0) via freedictionaryapi.com"
+	attributionText = "Powered by freedictionaryapi.com"
+	attributionIcon = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Wiktionary-logo.svg/250px-Wiktionary-logo.svg.png"
 
 	maxDescriptionLength = 2048
 	maxFieldLength       = 1024
@@ -168,7 +169,7 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, entry *Entry) *dis
 		Description: definitionList(entry),
 		Color:       0x07AB99,
 		Timestamp:   time.Now().Format(time.RFC3339),
-		Footer:      &discordgo.MessageEmbedFooter{Text: attribution},
+		Footer:      attributionFooter(res),
 	}
 
 	if res.Source.URL != "" {
@@ -211,6 +212,20 @@ func createDictionaryDefinitionEmbed(res *DictionaryResponse, entry *Entry) *dis
 	}
 
 	return embed
+}
+
+// attributionFooter credits the api and names the licence the response reports,
+// which CC BY-SA 4.0 requires alongside the source link carried in the embed url.
+func attributionFooter(res *DictionaryResponse) *discordgo.MessageEmbedFooter {
+	text := attributionText
+	if license := normalizeOutput(res.Source.License.Name); license != "" {
+		text += " | Wiktionary, " + license
+	}
+
+	return &discordgo.MessageEmbedFooter{
+		Text:    text,
+		IconURL: attributionIcon,
+	}
 }
 
 func definitionList(entry *Entry) string {
