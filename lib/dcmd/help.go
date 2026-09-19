@@ -146,7 +146,7 @@ func GenerateHelp(d *Data, container *Container, formatter HelpFormatter) (embed
 	sets := SortCommands(container, container)
 
 	for _, set := range sets {
-		cName := set.Emoji() + set.Name()
+		cName := set.Name()
 		if cName != "" {
 			cName += " "
 		}
@@ -250,9 +250,6 @@ func (s *StdHelpFormatter) FullCmdHelp(cmd *RegisteredCommand, container *Contai
 		}
 	}
 
-	args := s.ArgDefs(cmd, data)
-	switches := s.Switches(cmd.Command)
-
 	nameStr := s.CmdNameString(cmd, container, false)
 	embed := &discordgo.MessageEmbed{
 		Title: nameStr,
@@ -260,20 +257,109 @@ func (s *StdHelpFormatter) FullCmdHelp(cmd *RegisteredCommand, container *Contai
 
 	// Embed titles are plain text and code blocks suppress markdown, so the top
 	// of the description is the only place in this embed a mention can render.
+	// It is also the only place the name is worth repeating, since it doubles as
+	// the way to run the command.
 	if mention := s.slashMention(nameStr); mention != "" {
-		embed.Description += mention + "\n"
+		embed.Description = mention + "\n\n"
+	}
+	embed.Description += desc
+
+	if details := s.argumentDetails(cmd, data); details != "" {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+			Name:  "Arguments",
+			Value: details,
+		})
 	}
 
-	if args != "" {
-		embed.Description += "```\n" + args + "\n```"
+	if details := s.switchDetails(cmd.Command); details != "" {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
+			Name:  "Switches",
+			Value: details,
+		})
 	}
-	if switches != "" {
-		embed.Description += "```\n" + switches + "\n```"
-	}
-
-	embed.Description += "\n" + desc
 
 	return embed
+}
+
+// argumentDetails lists each argument on its own line with its type and help,
+// which reads better than repeating the command name in a usage block.
+func (s *StdHelpFormatter) argumentDetails(cmd *RegisteredCommand, data *Data) string {
+	cast, ok := cmd.Command.(CmdWithArgDefs)
+	if !ok {
+		return ""
+	}
+
+	defs, required, combos := cast.ArgDefs(data)
+	if len(defs) == 0 {
+		return ""
+	}
+
+	// With combos the same argument can be required in one form and absent in
+	// another, so only the ones in every combo are genuinely required.
+	requiredFor := func(i int) bool {
+		if len(combos) == 0 {
+			return i < required
+		}
+		for _, combo := range combos {
+			found := false
+			for _, idx := range combo {
+				if idx == i {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		}
+		return true
+	}
+
+	var b strings.Builder
+	for i, arg := range defs {
+		if arg == nil {
+			continue
+		}
+
+		b.WriteString("`" + strings.ToLower(arg.Name) + "`")
+		if arg.Type != nil {
+			b.WriteString(" " + arg.Type.HelpName())
+		}
+		if !requiredFor(i) {
+			b.WriteString(" *(optional)*")
+		}
+		if arg.Help != "" {
+			b.WriteString(" - " + arg.Help)
+		}
+		b.WriteString("\n")
+	}
+
+	return b.String()
+}
+
+func (s *StdHelpFormatter) switchDetails(cmd Cmd) string {
+	cast, ok := cmd.(CmdWithSwitches)
+	if !ok {
+		return ""
+	}
+
+	var b strings.Builder
+	for _, sw := range cast.Switches() {
+		if sw == nil {
+			continue
+		}
+
+		b.WriteString("`-" + strings.ToLower(sw.Name) + "`")
+		if sw.Type != nil {
+			b.WriteString(" " + sw.Type.HelpName())
+		}
+		if sw.Help != "" {
+			b.WriteString(" - " + sw.Help)
+		}
+		b.WriteString("\n")
+	}
+
+	return b.String()
 }
 
 func (s *StdHelpFormatter) ShortCmdHelp(cmd *RegisteredCommand, container *Container, data *Data) string {

@@ -972,11 +972,14 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 // aliases have no slash command of their own, so help must name the container
 // form or it cannot resolve a command mention.
 func (yc *YAGCommand) CanonicalName() string {
-	if yc.containerName != "" {
-		return yc.containerName + " " + yc.Name
+	// Empty means "no opinion": help then uses the container the command was
+	// found in, which is correct for everything registered straight into a
+	// container rather than moved with AddContainerCommand.
+	if yc.containerName == "" {
+		return ""
 	}
 
-	return yc.Name
+	return yc.containerName + " " + yc.Name
 }
 
 func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
