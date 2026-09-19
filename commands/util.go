@@ -201,7 +201,7 @@ func CommonContainerNotFoundHandler(container *dcmd.Container, fixedMessage stri
 			return fixedMessage, nil
 		}
 
-		resp := dcmd.GenerateHelp(data, container, &dcmd.StdHelpFormatter{})
+		resp := dcmd.GenerateHelp(data, container, helpFormatter)
 		if len(resp) > 0 {
 			return resp[0], nil
 		}

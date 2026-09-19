@@ -15,7 +15,6 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "setstatus",
 	Description:          "Sets the bot's presence type, status text, online status, and optional streaming URL. Bot Admin Only",
-	HideFromHelp:         true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "status", Type: dcmd.String, Default: ""},
 	},

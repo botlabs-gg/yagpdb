@@ -2,6 +2,7 @@ package dcmd
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
@@ -132,11 +133,14 @@ func FindSortedCommands(sets []*SortedCommandSet, cat *Category, container *Cont
 // GenerateFullHelp generates full help for a container
 func GenerateHelp(d *Data, container *Container, formatter HelpFormatter) (embeds []*discordgo.MessageEmbed) {
 
-	invoked := ""
-	if d != nil && d.TraditionalTriggerData != nil && d.TraditionalTriggerData.PrefixUsed != "" {
-		invoked = d.TraditionalTriggerData.PrefixUsed + " "
-	} else if d != nil && d.TriggerType == TriggerTypeSlashCommands {
-		invoked = "/"
+	// Footers render as plain text, so a mention prefix would show as raw markup
+	// rather than the bot's name. Only an actual prefix trigger is worth echoing,
+	// and only while prefix triggers still work.
+	invoked := "/"
+	if d != nil && d.TriggerType == TriggerTypePrefix && d.TraditionalTriggerData != nil &&
+		d.TraditionalTriggerData.PrefixUsed != "" &&
+		(d.System == nil || !d.System.DisablePrefixTrigger) {
+		invoked = d.TraditionalTriggerData.PrefixUsed
 	}
 
 	sets := SortCommands(container, container)
@@ -176,12 +180,58 @@ func GenerateTargettedHelp(target string, d *Data, container *Container, formatt
 		return nil
 	}
 
+	// Returning nothing lets the caller report it the same way as an unknown name.
+	if cmd.Trigger.HideFromTargettedHelp {
+		return nil
+	}
+
 	embed := formatter.FullCmdHelp(cmd, cmdContainer, d)
 
 	return []*discordgo.MessageEmbed{embed}
 }
 
-type StdHelpFormatter struct{}
+type StdHelpFormatter struct {
+	// SlashCommandID resolves a top level command or container name to its
+	// registered application command id, letting help render clickable command
+	// mentions. Returning 0 falls back to plain text, which is required for
+	// anything not registered as a slash command: discord shows the raw markup
+	// when the id does not resolve.
+	//
+	// Mentions only render where markdown does, so this never applies to embed
+	// titles or footers.
+	SlashCommandID func(topLevelName string) int64
+}
+
+// slashMention returns a clickable command mention for nameStr, or "" when the
+// command has no registered id. Discord keys the mention off the top level
+// command id and carries the rest of the path in the label, so "fun roll"
+// resolves through "fun".
+func (s *StdHelpFormatter) slashMention(nameStr string) string {
+	if s.SlashCommandID == nil || nameStr == "" {
+		return ""
+	}
+
+	topLevel := nameStr
+	if i := strings.IndexByte(nameStr, ' '); i > 0 {
+		topLevel = nameStr[:i]
+	}
+
+	id := s.SlashCommandID(topLevel)
+	if id == 0 {
+		return ""
+	}
+
+	return "</" + nameStr + ":" + strconv.FormatInt(id, 10) + ">"
+}
+
+// cmdMention renders nameStr as a mention where one is available and as plain
+// text otherwise, since discord shows raw markup for an id it cannot resolve.
+func (s *StdHelpFormatter) cmdMention(nameStr string) string {
+	if mention := s.slashMention(nameStr); mention != "" {
+		return mention
+	}
+	return "**`" + nameStr + "`**"
+}
 
 var _ HelpFormatter = (*StdHelpFormatter)(nil)
 
@@ -203,8 +253,15 @@ func (s *StdHelpFormatter) FullCmdHelp(cmd *RegisteredCommand, container *Contai
 	args := s.ArgDefs(cmd, data)
 	switches := s.Switches(cmd.Command)
 
+	nameStr := s.CmdNameString(cmd, container, false)
 	embed := &discordgo.MessageEmbed{
-		Title: s.CmdNameString(cmd, container, false),
+		Title: nameStr,
+	}
+
+	// Embed titles are plain text and code blocks suppress markdown, so the top
+	// of the description is the only place in this embed a mention can render.
+	if mention := s.slashMention(nameStr); mention != "" {
+		embed.Description += mention + "\n"
 	}
 
 	if args != "" {
@@ -235,19 +292,39 @@ func (s *StdHelpFormatter) ShortCmdHelp(cmd *RegisteredCommand, container *Conta
 		}
 	}
 
-	return fmt.Sprintf("**`%s`**%s\n\n", nameStr, desc)
+	return fmt.Sprintf("%s%s\n\n", s.cmdMention(nameStr), desc)
+}
+
+// CmdWithCanonicalName is implemented by commands that are reachable from more
+// than one place in the tree, so help can name the path they are really invoked
+// by rather than whichever alias the user happened to type.
+type CmdWithCanonicalName interface {
+	CanonicalName() string
 }
 
 func (s *StdHelpFormatter) CmdNameString(cmd *RegisteredCommand, container *Container, containerAliases bool) string {
+	// A command registered in a container and again at the root under a legacy
+	// alias resolves to whichever was matched, and the root one has no container
+	// in its chain. Ask the command where it actually lives.
+	if cast, ok := cmd.Command.(CmdWithCanonicalName); ok {
+		if canonical := cast.CanonicalName(); canonical != "" {
+			return strings.ToLower(canonical)
+		}
+	}
+
 	// Add the current container stack to the name
 	nameStr := container.FullName(containerAliases)
 	if nameStr != "" {
 		nameStr += " "
 	}
 
-	nameStr += cmd.FormatNames(true, "/")
+	// Slash commands have no aliases, so listing them here would advertise names
+	// that only work through the prefix and mention triggers.
+	nameStr += cmd.FormatNames(false, "/")
 
-	return nameStr
+	// Discord registers every command and container name lowercased, so help
+	// should show the name as it is actually typed.
+	return strings.ToLower(nameStr)
 }
 
 func (s *StdHelpFormatter) Switches(cmd Cmd) (str string) {
@@ -277,16 +354,23 @@ func (s *StdHelpFormatter) ArgDefs(cmd *RegisteredCommand, data *Data) (str stri
 
 	defs, req, combos := cast.ArgDefs(data)
 
+	name := strings.ToLower(cmd.FormatNames(false, "/"))
+	if canonical, ok := cmd.Command.(CmdWithCanonicalName); ok {
+		if c := canonical.CanonicalName(); c != "" {
+			name = strings.ToLower(c)
+		}
+	}
+
 	if len(combos) > 0 {
 		for _, combo := range combos {
 			comboDefs := make([]*ArgDef, len(combo))
 			for i, v := range combo {
 				comboDefs[i] = defs[v]
 			}
-			str += cmd.FormatNames(false, "/") + " " + s.ArgDefLine(comboDefs, len(comboDefs)) + "\n"
+			str += name + " " + s.ArgDefLine(comboDefs, len(comboDefs)) + "\n"
 		}
 	} else {
-		str = cmd.FormatNames(false, "/") + " " + s.ArgDefLine(defs, req)
+		str = name + " " + s.ArgDefLine(defs, req)
 	}
 	// Trim the last newline
 	if len(str) > 0 && strings.HasSuffix(str, "\n") {
@@ -324,7 +408,7 @@ func (s *StdHelpFormatter) ArgDef(arg *ArgDef) (str string) {
 		tName = arg.Type.HelpName()
 	}
 
-	str = fmt.Sprintf("%s:%s", arg.Name, tName)
+	str = fmt.Sprintf("%s:%s", strings.ToLower(arg.Name), tName)
 	if arg.Help != "" {
 		str += " - " + arg.Help
 	}

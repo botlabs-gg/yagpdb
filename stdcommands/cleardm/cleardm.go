@@ -18,7 +18,6 @@ var Command = &commands.YAGCommand{
 	Name:                 "cleardm",
 	Description:          "clears the DM chat with a user, bot owner only command.",
 	Aliases:              []string{"cleardms", "cleandm", "cleandms"},
-	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "Target", Type: dcmd.User},

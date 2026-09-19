@@ -22,14 +22,20 @@ func GenCommandsDocs() {
 	out.WriteString("## Legend\n\n")
 	out.WriteString("`<required arg>` `[optional arg]`\n\n")
 	out.WriteString("Text arguments containing multiple words needs be to put in quotes (\"arg here\") or code ticks (`arg here`) if it's not the last argument and there's more than 1 text argument.\n\n")
-	out.WriteString("For example with the poll command if you want the question to have multiple words: `-poll \"whats your favorite color\" red blue green2`\n\n")
+	out.WriteString("For example with the poll command if you want the question to have multiple words: `/poll \"whats your favorite color\" red blue green2`\n\n")
 
+	// No SlashCommandID resolver: the docs are plain markdown and a command
+	// mention would render as raw markup on the site.
 	stdHelpFmt := &dcmd.StdHelpFormatter{}
 	mockCmdData := &dcmd.Data{}
 
 	for _, set := range sets {
 
-		out.WriteString("## " + set.Name() + " " + set.Emoji() + "\n\n")
+		out.WriteString("## ")
+		out.WriteString(set.Name())
+		out.WriteString(" ")
+		out.WriteString(set.Emoji())
+		out.WriteString("\n\n")
 
 		for _, entry := range set.Commands {
 			// get the main name
@@ -38,6 +44,8 @@ func GenCommandsDocs() {
 				nameStr += " "
 			}
 			nameStr += entry.Cmd.Trigger.Names[0]
+			// match how discord registers them
+			nameStr = strings.ToLower(nameStr)
 
 			// then aliases
 			var as bytes.Buffer
@@ -49,6 +57,10 @@ func GenCommandsDocs() {
 			// arguments and switches
 			args := stdHelpFmt.ArgDefs(entry.Cmd, mockCmdData)
 			switches := stdHelpFmt.Switches(entry.Cmd.Command)
+
+			// ArgDefs only knows the command's own name, so commands inside a
+			// container would otherwise be documented without the container.
+			args = qualifyUsageLines(args, strings.ToLower(entry.Container.FullName(false)))
 
 			// grab the description
 			desc := ""
@@ -83,6 +95,22 @@ func GenCommandsDocs() {
 	}
 
 	os.Stdout.Write(out.Bytes())
+}
+
+// qualifyUsageLines prefixes every usage line with the container the command
+// lives in, so "Roll <Sides>" reads "fun Roll <Sides>".
+func qualifyUsageLines(usage, container string) string {
+	if container == "" || usage == "" {
+		return usage
+	}
+
+	lines := strings.Split(usage, "\n")
+	for i, line := range lines {
+		if line != "" && !strings.HasPrefix(line, container+" ") {
+			lines[i] = container + " " + line
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func GenConfigDocs() {

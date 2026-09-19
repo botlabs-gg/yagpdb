@@ -30,15 +30,25 @@ var _ commands.CommandProvider = (*Plugin)(nil)
 func (p *Plugin) AddCommands() {
 	if confEnableUsernameTracking.GetBool() {
 		commands.AddRootCommands(p, cmdLogs, cmdWhois, cmdNicknames, cmdUsernames, cmdClearNames)
-	} else {
-		commands.AddRootCommands(p, cmdLogs, cmdWhois)
-		if run.FlagGenCmdDocs {
-			for _, cmd := range []*commands.YAGCommand{cmdNicknames, cmdUsernames, cmdClearNames} {
-				cmd.Description = fmt.Sprint(cmd.Description, " Disabled on the public instance.")
-				commands.AddRootCommands(p, cmd)
-			}
-		}
+		return
 	}
+
+	commands.AddRootCommands(p, cmdLogs, cmdWhois)
+
+	// Still registered while tracking is off so "help usernames" can say why the
+	// command does nothing, but kept out of the command list and unable to run.
+	// The docs list them instead of hiding them.
+	for _, cmd := range []*commands.YAGCommand{cmdNicknames, cmdUsernames, cmdClearNames} {
+		cmd.Description = fmt.Sprint(cmd.Description, " Disabled on the public instance.")
+		if !run.FlagGenCmdDocs {
+			cmd.RunFunc = runDisabledCommand
+		}
+		commands.AddRootCommands(p, cmd)
+	}
+}
+
+func runDisabledCommand(data *dcmd.Data) (interface{}, error) {
+	return "This command is disabled on the public instance.", nil
 }
 
 func (p *Plugin) BotInit() {
@@ -286,11 +296,13 @@ var cmdWhois = &commands.YAGCommand{
 }
 
 var cmdUsernames = &commands.YAGCommand{
-	CmdCategory: commands.CategoryTool,
-	Name:        "Usernames",
-	Description: "Shows past usernames of a user.",
-	Aliases:     []string{"unames", "un"},
-	RunInDM:     true,
+	CmdCategory:          commands.CategoryTool,
+	Name:                 "Usernames",
+	Description:          "Shows past usernames of a user.",
+	Aliases:              []string{"unames", "un"},
+	RunInDM:              true,
+	HideFromHelp:         true,
+	HideFromCommandsPage: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
@@ -347,11 +359,13 @@ var cmdUsernames = &commands.YAGCommand{
 }
 
 var cmdNicknames = &commands.YAGCommand{
-	CmdCategory: commands.CategoryTool,
-	Name:        "Nicknames",
-	Description: "Shows past nicknames of a user.",
-	Aliases:     []string{"nn"},
-	RunInDM:     false,
+	CmdCategory:          commands.CategoryTool,
+	Name:                 "Nicknames",
+	Description:          "Shows past nicknames of a user.",
+	Aliases:              []string{"nn"},
+	RunInDM:              false,
+	HideFromHelp:         true,
+	HideFromCommandsPage: true,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "User", Type: dcmd.User},
 	},
@@ -405,11 +419,12 @@ var cmdNicknames = &commands.YAGCommand{
 }
 
 var cmdClearNames = &commands.YAGCommand{
-	CmdCategory: commands.CategoryTool,
-	Name:        "ResetPastNames",
-	Description: "Reset your past usernames/nicknames.",
-	RunInDM:     true,
-	// Cooldown:    100,
+	CmdCategory:          commands.CategoryTool,
+	Name:                 "ResetPastNames",
+	Description:          "Reset your past usernames/nicknames.",
+	RunInDM:              true,
+	HideFromHelp:         true,
+	HideFromCommandsPage: true,
 	RunFunc: func(parsed *dcmd.Data) (interface{}, error) {
 		queries := []string{
 			"DELETE FROM username_listings WHERE user_id=$1",

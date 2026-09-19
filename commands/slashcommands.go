@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -16,6 +17,10 @@ import (
 var (
 	slashCommandsContainers []*slashCommandsContainer
 	slashCommandsIdsSet     = new(int32)
+
+	// top level command and container names to their registered id, used to
+	// render clickable command mentions in help
+	slashCommandIDsByName atomic.Value
 )
 
 type slashCommandsContainer struct {
@@ -67,6 +72,15 @@ func (p *Plugin) updateGlobalCommands() {
 
 	if bytes.Equal([]byte(current), encoded) {
 		logger.Info("Slash commands identical, skipping update")
+
+		// The ids only ever arrived with the response to an update, so a bot that
+		// starts with an unchanged command set never learned them.
+		existing, err := common.BotSession.GetGlobalApplicationCommands(common.BotApplication.ID)
+		if err != nil {
+			logger.WithError(err).Error("failed fetching existing global slash commands")
+			return
+		}
+		assignSlashCommandIDs(existing)
 		return
 	}
 	// fmt.Println(string(encoded))
@@ -80,9 +94,21 @@ func (p *Plugin) updateGlobalCommands() {
 		return
 	}
 
-	// assign the id's
+	assignSlashCommandIDs(ret)
+
+	err = common.RedisPool.Do(radix.Cmd(nil, "SET", "slash_commands_current", string(encoded)))
+	if err != nil {
+		logger.WithError(err).Error("failed setting current slash commands in redis")
+	}
+}
+
+func assignSlashCommandIDs(cmds []*discordgo.ApplicationCommand) {
+	byName := make(map[string]int64, len(cmds))
+
 OUTER:
-	for _, v := range ret {
+	for _, v := range cmds {
+		byName[strings.ToLower(v.Name)] = v.ID
+
 		for _, rs := range CommandSystem.Root.Commands {
 			if cast, ok := rs.Command.(*YAGCommand); ok {
 				if cast.SlashCommandEnabled && strings.EqualFold(v.Name, cast.Name) {
@@ -101,12 +127,39 @@ OUTER:
 		}
 	}
 
+	slashCommandIDsByName.Store(byName)
 	atomic.StoreInt32(slashCommandsIdsSet, 1)
 
-	err = common.RedisPool.Do(radix.Cmd(nil, "SET", "slash_commands_current", string(encoded)))
-	if err != nil {
-		logger.WithError(err).Error("failed setting current slash commands in redis")
+	// Without these, help falls back to plain text instead of command mentions.
+	logger.Infof("Loaded %d slash command ids", len(byName))
+}
+
+// SlashCommandIDForName returns the registered application command id for a top
+// level command or container name. It returns 0 while the ids are unknown, which
+// callers must treat as "render as plain text": discord shows the raw markup
+// instead of a mention when the id does not resolve.
+func SlashCommandIDForName(name string) int64 {
+	byName, _ := slashCommandIDsByName.Load().(map[string]int64)
+	if byName == nil {
+		return 0
 	}
+	return byName[strings.ToLower(name)]
+}
+
+// SlashCommandMention renders fullName as a clickable command mention, falling
+// back to the plain "/name" form when the id is unknown. Discord resolves the
+// mention through the top level command id, so "fun roll" keys off "fun".
+func SlashCommandMention(fullName string) string {
+	topLevel := fullName
+	if i := strings.IndexByte(fullName, ' '); i > 0 {
+		topLevel = fullName[:i]
+	}
+
+	if id := SlashCommandIDForName(topLevel); id != 0 {
+		return "</" + fullName + ":" + strconv.FormatInt(id, 10) + ">"
+	}
+
+	return "`/" + fullName + "`"
 }
 
 func (p *Plugin) containerToSlashCommand(container *slashCommandsContainer) *discordgo.CreateApplicationCommandRequest {

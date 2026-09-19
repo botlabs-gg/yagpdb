@@ -141,6 +141,10 @@ WHERE table_name=$1 AND column_name=$2;
 }
 
 func InitSchemas(name string, schemas ...string) {
+	if RunningDocGen {
+		return
+	}
+
 	if err := BlockingLockRedisKey("schema_init", time.Minute*10, 60*60); err != nil {
 		panic(err)
 	}

@@ -58,9 +58,15 @@
                         <div class="row">
                             <div class="col-lg-6">
                                 <div class="form-group">
-                                    <label for="prefix">Command Prefix<br><b>Note: Changing the prefix does not change the flag usage in commands. They will still begin with <code>-</code></b></label>
+                                    <label for="prefix">Command Prefix
+                                        {{if .PrefixCommandsDisabled}}
+                                        <br><b>Note: Built-in commands no longer respond to a prefix, so this prefix is only used for custom commands. Built-in commands are run with <code>/</code>.</b>
+                                        {{else}}
+                                        <br><b>Note: Changing the prefix does not change the flag usage in commands. They will still begin with <code>-</code></b>
+                                        {{end}}
+                                    </label>
                                     <div class="row-lg-6">
-                                        <p id="example-command-usage">Example command usage: <code>{{.CommandPrefix}}rolemenu create &lt;name&gt; -nodm</code></p>
+                                        <p id="example-command-usage" data-example="{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}rolemenu create &lt;name&gt; -nodm{{end}}" data-trigger-example="{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}ping{{end}}">Example {{if .PrefixCommandsDisabled}}custom {{end}}command usage: <code>{{.CommandPrefix}}{{if .PrefixCommandsDisabled}}mycustomcommand{{else}}rolemenu create &lt;name&gt; -nodm{{end}}</code></p>
                                     </div>
                                     <input type="text" class="form-control" id="prefix" name="Prefix"
                                         value="{{.CommandPrefix}}">
@@ -130,12 +136,15 @@
 	function handlePrefixChange(prefix) {
 		if (prefix.length === 0) return;
 
-		$("#example-command-usage > code").text(`${prefix}rolemenu create <name> -nodm`);
+		const usage = $("#example-command-usage");
+		const example = usage.attr("data-example");
+		const triggerExample = usage.attr("data-trigger-example");
+		usage.children("code").text(`${prefix}${example}`);
 
 		const existingWarning = $("#trailing-space-warning");
 		if (prefix[prefix.length - 1] === " ") {
 			if (existingWarning.length > 0) return; // don't duplicate warnings
-			addAlert("warning", `You have a trailing space in your command prefix, meaning that while '${prefix}ping' would trigger, '${prefix.trimRight()}ping' would not.`, "trailing-space-warning")
+			addAlert("warning", `You have a trailing space in your command prefix, meaning that while '${prefix}${triggerExample}' would trigger, '${prefix.trimRight()}${triggerExample}' would not.`, "trailing-space-warning")
 		} else if (existingWarning.length) {
 			existingWarning.remove();
 		}

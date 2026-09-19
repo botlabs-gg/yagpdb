@@ -4,7 +4,11 @@ type Trigger struct {
 	Names       []string
 	Middlewares []MiddleWareFunc
 
-	HideFromHelp bool
+	// HideFromHelp keeps the command out of the help listing while leaving it
+	// reachable by name. HideFromTargettedHelp additionally makes "help <name>"
+	// report it as not found.
+	HideFromHelp          bool
+	HideFromTargettedHelp bool
 
 	EnableInDM            bool
 	EnableInGuildChannels bool
@@ -27,6 +31,11 @@ func NewTrigger(name string, aliases ...string) *Trigger {
 
 func (t *Trigger) SetHideFromHelp(hide bool) *Trigger {
 	t.HideFromHelp = hide
+	return t
+}
+
+func (t *Trigger) SetHideFromTargettedHelp(hide bool) *Trigger {
+	t.HideFromTargettedHelp = hide
 	return t
 }
 

@@ -35,7 +35,7 @@ func cmdFuncHelp(data *dcmd.Data) (interface{}, error) {
 	target := data.Args[0].Str()
 
 	// Send the targetted help in the channel it was requested in
-	resp := dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], &dcmd.StdHelpFormatter{})
+	resp := dcmd.GenerateTargettedHelp(target, data, data.ContainerChain[0], helpFormatter)
 	for _, v := range resp {
 		ensureEmbedLimits(v)
 	}

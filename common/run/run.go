@@ -100,6 +100,15 @@ func Init() {
 
 	log.Info("Starting YAGPDB version " + common.VERSION)
 
+	// Doc generation only walks the registered plugins, so it runs without a
+	// redis, database or discord connection. The plugins register after this
+	// returns and Run() then generates and exits.
+	if FlagGenCmdDocs || flagGenConfigDocs {
+		common.RunningDocGen = true
+		common.LoadConfigForDocs()
+		return
+	}
+
 	err := common.CoreInit(true)
 	if err != nil {
 		log.WithError(err).Fatal("Failed running core init ")
