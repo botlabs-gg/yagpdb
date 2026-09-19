@@ -2,6 +2,7 @@ package paginatedmessages
 
 import (
 	"errors"
+	"strconv"
 	"sync"
 	"time"
 
@@ -67,10 +68,33 @@ type PaginatedMessage struct {
 	Navigate     func(p *PaginatedMessage, newPage int) (*discordgo.MessageEmbed, error)
 	Broken       bool
 
+	// Footer the command put on its embeds. The page counter is combined with it
+	// instead of replacing it, which would otherwise throw away things like
+	// source attribution. Written once before the message goes live.
+	baseFooter *discordgo.MessageEmbedFooter
+
 	stopped        bool
 	stopCh         chan bool
 	lastUpdateTime time.Time
 	mu             sync.Mutex
+}
+
+// pageFooter renders the page counter, keeping whatever footer the command set.
+func (p *PaginatedMessage) pageFooter(page int) *discordgo.MessageEmbedFooter {
+	text := "Page " + strconv.Itoa(page)
+	if p.MaxPage > 0 {
+		text += "/" + strconv.Itoa(p.MaxPage)
+	}
+
+	footer := &discordgo.MessageEmbedFooter{Text: text}
+	if p.baseFooter != nil {
+		if p.baseFooter.Text != "" {
+			footer.Text += " | " + p.baseFooter.Text
+		}
+		footer.IconURL = p.baseFooter.IconURL
+	}
+
+	return footer
 }
 
 type PagerFunc func(p *PaginatedMessage, page int) (*discordgo.MessageEmbed, error)

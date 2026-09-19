@@ -2,7 +2,6 @@ package paginatedmessages
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -134,15 +133,13 @@ func (p *PaginatedResponse) Send(data *dcmd.Data) ([]*discordgo.Message, error) 
 		return nil, fmt.Errorf("generating first page of paginated response: %s", err)
 	}
 
-	footer := "Page " + strconv.Itoa(p.initPage)
+	pm.baseFooter = embed.Footer
+
 	nextButtonDisabled := false
 	if pm.MaxPage > 0 {
-		footer += "/" + strconv.Itoa(pm.MaxPage)
 		nextButtonDisabled = p.initPage >= pm.MaxPage
 	}
-	embed.Footer = &discordgo.MessageEmbedFooter{
-		Text: footer,
-	}
+	embed.Footer = pm.pageFooter(p.initPage)
 	embed.Timestamp = time.Now().Format(time.RFC3339)
 	msg := &discordgo.Message{}
 	switch data.TriggerType {
@@ -218,16 +215,12 @@ func (p *PaginatedMessage) HandlePageButtonClick(ic *discordgo.InteractionCreate
 	p.lastUpdateTime = time.Now()
 
 	p.CurrentPage = newPage
-	footer := "Page " + strconv.Itoa(newPage)
 	nextButtonDisabled := false
 	if p.MaxPage > 0 {
-		footer += "/" + strconv.Itoa(p.MaxPage)
 		nextButtonDisabled = newPage >= p.MaxPage
 	}
 
-	newMsg.Footer = &discordgo.MessageEmbedFooter{
-		Text: footer,
-	}
+	newMsg.Footer = p.pageFooter(newPage)
 	newMsg.Timestamp = time.Now().Format(time.RFC3339)
 
 	_, err = common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
@@ -267,13 +260,7 @@ OUTER:
 
 		// remove the navigation buttons
 		lastMessage := p.LastResponse
-		footer := "Page " + strconv.Itoa(p.CurrentPage)
-		if p.MaxPage > 0 {
-			footer += "/" + strconv.Itoa(p.MaxPage)
-		}
-		lastMessage.Footer = &discordgo.MessageEmbedFooter{
-			Text: footer,
-		}
+		lastMessage.Footer = p.pageFooter(p.CurrentPage)
 		lastMessage.Timestamp = time.Now().Format(time.RFC3339)
 
 		_, err := common.BotSession.ChannelMessageEditComplex(&discordgo.MessageEdit{
