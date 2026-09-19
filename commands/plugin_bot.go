@@ -396,7 +396,9 @@ func ensureEmbedLimits(embed *discordgo.MessageEmbed) {
 	for _, v := range lines {
 		if utf8.RuneCountInString(currentField.Value)+utf8.RuneCountInString(v) >= 1024 {
 			currentField = &discordgo.MessageEmbedField{
-				Name:  "...",
+				// Discord rejects an empty field name, a zero width space renders
+				// as nothing and keeps the list reading as one block.
+				Name:  "\u200b",
 				Value: v + "\n",
 			}
 			embed.Fields = append(embed.Fields, currentField)

@@ -180,6 +180,11 @@ func GenerateTargettedHelp(target string, d *Data, container *Container, formatt
 		return nil
 	}
 
+	// Returning nothing lets the caller report it the same way as an unknown name.
+	if cmd.Trigger.HideFromTargettedHelp {
+		return nil
+	}
+
 	embed := formatter.FullCmdHelp(cmd, cmdContainer, d)
 
 	return []*discordgo.MessageEmbed{embed}
@@ -290,7 +295,23 @@ func (s *StdHelpFormatter) ShortCmdHelp(cmd *RegisteredCommand, container *Conta
 	return fmt.Sprintf("%s%s\n\n", s.cmdMention(nameStr), desc)
 }
 
+// CmdWithCanonicalName is implemented by commands that are reachable from more
+// than one place in the tree, so help can name the path they are really invoked
+// by rather than whichever alias the user happened to type.
+type CmdWithCanonicalName interface {
+	CanonicalName() string
+}
+
 func (s *StdHelpFormatter) CmdNameString(cmd *RegisteredCommand, container *Container, containerAliases bool) string {
+	// A command registered in a container and again at the root under a legacy
+	// alias resolves to whichever was matched, and the root one has no container
+	// in its chain. Ask the command where it actually lives.
+	if cast, ok := cmd.Command.(CmdWithCanonicalName); ok {
+		if canonical := cast.CanonicalName(); canonical != "" {
+			return strings.ToLower(canonical)
+		}
+	}
+
 	// Add the current container stack to the name
 	nameStr := container.FullName(containerAliases)
 	if nameStr != "" {
@@ -333,16 +354,23 @@ func (s *StdHelpFormatter) ArgDefs(cmd *RegisteredCommand, data *Data) (str stri
 
 	defs, req, combos := cast.ArgDefs(data)
 
+	name := strings.ToLower(cmd.FormatNames(false, "/"))
+	if canonical, ok := cmd.Command.(CmdWithCanonicalName); ok {
+		if c := canonical.CanonicalName(); c != "" {
+			name = strings.ToLower(c)
+		}
+	}
+
 	if len(combos) > 0 {
 		for _, combo := range combos {
 			comboDefs := make([]*ArgDef, len(combo))
 			for i, v := range combo {
 				comboDefs[i] = defs[v]
 			}
-			str += strings.ToLower(cmd.FormatNames(false, "/")) + " " + s.ArgDefLine(comboDefs, len(comboDefs)) + "\n"
+			str += name + " " + s.ArgDefLine(comboDefs, len(comboDefs)) + "\n"
 		}
 	} else {
-		str = strings.ToLower(cmd.FormatNames(false, "/")) + " " + s.ArgDefLine(defs, req)
+		str = name + " " + s.ArgDefLine(defs, req)
 	}
 	// Trim the last newline
 	if len(str) > 0 && strings.HasSuffix(str, "\n") {

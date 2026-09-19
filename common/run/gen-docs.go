@@ -106,7 +106,7 @@ func qualifyUsageLines(usage, container string) string {
 
 	lines := strings.Split(usage, "\n")
 	for i, line := range lines {
-		if line != "" {
+		if line != "" && !strings.HasPrefix(line, container+" ") {
 			lines[i] = container + " " + line
 		}
 	}

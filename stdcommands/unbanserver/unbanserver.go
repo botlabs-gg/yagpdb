@@ -14,7 +14,6 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "unbanserver",
 	Description:          "Removes the bot ban from the specified server. Bot Owner Only",
-	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "server", Type: dcmd.String},

@@ -967,9 +967,25 @@ func (yc *YAGCommand) Logger(data *dcmd.Data) *logrus.Entry {
 	return l
 }
 
+// CanonicalName reports the path this command is invoked by. Commands moved into
+// a container keep root level aliases for backwards compatibility, and those
+// aliases have no slash command of their own, so help must name the container
+// form or it cannot resolve a command mention.
+func (yc *YAGCommand) CanonicalName() string {
+	if yc.containerName != "" {
+		return yc.containerName + " " + yc.Name
+	}
+
+	return yc.Name
+}
+
 func (yc *YAGCommand) GetTrigger() *dcmd.Trigger {
 	trigger := dcmd.NewTrigger(yc.Name, yc.Aliases...).SetEnableInDM(yc.RunInDM).SetEnableInGuildChannels(true)
-	trigger = trigger.SetHideFromHelp(yc.HideFromHelp)
+	// A command kept off the commands page is not one users are meant to browse,
+	// so it stays out of the help listing, but "help <name>" still explains it.
+	// HideFromHelp is the stronger form and hides it from both.
+	trigger = trigger.SetHideFromHelp(yc.HideFromHelp || yc.HideFromCommandsPage)
+	trigger = trigger.SetHideFromTargettedHelp(yc.HideFromHelp)
 	if len(yc.Middlewares) > 0 {
 		trigger = trigger.SetMiddlewares(yc.Middlewares...)
 	}

@@ -15,7 +15,6 @@ var Command = &commands.YAGCommand{
 	HideFromCommandsPage: true,
 	Name:                 "createinvite",
 	Description:          "Maintenance command, creates an invite for the specified server. Bot Admin Only",
-	HideFromHelp:         true,
 	RequiredArgs:         1,
 	Arguments: []*dcmd.ArgDef{
 		{Name: "server", Type: dcmd.BigInt},

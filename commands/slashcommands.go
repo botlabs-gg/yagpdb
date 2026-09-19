@@ -129,6 +129,9 @@ OUTER:
 
 	slashCommandIDsByName.Store(byName)
 	atomic.StoreInt32(slashCommandsIdsSet, 1)
+
+	// Without these, help falls back to plain text instead of command mentions.
+	logger.Infof("Loaded %d slash command ids", len(byName))
 }
 
 // SlashCommandIDForName returns the registered application command id for a top
