@@ -34,9 +34,9 @@ const (
 	maxFieldLength       = 1024
 	maxListedTerms       = 10
 
-	// Longer than any real word, and it keeps junk input out of the cache keys
+	// Longer than any real word (hopefully), and it keeps junk input out of the cache keys
 	// and off the api.
-	maxQueryLength = 64
+	maxQueryLength = 128
 
 	// The api allows 1000 requests an hour per ip and exposes no budget headers,
 	// so repeat lookups are served from redis instead. Definitions are static
