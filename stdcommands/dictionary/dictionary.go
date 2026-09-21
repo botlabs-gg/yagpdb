@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	apiEndpoint = "https://freedictionaryapi.com/api/v1/entries/en/"
+	apiEndpoint = "https://freedictionaryapi.com/api/v1/entries/all/"
 
 	// The data is Wiktionary content under CC BY-SA 4.0, which obliges us to
 	// credit the source and link the original page.
@@ -63,8 +63,8 @@ var Command = &commands.YAGCommand{
 	},
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		query := strings.ToLower(data.Args[0].Str())
+	RunFunc: func(data *dcmd.Data) (any, error) {
+		query := data.Args[0].Str()
 
 		res, err := lookup(query)
 		if errors.Is(err, errRateLimited) {
