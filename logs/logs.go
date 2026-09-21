@@ -27,7 +27,7 @@ import (
 
 var (
 	ErrChannelBlacklisted     = errors.New("Channel blacklisted from creating message logs")
-	ConfEnableMessageLogPurge = config.RegisterOption("yagpdb.enable_message_log_purge", "If enabled message logs older than 30 days will be deleted", false)
+	ConfEnableMessageLogPurge = config.RegisterOption("yagpdb.enable_message_log_purge", "Message logs older than 30 days are deleted. On by default; set to false to opt out and retain logs indefinitely", true)
 	logger                    = common.GetPluginLogger(&Plugin{})
 )
 
