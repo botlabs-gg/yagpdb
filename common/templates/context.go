@@ -353,7 +353,9 @@ func (c *Context) setupBaseData() {
 		c.Data["Channel"] = channel
 		c.Data["channel"] = channel
 
-		if parentID := common.ChannelOrThreadParentID(c.CurrentFrame.CS); parentID != c.CurrentFrame.CS.ID {
+		parentID := common.ChannelOrThreadParentID(c.CurrentFrame.CS)
+		if parentID != c.CurrentFrame.CS.ID && c.GS != nil {
+			// the parent may be missing from state, in which case this is nil
 			c.Data["ChannelOrThreadParent"] = CtxChannelFromCS(c.GS.GetChannelOrThread(parentID))
 		} else {
 			c.Data["ChannelOrThreadParent"] = channel
