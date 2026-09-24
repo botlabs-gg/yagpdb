@@ -41,6 +41,9 @@ func (c *CtxChannel) Mention() (string, error) {
 }
 
 func CtxChannelFromCS(cs *dstate.ChannelState) *CtxChannel {
+	if cs == nil {
+		return nil
+	}
 
 	cop := make([]*discordgo.PermissionOverwrite, len(cs.PermissionOverwrites))
 	for i := 0; i < len(cs.PermissionOverwrites); i++ {

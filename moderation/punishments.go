@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"runtime/debug"
 	"slices"
 	"strconv"
 	"strings"
@@ -201,6 +202,13 @@ var ActionMap = map[string]string{
 }
 
 func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.GuildSet, channel *dstate.ChannelState, message *discordgo.Message, author *discordgo.User, member *dstate.MemberState, duration time.Duration, reason string, warningID int, executedFromCommandTemplate bool) {
+	// this often runs in its own goroutine, where a panic would take down the whole process
+	defer func() {
+		if r := recover(); r != nil {
+			logger.WithField("guild", gs.ID).Errorf("recovered from panic while sending punishment DM\n%v\n%s", r, debug.Stack())
+		}
+	}()
+
 	if dmMsg == "" {
 		dmMsg = DefaultDMMessage
 	}
