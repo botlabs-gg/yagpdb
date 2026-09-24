@@ -7,6 +7,8 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/cplogs"
@@ -15,8 +17,6 @@ import (
 	"github.com/botlabs-gg/yagpdb/v2/rss/models"
 	"github.com/botlabs-gg/yagpdb/v2/web"
 	"github.com/mediocregopher/radix/v3"
-	"github.com/mmcdole/gofeed"
-	"github.com/sirupsen/logrus"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"goji.io"
@@ -89,7 +89,17 @@ func (p *Plugin) HandleRSS(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData, err
 	}
 
-	templateData["FeedItems"] = subs
+	feedItems := make([]*FeedWithStatus, 0, len(subs))
+	for _, sub := range subs {
+		status, statusClass := feedStatus(sub)
+		feedItems = append(feedItems, &FeedWithStatus{
+			RSSFeedSubscription: sub,
+			Status:              status,
+			StatusClass:         statusClass,
+		})
+	}
+
+	templateData["FeedItems"] = feedItems
 	templateData["FreeLimit"] = GuildMaxRSSFeedsFree
 	templateData["PremiumLimit"] = GuildMaxRSSFeedsPremium
 	templateData["VisibleURL"] = "/manage/" + discordgo.StrID(activeGuild.ID) + "/rss"
@@ -117,10 +127,13 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		}
 	}
 
-	parser := gofeed.NewParser()
-	_, err = parser.ParseURL(data.FeedURL)
+	feedURL := strings.TrimSpace(data.FeedURL)
+	fetchCtx, cancel := context.WithTimeout(ctx, feedFetchTimeout)
+	defer cancel()
+
+	res, err := fetchFeed(fetchCtx, feedURL, nil)
 	if err != nil {
-		return templateData.AddAlerts(web.ErrorAlert("The provided URL does not contain a valid RSS/Atom/JSON feed.")), nil
+		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Couldn't read an RSS/Atom/JSON feed from that URL: %v", err))), nil
 	}
 
 	mentionRoles := data.MentionRoles
@@ -136,7 +149,7 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 	sub := &models.RSSFeedSubscription{
 		GuildID:         activeGuild.ID,
 		ChannelID:       data.DiscordChannel,
-		FeedURL:         data.FeedURL,
+		FeedURL:         feedURL,
 		MentionEveryone: data.MentionEveryone,
 		MentionRoles:    mentionRoles,
 		Enabled:         true,
@@ -145,8 +158,45 @@ func (p *Plugin) HandleNew(w http.ResponseWriter, r *http.Request) (web.Template
 		return templateData.AddAlerts(web.ErrorAlert(fmt.Sprintf("Failed to add RSS feed: %v", err))), err
 	}
 
+	// what's already in the feed isn't news, without this the first poll would post
+	// everything published in the last day in one go
+	if err := SeedSeenItems(sub.ID, res.Feed); err != nil {
+		logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed seeding RSS deduplication set for new feed")
+	}
+
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyAddedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: data.FeedURL}))
 	return templateData, nil
+}
+
+// FeedWithStatus is a subscription plus what the poller last saw when fetching it
+type FeedWithStatus struct {
+	*models.RSSFeedSubscription
+	Status      string
+	StatusClass string
+}
+
+func feedStatus(sub *models.RSSFeedSubscription) (status string, class string) {
+	state, err := LoadFeedState(strings.TrimSpace(sub.FeedURL))
+	if err != nil {
+		return "Unknown", "text-muted"
+	}
+
+	lastError := common.CutStringShort(state.LastError, 200)
+
+	switch {
+	case !sub.Enabled && lastError != "":
+		return "Disabled: " + lastError, "text-danger"
+	case !sub.Enabled:
+		return "Disabled", "text-muted"
+	case state.CooldownUntil.After(time.Now()):
+		return "Rate limited by the feed host, retrying " + common.HumanizeTime(common.DurationPrecisionMinutes, state.CooldownUntil), "text-warning"
+	case !state.FirstFailure.IsZero():
+		return fmt.Sprintf("Failing since %s: %s", common.HumanizeTime(common.DurationPrecisionMinutes, state.FirstFailure), lastError), "text-warning"
+	case !state.LastSuccess.IsZero():
+		return "Checked " + common.HumanizeTime(common.DurationPrecisionMinutes, state.LastSuccess), "text-success"
+	}
+
+	return "Waiting for the first check", "text-muted"
 }
 
 type ContextKey int
@@ -203,6 +253,8 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (web.Templat
 		}
 	}
 
+	reEnabled := !sub.Enabled && data.Enabled
+
 	sub.ChannelID = data.DiscordChannel
 	sub.MentionEveryone = data.MentionEveryone
 	sub.MentionRoles = data.MentionRoles
@@ -211,6 +263,11 @@ func (p *Plugin) HandleEdit(w http.ResponseWriter, r *http.Request) (web.Templat
 	_, err := sub.UpdateG(ctx, boil.Whitelist("channel_id", "enabled", "mention_everyone", "mention_roles"))
 	if err != nil {
 		return templateData.AddAlerts(web.ErrorAlert("Failed to update RSS feed.")), err
+	}
+
+	if reEnabled {
+		// give a feed that was turned back on a clean slate to fail from
+		saveFeedState(strings.TrimSpace(sub.FeedURL), nil, "first_failure", "last_error", "cooldown_until")
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyUpdatedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.FeedURL}))
@@ -230,7 +287,7 @@ func (p *Plugin) HandleRemove(w http.ResponseWriter, r *http.Request) (web.Templ
 	key := seenSetKey(sub.ID)
 	err = common.RedisPool.Do(radix.Cmd(nil, "DEL", key))
 	if err != nil {
-		logrus.WithError(err).WithField("key", key).Warn("Failed to delete RSS deduplication key after feed deletion")
+		logger.WithError(err).WithField("key", key).Warn("Failed to delete RSS deduplication key after feed deletion")
 	}
 
 	go cplogs.RetryAddEntry(web.NewLogEntryFromContext(r.Context(), panelLogKeyRemovedFeed, &cplogs.Param{Type: cplogs.ParamTypeString, Value: sub.FeedURL}))

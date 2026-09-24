@@ -2,27 +2,30 @@ package rss
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"html"
 	"net/http"
 	"net/url"
 	"regexp"
+	"runtime/debug"
+	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
-	"crypto/md5"
-	"encoding/hex"
-
-	"html"
-	"strings"
-
 	"github.com/botlabs-gg/yagpdb/v2/common"
 	"github.com/botlabs-gg/yagpdb/v2/common/mqueue"
+	"github.com/botlabs-gg/yagpdb/v2/feeds"
 	"github.com/botlabs-gg/yagpdb/v2/lib/discordgo"
 	"github.com/botlabs-gg/yagpdb/v2/rss/models"
 	"github.com/mediocregopher/radix/v3"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/mmcdole/gofeed"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
@@ -31,9 +34,40 @@ const (
 	PollInterval       = time.Minute * 5
 	maxConcurrentFeeds = 10
 	feedFetchTimeout   = 30 * time.Second
+
+	// items older than this are never posted, so a feed that was unreachable for a
+	// while doesn't dump its whole backlog once it comes back
+	maxItemAge = 24 * time.Hour
+
+	// a feed that fails for this long without a single successful fetch in between is
+	// disabled. transient outages are far shorter than this, so anything that reaches
+	// it is broken for good.
+	feedFailureGracePeriod = 48 * time.Hour
+
+	// how long we leave a host alone after it asks us to back off
+	defaultFeedCooldown = 30 * time.Minute
+	maxFeedCooldown     = 6 * time.Hour
+
+	maxFeedSize  = 8 << 20
+	feedStateTTL = 30 * 24 * time.Hour
+
+	feedUserAgent = "YAGPDB.xyz (+https://yagpdb.xyz; https://github.com/botlabs-gg/yagpdb)"
+	feedAccept    = "application/atom+xml, application/rss+xml, application/feed+json, application/xml;q=0.9, text/xml;q=0.9, */*;q=0.5"
+
+	itemsPerMessage = 5
 )
 
+// fetch failures with these statuses are never transient, the feed is disabled on the spot
+var permanentFetchStatuses = []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound}
+
+var metricFeedFetches = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "yagpdb_rss_fetches_total",
+	Help: "RSS feed fetches by result",
+}, []string{"result"})
+
 var logger = common.GetPluginLogger(&Plugin{})
+
+var descriptionSanitizer = bluemonday.StrictPolicy()
 
 type Plugin struct {
 	Stop chan *sync.WaitGroup
@@ -84,20 +118,162 @@ func (p *Plugin) pollFeeds() {
 		return
 	}
 
-	logger.Infof("Polling through %d RSS feeds", len(subs))
+	// many guilds subscribe to the same popular feeds, fetching each url once per cycle
+	// keeps us off the host's rate limiter
+	groups := make(map[string][]*models.RSSFeedSubscription)
+	for _, sub := range subs {
+		feedURL := strings.TrimSpace(sub.FeedURL)
+		if feedURL == "" {
+			continue
+		}
+		groups[feedURL] = append(groups[feedURL], sub)
+	}
+
+	logger.Infof("Polling %d RSS feeds across %d unique urls", len(subs), len(groups))
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, maxConcurrentFeeds)
 
-	for _, sub := range subs {
+	for feedURL, group := range groups {
 		wg.Add(1)
 		sem <- struct{}{}
-		go func(sub *models.RSSFeedSubscription) {
+		go func(feedURL string, group []*models.RSSFeedSubscription) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			p.processFeed(sub)
-		}(sub)
+			// one bad feed must not take down the whole feeds process
+			defer func() {
+				if r := recover(); r != nil {
+					logger.WithField("url", feedURL).Errorf("recovered from panic while polling rss feed\n%v\n%s", r, debug.Stack())
+				}
+			}()
+
+			p.pollFeedURL(feedURL, group)
+		}(feedURL, group)
 	}
 	wg.Wait()
+}
+
+func (p *Plugin) pollFeedURL(feedURL string, subs []*models.RSSFeedSubscription) {
+	state, err := LoadFeedState(feedURL)
+	if err != nil {
+		logger.WithError(err).WithField("url", feedURL).Warn("Failed loading RSS feed state, fetching without it")
+	}
+
+	if state.CooldownUntil.After(time.Now()) {
+		metricFeedFetches.With(prometheus.Labels{"result": "cooldown"}).Inc()
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), feedFetchTimeout)
+	defer cancel()
+
+	res, err := fetchFeed(ctx, feedURL, state)
+	if err != nil {
+		p.handleFetchFailure(feedURL, subs, state, err)
+		return
+	}
+
+	recordFetchSuccess(feedURL, res)
+	if res.NotModified {
+		metricFeedFetches.With(prometheus.Labels{"result": "not_modified"}).Inc()
+		return
+	}
+	metricFeedFetches.With(prometheus.Labels{"result": "ok"}).Inc()
+
+	items := collectPostableItems(res.Feed)
+	if len(items) == 0 {
+		return
+	}
+
+	for _, sub := range subs {
+		p.processFeed(sub, res.Feed, items)
+	}
+}
+
+// handleFetchFailure decides what a failed fetch means for the subscriptions behind it:
+// back off when the host asks us to, disable right away on a permanent status, and
+// otherwise give the feed feedFailureGracePeriod to recover before disabling it.
+func (p *Plugin) handleFetchFailure(feedURL string, subs []*models.RSSFeedSubscription, state *feedState, err error) {
+	l := logger.WithError(err).WithField("url", feedURL)
+	now := time.Now()
+
+	fErr, _ := err.(*fetchError)
+
+	if cooldown := cooldownFor(fErr); cooldown > 0 {
+		metricFeedFetches.With(prometheus.Labels{"result": "rate_limited"}).Inc()
+		until := now.Add(cooldown)
+		l.Warnf("RSS feed host asked us to back off, not fetching again until %s", until.UTC().Format(time.RFC1123))
+		saveFeedState(feedURL, map[string]string{
+			"cooldown_until": formatUnix(until),
+			"last_error":     fmt.Sprintf("%s (retrying in %s)", err, common.HumanizeDuration(common.DurationPrecisionMinutes, cooldown)),
+		})
+		return
+	}
+
+	metricFeedFetches.With(prometheus.Labels{"result": "error"}).Inc()
+
+	if fErr != nil && slices.Contains(permanentFetchStatuses, fErr.StatusCode) {
+		l.Warn("Disabling RSS feed, the url is permanently unreachable")
+		p.disableSubscriptions(feedURL, subs, err)
+		return
+	}
+
+	firstFailure := state.FirstFailure
+	if firstFailure.IsZero() {
+		firstFailure = now
+	}
+
+	if now.Sub(firstFailure) >= feedFailureGracePeriod {
+		l.Warnf("Disabling RSS feed, it has been failing since %s", firstFailure.UTC().Format(time.RFC1123))
+		p.disableSubscriptions(feedURL, subs, err)
+		return
+	}
+
+	l.Warnf("Failed fetching RSS feed, first failed %s", common.HumanizeTime(common.DurationPrecisionMinutes, firstFailure))
+	saveFeedState(feedURL, map[string]string{
+		"first_failure": formatUnix(firstFailure),
+		"last_error":    err.Error(),
+	})
+}
+
+func (p *Plugin) disableSubscriptions(feedURL string, subs []*models.RSSFeedSubscription, reason error) {
+	ids := make([]int, 0, len(subs))
+	for _, sub := range subs {
+		ids = append(ids, sub.ID)
+	}
+
+	if len(ids) > 0 {
+		_, err := models.RSSFeedSubscriptions(
+			models.RSSFeedSubscriptionWhere.ID.IN(ids),
+		).UpdateAllG(context.Background(), models.M{"enabled": false, "updated_at": time.Now()})
+		if err != nil {
+			logger.WithError(err).WithField("url", feedURL).Error("Failed disabling RSS feed subscriptions")
+			return
+		}
+	}
+
+	// the failure clock is reset so re-enabling the feed gives it a fresh grace period,
+	// the error is kept around so the control panel can explain what happened
+	saveFeedState(feedURL, map[string]string{"last_error": fmt.Sprintf("disabled: %s", reason)}, "first_failure")
+}
+
+// cooldownFor returns how long to leave a host alone after it pushed back, or 0 if it didn't
+func cooldownFor(err *fetchError) time.Duration {
+	if err == nil {
+		return 0
+	}
+	if err.StatusCode != http.StatusTooManyRequests && err.StatusCode != http.StatusServiceUnavailable {
+		return 0
+	}
+
+	cooldown := err.RetryAfter
+	if cooldown <= 0 {
+		if err.StatusCode != http.StatusTooManyRequests {
+			return 0
+		}
+		cooldown = defaultFeedCooldown
+	}
+
+	return min(cooldown, maxFeedCooldown)
 }
 
 func (p *Plugin) DisableFeed(elem *mqueue.QueuedElement, err error) {
@@ -124,32 +300,56 @@ func seenSetKey(feedID int) string {
 	return fmt.Sprintf("rss:seen:%d", feedID)
 }
 
-// Checks if the item (by URL) has already been seen for this feed
-func isItemSeen(feedID int, url string) (bool, error) {
-	key := seenSetKey(feedID)
-	urlHash := md5Hash(url)
-	var zscoreResult string
-	err := common.RedisPool.Do(radix.Cmd(&zscoreResult, "ZSCORE", key, urlHash))
-	if err != nil {
-		return false, err
+func itemScore(published *time.Time) int64 {
+	if published != nil {
+		return published.Unix()
 	}
-	return zscoreResult != "", nil
+	return time.Now().Unix()
 }
 
-func markItemSeen(feedID int, url string, published *time.Time) error {
-	key := seenSetKey(feedID)
-	urlHash := md5Hash(url)
-	var score float64
-	if published != nil {
-		score = float64(published.Unix())
-	} else {
-		score = float64(time.Now().Unix())
-	}
-	if err := common.RedisPool.Do(radix.Cmd(nil, "ZADD", key, fmt.Sprintf("%f", score), urlHash)); err != nil {
-		return err
+// claimItem marks an item as seen and reports whether this caller was the one that
+// claimed it. the add is atomic so two pollers can never post the same item twice.
+func claimItem(feedID int, link string, published *time.Time) (bool, error) {
+	var added int
+	err := common.RedisPool.Do(radix.FlatCmd(&added, "ZADD", seenSetKey(feedID), "NX", itemScore(published), md5Hash(link)))
+	return added == 1, err
+}
+
+// releaseItems undoes claimItem for items we ended up not posting, so they get
+// another chance on the next poll instead of being silently dropped
+func releaseItems(feedID int, links []string) {
+	if len(links) == 0 {
+		return
 	}
 
-	return nil
+	args := make([]string, 0, len(links)+1)
+	args = append(args, seenSetKey(feedID))
+	for _, link := range links {
+		args = append(args, md5Hash(link))
+	}
+
+	if err := common.RedisPool.Do(radix.Cmd(nil, "ZREM", args...)); err != nil {
+		logger.WithError(err).WithField("feed_id", feedID).Warn("Failed releasing unposted RSS items")
+	}
+}
+
+// SeedSeenItems marks everything currently in the feed as seen, so a newly added
+// subscription starts quiet instead of posting the existing backlog
+func SeedSeenItems(feedID int, feed *gofeed.Feed) error {
+	args := make([]string, 0, len(feed.Items)*2+1)
+	args = append(args, seenSetKey(feedID))
+	for _, item := range feed.Items {
+		if !isPostableLink(item.Link) {
+			continue
+		}
+		args = append(args, strconv.FormatInt(itemScore(publishedAt(item)), 10), md5Hash(item.Link))
+	}
+
+	if len(args) == 1 {
+		return nil
+	}
+
+	return common.RedisPool.Do(radix.Cmd(nil, "ZADD", args...))
 }
 
 // Cleans up items older than 90 days for this feed
@@ -159,222 +359,15 @@ func cleanupOldItems(feedID int) error {
 	return common.RedisPool.Do(radix.Cmd(nil, "ZREMRANGEBYSCORE", key, "0", fmt.Sprintf("%d", oldest)))
 }
 
-func getFeed(sub *models.RSSFeedSubscription, attempt int) (*gofeed.Feed, error) {
-	parser := gofeed.NewParser()
-	httpClient := &http.Client{Timeout: feedFetchTimeout}
-	//use an http proxy if configured
-	proxy := common.ConfHttpProxy.GetString()
-	if len(proxy) > 0 {
-		proxyURL, err := url.Parse(proxy)
-		if err == nil {
-			httpClient.Transport = &http.Transport{
-				Proxy: http.ProxyURL(proxyURL),
-			}
-		} else {
-			logger.WithError(err).WithField("proxy", proxy).Warn("Invalid HTTP proxy configured for RSS fetcher, falling back to direct fetch")
-		}
-	}
-	parser.Client = httpClient
+func (p *Plugin) processFeed(sub *models.RSSFeedSubscription, feed *gofeed.Feed, items []*feedItem) {
+	posted := 0
 
-	feed, err := parser.ParseURL(sub.FeedURL)
-	if err != nil {
-		logger.WithError(err).WithField("url", sub.FeedURL).Warnf("Failed to parse RSS feed, retrying attempt %d", attempt+1)
-		if attempt < 3 {
-			time.Sleep(time.Minute * time.Duration(1<<attempt))
-			return getFeed(sub, attempt+1)
-		}
-		return nil, err
-	}
-	return feed, nil
-}
+	for i := 0; i < len(items); i += itemsPerMessage {
+		batch := items[i:min(i+itemsPerMessage, len(items))]
 
-func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
-	feed, err := getFeed(sub, 0)
-	if err != nil {
-		logger.WithError(err).WithField("url", sub.FeedURL).Warn("Failed to parse RSS feed, disabling feed")
-		p.DisableFeed(&mqueue.QueuedElement{
-			GuildID:      sub.GuildID,
-			ChannelID:    sub.ChannelID,
-			Source:       "rss",
-			SourceItemID: strconv.Itoa(sub.ID),
-		}, err)
-		return
-	}
-
-	if len(feed.Items) == 0 {
-		return
-	}
-
-	// We'll collect new items to post
-	var newItems []*gofeed.Item
-	cutoff := time.Now().Add(-24 * time.Hour)
-	for i := len(feed.Items) - 1; i >= 0; i-- {
-		item := feed.Items[i]
-		link := item.Link
-		if link == "" {
+		container, claimed := buildFeedContainer(sub, feed, batch)
+		if len(claimed) == 0 {
 			continue
-		}
-		u, err := url.ParseRequestURI(link)
-		if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
-			continue
-		}
-
-		// Use PublishedParsed, then UpdatedParsed
-		var itemTime *time.Time
-		if item.PublishedParsed != nil {
-			itemTime = item.PublishedParsed
-		} else if item.UpdatedParsed != nil {
-			itemTime = item.UpdatedParsed
-		}
-		if itemTime != nil && itemTime.Before(cutoff) {
-			continue
-		}
-		item.PublishedParsed = itemTime
-
-		seen, err := isItemSeen(sub.ID, link)
-		if err != nil {
-			logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed to check RSS deduplication set")
-			continue
-		}
-		if seen {
-			continue
-		}
-		newItems = append(newItems, item)
-	}
-
-	if len(newItems) == 0 {
-		return
-	}
-
-	logger.Infof("Found %d new items for feed %d", len(newItems), sub.ID)
-
-	batchSize := 5
-	for i := 0; i < len(newItems); i += batchSize {
-		end := min(i+batchSize, len(newItems))
-		batch := newItems[i:end]
-
-		accentColor := 0x2b7cff
-		container := discordgo.Container{
-			AccentColor: accentColor,
-		}
-
-		container.Components = append(container.Components, discordgo.TextDisplay{Content: "# New Articles Published"})
-
-		mentions := ""
-		if sub.MentionEveryone {
-			mentions = "@everyone"
-		} else if len(sub.MentionRoles) > 0 {
-			for _, roleId := range sub.MentionRoles {
-				mentions += "<@&" + discordgo.StrID(roleId) + "> "
-			}
-			mentions = strings.TrimSpace(mentions)
-		}
-
-		if mentions != "" {
-			container.Components = append(container.Components, discordgo.TextDisplay{Content: mentions})
-		}
-
-		var added = 0
-		for _, item := range batch {
-			link := item.Link
-			if link == "" {
-				continue
-			}
-			u, err := url.ParseRequestURI(link)
-			if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
-				continue
-			}
-
-			sanitizer := bluemonday.StrictPolicy()
-			// Sanitize and decode title and description
-			title := sanitizer.Sanitize(item.Title)
-			title = html.UnescapeString(title)
-			if strings.TrimSpace(title) == "" {
-				title = "(no title)"
-			}
-
-			desc := sanitizer.Sanitize(item.Description)
-			if len(desc) > 250 {
-				desc = desc[:245] + "..."
-			}
-			desc = html.UnescapeString(desc)
-
-			// Try to find an image for the post
-			var imageURL string
-			if item.Image != nil && item.Image.URL != "" {
-				imageURL = item.Image.URL
-			} else if len(item.Enclosures) > 0 {
-				for _, enc := range item.Enclosures {
-					if enc.Type != "" && len(enc.Type) >= 6 && enc.Type[:6] == "image/" && enc.URL != "" {
-						imageURL = enc.URL
-						break
-					}
-				}
-			}
-			if imageURL == "" {
-				imageURL = extractImageFromMediaExtensions(item)
-			}
-			if imageURL == "" {
-				imageURL = extractFirstImageFromHTML(item.Content)
-			}
-			if imageURL == "" {
-				imageURL = extractFirstImageFromHTML(item.Description)
-			}
-
-			text := fmt.Sprintf("### [%s](%s)", title, link)
-			if item.PublishedParsed != nil {
-				text = fmt.Sprintf("%s\n-# Published <t:%d:R>\n", text, item.PublishedParsed.Unix())
-			}
-
-			if desc != "" {
-				//new lines break the subtext formatting
-				lines := strings.Split(desc, "\n")
-				var filtered []string
-				for _, line := range lines {
-					line = strings.TrimSpace(line)
-					if line != "" {
-						filtered = append(filtered, "-# "+line)
-					}
-				}
-				desc = strings.Join(filtered, "\n")
-
-				text = fmt.Sprintf("%s\n%s", text, desc)
-			}
-
-			section := discordgo.Section{
-				Components: []discordgo.SectionComponentPart{},
-			}
-
-			var textDisplay discordgo.SectionComponentPart = discordgo.TextDisplay{Content: text}
-			section.Components = append(section.Components, textDisplay)
-
-			// prefer imageURL, then feed icon, then dummy RSS icon
-			thumbURL := imageURL
-			if thumbURL == "" && feed.Image != nil && feed.Image.URL != "" {
-				thumbURL = feed.Image.URL
-			}
-			if thumbURL == "" {
-				thumbURL = "https://upload.wikimedia.org/wikipedia/commons/6/6b/RSS_icon.jpg"
-			}
-			section.Accessory = discordgo.Thumbnail{
-				Media: discordgo.UnfurledMediaItem{URL: thumbURL},
-			}
-
-			container.Components = append(container.Components, discordgo.Separator{}, section)
-			added++
-
-			// Mark as seen in Redis
-			if err := markItemSeen(sub.ID, link, item.PublishedParsed); err != nil {
-				logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed to mark RSS item as seen")
-			}
-		}
-		if added == 0 {
-			return
-		}
-
-		msgSend := &discordgo.MessageSend{
-			Components: []discordgo.TopLevelComponent{container},
-			Flags:      discordgo.MessageFlagsIsComponentsV2,
 		}
 
 		parseMentions := []discordgo.AllowedMentionType{}
@@ -383,11 +376,14 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 		} else if len(sub.MentionRoles) > 0 {
 			parseMentions = append(parseMentions, discordgo.AllowedMentionTypeRoles)
 		}
-		msgSend.AllowedMentions = discordgo.AllowedMentions{
-			Parse: parseMentions,
+
+		msgSend := &discordgo.MessageSend{
+			Components:      []discordgo.TopLevelComponent{container},
+			Flags:           discordgo.MessageFlagsIsComponentsV2,
+			AllowedMentions: discordgo.AllowedMentions{Parse: parseMentions},
 		}
 
-		mqueue.QueueMessage(&mqueue.QueuedElement{
+		err := mqueue.QueueMessage(&mqueue.QueuedElement{
 			GuildID:      sub.GuildID,
 			ChannelID:    sub.ChannelID,
 			Source:       "rss",
@@ -398,12 +394,177 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription) {
 				Parse: parseMentions,
 			},
 		})
+		if err != nil {
+			logger.WithError(err).WithField("feed_id", sub.ID).Error("Failed queueing RSS message")
+			releaseItems(sub.ID, claimed)
+			continue
+		}
+
+		feeds.MetricPostedMessages.With(prometheus.Labels{"source": "rss"}).Inc()
+		posted += len(claimed)
 	}
 
-	// Cleanup old items after processing the feed
+	if posted == 0 {
+		return
+	}
+
+	logger.Infof("Posted %d new items for feed %d", posted, sub.ID)
+
 	if err := cleanupOldItems(sub.ID); err != nil {
 		logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed to cleanup old RSS deduplication entries")
 	}
+}
+
+// buildFeedContainer renders a batch of items and returns the links it claimed for this
+// subscription. items already claimed by an earlier poll are skipped.
+func buildFeedContainer(sub *models.RSSFeedSubscription, feed *gofeed.Feed, batch []*feedItem) (discordgo.Container, []string) {
+	container := discordgo.Container{
+		AccentColor: 0x2b7cff,
+	}
+
+	container.Components = append(container.Components, discordgo.TextDisplay{Content: "# New Articles Published"})
+
+	mentions := ""
+	if sub.MentionEveryone {
+		mentions = "@everyone"
+	} else if len(sub.MentionRoles) > 0 {
+		for _, roleId := range sub.MentionRoles {
+			mentions += "<@&" + discordgo.StrID(roleId) + "> "
+		}
+		mentions = strings.TrimSpace(mentions)
+	}
+
+	if mentions != "" {
+		container.Components = append(container.Components, discordgo.TextDisplay{Content: mentions})
+	}
+
+	claimed := make([]string, 0, len(batch))
+	for _, item := range batch {
+		claimedItem, err := claimItem(sub.ID, item.Link, item.PublishedAt)
+		if err != nil {
+			logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed to check RSS deduplication set")
+			continue
+		}
+		if !claimedItem {
+			continue
+		}
+
+		container.Components = append(container.Components, discordgo.Separator{}, buildItemSection(feed, item))
+		claimed = append(claimed, item.Link)
+	}
+
+	return container, claimed
+}
+
+func buildItemSection(feed *gofeed.Feed, item *feedItem) discordgo.Section {
+	title := html.UnescapeString(descriptionSanitizer.Sanitize(item.Title))
+	if strings.TrimSpace(title) == "" {
+		title = "(no title)"
+	}
+
+	desc := html.UnescapeString(common.CutStringShort(descriptionSanitizer.Sanitize(item.Description), 250))
+
+	text := fmt.Sprintf("### [%s](%s)", title, item.Link)
+	if item.PublishedAt != nil {
+		text = fmt.Sprintf("%s\n-# Published <t:%d:R>\n", text, item.PublishedAt.Unix())
+	}
+
+	if desc != "" {
+		//new lines break the subtext formatting
+		lines := strings.Split(desc, "\n")
+		var filtered []string
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				filtered = append(filtered, "-# "+line)
+			}
+		}
+		desc = strings.Join(filtered, "\n")
+
+		text = fmt.Sprintf("%s\n%s", text, desc)
+	}
+
+	section := discordgo.Section{
+		Components: []discordgo.SectionComponentPart{discordgo.TextDisplay{Content: text}},
+	}
+
+	// prefer the item image, then the feed icon, then a dummy RSS icon
+	thumbURL := itemImageURL(item.Item)
+	if thumbURL == "" && feed.Image != nil && feed.Image.URL != "" {
+		thumbURL = feed.Image.URL
+	}
+	if thumbURL == "" {
+		thumbURL = "https://upload.wikimedia.org/wikipedia/commons/6/6b/RSS_icon.jpg"
+	}
+	section.Accessory = discordgo.Thumbnail{
+		Media: discordgo.UnfurledMediaItem{URL: thumbURL},
+	}
+
+	return section
+}
+
+func itemImageURL(item *gofeed.Item) string {
+	if item.Image != nil && item.Image.URL != "" {
+		return item.Image.URL
+	}
+
+	for _, enc := range item.Enclosures {
+		if strings.HasPrefix(enc.Type, "image/") && enc.URL != "" {
+			return enc.URL
+		}
+	}
+
+	if url := extractImageFromMediaExtensions(item); url != "" {
+		return url
+	}
+	if url := extractFirstImageFromHTML(item.Content); url != "" {
+		return url
+	}
+	return extractFirstImageFromHTML(item.Description)
+}
+
+// feedItem is a feed entry that passed the link and age checks, with its publish time
+// resolved once so every subscriber of the same url reuses it
+type feedItem struct {
+	*gofeed.Item
+	PublishedAt *time.Time
+}
+
+func publishedAt(item *gofeed.Item) *time.Time {
+	if item.PublishedParsed != nil {
+		return item.PublishedParsed
+	}
+	return item.UpdatedParsed
+}
+
+func isPostableLink(link string) bool {
+	if link == "" {
+		return false
+	}
+	u, err := url.ParseRequestURI(link)
+	return err == nil && (u.Scheme == "http" || u.Scheme == "https")
+}
+
+// collectPostableItems returns the items worth posting, oldest first
+func collectPostableItems(feed *gofeed.Feed) []*feedItem {
+	cutoff := time.Now().Add(-maxItemAge)
+
+	items := make([]*feedItem, 0, len(feed.Items))
+	for i := len(feed.Items) - 1; i >= 0; i-- {
+		item := feed.Items[i]
+		if !isPostableLink(item.Link) {
+			continue
+		}
+
+		published := publishedAt(item)
+		if published != nil && published.Before(cutoff) {
+			continue
+		}
+
+		items = append(items, &feedItem{Item: item, PublishedAt: published})
+	}
+
+	return items
 }
 
 // Helper: extract first <img src=...> from HTML
@@ -424,7 +585,7 @@ func extractImageFromMediaExtensions(item *gofeed.Item) string {
 		if mediaExts, ok := item.Extensions["media"][ext]; ok {
 			for _, extVal := range mediaExts {
 				if url, ok := extVal.Attrs["url"]; ok && url != "" {
-					if t, ok := extVal.Attrs["type"]; !ok || (len(t) >= 6 && t[:6] == "image/") {
+					if t, ok := extVal.Attrs["type"]; !ok || strings.HasPrefix(t, "image/") {
 						return url
 					}
 				}
@@ -438,7 +599,7 @@ func extractImageFromMediaExtensions(item *gofeed.Item) string {
 				if children, ok := group.Children["media:"+ext]; ok {
 					for _, extVal := range children {
 						if url, ok := extVal.Attrs["url"]; ok && url != "" {
-							if t, ok := extVal.Attrs["type"]; !ok || (len(t) >= 6 && t[:6] == "image/") {
+							if t, ok := extVal.Attrs["type"]; !ok || strings.HasPrefix(t, "image/") {
 								return url
 							}
 						}
