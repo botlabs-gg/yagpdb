@@ -57,6 +57,8 @@ func TestCooldownFor(t *testing.T) {
 		{"unavailable with a hint", &fetchError{StatusCode: http.StatusServiceUnavailable, RetryAfter: time.Hour}, time.Hour},
 		{"capped", &fetchError{StatusCode: http.StatusTooManyRequests, RetryAfter: 30 * 24 * time.Hour}, maxFeedCooldown},
 		{"not found", &fetchError{StatusCode: http.StatusNotFound}, 0},
+		{"request timeout", &fetchError{StatusCode: http.StatusRequestTimeout}, 0},
+		{"too early", &fetchError{StatusCode: http.StatusTooEarly}, 0},
 		{"network error", &fetchError{Err: context.DeadlineExceeded}, 0},
 	}
 
@@ -66,6 +68,37 @@ func TestCooldownFor(t *testing.T) {
 				t.Errorf("got %s, want %s", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestIsPermanentStatus(t *testing.T) {
+	permanent := []int{http.StatusBadRequest, http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound, http.StatusGone, http.StatusTeapot, http.StatusUnavailableForLegalReasons}
+	for _, status := range permanent {
+		if !isPermanentStatus(status) {
+			t.Errorf("%d should disable the feed", status)
+		}
+	}
+
+	transient := []int{http.StatusRequestTimeout, http.StatusTooEarly, http.StatusTooManyRequests, http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout, 0}
+	for _, status := range transient {
+		if isPermanentStatus(status) {
+			t.Errorf("%d should not disable the feed", status)
+		}
+	}
+}
+
+// a rate limited feed must always take the cooldown path, never the disable path
+func TestRateLimitedFeedIsNeverPermanent(t *testing.T) {
+	for _, err := range []*fetchError{
+		{StatusCode: http.StatusTooManyRequests},
+		{StatusCode: http.StatusTooManyRequests, RetryAfter: time.Hour},
+	} {
+		if isPermanentStatus(err.StatusCode) {
+			t.Fatal("429 was treated as permanent")
+		}
+		if cooldownFor(err) <= 0 {
+			t.Fatal("429 did not produce a cooldown")
+		}
 	}
 }
 

@@ -57,9 +57,6 @@ const (
 	itemsPerMessage = 5
 )
 
-// fetch failures with these statuses are never transient, the feed is disabled on the spot
-var permanentFetchStatuses = []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound}
-
 var metricFeedFetches = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "yagpdb_rss_fetches_total",
 	Help: "RSS feed fetches by result",
@@ -211,8 +208,8 @@ func (p *Plugin) handleFetchFailure(feedURL string, subs []*models.RSSFeedSubscr
 
 	metricFeedFetches.With(prometheus.Labels{"result": "error"}).Inc()
 
-	if fErr != nil && slices.Contains(permanentFetchStatuses, fErr.StatusCode) {
-		l.Warn("Disabling RSS feed, the url is permanently unreachable")
+	if fErr != nil && isPermanentStatus(fErr.StatusCode) {
+		l.Warnf("Disabling RSS feed, the url returned %d", fErr.StatusCode)
 		p.disableSubscriptions(feedURL, subs, err)
 		return
 	}
@@ -254,6 +251,21 @@ func (p *Plugin) disableSubscriptions(feedURL string, subs []*models.RSSFeedSubs
 	// the failure clock is reset so re-enabling the feed gives it a fresh grace period,
 	// the error is kept around so the control panel can explain what happened
 	saveFeedState(feedURL, map[string]string{"last_error": fmt.Sprintf("disabled: %s", reason)}, "first_failure")
+}
+
+// the 4xx responses that can clear up on their own, so they get the same grace period
+// as a 5xx instead of disabling the feed
+var transientClientStatuses = []int{
+	http.StatusRequestTimeout, // the origin gave up waiting on us, not a broken feed
+	http.StatusTooEarly,       // asked to replay the request later
+	http.StatusTooManyRequests,
+}
+
+// isPermanentStatus reports whether a status means the feed is broken rather than
+// having a bad day. the rest of the 4xx range says the request itself is wrong, and
+// repeating it every 5 minutes won't make it right.
+func isPermanentStatus(status int) bool {
+	return status >= 400 && status < 500 && !slices.Contains(transientClientStatuses, status)
 }
 
 // cooldownFor returns how long to leave a host alone after it pushed back, or 0 if it didn't
@@ -408,7 +420,7 @@ func (p *Plugin) processFeed(sub *models.RSSFeedSubscription, feed *gofeed.Feed,
 		return
 	}
 
-	logger.Infof("Posted %d new items for feed %d", posted, sub.ID)
+	logger.Infof("Posted %d new items for feed %s", posted, sub.FeedURL)
 
 	if err := cleanupOldItems(sub.ID); err != nil {
 		logger.WithError(err).WithField("feed_id", sub.ID).Warn("Failed to cleanup old RSS deduplication entries")
