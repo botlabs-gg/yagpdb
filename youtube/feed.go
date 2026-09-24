@@ -140,38 +140,44 @@ func (p *Plugin) webSubSubscribeWithRetry(channel string) bool {
 	return false
 }
 
+// Resubscribes a chunk at a time, waiting for each to drain before starting the next.
+// The wait is what keeps the request rate down: without it the workers pull
+// continuously and the hub answers with 429s.
 func (p *Plugin) resubscribeChannels(channels []string) {
 	total := len(channels)
 	if total < 1 {
 		return
 	}
 
-	// a batch size of zero would spin forever on the chunking this replaced
-	workers := max(confResubBatchSize.GetInt(), 1)
-	// scaled so a pass reports roughly twenty times whatever its size
-	progressEvery := max(total/20, 1)
+	batchSize := max(confResubBatchSize.GetInt(), 1)
+	chunks := (total + batchSize - 1) / batchSize
+	logger.Infof("Resubscribing %d expiring subs in %d chunks of %d", total, chunks, batchSize)
 
-	logger.Infof("Resubscribing %d expiring subs with %d workers", total, workers)
-
-	var done, succeeded, failed atomic.Int64
 	started := time.Now()
+	succeeded, failed := 0, 0
 
-	p.processChannelsConcurrently(channels, workers, func(channel string) {
-		if p.webSubSubscribeWithRetry(channel) {
-			succeeded.Add(1)
-		} else {
-			failed.Add(1)
-		}
+	for i := 0; i < total; i += batchSize {
+		chunk := channels[i:min(i+batchSize, total)]
 
-		// Add returns the new value, so exactly one worker reports each milestone
-		if completed := done.Add(1); completed%int64(progressEvery) == 0 || completed == int64(total) {
-			logger.Infof("Resubscribed %d/%d expiring subs, %d ok, %d failed, %d pending",
-				completed, total, succeeded.Load(), failed.Load(), int64(total)-completed)
-		}
-	})
+		var chunkOK, chunkFailed atomic.Int64
+		p.processChannelsConcurrently(chunk, batchSize, func(channel string) {
+			if p.webSubSubscribeWithRetry(channel) {
+				chunkOK.Add(1)
+			} else {
+				chunkFailed.Add(1)
+			}
+		})
+
+		succeeded += int(chunkOK.Load())
+		failed += int(chunkFailed.Load())
+		done := i + len(chunk)
+
+		logger.Infof("Processed chunk %d/%d for expiring subs: %d ok, %d failed (%d done, %d pending)",
+			i/batchSize+1, chunks, chunkOK.Load(), chunkFailed.Load(), done, total-done)
+	}
 
 	logger.Infof("Finished resubscribing %d expiring subs in %s, %d ok, %d failed",
-		total, time.Since(started).Truncate(time.Second), succeeded.Load(), failed.Load())
+		total, time.Since(started).Truncate(time.Second), succeeded, failed)
 }
 
 // websubChannelsByScore returns the channels whose lease expiry falls in the given
