@@ -330,6 +330,18 @@ func QueueEventNonDiscord(evtData *EventData) {
 	queueEvent(evtData)
 }
 
+// droppableEvents are the only events thrown away when a shard's queue is full. they
+// are high volume and purely informational, so losing one costs nothing but slightly
+// stale presence or typing info.
+//
+// everything else has to be delivered. GuildCreate in particular is the only thing that
+// marks a guild available again after READY lists it as unavailable, so dropping one
+// leaves that guild unavailable in state until the next full reconnect.
+var droppableEvents = []Event{
+	EventPresenceUpdate,
+	EventTypingStart,
+}
+
 func queueEvent(evtData *EventData) {
 	s := evtData.Session
 	if s.ShardID >= len(workers) || workers[s.ShardID] == nil {
@@ -339,66 +351,91 @@ func queueEvent(evtData *EventData) {
 
 	select {
 	case workers[s.ShardID] <- evtData:
+		return
 	default:
-		recordDroppedEvent(evtData)
 	}
+
+	if slices.Contains(droppableEvents, evtData.Type) {
+		droppedEvents.record(evtData)
+		return
+	}
+
+	// this blocks the gateway reader for this shard until the worker catches up. the
+	// heartbeater and the writer run on their own goroutines, so the connection stays
+	// alive and this ends up as backpressure on the socket rather than a lost event.
+	blockedEvents.record(evtData)
+	workers[s.ShardID] <- evtData
 }
 
-type droppedEventKey struct {
+type queuePressureKey struct {
 	shardID int
 	evt     Event
 }
 
-var (
-	droppedEventsMU sync.Mutex
-	droppedEvents   = make(map[droppedEventKey]int64)
-)
-
-func recordDroppedEvent(evtData *EventData) {
-	key := droppedEventKey{shardID: evtData.Session.ShardID, evt: evtData.Type}
-
-	droppedEventsMU.Lock()
-	droppedEvents[key]++
-	droppedEventsMU.Unlock()
+type queuePressureCounter struct {
+	mu     sync.Mutex
+	counts map[queuePressureKey]int64
 }
 
-func logDroppedEvents(interval time.Duration) {
+func (c *queuePressureCounter) record(evtData *EventData) {
+	key := queuePressureKey{shardID: evtData.Session.ShardID, evt: evtData.Type}
+
+	c.mu.Lock()
+	c.counts[key]++
+	c.mu.Unlock()
+}
+
+func (c *queuePressureCounter) take() map[queuePressureKey]int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	snapshot := c.counts
+	c.counts = make(map[queuePressureKey]int64)
+	return snapshot
+}
+
+var (
+	droppedEvents = &queuePressureCounter{counts: make(map[queuePressureKey]int64)}
+	blockedEvents = &queuePressureCounter{counts: make(map[queuePressureKey]int64)}
+)
+
+func logQueuePressure(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	for range ticker.C {
-		droppedEventsMU.Lock()
-		snapshot := droppedEvents
-		droppedEvents = make(map[droppedEventKey]int64)
-		droppedEventsMU.Unlock()
-
-		if len(snapshot) < 1 {
-			continue
-		}
-
-		total := int64(0)
-		perShard := make(map[int]int64, len(snapshot))
-		for key, count := range snapshot {
-			total += count
-			perShard[key.shardID] += count
-		}
-
-		worstShard, worstCount := 0, int64(-1)
-		for shardID, count := range perShard {
-			if count > worstCount {
-				worstShard, worstCount = shardID, count
-			}
-		}
-
-		var worstEvt Event
-		worstEvtCount := int64(-1)
-		for key, count := range snapshot {
-			if key.shardID == worstShard && count > worstEvtCount {
-				worstEvt, worstEvtCount = key.evt, count
-			}
-		}
-
-		logrus.Warnf("event queues full, dropped %d events across %d shards in the last %s, worst shard %d with %d (mostly %s)",
-			total, len(perShard), interval, worstShard, worstCount, worstEvt)
+		logQueuePressureSnapshot("dropped", droppedEvents.take(), interval)
+		logQueuePressureSnapshot("waited to queue", blockedEvents.take(), interval)
 	}
+}
+
+func logQueuePressureSnapshot(what string, snapshot map[queuePressureKey]int64, interval time.Duration) {
+	if len(snapshot) < 1 {
+		return
+	}
+
+	total := int64(0)
+	perShard := make(map[int]int64, len(snapshot))
+	for key, count := range snapshot {
+		total += count
+		perShard[key.shardID] += count
+	}
+
+	worstShard, worstCount := 0, int64(-1)
+	for shardID, count := range perShard {
+		if count > worstCount {
+			worstShard, worstCount = shardID, count
+		}
+	}
+
+	var worstEvt Event
+	worstEvtCount := int64(-1)
+	for key, count := range snapshot {
+		if key.shardID == worstShard && count > worstEvtCount {
+			worstEvt, worstEvtCount = key.evt, count
+		}
+	}
+
+	logrus.Warnf("event queues full, %s %d events across %d shards in the last %s, worst shard %d with %d (mostly %s)",
+		what, total, len(perShard), interval, worstShard, worstCount, worstEvt)
 }
 
 // CS is the same as calling d.GS.GetChannel
@@ -446,7 +483,7 @@ func InitWorkers(totalShards int) {
 		go eventWorker(workers[i])
 	}
 
-	go logDroppedEvents(time.Second * 10)
+	go logQueuePressure(time.Second * 10)
 }
 
 func eventWorker(ch chan *EventData) {

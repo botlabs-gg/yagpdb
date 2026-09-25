@@ -60,6 +60,8 @@ var metricsLeftGuilds = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func guildRemoved(guildID int64) {
+	forgetGuild(guildID)
+
 	metricsLeftGuilds.Inc()
 	commonEventsTotal.With(prometheus.Labels{"type": "Guild Delete"}).Inc()
 

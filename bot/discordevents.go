@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -63,6 +64,39 @@ var (
 	}, 0)
 )
 
+var (
+	// guilds redis already knows we are connected to, snapshotted on READY. discord
+	// replays a GuildCreate for every guild at once after a reconnect, and for these
+	// there is nothing to write, so knowing about them up front saves a redis round
+	// trip per guild on the shard's only event worker.
+	knownGuildsMU sync.RWMutex
+	knownGuilds   = make(map[int64]struct{})
+)
+
+func isGuildKnown(guildID int64) bool {
+	knownGuildsMU.RLock()
+	defer knownGuildsMU.RUnlock()
+
+	_, ok := knownGuilds[guildID]
+	return ok
+}
+
+func markGuildKnown(guildIDs ...int64) {
+	knownGuildsMU.Lock()
+	defer knownGuildsMU.Unlock()
+
+	for _, guildID := range guildIDs {
+		knownGuilds[guildID] = struct{}{}
+	}
+}
+
+func forgetGuild(guildID int64) {
+	knownGuildsMU.Lock()
+	defer knownGuildsMU.Unlock()
+
+	delete(knownGuilds, guildID)
+}
+
 func HandleReady(data *eventsystem.EventData) {
 	evt := data.Ready()
 
@@ -86,29 +120,46 @@ func HandleReady(data *eventsystem.EventData) {
 		logger.WithError(err).Error("Failed retrieving connected servers")
 	}
 
+	// banned servers still have to go through the full check on GuildCreate so we leave
+	// them again, so they never make it into the known set
+	var bannedServers []int64
+	if err := common.RedisPool.Do(radix.Cmd(&bannedServers, "SMEMBERS", "banned_servers")); err != nil {
+		logger.WithError(err).Error("Failed retrieving banned servers")
+	}
+
+	banned := make(map[int64]struct{}, len(bannedServers))
+	for _, v := range bannedServers {
+		banned[v] = struct{}{}
+	}
+
+	guilds := make([]int64, len(evt.Guilds))
+	readyGuilds := make(map[int64]struct{}, len(evt.Guilds))
+	for i, v := range evt.Guilds {
+		guilds[i] = v.ID
+		readyGuilds[v.ID] = struct{}{}
+	}
+
 	numShards := ShardManager.GetNumShards()
 
-OUTER:
+	stillConnected := make([]int64, 0, len(evt.Guilds))
 	for _, v := range listedServers {
 		shard := (v >> 22) % int64(numShards)
 		if int(shard) != data.Session.ShardID {
 			continue
 		}
 
-		for _, readyGuild := range evt.Guilds {
-			if readyGuild.ID == v {
-				continue OUTER
-			}
+		if _, ok := readyGuilds[v]; !ok {
+			logger.Info("Left server while bot was down: ", v)
+			go guildRemoved(v)
+			continue
 		}
 
-		logger.Info("Left server while bot was down: ", v)
-		go guildRemoved(v)
+		if _, isBanned := banned[v]; !isBanned {
+			stillConnected = append(stillConnected, v)
+		}
 	}
 
-	guilds := make([]int64, len(evt.Guilds))
-	for i, v := range evt.Guilds {
-		guilds[i] = v.ID
-	}
+	markGuildKnown(stillConnected...)
 
 	featureflags.BatchInitCache(guilds)
 }
@@ -132,33 +183,39 @@ func HandleGuildCreate(evt *eventsystem.EventData) (retry bool, err error) {
 		"guild":  g.ID,
 	}).Debug("Joined guild")
 
-	saddRes := 0
-	isBanned := false
+	// guilds we already knew about at READY have nothing to write here, and after a
+	// reconnect that is every guild on the shard arriving at once
+	if !isGuildKnown(g.ID) {
+		saddRes := 0
+		isBanned := false
 
-	err = common.RedisPool.Do(radix.Pipeline(
-		radix.Cmd(&saddRes, "SADD", "connected_guilds", discordgo.StrID(g.ID)),
-		radix.Cmd(&isBanned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)),
-	))
-	if err != nil {
-		return true, errors.WithStackIf(err)
-	}
-
-	// check if this server is new
-	if saddRes > 0 {
-		logger.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
-		go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventNewGuild, g), eventsystem.EventNewGuild)
-
-		metricsJoinedGuilds.Inc()
-		commonEventsTotal.With(prometheus.Labels{"type": "Guild Create"}).Inc()
-	}
-
-	// check if the server is banned from using the bot
-	if isBanned {
-		logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
-		common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
-		err = common.BotSession.GuildLeave(g.ID)
+		err = common.RedisPool.Do(radix.Pipeline(
+			radix.Cmd(&saddRes, "SADD", "connected_guilds", discordgo.StrID(g.ID)),
+			radix.Cmd(&isBanned, "SISMEMBER", "banned_servers", discordgo.StrID(g.ID)),
+		))
 		if err != nil {
-			return CheckDiscordErrRetry(err), errors.WithStackIf(err)
+			return true, errors.WithStackIf(err)
+		}
+
+		// check if this server is new
+		if saddRes > 0 {
+			logger.WithField("g_name", g.Name).WithField("guild", g.ID).Info("Joined new guild!")
+			go eventsystem.EmitEvent(eventsystem.NewEventData(nil, eventsystem.EventNewGuild, g), eventsystem.EventNewGuild)
+
+			metricsJoinedGuilds.Inc()
+			commonEventsTotal.With(prometheus.Labels{"type": "Guild Create"}).Inc()
+		}
+
+		// check if the server is banned from using the bot
+		if isBanned {
+			logger.WithField("guild", g.ID).Info("Banned server tried to add bot back")
+			common.BotSession.ChannelMessageSend(g.ID, "This server is banned from using this bot. Join the support server for more info.")
+			err = common.BotSession.GuildLeave(g.ID)
+			if err != nil {
+				return CheckDiscordErrRetry(err), errors.WithStackIf(err)
+			}
+		} else {
+			markGuildKnown(g.ID)
 		}
 	}
 

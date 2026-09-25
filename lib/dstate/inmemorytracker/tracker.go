@@ -320,18 +320,24 @@ func (shard *ShardTracker) handleGuildCreate(gc *discordgo.GuildCreate) {
 	shard.guilds[gc.ID] = guildState
 	shard.guildMessages[gc.ID] = list.New()
 
+	// index the presences first: a big guild sends thousands of members and thousands of
+	// presences, and pairing them up by scanning was quadratic. this runs under the shard
+	// lock on the shard's only event worker, so it used to stall every other event behind
+	// it for entire seconds whenever a large guild reconnected.
+	presences := make(map[int64]*discordgo.Presence, len(gc.Presences))
+	for _, p := range gc.Presences {
+		presences[p.User.ID] = p
+	}
+
 	for _, v := range gc.Members {
 		// problem: the presences in guild does not include a full user object
 		// solution: only load presences that also have a corresponding member object
-		for _, p := range gc.Presences {
-			if p.User.ID == v.User.ID {
-				pms := dstate.MemberStateFromPresence(&discordgo.PresenceUpdate{
-					Presence: *p,
-					GuildID:  gc.ID,
-				})
-				shard.innerHandlePresenceUpdate(pms, true)
-				break
-			}
+		if p, ok := presences[v.User.ID]; ok {
+			pms := dstate.MemberStateFromPresence(&discordgo.PresenceUpdate{
+				Presence: *p,
+				GuildID:  gc.ID,
+			})
+			shard.innerHandlePresenceUpdate(pms, true)
 		}
 
 		ms := dstate.MemberStateFromMember(v)

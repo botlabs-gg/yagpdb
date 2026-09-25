@@ -121,6 +121,53 @@ func TestGuildCreate(t *testing.T) {
 	}
 }
 
+// presences and members are paired up by user id, and only some members in a guild
+// create are online, so the two lists rarely line up
+func TestGuildCreatePresenceMatching(t *testing.T) {
+	const guildID = 2
+	online := []int64{2001, 2003}
+
+	tracker := NewInMemoryTracker(TrackerConfig{}, 1)
+	tracker.HandleEvent(testSession, &discordgo.GuildCreate{
+		Guild: &discordgo.Guild{
+			ID:          guildID,
+			Name:        "presence test guild",
+			MemberCount: 3,
+			Members: []*discordgo.Member{
+				createTestMember(guildID, 2001, nil),
+				createTestMember(guildID, 2002, nil),
+				createTestMember(guildID, 2003, nil),
+			},
+			// deliberately out of order, and missing the offline member
+			Presences: []*discordgo.Presence{
+				{User: createTestUser(2003)},
+				{User: createTestUser(2001)},
+			},
+		},
+	})
+
+	for _, id := range online {
+		ms := tracker.GetMember(guildID, id)
+		if ms == nil {
+			t.Fatalf("member %d is missing", id)
+		}
+		if ms.Presence == nil {
+			t.Fatalf("member %d should have a presence", id)
+		}
+		if ms.User.ID != id {
+			t.Fatalf("member %d got the wrong user %d", id, ms.User.ID)
+		}
+	}
+
+	offline := tracker.GetMember(guildID, 2002)
+	if offline == nil {
+		t.Fatal("offline member is missing")
+	}
+	if offline.Presence != nil {
+		t.Fatal("offline member should not have picked up a presence")
+	}
+}
+
 func TestNoneExistantMember(t *testing.T) {
 	tracker := createTestState(TrackerConfig{})
 	ms := tracker.GetMember(1, 10001)
