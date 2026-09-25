@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	apiEndpoint = "https://freedictionaryapi.com/api/v1/entries/en/"
+	apiEndpoint = "https://freedictionaryapi.com/api/v1/entries/all/"
 
 	// The data is Wiktionary content under CC BY-SA 4.0, which obliges us to
 	// credit the source and link the original page.
@@ -34,9 +34,9 @@ const (
 	maxFieldLength       = 1024
 	maxListedTerms       = 10
 
-	// Longer than any real word, and it keeps junk input out of the cache keys
+	// Longer than any real word (hopefully), and it keeps junk input out of the cache keys
 	// and off the api.
-	maxQueryLength = 64
+	maxQueryLength = 128
 
 	// The api allows 1000 requests an hour per ip and exposes no budget headers,
 	// so repeat lookups are served from redis instead. Definitions are static
@@ -63,8 +63,8 @@ var Command = &commands.YAGCommand{
 	},
 	DefaultEnabled:      true,
 	SlashCommandEnabled: true,
-	RunFunc: func(data *dcmd.Data) (interface{}, error) {
-		query := strings.ToLower(data.Args[0].Str())
+	RunFunc: func(data *dcmd.Data) (any, error) {
+		query := data.Args[0].Str()
 
 		res, err := lookup(query)
 		if errors.Is(err, errRateLimited) {
