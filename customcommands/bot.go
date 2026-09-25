@@ -161,6 +161,19 @@ var cmdEvalCommand = &commands.YAGCommand{
 		}
 
 		msg := ctx.MessageSend(out)
+		msg.Embeds = ctx.CurrentFrame.EmbedsToSend
+		msg.Components = ctx.CurrentFrame.ComponentsToSend
+		if len(msg.Components) > 5 {
+			msg.Components = msg.Components[:5]
+		}
+
+		if strings.TrimSpace(out) == "" && len(msg.Embeds) == 0 && len(msg.Components) == 0 {
+			if data.TriggerType == dcmd.TriggerTypeSlashCommands {
+				return "Template executed, no output returned.", nil
+			}
+
+			return nil, nil
+		}
 
 		return msg, nil
 	},
