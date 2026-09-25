@@ -9,7 +9,7 @@ import (
 
 var confGoogleReCAPTCHASiteKey = config.RegisterOption("yagpdb.google.recaptcha_site_key", "Google reCAPTCHA site key", "")
 var confGoogleReCAPTCHASecret = config.RegisterOption("yagpdb.google.recaptcha_secret", "Google reCAPTCHA site secret", "")
-var confVerificationTrackIPs = config.RegisterOption("yagpdb.verification.track_ips", "Track verified users ip", true)
+var confVerificationTrackIPs = config.RegisterOption("yagpdb.verification.track_ips", "Record the IP address a member verified from, used to detect alt accounts and ban evasion. Off by default; opt in by setting this to true", false)
 
 type Plugin struct{}
 
