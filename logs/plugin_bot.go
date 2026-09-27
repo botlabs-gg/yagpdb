@@ -586,7 +586,7 @@ type UserGuildPair struct {
 	User    *discordgo.User
 }
 
-var confEnableUsernameTracking = config.RegisterOption("yagpdb.enable_username_tracking", "Enable username tracking", true)
+var confEnableUsernameTracking = config.RegisterOption("yagpdb.enable_username_tracking", "Record username and nickname history, and enable the usernames, nicknames and resetpastnames commands. Off by default; opt in by setting this to true", false)
 
 // Queue up all the events and process them one by one, because of limited connections
 func EvtProcesser() {

@@ -1,5 +1,29 @@
 This file will be updated with breaking changes, before you update you should check this file for steps on updating your database schema and migration processes, and be notified of other breaking changes elsewhere.
 
+**Privacy-affecting defaults are now opt-in**
+
+Four configuration changes. Self-hosters who relied on the previous behaviour must now opt in
+explicitly; nothing is removed, only the defaults changed.
+
+ - `yagpdb.disable_prefix_commands` has been **renamed** to `yagpdb.enable_prefix_commands`, and
+   the sense is inverted. Running built-in commands through the command prefix is now off by
+   default; set `yagpdb.enable_prefix_commands=true` to restore it. Custom commands are unaffected,
+   including those triggered by message content. If you previously set
+   `yagpdb.disable_prefix_commands`, that key no longer does anything and must be replaced.
+ - `yagpdb.enable_username_tracking` now defaults to **false**. Username and nickname history is no
+   longer recorded unless you opt in, and the `usernames`, `nicknames` and `resetpastnames`
+   commands stay disabled while it is off. The `pastUsernames` and `pastNicknames` custom command
+   template functions return an error while disabled. Existing rows in `username_listings` and
+   `nickname_listings` are left untouched; delete them yourself if you want the data gone.
+ - `yagpdb.verification.track_ips` now defaults to **false**. Verification no longer records the IP
+   a member verified from, which also means shared-IP alt detection and the automatic banning of
+   alts of a banned user do not run unless you opt in. Existing rows keep their stored IPs.
+ - `yagpdb.enable_message_log_purge` now defaults to **true**. Message logs older than 30 days are
+   deleted automatically. Set it to `false` to retain logs indefinitely as before. If you are
+   upgrading an instance that has never purged, the first run will delete a large backlog, so take
+   a backup first if you need that history.
+
+
 **18th Apr 2022 (1.32.0-dev)**
 
  - Autorole Full scan feature is now paid premium only, and the configuration form is disabled when full scan is active.

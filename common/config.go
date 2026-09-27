@@ -24,8 +24,8 @@ var (
 	ConfPQPassword = config.RegisterOption("yagpdb.pqpassword", "Postgres passoword", "")
 	ConfPQDB       = config.RegisterOption("yagpdb.pqdb", "Postgres database", "yagpdb")
 
-	ConfDisablePrefixCommands       = config.RegisterOption("yagpdb.disable_prefix_commands", "Disables running built-in commands through the command prefix, leaving the bot mention and discord's slash commands as the only way to run them. Custom commands are unaffected", false)
-	ConfEnablePrefixCommandsWarning = config.RegisterOption("yagpdb.enable_prefix_commands_warning", "Shows the prefix command deprecation notice, both on the dashboard and in discord. Independent of yagpdb.disable_prefix_commands, which only decides the wording", false)
+	ConfEnablePrefixCommands        = config.RegisterOption("yagpdb.enable_prefix_commands", "Opt in to running built-in commands through the command prefix. Off by default, leaving the bot mention and discord's slash commands as the only way to run them. Custom commands are unaffected", false)
+	ConfEnablePrefixCommandsWarning = config.RegisterOption("yagpdb.enable_prefix_commands_warning", "Shows the prefix command deprecation notice, both on the dashboard and in discord. Independent of yagpdb.enable_prefix_commands, which only decides the wording", false)
 
 	ConfMaxCCR            = config.RegisterOption("yagpdb.max_ccr", "Maximum number of concurrent outgoing requests to discord", 25)
 	ConfDisableKeepalives = config.RegisterOption("yagpdb.disable_keepalives", "Disables keepalive connections for outgoing requests to discord, this shouldn't be needed but i had networking issues once so i had to", false)
@@ -47,7 +47,7 @@ var (
 var PrefixCommandsShutdownDate = time.Date(2026, time.September, 15, 0, 0, 0, 0, time.UTC)
 
 func PrefixCommandsDisabled() bool {
-	return ConfDisablePrefixCommands.GetBool()
+	return !ConfEnablePrefixCommands.GetBool()
 }
 
 func ShowPrefixCommandsWarning() bool {
