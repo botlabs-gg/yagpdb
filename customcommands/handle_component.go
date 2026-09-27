@@ -44,13 +44,6 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	// Slash command interactions carry no source message, so handle them before the
-	// message/member guard below that the component & modal paths rely on.
-	if interaction.Type == discordgo.InteractionApplicationCommand {
-		handleSlashCommandInteraction(evt, cState, &interaction)
-		return
-	}
-
 	// A guild interaction always has a member. Components are always attached to a
 	// message, but modals opened from a slash command have no source message, so the
 	// message is only required by (and patched for) the component path below.
@@ -58,12 +51,20 @@ func handleInteractionCreate(evt *eventsystem.EventData) {
 		return
 	}
 
-	// Ephemeral messages always have guild_id = 0 even if created in a guild channel;
-	// see https://github.com/discord/discord-api-docs/issues/4557. But exec/execAdmin
-	// rely on the guild ID of the message to fill guild data, so patch it here.
+	// Interaction members never carry guild_id, and ephemeral messages always have
+	// guild_id = 0 even if created in a guild channel;
+	// see https://github.com/discord/discord-api-docs/issues/4557. Role functions and
+	// exec/execAdmin rely on these guild IDs, so patch them here.
 	interaction.Member.GuildID = evt.GS.ID
 	if interaction.Message != nil {
 		interaction.Message.GuildID = evt.GS.ID
+	}
+
+	// Slash command interactions carry no source message, so handle them before the
+	// message guard below that the component & modal paths rely on.
+	if interaction.Type == discordgo.InteractionApplicationCommand {
+		handleSlashCommandInteraction(evt, cState, &interaction)
+		return
 	}
 
 	switch interaction.Type {
