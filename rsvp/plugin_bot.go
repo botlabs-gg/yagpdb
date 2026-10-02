@@ -623,13 +623,13 @@ func (p *Plugin) sendReminders(m *models.RSVPSession, title, desc string) {
 			Embeds: []*discordgo.MessageEmbed{
 				{
 					Title:       title,
-					Description: common.ReplaceServerInvites(desc, 0, "[removed-server-invite]"),
+					Description: desc,
 					Footer: &discordgo.MessageEmbedFooter{
 						Text: "From the server: " + serverName,
 					},
 				},
 			},
-			Components: bot.GenerateServerInfoButton(m.GuildID),
+			Components: bot.DMComponents(m.GuildID, nil, 0),
 		}
 
 		err := bot.SendDMComplexMessage(v.UserID, msgSend)
