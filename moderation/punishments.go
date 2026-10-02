@@ -251,10 +251,10 @@ func sendPunishDM(config *Config, dmMsg string, action ModlogAction, gs *dstate.
 		msgSend := &discordgo.MessageSend{
 			Embeds: []*discordgo.MessageEmbed{
 				{
-					Description: common.ReplaceServerInvites(executed, 0, "[removed-server-invite]"),
+					Description: executed,
 				},
 			},
-			Components: bot.GenerateServerInfoButton(gs.ID),
+			Components: bot.DMComponents(gs.ID, nil, 0),
 		}
 
 		err = bot.SendDMComplexMessage(member.User.ID, msgSend)

@@ -539,7 +539,7 @@ func handleReactionAddRemove(evt *eventsystem.EventData) {
 					},
 				},
 			},
-			Components: bot.GenerateServerInfoButton(gs.ID),
+			Components: bot.DMComponents(gs.ID, nil, 0),
 		}
 		bot.SendDMComplexMessage(uID, msgSend)
 	}
